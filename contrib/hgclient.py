@@ -27,10 +27,11 @@ else:
     stringio = cStringIO.StringIO
     bprint = print
 
-def connectpipe(path=None):
+def connectpipe(path=None, extraargs=()):
     cmdline = [b'hg', b'serve', b'--cmdserver', b'pipe']
     if path:
         cmdline += [b'-R', path]
+    cmdline.extend(extraargs)
 
     server = subprocess.Popen(cmdline, stdin=subprocess.PIPE,
                               stdout=subprocess.PIPE)
@@ -114,6 +115,8 @@ def runcommand(server, args, output=stdout, error=stderr, input=None,
             writeblock(server, input.read(data))
         elif ch == b'L':
             writeblock(server, input.readline(data))
+        elif ch == b'm':
+            bprint(b"message: %r" % data)
         elif ch == b'r':
             ret, = struct.unpack('>i', data)
             if ret != 0:
@@ -132,3 +135,8 @@ def check(func, connect=connectpipe):
     finally:
         server.stdin.close()
         server.wait()
+
+def checkwith(connect=connectpipe, **kwargs):
+    def wrap(func):
+        return check(func, lambda: connect(**kwargs))
+    return wrap

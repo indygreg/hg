@@ -724,6 +724,43 @@ don't fall back to cwd if invalid -R path is specified (issue4805):
   $ cd ..
 
 
+structured message channel:
+
+  $ cat <<'EOF' >> repo2/.hg/hgrc
+  > [ui]
+  > # server --config should precede repository option
+  > message-output = stdio
+  > EOF
+
+  >>> from hgclient import bprint, checkwith, readchannel, runcommand
+  >>> @checkwith(extraargs=[b'--config', b'ui.message-output=channel',
+  ...                       b'--config', b'cmdserver.message-encodings=foo cbor'])
+  ... def verify(server):
+  ...     _ch, data = readchannel(server)
+  ...     bprint(data)
+  ...     runcommand(server, [b'-R', b'repo2', b'verify'])
+  capabilities: getencoding runcommand
+  encoding: ascii
+  message-encoding: cbor
+  pid: * (glob)
+  pgid: * (glob)
+  *** runcommand -R repo2 verify
+  message: '\xa2DdataTchecking changesets\nElabelJ ui.status'
+  message: '\xa2DdataSchecking manifests\nElabelJ ui.status'
+  message: '\xa2DdataX0crosschecking files in changesets and manifests\nElabelJ ui.status'
+  message: '\xa2DdataOchecking files\nElabelJ ui.status'
+  message: '\xa2DdataX/checked 0 changesets with 0 changes to 0 files\nElabelJ ui.status'
+
+bad message encoding:
+
+  $ hg serve --cmdserver pipe --config ui.message-output=channel
+  abort: no supported message encodings: 
+  [255]
+  $ hg serve --cmdserver pipe --config ui.message-output=channel \
+  > --config cmdserver.message-encodings='foo bar'
+  abort: no supported message encodings: foo bar
+  [255]
+
 unix domain socket:
 
   $ cd repo

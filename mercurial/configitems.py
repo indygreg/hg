@@ -173,6 +173,9 @@ coreconfigitem('chgserver', 'skiphash',
 coreconfigitem('cmdserver', 'log',
     default=None,
 )
+coreconfigitem('cmdserver', 'message-encodings',
+    default=list,
+)
 coreconfigitem('color', '.*',
     default=None,
     generic=True,

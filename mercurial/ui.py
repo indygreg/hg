@@ -1012,7 +1012,11 @@ class ui(object):
         try:
             if dest is self._ferr and not getattr(self._fout, 'closed', False):
                 self._fout.flush()
-            if self._colormode == 'win32':
+            if getattr(dest, 'structured', False):
+                # channel for machine-readable output with metadata, where
+                # no extra colorization is necessary.
+                dest.write(msg, **opts)
+            elif self._colormode == 'win32':
                 # windows color printing is its own can of crab, defer to
                 # the color module and that is it.
                 color.win32print(self, dest.write, msg, **opts)
@@ -1962,6 +1966,13 @@ def haveprogbar():
 
 def _selectmsgdests(ui):
     name = ui.config(b'ui', b'message-output')
+    if name == b'channel':
+        if ui.fmsg:
+            return ui.fmsg, ui.fmsg
+        else:
+            # fall back to ferr if channel isn't ready so that status/error
+            # messages can be printed
+            return ui.ferr, ui.ferr
     if name == b'stdio':
         return ui.fout, ui.ferr
     if name == b'stderr':

@@ -26,9 +26,11 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    pycompat,
     util,
 )
 from .utils import (
+    cborutil,
     procutil,
 )
 
@@ -69,6 +71,30 @@ class channeledoutput(object):
         if attr in (r'isatty', r'fileno', r'tell', r'seek'):
             raise AttributeError(attr)
         return getattr(self.out, attr)
+
+class channeledmessage(object):
+    """
+    Write encoded message and metadata to out in the following format:
+
+    data length (unsigned int),
+    encoded message and metadata, as a flat key-value dict.
+    """
+
+    # teach ui that write() can take **opts
+    structured = True
+
+    def __init__(self, out, channel, encodename, encodefn):
+        self._cout = channeledoutput(out, channel)
+        self.encoding = encodename
+        self._encodefn = encodefn
+
+    def write(self, data, **opts):
+        opts = pycompat.byteskwargs(opts)
+        opts[b'data'] = data
+        self._cout.write(self._encodefn(opts))
+
+    def __getattr__(self, attr):
+        return getattr(self._cout, attr)
 
 class channeledinput(object):
     """
@@ -156,6 +182,20 @@ class channeledinput(object):
             raise AttributeError(attr)
         return getattr(self.in_, attr)
 
+_messageencoders = {
+    b'cbor': lambda v: b''.join(cborutil.streamencode(v)),
+}
+
+def _selectmessageencoder(ui):
+    # experimental config: cmdserver.message-encodings
+    encnames = ui.configlist(b'cmdserver', b'message-encodings')
+    for n in encnames:
+        f = _messageencoders.get(n)
+        if f:
+            return n, f
+    raise error.Abort(b'no supported message encodings: %s'
+                      % b' '.join(encnames))
+
 class server(object):
     """
     Listens for commands on fin, runs them and writes the output on a channel
@@ -188,6 +228,14 @@ class server(object):
         self.cout = channeledoutput(fout, 'o')
         self.cin = channeledinput(fin, fout, 'I')
         self.cresult = channeledoutput(fout, 'r')
+
+        # TODO: add this to help/config.txt when stabilized
+        # ``channel``
+        #   Use separate channel for structured output. (Command-server only)
+        self.cmsg = None
+        if ui.config(b'ui', b'message-output') == b'channel':
+            encname, encfn = _selectmessageencoder(ui)
+            self.cmsg = channeledmessage(fout, b'm', encname, encfn)
 
         self.client = fin
 
@@ -254,7 +302,7 @@ class server(object):
                 ui.setconfig('ui', 'nontty', 'true', 'commandserver')
 
         req = dispatch.request(args[:], copiedui, self.repo, self.cin,
-                               self.cout, self.cerr)
+                               self.cout, self.cerr, self.cmsg)
 
         try:
             ret = dispatch.dispatch(req) & 255
@@ -289,6 +337,8 @@ class server(object):
         hellomsg += '\n'
         hellomsg += 'encoding: ' + encoding.encoding
         hellomsg += '\n'
+        if self.cmsg:
+            hellomsg += 'message-encoding: %s\n' % self.cmsg.encoding
         hellomsg += 'pid: %d' % procutil.getpid()
         if util.safehasattr(os, 'getpgid'):
             hellomsg += '\n'

@@ -1340,7 +1340,8 @@ class ui(object):
         If ui is not interactive, the default is returned.
         """
         if not self.interactive():
-            self.write(msg, ' ', default or '', "\n")
+            self.write(msg, ' ', label='ui.prompt')
+            self.write(default or '', "\n", label='ui.promptecho')
             return default
         self._writenobuf(self.fout, msg, label='ui.prompt')
         self.flush()
@@ -1349,7 +1350,7 @@ class ui(object):
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):
-                self.write(r, "\n")
+                self.write(r, "\n", label='ui.promptecho')
             return r
         except EOFError:
             raise error.ResponseExpected()

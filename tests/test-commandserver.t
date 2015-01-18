@@ -745,11 +745,11 @@ structured message channel:
   pid: * (glob)
   pgid: * (glob)
   *** runcommand -R repo2 verify
-  message: '\xa2DdataTchecking changesets\nElabelJ ui.status'
-  message: '\xa2DdataSchecking manifests\nElabelJ ui.status'
-  message: '\xa2DdataX0crosschecking files in changesets and manifests\nElabelJ ui.status'
-  message: '\xa2DdataOchecking files\nElabelJ ui.status'
-  message: '\xa2DdataX/checked 0 changesets with 0 changes to 0 files\nElabelJ ui.status'
+  message: '\xa2DdataTchecking changesets\nDtypeFstatus'
+  message: '\xa2DdataSchecking manifests\nDtypeFstatus'
+  message: '\xa2DdataX0crosschecking files in changesets and manifests\nDtypeFstatus'
+  message: '\xa2DdataOchecking files\nDtypeFstatus'
+  message: '\xa2DdataX/checked 0 changesets with 0 changes to 0 files\nDtypeFstatus'
 
 bad message encoding:
 

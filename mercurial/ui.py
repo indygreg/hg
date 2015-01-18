@@ -1039,6 +1039,12 @@ class ui(object):
             self._blockedtimes['stdio_blocked'] += \
                 (util.timer() - starttime) * 1000
 
+    def _writemsg(self, dest, *args, **opts):
+        _writemsgwith(self._write, dest, *args, **opts)
+
+    def _writemsgnobuf(self, dest, *args, **opts):
+        _writemsgwith(self._writenobuf, dest, *args, **opts)
+
     def flush(self):
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
@@ -1385,18 +1391,18 @@ class ui(object):
         If ui is not interactive, the default is returned.
         """
         if not self.interactive():
-            self._write(self._fmsgout, msg, ' ', label='ui.prompt')
-            self._write(self._fmsgout, default or '', "\n",
-                        label='ui.promptecho')
+            self._writemsg(self._fmsgout, msg, ' ', type='prompt')
+            self._writemsg(self._fmsgout, default or '', "\n",
+                           type='promptecho')
             return default
-        self._writenobuf(self._fmsgout, msg, label='ui.prompt')
+        self._writemsgnobuf(self._fmsgout, msg, type='prompt')
         self.flush()
         try:
             r = self._readline()
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):
-                self._write(self._fmsgout, r, "\n", label='ui.promptecho')
+                self._writemsg(self._fmsgout, r, "\n", type='promptecho')
             return r
         except EOFError:
             raise error.ResponseExpected()
@@ -1447,14 +1453,14 @@ class ui(object):
             if r.lower() in resps:
                 return resps.index(r.lower())
             # TODO: shouldn't it be a warning?
-            self._write(self._fmsgout, _("unrecognized response\n"))
+            self._writemsg(self._fmsgout, _("unrecognized response\n"))
 
     def getpass(self, prompt=None, default=None):
         if not self.interactive():
             return default
         try:
-            self._write(self._fmsgerr, prompt or _('password: '),
-                        label='ui.prompt')
+            self._writemsg(self._fmsgerr, prompt or _('password: '),
+                           type='prompt')
             # disable getpass() only if explicitly specified. it's still valid
             # to interact with tty even if fin is not a tty.
             with self.timeblockedsection('stdio'):
@@ -1474,24 +1480,21 @@ class ui(object):
         This adds an output label of "ui.status".
         '''
         if not self.quiet:
-            opts[r'label'] = opts.get(r'label', '') + ' ui.status'
-            self._write(self._fmsgout, *msg, **opts)
+            self._writemsg(self._fmsgout, type='status', *msg, **opts)
 
     def warn(self, *msg, **opts):
         '''write warning message to output (stderr)
 
         This adds an output label of "ui.warning".
         '''
-        opts[r'label'] = opts.get(r'label', '') + ' ui.warning'
-        self._write(self._fmsgerr, *msg, **opts)
+        self._writemsg(self._fmsgerr, type='warning', *msg, **opts)
 
     def error(self, *msg, **opts):
         '''write error message to output (stderr)
 
         This adds an output label of "ui.error".
         '''
-        opts[r'label'] = opts.get(r'label', '') + ' ui.error'
-        self._write(self._fmsgerr, *msg, **opts)
+        self._writemsg(self._fmsgerr, type='error', *msg, **opts)
 
     def note(self, *msg, **opts):
         '''write note to output (if ui.verbose is True)
@@ -1499,8 +1502,7 @@ class ui(object):
         This adds an output label of "ui.note".
         '''
         if self.verbose:
-            opts[r'label'] = opts.get(r'label', '') + ' ui.note'
-            self._write(self._fmsgout, *msg, **opts)
+            self._writemsg(self._fmsgout, type='note', *msg, **opts)
 
     def debug(self, *msg, **opts):
         '''write debug message to output (if ui.debugflag is True)
@@ -1508,8 +1510,7 @@ class ui(object):
         This adds an output label of "ui.debug".
         '''
         if self.debugflag:
-            opts[r'label'] = opts.get(r'label', '') + ' ui.debug'
-            self._write(self._fmsgout, *msg, **opts)
+            self._writemsg(self._fmsgout, type='debug', *msg, **opts)
 
     def edit(self, text, user, extra=None, editform=None, pending=None,
              repopath=None, action=None):
@@ -1978,3 +1979,14 @@ def _selectmsgdests(ui):
     if name == b'stderr':
         return ui.ferr, ui.ferr
     raise error.Abort(b'invalid ui.message-output destination: %s' % name)
+
+def _writemsgwith(write, dest, *args, **opts):
+    """Write ui message with the given ui._write*() function
+
+    The specified message type is translated to 'ui.<type>' label if the dest
+    isn't a structured channel, so that the message will be colorized.
+    """
+    # TODO: maybe change 'type' to a mandatory option
+    if r'type' in opts and not getattr(dest, 'structured', False):
+        opts[r'label'] = opts.get(r'label', '') + ' ui.%s' % opts.pop(r'type')
+    write(dest, *args, **opts)

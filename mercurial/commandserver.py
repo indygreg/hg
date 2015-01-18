@@ -78,6 +78,9 @@ class channeledmessage(object):
 
     data length (unsigned int),
     encoded message and metadata, as a flat key-value dict.
+
+    Each message should have 'type' attribute. Messages of unknown type
+    should be ignored.
     """
 
     # teach ui that write() can take **opts

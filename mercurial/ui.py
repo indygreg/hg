@@ -231,6 +231,7 @@ class ui(object):
             self._fout = src._fout
             self._ferr = src._ferr
             self._fin = src._fin
+            self._fmsg = src._fmsg
             self._fmsgout = src._fmsgout
             self._fmsgerr = src._fmsgerr
             self._finoutredirected = src._finoutredirected
@@ -258,6 +259,7 @@ class ui(object):
             self._fout = procutil.stdout
             self._ferr = procutil.stderr
             self._fin = procutil.stdin
+            self._fmsg = None
             self._fmsgout = self.fout  # configurable
             self._fmsgerr = self.ferr  # configurable
             self._finoutredirected = False
@@ -911,6 +913,17 @@ class ui(object):
     @fin.setter
     def fin(self, f):
         self._fin = f
+
+    @property
+    def fmsg(self):
+        """Stream dedicated for status/error messages; may be None if
+        fout/ferr are used"""
+        return self._fmsg
+
+    @fmsg.setter
+    def fmsg(self, f):
+        self._fmsg = f
+        self._fmsgout, self._fmsgerr = _selectmsgdests(self)
 
     def pushbuffer(self, error=False, subproc=False, labeled=False):
         """install a buffer to capture standard output of the ui object

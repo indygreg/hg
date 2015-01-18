@@ -50,7 +50,7 @@ from .utils import (
 
 class request(object):
     def __init__(self, args, ui=None, repo=None, fin=None, fout=None,
-                 ferr=None, prereposetups=None):
+                 ferr=None, fmsg=None, prereposetups=None):
         self.args = args
         self.ui = ui
         self.repo = repo
@@ -59,6 +59,8 @@ class request(object):
         self.fin = fin
         self.fout = fout
         self.ferr = ferr
+        # separate stream for status/error messages
+        self.fmsg = fmsg
 
         # remember options pre-parsed by _earlyparseopts()
         self.earlyoptions = {}
@@ -205,6 +207,8 @@ def dispatch(req):
                 req.ui.fout = req.fout
             if req.ferr:
                 req.ui.ferr = req.ferr
+            if req.fmsg:
+                req.ui.fmsg = req.fmsg
         except error.Abort as inst:
             ferr.write(_("abort: %s\n") % inst)
             if inst.hint:
@@ -955,6 +959,7 @@ def _dispatch(req):
                 repo.ui.fin = ui.fin
                 repo.ui.fout = ui.fout
                 repo.ui.ferr = ui.ferr
+                repo.ui.fmsg = ui.fmsg
             else:
                 try:
                     repo = hg.repository(ui, path=path,

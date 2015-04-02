@@ -1642,8 +1642,7 @@ class gitsubrepo(abstractsubrepo):
         # TODO: add support for non-plain formatter (see cmdutil.cat())
         for f in match.files():
             output = self._gitcommand(["show", "%s:%s" % (rev, f)])
-            fp = cmdutil.makefileobj(self._subparent, fntemplate,
-                                     self._ctx.node(),
+            fp = cmdutil.makefileobj(self._ctx, fntemplate,
                                      pathname=self.wvfs.reljoin(prefix, f))
             fp.write(output)
             fp.close()

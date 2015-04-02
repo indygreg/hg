@@ -956,19 +956,19 @@ class _unclosablefile(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         pass
 
-def makefileobj(repo, pat, node, desc=None, total=None,
+def makefileobj(ctx, pat, desc=None, total=None,
                 seqno=None, revwidth=None, mode='wb', modemap=None,
                 pathname=None):
 
     writable = mode not in ('r', 'rb')
 
     if isstdiofilename(pat):
+        repo = ctx.repo()
         if writable:
             fp = repo.ui.fout
         else:
             fp = repo.ui.fin
         return _unclosablefile(fp)
-    ctx = repo[node]
     fn = makefilename(ctx, pat, desc, total, seqno, revwidth, pathname)
     if modemap is not None:
         mode = modemap.get(fn, mode)
@@ -1546,7 +1546,7 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
         if not fp and fntemplate:
             desc_lines = ctx.description().rstrip().split('\n')
             desc = desc_lines[0]    #Commit always has a first line.
-            fo = makefileobj(repo, fntemplate, ctx.node(), desc=desc,
+            fo = makefileobj(ctx, fntemplate, desc=desc,
                              total=total, seqno=seqno, revwidth=revwidth,
                              mode='wb', modemap=filemode)
             dest = fo.name

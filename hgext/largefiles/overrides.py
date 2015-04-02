@@ -1359,8 +1359,7 @@ def overridecat(orig, ui, repo, file1, *pats, **opts):
     m.visitdir = lfvisitdirfn
 
     for f in ctx.walk(m):
-        with cmdutil.makefileobj(repo, opts.get('output'), ctx.node(),
-                                 pathname=f) as fp:
+        with cmdutil.makefileobj(ctx, opts.get('output'), pathname=f) as fp:
             lf = lfutil.splitstandin(f)
             if lf is None or origmatchfn(f):
                 # duplicating unreachable code from commands.cat

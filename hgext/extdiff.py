@@ -256,8 +256,8 @@ def dodiff(ui, repo, cmdline, pats, opts):
             cmdutil.export(repo, [repo[node1a].rev(), repo[node2].rev()],
                            fntemplate=repo.vfs.reljoin(tmproot, template),
                            match=matcher)
-            label1a = cmdutil.makefilename(repo, template, node1a)
-            label2 = cmdutil.makefilename(repo, template, node2)
+            label1a = cmdutil.makefilename(repo[node1a], template)
+            label2 = cmdutil.makefilename(repo[node2], template)
             dir1a = repo.vfs.reljoin(tmproot, label1a)
             dir2 = repo.vfs.reljoin(tmproot, label2)
             dir1b = None

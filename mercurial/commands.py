@@ -476,7 +476,7 @@ def archive(ui, repo, dest, **opts):
     if not ctx:
         raise error.Abort(_('no working directory: please specify a revision'))
     node = ctx.node()
-    dest = cmdutil.makefilename(repo, dest, node)
+    dest = cmdutil.makefilename(ctx, dest)
     if os.path.realpath(dest) == repo.root:
         raise error.Abort(_('repository root cannot be destination'))
 
@@ -490,7 +490,7 @@ def archive(ui, repo, dest, **opts):
         if not prefix:
             prefix = os.path.basename(repo.root) + '-%h'
 
-    prefix = cmdutil.makefilename(repo, prefix, node)
+    prefix = cmdutil.makefilename(ctx, prefix)
     match = scmutil.match(ctx, [], opts)
     archival.archive(repo, dest, node, kind, not opts.get('no_decode'),
                      match, prefix, subrepos=opts.get('subrepos'))

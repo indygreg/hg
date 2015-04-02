@@ -891,8 +891,10 @@ def getcommiteditor(edit=False, finishdesc=None, extramsg=None,
     else:
         return commiteditor
 
-def makefilename(repo, pat, node, desc=None,
+def makefilename(ctx, pat, desc=None,
                   total=None, seqno=None, revwidth=None, pathname=None):
+    repo = ctx.repo()
+    node = ctx.node()
     expander = {
         'H': lambda: hex(node),
         'R': lambda: '%d' % repo.changelog.rev(node),
@@ -966,7 +968,8 @@ def makefileobj(repo, pat, node, desc=None, total=None,
         else:
             fp = repo.ui.fin
         return _unclosablefile(fp)
-    fn = makefilename(repo, pat, node, desc, total, seqno, revwidth, pathname)
+    ctx = repo[node]
+    fn = makefilename(ctx, pat, desc, total, seqno, revwidth, pathname)
     if modemap is not None:
         mode = modemap.get(fn, mode)
         if mode == 'wb':
@@ -2163,7 +2166,7 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
     def write(path):
         filename = None
         if fntemplate:
-            filename = makefilename(repo, fntemplate, ctx.node(),
+            filename = makefilename(ctx, fntemplate,
                                     pathname=os.path.join(prefix, path))
             # attempt to create the directory if it does not already exist
             try:

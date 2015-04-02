@@ -893,16 +893,14 @@ def getcommiteditor(edit=False, finishdesc=None, extramsg=None,
 
 def makefilename(ctx, pat, desc=None,
                   total=None, seqno=None, revwidth=None, pathname=None):
-    repo = ctx.repo()
-    node = ctx.node()
     expander = {
-        'H': lambda: hex(node),
-        'R': lambda: '%d' % repo.changelog.rev(node),
-        'h': lambda: short(node),
+        'H': lambda: ctx.hex(),
+        'R': lambda: '%d' % ctx.rev(),
+        'h': lambda: short(ctx.node()),
         'm': lambda: re.sub('[^\w]', '_', desc or ''),
-        'r': lambda: ('%d' % repo.changelog.rev(node)).zfill(revwidth or 0),
+        'r': lambda: ('%d' % ctx.rev()).zfill(revwidth or 0),
         '%': lambda: '%',
-        'b': lambda: os.path.basename(repo.root),
+        'b': lambda: os.path.basename(ctx.repo().root),
         }
 
     try:

@@ -893,23 +893,17 @@ def getcommiteditor(edit=False, finishdesc=None, extramsg=None,
 
 def makefilename(repo, pat, node, desc=None,
                   total=None, seqno=None, revwidth=None, pathname=None):
-    node_expander = {
+    expander = {
         'H': lambda: hex(node),
         'R': lambda: '%d' % repo.changelog.rev(node),
         'h': lambda: short(node),
-        'm': lambda: re.sub('[^\w]', '_', desc or '')
-        }
-    expander = {
+        'm': lambda: re.sub('[^\w]', '_', desc or ''),
+        'r': lambda: ('%d' % repo.changelog.rev(node)).zfill(revwidth or 0),
         '%': lambda: '%',
         'b': lambda: os.path.basename(repo.root),
         }
 
     try:
-        if node:
-            expander.update(node_expander)
-        if node:
-            expander['r'] = (lambda:
-                    ('%d' % repo.changelog.rev(node)).zfill(revwidth or 0))
         if total is not None:
             expander['N'] = lambda: '%d' % total
         if seqno is not None:
@@ -960,7 +954,7 @@ class _unclosablefile(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         pass
 
-def makefileobj(repo, pat, node=None, desc=None, total=None,
+def makefileobj(repo, pat, node, desc=None, total=None,
                 seqno=None, revwidth=None, mode='wb', modemap=None,
                 pathname=None):
 

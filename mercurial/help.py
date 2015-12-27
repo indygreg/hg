@@ -62,7 +62,8 @@ def extshelp(ui):
     rst = loaddoc('extensions')(ui).splitlines(True)
     rst.extend(listexts(
         _('enabled extensions:'), extensions.enabled(), showdeprecated=True))
-    rst.extend(listexts(_('disabled extensions:'), extensions.disabled()))
+    rst.extend(listexts(_('disabled extensions:'), extensions.disabled(),
+                        showdeprecated=ui.verbose))
     doc = ''.join(rst)
     return doc
 

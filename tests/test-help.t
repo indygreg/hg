@@ -283,6 +283,11 @@ Test extension help:
        win32mbcs     allow the use of MBCS paths with problematic encodings
        zeroconf      discover and advertise repositories on the local network
 
+Verify that deprecated extensions are included if --verbose:
+
+  $ hg -v help extensions | grep children
+       children      command to display child changesets (DEPRECATED)
+
 Verify that extension keywords appear in help templates
 
   $ hg help --config extensions.transplant= templating|grep transplant > /dev/null

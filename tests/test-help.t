@@ -3391,6 +3391,70 @@ Sub-topic topics rendered properly
   </html>
   
 
+  $ get-with-headers.py 127.0.0.1:$HGPORT "help/unknowntopic"
+  404 Not Found
+  
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
+  <head>
+  <link rel="icon" href="/static/hgicon.png" type="image/png" />
+  <meta name="robots" content="index, nofollow" />
+  <link rel="stylesheet" href="/static/style-paper.css" type="text/css" />
+  <script type="text/javascript" src="/static/mercurial.js"></script>
+  
+  <title>test: error</title>
+  </head>
+  <body>
+  
+  <div class="container">
+  <div class="menu">
+  <div class="logo">
+  <a href="https://mercurial-scm.org/">
+  <img src="/static/hglogo.png" width=75 height=90 border=0 alt="mercurial" /></a>
+  </div>
+  <ul>
+  <li><a href="/shortlog">log</a></li>
+  <li><a href="/graph">graph</a></li>
+  <li><a href="/tags">tags</a></li>
+  <li><a href="/bookmarks">bookmarks</a></li>
+  <li><a href="/branches">branches</a></li>
+  </ul>
+  <ul>
+  <li><a href="/help">help</a></li>
+  </ul>
+  </div>
+  
+  <div class="main">
+  
+  <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
+  <h3>error</h3>
+  
+  
+  <form class="search" action="/log">
+  
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
+  <div id="hint">Find changesets by keywords (author, files, the commit message), revision
+  number or hash, or <a href="/help/revsets">revset expression</a>.</div>
+  </form>
+  
+  <div class="description">
+  <p>
+  An error occurred while processing your request:
+  </p>
+  <p>
+  Not Found
+  </p>
+  </div>
+  </div>
+  </div>
+  
+  
+  
+  </body>
+  </html>
+  
+  [1]
+
   $ killdaemons.py
 
 #endif

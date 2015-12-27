@@ -1403,7 +1403,7 @@ def help(web, req, tmpl):
 
     try:
         doc = helpmod.help_(u, commands, topic, subtopic=subtopic)
-    except error.UnknownCommand:
+    except error.Abort:
         raise ErrorResponse(HTTP_NOT_FOUND)
     return tmpl('help', topic=topicname, doc=doc)
 

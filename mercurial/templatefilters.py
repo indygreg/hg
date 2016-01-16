@@ -238,6 +238,7 @@ def indent(text, prefix):
 
 @templatefilter('json')
 def json(obj, paranoid=True):
+    """Any object. Serializes the object to a JSON formatted text."""
     if obj is None:
         return 'null'
     elif obj is False:

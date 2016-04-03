@@ -386,7 +386,7 @@ class hgweb(object):
                 self.check_perm(rctx, req, None)
 
             if cmd == '':
-                req.qsparams['cmd'] = rctx.tmpl.cache['default']
+                req.qsparams['cmd'] = rctx.tmpl.render('default', {})
                 cmd = req.qsparams['cmd']
 
             # Don't enable caching if using a CSP nonce because then it wouldn't

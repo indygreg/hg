@@ -1030,6 +1030,34 @@ pushing an unchanged bookmark should result in no changes
   no changes found
   [1]
 
+Pushing a really long bookmark should work fine (issue5165)
+===============================================
+
+#if b2-binary
+  >>> open('longname', 'w').write('wat' * 100)
+  $ hg book `cat longname`
+  $ hg push -B `cat longname` ../unchanged-b
+  pushing to ../unchanged-b
+  searching for changes
+  no changes found
+  exporting bookmark (wat){100} (re)
+  [1]
+  $ hg -R ../unchanged-b book --delete `cat longname`
+
+Test again but forcing bundle2 exchange to make sure that doesn't regress.
+
+  $ hg push -B `cat longname` ../unchanged-b --config devel.legacy.exchange=bundle1
+  pushing to ../unchanged-b
+  searching for changes
+  no changes found
+  exporting bookmark (wat){100} (re)
+  [1]
+  $ hg -R ../unchanged-b book --delete `cat longname`
+  $ hg book --delete `cat longname`
+  $ hg co @
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (activating bookmark @)
+#endif
 
 Check hook preventing push (issue4455)
 ======================================

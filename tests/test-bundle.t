@@ -216,8 +216,10 @@ Make sure bundlerepo doesn't leak tempfiles (issue2491)
 
 Pull ../full.hg into empty (with hook)
 
-  $ echo "[hooks]" >> .hg/hgrc
-  $ echo "changegroup = printenv.py changegroup" >> .hg/hgrc
+  $ cat >> .hg/hgrc <<EOF
+  > [hooks]
+  > changegroup = sh -c "printenv.py changegroup"
+  > EOF
 
 doesn't work (yet ?)
 
@@ -230,7 +232,7 @@ hg -R bundle://../full.hg verify
   adding manifests
   adding file changes
   added 9 changesets with 7 changes to 4 files (+1 heads)
-  changegroup hook: HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735 HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf HG_SOURCE=pull HG_TXNID=TXN:* HG_URL=bundle:../full.hg (glob)
+  changegroup hook: HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735 HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf HG_SOURCE=pull HG_TXNID=TXN:* HG_URL=bundle?../full.hg (glob)
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
 Rollback empty

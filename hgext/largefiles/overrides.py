@@ -1385,7 +1385,8 @@ def mergeupdate(orig, repo, node, branchmerge, force,
         lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
         unsure, s = lfdirstate.status(matchmod.always(repo.root,
                                                     repo.getcwd()),
-                                      [], False, False, False)
+                                      [], False, True, False)
+        oldclean = set(s.clean)
         pctx = repo['.']
         for lfile in unsure + s.modified:
             lfileabs = repo.wvfs.join(lfile)
@@ -1397,9 +1398,13 @@ def mergeupdate(orig, repo, node, branchmerge, force,
                                 lfutil.getexecutable(lfileabs))
             if (standin in pctx and
                 lfhash == lfutil.readstandin(repo, lfile, '.')):
-                lfdirstate.normal(lfile)
+                oldclean.add(lfile)
         for lfile in s.added:
             lfutil.updatestandin(repo, lfutil.standin(lfile))
+        # mark all clean largefiles as dirty, just in case the update gets
+        # interrupted before largefiles and lfdirstate are synchronized
+        for lfile in oldclean:
+            lfdirstate.normallookup(lfile)
         lfdirstate.write()
 
         oldstandins = lfutil.getstandinsstate(repo)
@@ -1408,6 +1413,13 @@ def mergeupdate(orig, repo, node, branchmerge, force,
 
         newstandins = lfutil.getstandinsstate(repo)
         filelist = lfutil.getlfilestoupdate(oldstandins, newstandins)
+
+        # to avoid leaving all largefiles as dirty and thus rehash them, mark
+        # all the ones that didn't change as clean
+        for lfile in oldclean.difference(filelist):
+            lfdirstate.normal(lfile)
+        lfdirstate.write()
+
         if branchmerge or force or partial:
             filelist.extend(s.deleted + s.removed)
 

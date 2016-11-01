@@ -68,6 +68,7 @@ from . import (
     setdiscovery,
     simplemerge,
     sshserver,
+    sslutil,
     streamclone,
     templatekw,
     templater,
@@ -1519,7 +1520,7 @@ def clone(ui, source, dest=None, **opts):
 
       - clone a remote repository to a new directory named hg/::
 
-          hg clone http://selenic.com/hg
+          hg clone https://www.mercurial-scm.org/repo/hg/
 
       - create a lightweight local clone::
 
@@ -1540,7 +1541,7 @@ def clone(ui, source, dest=None, **opts):
 
       - clone (and track) a particular named branch::
 
-          hg clone http://selenic.com/hg#stable
+          hg clone https://www.mercurial-scm.org/repo/hg/#stable
 
     See :hg:`help urls` for details on specifying URLs.
 
@@ -2702,6 +2703,25 @@ def debuginstall(ui, **opts):
              ("%s.%s.%s" % sys.version_info[:3]))
     fm.write('pythonlib', _("checking Python lib (%s)...\n"),
              os.path.dirname(os.__file__))
+
+    security = set(sslutil.supportedprotocols)
+    if sslutil.hassni:
+        security.add('sni')
+
+    fm.write('pythonsecurity', _("checking Python security support (%s)\n"),
+             fm.formatlist(sorted(security), name='protocol',
+                           fmt='%s', sep=','))
+
+    # These are warnings, not errors. So don't increment problem count. This
+    # may change in the future.
+    if 'tls1.2' not in security:
+        fm.plain(_('  TLS 1.2 not supported by Python install; '
+                   'network connections lack modern security\n'))
+    if 'sni' not in security:
+        fm.plain(_('  SNI not supported by Python install; may have '
+                   'connectivity issues with some servers\n'))
+
+    # TODO print CA cert info
 
     # hg version
     hgver = util.version()
@@ -4720,7 +4740,7 @@ def identify(ui, repo, source=None, rev=None,
 
       - check the most recent revision of a remote repository::
 
-          hg id -r tip http://selenic.com/hg/
+          hg id -r tip https://www.mercurial-scm.org/repo/hg/
 
     See :hg:`log` for generating more information about specific revisions,
     including full hash identifiers.
@@ -4923,7 +4943,7 @@ def import_(ui, repo, patch1=None, *patches, **opts):
 
       - import a changeset from an hgweb server::
 
-          hg import http://www.selenic.com/hg/rev/5ca8c111e9aa
+          hg import https://www.mercurial-scm.org/repo/hg/rev/5ca8c111e9aa
 
       - import all the patches in an Unix-style mbox::
 
@@ -7057,7 +7077,8 @@ def tag(ui, repo, name1, *names, **opts):
                 raise error.Abort(_('uncommitted merge'))
             bheads = repo.branchheads()
             if not opts.get('force') and bheads and p1 not in bheads:
-                raise error.Abort(_('not at a branch head (use -f to force)'))
+                raise error.Abort(_('working directory is not at a branch head '
+                                    '(use -f to force)'))
         r = scmutil.revsingle(repo, rev_).node()
 
         if not message:

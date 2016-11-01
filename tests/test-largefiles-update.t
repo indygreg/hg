@@ -144,6 +144,7 @@ Test that "hg merge" updates largefiles from "other" correctly
   large1 in #1
   $ cat .hglf/large1
   58e24f733a964da346e2407a2bee99d9001184f5
+  $ rm normal1.orig
 
 (merge non-existing largefiles from "other" via conflict prompt -
 make sure the following commit doesn't abort in a confusing way when trying to
@@ -243,6 +244,7 @@ Test that "hg rollback" restores status of largefiles correctly
   ? largeY
   $ test -f .hglf/largeY
   [1]
+  $ rm largeY
 
 Test that "hg rollback" restores standins correctly
 
@@ -285,6 +287,7 @@ is not branch-tip)
   58e24f733a964da346e2407a2bee99d9001184f5
   $ cat .hglf/large2
   1deebade43c8c498a3c8daddac0244dc55d1331d
+  $ rm normalX
 
 Test that "hg status" shows status of largefiles correctly just after
 automated commit like rebase/transplant
@@ -598,6 +601,7 @@ it is aborted by conflict.
   58e24f733a964da346e2407a2bee99d9001184f5
   $ cat large1
   large1 in #1
+  $ rm normal1.orig
 
 Test that rebase updates standins for manually modified largefiles at
 the 1st commit of resuming.
@@ -708,7 +712,7 @@ bit correctly on the platform being unaware of it.
 
   $ hg update -q -C 4
 
-  $ cat > exec-bit.patch <<EOF
+  $ cat > ../exec-bit.patch <<EOF
   > # HG changeset patch
   > # User test
   > # Date 0 0
@@ -721,12 +725,48 @@ bit correctly on the platform being unaware of it.
   > old mode 100644
   > new mode 100755
   > EOF
-  $ hg import --exact --bypass exec-bit.patch
-  applying exec-bit.patch
+  $ hg import --exact --bypass ../exec-bit.patch
+  applying ../exec-bit.patch
   $ hg status -A --rev tip large2
   C large2
 
 #endif
+
+Test a fatal error interrupting an update. Verify that status report dirty
+files correctly after an interrupted update. Also verify that checking all
+hashes reveals it isn't clean.
+
+Start with clean dirstates:
+  $ hg up -qcr "8^"
+  $ sleep 1
+  $ hg st
+Update standins without updating largefiles - large1 is modified and largeX is
+added:
+  $ cat << EOF > ../crashupdatelfiles.py
+  > import hgext.largefiles.lfutil
+  > def getlfilestoupdate(oldstandins, newstandins):
+  >      raise SystemExit(7)
+  > hgext.largefiles.lfutil.getlfilestoupdate = getlfilestoupdate
+  > EOF
+  $ hg up -Cr "8" --config extensions.crashupdatelfiles=../crashupdatelfiles.py
+  [7]
+Check large1 content and status ... and that update will undo modifications:
+  $ cat large1
+  large1 in #3
+  $ hg st
+  M large1
+  ! largeX
+  $ hg up -Cr .
+  getting changed largefiles
+  2 largefiles updated, 0 removed
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat large1
+  manually modified before 'hg transplant --continue'
+  $ hg st
+Force largefiles rehashing and check that all changes have been caught by
+status and update:
+  $ rm .hg/largefiles/dirstate
+  $ hg st
 
   $ cd ..
 

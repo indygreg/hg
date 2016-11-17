@@ -839,7 +839,7 @@ class unbundle20(unpackermixin):
             params = self._readexact(paramssize)
             self._processallparams(params)
             yield params
-            assert self._compengine.bundletype == 'UN'
+            assert self._compengine.bundletype()[1] == 'UN'
         # From there, payload might need to be decompressed
         self._fp = self._compengine.decompressorreader(self._fp)
         emptycount = 0

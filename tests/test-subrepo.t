@@ -58,10 +58,10 @@ Subrepopath which overlaps with filepath, does not change warnings in remove()
   $ mkdir snot
   $ touch snot/file
   $ hg remove -S snot/file
-  not removing snot/file: file is untracked
+  not removing snot/file: file is untracked (glob)
   [1]
   $ hg cat snot/filenot
-  snot/filenot: no such file in rev 7cf8cfea66e4
+  snot/filenot: no such file in rev 7cf8cfea66e4 (glob)
   [1]
   $ rm -r snot
 
@@ -332,7 +332,7 @@ should conflict
   conflict
   =======
   t3
-  >>>>>>> other: 7af322bc1198  - test: 7
+  >>>>>>> other: 7af322bc1198 - test: 7
 
 11: remove subrepo t
 
@@ -1518,8 +1518,8 @@ Forgetting an explicit path in a subrepo untracks the file
 Courtesy phases synchronisation to publishing server does not block the push
 (issue3781)
 
-  $ cp -r main issue3781
-  $ cp -r main issue3781-dest
+  $ cp -R main issue3781
+  $ cp -R main issue3781-dest
   $ cd issue3781-dest/s
   $ hg phase tip # show we have draft changeset
   5: draft

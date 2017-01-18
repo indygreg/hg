@@ -8,12 +8,13 @@
 from __future__ import absolute_import
 
 from . import (
+    error,
     pycompat,
     util,
 )
 
 class _funcregistrarbase(object):
-    """Base of decorator to register a fuction for specific purpose
+    """Base of decorator to register a function for specific purpose
 
     This decorator stores decorated functions into own dict 'table'.
 
@@ -49,6 +50,10 @@ class _funcregistrarbase(object):
 
     def _doregister(self, func, decl, *args, **kwargs):
         name = self._getname(decl)
+
+        if name in self._table:
+            msg = 'duplicate registration for name: "%s"' % name
+            raise error.ProgrammingError(msg)
 
         if func.__doc__ and not util.safehasattr(func, '_origdoc'):
             doc = func.__doc__.strip()
@@ -177,7 +182,7 @@ class templatekeyword(_templateregistrarbase):
 
     Usage::
 
-        templaetkeyword = registrar.templatekeyword()
+        templatekeyword = registrar.templatekeyword()
 
         @templatekeyword('mykeyword')
         def mykeywordfunc(repo, ctx, templ, cache, revcache, **args):

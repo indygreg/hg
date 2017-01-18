@@ -51,7 +51,7 @@ class verifier(object):
         self.errors = 0
         self.warnings = 0
         self.havecl = len(repo.changelog) > 0
-        self.havemf = len(repo.manifest) > 0
+        self.havemf = len(repo.manifestlog._revlog) > 0
         self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
         self.lrugetctx = util.lrucachefunc(repo.changectx)
         self.refersmf = False
@@ -201,7 +201,8 @@ class verifier(object):
                         progress=None):
         repo = self.repo
         ui = self.ui
-        mf = self.repo.manifest.dirlog(dir)
+        mfl = self.repo.manifestlog
+        mf = mfl._revlog.dirlog(dir)
 
         if not dir:
             self.ui.status(_("checking manifests\n"))
@@ -235,7 +236,8 @@ class verifier(object):
                 self.err(lr, _("%s not in changesets") % short(n), label)
 
             try:
-                for f, fn, fl in mf.readshallowdelta(n).iterentries():
+                mfdelta = mfl.get(dir, n).readdelta(shallow=True)
+                for f, fn, fl in mfdelta.iterentries():
                     if not f:
                         self.err(lr, _("entry without name in manifest"))
                     elif f == "/dev/null":  # ignore this in very old repos
@@ -423,7 +425,7 @@ class verifier(object):
 
             # cross-check
             if f in filenodes:
-                fns = [(lr, n) for n, lr in filenodes[f].iteritems()]
+                fns = [(v, k) for k, v in filenodes[f].iteritems()]
                 for lr, node in sorted(fns):
                     self.err(lr, _("manifest refers to unknown revision %s") %
                              short(node), f)

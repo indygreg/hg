@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import contextlib
 import errno
 import getpass
 import inspect
@@ -22,9 +23,11 @@ from .node import hex
 
 from . import (
     config,
+    encoding,
     error,
     formatter,
     progress,
+    pycompat,
     scmutil,
     util,
 )
@@ -93,6 +96,12 @@ default = %s
 
 class ui(object):
     def __init__(self, src=None):
+        """Create a fresh new ui object if no src given
+
+        Use uimod.ui.load() to create a ui which knows global and user configs.
+        In most cases, you should use ui.copy() to create a copy of an existing
+        ui object.
+        """
         # _buffers: used for temporary capture of output
         self._buffers = []
         # 3-tuple describing how each buffer in the stack behaves.
@@ -129,17 +138,32 @@ class ui(object):
 
             self.httppasswordmgrdb = src.httppasswordmgrdb
         else:
-            self.fout = sys.stdout
-            self.ferr = sys.stderr
-            self.fin = sys.stdin
+            self.fout = util.stdout
+            self.ferr = util.stderr
+            self.fin = util.stdin
 
             # shared read-only environment
-            self.environ = os.environ
-            # we always trust global config files
-            for f in scmutil.rcpath():
-                self.readconfig(f, trust=True)
+            self.environ = encoding.environ
 
             self.httppasswordmgrdb = urlreq.httppasswordmgrwithdefaultrealm()
+
+        allowed = self.configlist('experimental', 'exportableenviron')
+        if '*' in allowed:
+            self._exportableenviron = self.environ
+        else:
+            self._exportableenviron = {}
+            for k in allowed:
+                if k in self.environ:
+                    self._exportableenviron[k] = self.environ[k]
+
+    @classmethod
+    def load(cls):
+        """Create a ui and load global and user configs"""
+        u = cls()
+        # we always trust global config files
+        for f in scmutil.rcpath():
+            u.readconfig(f, trust=True)
+        return u
 
     def copy(self):
         return self.__class__(self)
@@ -175,7 +199,7 @@ class ui(object):
     def readconfig(self, filename, root=None, trust=False,
                    sections=None, remap=None):
         try:
-            fp = open(filename)
+            fp = open(filename, u'rb')
         except IOError:
             if not sections: # ignore unless we were looking for something
                 return
@@ -225,7 +249,7 @@ class ui(object):
         if section in (None, 'paths'):
             # expand vars and ~
             # translate paths relative to root (or home) into absolute paths
-            root = root or os.getcwd()
+            root = root or pycompat.getcwd()
             for c in self._tcfg, self._ucfg, self._ocfg:
                 for n, p in c.items('paths'):
                     # Ignore sub-options.
@@ -234,8 +258,9 @@ class ui(object):
                     if not p:
                         continue
                     if '%%' in p:
+                        s = self.configsource('paths', n) or 'none'
                         self.warn(_("(deprecated '%%' in path %s=%s from %s)\n")
-                                  % (n, p, self.configsource('paths', n)))
+                                  % (n, p, s))
                         p = p.replace('%%', '%')
                     p = util.expandpath(p)
                     if not util.hasscheme(p) and not os.path.isabs(p):
@@ -276,7 +301,7 @@ class ui(object):
         return untrusted and self._ucfg or self._tcfg
 
     def configsource(self, section, name, untrusted=False):
-        return self._data(untrusted).source(section, name) or 'none'
+        return self._data(untrusted).source(section, name)
 
     def config(self, section, name, default=None, untrusted=False):
         if isinstance(name, list):
@@ -520,7 +545,7 @@ class ui(object):
         result = self.config(section, name, untrusted=untrusted)
         if result is None:
             result = default or []
-        if isinstance(result, basestring):
+        if isinstance(result, bytes):
             result = _configlist(result.lstrip(' ,\n'))
             if result is None:
                 result = default or []
@@ -569,9 +594,11 @@ class ui(object):
         - False if HGPLAIN is not set, or feature is in HGPLAINEXCEPT
         - True otherwise
         '''
-        if 'HGPLAIN' not in os.environ and 'HGPLAINEXCEPT' not in os.environ:
+        if ('HGPLAIN' not in encoding.environ and
+                'HGPLAINEXCEPT' not in encoding.environ):
             return False
-        exceptions = os.environ.get('HGPLAINEXCEPT', '').strip().split(',')
+        exceptions = encoding.environ.get('HGPLAINEXCEPT',
+                '').strip().split(',')
         if feature and exceptions:
             return feature not in exceptions
         return True
@@ -584,13 +611,13 @@ class ui(object):
         If not found and ui.askusername is True, ask the user, else use
         ($LOGNAME or $USER or $LNAME or $USERNAME) + "@full.hostname".
         """
-        user = os.environ.get("HGUSER")
+        user = encoding.environ.get("HGUSER")
         if user is None:
             user = self.config("ui", ["username", "user"])
             if user is not None:
                 user = os.path.expandvars(user)
         if user is None:
-            user = os.environ.get("EMAIL")
+            user = encoding.environ.get("EMAIL")
         if user is None and self.configbool("ui", "askusername"):
             user = self.prompt(_("enter a commit username:"), default=None)
         if user is None and not self.interactive():
@@ -733,7 +760,7 @@ class ui(object):
         is curses, the interface for histedit is text and the interface for
         selecting chunk is crecord (the best curses interface available).
 
-        Consider the following exemple:
+        Consider the following example:
         ui.interface = curses
         ui.interface.histedit = text
 
@@ -814,12 +841,12 @@ class ui(object):
     def termwidth(self):
         '''how wide is the terminal in columns?
         '''
-        if 'COLUMNS' in os.environ:
+        if 'COLUMNS' in encoding.environ:
             try:
-                return int(os.environ['COLUMNS'])
+                return int(encoding.environ['COLUMNS'])
             except ValueError:
                 pass
-        return util.termwidth()
+        return scmutil.termsize(self)[0]
 
     def formatted(self):
         '''should formatted output be used?
@@ -954,7 +981,10 @@ class ui(object):
             # disable getpass() only if explicitly specified. it's still valid
             # to interact with tty even if fin is not a tty.
             if self.configbool('ui', 'nontty'):
-                return self.fin.readline().rstrip('\n')
+                l = self.fin.readline()
+                if not l:
+                    raise EOFError
+                return l.rstrip('\n')
             else:
                 return getpass.getpass('')
         except EOFError:
@@ -991,7 +1021,8 @@ class ui(object):
             opts['label'] = opts.get('label', '') + ' ui.debug'
             self.write(*msg, **opts)
 
-    def edit(self, text, user, extra=None, editform=None, pending=None):
+    def edit(self, text, user, extra=None, editform=None, pending=None,
+             tmpdir=None):
         extra_defaults = {
             'prefix': 'editor',
             'suffix': '.txt',
@@ -999,8 +1030,13 @@ class ui(object):
         if extra is not None:
             extra_defaults.update(extra)
         extra = extra_defaults
+
+        tdir = None
+        if self.configbool('experimental', 'editortmpinhg'):
+            tdir = tmpdir
         (fd, name) = tempfile.mkstemp(prefix='hg-' + extra['prefix'] + '-',
-                                      suffix=extra['suffix'], text=True)
+                                      suffix=extra['suffix'], text=True,
+                                      dir=tdir)
         try:
             f = os.fdopen(fd, "w")
             f.write(text)
@@ -1068,17 +1104,17 @@ class ui(object):
 
     def geteditor(self):
         '''return editor to use'''
-        if sys.platform == 'plan9':
+        if pycompat.sysplatform == 'plan9':
             # vi is the MIPS instruction simulator on Plan 9. We
             # instead default to E to plumb commit messages to
             # avoid confusion.
             editor = 'E'
         else:
             editor = 'vi'
-        return (os.environ.get("HGEDITOR") or
+        return (encoding.environ.get("HGEDITOR") or
                 self.config("ui", "editor") or
-                os.environ.get("VISUAL") or
-                os.environ.get("EDITOR", editor))
+                encoding.environ.get("VISUAL") or
+                encoding.environ.get("EDITOR", editor))
 
     @util.propertycache
     def _progbar(self):
@@ -1189,6 +1225,31 @@ class ui(object):
         msg += ("\n(compatibility will be dropped after Mercurial-%s,"
                 " update your code.)") % version
         self.develwarn(msg, stacklevel=2, config='deprec-warn')
+
+    def exportableenviron(self):
+        """The environment variables that are safe to export, e.g. through
+        hgweb.
+        """
+        return self._exportableenviron
+
+    @contextlib.contextmanager
+    def configoverride(self, overrides, source=""):
+        """Context manager for temporary config overrides
+        `overrides` must be a dict of the following structure:
+        {(section, name) : value}"""
+        backups = {}
+        try:
+            for (section, name), value in overrides.items():
+                backups[(section, name)] = self.backupconfig(section, name)
+                self.setconfig(section, name, value, source)
+            yield
+        finally:
+            for __, backup in backups.items():
+                self.restoreconfig(backup)
+            # just restoring ui.quiet config to the previous value is not enough
+            # as it does not update ui.quiet class member
+            if ('ui', 'quiet') in overrides:
+                self.fixconfig(section='ui')
 
 class paths(dict):
     """Represents a collection of paths and their configs.

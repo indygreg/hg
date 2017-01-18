@@ -28,9 +28,9 @@ from . import (
     bundle2,
     changegroup,
     changelog,
-    cmdutil,
     context,
     dirstate,
+    dirstateguard,
     encoding,
     error,
     exchange,
@@ -41,6 +41,7 @@ from . import (
     manifest,
     match as matchmod,
     merge as mergemod,
+    mergeutil,
     namespaces,
     obsolete,
     pathutil,
@@ -248,7 +249,7 @@ class localrepository(object):
     # only functions defined in module of enabled extensions are invoked
     featuresetupfuncs = set()
 
-    def __init__(self, baseui, path=None, create=False):
+    def __init__(self, baseui, path, create=False):
         self.requirements = set()
         self.wvfs = scmutil.vfs(path, expandpath=True, realpath=True)
         self.wopener = self.wvfs
@@ -282,6 +283,12 @@ class localrepository(object):
                     setupfunc(self.ui, self.supported)
         else:
             self.supported = self._basesupported
+
+        # Add compression engines.
+        for name in util.compengines:
+            engine = util.compengines[name]
+            if engine.revlogheader():
+                self.supported.add('exp-compression-%s' % name)
 
         if not self.vfs.isdir():
             if create:
@@ -396,6 +403,10 @@ class localrepository(object):
         self.svfs.options['aggressivemergedeltas'] = aggressivemergedeltas
         self.svfs.options['lazydeltabase'] = not scmutil.gddeltaconfig(self.ui)
 
+        for r in self.requirements:
+            if r.startswith('exp-compression-'):
+                self.svfs.options['compengine'] = r[len('exp-compression-'):]
+
     def _writerequirements(self):
         scmutil.writerequires(self.vfs, self.requirements)
 
@@ -498,21 +509,17 @@ class localrepository(object):
     @storecache('00changelog.i')
     def changelog(self):
         c = changelog.changelog(self.svfs)
-        if 'HG_PENDING' in os.environ:
-            p = os.environ['HG_PENDING']
+        if 'HG_PENDING' in encoding.environ:
+            p = encoding.environ['HG_PENDING']
             if p.startswith(self.root):
                 c.readpending('00changelog.i.a')
         return c
-
-    @property
-    def manifest(self):
-        return self.manifestlog._oldmanifest
 
     def _constructmanifest(self):
         # This is a temporary function while we migrate from manifest to
         # manifestlog. It allows bundlerepo and unionrepo to intercept the
         # manifest creation.
-        return manifest.manifest(self.svfs)
+        return manifest.manifestrevlog(self.svfs)
 
     @storecache('00manifest.i')
     def manifestlog(self):
@@ -1019,8 +1026,7 @@ class localrepository(object):
         if (self.ui.configbool('devel', 'all-warnings')
                 or self.ui.configbool('devel', 'check-locks')):
             if self._currentlock(self._lockref) is None:
-                raise RuntimeError('programming error: transaction requires '
-                                   'locking')
+                raise error.ProgrammingError('transaction requires locking')
         tr = self.currenttransaction()
         if tr is not None:
             return tr.nest()
@@ -1145,7 +1151,7 @@ class localrepository(object):
             wlock = self.wlock()
             lock = self.lock()
             if self.svfs.exists("undo"):
-                dsguard = cmdutil.dirstateguard(self, 'rollback')
+                dsguard = dirstateguard.dirstateguard(self, 'rollback')
 
                 return self._rollback(dryrun, force, dsguard)
             else:
@@ -1303,7 +1309,7 @@ class localrepository(object):
         # the contents of parentenvvar are used by the underlying lock to
         # determine whether it can be inherited
         if parentenvvar is not None:
-            parentlock = os.environ.get(parentenvvar)
+            parentlock = encoding.environ.get(parentenvvar)
         try:
             l = lockmod.lock(vfs, lockname, 0, releasefn=releasefn,
                              acquirefn=acquirefn, desc=desc,
@@ -1502,7 +1508,7 @@ class localrepository(object):
         return fparent1
 
     def checkcommitpatterns(self, wctx, vdirs, match, status, fail):
-        """check for commit arguments that aren't commitable"""
+        """check for commit arguments that aren't committable"""
         if match.isexact() or match.prefix():
             matched = set(status.modified + status.added + status.removed)
 
@@ -1633,13 +1639,7 @@ class localrepository(object):
                 raise error.Abort(_("cannot commit merge with missing files"))
 
             ms = mergemod.mergestate.read(self)
-
-            if list(ms.unresolved()):
-                raise error.Abort(_("unresolved merge conflicts "
-                                    "(see 'hg help resolve')"))
-            if ms.mdstate() != 's' or list(ms.driverresolved()):
-                raise error.Abort(_('driver-resolved merge conflicts'),
-                                  hint=_('run "hg resolve --all" to resolve'))
+            mergeutil.checkunresolved(ms)
 
             if editor:
                 cctx._text = editor(self, cctx, subs)
@@ -1705,10 +1705,18 @@ class localrepository(object):
             tr = self.transaction("commit")
             trp = weakref.proxy(tr)
 
-            if ctx.files():
-                m1 = p1.manifest()
-                m2 = p2.manifest()
-                m = m1.copy()
+            if ctx.manifestnode():
+                # reuse an existing manifest revision
+                mn = ctx.manifestnode()
+                files = ctx.files()
+            elif ctx.files():
+                m1ctx = p1.manifestctx()
+                m2ctx = p2.manifestctx()
+                mctx = m1ctx.copy()
+
+                m = mctx.read()
+                m1 = m1ctx.read()
+                m2 = m2ctx.read()
 
                 # check in files
                 added = []
@@ -1742,9 +1750,9 @@ class localrepository(object):
                 drop = [f for f in removed if f in m]
                 for f in drop:
                     del m[f]
-                mn = self.manifestlog.add(m, trp, linkrev,
-                                          p1.manifestnode(), p2.manifestnode(),
-                                          added, drop)
+                mn = mctx.write(trp, linkrev,
+                                p1.manifestnode(), p2.manifestnode(),
+                                added, drop)
                 files = changed + removed
             else:
                 mn = p1.manifestnode()
@@ -1995,6 +2003,18 @@ def newreporequirements(repo):
             requirements.add('fncache')
             if ui.configbool('format', 'dotencode', True):
                 requirements.add('dotencode')
+
+    compengine = ui.config('experimental', 'format.compression', 'zlib')
+    if compengine not in util.compengines:
+        raise error.Abort(_('compression engine %s defined by '
+                            'experimental.format.compression not available') %
+                          compengine,
+                          hint=_('run "hg debuginstall" to list available '
+                                 'compression engines'))
+
+    # zlib is the historical default and doesn't need an explicit requirement.
+    if compengine != 'zlib':
+        requirements.add('exp-compression-%s' % compengine)
 
     if scmutil.gdinitconfig(ui):
         requirements.add('generaldelta')

@@ -19,6 +19,7 @@ from .common import (
     HTTP_NOT_FOUND,
     HTTP_OK,
     HTTP_SERVER_ERROR,
+    cspvalues,
     get_contact,
     get_mtime,
     ismember,
@@ -136,7 +137,7 @@ class hgwebdir(object):
         if self.baseui:
             u = self.baseui.copy()
         else:
-            u = uimod.ui()
+            u = uimod.ui.load()
             u.setconfig('ui', 'report_untrusted', 'off', 'hgwebdir')
             u.setconfig('ui', 'nontty', 'true', 'hgwebdir')
             # displaying bundling progress bar while serving feels wrong and may
@@ -186,7 +187,8 @@ class hgwebdir(object):
         self.lastrefresh = time.time()
 
     def run(self):
-        if not os.environ.get('GATEWAY_INTERFACE', '').startswith("CGI/1."):
+        if not encoding.environ.get('GATEWAY_INTERFACE',
+                                    '').startswith("CGI/1."):
             raise RuntimeError("This function is only intended to be "
                                "called while running as a CGI script.")
         wsgicgi.launch(self)
@@ -226,8 +228,12 @@ class hgwebdir(object):
         try:
             self.refresh()
 
+            csp, nonce = cspvalues(self.ui)
+            if csp:
+                req.headers.append(('Content-Security-Policy', csp))
+
             virtual = req.env.get("PATH_INFO", "").strip('/')
-            tmpl = self.templater(req)
+            tmpl = self.templater(req, nonce)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
 
@@ -296,10 +302,10 @@ class hgwebdir(object):
         def archivelist(ui, nodeid, url):
             allowed = ui.configlist("web", "allow_archive", untrusted=True)
             archives = []
-            for i in [('zip', '.zip'), ('gz', '.tar.gz'), ('bz2', '.tar.bz2')]:
-                if i[0] in allowed or ui.configbool("web", "allow" + i[0],
+            for typ, spec in hgweb_mod.archivespecs.iteritems():
+                if typ in allowed or ui.configbool("web", "allow" + typ,
                                                     untrusted=True):
-                    archives.append({"type" : i[0], "extension": i[1],
+                    archives.append({"type" : typ, "extension": spec[2],
                                      "node": nodeid, "url": url})
             return archives
 
@@ -465,7 +471,7 @@ class hgwebdir(object):
                     sortcolumn=sortcolumn, descending=descending,
                     **dict(sort))
 
-    def templater(self, req):
+    def templater(self, req, nonce):
 
         def motd(**map):
             if self.motd is not None:
@@ -509,6 +515,7 @@ class hgwebdir(object):
             "staticurl": staticurl,
             "sessionvars": sessionvars,
             "style": style,
+            "nonce": nonce,
         }
         tmpl = templater.templater.frommapfile(mapfile, defaults=defaults)
         return tmpl

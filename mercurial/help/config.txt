@@ -418,6 +418,28 @@ one shown by default::
        "HG: removed {file}\n"                 }{if(files, "",
        "HG: no files changed\n")}
 
+``diff()``
+    String: show the diff (see :hg:`help templates` for detail)
+
+Sometimes it is helpful to show the diff of the changeset in the editor without
+having to prefix 'HG: ' to each line so that highlighting works correctly. For
+this, Mercurial provides a special string which will ignore everything below
+it::
+
+     HG: ------------------------ >8 ------------------------
+
+For example, the template configuration below will show the diff below the
+extra message::
+
+    [committemplate]
+    changeset = {desc}\n\n
+        HG: Enter commit message.  Lines beginning with 'HG:' are removed.
+        HG: {extramsg}
+        HG: ------------------------ >8 ------------------------
+        HG: Do not touch the line above.
+        HG: Everything below will be removed.
+        {diff()}
+
 .. note::
 
    For some problematic encodings (see :hg:`help win32mbcs` for
@@ -1401,7 +1423,7 @@ profiling is done using lsprof.
 
 ``type``
     The type of profiler to use.
-    (default: ls)
+    (default: stat)
 
     ``ls``
       Use Python's built-in instrumenting profiler. This profiler
@@ -1409,9 +1431,9 @@ profiling is done using lsprof.
       first line of a function. This restriction makes it difficult to
       identify the expensive parts of a non-trivial function.
     ``stat``
-      Use a third-party statistical profiler, statprof. This profiler
-      currently runs only on Unix systems, and is most useful for
-      profiling commands that run for longer than about 0.1 seconds.
+      Use a statistical profiler, statprof. This profiler is most
+      useful for profiling commands that run for longer than about 0.1
+      seconds.
 
 ``format``
     Profiling format.  Specific to the ``ls`` instrumenting profiler.
@@ -1425,6 +1447,20 @@ profiling is done using lsprof.
       Format profiling data for kcachegrind use: when saving to a
       file, the generated file can directly be loaded into
       kcachegrind.
+
+``statformat``
+    Profiling format for the ``stat`` profiler.
+    (default: hotpath)
+
+    ``hotpath``
+      Show a tree-based display containing the hot path of execution (where
+      most time was spent).
+    ``bymethod``
+      Show a table of methods ordered by how frequently they are active.
+    ``byline``
+      Show a table of lines in files ordered by how frequently they are active.
+    ``json``
+      Render profiling data as JSON.
 
 ``frequency``
     Sampling frequency.  Specific to the ``stat`` sampling profiler.
@@ -1509,6 +1545,21 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
 
 Controls generic server settings.
 
+``compressionengines``
+    List of compression engines and their relative priority to advertise
+    to clients.
+
+    The order of compression engines determines their priority, the first
+    having the highest priority. If a compression engine is not listed
+    here, it won't be advertised to clients.
+
+    If not set (the default), built-in defaults are used. Run
+    :hg:`debuginstall` to list available compression engines and their
+    default wire protocol priority.
+
+    Older Mercurial clients only support zlib compression and this setting
+    has no effect for legacy clients.
+
 ``uncompressed``
     Whether to allow clients to clone a repository using the
     uncompressed streaming protocol. This transfers about 40% more
@@ -1577,6 +1628,18 @@ Controls generic server settings.
     but sends more bytes to clients.
 
     This option only impacts the HTTP server.
+
+``zstdlevel``
+    Integer between ``1`` and ``22`` that controls the zstd compression level
+    for wire protocol commands. ``1`` is the minimal amount of compression and
+    ``22`` is the highest amount of compression.
+
+    The default (``3``) should be significantly faster than zlib while likely
+    delivering better compression ratios.
+
+    This option only impacts the HTTP server.
+
+    See also ``server.zliblevel``.
 
 ``smtp``
 --------
@@ -2047,6 +2110,20 @@ The full set of options is:
 ``contact``
     Name or email address of the person in charge of the repository.
     (default: ui.username or ``$EMAIL`` or "unknown" if unset or empty)
+
+``csp``
+    Send a ``Content-Security-Policy`` HTTP header with this value.
+
+    The value may contain a special string ``%nonce%``, which will be replaced
+    by a randomly-generated one-time use value. If the value contains
+    ``%nonce%``, ``web.cache`` will be disabled, as caching undermines the
+    one-time property of the nonce. This nonce will also be inserted into
+    ``<script>`` elements containing inline JavaScript.
+
+    Note: lots of HTML content sent by the server is derived from repository
+    data. Please consider the potential for malicious repository data to
+    "inject" itself into generated HTML content as part of your security
+    threat model.
 
 ``deny_push``
     Whether to deny pushing to the repository. If empty or not set,

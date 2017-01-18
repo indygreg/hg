@@ -100,6 +100,46 @@ make sure shelve files were backed up
   default.hg
   default.patch
 
+checks to make sure we dont create a directory or
+hidden file while choosing a new shelve name
+
+when we are given a name
+
+  $ hg shelve -n foo/bar
+  abort: shelved change names can not contain slashes
+  [255]
+  $ hg shelve -n .baz
+  abort: shelved change names can not start with '.'
+  [255]
+  $ hg shelve -n foo\\bar
+  abort: shelved change names can not contain slashes
+  [255]
+
+when shelve has to choose itself
+
+  $ hg branch x/y -q
+  $ hg commit -q -m "Branch commit 0"
+  $ hg shelve
+  nothing changed
+  [1]
+  $ hg branch .x -q
+  $ hg commit -q -m "Branch commit 1"
+  $ hg shelve
+  nothing changed
+  [1]
+  $ hg branch x\\y -q
+  $ hg commit -q -m "Branch commit 2"
+  $ hg shelve
+  nothing changed
+  [1]
+
+cleaning the branches made for name checking tests
+
+  $ hg up default -q
+  $ hg strip 3 -q
+  $ hg strip 2 -q
+  $ hg strip 1 -q
+
 create an mq patch - shelving should work fine with a patch applied
 
   $ echo n > n
@@ -127,15 +167,6 @@ set up some more complex changes to shelve
   A c.copy
     c
   R b/b
-
-prevent some foot-shooting
-
-  $ hg shelve -n foo/bar
-  abort: shelved change names may not contain slashes
-  [255]
-  $ hg shelve -n .baz
-  abort: shelved change names may not start with '.'
-  [255]
 
 the common case - no options or filenames
 
@@ -195,12 +226,12 @@ apply it and make sure our state is as expected
 (this also tests that same timestamp prevents backups from being
 removed, even though there are more than 'maxbackups' backups)
 
-  $ f -t .hg/shelve-backup/default.hg
-  .hg/shelve-backup/default.hg: file
-  $ touch -t 200001010000 .hg/shelve-backup/default.hg
-  $ f -t .hg/shelve-backup/default-1.hg
-  .hg/shelve-backup/default-1.hg: file
-  $ touch -t 200001010000 .hg/shelve-backup/default-1.hg
+  $ f -t .hg/shelve-backup/default.patch
+  .hg/shelve-backup/default.patch: file
+  $ touch -t 200001010000 .hg/shelve-backup/default.patch
+  $ f -t .hg/shelve-backup/default-1.patch
+  .hg/shelve-backup/default-1.patch: file
+  $ touch -t 200001010000 .hg/shelve-backup/default-1.patch
 
   $ hg unshelve
   unshelving change 'default-01'
@@ -332,7 +363,7 @@ ensure that we have a merge with unresolved conflicts
   +++ b/a/a
   @@ -1,2 +1,6 @@
    a
-  +<<<<<<< dest:   *  - shelve: pending changes temporary commit (glob)
+  +<<<<<<< dest:   * - shelve: pending changes temporary commit (glob)
    c
   +=======
   +a
@@ -759,7 +790,7 @@ unshelve and conflicts with tracked and untracked files
   M f
   ? f.orig
   $ cat f
-  <<<<<<< dest:   5f6b880e719b  - shelve: pending changes temporary commit
+  <<<<<<< dest:   5f6b880e719b - shelve: pending changes temporary commit
   g
   =======
   f
@@ -804,7 +835,7 @@ unshelve and conflicts with tracked and untracked files
   M f
   ? f.orig
   $ cat f
-  <<<<<<< dest:   *  - test: intermediate other change (glob)
+  <<<<<<< dest:   * - test: intermediate other change (glob)
   g
   =======
   f
@@ -960,7 +991,7 @@ Test interactive shelve
   x
   x
 
-shelve --patch and shelve --stat should work with a single valid shelfname
+shelve --patch and shelve --stat should work with valid shelfnames
 
   $ hg up --clean .
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -977,11 +1008,29 @@ shelve --patch and shelve --stat should work with a single valid shelfname
   shelved as default-01
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg shelve --patch default default-01
-  abort: --patch expects a single shelf
-  [255]
+  default-01      (*)* changes to: create conflict (glob)
+  
+  diff --git a/shelf-patch-b b/shelf-patch-b
+  new file mode 100644
+  --- /dev/null
+  +++ b/shelf-patch-b
+  @@ -0,0 +1,1 @@
+  +patch b
+  default         (*)* changes to: create conflict (glob)
+  
+  diff --git a/shelf-patch-a b/shelf-patch-a
+  new file mode 100644
+  --- /dev/null
+  +++ b/shelf-patch-a
+  @@ -0,0 +1,1 @@
+  +patch a
   $ hg shelve --stat default default-01
-  abort: --stat expects a single shelf
-  [255]
+  default-01      (*)* changes to: create conflict (glob)
+   shelf-patch-b |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
+  default         (*)* changes to: create conflict (glob)
+   shelf-patch-a |  1 +
+   1 files changed, 1 insertions(+), 0 deletions(-)
   $ hg shelve --patch default
   default         (*)* changes to: create conflict (glob)
   
@@ -1000,6 +1049,12 @@ shelve --patch and shelve --stat should work with a single valid shelfname
   [255]
   $ hg shelve --stat nonexistentshelf
   abort: cannot find shelf nonexistentshelf
+  [255]
+  $ hg shelve --patch default nonexistentshelf
+  abort: cannot find shelf nonexistentshelf
+  [255]
+  $ hg shelve --patch
+  abort: --patch expects at least one shelf
   [255]
 
   $ cd ..
@@ -1383,6 +1438,7 @@ We expect that bare-shelve will not keep branch in current working directory.
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg branch
   default
+  $ cd ..
 
 When i shelve commit on newly created branch i expect
 that after unshelve newly created branch will be preserved.
@@ -1416,6 +1472,7 @@ that after unshelve newly created branch will be preserved.
   ? b
   $ hg branch
   test
+  $ cd ..
 
 When i shelve commit on newly created branch, make
 some changes, unshelve it and running into merge
@@ -1489,11 +1546,12 @@ test branch.
   A b
   $ hg branch
   default
+  $ cd ..
 
 When i unshelve resulting in merge conflicts and makes saved
 file shelvedstate looks like in previous versions in
 mercurial(without restore branch information in 7th line) i
-expect that after resolving conflicts and succesfully
+expect that after resolving conflicts and successfully
 running 'shelve --continue' the branch information won't be
 restored and branch will be unchanged.
 
@@ -1551,6 +1609,7 @@ in previous versions) and running unshelve --continue
   M a
   $ hg branch
   default
+  $ cd ..
 
 On non bare shelve the branch information shouldn't be restored
 
@@ -1587,7 +1646,7 @@ On non bare shelve the branch information shouldn't be restored
   default
   $ cd ..
 
-Prepare unshleve with a corrupted shelvedstate
+Prepare unshelve with a corrupted shelvedstate
   $ hg init r1 && cd r1
   $ echo text1 > file && hg add file
   $ hg shelve
@@ -1621,4 +1680,33 @@ progress
   $ hg unshelve --abort
   abort: no unshelve in progress
   [255]
+  $ cd ..
+
+Unshelve respects --keep even if user intervention is needed
+  $ hg init unshelvekeep && cd unshelvekeep
+  $ echo 1 > file && hg ci -Am 1
+  adding file
+  $ echo 2 >> file
+  $ hg shelve
+  shelved as default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo 3 >> file && hg ci -Am 13
+  $ hg shelve --list
+  default         (1s ago)    changes to: 1
+  $ hg unshelve --keep
+  unshelving change 'default'
+  rebasing shelved changes
+  rebasing 2:3fbe6fbb0bef "changes to: 1" (tip)
+  merging file
+  warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+  $ hg resolve --mark file
+  (no more unresolved files)
+  continue: hg unshelve --continue
+  $ hg unshelve --continue
+  rebasing 2:3fbe6fbb0bef "changes to: 1" (tip)
+  unshelve of 'default' complete
+  $ hg shelve --list
+  default         (*s ago)    changes to: 1 (glob)
   $ cd ..

@@ -1593,10 +1593,6 @@ help/ shows help topics
         "topic": "merge-tools"
       },
       {
-        "summary": "Specifying Multiple Revisions",
-        "topic": "multirevs"
-      },
-      {
         "summary": "File Name Patterns",
         "topic": "patterns"
       },
@@ -1605,12 +1601,8 @@ help/ shows help topics
         "topic": "phases"
       },
       {
-        "summary": "Specifying Single Revisions",
+        "summary": "Specifying Revisions",
         "topic": "revisions"
-      },
-      {
-        "summary": "Specifying Revision Sets",
-        "topic": "revsets"
       },
       {
         "summary": "Using Mercurial from scripts and automation",

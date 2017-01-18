@@ -265,8 +265,17 @@ a bad, evil hook that prints to stdout
   > sys.stdout.write("KABOOM\n")
   > EOF
 
-  $ echo '[hooks]' >> ../remote/.hg/hgrc
-  $ echo "changegroup.stdout = python $TESTTMP/badhook" >> ../remote/.hg/hgrc
+  $ cat <<EOF > $TESTTMP/badpyhook.py
+  > import sys
+  > def hook(ui, repo, hooktype, **kwargs):
+  >     sys.stdout.write("KABOOM IN PROCESS\n")
+  > EOF
+
+  $ cat <<EOF >> ../remote/.hg/hgrc
+  > [hooks]
+  > changegroup.stdout = python $TESTTMP/badhook
+  > changegroup.pystdout = python:$TESTTMP/badpyhook.py:hook
+  > EOF
   $ echo r > r
   $ hg ci -A -m z r
 
@@ -281,6 +290,7 @@ push should succeed even though it has an unexpected response
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   remote: KABOOM
+  remote: KABOOM IN PROCESS
   $ hg -R ../remote heads
   changeset:   5:1383141674ec
   tag:         tip
@@ -447,6 +457,7 @@ stderr from remote commands should be printed before stdout from local code (iss
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   remote: KABOOM
+  remote: KABOOM IN PROCESS
   local stdout
 
 debug output
@@ -456,8 +467,8 @@ debug output
   running python ".*/dummyssh" user@dummy ('|")hg -R remote serve --stdio('|") (re)
   sending hello command
   sending between command
-  remote: 371
-  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024
+  remote: 355
+  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN
   remote: 1
   query 1; heads
   sending batch command

@@ -6,7 +6,6 @@ Create a repository:
   defaults.shelve=--date "0 0"
   defaults.tag=-d "0 0"
   devel.all-warnings=true
-  extensions.chgserver= (?)
   largefiles.usercache=$TESTTMP/.cache/largefiles (glob)
   ui.slash=True
   ui.interactive=False
@@ -35,7 +34,7 @@ Verify that updating to revision 0 via commands.update() works properly
 
   $ cat <<EOF > update_to_rev0.py
   > from mercurial import ui, hg, commands
-  > myui = ui.ui()
+  > myui = ui.ui.load()
   > repo = hg.repository(myui, path='.')
   > commands.update(myui, repo, rev=0)
   > EOF

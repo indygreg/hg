@@ -23,37 +23,29 @@
 #include <unistd.h>
 
 #include "hgclient.h"
+#include "procutil.h"
 #include "util.h"
 
-#ifndef UNIX_PATH_MAX
-#define UNIX_PATH_MAX (sizeof(((struct sockaddr_un *)NULL)->sun_path))
+#ifndef PATH_MAX
+#define PATH_MAX 4096
 #endif
 
 struct cmdserveropts {
-	char sockname[UNIX_PATH_MAX];
-	char redirectsockname[UNIX_PATH_MAX];
-	char lockfile[UNIX_PATH_MAX];
+	char sockname[PATH_MAX];
+	char initsockname[PATH_MAX];
+	char redirectsockname[PATH_MAX];
 	size_t argsize;
 	const char **args;
-	int lockfd;
-	int sockdirfd;
 };
 
 static void initcmdserveropts(struct cmdserveropts *opts) {
 	memset(opts, 0, sizeof(struct cmdserveropts));
-	opts->lockfd = -1;
-	opts->sockdirfd = -1;
 }
 
 static void freecmdserveropts(struct cmdserveropts *opts) {
 	free(opts->args);
 	opts->args = NULL;
 	opts->argsize = 0;
-	assert(opts->lockfd == -1 && "should be closed by unlockcmdserver()");
-	if (opts->sockdirfd >= 0) {
-		close(opts->sockdirfd);
-		opts->sockdirfd = -1;
-	}
 }
 
 /*
@@ -136,66 +128,44 @@ static void preparesockdir(const char *sockdir)
 		abortmsg("insecure sockdir %s", sockdir);
 }
 
-static void setcmdserveropts(struct cmdserveropts *opts)
+static void getdefaultsockdir(char sockdir[], size_t size)
 {
+	/* by default, put socket file in secure directory
+	 * (${XDG_RUNTIME_DIR}/chg, or /${TMPDIR:-tmp}/chg$UID)
+	 * (permission of socket file may be ignored on some Unices) */
+	const char *runtimedir = getenv("XDG_RUNTIME_DIR");
 	int r;
-	char sockdir[UNIX_PATH_MAX];
-	const char *envsockname = getenv("CHGSOCKNAME");
-	if (!envsockname) {
-		/* by default, put socket file in secure directory
-		 * (permission of socket file may be ignored on some Unices) */
+	if (runtimedir) {
+		r = snprintf(sockdir, size, "%s/chg", runtimedir);
+	} else {
 		const char *tmpdir = getenv("TMPDIR");
 		if (!tmpdir)
 			tmpdir = "/tmp";
-		r = snprintf(sockdir, sizeof(sockdir), "%s/chg%d",
-			     tmpdir, geteuid());
-		if (r < 0 || (size_t)r >= sizeof(sockdir))
-			abortmsg("too long TMPDIR (r = %d)", r);
+		r = snprintf(sockdir, size, "%s/chg%d", tmpdir, geteuid());
+	}
+	if (r < 0 || (size_t)r >= size)
+		abortmsg("too long TMPDIR (r = %d)", r);
+}
+
+static void setcmdserveropts(struct cmdserveropts *opts)
+{
+	int r;
+	char sockdir[PATH_MAX];
+	const char *envsockname = getenv("CHGSOCKNAME");
+	if (!envsockname) {
+		getdefaultsockdir(sockdir, sizeof(sockdir));
 		preparesockdir(sockdir);
 	}
 
 	const char *basename = (envsockname) ? envsockname : sockdir;
 	const char *sockfmt = (envsockname) ? "%s" : "%s/server";
-	const char *lockfmt = (envsockname) ? "%s.lock" : "%s/lock";
 	r = snprintf(opts->sockname, sizeof(opts->sockname), sockfmt, basename);
 	if (r < 0 || (size_t)r >= sizeof(opts->sockname))
 		abortmsg("too long TMPDIR or CHGSOCKNAME (r = %d)", r);
-	r = snprintf(opts->lockfile, sizeof(opts->lockfile), lockfmt, basename);
-	if (r < 0 || (size_t)r >= sizeof(opts->lockfile))
+	r = snprintf(opts->initsockname, sizeof(opts->initsockname),
+			"%s.%u", opts->sockname, (unsigned)getpid());
+	if (r < 0 || (size_t)r >= sizeof(opts->initsockname))
 		abortmsg("too long TMPDIR or CHGSOCKNAME (r = %d)", r);
-}
-
-/*
- * Acquire a file lock that indicates a client is trying to start and connect
- * to a server, before executing a command. The lock is released upon exit or
- * explicit unlock. Will block if the lock is held by another process.
- */
-static void lockcmdserver(struct cmdserveropts *opts)
-{
-	if (opts->lockfd == -1) {
-		opts->lockfd = open(opts->lockfile,
-				    O_RDWR | O_CREAT | O_NOFOLLOW, 0600);
-		if (opts->lockfd == -1)
-			abortmsgerrno("cannot create lock file %s",
-				      opts->lockfile);
-		fsetcloexec(opts->lockfd);
-	}
-	int r = flock(opts->lockfd, LOCK_EX);
-	if (r == -1)
-		abortmsgerrno("cannot acquire lock");
-}
-
-/*
- * Release the file lock held by calling lockcmdserver. Will do nothing if
- * lockcmdserver is not called.
- */
-static void unlockcmdserver(struct cmdserveropts *opts)
-{
-	if (opts->lockfd == -1)
-		return;
-	flock(opts->lockfd, LOCK_UN);
-	close(opts->lockfd);
-	opts->lockfd = -1;
 }
 
 static const char *gethgcmd(void)
@@ -223,9 +193,8 @@ static void execcmdserver(const struct cmdserveropts *opts)
 		hgcmd,
 		"serve",
 		"--cmdserver", "chgunix",
-		"--address", opts->sockname,
+		"--address", opts->initsockname,
 		"--daemon-postexec", "chdir:/",
-		"--config", "extensions.chgserver=",
 	};
 	size_t baseargvsize = sizeof(baseargv) / sizeof(baseargv[0]);
 	size_t argsize = baseargvsize + opts->argsize + 1;
@@ -248,7 +217,7 @@ static hgclient_t *retryconnectcmdserver(struct cmdserveropts *opts, pid_t pid)
 	static const struct timespec sleepreq = {0, 10 * 1000000};
 	int pst = 0;
 
-	debugmsg("try connect to %s repeatedly", opts->sockname);
+	debugmsg("try connect to %s repeatedly", opts->initsockname);
 
 	unsigned int timeoutsec = 60;  /* default: 60 seconds */
 	const char *timeoutenv = getenv("CHGTIMEOUT");
@@ -256,9 +225,15 @@ static hgclient_t *retryconnectcmdserver(struct cmdserveropts *opts, pid_t pid)
 		sscanf(timeoutenv, "%u", &timeoutsec);
 
 	for (unsigned int i = 0; !timeoutsec || i < timeoutsec * 100; i++) {
-		hgclient_t *hgc = hgc_open(opts->sockname);
-		if (hgc)
+		hgclient_t *hgc = hgc_open(opts->initsockname);
+		if (hgc) {
+			debugmsg("rename %s to %s", opts->initsockname,
+					opts->sockname);
+			int r = rename(opts->initsockname, opts->sockname);
+			if (r != 0)
+				abortmsgerrno("cannot rename");
 			return hgc;
+		}
 
 		if (pid > 0) {
 			/* collect zombie if child process fails to start */
@@ -270,7 +245,7 @@ static hgclient_t *retryconnectcmdserver(struct cmdserveropts *opts, pid_t pid)
 		nanosleep(&sleepreq, NULL);
 	}
 
-	abortmsg("timed out waiting for cmdserver %s", opts->sockname);
+	abortmsg("timed out waiting for cmdserver %s", opts->initsockname);
 	return NULL;
 
 cleanup:
@@ -298,14 +273,6 @@ static hgclient_t *connectcmdserver(struct cmdserveropts *opts)
 	if (hgc)
 		return hgc;
 
-	lockcmdserver(opts);
-	hgc = hgc_open(sockname);
-	if (hgc) {
-		unlockcmdserver(opts);
-		debugmsg("cmdserver is started by another process");
-		return hgc;
-	}
-
 	/* prevent us from being connected to an outdated server: we were
 	 * told by a server to redirect to opts->redirectsockname and that
 	 * address does not work. we do not want to connect to the server
@@ -313,7 +280,7 @@ static hgclient_t *connectcmdserver(struct cmdserveropts *opts)
 	if (sockname == opts->redirectsockname)
 		unlink(opts->sockname);
 
-	debugmsg("start cmdserver at %s", opts->sockname);
+	debugmsg("start cmdserver at %s", opts->initsockname);
 
 	pid_t pid = fork();
 	if (pid < 0)
@@ -324,7 +291,6 @@ static hgclient_t *connectcmdserver(struct cmdserveropts *opts)
 		hgc = retryconnectcmdserver(opts, pid);
 	}
 
-	unlockcmdserver(opts);
 	return hgc;
 }
 
@@ -335,215 +301,6 @@ static void killcmdserver(const struct cmdserveropts *opts)
 	if (resolvedpath) {
 		unlink(resolvedpath);
 		free(resolvedpath);
-	}
-}
-
-static pid_t pagerpid = 0;
-static pid_t peerpgid = 0;
-static pid_t peerpid = 0;
-
-static void forwardsignal(int sig)
-{
-	assert(peerpid > 0);
-	if (kill(peerpid, sig) < 0)
-		abortmsgerrno("cannot kill %d", peerpid);
-	debugmsg("forward signal %d", sig);
-}
-
-static void forwardsignaltogroup(int sig)
-{
-	/* prefer kill(-pgid, sig), fallback to pid if pgid is invalid */
-	pid_t killpid = peerpgid > 1 ? -peerpgid : peerpid;
-	if (kill(killpid, sig) < 0)
-		abortmsgerrno("cannot kill %d", killpid);
-	debugmsg("forward signal %d to %d", sig, killpid);
-}
-
-static void handlestopsignal(int sig)
-{
-	sigset_t unblockset, oldset;
-	struct sigaction sa, oldsa;
-	if (sigemptyset(&unblockset) < 0)
-		goto error;
-	if (sigaddset(&unblockset, sig) < 0)
-		goto error;
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = SIG_DFL;
-	sa.sa_flags = SA_RESTART;
-	if (sigemptyset(&sa.sa_mask) < 0)
-		goto error;
-
-	forwardsignal(sig);
-	if (raise(sig) < 0)  /* resend to self */
-		goto error;
-	if (sigaction(sig, &sa, &oldsa) < 0)
-		goto error;
-	if (sigprocmask(SIG_UNBLOCK, &unblockset, &oldset) < 0)
-		goto error;
-	/* resent signal will be handled before sigprocmask() returns */
-	if (sigprocmask(SIG_SETMASK, &oldset, NULL) < 0)
-		goto error;
-	if (sigaction(sig, &oldsa, NULL) < 0)
-		goto error;
-	return;
-
-error:
-	abortmsgerrno("failed to handle stop signal");
-}
-
-static void handlechildsignal(int sig UNUSED_)
-{
-	if (peerpid == 0 || pagerpid == 0)
-		return;
-	/* if pager exits, notify the server with SIGPIPE immediately.
-	 * otherwise the server won't get SIGPIPE if it does not write
-	 * anything. (issue5278) */
-	if (waitpid(pagerpid, NULL, WNOHANG) == pagerpid)
-		kill(peerpid, SIGPIPE);
-}
-
-static void setupsignalhandler(const hgclient_t *hgc)
-{
-	pid_t pid = hgc_peerpid(hgc);
-	if (pid <= 0)
-		return;
-	peerpid = pid;
-
-	pid_t pgid = hgc_peerpgid(hgc);
-	peerpgid = (pgid <= 1 ? 0 : pgid);
-
-	struct sigaction sa;
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = forwardsignaltogroup;
-	sa.sa_flags = SA_RESTART;
-	if (sigemptyset(&sa.sa_mask) < 0)
-		goto error;
-
-	if (sigaction(SIGHUP, &sa, NULL) < 0)
-		goto error;
-	if (sigaction(SIGINT, &sa, NULL) < 0)
-		goto error;
-
-	/* terminate frontend by double SIGTERM in case of server freeze */
-	sa.sa_handler = forwardsignal;
-	sa.sa_flags |= SA_RESETHAND;
-	if (sigaction(SIGTERM, &sa, NULL) < 0)
-		goto error;
-
-	/* notify the worker about window resize events */
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGWINCH, &sa, NULL) < 0)
-		goto error;
-	/* propagate job control requests to worker */
-	sa.sa_handler = forwardsignal;
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGCONT, &sa, NULL) < 0)
-		goto error;
-	sa.sa_handler = handlestopsignal;
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGTSTP, &sa, NULL) < 0)
-		goto error;
-	/* get notified when pager exits */
-	sa.sa_handler = handlechildsignal;
-	sa.sa_flags = SA_RESTART;
-	if (sigaction(SIGCHLD, &sa, NULL) < 0)
-		goto error;
-
-	return;
-
-error:
-	abortmsgerrno("failed to set up signal handlers");
-}
-
-static void restoresignalhandler()
-{
-	struct sigaction sa;
-	memset(&sa, 0, sizeof(sa));
-	sa.sa_handler = SIG_DFL;
-	sa.sa_flags = SA_RESTART;
-	if (sigemptyset(&sa.sa_mask) < 0)
-		goto error;
-
-	if (sigaction(SIGHUP, &sa, NULL) < 0)
-		goto error;
-	if (sigaction(SIGTERM, &sa, NULL) < 0)
-		goto error;
-	if (sigaction(SIGWINCH, &sa, NULL) < 0)
-		goto error;
-	if (sigaction(SIGCONT, &sa, NULL) < 0)
-		goto error;
-	if (sigaction(SIGTSTP, &sa, NULL) < 0)
-		goto error;
-	if (sigaction(SIGCHLD, &sa, NULL) < 0)
-		goto error;
-
-	/* ignore Ctrl+C while shutting down to make pager exits cleanly */
-	sa.sa_handler = SIG_IGN;
-	if (sigaction(SIGINT, &sa, NULL) < 0)
-		goto error;
-
-	peerpid = 0;
-	return;
-
-error:
-	abortmsgerrno("failed to restore signal handlers");
-}
-
-/* This implementation is based on hgext/pager.py (post 369741ef7253)
- * Return 0 if pager is not started, or pid of the pager */
-static pid_t setuppager(hgclient_t *hgc, const char *const args[],
-		       size_t argsize)
-{
-	const char *pagercmd = hgc_getpager(hgc, args, argsize);
-	if (!pagercmd)
-		return 0;
-
-	int pipefds[2];
-	if (pipe(pipefds) < 0)
-		return 0;
-	pid_t pid = fork();
-	if (pid < 0)
-		goto error;
-	if (pid > 0) {
-		close(pipefds[0]);
-		if (dup2(pipefds[1], fileno(stdout)) < 0)
-			goto error;
-		if (isatty(fileno(stderr))) {
-			if (dup2(pipefds[1], fileno(stderr)) < 0)
-				goto error;
-		}
-		close(pipefds[1]);
-		hgc_attachio(hgc);  /* reattach to pager */
-		return pid;
-	} else {
-		dup2(pipefds[0], fileno(stdin));
-		close(pipefds[0]);
-		close(pipefds[1]);
-
-		int r = execlp("/bin/sh", "/bin/sh", "-c", pagercmd, NULL);
-		if (r < 0) {
-			abortmsgerrno("cannot start pager '%s'", pagercmd);
-		}
-		return 0;
-	}
-
-error:
-	close(pipefds[0]);
-	close(pipefds[1]);
-	abortmsgerrno("failed to prepare pager");
-	return 0;
-}
-
-static void waitpager(pid_t pid)
-{
-	/* close output streams to notify the pager its input ends */
-	fclose(stdout);
-	fclose(stderr);
-	while (1) {
-		pid_t ret = waitpid(pid, NULL, 0);
-		if (ret == -1 && errno == EINTR)
-			continue;
-		break;
 	}
 }
 
@@ -671,14 +428,12 @@ int main(int argc, const char *argv[], const char *envp[])
 				 gethgcmd());
 	}
 
-	setupsignalhandler(hgc);
-	pagerpid = setuppager(hgc, argv + 1, argc - 1);
+	setupsignalhandler(hgc_peerpid(hgc), hgc_peerpgid(hgc));
 	int exitcode = hgc_runcommand(hgc, argv + 1, argc - 1);
 	restoresignalhandler();
 	hgc_close(hgc);
 	freecmdserveropts(&opts);
-	if (pagerpid)
-		waitpager(pagerpid);
+	waitpager();
 
 	return exitcode;
 }

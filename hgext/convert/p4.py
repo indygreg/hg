@@ -55,18 +55,9 @@ class p4_source(common.converter_source):
 
         common.checktool('p4', abort=False)
 
-        self.p4changes = {}
-        self.heads = {}
-        self.changeset = {}
-        self.files = {}
-        self.copies = {}
-        self.tags = {}
-        self.lastbranch = {}
-        self.parent = {}
+        self.revmap = {}
         self.encoding = self.ui.config('convert', 'p4.encoding',
                                        default=convcmd.orig_encoding)
-        self.depotname = {}           # mapping from local name to depot name
-        self.localname = {} # mapping from depot name to local name
         self.re_type = re.compile(
             "([a-z]+)?(text|binary|symlink|apple|resource|unicode|utf\d+)"
             "(\+\w+)?$")
@@ -78,24 +69,46 @@ class p4_source(common.converter_source):
         if revs and len(revs) > 1:
             raise error.Abort(_("p4 source does not support specifying "
                                "multiple revisions"))
-        self._parse(ui, path)
+
+    def setrevmap(self, revmap):
+        """Sets the parsed revmap dictionary.
+
+        Revmap stores mappings from a source revision to a target revision.
+        It is set in convertcmd.convert and provided by the user as a file
+        on the commandline.
+
+        Revisions in the map are considered beeing present in the
+        repository and ignored during _parse(). This allows for incremental
+        imports if a revmap is provided.
+        """
+        self.revmap = revmap
 
     def _parse_view(self, path):
         "Read changes affecting the path"
         cmd = 'p4 -G changes -s submitted %s' % util.shellquote(path)
         stdout = util.popen(cmd, mode='rb')
+        p4changes = {}
         for d in loaditer(stdout):
             c = d.get("change", None)
             if c:
-                self.p4changes[c] = True
+                p4changes[c] = True
+        return p4changes
 
     def _parse(self, ui, path):
         "Prepare list of P4 filenames and revisions to import"
+        p4changes = {}
+        changeset = {}
+        files_map = {}
+        copies_map = {}
+        localname = {}
+        depotname = {}
+        heads = []
+
         ui.status(_('reading p4 views\n'))
 
         # read client spec or view
         if "/" in path:
-            self._parse_view(path)
+            p4changes.update(self._parse_view(path))
             if path.startswith("//") and path.endswith("/..."):
                 views = {path[:-3]:""}
             else:
@@ -108,7 +121,7 @@ class p4_source(common.converter_source):
             for client in clientspec:
                 if client.startswith("View"):
                     sview, cview = clientspec[client].split()
-                    self._parse_view(sview)
+                    p4changes.update(self._parse_view(sview))
                     if sview.endswith("...") and cview.endswith("..."):
                         sview = sview[:-3]
                         cview = cview[:-3]
@@ -117,8 +130,8 @@ class p4_source(common.converter_source):
                     views[sview] = cview
 
         # list of changes that affect our source files
-        self.p4changes = self.p4changes.keys()
-        self.p4changes.sort(key=int)
+        p4changes = p4changes.keys()
+        p4changes.sort(key=int)
 
         # list with depot pathnames, longest first
         vieworder = views.keys()
@@ -126,32 +139,31 @@ class p4_source(common.converter_source):
 
         # handle revision limiting
         startrev = self.ui.config('convert', 'p4.startrev', default=0)
-        self.p4changes = [x for x in self.p4changes
-                          if ((not startrev or int(x) >= int(startrev)) and
-                              (not self.revs or int(x) <= int(self.revs[0])))]
 
         # now read the full changelists to get the list of file revisions
         ui.status(_('collecting p4 changelists\n'))
         lastid = None
-        for change in self.p4changes:
-            cmd = "p4 -G describe -s %s" % change
-            stdout = util.popen(cmd, mode='rb')
-            d = marshal.load(stdout)
-            desc = self.recode(d.get("desc", ""))
-            shortdesc = desc.split("\n", 1)[0]
-            t = '%s %s' % (d["change"], repr(shortdesc)[1:-1])
-            ui.status(util.ellipsis(t, 80) + '\n')
+        for change in p4changes:
+            if startrev and int(change) < int(startrev):
+                continue
+            if self.revs and int(change) > int(self.revs[0]):
+                continue
+            if change in self.revmap:
+                # Ignore already present revisions, but set the parent pointer.
+                lastid = change
+                continue
 
             if lastid:
                 parents = [lastid]
             else:
                 parents = []
 
-            date = (int(d["time"]), 0)     # timezone not set
-            c = common.commit(author=self.recode(d["user"]),
-                              date=util.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
-                              parents=parents, desc=desc, branch=None,
-                              extra={"p4": change})
+            d = self._fetch_revision(change)
+            c = self._construct_commit(d, parents)
+
+            shortdesc = c.desc.splitlines(True)[0].rstrip('\r\n')
+            t = '%s %s' % (c.rev, repr(shortdesc)[1:-1])
+            ui.status(util.ellipsis(t, 80) + '\n')
 
             files = []
             copies = {}
@@ -166,15 +178,15 @@ class p4_source(common.converter_source):
                         break
                 if filename:
                     files.append((filename, d["rev%d" % i]))
-                    self.depotname[filename] = oldname
+                    depotname[filename] = oldname
                     if (d.get("action%d" % i) == "move/add"):
                         copiedfiles.append(filename)
-                    self.localname[oldname] = filename
+                    localname[oldname] = filename
                 i += 1
 
             # Collect information about copied files
             for filename in copiedfiles:
-                oldname = self.depotname[filename]
+                oldname = depotname[filename]
 
                 flcmd = 'p4 -G filelog %s' \
                       % util.shellquote(oldname)
@@ -196,8 +208,8 @@ class p4_source(common.converter_source):
                                 j += 1
                         i += 1
 
-                    if copiedoldname and copiedoldname in self.localname:
-                        copiedfilename = self.localname[copiedoldname]
+                    if copiedoldname and copiedoldname in localname:
+                        copiedfilename = localname[copiedoldname]
                         break
 
                 if copiedfilename:
@@ -206,13 +218,45 @@ class p4_source(common.converter_source):
                     ui.warn(_("cannot find source for copied file: %s@%s\n")
                             % (filename, change))
 
-            self.changeset[change] = c
-            self.files[change] = files
-            self.copies[change] = copies
+            changeset[change] = c
+            files_map[change] = files
+            copies_map[change] = copies
             lastid = change
 
-        if lastid:
-            self.heads = [lastid]
+        if lastid and len(changeset) > 0:
+            heads = [lastid]
+
+        return {
+            'changeset': changeset,
+            'files': files_map,
+            'copies': copies_map,
+            'heads': heads,
+            'depotname': depotname,
+        }
+
+    @util.propertycache
+    def _parse_once(self):
+        return self._parse(self.ui, self.path)
+
+    @util.propertycache
+    def copies(self):
+        return self._parse_once['copies']
+
+    @util.propertycache
+    def files(self):
+        return self._parse_once['files']
+
+    @util.propertycache
+    def changeset(self):
+        return self._parse_once['changeset']
+
+    @util.propertycache
+    def heads(self):
+        return self._parse_once['heads']
+
+    @util.propertycache
+    def depotname(self):
+        return self._parse_once['depotname']
 
     def getheads(self):
         return self.heads
@@ -286,11 +330,39 @@ class p4_source(common.converter_source):
             raise error.Abort(_("convert from p4 does not support --full"))
         return self.files[rev], self.copies[rev], set()
 
+    def _construct_commit(self, obj, parents=None):
+        """
+        Constructs a common.commit object from an unmarshalled
+        `p4 describe` output
+        """
+        desc = self.recode(obj.get("desc", ""))
+        date = (int(obj["time"]), 0)     # timezone not set
+        if parents is None:
+            parents = []
+
+        return common.commit(author=self.recode(obj["user"]),
+            date=util.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
+            parents=parents, desc=desc, branch=None, rev=obj['change'],
+            extra={"p4": obj['change'], "convert_revision": obj['change']})
+
+    def _fetch_revision(self, rev):
+        """Return an output of `p4 describe` including author, commit date as
+        a dictionary."""
+        cmd = "p4 -G describe -s %s" % rev
+        stdout = util.popen(cmd, mode='rb')
+        return marshal.load(stdout)
+
     def getcommit(self, rev):
-        return self.changeset[rev]
+        if rev in self.changeset:
+            return self.changeset[rev]
+        elif rev in self.revmap:
+            d = self._fetch_revision(rev)
+            return self._construct_commit(d, parents=None)
+        raise error.Abort(
+            _("cannot find %s in the revmap or parsed changesets") % rev)
 
     def gettags(self):
-        return self.tags
+        return {}
 
     def getchangedfiles(self, rev, i):
         return sorted([x[0] for x in self.files[rev]])

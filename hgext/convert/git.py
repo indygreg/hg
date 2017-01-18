@@ -31,6 +31,18 @@ class submodule(object):
     def hgsubstate(self):
         return "%s %s" % (self.node, self.path)
 
+# Keys in extra fields that should not be copied if the user requests.
+bannedextrakeys = set([
+    # Git commit object built-ins.
+    'tree',
+    'parent',
+    'author',
+    'committer',
+    # Mercurial built-ins.
+    'branch',
+    'close',
+])
+
 class convert_git(common.converter_source, common.commandline):
     # Windows does not support GIT_DIR= construct while other systems
     # cannot remove environment variable. Just assume none have
@@ -78,6 +90,10 @@ class convert_git(common.converter_source, common.commandline):
                                              False)
             if findcopiesharder:
                 self.simopt.append('--find-copies-harder')
+
+            renamelimit = ui.configint('convert', 'git.renamelimit',
+                                       default=400)
+            self.simopt.append('-l%d' % renamelimit)
         else:
             self.simopt = []
 
@@ -87,6 +103,54 @@ class convert_git(common.converter_source, common.commandline):
         self.submodules = []
 
         self.catfilepipe = self.gitpipe('cat-file', '--batch')
+
+        self.copyextrakeys = self.ui.configlist('convert', 'git.extrakeys')
+        banned = set(self.copyextrakeys) & bannedextrakeys
+        if banned:
+            raise error.Abort(_('copying of extra key is forbidden: %s') %
+                              _(', ').join(sorted(banned)))
+
+        committeractions = self.ui.configlist('convert', 'git.committeractions',
+                                              'messagedifferent')
+
+        messagedifferent = None
+        messagealways = None
+        for a in committeractions:
+            if a.startswith(('messagedifferent', 'messagealways')):
+                k = a
+                v = None
+                if '=' in a:
+                    k, v = a.split('=', 1)
+
+                if k == 'messagedifferent':
+                    messagedifferent = v or 'committer:'
+                elif k == 'messagealways':
+                    messagealways = v or 'committer:'
+
+        if messagedifferent and messagealways:
+            raise error.Abort(_('committeractions cannot define both '
+                                'messagedifferent and messagealways'))
+
+        dropcommitter = 'dropcommitter' in committeractions
+        replaceauthor = 'replaceauthor' in committeractions
+
+        if dropcommitter and replaceauthor:
+            raise error.Abort(_('committeractions cannot define both '
+                                'dropcommitter and replaceauthor'))
+
+        if dropcommitter and messagealways:
+            raise error.Abort(_('committeractions cannot define both '
+                                'dropcommitter and messagealways'))
+
+        if not messagedifferent and not messagealways:
+            messagedifferent = 'committer:'
+
+        self.committeractions = {
+            'dropcommitter': dropcommitter,
+            'replaceauthor': replaceauthor,
+            'messagedifferent': messagedifferent,
+            'messagealways': messagealways,
+        }
 
     def after(self):
         for f in self.catfilepipe:
@@ -275,6 +339,7 @@ class convert_git(common.converter_source, common.commandline):
         l = c[:end].splitlines()
         parents = []
         author = committer = None
+        extra = {}
         for e in l[1:]:
             n, v = e.split(" ", 1)
             if n == "author":
@@ -291,16 +356,32 @@ class convert_git(common.converter_source, common.commandline):
                 committer = self.recode(committer)
             if n == "parent":
                 parents.append(v)
+            if n in self.copyextrakeys:
+                extra[n] = v
 
-        if committer and committer != author:
-            message += "\ncommitter: %s\n" % committer
+        if self.committeractions['dropcommitter']:
+            committer = None
+        elif self.committeractions['replaceauthor']:
+            author = committer
+
+        if committer:
+            messagealways = self.committeractions['messagealways']
+            messagedifferent = self.committeractions['messagedifferent']
+            if messagealways:
+                message += '\n%s %s\n' % (messagealways, committer)
+            elif messagedifferent and author != committer:
+                message += '\n%s %s\n' % (messagedifferent, committer)
+
         tzs, tzh, tzm = tz[-5:-4] + "1", tz[-4:-2], tz[-2:]
         tz = -int(tzs) * (int(tzh) * 3600 + int(tzm))
         date = tm + " " + str(tz)
+        saverev = self.ui.configbool('convert', 'git.saverev', True)
 
         c = common.commit(parents=parents, date=date, author=author,
                           desc=message,
-                          rev=version)
+                          rev=version,
+                          extra=extra,
+                          saverev=saverev)
         return c
 
     def numcommits(self):

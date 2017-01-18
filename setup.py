@@ -67,6 +67,7 @@ if 'FORCE_SETUPTOOLS' in os.environ:
     from setuptools import setup
 else:
     from distutils.core import setup
+from distutils.ccompiler import new_compiler
 from distutils.core import Command, Extension
 from distutils.dist import Distribution
 from distutils.command.build import build
@@ -167,7 +168,8 @@ version = ''
 # to not use any hgrc files and do no localization.
 env = {'HGMODULEPOLICY': 'py',
        'HGRCPATH': '',
-       'LANGUAGE': 'C'}
+       'LANGUAGE': 'C',
+       'PATH': ''} # make pypi modules that use os.environ['PATH'] happy
 if 'LD_LIBRARY_PATH' in os.environ:
     env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
 if 'SystemRoot' in os.environ:
@@ -275,7 +277,30 @@ class hgdist(Distribution):
         # too late for some cases
         return not self.pure and Distribution.has_ext_modules(self)
 
+# This is ugly as a one-liner. So use a variable.
+buildextnegops = dict(getattr(build_ext, 'negative_options', {}))
+buildextnegops['no-zstd'] = 'zstd'
+
 class hgbuildext(build_ext):
+    user_options = build_ext.user_options + [
+        ('zstd', None, 'compile zstd bindings [default]'),
+        ('no-zstd', None, 'do not compile zstd bindings'),
+    ]
+
+    boolean_options = build_ext.boolean_options + ['zstd']
+    negative_opt = buildextnegops
+
+    def initialize_options(self):
+        self.zstd = True
+        return build_ext.initialize_options(self)
+
+    def build_extensions(self):
+        # Filter out zstd if disabled via argument.
+        if not self.zstd:
+            self.extensions = [e for e in self.extensions
+                               if e.name != 'mercurial.zstd']
+
+        return build_ext.build_extensions(self)
 
     def build_extension(self, ext):
         try:
@@ -318,14 +343,16 @@ class hgbuildpy(build_py):
         if self.distribution.pure:
             self.distribution.ext_modules = []
         elif self.distribution.cffi:
-            import setup_mpatch_cffi
-            import setup_bdiff_cffi
-            exts = [setup_mpatch_cffi.ffi.distutils_extension(),
-                    setup_bdiff_cffi.ffi.distutils_extension()]
+            from mercurial.cffi import (
+                bdiff,
+                mpatch,
+            )
+            exts = [mpatch.ffi.distutils_extension(),
+                    bdiff.ffi.distutils_extension()]
             # cffi modules go here
             if sys.platform == 'darwin':
-                import setup_osutil_cffi
-                exts.append(setup_osutil_cffi.ffi.distutils_extension())
+                from mercurial.cffi import osutil
+                exts.append(osutil.ffi.distutils_extension())
             self.distribution.ext_modules = exts
         else:
             h = os.path.join(get_python_inc(), 'Python.h')
@@ -551,7 +578,13 @@ common_depends = ['mercurial/bitmanipulation.h',
                   'mercurial/compat.h',
                   'mercurial/util.h']
 
+osutil_cflags = []
 osutil_ldflags = []
+
+# platform specific macros: HAVE_SETPROCTITLE
+for plat, func in [(re.compile('freebsd'), 'setproctitle')]:
+    if plat.search(sys.platform) and hasfunction(new_compiler(), func):
+        osutil_cflags.append('-DHAVE_%s' % func.upper())
 
 if sys.platform == 'darwin':
     osutil_ldflags += ['-framework', 'ApplicationServices']
@@ -573,11 +606,16 @@ extmodules = [
                                     'mercurial/pathencode.c'],
               depends=common_depends),
     Extension('mercurial.osutil', ['mercurial/osutil.c'],
+              extra_compile_args=osutil_cflags,
               extra_link_args=osutil_ldflags,
               depends=common_depends),
     Extension('hgext.fsmonitor.pywatchman.bser',
               ['hgext/fsmonitor/pywatchman/bser.c']),
     ]
+
+sys.path.insert(0, 'contrib/python-zstandard')
+import setup_zstd
+extmodules.append(setup_zstd.get_c_extension(name='mercurial.zstd'))
 
 try:
     from distutils import cygwinccompiler

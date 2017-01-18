@@ -13,7 +13,6 @@ from .i18n import _
 from . import (
     bdiff,
     mdiff,
-    util,
 )
 
 def _findexactmatches(repo, added, removed):
@@ -43,6 +42,28 @@ def _findexactmatches(repo, added, removed):
     # Done
     repo.ui.progress(_('searching for exact renames'), None)
 
+def _ctxdata(fctx):
+    # lazily load text
+    orig = fctx.data()
+    return orig, mdiff.splitnewlines(orig)
+
+def _score(fctx, otherdata):
+    orig, lines = otherdata
+    text = fctx.data()
+    # bdiff.blocks() returns blocks of matching lines
+    # count the number of bytes in each
+    equal = 0
+    matches = bdiff.blocks(text, orig)
+    for x1, x2, y1, y2 in matches:
+        for line in lines[y1:y2]:
+            equal += len(line)
+
+    lengths = len(text) + len(orig)
+    return equal * 2.0 / lengths
+
+def score(fctx1, fctx2):
+    return _score(fctx1, _ctxdata(fctx2))
+
 def _findsimilarmatches(repo, added, removed, threshold):
     '''find potentially renamed files based on similar file content
 
@@ -54,35 +75,19 @@ def _findsimilarmatches(repo, added, removed, threshold):
         repo.ui.progress(_('searching for similar files'), i,
                          total=len(removed), unit=_('files'))
 
-        # lazily load text
-        @util.cachefunc
-        def data():
-            orig = r.data()
-            return orig, mdiff.splitnewlines(orig)
-
-        def score(text):
-            orig, lines = data()
-            # bdiff.blocks() returns blocks of matching lines
-            # count the number of bytes in each
-            equal = 0
-            matches = bdiff.blocks(text, orig)
-            for x1, x2, y1, y2 in matches:
-                for line in lines[y1:y2]:
-                    equal += len(line)
-
-            lengths = len(text) + len(orig)
-            return equal * 2.0 / lengths
-
+        data = None
         for a in added:
             bestscore = copies.get(a, (None, threshold))[1]
-            myscore = score(a.data())
+            if data is None:
+                data = _ctxdata(r)
+            myscore = _score(a, data)
             if myscore >= bestscore:
                 copies[a] = (r, myscore)
     repo.ui.progress(_('searching'), None)
 
     for dest, v in copies.iteritems():
-        source, score = v
-        yield source, dest, score
+        source, bscore = v
+        yield source, dest, bscore
 
 def findrenames(repo, added, removed, threshold):
     '''find renamed files -- yields (before, after, score) tuples'''

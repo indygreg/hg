@@ -19,7 +19,6 @@
 from __future__ import absolute_import
 
 import os
-import sys
 
 from .i18n import _
 from . import (
@@ -275,7 +274,7 @@ class Merge3Text(object):
     def minimize(self, merge_regions):
         """Trim conflict regions of lines where A and B sides match.
 
-        Lines where both A and B have made the same changes at the begining
+        Lines where both A and B have made the same changes at the beginning
         or the end of each merge region are eliminated from the conflict
         region and are instead considered the same.
         """
@@ -441,7 +440,7 @@ def simplemerge(ui, local, base, other, **opts):
         opener = scmutil.opener(os.path.dirname(local))
         out = opener(os.path.basename(local), "w", atomictemp=True)
     else:
-        out = sys.stdout
+        out = ui.fout
 
     m3 = Merge3Text(basetext, localtext, othertext)
     extrakwargs = {

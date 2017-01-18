@@ -11,7 +11,7 @@ import ssl
 import sys
 
 from mercurial import (
-    cmdutil,
+    server,
     sslutil,
     ui as uimod,
 )
@@ -37,7 +37,7 @@ class dummysmtpsecureserver(dummysmtpserver):
         if not pair:
             return
         conn, addr = pair
-        ui = uimod.ui()
+        ui = uimod.ui.load()
         try:
             # wrap_socket() would block, but we don't care
             conn = sslutil.wrapserversocket(conn, ui, certfile=self._certfile)
@@ -75,8 +75,8 @@ def main():
             dummysmtpsecureserver(addr, opts.certificate)
         log('listening at %s:%d\n' % addr)
 
-    cmdutil.service(vars(opts), initfn=init, runfn=run,
-                    runargs=[sys.executable, __file__] + sys.argv[1:])
+    server.runservice(vars(opts), initfn=init, runfn=run,
+                      runargs=[sys.executable, __file__] + sys.argv[1:])
 
 if __name__ == '__main__':
     main()

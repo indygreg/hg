@@ -13,8 +13,6 @@ allowing operations like diff and log with revsets.
 
 from __future__ import absolute_import
 
-import os
-
 from .i18n import _
 from .node import nullid
 
@@ -27,6 +25,7 @@ from . import (
     manifest,
     mdiff,
     pathutil,
+    pycompat,
     revlog,
     scmutil,
     util,
@@ -94,7 +93,7 @@ class unionrevlog(revlog.revlog):
         return mdiff.textdiff(self.revision(self.node(rev1)),
                               self.revision(self.node(rev2)))
 
-    def revision(self, nodeorrev):
+    def revision(self, nodeorrev, raw=False):
         """return an uncompressed revision of a given node or revision
         number.
         """
@@ -152,18 +151,18 @@ class unionchangelog(unionrevlog, changelog.changelog):
     def baserevdiff(self, rev1, rev2):
         return changelog.changelog.revdiff(self, rev1, rev2)
 
-class unionmanifest(unionrevlog, manifest.manifest):
+class unionmanifest(unionrevlog, manifest.manifestrevlog):
     def __init__(self, opener, opener2, linkmapper):
-        manifest.manifest.__init__(self, opener)
-        manifest2 = manifest.manifest(opener2)
+        manifest.manifestrevlog.__init__(self, opener)
+        manifest2 = manifest.manifestrevlog(opener2)
         unionrevlog.__init__(self, opener, self.indexfile, manifest2,
                              linkmapper)
 
     def baserevision(self, nodeorrev):
-        return manifest.manifest.revision(self, nodeorrev)
+        return manifest.manifestrevlog.revision(self, nodeorrev)
 
     def baserevdiff(self, rev1, rev2):
-        return manifest.manifest.revdiff(self, rev1, rev2)
+        return manifest.manifestrevlog.revdiff(self, rev1, rev2)
 
 class unionfilelog(unionrevlog, filelog.filelog):
     def __init__(self, opener, path, opener2, linkmapper, repo):
@@ -229,7 +228,7 @@ class unionrepository(localrepo.localrepository):
         return unionpeer(self)
 
     def getcwd(self):
-        return os.getcwd() # always outside the repo
+        return pycompat.getcwd() # always outside the repo
 
 def instance(ui, path, create):
     if create:
@@ -237,13 +236,13 @@ def instance(ui, path, create):
     parentpath = ui.config("bundle", "mainreporoot", "")
     if not parentpath:
         # try to find the correct path to the working directory repo
-        parentpath = cmdutil.findrepo(os.getcwd())
+        parentpath = cmdutil.findrepo(pycompat.getcwd())
         if parentpath is None:
             parentpath = ''
     if parentpath:
         # Try to make the full path relative so we get a nice, short URL.
         # In particular, we don't want temp dir names in test outputs.
-        cwd = os.getcwd()
+        cwd = pycompat.getcwd()
         if parentpath == cwd:
             parentpath = ''
         else:

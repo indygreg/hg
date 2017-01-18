@@ -92,6 +92,7 @@
    */mercurial/dispatch.py:* in dispatch (glob)
    */mercurial/dispatch.py:* in _runcatch (glob)
    */mercurial/dispatch.py:* in callcatch (glob)
+   */mercurial/scmutil.py* in callcatch (glob)
    */mercurial/dispatch.py:* in _runcatchfunc (glob)
    */mercurial/dispatch.py:* in _dispatch (glob)
    */mercurial/dispatch.py:* in runcommand (glob)
@@ -127,6 +128,7 @@
    */mercurial/dispatch.py:* in dispatch (glob)
    */mercurial/dispatch.py:* in _runcatch (glob)
    */mercurial/dispatch.py:* in callcatch (glob)
+   */mercurial/scmutil.py* in callcatch (glob)
    */mercurial/dispatch.py:* in _runcatchfunc (glob)
    */mercurial/dispatch.py:* in _dispatch (glob)
    */mercurial/dispatch.py:* in runcommand (glob)
@@ -150,6 +152,7 @@
    */mercurial/dispatch.py:* in dispatch (glob)
    */mercurial/dispatch.py:* in _runcatch (glob)
    */mercurial/dispatch.py:* in callcatch (glob)
+   */mercurial/scmutil.py* in callcatch (glob)
    */mercurial/dispatch.py:* in _runcatchfunc (glob)
    */mercurial/dispatch.py:* in _dispatch (glob)
    */mercurial/dispatch.py:* in runcommand (glob)
@@ -171,6 +174,6 @@ Test programming error failure:
   ** Mercurial Distributed SCM (*) (glob)
   ** Extensions loaded: * (glob)
   Traceback (most recent call last):
-  RuntimeError: programming error: transaction requires locking
+  mercurial.error.ProgrammingError: transaction requires locking
 
   $ cd ..

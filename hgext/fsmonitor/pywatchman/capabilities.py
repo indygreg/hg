@@ -26,6 +26,11 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+# no unicode literals
+
 import re
 
 def parse_version(vstr):
@@ -65,5 +70,3 @@ def synthesize(vers, opts):
             vers['error'] = 'client required capability `' + name + \
                             '` is not supported by this server'
     return vers
-
-# no-check-code -- this is a 3rd party library

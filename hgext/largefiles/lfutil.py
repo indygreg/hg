@@ -19,10 +19,12 @@ from mercurial.i18n import _
 
 from mercurial import (
     dirstate,
+    encoding,
     error,
     httpconnection,
     match as matchmod,
     node,
+    pycompat,
     scmutil,
     util,
 )
@@ -72,23 +74,25 @@ def _usercachedir(ui):
     path = ui.configpath(longname, 'usercache', None)
     if path:
         return path
-    if os.name == 'nt':
-        appdata = os.getenv('LOCALAPPDATA', os.getenv('APPDATA'))
+    if pycompat.osname == 'nt':
+        appdata = encoding.environ.get('LOCALAPPDATA',\
+                        encoding.environ.get('APPDATA'))
         if appdata:
             return os.path.join(appdata, longname)
     elif platform.system() == 'Darwin':
-        home = os.getenv('HOME')
+        home = encoding.environ.get('HOME')
         if home:
             return os.path.join(home, 'Library', 'Caches', longname)
-    elif os.name == 'posix':
-        path = os.getenv('XDG_CACHE_HOME')
+    elif pycompat.osname == 'posix':
+        path = encoding.environ.get('XDG_CACHE_HOME')
         if path:
             return os.path.join(path, longname)
-        home = os.getenv('HOME')
+        home = encoding.environ.get('HOME')
         if home:
             return os.path.join(home, '.cache', longname)
     else:
-        raise error.Abort(_('unknown operating system: %s\n') % os.name)
+        raise error.Abort(_('unknown operating system: %s\n')
+                          % pycompat.osname)
     raise error.Abort(_('unknown %s usercache location') % longname)
 
 def inusercache(ui, hash):

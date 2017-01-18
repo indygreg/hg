@@ -8,11 +8,11 @@
 
 from __future__ import absolute_import
 
-import os
 import sys
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     hook,
     util,
@@ -26,6 +26,7 @@ class sshserver(wireproto.abstractserverproto):
         self.lock = None
         self.fin = ui.fin
         self.fout = ui.fout
+        self.name = 'ssh'
 
         hook.redirect(True)
         ui.fout = repo.ui.fout = ui.ferr
@@ -68,13 +69,6 @@ class sshserver(wireproto.abstractserverproto):
     def redirect(self):
         pass
 
-    def groupchunks(self, fh):
-        return iter(lambda: fh.read(4096), '')
-
-    def compresschunks(self, chunks):
-        for chunk in chunks:
-            yield chunk
-
     def sendresponse(self, v):
         self.fout.write("%d\n" % len(v))
         self.fout.write(v)
@@ -82,7 +76,13 @@ class sshserver(wireproto.abstractserverproto):
 
     def sendstream(self, source):
         write = self.fout.write
-        for chunk in source.gen:
+
+        if source.reader:
+            gen = iter(lambda: source.reader.read(4096), '')
+        else:
+            gen = source.gen
+
+        for chunk in gen:
             write(chunk)
         self.fout.flush()
 
@@ -131,5 +131,5 @@ class sshserver(wireproto.abstractserverproto):
         return cmd != ''
 
     def _client(self):
-        client = os.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
+        client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
         return 'remote:ssh:' + client

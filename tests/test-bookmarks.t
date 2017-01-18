@@ -572,8 +572,8 @@ pull --update works the same as pull && update
 
   $ hg bookmark -r3 Y
   moving bookmark 'Y' forward from db815d6d32e6
-  $ cp -r  ../cloned-bookmarks-update ../cloned-bookmarks-manual-update
-  $ cp -r  ../cloned-bookmarks-update ../cloned-bookmarks-manual-update-with-divergence
+  $ cp -R ../cloned-bookmarks-update ../cloned-bookmarks-manual-update
+  $ cp -R ../cloned-bookmarks-update ../cloned-bookmarks-manual-update-with-divergence
 
 (manual version)
 
@@ -734,7 +734,7 @@ tipmost surviving ancestor of the stripped revision.
      summary:     0
   
 
-no-op update doesn't deactive bookmarks
+no-op update doesn't deactivate bookmarks
 
   $ hg bookmarks
    * four                      3:9ba5f110a0b3

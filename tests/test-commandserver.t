@@ -135,6 +135,19 @@ typical client does not want echo-back messages, so test without it:
   summary:     1
   
 
+check that "histedit --commands=-" can read rules from the input channel:
+
+  >>> import cStringIO
+  >>> from hgclient import readchannel, runcommand, check
+  >>> @check
+  ... def serverinput(server):
+  ...     readchannel(server)
+  ...     rules = 'pick eff892de26ec\n'
+  ...     runcommand(server, ['histedit', '0', '--commands=-',
+  ...                         '--config', 'extensions.histedit='],
+  ...                input=cStringIO.StringIO(rules))
+  *** runcommand histedit 0 --commands=- --config extensions.histedit=
+
 check that --cwd doesn't persist between requests:
 
   $ mkdir foo
@@ -223,8 +236,6 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ...                         'id'],
   ...                input=stringio('some input'))
   *** runcommand --config hooks.pre-identify=python:hook.hook id
-  hook talking
-  now try to read something: 'some input'
   eff892de26ec tip
 
   $ rm hook.py*
@@ -596,6 +607,12 @@ changelog and manifest would have invalid node:
   ...     runcommand(server, ['debuggetpass', '--config',
   ...                         'ui.interactive=True'],
   ...                input=stringio('1234\n'))
+  ...     runcommand(server, ['debuggetpass', '--config',
+  ...                         'ui.interactive=True'],
+  ...                input=stringio('\n'))
+  ...     runcommand(server, ['debuggetpass', '--config',
+  ...                         'ui.interactive=True'],
+  ...                input=stringio(''))
   ...     runcommand(server, ['debugprompt', '--config',
   ...                         'ui.interactive=True'],
   ...                input=stringio('5678\n'))
@@ -603,6 +620,11 @@ changelog and manifest would have invalid node:
   ...     runcommand(server, ['debugwritestdout'])
   *** runcommand debuggetpass --config ui.interactive=True
   password: 1234
+  *** runcommand debuggetpass --config ui.interactive=True
+  password: 
+  *** runcommand debuggetpass --config ui.interactive=True
+  password: abort: response expected
+   [255]
   *** runcommand debugprompt --config ui.interactive=True
   prompt: 5678
   *** runcommand debugreadstdin
@@ -804,7 +826,7 @@ cases.
   $ echo foo > foo
   $ hg add foo
 
-(failuer before finalization)
+(failure before finalization)
 
   >>> from hgclient import readchannel, runcommand, check
   >>> @check
@@ -823,7 +845,7 @@ cases.
   *** runcommand log
   *** runcommand verify -q
 
-(failuer after finalization)
+(failure after finalization)
 
   >>> from hgclient import readchannel, runcommand, check
   >>> @check

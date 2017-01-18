@@ -35,6 +35,7 @@ from . import (
     mdiff,
     pathutil,
     scmutil,
+    similar,
     util,
 )
 stringio = util.stringio
@@ -1069,7 +1070,7 @@ the hunk is left unchanged.
                     # Remove comment lines
                     patchfp = open(patchfn)
                     ncpatchfp = stringio()
-                    for line in patchfp:
+                    for line in util.iterfile(patchfp):
                         if not line.startswith('#'):
                             ncpatchfp.write(line)
                     patchfp.close()
@@ -2012,7 +2013,7 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files,
     fp = util.popen('%s %s -p%d < %s' % (patcher, ' '.join(args), strip,
                                        util.shellquote(patchname)))
     try:
-        for line in fp:
+        for line in util.iterfile(fp):
             line = line.rstrip()
             ui.note(line + '\n')
             if line.startswith('patching file '):
@@ -2168,6 +2169,36 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
 
     if git:
         buildopts['git'] = get('git')
+
+        # since this is in the experimental section, we need to call
+        # ui.configbool directory
+        buildopts['showsimilarity'] = ui.configbool('experimental',
+                                                    'extendedheader.similarity')
+
+        # need to inspect the ui object instead of using get() since we want to
+        # test for an int
+        hconf = ui.config('experimental', 'extendedheader.index')
+        if hconf is not None:
+            hlen = None
+            try:
+                # the hash config could be an integer (for length of hash) or a
+                # word (e.g. short, full, none)
+                hlen = int(hconf)
+                if hlen < 0 or hlen > 40:
+                    msg = _("invalid length for extendedheader.index: '%d'\n")
+                    ui.warn(msg % hlen)
+            except ValueError:
+                # default value
+                if hconf == 'short' or hconf == '':
+                    hlen = 12
+                elif hconf == 'full':
+                    hlen = 40
+                elif hconf != 'none':
+                    msg = _("invalid value for extendedheader.index: '%s'\n")
+                    ui.warn(msg % hconf)
+            finally:
+                buildopts['index'] = hlen
+
     if whitespace:
         buildopts['ignorews'] = get('ignore_all_space', 'ignorews')
         buildopts['ignorewsamount'] = get('ignore_space_change',
@@ -2318,6 +2349,8 @@ def difflabel(func, *args, **kw):
                     ('old', 'diff.extended'),
                     ('new', 'diff.extended'),
                     ('deleted', 'diff.extended'),
+                    ('index', 'diff.extended'),
+                    ('similarity', 'diff.extended'),
                     ('---', 'diff.file_a'),
                     ('+++', 'diff.file_b')]
     textprefixes = [('@', 'diff.hunk'),
@@ -2490,6 +2523,9 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
                     header.append('old mode %s' % mode1)
                     header.append('new mode %s' % mode2)
                 if copyop is not None:
+                    if opts.showsimilarity:
+                        sim = similar.score(ctx1[path1], ctx2[path2]) * 100
+                        header.append('similarity index %d%%' % sim)
                     header.append('%s from %s' % (copyop, path1))
                     header.append('%s to %s' % (copyop, path2))
         elif revs and not repo.ui.quiet:
@@ -2501,6 +2537,15 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
                 header.append('index %s..%s' %
                               (gitindex(content1), gitindex(content2)))
         else:
+            if opts.git and opts.index > 0:
+                flag = flag1
+                if flag is None:
+                    flag = flag2
+                header.append('index %s..%s %s' %
+                              (gitindex(content1)[0:opts.index],
+                               gitindex(content2)[0:opts.index],
+                               gitmode[flag]))
+
             text = mdiff.unidiff(content1, date1,
                                  content2, date2,
                                  path1, path2, opts=opts)
@@ -2550,7 +2595,7 @@ def diffstatdata(lines):
     addresult()
     return results
 
-def diffstat(lines, width=80, git=False):
+def diffstat(lines, width=80):
     output = []
     stats = diffstatdata(lines)
     maxname, maxtotal, totaladds, totalremoves, hasbinary = diffstatsum(stats)

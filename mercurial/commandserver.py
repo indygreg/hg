@@ -15,13 +15,13 @@ import select
 import signal
 import socket
 import struct
-import sys
 import traceback
 
 from .i18n import _
 from . import (
     encoding,
     error,
+    pycompat,
     util,
 )
 
@@ -54,8 +54,8 @@ class channeledoutput(object):
     def write(self, data):
         if not data:
             return
-        self.out.write(struct.pack('>cI', self.channel, len(data)))
-        self.out.write(data)
+        # single write() to guarantee the same atomicity as the underlying file
+        self.out.write(struct.pack('>cI', self.channel, len(data)) + data)
         self.out.flush()
 
     def __getattr__(self, attr):
@@ -153,7 +153,7 @@ class server(object):
     based stream to fout.
     """
     def __init__(self, ui, repo, fin, fout):
-        self.cwd = os.getcwd()
+        self.cwd = pycompat.getcwd()
 
         # developer config: cmdserver.log
         logpath = ui.config("cmdserver", "log", None)
@@ -304,8 +304,8 @@ def _protectio(ui):
     ui.flush()
     newfiles = []
     nullfd = os.open(os.devnull, os.O_RDWR)
-    for f, sysf, mode in [(ui.fin, sys.stdin, 'rb'),
-                          (ui.fout, sys.stdout, 'wb')]:
+    for f, sysf, mode in [(ui.fin, util.stdin, 'rb'),
+                          (ui.fout, util.stdout, 'wb')]:
         if f is sysf:
             newfd = os.dup(f.fileno())
             os.dup2(nullfd, f.fileno())
@@ -530,15 +530,3 @@ class unixforkingservice(object):
             _serverequest(self.ui, self.repo, conn, h.createcmdserver)
         finally:
             gc.collect()  # trigger __del__ since worker process uses os._exit
-
-_servicemap = {
-    'pipe': pipeservice,
-    'unix': unixforkingservice,
-    }
-
-def createservice(ui, repo, opts):
-    mode = opts['cmdserver']
-    try:
-        return _servicemap[mode](ui, repo, opts)
-    except KeyError:
-        raise error.Abort(_('unknown mode %s') % mode)

@@ -19,7 +19,7 @@ from . import (
 
 # modelled after templater.templatepath:
 if getattr(sys, 'frozen', None) is not None:
-    module = sys.executable
+    module = pycompat.sysexecutable
 else:
     module = __file__
 
@@ -29,7 +29,7 @@ except NameError:
     unicode = str
 
 _languages = None
-if (os.name == 'nt'
+if (pycompat.osname == 'nt'
     and 'LANGUAGE' not in encoding.environ
     and 'LC_ALL' not in encoding.environ
     and 'LC_MESSAGES' not in encoding.environ
@@ -49,6 +49,7 @@ if (os.name == 'nt'
 _ugettext = None
 
 def setdatapath(datapath):
+    datapath = pycompat.fsdecode(datapath)
     localedir = os.path.join(datapath, pycompat.sysstr('locale'))
     t = gettextmod.translation('hg', localedir, _languages, fallback=True)
     global _ugettext

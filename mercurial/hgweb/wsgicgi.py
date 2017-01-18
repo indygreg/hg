@@ -10,10 +10,8 @@
 
 from __future__ import absolute_import
 
-import os
-import sys
-
 from .. import (
+    encoding,
     util,
 )
 
@@ -22,10 +20,10 @@ from . import (
 )
 
 def launch(application):
-    util.setbinary(sys.stdin)
-    util.setbinary(sys.stdout)
+    util.setbinary(util.stdin)
+    util.setbinary(util.stdout)
 
-    environ = dict(os.environ.iteritems())
+    environ = dict(encoding.environ.iteritems())
     environ.setdefault('PATH_INFO', '')
     if environ.get('SERVER_SOFTWARE', '').startswith('Microsoft-IIS'):
         # IIS includes script_name in PATH_INFO
@@ -33,12 +31,12 @@ def launch(application):
         if environ['PATH_INFO'].startswith(scriptname):
             environ['PATH_INFO'] = environ['PATH_INFO'][len(scriptname):]
 
-    stdin = sys.stdin
+    stdin = util.stdin
     if environ.get('HTTP_EXPECT', '').lower() == '100-continue':
-        stdin = common.continuereader(stdin, sys.stdout.write)
+        stdin = common.continuereader(stdin, util.stdout.write)
 
     environ['wsgi.input'] = stdin
-    environ['wsgi.errors'] = sys.stderr
+    environ['wsgi.errors'] = util.stderr
     environ['wsgi.version'] = (1, 0)
     environ['wsgi.multithread'] = False
     environ['wsgi.multiprocess'] = True
@@ -51,7 +49,7 @@ def launch(application):
 
     headers_set = []
     headers_sent = []
-    out = sys.stdout
+    out = util.stdout
 
     def write(data):
         if not headers_set:

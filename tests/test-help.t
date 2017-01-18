@@ -113,11 +113,9 @@ Short help:
    hgweb         Configuring hgweb
    internals     Technical implementation topics
    merge-tools   Merge Tools
-   multirevs     Specifying Multiple Revisions
    patterns      File Name Patterns
    phases        Working with Phases
-   revisions     Specifying Single Revisions
-   revsets       Specifying Revision Sets
+   revisions     Specifying Revisions
    scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
    templating    Template Usage
@@ -190,11 +188,9 @@ Short help:
    hgweb         Configuring hgweb
    internals     Technical implementation topics
    merge-tools   Merge Tools
-   multirevs     Specifying Multiple Revisions
    patterns      File Name Patterns
    phases        Working with Phases
-   revisions     Specifying Single Revisions
-   revsets       Specifying Revision Sets
+   revisions     Specifying Revisions
    scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
    templating    Template Usage
@@ -241,7 +237,6 @@ Test extension help:
   
       enabled extensions:
   
-       chgserver     command server extension for cHg (EXPERIMENTAL) (?)
        children      command to display child changesets (DEPRECATED)
        rebase        command to move sets of revisions to a different ancestor
   
@@ -832,11 +827,9 @@ Test that default list of commands omits extension commands
    hgweb         Configuring hgweb
    internals     Technical implementation topics
    merge-tools   Merge Tools
-   multirevs     Specifying Multiple Revisions
    patterns      File Name Patterns
    phases        Working with Phases
-   revisions     Specifying Single Revisions
-   revsets       Specifying Revision Sets
+   revisions     Specifying Revisions
    scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
    templating    Template Usage
@@ -917,6 +910,8 @@ Test list of internal help commands
                  show set of successors for revision
    debugtemplate
                  parse and apply a template
+   debugupgraderepo
+                 upgrade a repository to use different features
    debugwalk     show how files match on given patterns
    debugwireargs
                  (no help text available)
@@ -1158,38 +1153,49 @@ Test commands that collide with topics (issue4240)
 
 Test a help topic
 
-  $ hg help revs
-  Specifying Single Revisions
-  """""""""""""""""""""""""""
+  $ hg help dates
+  Date Formats
+  """"""""""""
   
-      Mercurial supports several ways to specify individual revisions.
+      Some commands allow the user to specify a date, e.g.:
   
-      A plain integer is treated as a revision number. Negative integers are
-      treated as sequential offsets from the tip, with -1 denoting the tip, -2
-      denoting the revision prior to the tip, and so forth.
+      - backout, commit, import, tag: Specify the commit date.
+      - log, revert, update: Select revision(s) by date.
   
-      A 40-digit hexadecimal string is treated as a unique revision identifier.
+      Many date formats are valid. Here are some examples:
   
-      A hexadecimal string less than 40 characters long is treated as a unique
-      revision identifier and is referred to as a short-form identifier. A
-      short-form identifier is only valid if it is the prefix of exactly one
-      full-length identifier.
+      - "Wed Dec 6 13:18:29 2006" (local timezone assumed)
+      - "Dec 6 13:18 -0600" (year assumed, time offset provided)
+      - "Dec 6 13:18 UTC" (UTC and GMT are aliases for +0000)
+      - "Dec 6" (midnight)
+      - "13:18" (today assumed)
+      - "3:39" (3:39AM assumed)
+      - "3:39pm" (15:39)
+      - "2006-12-06 13:18:29" (ISO 8601 format)
+      - "2006-12-6 13:18"
+      - "2006-12-6"
+      - "12-6"
+      - "12/6"
+      - "12/6/6" (Dec 6 2006)
+      - "today" (midnight)
+      - "yesterday" (midnight)
+      - "now" - right now
   
-      Any other string is treated as a bookmark, tag, or branch name. A bookmark
-      is a movable pointer to a revision. A tag is a permanent name associated
-      with a revision. A branch name denotes the tipmost open branch head of
-      that branch - or if they are all closed, the tipmost closed head of the
-      branch. Bookmark, tag, and branch names must not contain the ":"
-      character.
+      Lastly, there is Mercurial's internal format:
   
-      The reserved name "tip" always identifies the most recent revision.
+      - "1165411109 0" (Wed Dec 6 13:18:29 2006 UTC)
   
-      The reserved name "null" indicates the null revision. This is the revision
-      of an empty repository, and the parent of revision 0.
+      This is the internal representation format for dates. The first number is
+      the number of seconds since the epoch (1970-01-01 00:00 UTC). The second
+      is the offset of the local timezone, in seconds west of UTC (negative if
+      the timezone is east of UTC).
   
-      The reserved name "." indicates the working directory parent. If no
-      working directory is checked out, it is equivalent to null. If an
-      uncommitted merge is in progress, "." is the revision of the first parent.
+      The log command also accepts date ranges:
+  
+      - "<DATE" - at or before a given date/time
+      - ">DATE" - on or after a given date/time
+      - "DATE to DATE" - a date range, inclusive
+      - "-DAYS" - within a given number of days of today
 
 Test repeated config section name
 
@@ -1280,7 +1286,7 @@ Test help hooks
   >     return doc + '\nhelphook1\n'
   > 
   > def extsetup(ui):
-  >     help.addtopichook('revsets', rewrite)
+  >     help.addtopichook('revisions', rewrite)
   > EOF
   $ cat > helphook2.py <<EOF
   > from mercurial import help
@@ -1289,7 +1295,7 @@ Test help hooks
   >     return doc + '\nhelphook2\n'
   > 
   > def extsetup(ui):
-  >     help.addtopichook('revsets', rewrite)
+  >     help.addtopichook('revisions', rewrite)
   > EOF
   $ echo '[extensions]' >> $HGRCPATH
   $ echo "helphook1 = `pwd`/helphook1.py" >> $HGRCPATH
@@ -1908,13 +1914,6 @@ Dish up an empty repo; serve it cold.
   Merge Tools
   </td></tr>
   <tr><td>
-  <a href="/help/multirevs">
-  multirevs
-  </a>
-  </td><td>
-  Specifying Multiple Revisions
-  </td></tr>
-  <tr><td>
   <a href="/help/patterns">
   patterns
   </a>
@@ -1933,14 +1932,7 @@ Dish up an empty repo; serve it cold.
   revisions
   </a>
   </td><td>
-  Specifying Single Revisions
-  </td></tr>
-  <tr><td>
-  <a href="/help/revsets">
-  revsets
-  </a>
-  </td><td>
-  Specifying Revision Sets
+  Specifying Revisions
   </td></tr>
   <tr><td>
   <a href="/help/scripting">
@@ -2363,7 +2355,6 @@ Dish up an empty repo; serve it cold.
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -2538,7 +2529,6 @@ Dish up an empty repo; serve it cold.
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -2734,14 +2724,13 @@ Dish up an empty repo; serve it cold.
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
   </html>
   
 
-  $ get-with-headers.py 127.0.0.1:$HGPORT "help/revisions"
+  $ get-with-headers.py 127.0.0.1:$HGPORT "help/dates"
   200 Script output follows
   
   <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -2752,7 +2741,7 @@ Dish up an empty repo; serve it cold.
   <link rel="stylesheet" href="/static/style-paper.css" type="text/css" />
   <script type="text/javascript" src="/static/mercurial.js"></script>
   
-  <title>Help: revisions</title>
+  <title>Help: dates</title>
   </head>
   <body>
   
@@ -2776,7 +2765,7 @@ Dish up an empty repo; serve it cold.
   
   <div class="main">
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
-  <h3>Help: revisions</h3>
+  <h3>Help: dates</h3>
   
   <form class="search" action="/log">
   
@@ -2785,51 +2774,61 @@ Dish up an empty repo; serve it cold.
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
   <div id="doc">
-  <h1>Specifying Single Revisions</h1>
+  <h1>Date Formats</h1>
   <p>
-  Mercurial supports several ways to specify individual revisions.
+  Some commands allow the user to specify a date, e.g.:
+  </p>
+  <ul>
+   <li> backout, commit, import, tag: Specify the commit date.
+   <li> log, revert, update: Select revision(s) by date.
+  </ul>
+  <p>
+  Many date formats are valid. Here are some examples:
+  </p>
+  <ul>
+   <li> &quot;Wed Dec 6 13:18:29 2006&quot; (local timezone assumed)
+   <li> &quot;Dec 6 13:18 -0600&quot; (year assumed, time offset provided)
+   <li> &quot;Dec 6 13:18 UTC&quot; (UTC and GMT are aliases for +0000)
+   <li> &quot;Dec 6&quot; (midnight)
+   <li> &quot;13:18&quot; (today assumed)
+   <li> &quot;3:39&quot; (3:39AM assumed)
+   <li> &quot;3:39pm&quot; (15:39)
+   <li> &quot;2006-12-06 13:18:29&quot; (ISO 8601 format)
+   <li> &quot;2006-12-6 13:18&quot;
+   <li> &quot;2006-12-6&quot;
+   <li> &quot;12-6&quot;
+   <li> &quot;12/6&quot;
+   <li> &quot;12/6/6&quot; (Dec 6 2006)
+   <li> &quot;today&quot; (midnight)
+   <li> &quot;yesterday&quot; (midnight)
+   <li> &quot;now&quot; - right now
+  </ul>
+  <p>
+  Lastly, there is Mercurial's internal format:
+  </p>
+  <ul>
+   <li> &quot;1165411109 0&quot; (Wed Dec 6 13:18:29 2006 UTC)
+  </ul>
+  <p>
+  This is the internal representation format for dates. The first number
+  is the number of seconds since the epoch (1970-01-01 00:00 UTC). The
+  second is the offset of the local timezone, in seconds west of UTC
+  (negative if the timezone is east of UTC).
   </p>
   <p>
-  A plain integer is treated as a revision number. Negative integers are
-  treated as sequential offsets from the tip, with -1 denoting the tip,
-  -2 denoting the revision prior to the tip, and so forth.
+  The log command also accepts date ranges:
   </p>
-  <p>
-  A 40-digit hexadecimal string is treated as a unique revision
-  identifier.
-  </p>
-  <p>
-  A hexadecimal string less than 40 characters long is treated as a
-  unique revision identifier and is referred to as a short-form
-  identifier. A short-form identifier is only valid if it is the prefix
-  of exactly one full-length identifier.
-  </p>
-  <p>
-  Any other string is treated as a bookmark, tag, or branch name. A
-  bookmark is a movable pointer to a revision. A tag is a permanent name
-  associated with a revision. A branch name denotes the tipmost open branch head
-  of that branch - or if they are all closed, the tipmost closed head of the
-  branch. Bookmark, tag, and branch names must not contain the &quot;:&quot; character.
-  </p>
-  <p>
-  The reserved name &quot;tip&quot; always identifies the most recent revision.
-  </p>
-  <p>
-  The reserved name &quot;null&quot; indicates the null revision. This is the
-  revision of an empty repository, and the parent of revision 0.
-  </p>
-  <p>
-  The reserved name &quot;.&quot; indicates the working directory parent. If no
-  working directory is checked out, it is equivalent to null. If an
-  uncommitted merge is in progress, &quot;.&quot; is the revision of the first
-  parent.
-  </p>
+  <ul>
+   <li> &quot;&lt;DATE&quot; - at or before a given date/time
+   <li> &quot;&gt;DATE&quot; - on or after a given date/time
+   <li> &quot;DATE to DATE&quot; - a date range, inclusive
+   <li> &quot;-DAYS&quot; - within a given number of days of today
+  </ul>
   
   </div>
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -2926,7 +2925,6 @@ Sub-topic indexes rendered properly
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -3165,7 +3163,6 @@ Sub-topic topics rendered properly
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>

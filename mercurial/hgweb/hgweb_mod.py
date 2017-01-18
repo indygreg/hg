@@ -19,6 +19,7 @@ from .common import (
     HTTP_OK,
     HTTP_SERVER_ERROR,
     caching,
+    cspvalues,
     permhooks,
 )
 from .request import wsgirequest
@@ -52,6 +53,12 @@ perms = {
     'unbundle': 'push',
     'pushkey': 'push',
 }
+
+archivespecs = util.sortdict((
+    ('zip', ('application/zip', 'zip', '.zip', None)),
+    ('gz', ('application/x-gzip', 'tgz', '.tar.gz', None)),
+    ('bz2', ('application/x-bzip2', 'tbz2', '.tar.bz2', None)),
+))
 
 def makebreadcrumb(url, prefix=''):
     '''Return a 'URL breadcrumb' list
@@ -89,7 +96,7 @@ class requestcontext(object):
         self.repo = repo
         self.reponame = app.reponame
 
-        self.archives = ('zip', 'gz', 'bz2')
+        self.archivespecs = archivespecs
 
         self.maxchanges = self.configint('web', 'maxchanges', 10)
         self.stripecount = self.configint('web', 'stripes', 1)
@@ -109,6 +116,8 @@ class requestcontext(object):
         # of the request.
         self.websubtable = app.websubtable
 
+        self.csp, self.nonce = cspvalues(self.repo.ui)
+
     # Trust the settings from the .hg/hgrc files by default.
     def config(self, section, name, default=None, untrusted=True):
         return self.repo.ui.config(section, name, default,
@@ -125,12 +134,6 @@ class requestcontext(object):
     def configlist(self, section, name, default=None, untrusted=True):
         return self.repo.ui.configlist(section, name, default,
                                        untrusted=untrusted)
-
-    archivespecs = {
-        'bz2': ('application/x-bzip2', 'tbz2', '.tar.bz2', None),
-        'gz': ('application/x-gzip', 'tgz', '.tar.gz', None),
-        'zip': ('application/zip', 'zip', '.zip', None),
-    }
 
     def archivelist(self, nodeid):
         allowed = self.configlist('web', 'allow_archive')
@@ -201,6 +204,7 @@ class requestcontext(object):
             'sessionvars': sessionvars,
             'pathdef': makebreadcrumb(req.url),
             'style': style,
+            'nonce': self.nonce,
         }
         tmpl = templater.templater.frommapfile(mapfile,
                                                filters={'websub': websubfilter},
@@ -224,7 +228,7 @@ class hgweb(object):
             if baseui:
                 u = baseui.copy()
             else:
-                u = uimod.ui()
+                u = uimod.ui.load()
             r = hg.repository(u, repo)
         else:
             # we trust caller to give us a private copy
@@ -286,7 +290,8 @@ class hgweb(object):
         Modern servers should be using WSGI and should avoid this
         method, if possible.
         """
-        if not os.environ.get('GATEWAY_INTERFACE', '').startswith("CGI/1."):
+        if not encoding.environ.get('GATEWAY_INTERFACE',
+                                    '').startswith("CGI/1."):
             raise RuntimeError("This function is only intended to be "
                                "called while running as a CGI script.")
         wsgicgi.launch(self)
@@ -316,6 +321,13 @@ class hgweb(object):
         # This state is global across all threads.
         encoding.encoding = rctx.config('web', 'encoding', encoding.encoding)
         rctx.repo.ui.environ = req.env
+
+        if rctx.csp:
+            # hgwebdir may have added CSP header. Since we generate our own,
+            # replace it.
+            req.headers = [h for h in req.headers
+                           if h[0] != 'Content-Security-Policy']
+            req.headers.append(('Content-Security-Policy', rctx.csp))
 
         # work with CGI variables to create coherent structure
         # use SCRIPT_NAME, PATH_INFO and QUERY_STRING as well as our REPO_NAME
@@ -413,7 +425,9 @@ class hgweb(object):
                 req.form['cmd'] = [tmpl.cache['default']]
                 cmd = req.form['cmd'][0]
 
-            if rctx.configbool('web', 'cache', True):
+            # Don't enable caching if using a CSP nonce because then it wouldn't
+            # be a nonce.
+            if rctx.configbool('web', 'cache', True) and not rctx.nonce:
                 caching(self, req) # sets ETag header or raises NOT_MODIFIED
             if cmd not in webcommands.__all__:
                 msg = 'no such method: %s' % cmd
@@ -467,4 +481,3 @@ def getwebview(repo):
         return repo.filtered(viewconfig)
     else:
         return repo.filtered('served')
-

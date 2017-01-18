@@ -261,10 +261,58 @@
                     for large projects, and is only effective when
                     "convert.git.similarity" is greater than 0. The default is
                     False.
+      convert.git.renamelimit
+                    perform rename and copy detection up to this many changed
+                    files in a commit. Increasing this will make rename and copy
+                    detection more accurate but will significantly slow down
+                    computation on large projects. The option is only relevant
+                    if "convert.git.similarity" is greater than 0. The default
+                    is "400".
+      convert.git.committeractions
+                    list of actions to take when processing author and committer
+                    values.
+  
+          Git commits have separate author (who wrote the commit) and committer
+          (who applied the commit) fields. Not all destinations support separate
+          author and committer fields (including Mercurial). This config option
+          controls what to do with these author and committer fields during
+          conversion.
+  
+          A value of "messagedifferent" will append a "committer: ..." line to
+          the commit message if the Git committer is different from the author.
+          The prefix of that line can be specified using the syntax
+          "messagedifferent=<prefix>". e.g. "messagedifferent=git-committer:".
+          When a prefix is specified, a space will always be inserted between
+          the prefix and the value.
+  
+          "messagealways" behaves like "messagedifferent" except it will always
+          result in a "committer: ..." line being appended to the commit
+          message. This value is mutually exclusive with "messagedifferent".
+  
+          "dropcommitter" will remove references to the committer. Only
+          references to the author will remain. Actions that add references to
+          the committer will have no effect when this is set.
+  
+          "replaceauthor" will replace the value of the author field with the
+          committer. Other actions that add references to the committer will
+          still take effect when this is set.
+  
+          The default is "messagedifferent".
+  
+      convert.git.extrakeys
+                    list of extra keys from commit metadata to copy to the
+                    destination. Some Git repositories store extra metadata in
+                    commits. By default, this non-default metadata will be lost
+                    during conversion. Setting this config option can retain
+                    that metadata. Some built-in keys such as "parent" and
+                    "branch" are not allowed to be copied.
       convert.git.remoteprefix
                     remote refs are converted as bookmarks with
                     "convert.git.remoteprefix" as a prefix followed by a /. The
                     default is 'remote'.
+      convert.git.saverev
+                    whether to store the original Git commit ID in the metadata
+                    of the destination commit. The default is True.
       convert.git.skipsubmodules
                     does not convert root level .gitmodules files or files with
                     160000 mode indicating a submodule. Default is False.

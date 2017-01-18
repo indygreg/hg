@@ -79,7 +79,7 @@ from mercurial.node import (
 from mercurial import (
     cmdutil,
     commands,
-    dispatch,
+    dirstateguard,
     error,
     extensions,
     hg,
@@ -87,6 +87,7 @@ from mercurial import (
     lock as lockmod,
     patch as patchmod,
     phases,
+    pycompat,
     registrar,
     revset,
     scmutil,
@@ -1660,7 +1661,7 @@ class queue(object):
             # caching against the next repo.status call
             mm, aa, dd = repo.status(patchparent, top)[:3]
             changes = repo.changelog.read(top)
-            man = repo.manifest.read(changes[0])
+            man = repo.manifestlog[changes[0]].read()
             aaa = aa[:]
             matchfn = scmutil.match(repo[None], pats, opts)
             # in short mode, we only diff the files included in the
@@ -1725,7 +1726,7 @@ class queue(object):
 
             dsguard = None
             try:
-                dsguard = cmdutil.dirstateguard(repo, 'mq.refresh')
+                dsguard = dirstateguard.dirstateguard(repo, 'mq.refresh')
                 if diffopts.git or diffopts.upgrade:
                     copies = {}
                     for dst in a:
@@ -3523,7 +3524,7 @@ def mqinit(orig, ui, *args, **kwargs):
             raise error.Abort(_('only a local queue repository '
                                'may be initialized'))
     else:
-        repopath = cmdutil.findrepo(os.getcwd())
+        repopath = cmdutil.findrepo(pycompat.getcwd())
         if not repopath:
             raise error.Abort(_('there is no Mercurial repository here '
                                '(.hg not found)'))
@@ -3588,7 +3589,7 @@ def extsetup(ui):
         for cmd, entry in cmdtable.iteritems():
             cmd = cmdutil.parsealiases(cmd)[0]
             func = entry[0]
-            if dispatch._cmdattr(ui, cmd, func, 'norepo'):
+            if func.norepo:
                 continue
             entry = extensions.wrapcommand(cmdtable, cmd, mqcommand)
             entry[1].extend(mqopt)

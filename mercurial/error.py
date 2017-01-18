@@ -84,7 +84,7 @@ class NoMergeDestAbort(MergeDestAbort):
     """Raised when an update is aborted because there is nothing to merge"""
 
 class ManyMergeDestAbort(MergeDestAbort):
-    """Raised when an update is aborted because destination is ambigious"""
+    """Raised when an update is aborted because destination is ambiguous"""
 
 class ResponseExpected(Abort):
     """Raised when an EOF is received for a prompt"""
@@ -167,6 +167,9 @@ class SignatureError(Exception):
 
 class PushRaced(RuntimeError):
     """An exception raised during unbundling that indicate a push race"""
+
+class ProgrammingError(RuntimeError):
+    """Raised if a mercurial (core or extension) developer made a mistake"""
 
 # bundle2 related errors
 class BundleValueError(ValueError):

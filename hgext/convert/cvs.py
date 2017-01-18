@@ -15,6 +15,7 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    pycompat,
     util,
 )
 
@@ -69,7 +70,7 @@ class convert_cvs(converter_source):
                 raise error.Abort(_('revision %s is not a patchset number')
                                  % self.revs[0])
 
-        d = os.getcwd()
+        d = pycompat.getcwd()
         try:
             os.chdir(self.path)
             id = None
@@ -188,7 +189,7 @@ class convert_cvs(converter_source):
 
         if conntype != "pserver":
             if conntype == "rsh":
-                rsh = os.environ.get("CVS_RSH") or "ssh"
+                rsh = encoding.environ.get("CVS_RSH") or "ssh"
                 if user:
                     cmd = [rsh, '-l', user, host] + cmd
                 else:

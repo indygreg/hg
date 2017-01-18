@@ -58,6 +58,11 @@ import signal
 import socket
 import subprocess
 import sys
+try:
+    import sysconfig
+except ImportError:
+    # sysconfig doesn't exist in Python 2.6
+    sysconfig = None
 import tempfile
 import threading
 import time
@@ -818,6 +823,8 @@ class Test(unittest.TestCase):
             offset = '' if i == 0 else '%s' % i
             env["HGPORT%s" % offset] = '%s' % (self._startport + i)
         env = os.environ.copy()
+        if sysconfig is not None:
+            env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase')
         env['TESTTMP'] = self._testtmp
         env['HOME'] = self._testtmp
         # This number should match portneeded in _getport
@@ -842,7 +849,7 @@ class Test(unittest.TestCase):
         env['TERM'] = 'xterm'
 
         for k in ('HG HGPROF CDPATH GREP_OPTIONS http_proxy no_proxy ' +
-                  'NO_PROXY').split():
+                  'NO_PROXY CHGDEBUG').split():
             if k in env:
                 del env[k]
 

@@ -17,6 +17,7 @@ from . import (
     error,
     minirst,
     parser,
+    pycompat,
     registrar,
     revset as revsetmod,
     templatefilters,
@@ -792,7 +793,7 @@ def revset(context, mapping, args):
 
 @templatefunc('rstdoc(text, style)')
 def rstdoc(context, mapping, args):
-    """Format ReStructuredText."""
+    """Format reStructuredText."""
     if len(args) != 2:
         # i18n: "rstdoc" is a keyword
         raise error.ParseError(_("rstdoc expects two arguments"))
@@ -1243,8 +1244,8 @@ def stylemap(styles, paths=None):
         # only plain name is allowed to honor template paths
         if (not style
             or style in (os.curdir, os.pardir)
-            or os.sep in style
-            or os.altsep and os.altsep in style):
+            or pycompat.ossep in style
+            or pycompat.osaltsep and pycompat.osaltsep in style):
             continue
         locations = [os.path.join(style, 'map'), 'map-' + style]
         locations.append('map')

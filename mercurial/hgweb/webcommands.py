@@ -972,28 +972,23 @@ def filelog(web, req, tmpl):
     morevars['revcount'] = revcount * 2
 
     count = fctx.filerev() + 1
-    start = max(0, fctx.filerev() - revcount + 1) # first rev on this page
+    start = max(0, count - revcount) # first rev on this page
     end = min(count, start + revcount) # last rev on this page
     parity = paritygen(web.stripecount, offset=start - end)
 
-    def entries():
-        l = []
+    repo = web.repo
+    revs = fctx.filelog().revs(start, end - 1)
+    entries = []
+    for i in revs:
+        iterfctx = fctx.filectx(i)
+        entries.append(dict(
+            parity=next(parity),
+            filerev=i,
+            file=f,
+            rename=webutil.renamelink(iterfctx),
+            **webutil.commonentry(repo, iterfctx)))
+    entries.reverse()
 
-        repo = web.repo
-        revs = fctx.filelog().revs(start, end - 1)
-        for i in revs:
-            iterfctx = fctx.filectx(i)
-
-            l.append(dict(
-                parity=next(parity),
-                filerev=i,
-                file=f,
-                rename=webutil.renamelink(iterfctx),
-                **webutil.commonentry(repo, iterfctx)))
-        for e in reversed(l):
-            yield e
-
-    entries = list(entries())
     latestentry = entries[:1]
 
     revnav = webutil.filerevnav(web.repo, fctx.path())
@@ -1034,7 +1029,7 @@ def archive(web, req, tmpl):
     allowed = web.configlist("web", "allow_archive")
     key = req.form['node'][0]
 
-    if type_ not in web.archives:
+    if type_ not in web.archivespecs:
         msg = 'Unsupported archive type: %s' % type_
         raise ErrorResponse(HTTP_NOT_FOUND, msg)
 
@@ -1302,7 +1297,7 @@ def help(web, req, tmpl):
         return tmpl('helptopics', topics=topics, title=topicname,
                     subindex=True)
 
-    u = webutil.wsgiui()
+    u = webutil.wsgiui.load()
     u.verbose = True
 
     # Render a page from a sub-topic.

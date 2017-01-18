@@ -50,6 +50,7 @@ perfstatus
    perfancestorset
                  (no help text available)
    perfannotate  (no help text available)
+   perfbdiff     benchmark a bdiff between revisions
    perfbranchmap
                  benchmark the update of a branchmap
    perfcca       (no help text available)
@@ -94,6 +95,8 @@ perfstatus
                  (no help text available)
    perfrawfiles  (no help text available)
    perfrevlog    Benchmark reading a series of revisions from a revlog.
+   perfrevlogchunks
+                 Benchmark operations on revlog chunks.
    perfrevlogrevision
                  Benchmark obtaining a revlog revision.
    perfrevrange  (no help text available)
@@ -112,6 +115,8 @@ perfstatus
   $ hg perfancestors
   $ hg perfancestorset 2
   $ hg perfannotate a
+  $ hg perfbdiff -c 1
+  $ hg perfbdiff --alldata 1
   $ hg perfbranchmap
   $ hg perfcca
   $ hg perfchangegroupchangelog
@@ -141,6 +146,7 @@ perfstatus
   $ hg perfrawfiles 2
   $ hg perfrevlog .hg/store/data/a.i
   $ hg perfrevlogrevision -m 0
+  $ hg perfrevlogchunks -c
   $ hg perfrevrange
   $ hg perfrevset 'all()'
   $ hg perfstartup

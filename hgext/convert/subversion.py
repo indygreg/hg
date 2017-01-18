@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 import os
 import re
-import sys
 import tempfile
 import xml.dom.minidom
 
@@ -13,8 +12,8 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    pycompat,
     scmutil,
-    strutil,
     util,
 )
 
@@ -104,7 +103,7 @@ def geturl(path):
         pass
     if os.path.isdir(path):
         path = os.path.normpath(os.path.abspath(path))
-        if os.name == 'nt':
+        if pycompat.osname == 'nt':
             path = '/' + util.normpath(path)
         # Module URL is later compared with the repository URL returned
         # by svn API, which is UTF-8.
@@ -164,10 +163,8 @@ def debugsvnlog(ui, **opts):
         raise error.Abort(_('debugsvnlog could not load Subversion python '
                            'bindings'))
 
-    util.setbinary(sys.stdin)
-    util.setbinary(sys.stdout)
-    args = decodeargs(sys.stdin.read())
-    get_log_child(sys.stdout, *args)
+    args = decodeargs(ui.fin.read())
+    get_log_child(ui.fout, *args)
 
 class logstream(object):
     """Interruptible revision log iterator."""
@@ -257,8 +254,8 @@ def issvnurl(ui, url):
     try:
         proto, path = url.split('://', 1)
         if proto == 'file':
-            if (os.name == 'nt' and path[:1] == '/' and path[1:2].isalpha()
-                and path[2:6].lower() == '%3a/'):
+            if (pycompat.osname == 'nt' and path[:1] == '/'
+                  and path[1:2].isalpha() and path[2:6].lower() == '%3a/'):
                 path = path[:2] + ':/' + path[6:]
             path = urlreq.url2pathname(path)
     except ValueError:
@@ -1122,7 +1119,7 @@ class svn_sink(converter_sink, commandline):
         self.delexec = []
         self.copies = []
         self.wc = None
-        self.cwd = os.getcwd()
+        self.cwd = pycompat.getcwd()
 
         created = False
         if os.path.isfile(os.path.join(path, '.svn', 'entries')):
@@ -1142,7 +1139,8 @@ class svn_sink(converter_sink, commandline):
                         path = '/' + path
                     path = 'file://' + path
 
-            wcpath = os.path.join(os.getcwd(), os.path.basename(path) + '-wc')
+            wcpath = os.path.join(pycompat.getcwd(), os.path.basename(path) +
+                                '-wc')
             ui.status(_('initializing svn working copy %r\n')
                       % os.path.basename(wcpath))
             self.run0('checkout', path, wcpath)
@@ -1240,7 +1238,8 @@ class svn_sink(converter_sink, commandline):
         for f in files:
             if os.path.isdir(self.wjoin(f)):
                 dirs.add(f)
-            for i in strutil.rfindall(f, '/'):
+            i = len(f)
+            for i in iter(lambda: f.rfind('/', 0, i), -1):
                 dirs.add(f[:i])
         return dirs
 

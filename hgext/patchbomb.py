@@ -75,6 +75,7 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     commands,
+    encoding,
     error,
     hg,
     mail,
@@ -166,7 +167,7 @@ def makepatch(ui, repo, patchlines, opts, _charsets, idx, total, numbered,
         while patchlines and not patchlines[0].strip():
             patchlines.pop(0)
 
-    ds = patch.diffstat(patchlines, git=opts.get('git'))
+    ds = patch.diffstat(patchlines)
     if opts.get('diffstat'):
         body += ds + '\n\n'
 
@@ -270,7 +271,7 @@ def _getdescription(repo, defaultbody, sender, **opts):
     else:
         ui.write(_('\nWrite the introductory message for the '
                    'patch series.\n\n'))
-        body = ui.edit(defaultbody, sender)
+        body = ui.edit(defaultbody, sender, tmpdir=repo.path)
         # Save series description in case sendmail fails
         msgfile = repo.vfs('last-email.txt', 'wb')
         msgfile.write(body)
@@ -693,8 +694,8 @@ def email(ui, repo, *revs, **opts):
         if opts.get('test'):
             ui.status(_('displaying '), subj, ' ...\n')
             ui.flush()
-            if 'PAGER' in os.environ and not ui.plain():
-                fp = util.popen(os.environ['PAGER'], 'w')
+            if 'PAGER' in encoding.environ and not ui.plain():
+                fp = util.popen(encoding.environ['PAGER'], 'w')
             else:
                 fp = ui
             generator = emailmod.Generator.Generator(fp, mangle_from_=False)

@@ -186,7 +186,6 @@ hgweb filerevision, html
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -236,7 +235,7 @@ hgweb fileannotate, html
   <li><a href="/comparison/tip/primes.py">comparison</a></li>
   <li class="active">annotate</li>
   <li><a href="/log/tip/primes.py">file log</a></li>
-  <li><a href="/raw-annotate/tip/primes.py">raw</a></li>
+  <li><a href="/raw-file/tip/primes.py">raw</a></li>
   </ul>
   <ul>
   <li><a href="/help">help</a></li>
@@ -857,7 +856,6 @@ hgweb fileannotate, html
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>

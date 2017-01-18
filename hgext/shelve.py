@@ -62,6 +62,13 @@ testedwith = 'ships-with-hg-core'
 
 backupdir = 'shelve-backup'
 shelvedir = 'shelved'
+shelvefileextensions = ['hg', 'patch']
+# universal extension is present in all types of shelves
+patchextension = 'patch'
+
+# we never need the user, so we use a
+# generic user for all shelve operations
+shelveuser = 'shelve@localhost'
 
 class shelvedfile(object):
     """Helper for the file storing a single shelve
@@ -154,6 +161,8 @@ class shelvedstate(object):
     """
     _version = 1
     _filename = 'shelvedstate'
+    _keep = 'keep'
+    _nokeep = 'nokeep'
 
     @classmethod
     def load(cls, repo):
@@ -170,6 +179,7 @@ class shelvedstate(object):
             parents = [nodemod.bin(h) for h in fp.readline().split()]
             stripnodes = [nodemod.bin(h) for h in fp.readline().split()]
             branchtorestore = fp.readline().strip()
+            keep = fp.readline().strip() == cls._keep
         except (ValueError, TypeError) as err:
             raise error.CorruptedState(str(err))
         finally:
@@ -183,6 +193,7 @@ class shelvedstate(object):
             obj.parents = parents
             obj.stripnodes = stripnodes
             obj.branchtorestore = branchtorestore
+            obj.keep = keep
         except error.RepoLookupError as err:
             raise error.CorruptedState(str(err))
 
@@ -190,7 +201,7 @@ class shelvedstate(object):
 
     @classmethod
     def save(cls, repo, name, originalwctx, pendingctx, stripnodes,
-             branchtorestore):
+             branchtorestore, keep=False):
         fp = repo.vfs(cls._filename, 'wb')
         fp.write('%i\n' % cls._version)
         fp.write('%s\n' % name)
@@ -201,6 +212,7 @@ class shelvedstate(object):
         fp.write('%s\n' %
                  ' '.join([nodemod.hex(n) for n in stripnodes]))
         fp.write('%s\n' % branchtorestore)
+        fp.write('%s\n' % (cls._keep if keep else cls._nokeep))
         fp.close()
 
     @classmethod
@@ -210,7 +222,8 @@ class shelvedstate(object):
 def cleanupoldbackups(repo):
     vfs = scmutil.vfs(repo.join(backupdir))
     maxbackups = repo.ui.configint('shelve', 'maxbackups', 10)
-    hgfiles = [f for f in vfs.listdir() if f.endswith('.hg')]
+    hgfiles = [f for f in vfs.listdir()
+               if f.endswith('.' + patchextension)]
     hgfiles = sorted([(vfs.stat(f).st_mtime, f) for f in hgfiles])
     if 0 < maxbackups and maxbackups < len(hgfiles):
         bordermtime = hgfiles[-maxbackups][0]
@@ -220,8 +233,8 @@ def cleanupoldbackups(repo):
         if mtime == bordermtime:
             # keep it, because timestamp can't decide exact order of backups
             continue
-        base = f[:-3]
-        for ext in 'hg patch'.split():
+        base = f[:-(1 + len(patchextension))]
+        for ext in shelvefileextensions:
             try:
                 vfs.unlink(base + '.' + ext)
             except OSError as err:
@@ -242,42 +255,117 @@ def createcmd(ui, repo, pats, opts):
         cmdutil.checkunfinished(repo)
         return _docreatecmd(ui, repo, pats, opts)
 
+def getshelvename(repo, parent, opts):
+    """Decide on the name this shelve is going to have"""
+    def gennames():
+        yield label
+        for i in xrange(1, 100):
+            yield '%s-%02d' % (label, i)
+    name = opts.get('name')
+    label = repo._activebookmark or parent.branch() or 'default'
+    # slashes aren't allowed in filenames, therefore we rename it
+    label = label.replace('/', '_')
+    label = label.replace('\\', '_')
+    # filenames must not start with '.' as it should not be hidden
+    if label.startswith('.'):
+        label = label.replace('.', '_', 1)
+
+    if name:
+        if shelvedfile(repo, name, patchextension).exists():
+            e = _("a shelved change named '%s' already exists") % name
+            raise error.Abort(e)
+
+        # ensure we are not creating a subdirectory or a hidden file
+        if '/' in name or '\\' in name:
+            raise error.Abort(_('shelved change names can not contain slashes'))
+        if name.startswith('.'):
+            raise error.Abort(_("shelved change names can not start with '.'"))
+
+    else:
+        for n in gennames():
+            if not shelvedfile(repo, n, patchextension).exists():
+                name = n
+                break
+        else:
+            raise error.Abort(_("too many shelved changes named '%s'") % label)
+
+    return name
+
+def mutableancestors(ctx):
+    """return all mutable ancestors for ctx (included)
+
+    Much faster than the revset ancestors(ctx) & draft()"""
+    seen = set([nodemod.nullrev])
+    visit = collections.deque()
+    visit.append(ctx)
+    while visit:
+        ctx = visit.popleft()
+        yield ctx.node()
+        for parent in ctx.parents():
+            rev = parent.rev()
+            if rev not in seen:
+                seen.add(rev)
+                if parent.mutable():
+                    visit.append(parent)
+
+def getcommitfunc(extra, interactive, editor=False):
+    def commitfunc(ui, repo, message, match, opts):
+        hasmq = util.safehasattr(repo, 'mq')
+        if hasmq:
+            saved, repo.mq.checkapplied = repo.mq.checkapplied, False
+        backup = repo.ui.backupconfig('phases', 'new-commit')
+        try:
+            repo.ui.setconfig('phases', 'new-commit', phases.secret)
+            editor_ = False
+            if editor:
+                editor_ = cmdutil.getcommiteditor(editform='shelve.shelve',
+                                                  **opts)
+            return repo.commit(message, shelveuser, opts.get('date'), match,
+                               editor=editor_, extra=extra)
+        finally:
+            repo.ui.restoreconfig(backup)
+            if hasmq:
+                repo.mq.checkapplied = saved
+
+    def interactivecommitfunc(ui, repo, *pats, **opts):
+        match = scmutil.match(repo['.'], pats, {})
+        message = opts['message']
+        return commitfunc(ui, repo, message, match, opts)
+
+    return interactivecommitfunc if interactive else commitfunc
+
+def _nothingtoshelvemessaging(ui, repo, pats, opts):
+    stat = repo.status(match=scmutil.match(repo[None], pats, opts))
+    if stat.deleted:
+        ui.status(_("nothing changed (%d missing files, see "
+                    "'hg status')\n") % len(stat.deleted))
+    else:
+        ui.status(_("nothing changed\n"))
+
+def _shelvecreatedcommit(repo, node, name):
+    bases = list(mutableancestors(repo[node]))
+    shelvedfile(repo, name, 'hg').writebundle(bases, node)
+    cmdutil.export(repo, [node],
+                   fp=shelvedfile(repo, name, patchextension).opener('wb'),
+                   opts=mdiff.diffopts(git=True))
+
+def _includeunknownfiles(repo, pats, opts, extra):
+    s = repo.status(match=scmutil.match(repo[None], pats, opts),
+                    unknown=True)
+    if s.unknown:
+        extra['shelve_unknown'] = '\0'.join(s.unknown)
+        repo[None].add(s.unknown)
+
+def _finishshelve(repo):
+    _aborttransaction(repo)
+
 def _docreatecmd(ui, repo, pats, opts):
-    def mutableancestors(ctx):
-        """return all mutable ancestors for ctx (included)
-
-        Much faster than the revset ancestors(ctx) & draft()"""
-        seen = set([nodemod.nullrev])
-        visit = collections.deque()
-        visit.append(ctx)
-        while visit:
-            ctx = visit.popleft()
-            yield ctx.node()
-            for parent in ctx.parents():
-                rev = parent.rev()
-                if rev not in seen:
-                    seen.add(rev)
-                    if parent.mutable():
-                        visit.append(parent)
-
     wctx = repo[None]
     parents = wctx.parents()
     if len(parents) > 1:
         raise error.Abort(_('cannot shelve while merging'))
     parent = parents[0]
     origbranch = wctx.branch()
-
-    # we never need the user, so we use a generic user for all shelve operations
-    user = 'shelve@localhost'
-    label = repo._activebookmark or parent.branch() or 'default'
-
-    # slashes aren't allowed in filenames, therefore we rename it
-    label = label.replace('/', '_')
-
-    def gennames():
-        yield label
-        for i in xrange(1, 100):
-            yield '%s-%02d' % (label, i)
 
     if parent.node() != nodemod.nullid:
         desc = "changes to: %s" % parent.description().split('\n', 1)[0]
@@ -287,8 +375,6 @@ def _docreatecmd(ui, repo, pats, opts):
     if not opts.get('message'):
         opts['message'] = desc
 
-    name = opts.get('name')
-
     lock = tr = None
     try:
         lock = repo.lock()
@@ -297,81 +383,31 @@ def _docreatecmd(ui, repo, pats, opts):
         # pull races. ensure we don't print the abort message to stderr.
         tr = repo.transaction('commit', report=lambda x: None)
 
-        if name:
-            if shelvedfile(repo, name, 'hg').exists():
-                raise error.Abort(_("a shelved change named '%s' already exists"
-                                   ) % name)
-        else:
-            for n in gennames():
-                if not shelvedfile(repo, n, 'hg').exists():
-                    name = n
-                    break
-            else:
-                raise error.Abort(_("too many shelved changes named '%s'") %
-                                 label)
-
-        # ensure we are not creating a subdirectory or a hidden file
-        if '/' in name or '\\' in name:
-            raise error.Abort(_('shelved change names may not contain slashes'))
-        if name.startswith('.'):
-            raise error.Abort(_("shelved change names may not start with '.'"))
         interactive = opts.get('interactive', False)
         includeunknown = (opts.get('unknown', False) and
                           not opts.get('addremove', False))
 
-        extra={}
+        name = getshelvename(repo, parent, opts)
+        extra = {}
         if includeunknown:
-            s = repo.status(match=scmutil.match(repo[None], pats, opts),
-                            unknown=True)
-            if s.unknown:
-                extra['shelve_unknown'] = '\0'.join(s.unknown)
-                repo[None].add(s.unknown)
+            _includeunknownfiles(repo, pats, opts, extra)
 
         if _iswctxonnewbranch(repo) and not _isbareshelve(pats, opts):
             # In non-bare shelve we don't store newly created branch
             # at bundled commit
             repo.dirstate.setbranch(repo['.'].branch())
 
-        def commitfunc(ui, repo, message, match, opts):
-            hasmq = util.safehasattr(repo, 'mq')
-            if hasmq:
-                saved, repo.mq.checkapplied = repo.mq.checkapplied, False
-            backup = repo.ui.backupconfig('phases', 'new-commit')
-            try:
-                repo.ui. setconfig('phases', 'new-commit', phases.secret)
-                editor = cmdutil.getcommiteditor(editform='shelve.shelve',
-                                                 **opts)
-                return repo.commit(message, user, opts.get('date'), match,
-                                   editor=editor, extra=extra)
-            finally:
-                repo.ui.restoreconfig(backup)
-                if hasmq:
-                    repo.mq.checkapplied = saved
-
-        def interactivecommitfunc(ui, repo, *pats, **opts):
-            match = scmutil.match(repo['.'], pats, {})
-            message = opts['message']
-            return commitfunc(ui, repo, message, match, opts)
+        commitfunc = getcommitfunc(extra, interactive, editor=True)
         if not interactive:
             node = cmdutil.commit(ui, repo, commitfunc, pats, opts)
         else:
-            node = cmdutil.dorecord(ui, repo, interactivecommitfunc, None,
+            node = cmdutil.dorecord(ui, repo, commitfunc, None,
                                     False, cmdutil.recordfilter, *pats, **opts)
         if not node:
-            stat = repo.status(match=scmutil.match(repo[None], pats, opts))
-            if stat.deleted:
-                ui.status(_("nothing changed (%d missing files, see "
-                            "'hg status')\n") % len(stat.deleted))
-            else:
-                ui.status(_("nothing changed\n"))
+            _nothingtoshelvemessaging(ui, repo, pats, opts)
             return 1
 
-        bases = list(mutableancestors(repo[node]))
-        shelvedfile(repo, name, 'hg').writebundle(bases, node)
-        cmdutil.export(repo, [node],
-                       fp=shelvedfile(repo, name, 'patch').opener('wb'),
-                       opts=mdiff.diffopts(git=True))
-
+        _shelvecreatedcommit(repo, node, name)
 
         if ui.formatted():
             desc = util.ellipsis(desc, ui.termwidth())
@@ -380,7 +416,7 @@ def _docreatecmd(ui, repo, pats, opts):
         if origbranch != repo['.'].branch() and not _isbareshelve(pats, opts):
             repo.dirstate.setbranch(origbranch)
 
-        _aborttransaction(repo)
+        _finishshelve(repo)
     finally:
         lockmod.release(tr, lock)
 
@@ -399,7 +435,7 @@ def cleanupcmd(ui, repo):
     with repo.wlock():
         for (name, _type) in repo.vfs.readdir(shelvedir):
             suffix = name.rsplit('.', 1)[-1]
-            if suffix in ('hg', 'patch'):
+            if suffix in shelvefileextensions:
                 shelvedfile(repo, name).movetobackup()
             cleanupoldbackups(repo)
 
@@ -410,8 +446,15 @@ def deletecmd(ui, repo, pats):
     with repo.wlock():
         try:
             for name in pats:
-                for suffix in 'hg patch'.split():
-                    shelvedfile(repo, name, suffix).movetobackup()
+                for suffix in shelvefileextensions:
+                    shfile = shelvedfile(repo, name, suffix)
+                    # patch file is necessary, as it should
+                    # be present for any kind of shelve,
+                    # but the .hg file is optional as in future we
+                    # will add obsolete shelve with does not create a
+                    # bundle
+                    if shfile.exists() or suffix == patchextension:
+                        shfile.movetobackup()
             cleanupoldbackups(repo)
         except OSError as err:
             if err.errno != errno.ENOENT:
@@ -429,7 +472,7 @@ def listshelves(repo):
     info = []
     for (name, _type) in names:
         pfx, sfx = name.rsplit('.', 1)
-        if not pfx or sfx != 'patch':
+        if not pfx or sfx != patchextension:
             continue
         st = shelvedfile(repo, name).stat()
         info.append((st.st_mtime, shelvedfile(repo, pfx).filename()))
@@ -457,7 +500,7 @@ def listcmd(ui, repo, pats, opts):
         ui.write(age, label='shelve.age')
         ui.write(' ' * (12 - len(age)))
         used += 12
-        with open(name + '.patch', 'rb') as fp:
+        with open(name + '.' + patchextension, 'rb') as fp:
             while True:
                 line = fp.readline()
                 if not line:
@@ -476,18 +519,17 @@ def listcmd(ui, repo, pats, opts):
                 for chunk, label in patch.difflabel(iter, difflines):
                     ui.write(chunk, label=label)
             if opts['stat']:
-                for chunk, label in patch.diffstatui(difflines, width=width,
-                                                     git=True):
+                for chunk, label in patch.diffstatui(difflines, width=width):
                     ui.write(chunk, label=label)
 
-def singlepatchcmds(ui, repo, pats, opts, subcommand):
-    """subcommand that displays a single shelf"""
-    if len(pats) != 1:
-        raise error.Abort(_("--%s expects a single shelf") % subcommand)
-    shelfname = pats[0]
+def patchcmds(ui, repo, pats, opts, subcommand):
+    """subcommand that displays shelves"""
+    if len(pats) == 0:
+        raise error.Abort(_("--%s expects at least one shelf") % subcommand)
 
-    if not shelvedfile(repo, shelfname, 'patch').exists():
-        raise error.Abort(_("cannot find shelf %s") % shelfname)
+    for shelfname in pats:
+        if not shelvedfile(repo, shelfname, patchextension).exists():
+            raise error.Abort(_("cannot find shelf %s") % shelfname)
 
     listcmd(ui, repo, pats, opts)
 
@@ -557,8 +599,10 @@ def restorebranch(ui, repo, branchtorestore):
 def unshelvecleanup(ui, repo, name, opts):
     """remove related files after an unshelve"""
     if not opts.get('keep'):
-        for filetype in 'hg patch'.split():
-            shelvedfile(repo, name, filetype).movetobackup()
+        for filetype in shelvefileextensions:
+            shfile = shelvedfile(repo, name, filetype)
+            if shfile.exists():
+                shfile.movetobackup()
         cleanupoldbackups(repo)
 
 def unshelvecontinue(ui, repo, state, opts):
@@ -599,6 +643,91 @@ def unshelvecontinue(ui, repo, state, opts):
         shelvedstate.clear(repo)
         unshelvecleanup(ui, repo, state.name, opts)
         ui.status(_("unshelve of '%s' complete\n") % state.name)
+
+def _commitworkingcopychanges(ui, repo, opts, tmpwctx):
+    """Temporarily commit working copy changes before moving unshelve commit"""
+    # Store pending changes in a commit and remember added in case a shelve
+    # contains unknown files that are part of the pending change
+    s = repo.status()
+    addedbefore = frozenset(s.added)
+    if not (s.modified or s.added or s.removed or s.deleted):
+        return tmpwctx, addedbefore
+    ui.status(_("temporarily committing pending changes "
+                "(restore with 'hg unshelve --abort')\n"))
+    commitfunc = getcommitfunc(extra=None, interactive=False,
+                               editor=False)
+    tempopts = {}
+    tempopts['message'] = "pending changes temporary commit"
+    tempopts['date'] = opts.get('date')
+    ui.quiet = True
+    node = cmdutil.commit(ui, repo, commitfunc, [], tempopts)
+    tmpwctx = repo[node]
+    return tmpwctx, addedbefore
+
+def _unshelverestorecommit(ui, repo, basename, oldquiet):
+    """Recreate commit in the repository during the unshelve"""
+    ui.quiet = True
+    shelvedfile(repo, basename, 'hg').applybundle()
+    shelvectx = repo['tip']
+    ui.quiet = oldquiet
+    return repo, shelvectx
+
+def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
+                          tmpwctx, shelvectx, branchtorestore):
+    """Rebase restored commit from its original location to a destination"""
+    # If the shelve is not immediately on top of the commit
+    # we'll be merging with, rebase it to be on top.
+    if tmpwctx.node() == shelvectx.parents()[0].node():
+        return shelvectx
+
+    ui.status(_('rebasing shelved changes\n'))
+    try:
+        rebase.rebase(ui, repo, **{
+            'rev': [shelvectx.rev()],
+            'dest': str(tmpwctx.rev()),
+            'keep': True,
+            'tool': opts.get('tool', ''),
+        })
+    except error.InterventionRequired:
+        tr.close()
+
+        stripnodes = [repo.changelog.node(rev)
+                      for rev in xrange(oldtiprev, len(repo))]
+        shelvedstate.save(repo, basename, pctx, tmpwctx, stripnodes,
+                          branchtorestore, opts.get('keep'))
+
+        util.rename(repo.join('rebasestate'),
+                    repo.join('unshelverebasestate'))
+        raise error.InterventionRequired(
+            _("unresolved conflicts (see 'hg resolve', then "
+              "'hg unshelve --continue')"))
+
+    # refresh ctx after rebase completes
+    shelvectx = repo['tip']
+
+    if not shelvectx in tmpwctx.children():
+        # rebase was a no-op, so it produced no child commit
+        shelvectx = tmpwctx
+    return shelvectx
+
+def _forgetunknownfiles(repo, shelvectx, addedbefore):
+    # Forget any files that were unknown before the shelve, unknown before
+    # unshelve started, but are now added.
+    shelveunknown = shelvectx.extra().get('shelve_unknown')
+    if not shelveunknown:
+        return
+    shelveunknown = frozenset(shelveunknown.split('\0'))
+    addedafter = frozenset(repo.status().added)
+    toforget = (addedafter & shelveunknown) - addedbefore
+    repo[None].forget(toforget)
+
+def _finishunshelve(repo, oldtiprev, tr):
+    # The transaction aborting will strip all the commits for us,
+    # but it doesn't update the inmemory structures, so addchangegroup
+    # hooks still fire and try to operate on the missing commits.
+    # Clean up manually to prevent this.
+    repo.unfiltered().changelog.strip(oldtiprev, tr)
+    _aborttransaction(repo)
 
 @command('unshelve',
          [('a', 'abort', None,
@@ -667,6 +796,8 @@ def _dounshelve(ui, repo, *shelved, **opts):
 
         try:
             state = shelvedstate.load(repo)
+            if opts.get('keep') is None:
+                opts['keep'] = state.keep
         except IOError as err:
             if err.errno != errno.ENOENT:
                 raise
@@ -701,7 +832,7 @@ def _dounshelve(ui, repo, *shelved, **opts):
     else:
         basename = shelved[0]
 
-    if not shelvedfile(repo, basename, 'patch').exists():
+    if not shelvedfile(repo, basename, patchextension).exists():
         raise error.Abort(_("shelved change '%s' not found") % basename)
 
     oldquiet = ui.quiet
@@ -722,101 +853,25 @@ def _dounshelve(ui, repo, *shelved, **opts):
         # and shelvectx is the unshelved changes. Then we merge it all down
         # to the original pctx.
 
-        # Store pending changes in a commit and remember added in case a shelve
-        # contains unknown files that are part of the pending change
-        s = repo.status()
-        addedbefore = frozenset(s.added)
-        if s.modified or s.added or s.removed or s.deleted:
-            ui.status(_("temporarily committing pending changes "
-                        "(restore with 'hg unshelve --abort')\n"))
-            def commitfunc(ui, repo, message, match, opts):
-                hasmq = util.safehasattr(repo, 'mq')
-                if hasmq:
-                    saved, repo.mq.checkapplied = repo.mq.checkapplied, False
+        tmpwctx, addedbefore = _commitworkingcopychanges(ui, repo, opts,
+                                                         tmpwctx)
 
-                backup = repo.ui.backupconfig('phases', 'new-commit')
-                try:
-                    repo.ui.setconfig('phases', 'new-commit', phases.secret)
-                    return repo.commit(message, 'shelve@localhost',
-                                       opts.get('date'), match)
-                finally:
-                    repo.ui.restoreconfig(backup)
-                    if hasmq:
-                        repo.mq.checkapplied = saved
-
-            tempopts = {}
-            tempopts['message'] = "pending changes temporary commit"
-            tempopts['date'] = opts.get('date')
-            ui.quiet = True
-            node = cmdutil.commit(ui, repo, commitfunc, [], tempopts)
-            tmpwctx = repo[node]
-
-        ui.quiet = True
-        shelvedfile(repo, basename, 'hg').applybundle()
-
-        ui.quiet = oldquiet
-
-        shelvectx = repo['tip']
+        repo, shelvectx = _unshelverestorecommit(ui, repo, basename, oldquiet)
 
         branchtorestore = ''
         if shelvectx.branch() != shelvectx.p1().branch():
             branchtorestore = shelvectx.branch()
 
-        # If the shelve is not immediately on top of the commit
-        # we'll be merging with, rebase it to be on top.
-        if tmpwctx.node() != shelvectx.parents()[0].node():
-            ui.status(_('rebasing shelved changes\n'))
-            try:
-                rebase.rebase(ui, repo, **{
-                    'rev' : [shelvectx.rev()],
-                    'dest' : str(tmpwctx.rev()),
-                    'keep' : True,
-                    'tool' : opts.get('tool', ''),
-                })
-            except error.InterventionRequired:
-                tr.close()
-
-                stripnodes = [repo.changelog.node(rev)
-                              for rev in xrange(oldtiprev, len(repo))]
-                shelvedstate.save(repo, basename, pctx, tmpwctx, stripnodes,
-                                  branchtorestore)
-
-                util.rename(repo.join('rebasestate'),
-                            repo.join('unshelverebasestate'))
-                raise error.InterventionRequired(
-                    _("unresolved conflicts (see 'hg resolve', then "
-                      "'hg unshelve --continue')"))
-
-            # refresh ctx after rebase completes
-            shelvectx = repo['tip']
-
-            if not shelvectx in tmpwctx.children():
-                # rebase was a no-op, so it produced no child commit
-                shelvectx = tmpwctx
-
+        shelvectx = _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev,
+                                          basename, pctx, tmpwctx, shelvectx,
+                                          branchtorestore)
         mergefiles(ui, repo, pctx, shelvectx)
         restorebranch(ui, repo, branchtorestore)
-
-        # Forget any files that were unknown before the shelve, unknown before
-        # unshelve started, but are now added.
-        shelveunknown = shelvectx.extra().get('shelve_unknown')
-        if shelveunknown:
-            shelveunknown = frozenset(shelveunknown.split('\0'))
-            addedafter = frozenset(repo.status().added)
-            toforget = (addedafter & shelveunknown) - addedbefore
-            repo[None].forget(toforget)
+        _forgetunknownfiles(repo, shelvectx, addedbefore)
 
         shelvedstate.clear(repo)
-
-        # The transaction aborting will strip all the commits for us,
-        # but it doesn't update the inmemory structures, so addchangegroup
-        # hooks still fire and try to operate on the missing commits.
-        # Clean up manually to prevent this.
-        repo.unfiltered().changelog.strip(oldtiprev, tr)
-
+        _finishunshelve(repo, oldtiprev, tr)
         unshelvecleanup(ui, repo, basename, opts)
-
-        _aborttransaction(repo)
     finally:
         ui.quiet = oldquiet
         if tr:
@@ -912,9 +967,9 @@ def shelvecmd(ui, repo, *pats, **opts):
     elif checkopt('list'):
         return listcmd(ui, repo, pats, opts)
     elif checkopt('patch'):
-        return singlepatchcmds(ui, repo, pats, opts, subcommand='patch')
+        return patchcmds(ui, repo, pats, opts, subcommand='patch')
     elif checkopt('stat'):
-        return singlepatchcmds(ui, repo, pats, opts, subcommand='stat')
+        return patchcmds(ui, repo, pats, opts, subcommand='stat')
     else:
         return createcmd(ui, repo, pats, opts)
 

@@ -302,6 +302,8 @@ def tokenize(program, lookup=None, syminitletters=None, symletters=None):
 
 # helpers
 
+_notset = object()
+
 def getsymbol(x):
     if x and x[0] == 'symbol':
         return x[1]
@@ -312,12 +314,34 @@ def getstring(x, err):
         return x[1]
     raise error.ParseError(err)
 
+def getinteger(x, err, default=_notset):
+    if not x and default is not _notset:
+        return default
+    try:
+        return int(getstring(x, err))
+    except ValueError:
+        raise error.ParseError(err)
+
 def getlist(x):
     if not x:
         return []
     if x[0] == 'list':
         return list(x[1:])
     return [x]
+
+def getrange(x, err):
+    if not x:
+        raise error.ParseError(err)
+    op = x[0]
+    if op == 'range':
+        return x[1], x[2]
+    elif op == 'rangepre':
+        return None, x[1]
+    elif op == 'rangepost':
+        return x[1], None
+    elif op == 'rangeall':
+        return None, None
+    raise error.ParseError(err)
 
 def getargs(x, min, max, err):
     l = getlist(x)
@@ -326,7 +350,7 @@ def getargs(x, min, max, err):
     return l
 
 def getargsdict(x, funcname, keys):
-    return parser.buildargsdict(getlist(x), funcname, keys.split(),
+    return parser.buildargsdict(getlist(x), funcname, parser.splitargspec(keys),
                                 keyvaluenode='keyvalue', keynode='symbol')
 
 def getset(repo, subset, x):
@@ -370,12 +394,22 @@ def rangeset(repo, subset, x, y, order):
         return baseset()
     return _makerangeset(repo, subset, m.first(), n.last(), order)
 
+def rangeall(repo, subset, x, order):
+    assert x is None
+    return _makerangeset(repo, subset, 0, len(repo) - 1, order)
+
 def rangepre(repo, subset, y, order):
     # ':y' can't be rewritten to '0:y' since '0' may be hidden
     n = getset(repo, fullreposet(repo), y)
     if not n:
         return baseset()
     return _makerangeset(repo, subset, 0, n.last(), order)
+
+def rangepost(repo, subset, x, order):
+    m = getset(repo, fullreposet(repo), x)
+    if not m:
+        return baseset()
+    return _makerangeset(repo, subset, m.first(), len(repo) - 1, order)
 
 def _makerangeset(repo, subset, m, n, order):
     if m == n:
@@ -437,10 +471,10 @@ def keyvaluepair(repo, subset, k, v):
 def func(repo, subset, a, b, order):
     f = getsymbol(a)
     if f in symbols:
-        fn = symbols[f]
-        if getattr(fn, '_takeorder', False):
-            return fn(repo, subset, b, order)
-        return fn(repo, subset, b)
+        func = symbols[f]
+        if getattr(func, '_takeorder', False):
+            return func(repo, subset, b, order)
+        return func(repo, subset, b)
 
     keep = lambda fn: getattr(fn, '__doc__', None) is not None
 
@@ -539,10 +573,7 @@ def ancestorspec(repo, subset, x, n, order):
     Changesets that are the Nth ancestor (first parents only) of a changeset
     in set.
     """
-    try:
-        n = int(n[1])
-    except (TypeError, ValueError):
-        raise error.ParseError(_("~ expects a number"))
+    n = getinteger(n, _("~ expects a number"))
     ps = set()
     cl = repo.changelog
     for r in getset(repo, fullreposet(repo), x):
@@ -556,9 +587,9 @@ def author(repo, subset, x):
     """Alias for ``user(string)``.
     """
     # i18n: "author" is a keyword
-    n = encoding.lower(getstring(x, _("author requires a string")))
-    kind, pattern, matcher = _substringmatcher(n)
-    return subset.filter(lambda x: matcher(encoding.lower(repo[x].user())),
+    n = getstring(x, _("author requires a string"))
+    kind, pattern, matcher = _substringmatcher(n, casesensitive=False)
+    return subset.filter(lambda x: matcher(repo[x].user()),
                          condrepr=('<user %r>', n))
 
 @predicate('bisect(string)', safe=True)
@@ -588,9 +619,7 @@ def bisected(repo, subset, x):
 def bookmark(repo, subset, x):
     """The named bookmark or all bookmarks.
 
-    If `name` starts with `re:`, the remainder of the name is treated as
-    a regular expression. To match a bookmark that actually starts with `re:`,
-    use the prefix `literal:`.
+    Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
     """
     # i18n: "bookmark" is a keyword
     args = getargs(x, 0, 1, _('bookmark takes one or no arguments'))
@@ -628,9 +657,8 @@ def branch(repo, subset, x):
     All changesets belonging to the given branch or the branches of the given
     changesets.
 
-    If `string` starts with `re:`, the remainder of the name is treated as
-    a regular expression. To match a branch that actually starts with `re:`,
-    use the prefix `literal:`.
+    Pattern matching is supported for `string`. See
+    :hg:`help revisions.patterns`.
     """
     getbi = repo.revbranchcache().branchinfo
 
@@ -723,12 +751,15 @@ def _children(repo, subset, parentset):
     cs = set()
     pr = repo.changelog.parentrevs
     minrev = parentset.min()
+    nullrev = node.nullrev
     for r in subset:
         if r <= minrev:
             continue
-        for p in pr(r):
-            if p in parentset:
-                cs.add(r)
+        p1, p2 = pr(r)
+        if p1 in parentset:
+            cs.add(r)
+        if p2 != nullrev and p2 in parentset:
+            cs.add(r)
     return baseset(cs)
 
 @predicate('children(set)', safe=True)
@@ -811,15 +842,17 @@ def date(repo, subset, x):
 @predicate('desc(string)', safe=True)
 def desc(repo, subset, x):
     """Search commit message for string. The match is case-insensitive.
+
+    Pattern matching is supported for `string`. See
+    :hg:`help revisions.patterns`.
     """
     # i18n: "desc" is a keyword
-    ds = encoding.lower(getstring(x, _("desc requires a string")))
+    ds = getstring(x, _("desc requires a string"))
 
-    def matches(x):
-        c = repo[x]
-        return ds in encoding.lower(c.description())
+    kind, pattern, matcher = _substringmatcher(ds, casesensitive=False)
 
-    return subset.filter(matches, condrepr=('<desc %r>', ds))
+    return subset.filter(lambda r: matcher(repo[r].description()),
+                         condrepr=('<desc %r>', ds))
 
 def _descendants(repo, subset, x, followfirst=False):
     roots = getset(repo, fullreposet(repo), x)
@@ -921,9 +954,8 @@ def extra(repo, subset, x):
     """Changesets with the given label in the extra metadata, with the given
     optional value.
 
-    If `value` starts with `re:`, the remainder of the value is treated as
-    a regular expression. To match a value that actually starts with `re:`,
-    use the prefix `literal:`.
+    Pattern matching is supported for `value`. See
+    :hg:`help revisions.patterns`.
     """
     args = getargsdict(x, 'extra', 'label value')
     if 'label' not in args:
@@ -1065,6 +1097,51 @@ def _followfirst(repo, subset, x):
     # of every revisions or files revisions.
     return _follow(repo, subset, x, '_followfirst', followfirst=True)
 
+@predicate('followlines(file, fromline:toline[, startrev=.])', safe=True)
+def followlines(repo, subset, x):
+    """Changesets modifying `file` in line range ('fromline', 'toline').
+
+    Line range corresponds to 'file' content at 'startrev' and should hence be
+    consistent with file size. If startrev is not specified, working directory's
+    parent is used.
+    """
+    from . import context  # avoid circular import issues
+
+    args = getargsdict(x, 'followlines', 'file *lines startrev')
+    if len(args['lines']) != 1:
+        raise error.ParseError(_("followlines requires a line range"))
+
+    rev = '.'
+    if 'startrev' in args:
+        revs = getset(repo, fullreposet(repo), args['startrev'])
+        if len(revs) != 1:
+            raise error.ParseError(
+                _("followlines expects exactly one revision"))
+        rev = revs.last()
+
+    pat = getstring(args['file'], _("followlines requires a pattern"))
+    if not matchmod.patkind(pat):
+        fname = pathutil.canonpath(repo.root, repo.getcwd(), pat)
+    else:
+        m = matchmod.match(repo.root, repo.getcwd(), [pat], ctx=repo[rev])
+        files = [f for f in repo[rev] if m(f)]
+        if len(files) != 1:
+            raise error.ParseError(_("followlines expects exactly one file"))
+        fname = files[0]
+
+    lr = getrange(args['lines'][0], _("followlines expects a line range"))
+    fromline, toline = [getinteger(a, _("line range bounds must be integers"))
+                        for a in lr]
+    if toline - fromline < 0:
+        raise error.ParseError(_("line range must be positive"))
+    if fromline < 1:
+        raise error.ParseError(_("fromline must be strictly positive"))
+    fromline -= 1
+
+    fctx = repo[rev].filectx(fname)
+    revs = (c.rev() for c in context.blockancestors(fctx, fromline, toline))
+    return subset & generatorset(revs, iterasc=False)
+
 @predicate('all()', safe=True)
 def getall(repo, subset, x):
     """All changesets, the same as ``0:tip``.
@@ -1204,6 +1281,9 @@ def hidden(repo, subset, x):
 def keyword(repo, subset, x):
     """Search commit message, user name, and names of changed files for
     string. The match is case-insensitive.
+
+    For a regular expression or case sensitive search of these fields, use
+    ``grep(regex)``.
     """
     # i18n: "keyword" is a keyword
     kw = encoding.lower(getstring(x, _("keyword requires a string")))
@@ -1223,19 +1303,12 @@ def limit(repo, subset, x):
     if 'set' not in args:
         # i18n: "limit" is a keyword
         raise error.ParseError(_("limit requires one to three arguments"))
-    try:
-        lim, ofs = 1, 0
-        if 'n' in args:
-            # i18n: "limit" is a keyword
-            lim = int(getstring(args['n'], _("limit requires a number")))
-        if 'offset' in args:
-            # i18n: "limit" is a keyword
-            ofs = int(getstring(args['offset'], _("limit requires a number")))
-        if ofs < 0:
-            raise error.ParseError(_("negative offset"))
-    except (TypeError, ValueError):
-        # i18n: "limit" is a keyword
-        raise error.ParseError(_("limit expects a number"))
+    # i18n: "limit" is a keyword
+    lim = getinteger(args.get('n'), _("limit expects a number"), default=1)
+    # i18n: "limit" is a keyword
+    ofs = getinteger(args.get('offset'), _("limit expects a number"), default=0)
+    if ofs < 0:
+        raise error.ParseError(_("negative offset"))
     os = getset(repo, fullreposet(repo), args['set'])
     result = []
     it = iter(os)
@@ -1258,14 +1331,10 @@ def last(repo, subset, x):
     """
     # i18n: "last" is a keyword
     l = getargs(x, 1, 2, _("last requires one or two arguments"))
-    try:
-        lim = 1
-        if len(l) == 2:
-            # i18n: "last" is a keyword
-            lim = int(getstring(l[1], _("last requires a number")))
-    except (TypeError, ValueError):
+    lim = 1
+    if len(l) == 2:
         # i18n: "last" is a keyword
-        raise error.ParseError(_("last expects a number"))
+        lim = getinteger(l[1], _("last expects a number"))
     os = getset(repo, fullreposet(repo), l[0])
     os.reverse()
     result = []
@@ -1354,9 +1423,8 @@ def modifies(repo, subset, x):
 def named(repo, subset, x):
     """The changesets in a given namespace.
 
-    If `namespace` starts with `re:`, the remainder of the string is treated as
-    a regular expression. To match a namespace that actually starts with `re:`,
-    use the prefix `literal:`.
+    Pattern matching is supported for `namespace`. See
+    :hg:`help revisions.patterns`.
     """
     # i18n: "named" is a keyword
     args = getargs(x, 1, 1, _('named requires a namespace argument'))
@@ -1443,7 +1511,7 @@ def only(repo, subset, x):
 
     results = set(cl.findmissingrevs(common=exclude, heads=include))
     # XXX we should turn this into a baseset instead of a set, smartset may do
-    # some optimisations from the fact this is a baseset.
+    # some optimizations from the fact this is a baseset.
     return subset & results
 
 @predicate('origin([set])', safe=True)
@@ -1475,7 +1543,7 @@ def origin(repo, subset, x):
     o = set([_firstsrc(r) for r in dests])
     o -= set([None])
     # XXX we should turn this into a baseset instead of a set, smartset may do
-    # some optimisations from the fact this is a baseset.
+    # some optimizations from the fact this is a baseset.
     return subset & o
 
 @predicate('outgoing([path])', safe=True)
@@ -1521,7 +1589,7 @@ def p1(repo, subset, x):
         ps.add(cl.parentrevs(r)[0])
     ps -= set([node.nullrev])
     # XXX we should turn this into a baseset instead of a set, smartset may do
-    # some optimisations from the fact this is a baseset.
+    # some optimizations from the fact this is a baseset.
     return subset & ps
 
 @predicate('p2([set])', safe=True)
@@ -1544,7 +1612,7 @@ def p2(repo, subset, x):
         ps.add(cl.parentrevs(r)[1])
     ps -= set([node.nullrev])
     # XXX we should turn this into a baseset instead of a set, smartset may do
-    # some optimisations from the fact this is a baseset.
+    # some optimizations from the fact this is a baseset.
     return subset & ps
 
 def parentpost(repo, subset, x, order):
@@ -2197,19 +2265,23 @@ def subrepo(repo, subset, x):
 
     return subset.filter(matches, condrepr=('<subrepo %r>', pat))
 
-def _substringmatcher(pattern):
-    kind, pattern, matcher = util.stringmatcher(pattern)
+def _substringmatcher(pattern, casesensitive=True):
+    kind, pattern, matcher = util.stringmatcher(pattern,
+                                                casesensitive=casesensitive)
     if kind == 'literal':
-        matcher = lambda s: pattern in s
+        if not casesensitive:
+            pattern = encoding.lower(pattern)
+            matcher = lambda s: pattern in encoding.lower(s)
+        else:
+            matcher = lambda s: pattern in s
     return kind, pattern, matcher
 
 @predicate('tag([name])', safe=True)
 def tag(repo, subset, x):
     """The specified tag by name, or all tagged revisions if no name is given.
 
-    If `name` starts with `re:`, the remainder of the name is treated as
-    a regular expression. To match a tag that actually starts with `re:`,
-    use the prefix `literal:`.
+    Pattern matching is supported for `name`. See
+    :hg:`help revisions.patterns`.
     """
     # i18n: "tag" is a keyword
     args = getargs(x, 0, 1, _("tag takes one or no arguments"))
@@ -2250,15 +2322,14 @@ def unstable(repo, subset, x):
 def user(repo, subset, x):
     """User name contains string. The match is case-insensitive.
 
-    If `string` starts with `re:`, the remainder of the string is treated as
-    a regular expression. To match a user that actually contains `re:`, use
-    the prefix `literal:`.
+    Pattern matching is supported for `string`. See
+    :hg:`help revisions.patterns`.
     """
     return author(repo, subset, x)
 
-# experimental
 @predicate('wdir', safe=True)
 def wdir(repo, subset, x):
+    """Working directory. (EXPERIMENTAL)"""
     # i18n: "wdir" is a keyword
     getargs(x, 0, 0, _("wdir takes no arguments"))
     if node.wdirrev in subset or isinstance(subset, fullreposet):
@@ -2339,7 +2410,9 @@ def _hexlist(repo, subset, x, order):
 
 methods = {
     "range": rangeset,
+    "rangeall": rangeall,
     "rangepre": rangepre,
+    "rangepost": rangepost,
     "dagrange": dagrange,
     "string": stringset,
     "symbol": stringset,
@@ -2454,10 +2527,6 @@ def _analyze(x, order):
         return _analyze(('func', ('symbol', 'ancestors'), x[1]), order)
     elif op == 'dagrangepost':
         return _analyze(('func', ('symbol', 'descendants'), x[1]), order)
-    elif op == 'rangeall':
-        return _analyze(('rangepre', ('string', 'tip')), order)
-    elif op == 'rangepost':
-        return _analyze(('range', x[1], ('string', 'tip')), order)
     elif op == 'negate':
         s = getstring(x[1], _("can't negate that"))
         return _analyze(('string', '-' + s), order)
@@ -2471,7 +2540,9 @@ def _analyze(x, order):
         return (op, _analyze(x[1], order), order)
     elif op == 'not':
         return (op, _analyze(x[1], anyorder), order)
-    elif op in ('rangepre', 'parentpost'):
+    elif op == 'rangeall':
+        return (op, None, order)
+    elif op in ('rangepre', 'rangepost', 'parentpost'):
         return (op, _analyze(x[1], defineorder), order)
     elif op == 'group':
         return _analyze(x[1], order)
@@ -2576,7 +2647,9 @@ def _optimize(x, small):
             o = _optimize(x[1], not small)
             order = x[2]
             return o[0], (op, o[1], order)
-    elif op in ('rangepre', 'parentpost'):
+    elif op == 'rangeall':
+        return smallbonus, x
+    elif op in ('rangepre', 'rangepost', 'parentpost'):
         o = _optimize(x[1], small)
         order = x[2]
         return o[0], (op, o[1], order)
@@ -2603,7 +2676,7 @@ def _optimize(x, small):
             w = 100 # very slow
         elif f == "ancestor":
             w = 1 * smallbonus
-        elif f in ('reverse', 'limit', 'first', '_intlist'):
+        elif f in ('reverse', 'limit', 'first', 'wdir', '_intlist'):
             w = 0
         elif f == "sort":
             w = 10 # assume most sorts look at changelog
@@ -3198,7 +3271,7 @@ class filteredset(abstractsmartset):
     def __len__(self):
         # Basic implementation to be changed in future patches.
         # until this gets improved, we use generator expression
-        # here, since list compr is free to call __len__ again
+        # here, since list comprehensions are free to call __len__ again
         # causing infinite recursion
         l = baseset(r for r in self)
         return len(l)
@@ -3811,17 +3884,6 @@ class fullreposet(spanset):
             # object.
             other = baseset(other - self._hiddenrevs)
 
-        # XXX As fullreposet is also used as bootstrap, this is wrong.
-        #
-        # With a giveme312() revset returning [3,1,2], this makes
-        #   'hg log -r "giveme312()"' -> 1, 2, 3 (wrong)
-        # We cannot just drop it because other usage still need to sort it:
-        #   'hg log -r "all() and giveme312()"' -> 1, 2, 3 (right)
-        #
-        # There is also some faulty revset implementations that rely on it
-        # (eg: children as of its state in e8075329c5fb)
-        #
-        # When we fix the two points above we can move this into the if clause
         other.sort(reverse=self.isdescending())
         return other
 

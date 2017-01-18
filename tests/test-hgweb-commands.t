@@ -829,7 +829,6 @@ Logs and changes
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -961,7 +960,6 @@ Logs and changes
   
   </div>
   </div>
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -1068,7 +1066,6 @@ Logs and changes
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -1352,7 +1349,6 @@ File-related
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -1478,7 +1474,6 @@ File-related
   </div>
   </div>
   
-  <script type="text/javascript">process_dates()</script>
   
   
   </body>
@@ -1690,7 +1685,6 @@ Overviews
     <td colspan="3"><a class="list" href="/branches?style=gitweb">...</a></td>
   </tr>
   </table>
-  <script type="text/javascript">process_dates()</script>
   <div class="page_footer">
   <div class="page_footer_text">test</div>
   <div class="rss_logo">
@@ -1835,7 +1829,6 @@ Overviews
       );
   </script>
   
-  <script type="text/javascript">process_dates()</script>
   <div class="page_footer">
   <div class="page_footer_text">test</div>
   <div class="rss_logo">
@@ -1903,7 +1896,7 @@ capabilities
   $ get-with-headers.py 127.0.0.1:$HGPORT '?cmd=capabilities'; echo
   200 Script output follows
   
-  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024
+  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=*zlib (glob)
 
 heads
 
@@ -2154,6 +2147,8 @@ capabilities
   bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps
   unbundle=HG10GZ,HG10BZ,HG10UN
   httpheader=1024
+  httpmediatype=0.1rx,0.1tx,0.2tx
+  compression=*zlib (glob)
 
 heads
 

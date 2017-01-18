@@ -17,6 +17,10 @@
 #include "bitmanipulation.h"
 #include "bdiff.h"
 
+/* Hash implementation from diffutils */
+#define ROL(v, n) ((v) << (n) | (v) >> (sizeof(v) * CHAR_BIT - (n)))
+#define HASH(h, c) ((c) + ROL(h ,7))
+
 struct pos {
 	int pos, len;
 };
@@ -31,9 +35,11 @@ int bdiff_splitlines(const char *a, ssize_t len, struct bdiff_line **lr)
 
 	/* count the lines */
 	i = 1; /* extra line for sentinel */
-	for (p = a; p < a + len; p++)
-		if (*p == '\n' || p == plast)
+	for (p = a; p < plast; p++)
+		if (*p == '\n')
 			i++;
+	if (p == plast)
+		i++;
 
 	*lr = l = (struct bdiff_line *)malloc(sizeof(struct bdiff_line) * i);
 	if (!l)
@@ -41,11 +47,10 @@ int bdiff_splitlines(const char *a, ssize_t len, struct bdiff_line **lr)
 
 	/* build the line array and calculate hashes */
 	hash = 0;
-	for (p = a; p < a + len; p++) {
-		/* Leonid Yuriev's hash */
-		hash = (hash * 1664525) + (unsigned char)*p + 1013904223;
+	for (p = a; p < plast; p++) {
+		hash = HASH(hash, *p);
 
-		if (*p == '\n' || p == plast) {
+		if (*p == '\n') {
 			l->hash = hash;
 			hash = 0;
 			l->len = p - b + 1;
@@ -54,6 +59,15 @@ int bdiff_splitlines(const char *a, ssize_t len, struct bdiff_line **lr)
 			l++;
 			b = p + 1;
 		}
+	}
+
+	if (p == plast) {
+		hash = HASH(hash, *p);
+		l->hash = hash;
+		l->len = p - b + 1;
+		l->l = b;
+		l->n = INT_MAX;
+		l++;
 	}
 
 	/* set up a sentinel */
@@ -138,7 +152,7 @@ static int longest_match(struct bdiff_line *a, struct bdiff_line *b,
 			struct pos *pos,
 			 int a1, int a2, int b1, int b2, int *omi, int *omj)
 {
-	int mi = a1, mj = b1, mk = 0, i, j, k, half;
+	int mi = a1, mj = b1, mk = 0, i, j, k, half, bhalf;
 
 	/* window our search on large regions to better bound
 	   worst-case performance. by choosing a window at the end, we
@@ -146,7 +160,8 @@ static int longest_match(struct bdiff_line *a, struct bdiff_line *b,
 	if (a2 - a1 > 30000)
 		a1 = a2 - 30000;
 
-	half = (a1 + a2) / 2;
+	half = (a1 + a2 - 1) / 2;
+	bhalf = (b1 + b2 - 1) / 2;
 
 	for (i = a1; i < a2; i++) {
 		/* skip all lines in b after the current block */
@@ -172,10 +187,20 @@ static int longest_match(struct bdiff_line *a, struct bdiff_line *b,
 
 			/* best match so far? we prefer matches closer
 			   to the middle to balance recursion */
-			if (k > mk || (k == mk && (i <= mi || i < half))) {
+			if (k > mk) {
+				/* a longer match */
 				mi = i;
 				mj = j;
 				mk = k;
+			} else if (k == mk) {
+				if (i > mi && i <= half && j > b1) {
+					/* same match but closer to half */
+					mi = i;
+					mj = j;
+				} else if (i == mi && (mj > bhalf || i == a1)) {
+					/* same i but best earlier j */
+					mj = j;
+				}
 			}
 		}
 	}

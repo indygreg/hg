@@ -14,6 +14,11 @@ import os
 import random
 import subprocess
 
+from . import (
+    encoding,
+    pycompat,
+)
+
 _kernel32 = ctypes.windll.kernel32
 _advapi32 = ctypes.windll.advapi32
 _user32 = ctypes.windll.user32
@@ -347,23 +352,25 @@ def hidewindow():
     pid = _kernel32.GetCurrentProcessId()
     _user32.EnumWindows(_WNDENUMPROC(callback), pid)
 
-def termwidth():
+def termsize():
     # cmd.exe does not handle CR like a unix console, the CR is
     # counted in the line length. On 80 columns consoles, if 80
     # characters are written, the following CR won't apply on the
     # current line but on the new one. Keep room for it.
-    width = 79
+    width = 80 - 1
+    height = 25
     # Query stderr to avoid problems with redirections
     screenbuf = _kernel32.GetStdHandle(
                   _STD_ERROR_HANDLE) # don't close the handle returned
     if screenbuf is None or screenbuf == _INVALID_HANDLE_VALUE:
-        return width
+        return width, height
     csbi = _CONSOLE_SCREEN_BUFFER_INFO()
     if not _kernel32.GetConsoleScreenBufferInfo(
                         screenbuf, ctypes.byref(csbi)):
-        return width
-    width = csbi.srWindow.Right - csbi.srWindow.Left
-    return width
+        return width, height
+    width = csbi.srWindow.Right - csbi.srWindow.Left  # don't '+ 1'
+    height = csbi.srWindow.Bottom - csbi.srWindow.Top + 1
+    return width, height
 
 def _1stchild(pid):
     '''return the 1st found child of the given pid
@@ -422,8 +429,8 @@ def spawndetached(args):
     pi = _PROCESS_INFORMATION()
 
     env = ''
-    for k in os.environ:
-        env += "%s=%s\0" % (k, os.environ[k])
+    for k in encoding.environ:
+        env += "%s=%s\0" % (k, encoding.environ[k])
     if not env:
         env = '\0'
     env += '\0'
@@ -431,12 +438,12 @@ def spawndetached(args):
     args = subprocess.list2cmdline(args)
     # Not running the command in shell mode makes Python 2.6 hang when
     # writing to hgweb output socket.
-    comspec = os.environ.get("COMSPEC", "cmd.exe")
+    comspec = encoding.environ.get("COMSPEC", "cmd.exe")
     args = comspec + " /c " + args
 
     res = _kernel32.CreateProcessA(
         None, args, None, None, False, _CREATE_NO_WINDOW,
-        env, os.getcwd(), ctypes.byref(si), ctypes.byref(pi))
+        env, pycompat.getcwd(), ctypes.byref(si), ctypes.byref(pi))
     if not res:
         raise ctypes.WinError()
 

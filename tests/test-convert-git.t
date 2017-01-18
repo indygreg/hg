@@ -374,6 +374,42 @@ source, the copy source took the contents of the copy dest)
   A bar-copied2
     bar
 
+renamelimit config option works
+
+  $ cd git-repo2
+  $ cat >> copy-source << EOF
+  > sc0
+  > sc1
+  > sc2
+  > sc3
+  > sc4
+  > sc5
+  > sc6
+  > EOF
+  $ git add copy-source
+  $ commit -m 'add copy-source'
+  $ cp copy-source source-copy0
+  $ echo 0 >> source-copy0
+  $ cp copy-source source-copy1
+  $ echo 1 >> source-copy1
+  $ git add source-copy0 source-copy1
+  $ commit -a -m 'copy copy-source 2 times'
+  $ cd ..
+
+  $ hg -q convert --config convert.git.renamelimit=1 \
+  > --config convert.git.findcopiesharder=true --datesort git-repo2 fullrepo2
+  $ hg -R fullrepo2 status -C --change master
+  A source-copy0
+  A source-copy1
+
+  $ hg -q convert --config convert.git.renamelimit=100 \
+  > --config convert.git.findcopiesharder=true --datesort git-repo2 fullrepo3
+  $ hg -R fullrepo3 status -C --change master
+  A source-copy0
+    copy-source
+  A source-copy1
+    copy-source
+
 test binary conversion (issue1359)
 
   $ count=19
@@ -435,6 +471,188 @@ convert author committer
   addfoo2
   
   committer: test <test@example.org>
+  
+  
+  changeset:   0:0735477b0224
+  user:        test <test@example.org>
+  date:        Mon Jan 01 00:00:20 2007 +0000
+  files:       foo
+  description:
+  addfoo
+  
+  
+
+Various combinations of committeractions fail
+
+  $ hg --config convert.git.committeractions=messagedifferent,messagealways convert git-repo4 bad-committer
+  initializing destination bad-committer repository
+  abort: committeractions cannot define both messagedifferent and messagealways
+  [255]
+
+  $ hg --config convert.git.committeractions=dropcommitter,replaceauthor convert git-repo4 bad-committer
+  initializing destination bad-committer repository
+  abort: committeractions cannot define both dropcommitter and replaceauthor
+  [255]
+
+  $ hg --config convert.git.committeractions=dropcommitter,messagealways convert git-repo4 bad-committer
+  initializing destination bad-committer repository
+  abort: committeractions cannot define both dropcommitter and messagealways
+  [255]
+
+custom prefix on messagedifferent works
+
+  $ hg --config convert.git.committeractions=messagedifferent=different: convert git-repo4 git-repo4-hg-messagedifferentprefix
+  initializing destination git-repo4-hg-messagedifferentprefix repository
+  scanning source...
+  sorting...
+  converting...
+  1 addfoo
+  0 addfoo2
+  updating bookmarks
+
+  $ hg -R git-repo4-hg-messagedifferentprefix log -v
+  changeset:   1:2fe0c98a109d
+  bookmark:    master
+  tag:         tip
+  user:        nottest <test@example.org>
+  date:        Mon Jan 01 00:00:21 2007 +0000
+  files:       foo
+  description:
+  addfoo2
+  
+  different: test <test@example.org>
+  
+  
+  changeset:   0:0735477b0224
+  user:        test <test@example.org>
+  date:        Mon Jan 01 00:00:20 2007 +0000
+  files:       foo
+  description:
+  addfoo
+  
+  
+
+messagealways will always add the "committer: " line even if committer identical
+
+  $ hg --config convert.git.committeractions=messagealways convert git-repo4 git-repo4-hg-messagealways
+  initializing destination git-repo4-hg-messagealways repository
+  scanning source...
+  sorting...
+  converting...
+  1 addfoo
+  0 addfoo2
+  updating bookmarks
+
+  $ hg -R git-repo4-hg-messagealways log -v
+  changeset:   1:8db057d8cd37
+  bookmark:    master
+  tag:         tip
+  user:        nottest <test@example.org>
+  date:        Mon Jan 01 00:00:21 2007 +0000
+  files:       foo
+  description:
+  addfoo2
+  
+  committer: test <test@example.org>
+  
+  
+  changeset:   0:8f71fe9c98be
+  user:        test <test@example.org>
+  date:        Mon Jan 01 00:00:20 2007 +0000
+  files:       foo
+  description:
+  addfoo
+  
+  committer: test <test@example.org>
+  
+  
+
+custom prefix on messagealways works
+
+  $ hg --config convert.git.committeractions=messagealways=always: convert git-repo4 git-repo4-hg-messagealwaysprefix
+  initializing destination git-repo4-hg-messagealwaysprefix repository
+  scanning source...
+  sorting...
+  converting...
+  1 addfoo
+  0 addfoo2
+  updating bookmarks
+
+  $ hg -R git-repo4-hg-messagealwaysprefix log -v
+  changeset:   1:83c17174de79
+  bookmark:    master
+  tag:         tip
+  user:        nottest <test@example.org>
+  date:        Mon Jan 01 00:00:21 2007 +0000
+  files:       foo
+  description:
+  addfoo2
+  
+  always: test <test@example.org>
+  
+  
+  changeset:   0:2ac9bcb3534a
+  user:        test <test@example.org>
+  date:        Mon Jan 01 00:00:20 2007 +0000
+  files:       foo
+  description:
+  addfoo
+  
+  always: test <test@example.org>
+  
+  
+
+replaceauthor replaces author with committer
+
+  $ hg --config convert.git.committeractions=replaceauthor convert git-repo4 git-repo4-hg-replaceauthor
+  initializing destination git-repo4-hg-replaceauthor repository
+  scanning source...
+  sorting...
+  converting...
+  1 addfoo
+  0 addfoo2
+  updating bookmarks
+
+  $ hg -R git-repo4-hg-replaceauthor log -v
+  changeset:   1:122c1d8999ea
+  bookmark:    master
+  tag:         tip
+  user:        test <test@example.org>
+  date:        Mon Jan 01 00:00:21 2007 +0000
+  files:       foo
+  description:
+  addfoo2
+  
+  
+  changeset:   0:0735477b0224
+  user:        test <test@example.org>
+  date:        Mon Jan 01 00:00:20 2007 +0000
+  files:       foo
+  description:
+  addfoo
+  
+  
+
+dropcommitter removes the committer
+
+  $ hg --config convert.git.committeractions=dropcommitter convert git-repo4 git-repo4-hg-dropcommitter
+  initializing destination git-repo4-hg-dropcommitter repository
+  scanning source...
+  sorting...
+  converting...
+  1 addfoo
+  0 addfoo2
+  updating bookmarks
+
+  $ hg -R git-repo4-hg-dropcommitter log -v
+  changeset:   1:190b2da396cc
+  bookmark:    master
+  tag:         tip
+  user:        nottest <test@example.org>
+  date:        Mon Jan 01 00:00:21 2007 +0000
+  files:       foo
+  description:
+  addfoo2
   
   
   changeset:   0:0735477b0224
@@ -714,7 +932,7 @@ damage git repository by renaming a commit object
   $ COMMIT_OBJ=1c/0ce3c5886f83a1d78a7b517cdff5cf9ca17bdd
   $ mv git-repo4/.git/objects/$COMMIT_OBJ git-repo4/.git/objects/$COMMIT_OBJ.tmp
   $ hg convert git-repo4 git-repo4-broken-hg 2>&1 | grep 'abort:'
-  abort: cannot retrieve number of commits in $TESTTMP/git-repo4/.git
+  abort: cannot retrieve number of commits in $TESTTMP/git-repo4/.git (glob)
   $ mv git-repo4/.git/objects/$COMMIT_OBJ.tmp git-repo4/.git/objects/$COMMIT_OBJ
 damage git repository by renaming a blob object
 
@@ -768,3 +986,182 @@ test for safely passing paths to git (CVE-2016-3105)
 
 #endif
 
+Conversion of extra commit metadata to extras works
+
+  $ git init gitextras >/dev/null 2>/dev/null
+  $ cd gitextras
+  $ touch foo
+  $ git add foo
+  $ commit -m initial
+  $ echo 1 > foo
+  $ tree=`git write-tree`
+
+Git doesn't provider a user-facing API to write extra metadata into the
+commit, so create the commit object by hand
+
+  $ git hash-object -t commit -w --stdin << EOF
+  > tree ${tree}
+  > parent ba6b1344e977ece9e00958dbbf17f1f09384b2c1
+  > author test <test@example.com> 1000000000 +0000
+  > committer test <test@example.com> 1000000000 +0000
+  > extra-1 extra-1
+  > extra-2 extra-2 with space
+  > convert_revision 0000aaaabbbbccccddddeeee
+  > 
+  > message with extras
+  > EOF
+  8123727c8361a4117d1a2d80e0c4e7d70c757f18
+
+  $ git reset --hard 8123727c8361a4117d1a2d80e0c4e7d70c757f18 > /dev/null
+
+  $ cd ..
+
+convert will not retain custom metadata keys by default
+
+  $ hg convert gitextras hgextras1
+  initializing destination hgextras1 repository
+  scanning source...
+  sorting...
+  converting...
+  1 initial
+  0 message with extras
+  updating bookmarks
+
+  $ hg -R hgextras1 log --debug -r 1
+  changeset:   1:e13a39880f68479127b2a80fa0b448cc8524aa09
+  bookmark:    master
+  tag:         tip
+  phase:       draft
+  parent:      0:dcb68977c55cd02cbd13b901df65c4b6e7b9c4b9
+  parent:      -1:0000000000000000000000000000000000000000
+  manifest:    0:6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50
+  user:        test <test@example.com>
+  date:        Sun Sep 09 01:46:40 2001 +0000
+  extra:       branch=default
+  extra:       convert_revision=8123727c8361a4117d1a2d80e0c4e7d70c757f18
+  description:
+  message with extras
+  
+  
+
+Attempting to convert a banned extra is disallowed
+
+  $ hg convert --config convert.git.extrakeys=tree,parent gitextras hgextras-banned
+  initializing destination hgextras-banned repository
+  abort: copying of extra key is forbidden: parent, tree
+  [255]
+
+Converting a specific extra works
+
+  $ hg convert --config convert.git.extrakeys=extra-1 gitextras hgextras2
+  initializing destination hgextras2 repository
+  scanning source...
+  sorting...
+  converting...
+  1 initial
+  0 message with extras
+  updating bookmarks
+
+  $ hg -R hgextras2 log --debug -r 1
+  changeset:   1:d40fb205d58597e6ecfd55b16f198be5bf436391
+  bookmark:    master
+  tag:         tip
+  phase:       draft
+  parent:      0:dcb68977c55cd02cbd13b901df65c4b6e7b9c4b9
+  parent:      -1:0000000000000000000000000000000000000000
+  manifest:    0:6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50
+  user:        test <test@example.com>
+  date:        Sun Sep 09 01:46:40 2001 +0000
+  extra:       branch=default
+  extra:       convert_revision=8123727c8361a4117d1a2d80e0c4e7d70c757f18
+  extra:       extra-1=extra-1
+  description:
+  message with extras
+  
+  
+
+Converting multiple extras works
+
+  $ hg convert --config convert.git.extrakeys=extra-1,extra-2 gitextras hgextras3
+  initializing destination hgextras3 repository
+  scanning source...
+  sorting...
+  converting...
+  1 initial
+  0 message with extras
+  updating bookmarks
+
+  $ hg -R hgextras3 log --debug -r 1
+  changeset:   1:0105af33379e7b6491501fd34141b7af700fe125
+  bookmark:    master
+  tag:         tip
+  phase:       draft
+  parent:      0:dcb68977c55cd02cbd13b901df65c4b6e7b9c4b9
+  parent:      -1:0000000000000000000000000000000000000000
+  manifest:    0:6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50
+  user:        test <test@example.com>
+  date:        Sun Sep 09 01:46:40 2001 +0000
+  extra:       branch=default
+  extra:       convert_revision=8123727c8361a4117d1a2d80e0c4e7d70c757f18
+  extra:       extra-1=extra-1
+  extra:       extra-2=extra-2 with space
+  description:
+  message with extras
+  
+  
+
+convert.git.saverev can be disabled to prevent convert_revision from being written
+
+  $ hg convert --config convert.git.saverev=false gitextras hgextras4
+  initializing destination hgextras4 repository
+  scanning source...
+  sorting...
+  converting...
+  1 initial
+  0 message with extras
+  updating bookmarks
+
+  $ hg -R hgextras4 log --debug -r 1
+  changeset:   1:1dcaf4ffe5bee43fa86db2800821f6f0af212c5c
+  bookmark:    master
+  tag:         tip
+  phase:       draft
+  parent:      0:a13935fec4daf06a5a87a7307ccb0fc94f98d06d
+  parent:      -1:0000000000000000000000000000000000000000
+  manifest:    0:6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50
+  user:        test <test@example.com>
+  date:        Sun Sep 09 01:46:40 2001 +0000
+  extra:       branch=default
+  description:
+  message with extras
+  
+  
+
+convert.git.saverev and convert.git.extrakeys can be combined to preserve
+convert_revision from source
+
+  $ hg convert --config convert.git.saverev=false --config convert.git.extrakeys=convert_revision gitextras hgextras5
+  initializing destination hgextras5 repository
+  scanning source...
+  sorting...
+  converting...
+  1 initial
+  0 message with extras
+  updating bookmarks
+
+  $ hg -R hgextras5 log --debug -r 1
+  changeset:   1:574d85931544d4542007664fee3747360e85ee28
+  bookmark:    master
+  tag:         tip
+  phase:       draft
+  parent:      0:a13935fec4daf06a5a87a7307ccb0fc94f98d06d
+  parent:      -1:0000000000000000000000000000000000000000
+  manifest:    0:6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50
+  user:        test <test@example.com>
+  date:        Sun Sep 09 01:46:40 2001 +0000
+  extra:       branch=default
+  extra:       convert_revision=0000aaaabbbbccccddddeeee
+  description:
+  message with extras
+  
+  

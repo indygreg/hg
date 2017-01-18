@@ -351,11 +351,9 @@ Testing -h/--help:
    hgweb         Configuring hgweb
    internals     Technical implementation topics
    merge-tools   Merge Tools
-   multirevs     Specifying Multiple Revisions
    patterns      File Name Patterns
    phases        Working with Phases
-   revisions     Specifying Single Revisions
-   revsets       Specifying Revision Sets
+   revisions     Specifying Revisions
    scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
    templating    Template Usage
@@ -434,11 +432,9 @@ Testing -h/--help:
    hgweb         Configuring hgweb
    internals     Technical implementation topics
    merge-tools   Merge Tools
-   multirevs     Specifying Multiple Revisions
    patterns      File Name Patterns
    phases        Working with Phases
-   revisions     Specifying Single Revisions
-   revsets       Specifying Revision Sets
+   revisions     Specifying Revisions
    scripting     Using Mercurial from scripts and automation
    subrepos      Subrepositories
    templating    Template Usage

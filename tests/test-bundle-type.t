@@ -35,17 +35,21 @@ bundle w/o type option
 
 test bundle types
 
-  $ for t in "None" "bzip2" "gzip" "none-v2" "v2" "v1" "gzip-v1"; do
-  >   echo % test bundle type $t
-  >   hg init t$t
+  $ testbundle() {
+  >   echo % test bundle type $1
+  >   hg init t$1
   >   cd t1
-  >   hg bundle -t $t ../b$t ../t$t
-  >   f -q -B6 -D ../b$t; echo
-  >   cd ../t$t
-  >   hg debugbundle ../b$t
-  >   hg debugbundle --spec ../b$t
+  >   hg bundle -t $1 ../b$1 ../t$1
+  >   f -q -B6 -D ../b$1; echo
+  >   cd ../t$1
+  >   hg debugbundle ../b$1
+  >   hg debugbundle --spec ../b$1
   >   echo
   >   cd ..
+  > }
+
+  $ for t in "None" "bzip2" "gzip" "none-v2" "v2" "v1" "gzip-v1"; do
+  >   testbundle $t
   > done
   % test bundle type None
   searching for changes
@@ -106,6 +110,69 @@ test bundle types
   c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
   gzip-v1
   
+
+Compression level can be adjusted for bundle2 bundles
+
+  $ hg init test-complevel
+  $ cd test-complevel
+
+  $ cat > file0 << EOF
+  > this is a file
+  > with some text
+  > and some more text
+  > and other content
+  > EOF
+  $ cat > file1 << EOF
+  > this is another file
+  > with some other content
+  > and repeated, repeated, repeated, repeated content
+  > EOF
+  $ hg -q commit -A -m initial
+
+  $ hg bundle -a -t gzip-v2 gzip-v2.hg
+  1 changesets found
+  $ f --size gzip-v2.hg
+  gzip-v2.hg: size=427
+
+  $ hg --config experimental.bundlecomplevel=1 bundle -a -t gzip-v2 gzip-v2-level1.hg
+  1 changesets found
+  $ f --size gzip-v2-level1.hg
+  gzip-v2-level1.hg: size=435
+
+  $ cd ..
+
+#if zstd
+
+  $ for t in "zstd" "zstd-v2"; do
+  >   testbundle $t
+  > done
+  % test bundle type zstd
+  searching for changes
+  1 changesets found
+  HG20\x00\x00 (esc)
+  Stream params: sortdict([('Compression', 'ZS')])
+  changegroup -- "sortdict([('version', '02'), ('nbchanges', '1')])"
+      c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  zstd-v2
+  
+  % test bundle type zstd-v2
+  searching for changes
+  1 changesets found
+  HG20\x00\x00 (esc)
+  Stream params: sortdict([('Compression', 'ZS')])
+  changegroup -- "sortdict([('version', '02'), ('nbchanges', '1')])"
+      c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  zstd-v2
+  
+#else
+
+zstd is a valid engine but isn't available
+
+  $ hg -R t1 bundle -a -t zstd irrelevant.hg
+  abort: compression engine zstd could not be loaded
+  [255]
+
+#endif
 
 test garbage file
 

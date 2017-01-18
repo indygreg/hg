@@ -173,7 +173,6 @@ from __future__ import absolute_import
 
 import errno
 import os
-import sys
 
 from mercurial.i18n import _
 from mercurial import (
@@ -991,9 +990,9 @@ def _getgoal(opts):
         return goaleditplan
     return goalnew
 
-def _readfile(path):
+def _readfile(ui, path):
     if path == '-':
-        return sys.stdin.read()
+        return ui.fin.read()
     else:
         with open(path, 'rb') as f:
             return f.read()
@@ -1191,7 +1190,7 @@ def _edithisteditplan(ui, repo, state, rules):
                                  node.short(state.topmost))
         rules = ruleeditor(repo, ui, state.actions, comment)
     else:
-        rules = _readfile(rules)
+        rules = _readfile(ui, rules)
     actions = parserules(rules, state)
     ctxs = [repo[act.node] \
             for act in state.actions if act.node]
@@ -1232,7 +1231,7 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
         actions = [pick(state, r) for r in revs]
         rules = ruleeditor(repo, ui, actions, comment)
     else:
-        rules = _readfile(rules)
+        rules = _readfile(ui, rules)
     actions = parserules(rules, state)
     warnverifyactions(ui, repo, actions, state, ctxs)
 
@@ -1335,7 +1334,8 @@ def ruleeditor(repo, ui, actions, editcomment=""):
     rules = '\n'.join([act.torule() for act in actions])
     rules += '\n\n'
     rules += editcomment
-    rules = ui.edit(rules, ui.username(), {'prefix': 'histedit'})
+    rules = ui.edit(rules, ui.username(), {'prefix': 'histedit'},
+                    tmpdir=repo.path)
 
     # Save edit rules in .hg/histedit-last-edit.txt in case
     # the user needs to ask for help after something
@@ -1406,12 +1406,12 @@ def verifyactions(actions, state, ctxs):
                        % node.short(missing[0]))
 
 def adjustreplacementsfrommarkers(repo, oldreplacements):
-    """Adjust replacements from obsolescense markers
+    """Adjust replacements from obsolescence markers
 
     Replacements structure is originally generated based on
     histedit's state and does not account for changes that are
     not recorded there. This function fixes that by adding
-    data read from obsolescense markers"""
+    data read from obsolescence markers"""
     if not obsolete.isenabled(repo, obsolete.createmarkersopt):
         return oldreplacements
 

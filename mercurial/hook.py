@@ -16,6 +16,7 @@ from . import (
     demandimport,
     error,
     extensions,
+    pycompat,
     util,
 )
 
@@ -90,12 +91,6 @@ def _pythonhook(ui, repo, name, hname, funcname, args, throw):
     starttime = time.time()
 
     try:
-        # redirect IO descriptors to the ui descriptors so hooks
-        # that write directly to these don't mess up the command
-        # protocol when running through the command server
-        old = sys.stdout, sys.stderr, sys.stdin
-        sys.stdout, sys.stderr, sys.stdin = ui.fout, ui.ferr, ui.fin
-
         r = obj(ui=ui, repo=repo, hooktype=name, **args)
     except Exception as exc:
         if isinstance(exc, error.Abort):
@@ -111,7 +106,6 @@ def _pythonhook(ui, repo, name, hname, funcname, args, throw):
         ui.traceback()
         return True, True
     finally:
-        sys.stdout, sys.stderr, sys.stdin = old
         duration = time.time() - starttime
         ui.log('pythonhook', 'pythonhook-%s: %s finished in %0.2f seconds\n',
                name, funcname, duration)
@@ -148,7 +142,7 @@ def _exthook(ui, repo, name, cmd, args, throw):
     if repo:
         cwd = repo.root
     else:
-        cwd = os.getcwd()
+        cwd = pycompat.getcwd()
     r = ui.system(cmd, environ=env, cwd=cwd)
 
     duration = time.time() - starttime
@@ -216,11 +210,11 @@ def runhooks(ui, repo, name, hooks, throw=False, **args):
         for hname, cmd in hooks:
             if oldstdout == -1 and _redirect:
                 try:
-                    stdoutno = sys.__stdout__.fileno()
-                    stderrno = sys.__stderr__.fileno()
+                    stdoutno = util.stdout.fileno()
+                    stderrno = util.stderr.fileno()
                     # temporarily redirect stdout to stderr, if possible
                     if stdoutno >= 0 and stderrno >= 0:
-                        sys.__stdout__.flush()
+                        util.stdout.flush()
                         oldstdout = os.dup(stdoutno)
                         os.dup2(stderrno, stdoutno)
                 except (OSError, AttributeError):
@@ -262,9 +256,10 @@ def runhooks(ui, repo, name, hooks, throw=False, **args):
             # The stderr is fully buffered on Windows when connected to a pipe.
             # A forcible flush is required to make small stderr data in the
             # remote side available to the client immediately.
-            sys.stderr.flush()
+            util.stderr.flush()
     finally:
         if _redirect and oldstdout >= 0:
+            util.stdout.flush()  # write hook output to stderr fd
             os.dup2(oldstdout, stdoutno)
             os.close(oldstdout)
 

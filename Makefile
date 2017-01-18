@@ -195,17 +195,17 @@ docker-ubuntu-trusty: contrib/docker/ubuntu-trusty
 docker-ubuntu-trusty-ppa: contrib/docker/ubuntu-trusty
 	contrib/dockerdeb ubuntu trusty --source-only
 
-docker-ubuntu-wily: contrib/docker/ubuntu-wily
-	contrib/dockerdeb ubuntu wily
-
-docker-ubuntu-wily-ppa: contrib/docker/ubuntu-wily
-	contrib/dockerdeb ubuntu wily --source-only
-
 docker-ubuntu-xenial: contrib/docker/ubuntu-xenial
 	contrib/dockerdeb ubuntu xenial
 
 docker-ubuntu-xenial-ppa: contrib/docker/ubuntu-xenial
 	contrib/dockerdeb ubuntu xenial --source-only
+
+docker-ubuntu-yakkety: contrib/docker/ubuntu-yakkety
+	contrib/dockerdeb ubuntu yakkety
+
+docker-ubuntu-yakkety-ppa: contrib/docker/ubuntu-yakkety
+	contrib/dockerdeb ubuntu yakkety --source-only
 
 fedora20:
 	mkdir -p packages/fedora20

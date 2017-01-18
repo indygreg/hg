@@ -18,6 +18,7 @@ import sys
 from .i18n import _
 from . import (
     error,
+    pycompat,
     util,
 )
 
@@ -638,7 +639,7 @@ def _verifycert(cert, hostname):
                 # According to RFC 2818 the most specific Common Name must
                 # be used.
                 if key == 'commonName':
-                    # 'subject' entries are unicide.
+                    # 'subject' entries are unicode.
                     try:
                         value = value.encode('ascii')
                     except UnicodeEncodeError:
@@ -667,9 +668,10 @@ def _plainapplepython():
       for using system certificate store CAs in addition to the provided
       cacerts file
     """
-    if sys.platform != 'darwin' or util.mainfrozen() or not sys.executable:
+    if (pycompat.sysplatform != 'darwin' or
+                        util.mainfrozen() or not pycompat.sysexecutable):
         return False
-    exe = os.path.realpath(sys.executable).lower()
+    exe = os.path.realpath(pycompat.sysexecutable).lower()
     return (exe.startswith('/usr/bin/python') or
             exe.startswith('/system/library/frameworks/python.framework/'))
 
@@ -706,7 +708,7 @@ def _defaultcacerts(ui):
     # because we'll get a certificate verification error later and the lack
     # of loaded CA certificates will be the reason why.
     # Assertion: this code is only called if certificates are being verified.
-    if os.name == 'nt':
+    if pycompat.osname == 'nt':
         if not _canloaddefaultcerts:
             ui.warn(_('(unable to load Windows CA certificates; see '
                       'https://mercurial-scm.org/wiki/SecureConnections for '
@@ -724,7 +726,7 @@ def _defaultcacerts(ui):
 
     # The Apple OpenSSL trick isn't available to us. If Python isn't able to
     # load system certs, we're out of luck.
-    if sys.platform == 'darwin':
+    if pycompat.sysplatform == 'darwin':
         # FUTURE Consider looking for Homebrew or MacPorts installed certs
         # files. Also consider exporting the keychain certs to a file during
         # Mercurial install.
@@ -737,7 +739,7 @@ def _defaultcacerts(ui):
     # / is writable on Windows. Out of an abundance of caution make sure
     # we're not on Windows because paths from _systemcacerts could be installed
     # by non-admin users.
-    assert os.name != 'nt'
+    assert pycompat.osname != 'nt'
 
     # Try to find CA certificates in well-known locations. We print a warning
     # when using a found file because we don't want too much silent magic
@@ -764,7 +766,7 @@ def _defaultcacerts(ui):
     return None
 
 def validatesocket(sock):
-    """Validate a socket meets security requiremnets.
+    """Validate a socket meets security requirements.
 
     The passed socket must have been created with ``wrapsocket()``.
     """

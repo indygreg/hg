@@ -18,6 +18,7 @@ from .i18n import (
 from . import (
     cmdutil,
     error,
+    pycompat,
     util,
 )
 
@@ -59,6 +60,8 @@ def find(name):
 def loadpath(path, module_name):
     module_name = module_name.replace('.', '_')
     path = util.normpath(util.expandpath(path))
+    module_name = pycompat.fsdecode(module_name)
+    path = pycompat.fsdecode(path)
     if os.path.isdir(path):
         # module/__init__.py style
         d, f = os.path.split(path)
@@ -74,7 +77,7 @@ def loadpath(path, module_name):
 
 def _importh(name):
     """import and return the <name> module"""
-    mod = __import__(name)
+    mod = __import__(pycompat.sysstr(name))
     components = name.split('.')
     for comp in components[1:]:
         mod = getattr(mod, comp)
@@ -426,7 +429,7 @@ def _disabledhelp(path):
         file.close()
 
     if doc: # extracting localized synopsis
-        return gettext(doc).splitlines()[0]
+        return gettext(doc)
     else:
         return _('(no help text available)')
 
@@ -448,7 +451,7 @@ def disabled():
     for name, path in paths.iteritems():
         doc = _disabledhelp(path)
         if doc:
-            exts[name] = doc
+            exts[name] = doc.splitlines()[0]
 
     return exts
 

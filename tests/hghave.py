@@ -150,7 +150,7 @@ def has_cvsnt():
 
 @check("darcs", "darcs client")
 def has_darcs():
-    return matchoutput('darcs --version', br'2\.[2-9]', True)
+    return matchoutput('darcs --version', br'\b2\.([2-9]|\d{2})', True)
 
 @check("mtn", "monotone client (>= 1.0)")
 def has_mtn():
@@ -449,7 +449,7 @@ def has_sslcontext():
 @check("defaultcacerts", "can verify SSL certs by system's CA certs store")
 def has_defaultcacerts():
     from mercurial import sslutil, ui as uimod
-    ui = uimod.ui()
+    ui = uimod.ui.load()
     return sslutil._defaultcacerts(ui) or sslutil._canloaddefaultcerts
 
 @check("defaultcacertsloaded", "detected presence of loaded system CA certs")
@@ -462,7 +462,7 @@ def has_defaultcacertsloaded():
     if not has_sslcontext():
         return False
 
-    ui = uimod.ui()
+    ui = uimod.ui.load()
     cafile = sslutil._defaultcacerts(ui)
     ctx = ssl.create_default_context()
     if cafile:
@@ -610,3 +610,12 @@ def has_hypothesis():
 @check("unziplinks", "unzip(1) understands and extracts symlinks")
 def unzip_understands_symlinks():
     return matchoutput('unzip --help', br'Info-ZIP')
+
+@check("zstd", "zstd Python module available")
+def has_zstd():
+    try:
+        import mercurial.zstd
+        mercurial.zstd.__version__
+        return True
+    except ImportError:
+        return False

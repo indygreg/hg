@@ -161,8 +161,8 @@ trivial
   (rangeall
     None)
   * optimized:
-  (rangepre
-    ('string', 'tip')
+  (rangeall
+    None
     define)
   * set:
   <spanset+ 0:9>
@@ -619,8 +619,8 @@ may be hidden (issue5385)
   (rangeall
     None)
   * analyzed:
-  (rangepre
-    ('string', 'tip')
+  (rangeall
+    None
     define)
   * set:
   <spanset+ 0:9>
@@ -865,6 +865,17 @@ test ancestors
   7
   8
   9
+  $ log 'author(r"re:\S")'
+  0
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
   $ log 'branch(é)'
   8
   9
@@ -881,6 +892,13 @@ test ancestors
   $ log 'children(ancestor(4,5))'
   2
   3
+
+  $ log 'children(4)'
+  6
+  8
+  $ log 'children(null)'
+  0
+
   $ log 'closed()'
   $ log 'contains(a)'
   0
@@ -894,6 +912,9 @@ test ancestors
   5
   $ log 'desc(B)'
   5
+  $ hg log -r 'desc(r"re:S?u")' --template "{rev} {desc|firstline}\n"
+  5 5 bug
+  6 6 issue619
   $ log 'descendants(2 or 3)'
   2
   3
@@ -1079,7 +1100,7 @@ Test '%' operator
   8
   9
 
-Test opreand of '%' is optimized recursively (issue4670)
+Test operand of '%' is optimized recursively (issue4670)
 
   $ try --optimize '8:9-8%'
   (onlypost
@@ -2802,8 +2823,8 @@ Bogus function with a similar internal name doesn't suggest the internal name
   [255]
 
 Undocumented functions aren't suggested as similar either
-  $ log 'wdir2()'
-  hg: parse error: unknown identifier: wdir2
+  $ log 'tagged2()'
+  hg: parse error: unknown identifier: tagged2
   [255]
 
 multiple revspecs
@@ -3085,7 +3106,7 @@ far away.
   [255]
 
 test scope of alias expansion: 'universe' is expanded prior to 'shadowall(0)',
-but 'all()' should never be substituded to '0()'.
+but 'all()' should never be substituted to '0()'.
 
   $ echo 'universe = all()' >> .hg/hgrc
   $ echo 'shadowall(all) = all and universe' >> .hg/hgrc

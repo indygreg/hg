@@ -3,8 +3,11 @@ from __future__ import absolute_import
 import os
 
 from . import (
+    encoding,
     osutil,
+    pycompat,
     util,
+    win32,
 )
 
 try:
@@ -32,7 +35,7 @@ def systemrcpath():
     if not isinstance(value, str) or not value:
         return rcpath
     value = util.localpath(value)
-    for p in value.split(os.pathsep):
+    for p in value.split(pycompat.ospathsep):
         if p.lower().endswith('mercurial.ini'):
             rcpath.append(p)
         elif os.path.isdir(p):
@@ -46,8 +49,11 @@ def userrcpath():
     home = os.path.expanduser('~')
     path = [os.path.join(home, 'mercurial.ini'),
             os.path.join(home, '.hgrc')]
-    userprofile = os.environ.get('USERPROFILE')
+    userprofile = encoding.environ.get('USERPROFILE')
     if userprofile and userprofile != home:
         path.append(os.path.join(userprofile, 'mercurial.ini'))
         path.append(os.path.join(userprofile, '.hgrc'))
     return path
+
+def termsize(ui):
+    return win32.termsize()

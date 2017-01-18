@@ -8,11 +8,17 @@
 
 from __future__ import absolute_import
 
+import base64
 import errno
 import mimetypes
 import os
+import uuid
 
-from .. import util
+from .. import (
+    encoding,
+    pycompat,
+    util,
+)
 
 httpserver = util.httpserver
 
@@ -139,7 +145,8 @@ def staticfile(directory, fname, req):
     parts = fname.split('/')
     for part in parts:
         if (part in ('', os.curdir, os.pardir) or
-            os.sep in part or os.altsep is not None and os.altsep in part):
+            pycompat.ossep in part or
+            pycompat.osaltsep is not None and pycompat.osaltsep in part):
             return
     fpath = os.path.join(*parts)
     if isinstance(directory, str):
@@ -187,10 +194,29 @@ def get_contact(config):
     """
     return (config("web", "contact") or
             config("ui", "username") or
-            os.environ.get("EMAIL") or "")
+            encoding.environ.get("EMAIL") or "")
 
 def caching(web, req):
     tag = 'W/"%s"' % web.mtime
     if req.env.get('HTTP_IF_NONE_MATCH') == tag:
         raise ErrorResponse(HTTP_NOT_MODIFIED)
     req.headers.append(('ETag', tag))
+
+def cspvalues(ui):
+    """Obtain the Content-Security-Policy header and nonce value.
+
+    Returns a 2-tuple of the CSP header value and the nonce value.
+
+    First value is ``None`` if CSP isn't enabled. Second value is ``None``
+    if CSP isn't enabled or if the CSP header doesn't need a nonce.
+    """
+    # Don't allow untrusted CSP setting since it be disable protections
+    # from a trusted/global source.
+    csp = ui.config('web', 'csp', untrusted=False)
+    nonce = None
+
+    if csp and '%nonce%' in csp:
+        nonce = base64.urlsafe_b64encode(uuid.uuid4().bytes).rstrip('=')
+        csp = csp.replace('%nonce%', nonce)
+
+    return csp, nonce

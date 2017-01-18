@@ -299,9 +299,21 @@ def showdiffstat(repo, ctx, templ, **args):
     """String. Statistics of changes with the following format:
     "modified files: +added/-removed lines"
     """
-    stats = patch.diffstatdata(util.iterlines(ctx.diff()))
+    stats = patch.diffstatdata(util.iterlines(ctx.diff(noprefix=False)))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%s: +%s/-%s' % (len(stats), adds, removes)
+
+@templatekeyword('envvars')
+def showenvvars(repo, **args):
+    """A dictionary of environment variables. (EXPERIMENTAL)"""
+
+    env = repo.ui.exportableenviron()
+    env = util.sortdict((k, env[k]) for k in sorted(env))
+    makemap = lambda k: {'key': k, 'value': env[k]}
+    c = [makemap(k) for k in env]
+    f = _showlist('envvar', c, plural='envvars', **args)
+    return _hybrid(f, env, makemap,
+                   lambda x: '%s=%s' % (x['key'], x['value']))
 
 @templatekeyword('extras')
 def showextras(**args):
@@ -458,7 +470,8 @@ def showmanifest(**args):
         # just avoid crash, we might want to use the 'ff...' hash in future
         return
     args = args.copy()
-    args.update({'rev': repo.manifest.rev(mnode), 'node': hex(mnode)})
+    args.update({'rev': repo.manifestlog._revlog.rev(mnode),
+                 'node': hex(mnode)})
     return templ('manifest', **args)
 
 def shownames(namespace, **args):
@@ -593,6 +606,14 @@ def loadkeyword(ui, extname, registrarobj):
 def termwidth(repo, ctx, templ, **args):
     """Integer. The width of the current terminal."""
     return repo.ui.termwidth()
+
+@templatekeyword('troubles')
+def showtroubles(**args):
+    """List of strings. Evolution troubles affecting the changeset.
+
+    (EXPERIMENTAL)
+    """
+    return showlist('trouble', args['ctx'].troubles(), **args)
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = keywords.values()

@@ -18,6 +18,7 @@ from .i18n import _
 from . import (
     encoding,
     osutil,
+    pycompat,
     win32,
 )
 
@@ -38,7 +39,6 @@ samefile = win32.samefile
 setsignalhandler = win32.setsignalhandler
 spawndetached = win32.spawndetached
 split = os.path.split
-termwidth = win32.termwidth
 testpid = win32.testpid
 unlink = win32.unlink
 
@@ -172,14 +172,12 @@ class winstdout(object):
             self.close()
             raise IOError(errno.EPIPE, 'Broken pipe')
 
-sys.__stdout__ = sys.stdout = winstdout(sys.stdout)
-
 def _is_win_9x():
     '''return true if run on windows 95, 98 or me.'''
     try:
         return sys.getwindowsversion()[3] == 1
     except AttributeError:
-        return 'command' in os.environ.get('comspec', '')
+        return 'command' in encoding.environ.get('comspec', '')
 
 def openhardlinks():
     return not _is_win_9x()
@@ -217,7 +215,7 @@ def setbinary(fd):
         msvcrt.setmode(fno(), os.O_BINARY)
 
 def pconvert(path):
-    return path.replace(os.sep, '/')
+    return path.replace(pycompat.ossep, '/')
 
 def localpath(path):
     return path.replace('/', '\\')
@@ -305,8 +303,8 @@ def findexe(command):
     PATH isn't searched if command is an absolute or relative path.
     An extension from PATHEXT is found and added if not present.
     If command isn't found None is returned.'''
-    pathext = os.environ.get('PATHEXT', '.COM;.EXE;.BAT;.CMD')
-    pathexts = [ext for ext in pathext.lower().split(os.pathsep)]
+    pathext = encoding.environ.get('PATHEXT', '.COM;.EXE;.BAT;.CMD')
+    pathexts = [ext for ext in pathext.lower().split(pycompat.ospathsep)]
     if os.path.splitext(command)[1].lower() in pathexts:
         pathexts = ['']
 
@@ -318,10 +316,10 @@ def findexe(command):
                 return executable
         return None
 
-    if os.sep in command:
+    if pycompat.ossep in command:
         return findexisting(command)
 
-    for path in os.environ.get('PATH', '').split(os.pathsep):
+    for path in encoding.environ.get('PATH', '').split(pycompat.ospathsep):
         executable = findexisting(os.path.join(path, command))
         if executable is not None:
             return executable

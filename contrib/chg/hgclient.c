@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include "hgclient.h"
+#include "procutil.h"
 #include "util.h"
 
 enum {
@@ -31,10 +32,10 @@ enum {
 	/* cHg extension: */
 	CAP_ATTACHIO = 0x0100,
 	CAP_CHDIR = 0x0200,
-	CAP_GETPAGER = 0x0400,
 	CAP_SETENV = 0x0800,
 	CAP_SETUMASK = 0x1000,
 	CAP_VALIDATE = 0x2000,
+	CAP_SETPROCNAME = 0x4000,
 };
 
 typedef struct {
@@ -47,10 +48,10 @@ static const cappair_t captable[] = {
 	{"runcommand", CAP_RUNCOMMAND},
 	{"attachio", CAP_ATTACHIO},
 	{"chdir", CAP_CHDIR},
-	{"getpager", CAP_GETPAGER},
 	{"setenv", CAP_SETENV},
 	{"setumask", CAP_SETUMASK},
 	{"validate", CAP_VALIDATE},
+	{"setprocname", CAP_SETPROCNAME},
 	{NULL, 0},  /* terminator */
 };
 
@@ -70,6 +71,8 @@ struct hgclient_tag_ {
 };
 
 static const size_t defaultdatasize = 4096;
+
+static void attachio(hgclient_t *hgc);
 
 static void initcontext(context_t *ctx)
 {
@@ -237,16 +240,27 @@ static void handlesystemrequest(hgclient_t *hgc)
 	ctx->data[ctx->datasize] = '\0';  /* terminate last string */
 
 	const char **args = unpackcmdargsnul(ctx);
-	if (!args[0] || !args[1])
-		abortmsg("missing command or cwd in system request");
-	debugmsg("run '%s' at '%s'", args[0], args[1]);
-	int32_t r = runshellcmd(args[0], args + 2, args[1]);
-	free(args);
+	if (!args[0] || !args[1] || !args[2])
+		abortmsg("missing type or command or cwd in system request");
+	if (strcmp(args[0], "system") == 0) {
+		debugmsg("run '%s' at '%s'", args[1], args[2]);
+		int32_t r = runshellcmd(args[1], args + 3, args[2]);
+		free(args);
 
-	uint32_t r_n = htonl(r);
-	memcpy(ctx->data, &r_n, sizeof(r_n));
-	ctx->datasize = sizeof(r_n);
-	writeblock(hgc);
+		uint32_t r_n = htonl(r);
+		memcpy(ctx->data, &r_n, sizeof(r_n));
+		ctx->datasize = sizeof(r_n);
+		writeblock(hgc);
+	} else if (strcmp(args[0], "pager") == 0) {
+		setuppager(args[1]);
+		if (hgc->capflags & CAP_ATTACHIO)
+			attachio(hgc);
+		/* unblock the server */
+		static const char emptycmd[] = "\n";
+		sendall(hgc->sockfd, emptycmd, sizeof(emptycmd) - 1);
+	} else {
+		abortmsg("unknown type in system request: %s", args[0]);
+	}
 }
 
 /* Read response of command execution until receiving 'r'-esult */
@@ -350,6 +364,16 @@ static void readhello(hgclient_t *hgc)
 	debugmsg("capflags=0x%04x, pid=%d", hgc->capflags, hgc->pid);
 }
 
+static void updateprocname(hgclient_t *hgc)
+{
+	int r = snprintf(hgc->ctx.data, hgc->ctx.maxdatasize,
+			"chg[worker/%d]", (int)getpid());
+	if (r < 0 || (size_t)r >= hgc->ctx.maxdatasize)
+		abortmsg("insufficient buffer to write procname (r = %d)", r);
+	hgc->ctx.datasize = (size_t)r;
+	writeblockrequest(hgc, "setprocname");
+}
+
 static void attachio(hgclient_t *hgc)
 {
 	debugmsg("request attachio");
@@ -425,15 +449,49 @@ hgclient_t *hgc_open(const char *sockname)
 
 	struct sockaddr_un addr;
 	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, sockname, sizeof(addr.sun_path));
+
+	/* use chdir to workaround small sizeof(sun_path) */
+	int bakfd = -1;
+	const char *basename = sockname;
+	{
+		const char *split = strrchr(sockname, '/');
+		if (split && split != sockname) {
+			if (split[1] == '\0')
+				abortmsg("sockname cannot end with a slash");
+			size_t len = split - sockname;
+			char sockdir[len + 1];
+			memcpy(sockdir, sockname, len);
+			sockdir[len] = '\0';
+
+			bakfd = open(".", O_DIRECTORY);
+			if (bakfd == -1)
+				abortmsgerrno("cannot open cwd");
+
+			int r = chdir(sockdir);
+			if (r != 0)
+				abortmsgerrno("cannot chdir %s", sockdir);
+
+			basename = split + 1;
+		}
+	}
+	if (strlen(basename) >= sizeof(addr.sun_path))
+		abortmsg("sockname is too long: %s", basename);
+	strncpy(addr.sun_path, basename, sizeof(addr.sun_path));
 	addr.sun_path[sizeof(addr.sun_path) - 1] = '\0';
 
+	/* real connect */
 	int r = connect(fd, (struct sockaddr *)&addr, sizeof(addr));
 	if (r < 0) {
+		if (errno != ENOENT && errno != ECONNREFUSED)
+			abortmsgerrno("cannot connect to %s", sockname);
+	}
+	if (bakfd != -1) {
+		fchdirx(bakfd);
+		close(bakfd);
+	}
+	if (r < 0) {
 		close(fd);
-		if (errno == ENOENT || errno == ECONNREFUSED)
-			return NULL;
-		abortmsgerrno("cannot connect to %s", addr.sun_path);
+		return NULL;
 	}
 	debugmsg("connected to %s", addr.sun_path);
 
@@ -445,6 +503,8 @@ hgclient_t *hgc_open(const char *sockname)
 	readhello(hgc);
 	if (!(hgc->capflags & CAP_RUNCOMMAND))
 		abortmsg("insufficient capability: runcommand");
+	if (hgc->capflags & CAP_SETPROCNAME)
+		updateprocname(hgc);
 	if (hgc->capflags & CAP_ATTACHIO)
 		attachio(hgc);
 	if (hgc->capflags & CAP_CHDIR)
@@ -542,31 +602,6 @@ void hgc_attachio(hgclient_t *hgc)
 	if (!(hgc->capflags & CAP_ATTACHIO))
 		return;
 	attachio(hgc);
-}
-
-/*!
- * Get pager command for the given Mercurial command args
- *
- * If no pager enabled, returns NULL. The return value becomes invalid
- * once you run another request to hgc.
- */
-const char *hgc_getpager(hgclient_t *hgc, const char *const args[],
-			 size_t argsize)
-{
-	assert(hgc);
-
-	if (!(hgc->capflags & CAP_GETPAGER))
-		return NULL;
-
-	packcmdargs(&hgc->ctx, args, argsize);
-	writeblockrequest(hgc, "getpager");
-	handleresponse(hgc);
-
-	if (hgc->ctx.datasize < 1 || hgc->ctx.data[0] == '\0')
-		return NULL;
-	enlargecontext(&hgc->ctx, hgc->ctx.datasize + 1);
-	hgc->ctx.data[hgc->ctx.datasize] = '\0';
-	return hgc->ctx.data;
 }
 
 /*!

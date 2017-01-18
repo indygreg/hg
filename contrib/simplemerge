@@ -3,6 +3,7 @@
 from mercurial import demandimport
 demandimport.enable()
 
+import getopt
 import sys
 from mercurial.i18n import _
 from mercurial import error, simplemerge, fancyopts, util, ui
@@ -47,14 +48,14 @@ try:
     opts = {}
     try:
         args = fancyopts.fancyopts(sys.argv[1:], options, opts)
-    except fancyopts.getopt.GetoptError as e:
+    except getopt.GetoptError as e:
         raise ParseError(e)
     if opts['help']:
         showhelp()
         sys.exit(0)
     if len(args) != 3:
             raise ParseError(_('wrong number of arguments'))
-    sys.exit(simplemerge.simplemerge(ui.ui(), *args, **opts))
+    sys.exit(simplemerge.simplemerge(ui.ui.load(), *args, **opts))
 except ParseError as e:
     sys.stdout.write("%s: %s\n" % (sys.argv[0], e))
     showhelp()

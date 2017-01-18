@@ -39,8 +39,8 @@ from . import (
 
 _pack = struct.pack
 _unpack = struct.unpack
-_compress = zlib.compress
-_decompress = zlib.decompress
+# Aliased for performance.
+_zlibdecompress = zlib.decompress
 
 # revlog header flags
 REVLOGV0 = 0
@@ -54,8 +54,16 @@ REVLOGNG_FLAGS = REVLOGNGINLINEDATA | REVLOGGENERALDELTA
 
 # revlog index flags
 REVIDX_ISCENSORED = (1 << 15) # revision has censor metadata, must be verified
+REVIDX_ELLIPSIS = (1 << 14) # revision hash does not match data (narrowhg)
+REVIDX_EXTSTORED = (1 << 13) # revision data is stored externally
 REVIDX_DEFAULT_FLAGS = 0
-REVIDX_KNOWN_FLAGS = REVIDX_ISCENSORED
+# stable order in which flags need to be processed and their processors applied
+REVIDX_FLAGS_ORDER = [
+    REVIDX_ISCENSORED,
+    REVIDX_ELLIPSIS,
+    REVIDX_EXTSTORED,
+]
+REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
 
 # max size of revlog with inline data
 _maxinline = 131072
@@ -64,6 +72,41 @@ _chunksize = 1048576
 RevlogError = error.RevlogError
 LookupError = error.LookupError
 CensoredNodeError = error.CensoredNodeError
+ProgrammingError = error.ProgrammingError
+
+# Store flag processors (cf. 'addflagprocessor()' to register)
+_flagprocessors = {
+    REVIDX_ISCENSORED: None,
+}
+
+def addflagprocessor(flag, processor):
+    """Register a flag processor on a revision data flag.
+
+    Invariant:
+    - Flags need to be defined in REVIDX_KNOWN_FLAGS and REVIDX_FLAGS_ORDER.
+    - Only one flag processor can be registered on a specific flag.
+    - flagprocessors must be 3-tuples of functions (read, write, raw) with the
+      following signatures:
+          - (read)  f(self, text) -> newtext, bool
+          - (write) f(self, text) -> newtext, bool
+          - (raw)   f(self, text) -> bool
+      The boolean returned by these transforms is used to determine whether
+      'newtext' can be used for hash integrity checking.
+
+      Note: The 'raw' transform is used for changegroup generation and in some
+      debug commands. In this case the transform only indicates whether the
+      contents can be used for hash integrity checks.
+    """
+    if not flag & REVIDX_KNOWN_FLAGS:
+        msg = _("cannot register processor on unknown flag '%#x'.") % (flag)
+        raise ProgrammingError(msg)
+    if flag not in REVIDX_FLAGS_ORDER:
+        msg = _("flag '%#x' undefined in REVIDX_FLAGS_ORDER.") % (flag)
+        raise ProgrammingError(msg)
+    if flag in _flagprocessors:
+        msg = _("cannot register multiple processors on flag '%#x'.") % (flag)
+        raise error.Abort(msg)
+    _flagprocessors[flag] = processor
 
 def getoffset(q):
     return int(q >> 16)
@@ -72,6 +115,8 @@ def gettype(q):
     return int(q & 0xFFFF)
 
 def offset_type(offset, type):
+    if (type & ~REVIDX_KNOWN_FLAGS) != 0:
+        raise ValueError('unknown revlog index flags')
     return long(long(offset) << 16 | type)
 
 _nullhash = hashlib.sha1(nullid)
@@ -96,22 +141,6 @@ def hash(text, p1, p2):
         s.update(l[1])
     s.update(text)
     return s.digest()
-
-def decompress(bin):
-    """ decompress the given input """
-    if not bin:
-        return bin
-    t = bin[0]
-    if t == '\0':
-        return bin
-    if t == 'x':
-        try:
-            return _decompress(bin)
-        except zlib.error as e:
-            raise RevlogError(_("revlog decompress error: %s") % str(e))
-    if t == 'u':
-        return util.buffer(bin, 1)
-    raise RevlogError(_("unknown compression type %r") % t)
 
 # index v0:
 #  4 bytes: offset
@@ -245,6 +274,7 @@ class revlog(object):
         # Mapping of revision integer to full node.
         self._nodecache = {nullid: nullrev}
         self._nodepos = None
+        self._compengine = 'zlib'
 
         v = REVLOG_DEFAULT_VERSION
         opts = getattr(opener, 'options', None)
@@ -261,6 +291,8 @@ class revlog(object):
             if 'aggressivemergedeltas' in opts:
                 self._aggressivemergedeltas = opts['aggressivemergedeltas']
             self._lazydeltabase = bool(opts.get('lazydeltabase', False))
+            if 'compengine' in opts:
+                self._compengine = opts['compengine']
 
         if self._chunkcachesize <= 0:
             raise RevlogError(_('revlog chunk cache size %r is not greater '
@@ -313,6 +345,12 @@ class revlog(object):
             self._chunkclear()
         # revnum -> (chain-length, sum-delta-length)
         self._chaininfocache = {}
+        # revlog header -> revlog compressor
+        self._decompressors = {}
+
+    @util.propertycache
+    def _compressor(self):
+        return util.compengines[self._compengine].revlogcompressor()
 
     def tip(self):
         return self.node(len(self.index) - 2)
@@ -380,22 +418,29 @@ class revlog(object):
                     return r
             raise LookupError(node, self.indexfile, _('no node'))
 
-    def node(self, rev):
-        return self.index[rev][7]
-    def linkrev(self, rev):
-        return self.index[rev][4]
-    def parents(self, node):
-        i = self.index
-        d = i[self.rev(node)]
-        return i[d[5]][7], i[d[6]][7] # map revisions to nodes inline
-    def parentrevs(self, rev):
-        return self.index[rev][5:7]
+    # Accessors for index entries.
+
+    # First tuple entry is 8 bytes. First 6 bytes are offset. Last 2 bytes
+    # are flags.
     def start(self, rev):
         return int(self.index[rev][0] >> 16)
-    def end(self, rev):
-        return self.start(rev) + self.length(rev)
+
+    def flags(self, rev):
+        return self.index[rev][0] & 0xFFFF
+
     def length(self, rev):
         return self.index[rev][1]
+
+    def rawsize(self, rev):
+        """return the length of the uncompressed text for a given revision"""
+        l = self.index[rev][2]
+        if l >= 0:
+            return l
+
+        t = self.revision(self.node(rev))
+        return len(t)
+    size = rawsize
+
     def chainbase(self, rev):
         base = self._chainbasecache.get(rev)
         if base is not None:
@@ -409,6 +454,26 @@ class revlog(object):
 
         self._chainbasecache[rev] = base
         return base
+
+    def linkrev(self, rev):
+        return self.index[rev][4]
+
+    def parentrevs(self, rev):
+        return self.index[rev][5:7]
+
+    def node(self, rev):
+        return self.index[rev][7]
+
+    # Derived from index values.
+
+    def end(self, rev):
+        return self.start(rev) + self.length(rev)
+
+    def parents(self, node):
+        i = self.index
+        d = i[self.rev(node)]
+        return i[d[5]][7], i[d[6]][7] # map revisions to nodes inline
+
     def chainlen(self, rev):
         return self._chaininfo(rev)[0]
 
@@ -477,18 +542,6 @@ class revlog(object):
 
         chain.reverse()
         return chain, stopped
-
-    def flags(self, rev):
-        return self.index[rev][0] & 0xFFFF
-    def rawsize(self, rev):
-        """return the length of the uncompressed text for a given revision"""
-        l = self.index[rev][2]
-        if l >= 0:
-            return l
-
-        t = self.revision(self.node(rev))
-        return len(t)
-    size = rawsize
 
     def ancestors(self, revs, stoprev=0, inclusive=False):
         """Generate the ancestors of 'revs' in reverse topological order.
@@ -582,7 +635,7 @@ class revlog(object):
                         visit.append(p)
         missing = list(missing)
         missing.sort()
-        return has, [self.node(r) for r in missing]
+        return has, [self.node(miss) for miss in missing]
 
     def incrementalmissingrevs(self, common=None):
         """Return an object that can be used to incrementally compute the
@@ -734,10 +787,10 @@ class revlog(object):
                 # include roots that aren't ancestors.
 
                 # Filter out roots that aren't ancestors of heads
-                roots = [n for n in roots if n in ancestors]
+                roots = [root for root in roots if root in ancestors]
                 # Recompute the lowest revision
                 if roots:
-                    lowestrev = min([self.rev(n) for n in roots])
+                    lowestrev = min([self.rev(root) for root in roots])
                 else:
                     # No more roots?  Return empty list
                     return nonodes
@@ -796,7 +849,7 @@ class revlog(object):
                     # But, obviously its parents aren't.
                     for p in self.parents(n):
                         heads.pop(p, None)
-        heads = [n for n, flag in heads.iteritems() if flag]
+        heads = [head for head, flag in heads.iteritems() if flag]
         roots = list(roots)
         assert orderedout
         assert roots
@@ -948,9 +1001,9 @@ class revlog(object):
 
     def _partialmatch(self, id):
         try:
-            n = self.index.partialmatch(id)
-            if n and self.hasnode(n):
-                return n
+            partial = self.index.partialmatch(id)
+            if partial and self.hasnode(partial):
+                return partial
             return None
         except RevlogError:
             # parsers.c radix tree lookup gave multiple matches
@@ -1094,8 +1147,17 @@ class revlog(object):
         Callers will need to call ``self.start(rev)`` and ``self.length(rev)``
         to determine where each revision's data begins and ends.
         """
-        start = self.start(startrev)
-        end = self.end(endrev)
+        # Inlined self.start(startrev) & self.end(endrev) for perf reasons
+        # (functions are expensive).
+        index = self.index
+        istart = index[startrev]
+        start = int(istart[0] >> 16)
+        if startrev == endrev:
+            end = start + istart[1]
+        else:
+            iend = index[endrev]
+            end = int(iend[0] >> 16) + iend[1]
+
         if self._inline:
             start += (startrev + 1) * self._io.size
             end += (endrev + 1) * self._io.size
@@ -1112,7 +1174,7 @@ class revlog(object):
 
         Returns a str holding uncompressed data for the requested revision.
         """
-        return decompress(self._chunkraw(rev, rev, df=df)[1])
+        return self.decompress(self._chunkraw(rev, rev, df=df)[1])
 
     def _chunks(self, revs, df=None):
         """Obtain decompressed chunks for the specified revisions.
@@ -1145,12 +1207,13 @@ class revlog(object):
             # 2G on Windows
             return [self._chunk(rev, df=df) for rev in revs]
 
+        decomp = self.decompress
         for rev in revs:
             chunkstart = start(rev)
             if inline:
                 chunkstart += (rev + 1) * iosize
             chunklength = length(rev)
-            ladd(decompress(buffer(data, chunkstart - offset, chunklength)))
+            ladd(decomp(buffer(data, chunkstart - offset, chunklength)))
 
         return l
 
@@ -1176,12 +1239,14 @@ class revlog(object):
         return mdiff.textdiff(self.revision(rev1),
                               self.revision(rev2))
 
-    def revision(self, nodeorrev, _df=None):
+    def revision(self, nodeorrev, _df=None, raw=False):
         """return an uncompressed revision of a given node or revision
         number.
 
-        _df is an existing file handle to read from. It is meant to only be
-        used internally.
+        _df - an existing file handle to read from. (internal-only)
+        raw - an optional argument specifying if the revision data is to be
+        treated as raw data when applying flag transforms. 'raw' should be set
+        to True when generating changegroups or in debug commands.
         """
         if isinstance(nodeorrev, int):
             rev = nodeorrev
@@ -1203,11 +1268,6 @@ class revlog(object):
         if rev is None:
             rev = self.rev(node)
 
-        # check rev flags
-        if self.flags(rev) & ~REVIDX_KNOWN_FLAGS:
-            raise RevlogError(_('incompatible revision flag %x') %
-                              (self.flags(rev) & ~REVIDX_KNOWN_FLAGS))
-
         chain, stopped = self._deltachain(rev, stoprev=cachedrev)
         if stopped:
             text = self._cache[2]
@@ -1222,7 +1282,10 @@ class revlog(object):
 
         text = mdiff.patches(text, bins)
 
-        text = self._checkhash(text, node, rev)
+        text, validatehash = self._processflags(text, self.flags(rev), 'read',
+                                                raw=raw)
+        if validatehash:
+            self.checkhash(text, node, rev=rev)
 
         self._cache = (node, rev, text)
         return text
@@ -1235,12 +1298,73 @@ class revlog(object):
         """
         return hash(text, p1, p2)
 
-    def _checkhash(self, text, node, rev):
-        p1, p2 = self.parents(node)
-        self.checkhash(text, p1, p2, node, rev)
-        return text
+    def _processflags(self, text, flags, operation, raw=False):
+        """Inspect revision data flags and applies transforms defined by
+        registered flag processors.
 
-    def checkhash(self, text, p1, p2, node, rev=None):
+        ``text`` - the revision data to process
+        ``flags`` - the revision flags
+        ``operation`` - the operation being performed (read or write)
+        ``raw`` - an optional argument describing if the raw transform should be
+        applied.
+
+        This method processes the flags in the order (or reverse order if
+        ``operation`` is 'write') defined by REVIDX_FLAGS_ORDER, applying the
+        flag processors registered for present flags. The order of flags defined
+        in REVIDX_FLAGS_ORDER needs to be stable to allow non-commutativity.
+
+        Returns a 2-tuple of ``(text, validatehash)`` where ``text`` is the
+        processed text and ``validatehash`` is a bool indicating whether the
+        returned text should be checked for hash integrity.
+
+        Note: If the ``raw`` argument is set, it has precedence over the
+        operation and will only update the value of ``validatehash``.
+        """
+        if not operation in ('read', 'write'):
+            raise ProgrammingError(_("invalid '%s' operation ") % (operation))
+        # Check all flags are known.
+        if flags & ~REVIDX_KNOWN_FLAGS:
+            raise RevlogError(_("incompatible revision flag '%#x'") %
+                              (flags & ~REVIDX_KNOWN_FLAGS))
+        validatehash = True
+        # Depending on the operation (read or write), the order might be
+        # reversed due to non-commutative transforms.
+        orderedflags = REVIDX_FLAGS_ORDER
+        if operation == 'write':
+            orderedflags = reversed(orderedflags)
+
+        for flag in orderedflags:
+            # If a flagprocessor has been registered for a known flag, apply the
+            # related operation transform and update result tuple.
+            if flag & flags:
+                vhash = True
+
+                if flag not in _flagprocessors:
+                    message = _("missing processor for flag '%#x'") % (flag)
+                    raise RevlogError(message)
+
+                processor = _flagprocessors[flag]
+                if processor is not None:
+                    readtransform, writetransform, rawtransform = processor
+
+                    if raw:
+                        vhash = rawtransform(self, text)
+                    elif operation == 'read':
+                        text, vhash = readtransform(self, text)
+                    else: # write operation
+                        text, vhash = writetransform(self, text)
+                validatehash = validatehash and vhash
+
+        return text, validatehash
+
+    def checkhash(self, text, node, p1=None, p2=None, rev=None):
+        """Check node hash integrity.
+
+        Available as a function so that subclasses can extend hash mismatch
+        behaviors as needed.
+        """
+        if p1 is None and p2 is None:
+            p1, p2 = self.parents(node)
         if node != self.hash(text, p1, p2):
             revornode = rev
             if revornode is None:
@@ -1300,7 +1424,7 @@ class revlog(object):
         self._chunkclear()
 
     def addrevision(self, text, transaction, link, p1, p2, cachedelta=None,
-                    node=None):
+                    node=None, flags=REVIDX_DEFAULT_FLAGS):
         """add a revision to the log
 
         text - the revision data to add
@@ -1311,10 +1435,22 @@ class revlog(object):
         node - nodeid of revision; typically node is not specified, and it is
             computed by default as hash(text, p1, p2), however subclasses might
             use different hashing method (and override checkhash() in such case)
+        flags - the known flags to set on the revision
         """
         if link == nullrev:
             raise RevlogError(_("attempted to add linkrev -1 to %s")
                               % self.indexfile)
+
+        if flags:
+            node = node or self.hash(text, p1, p2)
+
+        newtext, validatehash = self._processflags(text, flags, 'write')
+
+        # If the flag processor modifies the revision data, ignore any provided
+        # cachedelta.
+        if newtext != text:
+            cachedelta = None
+        text = newtext
 
         if len(text) > _maxentrysize:
             raise RevlogError(
@@ -1325,46 +1461,90 @@ class revlog(object):
         if node in self.nodemap:
             return node
 
+        if validatehash:
+            self.checkhash(text, node, p1=p1, p2=p2)
+
         dfh = None
         if not self._inline:
             dfh = self.opener(self.datafile, "a+")
         ifh = self.opener(self.indexfile, "a+", checkambig=self._checkambig)
         try:
             return self._addrevision(node, text, transaction, link, p1, p2,
-                                     REVIDX_DEFAULT_FLAGS, cachedelta, ifh, dfh)
+                                     flags, cachedelta, ifh, dfh)
         finally:
             if dfh:
                 dfh.close()
             ifh.close()
 
-    def compress(self, text):
-        """ generate a possibly-compressed representation of text """
-        if not text:
-            return ("", text)
-        l = len(text)
-        bin = None
-        if l < 44:
-            pass
-        elif l > 1000000:
-            # zlib makes an internal copy, thus doubling memory usage for
-            # large files, so lets do this in pieces
-            z = zlib.compressobj()
-            p = []
-            pos = 0
-            while pos < l:
-                pos2 = pos + 2**20
-                p.append(z.compress(text[pos:pos2]))
-                pos = pos2
-            p.append(z.flush())
-            if sum(map(len, p)) < l:
-                bin = "".join(p)
-        else:
-            bin = _compress(text)
-        if bin is None or len(bin) > l:
-            if text[0] == '\0':
-                return ("", text)
-            return ('u', text)
-        return ("", bin)
+    def compress(self, data):
+        """Generate a possibly-compressed representation of data."""
+        if not data:
+            return '', data
+
+        compressed = self._compressor.compress(data)
+
+        if compressed:
+            # The revlog compressor added the header in the returned data.
+            return '', compressed
+
+        if data[0] == '\0':
+            return '', data
+        return 'u', data
+
+    def decompress(self, data):
+        """Decompress a revlog chunk.
+
+        The chunk is expected to begin with a header identifying the
+        format type so it can be routed to an appropriate decompressor.
+        """
+        if not data:
+            return data
+
+        # Revlogs are read much more frequently than they are written and many
+        # chunks only take microseconds to decompress, so performance is
+        # important here.
+        #
+        # We can make a few assumptions about revlogs:
+        #
+        # 1) the majority of chunks will be compressed (as opposed to inline
+        #    raw data).
+        # 2) decompressing *any* data will likely by at least 10x slower than
+        #    returning raw inline data.
+        # 3) we want to prioritize common and officially supported compression
+        #    engines
+        #
+        # It follows that we want to optimize for "decompress compressed data
+        # when encoded with common and officially supported compression engines"
+        # case over "raw data" and "data encoded by less common or non-official
+        # compression engines." That is why we have the inline lookup first
+        # followed by the compengines lookup.
+        #
+        # According to `hg perfrevlogchunks`, this is ~0.5% faster for zlib
+        # compressed chunks. And this matters for changelog and manifest reads.
+        t = data[0]
+
+        if t == 'x':
+            try:
+                return _zlibdecompress(data)
+            except zlib.error as e:
+                raise RevlogError(_('revlog decompress error: %s') % str(e))
+        # '\0' is more common than 'u' so it goes first.
+        elif t == '\0':
+            return data
+        elif t == 'u':
+            return util.buffer(data, 1)
+
+        try:
+            compressor = self._decompressors[t]
+        except KeyError:
+            try:
+                engine = util.compengines.forrevlogheader(t)
+                compressor = engine.revlogcompressor()
+                self._decompressors[t] = compressor
+            except KeyError:
+                raise RevlogError(_('unknown compression type %r') % t)
+
+        return compressor.decompress(data)
 
     def _isgooddelta(self, d, textlen):
         """Returns True if the given delta is good. Good means that it is within
@@ -1386,13 +1566,16 @@ class revlog(object):
         return True
 
     def _addrevision(self, node, text, transaction, link, p1, p2, flags,
-                     cachedelta, ifh, dfh, alwayscache=False):
+                     cachedelta, ifh, dfh, alwayscache=False, raw=False):
         """internal function to add revisions to the log
 
         see addrevision for argument descriptions.
         invariants:
         - text is optional (can be None); if not set, cachedelta must be set.
           if both are set, they must correspond to each other.
+        - raw is optional; if set to True, it indicates the revision data is to
+          be treated by _processflags() as raw. It is usually set by changegroup
+          generation and debug commands.
         """
         btext = [text]
         def buildtext():
@@ -1412,10 +1595,14 @@ class revlog(object):
                     fh = ifh
                 else:
                     fh = dfh
-                basetext = self.revision(self.node(baserev), _df=fh)
+                basetext = self.revision(self.node(baserev), _df=fh, raw=raw)
                 btext[0] = mdiff.patch(basetext, delta)
+
             try:
-                self.checkhash(btext[0], p1, p2, node)
+                res = self._processflags(btext[0], flags, 'read', raw=raw)
+                btext[0], validatehash = res
+                if validatehash:
+                    self.checkhash(btext[0], node, p1=p1, p2=p2)
                 if flags & REVIDX_ISCENSORED:
                     raise RevlogError(_('node %s is not censored') % node)
             except CensoredNodeError:
@@ -1642,10 +1829,14 @@ class revlog(object):
                 # the added revision, which will require a call to
                 # revision(). revision() will fast path if there is a cache
                 # hit. So, we tell _addrevision() to always cache in this case.
+                # We're only using addgroup() in the context of changegroup
+                # generation so the revision data can always be handled as raw
+                # by the flagprocessor.
                 chain = self._addrevision(node, None, transaction, link,
                                           p1, p2, flags, (baserev, delta),
                                           ifh, dfh,
-                                          alwayscache=bool(addrevisioncb))
+                                          alwayscache=bool(addrevisioncb),
+                                          raw=True)
 
                 if addrevisioncb:
                     addrevisioncb(self, chain)
@@ -1794,3 +1985,117 @@ class revlog(object):
         if not self._inline:
             res.append(self.datafile)
         return res
+
+    DELTAREUSEALWAYS = 'always'
+    DELTAREUSESAMEREVS = 'samerevs'
+    DELTAREUSENEVER = 'never'
+
+    DELTAREUSEALL = set(['always', 'samerevs', 'never'])
+
+    def clone(self, tr, destrevlog, addrevisioncb=None,
+              deltareuse=DELTAREUSESAMEREVS, aggressivemergedeltas=None):
+        """Copy this revlog to another, possibly with format changes.
+
+        The destination revlog will contain the same revisions and nodes.
+        However, it may not be bit-for-bit identical due to e.g. delta encoding
+        differences.
+
+        The ``deltareuse`` argument control how deltas from the existing revlog
+        are preserved in the destination revlog. The argument can have the
+        following values:
+
+        DELTAREUSEALWAYS
+           Deltas will always be reused (if possible), even if the destination
+           revlog would not select the same revisions for the delta. This is the
+           fastest mode of operation.
+        DELTAREUSESAMEREVS
+           Deltas will be reused if the destination revlog would pick the same
+           revisions for the delta. This mode strikes a balance between speed
+           and optimization.
+        DELTAREUSENEVER
+           Deltas will never be reused. This is the slowest mode of execution.
+           This mode can be used to recompute deltas (e.g. if the diff/delta
+           algorithm changes).
+
+        Delta computation can be slow, so the choice of delta reuse policy can
+        significantly affect run time.
+
+        The default policy (``DELTAREUSESAMEREVS``) strikes a balance between
+        two extremes. Deltas will be reused if they are appropriate. But if the
+        delta could choose a better revision, it will do so. This means if you
+        are converting a non-generaldelta revlog to a generaldelta revlog,
+        deltas will be recomputed if the delta's parent isn't a parent of the
+        revision.
+
+        In addition to the delta policy, the ``aggressivemergedeltas`` argument
+        controls whether to compute deltas against both parents for merges.
+        By default, the current default is used.
+        """
+        if deltareuse not in self.DELTAREUSEALL:
+            raise ValueError(_('value for deltareuse invalid: %s') % deltareuse)
+
+        if len(destrevlog):
+            raise ValueError(_('destination revlog is not empty'))
+
+        if getattr(self, 'filteredrevs', None):
+            raise ValueError(_('source revlog has filtered revisions'))
+        if getattr(destrevlog, 'filteredrevs', None):
+            raise ValueError(_('destination revlog has filtered revisions'))
+
+        # lazydeltabase controls whether to reuse a cached delta, if possible.
+        oldlazydeltabase = destrevlog._lazydeltabase
+        oldamd = destrevlog._aggressivemergedeltas
+
+        try:
+            if deltareuse == self.DELTAREUSEALWAYS:
+                destrevlog._lazydeltabase = True
+            elif deltareuse == self.DELTAREUSESAMEREVS:
+                destrevlog._lazydeltabase = False
+
+            destrevlog._aggressivemergedeltas = aggressivemergedeltas or oldamd
+
+            populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
+                                                self.DELTAREUSESAMEREVS)
+
+            index = self.index
+            for rev in self:
+                entry = index[rev]
+
+                # Some classes override linkrev to take filtered revs into
+                # account. Use raw entry from index.
+                flags = entry[0] & 0xffff
+                linkrev = entry[4]
+                p1 = index[entry[5]][7]
+                p2 = index[entry[6]][7]
+                node = entry[7]
+
+                # (Possibly) reuse the delta from the revlog if allowed and
+                # the revlog chunk is a delta.
+                cachedelta = None
+                text = None
+                if populatecachedelta:
+                    dp = self.deltaparent(rev)
+                    if dp != nullrev:
+                        cachedelta = (dp, str(self._chunk(rev)))
+
+                if not cachedelta:
+                    text = self.revision(rev)
+
+                ifh = destrevlog.opener(destrevlog.indexfile, 'a+',
+                                        checkambig=False)
+                dfh = None
+                if not destrevlog._inline:
+                    dfh = destrevlog.opener(destrevlog.datafile, 'a+')
+                try:
+                    destrevlog._addrevision(node, text, tr, linkrev, p1, p2,
+                                            flags, cachedelta, ifh, dfh)
+                finally:
+                    if dfh:
+                        dfh.close()
+                    ifh.close()
+
+                if addrevisioncb:
+                    addrevisioncb(self, rev, node)
+        finally:
+            destrevlog._lazydeltabase = oldlazydeltabase
+            destrevlog._aggressivemergedeltas = oldamd

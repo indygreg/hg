@@ -15,6 +15,7 @@ import socket
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     httpconnection as httpconnectionmod,
     keepalive,
@@ -79,7 +80,8 @@ class passwordmgr(object):
 
 class proxyhandler(urlreq.proxyhandler):
     def __init__(self, ui):
-        proxyurl = ui.config("http_proxy", "host") or os.getenv('http_proxy')
+        proxyurl = (ui.config("http_proxy", "host") or
+                        encoding.environ.get('http_proxy'))
         # XXX proxyauthinfo = None
 
         if proxyurl:
@@ -97,7 +99,7 @@ class proxyhandler(urlreq.proxyhandler):
             no_list.extend([p.lower() for
                             p in ui.configlist("http_proxy", "no")])
             no_list.extend([p.strip().lower() for
-                            p in os.getenv("no_proxy", '').split(',')
+                            p in encoding.environ.get("no_proxy", '').split(',')
                             if p.strip()])
             # "http_proxy.always" config is for running tests on localhost
             if ui.configbool("http_proxy", "always"):
@@ -111,17 +113,6 @@ class proxyhandler(urlreq.proxyhandler):
                       (proxy.host, proxy.port))
         else:
             proxies = {}
-
-        # urllib2 takes proxy values from the environment and those
-        # will take precedence if found. So, if there's a config entry
-        # defining a proxy, drop the environment ones
-        if ui.config("http_proxy", "host"):
-            for env in ["HTTP_PROXY", "http_proxy", "no_proxy"]:
-                try:
-                    if env in os.environ:
-                        del os.environ[env]
-                except OSError:
-                    pass
 
         urlreq.proxyhandler.__init__(self, proxies)
         self.ui = ui
@@ -475,6 +466,11 @@ def opener(ui, authinfo=None):
     # user agent they deem appropriate.
     agent = 'mercurial/proto-1.0 (Mercurial %s)' % util.version()
     opener.addheaders = [('User-agent', agent)]
+
+    # This header should only be needed by wire protocol requests. But it has
+    # been sent on all requests since forever. We keep sending it for backwards
+    # compatibility reasons. Modern versions of the wire protocol use
+    # X-HgProto-<N> for advertising client support.
     opener.addheaders.append(('Accept', 'application/mercurial-0.1'))
     return opener
 

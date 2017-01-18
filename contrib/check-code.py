@@ -142,7 +142,8 @@ testpats = [
     (r'\|&', "don't use |&, use 2>&1"),
     (r'\w =  +\w', "only one space after = allowed"),
     (r'\bsed\b.*[^\\]\\n', "don't use 'sed ... \\n', use a \\ and a newline"),
-    (r'env.*-u', "don't use 'env -u VAR', use 'unset VAR'")
+    (r'env.*-u', "don't use 'env -u VAR', use 'unset VAR'"),
+    (r'cp.* -r ', "don't use 'cp -r', use 'cp -R'"),
   ],
   # warnings
   [
@@ -324,6 +325,7 @@ pypats = [
     # XXX only catch mutable arguments on the first line of the definition
     (r'def.*[( ]\w+=\{\}', "don't use mutable default arguments"),
     (r'\butil\.Abort\b', "directly use error.Abort"),
+    (r'^@(\w*\.)?cachefunc', "module-level @cachefunc is risky, please avoid"),
     (r'^import Queue', "don't use Queue, use util.queue + util.empty"),
     (r'^import cStringIO', "don't use cStringIO.StringIO, use util.stringio"),
     (r'^import urllib', "don't use urllib, use util.urlreq/util.urlerr"),
@@ -455,8 +457,27 @@ allfilespats = [
   [],
 ]
 
+py3pats = [
+  [
+    (r'os\.environ', "use encoding.environ instead (py3)"),
+    (r'os\.name', "use pycompat.osname instead (py3)"),
+    (r'os\.getcwd', "use pycompat.getcwd instead (py3)"),
+    (r'os\.sep', "use pycompat.ossep instead (py3)"),
+    (r'os\.pathsep', "use pycompat.ospathsep instead (py3)"),
+    (r'os\.altsep', "use pycompat.osaltsep instead (py3)"),
+    (r'sys\.platform', "use pycompat.sysplatform instead (py3)"),
+    (r'getopt\.getopt', "use pycompat.getoptb instead (py3)"),
+    (r'os\.getenv', "use encoding.environ.get instead"),
+    (r'os\.setenv', "modifying the environ dict is not preferred"),
+  ],
+  # warnings
+  [],
+]
+
 checks = [
     ('python', r'.*\.(py|cgi)$', r'^#!.*python', pyfilters, pypats),
+    ('python 3', r'.*(hgext|mercurial).*(?<!pycompat)\.py', '',
+            pyfilters, py3pats),
     ('test script', r'(.*/)?test-[^.~]*$', '', testfilters, testpats),
     ('c', r'.*\.[ch]$', '', cfilters, cpats),
     ('unified test', r'.*\.t$', '', utestfilters, utestpats),

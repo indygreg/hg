@@ -18,6 +18,7 @@ from ..i18n import _
 
 from .. import (
     error,
+    pycompat,
     util,
 )
 
@@ -266,7 +267,7 @@ def openlog(opt, default):
 class MercurialHTTPServer(_mixin, httpservermod.httpserver, object):
 
     # SO_REUSEADDR has broken semantics on windows
-    if os.name == 'nt':
+    if pycompat.osname == 'nt':
         allow_reuse_address = 0
 
     def __init__(self, ui, app, addr, handler, **kwargs):
@@ -281,8 +282,8 @@ class MercurialHTTPServer(_mixin, httpservermod.httpserver, object):
             prefix = '/' + prefix.strip('/')
         self.prefix = prefix
 
-        alog = openlog(ui.config('web', 'accesslog', '-'), sys.stdout)
-        elog = openlog(ui.config('web', 'errorlog', '-'), sys.stderr)
+        alog = openlog(ui.config('web', 'accesslog', '-'), ui.fout)
+        elog = openlog(ui.config('web', 'errorlog', '-'), ui.ferr)
         self.accesslog = alog
         self.errorlog = elog
 

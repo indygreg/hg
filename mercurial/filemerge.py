@@ -16,6 +16,7 @@ from .i18n import _
 from .node import nullid, short
 
 from . import (
+    encoding,
     error,
     formatter,
     match,
@@ -165,7 +166,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
                 return (force, force)
 
     # HGMERGE takes next precedence
-    hgmerge = os.environ.get("HGMERGE")
+    hgmerge = encoding.environ.get("HGMERGE")
     if hgmerge:
         if changedelete and not supportscd(hgmerge):
             return ":prompt", None
@@ -189,7 +190,8 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
         if _toolbool(ui, t, "disabled", False):
             disabled.add(t)
     names = tools.keys()
-    tools = sorted([(-p, t) for t, p in tools.items() if t not in disabled])
+    tools = sorted([(-p, tool) for tool, p in tools.items()
+                    if tool not in disabled])
     uimerge = ui.config("ui", "merge")
     if uimerge:
         # external tools defined in uimerge won't be able to handle
@@ -517,7 +519,8 @@ def _formatconflictmarker(repo, ctx, template, label, pad):
     return util.ellipsis(mark, 80 - 8)
 
 _defaultconflictmarker = ('{node|short} '
-                          '{ifeq(tags, "tip", "", "{tags} ")}'
+                          '{ifeq(tags, "tip", "", '
+                           'ifeq(tags, "", "", "{tags} "))}'
                           '{if(bookmarks, "{bookmarks} ")}'
                           '{ifeq(branch, "default", "", "{branch} ")}'
                           '- {author|user}: {desc|firstline}')
@@ -575,8 +578,9 @@ def _filemerge(premerge, repo, mynode, orig, fcd, fco, fca, labels=None):
     a boolean indicating whether the file was deleted from disk."""
 
     def temp(prefix, ctx):
-        pre = "%s~%s." % (os.path.basename(ctx.path()), prefix)
-        (fd, name) = tempfile.mkstemp(prefix=pre)
+        fullbase, ext = os.path.splitext(ctx.path())
+        pre = "%s~%s." % (os.path.basename(fullbase), prefix)
+        (fd, name) = tempfile.mkstemp(prefix=pre, suffix=ext)
         data = repo.wwritedata(ctx.path(), ctx.data())
         f = os.fdopen(fd, "wb")
         f.write(data)

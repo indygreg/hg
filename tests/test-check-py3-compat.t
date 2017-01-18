@@ -4,24 +4,32 @@
   $ cd "$TESTDIR"/..
 
   $ hg files 'set:(**.py)' | sed 's|\\|/|g' | xargs python contrib/check-py3-compat.py
-  hgext/fsmonitor/pywatchman/__init__.py not using absolute_import
-  hgext/fsmonitor/pywatchman/__init__.py requires print_function
-  hgext/fsmonitor/pywatchman/capabilities.py not using absolute_import
-  hgext/fsmonitor/pywatchman/pybser.py not using absolute_import
+  contrib/python-zstandard/setup.py not using absolute_import
+  contrib/python-zstandard/setup_zstd.py not using absolute_import
+  contrib/python-zstandard/tests/common.py not using absolute_import
+  contrib/python-zstandard/tests/test_cffi.py not using absolute_import
+  contrib/python-zstandard/tests/test_compressor.py not using absolute_import
+  contrib/python-zstandard/tests/test_data_structures.py not using absolute_import
+  contrib/python-zstandard/tests/test_decompressor.py not using absolute_import
+  contrib/python-zstandard/tests/test_estimate_sizes.py not using absolute_import
+  contrib/python-zstandard/tests/test_module_attributes.py not using absolute_import
+  contrib/python-zstandard/tests/test_roundtrip.py not using absolute_import
+  contrib/python-zstandard/tests/test_train_dictionary.py not using absolute_import
   i18n/check-translation.py not using absolute_import
   setup.py not using absolute_import
   tests/test-demandimport.py not using absolute_import
 
 #if py3exe
-  $ hg files 'set:(**.py) - grep(pygments)' | sed 's|\\|/|g' \
-  > | xargs $PYTHON3 contrib/check-py3-compat.py \
+  $ hg files 'set:(**.py) - grep(pygments)' -X hgext/fsmonitor/pywatchman \
+  > | sed 's|\\|/|g' | xargs $PYTHON3 contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
   hgext/convert/transport.py: error importing: <ImportError> No module named 'svn.client' (error at transport.py:*)
-  hgext/fsmonitor/pywatchman/capabilities.py: error importing: <ImportError> No module named 'pybser' (error at __init__.py:*)
-  hgext/fsmonitor/pywatchman/pybser.py: error importing: <ImportError> No module named 'pybser' (error at __init__.py:*)
-  hgext/fsmonitor/watchmanclient.py: error importing: <ImportError> No module named 'pybser' (error at __init__.py:*)
-  hgext/mq.py: error importing: <TypeError> __import__() argument 1 must be str, not bytes (error at extensions.py:*)
-  mercurial/scmwindows.py: error importing: <ImportError> No module named 'winreg' (error at scmwindows.py:*)
+  hgext/fsmonitor/state.py: error importing: <SyntaxError> from __future__ imports must occur at the beginning of the file (__init__.py, line 30) (error at watchmanclient.py:*)
+  hgext/fsmonitor/watchmanclient.py: error importing: <SyntaxError> from __future__ imports must occur at the beginning of the file (__init__.py, line 30) (error at watchmanclient.py:*)
+  mercurial/cffi/bdiff.py: error importing: <ImportError> No module named 'mercurial.cffi' (error at check-py3-compat.py:*)
+  mercurial/cffi/mpatch.py: error importing: <ImportError> No module named 'mercurial.cffi' (error at check-py3-compat.py:*)
+  mercurial/cffi/osutil.py: error importing: <ImportError> No module named 'mercurial.cffi' (error at check-py3-compat.py:*)
+  mercurial/scmwindows.py: error importing: <ImportError> No module named 'msvcrt' (error at win32.py:*)
   mercurial/win32.py: error importing: <ImportError> No module named 'msvcrt' (error at win32.py:*)
   mercurial/windows.py: error importing: <ImportError> No module named 'msvcrt' (error at windows.py:*)
 

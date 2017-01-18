@@ -24,6 +24,7 @@ from .i18n import _
 from . import (
     cmdutil,
     config,
+    encoding,
     error,
     exchange,
     filemerge,
@@ -31,6 +32,7 @@ from . import (
     node,
     pathutil,
     phases,
+    pycompat,
     scmutil,
     util,
 )
@@ -462,12 +464,12 @@ class abstractsubrepo(object):
             return _("uncommitted changes in subrepository '%s'"
                      ) % subrelpath(self)
 
-    def bailifchanged(self, ignoreupdate=False):
+    def bailifchanged(self, ignoreupdate=False, hint=None):
         """raise Abort if subrepository is ``dirty()``
         """
         dirtyreason = self.dirtyreason(ignoreupdate=ignoreupdate)
         if dirtyreason:
-            raise error.Abort(dirtyreason)
+            raise error.Abort(dirtyreason, hint=hint)
 
     def basestate(self):
         """current working directory base state, disregarding .hgsubstate
@@ -1101,7 +1103,7 @@ class svnsubrepo(abstractsubrepo):
             path = self.wvfs.reljoin(self._ctx.repo().origroot,
                                      self._path, filename)
             cmd.append(path)
-        env = dict(os.environ)
+        env = dict(encoding.environ)
         # Avoid localized output, preserve current locale for everything else.
         lc_all = env.get('LC_ALL')
         if lc_all:
@@ -1172,7 +1174,7 @@ class svnsubrepo(abstractsubrepo):
                 changes.append(path)
         for path in changes:
             for ext in externals:
-                if path == ext or path.startswith(ext + os.sep):
+                if path == ext or path.startswith(ext + pycompat.ossep):
                     return True, True, bool(missing)
         return bool(changes), False, bool(missing)
 
@@ -1311,7 +1313,7 @@ class gitsubrepo(abstractsubrepo):
             notfoundhint = _("check git is installed and in your PATH")
             if e.errno != errno.ENOENT:
                 raise error.Abort(genericerror % (self._path, e.strerror))
-            elif os.name == 'nt':
+            elif pycompat.osname == 'nt':
                 try:
                     self._gitexecutable = 'git.cmd'
                     out, err = self._gitnodir(['--version'])
@@ -1397,7 +1399,7 @@ class gitsubrepo(abstractsubrepo):
         """
         self.ui.debug('%s: git %s\n' % (self._relpath, ' '.join(commands)))
         if env is None:
-            env = os.environ.copy()
+            env = encoding.environ.copy()
         # disable localization for Git output (issue5176)
         env['LC_ALL'] = 'C'
         # fix for Git CVE-2015-7545
@@ -1632,7 +1634,7 @@ class gitsubrepo(abstractsubrepo):
         if self._gitmissing():
             raise error.Abort(_("subrepo %s is missing") % self._relpath)
         cmd = ['commit', '-a', '-m', text]
-        env = os.environ.copy()
+        env = encoding.environ.copy()
         if user:
             cmd += ['--author', user]
         if date:

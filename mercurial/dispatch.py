@@ -10,12 +10,11 @@ from __future__ import absolute_import, print_function
 import atexit
 import difflib
 import errno
+import getopt
 import os
 import pdb
 import re
-import shlex
 import signal
-import socket
 import sys
 import time
 import traceback
@@ -25,7 +24,9 @@ from .i18n import _
 
 from . import (
     cmdutil,
+    color,
     commands,
+    debugcommands,
     demandimport,
     encoding,
     error,
@@ -35,7 +36,9 @@ from . import (
     hg,
     hook,
     profiling,
+    pycompat,
     revset,
+    scmutil,
     templatefilters,
     templatekw,
     templater,
@@ -57,7 +60,7 @@ class request(object):
 
 def run():
     "run the command in sys.argv"
-    sys.exit((dispatch(request(sys.argv[1:])) or 0) & 255)
+    sys.exit((dispatch(request(pycompat.sysargv[1:])) or 0) & 255)
 
 def _getsimilar(symbols, value):
     sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()
@@ -95,11 +98,11 @@ def dispatch(req):
     elif req.ui:
         ferr = req.ui.ferr
     else:
-        ferr = sys.stderr
+        ferr = util.stderr
 
     try:
         if not req.ui:
-            req.ui = uimod.ui()
+            req.ui = uimod.ui.load()
         if '--traceback' in req.args:
             req.ui.setconfig('ui', 'traceback', 'on', '--traceback')
 
@@ -216,30 +219,15 @@ def _runcatch(req):
     return callcatch(ui, _runcatchfunc)
 
 def callcatch(ui, func):
-    """call func() with global exception handling
-
-    return func() if no exception happens. otherwise do some error handling
-    and return an exit code accordingly.
+    """like scmutil.callcatch but handles more high-level exceptions about
+    config parsing and commands. besides, use handlecommandexception to handle
+    uncaught exceptions.
     """
     try:
-        return func()
-    # Global exception handling, alphabetically
-    # Mercurial-specific first, followed by built-in and library exceptions
+        return scmutil.callcatch(ui, func)
     except error.AmbiguousCommand as inst:
         ui.warn(_("hg: command '%s' is ambiguous:\n    %s\n") %
                 (inst.args[0], " ".join(inst.args[1])))
-    except error.ParseError as inst:
-        _formatparse(ui.warn, inst)
-        return -1
-    except error.LockHeld as inst:
-        if inst.errno == errno.ETIMEDOUT:
-            reason = _('timed out waiting for lock held by %s') % inst.locker
-        else:
-            reason = _('lock held by %s') % inst.locker
-        ui.warn(_("abort: %s: %s\n") % (inst.desc or inst.filename, reason))
-    except error.LockUnavailable as inst:
-        ui.warn(_("abort: could not lock %s: %s\n") %
-               (inst.desc or inst.filename, inst.strerror))
     except error.CommandError as inst:
         if inst.args[0]:
             ui.warn(_("hg %s: %s\n") % (inst.args[0], inst.args[1]))
@@ -247,34 +235,9 @@ def callcatch(ui, func):
         else:
             ui.warn(_("hg: %s\n") % inst.args[1])
             commands.help_(ui, 'shortlist')
-    except error.OutOfBandError as inst:
-        if inst.args:
-            msg = _("abort: remote error:\n")
-        else:
-            msg = _("abort: remote error\n")
-        ui.warn(msg)
-        if inst.args:
-            ui.warn(''.join(inst.args))
-        if inst.hint:
-            ui.warn('(%s)\n' % inst.hint)
-    except error.RepoError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
-        if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
-    except error.ResponseError as inst:
-        ui.warn(_("abort: %s") % inst.args[0])
-        if not isinstance(inst.args[1], basestring):
-            ui.warn(" %r\n" % (inst.args[1],))
-        elif not inst.args[1]:
-            ui.warn(_(" empty string\n"))
-        else:
-            ui.warn("\n%r\n" % util.ellipsis(inst.args[1]))
-    except error.CensoredNodeError as inst:
-        ui.warn(_("abort: file censored %s!\n") % inst)
-    except error.RevlogError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
-    except error.SignalInterrupt:
-        ui.warn(_("killed!\n"))
+    except error.ParseError as inst:
+        _formatparse(ui.warn, inst)
+        return -1
     except error.UnknownCommand as inst:
         ui.warn(_("hg: unknown command '%s'\n") % inst.args[0])
         try:
@@ -290,61 +253,11 @@ def callcatch(ui, func):
                     suggested = True
             if not suggested:
                 commands.help_(ui, 'shortlist')
-    except error.InterventionRequired as inst:
-        ui.warn("%s\n" % inst)
-        if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
-        return 1
-    except error.Abort as inst:
-        ui.warn(_("abort: %s\n") % inst)
-        if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
-    except ImportError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
-        m = str(inst).split()[-1]
-        if m in "mpatch bdiff".split():
-            ui.warn(_("(did you forget to compile extensions?)\n"))
-        elif m in "zlib".split():
-            ui.warn(_("(is your Python install correct?)\n"))
-    except IOError as inst:
-        if util.safehasattr(inst, "code"):
-            ui.warn(_("abort: %s\n") % inst)
-        elif util.safehasattr(inst, "reason"):
-            try: # usually it is in the form (errno, strerror)
-                reason = inst.reason.args[1]
-            except (AttributeError, IndexError):
-                # it might be anything, for example a string
-                reason = inst.reason
-            if isinstance(reason, unicode):
-                # SSLError of Python 2.7.9 contains a unicode
-                reason = reason.encode(encoding.encoding, 'replace')
-            ui.warn(_("abort: error: %s\n") % reason)
-        elif (util.safehasattr(inst, "args")
-              and inst.args and inst.args[0] == errno.EPIPE):
-            pass
-        elif getattr(inst, "strerror", None):
-            if getattr(inst, "filename", None):
-                ui.warn(_("abort: %s: %s\n") % (inst.strerror, inst.filename))
-            else:
-                ui.warn(_("abort: %s\n") % inst.strerror)
-        else:
-            raise
-    except OSError as inst:
-        if getattr(inst, "filename", None) is not None:
-            ui.warn(_("abort: %s: '%s'\n") % (inst.strerror, inst.filename))
-        else:
-            ui.warn(_("abort: %s\n") % inst.strerror)
+    except IOError:
+        raise
     except KeyboardInterrupt:
         raise
-    except MemoryError:
-        ui.warn(_("abort: out of memory\n"))
-    except SystemExit as inst:
-        # Commands shouldn't sys.exit directly, but give a return code.
-        # Just in case catch this and and pass exit code to caller.
-        return inst.code
-    except socket.error as inst:
-        ui.warn(_("abort: %s\n") % inst.args[-1])
-    except:  # perhaps re-raises
+    except:  # probably re-raises
         if not handlecommandexception(ui):
             raise
 
@@ -365,7 +278,7 @@ def aliasargs(fn, givenargs):
         cmd = re.sub(r'\$(\d+|\$)', replacer, cmd)
         givenargs = [x for i, x in enumerate(givenargs)
                      if i not in nums]
-        args = shlex.split(cmd)
+        args = pycompat.shlexsplit(cmd)
     return args + givenargs
 
 def aliasinterpolate(name, args, cmd):
@@ -437,7 +350,7 @@ class cmdalias(object):
             return
 
         try:
-            args = shlex.split(self.definition)
+            args = pycompat.shlexsplit(self.definition)
         except ValueError as inst:
             self.badalias = (_("error in definition for alias '%s': %s")
                              % (self.name, inst))
@@ -536,7 +449,7 @@ def _parse(ui, args):
 
     try:
         args = fancyopts.fancyopts(args, commands.globalopts, options)
-    except fancyopts.getopt.GetoptError as inst:
+    except getopt.GetoptError as inst:
         raise error.CommandError(None, inst)
 
     if args:
@@ -547,7 +460,7 @@ def _parse(ui, args):
         args = aliasargs(entry[0], args)
         defaults = ui.config("defaults", cmd)
         if defaults:
-            args = map(util.expandpath, shlex.split(defaults)) + args
+            args = map(util.expandpath, pycompat.shlexsplit(defaults)) + args
         c = list(entry[1])
     else:
         cmd = None
@@ -559,7 +472,7 @@ def _parse(ui, args):
 
     try:
         args = fancyopts.fancyopts(args, c, cmdoptions, gnu=True)
-    except fancyopts.getopt.GetoptError as inst:
+    except getopt.GetoptError as inst:
         raise error.CommandError(cmd, inst)
 
     # separate global options back out
@@ -665,7 +578,7 @@ def _getlocal(ui, rpath, wd=None):
     """
     if wd is None:
         try:
-            wd = os.getcwd()
+            wd = pycompat.getcwd()
         except OSError as e:
             raise error.Abort(_("error getting current working directory: %s") %
                               e.strerror)
@@ -689,7 +602,7 @@ def _checkshellalias(lui, ui, args):
 
     try:
         args = fancyopts.fancyopts(args, commands.globalopts, options)
-    except fancyopts.getopt.GetoptError:
+    except getopt.GetoptError:
         return
 
     if not args:
@@ -712,14 +625,6 @@ def _checkshellalias(lui, ui, args):
         return lambda: runcommand(lui, None, cmd, args[:1], ui, options, d,
                                   [], {})
 
-def _cmdattr(ui, cmd, func, attr):
-    try:
-        return getattr(func, attr)
-    except AttributeError:
-        ui.deprecwarn("missing attribute '%s', use @command decorator "
-                      "to register '%s'" % (attr, cmd), '3.8')
-        return False
-
 _loaded = set()
 
 # list of (objname, loadermod, loadername) tuple:
@@ -730,6 +635,7 @@ _loaded = set()
 #   extraobj) arguments
 extraloaders = [
     ('cmdtable', commands, 'loadcmdtable'),
+    ('colortable', color, 'loadcolortable'),
     ('filesetpredicate', fileset, 'loadpredicate'),
     ('revsetpredicate', revset, 'loadpredicate'),
     ('templatefilter', templatefilters, 'loadfilter'),
@@ -767,6 +673,10 @@ def _dispatch(req):
         _loaded.add(name)
 
     # (reposetup is handled in hg.repository)
+
+    # Side-effect of accessing is debugcommands module is guaranteed to be
+    # imported and commands.table is populated.
+    debugcommands.command
 
     addaliases(lui, commands.table)
 
@@ -848,7 +758,7 @@ def _dispatch(req):
     with profiling.maybeprofile(lui):
         repo = None
         cmdpats = args[:]
-        if not _cmdattr(ui, cmd, func, 'norepo'):
+        if not func.norepo:
             # use the repo from the request only if we don't have -R
             if not rpath and not cwd:
                 repo = req.repo
@@ -871,9 +781,8 @@ def _dispatch(req):
                 except error.RepoError:
                     if rpath and rpath[-1]: # invalid -R path
                         raise
-                    if not _cmdattr(ui, cmd, func, 'optionalrepo'):
-                        if (_cmdattr(ui, cmd, func, 'inferrepo') and
-                            args and not path):
+                    if not func.optionalrepo:
+                        if func.inferrepo and args and not path:
                             # try to infer -R from command args
                             repos = map(cmdutil.findrepo, args)
                             guess = repos[0]
@@ -883,7 +792,7 @@ def _dispatch(req):
                         if not path:
                             raise error.RepoError(_("no repository found in"
                                                     " '%s' (.hg not found)")
-                                                  % os.getcwd())
+                                                  % pycompat.getcwd())
                         raise
             if repo:
                 ui = repo.ui
@@ -895,7 +804,8 @@ def _dispatch(req):
 
         msg = ' '.join(' ' in a and repr(a) or a for a in fullargs)
         ui.log("command", '%s\n', msg)
-        d = lambda: util.checksignature(func)(ui, *args, **cmdoptions)
+        strcmdopt = pycompat.strkwargs(cmdoptions)
+        d = lambda: util.checksignature(func)(ui, *args, **strcmdopt)
         try:
             return runcommand(lui, repo, cmd, fullargs, ui, options, d,
                               cmdpats, cmdoptions)

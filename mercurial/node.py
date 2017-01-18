@@ -17,6 +17,14 @@ nullrev = -1
 nullid = b"\0" * 20
 nullhex = hex(nullid)
 
+# Phony node value to stand-in for new files in some uses of
+# manifests.
+newnodeid = '!' * 20
+addednodeid = ('0' * 15) + 'added'
+modifiednodeid = ('0' * 12) + 'modified'
+
+wdirnodes = set((newnodeid, addednodeid, modifiednodeid))
+
 # pseudo identifiers for working directory
 # (they are experimental, so don't add too many dependencies on them)
 wdirrev = 0x7fffffff

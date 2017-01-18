@@ -137,14 +137,16 @@ class cg1unpacker(object):
     _grouplistcount = 1 # One list of files after the manifests
 
     def __init__(self, fh, alg, extras=None):
-        if alg == 'UN':
-            alg = None # get more modern without breaking too much
-        if not alg in util.decompressors:
+        if alg is None:
+            alg = 'UN'
+        if alg not in util.compengines.supportedbundletypes:
             raise error.Abort(_('unknown stream compression type: %s')
                              % alg)
         if alg == 'BZ':
             alg = '_truncatedBZ'
-        self._stream = util.decompressors[alg](fh)
+
+        compengine = util.compengines.forbundletype(alg)
+        self._stream = compengine.decompressorreader(fh)
         self._type = alg
         self.extras = extras or {}
         self.callback = None
@@ -152,7 +154,7 @@ class cg1unpacker(object):
     # These methods (compressed, read, seek, tell) all appear to only
     # be used by bundlerepo, but it's a little hard to tell.
     def compressed(self):
-        return self._type is not None
+        return self._type is not None and self._type != 'UN'
     def read(self, l):
         return self._stream.read(l)
     def seek(self, pos):
@@ -250,7 +252,7 @@ class cg1unpacker(object):
         # no new manifest will be created and the manifest group will
         # be empty during the pull
         self.manifestheader()
-        repo.manifest.addgroup(self, revmap, trp)
+        repo.manifestlog._revlog.addgroup(self, revmap, trp)
         repo.ui.progress(_('manifests'), None)
         self.callback = None
 
@@ -330,11 +332,12 @@ class cg1unpacker(object):
 
                 needfiles = {}
                 if repo.ui.configbool('server', 'validate', default=False):
+                    cl = repo.changelog
+                    ml = repo.manifestlog
                     # validate incoming csets have their manifests
                     for cset in xrange(clstart, clend):
-                        mfnode = repo.changelog.read(
-                            repo.changelog.node(cset))[0]
-                        mfest = repo.manifestlog[mfnode].readdelta()
+                        mfnode = cl.changelogrevision(cset).manifest
+                        mfest = ml[mfnode].readdelta()
                         # store file nodes we must see
                         for f, n in mfest.iteritems():
                             needfiles.setdefault(f, set()).add(n)
@@ -479,7 +482,7 @@ class cg3unpacker(cg2unpacker):
             # If we get here, there are directory manifests in the changegroup
             d = chunkdata["filename"]
             repo.ui.debug("adding %s revisions\n" % d)
-            dirlog = repo.manifest.dirlog(d)
+            dirlog = repo.manifestlog._revlog.dirlog(d)
             if not dirlog.addgroup(self, revmap, trp):
                 raise error.Abort(_("received dir revlog group is empty"))
 
@@ -587,7 +590,7 @@ class cg1packer(object):
     def _packmanifests(self, dir, mfnodes, lookuplinknode):
         """Pack flat manifests into a changegroup stream."""
         assert not dir
-        for chunk in self.group(mfnodes, self._repo.manifest,
+        for chunk in self.group(mfnodes, self._repo.manifestlog._revlog,
                                 lookuplinknode, units=_('manifests')):
             yield chunk
 
@@ -676,7 +679,8 @@ class cg1packer(object):
     def generatemanifests(self, commonrevs, clrevorder, fastpathlinkrev, mfs,
                           fnodes):
         repo = self._repo
-        dirlog = repo.manifest.dirlog
+        mfl = repo.manifestlog
+        dirlog = mfl._revlog.dirlog
         tmfnodes = {'': mfs}
 
         # Callback for the manifest, used to collect linkrevs for filelog
@@ -704,7 +708,7 @@ class cg1packer(object):
                 treemanifests to send.
                 """
                 clnode = tmfnodes[dir][x]
-                mdata = dirlog(dir).readshallowfast(x)
+                mdata = mfl.get(dir, x).readfast(shallow=True)
                 for p, n, fl in mdata.iterentries():
                     if fl == 't': # subdirectory manifest
                         subdir = dir + p + '/'
@@ -779,7 +783,7 @@ class cg1packer(object):
         prefix = ''
         if revlog.iscensored(base) or revlog.iscensored(rev):
             try:
-                delta = revlog.revision(node)
+                delta = revlog.revision(node, raw=True)
             except error.CensoredNodeError as e:
                 delta = e.tombstone
             if base == nullrev:
@@ -788,7 +792,7 @@ class cg1packer(object):
                 baselen = revlog.rawsize(base)
                 prefix = mdiff.replacediffheader(baselen, len(delta))
         elif base == nullrev:
-            delta = revlog.revision(node)
+            delta = revlog.revision(node, raw=True)
             prefix = mdiff.trivialdiffheader(len(delta))
         else:
             delta = revlog.revdiff(base, rev)
@@ -850,8 +854,10 @@ class cg3packer(cg2packer):
     def _packmanifests(self, dir, mfnodes, lookuplinknode):
         if dir:
             yield self.fileheader(dir)
-        for chunk in self.group(mfnodes, self._repo.manifest.dirlog(dir),
-                                lookuplinknode, units=_('manifests')):
+
+        dirlog = self._repo.manifestlog._revlog.dirlog(dir)
+        for chunk in self.group(mfnodes, dirlog, lookuplinknode,
+                                units=_('manifests')):
             yield chunk
 
     def _manifestsdone(self):
@@ -868,24 +874,21 @@ _packermap = {'01': (cg1packer, cg1unpacker),
              '03': (cg3packer, cg3unpacker),
 }
 
-def allsupportedversions(ui):
+def allsupportedversions(repo):
     versions = set(_packermap.keys())
-    versions.discard('03')
-    if (ui.configbool('experimental', 'changegroup3') or
-        ui.configbool('experimental', 'treemanifest')):
-        versions.add('03')
+    if not (repo.ui.configbool('experimental', 'changegroup3') or
+            repo.ui.configbool('experimental', 'treemanifest') or
+            'treemanifest' in repo.requirements):
+        versions.discard('03')
     return versions
 
 # Changegroup versions that can be applied to the repo
 def supportedincomingversions(repo):
-    versions = allsupportedversions(repo.ui)
-    if 'treemanifest' in repo.requirements:
-        versions.add('03')
-    return versions
+    return allsupportedversions(repo)
 
 # Changegroup versions that can be created from the repo
 def supportedoutgoingversions(repo):
-    versions = allsupportedversions(repo.ui)
+    versions = allsupportedversions(repo)
     if 'treemanifest' in repo.requirements:
         # Versions 01 and 02 support only flat manifests and it's just too
         # expensive to convert between the flat manifest and tree manifest on
@@ -894,7 +897,6 @@ def supportedoutgoingversions(repo):
         # support versions 01 and 02.
         versions.discard('01')
         versions.discard('02')
-        versions.add('03')
     return versions
 
 def safeversion(repo):

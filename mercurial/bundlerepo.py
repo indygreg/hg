@@ -35,6 +35,7 @@ from . import (
     node as nodemod,
     pathutil,
     phases,
+    pycompat,
     revlog,
     scmutil,
     util,
@@ -116,7 +117,7 @@ class bundlerevlog(revlog.revlog):
         return mdiff.textdiff(self.revision(self.node(rev1)),
                               self.revision(self.node(rev2)))
 
-    def revision(self, nodeorrev):
+    def revision(self, nodeorrev, raw=False):
         """return an uncompressed revision of a given node or revision
         number.
         """
@@ -147,7 +148,10 @@ class bundlerevlog(revlog.revlog):
             delta = self._chunk(chain.pop())
             text = mdiff.patches(text, [delta])
 
-        self._checkhash(text, node, rev)
+        text, validatehash = self._processflags(text, self.flags(rev),
+                                                'read', raw=raw)
+        if validatehash:
+            self.checkhash(text, node, rev=rev)
         self._cache = (node, rev, text)
         return text
 
@@ -187,9 +191,9 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
         finally:
             self.filteredrevs = oldfilter
 
-class bundlemanifest(bundlerevlog, manifest.manifest):
+class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
     def __init__(self, opener, bundle, linkmapper, dirlogstarts=None, dir=''):
-        manifest.manifest.__init__(self, opener, dir=dir)
+        manifest.manifestrevlog.__init__(self, opener, dir=dir)
         bundlerevlog.__init__(self, opener, self.indexfile, bundle,
                               linkmapper)
         if dirlogstarts is None:
@@ -207,7 +211,7 @@ class bundlemanifest(bundlerevlog, manifest.manifest):
         if node in self.fulltextcache:
             result = self.fulltextcache[node].tostring()
         else:
-            result = manifest.manifest.revision(self, nodeorrev)
+            result = manifest.manifestrevlog.revision(self, nodeorrev)
         return result
 
     def dirlog(self, d):
@@ -359,7 +363,7 @@ class bundlerepository(localrepo.localrepository):
 
     @localrepo.unfilteredpropertycache
     def filestart(self):
-        self.manifest
+        self.manifestlog
         return self.filestart
 
     def url(self):
@@ -392,7 +396,7 @@ class bundlerepository(localrepo.localrepository):
         return bundlepeer(self)
 
     def getcwd(self):
-        return os.getcwd() # always outside the repo
+        return pycompat.getcwd() # always outside the repo
 
     # Check if parents exist in localrepo before setting
     def setparents(self, p1, p2=nullid):
@@ -412,13 +416,13 @@ def instance(ui, path, create):
     parentpath = ui.config("bundle", "mainreporoot", "")
     if not parentpath:
         # try to find the correct path to the working directory repo
-        parentpath = cmdutil.findrepo(os.getcwd())
+        parentpath = cmdutil.findrepo(pycompat.getcwd())
         if parentpath is None:
             parentpath = ''
     if parentpath:
         # Try to make the full path relative so we get a nice, short URL.
         # In particular, we don't want temp dir names in test outputs.
-        cwd = os.getcwd()
+        cwd = pycompat.getcwd()
         if parentpath == cwd:
             parentpath = ''
         else:

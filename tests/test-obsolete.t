@@ -3,7 +3,7 @@
   > # public changeset are not obsolete
   > publish=false
   > [ui]
-  > logtemplate="{rev}:{node|short} ({phase}) [{tags} {bookmarks}] {desc|firstline}\n"
+  > logtemplate="{rev}:{node|short} ({phase}{if(troubles, ' {troubles}')}) [{tags} {bookmarks}] {desc|firstline}\n"
   > EOF
   $ mkcommit() {
   >    echo "$1" > "$1"
@@ -203,7 +203,7 @@ Check that public changeset are not accounted as obsolete:
 
   $ hg --hidden phase --public 2
   $ hg log -G
-  @  5:5601fb93a350 (draft) [tip ] add new_3_c
+  @  5:5601fb93a350 (draft bumped) [tip ] add new_3_c
   |
   | o  2:245bde4270cd (public) [ ] add original_c
   |/
@@ -220,7 +220,7 @@ note that the bumped changeset (5:5601fb93a350) is not a direct successor of
 the public changeset
 
   $ hg log --hidden -r 'bumped()'
-  5:5601fb93a350 (draft) [tip ] add new_3_c
+  5:5601fb93a350 (draft bumped) [tip ] add new_3_c
 
 And that we can't push bumped changeset
 
@@ -242,7 +242,7 @@ Fixing "bumped" situation
 We need to create a clone of 5 and add a special marker with a flag
 
   $ hg summary
-  parent: 5:5601fb93a350 tip
+  parent: 5:5601fb93a350 tip (bumped)
    add new_3_c
   branch: default
   commit: (clean)
@@ -477,7 +477,7 @@ detect outgoing obsolete and unstable
   $ hg log -r 'obsolete()'
   4:94b33453f93b (draft) [ ] add original_d
   $ hg summary
-  parent: 5:cda648ca50f5 tip
+  parent: 5:cda648ca50f5 tip (unstable)
    add original_e
   branch: default
   commit: (clean)
@@ -485,7 +485,7 @@ detect outgoing obsolete and unstable
   phases: 3 draft
   unstable: 1 changesets
   $ hg log -G -r '::unstable()'
-  @  5:cda648ca50f5 (draft) [tip ] add original_e
+  @  5:cda648ca50f5 (draft unstable) [tip ] add original_e
   |
   x  4:94b33453f93b (draft) [ ] add original_d
   |
@@ -527,7 +527,7 @@ Don't try to push extinct changeset
   2:245bde4270cd (public) [ ] add original_c
   3:6f9641995072 (draft) [ ] add n3w_3_c
   4:94b33453f93b (draft) [ ] add original_d
-  5:cda648ca50f5 (draft) [tip ] add original_e
+  5:cda648ca50f5 (draft unstable) [tip ] add original_e
   $ hg push ../tmpf -f # -f because be push unstable too
   pushing to ../tmpf
   searching for changes
@@ -548,7 +548,7 @@ no warning displayed
 Do not warn about new head when the new head is a successors of a remote one
 
   $ hg log -G
-  @  5:cda648ca50f5 (draft) [tip ] add original_e
+  @  5:cda648ca50f5 (draft unstable) [tip ] add original_e
   |
   x  4:94b33453f93b (draft) [ ] add original_d
   |
@@ -719,8 +719,6 @@ Template keywords
   $ hg debugobsolete -r6 -T '{flag} {get(metadata, "user")}\n'
   0 test
 
-#if serve
-
 Test the debug output for exchange
 ----------------------------------
 
@@ -745,6 +743,8 @@ check hgweb does not explode
   > done
   $ hg up tip
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+#if serve
 
   $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
@@ -796,7 +796,49 @@ reenable for later test
   $ echo '[experimental]' >> $HGRCPATH
   $ echo "evolution=createmarkers,exchange" >> $HGRCPATH
 
+  $ rm hg.pid access.log errors.log
 #endif
+
+Several troubles on the same changeset (create an unstable and bumped changeset)
+
+  $ hg debugobsolete `getid obsolete_e`
+  $ hg debugobsolete `getid original_c` `getid babar`
+  $ hg log --config ui.logtemplate= -r 'bumped() and unstable()'
+  changeset:   7:50c51b361e60
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  trouble:     unstable, bumped
+  summary:     add babar
+  
+
+test the "troubles" templatekw
+
+  $ hg log -r 'bumped() and unstable()'
+  7:50c51b361e60 (draft unstable bumped) [ ] add babar
+
+test the default cmdline template
+
+  $ hg log -T default -r 'bumped()'
+  changeset:   7:50c51b361e60
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  trouble:     unstable, bumped
+  summary:     add babar
+  
+
+test summary output
+
+  $ hg up -r 'bumped() and unstable()'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg summary
+  parent: 7:50c51b361e60  (unstable, bumped)
+   add babar
+  branch: default
+  commit: (clean)
+  update: 2 new changesets (update)
+  phases: 4 draft
+  unstable: 2 changesets
+  bumped: 1 changesets
 
 Test incoming/outcoming with changesets obsoleted remotely, known locally
 ===============================================================================
@@ -1211,7 +1253,7 @@ Test the --delete option of debugobsolete command
   2 1ab51af8f9b41ef8c7f6f3312d4706d870b1fb74 29346082e4a9e27042b62d2da0e2de211c027621 0 \(.*\) {'user': 'test'} (re)
   3 4715cf767440ed891755448016c2b8cf70760c30 7ae79c5d60f049c7b0dd02f5f25b9d60aaf7b36d 0 \(.*\) {'user': 'test'} (re)
   $ hg debugobsolete --delete 1 --delete 3
-  deleted 2 obsolescense markers
+  deleted 2 obsolescence markers
   $ hg debugobsolete
   cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b f9bd49731b0b175e42992a3c8fa6c678b2bc11f1 0 \(.*\) {'user': 'test'} (re)
   1ab51af8f9b41ef8c7f6f3312d4706d870b1fb74 29346082e4a9e27042b62d2da0e2de211c027621 0 \(.*\) {'user': 'test'} (re)

@@ -431,10 +431,10 @@ patches: import patch1 patch2; rollback
   parent: 0
 
 Test that "hg rollback" doesn't restore dirstate to one at the
-beginning of the rollbacked transaction in not-"parent-gone" case.
+beginning of the rolled back transaction in not-"parent-gone" case.
 
 invoking pretxncommit hook will cause marking '.hg/dirstate' as a file
-to be restored at rollbacking, after DirstateTransactionPlan (see wiki
+to be restored when rolling back, after DirstateTransactionPlan (see wiki
 page for detail).
 
   $ hg --cwd b branch -q foobar
@@ -451,7 +451,7 @@ page for detail).
   $ hg --cwd b update -q -C 0
   $ hg --cwd b --config extensions.strip= strip -q 1
 
-Test visibility of in-memory distate changes inside transaction to
+Test visibility of in-memory dirstate changes inside transaction to
 external process
 
   $ echo foo > a/foo
@@ -1517,6 +1517,13 @@ prepare a stack of patches depending on each other
   |
   o  initial [Babar] 2: +8/-0
   
+Adding those config options should not change the output of diffstat. Bugfix #4755.
+
+  $ hg log -r . --template '{diffstat}\n'
+  1: +1/-0
+  $ hg log -r . --template '{diffstat}\n' --config diff.git=1 \
+  >   --config diff.noprefix=1
+  1: +1/-0
 
 Importing with some success and some errors:
 

@@ -21,6 +21,7 @@ from . import (
     osutil,
     parsers,
     pathutil,
+    pycompat,
     scmutil,
     util,
 )
@@ -66,7 +67,7 @@ def _trypending(root, vfs, filename):
 
     This returns '(fp, is_pending_opened)' tuple.
     '''
-    if root == os.environ.get('HG_PENDING'):
+    if root == encoding.environ.get('HG_PENDING'):
         try:
             return (vfs('%s.pending' % filename), True)
         except IOError as inst:
@@ -215,7 +216,7 @@ class dirstate(object):
 
     @propertycache
     def _slash(self):
-        return self._ui.configbool('ui', 'slash') and os.sep != '/'
+        return self._ui.configbool('ui', 'slash') and pycompat.ossep != '/'
 
     @propertycache
     def _checklink(self):
@@ -270,7 +271,7 @@ class dirstate(object):
 
     @propertycache
     def _cwd(self):
-        return os.getcwd()
+        return pycompat.getcwd()
 
     def getcwd(self):
         '''Return the path from which a canonical path is calculated.
@@ -285,7 +286,7 @@ class dirstate(object):
         # self._root ends with a path separator if self._root is '/' or 'C:\'
         rootsep = self._root
         if not util.endswithsep(rootsep):
-            rootsep += os.sep
+            rootsep += pycompat.ossep
         if cwd.startswith(rootsep):
             return cwd[len(rootsep):]
         else:

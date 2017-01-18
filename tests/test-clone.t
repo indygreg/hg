@@ -31,6 +31,10 @@ Trigger branchcache creation:
   default                       10:a7949464abda
   $ ls .hg/cache
   branch2-served
+  checkisexec
+  checklink
+  checklink-target
+  checknoexec
   rbc-names-v1
   rbc-revs-v1
 
@@ -45,6 +49,9 @@ Ensure branchcache got copied over:
 
   $ ls .hg/cache
   branch2-served
+  checkisexec
+  checklink
+  checklink-target
 
   $ cat a
   a
@@ -508,7 +515,7 @@ iterable in addbranchrevs()
 
   $ cat <<EOF > simpleclone.py
   > from mercurial import ui, hg
-  > myui = ui.ui()
+  > myui = ui.ui.load()
   > repo = hg.repository(myui, 'a')
   > hg.clone(myui, {}, repo, dest="ua")
   > EOF
@@ -521,7 +528,7 @@ iterable in addbranchrevs()
 
   $ cat <<EOF > branchclone.py
   > from mercurial import ui, hg, extensions
-  > myui = ui.ui()
+  > myui = ui.ui.load()
   > extensions.loadall(myui)
   > repo = hg.repository(myui, 'a')
   > hg.clone(myui, {}, repo, dest="ua", branch=["stable",])

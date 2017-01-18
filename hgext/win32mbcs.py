@@ -53,6 +53,7 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
+    pycompat,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -97,7 +98,7 @@ def appendsep(s):
     except UnicodeError:
         us = s
     if us and us[-1] not in ':/\\':
-        s += os.sep
+        s += pycompat.ossep
     return s
 
 
@@ -138,10 +139,7 @@ def wrapname(name, wrapper):
     func = getattr(module, name)
     def f(*args, **kwds):
         return wrapper(func, args, kwds)
-    try:
-        f.__name__ = func.__name__ # fails with Python 2.3
-    except Exception:
-        pass
+    f.__name__ = func.__name__
     setattr(module, name, f)
 
 # List of functions to be wrapped.
@@ -171,7 +169,7 @@ problematic_encodings = '''big5 big5-tw csbig5 big5hkscs big5-hkscs
 def extsetup(ui):
     # TODO: decide use of config section for this extension
     if ((not os.path.supports_unicode_filenames) and
-        (sys.platform != 'cygwin')):
+        (pycompat.sysplatform != 'cygwin')):
         ui.warn(_("[win32mbcs] cannot activate on this platform.\n"))
         return
     # determine encoding for filename
@@ -181,7 +179,7 @@ def extsetup(ui):
     if _encoding.lower() in problematic_encodings.split():
         for f in funcs.split():
             wrapname(f, wrapper)
-        if os.name == 'nt':
+        if pycompat.osname == 'nt':
             for f in winfuncs.split():
                 wrapname(f, wrapper)
         wrapname("mercurial.osutil.listdir", wrapperforlistdir)

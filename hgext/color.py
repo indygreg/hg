@@ -164,14 +164,15 @@ If ``pagermode`` is not defined, the ``mode`` will be used.
 
 from __future__ import absolute_import
 
-import os
-
 from mercurial.i18n import _
 from mercurial import (
     cmdutil,
+    color,
     commands,
     dispatch,
+    encoding,
     extensions,
+    pycompat,
     subrepo,
     ui as uimod,
     util,
@@ -197,7 +198,6 @@ _effects = {'none': 0, 'black': 30, 'red': 31, 'green': 32, 'yellow': 33,
 def _terminfosetup(ui, mode):
     '''Initialize terminfo data and the terminal if we're in terminfo mode.'''
 
-    global _terminfo_params
     # If we failed to load curses, we go ahead and return.
     if not _terminfo_params:
         return
@@ -215,7 +215,7 @@ def _terminfosetup(ui, mode):
     try:
         curses.setupterm()
     except curses.error as e:
-        _terminfo_params = {}
+        _terminfo_params.clear()
         return
 
     for key, (b, e, c) in _terminfo_params.items():
@@ -232,11 +232,9 @@ def _terminfosetup(ui, mode):
         if mode == "terminfo":
             ui.warn(_("no terminfo entry for setab/setaf: reverting to "
               "ECMA-48 color\n"))
-        _terminfo_params = {}
+        _terminfo_params.clear()
 
 def _modesetup(ui, coloropt):
-    global _terminfo_params
-
     if coloropt == 'debug':
         return 'debug'
 
@@ -245,7 +243,8 @@ def _modesetup(ui, coloropt):
     if not always and not auto:
         return None
 
-    formatted = always or (os.environ.get('TERM') != 'dumb' and ui.formatted())
+    formatted = (always or (encoding.environ.get('TERM') != 'dumb'
+                 and ui.formatted()))
 
     mode = ui.config('color', 'mode', 'auto')
 
@@ -255,8 +254,8 @@ def _modesetup(ui, coloropt):
 
     realmode = mode
     if mode == 'auto':
-        if os.name == 'nt':
-            term = os.environ.get('TERM')
+        if pycompat.osname == 'nt':
+            term = encoding.environ.get('TERM')
             # TERM won't be defined in a vanilla cmd.exe environment.
 
             # UNIX-like environments on Windows such as Cygwin and MSYS will
@@ -275,18 +274,18 @@ def _modesetup(ui, coloropt):
 
     def modewarn():
         # only warn if color.mode was explicitly set and we're in
-        # an interactive terminal
-        if mode == realmode and ui.interactive():
+        # a formatted terminal
+        if mode == realmode and ui.formatted():
             ui.warn(_('warning: failed to set color mode to %s\n') % mode)
 
     if realmode == 'win32':
-        _terminfo_params = {}
+        _terminfo_params.clear()
         if not w32effects:
             modewarn()
             return None
         _effects.update(w32effects)
     elif realmode == 'ansi':
-        _terminfo_params = {}
+        _terminfo_params.clear()
     elif realmode == 'terminfo':
         _terminfosetup(ui, mode)
         if not _terminfo_params:
@@ -325,61 +324,6 @@ try:
 except ImportError:
     _terminfo_params = {}
 
-_styles = {'grep.match': 'red bold',
-           'grep.linenumber': 'green',
-           'grep.rev': 'green',
-           'grep.change': 'green',
-           'grep.sep': 'cyan',
-           'grep.filename': 'magenta',
-           'grep.user': 'magenta',
-           'grep.date': 'magenta',
-           'bookmarks.active': 'green',
-           'branches.active': 'none',
-           'branches.closed': 'black bold',
-           'branches.current': 'green',
-           'branches.inactive': 'none',
-           'diff.changed': 'white',
-           'diff.deleted': 'red',
-           'diff.diffline': 'bold',
-           'diff.extended': 'cyan bold',
-           'diff.file_a': 'red bold',
-           'diff.file_b': 'green bold',
-           'diff.hunk': 'magenta',
-           'diff.inserted': 'green',
-           'diff.tab': '',
-           'diff.trailingwhitespace': 'bold red_background',
-           'changeset.public' : '',
-           'changeset.draft' : '',
-           'changeset.secret' : '',
-           'diffstat.deleted': 'red',
-           'diffstat.inserted': 'green',
-           'histedit.remaining': 'red bold',
-           'ui.prompt': 'yellow',
-           'log.changeset': 'yellow',
-           'patchbomb.finalsummary': '',
-           'patchbomb.from': 'magenta',
-           'patchbomb.to': 'cyan',
-           'patchbomb.subject': 'green',
-           'patchbomb.diffstats': '',
-           'rebase.rebased': 'blue',
-           'rebase.remaining': 'red bold',
-           'resolve.resolved': 'green bold',
-           'resolve.unresolved': 'red bold',
-           'shelve.age': 'cyan',
-           'shelve.newest': 'green bold',
-           'shelve.name': 'blue bold',
-           'status.added': 'green bold',
-           'status.clean': 'none',
-           'status.copied': 'none',
-           'status.deleted': 'cyan bold underline',
-           'status.ignored': 'black bold',
-           'status.modified': 'blue bold',
-           'status.removed': 'red bold',
-           'status.unknown': 'magenta bold underline',
-           'tags.normal': 'green',
-           'tags.local': 'black bold'}
-
-
 def _effect_str(effect):
     '''Helper function for render_effects().'''
 
@@ -415,10 +359,6 @@ def render_effects(text, effects):
         stop = _effect_str('none')
     return ''.join([start, text, stop])
 
-def extstyles():
-    for name, ext in extensions.extensions():
-        _styles.update(getattr(ext, 'colortable', {}))
-
 def valideffect(effect):
     'Determine if the effect is valid or not.'
     good = False
@@ -442,7 +382,7 @@ def configstyles(ui):
                     ui.warn(_("ignoring unknown color/effect %r "
                               "(configured in color.%s)\n")
                             % (e, status))
-            _styles[status] = ' '.join(good)
+            color._styles[status] = ' '.join(good)
 
 class colorui(uimod.ui):
     _colormode = 'ansi'
@@ -495,15 +435,15 @@ class colorui(uimod.ui):
 
         effects = []
         for l in label.split():
-            s = _styles.get(l, '')
+            s = color._styles.get(l, '')
             if s:
                 effects.append(s)
             elif valideffect(l):
                 effects.append(l)
         effects = ' '.join(effects)
         if effects:
-            return '\n'.join([render_effects(s, effects)
-                              for s in msg.split('\n')])
+            return '\n'.join([render_effects(line, effects)
+                              for line in msg.split('\n')])
         return msg
 
 def uisetup(ui):
@@ -516,7 +456,6 @@ def uisetup(ui):
         mode = _modesetup(ui_, opts['color'])
         colorui._colormode = mode
         if mode and mode != 'debug':
-            extstyles()
             configstyles(ui_)
         return orig(ui_, opts, cmd, cmdfunc)
     def colorgit(orig, gitsub, commands, env=None, stream=False, cwd=None):
@@ -536,24 +475,52 @@ def extsetup(ui):
          _("when to colorize (boolean, always, auto, never, or debug)"),
          _('TYPE')))
 
-@command('debugcolor', [], 'hg debugcolor')
+@command('debugcolor',
+        [('', 'style', None, _('show all configured styles'))],
+        'hg debugcolor')
 def debugcolor(ui, repo, **opts):
-    global _styles
-    _styles = {}
-    for effect in _effects.keys():
-        _styles[effect] = effect
-    if _terminfo_params:
-        for k, v in ui.configitems('color'):
-            if k.startswith('color.'):
-                _styles[k] = k[6:]
-            elif k.startswith('terminfo.'):
-                _styles[k] = k[9:]
+    """show available color, effects or style"""
     ui.write(('color mode: %s\n') % ui._colormode)
-    ui.write(_('available colors:\n'))
-    for colorname, label in _styles.items():
-        ui.write(('%s\n') % colorname, label=label)
+    if opts.get('style'):
+        return _debugdisplaystyle(ui)
+    else:
+        return _debugdisplaycolor(ui)
 
-if os.name != 'nt':
+def _debugdisplaycolor(ui):
+    oldstyle = color._styles.copy()
+    try:
+        color._styles.clear()
+        for effect in _effects.keys():
+            color._styles[effect] = effect
+        if _terminfo_params:
+            for k, v in ui.configitems('color'):
+                if k.startswith('color.'):
+                    color._styles[k] = k[6:]
+                elif k.startswith('terminfo.'):
+                    color._styles[k] = k[9:]
+        ui.write(_('available colors:\n'))
+        # sort label with a '_' after the other to group '_background' entry.
+        items = sorted(color._styles.items(),
+                       key=lambda i: ('_' in i[0], i[0], i[1]))
+        for colorname, label in items:
+            ui.write(('%s\n') % colorname, label=label)
+    finally:
+        color._styles.clear()
+        color._styles.update(oldstyle)
+
+def _debugdisplaystyle(ui):
+    ui.write(_('available style:\n'))
+    width = max(len(s) for s in color._styles)
+    for label, effects in sorted(color._styles.items()):
+        ui.write('%s' % label, label=label)
+        if effects:
+            # 50
+            ui.write(': ')
+            ui.write(' ' * (max(0, width - len(label))))
+            ui.write(', '.join(ui.label(e, e) for e in effects.split()))
+        ui.write('\n')
+
+if pycompat.osname != 'nt':
     w32effects = None
 else:
     import ctypes
@@ -661,7 +628,7 @@ else:
 
         # determine console attributes based on labels
         for l in label.split():
-            style = _styles.get(l, '')
+            style = color._styles.get(l, '')
             for effect in style.split():
                 try:
                     attr = mapcolor(w32effects[effect], attr)

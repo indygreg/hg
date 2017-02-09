@@ -830,8 +830,7 @@ class base(histeditaction):
 
     def run(self):
         if self.repo['.'].node() != self.node:
-            mergemod.update(self.repo, self.node, False, True)
-            #                                     branchmerge, force)
+            mergemod.update(self.repo, self.node, branchmerge=False, force=True)
         return self.continueclean()
 
     def continuedirty(self):

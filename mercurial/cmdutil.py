@@ -365,8 +365,8 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
             if backups:
                 # Equivalent to hg.revert
                 m = scmutil.matchfiles(repo, backups.keys())
-                mergemod.update(repo, repo.dirstate.p1(),
-                        False, True, matcher=m)
+                mergemod.update(repo, repo.dirstate.p1(), branchmerge=False,
+                                force=True, matcher=m)
 
             # 3b. (apply)
             if dopatch:

@@ -1188,7 +1188,7 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
     else:
         if repo['.'].rev() != p1:
             repo.ui.debug(" update to %d:%s\n" % (p1, repo[p1]))
-            mergemod.update(repo, p1, False, True)
+            mergemod.update(repo, p1, branchmerge=False, force=True)
         else:
             repo.ui.debug(" already in destination\n")
         # This is, alas, necessary to invalidate workingctx's manifest cache,
@@ -1200,7 +1200,8 @@ def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
         repo.ui.debug("   detach base %d:%s\n" % (base, repo[base]))
     # When collapsing in-place, the parent is the common ancestor, we
     # have to allow merging with it.
-    stats = mergemod.update(repo, rev, True, True, base, collapse,
+    stats = mergemod.update(repo, rev, branchmerge=True, force=True,
+                            ancestor=base, mergeancestor=collapse,
                             labels=['dest', 'source'], wc=wctx)
     if collapse:
         copies.duplicatecopies(repo, wctx, rev, dest)
@@ -1643,7 +1644,7 @@ def abort(repo, originalwd, destmap, state, activebookmark=None, backup=True,
 
             # Update away from the rebase if necessary
             if shouldupdate or needupdate(repo, state):
-                mergemod.update(repo, originalwd, False, True)
+                mergemod.update(repo, originalwd, branchmerge=False, force=True)
 
             # Strip from the first rebased revision
             if rebased:

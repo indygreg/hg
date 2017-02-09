@@ -846,7 +846,7 @@ def updaterepo(repo, node, overwrite, updatecheck=None):
     When overwrite is set, changes are clobbered, merged else
 
     returns stats (see pydoc mercurial.merge.applyupdates)"""
-    return mergemod.update(repo, node, False, overwrite,
+    return mergemod.update(repo, node, branchmerge=False, force=overwrite,
                            labels=['working copy', 'destination'],
                            updatecheck=updatecheck)
 
@@ -949,8 +949,8 @@ def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
     if not abort:
-        stats = mergemod.update(repo, node, True, force, mergeforce=mergeforce,
-                                labels=labels)
+        stats = mergemod.update(repo, node, branchmerge=True, force=force,
+                                mergeforce=mergeforce, labels=labels)
     else:
         ms = mergemod.mergestate.read(repo)
         if ms.active():

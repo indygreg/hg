@@ -643,7 +643,9 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         with dirstateguard.dirstateguard(repo, 'backout'):
             overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
             with ui.configoverride(overrides, 'backout'):
-                stats = mergemod.update(repo, parent, True, True, node, False)
+                stats = mergemod.update(repo, parent, branchmerge=True,
+                                        force=True, ancestor=node,
+                                        mergeancestor=False)
             repo.setparents(op1, op2)
         hg._showstats(repo, stats)
         if stats.unresolvedcount:

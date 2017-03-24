@@ -32,7 +32,6 @@ from mercurial.node import short
 
 from mercurial import (
     error,
-    lock as lockmod,
     registrar,
     revlog,
     scmutil,
@@ -52,13 +51,8 @@ testedwith = 'ships-with-hg-core'
      ('t', 'tombstone', '', _('replacement tombstone data'), _('TEXT'))],
     _('-r REV [-t TEXT] [FILE]'))
 def censor(ui, repo, path, rev='', tombstone='', **opts):
-    wlock = lock = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
+    with repo.wlock(), repo.lock():
         return _docensor(ui, repo, path, rev, tombstone, **opts)
-    finally:
-        lockmod.release(lock, wlock)
 
 def _docensor(ui, repo, path, rev='', tombstone='', **opts):
     if not path:

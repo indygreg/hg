@@ -70,17 +70,10 @@ def relink(ui, repo, origin=None, **opts):
         # No point in continuing
         raise error.Abort(_('source and destination are on different devices'))
 
-    locallock = repo.lock()
-    try:
-        remotelock = src.lock()
-        try:
-            candidates = sorted(collect(src, ui))
-            targets = prune(candidates, src.store.path, repo.store.path, ui)
-            do_relink(src.store.path, repo.store.path, targets, ui)
-        finally:
-            remotelock.release()
-    finally:
-        locallock.release()
+    with repo.lock(), src.lock():
+        candidates = sorted(collect(src, ui))
+        targets = prune(candidates, src.store.path, repo.store.path, ui)
+        do_relink(src.store.path, repo.store.path, targets, ui)
 
 def collect(src, ui):
     seplen = len(os.path.sep)

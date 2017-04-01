@@ -620,9 +620,9 @@ def formatspec(expr, *args):
         return '(%s or %s)' % (listexp(s[:m], t), listexp(s[m:], t))
 
     expr = pycompat.bytestr(expr)
+    argiter = iter(args)
     ret = []
     pos = 0
-    arg = 0
     while pos < len(expr):
         q = expr.find('%', pos)
         if q < 0:
@@ -634,14 +634,12 @@ def formatspec(expr, *args):
         if d == '%':
             ret.append(d)
         elif d in 'dsnbr':
-            ret.append(argtype(d, args[arg]))
-            arg += 1
+            ret.append(argtype(d, next(argiter)))
         elif d == 'l':
             # a list of some type
             pos += 1
             d = expr[pos]
-            ret.append(listexp(list(args[arg]), d))
-            arg += 1
+            ret.append(listexp(list(next(argiter)), d))
         else:
             raise error.Abort(_('unexpected revspec format character %s') % d)
         pos += 1

@@ -4080,6 +4080,12 @@ default. join() should agree with the default formatting:
   5:13207e5a10d9fd28ec424934298e176197f2c67f,
   4:bbe44766e73d5f11ed2177f1838de10c53ef3e74
 
+Invalid arguments passed to revset()
+
+  $ hg log -T '{revset("%whatever", 0)}\n'
+  hg: parse error: unexpected revspec format character w
+  [255]
+
 Test files function
 
   $ hg log -T "{rev}\n{join(files('*'), '\n')}\n"

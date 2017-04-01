@@ -641,7 +641,8 @@ def formatspec(expr, *args):
             d = expr[pos]
             ret.append(listexp(list(next(argiter)), d))
         else:
-            raise error.Abort(_('unexpected revspec format character %s') % d)
+            raise error.ParseError(_('unexpected revspec format character %s')
+                                   % d)
         pos += 1
 
     return ''.join(ret)

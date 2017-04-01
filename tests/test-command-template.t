@@ -4103,6 +4103,24 @@ Invalid arguments passed to revset()
   $ hg log -T '{revset("%l", 0)}\n'
   hg: parse error: incomplete revspec format character
   [255]
+  $ hg log -T '{revset("%d", 'foo')}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%ld", files)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%ls", 0)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%b", 'foo')}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%lb", files)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%r", 0)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
 
 Test files function
 

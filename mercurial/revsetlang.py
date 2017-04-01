@@ -599,7 +599,10 @@ def formatspec(expr, *args):
         elif c == 'n':
             return _quote(node.hex(arg))
         elif c == 'b':
-            return _quote(arg.branch())
+            try:
+                return _quote(arg.branch())
+            except AttributeError:
+                raise TypeError
         raise error.ParseError(_('unexpected revspec format character %s') % c)
 
     def listexp(s, t):
@@ -615,7 +618,10 @@ def formatspec(expr, *args):
         elif t == 'n':
             return "_hexlist('%s')" % "\0".join(node.hex(a) for a in s)
         elif t == 'b':
-            return "_list('%s')" % "\0".join(a.branch() for a in s)
+            try:
+                return "_list('%s')" % "\0".join(a.branch() for a in s)
+            except AttributeError:
+                raise TypeError
 
         m = l // 2
         return '(%s or %s)' % (listexp(s[:m], t), listexp(s[m:], t))
@@ -651,9 +657,15 @@ def formatspec(expr, *args):
                 d = expr[pos]
             except IndexError:
                 raise error.ParseError(_('incomplete revspec format character'))
-            ret.append(listexp(list(arg), d))
+            try:
+                ret.append(listexp(list(arg), d))
+            except (TypeError, ValueError):
+                raise error.ParseError(_('invalid argument for revspec'))
         else:
-            ret.append(argtype(d, arg))
+            try:
+                ret.append(argtype(d, arg))
+            except (TypeError, ValueError):
+                raise error.ParseError(_('invalid argument for revspec'))
         pos += 1
 
     try:

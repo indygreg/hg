@@ -630,22 +630,20 @@ def formatspec(expr, *args):
             break
         ret.append(expr[pos:q])
         pos = q + 1
-        if True:
+        d = expr[pos]
+        if d == '%':
+            ret.append(d)
+        elif d in 'dsnbr':
+            ret.append(argtype(d, args[arg]))
+            arg += 1
+        elif d == 'l':
+            # a list of some type
+            pos += 1
             d = expr[pos]
-            if d == '%':
-                ret.append(d)
-            elif d in 'dsnbr':
-                ret.append(argtype(d, args[arg]))
-                arg += 1
-            elif d == 'l':
-                # a list of some type
-                pos += 1
-                d = expr[pos]
-                ret.append(listexp(list(args[arg]), d))
-                arg += 1
-            else:
-                raise error.Abort(_('unexpected revspec format character %s')
-                                  % d)
+            ret.append(listexp(list(args[arg]), d))
+            arg += 1
+        else:
+            raise error.Abort(_('unexpected revspec format character %s') % d)
         pos += 1
 
     return ''.join(ret)

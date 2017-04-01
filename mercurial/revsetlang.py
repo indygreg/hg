@@ -631,7 +631,10 @@ def formatspec(expr, *args):
             break
         ret.append(expr[pos:q])
         pos = q + 1
-        d = expr[pos]
+        try:
+            d = expr[pos]
+        except IndexError:
+            raise error.ParseError(_('incomplete revspec format character'))
         if d == '%':
             ret.append(d)
             pos += 1
@@ -644,7 +647,10 @@ def formatspec(expr, *args):
         if d == 'l':
             # a list of some type
             pos += 1
-            d = expr[pos]
+            try:
+                d = expr[pos]
+            except IndexError:
+                raise error.ParseError(_('incomplete revspec format character'))
             ret.append(listexp(list(arg), d))
         else:
             ret.append(argtype(d, arg))

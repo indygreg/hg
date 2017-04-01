@@ -4088,6 +4088,15 @@ Invalid arguments passed to revset()
   $ hg log -T '{revset("%lwhatever", files)}\n'
   hg: parse error: unexpected revspec format character w
   [255]
+  $ hg log -T '{revset("%s %s", 0)}\n'
+  hg: parse error: missing argument for revspec
+  [255]
+  $ hg log -T '{revset("", 0)}\n'
+  hg: parse error: too many revspec arguments specified
+  [255]
+  $ hg log -T '{revset("%s", 0, 1)}\n'
+  hg: parse error: too many revspec arguments specified
+  [255]
 
 Test files function
 

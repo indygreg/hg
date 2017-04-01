@@ -634,15 +634,27 @@ def formatspec(expr, *args):
         d = expr[pos]
         if d == '%':
             ret.append(d)
-        elif d == 'l':
+            pos += 1
+            continue
+
+        try:
+            arg = next(argiter)
+        except StopIteration:
+            raise error.ParseError(_('missing argument for revspec'))
+        if d == 'l':
             # a list of some type
             pos += 1
             d = expr[pos]
-            ret.append(listexp(list(next(argiter)), d))
+            ret.append(listexp(list(arg), d))
         else:
-            ret.append(argtype(d, next(argiter)))
+            ret.append(argtype(d, arg))
         pos += 1
 
+    try:
+        next(argiter)
+        raise error.ParseError(_('too many revspec arguments specified'))
+    except StopIteration:
+        pass
     return ''.join(ret)
 
 def prettyformat(tree):

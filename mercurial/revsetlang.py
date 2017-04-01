@@ -624,9 +624,13 @@ def formatspec(expr, *args):
     pos = 0
     arg = 0
     while pos < len(expr):
-        c = expr[pos]
-        if c == '%':
-            pos += 1
+        q = expr.find('%', pos)
+        if q < 0:
+            ret.append(expr[pos:])
+            break
+        ret.append(expr[pos:q])
+        pos = q + 1
+        if True:
             d = expr[pos]
             if d == '%':
                 ret.append(d)
@@ -642,8 +646,6 @@ def formatspec(expr, *args):
             else:
                 raise error.Abort(_('unexpected revspec format character %s')
                                   % d)
-        else:
-            ret.append(c)
         pos += 1
 
     return ''.join(ret)

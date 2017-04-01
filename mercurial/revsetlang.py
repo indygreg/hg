@@ -600,6 +600,7 @@ def formatspec(expr, *args):
             return _quote(node.hex(arg))
         elif c == 'b':
             return _quote(arg.branch())
+        raise error.ParseError(_('unexpected revspec format character %s') % c)
 
     def listexp(s, t):
         l = len(s)
@@ -633,16 +634,13 @@ def formatspec(expr, *args):
         d = expr[pos]
         if d == '%':
             ret.append(d)
-        elif d in 'dsnbr':
-            ret.append(argtype(d, next(argiter)))
         elif d == 'l':
             # a list of some type
             pos += 1
             d = expr[pos]
             ret.append(listexp(list(next(argiter)), d))
         else:
-            raise error.ParseError(_('unexpected revspec format character %s')
-                                   % d)
+            ret.append(argtype(d, next(argiter)))
         pos += 1
 
     return ''.join(ret)

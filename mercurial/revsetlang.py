@@ -585,7 +585,9 @@ def formatspec(expr, *args):
     >>> formatspec(b'branch(%b)', b)
     "branch('default')"
     >>> formatspec(b'root(%ls)', [b'a', b'b', b'c', b'd'])
-    "root(_list('a\\x00b\\x00c\\x00d'))"
+    "root(_list('a\\\\x00b\\\\x00c\\\\x00d'))"
+    >>> formatspec('%ls', ['a', "'"])
+    "_list('a\\\\x00\\\\'')"
     '''
 
     def argtype(c, arg):
@@ -614,7 +616,7 @@ def formatspec(expr, *args):
         elif t == 'd':
             return "_intlist('%s')" % "\0".join('%d' % int(a) for a in s)
         elif t == 's':
-            return "_list('%s')" % "\0".join(s)
+            return "_list(%s)" % _quote("\0".join(s))
         elif t == 'n':
             return "_hexlist('%s')" % "\0".join(node.hex(a) for a in s)
         elif t == 'b':

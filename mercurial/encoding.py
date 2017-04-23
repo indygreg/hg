@@ -93,6 +93,16 @@ class localstr(bytes):
     def __hash__(self):
         return hash(self._utf8) # avoid collisions in local string space
 
+class safelocalstr(bytes):
+    """Tagged string denoting it was previously an internal UTF-8 string,
+    and can be converted back to UTF-8 losslessly
+
+    >>> assert safelocalstr(b'\\xc3') == b'\\xc3'
+    >>> assert b'\\xc3' == safelocalstr(b'\\xc3')
+    >>> assert b'\\xc3' in {safelocalstr(b'\\xc3'): 0}
+    >>> assert safelocalstr(b'\\xc3') in {b'\\xc3': 0}
+    """
+
 def tolocal(s):
     """
     Convert a string from internal UTF-8 to local encoding
@@ -140,7 +150,7 @@ def tolocal(s):
             r = u.encode(_sysstr(encoding), u"replace")
             if u == r.decode(_sysstr(encoding)):
                 # r is a safe, non-lossy encoding of s
-                return r
+                return safelocalstr(r)
             return localstr(s, r)
         except UnicodeDecodeError:
             # we should only get here if we're looking at an ancient changeset
@@ -149,7 +159,7 @@ def tolocal(s):
                 r = u.encode(_sysstr(encoding), u"replace")
                 if u == r.decode(_sysstr(encoding)):
                     # r is a safe, non-lossy encoding of s
-                    return r
+                    return safelocalstr(r)
                 return localstr(u.encode('UTF-8'), r)
             except UnicodeDecodeError:
                 u = s.decode("utf-8", "replace") # last ditch
@@ -402,7 +412,7 @@ def jsonescape(s, paranoid=False):
     JSON is problematic for us because it doesn't support non-Unicode
     bytes. To deal with this, we take the following approach:
 
-    - localstr objects are converted back to UTF-8
+    - localstr/safelocalstr objects are converted back to UTF-8
     - valid UTF-8/ASCII strings are passed as-is
     - other strings are converted to UTF-8b surrogate encoding
     - apply JSON-specified string escaping
@@ -495,6 +505,7 @@ def toutf8b(s):
     - local strings that have a cached known UTF-8 encoding (aka
       localstr) get sent as UTF-8 so Unicode-oriented clients get the
       Unicode data they want
+    - non-lossy local strings (aka safelocalstr) get sent as UTF-8 as well
     - because we must preserve UTF-8 bytestring in places such as
       filenames, metadata can't be roundtripped without help
 
@@ -508,6 +519,10 @@ def toutf8b(s):
         # assume that the original UTF-8 sequence would never contain
         # invalid characters in U+DCxx range
         return s._utf8
+    elif isinstance(s, safelocalstr):
+        # already verified that s is non-lossy in legacy encoding, which
+        # shouldn't contain characters in U+DCxx range
+        return fromlocal(s)
     elif isasciistr(s):
         return s
     if "\xed" not in s:

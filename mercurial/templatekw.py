@@ -278,6 +278,8 @@ def showdescription(context, mapping):
     if isinstance(s, encoding.localstr):
         # try hard to preserve utf-8 bytes
         return encoding.tolocal(encoding.fromlocal(s).strip())
+    elif isinstance(s, encoding.safelocalstr):
+        return encoding.safelocalstr(s.strip())
     else:
         return s.strip()
 

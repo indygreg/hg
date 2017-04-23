@@ -4691,6 +4691,13 @@ json filter should try round-trip conversion to utf-8:
   $ HGENCODING=ascii hg log -T "{desc|json}\n" -r0
   "non-ascii branch: \u00e9"
 
+json filter should take input as utf-8 if it was converted from utf-8:
+
+  $ HGENCODING=latin-1 hg log -T "{branch|json}\n" -r0
+  "\u00e9"
+  $ HGENCODING=latin-1 hg log -T "{desc|json}\n" -r0
+  "non-ascii branch: \u00e9"
+
 json filter takes input as utf-8b:
 
   $ HGENCODING=ascii hg log -T "{'`cat utf-8`'|json}\n" -l1

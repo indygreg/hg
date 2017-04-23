@@ -53,6 +53,13 @@ class Utf8bEncodingTest(unittest.TestCase):
         self.assertEqual(l, b'?')  # lossy
         self.assertEqual(s, encoding.toutf8b(l))  # utf8 sequence preserved
 
+    def testlosslesslatin(self):
+        encoding.encoding = b'latin-1'
+        s = u'\xc0'.encode('utf-8')
+        l = encoding.tolocal(s)
+        self.assertEqual(l, b'\xc0')  # lossless
+        self.assertEqual(s, encoding.toutf8b(l))  # convert back to utf-8
+
     def testlossy0xed(self):
         encoding.encoding = b'euc-kr'  # U+Dxxx Hangul
         s = u'\ud1bc\xc0'.encode('utf-8')
@@ -60,6 +67,13 @@ class Utf8bEncodingTest(unittest.TestCase):
         self.assertIn(b'\xed', l)
         self.assertTrue(l.endswith(b'?'))  # lossy
         self.assertEqual(s, encoding.toutf8b(l))  # utf8 sequence preserved
+
+    def testlossless0xed(self):
+        encoding.encoding = b'euc-kr'  # U+Dxxx Hangul
+        s = u'\ud1bc'.encode('utf-8')
+        l = encoding.tolocal(s)
+        self.assertEqual(l, b'\xc5\xed')  # lossless
+        self.assertEqual(s, encoding.toutf8b(l))  # convert back to utf-8
 
 if __name__ == '__main__':
     import silenttestrunner

@@ -1192,6 +1192,9 @@ def blockancestors(fctx, fromline, toline, followfirst=False):
     `fromline`-`toline` range.
     """
     diffopts = patch.diffopts(fctx._repo.ui)
+    introrev = fctx.introrev()
+    if fctx.rev() != introrev:
+        fctx = fctx.filectx(fctx.filenode(), changeid=introrev)
     visit = {(fctx.linkrev(), fctx.filenode()): (fctx, (fromline, toline))}
     while visit:
         c, linerange2 = visit.pop(max(visit))
@@ -1211,6 +1214,10 @@ def blockancestors(fctx, fromline, toline, followfirst=False):
                 # introduced in this revision; no need to go futher in this
                 # branch.
                 continue
+            # Set _descendantrev with 'c' (a known descendant) so that, when
+            # _adjustlinkrev is called for 'p', it receives this descendant
+            # (as srcrev) instead possibly topmost introrev.
+            p._descendantrev = c.rev()
             visit[p.linkrev(), p.filenode()] = p, linerange1
         if inrange:
             yield c, linerange2

@@ -131,6 +131,9 @@ class lock(object):
             except (OSError, IOError) as why:
                 if why.errno == errno.EEXIST:
                     locker = self._readlock()
+                    if locker is None:
+                        continue
+
                     # special case where a parent process holds the lock -- this
                     # is different from the pid being different because we do
                     # want the unlock and postrelease functions to be called,
@@ -147,6 +150,12 @@ class lock(object):
                 else:
                     raise error.LockUnavailable(why.errno, why.strerror,
                                                 why.filename, self.desc)
+
+        if not self.held:
+            # use empty locker to mean "busy for frequent lock/unlock
+            # by many processes"
+            raise error.LockHeld(errno.EAGAIN,
+                                 self.vfs.join(self.f), self.desc, "")
 
     def _readlock(self):
         """read lock and return its value

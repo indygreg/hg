@@ -414,16 +414,15 @@ effect and style see :hg:`help color`.
 
 ``mode``
     String: control the method used to output color. One of ``auto``, ``ansi``,
-    ``win32``, ``terminfo`` or ``debug``. In auto mode the color extension will
+    ``win32``, ``terminfo`` or ``debug``. In auto mode, Mercurial will
     use ANSI mode by default (or win32 mode on Windows) if it detects a
     terminal. Any invalid value will disable color.
 
 ``pagermode``
-    String: optinal override of ``color.mode`` used with pager (from the pager
-    extensions).
+    String: optinal override of ``color.mode`` used with pager.
 
     On some systems, terminfo mode may cause problems when using
-    color with the pager extension and less -R. less with the -R option
+    color with ``less -R`` as a pager program. less with the -R option
     will only display ECMA-48 color codes, and terminfo mode may sometimes
     emit codes that less doesn't understand. You can work around this by
     either using ansi mode (or auto mode), or by using less -r (which will
@@ -431,19 +430,18 @@ effect and style see :hg:`help color`.
     codes).
 
     On some systems (such as MSYS in Windows), the terminal may support
-    a different color mode than the pager (activated via the "pager"
-    extension).
+    a different color mode than the pager program.
 
 ``commands``
 ------------
 
 ``status.relative``
-    Make paths in ``hg status`` output relative to the current directory.
+    Make paths in :hg:`status` output relative to the current directory.
     (default: False)
 
 ``update.requiredest``
-    Require that the user pass a destination when running ``hg update``.
-    For example, ``hg update .::`` will be allowed, but a plain ``hg update``
+    Require that the user pass a destination when running :hg:`update`.
+    For example, :hg:`update .::` will be allowed, but a plain :hg:`update`
     will be disallowed.
     (default: False)
 
@@ -1363,6 +1361,27 @@ Supported arguments:
     the executable name of the tool.
     (default: None)
 
+``pager``
+---------
+
+Setting used to control when to paginate and with what external tool. See
+:hg:`help pager` for details.
+
+``pager``
+    Define the external tool used as pager.
+
+    If no pager is set, Mercurial uses the environment variable $PAGER.
+    If neither pager.pager, nor $PAGER is set, a default pager will be
+    used, typically `less` on Unix and `more` on Windows. Example::
+
+      [pager]
+      pager = less -FRX
+
+``ignore``
+    List of commands to disable the pager for. Example::
+
+      [pager]
+      ignore = version, help, update
 
 ``patch``
 ---------
@@ -1862,11 +1881,9 @@ User interface controls.
     By default, the first bundle advertised by the server is used.
 
 ``color``
-    String: when to use to colorize output. possible value are auto, always,
-    never, or debug (default: auto). 'auto' will use color whenever it seems
-    possible. See :hg:`help color` for details.
-
-    (in addition a boolean can be used in place always/never)
+    When to colorize output. Possible value are Boolean ("yes" or "no"), or
+    "debug", or "always". (default: "yes"). "yes" will use color whenever it
+    seems possible. See :hg:`help color` for details.
 
 ``commitsubrepos``
     Whether to commit modified subrepositories when committing the
@@ -1942,6 +1959,10 @@ User interface controls.
 ``origbackuppath``
     The path to a directory used to store generated .orig files. If the path is
     not a directory, one will be created.
+
+``paginate``
+  Control the pagination of command output (default: True). See :hg:`help pager`
+  for details.
 
 ``patch``
     An optional external tool that ``hg import`` and some extensions

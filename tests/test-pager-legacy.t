@@ -160,7 +160,7 @@ Pager with color enabled allows colors to come through by default,
 even though stdout is no longer a tty.
   $ cat >> $HGRCPATH <<EOF
   > [ui]
-  > color = yes
+  > color = always
   > [color]
   > mode = ansi
   > EOF

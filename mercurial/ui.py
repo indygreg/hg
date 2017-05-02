@@ -51,14 +51,20 @@ samplehgrcs = {
 # username = Jane Doe <jdoe@example.com>
 username =
 
-# uncomment to colorize command output
-# color = auto
+# uncomment to disable color in command output
+# (see 'hg help color' for details)
+# color = never
+
+# uncomment to disable command output pagination
+# (see 'hg help pager' for details)
+# paginate = never
 
 [extensions]
 # uncomment these lines to enable some popular extensions
 # (see 'hg help extensions' for more info)
 #
-# pager =""",
+# churn =
+""",
 
     'cloned':
 """# example repository config (see 'hg help config' for more info)
@@ -97,15 +103,21 @@ default = %s
 """# example system-wide hg config (see 'hg help config' for more info)
 
 [ui]
-# uncomment to colorize command output
-# color = auto
+# uncomment to disable color in command output
+# (see 'hg help color' for details)
+# color = never
+
+# uncomment to disable command output pagination
+# (see 'hg help pager' for details)
+# paginate = never
 
 [extensions]
 # uncomment these lines to enable some popular extensions
 # (see 'hg help extensions' for more info)
 #
 # blackbox =
-# pager =""",
+# churn =
+""",
 }
 
 
@@ -844,7 +856,7 @@ class ui(object):
         if (self._disablepager
             or self.pageractive
             or command in self.configlist('pager', 'ignore')
-            or not self.configbool('pager', 'enable', True)
+            or not self.configbool('ui', 'paginate', True)
             or not self.configbool('pager', 'attend-' + command, True)
             # TODO: if we want to allow HGPLAINEXCEPT=pager,
             # formatted() will need some adjustment.
@@ -857,8 +869,7 @@ class ui(object):
             # HGPLAINEXCEPT=pager, and the user didn't specify --debug.
             return
 
-        fallbackpager = 'more'
-        pagercmd = self.config('pager', 'pager', fallbackpager)
+        pagercmd = self.config('pager', 'pager', rcutil.fallbackpager)
         if not pagercmd:
             return
 

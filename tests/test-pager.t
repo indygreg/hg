@@ -52,6 +52,30 @@ By default diff and log are paged, but id is not:
   $ hg id
   46106edeeb38 tip
 
+We can control the pager from the config
+
+  $ hg log --limit 1 --config 'ui.paginate=False'
+  changeset:   10:46106edeeb38
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     modify a 10
+  
+  $ hg log --limit 1 --config 'ui.paginate=0'
+  changeset:   10:46106edeeb38
+  tag:         tip
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     modify a 10
+  
+  $ hg log --limit 1 --config 'ui.paginate=1'
+  paged! 'changeset:   10:46106edeeb38\n'
+  paged! 'tag:         tip\n'
+  paged! 'user:        test\n'
+  paged! 'date:        Thu Jan 01 00:00:00 1970 +0000\n'
+  paged! 'summary:     modify a 10\n'
+  paged! '\n'
+
 We can enable the pager on id:
 
 BROKEN: should be paged
@@ -69,8 +93,9 @@ core:
    a 1
   +a 2
 
-If 'log' is in attend, then 'history' should also be paged:
-  $ hg history --limit 2 --config pager.attend=log
+Command aliases should have same behavior as main command
+
+  $ hg history --limit 2
   paged! 'changeset:   10:46106edeeb38\n'
   paged! 'tag:         tip\n'
   paged! 'user:        test\n'
@@ -82,6 +107,24 @@ If 'log' is in attend, then 'history' should also be paged:
   paged! 'date:        Thu Jan 01 00:00:00 1970 +0000\n'
   paged! 'summary:     modify a 9\n'
   paged! '\n'
+
+Abbreviated command alias should also be paged
+
+  $ hg hist -l 1
+  paged! 'changeset:   10:46106edeeb38\n'
+  paged! 'tag:         tip\n'
+  paged! 'user:        test\n'
+  paged! 'date:        Thu Jan 01 00:00:00 1970 +0000\n'
+  paged! 'summary:     modify a 10\n'
+  paged! '\n'
+
+Attend for an abbreviated command does not work
+
+  $ hg --config pager.attend-ident=true ident
+  46106edeeb38 tip
+
+  $ hg --config extensions.pager= --config pager.attend-ident=true ident
+  46106edeeb38 tip
 
 Pager should not start if stdout is not a tty.
 
@@ -98,7 +141,7 @@ Pager with color enabled allows colors to come through by default,
 even though stdout is no longer a tty.
   $ cat >> $HGRCPATH <<EOF
   > [ui]
-  > color = yes
+  > color = always
   > [color]
   > mode = ansi
   > EOF

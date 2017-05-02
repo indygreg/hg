@@ -1,14 +1,21 @@
-Mercurial can colorizes output from several commands.
+Mercurial colorizes output from several commands.
 
 For example, the diff command shows additions in green and deletions
 in red, while the status command shows modified files in magenta. Many
 other commands have analogous colors. It is possible to customize
 these colors.
 
-To enable color use::
+To enable color (default) whenever possible use::
 
   [ui]
-  color = auto
+  color = yes
+
+To disable color use::
+
+  [ui]
+  color = no
+
+See :hg:`help config.ui.color` for details.
 
 Mode
 ====
@@ -119,7 +126,7 @@ effects may be overridden from your configuration file::
 Custom colors
 =============
 
-Because there are only eight standard colors, this module allows you
+Because there are only eight standard colors, Mercurial allows you
 to define color names for other color slots which might be available
 for your terminal type, assuming terminfo mode.  For instance::
 

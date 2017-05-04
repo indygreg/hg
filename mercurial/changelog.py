@@ -295,6 +295,11 @@ class changelog(revlog.revlog):
         self._divert = False
         self.filteredrevs = frozenset()
 
+    def tiprev(self):
+        for i in xrange(len(self) -1, -2, -1):
+            if i not in self.filteredrevs:
+                return i
+
     def tip(self):
         """filtered version of revlog.tip"""
         for i in xrange(len(self) -1, -2, -1):

@@ -302,9 +302,7 @@ class changelog(revlog.revlog):
 
     def tip(self):
         """filtered version of revlog.tip"""
-        for i in xrange(len(self) -1, -2, -1):
-            if i not in self.filteredrevs:
-                return self.node(i)
+        return self.node(self.tiprev())
 
     def __contains__(self, rev):
         """filtered version of revlog.__contains__"""

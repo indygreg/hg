@@ -337,6 +337,13 @@ class vfs(abstractvfs):
             return
         os.chmod(name, self.createmode & 0o666)
 
+    def _auditpath(self, path, mode):
+        if self._audit:
+            r = util.checkosfilename(path)
+            if r:
+                raise error.Abort("%s: %r" % (r, path))
+            self.audit(path, mode=mode)
+
     def __call__(self, path, mode="r", atomictemp=False, notindexed=False,
                  backgroundclose=False, checkambig=False, auditpath=True):
         '''Open ``path`` file, which is relative to vfs root.
@@ -369,11 +376,7 @@ class vfs(abstractvfs):
         cases (see also issue5418 and issue5584 for detail).
         '''
         if auditpath:
-            if self._audit:
-                r = util.checkosfilename(path)
-                if r:
-                    raise error.Abort("%s: %r" % (r, path))
-            self.audit(path, mode=mode)
+            self._auditpath(path, mode)
         f = self.join(path)
 
         if "b" not in mode:

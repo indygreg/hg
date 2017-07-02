@@ -1030,12 +1030,12 @@ class localrepository(object):
                 path = path[len(repo.path) + 1:]
             if path.startswith('cache/'):
                 msg = 'accessing cache with vfs instead of cachevfs: "%s"'
-                repo.ui.develwarn(msg % path, stacklevel=2, config="cache-vfs")
+                repo.ui.develwarn(msg % path, stacklevel=3, config="cache-vfs")
             if path.startswith('journal.') or path.startswith('undo.'):
                 # journal is covered by 'lock'
                 if repo._currentlock(repo._lockref) is None:
                     repo.ui.develwarn('write with no lock: "%s"' % path,
-                                      stacklevel=2, config='check-locks')
+                                      stacklevel=3, config='check-locks')
             elif repo._currentlock(repo._wlockref) is None:
                 # rest of vfs files are covered by 'wlock'
                 #
@@ -1044,7 +1044,7 @@ class localrepository(object):
                     if path.startswith(prefix):
                         return
                 repo.ui.develwarn('write with no wlock: "%s"' % path,
-                                  stacklevel=2, config='check-locks')
+                                  stacklevel=3, config='check-locks')
             return ret
         return checkvfs
 
@@ -1063,7 +1063,7 @@ class localrepository(object):
                 path = path[len(repo.sharedpath) + 1:]
             if repo._currentlock(repo._lockref) is None:
                 repo.ui.develwarn('write with no lock: "%s"' % path,
-                                  stacklevel=3)
+                                  stacklevel=4)
             return ret
         return checksvfs
 

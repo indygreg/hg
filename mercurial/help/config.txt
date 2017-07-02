@@ -886,6 +886,12 @@ They contain the type of hook which triggered the run and the full name
 of the hook in the config, respectively. In the example above, this will
 be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
 
+.. container:: windows
+
+  Some basic Unix syntax is supported for portability, including ``$VAR``
+  and ``${VAR}`` style variables.  To use a literal ``$``, it must be
+  escaped with a back slash or inside of a strong quote.
+
 ``changegroup``
   Run after a changegroup has been added via push, pull or unbundle.  The ID of
   the first new changeset is in ``$HG_NODE`` and last is in ``$HG_NODE_LAST``.

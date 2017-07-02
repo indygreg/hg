@@ -120,8 +120,6 @@ def pythonhook(ui, repo, htype, hname, funcname, args, throw):
     return r, False
 
 def _exthook(ui, repo, htype, name, cmd, args, throw):
-    ui.note(_("running hook %s: %s\n") % (name, cmd))
-
     starttime = util.timer()
     env = {}
 
@@ -140,6 +138,12 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
         if isinstance(v, (dict, list)):
             v = stringutil.pprint(v)
         env['HG_' + k.upper()] = v
+
+    if pycompat.iswindows:
+        environ = procutil.shellenviron(env)
+        cmd = util.platform.shelltocmdexe(cmd, environ)
+
+    ui.note(_("running hook %s: %s\n") % (name, cmd))
 
     if repo:
         cwd = repo.root

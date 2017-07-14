@@ -122,6 +122,12 @@ class bmstore(dict):
         self._clean = False
         return dict.__delitem__(self, key)
 
+    def update(self, *others):
+        msg = ("bookmarks.update(...)' is deprecated, "
+               "use 'bookmarks.applychanges'")
+        self._repo.ui.deprecwarn(msg, '4.5')
+        return dict.update(self, *others)
+
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
         """

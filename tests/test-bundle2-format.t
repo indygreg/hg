@@ -14,7 +14,6 @@ Create an extension to test bundle2 API
   > """
   > 
   > import sys, os, gc
-  > from mercurial import cmdutil
   > from mercurial import util
   > from mercurial import bundle2
   > from mercurial import scmutil
@@ -22,6 +21,7 @@ Create an extension to test bundle2 API
   > from mercurial import changegroup
   > from mercurial import error
   > from mercurial import obsolete
+  > from mercurial import registrar
   > 
   > 
   > try:
@@ -33,7 +33,7 @@ Create an extension to test bundle2 API
   >     pass
   > 
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
+  > command = registrar.command(cmdtable)
   > 
   > ELEPHANTSSONG = """Patali Dirapata, Cromda Cromda Ripalo, Pata Pata, Ko Ko Ko
   > Bokoro Dipoulito, Rondi Rondi Pepino, Pata Pata, Ko Ko Ko
@@ -70,7 +70,7 @@ Create an extension to test bundle2 API
   >             for val in op.reply.capabilities[cap]:
   >                 op.ui.write('debugreply:         %r\n' % val)
   > 
-  > @command('bundle2',
+  > @command(b'bundle2',
   >          [('', 'param', [], 'stream level parameter'),
   >           ('', 'unknown', False, 'include an unknown mandatory part in the bundle'),
   >           ('', 'unknownparams', False, 'include an unknown part parameters in the bundle'),
@@ -113,7 +113,7 @@ Create an extension to test bundle2 API
   >             headmissing = [c.node() for c in repo.set('heads(%ld)', revs)]
   >             headcommon  = [c.node() for c in repo.set('parents(%ld) - %ld', revs, revs)]
   >             outgoing = discovery.outgoing(repo, headcommon, headmissing)
-  >             cg = changegroup.getlocalchangegroup(repo, 'test:bundle2', outgoing, None)
+  >             cg = changegroup.getchangegroup(repo, 'test:bundle2', outgoing, None)
   >             bundler.newpart('changegroup', data=cg.getchunks(),
   >                             mandatory=False)
   > 
@@ -169,7 +169,7 @@ Create an extension to test bundle2 API
   >     finally:
   >         file.flush()
   > 
-  > @command('unbundle2', [], '')
+  > @command(b'unbundle2', [], '')
   > def cmdunbundle2(ui, repo, replypath=None):
   >     """process a bundle2 stream from stdin on the current repo"""
   >     try:
@@ -200,7 +200,7 @@ Create an extension to test bundle2 API
   >             for chunk in op.reply.getchunks():
   >                 file.write(chunk)
   > 
-  > @command('statbundle2', [], '')
+  > @command(b'statbundle2', [], '')
   > def cmdstatbundle2(ui, repo):
   >     """print statistic on the bundle2 container read from stdin"""
   >     unbundler = bundle2.getunbundler(ui, sys.stdin)
@@ -229,7 +229,7 @@ Create an extension to test bundle2 API
   > [experimental]
   > evolution=createmarkers
   > [ui]
-  > ssh=python "$TESTDIR/dummyssh"
+  > ssh=$PYTHON "$TESTDIR/dummyssh"
   > logtemplate={rev}:{node|short} {phase} {author} {bookmarks} {desc|firstline}
   > [web]
   > push_ssl = false

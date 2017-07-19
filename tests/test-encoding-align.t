@@ -4,7 +4,7 @@ Test alignment of multibyte characters
   $ export HGENCODING
   $ hg init t
   $ cd t
-  $ python << EOF
+  $ $PYTHON << EOF
   > # (byte, width) = (6, 4)
   > s = "\xe7\x9f\xad\xe5\x90\x8d"
   > # (byte, width) = (7, 7): odd width is good for alignment test
@@ -16,11 +16,11 @@ Test alignment of multibyte characters
   > f = file('l', 'w'); f.write(l); f.close()
   > # instant extension to show list of options
   > f = file('showoptlist.py', 'w'); f.write("""# encoding: utf-8
-  > from mercurial import cmdutil
+  > from mercurial import registrar
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
+  > command = registrar.command(cmdtable)
   > 
-  > @command('showoptlist',
+  > @command(b'showoptlist',
   >     [('s', 'opt1', '', 'short width'  + ' %(s)s' * 8, '%(s)s'),
   >     ('m', 'opt2', '', 'middle width' + ' %(m)s' * 8, '%(m)s'),
   >     ('l', 'opt3', '', 'long width'   + ' %(l)s' * 8, '%(l)s')],

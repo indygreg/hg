@@ -1,6 +1,7 @@
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > rebase=
+  > drawdag=$TESTDIR/drawdag.py
   > 
   > [phases]
   > publish=False
@@ -64,7 +65,7 @@ can abort or warn for colliding untracked files)
   HG: user: Nicolas Dumazet <nicdumz.commits@gmail.com>
   HG: branch 'default'
   HG: added D
-  saved backup bundle to $TESTTMP/a1/.hg/strip-backup/32af7686d403-6f7dface-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a1/.hg/strip-backup/32af7686d403-6f7dface-rebase.hg (glob)
   $ cat D.orig
   collide
   $ rm D.orig
@@ -99,7 +100,7 @@ that we can ignore for colliding untracked files)
 
   $ HGEDITOR=cat hg rebase -s 3 -d 5 --config merge.checkunknown=ignore
   rebasing 3:32af7686d403 "D"
-  saved backup bundle to $TESTTMP/a2/.hg/strip-backup/32af7686d403-6f7dface-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a2/.hg/strip-backup/32af7686d403-6f7dface-rebase.hg (glob)
   $ cat D.orig
   collide
   $ rm D.orig
@@ -137,7 +138,7 @@ if they have the same contents)
   rebasing 4:9520eea781bc "E"
   rebasing 6:eea13746799a "G"
   note: rebase of 6:eea13746799a created no changes to commit
-  saved backup bundle to $TESTTMP/a3/.hg/strip-backup/9520eea781bc-fcd8edd4-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a3/.hg/strip-backup/9520eea781bc-fcd8edd4-rebase.hg (glob)
   $ f E.orig
   E.orig: file not found
 
@@ -169,7 +170,7 @@ F onto E - rebase of a branching point (skip G):
   rebasing 6:eea13746799a "G"
   note: rebase of 6:eea13746799a created no changes to commit
   rebasing 7:02de42196ebe "H" (tip)
-  saved backup bundle to $TESTTMP/a4/.hg/strip-backup/24b6387c8c8c-c3fe765d-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a4/.hg/strip-backup/24b6387c8c8c-c3fe765d-rebase.hg (glob)
 
   $ hg tglog
   @  6: 'H'
@@ -196,7 +197,7 @@ G onto H - merged revision having a parent in ancestors of target:
 
   $ hg rebase -s 6 -d 7
   rebasing 6:eea13746799a "G"
-  saved backup bundle to $TESTTMP/a5/.hg/strip-backup/eea13746799a-883828ed-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a5/.hg/strip-backup/eea13746799a-883828ed-rebase.hg (glob)
 
   $ hg tglog
   o    7: 'G'
@@ -227,7 +228,7 @@ F onto B - G maintains E as parent:
   rebasing 5:24b6387c8c8c "F"
   rebasing 6:eea13746799a "G"
   rebasing 7:02de42196ebe "H" (tip)
-  saved backup bundle to $TESTTMP/a6/.hg/strip-backup/24b6387c8c8c-c3fe765d-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a6/.hg/strip-backup/24b6387c8c8c-c3fe765d-rebase.hg (glob)
 
   $ hg tglog
   @  7: 'H'
@@ -300,7 +301,7 @@ C onto A - rebase onto an ancestor:
   $ hg rebase -d 0 -s 2
   rebasing 2:5fddd98957c8 "C"
   rebasing 3:32af7686d403 "D"
-  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/5fddd98957c8-f9244fa1-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/5fddd98957c8-f9244fa1-rebase.hg (glob)
   $ hg tglog
   o  7: 'D'
   |
@@ -344,31 +345,31 @@ Source phase greater or equal to destination phase: new changeset get the phase 
   5
   $ hg rebase -s9 -d0
   rebasing 9:2b23e52411f4 "D" (tip)
-  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/2b23e52411f4-f942decf-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/2b23e52411f4-f942decf-rebase.hg (glob)
   $ hg id -n # check we updated back to parent
   5
   $ hg log --template "{phase}\n" -r 9
   draft
   $ hg rebase -s9 -d1
   rebasing 9:2cb10d0cfc6c "D" (tip)
-  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/2cb10d0cfc6c-ddb0f256-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/2cb10d0cfc6c-ddb0f256-rebase.hg (glob)
   $ hg log --template "{phase}\n" -r 9
   draft
   $ hg phase --force --secret 9
   $ hg rebase -s9 -d0
   rebasing 9:c5b12b67163a "D" (tip)
-  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/c5b12b67163a-4e372053-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/c5b12b67163a-4e372053-rebase.hg (glob)
   $ hg log --template "{phase}\n" -r 9
   secret
   $ hg rebase -s9 -d1
   rebasing 9:2a0524f868ac "D" (tip)
-  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/2a0524f868ac-cefd8574-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/2a0524f868ac-cefd8574-rebase.hg (glob)
   $ hg log --template "{phase}\n" -r 9
   secret
 Source phase lower than destination phase: new changeset get the phase of destination:
   $ hg rebase -s8 -d9
   rebasing 8:6d4f22462821 "C"
-  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/6d4f22462821-3441f70b-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/6d4f22462821-3441f70b-rebase.hg (glob)
   $ hg log --template "{phase}\n" -r 'rev(9)'
   secret
 
@@ -596,7 +597,7 @@ rebase on ancestor with revset
   rebasing 6:3d8a618087a7 "G"
   rebasing 7:72434a4e60b0 "H"
   rebasing 8:479ddb54a924 "I" (tip)
-  saved backup bundle to $TESTTMP/ah5/.hg/strip-backup/3d8a618087a7-b4f73f31-backup.hg (glob)
+  saved backup bundle to $TESTTMP/ah5/.hg/strip-backup/3d8a618087a7-b4f73f31-rebase.hg (glob)
   $ hg tglog
   o  8: 'I'
   |
@@ -631,7 +632,7 @@ We would expect heads are I, F if it was supported
   rebasing 6:3d8a618087a7 "G"
   rebasing 7:72434a4e60b0 "H"
   rebasing 8:479ddb54a924 "I" (tip)
-  saved backup bundle to $TESTTMP/ah6/.hg/strip-backup/3d8a618087a7-aae93a24-backup.hg (glob)
+  saved backup bundle to $TESTTMP/ah6/.hg/strip-backup/3d8a618087a7-aae93a24-rebase.hg (glob)
   $ hg tglog
   o  8: 'I'
   |
@@ -700,7 +701,7 @@ each root have a different common ancestor with the destination and this is a de
   $ hg rebase --dest 'desc(G)' --rev 'desc(K) + desc(I)'
   rebasing 8:e7ec4e813ba6 "I"
   rebasing 10:23a4ace37988 "K" (tip)
-  saved backup bundle to $TESTTMP/a8/.hg/strip-backup/23a4ace37988-b06984b3-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a8/.hg/strip-backup/23a4ace37988-b06984b3-rebase.hg (glob)
   $ hg log --rev 'children(desc(G))'
   changeset:   9:adb617877056
   parent:      6:eea13746799a
@@ -761,19 +762,13 @@ Test that rebase is not confused by $CWD disappearing during rebase (issue4121)
   $ touch subfile
   $ hg add subfile
   $ hg commit -m 'second source with subdir'
-#if rmcwd
+
   $ hg rebase -b . -d 1 --traceback
   rebasing 2:779a07b1b7a0 "first source commit"
-  current directory was removed
-  (consider changing to repo root: $TESTTMP/cwd-vanish)
+  current directory was removed (rmcwd !)
+  (consider changing to repo root: $TESTTMP/cwd-vanish) (rmcwd !)
   rebasing 3:a7d6f3a00bf3 "second source with subdir" (tip)
-  saved backup bundle to $TESTTMP/cwd-vanish/.hg/strip-backup/779a07b1b7a0-853e0073-backup.hg (glob)
-#else
-  $ hg rebase -b . -d 1 --traceback
-  rebasing 2:779a07b1b7a0 "first source commit"
-  rebasing 3:a7d6f3a00bf3 "second source with subdir" (tip)
-  saved backup bundle to $TESTTMP/cwd-vanish/.hg/strip-backup/779a07b1b7a0-853e0073-backup.hg (glob)
-#endif
+  saved backup bundle to $TESTTMP/cwd-vanish/.hg/strip-backup/779a07b1b7a0-853e0073-rebase.hg (glob)
 
 Get back to the root of cwd-vanish. Note that even though `cd ..`
 works on most systems, it does not work on FreeBSD 10, so we use an
@@ -824,7 +819,7 @@ Test that rebase is done in topo order (issue5370)
   rebasing 4:82ae8dc7a9b7 "E"
   rebasing 3:ab709c9f7171 "D"
   rebasing 5:412b391de760 "F"
-  saved backup bundle to $TESTTMP/order/.hg/strip-backup/76035bbd54bd-e341bc99-backup.hg (glob)
+  saved backup bundle to $TESTTMP/order/.hg/strip-backup/76035bbd54bd-e341bc99-rebase.hg (glob)
 
   $ hg tglog
   o  6: 'F'
@@ -913,3 +908,42 @@ Testing from upper head
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     second source with subdir
   
+Testing rebase being called inside another transaction
+
+  $ cd $TESTTMP
+  $ hg init tr-state
+  $ cd tr-state
+  $ cat > $TESTTMP/wraprebase.py <<EOF
+  > from __future__ import absolute_import
+  > from mercurial import extensions
+  > def _rebase(orig, ui, repo, *args, **kwargs):
+  >     with repo.wlock():
+  >         with repo.lock():
+  >             with repo.transaction('wrappedrebase'):
+  >                 return orig(ui, repo, *args, **kwargs)
+  > def wraprebase(loaded):
+  >     assert loaded
+  >     rebasemod = extensions.find('rebase')
+  >     extensions.wrapcommand(rebasemod.cmdtable, 'rebase', _rebase)
+  > def extsetup(ui):
+  >     extensions.afterloaded('rebase', wraprebase)
+  > EOF
+
+  $ cat >> .hg/hgrc <<EOF
+  > [extensions]
+  > wraprebase=$TESTTMP/wraprebase.py
+  > [experimental]
+  > evolution=all
+  > EOF
+
+  $ hg debugdrawdag <<'EOS'
+  > B C
+  > |/
+  > A
+  > EOS
+
+  $ hg rebase -s C -d B
+  rebasing 2:dc0947a82db8 "C" (C tip)
+
+  $ [ -f .hg/rebasestate ] && echo 'WRONG: rebasestate should not exist'
+  [1]

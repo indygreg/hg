@@ -13,6 +13,7 @@
 </div>
 
 <div class="page_nav">
+<div>
 <a href="{url|urlescape}summary{sessionvars%urlparameter}">summary</a> |
 <a href="{url|urlescape}shortlog{sessionvars%urlparameter}">shortlog</a> |
 <a href="{url|urlescape}log{sessionvars%urlparameter}">changelog</a> |
@@ -30,7 +31,8 @@ file |
 <a href="{url|urlescape}comparison/{symrev}/{file|urlescape}{sessionvars%urlparameter}">comparison</a> |
 <a href="{url|urlescape}raw-file/{symrev}/{file|urlescape}">raw</a> |
 <a href="{url|urlescape}help{sessionvars%urlparameter}">help</a>
-<br/>
+</div>
+{searchform}
 </div>
 
 <div class="title">{file|escape}</div>
@@ -59,12 +61,15 @@ file |
 </table>
 </div>
 
-<div class="page_path description">
-{desc|strip|escape|websub|addbreaks|nonempty}
-</div>
+<div class="page_path description">{desc|strip|escape|websub|nonempty}</div>
 
 <div class="page_body">
-<pre class="sourcelines stripes" data-logurl="{url|urlescape}log/{symrev}/{file|urlescape}" data-ishead="{ishead}">{text%fileline}</pre>
+<pre class="sourcelines stripes"
+     data-logurl="{url|urlescape}log/{symrev}/{file|urlescape}"
+     data-selectabletag="SPAN"
+     data-ishead="{ishead}">
+{text%fileline}
+</pre>
 </div>
 
 <script type="text/javascript" src="{staticurl|urlescape}followlines.js"></script>

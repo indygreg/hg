@@ -44,3 +44,7 @@ wcctx._status=<status modified=['bar-m'], added=['bar-a'], removed=[], deleted=[
 wcctx._status=<status modified=['bar-m'], added=['bar-a'], removed=[], deleted=[], unknown=[], ignored=[], clean=[]>
 <status modified=[], added=['bar-r'], removed=[], deleted=[], unknown=[], ignored=[], clean=['foo']>
 wcctx._status=<status modified=['bar-m'], added=['bar-a'], removed=[], deleted=[], unknown=[], ignored=[], clean=[]>
+== commit with manifestlog invalidated
+commit 1: 2efe531a913fa648867ab8824360371679d05a65
+commit 2: 2caca91f6362020334384ebe27bae67315298abf
+commit 3: abd6b0f49f338be22b094ef2b7425e8048f8337b

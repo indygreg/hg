@@ -14,6 +14,7 @@ from . import (
     error,
     merge,
     parser,
+    pycompat,
     registrar,
     scmutil,
     util,
@@ -37,12 +38,13 @@ elements = {
     "end": (0, None, None, None, None),
 }
 
-keywords = set(['and', 'or', 'not'])
+keywords = {'and', 'or', 'not'}
 
 globchars = ".*{}[]?/\\_"
 
 def tokenize(program):
     pos, l = 0, len(program)
+    program = pycompat.bytestr(program)
     while pos < l:
         c = program[pos]
         if c.isspace(): # skip inter-token whitespace
@@ -256,7 +258,7 @@ def binary(mctx, x):
     """
     # i18n: "binary" is a keyword
     getargs(x, 0, 0, _("binary takes no arguments"))
-    return [f for f in mctx.existing() if util.binary(mctx.ctx[f].data())]
+    return [f for f in mctx.existing() if mctx.ctx[f].isbinary()]
 
 @predicate('exec()', callexisting=True)
 def exec_(mctx, x):

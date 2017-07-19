@@ -23,6 +23,7 @@ from . import (
     filemerge,
     fileset,
     minirst,
+    pycompat,
     revset,
     templatefilters,
     templatekw,
@@ -33,7 +34,7 @@ from .hgweb import (
     webcommands,
 )
 
-_exclkeywords = set([
+_exclkeywords = {
     "(ADVANCED)",
     "(DEPRECATED)",
     "(EXPERIMENTAL)",
@@ -43,7 +44,7 @@ _exclkeywords = set([
     _("(DEPRECATED)"),
     # i18n: "(EXPERIMENTAL)" is a keyword, must be translated consistently
     _("(EXPERIMENTAL)"),
-    ])
+}
 
 def listexts(header, exts, indent=1, showdeprecated=False):
     '''return a text listing of the given extensions'''
@@ -83,7 +84,11 @@ def optrst(header, options, verbose):
             so = '-' + shortopt
         lo = '--' + longopt
         if default:
-            desc += _(" (default: %s)") % default
+            # default is of unknown type, and in Python 2 we abused
+            # the %s-shows-repr property to handle integers etc. To
+            # match that behavior on Python 3, we do str(default) and
+            # then convert it to bytes.
+            desc += _(" (default: %s)") % pycompat.bytestr(default)
 
         if isinstance(default, list):
             lo += " %s [+]" % optlabel
@@ -113,7 +118,7 @@ def filtercmd(ui, cmd, kw, doc):
         return True
     return False
 
-def topicmatch(ui, kw):
+def topicmatch(ui, commands, kw):
     """Return help topics matching kw.
 
     Returns {'section': [(name, summary), ...], ...} where section is
@@ -133,14 +138,13 @@ def topicmatch(ui, kw):
             or lowercontains(header)
             or (callable(doc) and lowercontains(doc(ui)))):
             results['topics'].append((names[0], header))
-    from . import commands # avoid cycle
     for cmd, entry in commands.table.iteritems():
         if len(entry) == 3:
             summary = entry[2]
         else:
             summary = ''
         # translate docs *before* searching there
-        docs = _(getattr(entry[0], '__doc__', None)) or ''
+        docs = _(pycompat.getdoc(entry[0])) or ''
         if kw in cmd or lowercontains(summary) or lowercontains(docs):
             doclines = docs.splitlines()
             if doclines:
@@ -162,8 +166,9 @@ def topicmatch(ui, kw):
         for cmd, entry in getattr(mod, 'cmdtable', {}).iteritems():
             if kw in cmd or (len(entry) > 2 and lowercontains(entry[2])):
                 cmdname = cmd.partition('|')[0].lstrip('^')
-                if entry[0].__doc__:
-                    cmddoc = gettext(entry[0].__doc__).splitlines()[0]
+                cmddoc = pycompat.getdoc(entry[0])
+                if cmddoc:
+                    cmddoc = gettext(cmddoc).splitlines()[0]
                 else:
                     cmddoc = _('(no help text available)')
                 if filtercmd(ui, cmdname, kw, cmddoc):
@@ -259,13 +264,14 @@ def makeitemsdoc(ui, topic, doc, marker, items, dedent=False):
     """
     entries = []
     for name in sorted(items):
-        text = (items[name].__doc__ or '').rstrip()
+        text = (pycompat.getdoc(items[name]) or '').rstrip()
         if (not text
             or not ui.verbose and any(w in text for w in _exclkeywords)):
             continue
         text = gettext(text)
         if dedent:
-            text = textwrap.dedent(text)
+            # Abuse latin1 to use textwrap.dedent() on bytes.
+            text = textwrap.dedent(text.decode('latin1')).encode('latin1')
         lines = text.splitlines()
         doclines = [(lines[0])]
         for l in lines[1:]:
@@ -297,13 +303,14 @@ addtopicsymbols('templates', '.. functionsmarker', templater.funcs)
 addtopicsymbols('hgweb', '.. webcommandsmarker', webcommands.commands,
                 dedent=True)
 
-def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
+def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
+          **opts):
     '''
     Generate the help for 'name' as unformatted restructured text. If
     'name' is None, describe the commands available.
     '''
 
-    from . import commands # avoid cycle
+    opts = pycompat.byteskwargs(opts)
 
     def helpcmd(name, subtopic=None):
         try:
@@ -343,7 +350,7 @@ def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
         rst.append('\n')
 
         # description
-        doc = gettext(entry[0].__doc__)
+        doc = gettext(pycompat.getdoc(entry[0]))
         if not doc:
             doc = _("(no help text available)")
         if util.safehasattr(entry[0], 'definition'):  # aliased command
@@ -365,7 +372,7 @@ def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
         # extension help text
         try:
             mod = extensions.find(name)
-            doc = gettext(mod.__doc__) or ''
+            doc = gettext(pycompat.getdoc(mod)) or ''
             if '\n' in doc.strip():
                 msg = _("(use 'hg help -e %s' to show help for "
                         "the %s extension)") % (name, name)
@@ -413,7 +420,7 @@ def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
             if name == "shortlist" and not f.startswith("^"):
                 continue
             f = f.lstrip("^")
-            doc = e[0].__doc__
+            doc = pycompat.getdoc(e[0])
             if filtercmd(ui, f, name, doc):
                 continue
             doc = gettext(doc)
@@ -516,7 +523,7 @@ def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
     def helpext(name, subtopic=None):
         try:
             mod = extensions.find(name)
-            doc = gettext(mod.__doc__) or _('no help text available')
+            doc = gettext(pycompat.getdoc(mod)) or _('no help text available')
         except KeyError:
             mod = None
             doc = extensions.disabledext(name)
@@ -552,7 +559,7 @@ def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
     def helpextcmd(name, subtopic=None):
         cmd, ext, mod = extensions.disabledcmd(ui, name,
                                                ui.configbool('ui', 'strict'))
-        doc = gettext(mod.__doc__).splitlines()[0]
+        doc = gettext(pycompat.getdoc(mod)).splitlines()[0]
 
         rst = listexts(_("'%s' is provided by the following "
                               "extension:") % cmd, {ext: doc}, indent=4,
@@ -566,7 +573,7 @@ def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
     rst = []
     kw = opts.get('keyword')
     if kw or name is None and any(opts[o] for o in opts):
-        matches = topicmatch(ui, name or '')
+        matches = topicmatch(ui, commands, name or '')
         helpareas = []
         if opts.get('extension'):
             helpareas += [('extensions', _('Extensions'))]
@@ -613,11 +620,12 @@ def help_(ui, name, unknowncmd=False, full=True, subtopic=None, **opts):
         # program name
         if not ui.quiet:
             rst = [_("Mercurial Distributed SCM\n"), '\n']
-        rst.extend(helplist(None, **opts))
+        rst.extend(helplist(None, **pycompat.strkwargs(opts)))
 
     return ''.join(rst)
 
-def formattedhelp(ui, name, keep=None, unknowncmd=False, full=True, **opts):
+def formattedhelp(ui, commands, name, keep=None, unknowncmd=False, full=True,
+                  **opts):
     """get help for a given topic (as a dotted name) as rendered rst
 
     Either returns the rendered help text or raises an exception.
@@ -639,11 +647,11 @@ def formattedhelp(ui, name, keep=None, unknowncmd=False, full=True, **opts):
                 subtopic = remaining
             else:
                 section = remaining
-    textwidth = ui.configint('ui', 'textwidth', 78)
+    textwidth = ui.configint('ui', 'textwidth')
     termwidth = ui.termwidth() - 2
     if textwidth <= 0 or termwidth < textwidth:
         textwidth = termwidth
-    text = help_(ui, name,
+    text = help_(ui, commands, name,
                  subtopic=subtopic, unknowncmd=unknowncmd, full=full, **opts)
 
     formatted, pruned = minirst.format(text, textwidth, keep=keep,

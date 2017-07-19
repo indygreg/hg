@@ -182,17 +182,22 @@ def findcommonoutgoing(repo, other, onlyheads=None, force=False,
 
     return og
 
-def _headssummary(repo, remote, outgoing):
+def _headssummary(pushop):
     """compute a summary of branch and heads status before and after push
 
-    return {'branch': ([remoteheads], [newheads], [unsyncedheads])} mapping
+    return {'branch': ([remoteheads], [newheads],
+                       [unsyncedheads], [discardedheads])} mapping
 
-    - branch: the branch name
+    - branch: the branch name,
     - remoteheads: the list of remote heads known locally
-                   None if the branch is new
-    - newheads: the new remote heads (known locally) with outgoing pushed
-    - unsyncedheads: the list of remote heads unknown locally.
+                   None if the branch is new,
+    - newheads: the new remote heads (known locally) with outgoing pushed,
+    - unsyncedheads: the list of remote heads unknown locally,
+    - discardedheads: the list of heads made obsolete by the push.
     """
+    repo = pushop.repo.unfiltered()
+    remote = pushop.remote
+    outgoing = pushop.outgoing
     cl = repo.changelog
     headssum = {}
     # A. Create set of branches involved in the push.
@@ -235,6 +240,23 @@ def _headssummary(repo, remote, outgoing):
     newmap.update(repo, (ctx.rev() for ctx in missingctx))
     for branch, newheads in newmap.iteritems():
         headssum[branch][1][:] = newheads
+    for branch, items in headssum.iteritems():
+        for l in items:
+            if l is not None:
+                l.sort()
+        headssum[branch] = items + ([],)
+
+    # If there are no obsstore, no post processing are needed.
+    if repo.obsstore:
+        torev = repo.changelog.rev
+        futureheads = set(torev(h) for h in outgoing.missingheads)
+        futureheads |= set(torev(h) for h in outgoing.commonheads)
+        allfuturecommon = repo.changelog.ancestors(futureheads, inclusive=True)
+        for branch, heads in sorted(headssum.iteritems()):
+            remoteheads, newheads, unsyncedheads, placeholder = heads
+            result = _postprocessobsolete(pushop, allfuturecommon, newheads)
+            headssum[branch] = (remoteheads, sorted(result[0]), unsyncedheads,
+                                sorted(result[1]))
     return headssum
 
 def _oldheadssummary(repo, remoteheads, outgoing, inc=False):
@@ -244,20 +266,20 @@ def _oldheadssummary(repo, remoteheads, outgoing, inc=False):
     # Construct {old,new}map with branch = None (topological branch).
     # (code based on update)
     knownnode = repo.changelog.hasnode # no nodemap until it is filtered
-    oldheads = set(h for h in remoteheads if knownnode(h))
+    oldheads = sorted(h for h in remoteheads if knownnode(h))
     # all nodes in outgoing.missing are children of either:
     # - an element of oldheads
     # - another element of outgoing.missing
     # - nullrev
     # This explains why the new head are very simple to compute.
     r = repo.set('heads(%ln + %ln)', oldheads, outgoing.missing)
-    newheads = list(c.node() for c in r)
+    newheads = sorted(c.node() for c in r)
     # set some unsynced head to issue the "unsynced changes" warning
     if inc:
-        unsynced = set([None])
+        unsynced = [None]
     else:
-        unsynced = set()
-    return {None: (oldheads, newheads, unsynced)}
+        unsynced = []
+    return {None: (oldheads, newheads, unsynced, [])}
 
 def _nowarnheads(pushop):
     # Compute newly pushed bookmarks. We don't warn about bookmarked heads.
@@ -307,9 +329,10 @@ def checkheads(pushop):
         return
 
     if remote.capable('branchmap'):
-        headssum = _headssummary(repo, remote, outgoing)
+        headssum = _headssummary(pushop)
     else:
         headssum = _oldheadssummary(repo, remoteheads, outgoing, inc)
+    pushop.pushbranchmap = headssum
     newbranches = [branch for branch, heads in headssum.iteritems()
                    if heads[0] is None]
     # 1. Check for new branches on the remote.
@@ -327,41 +350,26 @@ def checkheads(pushop):
     # If there are more heads after the push than before, a suitable
     # error message, depending on unsynced status, is displayed.
     errormsg = None
-    # If there is no obsstore, allfuturecommon won't be used, so no
-    # need to compute it.
-    if repo.obsstore:
-        allmissing = set(outgoing.missing)
-        cctx = repo.set('%ld', outgoing.common)
-        allfuturecommon = set(c.node() for c in cctx)
-        allfuturecommon.update(allmissing)
     for branch, heads in sorted(headssum.iteritems()):
-        remoteheads, newheads, unsyncedheads = heads
-        candidate_newhs = set(newheads)
+        remoteheads, newheads, unsyncedheads, discardedheads = heads
         # add unsynced data
         if remoteheads is None:
             oldhs = set()
         else:
             oldhs = set(remoteheads)
         oldhs.update(unsyncedheads)
-        candidate_newhs.update(unsyncedheads)
         dhs = None # delta heads, the new heads on branch
-        if not repo.obsstore:
-            discardedheads = set()
-            newhs = candidate_newhs
-        else:
-            newhs, discardedheads = _postprocessobsolete(pushop,
-                                                         allfuturecommon,
-                                                         candidate_newhs)
-        unsynced = sorted(h for h in unsyncedheads if h not in discardedheads)
-        if unsynced:
-            if None in unsynced:
+        newhs = set(newheads)
+        newhs.update(unsyncedheads)
+        if unsyncedheads:
+            if None in unsyncedheads:
                 # old remote, no heads data
                 heads = None
-            elif len(unsynced) <= 4 or repo.ui.verbose:
-                heads = ' '.join(short(h) for h in unsynced)
+            elif len(unsyncedheads) <= 4 or repo.ui.verbose:
+                heads = ' '.join(short(h) for h in unsyncedheads)
             else:
-                heads = (' '.join(short(h) for h in unsynced[:4]) +
-                         ' ' + _("and %s others") % (len(unsynced) - 4))
+                heads = (' '.join(short(h) for h in unsyncedheads[:4]) +
+                         ' ' + _("and %s others") % (len(unsyncedheads) - 4))
             if heads is None:
                 repo.ui.status(_("remote has heads that are "
                                  "not known locally\n"))
@@ -431,11 +439,12 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     repo = pushop.repo
     unfi = repo.unfiltered()
     tonode = unfi.changelog.node
+    torev = unfi.changelog.nodemap.get
     public = phases.public
     getphase = unfi._phasecache.phase
     ispublic = (lambda r: getphase(unfi, r) == public)
-    hasoutmarker = functools.partial(pushingmarkerfor, unfi.obsstore,
-                                     futurecommon)
+    ispushed = (lambda n: torev(n) in futurecommon)
+    hasoutmarker = functools.partial(pushingmarkerfor, unfi.obsstore, ispushed)
     successorsmarkers = unfi.obsstore.successors
     newhs = set() # final set of new heads
     discarded = set() # new head of fully replaced branch
@@ -460,8 +469,7 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     while localcandidate:
         nh = localcandidate.pop()
         # run this check early to skip the evaluation of the whole branch
-        if (nh in futurecommon
-                or unfi[nh].phase() <= public):
+        if (torev(nh) in futurecommon or ispublic(torev(nh))):
             newhs.add(nh)
             continue
 
@@ -476,7 +484,7 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
         # * any part of it is considered part of the result by previous logic,
         # * if we have no markers to push to obsolete it.
         if (any(ispublic(r) for r in branchrevs)
-                or any(n in futurecommon for n in branchnodes)
+                or any(torev(n) in futurecommon for n in branchnodes)
                 or any(not hasoutmarker(n) for n in branchnodes)):
             newhs.add(nh)
         else:
@@ -488,7 +496,7 @@ def _postprocessobsolete(pushop, futurecommon, candidate_newhs):
     newhs |= unknownheads
     return newhs, discarded
 
-def pushingmarkerfor(obsstore, pushset, node):
+def pushingmarkerfor(obsstore, ispushed, node):
     """true if some markers are to be pushed for node
 
     We cannot just look in to the pushed obsmarkers from the pushop because
@@ -504,7 +512,7 @@ def pushingmarkerfor(obsstore, pushset, node):
     seen = set(stack)
     while stack:
         current = stack.pop()
-        if current in pushset:
+        if ispushed(current):
             return True
         markers = successorsmarkers.get(current, ())
         # markers fields = ('prec', 'succs', 'flag', 'meta', 'date', 'parents')

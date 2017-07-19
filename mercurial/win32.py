@@ -22,6 +22,7 @@ from . import (
 _kernel32 = ctypes.windll.kernel32
 _advapi32 = ctypes.windll.advapi32
 _user32 = ctypes.windll.user32
+_crypt32 = ctypes.windll.crypt32
 
 _BOOL = ctypes.c_long
 _WORD = ctypes.c_ushort
@@ -31,6 +32,7 @@ _LONG = ctypes.c_long
 _LPCSTR = _LPSTR = ctypes.c_char_p
 _HANDLE = ctypes.c_void_p
 _HWND = _HANDLE
+_PCCERT_CONTEXT = ctypes.c_void_p
 
 _INVALID_HANDLE_VALUE = _HANDLE(-1).value
 
@@ -131,30 +133,76 @@ class _CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
                 ('srWindow', _SMALL_RECT),
                 ('dwMaximumWindowSize', _COORD)]
 
+_STD_OUTPUT_HANDLE = _DWORD(-11).value
 _STD_ERROR_HANDLE = _DWORD(-12).value
 
-# CreateToolhelp32Snapshot, Process32First, Process32Next
-_TH32CS_SNAPPROCESS = 0x00000002
-_MAX_PATH = 260
+# CERT_TRUST_STATUS dwErrorStatus
+CERT_TRUST_IS_PARTIAL_CHAIN = 0x10000
 
-class _tagPROCESSENTRY32(ctypes.Structure):
-    _fields_ = [('dwsize', _DWORD),
-                ('cntUsage', _DWORD),
-                ('th32ProcessID', _DWORD),
-                ('th32DefaultHeapID', ctypes.c_void_p),
-                ('th32ModuleID', _DWORD),
-                ('cntThreads', _DWORD),
-                ('th32ParentProcessID', _DWORD),
-                ('pcPriClassBase', _LONG),
-                ('dwFlags', _DWORD),
-                ('szExeFile', ctypes.c_char * _MAX_PATH)]
+# CertCreateCertificateContext encodings
+X509_ASN_ENCODING = 0x00000001
+PKCS_7_ASN_ENCODING = 0x00010000
 
-    def __init__(self):
-        super(_tagPROCESSENTRY32, self).__init__()
-        self.dwsize = ctypes.sizeof(self)
+# These structs are only complete enough to achieve what we need.
+class CERT_CHAIN_CONTEXT(ctypes.Structure):
+    _fields_ = (
+        ("cbSize", _DWORD),
 
+        # CERT_TRUST_STATUS struct
+        ("dwErrorStatus", _DWORD),
+        ("dwInfoStatus", _DWORD),
+
+        ("cChain", _DWORD),
+        ("rgpChain", ctypes.c_void_p),
+        ("cLowerQualityChainContext", _DWORD),
+        ("rgpLowerQualityChainContext", ctypes.c_void_p),
+        ("fHasRevocationFreshnessTime", _BOOL),
+        ("dwRevocationFreshnessTime", _DWORD),
+    )
+
+class CERT_USAGE_MATCH(ctypes.Structure):
+    _fields_ = (
+        ("dwType", _DWORD),
+
+         # CERT_ENHKEY_USAGE struct
+        ("cUsageIdentifier", _DWORD),
+        ("rgpszUsageIdentifier", ctypes.c_void_p), # LPSTR *
+    )
+
+class CERT_CHAIN_PARA(ctypes.Structure):
+    _fields_ = (
+        ("cbSize", _DWORD),
+        ("RequestedUsage", CERT_USAGE_MATCH),
+        ("RequestedIssuancePolicy", CERT_USAGE_MATCH),
+        ("dwUrlRetrievalTimeout", _DWORD),
+        ("fCheckRevocationFreshnessTime", _BOOL),
+        ("dwRevocationFreshnessTime", _DWORD),
+        ("pftCacheResync", ctypes.c_void_p), # LPFILETIME
+        ("pStrongSignPara", ctypes.c_void_p), # PCCERT_STRONG_SIGN_PARA
+        ("dwStrongSignFlags", _DWORD),
+    )
 
 # types of parameters of C functions used (required by pypy)
+
+_crypt32.CertCreateCertificateContext.argtypes = [_DWORD, # cert encoding
+                                                  ctypes.c_char_p, # cert
+                                                  _DWORD] # cert size
+_crypt32.CertCreateCertificateContext.restype = _PCCERT_CONTEXT
+
+_crypt32.CertGetCertificateChain.argtypes = [
+        ctypes.c_void_p, # HCERTCHAINENGINE
+        _PCCERT_CONTEXT,
+        ctypes.c_void_p, # LPFILETIME
+        ctypes.c_void_p, # HCERTSTORE
+        ctypes.c_void_p, # PCERT_CHAIN_PARA
+        _DWORD,
+        ctypes.c_void_p, # LPVOID
+        ctypes.c_void_p  # PCCERT_CHAIN_CONTEXT *
+    ]
+_crypt32.CertGetCertificateChain.restype = _BOOL
+
+_crypt32.CertFreeCertificateContext.argtypes = [_PCCERT_CONTEXT]
+_crypt32.CertFreeCertificateContext.restype = _BOOL
 
 _kernel32.CreateFileA.argtypes = [_LPCSTR, _DWORD, _DWORD, ctypes.c_void_p,
     _DWORD, _DWORD, _HANDLE]
@@ -202,6 +250,12 @@ _SIGNAL_HANDLER = ctypes.WINFUNCTYPE(_BOOL, _DWORD)
 _kernel32.SetConsoleCtrlHandler.argtypes = [_SIGNAL_HANDLER, _BOOL]
 _kernel32.SetConsoleCtrlHandler.restype = _BOOL
 
+_kernel32.SetConsoleMode.argtypes = [_HANDLE, _DWORD]
+_kernel32.SetConsoleMode.restype = _BOOL
+
+_kernel32.GetConsoleMode.argtypes = [_HANDLE, ctypes.c_void_p]
+_kernel32.GetConsoleMode.restype = _BOOL
+
 _kernel32.GetStdHandle.argtypes = [_DWORD]
 _kernel32.GetStdHandle.restype = _HANDLE
 
@@ -221,21 +275,17 @@ _WNDENUMPROC = ctypes.WINFUNCTYPE(_BOOL, _HWND, _LPARAM)
 _user32.EnumWindows.argtypes = [_WNDENUMPROC, _LPARAM]
 _user32.EnumWindows.restype = _BOOL
 
-_kernel32.CreateToolhelp32Snapshot.argtypes = [_DWORD, _DWORD]
-_kernel32.CreateToolhelp32Snapshot.restype = _BOOL
-
 _kernel32.PeekNamedPipe.argtypes = [_HANDLE, ctypes.c_void_p, _DWORD,
     ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p]
 _kernel32.PeekNamedPipe.restype = _BOOL
 
-_kernel32.Process32First.argtypes = [_HANDLE, ctypes.c_void_p]
-_kernel32.Process32First.restype = _BOOL
-
-_kernel32.Process32Next.argtypes = [_HANDLE, ctypes.c_void_p]
-_kernel32.Process32Next.restype = _BOOL
-
 def _raiseoserror(name):
-    err = ctypes.WinError()
+    # Force the code to a signed int to avoid an 'int too large' error.
+    # See https://bugs.python.org/issue28474
+    code = _kernel32.GetLastError()
+    if code > 0x7fffffff:
+        code -= 2**32
+    err = ctypes.WinError(code=code)
     raise OSError(err.errno, '%s: %s' % (name, err.strerror))
 
 def _getfileinfo(name):
@@ -251,6 +301,51 @@ def _getfileinfo(name):
         return fi
     finally:
         _kernel32.CloseHandle(fh)
+
+def checkcertificatechain(cert, build=True):
+    '''Tests the given certificate to see if there is a complete chain to a
+       trusted root certificate.  As a side effect, missing certificates are
+       downloaded and installed unless ``build=False``.  True is returned if a
+       chain to a trusted root exists (even if built on the fly), otherwise
+       False.  NB: A chain to a trusted root does NOT imply that the certificate
+       is valid.
+    '''
+
+    chainctxptr = ctypes.POINTER(CERT_CHAIN_CONTEXT)
+
+    pchainctx = chainctxptr()
+    chainpara = CERT_CHAIN_PARA(cbSize=ctypes.sizeof(CERT_CHAIN_PARA),
+                                RequestedUsage=CERT_USAGE_MATCH())
+
+    certctx = _crypt32.CertCreateCertificateContext(X509_ASN_ENCODING, cert,
+                                                    len(cert))
+    if certctx is None:
+        _raiseoserror('CertCreateCertificateContext')
+
+    flags = 0
+
+    if not build:
+        flags |= 0x100  # CERT_CHAIN_DISABLE_AUTH_ROOT_AUTO_UPDATE
+
+    try:
+        # Building the certificate chain will update root certs as necessary.
+        if not _crypt32.CertGetCertificateChain(None,      # hChainEngine
+                                                certctx,   # pCertContext
+                                                None,      # pTime
+                                                None,      # hAdditionalStore
+                                                ctypes.byref(chainpara),
+                                                flags,
+                                                None,      # pvReserved
+                                                ctypes.byref(pchainctx)):
+            _raiseoserror('CertGetCertificateChain')
+
+        chainctx = pchainctx.contents
+
+        return chainctx.dwErrorStatus & CERT_TRUST_IS_PARTIAL_CHAIN == 0
+    finally:
+        if pchainctx:
+            _crypt32.CertFreeCertificateChain(pchainctx)
+        _crypt32.CertFreeCertificateContext(certctx)
 
 def oslink(src, dst):
     try:
@@ -372,50 +467,28 @@ def termsize():
     height = csbi.srWindow.Bottom - csbi.srWindow.Top + 1
     return width, height
 
-def _1stchild(pid):
-    '''return the 1st found child of the given pid
+def enablevtmode():
+    '''Enable virtual terminal mode for the associated console.  Return True if
+    enabled, else False.'''
 
-    None is returned when no child is found'''
-    pe = _tagPROCESSENTRY32()
+    ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4
 
-    # create handle to list all processes
-    ph = _kernel32.CreateToolhelp32Snapshot(_TH32CS_SNAPPROCESS, 0)
-    if ph == _INVALID_HANDLE_VALUE:
-        raise ctypes.WinError()
-    try:
-        r = _kernel32.Process32First(ph, ctypes.byref(pe))
-        # loop over all processes
-        while r:
-            if pe.th32ParentProcessID == pid:
-                # return first child found
-                return pe.th32ProcessID
-            r = _kernel32.Process32Next(ph, ctypes.byref(pe))
-    finally:
-        _kernel32.CloseHandle(ph)
-    if _kernel32.GetLastError() != _ERROR_NO_MORE_FILES:
-        raise ctypes.WinError()
-    return None # no child found
+    handle = _kernel32.GetStdHandle(_STD_OUTPUT_HANDLE) # don't close the handle
+    if handle == _INVALID_HANDLE_VALUE:
+        return False
 
-class _tochildpid(int): # pid is _DWORD, which always matches in an int
-    '''helper for spawndetached, returns the child pid on conversion to string
+    mode = _DWORD(0)
 
-    Does not resolve the child pid immediately because the child may not yet be
-    started.
-    '''
-    def childpid(self):
-        '''returns the child pid of the first found child of the process
-        with this pid'''
-        return _1stchild(self)
-    def __str__(self):
-        # run when the pid is written to the file
-        ppid = self.childpid()
-        if ppid is None:
-            # race, child has exited since check
-            # fall back to this pid. Its process will also have disappeared,
-            # raising the same error type later as when the child pid would
-            # be returned.
-            return " %d" % self
-        return str(ppid)
+    if not _kernel32.GetConsoleMode(handle, ctypes.byref(mode)):
+        return False
+
+    if (mode.value & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == 0:
+        mode.value |= ENABLE_VIRTUAL_TERMINAL_PROCESSING
+
+        if not _kernel32.SetConsoleMode(handle, mode):
+            return False
+
+    return True
 
 def spawndetached(args):
     # No standard library function really spawns a fully detached
@@ -436,10 +509,6 @@ def spawndetached(args):
     env += '\0'
 
     args = subprocess.list2cmdline(args)
-    # Not running the command in shell mode makes Python 2.6 hang when
-    # writing to hgweb output socket.
-    comspec = encoding.environ.get("COMSPEC", "cmd.exe")
-    args = comspec + " /c " + args
 
     res = _kernel32.CreateProcessA(
         None, args, None, None, False, _CREATE_NO_WINDOW,
@@ -447,8 +516,7 @@ def spawndetached(args):
     if not res:
         raise ctypes.WinError()
 
-    # _tochildpid because the process is the child of COMSPEC
-    return _tochildpid(pi.dwProcessId)
+    return pi.dwProcessId
 
 def unlink(f):
     '''try to implement POSIX' unlink semantics on Windows'''

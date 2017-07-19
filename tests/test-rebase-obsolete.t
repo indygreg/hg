@@ -555,6 +555,7 @@ Test hidden changesets in the rebase set (issue4504)
   $ hg add J
   $ hg commit -m J
   $ hg debugobsolete `hg log --rev . -T '{node}'`
+  obsoleted 1 changesets
 
   $ hg rebase --rev .~1::. --dest 'max(desc(D))' --traceback --config experimental.rebaseskipobsolete=off
   rebasing 9:4bde274eefcf "I"
@@ -710,6 +711,7 @@ Even when the chain include missing node
   o  0:4a2df7238c3b A
   
   $ hg debugobsolete `hg log -r 7 -T '{node}\n'` --config experimental.evolution=all
+  obsoleted 1 changesets
   $ hg rebase -d 6 -r "4::"
   rebasing 4:ff2c4d47b71d "C"
   note: not rebasing 7:360bbaa7d3ce "O", it has no successor
@@ -737,6 +739,7 @@ should display a friendly error message
   $ hg commit -m nonrelevant
   created new head
   $ hg debugobsolete `hg log -r 11 -T '{node}\n'` --config experimental.evolution=all
+  obsoleted 1 changesets
   $ hg rebase -r . -d 10
   note: not rebasing 11:f44da1f4954c "nonrelevant" (tip), it has no successor
 
@@ -861,6 +864,7 @@ Create the changes that we will rebase
   $ hg add L
   $ hg commit -m "dummy change"
   $ hg debugobsolete `hg log -r ".^" -T '{node}'` `hg log -r 19 -T '{node}'` --config experimental.evolution=all
+  obsoleted 1 changesets
 
   $ hg log -G -r 17::
   @  22:7bdc8a87673d dummy change
@@ -902,7 +906,7 @@ rebase source is obsoleted (issue5198)
   $ hg up 9520eea781bc
   1 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ echo 1 >> E
-  $ hg commit --amend -m "E'"
+  $ hg commit --amend -m "E'" -d "0 0"
   $ hg log -G
   @  9:69abe8906104 E'
   |
@@ -967,14 +971,19 @@ equivalents in destination
   $ hg up 2 && hg log -r .  # working dir is at rev 2 again
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   2:1e9a3c00cbe9 b (no-eol)
-  $ hg rebase -r 2 -d 3
+  $ hg rebase -r 2 -d 3 --config experimental.evolution.track-operation=1
   note: not rebasing 2:1e9a3c00cbe9 "b" (mybook), already in destination as 3:be1832deae9a "b"
 Check that working directory was updated to rev 3 although rev 2 was skipped
 during the rebase operation
   $ hg log -r .
   3:be1832deae9a b (no-eol)
 
-Check that bookmark was moved to rev 3 although rev 2 was skipped
-during the rebase operation
+Check that bookmark was not moved to rev 3 if rev 2 was skipped during the
+rebase operation. This makes sense because if rev 2 has a successor, the
+operation generating that successor (ex. rebase) should be responsible for
+moving bookmarks. If the bookmark is on a precursor, like rev 2, that means the
+user manually moved it back. In that case we should not move it again.
   $ hg bookmarks
-     mybook                    3:be1832deae9a
+     mybook                    2:1e9a3c00cbe9
+  $ hg debugobsolete --rev tip
+  1e9a3c00cbe90d236ac05ef61efcc5e40b7412bc be1832deae9ac531caa7438b8dcf6055a122cd8e 0 (*) {'user': 'test'} (glob)

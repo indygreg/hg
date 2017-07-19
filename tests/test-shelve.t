@@ -626,7 +626,7 @@ shelve should leave dirstate clean (issue4055)
   $ hg rebase -d 1 --config extensions.rebase=
   rebasing 2:323bfa07f744 "xyz" (tip)
   merging x
-  saved backup bundle to $TESTTMP/shelverebase/.hg/strip-backup/323bfa07f744-78114325-backup.hg (glob)
+  saved backup bundle to $TESTTMP/shelverebase/.hg/strip-backup/323bfa07f744-78114325-rebase.hg (glob)
   $ hg unshelve
   unshelving change 'default'
   rebasing shelved changes
@@ -685,6 +685,7 @@ test bug 4073 we need to enable obsolete markers for it
   shelved as default
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `hg --debug id -i -r 1`
+  obsoleted 1 changesets
   $ hg unshelve
   unshelving change 'default'
 
@@ -1591,9 +1592,8 @@ shelve on new branch, conflict with previous shelvedstate
 Removing restore branch information from shelvedstate file(making it looks like
 in previous versions) and running unshelve --continue
 
-  $ head -n 6 < .hg/shelvedstate > .hg/shelvedstate_oldformat
-  $ rm .hg/shelvedstate
-  $ mv .hg/shelvedstate_oldformat .hg/shelvedstate
+  $ cp .hg/shelvedstate .hg/shelvedstate_old
+  $ cat .hg/shelvedstate_old | grep -v 'branchtorestore' > .hg/shelvedstate
 
   $ echo "aaabbbccc" > a
   $ rm a.orig
@@ -1737,3 +1737,48 @@ Unshelving when there are deleted files does not crash (issue4176)
   [255]
   $ hg st
   ! a
+  $ cd ..
+
+New versions of Mercurial know how to read onld shelvedstate files
+  $ hg init oldshelvedstate
+  $ cd oldshelvedstate
+  $ echo root > root && hg ci -Am root
+  adding root
+  $ echo 1 > a
+  $ hg add a
+  $ hg shelve --name ashelve
+  shelved as ashelve
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo 2 > a
+  $ hg ci -Am a
+  adding a
+  $ hg unshelve
+  unshelving change 'ashelve'
+  rebasing shelved changes
+  rebasing 2:003d2d94241c "changes to: root" (tip)
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
+  [1]
+putting v1 shelvedstate file in place of a created v2
+  $ cat << EOF > .hg/shelvedstate
+  > 1
+  > ashelve
+  > 8b058dae057a5a78f393f4535d9e363dd5efac9d
+  > 8b058dae057a5a78f393f4535d9e363dd5efac9d
+  > 8b058dae057a5a78f393f4535d9e363dd5efac9d 003d2d94241cc7aff0c3a148e966d6a4a377f3a7
+  > 003d2d94241cc7aff0c3a148e966d6a4a377f3a7
+  > 
+  > nokeep
+  > :no-active-bookmark
+  > EOF
+  $ echo 1 > a
+  $ hg resolve --mark a
+  (no more unresolved files)
+  continue: hg unshelve --continue
+mercurial does not crash
+  $ hg unshelve --continue
+  rebasing 2:003d2d94241c "changes to: root" (tip)
+  unshelve of 'ashelve' complete
+  $ cd ..
+

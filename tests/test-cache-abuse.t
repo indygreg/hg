@@ -24,6 +24,7 @@ Build a repo with some cacheable bits:
   $ echo dumb > dumb
   $ hg ci -qAmdumb
   $ hg debugobsolete b1174d11b69e63cb0c5726621a43c859f0858d7f
+  obsoleted 1 changesets
 
   $ hg phase -pr t1
   $ hg phase -fsr t2
@@ -69,10 +70,6 @@ Beat up tags caches:
   $ damage "tags --hidden" tags2
   $ damage tags tags2-visible
   $ damage "tag -f t3" hgtagsfnodes1
-
-Beat up hidden cache:
-
-  $ damage log hidden
 
 Beat up branch caches:
 

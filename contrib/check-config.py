@@ -13,10 +13,34 @@ import sys
 
 foundopts = {}
 documented = {}
+allowinconsistent = set()
 
-configre = (r"""ui\.config(|int|bool|list)\(['"](\S+)['"],\s*"""
-            r"""['"](\S+)['"](,\s+(?:default=)?(\S+?))?\)""")
+configre = re.compile(r'''
+    # Function call
+    ui\.config(?P<ctype>|int|bool|list)\(
+        # First argument.
+        ['"](?P<section>\S+)['"],\s*
+        # Second argument
+        ['"](?P<option>\S+)['"](,\s+
+        (?:default=)?(?P<default>\S+?))?
+    \)''', re.VERBOSE | re.MULTILINE)
+
+configwithre = re.compile('''
+    ui\.config(?P<ctype>with)\(
+        # First argument is callback function. This doesn't parse robustly
+        # if it is e.g. a function call.
+        [^,]+,\s*
+        ['"](?P<section>\S+)['"],\s*
+        ['"](?P<option>\S+)['"](,\s+
+        (?:default=)?(?P<default>\S+?))?
+    \)''', re.VERBOSE | re.MULTILINE)
+
 configpartialre = (r"""ui\.config""")
+
+ignorere = re.compile(r'''
+    \#\s(?P<reason>internal|experimental|deprecated|developer|inconsistent)\s
+    config:\s(?P<config>\S+\.\S+)$
+    ''', re.VERBOSE | re.MULTILINE)
 
 def main(args):
     for f in args:
@@ -24,7 +48,9 @@ def main(args):
         prevname = ''
         confsect = ''
         carryover = ''
+        linenum = 0
         for l in open(f):
+            linenum += 1
 
             # check topic-like bits
             m = re.match('\s*``(\S+)``', l)
@@ -64,28 +90,32 @@ def main(args):
                 documented[m.group(1)] = 1
 
             # look for ignore markers
-            m = re.search(r'# (?:internal|experimental|deprecated|developer)'
-                          ' config: (\S+\.\S+)$', l)
+            m = ignorere.search(l)
             if m:
-                documented[m.group(1)] = 1
+                if m.group('reason') == 'inconsistent':
+                    allowinconsistent.add(m.group('config'))
+                else:
+                    documented[m.group('config')] = 1
 
             # look for code-like bits
             line = carryover + l
-            m = re.search(configre, line, re.MULTILINE)
+            m = configre.search(line) or configwithre.search(line)
             if m:
-                ctype = m.group(1)
+                ctype = m.group('ctype')
                 if not ctype:
                     ctype = 'str'
-                name = m.group(2) + "." + m.group(3)
-                default = m.group(5)
+                name = m.group('section') + "." + m.group('option')
+                default = m.group('default')
                 if default in (None, 'False', 'None', '0', '[]', '""', "''"):
                     default = ''
                 if re.match('[a-z.]+$', default):
                     default = '<variable>'
-                if name in foundopts and (ctype, default) != foundopts[name]:
-                    print(l)
+                if (name in foundopts and (ctype, default) != foundopts[name]
+                    and name not in allowinconsistent):
+                    print(l.rstrip())
                     print("conflict on %s: %r != %r" % (name, (ctype, default),
                                                         foundopts[name]))
+                    print("at %s:%d:" % (f, linenum))
                 foundopts[name] = (ctype, default)
                 carryover = ''
             else:

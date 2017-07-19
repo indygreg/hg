@@ -154,6 +154,18 @@ def _readroots(repo, phasedefaults=None):
         dirty = True
     return roots, dirty
 
+def _trackphasechange(data, rev, old, new):
+    """add a phase move the <data> dictionnary
+
+    If data is None, nothing happens.
+    """
+    if data is None:
+        return
+    existing = data.get(rev)
+    if existing is not None:
+        old = existing[0]
+    data[rev] = (old, new)
+
 class phasecache(object):
     def __init__(self, repo, phasedefaults, _load=True):
         if _load:
@@ -282,11 +294,33 @@ class phasecache(object):
         tr.addfilegenerator('phase', ('phaseroots',), self._write)
         tr.hookargs['phases_moved'] = '1'
 
+    def registernew(self, repo, tr, targetphase, nodes):
+        repo = repo.unfiltered()
+        self._retractboundary(repo, tr, targetphase, nodes)
+        if tr is not None and 'phases' in tr.changes:
+            phasetracking = tr.changes['phases']
+            torev = repo.changelog.rev
+            phase = self.phase
+            for n in nodes:
+                rev = torev(n)
+                revphase = phase(repo, rev)
+                _trackphasechange(phasetracking, rev, None, revphase)
+        repo.invalidatevolatilesets()
+
     def advanceboundary(self, repo, tr, targetphase, nodes):
+        """Set all 'nodes' to phase 'targetphase'
+
+        Nodes with a phase lower than 'targetphase' are not affected.
+        """
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
+        if tr is None:
+            phasetracking = None
+        else:
+            phasetracking = tr.changes.get('phases')
 
         repo = repo.unfiltered()
+
         delroots = [] # set of root deleted by this path
         for phase in xrange(targetphase + 1, len(allphases)):
             # filter nodes that are not in a compatible phase already
@@ -294,27 +328,63 @@ class phasecache(object):
                      if self.phase(repo, repo[n].rev()) >= phase]
             if not nodes:
                 break # no roots to move anymore
+
             olds = self.phaseroots[phase]
+
+            affected = repo.revs('%ln::%ln', olds, nodes)
+            for r in affected:
+                _trackphasechange(phasetracking, r, self.phase(repo, r),
+                                  targetphase)
+
             roots = set(ctx.node() for ctx in repo.set(
-                    'roots((%ln::) - (%ln::%ln))', olds, olds, nodes))
+                    'roots((%ln::) - %ld)', olds, affected))
             if olds != roots:
                 self._updateroots(phase, roots, tr)
                 # some roots may need to be declared for lower phases
                 delroots.extend(olds - roots)
-            # declare deleted root in the target phase
-            if targetphase != 0:
-                self.retractboundary(repo, tr, targetphase, delroots)
+        # declare deleted root in the target phase
+        if targetphase != 0:
+            self._retractboundary(repo, tr, targetphase, delroots)
         repo.invalidatevolatilesets()
 
     def retractboundary(self, repo, tr, targetphase, nodes):
+        oldroots = self.phaseroots[:targetphase + 1]
+        if tr is None:
+            phasetracking = None
+        else:
+            phasetracking = tr.changes.get('phases')
+        repo = repo.unfiltered()
+        if (self._retractboundary(repo, tr, targetphase, nodes)
+            and phasetracking is not None):
+
+            # find the affected revisions
+            new = self.phaseroots[targetphase]
+            old = oldroots[targetphase]
+            affected = set(repo.revs('(%ln::) - (%ln::)', new, old))
+
+            # find the phase of the affected revision
+            for phase in xrange(targetphase, -1, -1):
+                if phase:
+                    roots = oldroots[phase]
+                    revs = set(repo.revs('%ln::%ld', roots, affected))
+                    affected -= revs
+                else: # public phase
+                    revs = affected
+                for r in revs:
+                    _trackphasechange(phasetracking, r, phase, targetphase)
+        repo.invalidatevolatilesets()
+
+    def _retractboundary(self, repo, tr, targetphase, nodes):
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
 
         repo = repo.unfiltered()
         currentroots = self.phaseroots[targetphase]
+        finalroots = oldroots = set(currentroots)
         newroots = [n for n in nodes
                     if self.phase(repo, repo[n].rev()) < targetphase]
         if newroots:
+
             if nullid in newroots:
                 raise error.Abort(_('cannot change null revision phase'))
             currentroots = currentroots.copy()
@@ -330,9 +400,10 @@ class phasecache(object):
             finalroots = set(n for n in currentroots if repo[n].rev() <
                              minnewroot)
             finalroots.update(ctx.node() for ctx in updatedroots)
-
+        if finalroots != oldroots:
             self._updateroots(targetphase, finalroots, tr)
-        repo.invalidatevolatilesets()
+            return True
+        return False
 
     def filterunknown(self, repo):
         """remove unknown nodes from the phase boundary
@@ -385,6 +456,16 @@ def retractboundary(repo, tr, targetphase, nodes):
     phcache.retractboundary(repo, tr, targetphase, nodes)
     repo._phasecache.replace(phcache)
 
+def registernew(repo, tr, targetphase, nodes):
+    """register a new revision and its phase
+
+    Code adding revisions to the repository should use this function to
+    set new changeset in their target phase (or higher).
+    """
+    phcache = repo._phasecache.copy()
+    phcache.registernew(repo, tr, targetphase, nodes)
+    repo._phasecache.replace(phcache)
+
 def listphases(repo):
     """List phases root for serialization over pushkey"""
     # Use ordered dictionary so behavior is deterministic.
@@ -423,12 +504,34 @@ def pushphase(repo, nhex, oldphasestr, newphasestr):
         if currentphase == oldphase and newphase < oldphase:
             with repo.transaction('pushkey-phase') as tr:
                 advanceboundary(repo, tr, newphase, [bin(nhex)])
-            return 1
+            return True
         elif currentphase == newphase:
             # raced, but got correct result
-            return 1
+            return True
         else:
-            return 0
+            return False
+
+def subsetphaseheads(repo, subset):
+    """Finds the phase heads for a subset of a history
+
+    Returns a list indexed by phase number where each item is a list of phase
+    head nodes.
+    """
+    cl = repo.changelog
+
+    headsbyphase = [[] for i in allphases]
+    # No need to keep track of secret phase; any heads in the subset that
+    # are not mentioned are implicitly secret.
+    for phase in allphases[:-1]:
+        revset = "heads(%%ln & %s())" % phasenames[phase]
+        headsbyphase[phase] = [cl.node(r) for r in repo.revs(revset, subset)]
+    return headsbyphase
+
+def updatephases(repo, tr, headsbyphase):
+    """Updates the repo with the given phase heads"""
+    # Now advance phase boundaries of all but secret phase
+    for phase in allphases[:-1]:
+        advanceboundary(repo, tr, phase, headsbyphase[phase])
 
 def analyzeremotephases(repo, subset, roots):
     """Compute phases heads and root in a subset of node from root dict

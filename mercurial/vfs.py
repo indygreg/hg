@@ -17,11 +17,27 @@ import threading
 from .i18n import _
 from . import (
     error,
-    osutil,
     pathutil,
     pycompat,
     util,
 )
+
+def _avoidambig(path, oldstat):
+    """Avoid file stat ambiguity forcibly
+
+    This function causes copying ``path`` file, if it is owned by
+    another (see issue5418 and issue5584 for detail).
+    """
+    def checkandavoid():
+        newstat = util.filestat.frompath(path)
+        # return whether file stat ambiguity is (already) avoided
+        return (not newstat.isambig(oldstat) or
+                newstat.avoidambig(path, oldstat))
+    if not checkandavoid():
+        # simply copy to change owner of path to get privilege to
+        # advance mtime (see issue5418)
+        util.rename(util.mktempcopy(path), path)
+        checkandavoid()
 
 class abstractvfs(object):
     """Abstract base class; cannot be instantiated"""
@@ -163,7 +179,7 @@ class abstractvfs(object):
             return fd, fname
 
     def readdir(self, path=None, stat=None, skip=None):
-        return osutil.listdir(self.join(path), stat, skip)
+        return util.listdir(self.join(path), stat, skip)
 
     def readlock(self, path):
         return util.readlock(self.join(path))
@@ -174,17 +190,20 @@ class abstractvfs(object):
         checkambig argument is used with util.filestat, and is useful
         only if destination file is guarded by any lock
         (e.g. repo.lock or repo.wlock).
+
+        To avoid file stat ambiguity forcibly, checkambig=True involves
+        copying ``src`` file, if it is owned by another. Therefore, use
+        checkambig=True only in limited cases (see also issue5418 and
+        issue5584 for detail).
         """
+        srcpath = self.join(src)
         dstpath = self.join(dst)
-        oldstat = checkambig and util.filestat(dstpath)
+        oldstat = checkambig and util.filestat.frompath(dstpath)
         if oldstat and oldstat.stat:
-            ret = util.rename(self.join(src), dstpath)
-            newstat = util.filestat(dstpath)
-            if newstat.isambig(oldstat):
-                # stat of renamed file is ambiguous to original one
-                newstat.avoidambig(dstpath, oldstat)
+            ret = util.rename(srcpath, dstpath)
+            _avoidambig(dstpath, oldstat)
             return ret
-        return util.rename(self.join(src), dstpath)
+        return util.rename(srcpath, dstpath)
 
     def readlink(self, path):
         return os.readlink(self.join(path))
@@ -283,21 +302,13 @@ class vfs(abstractvfs):
         if realpath:
             base = os.path.realpath(base)
         self.base = base
-        self.mustaudit = audit
-        self.createmode = None
-        self._trustnlink = None
-
-    @property
-    def mustaudit(self):
-        return self._audit
-
-    @mustaudit.setter
-    def mustaudit(self, onoff):
-        self._audit = onoff
-        if onoff:
+        self._audit = audit
+        if audit:
             self.audit = pathutil.pathauditor(self.base)
         else:
-            self.audit = util.always
+            self.audit = (lambda path, mode=None: True)
+        self.createmode = None
+        self._trustnlink = None
 
     @util.propertycache
     def _cansymlink(self):
@@ -313,7 +324,8 @@ class vfs(abstractvfs):
         os.chmod(name, self.createmode & 0o666)
 
     def __call__(self, path, mode="r", text=False, atomictemp=False,
-                 notindexed=False, backgroundclose=False, checkambig=False):
+                 notindexed=False, backgroundclose=False, checkambig=False,
+                 auditpath=True):
         '''Open ``path`` file, which is relative to vfs root.
 
         Newly created directories are marked as "not to be indexed by
@@ -336,12 +348,19 @@ class vfs(abstractvfs):
         ``checkambig`` argument is passed to atomictemplfile (valid
         only for writing), and is useful only if target file is
         guarded by any lock (e.g. repo.lock or repo.wlock).
+
+        To avoid file stat ambiguity forcibly, checkambig=True involves
+        copying ``path`` file opened in "append" mode (e.g. for
+        truncation), if it is owned by another. Therefore, use
+        combination of append mode and checkambig=True only in limited
+        cases (see also issue5418 and issue5584 for detail).
         '''
-        if self._audit:
-            r = util.checkosfilename(path)
-            if r:
-                raise error.Abort("%s: %r" % (r, path))
-        self.audit(path)
+        if auditpath:
+            if self._audit:
+                r = util.checkosfilename(path)
+                if r:
+                    raise error.Abort("%s: %r" % (r, path))
+            self.audit(path, mode=mode)
         f = self.join(path)
 
         if not text and "b" not in mode:
@@ -422,17 +441,9 @@ class vfs(abstractvfs):
 
 opener = vfs
 
-class auditvfs(object):
+class proxyvfs(object):
     def __init__(self, vfs):
         self.vfs = vfs
-
-    @property
-    def mustaudit(self):
-        return self.vfs.mustaudit
-
-    @mustaudit.setter
-    def mustaudit(self, onoff):
-        self.vfs.mustaudit = onoff
 
     @property
     def options(self):
@@ -442,11 +453,11 @@ class auditvfs(object):
     def options(self, value):
         self.vfs.options = value
 
-class filtervfs(abstractvfs, auditvfs):
+class filtervfs(abstractvfs, proxyvfs):
     '''Wrapper vfs for filtering filenames with a function.'''
 
     def __init__(self, vfs, filter):
-        auditvfs.__init__(self, vfs)
+        proxyvfs.__init__(self, vfs)
         self._filter = filter
 
     def __call__(self, path, *args, **kwargs):
@@ -460,11 +471,11 @@ class filtervfs(abstractvfs, auditvfs):
 
 filteropener = filtervfs
 
-class readonlyvfs(abstractvfs, auditvfs):
+class readonlyvfs(abstractvfs, proxyvfs):
     '''Wrapper vfs preventing any writing.'''
 
     def __init__(self, vfs):
-        auditvfs.__init__(self, vfs)
+        proxyvfs.__init__(self, vfs)
 
     def __call__(self, path, mode='r', *args, **kw):
         if mode not in ('r', 'rb'):
@@ -534,17 +545,14 @@ class backgroundfilecloser(object):
         # There is overhead to starting and stopping the background threads.
         # Don't do background processing unless the file count is large enough
         # to justify it.
-        minfilecount = ui.configint('worker', 'backgroundcloseminfilecount',
-                                    2048)
+        minfilecount = ui.configint('worker', 'backgroundcloseminfilecount')
         # FUTURE dynamically start background threads after minfilecount closes.
         # (We don't currently have any callers that don't know their file count)
         if expectedcount > 0 and expectedcount < minfilecount:
             return
 
-        # Windows defaults to a limit of 512 open files. A buffer of 128
-        # should give us enough headway.
-        maxqueue = ui.configint('worker', 'backgroundclosemaxqueue', 384)
-        threadcount = ui.configint('worker', 'backgroundclosethreadcount', 4)
+        maxqueue = ui.configint('worker', 'backgroundclosemaxqueue')
+        threadcount = ui.configint('worker', 'backgroundclosethreadcount')
 
         ui.debug('starting %d threads for background file closing\n' %
                  threadcount)
@@ -618,15 +626,12 @@ class checkambigatclosing(closewrapbase):
     """
     def __init__(self, fh):
         super(checkambigatclosing, self).__init__(fh)
-        object.__setattr__(self, r'_oldstat', util.filestat(fh.name))
+        object.__setattr__(self, r'_oldstat', util.filestat.frompath(fh.name))
 
     def _checkambig(self):
         oldstat = self._oldstat
         if oldstat.stat:
-            newstat = util.filestat(self._origfh.name)
-            if newstat.isambig(oldstat):
-                # stat of changed file is ambiguous to original one
-                newstat.avoidambig(self._origfh.name, oldstat)
+            _avoidambig(self._origfh.name, oldstat)
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self._origfh.__exit__(exc_type, exc_value, exc_tb)

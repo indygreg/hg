@@ -20,6 +20,7 @@
   > EOF
   $ cat >> $HGRCPATH << EOF
   > [extensions]
+  > drawdag=$TESTDIR/drawdag.py
   > testrevset=$TESTTMP/testrevset.py
   > EOF
 
@@ -37,15 +38,15 @@ these predicates use '\0' as a separator:
   $ cat <<EOF > debugrevlistspec.py
   > from __future__ import absolute_import
   > from mercurial import (
-  >     cmdutil,
   >     node as nodemod,
+  >     registrar,
   >     revset,
   >     revsetlang,
   >     smartset,
   > )
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
-  > @command('debugrevlistspec',
+  > command = registrar.command(cmdtable)
+  > @command(b'debugrevlistspec',
   >     [('', 'optimize', None, 'print parsed tree after optimizing'),
   >      ('', 'bin', None, 'unhexlify arguments')])
   > def debugrevlistspec(ui, repo, fmt, *args, **opts):
@@ -157,7 +158,7 @@ trivial
     ('symbol', '0')
     ('symbol', '1'))
   * set:
-  <spanset+ 0:1>
+  <spanset+ 0:2>
   0
   1
   $ try --optimize :
@@ -168,7 +169,7 @@ trivial
     None
     define)
   * set:
-  <spanset+ 0:9>
+  <spanset+ 0:10>
   0
   1
   2
@@ -266,7 +267,7 @@ names that should be caught by fallback mechanism
   (rangepost
     ('symbol', '+a+b+c+'))
   * set:
-  <spanset+ 3:9>
+  <spanset+ 3:10>
   3
   4
   5
@@ -278,7 +279,7 @@ names that should be caught by fallback mechanism
   (rangepre
     ('symbol', '+a+b+c+'))
   * set:
-  <spanset+ 0:3>
+  <spanset+ 0:4>
   0
   1
   2
@@ -288,7 +289,7 @@ names that should be caught by fallback mechanism
     ('symbol', '-a-b-c-')
     ('symbol', '+a+b+c+'))
   * set:
-  <spanset- 3:4>
+  <spanset- 3:5>
   4
   3
   $ log '-a-b-c-:+a+b+c+'
@@ -413,7 +414,7 @@ quoting needed
   hg: parse error: invalid \x escape
   [255]
   $ log 'date(tip)'
-  abort: invalid date: 'tip'
+  hg: parse error: invalid date: 'tip'
   [255]
   $ log '0:date'
   abort: unknown revision 'date'!
@@ -497,6 +498,158 @@ keyword arguments
       None
       any))
   hg: parse error: can't use a key-value pair in this context
+  [255]
+
+relation-subscript operator has the highest binding strength (as function call):
+
+  $ hg debugrevspec -p parsed 'tip:tip^#generations[-1]'
+  * parsed:
+  (range
+    ('symbol', 'tip')
+    (relsubscript
+      (parentpost
+        ('symbol', 'tip'))
+      ('symbol', 'generations')
+      (negate
+        ('symbol', '1'))))
+  9
+  8
+  7
+  6
+  5
+  4
+
+  $ hg debugrevspec -p parsed --no-show-revs 'not public()#generations[0]'
+  * parsed:
+  (not
+    (relsubscript
+      (func
+        ('symbol', 'public')
+        None)
+      ('symbol', 'generations')
+      ('symbol', '0')))
+
+left-hand side of relation-subscript operator should be optimized recursively:
+
+  $ hg debugrevspec -p analyzed -p optimized --no-show-revs \
+  > '(not public())#generations[0]'
+  * analyzed:
+  (relsubscript
+    (not
+      (func
+        ('symbol', 'public')
+        None
+        any)
+      define)
+    ('symbol', 'generations')
+    ('symbol', '0')
+    define)
+  * optimized:
+  (relsubscript
+    (func
+      ('symbol', '_notpublic')
+      None
+      any)
+    ('symbol', 'generations')
+    ('symbol', '0')
+    define)
+
+resolution of subscript and relation-subscript ternary operators:
+
+  $ hg debugrevspec -p analyzed 'tip[0]'
+  * analyzed:
+  (subscript
+    ('symbol', 'tip')
+    ('symbol', '0')
+    define)
+  hg: parse error: can't use a subscript in this context
+  [255]
+
+  $ hg debugrevspec -p analyzed 'tip#rel[0]'
+  * analyzed:
+  (relsubscript
+    ('symbol', 'tip')
+    ('symbol', 'rel')
+    ('symbol', '0')
+    define)
+  hg: parse error: unknown identifier: rel
+  [255]
+
+  $ hg debugrevspec -p analyzed '(tip#rel)[0]'
+  * analyzed:
+  (subscript
+    (relation
+      ('symbol', 'tip')
+      ('symbol', 'rel')
+      define)
+    ('symbol', '0')
+    define)
+  hg: parse error: can't use a subscript in this context
+  [255]
+
+  $ hg debugrevspec -p analyzed 'tip#rel[0][1]'
+  * analyzed:
+  (subscript
+    (relsubscript
+      ('symbol', 'tip')
+      ('symbol', 'rel')
+      ('symbol', '0')
+      define)
+    ('symbol', '1')
+    define)
+  hg: parse error: can't use a subscript in this context
+  [255]
+
+  $ hg debugrevspec -p analyzed 'tip#rel0#rel1[1]'
+  * analyzed:
+  (relsubscript
+    (relation
+      ('symbol', 'tip')
+      ('symbol', 'rel0')
+      define)
+    ('symbol', 'rel1')
+    ('symbol', '1')
+    define)
+  hg: parse error: unknown identifier: rel1
+  [255]
+
+  $ hg debugrevspec -p analyzed 'tip#rel0[0]#rel1[1]'
+  * analyzed:
+  (relsubscript
+    (relsubscript
+      ('symbol', 'tip')
+      ('symbol', 'rel0')
+      ('symbol', '0')
+      define)
+    ('symbol', 'rel1')
+    ('symbol', '1')
+    define)
+  hg: parse error: unknown identifier: rel1
+  [255]
+
+parse errors of relation, subscript and relation-subscript operators:
+
+  $ hg debugrevspec '[0]'
+  hg: parse error at 0: not a prefix: [
+  [255]
+  $ hg debugrevspec '.#'
+  hg: parse error at 2: not a prefix: end
+  [255]
+  $ hg debugrevspec '#rel'
+  hg: parse error at 0: not a prefix: #
+  [255]
+  $ hg debugrevspec '.#rel[0'
+  hg: parse error at 7: unexpected token: end
+  [255]
+  $ hg debugrevspec '.]'
+  hg: parse error at 1: invalid token
+  [255]
+
+  $ hg debugrevspec '.#generations[a]'
+  hg: parse error: relation subscript must be an integer
+  [255]
+  $ hg debugrevspec '.#generations[1-2]'
+  hg: parse error: relation subscript must be an integer
   [255]
 
 parsed tree at stages:
@@ -626,7 +779,7 @@ may be hidden (issue5385)
     None
     define)
   * set:
-  <spanset+ 0:9>
+  <spanset+ 0:10>
   0
   1
   2
@@ -643,7 +796,7 @@ may be hidden (issue5385)
     ('symbol', '1')
     define)
   * set:
-  <spanset+ 0:1>
+  <spanset+ 0:2>
   0
   1
   $ try -p analyzed ':(1|2)'
@@ -656,7 +809,7 @@ may be hidden (issue5385)
       define)
     define)
   * set:
-  <spanset+ 0:2>
+  <spanset+ 0:3>
   0
   1
   2
@@ -681,7 +834,7 @@ infix/suffix resolution of ^ operator (issue2884):
       ('symbol', '1'))
     ('symbol', '2'))
   * set:
-  <spanset+ 0:2>
+  <spanset+ 0:3>
   0
   1
   2
@@ -702,7 +855,7 @@ infix/suffix resolution of ^ operator (issue2884):
     (parentpost
       ('symbol', '9')))
   * set:
-  <spanset+ 8:9>
+  <spanset+ 8:10>
   8
   9
 
@@ -727,7 +880,7 @@ infix/suffix resolution of ^ operator (issue2884):
         ('symbol', '1'))
       ('symbol', '2')))
   * set:
-  <spanset+ 0:2>
+  <spanset+ 0:3>
   0
   1
   2
@@ -742,7 +895,7 @@ infix/suffix resolution of ^ operator (issue2884):
           ('symbol', '4'))))
     ('symbol', '2'))
   * set:
-  <spanset+ 0:2>
+  <spanset+ 0:3>
   0
   1
   2
@@ -770,7 +923,7 @@ infix/suffix resolution of ^ operator (issue2884):
           (parentpost
             ('symbol', '9'))))))
   * set:
-  <spanset+ 4:9>
+  <spanset+ 4:10>
   4
   5
   6
@@ -788,7 +941,7 @@ infix/suffix resolution of ^ operator (issue2884):
       ('symbol', '1'))
     ('symbol', '2'))
   * set:
-  <spanset+ 0:2>
+  <spanset+ 0:3>
   0
   1
   2
@@ -803,7 +956,7 @@ infix/suffix resolution of ^ operator (issue2884):
       ('symbol', '1'))
     ('symbol', '2'))
   * set:
-  <spanset+ 0:2>
+  <spanset+ 0:3>
   0
   1
   2
@@ -842,6 +995,20 @@ ancestor can accept 0 or more arguments
 
 test ancestors
 
+  $ hg log -G -T '{rev}\n' --config experimental.graphshorten=True
+  @  9
+  o  8
+  | o  7
+  | o  6
+  |/|
+  | o  5
+  o |  4
+  | o  3
+  o |  2
+  |/
+  o  1
+  o  0
+
   $ log 'ancestors(5)'
   0
   1
@@ -854,6 +1021,194 @@ test ancestors
   1
   2
   3
+
+test ancestors with depth limit
+
+ (depth=0 selects the node itself)
+
+  $ log 'reverse(ancestors(9, depth=0))'
+  9
+
+ (interleaved: '4' would be missing if heap queue were higher depth first)
+
+  $ log 'reverse(ancestors(8:9, depth=1))'
+  9
+  8
+  4
+
+ (interleaved: '2' would be missing if heap queue were higher depth first)
+
+  $ log 'reverse(ancestors(7+8, depth=2))'
+  8
+  7
+  6
+  5
+  4
+  2
+
+ (walk example above by separate queries)
+
+  $ log 'reverse(ancestors(8, depth=2)) + reverse(ancestors(7, depth=2))'
+  8
+  4
+  2
+  7
+  6
+  5
+
+ (walk 2nd and 3rd ancestors)
+
+  $ log 'reverse(ancestors(7, depth=3, startdepth=2))'
+  5
+  4
+  3
+  2
+
+ (interleaved: '4' would be missing if higher-depth ancestors weren't scanned)
+
+  $ log 'reverse(ancestors(7+8, depth=2, startdepth=2))'
+  5
+  4
+  2
+
+ (note that 'ancestors(x, depth=y, startdepth=z)' does not identical to
+ 'ancestors(x, depth=y) - ancestors(x, depth=z-1)' because a node may have
+ multiple depths)
+
+  $ log 'reverse(ancestors(7+8, depth=2) - ancestors(7+8, depth=1))'
+  5
+  2
+
+test bad arguments passed to ancestors()
+
+  $ log 'ancestors(., depth=-1)'
+  hg: parse error: negative depth
+  [255]
+  $ log 'ancestors(., depth=foo)'
+  hg: parse error: ancestors expects an integer depth
+  [255]
+
+test descendants
+
+  $ hg log -G -T '{rev}\n' --config experimental.graphshorten=True
+  @  9
+  o  8
+  | o  7
+  | o  6
+  |/|
+  | o  5
+  o |  4
+  | o  3
+  o |  2
+  |/
+  o  1
+  o  0
+
+ (null is ultimate root and has optimized path)
+
+  $ log 'null:4 & descendants(null)'
+  -1
+  0
+  1
+  2
+  3
+  4
+
+ (including merge)
+
+  $ log ':8 & descendants(2)'
+  2
+  4
+  6
+  7
+  8
+
+ (multiple roots)
+
+  $ log ':8 & descendants(2+5)'
+  2
+  4
+  5
+  6
+  7
+  8
+
+test descendants with depth limit
+
+ (depth=0 selects the node itself)
+
+  $ log 'descendants(0, depth=0)'
+  0
+  $ log 'null: & descendants(null, depth=0)'
+  -1
+
+ (p2 = null should be ignored)
+
+  $ log 'null: & descendants(null, depth=2)'
+  -1
+  0
+  1
+
+ (multiple paths: depth(6) = (2, 3))
+
+  $ log 'descendants(1+3, depth=2)'
+  1
+  2
+  3
+  4
+  5
+  6
+
+ (multiple paths: depth(5) = (1, 2), depth(6) = (2, 3))
+
+  $ log 'descendants(3+1, depth=2, startdepth=2)'
+  4
+  5
+  6
+
+ (multiple depths: depth(6) = (0, 2, 4), search for depth=2)
+
+  $ log 'descendants(0+3+6, depth=3, startdepth=1)'
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+
+ (multiple depths: depth(6) = (0, 4), no match)
+
+  $ log 'descendants(0+6, depth=3, startdepth=1)'
+  1
+  2
+  3
+  4
+  5
+  7
+
+test ancestors/descendants relation subscript:
+
+  $ log 'tip#generations[0]'
+  9
+  $ log '.#generations[-1]'
+  8
+  $ log '.#g[(-1)]'
+  8
+
+  $ hg debugrevspec -p parsed 'roots(:)#g[2]'
+  * parsed:
+  (relsubscript
+    (func
+      ('symbol', 'roots')
+      (rangeall
+        None))
+    ('symbol', 'g')
+    ('symbol', '2'))
+  2
+  3
+
+test author
 
   $ log 'author(bob)'
   2
@@ -957,7 +1312,7 @@ test ancestors
     ('string', '\x08issue\\d+'))
   * set:
   <filteredset
-    <fullreposet+ 0:9>,
+    <fullreposet+ 0:10>,
     <grep '\x08issue\\d+'>>
   $ try 'grep(r"\bissue\d+")'
   (func
@@ -965,7 +1320,7 @@ test ancestors
     ('string', '\\bissue\\d+'))
   * set:
   <filteredset
-    <fullreposet+ 0:9>,
+    <fullreposet+ 0:10>,
     <grep '\\bissue\\d+'>>
   6
   $ try 'grep(r"\")'
@@ -986,6 +1341,9 @@ test ancestors
   $ log 'keyword(issue)'
   6
   $ log 'keyword("test a")'
+
+Test first (=limit) and last
+
   $ log 'limit(head(), 1)'
   0
   $ log 'limit(author("re:bob|test"), 3, 5)'
@@ -998,6 +1356,173 @@ test ancestors
   $ log 'limit(all(), 1, -1)'
   hg: parse error: negative offset
   [255]
+  $ log 'limit(all(), -1)'
+  hg: parse error: negative number to select
+  [255]
+  $ log 'limit(all(), 0)'
+
+  $ log 'last(all(), -1)'
+  hg: parse error: negative number to select
+  [255]
+  $ log 'last(all(), 0)'
+  $ log 'last(all(), 1)'
+  9
+  $ log 'last(all(), 2)'
+  8
+  9
+
+Test smartset.slice() by first/last()
+
+ (using unoptimized set, filteredset as example)
+
+  $ hg debugrevspec --no-show-revs -s '0:7 & branch("re:")'
+  * set:
+  <filteredset
+    <spanset+ 0:8>,
+    <branch 're:'>>
+  $ log 'limit(0:7 & branch("re:"), 3, 4)'
+  4
+  5
+  6
+  $ log 'limit(7:0 & branch("re:"), 3, 4)'
+  3
+  2
+  1
+  $ log 'last(0:7 & branch("re:"), 2)'
+  6
+  7
+
+ (using baseset)
+
+  $ hg debugrevspec --no-show-revs -s 0+1+2+3+4+5+6+7
+  * set:
+  <baseset [0, 1, 2, 3, 4, 5, 6, 7]>
+  $ hg debugrevspec --no-show-revs -s 0::7
+  * set:
+  <baseset+ [0, 1, 2, 3, 4, 5, 6, 7]>
+  $ log 'limit(0+1+2+3+4+5+6+7, 3, 4)'
+  4
+  5
+  6
+  $ log 'limit(sort(0::7, rev), 3, 4)'
+  4
+  5
+  6
+  $ log 'limit(sort(0::7, -rev), 3, 4)'
+  3
+  2
+  1
+  $ log 'last(sort(0::7, rev), 2)'
+  6
+  7
+  $ hg debugrevspec -s 'limit(sort(0::7, rev), 3, 6)'
+  * set:
+  <baseset+ [6, 7]>
+  6
+  7
+  $ hg debugrevspec -s 'limit(sort(0::7, rev), 3, 9)'
+  * set:
+  <baseset+ []>
+  $ hg debugrevspec -s 'limit(sort(0::7, -rev), 3, 6)'
+  * set:
+  <baseset- [0, 1]>
+  1
+  0
+  $ hg debugrevspec -s 'limit(sort(0::7, -rev), 3, 9)'
+  * set:
+  <baseset- []>
+  $ hg debugrevspec -s 'limit(0::7, 0)'
+  * set:
+  <baseset+ []>
+
+ (using spanset)
+
+  $ hg debugrevspec --no-show-revs -s 0:7
+  * set:
+  <spanset+ 0:8>
+  $ log 'limit(0:7, 3, 4)'
+  4
+  5
+  6
+  $ log 'limit(7:0, 3, 4)'
+  3
+  2
+  1
+  $ log 'limit(0:7, 3, 6)'
+  6
+  7
+  $ log 'limit(7:0, 3, 6)'
+  1
+  0
+  $ log 'last(0:7, 2)'
+  6
+  7
+  $ hg debugrevspec -s 'limit(0:7, 3, 6)'
+  * set:
+  <spanset+ 6:8>
+  6
+  7
+  $ hg debugrevspec -s 'limit(0:7, 3, 9)'
+  * set:
+  <spanset+ 8:8>
+  $ hg debugrevspec -s 'limit(7:0, 3, 6)'
+  * set:
+  <spanset- 0:2>
+  1
+  0
+  $ hg debugrevspec -s 'limit(7:0, 3, 9)'
+  * set:
+  <spanset- 0:0>
+  $ hg debugrevspec -s 'limit(0:7, 0)'
+  * set:
+  <spanset+ 0:0>
+
+Test order of first/last revisions
+
+  $ hg debugrevspec -s 'first(4:0, 3) & 3:'
+  * set:
+  <filteredset
+    <spanset- 2:5>,
+    <spanset+ 3:10>>
+  4
+  3
+
+  $ hg debugrevspec -s '3: & first(4:0, 3)'
+  * set:
+  <filteredset
+    <spanset+ 3:10>,
+    <spanset- 2:5>>
+  3
+  4
+
+  $ hg debugrevspec -s 'last(4:0, 3) & :1'
+  * set:
+  <filteredset
+    <spanset- 0:3>,
+    <spanset+ 0:2>>
+  1
+  0
+
+  $ hg debugrevspec -s ':1 & last(4:0, 3)'
+  * set:
+  <filteredset
+    <spanset+ 0:2>,
+    <spanset+ 0:3>>
+  0
+  1
+
+Test scmutil.revsingle() should return the last revision
+
+  $ hg debugrevspec -s 'last(0::)'
+  * set:
+  <baseset slice=0:1
+    <generatorset->>
+  9
+  $ hg identify -r '0::' --num
+  9
+
+Test matching
+
   $ log 'matching(6)'
   6
   $ log 'matching(6:7, "phase parents user date branch summary files description substate")'
@@ -1210,10 +1735,10 @@ Test null revision
   $ log 'reverse(null:)' | tail -2
   0
   -1
-BROKEN: should be '-1'
   $ log 'first(null:)'
-BROKEN: should be '-1'
+  -1
   $ log 'min(null:)'
+BROKEN: should be '-1'
   $ log 'tip:null and all()' | tail -2
   1
   0
@@ -1221,6 +1746,42 @@ BROKEN: should be '-1'
 Test working-directory revision
   $ hg debugrevspec 'wdir()'
   2147483647
+  $ hg debugrevspec 'wdir()^'
+  9
+  $ hg up 7
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg debugrevspec 'wdir()^'
+  7
+  $ hg debugrevspec 'wdir()^0'
+  2147483647
+  $ hg debugrevspec 'wdir()~3'
+  5
+  $ hg debugrevspec 'ancestors(wdir())'
+  0
+  1
+  2
+  3
+  4
+  5
+  6
+  7
+  2147483647
+  $ hg debugrevspec 'wdir()~0'
+  2147483647
+  $ hg debugrevspec 'p1(wdir())'
+  7
+  $ hg debugrevspec 'p2(wdir())'
+  $ hg debugrevspec 'parents(wdir())'
+  7
+  $ hg debugrevspec 'wdir()^1'
+  7
+  $ hg debugrevspec 'wdir()^2'
+  $ hg debugrevspec 'wdir()^3'
+  hg: parse error: ^ expects a number 0, 1, or 2
+  [255]
+For tests consistency
+  $ hg up 9
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg debugrevspec 'tip or wdir()'
   9
   2147483647
@@ -1239,9 +1800,104 @@ Test working-directory revision
   9
   $ log '(all() + wdir()) & max(. + wdir())'
   2147483647
-  $ log '(all() + wdir()) & first(wdir() + .)'
+  $ log 'first(wdir() + .)'
   2147483647
-  $ log '(all() + wdir()) & last(. + wdir())'
+  $ log 'last(. + wdir())'
+  2147483647
+
+Test working-directory integer revision and node id
+(BUG: '0:wdir()' is still needed to populate wdir revision)
+
+  $ hg debugrevspec '0:wdir() & 2147483647'
+  2147483647
+  $ hg debugrevspec '0:wdir() & rev(2147483647)'
+  2147483647
+  $ hg debugrevspec '0:wdir() & ffffffffffffffffffffffffffffffffffffffff'
+  2147483647
+  $ hg debugrevspec '0:wdir() & ffffffffffff'
+  2147483647
+  $ hg debugrevspec '0:wdir() & id(ffffffffffffffffffffffffffffffffffffffff)'
+  2147483647
+  $ hg debugrevspec '0:wdir() & id(ffffffffffff)'
+  2147483647
+
+  $ cd ..
+
+Test short 'ff...' hash collision
+(BUG: '0:wdir()' is still needed to populate wdir revision)
+
+  $ hg init wdir-hashcollision
+  $ cd wdir-hashcollision
+  $ cat <<EOF >> .hg/hgrc
+  > [experimental]
+  > evolution = createmarkers
+  > EOF
+  $ echo 0 > a
+  $ hg ci -qAm 0
+  $ for i in 2463 2961 6726 78127; do
+  >   hg up -q 0
+  >   echo $i > a
+  >   hg ci -qm $i
+  > done
+  $ hg up -q null
+  $ hg log -r '0:wdir()' -T '{rev}:{node} {shortest(node, 3)}\n'
+  0:b4e73ffab476aa0ee32ed81ca51e07169844bc6a b4e
+  1:fffbae3886c8fbb2114296380d276fd37715d571 fffba
+  2:fffb6093b00943f91034b9bdad069402c834e572 fffb6
+  3:fff48a9b9de34a4d64120c29548214c67980ade3 fff4
+  4:ffff85cff0ff78504fcdc3c0bc10de0c65379249 ffff8
+  2147483647:ffffffffffffffffffffffffffffffffffffffff fffff
+  $ hg debugobsolete fffbae3886c8fbb2114296380d276fd37715d571
+  obsoleted 1 changesets
+
+  $ hg debugrevspec '0:wdir() & fff'
+  abort: 00changelog.i@fff: ambiguous identifier!
+  [255]
+  $ hg debugrevspec '0:wdir() & ffff'
+  abort: 00changelog.i@ffff: ambiguous identifier!
+  [255]
+  $ hg debugrevspec '0:wdir() & fffb'
+  abort: 00changelog.i@fffb: ambiguous identifier!
+  [255]
+BROKEN should be '2' (node lookup uses unfiltered repo since dc25ed84bee8)
+  $ hg debugrevspec '0:wdir() & id(fffb)'
+  2
+  $ hg debugrevspec '0:wdir() & ffff8'
+  4
+  $ hg debugrevspec '0:wdir() & fffff'
+  2147483647
+
+  $ cd ..
+
+Test branch() with wdir()
+
+  $ cd repo
+
+  $ log '0:wdir() & branch("literal:é")'
+  8
+  9
+  2147483647
+  $ log '0:wdir() & branch("re:é")'
+  8
+  9
+  2147483647
+  $ log '0:wdir() & branch("re:^a")'
+  0
+  2
+  $ log '0:wdir() & branch(8)'
+  8
+  9
+  2147483647
+
+branch(wdir()) returns all revisions belonging to the working branch. The wdir
+itself isn't returned unless it is explicitly populated.
+
+  $ log 'branch(wdir())'
+  8
+  9
+  $ log '0:wdir() & branch(wdir())'
+  8
+  9
   2147483647
 
   $ log 'outgoing()'
@@ -1358,10 +2014,10 @@ ordering defined by it.
   * set:
   <filteredset
     <filteredset
-      <spanset- 0:3>,
-      <spanset+ 0:3>>,
+      <spanset- 0:4>,
+      <spanset+ 0:4>>,
     <not
-      <spanset+ 1:2>>>
+      <spanset+ 1:3>>>
   3
   0
 
@@ -1392,7 +2048,7 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <baseset [0, 1, 2]>>
   2
   1
@@ -1429,10 +2085,10 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <addset
       <baseset [2]>,
-      <spanset+ 0:1>>>
+      <spanset+ 0:2>>>
   2
   1
   0
@@ -1460,7 +2116,7 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <baseset+ [0, 1, 2]>>
   2
   1
@@ -1488,7 +2144,7 @@ ordering defined by it.
   * set:
   <filteredset
     <baseset [0, 2, 1]>,
-    <spanset- 0:2>>
+    <spanset- 0:3>>
   0
   2
   1
@@ -1516,7 +2172,7 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <baseset [0, 1, 2]>>
   2
   1
@@ -1564,7 +2220,7 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <not
       <baseset [0, 1]>>>
   2
@@ -1589,7 +2245,7 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <not
       <baseset [0, 1]>>>
   2
@@ -1640,7 +2296,7 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <baseset [0, 1, 2]>>
   2
   1
@@ -1674,8 +2330,8 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset+ 0:2>,
-    <spanset+ 0:9>>
+    <spanset+ 0:3>,
+    <spanset+ 0:10>>
   0
   1
   2
@@ -1713,8 +2369,8 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset+ 0:2>,
-    <spanset+ 0:9>>
+    <spanset+ 0:3>,
+    <spanset+ 0:10>>
   0
   1
   2
@@ -1757,10 +2413,9 @@ ordering defined by it.
       follow)
     define)
   * set:
-  <baseset
-    <limit n=1, offset=0,
-      <spanset- 0:2>,
-      <baseset [1, 0, 2]>>>
+  <filteredset
+    <baseset [1]>,
+    <spanset- 0:3>>
   1
 
   $ try --optimize '2:0 & not last(0 + 2 + 1)'
@@ -1792,12 +2447,9 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <not
-      <baseset
-        <last n=1,
-          <fullreposet+ 0:9>,
-          <baseset [1, 2, 0]>>>>>
+      <baseset [1]>>>
   2
   0
 
@@ -1840,7 +2492,7 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset- 0:2>,
+    <spanset- 0:3>,
     <baseset [1]>>
   1
 
@@ -1941,11 +2593,11 @@ ordering defined by it.
     define)
   * set:
   <filteredset
-    <spanset+ 0:2>,
+    <spanset+ 0:3>,
     <addset
       <baseset [2]>,
       <filteredset
-        <fullreposet+ 0:9>,
+        <fullreposet+ 0:10>,
         <contains 'a'>>>>
   0
   1
@@ -1973,7 +2625,7 @@ ordering defined by it.
   * set:
   <addset
     <filteredset
-      <spanset- 0:2>,
+      <spanset- 0:3>,
       <contains 'a'>>,
     <baseset [2]>>
   1
@@ -2398,7 +3050,7 @@ test optimization of trivial `or` operation
   * set:
   <addset
     <baseset [0, 1]>,
-    <spanset+ 2:3>>
+    <spanset+ 2:4>>
   0
   1
   2
@@ -2436,10 +3088,10 @@ test optimization of trivial `or` operation
   * set:
   <addset
     <addset
-      <spanset+ 0:1>,
+      <spanset+ 0:2>,
       <baseset [2]>>,
     <addset
-      <spanset+ 3:4>,
+      <spanset+ 3:5>,
       <baseset [5, 6]>>>
   0
   1
@@ -2554,13 +3206,13 @@ test that chained `or` operations make balanced addsets
   * set:
   <addset
     <addset
-      <spanset+ 0:1>,
-      <spanset+ 1:2>>,
+      <spanset+ 0:2>,
+      <spanset+ 1:3>>,
     <addset
-      <spanset+ 2:3>,
+      <spanset+ 2:4>,
       <addset
-        <spanset+ 3:4>,
-        <spanset+ 4:5>>>>
+        <spanset+ 3:5>,
+        <spanset+ 4:6>>>>
   0
   1
   2
@@ -2588,14 +3240,14 @@ no crash by empty group "()" while optimizing `or` operations
 test that chained `or` operations never eat up stack (issue4624)
 (uses `0:1` instead of `0` to avoid future optimization of trivial revisions)
 
-  $ hg log -T '{rev}\n' -r `python -c "print '+'.join(['0:1'] * 500)"`
+  $ hg log -T '{rev}\n' -r `$PYTHON -c "print '+'.join(['0:1'] * 500)"`
   0
   1
 
 test that repeated `-r` options never eat up stack (issue4565)
 (uses `-r 0::1` to avoid possible optimization at old-style parser)
 
-  $ hg log -T '{rev}\n' `python -c "for i in xrange(500): print '-r 0::1 ',"`
+  $ hg log -T '{rev}\n' `$PYTHON -c "for i in xrange(500): print '-r 0::1 ',"`
   0
   1
 
@@ -2693,6 +3345,67 @@ no crash by empty group "()" while optimizing to "only()"
     define)
   hg: parse error: missing argument
   [255]
+
+optimization to only() works only if ancestors() takes only one argument
+
+  $ hg debugrevspec -p optimized 'ancestors(6) - ancestors(4, 1)'
+  * optimized:
+  (difference
+    (func
+      ('symbol', 'ancestors')
+      ('symbol', '6')
+      define)
+    (func
+      ('symbol', 'ancestors')
+      (list
+        ('symbol', '4')
+        ('symbol', '1'))
+      any)
+    define)
+  0
+  1
+  3
+  5
+  6
+  $ hg debugrevspec -p optimized 'ancestors(6, 1) - ancestors(4)'
+  * optimized:
+  (difference
+    (func
+      ('symbol', 'ancestors')
+      (list
+        ('symbol', '6')
+        ('symbol', '1'))
+      define)
+    (func
+      ('symbol', 'ancestors')
+      ('symbol', '4')
+      any)
+    define)
+  5
+  6
+
+optimization disabled if keyword arguments passed (because we're too lazy
+to support it)
+
+  $ hg debugrevspec -p optimized 'ancestors(set=6) - ancestors(set=4)'
+  * optimized:
+  (difference
+    (func
+      ('symbol', 'ancestors')
+      (keyvalue
+        ('symbol', 'set')
+        ('symbol', '6'))
+      define)
+    (func
+      ('symbol', 'ancestors')
+      (keyvalue
+        ('symbol', 'set')
+        ('symbol', '4'))
+      any)
+    define)
+  3
+  5
+  6
 
 invalid function call should not be optimized to only()
 
@@ -2845,6 +3558,16 @@ parentrevspec
   $ log 'merge()^^^'
   1
 
+  $ hg debugrevspec -s '(merge() | 0)~-1'
+  * set:
+  <baseset+ [1, 7]>
+  1
+  7
+  $ log 'merge()~-1'
+  7
+  $ log 'tip~-1'
+  $ log '(tip | merge())~-1'
+  7
   $ log 'merge()~0'
   6
   $ log 'merge()~1'
@@ -2863,6 +3586,10 @@ parentrevspec
 
   $ log 'tip^foo'
   hg: parse error: ^ expects a number 0, 1, or 2
+  [255]
+
+  $ log 'branchpoint()~-1'
+  abort: revision in set has more than one child!
   [255]
 
 Bogus function gets suggestions
@@ -2965,7 +3692,7 @@ aliases:
     None)
   * set:
   <filteredset
-    <fullreposet+ 0:9>,
+    <fullreposet+ 0:10>,
     <merge>>
   6
 
@@ -2986,7 +3713,7 @@ aliases:
     None)
   * set:
   <filteredset
-    <fullreposet+ 0:9>,
+    <fullreposet+ 0:10>,
     <merge>>
   6
 
@@ -3042,11 +3769,7 @@ test alias recursion
       ('symbol', 'merge')
       None))
   * set:
-  <addset+
-    <filteredset
-      <fullreposet+ 0:9>,
-      <merge>>,
-    <generatorset+>>
+  <generatorset+>
   6
   7
 
@@ -3107,8 +3830,8 @@ test nesting and variable passing
   * set:
   <baseset
     <max
-      <fullreposet+ 0:9>,
-      <spanset+ 2:5>>>
+      <fullreposet+ 0:10>,
+      <spanset+ 2:6>>>
   5
 
 test chained `or` operations are flattened at parsing phase
@@ -3141,10 +3864,10 @@ test chained `or` operations are flattened at parsing phase
         ('symbol', '3'))))
   * set:
   <addset
-    <spanset+ 0:1>,
+    <spanset+ 0:2>,
     <addset
-      <spanset+ 1:2>,
-      <spanset+ 2:3>>>
+      <spanset+ 1:3>,
+      <spanset+ 2:4>>>
   0
   1
   2
@@ -3189,7 +3912,7 @@ but 'all()' should never be substituted to '0()'.
   * set:
   <filteredset
     <baseset [0]>,
-    <spanset+ 0:9>>
+    <spanset+ 0:10>>
   0
 
 test unknown reference:
@@ -3238,7 +3961,7 @@ test unknown reference:
   <addset
     <baseset [9]>,
     <filteredset
-      <fullreposet+ 0:9>,
+      <fullreposet+ 0:10>,
       <desc '$1'>>>
   9
 
@@ -3409,10 +4132,7 @@ issue2549 - correct optimizations
       ('symbol', '2')))
   * set:
   <filteredset
-    <baseset
-      <limit n=2, offset=0,
-        <fullreposet+ 0:9>,
-        <baseset [1, 2, 3]>>>,
+    <baseset [1, 2]>,
     <not
       <baseset [2]>>>
   1
@@ -3430,7 +4150,7 @@ issue2549 - correct optimizations
   <filteredset
     <baseset
       <max
-        <fullreposet+ 0:9>,
+        <fullreposet+ 0:10>,
         <baseset [1, 2]>>>,
     <not
       <baseset [2]>>>
@@ -3448,7 +4168,7 @@ issue2549 - correct optimizations
   <filteredset
     <baseset
       <min
-        <fullreposet+ 0:9>,
+        <fullreposet+ 0:10>,
         <baseset [1, 2]>>>,
     <not
       <baseset [1]>>>
@@ -3466,10 +4186,7 @@ issue2549 - correct optimizations
       ('symbol', '2')))
   * set:
   <filteredset
-    <baseset
-      <last n=1,
-        <fullreposet+ 0:9>,
-        <baseset [2, 1]>>>,
+    <baseset [2]>,
     <not
       <baseset [2]>>>
 
@@ -3638,7 +4355,7 @@ test author/desc/keyword in problematic encoding
   $ hg init problematicencoding
   $ cd problematicencoding
 
-  $ python > setup.sh <<EOF
+  $ $PYTHON > setup.sh <<EOF
   > print u'''
   > echo a > text
   > hg add text
@@ -3654,7 +4371,7 @@ test author/desc/keyword in problematic encoding
   $ sh < setup.sh
 
 test in problematic encoding
-  $ python > test.sh <<EOF
+  $ $PYTHON > test.sh <<EOF
   > print u'''
   > hg --encoding cp932 log --template '{rev}\\n' -r 'author(\u30A2)'
   > echo ====
@@ -3717,4 +4434,80 @@ loading it
   hg: parse error: unknown identifier: custom1
   [255]
 
+Test repo.anyrevs with customized revset overrides
+
+  $ cat > $TESTTMP/printprevset.py <<EOF
+  > from mercurial import encoding
+  > def reposetup(ui, repo):
+  >     alias = {}
+  >     p = encoding.environ.get('P')
+  >     if p:
+  >         alias['P'] = p
+  >     revs = repo.anyrevs(['P'], user=True, localalias=alias)
+  >     ui.write('P=%r' % list(revs))
+  > EOF
+
+  $ cat >> .hg/hgrc <<EOF
+  > custompredicate = !
+  > printprevset = $TESTTMP/printprevset.py
+  > EOF
+
+  $ hg --config revsetalias.P=1 log -r . -T '\n'
+  P=[1]
+  $ P=3 hg --config revsetalias.P=2 log -r . -T '\n'
+  P=[3]
+
   $ cd ..
+
+Test obsstore related revsets
+
+  $ hg init repo1
+  $ cd repo1
+  $ cat <<EOF >> .hg/hgrc
+  > [experimental]
+  > evolution = createmarkers
+  > EOF
+
+  $ hg debugdrawdag <<'EOS'
+  >        F G
+  >        |/    # split: B -> E, F
+  > B C D  E     # amend: B -> C -> D
+  >  \|/   |     # amend: F -> G
+  >   A    A  Z  # amend: A -> Z
+  > EOS
+
+  $ hg log -r 'successors(Z)' -T '{desc}\n'
+  Z
+
+  $ hg log -r 'successors(F)' -T '{desc}\n'
+  F
+  G
+
+  $ hg tag --remove --local C D E F G
+
+  $ hg log -r 'successors(B)' -T '{desc}\n'
+  B
+  D
+  E
+  G
+
+  $ hg log -r 'successors(B)' -T '{desc}\n' --hidden
+  B
+  C
+  D
+  E
+  F
+  G
+
+  $ hg log -r 'successors(B)-obsolete()' -T '{desc}\n' --hidden
+  D
+  E
+  G
+
+  $ hg log -r 'successors(B+A)-divergent()' -T '{desc}\n'
+  A
+  Z
+  B
+
+  $ hg log -r 'successors(B+A)-divergent()-obsolete()' -T '{desc}\n'
+  Z

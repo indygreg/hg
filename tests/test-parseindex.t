@@ -53,7 +53,7 @@ We approximate that by reducing the read buffer to 1 byte.
   > for r in cl:
   >     print short(cl.node(r))
   > EOF
-  $ python test.py
+  $ $PYTHON test.py
   2 revisions:
   7c31755bf9b5
   26333235a41c
@@ -66,7 +66,7 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
 
   $ cd a
 
-  $ python <<EOF
+  $ $PYTHON <<EOF
   > from mercurial import changelog, vfs
   > cl = changelog.changelog(vfs.vfs('.hg/store'))
   > print 'good heads:'
@@ -128,7 +128,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   $ hg clone --pull -q --config phases.publish=False ../a segv
   $ rm -R limit/.hg/cache segv/.hg/cache
 
-  $ python <<EOF
+  $ $PYTHON <<EOF
   > data = open("limit/.hg/store/00changelog.i", "rb").read()
   > for n, p in [('limit', '\0\0\0\x02'), ('segv', '\0\x01\0\0')]:
   >     # corrupt p1 at rev0 and p2 at rev1
@@ -167,13 +167,13 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   >         print inst
   > EOF
 
-  $ python test.py limit/.hg/store
+  $ $PYTHON test.py limit/.hg/store
   reachableroots: parent out of range
   compute_phases_map_sets: parent out of range
   index_headrevs: parent out of range
   find_gca_candidates: parent out of range
   find_deepest: parent out of range
-  $ python test.py segv/.hg/store
+  $ $PYTHON test.py segv/.hg/store
   reachableroots: parent out of range
   compute_phases_map_sets: parent out of range
   index_headrevs: parent out of range

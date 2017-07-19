@@ -81,9 +81,10 @@ should give a 404 - static file that does not exist
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
   <h3>error</h3>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30"></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -188,9 +189,10 @@ should give a 404 - file does not exist
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
   <h3>error</h3>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30"></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -268,9 +270,10 @@ try bad style
    <span class="tag">tip</span> <span class="tag">@</span> <span class="tag">a b c</span> <span class="tag">d/e/f</span> 
   </h3>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -337,7 +340,7 @@ static file
 
   $ get-with-headers.py --twice localhost:$HGPORT 'static/style-gitweb.css' - date etag server
   200 Script output follows
-  content-length: 8012
+  content-length: 9007
   content-type: text/css
   
   body { font-family: sans-serif; font-size: 12px; border:solid #d9d8d1; border-width:1px; margin:10px; background: white; color: black; }
@@ -346,8 +349,19 @@ static file
   div.page_header { height:25px; padding:8px; font-size:18px; font-weight:bold; background-color:#d9d8d1; }
   div.page_header a:visited { color:#0000cc; }
   div.page_header a:hover { color:#880000; }
-  div.page_nav { padding:8px; }
+  div.page_nav {
+      padding:8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+  }
   div.page_nav a:visited { color:#0000cc; }
+  div.extra_nav {
+      padding: 8px;
+  }
+  div.extra_nav a:visited {
+      color: #0000cc;
+  }
   div.page_path { padding:8px; border:solid #d9d8d1; border-width:0px 0px 1px}
   div.page_footer { padding:4px 8px; background-color: #d9d8d1; }
   div.page_footer_text { float:left; color:#555555; font-style:italic; }
@@ -394,13 +408,30 @@ static file
   div.pre { font-family:monospace; font-size:12px; white-space:pre; }
   div.diff_info { font-family:monospace; color:#000099; background-color:#edece6; font-style:italic; }
   div.index_include { border:solid #d9d8d1; border-width:0px 0px 1px; padding:12px 8px; }
-  div.search { margin:4px 8px; position:absolute; top:56px; right:12px }
+  
+  .search {
+      margin-right: 8px;
+  }
+  
+  div#hint {
+    position: absolute;
+    display: none;
+    width: 250px;
+    padding: 5px;
+    background: #ffc;
+    border: 1px solid yellow;
+    border-radius: 5px;
+  }
+  
+  #searchform:hover div#hint { display: block; }
+  
   tr.thisrev a { color:#999999; text-decoration: none; }
   tr.thisrev pre { color:#009900; }
   td.annotate {
     white-space: nowrap;
   }
   div.annotate-info {
+    z-index: 5;
     display: none;
     position: absolute;
     background-color: #FFFFFF;
@@ -467,7 +498,7 @@ static file
   	-ms-user-select: none;
   	user-select: none;
   	display: inline-block;
-  	margin-left: -5em;
+  	margin-left: -6em;
   	width: 4em;
   	color: #999;
   	text-align: right;
@@ -489,13 +520,11 @@ static file
   
   .description {
       font-family: monospace;
+      white-space: pre;
   }
   
   /* Followlines */
-  div.page_body pre.sourcelines > span.followlines-select:hover {
-    cursor: cell;
-  }
-  
+  tbody.sourcelines > tr.followlines-selected,
   pre.sourcelines > span.followlines-selected {
     background-color: #99C7E9 !important;
   }
@@ -532,21 +561,62 @@ static file
     font-family: sans-serif;
   }
   
-  div#followlines-tooltip {
+  .btn-followlines {
     display: none;
-    position: fixed;
-    background-color: #ffc;
-    border: 1px solid #999;
-    padding: 2px;
+    cursor: pointer;
+    box-sizing: content-box;
+    font-size: 11px;
+    width: 13px;
+    height: 13px;
+    border-radius: 3px;
+    margin: 0px;
+    margin-top: -2px;
+    padding: 0px;
+    background-color: #E5FDE5;
+    border: 1px solid #9BC19B;
+    font-family: monospace;
+    text-align: center;
+    line-height: 5px;
   }
   
-  .sourcelines:hover > div#followlines-tooltip {
+  tr .btn-followlines {
+    position: absolute;
+  }
+  
+  span .btn-followlines {
+    float: left;
+  }
+  
+  span.followlines-select .btn-followlines {
+    margin-left: -1.6em;
+  }
+  
+  .btn-followlines:hover {
+    transform: scale(1.1, 1.1);
+  }
+  
+  .btn-followlines .followlines-plus {
+    color: green;
+  }
+  
+  .btn-followlines .followlines-minus {
+    color: red;
+  }
+  
+  .btn-followlines-end {
+    background-color: #ffdcdc;
+  }
+  
+  .sourcelines tr:hover .btn-followlines,
+  .sourcelines span.followlines-select:hover > .btn-followlines {
     display: inline;
   }
   
-  .sourcelines:hover > div#followlines-tooltip.hidden {
+  .btn-followlines-hidden,
+  .sourcelines tr:hover .btn-followlines-hidden {
     display: none;
   }
+  
   /* Graph */
   div#wrapper {
   	position: relative;

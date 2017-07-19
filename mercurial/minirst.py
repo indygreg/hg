@@ -315,7 +315,8 @@ def findtables(blocks):
             # column markers are ASCII so we can calculate column
             # position in bytes
             columns = [x for x in xrange(len(div))
-                       if div[x] == '=' and (x == 0 or div[x - 1] == ' ')]
+                       if div[x:x + 1] == '=' and (x == 0 or
+                                                   div[x - 1:x] == ' ')]
             rows = []
             for l in block['lines'][1:-1]:
                 if l == div:
@@ -356,7 +357,7 @@ def findsections(blocks):
             len(block['lines']) == 2 and
             encoding.colwidth(block['lines'][0]) == len(block['lines'][1]) and
             _sectionre.match(block['lines'][1])):
-            block['underline'] = block['lines'][1][0]
+            block['underline'] = block['lines'][1][0:1]
             block['type'] = 'section'
             del block['lines'][1]
     return blocks
@@ -452,7 +453,7 @@ _admonitiontitles = {
 }
 
 def formatoption(block, width):
-    desc = ' '.join(map(str.strip, block['lines']))
+    desc = ' '.join(map(bytes.strip, block['lines']))
     colwidth = encoding.colwidth(block['optstr'])
     usablewidth = width - 1
     hanging = block['optstrwidth']
@@ -474,7 +475,7 @@ def formatblock(block, width):
         hang = len(block['lines'][-1]) - len(block['lines'][-1].lstrip())
 
         defindent = indent + hang * ' '
-        text = ' '.join(map(str.strip, block['lines']))
+        text = ' '.join(map(bytes.strip, block['lines']))
         return '%s\n%s\n' % (indent + admonition,
                              util.wrap(text, width=width,
                                        initindent=defindent,
@@ -512,7 +513,7 @@ def formatblock(block, width):
         term = indent + block['lines'][0]
         hang = len(block['lines'][-1]) - len(block['lines'][-1].lstrip())
         defindent = indent + hang * ' '
-        text = ' '.join(map(str.strip, block['lines'][1:]))
+        text = ' '.join(map(bytes.strip, block['lines'][1:]))
         return '%s\n%s\n' % (term, util.wrap(text, width=width,
                                              initindent=defindent,
                                              hangindent=defindent))
@@ -567,7 +568,7 @@ def formathtml(blocks):
 
         if btype == 'admonition':
             admonition = escape(_admonitiontitles[b['admonitiontitle']])
-            text = escape(' '.join(map(str.strip, lines)))
+            text = escape(' '.join(map(bytes.strip, lines)))
             out.append('<p>\n<b>%s</b> %s\n</p>\n' % (admonition, text))
         elif btype == 'paragraph':
             out.append('<p>\n%s\n</p>\n' % escape('\n'.join(lines)))
@@ -597,7 +598,7 @@ def formathtml(blocks):
         elif btype == 'definition':
             openlist('dl', level)
             term = escape(lines[0])
-            text = escape(' '.join(map(str.strip, lines[1:])))
+            text = escape(' '.join(map(bytes.strip, lines[1:])))
             out.append(' <dt>%s\n <dd>%s\n' % (term, text))
         elif btype == 'bullet':
             bullet, head = lines[0].split(' ', 1)
@@ -609,12 +610,12 @@ def formathtml(blocks):
         elif btype == 'field':
             openlist('dl', level)
             key = escape(b['key'])
-            text = escape(' '.join(map(str.strip, lines)))
+            text = escape(' '.join(map(bytes.strip, lines)))
             out.append(' <dt>%s\n <dd>%s\n' % (key, text))
         elif btype == 'option':
             openlist('dl', level)
             opt = escape(b['optstr'])
-            desc = escape(' '.join(map(str.strip, lines)))
+            desc = escape(' '.join(map(bytes.strip, lines)))
             out.append(' <dt>%s\n <dd>%s\n' % (opt, desc))
 
         # close lists if indent level of next block is lower

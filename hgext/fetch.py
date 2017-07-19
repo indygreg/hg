@@ -15,17 +15,17 @@ from mercurial.node import (
 )
 from mercurial import (
     cmdutil,
-    commands,
     error,
     exchange,
     hg,
     lock,
+    registrar,
     util,
 )
 
 release = lock.release
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -35,10 +35,10 @@ testedwith = 'ships-with-hg-core'
 @command('fetch',
     [('r', 'rev', [],
      _('a specific revision you would like to pull'), _('REV')),
-    ('e', 'edit', None, _('invoke editor on commit messages')),
+    ('', 'edit', None, _('invoke editor on commit messages')),
     ('', 'force-editor', None, _('edit commit message (DEPRECATED)')),
     ('', 'switch-parent', None, _('switch parents when merging')),
-    ] + commands.commitopts + commands.commitopts2 + commands.remoteopts,
+    ] + cmdutil.commitopts + cmdutil.commitopts2 + cmdutil.remoteopts,
     _('hg fetch [SOURCE]'))
 def fetch(ui, repo, source='default', **opts):
     '''pull changes from a remote repository, merge new changes if needed.

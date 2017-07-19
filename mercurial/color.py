@@ -45,8 +45,6 @@ except ImportError:
     curses = None
     _baseterminfoparams = {}
 
-_enabledbydefault = True
-
 # start and stop parameters for effects
 _effects = {
     'none': 0,
@@ -185,10 +183,7 @@ def setup(ui):
 def _modesetup(ui):
     if ui.plain():
         return None
-    default = 'never'
-    if _enabledbydefault:
-        default = 'auto'
-    config = ui.config('ui', 'color', default)
+    config = ui.config('ui', 'color')
     if config == 'debug':
         return 'debug'
 
@@ -208,31 +203,41 @@ def _modesetup(ui):
     formatted = (always or (encoding.environ.get('TERM') != 'dumb'
                  and ui.formatted()))
 
-    mode = ui.config('color', 'mode', 'auto')
+    mode = ui.config('color', 'mode')
 
     # If pager is active, color.pagermode overrides color.mode.
     if getattr(ui, 'pageractive', False):
         mode = ui.config('color', 'pagermode', mode)
 
     realmode = mode
-    if mode == 'auto':
-        if pycompat.osname == 'nt':
-            term = encoding.environ.get('TERM')
-            # TERM won't be defined in a vanilla cmd.exe environment.
+    if pycompat.osname == 'nt':
+        from . import win32
 
-            # UNIX-like environments on Windows such as Cygwin and MSYS will
-            # set TERM. They appear to make a best effort attempt at setting it
-            # to something appropriate. However, not all environments with TERM
-            # defined support ANSI. Since "ansi" could result in terminal
-            # gibberish, we error on the side of selecting "win32". However, if
-            # w32effects is not defined, we almost certainly don't support
-            # "win32", so don't even try.
-            if (term and 'xterm' in term) or not w32effects:
+        term = encoding.environ.get('TERM')
+        # TERM won't be defined in a vanilla cmd.exe environment.
+
+        # UNIX-like environments on Windows such as Cygwin and MSYS will
+        # set TERM. They appear to make a best effort attempt at setting it
+        # to something appropriate. However, not all environments with TERM
+        # defined support ANSI.
+        ansienviron = term and 'xterm' in term
+
+        if mode == 'auto':
+            # Since "ansi" could result in terminal gibberish, we error on the
+            # side of selecting "win32". However, if w32effects is not defined,
+            # we almost certainly don't support "win32", so don't even try.
+            # w32ffects is not populated when stdout is redirected, so checking
+            # it first avoids win32 calls in a state known to error out.
+            if ansienviron or not w32effects or win32.enablevtmode():
                 realmode = 'ansi'
             else:
                 realmode = 'win32'
-        else:
-            realmode = 'ansi'
+        # An empty w32effects is a clue that stdout is redirected, and thus
+        # cannot enable VT mode.
+        elif mode == 'ansi' and w32effects and not ansienviron:
+            win32.enablevtmode()
+    elif mode == 'auto':
+        realmode = 'ansi'
 
     def modewarn():
         # only warn if color.mode was explicitly set and we're in
@@ -442,10 +447,10 @@ if pycompat.osname == 'nt':
         'inverse': _COMMON_LVB_REVERSE_VIDEO, # double-byte charsets only
     }
 
-    passthrough = set([_FOREGROUND_INTENSITY,
-                       _BACKGROUND_INTENSITY,
-                       _COMMON_LVB_UNDERSCORE,
-                       _COMMON_LVB_REVERSE_VIDEO])
+    passthrough = {_FOREGROUND_INTENSITY,
+                   _BACKGROUND_INTENSITY,
+                   _COMMON_LVB_UNDERSCORE,
+                   _COMMON_LVB_REVERSE_VIDEO}
 
     stdout = _kernel32.GetStdHandle(
                   _STD_OUTPUT_HANDLE)  # don't close the handle returned

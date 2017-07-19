@@ -73,7 +73,7 @@ def annotatesubrepoerror(func):
             raise ex
         except error.Abort as ex:
             subrepo = subrelpath(self)
-            errormsg = str(ex) + ' ' + _('(in subrepo %s)') % subrepo
+            errormsg = str(ex) + ' ' + _('(in subrepository "%s")') % subrepo
             # avoid handling this exception by raising a SubrepoAbort exception
             raise SubrepoAbort(errormsg, hint=ex.hint, subrepo=subrepo,
                                cause=sys.exc_info())
@@ -147,7 +147,7 @@ def state(ctx, ui):
         kind = 'hg'
         if src.startswith('['):
             if ']' not in src:
-                raise error.Abort(_('missing ] in subrepo source'))
+                raise error.Abort(_('missing ] in subrepository source'))
             kind, src = src.split(']', 1)
             kind = kind[1:]
             src = src.lstrip() # strip any extra whitespace after ']'
@@ -401,7 +401,7 @@ def newcommitphase(ui, ctx):
     substate = getattr(ctx, "substate", None)
     if not substate:
         return commitphase
-    check = ui.config('phases', 'checksubrepos', 'follow')
+    check = ui.config('phases', 'checksubrepos')
     if check not in ('ignore', 'follow', 'abort'):
         raise error.Abort(_('invalid phases.checksubrepos configuration: %s')
                          % (check))
@@ -460,14 +460,15 @@ class abstractsubrepo(object):
         """
         return False
 
-    def dirty(self, ignoreupdate=False):
+    def dirty(self, ignoreupdate=False, missing=False):
         """returns true if the dirstate of the subrepo is dirty or does not
         match current stored state. If ignoreupdate is true, only check
-        whether the subrepo has uncommitted changes in its dirstate.
+        whether the subrepo has uncommitted changes in its dirstate.  If missing
+        is true, check for deleted files.
         """
         raise NotImplementedError
 
-    def dirtyreason(self, ignoreupdate=False):
+    def dirtyreason(self, ignoreupdate=False, missing=False):
         """return reason string if it is ``dirty()``
 
         Returned string should have enough information for the message
@@ -475,14 +476,15 @@ class abstractsubrepo(object):
 
         This returns None, otherwise.
         """
-        if self.dirty(ignoreupdate=ignoreupdate):
-            return _("uncommitted changes in subrepository '%s'"
+        if self.dirty(ignoreupdate=ignoreupdate, missing=missing):
+            return _('uncommitted changes in subrepository "%s"'
                      ) % subrelpath(self)
 
     def bailifchanged(self, ignoreupdate=False, hint=None):
         """raise Abort if subrepository is ``dirty()``
         """
-        dirtyreason = self.dirtyreason(ignoreupdate=ignoreupdate)
+        dirtyreason = self.dirtyreason(ignoreupdate=ignoreupdate,
+                                       missing=True)
         if dirtyreason:
             raise error.Abort(dirtyreason, hint=hint)
 
@@ -538,7 +540,7 @@ class abstractsubrepo(object):
         self.ui.warn("%s: %s" % (prefix, _("addremove is not supported")))
         return 1
 
-    def cat(self, match, prefix, **opts):
+    def cat(self, match, fm, fntemplate, prefix, **opts):
         return 1
 
     def status(self, rev2, **opts):
@@ -767,10 +769,11 @@ class hgsubrepo(abstractsubrepo):
                                  dry_run, similarity)
 
     @annotatesubrepoerror
-    def cat(self, match, prefix, **opts):
+    def cat(self, match, fm, fntemplate, prefix, **opts):
         rev = self._state[1]
         ctx = self._repo[rev]
-        return cmdutil.cat(self.ui, self._repo, ctx, match, prefix, **opts)
+        return cmdutil.cat(self.ui, self._repo, ctx, match, fm, fntemplate,
+                           prefix, **opts)
 
     @annotatesubrepoerror
     def status(self, rev2, **opts):
@@ -814,7 +817,7 @@ class hgsubrepo(abstractsubrepo):
         return total
 
     @annotatesubrepoerror
-    def dirty(self, ignoreupdate=False):
+    def dirty(self, ignoreupdate=False, missing=False):
         r = self._state[1]
         if r == '' and not ignoreupdate: # no state recorded
             return True
@@ -822,7 +825,7 @@ class hgsubrepo(abstractsubrepo):
         if r != w.p1().hex() and not ignoreupdate:
             # different version checked out
             return True
-        return w.dirty() # working directory changed
+        return w.dirty(missing=missing) # working directory changed
 
     def basestate(self):
         return self._repo['.'].hex()
@@ -893,7 +896,7 @@ class hgsubrepo(abstractsubrepo):
             ctx = urepo[revision]
             if ctx.hidden():
                 urepo.ui.warn(
-                    _('revision %s in subrepo %s is hidden\n') \
+                    _('revision %s in subrepository "%s" is hidden\n') \
                     % (revision[0:12], self._path))
                 repo = urepo
         hg.updaterepo(repo, revision, overwrite)
@@ -907,12 +910,14 @@ class hgsubrepo(abstractsubrepo):
 
         def mergefunc():
             if anc == cur and dst.branch() == cur.branch():
-                self.ui.debug("updating subrepo %s\n" % subrelpath(self))
+                self.ui.debug('updating subrepository "%s"\n'
+                              % subrelpath(self))
                 hg.update(self._repo, state[1])
             elif anc == dst:
-                self.ui.debug("skipping subrepo %s\n" % subrelpath(self))
+                self.ui.debug('skipping subrepository "%s"\n'
+                              % subrelpath(self))
             else:
-                self.ui.debug("merging subrepo %s\n" % subrelpath(self))
+                self.ui.debug('merging subrepository "%s"\n' % subrelpath(self))
                 hg.merge(self._repo, state[1], remind=False)
 
         wctx = self._repo[None]
@@ -1201,8 +1206,10 @@ class svnsubrepo(abstractsubrepo):
                     return True, True, bool(missing)
         return bool(changes), False, bool(missing)
 
-    def dirty(self, ignoreupdate=False):
-        if not self._wcchanged()[0]:
+    def dirty(self, ignoreupdate=False, missing=False):
+        wcchanged = self._wcchanged()
+        changed = wcchanged[0] or (missing and wcchanged[2])
+        if not changed:
             if self._state[1] in self._wcrevs() or ignoreupdate:
                 return False
         return True
@@ -1550,11 +1557,11 @@ class gitsubrepo(abstractsubrepo):
         # try only origin: the originally cloned repo
         self._gitcommand(['fetch'])
         if not self._githavelocally(revision):
-            raise error.Abort(_("revision %s does not exist in subrepo %s\n") %
-                               (revision, self._relpath))
+            raise error.Abort(_('revision %s does not exist in subrepository '
+                                '"%s"\n') % (revision, self._relpath))
 
     @annotatesubrepoerror
-    def dirty(self, ignoreupdate=False):
+    def dirty(self, ignoreupdate=False, missing=False):
         if self._gitmissing():
             return self._state[1] != ''
         if self._gitisbare():
@@ -1606,8 +1613,8 @@ class gitsubrepo(abstractsubrepo):
 
         def rawcheckout():
             # no branch to checkout, check it out with no branch
-            self.ui.warn(_('checking out detached HEAD in subrepo %s\n') %
-                          self._relpath)
+            self.ui.warn(_('checking out detached HEAD in '
+                           'subrepository "%s"\n') % self._relpath)
             self.ui.warn(_('check out a git branch if you intend '
                             'to make changes\n'))
             checkout(['-q', revision])
@@ -1726,14 +1733,14 @@ class gitsubrepo(abstractsubrepo):
             # determine if the current branch is even useful
             if not self._gitisancestor(self._state[1], current):
                 self.ui.warn(_('unrelated git branch checked out '
-                                'in subrepo %s\n') % self._relpath)
+                               'in subrepository "%s"\n') % self._relpath)
                 return False
-            self.ui.status(_('pushing branch %s of subrepo %s\n') %
+            self.ui.status(_('pushing branch %s of subrepository "%s"\n') %
                            (current.split('/', 2)[2], self._relpath))
             ret = self._gitdir(cmd + ['origin', current])
             return ret[1] == 0
         else:
-            self.ui.warn(_('no branch checked out in subrepo %s\n'
+            self.ui.warn(_('no branch checked out in subrepository "%s"\n'
                            'cannot push revision %s\n') %
                           (self._relpath, self._state[1]))
             return False
@@ -1771,7 +1778,7 @@ class gitsubrepo(abstractsubrepo):
                 if exact:
                     rejected.append(f)
                 continue
-            if not opts.get('dry_run'):
+            if not opts.get(r'dry_run'):
                 self._gitcommand(command + [f])
 
         for f in rejected:
@@ -1832,7 +1839,7 @@ class gitsubrepo(abstractsubrepo):
 
 
     @annotatesubrepoerror
-    def cat(self, match, prefix, **opts):
+    def cat(self, match, fm, fntemplate, prefix, **opts):
         rev = self._state[1]
         if match.anypats():
             return 1 #No support for include/exclude yet
@@ -1840,9 +1847,10 @@ class gitsubrepo(abstractsubrepo):
         if not match.files():
             return 1
 
+        # TODO: add support for non-plain formatter (see cmdutil.cat())
         for f in match.files():
             output = self._gitcommand(["show", "%s:%s" % (rev, f)])
-            fp = cmdutil.makefileobj(self._subparent, opts.get('output'),
+            fp = cmdutil.makefileobj(self._subparent, fntemplate,
                                      self._ctx.node(),
                                      pathname=self.wvfs.reljoin(prefix, f))
             fp.write(output)
@@ -1878,9 +1886,9 @@ class gitsubrepo(abstractsubrepo):
         deleted, unknown, ignored, clean = [], [], [], []
 
         command = ['status', '--porcelain', '-z']
-        if opts.get('unknown'):
+        if opts.get(r'unknown'):
             command += ['--untracked-files=all']
-        if opts.get('ignored'):
+        if opts.get(r'ignored'):
             command += ['--ignored']
         out = self._gitcommand(command)
 
@@ -1908,7 +1916,7 @@ class gitsubrepo(abstractsubrepo):
             elif st == '!!':
                 ignored.append(filename1)
 
-        if opts.get('clean'):
+        if opts.get(r'clean'):
             out = self._gitcommand(['ls-files'])
             for f in out.split('\n'):
                 if not f in changedfiles:
@@ -1921,7 +1929,7 @@ class gitsubrepo(abstractsubrepo):
     def diff(self, ui, diffopts, node2, match, prefix, **opts):
         node1 = self._state[1]
         cmd = ['diff', '--no-renames']
-        if opts['stat']:
+        if opts[r'stat']:
             cmd.append('--stat')
         else:
             # for Git, this also implies '-p'
@@ -1964,7 +1972,7 @@ class gitsubrepo(abstractsubrepo):
     @annotatesubrepoerror
     def revert(self, substate, *pats, **opts):
         self.ui.status(_('reverting subrepo %s\n') % substate[0])
-        if not opts.get('no_backup'):
+        if not opts.get(r'no_backup'):
             status = self.status(None)
             names = status.modified
             for name in names:
@@ -1973,7 +1981,7 @@ class gitsubrepo(abstractsubrepo):
                         (name, bakname))
                 self.wvfs.rename(name, bakname)
 
-        if not opts.get('dry_run'):
+        if not opts.get(r'dry_run'):
             self.get(substate, overwrite=True)
         return []
 

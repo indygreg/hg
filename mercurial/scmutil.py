@@ -13,20 +13,28 @@ import hashlib
 import os
 import re
 import socket
+import weakref
 
 from .i18n import _
-from .node import wdirrev
+from .node import (
+    hex,
+    nullid,
+    wdirid,
+    wdirrev,
+)
+
 from . import (
     encoding,
     error,
     match as matchmod,
+    obsolete,
+    obsutil,
     pathutil,
     phases,
     pycompat,
     revsetlang,
     similar,
     util,
-    vfs as vfsmod,
 )
 
 if pycompat.osname == 'nt':
@@ -121,10 +129,6 @@ def nochangesfound(ui, repo, excluded=None):
     secretlist = []
     if excluded:
         for n in excluded:
-            if n not in repo:
-                # discovery should not have included the filtered revision,
-                # we have to explicitly exclude it until discovery is cleanup.
-                continue
             ctx = repo[n]
             if ctx.phase() >= phases.secret and not ctx.extinct():
                 secretlist.append(n)
@@ -186,13 +190,13 @@ def callcatch(ui, func):
         ui.warn(_("abort: file censored %s!\n") % inst)
     except error.RevlogError as inst:
         ui.warn(_("abort: %s!\n") % inst)
-    except error.SignalInterrupt:
-        ui.warn(_("killed!\n"))
     except error.InterventionRequired as inst:
         ui.warn("%s\n" % inst)
         if inst.hint:
             ui.warn(_("(%s)\n") % inst.hint)
         return 1
+    except error.WdirUnsupported:
+        ui.warn(_("abort: working directory revision cannot be specified\n"))
     except error.Abort as inst:
         ui.warn(_("abort: %s\n") % inst)
         if inst.hint:
@@ -215,7 +219,7 @@ def callcatch(ui, func):
                 reason = inst.reason
             if isinstance(reason, unicode):
                 # SSLError of Python 2.7.9 contains a unicode
-                reason = reason.encode(encoding.encoding, 'replace')
+                reason = encoding.unitolocal(reason)
             ui.warn(_("abort: error: %s\n") % reason)
         elif (util.safehasattr(inst, "args")
               and inst.args and inst.args[0] == errno.EPIPE):
@@ -277,7 +281,7 @@ def checkportable(ui, f):
 def checkportabilityalert(ui):
     '''check if the user's config requests nothing, a warning, or abort for
     non-portable filenames'''
-    val = ui.config('ui', 'portablefilenames', 'warn')
+    val = ui.config('ui', 'portablefilenames')
     lval = val.lower()
     bval = util.parsebool(val)
     abort = pycompat.osname == 'nt' or lval == 'abort'
@@ -335,27 +339,6 @@ def filteredhash(repo, maxrev):
         key = s.digest()
     return key
 
-def _deprecated(old, new, func):
-    msg = ('class at mercurial.scmutil.%s moved to mercurial.vfs.%s'
-           % (old, new))
-    def wrapper(*args, **kwargs):
-        util.nouideprecwarn(msg, '4.2')
-        return func(*args, **kwargs)
-    return wrapper
-
-# compatibility layer since all 'vfs' code moved to 'mercurial.vfs'
-#
-# This is hard to instal deprecation warning to this since we do not have
-# access to a 'ui' object.
-opener = _deprecated('opener', 'vfs', vfsmod.vfs)
-vfs = _deprecated('vfs', 'vfs', vfsmod.vfs)
-filteropener = _deprecated('filteropener', 'filtervfs', vfsmod.filtervfs)
-filtervfs = _deprecated('filtervfs', 'filtervfs', vfsmod.filtervfs)
-abstractvfs = _deprecated('abstractvfs', 'abstractvfs', vfsmod.abstractvfs)
-readonlyvfs = _deprecated('readonlyvfs', 'readonlyvfs', vfsmod.readonlyvfs)
-auditvfs = _deprecated('auditvfs', 'auditvfs', vfsmod.auditvfs)
-checkambigatclosing = vfsmod.checkambigatclosing
-
 def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
     '''yield every hg repository under path, always recursively.
     The recurse flag will only control recursion into repo working dirs'''
@@ -404,9 +387,17 @@ def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
                         newdirs.append(d)
             dirs[:] = newdirs
 
-def intrev(rev):
-    """Return integer for a given revision that can be used in comparison or
+def binnode(ctx):
+    """Return binary node id for a given basectx"""
+    node = ctx.node()
+    if node is None:
+        return wdirid
+    return node
+
+def intrev(ctx):
+    """Return integer for a given basectx that can be used in comparison or
     arithmetic operation"""
+    rev = ctx.rev()
     if rev is None:
         return wdirrev
     return rev
@@ -494,7 +485,7 @@ def meaningfulparents(repo, ctx):
         return parents
     if repo.ui.debugflag:
         return [parents[0], repo['null']]
-    if parents[0].rev() >= intrev(ctx.rev()) - 1:
+    if parents[0].rev() >= intrev(ctx) - 1:
         return []
     return parents
 
@@ -561,7 +552,7 @@ def origpath(ui, repo, filepath):
     Fetch user defined path from config file: [ui] origbackuppath = <path>
     Fall back to default (filepath) if not specified
     '''
-    origbackuppath = ui.config('ui', 'origbackuppath', None)
+    origbackuppath = ui.config('ui', 'origbackuppath')
     if origbackuppath is None:
         return filepath + ".orig"
 
@@ -574,6 +565,86 @@ def origpath(ui, repo, filepath):
         util.makedirs(origbackupdir)
 
     return fullorigpath + ".orig"
+
+class _containsnode(object):
+    """proxy __contains__(node) to container.__contains__ which accepts revs"""
+
+    def __init__(self, repo, revcontainer):
+        self._torev = repo.changelog.rev
+        self._revcontains = revcontainer.__contains__
+
+    def __contains__(self, node):
+        return self._revcontains(self._torev(node))
+
+def cleanupnodes(repo, mapping, operation):
+    """do common cleanups when old nodes are replaced by new nodes
+
+    That includes writing obsmarkers or stripping nodes, and moving bookmarks.
+    (we might also want to move working directory parent in the future)
+
+    mapping is {oldnode: [newnode]} or a iterable of nodes if they do not have
+    replacements. operation is a string, like "rebase".
+    """
+    if not util.safehasattr(mapping, 'items'):
+        mapping = {n: () for n in mapping}
+
+    with repo.transaction('cleanup') as tr:
+        # Move bookmarks
+        bmarks = repo._bookmarks
+        bmarkchanges = []
+        allnewnodes = [n for ns in mapping.values() for n in ns]
+        for oldnode, newnodes in mapping.items():
+            oldbmarks = repo.nodebookmarks(oldnode)
+            if not oldbmarks:
+                continue
+            from . import bookmarks # avoid import cycle
+            if len(newnodes) > 1:
+                # usually a split, take the one with biggest rev number
+                newnode = next(repo.set('max(%ln)', newnodes)).node()
+            elif len(newnodes) == 0:
+                # move bookmark backwards
+                roots = list(repo.set('max((::%n) - %ln)', oldnode,
+                                      list(mapping)))
+                if roots:
+                    newnode = roots[0].node()
+                else:
+                    newnode = nullid
+            else:
+                newnode = newnodes[0]
+            repo.ui.debug('moving bookmarks %r from %s to %s\n' %
+                          (oldbmarks, hex(oldnode), hex(newnode)))
+            # Delete divergent bookmarks being parents of related newnodes
+            deleterevs = repo.revs('parents(roots(%ln & (::%n))) - parents(%n)',
+                                   allnewnodes, newnode, oldnode)
+            deletenodes = _containsnode(repo, deleterevs)
+            for name in oldbmarks:
+                bmarkchanges.append((name, newnode))
+                for b in bookmarks.divergent2delete(repo, deletenodes, name):
+                    bmarkchanges.append((b, None))
+
+        if bmarkchanges:
+            bmarks.applychanges(repo, tr, bmarkchanges)
+
+        # Obsolete or strip nodes
+        if obsolete.isenabled(repo, obsolete.createmarkersopt):
+            # If a node is already obsoleted, and we want to obsolete it
+            # without a successor, skip that obssolete request since it's
+            # unnecessary. That's the "if s or not isobs(n)" check below.
+            # Also sort the node in topology order, that might be useful for
+            # some obsstore logic.
+            # NOTE: the filtering and sorting might belong to createmarkers.
+            # Unfiltered repo is needed since nodes in mapping might be hidden.
+            unfi = repo.unfiltered()
+            isobs = unfi.obsstore.successors.__contains__
+            torev = unfi.changelog.rev
+            sortfunc = lambda ns: torev(ns[0])
+            rels = [(unfi[n], tuple(unfi[m] for m in s))
+                    for n, s in sorted(mapping.items(), key=sortfunc)
+                    if s or not isobs(n)]
+            obsolete.createmarkers(repo, rels, operation=operation)
+        else:
+            from . import repair # avoid import cycle
+            repair.delayedstrip(repo.ui, repo, list(mapping), operation)
 
 def addremove(repo, matcher, prefix, opts=None, dry_run=None, similarity=None):
     if opts is None:
@@ -931,39 +1002,71 @@ def gdinitconfig(ui):
     """helper function to know if a repo should be created as general delta
     """
     # experimental config: format.generaldelta
-    return (ui.configbool('format', 'generaldelta', False)
-            or ui.configbool('format', 'usegeneraldelta', True))
+    return (ui.configbool('format', 'generaldelta')
+            or ui.configbool('format', 'usegeneraldelta'))
 
 def gddeltaconfig(ui):
     """helper function to know if incoming delta should be optimised
     """
     # experimental config: format.generaldelta
-    return ui.configbool('format', 'generaldelta', False)
+    return ui.configbool('format', 'generaldelta')
 
 class simplekeyvaluefile(object):
     """A simple file with key=value lines
 
     Keys must be alphanumerics and start with a letter, values must not
     contain '\n' characters"""
+    firstlinekey = '__firstline'
 
     def __init__(self, vfs, path, keys=None):
         self.vfs = vfs
         self.path = path
 
-    def read(self):
+    def read(self, firstlinenonkeyval=False):
+        """Read the contents of a simple key-value file
+
+        'firstlinenonkeyval' indicates whether the first line of file should
+        be treated as a key-value pair or reuturned fully under the
+        __firstline key."""
         lines = self.vfs.readlines(self.path)
+        d = {}
+        if firstlinenonkeyval:
+            if not lines:
+                e = _("empty simplekeyvalue file")
+                raise error.CorruptedState(e)
+            # we don't want to include '\n' in the __firstline
+            d[self.firstlinekey] = lines[0][:-1]
+            del lines[0]
+
         try:
-            d = dict(line[:-1].split('=', 1) for line in lines if line)
+            # the 'if line.strip()' part prevents us from failing on empty
+            # lines which only contain '\n' therefore are not skipped
+            # by 'if line'
+            updatedict = dict(line[:-1].split('=', 1) for line in lines
+                                                      if line.strip())
+            if self.firstlinekey in updatedict:
+                e = _("%r can't be used as a key")
+                raise error.CorruptedState(e % self.firstlinekey)
+            d.update(updatedict)
         except ValueError as e:
             raise error.CorruptedState(str(e))
         return d
 
-    def write(self, data):
+    def write(self, data, firstline=None):
         """Write key=>value mapping to a file
         data is a dict. Keys must be alphanumerical and start with a letter.
-        Values must not contain newline characters."""
+        Values must not contain newline characters.
+
+        If 'firstline' is not None, it is written to file before
+        everything else, as it is, not in a key=value form"""
         lines = []
+        if firstline is not None:
+            lines.append('%s\n' % firstline)
+
         for k, v in data.items():
+            if k == self.firstlinekey:
+                e = "key name '%s' is reserved" % self.firstlinekey
+                raise error.ProgrammingError(e)
             if not k[0].isalpha():
                 e = "keys must start with a letter in a key-value file"
                 raise error.ProgrammingError(e)
@@ -976,3 +1079,27 @@ class simplekeyvaluefile(object):
             lines.append("%s=%s\n" % (k, v))
         with self.vfs(self.path, mode='wb', atomictemp=True) as fp:
             fp.write(''.join(lines))
+
+_reportobsoletedsource = [
+    'debugobsolete',
+    'pull',
+    'push',
+    'serve',
+    'unbundle',
+]
+
+def registersummarycallback(repo, otr, txnname=''):
+    """register a callback to issue a summary after the transaction is closed
+    """
+    for source in _reportobsoletedsource:
+        if txnname.startswith(source):
+            reporef = weakref.ref(repo)
+            def reportsummary(tr):
+                """the actual callback reporting the summary"""
+                repo = reporef()
+                obsoleted = obsutil.getobsoleted(repo, tr)
+                if obsoleted:
+                    repo.ui.status(_('obsoleted %i changesets\n')
+                                   % len(obsoleted))
+            otr.addpostclose('00-txnreport', reportsummary)
+            break

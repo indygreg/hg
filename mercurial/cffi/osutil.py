@@ -1,102 +1,102 @@
+# osutil.py - CFFI version of osutil.c
+#
+# Copyright 2016 Maciej Fijalkowski <fijall@gmail.com>
+#
+# This software may be used and distributed according to the terms of the
+# GNU General Public License version 2 or any later version.
+
 from __future__ import absolute_import
 
-import cffi
+import os
+import stat as statmod
 
-ffi = cffi.FFI()
-ffi.set_source("_osutil_cffi", """
-#include <sys/attr.h>
-#include <sys/vnode.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <time.h>
+from ..pure.osutil import *
 
-typedef struct val_attrs {
-    uint32_t          length;
-    attribute_set_t   returned;
-    attrreference_t   name_info;
-    fsobj_type_t      obj_type;
-    struct timespec   mtime;
-    uint32_t          accessmask;
-    off_t             datalength;
-} __attribute__((aligned(4), packed)) val_attrs_t;
-""", include_dirs=['mercurial'])
-ffi.cdef('''
+from .. import (
+    pycompat,
+)
 
-typedef uint32_t attrgroup_t;
+if pycompat.sysplatform == 'darwin':
+    from . import _osutil
 
-typedef struct attrlist {
-    uint16_t     bitmapcount; /* number of attr. bit sets in list */
-    uint16_t   reserved;    /* (to maintain 4-byte alignment) */
-    attrgroup_t commonattr;  /* common attribute group */
-    attrgroup_t volattr;     /* volume attribute group */
-    attrgroup_t dirattr;     /* directory attribute group */
-    attrgroup_t fileattr;    /* file attribute group */
-    attrgroup_t forkattr;    /* fork attribute group */
-    ...;
-};
+    ffi = _osutil.ffi
+    lib = _osutil.lib
 
-typedef struct attribute_set {
-    ...;
-} attribute_set_t;
+    listdir_batch_size = 4096
+    # tweakable number, only affects performance, which chunks
+    # of bytes do we get back from getattrlistbulk
 
-typedef struct attrreference {
-    int attr_dataoffset;
-    int attr_length;
-    ...;
-} attrreference_t;
+    attrkinds = [None] * 20 # we need the max no for enum VXXX, 20 is plenty
 
-typedef int ... off_t;
+    attrkinds[lib.VREG] = statmod.S_IFREG
+    attrkinds[lib.VDIR] = statmod.S_IFDIR
+    attrkinds[lib.VLNK] = statmod.S_IFLNK
+    attrkinds[lib.VBLK] = statmod.S_IFBLK
+    attrkinds[lib.VCHR] = statmod.S_IFCHR
+    attrkinds[lib.VFIFO] = statmod.S_IFIFO
+    attrkinds[lib.VSOCK] = statmod.S_IFSOCK
 
-typedef struct val_attrs {
-    uint32_t          length;
-    attribute_set_t   returned;
-    attrreference_t   name_info;
-    uint32_t          obj_type;
-    struct timespec   mtime;
-    uint32_t          accessmask;
-    off_t             datalength;
-    ...;
-} val_attrs_t;
+    class stat_res(object):
+        def __init__(self, st_mode, st_mtime, st_size):
+            self.st_mode = st_mode
+            self.st_mtime = st_mtime
+            self.st_size = st_size
 
-/* the exact layout of the above struct will be figured out during build time */
+    tv_sec_ofs = ffi.offsetof("struct timespec", "tv_sec")
+    buf = ffi.new("char[]", listdir_batch_size)
 
-typedef int ... time_t;
+    def listdirinternal(dfd, req, stat, skip):
+        ret = []
+        while True:
+            r = lib.getattrlistbulk(dfd, req, buf, listdir_batch_size, 0)
+            if r == 0:
+                break
+            if r == -1:
+                raise OSError(ffi.errno, os.strerror(ffi.errno))
+            cur = ffi.cast("val_attrs_t*", buf)
+            for i in range(r):
+                lgt = cur.length
+                assert lgt == ffi.cast('uint32_t*', cur)[0]
+                ofs = cur.name_info.attr_dataoffset
+                str_lgt = cur.name_info.attr_length
+                base_ofs = ffi.offsetof('val_attrs_t', 'name_info')
+                name = str(ffi.buffer(ffi.cast("char*", cur) + base_ofs + ofs,
+                           str_lgt - 1))
+                tp = attrkinds[cur.obj_type]
+                if name == "." or name == "..":
+                    continue
+                if skip == name and tp == statmod.S_ISDIR:
+                    return []
+                if stat:
+                    mtime = cur.mtime.tv_sec
+                    mode = (cur.accessmask & ~lib.S_IFMT)| tp
+                    ret.append((name, tp, stat_res(st_mode=mode, st_mtime=mtime,
+                                st_size=cur.datalength)))
+                else:
+                    ret.append((name, tp))
+                cur = ffi.cast("val_attrs_t*", int(ffi.cast("intptr_t", cur))
+                    + lgt)
+        return ret
 
-typedef struct timespec {
-    time_t tv_sec;
-    ...;
-};
+    def listdir(path, stat=False, skip=None):
+        req = ffi.new("struct attrlist*")
+        req.bitmapcount = lib.ATTR_BIT_MAP_COUNT
+        req.commonattr = (lib.ATTR_CMN_RETURNED_ATTRS |
+                          lib.ATTR_CMN_NAME |
+                          lib.ATTR_CMN_OBJTYPE |
+                          lib.ATTR_CMN_ACCESSMASK |
+                          lib.ATTR_CMN_MODTIME)
+        req.fileattr = lib.ATTR_FILE_DATALENGTH
+        dfd = lib.open(path, lib.O_RDONLY, 0)
+        if dfd == -1:
+            raise OSError(ffi.errno, os.strerror(ffi.errno))
 
-int getattrlist(const char* path, struct attrlist * attrList, void * attrBuf,
-                size_t attrBufSize, unsigned int options);
-
-int getattrlistbulk(int dirfd, struct attrlist * attrList, void * attrBuf,
-                    size_t attrBufSize, uint64_t options);
-
-#define ATTR_BIT_MAP_COUNT ...
-#define ATTR_CMN_NAME ...
-#define ATTR_CMN_OBJTYPE ...
-#define ATTR_CMN_MODTIME ...
-#define ATTR_CMN_ACCESSMASK ...
-#define ATTR_CMN_ERROR ...
-#define ATTR_CMN_RETURNED_ATTRS ...
-#define ATTR_FILE_DATALENGTH ...
-
-#define VREG ...
-#define VDIR ...
-#define VLNK ...
-#define VBLK ...
-#define VCHR ...
-#define VFIFO ...
-#define VSOCK ...
-
-#define S_IFMT ...
-
-int open(const char *path, int oflag, int perm);
-int close(int);
-
-#define O_RDONLY ...
-''')
-
-if __name__ == '__main__':
-    ffi.compile()
+        try:
+            ret = listdirinternal(dfd, req, stat, skip)
+        finally:
+            try:
+                lib.close(dfd)
+            except BaseException:
+                pass # we ignore all the errors from closing, not
+                # much we can do about that
+        return ret

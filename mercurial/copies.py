@@ -414,13 +414,15 @@ def mergecopies(repo, c1, c2, base):
                                       baselabel='topological common ancestor')
 
     for f in u1u:
-        _checkcopies(c1, f, m1, m2, base, tca, dirtyc1, limit, data1)
+        _checkcopies(c1, c2, f, base, tca, dirtyc1, limit, data1)
 
     for f in u2u:
-        _checkcopies(c2, f, m2, m1, base, tca, dirtyc2, limit, data2)
+        _checkcopies(c2, c1, f, base, tca, dirtyc2, limit, data2)
 
-    copy = dict(data1['copy'].items() + data2['copy'].items())
-    fullcopy = dict(data1['fullcopy'].items() + data2['fullcopy'].items())
+    copy = dict(data1['copy'])
+    copy.update(data2['copy'])
+    fullcopy = dict(data1['fullcopy'])
+    fullcopy.update(data2['fullcopy'])
 
     if dirtyc1:
         _combinecopies(data2['incomplete'], data1['incomplete'], copy, diverge,
@@ -462,8 +464,8 @@ def mergecopies(repo, c1, c2, base):
              'incompletediverge': bothincompletediverge
             }
     for f in bothnew:
-        _checkcopies(c1, f, m1, m2, base, tca, dirtyc1, limit, both1)
-        _checkcopies(c2, f, m2, m1, base, tca, dirtyc2, limit, both2)
+        _checkcopies(c1, c2, f, base, tca, dirtyc1, limit, both1)
+        _checkcopies(c2, c1, f, base, tca, dirtyc2, limit, both2)
     if dirtyc1:
         # incomplete copies may only be found on the "dirty" side for bothnew
         assert not both2['incomplete']
@@ -598,17 +600,16 @@ def _related(f1, f2, limit):
     except StopIteration:
         return False
 
-def _checkcopies(ctx, f, m1, m2, base, tca, remotebase, limit, data):
+def _checkcopies(srcctx, dstctx, f, base, tca, remotebase, limit, data):
     """
-    check possible copies of f from m1 to m2
+    check possible copies of f from msrc to mdst
 
-    ctx = starting context for f in m1
-    f = the filename to check (as in m1)
-    m1 = the source manifest
-    m2 = the destination manifest
+    srcctx = starting context for f in msrc
+    dstctx = destination context for f in mdst
+    f = the filename to check (as in msrc)
     base = the changectx used as a merge base
     tca = topological common ancestor for graft-like scenarios
-    remotebase = True if base is outside tca::ctx, False otherwise
+    remotebase = True if base is outside tca::srcctx, False otherwise
     limit = the rev number to not search beyond
     data = dictionary of dictionary to store copy data. (see mergecopies)
 
@@ -618,6 +619,8 @@ def _checkcopies(ctx, f, m1, m2, base, tca, remotebase, limit, data):
     once it "goes behind a certain revision".
     """
 
+    msrc = srcctx.manifest()
+    mdst = dstctx.manifest()
     mb = base.manifest()
     mta = tca.manifest()
     # Might be true if this call is about finding backward renames,
@@ -630,15 +633,16 @@ def _checkcopies(ctx, f, m1, m2, base, tca, remotebase, limit, data):
     # the base) this is more complicated as we must detect a divergence.
     # We use 'backwards = False' in that case.
     backwards = not remotebase and base != tca and f in mb
-    getfctx = _makegetfctx(ctx)
+    getsrcfctx = _makegetfctx(srcctx)
+    getdstfctx = _makegetfctx(dstctx)
 
-    if m1[f] == mb.get(f) and not remotebase:
+    if msrc[f] == mb.get(f) and not remotebase:
         # Nothing to merge
         return
 
     of = None
-    seen = set([f])
-    for oc in getfctx(f, m1[f]).ancestors():
+    seen = {f}
+    for oc in getsrcfctx(f, msrc[f]).ancestors():
         ocr = oc.linkrev()
         of = oc.path()
         if of in seen:
@@ -653,11 +657,11 @@ def _checkcopies(ctx, f, m1, m2, base, tca, remotebase, limit, data):
             data['fullcopy'][of] = f # grafting backwards through renames
         else:
             data['fullcopy'][f] = of
-        if of not in m2:
+        if of not in mdst:
             continue # no match, keep looking
-        if m2[of] == mb.get(of):
+        if mdst[of] == mb.get(of):
             return # no merge needed, quit early
-        c2 = getfctx(of, m2[of])
+        c2 = getdstfctx(of, mdst[of])
         # c2 might be a plain new file on added on destination side that is
         # unrelated to the droids we are looking for.
         cr = _related(oc, c2, tca.rev())

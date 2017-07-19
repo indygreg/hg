@@ -130,7 +130,7 @@ def _peerlookup(path):
 
 def islocal(repo):
     '''return true if repo (or path pointing to repo) is local'''
-    if isinstance(repo, str):
+    if isinstance(repo, bytes):
         try:
             return _peerlookup(repo).islocal(repo)
         except AttributeError:
@@ -148,10 +148,12 @@ def openpath(ui, path):
 # a list of (ui, repo) functions called for wire peer initialization
 wirepeersetupfuncs = []
 
-def _peerorrepo(ui, path, create=False):
+def _peerorrepo(ui, path, create=False, presetupfuncs=None):
     """return a repository object for the specified path"""
     obj = _peerlookup(path).instance(ui, path, create)
     ui = getattr(obj, "ui", ui)
+    for f in presetupfuncs or []:
+        f(ui, obj)
     for name, module in extensions.extensions(ui):
         hook = getattr(module, 'reposetup', None)
         if hook:
@@ -161,9 +163,9 @@ def _peerorrepo(ui, path, create=False):
             f(ui, obj)
     return obj
 
-def repository(ui, path='', create=False):
+def repository(ui, path='', create=False, presetupfuncs=None):
     """return a repository object for the specified path"""
-    peer = _peerorrepo(ui, path, create)
+    peer = _peerorrepo(ui, path, create, presetupfuncs=presetupfuncs)
     repo = peer.local()
     if not repo:
         raise error.Abort(_("repository '%s' is not local") %
@@ -407,6 +409,29 @@ def clonewithshare(ui, peeropts, sharepath, source, srcpeer, dest, pull=False,
 
     return srcpeer, peer(ui, peeropts, dest)
 
+# Recomputing branch cache might be slow on big repos,
+# so just copy it
+def _copycache(srcrepo, dstcachedir, fname):
+    """copy a cache from srcrepo to destcachedir (if it exists)"""
+    srcbranchcache = srcrepo.vfs.join('cache/%s' % fname)
+    dstbranchcache = os.path.join(dstcachedir, fname)
+    if os.path.exists(srcbranchcache):
+        if not os.path.exists(dstcachedir):
+            os.mkdir(dstcachedir)
+        util.copyfile(srcbranchcache, dstbranchcache)
+
+def _cachetocopy(srcrepo):
+    """return the list of cache file valuable to copy during a clone"""
+    # In local clones we're copying all nodes, not just served
+    # ones. Therefore copy all branch caches over.
+    cachefiles = ['branch2']
+    cachefiles += ['branch2-%s' % f for f in repoview.filtertable]
+    cachefiles += ['rbc-names-v1', 'rbc-revs-v1']
+    cachefiles += ['tags2']
+    cachefiles += ['tags2-%s' % f for f in repoview.filtertable]
+    cachefiles += ['hgtagsfnodes1']
+    return cachefiles
+
 def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
           update=True, stream=False, branch=None, shareopts=None):
     """Make a copy of an existing repository.
@@ -452,7 +477,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
     remote's path/URL. Defaults to "identity."
     """
 
-    if isinstance(source, str):
+    if isinstance(source, bytes):
         origsource = ui.expandpath(source)
         source, branch = parseurl(origsource, branch)
         srcpeer = peer(ui, peeropts, source)
@@ -564,22 +589,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
             if os.path.exists(srcbookmarks):
                 util.copyfile(srcbookmarks, dstbookmarks)
 
-            # Recomputing branch cache might be slow on big repos,
-            # so just copy it
-            def copybranchcache(fname):
-                srcbranchcache = srcrepo.vfs.join('cache/%s' % fname)
-                dstbranchcache = os.path.join(dstcachedir, fname)
-                if os.path.exists(srcbranchcache):
-                    if not os.path.exists(dstcachedir):
-                        os.mkdir(dstcachedir)
-                    util.copyfile(srcbranchcache, dstbranchcache)
-
             dstcachedir = os.path.join(destpath, 'cache')
-            # In local clones we're copying all nodes, not just served
-            # ones. Therefore copy all branch caches over.
-            copybranchcache('branch2')
-            for cachename in repoview.filtertable:
-                copybranchcache('branch2-%s' % cachename)
+            for cache in _cachetocopy(srcrepo):
+                _copycache(srcrepo, dstcachedir, cache)
 
             # we need to re-init the repo after manually copying the data
             # into it
@@ -869,7 +881,7 @@ def _outgoing(ui, repo, dest, opts):
         revs = [repo.lookup(rev) for rev in scmutil.revrange(repo, revs)]
 
     other = peer(repo, opts, dest)
-    outgoing = discovery.findcommonoutgoing(repo.unfiltered(), other, revs,
+    outgoing = discovery.findcommonoutgoing(repo, other, revs,
                                             force=opts.get('force'))
     o = outgoing.missing
     if not o:

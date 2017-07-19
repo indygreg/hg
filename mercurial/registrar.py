@@ -8,10 +8,18 @@
 from __future__ import absolute_import
 
 from . import (
+    configitems,
     error,
     pycompat,
     util,
 )
+
+# unlike the other registered items, config options are neither functions or
+# classes. Registering the option is just small function call.
+#
+# We still add the official API to the registrar module for consistency with
+# the other items extensions want might to register.
+configitem = configitems.getitemregister
 
 class _funcregistrarbase(object):
     """Base of decorator to register a function for specific purpose
@@ -95,6 +103,47 @@ class _funcregistrarbase(object):
         """Execute exra setup for registered function, if needed
         """
         pass
+
+class command(_funcregistrarbase):
+    """Decorator to register a command function to table
+
+    This class receives a command table as its argument. The table should
+    be a dict.
+
+    The created object can be used as a decorator for adding commands to
+    that command table. This accepts multiple arguments to define a command.
+
+    The first argument is the command name.
+
+    The options argument is an iterable of tuples defining command arguments.
+    See ``mercurial.fancyopts.fancyopts()`` for the format of each tuple.
+
+    The synopsis argument defines a short, one line summary of how to use the
+    command. This shows up in the help output.
+
+    The norepo argument defines whether the command does not require a
+    local repository. Most commands operate against a repository, thus the
+    default is False.
+
+    The optionalrepo argument defines whether the command optionally requires
+    a local repository.
+
+    The inferrepo argument defines whether to try to find a repository from the
+    command line arguments. If True, arguments will be examined for potential
+    repository locations. See ``findrepo()``. If a repository is found, it
+    will be used.
+    """
+
+    def _doregister(self, func, name, options=(), synopsis=None,
+                    norepo=False, optionalrepo=False, inferrepo=False):
+        func.norepo = norepo
+        func.optionalrepo = optionalrepo
+        func.inferrepo = inferrepo
+        if synopsis:
+            self._table[name] = func, list(options), synopsis
+        else:
+            self._table[name] = func, list(options)
+        return func
 
 class revsetpredicate(_funcregistrarbase):
     """Decorator to register revset predicate

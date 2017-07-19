@@ -32,6 +32,7 @@
    b: copy a:b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3
   committing manifest
   committing changelog
+  updating the branch cache
   committed changeset 1:93580a2c28a50a56f63526fb305067e6fbf739c4
 
 we should see two history entries
@@ -191,6 +192,7 @@ should show copy
 XXX: filtering lfilesrepo.status() in 3.3-rc causes the copy source to not be
 displayed.
   $ hg st -C --config extensions.largefiles=
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   M bar
     foo
 

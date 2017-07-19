@@ -392,9 +392,9 @@ merge-patterns specifies executable not found in PATH and gets warning:
   true.executable=cat
   # hg update -C 1
   $ hg merge -r 2 --config merge-patterns.f=true --config merge-tools.true.executable=nonexistentmergetool
-  couldn't find merge tool true specified for f
+  couldn't find merge tool true (for pattern f)
   merging f
-  couldn't find merge tool true specified for f
+  couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
@@ -418,9 +418,9 @@ merge-patterns specifies executable with bogus path and gets warning:
   true.executable=cat
   # hg update -C 1
   $ hg merge -r 2 --config merge-patterns.f=true --config merge-tools.true.executable=/nonexistent/mergetool
-  couldn't find merge tool true specified for f
+  couldn't find merge tool true (for pattern f)
   merging f
-  couldn't find merge tool true specified for f
+  couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
@@ -531,8 +531,7 @@ ui.merge specifies internal:prompt:
   true.executable=cat
   # hg update -C 1
   $ hg merge -r 2 --config ui.merge=internal:prompt
-  no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? u
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
   [1]
@@ -556,8 +555,7 @@ ui.merge specifies :prompt, with 'leave unresolved' chosen
   $ hg merge -r 2 --config ui.merge=:prompt --config ui.interactive=True << EOF
   > u
   > EOF
-  no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? u
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
   [1]
@@ -579,8 +577,7 @@ prompt with EOF
   true.executable=cat
   # hg update -C 1
   $ hg merge -r 2 --config ui.merge=internal:prompt --config ui.interactive=true
-  no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? 
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? 
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
   [1]
@@ -593,8 +590,7 @@ prompt with EOF
   # hg resolve --list
   U f
   $ hg resolve --all --config ui.merge=internal:prompt --config ui.interactive=true
-  no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? 
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? 
   [1]
   $ aftermerge
   # cat f
@@ -607,8 +603,7 @@ prompt with EOF
   U f
   $ rm f
   $ hg resolve --all --config ui.merge=internal:prompt --config ui.interactive=true
-  no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? 
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? 
   [1]
   $ aftermerge
   # cat f
@@ -619,8 +614,7 @@ prompt with EOF
   # hg resolve --list
   U f
   $ hg resolve --all --config ui.merge=internal:prompt
-  no tool found to merge f
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? u
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   [1]
   $ aftermerge
   # cat f
@@ -676,6 +670,72 @@ f.other:
   revision 2
   space
   $ rm f.base f.local f.other
+
+check that internal:dump doesn't dump files if premerge runs
+successfully
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 3 --config ui.merge=internal:dump
+  merging f
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  revision 3
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
+check that internal:forcedump dumps files, even if local and other can
+be merged easily
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 3 --config ui.merge=internal:forcedump
+  merging f
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  [1]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  M f
+  ? f.base
+  ? f.local
+  ? f.orig
+  ? f.other
+  # hg resolve --list
+  U f
+
+  $ cat f.base
+  revision 0
+  space
+
+  $ cat f.local
+  revision 1
+  space
+
+  $ cat f.other
+  revision 0
+  space
+  revision 3
+
+  $ rm -f f.base f.local f.other
 
 ui.merge specifies internal:other but is overruled by pattern for false:
 
@@ -1221,3 +1281,68 @@ Verify naming of temporary files and that extension is preserved:
   */f~base.?????? $TESTTMP/f.txt.orig */f~other.??????.txt $TESTTMP/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+
+Check that debugpicktool examines which merge tool is chosen for
+specified file as expected
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+
+(default behavior: checking files in the working parent context)
+
+  $ hg manifest
+  f
+  $ hg debugpickmergetool
+  f = true
+
+(-X/-I and file patterns limmit examination targets)
+
+  $ hg debugpickmergetool -X f
+  $ hg debugpickmergetool unknown
+  unknown: no such file in rev ef83787e2614
+
+(--changedelete emulates merging change and delete)
+
+  $ hg debugpickmergetool --changedelete
+  f = :prompt
+
+(-r REV causes checking files in specified revision)
+
+  $ hg manifest -r tip
+  f.txt
+  $ hg debugpickmergetool -r tip
+  f.txt = true
+
+#if symlink
+
+(symlink causes chosing :prompt)
+
+  $ hg debugpickmergetool -r 6d00b3726f6e
+  f = :prompt
+
+#endif
+
+(--verbose shows some configurations)
+
+  $ hg debugpickmergetool --tool foobar -v
+  with --tool 'foobar'
+  f = foobar
+
+  $ HGMERGE=false hg debugpickmergetool -v
+  with HGMERGE='false'
+  f = false
+
+  $ hg debugpickmergetool --config ui.merge=false -v
+  with ui.merge='false'
+  f = false
+
+(--debug shows errors detected intermediately)
+
+  $ hg debugpickmergetool --config merge-patterns.f=true --config merge-tools.true.executable=nonexistentmergetool --debug f
+  couldn't find merge tool true (for pattern f)
+  couldn't find merge tool true
+  f = false

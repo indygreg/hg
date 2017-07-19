@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 from . import (
+    error,
     util,
 )
 
@@ -116,7 +117,7 @@ class abstractsmartset(object):
         """reverse the expected iteration order"""
         raise NotImplementedError()
 
-    def sort(self, reverse=True):
+    def sort(self, reverse=False):
         """get the set to iterate in an ascending or descending order"""
         raise NotImplementedError()
 
@@ -154,6 +155,28 @@ class abstractsmartset(object):
         if cache and util.safehasattr(condition, 'func_code'):
             condition = util.cachefunc(condition)
         return filteredset(self, condition, condrepr)
+
+    def slice(self, start, stop):
+        """Return new smartset that contains selected elements from this set"""
+        if start < 0 or stop < 0:
+            raise error.ProgrammingError('negative index not allowed')
+        return self._slice(start, stop)
+
+    def _slice(self, start, stop):
+        # sub classes may override this. start and stop must not be negative,
+        # but start > stop is allowed, which should be an empty set.
+        ys = []
+        it = iter(self)
+        for x in xrange(start):
+            y = next(it, None)
+            if y is None:
+                break
+        for x in xrange(stop - start):
+            y = next(it, None)
+            if y is None:
+                break
+            ys.append(y)
+        return baseset(ys, datarepr=('slice=%d:%d %r', start, stop, self))
 
 class baseset(abstractsmartset):
     """Basic data structure that represents a revset and contains the basic
@@ -245,7 +268,7 @@ class baseset(abstractsmartset):
     @util.propertycache
     def _list(self):
         # _list is only lazily constructed if we have _set
-        assert '_set' in self.__dict__
+        assert r'_set' in self.__dict__
         return list(self._set)
 
     def __iter__(self):
@@ -348,6 +371,18 @@ class baseset(abstractsmartset):
 
     def __sub__(self, other):
         return self._fastsetop(other, '__sub__')
+
+    def _slice(self, start, stop):
+        # creating new list should be generally cheaper than iterating items
+        if self._ascending is None:
+            return baseset(self._list[start:stop], istopo=self._istopo)
+
+        data = self._asclist
+        if not self._ascending:
+            start, stop = max(len(data) - stop, 0), max(len(data) - start, 0)
+        s = baseset(data[start:stop], istopo=self._istopo)
+        s._ascending = self._ascending
+        return s
 
     def __repr__(self):
         d = {None: '', False: '-', True: '+'}[self._ascending]
@@ -731,6 +766,11 @@ class generatorset(abstractsmartset):
     be iterated more than once.
     When asked for membership it generates values until either it finds the
     requested one or has gone through all the elements in the generator
+
+    >>> xs = generatorset([0, 1, 4], iterasc=True)
+    >>> assert xs.last() == xs.last()
+    >>> xs.last()  # cached
+    4
     """
     def __init__(self, gen, iterasc=None):
         """
@@ -836,7 +876,10 @@ class generatorset(abstractsmartset):
                 if i < _len(genlist):
                     yield genlist[i]
                 else:
-                    yield _next(nextgen)
+                    try:
+                        yield _next(nextgen)
+                    except StopIteration:
+                        return
                 i += 1
         return gen()
 
@@ -899,14 +942,29 @@ class generatorset(abstractsmartset):
             # we need to consume all and try again
             for x in self._consumegen():
                 pass
-            return self.first()
+            return self.last()
         return next(it(), None)
 
     def __repr__(self):
         d = {False: '-', True: '+'}[self._ascending]
         return '<%s%s>' % (type(self).__name__, d)
 
-class spanset(abstractsmartset):
+def spanset(repo, start=0, end=None):
+    """Create a spanset that represents a range of repository revisions
+
+    start: first revision included the set (default to 0)
+    end:   first revision excluded (last+1) (default to len(repo))
+
+    Spanset will be descending if `end` < `start`.
+    """
+    if end is None:
+        end = len(repo)
+    ascending = start <= end
+    if not ascending:
+        start, end = end + 1, start + 1
+    return _spanset(start, end, ascending, repo.changelog.filteredrevs)
+
+class _spanset(abstractsmartset):
     """Duck type for baseset class which represents a range of revisions and
     can work lazily and without having all the range in memory
 
@@ -916,23 +974,11 @@ class spanset(abstractsmartset):
     - revision filtered with this repoview will be skipped.
 
     """
-    def __init__(self, repo, start=0, end=None):
-        """
-        start: first revision included the set
-               (default to 0)
-        end:   first revision excluded (last+1)
-               (default to len(repo)
-
-        Spanset will be descending if `end` < `start`.
-        """
-        if end is None:
-            end = len(repo)
-        self._ascending = start <= end
-        if not self._ascending:
-            start, end = end + 1, start +1
+    def __init__(self, start, end, ascending, hiddenrevs):
         self._start = start
         self._end = end
-        self._hiddenrevs = repo.changelog.filteredrevs
+        self._ascending = ascending
+        self._hiddenrevs = hiddenrevs
 
     def sort(self, reverse=False):
         self._ascending = not reverse
@@ -1018,12 +1064,24 @@ class spanset(abstractsmartset):
             return x
         return None
 
+    def _slice(self, start, stop):
+        if self._hiddenrevs:
+            # unoptimized since all hidden revisions in range has to be scanned
+            return super(_spanset, self)._slice(start, stop)
+        if self._ascending:
+            x = min(self._start + start, self._end)
+            y = min(self._start + stop, self._end)
+        else:
+            x = max(self._end - stop, self._start)
+            y = max(self._end - start, self._start)
+        return _spanset(x, y, self._ascending, self._hiddenrevs)
+
     def __repr__(self):
         d = {False: '-', True: '+'}[self._ascending]
-        return '<%s%s %d:%d>' % (type(self).__name__, d,
-                                 self._start, self._end - 1)
+        return '<%s%s %d:%d>' % (type(self).__name__.lstrip('_'), d,
+                                 self._start, self._end)
 
-class fullreposet(spanset):
+class fullreposet(_spanset):
     """a set containing all revisions in the repo
 
     This class exists to host special optimization and magic to handle virtual
@@ -1031,7 +1089,8 @@ class fullreposet(spanset):
     """
 
     def __init__(self, repo):
-        super(fullreposet, self).__init__(repo)
+        super(fullreposet, self).__init__(0, len(repo), True,
+                                          repo.changelog.filteredrevs)
 
     def __and__(self, other):
         """As self contains the whole repo, all of the other set should also be

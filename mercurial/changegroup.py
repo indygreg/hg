@@ -20,7 +20,6 @@ from .node import (
 )
 
 from . import (
-    branchmap,
     dagutil,
     discovery,
     error,
@@ -60,25 +59,6 @@ def chunkheader(length):
 def closechunk():
     """return a changegroup chunk header (string) for a zero-length chunk"""
     return struct.pack(">l", 0)
-
-def combineresults(results):
-    """logic to combine 0 or more addchangegroup results into one"""
-    changedheads = 0
-    result = 1
-    for ret in results:
-        # If any changegroup result is 0, return 0
-        if ret == 0:
-            result = 0
-            break
-        if ret < -1:
-            changedheads += ret + 1
-        elif ret > 1:
-            changedheads += ret - 1
-    if changedheads > 0:
-        result = 1 + changedheads
-    elif changedheads < 0:
-        result = -1 + changedheads
-    return result
 
 def writechunks(ui, chunks, filename, vfs=None):
     """Write chunks to a file and return its filename.
@@ -257,8 +237,8 @@ class cg1unpacker(object):
         repo.ui.progress(_('manifests'), None)
         self.callback = None
 
-    def apply(self, repo, srctype, url, emptyok=False,
-              targetphase=phases.draft, expectedtotal=None):
+    def apply(self, repo, tr, srctype, url, targetphase=phases.draft,
+              expectedtotal=None):
         """Add the changegroup returned by source.read() to this repo.
         srctype is a string like 'push', 'pull', or 'unbundle'.  url is
         the URL of the repo where this changegroup is coming from.
@@ -280,169 +260,159 @@ class cg1unpacker(object):
         changesets = files = revisions = 0
 
         try:
-            with repo.transaction("\n".join([srctype,
-                                             util.hidepassword(url)])) as tr:
-                # The transaction could have been created before and already
-                # carries source information. In this case we use the top
-                # level data. We overwrite the argument because we need to use
-                # the top level value (if they exist) in this function.
-                srctype = tr.hookargs.setdefault('source', srctype)
-                url = tr.hookargs.setdefault('url', url)
-                repo.hook('prechangegroup', throw=True, **tr.hookargs)
+            # The transaction may already carry source information. In this
+            # case we use the top level data. We overwrite the argument
+            # because we need to use the top level value (if they exist)
+            # in this function.
+            srctype = tr.hookargs.setdefault('source', srctype)
+            url = tr.hookargs.setdefault('url', url)
+            repo.hook('prechangegroup', throw=True, **tr.hookargs)
 
-                # write changelog data to temp files so concurrent readers
-                # will not see an inconsistent view
+            # write changelog data to temp files so concurrent readers
+            # will not see an inconsistent view
+            cl = repo.changelog
+            cl.delayupdate(tr)
+            oldheads = set(cl.heads())
+
+            trp = weakref.proxy(tr)
+            # pull off the changeset group
+            repo.ui.status(_("adding changesets\n"))
+            clstart = len(cl)
+            class prog(object):
+                def __init__(self, step, total):
+                    self._step = step
+                    self._total = total
+                    self._count = 1
+                def __call__(self):
+                    repo.ui.progress(self._step, self._count, unit=_('chunks'),
+                                     total=self._total)
+                    self._count += 1
+            self.callback = prog(_('changesets'), expectedtotal)
+
+            efiles = set()
+            def onchangelog(cl, node):
+                efiles.update(cl.readfiles(node))
+
+            self.changelogheader()
+            cgnodes = cl.addgroup(self, csmap, trp, addrevisioncb=onchangelog)
+            efiles = len(efiles)
+
+            if not cgnodes:
+                repo.ui.develwarn('applied empty changegroup',
+                                  config='empty-changegroup')
+            clend = len(cl)
+            changesets = clend - clstart
+            repo.ui.progress(_('changesets'), None)
+            self.callback = None
+
+            # pull off the manifest group
+            repo.ui.status(_("adding manifests\n"))
+            self._unpackmanifests(repo, revmap, trp, prog, changesets)
+
+            needfiles = {}
+            if repo.ui.configbool('server', 'validate'):
                 cl = repo.changelog
-                cl.delayupdate(tr)
-                oldheads = set(cl.heads())
+                ml = repo.manifestlog
+                # validate incoming csets have their manifests
+                for cset in xrange(clstart, clend):
+                    mfnode = cl.changelogrevision(cset).manifest
+                    mfest = ml[mfnode].readdelta()
+                    # store file cgnodes we must see
+                    for f, n in mfest.iteritems():
+                        needfiles.setdefault(f, set()).add(n)
 
-                trp = weakref.proxy(tr)
-                # pull off the changeset group
-                repo.ui.status(_("adding changesets\n"))
-                clstart = len(cl)
-                class prog(object):
-                    def __init__(self, step, total):
-                        self._step = step
-                        self._total = total
-                        self._count = 1
-                    def __call__(self):
-                        repo.ui.progress(self._step, self._count,
-                                         unit=_('chunks'), total=self._total)
-                        self._count += 1
-                self.callback = prog(_('changesets'), expectedtotal)
+            # process the files
+            repo.ui.status(_("adding file changes\n"))
+            newrevs, newfiles = _addchangegroupfiles(
+                repo, self, revmap, trp, efiles, needfiles)
+            revisions += newrevs
+            files += newfiles
 
-                efiles = set()
-                def onchangelog(cl, node):
-                    efiles.update(cl.readfiles(node))
+            deltaheads = 0
+            if oldheads:
+                heads = cl.heads()
+                deltaheads = len(heads) - len(oldheads)
+                for h in heads:
+                    if h not in oldheads and repo[h].closesbranch():
+                        deltaheads -= 1
+            htext = ""
+            if deltaheads:
+                htext = _(" (%+d heads)") % deltaheads
 
-                self.changelogheader()
-                srccontent = cl.addgroup(self, csmap, trp,
-                                         addrevisioncb=onchangelog)
-                efiles = len(efiles)
+            repo.ui.status(_("added %d changesets"
+                             " with %d changes to %d files%s\n")
+                             % (changesets, revisions, files, htext))
+            repo.invalidatevolatilesets()
 
-                if not (srccontent or emptyok):
-                    raise error.Abort(_("received changelog group is empty"))
-                clend = len(cl)
-                changesets = clend - clstart
-                repo.ui.progress(_('changesets'), None)
-                self.callback = None
+            if changesets > 0:
+                if 'node' not in tr.hookargs:
+                    tr.hookargs['node'] = hex(cl.node(clstart))
+                    tr.hookargs['node_last'] = hex(cl.node(clend - 1))
+                    hookargs = dict(tr.hookargs)
+                else:
+                    hookargs = dict(tr.hookargs)
+                    hookargs['node'] = hex(cl.node(clstart))
+                    hookargs['node_last'] = hex(cl.node(clend - 1))
+                repo.hook('pretxnchangegroup', throw=True, **hookargs)
 
-                # pull off the manifest group
-                repo.ui.status(_("adding manifests\n"))
-                self._unpackmanifests(repo, revmap, trp, prog, changesets)
+            added = [cl.node(r) for r in xrange(clstart, clend)]
+            phaseall = None
+            if srctype in ('push', 'serve'):
+                # Old servers can not push the boundary themselves.
+                # New servers won't push the boundary if changeset already
+                # exists locally as secret
+                #
+                # We should not use added here but the list of all change in
+                # the bundle
+                if repo.publishing():
+                    targetphase = phaseall = phases.public
+                else:
+                    # closer target phase computation
 
-                needfiles = {}
-                if repo.ui.configbool('server', 'validate', default=False):
-                    cl = repo.changelog
-                    ml = repo.manifestlog
-                    # validate incoming csets have their manifests
-                    for cset in xrange(clstart, clend):
-                        mfnode = cl.changelogrevision(cset).manifest
-                        mfest = ml[mfnode].readdelta()
-                        # store file nodes we must see
-                        for f, n in mfest.iteritems():
-                            needfiles.setdefault(f, set()).add(n)
+                    # Those changesets have been pushed from the
+                    # outside, their phases are going to be pushed
+                    # alongside. Therefor `targetphase` is
+                    # ignored.
+                    targetphase = phaseall = phases.draft
+            if added:
+                phases.registernew(repo, tr, targetphase, added)
+            if phaseall is not None:
+                phases.advanceboundary(repo, tr, phaseall, cgnodes)
 
-                # process the files
-                repo.ui.status(_("adding file changes\n"))
-                newrevs, newfiles = _addchangegroupfiles(
-                    repo, self, revmap, trp, efiles, needfiles)
-                revisions += newrevs
-                files += newfiles
+            if changesets > 0:
 
-                dh = 0
-                if oldheads:
-                    heads = cl.heads()
-                    dh = len(heads) - len(oldheads)
-                    for h in heads:
-                        if h not in oldheads and repo[h].closesbranch():
-                            dh -= 1
-                htext = ""
-                if dh:
-                    htext = _(" (%+d heads)") % dh
+                def runhooks():
+                    # These hooks run when the lock releases, not when the
+                    # transaction closes. So it's possible for the changelog
+                    # to have changed since we last saw it.
+                    if clstart >= len(repo):
+                        return
 
-                repo.ui.status(_("added %d changesets"
-                                 " with %d changes to %d files%s\n")
-                                 % (changesets, revisions, files, htext))
-                repo.invalidatevolatilesets()
+                    repo.hook("changegroup", **hookargs)
 
-                if changesets > 0:
-                    if 'node' not in tr.hookargs:
-                        tr.hookargs['node'] = hex(cl.node(clstart))
-                        tr.hookargs['node_last'] = hex(cl.node(clend - 1))
-                        hookargs = dict(tr.hookargs)
-                    else:
-                        hookargs = dict(tr.hookargs)
-                        hookargs['node'] = hex(cl.node(clstart))
-                        hookargs['node_last'] = hex(cl.node(clend - 1))
-                    repo.hook('pretxnchangegroup', throw=True, **hookargs)
+                    for n in added:
+                        args = hookargs.copy()
+                        args['node'] = hex(n)
+                        del args['node_last']
+                        repo.hook("incoming", **args)
 
-                added = [cl.node(r) for r in xrange(clstart, clend)]
-                publishing = repo.publishing()
-                if srctype in ('push', 'serve'):
-                    # Old servers can not push the boundary themselves.
-                    # New servers won't push the boundary if changeset already
-                    # exists locally as secret
-                    #
-                    # We should not use added here but the list of all change in
-                    # the bundle
-                    if publishing:
-                        phases.advanceboundary(repo, tr, phases.public,
-                                               srccontent)
-                    else:
-                        # Those changesets have been pushed from the
-                        # outside, their phases are going to be pushed
-                        # alongside. Therefor `targetphase` is
-                        # ignored.
-                        phases.advanceboundary(repo, tr, phases.draft,
-                                               srccontent)
-                        phases.retractboundary(repo, tr, phases.draft, added)
-                elif srctype != 'strip':
-                    # publishing only alter behavior during push
-                    #
-                    # strip should not touch boundary at all
-                    phases.retractboundary(repo, tr, targetphase, added)
+                    newheads = [h for h in repo.heads()
+                                if h not in oldheads]
+                    repo.ui.log("incoming",
+                                "%s incoming changes - new heads: %s\n",
+                                len(added),
+                                ', '.join([hex(c[:6]) for c in newheads]))
 
-                if changesets > 0:
-                    if srctype != 'strip':
-                        # During strip, branchcache is invalid but
-                        # coming call to `destroyed` will repair it.
-                        # In other case we can safely update cache on
-                        # disk.
-                        repo.ui.debug('updating the branch cache\n')
-                        branchmap.updatecache(repo.filtered('served'))
-
-                    def runhooks():
-                        # These hooks run when the lock releases, not when the
-                        # transaction closes. So it's possible for the changelog
-                        # to have changed since we last saw it.
-                        if clstart >= len(repo):
-                            return
-
-                        repo.hook("changegroup", **hookargs)
-
-                        for n in added:
-                            args = hookargs.copy()
-                            args['node'] = hex(n)
-                            del args['node_last']
-                            repo.hook("incoming", **args)
-
-                        newheads = [h for h in repo.heads()
-                                    if h not in oldheads]
-                        repo.ui.log("incoming",
-                                    "%s incoming changes - new heads: %s\n",
-                                    len(added),
-                                    ', '.join([hex(c[:6]) for c in newheads]))
-
-                    tr.addpostclose('changegroup-runhooks-%020i' % clstart,
-                                    lambda tr: repo._afterlock(runhooks))
+                tr.addpostclose('changegroup-runhooks-%020i' % clstart,
+                                lambda tr: repo._afterlock(runhooks))
         finally:
             repo.ui.flush()
         # never return 0 here:
-        if dh < 0:
-            return dh - 1
+        if deltaheads < 0:
+            ret = deltaheads - 1
         else:
-            return dh + 1
+            ret = deltaheads + 1
+        return ret
 
 class cg2unpacker(cg1unpacker):
     """Unpacker for cg2 streams.
@@ -506,14 +476,16 @@ class cg1packer(object):
         """Given a source repo, construct a bundler.
 
         bundlecaps is optional and can be used to specify the set of
-        capabilities which can be used to build the bundle.
+        capabilities which can be used to build the bundle. While bundlecaps is
+        unused in core Mercurial, extensions rely on this feature to communicate
+        capabilities to customize the changegroup packer.
         """
         # Set of capabilities we can use to build the bundle.
         if bundlecaps is None:
             bundlecaps = set()
         self._bundlecaps = bundlecaps
         # experimental config: bundle.reorder
-        reorder = repo.ui.config('bundle', 'reorder', 'auto')
+        reorder = repo.ui.config('bundle', 'reorder')
         if reorder == 'auto':
             reorder = None
         else:
@@ -974,8 +946,8 @@ def getlocalchangegroupraw(repo, source, outgoing, bundlecaps=None,
     bundler = getbundler(version, repo, bundlecaps)
     return getsubsetraw(repo, outgoing, bundler, source)
 
-def getlocalchangegroup(repo, source, outgoing, bundlecaps=None,
-                        version='01'):
+def getchangegroup(repo, source, outgoing, bundlecaps=None,
+                   version='01'):
     """Like getbundle, but taking a discovery.outgoing as an argument.
 
     This is only implemented for local repos and reuses potentially
@@ -985,18 +957,10 @@ def getlocalchangegroup(repo, source, outgoing, bundlecaps=None,
     bundler = getbundler(version, repo, bundlecaps)
     return getsubset(repo, outgoing, bundler, source)
 
-def getchangegroup(repo, source, outgoing, bundlecaps=None,
-                   version='01'):
-    """Like changegroupsubset, but returns the set difference between the
-    ancestors of heads and the ancestors common.
-
-    If heads is None, use the local heads. If common is None, use [nullid].
-
-    The nodes in common might not all be known locally due to the way the
-    current discovery protocol works.
-    """
-    return getlocalchangegroup(repo, source, outgoing, bundlecaps=bundlecaps,
-                               version=version)
+def getlocalchangegroup(repo, *args, **kwargs):
+    repo.ui.deprecwarn('getlocalchangegroup is deprecated, use getchangegroup',
+                       '4.3')
+    return getchangegroup(repo, *args, **kwargs)
 
 def changegroup(repo, basenodes, source):
     # to avoid a race we use changegroupsubset() (issue1320)

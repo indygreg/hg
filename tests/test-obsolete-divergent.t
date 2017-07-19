@@ -10,6 +10,8 @@ Enable obsolete
   > logtemplate = {rev}:{node|short} {desc}\n
   > [experimental]
   > evolution=createmarkers
+  > [extensions]
+  > drawdag=$TESTDIR/drawdag.py
   > [alias]
   > debugobsolete = debugobsolete -d '0 0'
   > [phases]
@@ -57,6 +59,7 @@ A_1 have two direct and divergent successors A_1 and A_1
 
   $ newcase direct
   $ hg debugobsolete `getid A_0` `getid A_1`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
   $ hg log -G --hidden
   o  3:392fd25390da A_2
@@ -80,6 +83,23 @@ A_1 have two direct and divergent successors A_1 and A_1
   $ hg log -r 'divergent()'
   2:82623d38b9ba A_1
   3:392fd25390da A_2
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba
+      392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
 
 check that mercurial refuse to push
 
@@ -98,10 +118,12 @@ indirect divergence with known changeset
 
   $ newcase indirect_known
   $ hg debugobsolete `getid A_0` `getid A_1`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_2` `getid A_3`
+  obsoleted 1 changesets
   $ hg log -G --hidden
   @  4:01f36c5a8fda A_3
   |
@@ -128,6 +150,25 @@ indirect divergence with known changeset
   $ hg log -r 'divergent()'
   2:82623d38b9ba A_1
   4:01f36c5a8fda A_3
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  82623d38b9ba
+      82623d38b9ba
+  01f36c5a8fda
+      01f36c5a8fda
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba
+      392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  01f36c5a8fda
+      01f36c5a8fda
   $ cd ..
 
 
@@ -136,6 +177,7 @@ indirect divergence with known changeset
 
   $ newcase indirect_unknown
   $ hg debugobsolete `getid A_0` aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  obsoleted 1 changesets
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid A_1`
   $ hg debugobsolete `getid A_0` `getid A_2`
   $ hg log -G --hidden
@@ -160,6 +202,23 @@ indirect divergence with known changeset
   $ hg log -r 'divergent()'
   2:82623d38b9ba A_1
   3:392fd25390da A_2
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba
+      392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
   $ cd ..
 
 do not take unknown node in account if they are final
@@ -167,7 +226,9 @@ do not take unknown node in account if they are final
 
   $ newcase final-unknown
   $ hg debugobsolete `getid A_0` `getid A_1`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_1` `getid A_2`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
   $ hg debugobsolete bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb cccccccccccccccccccccccccccccccccccccccc
   $ hg debugobsolete `getid A_1` dddddddddddddddddddddddddddddddddddddddd
@@ -175,6 +236,10 @@ do not take unknown node in account if they are final
   $ hg debugsuccessorssets --hidden 'desc('A_0')'
   007dc284c1f8
       392fd25390da
+  $ hg debugsuccessorssets 'desc('A_0')' --closest
+  $ hg debugsuccessorssets 'desc('A_0')' --closest --hidden
+  007dc284c1f8
+      82623d38b9ba
 
   $ cd ..
 
@@ -183,11 +248,14 @@ divergence that converge again is not divergence anymore
 
   $ newcase converged_divergence
   $ hg debugobsolete `getid A_0` `getid A_1`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_1` `getid A_3`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_2` `getid A_3`
+  obsoleted 1 changesets
   $ hg log -G --hidden
   @  4:01f36c5a8fda A_3
   |
@@ -211,6 +279,23 @@ divergence that converge again is not divergence anymore
   01f36c5a8fda
       01f36c5a8fda
   $ hg log -r 'divergent()'
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  01f36c5a8fda
+      01f36c5a8fda
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba
+      392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  01f36c5a8fda
+      01f36c5a8fda
   $ cd ..
 
 split is not divergences
@@ -218,6 +303,7 @@ split is not divergences
 
   $ newcase split
   $ hg debugobsolete `getid A_0` `getid A_1` `getid A_2`
+  obsoleted 1 changesets
   $ hg log -G --hidden
   o  3:392fd25390da A_2
   |
@@ -237,22 +323,41 @@ split is not divergences
   392fd25390da
       392fd25390da
   $ hg log -r 'divergent()'
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba 392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
 
 Even when subsequent rewriting happen
 
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_1` `getid A_3`
+  obsoleted 1 changesets
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ mkcommit A_4
   created new head
   $ hg debugobsolete `getid A_2` `getid A_4`
+  obsoleted 1 changesets
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ mkcommit A_5
   created new head
   $ hg debugobsolete `getid A_4` `getid A_5`
+  obsoleted 1 changesets
   $ hg log -G --hidden
   @  6:e442cfc57690 A_5
   |
@@ -283,6 +388,28 @@ Even when subsequent rewriting happen
       e442cfc57690
   e442cfc57690
       e442cfc57690
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  01f36c5a8fda
+      01f36c5a8fda
+  e442cfc57690
+      e442cfc57690
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba 392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  01f36c5a8fda
+      01f36c5a8fda
+  6a411f0d7a0a
+      e442cfc57690
+  e442cfc57690
+      e442cfc57690
   $ hg log -r 'divergent()'
 
 Check more complex obsolescence graft (with divergence)
@@ -290,6 +417,7 @@ Check more complex obsolescence graft (with divergence)
   $ mkcommit B_0; hg up 0
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg debugobsolete `getid B_0` `getid A_2`
+  obsoleted 1 changesets
   $ mkcommit A_7; hg up 0
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -297,6 +425,7 @@ Check more complex obsolescence graft (with divergence)
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_5` `getid A_7` `getid A_8`
+  obsoleted 1 changesets
   $ mkcommit A_9; hg up 0
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -352,6 +481,40 @@ Check more complex obsolescence graft (with divergence)
       14608b260df8
   bed64f5d2f5a
       bed64f5d2f5a
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  01f36c5a8fda
+      01f36c5a8fda
+  7ae126973a96
+      7ae126973a96
+  14608b260df8
+      14608b260df8
+  bed64f5d2f5a
+      bed64f5d2f5a
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba 392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  01f36c5a8fda
+      01f36c5a8fda
+  6a411f0d7a0a
+      e442cfc57690
+  e442cfc57690
+      e442cfc57690
+  3750ebee865d
+      392fd25390da
+  7ae126973a96
+      7ae126973a96
+  14608b260df8
+      14608b260df8
+  bed64f5d2f5a
+      bed64f5d2f5a
   $ hg log -r 'divergent()'
   4:01f36c5a8fda A_3
   8:7ae126973a96 A_7
@@ -364,8 +527,11 @@ fix the divergence
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_9` `getid A_A`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_7` `getid A_A`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_8` `getid A_A`
+  obsoleted 1 changesets
   $ hg log -G --hidden
   o  11:a139f71be9da A_A
   |
@@ -416,6 +582,38 @@ fix the divergence
       a139f71be9da
   a139f71be9da
       a139f71be9da
+  $ hg debugsuccessorssets 'all()' --closest
+  d20a80d4def3
+      d20a80d4def3
+  01f36c5a8fda
+      01f36c5a8fda
+  a139f71be9da
+      a139f71be9da
+  $ hg debugsuccessorssets 'all()' --closest --hidden
+  d20a80d4def3
+      d20a80d4def3
+  007dc284c1f8
+      82623d38b9ba 392fd25390da
+  82623d38b9ba
+      82623d38b9ba
+  392fd25390da
+      392fd25390da
+  01f36c5a8fda
+      01f36c5a8fda
+  6a411f0d7a0a
+      e442cfc57690
+  e442cfc57690
+      e442cfc57690
+  3750ebee865d
+      392fd25390da
+  7ae126973a96
+      a139f71be9da
+  14608b260df8
+      a139f71be9da
+  bed64f5d2f5a
+      a139f71be9da
+  a139f71be9da
+      a139f71be9da
   $ hg log -r 'divergent()'
 
   $ cd ..
@@ -429,9 +627,59 @@ successors-set. (report [A,B] not [A] + [A,B])
 
   $ newcase subset
   $ hg debugobsolete `getid A_0` `getid A_2`
+  obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_1` `getid A_2`
   $ hg debugsuccessorssets --hidden 'desc('A_0')'
   007dc284c1f8
       82623d38b9ba 392fd25390da
+  $ hg debugsuccessorssets 'desc('A_0')' --closest
+  $ hg debugsuccessorssets 'desc('A_0')' --closest --hidden
+  007dc284c1f8
+      82623d38b9ba 392fd25390da
 
   $ cd ..
+
+Use scmutil.cleanupnodes API to create divergence
+
+  $ hg init cleanupnodes
+  $ cd cleanupnodes
+  $ hg debugdrawdag <<'EOS'
+  >   B1  B3 B4
+  >   |     \|
+  >   A      Z
+  > EOS
+
+  $ hg update -q B1
+  $ echo 3 >> B
+  $ hg commit --amend -m B2
+  $ cat > $TESTTMP/scmutilcleanup.py <<EOF
+  > from mercurial import registrar, scmutil
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command('cleanup')
+  > def cleanup(ui, repo):
+  >     def node(expr):
+  >         unfi = repo.unfiltered()
+  >         rev = unfi.revs(expr).first()
+  >         return unfi.changelog.node(rev)
+  >     with repo.wlock(), repo.lock(), repo.transaction('delayedstrip'):
+  >         mapping = {node('desc(B1)'): [node('desc(B3)')],
+  >                    node('desc(B3)'): [node('desc(B4)')]}
+  >         scmutil.cleanupnodes(repo, mapping, 'test')
+  > EOF
+
+  $ rm .hg/localtags
+  $ hg cleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
+  $ hg log -G -T '{rev}:{node|short} {desc} {troubles}' -r 'sort(all(), topo)'
+  @  5:1a2a9b5b0030 B2 divergent
+  |
+  | o  4:70d5a63ca112 B4 divergent
+  | |
+  | o  1:48b9aae0607f Z
+  |
+  o  0:426bada5c675 A
+  
+  $ hg debugobsolete
+  a178212c3433c4e77b573f6011e29affb8aefa33 1a2a9b5b0030632400aa78e00388c20f99d3ec44 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+  a178212c3433c4e77b573f6011e29affb8aefa33 ad6478fb94ecec98b86daae98722865d494ac561 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
+  ad6478fb94ecec98b86daae98722865d494ac561 70d5a63ca112acb3764bc1d7320ca90ea688d671 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}

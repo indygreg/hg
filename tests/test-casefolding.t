@@ -9,7 +9,6 @@ test file addition with bad case
   $ cd repo1
   $ echo a > a
   $ hg add A
-  adding a
   $ hg st
   A a
   $ hg ci -m adda
@@ -28,6 +27,7 @@ test case collision on rename (issue750)
   a
   committing manifest
   committing changelog
+  updating the branch cache
   committed changeset 0:07f4944404050f47db2e5c5071e0e84e7a27bba9
 
 Case-changing renames should work:
@@ -70,14 +70,12 @@ test changing case of path components
   A D/c
   $ hg ci -m addc D/c
   $ hg mv d/b d/e
-  moving D/b to D/e (glob)
   $ hg st
   A D/e
   R D/b
   $ hg revert -aq
   $ rm d/e
   $ hg mv d/b D/B
-  moving D/b to D/B (glob)
   $ hg st
   A D/B
   R D/b

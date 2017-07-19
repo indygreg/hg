@@ -220,7 +220,8 @@ class hgwebdir(object):
         return False
 
     def run_wsgi(self, req):
-        with profiling.maybeprofile(self.ui):
+        profile = self.ui.configbool('profiling', 'enabled')
+        with profiling.profile(self.ui, enabled=profile):
             for r in self._runwsgi(req):
                 yield r
 
@@ -403,7 +404,7 @@ class hgwebdir(object):
                 except Exception as e:
                     u.warn(_('error reading %s/.hg/hgrc: %s\n') % (path, e))
                     continue
-                def get(section, name, default=None):
+                def get(section, name, default=uimod._unset):
                     return u.config(section, name, default, untrusted=True)
 
                 if u.configbool("web", "hidden", untrusted=True):

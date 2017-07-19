@@ -187,11 +187,9 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ...     runcommand(server, ['-R', 'foo', 'showconfig', 'ui', 'defaults'])
   *** runcommand showconfig
   bundle.mainreporoot=$TESTTMP/repo
-  defaults.backout=-d "0 0"
-  defaults.commit=-d "0 0"
-  defaults.shelve=--date "0 0"
-  defaults.tag=-d "0 0"
   devel.all-warnings=true
+  devel.default-date=0 0
+  extensions.fsmonitor= (fsmonitor !)
   largefiles.usercache=$TESTTMP/.cache/largefiles
   ui.slash=True
   ui.interactive=False
@@ -203,10 +201,6 @@ check that local configs for the cached repo aren't inherited when -R is used:
   web\.ipv6=(?:True|False) (re)
   *** runcommand init foo
   *** runcommand -R foo showconfig ui defaults
-  defaults.backout=-d "0 0"
-  defaults.commit=-d "0 0"
-  defaults.shelve=--date "0 0"
-  defaults.tag=-d "0 0"
   ui.slash=True
   ui.interactive=False
   ui.mergemarkers=detailed
@@ -521,6 +515,7 @@ changelog and manifest would have invalid node:
   *** runcommand up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   *** runcommand phase -df tip
+  obsoleted 1 changesets
   *** runcommand log --hidden
   changeset:   1:731265503d86
   tag:         tip
@@ -579,19 +574,19 @@ changelog and manifest would have invalid node:
 
   $ cat <<EOF > dbgui.py
   > import os, sys
-  > from mercurial import cmdutil, commands
+  > from mercurial import commands, registrar
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
-  > @command("debuggetpass", norepo=True)
+  > command = registrar.command(cmdtable)
+  > @command(b"debuggetpass", norepo=True)
   > def debuggetpass(ui):
   >     ui.write("%s\\n" % ui.getpass())
-  > @command("debugprompt", norepo=True)
+  > @command(b"debugprompt", norepo=True)
   > def debugprompt(ui):
   >     ui.write("%s\\n" % ui.prompt("prompt:"))
-  > @command("debugreadstdin", norepo=True)
+  > @command(b"debugreadstdin", norepo=True)
   > def debugreadstdin(ui):
   >     ui.write("read: %r\n" % sys.stdin.read(1))
-  > @command("debugwritestdout", norepo=True)
+  > @command(b"debugwritestdout", norepo=True)
   > def debugwritestdout(ui):
   >     os.write(1, "low-level stdout fd and\n")
   >     sys.stdout.write("stdout should be redirected to /dev/null\n")

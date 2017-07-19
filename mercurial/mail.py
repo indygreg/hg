@@ -24,26 +24,6 @@ from . import (
     util,
 )
 
-_oldheaderinit = email.header.Header.__init__
-def _unifiedheaderinit(self, *args, **kw):
-    """
-    Python 2.7 introduces a backwards incompatible change
-    (Python issue1974, r70772) in email.Generator.Generator code:
-    pre-2.7 code passed "continuation_ws='\t'" to the Header
-    constructor, and 2.7 removed this parameter.
-
-    Default argument is continuation_ws=' ', which means that the
-    behavior is different in <2.7 and 2.7
-
-    We consider the 2.7 behavior to be preferable, but need
-    to have an unified behavior for versions 2.4 to 2.7
-    """
-    # override continuation_ws
-    kw['continuation_ws'] = ' '
-    _oldheaderinit(self, *args, **kw)
-
-setattr(email.header.Header, '__init__', _unifiedheaderinit)
-
 class STARTTLS(smtplib.SMTP):
     '''Derived class to verify the peer certificate for STARTTLS.
 
@@ -98,7 +78,7 @@ class SMTPS(smtplib.SMTP):
 def _smtp(ui):
     '''build an smtp connection and return a function to send mail'''
     local_hostname = ui.config('smtp', 'local_hostname')
-    tls = ui.config('smtp', 'tls', 'none')
+    tls = ui.config('smtp', 'tls')
     # backward compatible: when tls = true, we use starttls.
     starttls = tls == 'starttls' or util.parsebool(tls)
     smtps = tls == 'smtps'
@@ -155,7 +135,7 @@ def _smtp(ui):
 
 def _sendmail(ui, sender, recipients, msg):
     '''send mail using sendmail.'''
-    program = ui.config('email', 'method', 'smtp')
+    program = ui.config('email', 'method')
     cmdline = '%s -f %s %s' % (program, util.email(sender),
                                ' '.join(map(util.email, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
@@ -184,7 +164,7 @@ def connect(ui, mbox=None):
     if mbox:
         open(mbox, 'wb').close()
         return lambda s, r, m: _mbox(mbox, s, r, m)
-    if ui.config('email', 'method', 'smtp') == 'smtp':
+    if ui.config('email', 'method') == 'smtp':
         return _smtp(ui)
     return lambda s, r, m: _sendmail(ui, s, r, m)
 
@@ -194,7 +174,7 @@ def sendmail(ui, sender, recipients, msg, mbox=None):
 
 def validateconfig(ui):
     '''determine if we have enough config data to try sending email.'''
-    method = ui.config('email', 'method', 'smtp')
+    method = ui.config('email', 'method')
     if method == 'smtp':
         if not ui.config('smtp', 'host'):
             raise error.Abort(_('smtp specified as email transport, '

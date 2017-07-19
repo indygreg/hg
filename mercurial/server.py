@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import os
-import sys
 import tempfile
 
 from .i18n import _
@@ -19,6 +18,7 @@ from . import (
     commandserver,
     error,
     hgweb,
+    pycompat,
     util,
 )
 
@@ -29,11 +29,11 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
     def writepid(pid):
         if opts['pid_file']:
             if appendpid:
-                mode = 'a'
+                mode = 'ab'
             else:
-                mode = 'w'
+                mode = 'wb'
             fp = open(opts['pid_file'], mode)
-            fp.write(str(pid) + '\n')
+            fp.write('%d\n' % pid)
             fp.close()
 
     if opts['daemon'] and not opts['daemon_postexec']:
@@ -42,7 +42,7 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
         os.close(lockfd)
         try:
             if not runargs:
-                runargs = util.hgcmd() + sys.argv[1:]
+                runargs = util.hgcmd() + pycompat.sysargv[1:]
             runargs.append('--daemon-postexec=unlink:%s' % lockpath)
             # Don't pass --cwd to the child process, because we've already
             # changed directory.
@@ -123,7 +123,7 @@ def _createhgwebservice(ui, repo, opts):
     if opts.get('port'):
         opts['port'] = util.getport(opts.get('port'))
 
-    alluis = set([ui])
+    alluis = {ui}
     if repo:
         baseui = repo.baseui
         alluis.update([repo.baseui, repo.ui])

@@ -99,6 +99,7 @@ Show debug commands if there are no other candidates
   debugnamecomplete
   debugobsolete
   debugpathcomplete
+  debugpickmergetool
   debugpushkey
   debugpvec
   debugrebuilddirstate
@@ -107,9 +108,11 @@ Show debug commands if there are no other candidates
   debugrevlog
   debugrevspec
   debugsetparents
+  debugssl
   debugsub
   debugsuccessorssets
   debugtemplate
+  debugupdatecaches
   debugupgraderepo
   debugwalk
   debugwireargs
@@ -215,7 +218,7 @@ Show an error if we use --options with an ambiguous abbreviation
 Show all commands + options
   $ hg debugcommands
   add: include, exclude, subrepos, dry-run
-  annotate: rev, follow, no-follow, text, user, file, date, number, changeset, line-number, ignore-all-space, ignore-space-change, ignore-blank-lines, include, exclude, template
+  annotate: rev, follow, no-follow, text, user, file, date, number, changeset, line-number, skip, ignore-all-space, ignore-space-change, ignore-blank-lines, include, exclude, template
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, ssh, remotecmd, insecure
   commit: addremove, close-branch, amend, secret, edit, interactive, include, exclude, message, logfile, date, user, subrepos
   diff: rev, change, text, git, binary, nodates, noprefix, show-function, reverse, ignore-all-space, ignore-space-change, ignore-blank-lines, unified, stat, root, include, exclude, subrepos
@@ -228,7 +231,7 @@ Show all commands + options
   push: force, rev, bookmark, branch, new-branch, ssh, remotecmd, insecure
   remove: after, force, subrepos, include, exclude
   serve: accesslog, daemon, daemon-postexec, errorlog, port, address, prefix, name, web-conf, webdir-conf, pid-file, stdio, cmdserver, templates, style, ipv6, certificate, subrepos
-  status: all, modified, added, removed, deleted, clean, unknown, ignored, no-status, copies, print0, rev, change, include, exclude, subrepos, template
+  status: all, modified, added, removed, deleted, clean, unknown, ignored, no-status, terse, copies, print0, rev, change, include, exclude, subrepos, template
   summary: remote
   update: clean, check, merge, date, rev, tool
   addremove: similarity, subrepos, include, exclude, dry-run
@@ -239,13 +242,13 @@ Show all commands + options
   branch: force, clean
   branches: active, closed, template
   bundle: force, rev, branch, base, all, type, ssh, remotecmd, insecure
-  cat: output, rev, decode, include, exclude
+  cat: output, rev, decode, include, exclude, template
   config: untrusted, edit, local, global, template
   copy: after, force, include, exclude, dry-run
   debugancestor: 
   debugapplystreamclonebundle: 
   debugbuilddag: mergeable-file, overwritten-file, new-file
-  debugbundle: all, spec
+  debugbundle: all, part-type, spec
   debugcheckstate: 
   debugcolor: style
   debugcommands: 
@@ -270,19 +273,22 @@ Show all commands + options
   debuglocks: force-lock, force-wlock
   debugmergestate: 
   debugnamecomplete: 
-  debugobsolete: flags, record-parents, rev, index, delete, date, user, template
+  debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
   debugpathcomplete: full, normal, added, removed
+  debugpickmergetool: rev, changedelete, include, exclude, tool
   debugpushkey: 
   debugpvec: 
   debugrebuilddirstate: rev, minimal
   debugrebuildfncache: 
   debugrename: rev
   debugrevlog: changelog, manifest, dir, dump
-  debugrevspec: optimize, show-stage, no-optimized, verify-optimized
+  debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized
   debugsetparents: 
+  debugssl: 
   debugsub: rev
-  debugsuccessorssets: 
+  debugsuccessorssets: closest
   debugtemplate: rev, define
+  debugupdatecaches: 
   debugupgraderepo: optimize, run
   debugwalk: include, exclude
   debugwireargs: three, four, five, ssh, remotecmd, insecure
@@ -291,7 +297,7 @@ Show all commands + options
   grep: print0, all, text, follow, ignore-case, files-with-matches, line-number, rev, user, date, template, include, exclude
   heads: rev, topo, active, closed, style, template
   help: extension, command, keyword, system
-  identify: rev, num, id, branch, tags, bookmarks, ssh, remotecmd, insecure
+  identify: rev, num, id, branch, tags, bookmarks, ssh, remotecmd, insecure, template
   import: strip, base, edit, force, no-commit, bypass, partial, exact, prefix, import-branch, message, logfile, date, user, similarity
   incoming: force, newest-first, bundle, rev, bookmarks, branch, patch, git, limit, no-merges, stat, graph, style, template, ssh, remotecmd, insecure, subrepos
   locate: rev, print0, fullpath, include, exclude

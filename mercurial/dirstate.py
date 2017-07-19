@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import collections
+import contextlib
 import errno
 import os
 import stat
@@ -18,14 +19,15 @@ from . import (
     encoding,
     error,
     match as matchmod,
-    osutil,
-    parsers,
     pathutil,
+    policy,
     pycompat,
     scmutil,
     txnutil,
     util,
 )
+
+parsers = policy.importmod(r'parsers')
 
 propertycache = util.propertycache
 filecache = scmutil.filecache
@@ -68,7 +70,7 @@ def nonnormalentries(dmap):
 
 class dirstate(object):
 
-    def __init__(self, opener, ui, root, validate):
+    def __init__(self, opener, ui, root, validate, sparsematchfn):
         '''Create a new dirstate object.
 
         opener is an open()-like callable that can be used to open the
@@ -78,13 +80,10 @@ class dirstate(object):
         self._opener = opener
         self._validate = validate
         self._root = root
+        self._sparsematchfn = sparsematchfn
         # ntpath.join(root, '') of Python 2.7.9 does not add sep if root is
         # UNC path pointing to root share (issue4557)
         self._rootdir = pathutil.normasprefix(root)
-        # internal config: ui.forcecwd
-        forcecwd = ui.config('ui', 'forcecwd')
-        if forcecwd:
-            self._cwd = forcecwd
         self._dirty = False
         self._dirtypl = False
         self._lastnormaltime = 0
@@ -100,6 +99,23 @@ class dirstate(object):
         # for consistent view between _pl() and _read() invocations
         self._pendingmode = None
 
+    @contextlib.contextmanager
+    def parentchange(self):
+        '''Context manager for handling dirstate parents.
+
+        If an exception occurs in the scope of the context manager,
+        the incoherent dirstate won't be written when wlock is
+        released.
+        '''
+        self._parentwriters += 1
+        yield
+        # Typically we want the "undo" step of a context manager in a
+        # finally block so it happens even when an exception
+        # occurs. In this case, however, we only want to decrement
+        # parentwriters if the code in the with statement exits
+        # normally, so we don't have a try/finally here on purpose.
+        self._parentwriters -= 1
+
     def beginparentchange(self):
         '''Marks the beginning of a set of changes that involve changing
         the dirstate parents. If there is an exception during this time,
@@ -107,6 +123,8 @@ class dirstate(object):
         prevents writing an incoherent dirstate where the parent doesn't
         match the contents.
         '''
+        self._ui.deprecwarn('beginparentchange is obsoleted by the '
+                            'parentchange context manager.', '4.3')
         self._parentwriters += 1
 
     def endparentchange(self):
@@ -114,6 +132,8 @@ class dirstate(object):
         dirstate parents. Once all parent changes have been marked done,
         the wlock will be free to write the dirstate on release.
         '''
+        self._ui.deprecwarn('endparentchange is obsoleted by the '
+                            'parentchange context manager.', '4.3')
         if self._parentwriters > 0:
             self._parentwriters -= 1
 
@@ -134,6 +154,11 @@ class dirstate(object):
     def _copymap(self):
         self._read()
         return self._copymap
+
+    @propertycache
+    def _identity(self):
+        self._read()
+        return self._identity
 
     @propertycache
     def _nonnormalset(self):
@@ -173,6 +198,19 @@ class dirstate(object):
             f[normcase(name)] = name
         return f
 
+    @property
+    def _sparsematcher(self):
+        """The matcher for the sparse checkout.
+
+        The working directory may not include every file from a manifest. The
+        matcher obtained by this property will match a path if it is to be
+        included in the working directory.
+        """
+        # TODO there is potential to cache this property. For now, the matcher
+        # is resolved on every access. (But the called function does use a
+        # cache to keep the lookup fast.)
+        return self._sparsematchfn()
+
     @repocache('branch')
     def _branch(self):
         try:
@@ -209,7 +247,7 @@ class dirstate(object):
     def _ignore(self):
         files = self._ignorefiles()
         if not files:
-            return util.never
+            return matchmod.never(self._root, '')
 
         pats = ['include:%s' % f for f in files]
         return matchmod.match(self._root, '', [], pats, warn=self._ui.warn)
@@ -271,6 +309,10 @@ class dirstate(object):
 
     @propertycache
     def _cwd(self):
+        # internal config: ui.forcecwd
+        forcecwd = self._ui.config('ui', 'forcecwd')
+        if forcecwd:
+            return forcecwd
         return pycompat.getcwd()
 
     def getcwd(self):
@@ -320,8 +362,10 @@ class dirstate(object):
         for x in sorted(self._map):
             yield x
 
-    def iteritems(self):
+    def items(self):
         return self._map.iteritems()
+
+    iteritems = items
 
     def parents(self):
         return [self._validate(p) for p in self._pl]
@@ -401,6 +445,9 @@ class dirstate(object):
     def _read(self):
         self._map = {}
         self._copymap = {}
+        # ignore HG_PENDING because identity is used only for writing
+        self._identity = util.filestat.frompath(
+            self._opener.join(self._filename))
         try:
             fp = self._opendirstatefile()
             try:
@@ -445,7 +492,14 @@ class dirstate(object):
             self._pl = p
 
     def invalidate(self):
-        for a in ("_map", "_copymap", "_filefoldmap", "_dirfoldmap", "_branch",
+        '''Causes the next access to reread the dirstate.
+
+        This is different from localrepo.invalidatedirstate() because it always
+        rereads the dirstate. Use localrepo.invalidatedirstate() if you want to
+        check whether the dirstate has changed before rereading it.'''
+
+        for a in ("_map", "_copymap", "_identity",
+                  "_filefoldmap", "_dirfoldmap", "_branch",
                   "_pl", "_dirs", "_ignore", "_nonnormalset",
                   "_otherparentset"):
             if a in self.__dict__:
@@ -709,6 +763,14 @@ class dirstate(object):
                 self.drop(f)
 
         self._dirty = True
+
+    def identity(self):
+        '''Return identity of dirstate itself to detect changing in storage
+
+        If identity of previous dirstate is equal to this, writing
+        changes based on the former dirstate out can keep consistency.
+        '''
+        return self._identity
 
     def write(self, tr):
         if not self._dirty:
@@ -988,7 +1050,7 @@ class dirstate(object):
         matchalways = match.always()
         matchtdir = match.traversedir
         dmap = self._map
-        listdir = osutil.listdir
+        listdir = util.listdir
         lstat = os.lstat
         dirkind = stat.S_IFDIR
         regkind = stat.S_IFREG
@@ -1021,6 +1083,8 @@ class dirstate(object):
             wadd = work.append
             while work:
                 nd = work.pop()
+                if not match.visitdir(nd):
+                    continue
                 skip = None
                 if nd == '.':
                     nd = ''
@@ -1236,10 +1300,10 @@ class dirstate(object):
         else:
             return self._filename
 
-    def savebackup(self, tr, suffix='', prefix=''):
-        '''Save current dirstate into backup file with suffix'''
-        assert len(suffix) > 0 or len(prefix) > 0
+    def savebackup(self, tr, backupname):
+        '''Save current dirstate into backup file'''
         filename = self._actualfilename(tr)
+        assert backupname != filename
 
         # use '_writedirstate' instead of 'write' to write changes certainly,
         # because the latter omits writing out if transaction is running.
@@ -1260,27 +1324,20 @@ class dirstate(object):
             # end of this transaction
             tr.registertmp(filename, location='plain')
 
-        backupname = prefix + self._filename + suffix
-        assert backupname != filename
         self._opener.tryunlink(backupname)
         # hardlink backup is okay because _writedirstate is always called
         # with an "atomictemp=True" file.
         util.copyfile(self._opener.join(filename),
                       self._opener.join(backupname), hardlink=True)
 
-    def restorebackup(self, tr, suffix='', prefix=''):
-        '''Restore dirstate by backup file with suffix'''
-        assert len(suffix) > 0 or len(prefix) > 0
+    def restorebackup(self, tr, backupname):
+        '''Restore dirstate by backup file'''
         # this "invalidate()" prevents "wlock.release()" from writing
         # changes of dirstate out after restoring from backup file
         self.invalidate()
         filename = self._actualfilename(tr)
-        # using self._filename to avoid having "pending" in the backup filename
-        self._opener.rename(prefix + self._filename + suffix, filename,
-                            checkambig=True)
+        self._opener.rename(backupname, filename, checkambig=True)
 
-    def clearbackup(self, tr, suffix='', prefix=''):
-        '''Clear backup file with suffix'''
-        assert len(suffix) > 0 or len(prefix) > 0
-        # using self._filename to avoid having "pending" in the backup filename
-        self._opener.unlink(prefix + self._filename + suffix)
+    def clearbackup(self, tr, backupname):
+        '''Clear backup file'''
+        self._opener.unlink(backupname)

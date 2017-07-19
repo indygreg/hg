@@ -41,8 +41,8 @@ def composelargefilematcher(match, manifest):
     m = copy.copy(match)
     lfile = lambda f: lfutil.standin(f) in manifest
     m._files = filter(lfile, m._files)
-    m._fileroots = set(m._files)
-    m._always = False
+    m._fileset = set(m._files)
+    m.always = lambda: False
     origmatchfn = m.matchfn
     m.matchfn = lambda f: lfile(f) and origmatchfn(f)
     return m
@@ -56,8 +56,8 @@ def composenormalfilematcher(match, manifest, exclude=None):
     notlfile = lambda f: not (lfutil.isstandin(f) or lfutil.standin(f) in
             manifest or f in excluded)
     m._files = filter(notlfile, m._files)
-    m._fileroots = set(m._files)
-    m._always = False
+    m._fileset = set(m._files)
+    m.always = lambda: False
     origmatchfn = m.matchfn
     m.matchfn = lambda f: notlfile(f) and origmatchfn(f)
     return m
@@ -105,9 +105,9 @@ def restorematchandpatsfn():
             scmutil.matchandpats)
 
 def addlargefiles(ui, repo, isaddremove, matcher, **opts):
-    large = opts.get('large')
+    large = opts.get(r'large')
     lfsize = lfutil.getminsize(
-        ui, lfutil.islfilesrepo(repo), opts.get('lfsize'))
+        ui, lfutil.islfilesrepo(repo), opts.get(r'lfsize'))
 
     lfmatcher = None
     if lfutil.islfilesrepo(repo):
@@ -119,7 +119,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, **opts):
     m = matcher
 
     wctx = repo[None]
-    for f in repo.walk(matchmod.badmatch(m, lambda x, y: None)):
+    for f in wctx.walk(matchmod.badmatch(m, lambda x, y: None)):
         exact = m.exact(f)
         lfile = lfutil.standin(f) in wctx
         nfile = f in wctx
@@ -258,7 +258,7 @@ def overrideadd(orig, ui, repo, *pats, **opts):
 
 def cmdutiladd(orig, ui, repo, matcher, prefix, explicitonly, **opts):
     # The --normal flag short circuits this override
-    if opts.get('normal'):
+    if opts.get(r'normal'):
         return orig(ui, repo, matcher, prefix, explicitonly, **opts)
 
     ladded, lbad = addlargefiles(ui, repo, False, matcher, **opts)
@@ -289,10 +289,10 @@ def overridestatus(orig, ui, repo, *pats, **opts):
     finally:
         repo.lfstatus = False
 
-def overridedirty(orig, repo, ignoreupdate=False):
+def overridedirty(orig, repo, ignoreupdate=False, missing=False):
     try:
         repo._repo.lfstatus = True
-        return orig(repo, ignoreupdate)
+        return orig(repo, ignoreupdate=ignoreupdate, missing=missing)
     finally:
         repo._repo.lfstatus = False
 
@@ -347,14 +347,12 @@ def overridelog(orig, ui, repo, *pats, **opts):
                 else:
                     f = m._cwd + '/' + f
                 return back + lfutil.standin(f)
-
-            pats.update(fixpats(f, tostandin) for f in p)
         else:
             def tostandin(f):
                 if lfutil.isstandin(f):
                     return f
                 return lfutil.standin(f)
-            pats.update(fixpats(f, tostandin) for f in p)
+        pats.update(fixpats(f, tostandin) for f in p)
 
         for i in range(0, len(m._files)):
             # Don't add '.hglf' to m.files, since that is already covered by '.'
@@ -370,8 +368,8 @@ def overridelog(orig, ui, repo, *pats, **opts):
             elif m._files[i] not in ctx and repo.wvfs.isdir(standin):
                 m._files.append(standin)
 
-        m._fileroots = set(m._files)
-        m._always = False
+        m._fileset = set(m._files)
+        m.always = lambda: False
         origmatchfn = m.matchfn
         def lfmatchfn(f):
             lf = lfutil.splitstandin(f)
@@ -381,7 +379,7 @@ def overridelog(orig, ui, repo, *pats, **opts):
             return r
         m.matchfn = lfmatchfn
 
-        ui.debug('updated patterns: %s\n' % sorted(pats))
+        ui.debug('updated patterns: %s\n' % ', '.join(sorted(pats)))
         return m, pats
 
     # For hg log --patch, the match object is used in two different senses:
@@ -646,7 +644,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
             m = copy.copy(match)
             lfile = lambda f: lfutil.standin(f) in manifest
             m._files = [lfutil.standin(f) for f in m._files if lfile(f)]
-            m._fileroots = set(m._files)
+            m._fileset = set(m._files)
             origmatchfn = m.matchfn
             def matchfn(f):
                 lfile = lfutil.splitstandin(f)
@@ -769,7 +767,7 @@ def overriderevert(orig, ui, repo, ctx, parents, *pats, **opts):
                 else:
                     matchfiles.append(f)
             m._files = matchfiles
-            m._fileroots = set(m._files)
+            m._fileset = set(m._files)
             origmatchfn = m.matchfn
             def matchfn(f):
                 lfile = lfutil.splitstandin(f)
@@ -975,7 +973,7 @@ def overridearchive(orig, repo, dest, node, kind, decode=True, matchfn=None,
 
     archiver = archival.archivers[kind](dest, mtime or ctx.date()[0])
 
-    if repo.ui.configbool("ui", "archivemeta", True):
+    if repo.ui.configbool("ui", "archivemeta"):
         write('.hg_archival.txt', 0o644, False,
               lambda: archival.buildmetadata(ctx))
 

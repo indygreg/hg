@@ -26,27 +26,16 @@ These imports will not be delayed:
 
 from __future__ import absolute_import
 
+import __builtin__ as builtins
 import contextlib
 import os
 import sys
-
-# __builtin__ in Python 2, builtins in Python 3.
-try:
-    import __builtin__ as builtins
-except ImportError:
-    import builtins
 
 contextmanager = contextlib.contextmanager
 
 _origimport = __import__
 
 nothing = object()
-
-# Python 3 doesn't have relative imports nor level -1.
-level = -1
-if sys.version_info[0] >= 3:
-    level = 0
-_import = _origimport
 
 def _hgextimport(importfunc, name, globals, *args, **kwargs):
     try:
@@ -69,6 +58,7 @@ class _demandmod(object):
     Specify 1 as 'level' argument at construction, to import module
     relatively.
     """
+
     def __init__(self, name, globals, locals, level):
         if '.' in name:
             head, rest = name.split('.', 1)
@@ -79,6 +69,7 @@ class _demandmod(object):
         object.__setattr__(self, r"_data",
                            (head, globals, locals, after, level, set()))
         object.__setattr__(self, r"_module", None)
+
     def _extend(self, name):
         """add to the list of submodules to load"""
         self._data[3].append(name)
@@ -97,7 +88,7 @@ class _demandmod(object):
     def _load(self):
         if not self._module:
             head, globals, locals, after, level, modrefs = self._data
-            mod = _hgextimport(_import, head, globals, locals, None, level)
+            mod = _hgextimport(_origimport, head, globals, locals, None, level)
             if mod is self:
                 # In this case, _hgextimport() above should imply
                 # _demandimport(). Otherwise, _hgextimport() never
@@ -130,12 +121,15 @@ class _demandmod(object):
                 subload(mod, x)
 
             # Replace references to this proxy instance with the actual module.
-            if locals and locals.get(head) == self:
-                locals[head] = mod
+            if locals:
+                if locals.get(head) is self:
+                    locals[head] = mod
+                elif locals.get(head + r'mod') is self:
+                    locals[head + r'mod'] = mod
 
             for modname in modrefs:
                 modref = sys.modules.get(modname, None)
-                if modref and getattr(modref, head, None) == self:
+                if modref and getattr(modref, head, None) is self:
                     setattr(modref, head, mod)
 
             object.__setattr__(self, r"_module", mod)
@@ -144,30 +138,41 @@ class _demandmod(object):
         if self._module:
             return "<proxied module '%s'>" % self._data[0]
         return "<unloaded module '%s'>" % self._data[0]
+
     def __call__(self, *args, **kwargs):
         raise TypeError("%s object is not callable" % repr(self))
-    def __getattribute__(self, attr):
-        if attr in ('_data', '_extend', '_load', '_module', '_addref'):
-            return object.__getattribute__(self, attr)
+
+    def __getattr__(self, attr):
         self._load()
         return getattr(self._module, attr)
+
     def __setattr__(self, attr, val):
         self._load()
         setattr(self._module, attr, val)
 
+    @property
+    def __dict__(self):
+        self._load()
+        return self._module.__dict__
+
+    @property
+    def __doc__(self):
+        self._load()
+        return self._module.__doc__
+
 _pypy = '__pypy__' in sys.builtin_module_names
 
-def _demandimport(name, globals=None, locals=None, fromlist=None, level=level):
-    if not locals or name in ignore or fromlist == ('*',):
+def _demandimport(name, globals=None, locals=None, fromlist=None, level=-1):
+    if locals is None or name in ignore or fromlist == ('*',):
         # these cases we can't really delay
-        return _hgextimport(_import, name, globals, locals, fromlist, level)
+        return _hgextimport(_origimport, name, globals, locals, fromlist, level)
     elif not fromlist:
         # import a [as b]
         if '.' in name: # a.b
             base, rest = name.split('.', 1)
             # email.__init__ loading email.mime
             if globals and globals.get('__name__', None) == base:
-                return _import(name, globals, locals, fromlist, level)
+                return _origimport(name, globals, locals, fromlist, level)
             # if a is already demand-loaded, add b to its submodule list
             if base in locals:
                 if isinstance(locals[base], _demandmod):
@@ -222,10 +227,14 @@ def _demandimport(name, globals=None, locals=None, fromlist=None, level=level):
             # recurse down the module chain, and return the leaf module
             mod = rootmod
             for comp in modname.split('.')[1:]:
-                if getattr(mod, comp, nothing) is nothing:
-                    setattr(mod, comp, _demandmod(comp, mod.__dict__,
-                                                  mod.__dict__, level=1))
-                mod = getattr(mod, comp)
+                obj = getattr(mod, comp, nothing)
+                if obj is nothing:
+                    obj = _demandmod(comp, mod.__dict__, mod.__dict__, level=1)
+                    setattr(mod, comp, obj)
+                elif mod.__name__ + '.' + comp in sys.modules:
+                    # prefer loaded module over attribute (issue5617)
+                    obj = sys.modules[mod.__name__ + '.' + comp]
+                mod = obj
             return mod
 
         if level >= 0:
@@ -265,45 +274,11 @@ def _demandimport(name, globals=None, locals=None, fromlist=None, level=level):
 
         return mod
 
-ignore = [
-    '__future__',
-    '_hashlib',
-    # ImportError during pkg_resources/__init__.py:fixup_namespace_package
-    '_imp',
-    '_xmlplus',
-    'fcntl',
-    'nt', # pathlib2 tests the existence of built-in 'nt' module
-    'win32com.gen_py',
-    'win32com.shell', # 'appdirs' tries to import win32com.shell
-    '_winreg', # 2.7 mimetypes needs immediate ImportError
-    'pythoncom',
-    # imported by tarfile, not available under Windows
-    'pwd',
-    'grp',
-    # imported by profile, itself imported by hotshot.stats,
-    # not available under Windows
-    'resource',
-    # this trips up many extension authors
-    'gtk',
-    # setuptools' pkg_resources.py expects "from __main__ import x" to
-    # raise ImportError if x not defined
-    '__main__',
-    '_ssl', # conditional imports in the stdlib, issue1964
-    '_sre', # issue4920
-    'rfc822',
-    'mimetools',
-    'sqlalchemy.events', # has import-time side effects (issue5085)
-    # setuptools 8 expects this module to explode early when not on windows
-    'distutils.msvc9compiler',
-    '__builtin__',
-    'builtins',
-    ]
+ignore = []
 
-if _pypy:
-    ignore.extend([
-        # _ctypes.pointer is shadowed by "from ... import pointer" (PyPy 5)
-        '_ctypes.pointer',
-    ])
+def init(ignorelist):
+    global ignore
+    ignore = ignorelist
 
 def isenabled():
     return builtins.__import__ == _demandimport

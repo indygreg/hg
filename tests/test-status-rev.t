@@ -5,7 +5,7 @@ combined correctly with the dirstate status.
 
 First commit
 
-  $ python $TESTDIR/generate-working-copy-states.py state 2 1
+  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 1
   $ hg addremove --similarity 0
   adding content1_content1_content1-tracked
   adding content1_content1_content1-untracked
@@ -31,7 +31,7 @@ First commit
 
 Second commit
 
-  $ python $TESTDIR/generate-working-copy-states.py state 2 2
+  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 2
   $ hg addremove --similarity 0
   removing content1_missing_content1-tracked
   removing content1_missing_content1-untracked
@@ -49,7 +49,7 @@ Second commit
 
 Working copy
 
-  $ python $TESTDIR/generate-working-copy-states.py state 2 wc
+  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 wc
   $ hg addremove --similarity 0
   adding content1_missing_content1-tracked
   adding content1_missing_content1-untracked
@@ -81,13 +81,10 @@ Status compared to parent of the working copy, i.e. the dirstate status
   $ hg status -A --rev 1 'glob:missing_*_missing-tracked'
   ! missing_content2_missing-tracked
   ! missing_missing_missing-tracked
-#if windows
+
   $ hg status -A --rev 1 'glob:missing_missing_missing-untracked'
-  missing_missing_missing-untracked: The system cannot find the file specified
-#else
-  $ hg status -A --rev 1 'glob:missing_missing_missing-untracked'
-  missing_missing_missing-untracked: No such file or directory
-#endif
+  missing_missing_missing-untracked: The system cannot find the file specified (windows !)
+  missing_missing_missing-untracked: No such file or directory (no-windows !)
 
 Status between first and second commit. Should ignore dirstate status.
 

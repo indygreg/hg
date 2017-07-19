@@ -23,7 +23,6 @@ from mercurial.i18n import _
 from mercurial import (
     bookmarks,
     cmdutil,
-    commands,
     dispatch,
     error,
     extensions,
@@ -31,13 +30,14 @@ from mercurial import (
     localrepo,
     lock,
     node,
+    registrar,
     util,
 )
 
 from . import share
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -61,27 +61,38 @@ sharednamespaces = {
 def extsetup(ui):
     extensions.wrapfunction(dispatch, 'runcommand', runcommand)
     extensions.wrapfunction(bookmarks.bmstore, '_write', recordbookmarks)
-    extensions.wrapfunction(
-        localrepo.localrepository.dirstate, 'func', wrapdirstate)
+    extensions.wrapfilecache(
+        localrepo.localrepository, 'dirstate', wrapdirstate)
     extensions.wrapfunction(hg, 'postshare', wrappostshare)
     extensions.wrapfunction(hg, 'copystore', unsharejournal)
 
 def reposetup(ui, repo):
     if repo.local():
         repo.journal = journalstorage(repo)
+        repo._wlockfreeprefix.add('namejournal')
+
+        dirstate, cached = localrepo.isfilecached(repo, 'dirstate')
+        if cached:
+            # already instantiated dirstate isn't yet marked as
+            # "journal"-ing, even though repo.dirstate() was already
+            # wrapped by own wrapdirstate()
+            _setupdirstate(repo, dirstate)
 
 def runcommand(orig, lui, repo, cmd, fullargs, *args):
     """Track the command line options for recording in the journal"""
     journalstorage.recordcommand(*fullargs)
     return orig(lui, repo, cmd, fullargs, *args)
 
+def _setupdirstate(repo, dirstate):
+    dirstate.journalstorage = repo.journal
+    dirstate.addparentchangecallback('journal', recorddirstateparents)
+
 # hooks to record dirstate changes
 def wrapdirstate(orig, repo):
     """Make journal storage available to the dirstate object"""
     dirstate = orig(repo)
     if util.safehasattr(repo, 'journal'):
-        dirstate.journalstorage = repo.journal
-        dirstate.addparentchangecallback('journal', recorddirstateparents)
+        _setupdirstate(repo, dirstate)
     return dirstate
 
 def recorddirstateparents(dirstate, old, new):
@@ -158,7 +169,7 @@ def unsharejournal(orig, ui, repo, repopath):
             util.safehasattr(repo, 'journal')):
         sharedrepo = share._getsrcrepo(repo)
         sharedfeatures = _readsharedfeatures(repo)
-        if sharedrepo and sharedfeatures > set(['journal']):
+        if sharedrepo and sharedfeatures > {'journal'}:
             # there is a shared repository and there are shared journal entries
             # to copy. move shared date over from source to destination but
             # move the local file first
@@ -292,7 +303,7 @@ class journalstorage(object):
             # default to 600 seconds timeout
             l = lock.lock(
                 vfs, 'namejournal.lock',
-                int(self.ui.config("ui", "timeout", "600")), desc=desc)
+                int(self.ui.config("ui", "timeout")), desc=desc)
             self.ui.warn(_("got lock after %s seconds\n") % l.delay)
         self._lockref = weakref.ref(l)
         return l
@@ -420,7 +431,7 @@ _ignoreopts = ('no-merges', 'graph')
     'journal', [
         ('', 'all', None, 'show history for all names'),
         ('c', 'commits', None, 'show commit metadata'),
-    ] + [opt for opt in commands.logopts if opt[1] not in _ignoreopts],
+    ] + [opt for opt in cmdutil.logopts if opt[1] not in _ignoreopts],
     '[OPTION]... [BOOKMARKNAME]')
 def journal(ui, repo, *args, **opts):
     """show the previous position of bookmarks and the working copy

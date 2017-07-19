@@ -75,11 +75,8 @@ Test if log-like commands work:
 Test if `hg config` works:
 
   $ $PYTHON3 $HGBIN config
-  defaults.backout=-d "0 0"
-  defaults.commit=-d "0 0"
-  defaults.shelve=--date "0 0"
-  defaults.tag=-d "0 0"
   devel.all-warnings=true
+  devel.default-date=0 0
   largefiles.usercache=$TESTTMP/.cache/largefiles
   ui.slash=True
   ui.interactive=False
@@ -121,6 +118,13 @@ Test bytes-ness of policy.policy with HGMODULEPOLICY
   $ $PYTHON3 $HGBIN add iota
   $ $PYTHON3 $HGBIN status
   A iota
+  $ hg diff --nodates --git
+  diff --git a/iota b/iota
+  new file mode 100644
+  --- /dev/null
+  +++ b/iota
+  @@ -0,0 +1,1 @@
+  +This is the file 'iota'.
   $ $PYTHON3 $HGBIN commit --message 'commit performed in Python 3'
   $ $PYTHON3 $HGBIN status
 
@@ -139,6 +143,25 @@ Test bytes-ness of policy.policy with HGMODULEPOLICY
   commit: (clean)
   update: (current)
   phases: 2 draft
+
+Test weird unicode-vs-bytes stuff
+
+  $ $PYTHON3 $HGBIN help | egrep -v '^ |^$'
+  Mercurial Distributed SCM
+  list of commands:
+  additional help topics:
+  (use 'hg help -v' to show built-in aliases and global options)
+
+  $ $PYTHON3 $HGBIN help help | egrep -v '^ |^$'
+  hg help [-ecks] [TOPIC]
+  show help for a given topic or a help overview
+  options ([+] can be repeated):
+  (some details hidden, use --verbose to show complete help)
+
+  $ $PYTHON3 $HGBIN help -k notopic
+  abort: no matches
+  (try 'hg help' for a list of topics)
+  [255]
 
 Prove the repo is valid using the Python 2 `hg`:
   $ hg verify
@@ -159,3 +182,58 @@ Prove the repo is valid using the Python 2 `hg`:
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     commit performed in Python 3
   
+
+  $ $PYTHON3 $HGBIN log -G
+  @  changeset:   1:e1e9167203d4
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     message
+  |
+  o  changeset:   0:71c96e924262
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     commit performed in Python 3
+  
+  $ $PYTHON3 $HGBIN log -Tjson
+  [
+   {
+    "rev": 1,
+    "node": "e1e9167203d450ca2f558af628955b5f5afd4489",
+    "branch": "default",
+    "phase": "draft",
+    "user": "test",
+    "date": [0, 0],
+    "desc": "message",
+    "bookmarks": [],
+    "tags": ["tip"],
+    "parents": ["71c96e924262969ff0d8d3d695b0f75412ccc3d8"]
+   },
+   {
+    "rev": 0,
+    "node": "71c96e924262969ff0d8d3d695b0f75412ccc3d8",
+    "branch": "default",
+    "phase": "draft",
+    "user": "test",
+    "date": [0, 0],
+    "desc": "commit performed in Python 3",
+    "bookmarks": [],
+    "tags": [],
+    "parents": ["0000000000000000000000000000000000000000"]
+   }
+  ]
+
+Show that update works now!
+
+  $ $PYTHON3 $HGBIN up 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ $PYTHON3 $HGBIN identify
+  71c96e924262
+
+branches and bookmarks also works!
+
+  $ $PYTHON3 $HGBIN branches
+  default                        1:e1e9167203d4
+  $ $PYTHON3 $HGBIN bookmark book
+  $ $PYTHON3 $HGBIN bookmarks
+   * book                      0:71c96e924262

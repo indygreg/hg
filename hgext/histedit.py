@@ -201,6 +201,7 @@ from mercurial import (
     mergeutil,
     node,
     obsolete,
+    registrar,
     repair,
     scmutil,
     util,
@@ -209,7 +210,7 @@ from mercurial import (
 pickle = util.pickle
 release = lock.release
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -279,7 +280,6 @@ class histeditstate(object):
         self.lock = lock
         self.wlock = wlock
         self.backupfile = None
-        self.tr = None
         if replacements is None:
             self.replacements = []
         else:
@@ -1107,25 +1107,24 @@ def _continuehistedit(ui, repo, state):
         if action.verb == 'fold' and nextact and nextact.verb == 'fold':
             state.actions[idx].__class__ = _multifold
 
-    total = len(state.actions)
-    pos = 0
-    state.tr = None
-
     # Force an initial state file write, so the user can run --abort/continue
     # even if there's an exception before the first transaction serialize.
     state.write()
-    try:
-        # Don't use singletransaction by default since it rolls the entire
-        # transaction back if an unexpected exception happens (like a
-        # pretxncommit hook throws, or the user aborts the commit msg editor).
-        if ui.configbool("histedit", "singletransaction", False):
-            # Don't use a 'with' for the transaction, since actions may close
-            # and reopen a transaction. For example, if the action executes an
-            # external process it may choose to commit the transaction first.
-            state.tr = repo.transaction('histedit')
 
+    total = len(state.actions)
+    pos = 0
+    tr = None
+    # Don't use singletransaction by default since it rolls the entire
+    # transaction back if an unexpected exception happens (like a
+    # pretxncommit hook throws, or the user aborts the commit msg editor).
+    if ui.configbool("histedit", "singletransaction", False):
+        # Don't use a 'with' for the transaction, since actions may close
+        # and reopen a transaction. For example, if the action executes an
+        # external process it may choose to commit the transaction first.
+        tr = repo.transaction('histedit')
+    with util.acceptintervention(tr):
         while state.actions:
-            state.write(tr=state.tr)
+            state.write(tr=tr)
             actobj = state.actions[0]
             pos += 1
             ui.progress(_("editing"), pos, actobj.torule(),
@@ -1136,17 +1135,6 @@ def _continuehistedit(ui, repo, state):
             state.parentctxnode = parentctx.node()
             state.replacements.extend(replacement_)
             state.actions.pop(0)
-
-        if state.tr is not None:
-            state.tr.close()
-    except error.InterventionRequired:
-        if state.tr is not None:
-            state.tr.close()
-        raise
-    except Exception:
-        if state.tr is not None:
-            state.tr.abort()
-        raise
 
     state.write()
     ui.progress(_("editing"), None)
@@ -1170,13 +1158,21 @@ def _finishhistedit(ui, repo, state):
                     for n in succs[1:]:
                         ui.debug(m % node.short(n))
 
-    safecleanupnode(ui, repo, 'temp', tmpnodes)
-
     if not state.keep:
         if mapping:
-            movebookmarks(ui, repo, mapping, state.topmost, ntm)
+            movetopmostbookmarks(repo, state.topmost, ntm)
             # TODO update mq state
-        safecleanupnode(ui, repo, 'replaced', mapping)
+    else:
+        mapping = {}
+
+    for n in tmpnodes:
+        mapping[n] = ()
+
+    # remove entries about unknown nodes
+    nodemap = repo.unfiltered().changelog.nodemap
+    mapping = {k: v for k, v in mapping.items()
+               if k in nodemap and all(n in nodemap for n in v)}
+    scmutil.cleanupnodes(repo, mapping, 'histedit')
 
     state.clear()
     if os.path.exists(repo.sjoin('undo')):
@@ -1197,12 +1193,8 @@ def _aborthistedit(ui, repo, state):
             f = hg.openpath(ui, backupfile)
             gen = exchange.readbundle(ui, f, backupfile)
             with repo.transaction('histedit.abort') as tr:
-                if not isinstance(gen, bundle2.unbundle20):
-                    gen.apply(repo, 'histedit', 'bundle:' + backupfile)
-                if isinstance(gen, bundle2.unbundle20):
-                    bundle2.applybundle(repo, gen, tr,
-                                        source='histedit',
-                                        url='bundle:' + backupfile)
+                bundle2.applybundle(repo, gen, tr, source='histedit',
+                                    url='bundle:' + backupfile)
 
             os.remove(backupfile)
 
@@ -1210,8 +1202,8 @@ def _aborthistedit(ui, repo, state):
         if repo.unfiltered().revs('parents() and (%n  or %ln::)',
                                 state.parentctxnode, leafs | tmpnodes):
             hg.clean(repo, state.topmost, show_stats=True, quietempty=True)
-        cleanupnode(ui, repo, 'created', tmpnodes)
-        cleanupnode(ui, repo, 'temp', leafs)
+        cleanupnode(ui, repo, tmpnodes)
+        cleanupnode(ui, repo, leafs)
     except Exception:
         if state.inprogress():
             ui.warn(_('warning: encountered an exception during histedit '
@@ -1544,53 +1536,27 @@ def processreplacement(state):
 
     return final, tmpnodes, new, newtopmost
 
-def movebookmarks(ui, repo, mapping, oldtopmost, newtopmost):
-    """Move bookmark from old to newly created node"""
-    if not mapping:
-        # if nothing got rewritten there is not purpose for this function
-        return
-    moves = []
-    for bk, old in sorted(repo._bookmarks.iteritems()):
-        if old == oldtopmost:
-            # special case ensure bookmark stay on tip.
-            #
-            # This is arguably a feature and we may only want that for the
-            # active bookmark. But the behavior is kept compatible with the old
-            # version for now.
-            moves.append((bk, newtopmost))
-            continue
-        base = old
-        new = mapping.get(base, None)
-        if new is None:
-            continue
-        while not new:
-            # base is killed, trying with parent
-            base = repo[base].p1().node()
-            new = mapping.get(base, (base,))
-            # nothing to move
-        moves.append((bk, new[-1]))
-    if moves:
-        lock = tr = None
-        try:
-            lock = repo.lock()
-            tr = repo.transaction('histedit')
-            marks = repo._bookmarks
-            for mark, new in moves:
-                old = marks[mark]
-                ui.note(_('histedit: moving bookmarks %s from %s to %s\n')
-                        % (mark, node.short(old), node.short(new)))
-                marks[mark] = new
-            marks.recordchange(tr)
-            tr.close()
-        finally:
-            release(tr, lock)
+def movetopmostbookmarks(repo, oldtopmost, newtopmost):
+    """Move bookmark from oldtopmost to newly created topmost
 
-def cleanupnode(ui, repo, name, nodes):
+    This is arguably a feature and we may only want that for the active
+    bookmark. But the behavior is kept compatible with the old version for now.
+    """
+    if not oldtopmost or not newtopmost:
+        return
+    oldbmarks = repo.nodebookmarks(oldtopmost)
+    if oldbmarks:
+        with repo.lock(), repo.transaction('histedit') as tr:
+            marks = repo._bookmarks
+            changes = []
+            for name in oldbmarks:
+                changes.append((name, newtopmost))
+            marks.applychanges(repo, tr, changes)
+
+def cleanupnode(ui, repo, nodes):
     """strip a group of nodes from the repository
 
     The set of node to strip may contains unknown nodes."""
-    ui.debug('should strip %s nodes %s\n' %
-             (name, ', '.join([node.short(n) for n in nodes])))
     with repo.lock():
         # do not let filtering get in the way of the cleanse
         # we should probably get rid of obsolescence marker created during the
@@ -1601,39 +1567,8 @@ def cleanupnode(ui, repo, name, nodes):
         nm = repo.changelog.nodemap
         nodes = sorted(n for n in nodes if n in nm)
         roots = [c.node() for c in repo.set("roots(%ln)", nodes)]
-        for c in roots:
-            # We should process node in reverse order to strip tip most first.
-            # but this trigger a bug in changegroup hook.
-            # This would reduce bundle overhead
-            repair.strip(ui, repo, c)
-
-def safecleanupnode(ui, repo, name, nodes):
-    """strip or obsolete nodes
-
-    nodes could be either a set or dict which maps to replacements.
-    nodes could be unknown (outside the repo).
-    """
-    supportsmarkers = obsolete.isenabled(repo, obsolete.createmarkersopt)
-    if supportsmarkers:
-        if util.safehasattr(nodes, 'get'):
-            # nodes is a dict-like mapping
-            # use unfiltered repo for successors in case they are hidden
-            urepo = repo.unfiltered()
-            def getmarker(prec):
-                succs = tuple(urepo[n] for n in nodes.get(prec, ()))
-                return (repo[prec], succs)
-        else:
-            # nodes is a set-like
-            def getmarker(prec):
-                return (repo[prec], ())
-        # sort by revision number because it sound "right"
-        sortednodes = sorted([n for n in nodes if n in repo],
-                             key=repo.changelog.rev)
-        markers = [getmarker(t) for t in sortednodes]
-        if markers:
-            obsolete.createmarkers(repo, markers)
-    else:
-        return cleanupnode(ui, repo, name, nodes)
+        if roots:
+            repair.strip(ui, repo, roots)
 
 def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
     if isinstance(nodelist, str):
@@ -1641,8 +1576,8 @@ def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
     if os.path.exists(os.path.join(repo.path, 'histedit-state')):
         state = histeditstate(repo)
         state.read()
-        histedit_nodes = set([action.node for action
-                             in state.actions if action.node])
+        histedit_nodes = {action.node for action
+                          in state.actions if action.node}
         common_nodes = histedit_nodes & set(nodelist)
         if common_nodes:
             raise error.Abort(_("histedit in progress, can't strip %s")

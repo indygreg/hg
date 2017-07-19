@@ -112,15 +112,15 @@ Extension disabled for lack of a hook
   adding foo/file.txt revisions
   adding quux/file.py revisions
   added 3 changesets with 3 changes to 3 files
-  updating the branch cache
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-bundle: 3 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-bundle: 1 parts total
@@ -147,7 +147,6 @@ Extension disabled for lack of acl.sources
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -177,15 +176,15 @@ Extension disabled for lack of acl.sources
   added 3 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.acl: hgext.acl.hook
   acl: changes have source "push" - skipping
-  updating the branch cache
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-bundle: 3 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-bundle: 1 parts total
@@ -213,7 +212,6 @@ No [acl.allow]/[acl.deny]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -253,15 +251,15 @@ No [acl.allow]/[acl.deny]
   acl: path access granted: "f9cafe1212c8"
   acl: branch access granted: "911600dab2ae" on branch "default"
   acl: path access granted: "911600dab2ae"
-  updating the branch cache
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-bundle: 3 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-bundle: 1 parts total
@@ -289,7 +287,6 @@ Empty [acl.allow]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -354,7 +351,6 @@ fred is allowed inside foo/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -424,7 +420,6 @@ Empty [acl.deny]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -491,7 +486,6 @@ fred is allowed inside foo/, but not foo/bar/ (case matters)
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -563,7 +557,6 @@ fred is allowed inside foo/, but not foo/Bar/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -632,7 +625,6 @@ fred is allowed inside foo/, but not foo/Bar/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -703,7 +695,6 @@ barney is allowed everywhere
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -743,15 +734,15 @@ barney is allowed everywhere
   acl: path access granted: "f9cafe1212c8"
   acl: branch access granted: "911600dab2ae" on branch "default"
   acl: path access granted: "911600dab2ae"
-  updating the branch cache
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-bundle: 3 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-bundle: 1 parts total
@@ -786,7 +777,6 @@ wilma can change files with a .txt extension
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -864,7 +854,6 @@ file specified by acl.config does not exist
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -937,7 +926,6 @@ betty is allowed inside foo/ by a acl.config file
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1021,7 +1009,6 @@ acl.config can set only [acl.allow]/[acl.deny]
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1061,15 +1048,15 @@ acl.config can set only [acl.allow]/[acl.deny]
   acl: path access granted: "f9cafe1212c8"
   acl: branch access granted: "911600dab2ae" on branch "default"
   acl: path access granted: "911600dab2ae"
-  updating the branch cache
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-bundle: 3 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-bundle: 1 parts total
@@ -1107,7 +1094,6 @@ fred is always allowed
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1147,15 +1133,15 @@ fred is always allowed
   acl: path access granted: "f9cafe1212c8"
   acl: branch access granted: "911600dab2ae" on branch "default"
   acl: path access granted: "911600dab2ae"
-  updating the branch cache
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-bundle: 3 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-bundle: 1 parts total
@@ -1189,7 +1175,6 @@ no one is allowed inside foo/Bar/
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1265,7 +1250,6 @@ OS-level groups
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1306,15 +1290,15 @@ OS-level groups
   acl: path access granted: "f9cafe1212c8"
   acl: branch access granted: "911600dab2ae" on branch "default"
   acl: path access granted: "911600dab2ae"
-  updating the branch cache
   bundle2-input-part: total payload size 1553
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-bundle: 3 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-bundle: 1 parts total
@@ -1348,7 +1332,6 @@ OS-level groups
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
-  invalid branchheads cache (served): tip differs
   listing keys for "bookmarks"
   3 changesets found
   list of changesets:
@@ -1508,18 +1491,18 @@ No branch acls specified
   acl: path access granted: "911600dab2ae"
   acl: branch access granted: "e8fc755d4d82" on branch "foobar"
   acl: path access granted: "e8fc755d4d82"
-  updating the branch cache
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:e8fc755d4d8217ee5b0c2bb41558c40d43b92c01"
   bundle2-input-bundle: 4 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
@@ -1804,18 +1787,18 @@ Branch acl allow other
   acl: path access granted: "911600dab2ae"
   acl: branch access granted: "e8fc755d4d82" on branch "foobar"
   acl: path access granted: "e8fc755d4d82"
-  updating the branch cache
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:e8fc755d4d8217ee5b0c2bb41558c40d43b92c01"
   bundle2-input-bundle: 4 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
@@ -1897,18 +1880,18 @@ push foobar into the remote
   acl: path access granted: "911600dab2ae"
   acl: branch access granted: "e8fc755d4d82" on branch "foobar"
   acl: path access granted: "e8fc755d4d82"
-  updating the branch cache
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:e8fc755d4d8217ee5b0c2bb41558c40d43b92c01"
   bundle2-input-bundle: 4 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
@@ -2058,18 +2041,18 @@ User 'astro' must not be denied
   acl: path access granted: "911600dab2ae"
   acl: branch access granted: "e8fc755d4d82" on branch "foobar"
   acl: path access granted: "e8fc755d4d82"
-  updating the branch cache
   bundle2-input-part: total payload size 2068
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:911600dab2ae7a9baff75958b84fe606851ce955"
   bundle2-input-part: "pushkey" (params: 4 mandatory) supported
   pushing key for "phases:e8fc755d4d8217ee5b0c2bb41558c40d43b92c01"
   bundle2-input-bundle: 4 parts total
+  updating the branch cache
   bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
   bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
-  bundle2-input-bundle: with-transaction
+  bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
   bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported

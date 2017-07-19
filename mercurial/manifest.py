@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import heapq
+import itertools
 import os
 import struct
 
@@ -19,11 +20,12 @@ from .node import (
 from . import (
     error,
     mdiff,
-    parsers,
+    policy,
     revlog,
     util,
 )
 
+parsers = policy.importmod(r'parsers')
 propertycache = util.propertycache
 
 def _parsev1(data):
@@ -32,7 +34,7 @@ def _parsev1(data):
     # class exactly matches its C counterpart to try and help
     # prevent surprise breakage for anyone that develops against
     # the pure version.
-    if data and data[-1] != '\n':
+    if data and data[-1:] != '\n':
         raise ValueError('Manifest did not end in a newline.')
     prev = None
     for l in data.splitlines():
@@ -54,7 +56,7 @@ def _parsev2(data):
         end = data.find('\n', pos + 1) # +1 to skip stem length byte
         if end == -1:
             raise ValueError('Manifest ended with incomplete file entry.')
-        stemlen = ord(data[pos])
+        stemlen = ord(data[pos:pos + 1])
         items = data[pos + 1:end].split('\0')
         f = prevf[:stemlen] + items[0]
         if prevf > f:
@@ -577,8 +579,10 @@ class manifestdict(object):
         c._lm = self._lm.copy()
         return c
 
-    def iteritems(self):
+    def items(self):
         return (x[:2] for x in self._lm.iterentries())
+
+    iteritems = items
 
     def iterentries(self):
         return self._lm.iterentries()
@@ -778,25 +782,29 @@ class treemanifest(object):
 
     def iterentries(self):
         self._load()
-        for p, n in sorted(self._dirs.items() + self._files.items()):
+        for p, n in sorted(itertools.chain(self._dirs.items(),
+                                           self._files.items())):
             if p in self._files:
                 yield self._subpath(p), n, self._flags.get(p, '')
             else:
                 for x in n.iterentries():
                     yield x
 
-    def iteritems(self):
+    def items(self):
         self._load()
-        for p, n in sorted(self._dirs.items() + self._files.items()):
+        for p, n in sorted(itertools.chain(self._dirs.items(),
+                                           self._files.items())):
             if p in self._files:
                 yield self._subpath(p), n
             else:
                 for f, sn in n.iteritems():
                     yield f, sn
 
+    iteritems = items
+
     def iterkeys(self):
         self._load()
-        for p in sorted(self._dirs.keys() + self._files.keys()):
+        for p in sorted(itertools.chain(self._dirs, self._files)):
             if p in self._files:
                 yield self._subpath(p)
             else:
@@ -1175,25 +1183,31 @@ class manifestrevlog(revlog.revlog):
     '''A revlog that stores manifest texts. This is responsible for caching the
     full-text manifest contents.
     '''
-    def __init__(self, opener, dir='', dirlogcache=None, indexfile=None):
+    def __init__(self, opener, dir='', dirlogcache=None, indexfile=None,
+                 treemanifest=False):
         """Constructs a new manifest revlog
 
         `indexfile` - used by extensions to have two manifests at once, like
         when transitioning between flatmanifeset and treemanifests.
+
+        `treemanifest` - used to indicate this is a tree manifest revlog. Opener
+        options can also be used to make this a tree manifest revlog. The opener
+        option takes precedence, so if it is set to True, we ignore whatever
+        value is passed in to the constructor.
         """
         # During normal operations, we expect to deal with not more than four
         # revs at a time (such as during commit --amend). When rebasing large
         # stacks of commits, the number can go up, hence the config knob below.
         cachesize = 4
-        usetreemanifest = False
+        optiontreemanifest = False
         usemanifestv2 = False
         opts = getattr(opener, 'options', None)
         if opts is not None:
             cachesize = opts.get('manifestcachesize', cachesize)
-            usetreemanifest = opts.get('treemanifest', usetreemanifest)
+            optiontreemanifest = opts.get('treemanifest', False)
             usemanifestv2 = opts.get('manifestv2', usemanifestv2)
 
-        self._treeondisk = usetreemanifest
+        self._treeondisk = optiontreemanifest or treemanifest
         self._usemanifestv2 = usemanifestv2
 
         self._fulltextcache = util.lrucachedict(cachesize)
@@ -1216,7 +1230,8 @@ class manifestrevlog(revlog.revlog):
             self._dirlogcache = {'': self}
 
         super(manifestrevlog, self).__init__(opener, indexfile,
-                                             checkambig=bool(dir))
+                                             # only root indexfile is cached
+                                             checkambig=not bool(dir))
 
     @property
     def fulltextcache(self):
@@ -1231,8 +1246,10 @@ class manifestrevlog(revlog.revlog):
         if dir:
             assert self._treeondisk
         if dir not in self._dirlogcache:
-            self._dirlogcache[dir] = manifestrevlog(self.opener, dir,
-                                                    self._dirlogcache)
+            mfrevlog = manifestrevlog(self.opener, dir,
+                                      self._dirlogcache,
+                                      treemanifest=self._treeondisk)
+            self._dirlogcache[dir] = mfrevlog
         return self._dirlogcache[dir]
 
     def add(self, m, transaction, link, p1, p2, added, removed, readtree=None):
@@ -1317,8 +1334,7 @@ class manifestlog(object):
             cachesize = opts.get('manifestcachesize', cachesize)
         self._treeinmem = usetreemanifest
 
-        self._oldmanifest = repo._constructmanifest()
-        self._revlog = self._oldmanifest
+        self._revlog = repo._constructmanifest()
 
         # A cache of the manifestctx or treemanifestctx for each directory
         self._dirmancache = {}
@@ -1340,12 +1356,7 @@ class manifestlog(object):
                    the revlog
         """
         if node in self._dirmancache.get(dir, ()):
-            cachemf = self._dirmancache[dir][node]
-            # The old manifest may put non-ctx manifests in the cache, so
-            # skip those since they don't implement the full api.
-            if (isinstance(cachemf, manifestctx) or
-                isinstance(cachemf, treemanifestctx)):
-                return cachemf
+            return self._dirmancache[dir][node]
 
         if dir:
             if self._revlog._treeondisk:

@@ -7,11 +7,11 @@
 
 from __future__ import absolute_import
 
-import heapq
 import re
 
 from .i18n import _
 from . import (
+    dagop,
     destutil,
     encoding,
     error,
@@ -19,11 +19,13 @@ from . import (
     match as matchmod,
     node,
     obsolete as obsmod,
+    obsutil,
     pathutil,
     phases,
     registrar,
     repoview,
     revsetlang,
+    scmutil,
     smartset,
     util,
 )
@@ -48,123 +50,6 @@ generatorset = smartset.generatorset
 spanset = smartset.spanset
 fullreposet = smartset.fullreposet
 
-def _revancestors(repo, revs, followfirst):
-    """Like revlog.ancestors(), but supports followfirst."""
-    if followfirst:
-        cut = 1
-    else:
-        cut = None
-    cl = repo.changelog
-
-    def iterate():
-        revs.sort(reverse=True)
-        irevs = iter(revs)
-        h = []
-
-        inputrev = next(irevs, None)
-        if inputrev is not None:
-            heapq.heappush(h, -inputrev)
-
-        seen = set()
-        while h:
-            current = -heapq.heappop(h)
-            if current == inputrev:
-                inputrev = next(irevs, None)
-                if inputrev is not None:
-                    heapq.heappush(h, -inputrev)
-            if current not in seen:
-                seen.add(current)
-                yield current
-                for parent in cl.parentrevs(current)[:cut]:
-                    if parent != node.nullrev:
-                        heapq.heappush(h, -parent)
-
-    return generatorset(iterate(), iterasc=False)
-
-def _revdescendants(repo, revs, followfirst):
-    """Like revlog.descendants() but supports followfirst."""
-    if followfirst:
-        cut = 1
-    else:
-        cut = None
-
-    def iterate():
-        cl = repo.changelog
-        # XXX this should be 'parentset.min()' assuming 'parentset' is a
-        # smartset (and if it is not, it should.)
-        first = min(revs)
-        nullrev = node.nullrev
-        if first == nullrev:
-            # Are there nodes with a null first parent and a non-null
-            # second one? Maybe. Do we care? Probably not.
-            for i in cl:
-                yield i
-        else:
-            seen = set(revs)
-            for i in cl.revs(first + 1):
-                for x in cl.parentrevs(i)[:cut]:
-                    if x != nullrev and x in seen:
-                        seen.add(i)
-                        yield i
-                        break
-
-    return generatorset(iterate(), iterasc=True)
-
-def _reachablerootspure(repo, minroot, roots, heads, includepath):
-    """return (heads(::<roots> and ::<heads>))
-
-    If includepath is True, return (<roots>::<heads>)."""
-    if not roots:
-        return []
-    parentrevs = repo.changelog.parentrevs
-    roots = set(roots)
-    visit = list(heads)
-    reachable = set()
-    seen = {}
-    # prefetch all the things! (because python is slow)
-    reached = reachable.add
-    dovisit = visit.append
-    nextvisit = visit.pop
-    # open-code the post-order traversal due to the tiny size of
-    # sys.getrecursionlimit()
-    while visit:
-        rev = nextvisit()
-        if rev in roots:
-            reached(rev)
-            if not includepath:
-                continue
-        parents = parentrevs(rev)
-        seen[rev] = parents
-        for parent in parents:
-            if parent >= minroot and parent not in seen:
-                dovisit(parent)
-    if not reachable:
-        return baseset()
-    if not includepath:
-        return reachable
-    for rev in sorted(seen):
-        for parent in seen[rev]:
-            if parent in reachable:
-                reached(rev)
-    return reachable
-
-def reachableroots(repo, roots, heads, includepath=False):
-    """return (heads(::<roots> and ::<heads>))
-
-    If includepath is True, return (<roots>::<heads>)."""
-    if not roots:
-        return baseset()
-    minroot = roots.min()
-    roots = list(roots)
-    heads = list(heads)
-    try:
-        revs = repo.changelog.reachableroots(minroot, heads, roots, includepath)
-    except AttributeError:
-        revs = _reachablerootspure(repo, minroot, roots, heads, includepath)
-    revs = baseset(revs)
-    revs.sort()
-    return revs
-
 # helpers
 
 def getset(repo, subset, x):
@@ -185,7 +70,7 @@ def _getrevsource(repo, r):
 # operator methods
 
 def stringset(repo, subset, x):
-    x = repo[x].rev()
+    x = scmutil.intrev(repo[x])
     if (x in subset
         or x == node.nullrev and isinstance(subset, fullreposet)):
         return baseset([x])
@@ -236,8 +121,8 @@ def _makerangeset(repo, subset, m, n, order):
 
 def dagrange(repo, subset, x, y, order):
     r = fullreposet(repo)
-    xs = reachableroots(repo, getset(repo, r, x), getset(repo, r, y),
-                         includepath=True)
+    xs = dagop.reachableroots(repo, getset(repo, r, x), getset(repo, r, y),
+                              includepath=True)
     return subset & xs
 
 def andset(repo, subset, x, y, order):
@@ -265,6 +150,31 @@ def orset(repo, subset, x, order):
 
 def notset(repo, subset, x, order):
     return subset - getset(repo, subset, x)
+
+def relationset(repo, subset, x, y, order):
+    raise error.ParseError(_("can't use a relation in this context"))
+
+def relsubscriptset(repo, subset, x, y, z, order):
+    # this is pretty basic implementation of 'x#y[z]' operator, still
+    # experimental so undocumented. see the wiki for further ideas.
+    # https://www.mercurial-scm.org/wiki/RevsetOperatorPlan
+    rel = getsymbol(y)
+    n = getinteger(z, _("relation subscript must be an integer"))
+
+    # TODO: perhaps this should be a table of relation functions
+    if rel in ('g', 'generations'):
+        # TODO: support range, rewrite tests, and drop startdepth argument
+        # from ancestors() and descendants() predicates
+        if n <= 0:
+            n = -n
+            return _ancestors(repo, subset, x, startdepth=n, stopdepth=n + 1)
+        else:
+            return _descendants(repo, subset, x, startdepth=n, stopdepth=n + 1)
+
+    raise error.UnknownIdentifier(rel, ['generations'])
+
+def subscriptset(repo, subset, x, y, order):
+    raise error.ParseError(_("can't use a subscript in this context"))
 
 def listset(repo, subset, *xs):
     raise error.ParseError(_("can't use a list in this context"),
@@ -354,18 +264,42 @@ def ancestor(repo, subset, x):
         return baseset([anc.rev()])
     return baseset()
 
-def _ancestors(repo, subset, x, followfirst=False):
+def _ancestors(repo, subset, x, followfirst=False, startdepth=None,
+               stopdepth=None):
     heads = getset(repo, fullreposet(repo), x)
     if not heads:
         return baseset()
-    s = _revancestors(repo, heads, followfirst)
+    s = dagop.revancestors(repo, heads, followfirst, startdepth, stopdepth)
     return subset & s
 
-@predicate('ancestors(set)', safe=True)
+@predicate('ancestors(set[, depth])', safe=True)
 def ancestors(repo, subset, x):
-    """Changesets that are ancestors of a changeset in set.
+    """Changesets that are ancestors of changesets in set, including the
+    given changesets themselves.
+
+    If depth is specified, the result only includes changesets up to
+    the specified generation.
     """
-    return _ancestors(repo, subset, x)
+    # startdepth is for internal use only until we can decide the UI
+    args = getargsdict(x, 'ancestors', 'set depth startdepth')
+    if 'set' not in args:
+        # i18n: "ancestors" is a keyword
+        raise error.ParseError(_('ancestors takes at least 1 argument'))
+    startdepth = stopdepth = None
+    if 'startdepth' in args:
+        n = getinteger(args['startdepth'],
+                       "ancestors expects an integer startdepth")
+        if n < 0:
+            raise error.ParseError("negative startdepth")
+        startdepth = n
+    if 'depth' in args:
+        # i18n: "ancestors" is a keyword
+        n = getinteger(args['depth'], _("ancestors expects an integer depth"))
+        if n < 0:
+            raise error.ParseError(_("negative depth"))
+        stopdepth = n + 1
+    return _ancestors(repo, subset, args['set'],
+                      startdepth=startdepth, stopdepth=stopdepth)
 
 @predicate('_firstancestors', safe=True)
 def _firstancestors(repo, subset, x):
@@ -373,17 +307,41 @@ def _firstancestors(repo, subset, x):
     # Like ``ancestors(set)`` but follows only the first parents.
     return _ancestors(repo, subset, x, followfirst=True)
 
+def _childrenspec(repo, subset, x, n, order):
+    """Changesets that are the Nth child of a changeset
+    in set.
+    """
+    cs = set()
+    for r in getset(repo, fullreposet(repo), x):
+        for i in range(n):
+            c = repo[r].children()
+            if len(c) == 0:
+                break
+            if len(c) > 1:
+                raise error.RepoLookupError(
+                    _("revision in set has more than one child"))
+            r = c[0].rev()
+        else:
+            cs.add(r)
+    return subset & cs
+
 def ancestorspec(repo, subset, x, n, order):
     """``set~n``
     Changesets that are the Nth ancestor (first parents only) of a changeset
     in set.
     """
     n = getinteger(n, _("~ expects a number"))
+    if n < 0:
+        # children lookup
+        return _childrenspec(repo, subset, x, -n, order)
     ps = set()
     cl = repo.changelog
     for r in getset(repo, fullreposet(repo), x):
         for i in range(n):
-            r = cl.parentrevs(r)[0]
+            try:
+                r = cl.parentrevs(r)[0]
+            except error.WdirUnsupported:
+                r = repo[r].parents()[0].rev()
         ps.add(r)
     return subset & ps
 
@@ -451,9 +409,8 @@ def bookmark(repo, subset, x):
             for bmrev in matchrevs:
                 bms.add(repo[bmrev].rev())
     else:
-        bms = set([repo[r].rev()
-                   for r in repo._bookmarks.values()])
-    bms -= set([node.nullrev])
+        bms = {repo[r].rev() for r in repo._bookmarks.values()}
+    bms -= {node.nullrev}
     return subset & bms
 
 @predicate('branch(string or set)', safe=True)
@@ -466,6 +423,11 @@ def branch(repo, subset, x):
     :hg:`help revisions.patterns`.
     """
     getbi = repo.revbranchcache().branchinfo
+    def getbranch(r):
+        try:
+            return getbi(r)[0]
+        except error.WdirUnsupported:
+            return repo[r].branch()
 
     try:
         b = getstring(x, '')
@@ -478,21 +440,21 @@ def branch(repo, subset, x):
             # note: falls through to the revspec case if no branch with
             # this name exists and pattern kind is not specified explicitly
             if pattern in repo.branchmap():
-                return subset.filter(lambda r: matcher(getbi(r)[0]),
+                return subset.filter(lambda r: matcher(getbranch(r)),
                                      condrepr=('<branch %r>', b))
             if b.startswith('literal:'):
                 raise error.RepoLookupError(_("branch '%s' does not exist")
                                             % pattern)
         else:
-            return subset.filter(lambda r: matcher(getbi(r)[0]),
+            return subset.filter(lambda r: matcher(getbranch(r)),
                                  condrepr=('<branch %r>', b))
 
     s = getset(repo, fullreposet(repo), x)
     b = set()
     for r in s:
-        b.add(getbi(r)[0])
+        b.add(getbranch(r))
     c = s.__contains__
-    return subset.filter(lambda r: c(r) or getbi(r)[0] in b,
+    return subset.filter(lambda r: c(r) or getbranch(r) in b,
                          condrepr=lambda: '<branch %r>' % sorted(b))
 
 @predicate('bumped()', safe=True)
@@ -659,30 +621,42 @@ def desc(repo, subset, x):
     return subset.filter(lambda r: matcher(repo[r].description()),
                          condrepr=('<desc %r>', ds))
 
-def _descendants(repo, subset, x, followfirst=False):
+def _descendants(repo, subset, x, followfirst=False, startdepth=None,
+                 stopdepth=None):
     roots = getset(repo, fullreposet(repo), x)
     if not roots:
         return baseset()
-    s = _revdescendants(repo, roots, followfirst)
+    s = dagop.revdescendants(repo, roots, followfirst, startdepth, stopdepth)
+    return subset & s
 
-    # Both sets need to be ascending in order to lazily return the union
-    # in the correct order.
-    base = subset & roots
-    desc = subset & s
-    result = base + desc
-    if subset.isascending():
-        result.sort()
-    elif subset.isdescending():
-        result.sort(reverse=True)
-    else:
-        result = subset & result
-    return result
-
-@predicate('descendants(set)', safe=True)
+@predicate('descendants(set[, depth])', safe=True)
 def descendants(repo, subset, x):
-    """Changesets which are descendants of changesets in set.
+    """Changesets which are descendants of changesets in set, including the
+    given changesets themselves.
+
+    If depth is specified, the result only includes changesets up to
+    the specified generation.
     """
-    return _descendants(repo, subset, x)
+    # startdepth is for internal use only until we can decide the UI
+    args = getargsdict(x, 'descendants', 'set depth startdepth')
+    if 'set' not in args:
+        # i18n: "descendants" is a keyword
+        raise error.ParseError(_('descendants takes at least 1 argument'))
+    startdepth = stopdepth = None
+    if 'startdepth' in args:
+        n = getinteger(args['startdepth'],
+                       "descendants expects an integer startdepth")
+        if n < 0:
+            raise error.ParseError("negative startdepth")
+        startdepth = n
+    if 'depth' in args:
+        # i18n: "descendants" is a keyword
+        n = getinteger(args['depth'], _("descendants expects an integer depth"))
+        if n < 0:
+            raise error.ParseError(_("negative depth"))
+        stopdepth = n + 1
+    return _descendants(repo, subset, args['set'],
+                        startdepth=startdepth, stopdepth=stopdepth)
 
 @predicate('_firstdescendants', safe=True)
 def _firstdescendants(repo, subset, x):
@@ -850,11 +824,11 @@ def filelog(repo, subset, x):
 
     return subset & s
 
-@predicate('first(set, [n])', safe=True)
-def first(repo, subset, x):
+@predicate('first(set, [n])', safe=True, takeorder=True)
+def first(repo, subset, x, order):
     """An alias for limit().
     """
-    return limit(repo, subset, x)
+    return limit(repo, subset, x, order)
 
 def _follow(repo, subset, x, name, followfirst=False):
     l = getargs(x, 0, 2, _("%s takes no arguments or a pattern "
@@ -882,7 +856,7 @@ def _follow(repo, subset, x, name, followfirst=False):
             # include the revision responsible for the most recent version
             s.add(fctx.introrev())
     else:
-        s = _revancestors(repo, baseset([c.rev()]), followfirst)
+        s = dagop.revancestors(repo, baseset([c.rev()]), followfirst)
 
     return subset & s
 
@@ -915,8 +889,6 @@ def followlines(repo, subset, x):
     descendants of 'startrev' are returned though renames are (currently) not
     followed in this direction.
     """
-    from . import context  # avoid circular import issues
-
     args = getargsdict(x, 'followlines', 'file *lines startrev descend')
     if len(args['lines']) != 1:
         raise error.ParseError(_("followlines requires a line range"))
@@ -956,12 +928,12 @@ def followlines(repo, subset, x):
     if descend:
         rs = generatorset(
             (c.rev() for c, _linerange
-             in context.blockdescendants(fctx, fromline, toline)),
+             in dagop.blockdescendants(fctx, fromline, toline)),
             iterasc=True)
     else:
         rs = generatorset(
             (c.rev() for c, _linerange
-             in context.blockancestors(fctx, fromline, toline)),
+             in dagop.blockancestors(fctx, fromline, toline)),
             iterasc=False)
     return subset & rs
 
@@ -1118,8 +1090,8 @@ def keyword(repo, subset, x):
 
     return subset.filter(matches, condrepr=('<keyword %r>', kw))
 
-@predicate('limit(set[, n[, offset]])', safe=True)
-def limit(repo, subset, x):
+@predicate('limit(set[, n[, offset]])', safe=True, takeorder=True)
+def limit(repo, subset, x, order):
     """First n members of set, defaulting to 1, starting from offset.
     """
     args = getargsdict(x, 'limit', 'set n offset')
@@ -1128,28 +1100,20 @@ def limit(repo, subset, x):
         raise error.ParseError(_("limit requires one to three arguments"))
     # i18n: "limit" is a keyword
     lim = getinteger(args.get('n'), _("limit expects a number"), default=1)
+    if lim < 0:
+        raise error.ParseError(_("negative number to select"))
     # i18n: "limit" is a keyword
     ofs = getinteger(args.get('offset'), _("limit expects a number"), default=0)
     if ofs < 0:
         raise error.ParseError(_("negative offset"))
     os = getset(repo, fullreposet(repo), args['set'])
-    result = []
-    it = iter(os)
-    for x in xrange(ofs):
-        y = next(it, None)
-        if y is None:
-            break
-    for x in xrange(lim):
-        y = next(it, None)
-        if y is None:
-            break
-        elif y in subset:
-            result.append(y)
-    return baseset(result, datarepr=('<limit n=%d, offset=%d, %r, %r>',
-                                     lim, ofs, subset, os))
+    ls = os.slice(ofs, ofs + lim)
+    if order == followorder and lim > 1:
+        return subset & ls
+    return ls & subset
 
-@predicate('last(set, [n])', safe=True)
-def last(repo, subset, x):
+@predicate('last(set, [n])', safe=True, takeorder=True)
+def last(repo, subset, x, order):
     """Last n members of set, defaulting to 1.
     """
     # i18n: "last" is a keyword
@@ -1158,17 +1122,15 @@ def last(repo, subset, x):
     if len(l) == 2:
         # i18n: "last" is a keyword
         lim = getinteger(l[1], _("last expects a number"))
+    if lim < 0:
+        raise error.ParseError(_("negative number to select"))
     os = getset(repo, fullreposet(repo), l[0])
     os.reverse()
-    result = []
-    it = iter(os)
-    for x in xrange(lim):
-        y = next(it, None)
-        if y is None:
-            break
-        elif y in subset:
-            result.append(y)
-    return baseset(result, datarepr=('<last n=%d, %r, %r>', lim, subset, os))
+    ls = os.slice(0, lim)
+    if order == followorder and lim > 1:
+        return subset & ls
+    ls.reverse()
+    return ls & subset
 
 @predicate('max(set)', safe=True)
 def maxrev(repo, subset, x):
@@ -1276,7 +1238,7 @@ def named(repo, subset, x):
             if name not in ns.deprecated:
                 names.update(repo[n].rev() for n in ns.nodes(repo, name))
 
-    names -= set([node.nullrev])
+    names -= {node.nullrev}
     return subset & names
 
 @predicate('id(string)', safe=True)
@@ -1290,13 +1252,18 @@ def node_(repo, subset, x):
     if len(n) == 40:
         try:
             rn = repo.changelog.rev(node.bin(n))
+        except error.WdirUnsupported:
+            rn = node.wdirrev
         except (LookupError, TypeError):
             rn = None
     else:
         rn = None
-        pm = repo.changelog._partialmatch(n)
-        if pm is not None:
-            rn = repo.changelog.rev(pm)
+        try:
+            pm = repo.changelog._partialmatch(n)
+            if pm is not None:
+                rn = repo.changelog.rev(pm)
+        except error.WdirUnsupported:
+            rn = node.wdirrev
 
     if rn is None:
         return baseset()
@@ -1326,7 +1293,7 @@ def only(repo, subset, x):
         if not include:
             return baseset()
 
-        descendants = set(_revdescendants(repo, include, False))
+        descendants = set(dagop.revdescendants(repo, include, False))
         exclude = [rev for rev in cl.headrevs()
             if not rev in descendants and not rev in include]
     else:
@@ -1363,8 +1330,8 @@ def origin(repo, subset, x):
                 return src
             src = prev
 
-    o = set([_firstsrc(r) for r in dests])
-    o -= set([None])
+    o = {_firstsrc(r) for r in dests}
+    o -= {None}
     # XXX we should turn this into a baseset instead of a set, smartset may do
     # some optimizations from the fact this is a baseset.
     return subset & o
@@ -1393,7 +1360,7 @@ def outgoing(repo, subset, x):
     outgoing = discovery.findcommonoutgoing(repo, other, onlyheads=revs)
     repo.ui.popbuffer()
     cl = repo.changelog
-    o = set([cl.rev(r) for r in outgoing.missing])
+    o = {cl.rev(r) for r in outgoing.missing}
     return subset & o
 
 @predicate('p1([set])', safe=True)
@@ -1409,8 +1376,11 @@ def p1(repo, subset, x):
     ps = set()
     cl = repo.changelog
     for r in getset(repo, fullreposet(repo), x):
-        ps.add(cl.parentrevs(r)[0])
-    ps -= set([node.nullrev])
+        try:
+            ps.add(cl.parentrevs(r)[0])
+        except error.WdirUnsupported:
+            ps.add(repo[r].parents()[0].rev())
+    ps -= {node.nullrev}
     # XXX we should turn this into a baseset instead of a set, smartset may do
     # some optimizations from the fact this is a baseset.
     return subset & ps
@@ -1432,8 +1402,13 @@ def p2(repo, subset, x):
     ps = set()
     cl = repo.changelog
     for r in getset(repo, fullreposet(repo), x):
-        ps.add(cl.parentrevs(r)[1])
-    ps -= set([node.nullrev])
+        try:
+            ps.add(cl.parentrevs(r)[1])
+        except error.WdirUnsupported:
+            parents = repo[r].parents()
+            if len(parents) == 2:
+                ps.add(parents[1])
+    ps -= {node.nullrev}
     # XXX we should turn this into a baseset instead of a set, smartset may do
     # some optimizations from the fact this is a baseset.
     return subset & ps
@@ -1454,11 +1429,11 @@ def parents(repo, subset, x):
         up = ps.update
         parentrevs = cl.parentrevs
         for r in getset(repo, fullreposet(repo), x):
-            if r == node.wdirrev:
-                up(p.rev() for p in repo[r].parents())
-            else:
+            try:
                 up(parentrevs(r))
-    ps -= set([node.nullrev])
+            except error.WdirUnsupported:
+                up(p.rev() for p in repo[r].parents())
+    ps -= {node.nullrev}
     return subset & ps
 
 def _phase(repo, subset, *targets):
@@ -1500,11 +1475,19 @@ def parentspec(repo, subset, x, n, order):
         if n == 0:
             ps.add(r)
         elif n == 1:
-            ps.add(cl.parentrevs(r)[0])
-        elif n == 2:
-            parents = cl.parentrevs(r)
-            if parents[1] != node.nullrev:
-                ps.add(parents[1])
+            try:
+                ps.add(cl.parentrevs(r)[0])
+            except error.WdirUnsupported:
+                ps.add(repo[r].parents()[0].rev())
+        else:
+            try:
+                parents = cl.parentrevs(r)
+                if parents[1] != node.nullrev:
+                    ps.add(parents[1])
+            except error.WdirUnsupported:
+                parents = repo[r].parents()
+                if len(parents) == 2:
+                    ps.add(parents[1].rev())
     return subset & ps
 
 @predicate('present(set)', safe=True)
@@ -1597,7 +1580,7 @@ def rev(repo, subset, x):
     except (TypeError, ValueError):
         # i18n: "rev" is a keyword
         raise error.ParseError(_("rev expects a number"))
-    if l not in repo.changelog and l != node.nullrev:
+    if l not in repo.changelog and l not in (node.nullrev, node.wdirrev):
         return baseset()
     return subset & baseset([l])
 
@@ -1812,7 +1795,8 @@ def sort(repo, subset, x, order):
         firstbranch = ()
         if 'topo.firstbranch' in opts:
             firstbranch = getset(repo, subset, opts['topo.firstbranch'])
-        revs = baseset(_toposort(revs, repo.changelog.parentrevs, firstbranch),
+        revs = baseset(dagop.toposort(revs, repo.changelog.parentrevs,
+                                      firstbranch),
                        istopo=True)
         if keyflags[0][1]:
             revs.reverse()
@@ -1823,204 +1807,6 @@ def sort(repo, subset, x, order):
     for k, reverse in reversed(keyflags):
         ctxs.sort(key=_sortkeyfuncs[k], reverse=reverse)
     return baseset([c.rev() for c in ctxs])
-
-def _toposort(revs, parentsfunc, firstbranch=()):
-    """Yield revisions from heads to roots one (topo) branch at a time.
-
-    This function aims to be used by a graph generator that wishes to minimize
-    the number of parallel branches and their interleaving.
-
-    Example iteration order (numbers show the "true" order in a changelog):
-
-      o  4
-      |
-      o  1
-      |
-      | o  3
-      | |
-      | o  2
-      |/
-      o  0
-
-    Note that the ancestors of merges are understood by the current
-    algorithm to be on the same branch. This means no reordering will
-    occur behind a merge.
-    """
-
-    ### Quick summary of the algorithm
-    #
-    # This function is based around a "retention" principle. We keep revisions
-    # in memory until we are ready to emit a whole branch that immediately
-    # "merges" into an existing one. This reduces the number of parallel
-    # branches with interleaved revisions.
-    #
-    # During iteration revs are split into two groups:
-    # A) revision already emitted
-    # B) revision in "retention". They are stored as different subgroups.
-    #
-    # for each REV, we do the following logic:
-    #
-    #   1) if REV is a parent of (A), we will emit it. If there is a
-    #   retention group ((B) above) that is blocked on REV being
-    #   available, we emit all the revisions out of that retention
-    #   group first.
-    #
-    #   2) else, we'll search for a subgroup in (B) awaiting for REV to be
-    #   available, if such subgroup exist, we add REV to it and the subgroup is
-    #   now awaiting for REV.parents() to be available.
-    #
-    #   3) finally if no such group existed in (B), we create a new subgroup.
-    #
-    #
-    # To bootstrap the algorithm, we emit the tipmost revision (which
-    # puts it in group (A) from above).
-
-    revs.sort(reverse=True)
-
-    # Set of parents of revision that have been emitted. They can be considered
-    # unblocked as the graph generator is already aware of them so there is no
-    # need to delay the revisions that reference them.
-    #
-    # If someone wants to prioritize a branch over the others, pre-filling this
-    # set will force all other branches to wait until this branch is ready to be
-    # emitted.
-    unblocked = set(firstbranch)
-
-    # list of groups waiting to be displayed, each group is defined by:
-    #
-    #   (revs:    lists of revs waiting to be displayed,
-    #    blocked: set of that cannot be displayed before those in 'revs')
-    #
-    # The second value ('blocked') correspond to parents of any revision in the
-    # group ('revs') that is not itself contained in the group. The main idea
-    # of this algorithm is to delay as much as possible the emission of any
-    # revision.  This means waiting for the moment we are about to display
-    # these parents to display the revs in a group.
-    #
-    # This first implementation is smart until it encounters a merge: it will
-    # emit revs as soon as any parent is about to be emitted and can grow an
-    # arbitrary number of revs in 'blocked'. In practice this mean we properly
-    # retains new branches but gives up on any special ordering for ancestors
-    # of merges. The implementation can be improved to handle this better.
-    #
-    # The first subgroup is special. It corresponds to all the revision that
-    # were already emitted. The 'revs' lists is expected to be empty and the
-    # 'blocked' set contains the parents revisions of already emitted revision.
-    #
-    # You could pre-seed the <parents> set of groups[0] to a specific
-    # changesets to select what the first emitted branch should be.
-    groups = [([], unblocked)]
-    pendingheap = []
-    pendingset = set()
-
-    heapq.heapify(pendingheap)
-    heappop = heapq.heappop
-    heappush = heapq.heappush
-    for currentrev in revs:
-        # Heap works with smallest element, we want highest so we invert
-        if currentrev not in pendingset:
-            heappush(pendingheap, -currentrev)
-            pendingset.add(currentrev)
-        # iterates on pending rev until after the current rev have been
-        # processed.
-        rev = None
-        while rev != currentrev:
-            rev = -heappop(pendingheap)
-            pendingset.remove(rev)
-
-            # Seek for a subgroup blocked, waiting for the current revision.
-            matching = [i for i, g in enumerate(groups) if rev in g[1]]
-
-            if matching:
-                # The main idea is to gather together all sets that are blocked
-                # on the same revision.
-                #
-                # Groups are merged when a common blocking ancestor is
-                # observed. For example, given two groups:
-                #
-                # revs [5, 4] waiting for 1
-                # revs [3, 2] waiting for 1
-                #
-                # These two groups will be merged when we process
-                # 1. In theory, we could have merged the groups when
-                # we added 2 to the group it is now in (we could have
-                # noticed the groups were both blocked on 1 then), but
-                # the way it works now makes the algorithm simpler.
-                #
-                # We also always keep the oldest subgroup first. We can
-                # probably improve the behavior by having the longest set
-                # first. That way, graph algorithms could minimise the length
-                # of parallel lines their drawing. This is currently not done.
-                targetidx = matching.pop(0)
-                trevs, tparents = groups[targetidx]
-                for i in matching:
-                    gr = groups[i]
-                    trevs.extend(gr[0])
-                    tparents |= gr[1]
-                # delete all merged subgroups (except the one we kept)
-                # (starting from the last subgroup for performance and
-                # sanity reasons)
-                for i in reversed(matching):
-                    del groups[i]
-            else:
-                # This is a new head. We create a new subgroup for it.
-                targetidx = len(groups)
-                groups.append(([], set([rev])))
-
-            gr = groups[targetidx]
-
-            # We now add the current nodes to this subgroups. This is done
-            # after the subgroup merging because all elements from a subgroup
-            # that relied on this rev must precede it.
-            #
-            # we also update the <parents> set to include the parents of the
-            # new nodes.
-            if rev == currentrev: # only display stuff in rev
-                gr[0].append(rev)
-            gr[1].remove(rev)
-            parents = [p for p in parentsfunc(rev) if p > node.nullrev]
-            gr[1].update(parents)
-            for p in parents:
-                if p not in pendingset:
-                    pendingset.add(p)
-                    heappush(pendingheap, -p)
-
-            # Look for a subgroup to display
-            #
-            # When unblocked is empty (if clause), we were not waiting for any
-            # revisions during the first iteration (if no priority was given) or
-            # if we emitted a whole disconnected set of the graph (reached a
-            # root).  In that case we arbitrarily take the oldest known
-            # subgroup. The heuristic could probably be better.
-            #
-            # Otherwise (elif clause) if the subgroup is blocked on
-            # a revision we just emitted, we can safely emit it as
-            # well.
-            if not unblocked:
-                if len(groups) > 1:  # display other subset
-                    targetidx = 1
-                    gr = groups[1]
-            elif not gr[1] & unblocked:
-                gr = None
-
-            if gr is not None:
-                # update the set of awaited revisions with the one from the
-                # subgroup
-                unblocked |= gr[1]
-                # output all revisions in the subgroup
-                for r in gr[0]:
-                    yield r
-                # delete the subgroup that you just output
-                # unless it is groups[0] in which case you just empty it.
-                if targetidx:
-                    del groups[targetidx]
-                else:
-                    gr[0][:] = []
-    # Check if we have some subgroup waiting for revisions we are not going to
-    # iterate over
-    for g in groups:
-        for r in g[0]:
-            yield r
 
 @predicate('subrepo([pattern])')
 def subrepo(repo, subset, x):
@@ -2066,6 +1852,28 @@ def subrepo(repo, subset, x):
 
     return subset.filter(matches, condrepr=('<subrepo %r>', pat))
 
+def _mapbynodefunc(repo, s, f):
+    """(repo, smartset, [node] -> [node]) -> smartset
+
+    Helper method to map a smartset to another smartset given a function only
+    talking about nodes. Handles converting between rev numbers and nodes, and
+    filtering.
+    """
+    cl = repo.unfiltered().changelog
+    torev = cl.rev
+    tonode = cl.node
+    nodemap = cl.nodemap
+    result = set(torev(n) for n in f(tonode(r) for r in s) if n in nodemap)
+    return smartset.baseset(result - repo.changelog.filteredrevs)
+
+@predicate('successors(set)', safe=True)
+def successors(repo, subset, x):
+    """All successors for set, including the given set themselves"""
+    s = getset(repo, fullreposet(repo), x)
+    f = lambda nodes: obsutil.allsuccessors(repo.obsstore, nodes)
+    d = _mapbynodefunc(repo, s, f)
+    return subset & d
+
 def _substringmatcher(pattern, casesensitive=True):
     kind, pattern, matcher = util.stringmatcher(pattern,
                                                 casesensitive=casesensitive)
@@ -2098,11 +1906,11 @@ def tag(repo, subset, x):
             if tn is None:
                 raise error.RepoLookupError(_("tag '%s' does not exist")
                                             % pattern)
-            s = set([repo[tn].rev()])
+            s = {repo[tn].rev()}
         else:
-            s = set([cl.rev(n) for t, n in repo.tagslist() if matcher(t)])
+            s = {cl.rev(n) for t, n in repo.tagslist() if matcher(t)}
     else:
-        s = set([cl.rev(n) for t, n in repo.tagslist() if t != 'tip'])
+        s = {cl.rev(n) for t, n in repo.tagslist() if t != 'tip'}
     return subset & s
 
 @predicate('tagged', safe=True)
@@ -2128,7 +1936,7 @@ def user(repo, subset, x):
     """
     return author(repo, subset, x)
 
-@predicate('wdir', safe=True)
+@predicate('wdir()', safe=True)
 def wdir(repo, subset, x):
     """Working directory. (EXPERIMENTAL)"""
     # i18n: "wdir" is a keyword
@@ -2221,6 +2029,9 @@ methods = {
     "or": orset,
     "not": notset,
     "difference": differenceset,
+    "relation": relationset,
+    "relsubscript": relsubscriptset,
+    "subscript": subscriptset,
     "list": listset,
     "keyvalue": keyvaluepair,
     "func": func,
@@ -2241,12 +2052,15 @@ def match(ui, spec, repo=None, order=defineorder):
     """
     return matchany(ui, [spec], repo=repo, order=order)
 
-def matchany(ui, specs, repo=None, order=defineorder):
+def matchany(ui, specs, repo=None, order=defineorder, localalias=None):
     """Create a matcher that will include any revisions matching one of the
     given specs
 
     If order=followorder, a matcher takes the ordering specified by the input
     set.
+
+    If localalias is not None, it is a dict {name: definitionstring}. It takes
+    precedence over [revsetalias] config section.
     """
     if not specs:
         def mfunc(repo, subset=None):
@@ -2263,8 +2077,15 @@ def matchany(ui, specs, repo=None, order=defineorder):
         tree = ('or',
                 ('list',) + tuple(revsetlang.parse(s, lookup) for s in specs))
 
+    aliases = []
+    warn = None
     if ui:
-        tree = revsetlang.expandaliases(ui, tree)
+        aliases.extend(ui.configitems('revsetalias'))
+        warn = ui.warn
+    if localalias:
+        aliases.extend(localalias.items())
+    if aliases:
+        tree = revsetlang.expandaliases(tree, aliases, warn=warn)
     tree = revsetlang.foldconcat(tree)
     tree = revsetlang.analyze(tree, order)
     tree = revsetlang.optimize(tree)

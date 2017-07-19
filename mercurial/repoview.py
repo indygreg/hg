@@ -9,13 +9,9 @@
 from __future__ import absolute_import
 
 import copy
-import hashlib
-import heapq
-import struct
 
 from .node import nullrev
 from . import (
-    error,
     obsolete,
     phases,
     tags as tagsmod,
@@ -32,141 +28,40 @@ def hideablerevs(repo):
     lead to crashes."""
     return obsolete.getrevs(repo, 'obsolete')
 
-def _getstatichidden(repo):
-    """Revision to be hidden (disregarding dynamic blocker)
-
-    To keep a consistent graph, we cannot hide any revisions with
-    non-hidden descendants. This function computes the set of
-    revisions that could be hidden while keeping the graph consistent.
-
-    A second pass will be done to apply "dynamic blocker" like bookmarks or
-    working directory parents.
-
+def pinnedrevs(repo):
+    """revisions blocking hidden changesets from being filtered
     """
-    assert not repo.changelog.filteredrevs
-    hidden = set(hideablerevs(repo))
-    if hidden:
-        getphase = repo._phasecache.phase
-        getparentrevs = repo.changelog.parentrevs
-        # Skip heads which are public (guaranteed to not be hidden)
-        heap = [-r for r in repo.changelog.headrevs() if getphase(repo, r)]
-        heapq.heapify(heap)
-        heappop = heapq.heappop
-        heappush = heapq.heappush
-        seen = set() # no need to init it with heads, they have no children
-        while heap:
-            rev = -heappop(heap)
-            # All children have been processed so at that point, if no children
-            # removed 'rev' from the 'hidden' set, 'rev' is going to be hidden.
-            blocker = rev not in hidden
-            for parent in getparentrevs(rev):
-                if parent == nullrev:
-                    continue
-                if blocker:
-                    # If visible, ensure parent will be visible too
-                    hidden.discard(parent)
-                # - Avoid adding the same revision twice
-                # - Skip nodes which are public (guaranteed to not be hidden)
-                pre = len(seen)
-                seen.add(parent)
-                if pre < len(seen) and getphase(repo, rev):
-                    heappush(heap, -parent)
-    return hidden
-
-def _getdynamicblockers(repo):
-    """Non-cacheable revisions blocking hidden changesets from being filtered.
-
-    Get revisions that will block hidden changesets and are likely to change,
-    but unlikely to create hidden blockers. They won't be cached, so be careful
-    with adding additional computation."""
 
     cl = repo.changelog
-    blockers = set()
-    blockers.update([par.rev() for par in repo[None].parents()])
-    blockers.update([cl.rev(bm) for bm in repo._bookmarks.values()])
+    pinned = set()
+    pinned.update([par.rev() for par in repo[None].parents()])
+    pinned.update([cl.rev(bm) for bm in repo._bookmarks.values()])
 
     tags = {}
     tagsmod.readlocaltags(repo.ui, repo, tags, {})
     if tags:
         rev, nodemap = cl.rev, cl.nodemap
-        blockers.update(rev(t[0]) for t in tags.values() if t[0] in nodemap)
-    return blockers
+        pinned.update(rev(t[0]) for t in tags.values() if t[0] in nodemap)
+    return pinned
 
-cacheversion = 1
-cachefile = 'cache/hidden'
 
-def cachehash(repo, hideable):
-    """return sha1 hash of repository data to identify a valid cache.
+def _revealancestors(pfunc, hidden, revs):
+    """reveals contiguous chains of hidden ancestors of 'revs' by removing them
+    from 'hidden'
 
-    We calculate a sha1 of repo heads and the content of the obsstore and write
-    it to the cache. Upon reading we can easily validate by checking the hash
-    against the stored one and discard the cache in case the hashes don't match.
+    - pfunc(r): a funtion returning parent of 'r',
+    - hidden: the (preliminary) hidden revisions, to be updated
+    - revs: iterable of revnum,
+
+    (Ancestors are revealed exclusively, i.e. the elements in 'revs' are
+    *not* revealed)
     """
-    h = hashlib.sha1()
-    h.update(''.join(repo.heads()))
-    h.update('%d' % hash(frozenset(hideable)))
-    return h.digest()
-
-def _writehiddencache(cachefile, cachehash, hidden):
-    """write hidden data to a cache file"""
-    data = struct.pack('>%ii' % len(hidden), *sorted(hidden))
-    cachefile.write(struct.pack(">H", cacheversion))
-    cachefile.write(cachehash)
-    cachefile.write(data)
-
-def trywritehiddencache(repo, hideable, hidden):
-    """write cache of hidden changesets to disk
-
-    Will not write the cache if a wlock cannot be obtained lazily.
-    The cache consists of a head of 22byte:
-       2 byte    version number of the cache
-      20 byte    sha1 to validate the cache
-     n*4 byte    hidden revs
-    """
-    wlock = fh = None
-    try:
-        wlock = repo.wlock(wait=False)
-        # write cache to file
-        newhash = cachehash(repo, hideable)
-        fh = repo.vfs.open(cachefile, 'w+b', atomictemp=True)
-        _writehiddencache(fh, newhash, hidden)
-        fh.close()
-    except (IOError, OSError):
-        repo.ui.debug('error writing hidden changesets cache\n')
-    except error.LockHeld:
-        repo.ui.debug('cannot obtain lock to write hidden changesets cache\n')
-    finally:
-        if wlock:
-            wlock.release()
-
-def _readhiddencache(repo, cachefilename, newhash):
-    hidden = fh = None
-    try:
-        if repo.vfs.exists(cachefile):
-            fh = repo.vfs.open(cachefile, 'rb')
-            version, = struct.unpack(">H", fh.read(2))
-            oldhash = fh.read(20)
-            if (cacheversion, oldhash) == (version, newhash):
-                # cache is valid, so we can start reading the hidden revs
-                data = fh.read()
-                count = len(data) / 4
-                hidden = frozenset(struct.unpack('>%ii' % count, data))
-        return hidden
-    except struct.error:
-        repo.ui.debug('corrupted hidden cache\n')
-        # No need to fix the content as it will get rewritten
-        return None
-    except (IOError, OSError):
-        repo.ui.debug('cannot read hidden cache\n')
-        return None
-    finally:
-        if fh:
-            fh.close()
-
-def tryreadcache(repo, hideable):
-    """read a cache if the cache exists and is valid, otherwise returns None."""
-    newhash = cachehash(repo, hideable)
-    return _readhiddencache(repo, cachefile, newhash)
+    stack = list(revs)
+    while stack:
+        for p in pfunc(stack.pop()):
+            if p != nullrev and p in hidden:
+                hidden.remove(p)
+                stack.append(p)
 
 def computehidden(repo):
     """compute the set of hidden revision to filter
@@ -174,22 +69,16 @@ def computehidden(repo):
     During most operation hidden should be filtered."""
     assert not repo.changelog.filteredrevs
 
-    hidden = frozenset()
-    hideable = hideablerevs(repo)
-    if hideable:
-        cl = repo.changelog
-        hidden = tryreadcache(repo, hideable)
-        if hidden is None:
-            hidden = frozenset(_getstatichidden(repo))
-            trywritehiddencache(repo, hideable, hidden)
+    hidden = hideablerevs(repo)
+    if hidden:
+        hidden = set(hidden - pinnedrevs(repo))
+        pfunc = repo.changelog.parentrevs
+        mutablephases = (phases.draft, phases.secret)
+        mutable = repo._phasecache.getrevset(repo, mutablephases)
 
-        # check if we have wd parents, bookmarks or tags pointing to hidden
-        # changesets and remove those.
-        dynamic = hidden & _getdynamicblockers(repo)
-        if dynamic:
-            blocked = cl.ancestors(dynamic, inclusive=True)
-            hidden = frozenset(r for r in hidden if r not in blocked)
-    return hidden
+        visible = mutable - hidden
+        _revealancestors(pfunc, hidden, visible)
+    return frozenset(hidden)
 
 def computeunserved(repo):
     """compute the set of revision that should be filtered when used a server
@@ -354,10 +243,3 @@ class repoview(object):
 
     def __delattr__(self, attr):
         return delattr(self._unfilteredrepo, attr)
-
-    # The `requirements` attribute is initialized during __init__. But
-    # __getattr__ won't be called as it also exists on the class. We need
-    # explicit forwarding to main repo here
-    @property
-    def requirements(self):
-        return self._unfilteredrepo.requirements

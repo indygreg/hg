@@ -53,6 +53,7 @@ from .node import (
 from . import (
     dagutil,
     error,
+    util,
 )
 
 def _updatesample(dag, nodes, sample, quicksamplesize=0):
@@ -136,6 +137,8 @@ def findcommonheads(ui, local, remote,
     '''Return a tuple (common, anyincoming, remoteheads) used to identify
     missing nodes from or in remote.
     '''
+    start = util.timer()
+
     roundtrips = 0
     cl = local.changelog
     dag = dagutil.revlogdag(cl)
@@ -235,15 +238,21 @@ def findcommonheads(ui, local, remote,
     # common.bases can include nullrev, but our contract requires us to not
     # return any heads in that case, so discard that
     result.discard(nullrev)
+    elapsed = util.timer() - start
     ui.progress(_('searching'), None)
-    ui.debug("%d total queries\n" % roundtrips)
+    ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
+    msg = ('found %d common and %d unknown server heads,'
+           ' %d roundtrips in %.4fs\n')
+    missing = set(result) - set(srvheads)
+    ui.log('discovery', msg, len(result), len(missing), roundtrips,
+           elapsed)
 
     if not result and srvheadhashes != [nullid]:
         if abortwhenunrelated:
             raise error.Abort(_("repository is unrelated"))
         else:
             ui.warn(_("warning: repository is unrelated\n"))
-        return (set([nullid]), True, srvheadhashes,)
+        return ({nullid}, True, srvheadhashes,)
 
     anyincoming = (srvheadhashes != [nullid])
     return dag.externalizeall(result), anyincoming, srvheadhashes

@@ -11,7 +11,6 @@ import errno
 import gc
 import os
 import random
-import select
 import signal
 import socket
 import struct
@@ -22,6 +21,7 @@ from . import (
     encoding,
     error,
     pycompat,
+    selectors2,
     util,
 )
 
@@ -156,7 +156,7 @@ class server(object):
         self.cwd = pycompat.getcwd()
 
         # developer config: cmdserver.log
-        logpath = ui.config("cmdserver", "log", None)
+        logpath = ui.config("cmdserver", "log")
         if logpath:
             global logfile
             if logpath == '-':
@@ -409,13 +409,12 @@ class unixservicehandler(object):
 
     def bindsocket(self, sock, address):
         util.bindunixsocket(sock, address)
+        sock.listen(socket.SOMAXCONN)
+        self.ui.status(_('listening at %s\n') % address)
+        self.ui.flush()  # avoid buffering of status message
 
     def unlinksocket(self, address):
         os.unlink(address)
-
-    def printbanner(self, address):
-        self.ui.status(_('listening at %s\n') % address)
-        self.ui.flush()  # avoid buffering of status message
 
     def shouldexit(self):
         """True if server should shut down; checked per pollinterval"""
@@ -452,10 +451,8 @@ class unixforkingservice(object):
     def init(self):
         self._sock = socket.socket(socket.AF_UNIX)
         self._servicehandler.bindsocket(self._sock, self.address)
-        self._sock.listen(socket.SOMAXCONN)
         o = signal.signal(signal.SIGCHLD, self._sigchldhandler)
         self._oldsigchldhandler = o
-        self._servicehandler.printbanner(self.address)
         self._socketunlinked = False
 
     def _unlinksocket(self):
@@ -479,6 +476,8 @@ class unixforkingservice(object):
     def _mainloop(self):
         exiting = False
         h = self._servicehandler
+        selector = selectors2.DefaultSelector()
+        selector.register(self._sock, selectors2.EVENT_READ)
         while True:
             if not exiting and h.shouldexit():
                 # clients can no longer connect() to the domain socket, so
@@ -488,15 +487,15 @@ class unixforkingservice(object):
                 # waiting for recv() will receive ECONNRESET.
                 self._unlinksocket()
                 exiting = True
+            ready = selector.select(timeout=h.pollinterval)
+            if not ready:
+                # only exit if we completed all queued requests
+                if exiting:
+                    break
+                continue
             try:
-                ready = select.select([self._sock], [], [], h.pollinterval)[0]
-                if not ready:
-                    # only exit if we completed all queued requests
-                    if exiting:
-                        break
-                    continue
                 conn, _addr = self._sock.accept()
-            except (select.error, socket.error) as inst:
+            except socket.error as inst:
                 if inst.args[0] == errno.EINTR:
                     continue
                 raise
@@ -519,6 +518,7 @@ class unixforkingservice(object):
                         self.ui.traceback(force=True)
                     finally:
                         os._exit(255)
+        selector.close()
 
     def _sigchldhandler(self, signal, frame):
         self._reapworkers(os.WNOHANG)

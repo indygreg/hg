@@ -5,8 +5,7 @@ import random
 import sys
 
 from mercurial import (
-    bdiff,
-    mpatch,
+    mdiff,
 )
 
 def reducetest(a, b):
@@ -42,10 +41,10 @@ def reducetest(a, b):
     sys.exit(0)
 
 def test1(a, b):
-    d = bdiff.bdiff(a, b)
+    d = mdiff.textdiff(a, b)
     if not d:
         raise ValueError("empty")
-    c = mpatch.patches(a, [d])
+    c = mdiff.patches(a, [d])
     if c != b:
         raise ValueError("bad")
 

@@ -24,6 +24,20 @@ share shouldn't have a store dir
   $ test -d .hg/store
   [1]
 
+share shouldn't have a cache dir, original repo should
+
+  $ hg branches
+  default                        0:d3873e73d99e
+  $ hg tags
+  tip                                0:d3873e73d99e
+  $ test -d .hg/cache
+  [1]
+  $ ls -1 ../repo1/.hg/cache
+  branch2-served
+  rbc-names-v1
+  rbc-revs-v1
+  tags2-visible
+
 Some sed versions appends newline, some don't, and some just fails
 
   $ cat .hg/sharedpath; echo
@@ -243,6 +257,8 @@ test that commits work
 non largefiles repos won't enable largefiles
 
   $ hg share --config extensions.largefiles= repo3 sharedrepo
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   updating working directory
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ [ -f sharedrepo/.hg/hgrc ]

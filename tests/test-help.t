@@ -660,6 +660,32 @@ Test command without options
   (use 'hg help' for the full list of commands or 'hg -v' for details)
   [255]
 
+Typoed command gives suggestion
+  $ hg puls
+  hg: unknown command 'puls'
+  (did you mean one of pull, push?)
+  [255]
+
+Not enabled extension gets suggested
+
+  $ hg rebase
+  hg: unknown command 'rebase'
+  'rebase' is provided by the following extension:
+  
+      rebase        command to move sets of revisions to a different ancestor
+  
+  (use 'hg help extensions' for information on enabling extensions)
+  [255]
+
+Disabled extension gets suggested
+  $ hg --config extensions.rebase=! rebase
+  hg: unknown command 'rebase'
+  'rebase' is provided by the following extension:
+  
+      rebase        command to move sets of revisions to a different ancestor
+  
+  (use 'hg help extensions' for information on enabling extensions)
+  [255]
 
 Make sure that we don't run afoul of the help system thinking that
 this is a section and erroring out weirdly.
@@ -680,26 +706,26 @@ this is a section and erroring out weirdly.
 
   $ cat > helpext.py <<EOF
   > import os
-  > from mercurial import cmdutil, commands
+  > from mercurial import commands, registrar
   > 
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
+  > command = registrar.command(cmdtable)
   > 
-  > @command('nohelp',
-  >     [('', 'longdesc', 3, 'x'*90),
-  >     ('n', '', None, 'normal desc'),
-  >     ('', 'newline', '', 'line1\nline2')],
-  >     'hg nohelp',
+  > @command(b'nohelp',
+  >     [(b'', b'longdesc', 3, b'x'*90),
+  >     (b'n', b'', None, b'normal desc'),
+  >     (b'', b'newline', b'', b'line1\nline2')],
+  >     b'hg nohelp',
   >     norepo=True)
-  > @command('debugoptADV', [('', 'aopt', None, 'option is (ADVANCED)')])
-  > @command('debugoptDEP', [('', 'dopt', None, 'option is (DEPRECATED)')])
-  > @command('debugoptEXP', [('', 'eopt', None, 'option is (EXPERIMENTAL)')])
+  > @command(b'debugoptADV', [(b'', b'aopt', None, b'option is (ADVANCED)')])
+  > @command(b'debugoptDEP', [(b'', b'dopt', None, b'option is (DEPRECATED)')])
+  > @command(b'debugoptEXP', [(b'', b'eopt', None, b'option is (EXPERIMENTAL)')])
   > def nohelp(ui, *args, **kwargs):
   >     pass
   > 
   > def uisetup(ui):
-  >     ui.setconfig('alias', 'shellalias', '!echo hi', 'helpext')
-  >     ui.setconfig('alias', 'hgalias', 'summary', 'helpext')
+  >     ui.setconfig(b'alias', b'shellalias', b'!echo hi', b'helpext')
+  >     ui.setconfig(b'alias', b'hgalias', b'summary', b'helpext')
   > 
   > EOF
   $ echo '[extensions]' >> $HGRCPATH
@@ -912,6 +938,8 @@ Test list of internal help commands
    debugoptEXP   (no help text available)
    debugpathcomplete
                  complete part or all of a tracked path
+   debugpickmergetool
+                 examine which merge tool is chosen for specified file
    debugpushkey  access the pushkey key/value protocol
    debugpvec     (no help text available)
    debugrebuilddirstate
@@ -924,11 +952,14 @@ Test list of internal help commands
    debugrevspec  parse and apply a revision specification
    debugsetparents
                  manually set the parents of the current working directory
+   debugssl      test a secure connection to a server
    debugsub      (no help text available)
    debugsuccessorssets
                  show set of successors for revision
    debugtemplate
                  parse and apply a template
+   debugupdatecaches
+                 warm all known caches in the repository
    debugupgraderepo
                  upgrade a repository to use different features
    debugwalk     show how files match on given patterns
@@ -1642,7 +1673,7 @@ replacement makes message meaningless.
 This tests that section lookup by translated string isn't broken by
 such str.lower().
 
-  $ python <<EOF
+  $ $PYTHON <<EOF
   > def escape(s):
   >     return ''.join('\u%x' % ord(uc) for uc in s.decode('cp932'))
   > # translation of "record" in ja_JP.cp932
@@ -1676,7 +1707,7 @@ such str.lower().
   > ambiguous = ./ambiguous.py
   > EOF
 
-  $ python <<EOF | sh
+  $ $PYTHON <<EOF | sh
   > upper = "\x8bL\x98^"
   > print "hg --encoding cp932 help -e ambiguous.%s" % upper
   > EOF
@@ -1686,7 +1717,7 @@ such str.lower().
   Upper name should show only this message
   
 
-  $ python <<EOF | sh
+  $ $PYTHON <<EOF | sh
   > lower = "\x8bl\x98^"
   > print "hg --encoding cp932 help -e ambiguous.%s" % lower
   > EOF
@@ -1760,10 +1791,17 @@ Test dynamic list of merge tools only shows up once
         accordingly be named "a.txt.local", "a.txt.other" and "a.txt.base" and
         they will be placed in the same directory as "a.txt".
   
+        This implies permerge. Therefore, files aren't dumped, if premerge runs
+        successfully. Use :forcedump to forcibly write files out.
+  
       ":fail"
         Rather than attempting to merge files that were modified on both
         branches, it marks them as unresolved. The resolve command must be used
         to resolve these conflicts.
+  
+      ":forcedump"
+        Creates three versions of the files as same as :dump, but omits
+        premerge.
   
       ":local"
         Uses the local 'p1()' version of files as the merged version.
@@ -1856,7 +1894,7 @@ Compression engines listed in `hg help bundlespec`
 Test usage of section marks in help documents
 
   $ cd "$TESTDIR"/../doc
-  $ python check-seclevel.py
+  $ $PYTHON check-seclevel.py
   $ cd $TESTTMP
 
 #if serve
@@ -1904,9 +1942,10 @@ Dish up an empty repo; serve it cold.
   
   <div class="main">
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -2498,7 +2537,7 @@ Dish up an empty repo; serve it cold.
   
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -2678,7 +2717,7 @@ Dish up an empty repo; serve it cold.
   
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -2879,7 +2918,7 @@ Dish up an empty repo; serve it cold.
   
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -2982,9 +3021,10 @@ Sub-topic indexes rendered properly
   
   <div class="main">
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -3089,7 +3129,7 @@ Sub-topic topics rendered properly
   
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>

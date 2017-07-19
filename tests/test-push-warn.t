@@ -41,7 +41,7 @@ Specifying a revset that evaluates to null will abort
   searching for changes
   taking quick initial sample
   query 2; still undecided: 1, sample size is: 1
-  2 total queries
+  2 total queries in *.????s (glob)
   listing keys for "phases"
   checking for updated bookmarks
   listing keys for "bookmarks"
@@ -418,7 +418,7 @@ multiple new heads but also doesn't report too many heads:
   adding c
   created new head
 
-  $ for i in `python $TESTDIR/seq.py 3`; do hg -R h up -q 0; echo $i > h/b; hg -R h ci -qAm$i; done
+  $ for i in `$PYTHON $TESTDIR/seq.py 3`; do hg -R h up -q 0; echo $i > h/b; hg -R h ci -qAm$i; done
 
   $ hg -R i push h
   pushing to h

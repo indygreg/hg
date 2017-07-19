@@ -98,7 +98,8 @@ def isexec(f):
     return (os.lstat(f).st_mode & 0o100 != 0)
 
 def setflags(f, l, x):
-    s = os.lstat(f).st_mode
+    st = os.lstat(f)
+    s = st.st_mode
     if l:
         if not stat.S_ISLNK(s):
             # switch file to link
@@ -125,6 +126,14 @@ def setflags(f, l, x):
         s = 0o666 & ~umask # avoid restatting for chmod
 
     sx = s & 0o100
+    if st.st_nlink > 1 and bool(x) != bool(sx):
+        # the file is a hardlink, break it
+        with open(f, "rb") as fp:
+            data = fp.read()
+        unlink(f)
+        with open(f, "wb") as fp:
+            fp.write(data)
+
     if x and not sx:
         # Turn on +x for every +r bit when making a file executable
         # and obey umask.
@@ -244,7 +253,17 @@ def checklink(path):
                 # create a fixed file to link to; doesn't matter if it
                 # already exists.
                 target = 'checklink-target'
-                open(os.path.join(cachedir, target), 'w').close()
+                try:
+                    open(os.path.join(cachedir, target), 'w').close()
+                except IOError as inst:
+                    if inst[0] == errno.EACCES:
+                        # If we can't write to cachedir, just pretend
+                        # that the fs is readonly and by association
+                        # that the fs won't support symlinks. This
+                        # seems like the least dangerous way to avoid
+                        # data loss.
+                        return False
+                    raise
             try:
                 os.symlink(target, name)
                 if cachedir is None:
@@ -474,7 +493,7 @@ def findexe(command):
 def setsignalhandler():
     pass
 
-_wantedkinds = set([stat.S_IFREG, stat.S_IFLNK])
+_wantedkinds = {stat.S_IFREG, stat.S_IFLNK}
 
 def statfiles(files):
     '''Stat each file in files. Yield each stat, or None if a file does not
@@ -494,7 +513,7 @@ def statfiles(files):
 
 def getuser():
     '''return name of current user'''
-    return getpass.getuser()
+    return pycompat.fsencode(getpass.getuser())
 
 def username(uid=None):
     """Return the name of the user with the given uid.

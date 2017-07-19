@@ -45,7 +45,7 @@ before commit
 store can be written by the group, other files cannot
 store is setgid
 
-  $ python ../printmodes.py .
+  $ $PYTHON ../printmodes.py .
   00700 ./.hg/
   00600 ./.hg/00changelog.i
   00600 ./.hg/requires
@@ -61,7 +61,7 @@ files created in .hg can be written by the group
 (in particular, store/**, dirstate, branch cache file, undo files)
 new directories are setgid
 
-  $ python ../printmodes.py .
+  $ $PYTHON ../printmodes.py .
   00700 ./.hg/
   00600 ./.hg/00changelog.i
   00770 ./.hg/cache/
@@ -69,6 +69,7 @@ new directories are setgid
   00660 ./.hg/cache/rbc-names-v1
   00660 ./.hg/cache/rbc-revs-v1
   00660 ./.hg/dirstate
+  00660 ./.hg/fsmonitor.state (fsmonitor !)
   00660 ./.hg/last-message.txt
   00600 ./.hg/requires
   00770 ./.hg/store/
@@ -98,7 +99,7 @@ new directories are setgid
 before push
 group can write everything
 
-  $ python ../printmodes.py ../push
+  $ $PYTHON ../printmodes.py ../push
   00770 ../push/.hg/
   00660 ../push/.hg/00changelog.i
   00660 ../push/.hg/requires
@@ -110,13 +111,11 @@ group can write everything
 after push
 group can still write everything
 
-  $ python ../printmodes.py ../push
+  $ $PYTHON ../printmodes.py ../push
   00770 ../push/.hg/
   00660 ../push/.hg/00changelog.i
   00770 ../push/.hg/cache/
   00660 ../push/.hg/cache/branch2-base
-  00660 ../push/.hg/cache/rbc-names-v1
-  00660 ../push/.hg/cache/rbc-revs-v1
   00660 ../push/.hg/dirstate
   00660 ../push/.hg/requires
   00770 ../push/.hg/store/
@@ -148,8 +147,8 @@ just check that directories have the same mode.
   $ mkdir dir
   $ touch dir/file
   $ hg ci -qAm 'add dir/file'
-  $ storemode=`python ../mode.py .hg/store`
-  $ dirmode=`python ../mode.py .hg/store/data/dir`
+  $ storemode=`$PYTHON ../mode.py .hg/store`
+  $ dirmode=`$PYTHON ../mode.py .hg/store/data/dir`
   $ if [ "$storemode" != "$dirmode" ]; then
   >  echo "$storemode != $dirmode"
   > fi

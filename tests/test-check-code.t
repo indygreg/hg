@@ -7,41 +7,15 @@
 New errors are not allowed. Warnings are strongly discouraged.
 (The writing "no-che?k-code" is for not skipping this file when checking.)
 
-  $ hg locate -X contrib/python-zstandard -X hgext/fsmonitor/pywatchman |
+  $ testrepohg locate -X contrib/python-zstandard \
+  > -X hgext/fsmonitor/pywatchman |
   > sed 's-\\-/-g' | "$check_code" --warnings --per-file=0 - || false
-  contrib/perf.py:869:
-   >             r.revision(r.node(x))
-   don't convert rev to node before passing to revision(nodeorrev)
   Skipping i18n/polib.py it has no-che?k-code (glob)
-  mercurial/demandimport.py:313:
-   >     if os.environ.get('HGDEMANDIMPORT') != 'disable':
-   use encoding.environ instead (py3)
-  mercurial/encoding.py:54:
-   >     environ = os.environ
-   use encoding.environ instead (py3)
-  mercurial/encoding.py:56:
-   >     environ = os.environb
-   use encoding.environ instead (py3)
-  mercurial/encoding.py:61:
-   >                    for k, v in os.environ.items())
-   use encoding.environ instead (py3)
-  mercurial/encoding.py:221:
-   >                    for k, v in os.environ.items())
-   use encoding.environ instead (py3)
   Skipping mercurial/httpclient/__init__.py it has no-che?k-code (glob)
   Skipping mercurial/httpclient/_readers.py it has no-che?k-code (glob)
-  mercurial/policy.py:46:
-   >     if 'HGMODULEPOLICY' in os.environ:
-   use encoding.environ instead (py3)
-  mercurial/policy.py:47:
-   >         policy = os.environ['HGMODULEPOLICY'].encode('utf-8')
-   use encoding.environ instead (py3)
-  mercurial/policy.py:49:
-   >     policy = os.environ.get('HGMODULEPOLICY', policy)
-   use encoding.environ instead (py3)
+  Skipping mercurial/selectors2.py it has no-che?k-code (glob)
   Skipping mercurial/statprof.py it has no-che?k-code (glob)
   Skipping tests/badserverext.py it has no-che?k-code (glob)
-  [1]
 
 @commands in debugcommands.py should be in alphabetical order.
 
@@ -61,7 +35,7 @@ New errors are not allowed. Warnings are strongly discouraged.
 
 Prevent adding new files in the root directory accidentally.
 
-  $ hg files 'glob:*'
+  $ testrepohg files 'glob:*'
   .editorconfig
   .hgignore
   .hgsigs

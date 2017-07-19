@@ -101,7 +101,7 @@ release = lockmod.release
 seriesopts = [('s', 'summary', None, _('print first line of patch header'))]
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -932,14 +932,13 @@ class queue(object):
                         merged.append(f)
                     else:
                         removed.append(f)
-                repo.dirstate.beginparentchange()
-                for f in removed:
-                    repo.dirstate.remove(f)
-                for f in merged:
-                    repo.dirstate.merge(f)
-                p1, p2 = repo.dirstate.parents()
-                repo.setparents(p1, merge)
-                repo.dirstate.endparentchange()
+                with repo.dirstate.parentchange():
+                    for f in removed:
+                        repo.dirstate.remove(f)
+                    for f in merged:
+                        repo.dirstate.merge(f)
+                    p1, p2 = repo.dirstate.parents()
+                    repo.setparents(p1, merge)
 
             if all_files and '.hgsubstate' in all_files:
                 wctx = repo[None]
@@ -1580,16 +1579,15 @@ class queue(object):
                 if keepchanges and tobackup:
                     raise error.Abort(_("local changes found, qrefresh first"))
                 self.backup(repo, tobackup)
-                repo.dirstate.beginparentchange()
-                for f in a:
-                    repo.wvfs.unlinkpath(f, ignoremissing=True)
-                    repo.dirstate.drop(f)
-                for f in m + r:
-                    fctx = ctx[f]
-                    repo.wwrite(f, fctx.data(), fctx.flags())
-                    repo.dirstate.normal(f)
-                repo.setparents(qp, nullid)
-                repo.dirstate.endparentchange()
+                with repo.dirstate.parentchange():
+                    for f in a:
+                        repo.wvfs.unlinkpath(f, ignoremissing=True)
+                        repo.dirstate.drop(f)
+                    for f in m + r:
+                        fctx = ctx[f]
+                        repo.wwrite(f, fctx.data(), fctx.flags())
+                        repo.dirstate.normal(f)
+                    repo.setparents(qp, nullid)
             for patch in reversed(self.applied[start:end]):
                 self.ui.status(_("popping %s\n") % patch.name)
             del self.applied[start:end]
@@ -1836,9 +1834,7 @@ class queue(object):
                     patchf.close()
 
                     marks = repo._bookmarks
-                    for bm in bmlist:
-                        marks[bm] = n
-                    marks.recordchange(tr)
+                    marks.applychanges(repo, tr, [(bm, n) for bm in bmlist])
                     tr.close()
 
                     self.applied.append(statusentry(n, patchfn))
@@ -2409,7 +2405,7 @@ def init(ui, repo, **opts):
            _('use uncompressed transfer (fast over LAN)')),
           ('p', 'patches', '',
            _('location of source patch repository'), _('REPO')),
-         ] + commands.remoteopts,
+         ] + cmdutil.remoteopts,
          _('hg qclone [OPTION]... SOURCE [DEST]'),
          norepo=True)
 def clone(ui, source, dest=None, **opts):
@@ -2577,7 +2573,7 @@ def setupheaderopts(ui, opts):
           ('D', 'currentdate', None, _('add "Date: <current date>" to patch')),
           ('d', 'date', '',
            _('add "Date: <DATE>" to patch'), _('DATE'))
-          ] + commands.walkopts + commands.commitopts,
+          ] + cmdutil.walkopts + cmdutil.commitopts,
          _('hg qnew [-e] [-m TEXT] [-l FILE] PATCH [FILE]...'),
          inferrepo=True)
 def new(ui, repo, patch, *args, **opts):
@@ -2626,7 +2622,7 @@ def new(ui, repo, patch, *args, **opts):
            _('add/update date field in patch with current date')),
           ('d', 'date', '',
            _('add/update date field in patch with given date'), _('DATE'))
-          ] + commands.walkopts + commands.commitopts,
+          ] + cmdutil.walkopts + cmdutil.commitopts,
          _('hg qrefresh [-I] [-X] [-e] [-m TEXT] [-l FILE] [-s] [FILE]...'),
          inferrepo=True)
 def refresh(ui, repo, *pats, **opts):
@@ -2659,7 +2655,7 @@ def refresh(ui, repo, *pats, **opts):
         return ret
 
 @command("^qdiff",
-         commands.diffopts + commands.diffopts2 + commands.walkopts,
+         cmdutil.diffopts + cmdutil.diffopts2 + cmdutil.walkopts,
          _('hg qdiff [OPTION]... [FILE]...'),
          inferrepo=True)
 def diff(ui, repo, *pats, **opts):
@@ -2684,7 +2680,7 @@ def diff(ui, repo, *pats, **opts):
 @command('qfold',
          [('e', 'edit', None, _('invoke editor on commit messages')),
           ('k', 'keep', None, _('keep folded patch files')),
-         ] + commands.commitopts,
+         ] + cmdutil.commitopts,
          _('hg qfold [-e] [-k] [-m TEXT] [-l FILE] PATCH...'))
 def fold(ui, repo, *files, **opts):
     """fold the named patches into the current patch
@@ -3046,7 +3042,7 @@ def restore(ui, repo, rev, **opts):
           ('n', 'name', '',
            _('copy directory name'), _('NAME')),
           ('e', 'empty', None, _('clear queue status file')),
-          ('f', 'force', None, _('force copy'))] + commands.commitopts,
+          ('f', 'force', None, _('force copy'))] + cmdutil.commitopts,
          _('hg qsave [-m TEXT] [-l FILE] [-c] [-n NAME] [-e] [-f]'))
 def save(ui, repo, **opts):
     """save current queue state (DEPRECATED)
@@ -3540,7 +3536,7 @@ def mqcommand(orig, ui, repo, *args, **kwargs):
     """Add --mq option to operate on patch repository instead of main"""
 
     # some commands do not like getting unknown options
-    mq = kwargs.pop('mq', None)
+    mq = kwargs.pop(r'mq', None)
 
     if not mq:
         return orig(ui, repo, *args, **kwargs)

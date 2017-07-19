@@ -31,17 +31,17 @@ from mercurial.i18n import _
 from mercurial.node import short
 
 from mercurial import (
-    cmdutil,
     error,
     filelog,
     lock as lockmod,
+    registrar,
     revlog,
     scmutil,
     util,
 )
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -102,7 +102,7 @@ def _docensor(ui, repo, path, rev='', tombstone='', **opts):
             hint=_('clean/delete/update first'))
 
     flogv = flog.version & 0xFFFF
-    if flogv != revlog.REVLOGNG:
+    if flogv != revlog.REVLOGV1:
         raise error.Abort(
             _('censor does not support revlog version %d') % (flogv,))
 
@@ -117,7 +117,7 @@ def _docensor(ui, repo, path, rev='', tombstone='', **opts):
     # Using two files instead of one makes it easy to rewrite entry-by-entry
     idxread = repo.svfs(flog.indexfile, 'r')
     idxwrite = repo.svfs(flog.indexfile, 'wb', atomictemp=True)
-    if flog.version & revlog.REVLOGNGINLINEDATA:
+    if flog.version & revlog.FLAG_INLINE_DATA:
         dataread, datawrite = idxread, idxwrite
     else:
         dataread = repo.svfs(flog.datafile, 'r')

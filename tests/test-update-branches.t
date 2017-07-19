@@ -94,6 +94,7 @@ Cases are run as shown in that table, row by row.
 
   $ norevtest 'none clean same'   clean 2
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "bd10386d478c: 2"
   1 other heads for branch "default"
   parent=2
 
@@ -141,6 +142,7 @@ Cases are run as shown in that table, row by row.
 
   $ norevtest 'none dirty cross'  dirty 2
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "bd10386d478c: 2"
   1 other heads for branch "default"
   parent=2
   M foo
@@ -171,12 +173,13 @@ Cases are run as shown in that table, row by row.
   M foo
 
   $ revtest '-c dirtysub linear'   dirtysub 1 2 -c
-  abort: uncommitted changes in subrepository 'sub'
+  abort: uncommitted changes in subrepository "sub"
   parent=1
   M sub/suba
 
   $ norevtest '-c clean same'   clean 2 -c
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "bd10386d478c: 2"
   1 other heads for branch "default"
   parent=2
 
@@ -499,6 +502,7 @@ We add simple obsolescence marker between 3 and 4 (indirect successors)
   $ hg id --debug -i -r 4
   d047485b3896813b2a624e86201983520f003206
   $ hg debugobsolete 6efa171f091b00a3c35edc15d48c52a498929953 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+  obsoleted 1 changesets
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa d047485b3896813b2a624e86201983520f003206
 
 Test that 5 is detected as a valid destination from 3 and also accepts moving
@@ -545,6 +549,7 @@ non-obsolete parent but that will be decided later.
   $ hg up --quiet 0
   $ hg up --quiet 2
   $ hg debugobsolete bd10386d478cd5a9faf2e604114c8e6da62d3889
+  obsoleted 1 changesets
   $ hg up
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

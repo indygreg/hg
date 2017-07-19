@@ -11,7 +11,7 @@ from .i18n import _
 from . import (
     bookmarks,
     error,
-    obsolete,
+    obsutil,
     scmutil,
 )
 
@@ -24,7 +24,7 @@ def _destupdateobs(repo, clean):
 
     if p1.obsolete() and not p1.children():
         # allow updating to successors
-        successors = obsolete.successorssets(repo, p1.node())
+        successors = obsutil.successorssets(repo, p1.node())
 
         # behavior of certain cases is as follows,
         #
@@ -234,7 +234,7 @@ msgdestmerge = {
 def _destmergebook(repo, action='merge', sourceset=None, destspace=None):
     """find merge destination in the active bookmark case"""
     node = None
-    bmheads = repo.bookmarkheads(repo._activebookmark)
+    bmheads = bookmarks.headsforactive(repo)
     curhead = repo[repo._activebookmark].node()
     if len(bmheads) == 2:
         if curhead == bmheads[0]:
@@ -354,8 +354,14 @@ def desthistedit(ui, repo):
 
     return None
 
+def stackbase(ui, repo):
+    # The histedit default base stops at public changesets, branchpoints,
+    # and merges, which is exactly what we want for a stack.
+    revs = scmutil.revrange(repo, [histeditdefaultrevset])
+    return revs.last() if revs else None
+
 def _statusotherbook(ui, repo):
-    bmheads = repo.bookmarkheads(repo._activebookmark)
+    bmheads = bookmarks.headsforactive(repo)
     curhead = repo[repo._activebookmark].node()
     if repo.revs('%n and parents()', curhead):
         # we are on the active bookmark
@@ -391,6 +397,9 @@ def _statusotherbranchheads(ui, repo):
                 ui.warn(_('(committing will reopen branch "%s")\n') %
                           (currentbranch))
         elif otherheads:
+            curhead = repo['.']
+            ui.status(_('updated to "%s: %s"\n') % (curhead,
+                                    curhead.description().split('\n')[0]))
             ui.status(_('%i other heads for branch "%s"\n') %
                       (len(otherheads), currentbranch))
 

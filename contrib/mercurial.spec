@@ -37,8 +37,8 @@ BuildRequires: make, gcc, gettext
 %if "%{?withpython}"
 BuildRequires: readline-devel, openssl-devel, ncurses-devel, zlib-devel, bzip2-devel
 %else
-BuildRequires: python >= 2.6, python-devel, python-docutils >= 0.5
-Requires: python >= 2.6
+BuildRequires: python >= 2.7, python-devel, python-docutils >= 0.5
+Requires: python >= 2.7
 %endif
 # The hgk extension uses the wish tcl interpreter, but we don't enforce it
 #Requires: tk
@@ -153,10 +153,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/%{pythonhg}
 %{hgpyprefix}
 %else
-%if "%{?pythonver}" != "2.4"
 %{_libdir}/python%{pythonver}/site-packages/%{name}-*-py%{pythonver}.egg-info
-%endif
 %{_libdir}/python%{pythonver}/site-packages/%{name}
 %{_libdir}/python%{pythonver}/site-packages/hgext
 %{_libdir}/python%{pythonver}/site-packages/hgext3rd
+%{_libdir}/python%{pythonver}/site-packages/hgdemandimport
 %endif

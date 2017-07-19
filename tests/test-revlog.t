@@ -1,3 +1,35 @@
+  $ hg init empty-repo
+  $ cd empty-repo
+
+Flags on revlog version 0 are rejected
+
+  >>> with open('.hg/store/00changelog.i', 'wb') as fh:
+  ...     fh.write('\x00\x01\x00\x00')
+
+  $ hg log
+  abort: unknown flags (0x01) in version 0 revlog 00changelog.i!
+  [255]
+
+Unknown flags on revlog version 1 are rejected
+
+  >>> with open('.hg/store/00changelog.i', 'wb') as fh:
+  ...     fh.write('\x00\x04\x00\x01')
+
+  $ hg log
+  abort: unknown flags (0x04) in version 1 revlog 00changelog.i!
+  [255]
+
+Unknown version is rejected
+
+  >>> with open('.hg/store/00changelog.i', 'wb') as fh:
+  ...     fh.write('\x00\x00\x00\x02')
+
+  $ hg log
+  abort: unknown version (2) in revlog 00changelog.i!
+  [255]
+
+  $ cd ..
+
 Test for CVE-2016-3630
 
   $ hg init
@@ -12,4 +44,4 @@ Test for CVE-2016-3630
        0         0      19     -1       2 99e0332bd498 000000000000 000000000000
        1        19      12      0       3 6674f57a23d8 99e0332bd498 000000000000
   $ hg debugdata a.i 1 2>&1 | egrep 'Error:.*decoded'
-  (mercurial.mpatch.)?mpatchError: patch cannot be decoded (re)
+  (mercurial\.\w+\.mpatch\.)?mpatchError: patch cannot be decoded (re)

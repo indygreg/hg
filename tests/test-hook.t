@@ -4,7 +4,7 @@ commit hooks can see env vars
 
   $ cat > $TESTTMP/txnabort.checkargs.py <<EOF
   > def showargs(ui, repo, hooktype, **kwargs):
-  >     ui.write('%s python hook: %s\n' % (hooktype, ','.join(sorted(kwargs))))
+  >     ui.write('%s Python hook: %s\n' % (hooktype, ','.join(sorted(kwargs))))
   > EOF
 
   $ hg init a
@@ -95,13 +95,13 @@ pretxncommit and commit hooks can see both parents of merge
 test generic hooks
 
   $ hg id
-  pre-identify hook: HG_ARGS=id HG_HOOKNAME=pre-identify HG_HOOKTYPE=pre-identify HG_OPTS={'bookmarks': None, 'branch': None, 'id': None, 'insecure': None, 'num': None, 'remotecmd': '', 'rev': '', 'ssh': '', 'tags': None} HG_PATS=[]
+  pre-identify hook: HG_ARGS=id HG_HOOKNAME=pre-identify HG_HOOKTYPE=pre-identify HG_OPTS={'bookmarks': None, 'branch': None, 'id': None, 'insecure': None, 'num': None, 'remotecmd': '', 'rev': '', 'ssh': '', 'tags': None, 'template': ''} HG_PATS=[]
   abort: pre-identify hook exited with status 1
   [255]
   $ hg cat b
-  pre-cat hook: HG_ARGS=cat b HG_HOOKNAME=pre-cat HG_HOOKTYPE=pre-cat HG_OPTS={'decode': None, 'exclude': [], 'include': [], 'output': '', 'rev': ''} HG_PATS=['b']
+  pre-cat hook: HG_ARGS=cat b HG_HOOKNAME=pre-cat HG_HOOKTYPE=pre-cat HG_OPTS={'decode': None, 'exclude': [], 'include': [], 'output': '', 'rev': '', 'template': ''} HG_PATS=['b']
   b
-  post-cat hook: HG_ARGS=cat b HG_HOOKNAME=post-cat HG_HOOKTYPE=post-cat HG_OPTS={'decode': None, 'exclude': [], 'include': [], 'output': '', 'rev': ''} HG_PATS=['b'] HG_RESULT=0
+  post-cat hook: HG_ARGS=cat b HG_HOOKNAME=post-cat HG_HOOKTYPE=post-cat HG_OPTS={'decode': None, 'exclude': [], 'include': [], 'output': '', 'rev': '', 'template': ''} HG_PATS=['b'] HG_RESULT=0
 
   $ cd ../b
   $ hg pull ../a
@@ -175,7 +175,7 @@ more there after
   5:6f611f8018c1
   pretxncommit.forbid hook: HG_HOOKNAME=pretxncommit.forbid1 HG_HOOKTYPE=pretxncommit HG_NODE=6f611f8018c10e827fee6bd2bc807f937e761567 HG_PARENT1=539e4b31b6dc99b3cfbaa6b53cbc1c1f9a1e3a10 HG_PENDING=$TESTTMP/a
   transaction abort!
-  txnabort python hook: txnid,txnname
+  txnabort Python hook: txnid,txnname
   txnabort hook: HG_HOOKNAME=txnabort.1 HG_HOOKTYPE=txnabort HG_TXNID=TXN:$ID$ HG_TXNNAME=commit
   rollback completed
   abort: pretxncommit.forbid1 hook exited with status 1
@@ -648,6 +648,7 @@ make sure --traceback works
   foo
   committing manifest
   committing changelog
+  updating the branch cache
   committed changeset 1:52998019f6252a2b893452765fcb0a47351a5708
   calling hook commit.auto: hgext_hookext.autohook
   Automatically installed hook
@@ -729,6 +730,7 @@ final release (and dirstate flush).
   $ hg ci -ma
   223eafe2750c tip
   $ hg up 0 --config extensions.largefiles=
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   cb9a9f314b8b
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

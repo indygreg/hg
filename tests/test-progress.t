@@ -1,10 +1,10 @@
 
   $ cat > loop.py <<EOF
-  > from mercurial import cmdutil, commands
+  > from mercurial import commands, registrar
   > import time
   > 
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
+  > command = registrar.command(cmdtable)
   > 
   > class incrementingtime(object):
   >     def __init__(self):
@@ -14,7 +14,7 @@
   >         return self._time
   > time.time = incrementingtime()
   > 
-  > @command('loop',
+  > @command(b'loop',
   >     [('', 'total', '', 'override for total'),
   >     ('', 'nested', False, 'show nested results'),
   >     ('', 'parallel', False, 'show parallel sets of results')],

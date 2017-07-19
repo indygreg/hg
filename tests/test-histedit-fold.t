@@ -154,7 +154,7 @@ check saving last-message.txt
   > from mercurial import util
   > def abortfolding(ui, repo, hooktype, **kwargs):
   >     ctx = repo[kwargs.get('node')]
-  >     if set(ctx.files()) == set(['c', 'd', 'f']):
+  >     if set(ctx.files()) == {'c', 'd', 'f'}:
   >         return True # abort folding commit only
   >     ui.warn('allow non-folding commit\\n')
   > EOF
@@ -305,7 +305,7 @@ should effectively drop the changes from +6.
   continue: hg histedit --continue
   $ hg histedit --continue
   251d831eeec5: empty changeset
-  saved backup bundle to $TESTTMP/*-backup.hg (glob)
+  saved backup bundle to $TESTTMP/fold-to-empty-test/.hg/strip-backup/888f9082bf99-daa0b8b3-histedit.hg (glob)
   $ hg logt --graph
   @  1:617f94f13c0f +4
   |
@@ -382,8 +382,7 @@ dropped revision.
   HG: user: test
   HG: branch 'default'
   HG: changed file
-  saved backup bundle to $TESTTMP/fold-with-dropped/.hg/strip-backup/55c8d8dc79ce-4066cd98-backup.hg (glob)
-  saved backup bundle to $TESTTMP/fold-with-dropped/.hg/strip-backup/617f94f13c0f-a35700fc-backup.hg (glob)
+  saved backup bundle to $TESTTMP/fold-with-dropped/.hg/strip-backup/617f94f13c0f-3d69522c-histedit.hg (glob)
   $ hg logt -G
   @  1:10c647b2cdd5 +4
   |
@@ -488,6 +487,7 @@ into the hook command.
   $ echo "foo" > amended.txt
   $ hg add amended.txt
   $ hg ci -q --config extensions.largefiles= --amend -I amended.txt
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
 
 Test that folding multiple changes in a row doesn't show multiple
 editors.

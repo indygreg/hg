@@ -44,6 +44,7 @@ import hashlib
 import inspect
 import os
 import re
+import socket
 import struct
 import time
 
@@ -54,7 +55,6 @@ from . import (
     encoding,
     error,
     extensions,
-    osutil,
     pycompat,
     util,
 )
@@ -75,7 +75,8 @@ _configsections = [
 # sensitive environment variables affecting confighash
 _envre = re.compile(r'''\A(?:
                     CHGHG
-                    |HG(?:[A-Z].*)?
+                    |HG(?:DEMANDIMPORT|EMITWARNINGS|MODULEPOLICY|PROF|RCPATH)?
+                    |HG(?:ENCODING|PLAIN).*
                     |LANG(?:UAGE)?
                     |LC_.*
                     |LD_.*
@@ -313,7 +314,7 @@ class chgcmdserver(commandserver.server):
         # tell client to sendmsg() with 1-byte payload, which makes it
         # distinctive from "attachio\n" command consumed by client.read()
         self.clientsock.sendall(struct.pack('>cI', 'I', 1))
-        clientfds = osutil.recvfds(self.clientsock.fileno())
+        clientfds = util.recvfds(self.clientsock.fileno())
         _log('received fds: %r\n' % clientfds)
 
         ui = self.ui
@@ -458,12 +459,12 @@ class chgcmdserver(commandserver.server):
                          'setenv': setenv,
                          'setumask': setumask})
 
-    if util.safehasattr(osutil, 'setprocname'):
+    if util.safehasattr(util, 'setprocname'):
         def setprocname(self):
             """Change process title"""
             name = self._readstr()
             _log('setprocname: %r\n' % name)
-            osutil.setprocname(name)
+            util.setprocname(name)
         capabilities['setprocname'] = setprocname
 
 def _tempaddress(address):
@@ -484,7 +485,7 @@ class chgunixservicehandler(object):
 
     def __init__(self, ui):
         self.ui = ui
-        self._idletimeout = ui.configint('chgserver', 'idletimeout', 3600)
+        self._idletimeout = ui.configint('chgserver', 'idletimeout')
         self._lastactive = time.time()
 
     def bindsocket(self, sock, address):
@@ -492,10 +493,11 @@ class chgunixservicehandler(object):
         self._checkextensions()
         self._bind(sock)
         self._createsymlink()
+        # no "listening at" message should be printed to simulate hg behavior
 
     def _inithashstate(self, address):
         self._baseaddress = address
-        if self.ui.configbool('chgserver', 'skiphash', False):
+        if self.ui.configbool('chgserver', 'skiphash'):
             self._hashstate = None
             self._realaddress = address
             return
@@ -517,6 +519,7 @@ class chgunixservicehandler(object):
         tempaddress = _tempaddress(self._realaddress)
         util.bindunixsocket(sock, tempaddress)
         self._socketstat = os.stat(tempaddress)
+        sock.listen(socket.SOMAXCONN)
         # rename will replace the old socket file if exists atomically. the
         # old server will detect ownership change and exit.
         util.rename(tempaddress, self._realaddress)
@@ -544,10 +547,6 @@ class chgunixservicehandler(object):
         # since that server will detect and exit automatically and
         # the client will start a new server on demand.
         util.tryunlink(self._realaddress)
-
-    def printbanner(self, address):
-        # no "listening at" message should be printed to simulate hg behavior
-        pass
 
     def shouldexit(self):
         if not self._issocketowner():

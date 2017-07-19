@@ -27,9 +27,10 @@
   chunks size   : 44
       0x75 (u)  : 44 (100.00%)
   
-  avg chain length  : 0
-  max chain length  : 0
-  compression ratio : 0
+  avg chain length  :  0
+  max chain length  :  0
+  max chain reach   : 44
+  compression ratio :  0
   
   uncompressed data size (min/max/avg) : 43 / 43 / 43
   full revision size (min/max/avg)     : 44 / 44 / 44
@@ -109,6 +110,23 @@ Test max chain len
       6     5    -1   ???   ???        ???  ???  ???    0     ???      ????           ?     1        1 (glob)
       7     6    -1   ???   ???        ???  ???  ???    0     ???      ????           ?     1        2 (glob)
       8     7    -1   ???   ???        ???  ???  ???    0     ???      ????           ?     1        3 (glob)
+
+Test WdirUnsupported exception
+
+  $ hg debugdata -c ffffffffffffffffffffffffffffffffffffffff
+  abort: working directory revision cannot be specified
+  [255]
+
+Test cache warming command
+
+  $ rm -rf .hg/cache/
+  $ hg debugupdatecaches --debug
+  updating the branch cache
+  $ ls -r .hg/cache/*
+  .hg/cache/rbc-revs-v1
+  .hg/cache/rbc-names-v1
+  .hg/cache/branch2-served
+
   $ cd ..
 
 Test internal debugstacktrace command
@@ -125,7 +143,7 @@ Test internal debugstacktrace command
   >     dst('hi ...\\nfrom h hidden in g', 1, depth=2)
   > f()
   > EOF
-  $ python debugstacktrace.py
+  $ $PYTHON debugstacktrace.py
   stacktrace at:
    debugstacktrace.py:10 in * (glob)
    debugstacktrace.py:3  in f

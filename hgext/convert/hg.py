@@ -345,8 +345,8 @@ class mercurial_sink(common.converter_sink):
                 if commit.rev != node:
                     ctx = self.repo[node]
                     if ctx.phase() < phases.draft:
-                        phases.retractboundary(self.repo, tr, phases.draft,
-                                               [ctx.node()])
+                        phases.registernew(self.repo, tr, phases.draft,
+                                           [ctx.node()])
 
             text = "(octopus merge fixup)\n"
             p2 = node
@@ -425,9 +425,9 @@ class mercurial_sink(common.converter_sink):
             tr = self.repo.transaction('bookmark')
             self.ui.status(_("updating bookmarks\n"))
             destmarks = self.repo._bookmarks
-            for bookmark in updatedbookmark:
-                destmarks[bookmark] = nodemod.bin(updatedbookmark[bookmark])
-            destmarks.recordchange(tr)
+            changes = [(bookmark, nodemod.bin(updatedbookmark[bookmark]))
+                       for bookmark in updatedbookmark]
+            destmarks.applychanges(self.repo, tr, changes)
             tr.close()
         finally:
             lockmod.release(lock, wlock, tr)

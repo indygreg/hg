@@ -28,14 +28,14 @@ unpack_from = struct.unpack_from
 
 def _filename(repo):
     """name of a branchcache file for a given repo or repoview"""
-    filename = "cache/branch2"
+    filename = "branch2"
     if repo.filtername:
         filename = '%s-%s' % (filename, repo.filtername)
     return filename
 
 def read(repo):
     try:
-        f = repo.vfs(_filename(repo))
+        f = repo.cachevfs(_filename(repo))
         lines = f.read().split('\n')
         f.close()
     except (IOError, OSError):
@@ -67,8 +67,6 @@ def read(repo):
             partial.setdefault(label, []).append(node)
             if state == 'c':
                 partial._closednodes.add(node)
-    except KeyboardInterrupt:
-        raise
     except Exception as inst:
         if repo.ui.debugflag:
             msg = 'invalid branchheads cache'
@@ -230,7 +228,7 @@ class branchcache(dict):
 
     def write(self, repo):
         try:
-            f = repo.vfs(_filename(repo), "w", atomictemp=True)
+            f = repo.cachevfs(_filename(repo), "w", atomictemp=True)
             cachekey = [hex(self.tipnode), '%d' % self.tiprev]
             if self.filteredhash is not None:
                 cachekey.append(hex(self.filteredhash))
@@ -319,8 +317,8 @@ class branchcache(dict):
 # Revision branch info cache
 
 _rbcversion = '-v1'
-_rbcnames = 'cache/rbc-names' + _rbcversion
-_rbcrevs = 'cache/rbc-revs' + _rbcversion
+_rbcnames = 'rbc-names' + _rbcversion
+_rbcrevs = 'rbc-revs' + _rbcversion
 # [4 byte hash prefix][4 byte branch name number with sign bit indicating open]
 _rbcrecfmt = '>4sI'
 _rbcrecsize = calcsize(_rbcrecfmt)
@@ -358,7 +356,7 @@ class revbranchcache(object):
         self._rbcrevs = bytearray()
         self._rbcsnameslen = 0 # length of names read at _rbcsnameslen
         try:
-            bndata = repo.vfs.read(_rbcnames)
+            bndata = repo.cachevfs.read(_rbcnames)
             self._rbcsnameslen = len(bndata) # for verification before writing
             if bndata:
                 self._names = [encoding.tolocal(bn)
@@ -370,7 +368,7 @@ class revbranchcache(object):
 
         if self._names:
             try:
-                data = repo.vfs.read(_rbcrevs)
+                data = repo.cachevfs.read(_rbcrevs)
                 self._rbcrevs[:] = data
             except (IOError, OSError) as inst:
                 repo.ui.debug("couldn't read revision branch cache: %s\n" %
@@ -408,8 +406,7 @@ class revbranchcache(object):
 
         # fast path: extract data from cache, use it if node is matching
         reponode = changelog.node(rev)[:_rbcnodelen]
-        cachenode, branchidx = unpack_from(
-            _rbcrecfmt, util.buffer(self._rbcrevs), rbcrevidx)
+        cachenode, branchidx = unpack_from(_rbcrecfmt, self._rbcrevs, rbcrevidx)
         close = bool(branchidx & _rbccloseflag)
         if close:
             branchidx &= _rbcbranchidxmask
@@ -476,7 +473,7 @@ class revbranchcache(object):
                 step = ' names'
                 wlock = repo.wlock(wait=False)
                 if self._rbcnamescount != 0:
-                    f = repo.vfs.open(_rbcnames, 'ab')
+                    f = repo.cachevfs.open(_rbcnames, 'ab')
                     if f.tell() == self._rbcsnameslen:
                         f.write('\0')
                     else:
@@ -486,8 +483,8 @@ class revbranchcache(object):
                         self._rbcrevslen = 0
                 if self._rbcnamescount == 0:
                     # before rewriting names, make sure references are removed
-                    repo.vfs.unlinkpath(_rbcrevs, ignoremissing=True)
-                    f = repo.vfs.open(_rbcnames, 'wb')
+                    repo.cachevfs.unlinkpath(_rbcrevs, ignoremissing=True)
+                    f = repo.cachevfs.open(_rbcnames, 'wb')
                 f.write('\0'.join(encoding.fromlocal(b)
                                   for b in self._names[self._rbcnamescount:]))
                 self._rbcsnameslen = f.tell()
@@ -501,9 +498,10 @@ class revbranchcache(object):
                     wlock = repo.wlock(wait=False)
                 revs = min(len(repo.changelog),
                            len(self._rbcrevs) // _rbcrecsize)
-                f = repo.vfs.open(_rbcrevs, 'ab')
+                f = repo.cachevfs.open(_rbcrevs, 'ab')
                 if f.tell() != start:
-                    repo.ui.debug("truncating %s to %d\n" % (_rbcrevs, start))
+                    repo.ui.debug("truncating cache/%s to %d\n"
+                                  % (_rbcrevs, start))
                     f.seek(start)
                     if f.tell() != start:
                         start = 0

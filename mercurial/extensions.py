@@ -18,6 +18,7 @@ from .i18n import (
 
 from . import (
     cmdutil,
+    configitems,
     encoding,
     error,
     pycompat,
@@ -28,8 +29,16 @@ _extensions = {}
 _disabledextensions = {}
 _aftercallbacks = {}
 _order = []
-_builtin = set(['hbisect', 'bookmarks', 'parentrevspec', 'progress', 'interhg',
-                'inotify', 'hgcia'])
+_builtin = {
+    'hbisect',
+    'bookmarks',
+    'color',
+    'parentrevspec',
+    'progress',
+    'interhg',
+    'inotify',
+    'hgcia'
+}
 
 def extensions(ui=None):
     if ui:
@@ -118,6 +127,23 @@ def _reportimporterror(ui, err, failed, next):
     if ui.debugflag:
         ui.traceback()
 
+# attributes set by registrar.command
+_cmdfuncattrs = ('norepo', 'optionalrepo', 'inferrepo')
+
+def _validatecmdtable(ui, cmdtable):
+    """Check if extension commands have required attributes"""
+    for c, e in cmdtable.iteritems():
+        f = e[0]
+        if getattr(f, '_deprecatedregistrar', False):
+            ui.deprecwarn("cmdutil.command is deprecated, use "
+                          "registrar.command to register '%s'" % c, '4.6')
+        missing = [a for a in _cmdfuncattrs if not util.safehasattr(f, a)]
+        if not missing:
+            continue
+        raise error.ProgrammingError(
+            'missing attributes: %s' % ', '.join(missing),
+            hint="use @command decorator to register '%s'" % c)
+
 def load(ui, name, path):
     if name.startswith('hgext.') or name.startswith('hgext/'):
         shortname = name[6:]
@@ -139,6 +165,7 @@ def load(ui, name, path):
         ui.warn(_('(third party extension %s requires version %s or newer '
                   'of Mercurial; disabling)\n') % (shortname, minver))
         return
+    _validatecmdtable(ui, getattr(mod, 'cmdtable', {}))
 
     _extensions[shortname] = mod
     _order.append(shortname)
@@ -149,20 +176,36 @@ def load(ui, name, path):
 def _runuisetup(name, ui):
     uisetup = getattr(_extensions[name], 'uisetup', None)
     if uisetup:
-        uisetup(ui)
+        try:
+            uisetup(ui)
+        except Exception as inst:
+            ui.traceback()
+            msg = _forbytes(inst)
+            ui.warn(_("*** failed to set up extension %s: %s\n") % (name, msg))
+            return False
+    return True
 
 def _runextsetup(name, ui):
     extsetup = getattr(_extensions[name], 'extsetup', None)
     if extsetup:
         try:
-            extsetup(ui)
-        except TypeError:
-            if inspect.getargspec(extsetup).args:
-                raise
-            extsetup() # old extsetup with no ui argument
+            try:
+                extsetup(ui)
+            except TypeError:
+                if inspect.getargspec(extsetup).args:
+                    raise
+                extsetup() # old extsetup with no ui argument
+        except Exception as inst:
+            ui.traceback()
+            msg = _forbytes(inst)
+            ui.warn(_("*** failed to set up extension %s: %s\n") % (name, msg))
+            return False
+    return True
 
-def loadall(ui):
+def loadall(ui, whitelist=None):
     result = ui.configitems("extensions")
+    if whitelist is not None:
+        result = [(k, v) for (k, v) in result if k in whitelist]
     newindex = len(_order)
     for (name, path) in result:
         if path:
@@ -171,23 +214,31 @@ def loadall(ui):
                 continue
         try:
             load(ui, name, path)
-        except KeyboardInterrupt:
-            raise
         except Exception as inst:
-            inst = _forbytes(inst)
+            msg = _forbytes(inst)
             if path:
                 ui.warn(_("*** failed to import extension %s from %s: %s\n")
-                        % (name, path, inst))
+                        % (name, path, msg))
             else:
                 ui.warn(_("*** failed to import extension %s: %s\n")
-                        % (name, inst))
+                        % (name, msg))
+            if isinstance(inst, error.Hint) and inst.hint:
+                ui.warn(_("*** (%s)\n") % inst.hint)
             ui.traceback()
 
+    broken = set()
     for name in _order[newindex:]:
-        _runuisetup(name, ui)
+        if not _runuisetup(name, ui):
+            broken.add(name)
 
     for name in _order[newindex:]:
-        _runextsetup(name, ui)
+        if name in broken:
+            continue
+        if not _runextsetup(name, ui):
+            broken.add(name)
+
+    for name in broken:
+        _extensions[name] = None
 
     # Call aftercallbacks that were never met.
     for shortname in _aftercallbacks:
@@ -200,6 +251,44 @@ def loadall(ui):
     # loadall() is called multiple times and lingering _aftercallbacks
     # entries could result in double execution. See issue4646.
     _aftercallbacks.clear()
+
+    # delay importing avoids cyclic dependency (especially commands)
+    from . import (
+        color,
+        commands,
+        fileset,
+        revset,
+        templatefilters,
+        templatekw,
+        templater,
+    )
+
+    # list of (objname, loadermod, loadername) tuple:
+    # - objname is the name of an object in extension module,
+    #   from which extra information is loaded
+    # - loadermod is the module where loader is placed
+    # - loadername is the name of the function,
+    #   which takes (ui, extensionname, extraobj) arguments
+    extraloaders = [
+        ('cmdtable', commands, 'loadcmdtable'),
+        ('colortable', color, 'loadcolortable'),
+        ('configtable', configitems, 'loadconfigtable'),
+        ('filesetpredicate', fileset, 'loadpredicate'),
+        ('revsetpredicate', revset, 'loadpredicate'),
+        ('templatefilter', templatefilters, 'loadfilter'),
+        ('templatefunc', templater, 'loadfunction'),
+        ('templatekeyword', templatekw, 'loadkeyword'),
+    ]
+
+    for name in _order[newindex:]:
+        module = _extensions[name]
+        if not module:
+            continue # loading this module failed
+
+        for objname, loadermod, loadername in extraloaders:
+            extraobj = getattr(module, objname, None)
+            if extraobj is not None:
+                getattr(loadermod, loadername)(ui, name, extraobj)
 
 def afterloaded(extension, callback):
     '''Run the specified function after a named extension is loaded.
@@ -215,7 +304,9 @@ def afterloaded(extension, callback):
     '''
 
     if extension in _extensions:
-        callback(loaded=True)
+        # Report loaded as False if the extension is disabled
+        loaded = (_extensions[extension] is not None)
+        callback(loaded=loaded)
     else:
         _aftercallbacks.setdefault(extension, []).append(callback)
 
@@ -287,6 +378,25 @@ def wrapcommand(table, command, wrapper, synopsis=None, docstring=None):
         newentry[2] += synopsis
     table[key] = tuple(newentry)
     return entry
+
+def wrapfilecache(cls, propname, wrapper):
+    """Wraps a filecache property.
+
+    These can't be wrapped using the normal wrapfunction.
+    """
+    assert callable(wrapper)
+    for currcls in cls.__mro__:
+        if propname in currcls.__dict__:
+            origfn = currcls.__dict__[propname].func
+            assert callable(origfn)
+            def wrap(*args, **kwargs):
+                return wrapper(origfn, *args, **kwargs)
+            currcls.__dict__[propname].func = wrap
+            break
+
+    if currcls is object:
+        raise AttributeError(
+            _("type '%s' has no property '%s'") % (cls, propname))
 
 def wrapfunction(container, funcname, wrapper):
     '''Wrap the function named funcname in container
@@ -392,7 +502,11 @@ def _disabledpaths(strip_init=False):
         if name in exts or name in _order or name == '__init__':
             continue
         exts[name] = path
-    exts.update(_disabledextensions)
+    for name, path in _disabledextensions.iteritems():
+        # If no path was provided for a disabled extension (e.g. "color=!"),
+        # don't replace the path we already found by the scan above.
+        if path:
+            exts[name] = path
     return exts
 
 def _moduledoc(file):

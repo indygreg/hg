@@ -33,6 +33,7 @@ test issue352
   [255]
   $ echo foo > "$A"
   $ hg debugwalk
+  matcher: <alwaysmatcher>
   f  he\r (no-eol) (esc)
   llo  he\r (no-eol) (esc)
   llo

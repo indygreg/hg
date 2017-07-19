@@ -33,7 +33,6 @@ from mercurial import (
     bundlerepo,
     changegroup,
     cmdutil,
-    commands,
     error,
     exchange,
     hg,
@@ -43,6 +42,7 @@ from mercurial import (
     node as nodemod,
     patch,
     phases,
+    registrar,
     repair,
     scmutil,
     templatefilters,
@@ -55,7 +55,7 @@ from . import (
 )
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -126,15 +126,10 @@ class shelvedfile(object):
         fp = self.opener()
         try:
             gen = exchange.readbundle(self.repo.ui, fp, self.fname, self.vfs)
-            if not isinstance(gen, bundle2.unbundle20):
-                gen.apply(self.repo, 'unshelve',
-                          'bundle:' + self.vfs.join(self.fname),
-                          targetphase=phases.secret)
-            if isinstance(gen, bundle2.unbundle20):
-                bundle2.applybundle(self.repo, gen,
-                                    self.repo.currenttransaction(),
-                                    source='unshelve',
-                                    url='bundle:' + self.vfs.join(self.fname))
+            bundle2.applybundle(self.repo, gen, self.repo.currenttransaction(),
+                                source='unshelve',
+                                url='bundle:' + self.vfs.join(self.fname),
+                                targetphase=phases.secret)
         finally:
             fp.close()
 
@@ -167,7 +162,7 @@ class shelvedstate(object):
     Handles saving and restoring a shelved state. Ensures that different
     versions of a shelved state are possible and handles them appropriately.
     """
-    _version = 1
+    _version = 2
     _filename = 'shelvedstate'
     _keep = 'keep'
     _nokeep = 'nokeep'
@@ -175,40 +170,75 @@ class shelvedstate(object):
     _noactivebook = ':no-active-bookmark'
 
     @classmethod
-    def load(cls, repo):
+    def _verifyandtransform(cls, d):
+        """Some basic shelvestate syntactic verification and transformation"""
+        try:
+            d['originalwctx'] = nodemod.bin(d['originalwctx'])
+            d['pendingctx'] = nodemod.bin(d['pendingctx'])
+            d['parents'] = [nodemod.bin(h)
+                            for h in d['parents'].split(' ')]
+            d['nodestoremove'] = [nodemod.bin(h)
+                                  for h in d['nodestoremove'].split(' ')]
+        except (ValueError, TypeError, KeyError) as err:
+            raise error.CorruptedState(str(err))
+
+    @classmethod
+    def _getversion(cls, repo):
+        """Read version information from shelvestate file"""
         fp = repo.vfs(cls._filename)
         try:
             version = int(fp.readline().strip())
-
-            if version != cls._version:
-                raise error.Abort(_('this version of shelve is incompatible '
-                                   'with the version used in this repo'))
-            name = fp.readline().strip()
-            wctx = nodemod.bin(fp.readline().strip())
-            pendingctx = nodemod.bin(fp.readline().strip())
-            parents = [nodemod.bin(h) for h in fp.readline().split()]
-            nodestoremove = [nodemod.bin(h) for h in fp.readline().split()]
-            branchtorestore = fp.readline().strip()
-            keep = fp.readline().strip() == cls._keep
-            activebook = fp.readline().strip()
-        except (ValueError, TypeError) as err:
+        except ValueError as err:
             raise error.CorruptedState(str(err))
         finally:
             fp.close()
+        return version
 
+    @classmethod
+    def _readold(cls, repo):
+        """Read the old position-based version of a shelvestate file"""
+        # Order is important, because old shelvestate file uses it
+        # to detemine values of fields (i.g. name is on the second line,
+        # originalwctx is on the third and so forth). Please do not change.
+        keys = ['version', 'name', 'originalwctx', 'pendingctx', 'parents',
+                'nodestoremove', 'branchtorestore', 'keep', 'activebook']
+        # this is executed only seldomly, so it is not a big deal
+        # that we open this file twice
+        fp = repo.vfs(cls._filename)
+        d = {}
+        try:
+            for key in keys:
+                d[key] = fp.readline().strip()
+        finally:
+            fp.close()
+        return d
+
+    @classmethod
+    def load(cls, repo):
+        version = cls._getversion(repo)
+        if version < cls._version:
+            d = cls._readold(repo)
+        elif version == cls._version:
+            d = scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
+                       .read(firstlinenonkeyval=True)
+        else:
+            raise error.Abort(_('this version of shelve is incompatible '
+                                'with the version used in this repo'))
+
+        cls._verifyandtransform(d)
         try:
             obj = cls()
-            obj.name = name
-            obj.wctx = repo[wctx]
-            obj.pendingctx = repo[pendingctx]
-            obj.parents = parents
-            obj.nodestoremove = nodestoremove
-            obj.branchtorestore = branchtorestore
-            obj.keep = keep
+            obj.name = d['name']
+            obj.wctx = repo[d['originalwctx']]
+            obj.pendingctx = repo[d['pendingctx']]
+            obj.parents = d['parents']
+            obj.nodestoremove = d['nodestoremove']
+            obj.branchtorestore = d.get('branchtorestore', '')
+            obj.keep = d.get('keep') == cls._keep
             obj.activebookmark = ''
-            if activebook != cls._noactivebook:
-                obj.activebookmark = activebook
-        except error.RepoLookupError as err:
+            if d.get('activebook', '') != cls._noactivebook:
+                obj.activebookmark = d.get('activebook', '')
+        except (error.RepoLookupError, KeyError) as err:
             raise error.CorruptedState(str(err))
 
         return obj
@@ -216,19 +246,20 @@ class shelvedstate(object):
     @classmethod
     def save(cls, repo, name, originalwctx, pendingctx, nodestoremove,
              branchtorestore, keep=False, activebook=''):
-        fp = repo.vfs(cls._filename, 'wb')
-        fp.write('%i\n' % cls._version)
-        fp.write('%s\n' % name)
-        fp.write('%s\n' % nodemod.hex(originalwctx.node()))
-        fp.write('%s\n' % nodemod.hex(pendingctx.node()))
-        fp.write('%s\n' %
-                 ' '.join([nodemod.hex(p) for p in repo.dirstate.parents()]))
-        fp.write('%s\n' %
-                 ' '.join([nodemod.hex(n) for n in nodestoremove]))
-        fp.write('%s\n' % branchtorestore)
-        fp.write('%s\n' % (cls._keep if keep else cls._nokeep))
-        fp.write('%s\n' % (activebook or cls._noactivebook))
-        fp.close()
+        info = {
+            "name": name,
+            "originalwctx": nodemod.hex(originalwctx.node()),
+            "pendingctx": nodemod.hex(pendingctx.node()),
+            "parents": ' '.join([nodemod.hex(p)
+                                 for p in repo.dirstate.parents()]),
+            "nodestoremove": ' '.join([nodemod.hex(n)
+                                      for n in nodestoremove]),
+            "branchtorestore": branchtorestore,
+            "keep": cls._keep if keep else cls._nokeep,
+            "activebook": activebook or cls._noactivebook
+        }
+        scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
+               .write(info, firstline=str(cls._version))
 
     @classmethod
     def clear(cls, repo):
@@ -266,9 +297,10 @@ def _aborttransaction(repo):
     '''Abort current transaction for shelve/unshelve, but keep dirstate
     '''
     tr = repo.currenttransaction()
-    repo.dirstate.savebackup(tr, suffix='.shelve')
+    backupname = 'dirstate.shelve'
+    repo.dirstate.savebackup(tr, backupname)
     tr.abort()
-    repo.dirstate.restorebackup(None, suffix='.shelve')
+    repo.dirstate.restorebackup(None, backupname)
 
 def createcmd(ui, repo, pats, opts):
     """subcommand that creates a new shelve"""
@@ -280,7 +312,7 @@ def getshelvename(repo, parent, opts):
     """Decide on the name this shelve is going to have"""
     def gennames():
         yield label
-        for i in xrange(1, 100):
+        for i in itertools.count(1):
             yield '%s-%02d' % (label, i)
     name = opts.get('name')
     label = repo._activebookmark or parent.branch() or 'default'
@@ -307,8 +339,6 @@ def getshelvename(repo, parent, opts):
             if not shelvedfile(repo, n, patchextension).exists():
                 name = n
                 break
-        else:
-            raise error.Abort(_("too many shelved changes named '%s'") % label)
 
     return name
 
@@ -316,7 +346,7 @@ def mutableancestors(ctx):
     """return all mutable ancestors for ctx (included)
 
     Much faster than the revset ancestors(ctx) & draft()"""
-    seen = set([nodemod.nullrev])
+    seen = {nodemod.nullrev}
     visit = collections.deque()
     visit.append(ctx)
     while visit:
@@ -630,7 +660,7 @@ def unshelvecontinue(ui, repo, state, opts):
     with repo.lock():
         checkparents(repo, state)
         ms = merge.mergestate.read(repo)
-        if [f for f in ms if ms[f] == 'u']:
+        if list(ms.unresolved()):
             raise error.Abort(
                 _("unresolved conflicts, can't continue"),
                 hint=_("see 'hg resolve', then 'hg unshelve --continue'"))
@@ -645,7 +675,7 @@ def unshelvecontinue(ui, repo, state, opts):
             raise
 
         shelvectx = repo['tip']
-        if not shelvectx in state.pendingctx.children():
+        if state.pendingctx not in shelvectx.parents():
             # rebase was a no-op, so it produced no child commit
             shelvectx = state.pendingctx
         else:
@@ -722,7 +752,7 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     # refresh ctx after rebase completes
     shelvectx = repo['tip']
 
-    if not shelvectx in tmpwctx.children():
+    if tmpwctx not in shelvectx.parents():
         # rebase was a no-op, so it produced no child commit
         shelvectx = tmpwctx
     return shelvectx
@@ -934,7 +964,7 @@ def _dounshelve(ui, repo, *shelved, **opts):
           ('i', 'interactive', None,
            _('interactive mode, only works while creating a shelve')),
           ('', 'stat', None,
-           _('output diffstat-style summary of changes'))] + commands.walkopts,
+           _('output diffstat-style summary of changes'))] + cmdutil.walkopts,
          _('hg shelve [OPTION]... [FILE]...'))
 def shelvecmd(ui, repo, *pats, **opts):
     '''save and set aside changes from the working directory
@@ -970,17 +1000,17 @@ def shelvecmd(ui, repo, *pats, **opts):
     all shelved changes, use ``--cleanup``.
     '''
     allowables = [
-        ('addremove', set(['create'])), # 'create' is pseudo action
-        ('unknown', set(['create'])),
-        ('cleanup', set(['cleanup'])),
-#       ('date', set(['create'])), # ignored for passing '--date "0 0"' in tests
-        ('delete', set(['delete'])),
-        ('edit', set(['create'])),
-        ('list', set(['list'])),
-        ('message', set(['create'])),
-        ('name', set(['create'])),
-        ('patch', set(['patch', 'list'])),
-        ('stat', set(['stat', 'list'])),
+        ('addremove', {'create'}), # 'create' is pseudo action
+        ('unknown', {'create'}),
+        ('cleanup', {'cleanup'}),
+#       ('date', {'create'}), # ignored for passing '--date "0 0"' in tests
+        ('delete', {'delete'}),
+        ('edit', {'create'}),
+        ('list', {'list'}),
+        ('message', {'create'}),
+        ('name', {'create'}),
+        ('patch', {'patch', 'list'}),
+        ('stat', {'stat', 'list'}),
     ]
     def checkopt(opt):
         if opts.get(opt):

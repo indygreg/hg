@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import errno
 import hashlib
-import os
 import shutil
 import struct
 
@@ -28,7 +27,7 @@ from . import (
     error,
     filemerge,
     match as matchmod,
-    obsolete,
+    obsutil,
     pycompat,
     scmutil,
     subrepo,
@@ -414,7 +413,7 @@ class mergestate(object):
         if fcl.isabsent():
             hash = nullhex
         else:
-            hash = hashlib.sha1(fcl.path()).hexdigest()
+            hash = hex(hashlib.sha1(fcl.path()).digest())
             self._repo.vfs.write('merge/' + hash, fcl.data())
         self._state[fd] = ['u', hash, fcl.path(),
                            fca.path(), hex(fca.filenode()),
@@ -445,7 +444,7 @@ class mergestate(object):
     def unresolved(self):
         """Obtain the paths of unresolved files."""
 
-        for f, entry in self._state.items():
+        for f, entry in self._state.iteritems():
             if entry[0] == 'u':
                 yield f
 
@@ -492,10 +491,10 @@ class mergestate(object):
             # restore local
             if hash != nullhex:
                 f = self._repo.vfs('merge/' + hash)
-                self._repo.wwrite(dfile, f.read(), flags)
+                wctx[dfile].write(f.read(), flags)
                 f.close()
             else:
-                self._repo.wvfs.unlinkpath(dfile, ignoremissing=True)
+                wctx[dfile].remove(ignoremissing=True)
             complete, r, deleted = filemerge.premerge(self._repo, self._local,
                                                       lfile, fcd, fco, fca,
                                                       labels=self._labels)
@@ -568,8 +567,7 @@ class mergestate(object):
 
     def unresolvedcount(self):
         """get unresolved count for this merge (persistent)"""
-        return len([True for f, entry in self._state.iteritems()
-                    if entry[0] == 'u'])
+        return len(list(self.unresolved()))
 
     def actions(self):
         """return lists of actions to perform on the dirstate"""
@@ -786,7 +784,7 @@ def driverconclude(repo, ms, wctx, labels=None):
     return True
 
 def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
-                  acceptremote, followcopies):
+                  acceptremote, followcopies, forcefulldiff=False):
     """
     Merge wctx and p2 with ancestor pa and generate merge action list
 
@@ -801,15 +799,18 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
 
     # manifests fetched in order are going to be faster, so prime the caches
     [x.manifest() for x in
-     sorted(wctx.parents() + [p2, pa], key=lambda x: x.rev())]
+     sorted(wctx.parents() + [p2, pa], key=scmutil.intrev)]
 
     if followcopies:
         ret = copies.mergecopies(repo, wctx, p2, pa)
         copy, movewithdir, diverge, renamedelete, dirmove = ret
 
+    boolbm = pycompat.bytestr(bool(branchmerge))
+    boolf = pycompat.bytestr(bool(force))
+    boolm = pycompat.bytestr(bool(matcher))
     repo.ui.note(_("resolving manifests\n"))
     repo.ui.debug(" branchmerge: %s, force: %s, partial: %s\n"
-                  % (bool(branchmerge), bool(force), bool(matcher)))
+                  % (boolbm, boolf, boolm))
     repo.ui.debug(" ancestor: %s, local: %s, remote: %s\n" % (pa, wctx, p2))
 
     m1, m2, ma = wctx.manifest(), p2.manifest(), pa.manifest()
@@ -820,6 +821,25 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
         # check whether sub state is modified
         if any(wctx.sub(s).dirty() for s in wctx.substate):
             m1['.hgsubstate'] = modifiednodeid
+
+    # Don't use m2-vs-ma optimization if:
+    # - ma is the same as m1 or m2, which we're just going to diff again later
+    # - The caller specifically asks for a full diff, which is useful during bid
+    #   merge.
+    if (pa not in ([wctx, p2] + wctx.parents()) and not forcefulldiff):
+        # Identify which files are relevant to the merge, so we can limit the
+        # total m1-vs-m2 diff to just those files. This has significant
+        # performance benefits in large repositories.
+        relevantfiles = set(ma.diff(m2).keys())
+
+        # For copied and moved files, we need to add the source file too.
+        for copykey, copyvalue in copy.iteritems():
+            if copyvalue in relevantfiles:
+                relevantfiles.add(copykey)
+        for movedirkey in movewithdir:
+            relevantfiles.add(movedirkey)
+        filesmatcher = scmutil.matchfiles(repo, relevantfiles)
+        matcher = matchmod.intersectmatchers(matcher, filesmatcher)
 
     diff = m1.diff(m2, match=matcher)
 
@@ -955,7 +975,10 @@ def _resolvetrivial(repo, wctx, mctx, ancestor, actions):
 def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
                      acceptremote, followcopies, matcher=None,
                      mergeforce=False):
-    "Calculate the actions needed to merge mctx into wctx using ancestors"
+    """Calculate the actions needed to merge mctx into wctx using ancestors"""
+    # Avoid cycle.
+    from . import sparse
+
     if len(ancestors) == 1: # default
         actions, diverge, renamedelete = manifestmerge(
             repo, wctx, mctx, ancestors[0], branchmerge, force, matcher,
@@ -974,7 +997,7 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
             repo.ui.note(_('\ncalculating bids for ancestor %s\n') % ancestor)
             actions, diverge1, renamedelete1 = manifestmerge(
                 repo, wctx, mctx, ancestor, branchmerge, force, matcher,
-                acceptremote, followcopies)
+                acceptremote, followcopies, forcefulldiff=True)
             _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce)
 
             # Track the shortest set of warning on the theory that bid
@@ -1054,16 +1077,17 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
         fractions = _forgetremoved(wctx, mctx, branchmerge)
         actions.update(fractions)
 
-    return actions, diverge, renamedelete
+    prunedactions = sparse.filterupdatesactions(repo, wctx, mctx, branchmerge,
+                                                actions)
 
-def batchremove(repo, actions):
+    return prunedactions, diverge, renamedelete
+
+def batchremove(repo, wctx, actions):
     """apply removes to the working directory
 
     yields tuples for progress updates
     """
     verbose = repo.ui.verbose
-    unlinkpath = repo.wvfs.unlinkpath
-    audit = repo.wvfs.audit
     try:
         cwd = pycompat.getcwd()
     except OSError as err:
@@ -1075,9 +1099,9 @@ def batchremove(repo, actions):
         repo.ui.debug(" %s: %s -> r\n" % (f, msg))
         if verbose:
             repo.ui.note(_("removing %s\n") % f)
-        audit(f)
+        wctx[f].audit()
         try:
-            unlinkpath(f, ignoremissing=True)
+            wctx[f].remove(ignoremissing=True)
         except OSError as inst:
             repo.ui.warn(_("update failed to remove %s: %s!\n") %
                          (f, inst.strerror))
@@ -1100,7 +1124,7 @@ def batchremove(repo, actions):
                            "(consider changing to repo root: %s)\n") %
                          repo.root)
 
-def batchget(repo, mctx, actions):
+def batchget(repo, mctx, wctx, actions):
     """apply gets to the working directory
 
     mctx is the context to get from
@@ -1109,7 +1133,6 @@ def batchget(repo, mctx, actions):
     """
     verbose = repo.ui.verbose
     fctx = mctx.filectx
-    wwrite = repo.wwrite
     ui = repo.ui
     i = 0
     with repo.wvfs.backgroundclosing(ui, expectedcount=len(actions)):
@@ -1130,7 +1153,7 @@ def batchget(repo, mctx, actions):
 
             if repo.wvfs.isdir(f) and not repo.wvfs.islink(f):
                 repo.wvfs.removedirs(f)
-            wwrite(f, fctx(f).data(), flags, backgroundclose=True)
+            wctx[f].write(fctx(f).data(), flags, backgroundclose=True)
             if i == 100:
                 yield i, f
                 i = 0
@@ -1181,17 +1204,16 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         if f1 != f and move:
             moves.append(f1)
 
-    audit = repo.wvfs.audit
     _updating = _('updating')
     _files = _('files')
     progress = repo.ui.progress
 
     # remove renamed files after safely stored
     for f in moves:
-        if os.path.lexists(repo.wjoin(f)):
+        if wctx[f].lexists():
             repo.ui.debug("removing %s\n" % f)
-            audit(f)
-            repo.wvfs.unlinkpath(f)
+            wctx[f].audit()
+            wctx[f].remove()
 
     numupdates = sum(len(l) for m, l in actions.items() if m != 'k')
 
@@ -1200,14 +1222,16 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
 
     # remove in parallel (must come first)
     z = 0
-    prog = worker.worker(repo.ui, 0.001, batchremove, (repo,), actions['r'])
+    prog = worker.worker(repo.ui, 0.001, batchremove, (repo, wctx),
+                         actions['r'])
     for i, item in prog:
         z += i
         progress(_updating, z, item=item, total=numupdates, unit=_files)
     removed = len(actions['r'])
 
     # get in parallel
-    prog = worker.worker(repo.ui, 0.001, batchget, (repo, mctx), actions['g'])
+    prog = worker.worker(repo.ui, 0.001, batchget, (repo, mctx, wctx),
+                         actions['g'])
     for i, item in prog:
         z += i
         progress(_updating, z, item=item, total=numupdates, unit=_files)
@@ -1246,9 +1270,9 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         progress(_updating, z, item=f, total=numupdates, unit=_files)
         f0, flags = args
         repo.ui.note(_("moving %s to %s\n") % (f0, f))
-        audit(f)
-        repo.wwrite(f, wctx.filectx(f0).data(), flags)
-        repo.wvfs.unlinkpath(f0)
+        wctx[f].audit()
+        wctx[f].write(wctx.filectx(f0).data(), flags)
+        wctx[f0].remove()
         updated += 1
 
     # local directory rename, get
@@ -1258,7 +1282,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         progress(_updating, z, item=f, total=numupdates, unit=_files)
         f0, flags = args
         repo.ui.note(_("getting %s to %s\n") % (f0, f))
-        repo.wwrite(f, mctx.filectx(f0).data(), flags)
+        wctx[f].write(mctx.filectx(f0).data(), flags)
         updated += 1
 
     # exec
@@ -1267,8 +1291,8 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
         flags, = args
-        audit(f)
-        util.setflags(repo.wjoin(f), 'l' in flags, 'x' in flags)
+        wctx[f].audit()
+        wctx[f].setflags('l' in flags, 'x' in flags)
         updated += 1
 
     # the ordering is important here -- ms.mergedriver will raise if the merge
@@ -1301,7 +1325,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
             subrepo.submerge(repo, wctx, mctx, wctx.ancestor(mctx),
                              overwrite, labels)
             continue
-        audit(f)
+        wctx[f].audit()
         complete, r = ms.preresolve(f, wctx)
         if not complete:
             numupdates += 1
@@ -1496,6 +1520,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
 
     Return the same tuple as applyupdates().
     """
+    # Avoid cycle.
+    from . import sparse
 
     # This function used to find the default destination if node was None, but
     # that's now in destutil.py.
@@ -1568,8 +1594,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
                 dirty = wc.dirty(missing=True)
                 if dirty:
                     # Branching is a bit strange to ensure we do the minimal
-                    # amount of call to obsolete.foreground.
-                    foreground = obsolete.foreground(repo, [p1.node()])
+                    # amount of call to obsutil.foreground.
+                    foreground = obsutil.foreground(repo, [p1.node()])
                     # note: the <node> variable contains a random identifier
                     if repo[node].node() in foreground:
                         pass # allow updating to successors
@@ -1587,7 +1613,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
             pas = [p1]
 
         # deprecated config: merge.followcopies
-        followcopies = repo.ui.configbool('merge', 'followcopies', True)
+        followcopies = repo.ui.configbool('merge', 'followcopies')
         if overwrite:
             followcopies = False
         elif not pas[0]:
@@ -1676,15 +1702,19 @@ def update(repo, node, branchmerge, force, ancestor=None,
         stats = applyupdates(repo, actions, wc, p2, overwrite, labels=labels)
 
         if not partial:
-            repo.dirstate.beginparentchange()
-            repo.setparents(fp1, fp2)
-            recordupdates(repo, actions, branchmerge)
-            # update completed, clear state
-            util.unlink(repo.vfs.join('updatestate'))
+            with repo.dirstate.parentchange():
+                repo.setparents(fp1, fp2)
+                recordupdates(repo, actions, branchmerge)
+                # update completed, clear state
+                util.unlink(repo.vfs.join('updatestate'))
 
-            if not branchmerge:
-                repo.dirstate.setbranch(p2.branch())
-            repo.dirstate.endparentchange()
+                if not branchmerge:
+                    repo.dirstate.setbranch(p2.branch())
+
+    # If we're updating to a location, clean up any stale temporary includes
+    # (ex: this happens during hg rebase --abort).
+    if not branchmerge:
+        sparse.prunetemporaryincludes(repo)
 
     if not partial:
         repo.hook('update', parent1=xp1, parent2=xp2, error=stats[3])
@@ -1722,10 +1752,9 @@ def graft(repo, ctx, pctx, labels, keepparent=False):
         parents.remove(pctx)
         pother = parents[0].node()
 
-    repo.dirstate.beginparentchange()
-    repo.setparents(repo['.'].node(), pother)
-    repo.dirstate.write(repo.currenttransaction())
-    # fix up dirstate for copies and renames
-    copies.duplicatecopies(repo, ctx.rev(), pctx.rev())
-    repo.dirstate.endparentchange()
+    with repo.dirstate.parentchange():
+        repo.setparents(repo['.'].node(), pother)
+        repo.dirstate.write(repo.currenttransaction())
+        # fix up dirstate for copies and renames
+        copies.duplicatecopies(repo, ctx.rev(), pctx.rev())
     return stats

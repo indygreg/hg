@@ -49,6 +49,26 @@ clone via stream
 try to clone via stream, should use pull instead
 
   $ hg clone --uncompressed http://localhost:$HGPORT1/ copy2
+  warning: stream clone requested but server has them disabled
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 4 changes to 4 files
+  updating to branch default
+  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+try to clone via stream but missing requirements, so should use pull instead
+
+  $ cat > $TESTTMP/removesupportedformat.py << EOF
+  > from mercurial import localrepo
+  > def extsetup(ui):
+  >     localrepo.localrepository.supportedformats.remove('generaldelta')
+  > EOF
+
+  $ hg clone --config extensions.rsf=$TESTTMP/removesupportedformat.py --uncompressed http://localhost:$HGPORT/ copy3
+  warning: stream clone requested but client is missing requirements: generaldelta
+  (see https://www.mercurial-scm.org/wiki/MissingRequirement for more information)
   requesting all changes
   adding changesets
   adding manifests
@@ -333,6 +353,44 @@ check abort error reporting while pulling/cloning
   abort: pull failed on remote
   [255]
   $ cat error.log
+
+disable pull-based clones
+
+  $ hg -R test serve -p $HGPORT1 -d --pid-file=hg4.pid -E error.log --config server.disablefullbundle=True
+  $ cat hg4.pid >> $DAEMON_PIDS
+  $ hg clone http://localhost:$HGPORT1/ disable-pull-clone
+  requesting all changes
+  remote: abort: server has pull-based clones disabled
+  abort: pull failed on remote
+  (remove --pull if specified or upgrade Mercurial)
+  [255]
+
+... but keep stream clones working
+
+  $ hg clone --uncompressed --noupdate http://localhost:$HGPORT1/ test-stream-clone
+  streaming all changes
+  * files to transfer, * of data (glob)
+  transferred * in * seconds (*/sec) (glob)
+  searching for changes
+  no changes found
+  $ cat error.log
+
+... and also keep partial clones and pulls working
+  $ hg clone http://localhost:$HGPORT1 --rev 0 test-partial-clone
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 4 changes to 4 files
+  updating to branch default
+  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg pull -R test-partial-clone
+  pulling from http://localhost:$HGPORT1/
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 3 changes to 3 files
+  (run 'hg update' to get a working copy)
 
 corrupt cookies file should yield a warning
 

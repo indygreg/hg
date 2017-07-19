@@ -4,9 +4,23 @@ test --time
   $ hg init a
   $ cd a
 
-#if lsprof
 
 test --profile
+
+  $ hg st --profile 2>&1 | grep Sample
+  Sample count: \d+ (re)
+
+Abreviated version
+
+  $ hg st --prof 2>&1 | grep Sample
+  Sample count: \d+ (re)
+
+In alias
+
+  $ hg --config "alias.profst=status --profile" profst 2>&1 | grep Sample
+  Sample count: \d+ (re)
+
+#if lsprof
 
   $ prof='hg --config profiling.type=ls --profile'
 
@@ -51,10 +65,10 @@ Install an extension that can sleep and guarantee a profiler has time to run
 
   $ cat >> sleepext.py << EOF
   > import time
-  > from mercurial import cmdutil, commands
+  > from mercurial import registrar, commands
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
-  > @command('sleep', [], 'hg sleep')
+  > command = registrar.command(cmdtable)
+  > @command(b'sleep', [], 'hg sleep')
   > def sleep(ui, *args, **kwargs):
   >     time.sleep(0.1)
   > EOF
@@ -97,5 +111,53 @@ statprof can be used as a standalone module
   $ $PYTHON -m mercurial.statprof hotpath
   must specify --file to load
   [1]
+
+  $ cd ..
+
+profiler extension could be loaded before other extensions
+
+  $ cat > fooprof.py <<EOF
+  > from __future__ import absolute_import
+  > import contextlib
+  > @contextlib.contextmanager
+  > def profile(ui, fp):
+  >     print('fooprof: start profile')
+  >     yield
+  >     print('fooprof: end profile')
+  > def extsetup(ui):
+  >     ui.write('fooprof: loaded\n')
+  > EOF
+
+  $ cat > otherextension.py <<EOF
+  > from __future__ import absolute_import
+  > def extsetup(ui):
+  >     ui.write('otherextension: loaded\n')
+  > EOF
+
+  $ hg init b
+  $ cd b
+  $ cat >> .hg/hgrc <<EOF
+  > [extensions]
+  > other = $TESTTMP/otherextension.py
+  > fooprof = $TESTTMP/fooprof.py
+  > EOF
+
+  $ hg root
+  otherextension: loaded
+  fooprof: loaded
+  $TESTTMP/b (glob)
+  $ HGPROF=fooprof hg root --profile
+  fooprof: loaded
+  fooprof: start profile
+  otherextension: loaded
+  $TESTTMP/b (glob)
+  fooprof: end profile
+
+  $ HGPROF=other hg root --profile 2>&1 | head -n 2
+  otherextension: loaded
+  unrecognized profiler 'other' - ignored
+
+  $ HGPROF=unknown hg root --profile 2>&1 | head -n 1
+  unrecognized profiler 'unknown' - ignored
 
   $ cd ..

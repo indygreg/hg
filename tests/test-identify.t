@@ -43,12 +43,43 @@ with options
   cb9a9f314b8b
   $ hg id -n -t -b -i
   cb9a9f314b8b 0 default tip
+  $ hg id -Tjson
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "dirty": "",
+    "id": "cb9a9f314b8b",
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "parents": [{"node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "rev": 0}],
+    "tags": ["tip"]
+   }
+  ]
+
+test template keywords and functions which require changectx:
+
+  $ hg id -T '{rev} {node|shortest}\n'
+  2147483647 ffff
+  $ hg id -T '{parents % "{rev} {node|shortest} {desc}\n"}'
+  0 cb9a a
 
 with modifications
 
   $ echo b > a
   $ hg id -n -t -b -i
   cb9a9f314b8b+ 0+ default tip
+  $ hg id -Tjson
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "dirty": "+",
+    "id": "cb9a9f314b8b+",
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "parents": [{"node": "cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b", "rev": 0}],
+    "tags": ["tip"]
+   }
+  ]
 
 other local repo
 

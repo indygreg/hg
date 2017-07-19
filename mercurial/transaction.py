@@ -26,10 +26,10 @@ version = 2
 # These are the file generators that should only be executed after the
 # finalizers are done, since they rely on the output of the finalizers (like
 # the changelog having been written).
-postfinalizegenerators = set([
+postfinalizegenerators = {
     'bookmarks',
     'dirstate'
-])
+}
 
 gengroupall='all'
 gengroupprefinalize='prefinalize'
@@ -44,11 +44,12 @@ def active(func):
     return _active
 
 def _playback(journal, report, opener, vfsmap, entries, backupentries,
-              unlink=True):
+              unlink=True, checkambigfiles=None):
     for f, o, _ignore in entries:
         if o or not unlink:
+            checkambig = checkambigfiles and (f, '') in checkambigfiles
             try:
-                fp = opener(f, 'a', checkambig=True)
+                fp = opener(f, 'a', checkambig=checkambig)
                 fp.truncate(o)
                 fp.close()
             except IOError:
@@ -71,8 +72,9 @@ def _playback(journal, report, opener, vfsmap, entries, backupentries,
             if f and b:
                 filepath = vfs.join(f)
                 backuppath = vfs.join(b)
+                checkambig = checkambigfiles and (f, l) in checkambigfiles
                 try:
-                    util.copyfile(backuppath, filepath, checkambig=True)
+                    util.copyfile(backuppath, filepath, checkambig=checkambig)
                     backupfiles.append(b)
                 except IOError:
                     report(_("failed to recover %s\n") % f)
@@ -101,7 +103,8 @@ def _playback(journal, report, opener, vfsmap, entries, backupentries,
 
 class transaction(object):
     def __init__(self, report, opener, vfsmap, journalname, undoname=None,
-                 after=None, createmode=None, validator=None, releasefn=None):
+                 after=None, createmode=None, validator=None, releasefn=None,
+                 checkambigfiles=None):
         """Begin a new transaction
 
         Begins a new transaction that allows rolling back writes in the event of
@@ -110,6 +113,10 @@ class transaction(object):
         * `after`: called after the transaction has been committed
         * `createmode`: the mode of the journal file that will be created
         * `releasefn`: called after releasing (with transaction and result)
+
+        `checkambigfiles` is a set of (path, vfs-location) tuples,
+        which determine whether file stat ambiguity should be avoided
+        for corresponded files.
         """
         self.count = 1
         self.usages = 1
@@ -136,6 +143,14 @@ class transaction(object):
         if releasefn is None:
             releasefn = lambda tr, success: None
         self.releasefn = releasefn
+
+        self.checkambigfiles = set()
+        if checkambigfiles:
+            self.checkambigfiles.update(checkambigfiles)
+
+        # A dict dedicated to precisely tracking the changes introduced in the
+        # transaction.
+        self.changes = {}
 
         # a dict of arguments to be passed to hooks
         self.hookargs = {}
@@ -288,6 +303,12 @@ class transaction(object):
         # but for bookmarks that are handled outside this mechanism.
         self._filegenerators[genid] = (order, filenames, genfunc, location)
 
+    @active
+    def removefilegenerator(self, genid):
+        """reverse of addfilegenerator, remove a file generator function"""
+        if genid in self._filegenerators:
+            del self._filegenerators[genid]
+
     def _generatefiles(self, suffix='', group=gengroupall):
         # write files registered for generation
         any = False
@@ -308,10 +329,12 @@ class transaction(object):
                     name += suffix
                     if suffix:
                         self.registertmp(name, location=location)
+                        checkambig = False
                     else:
                         self.addbackup(name, location=location)
+                        checkambig = (name, location) in self.checkambigfiles
                     files.append(vfs(name, 'w', atomictemp=True,
-                                     checkambig=not suffix))
+                                     checkambig=checkambig))
                 genfunc(*files)
             finally:
                 for f in files:
@@ -402,7 +425,7 @@ class transaction(object):
 
     @active
     def addpostclose(self, category, callback):
-        """add a callback to be called after the transaction is closed
+        """add or replace a callback to be called after the transaction closed
 
         The transaction will be given as callback's first argument.
 
@@ -410,6 +433,11 @@ class transaction(object):
         with a newer callback.
         """
         self._postclosecallback[category] = callback
+
+    @active
+    def getpostclose(self, category):
+        """return a postclose callback added before, or None"""
+        return self._postclosecallback.get(category, None)
 
     @active
     def addabort(self, category, callback):
@@ -427,6 +455,7 @@ class transaction(object):
         '''commit the transaction'''
         if self.count == 1:
             self.validator(self)  # will raise exception if needed
+            self.validator = None # Help prevent cycles.
             self._generatefiles(group=gengroupprefinalize)
             categories = sorted(self._finalizecallback)
             for cat in categories:
@@ -460,6 +489,7 @@ class transaction(object):
         self._writeundo()
         if self.after:
             self.after()
+            self.after = None # Help prevent cycles.
         if self.opener.isfile(self._backupjournal):
             self.opener.unlink(self._backupjournal)
         if self.opener.isfile(self.journal):
@@ -483,6 +513,7 @@ class transaction(object):
         self.journal = None
 
         self.releasefn(self, True) # notify success of closing transaction
+        self.releasefn = None # Help prevent cycles.
 
         # run post close action
         categories = sorted(self._postclosecallback)
@@ -546,15 +577,17 @@ class transaction(object):
                 # Prevent double usage and help clear cycles.
                 self._abortcallback = None
                 _playback(self.journal, self.report, self.opener, self._vfsmap,
-                          self.entries, self._backupentries, False)
+                          self.entries, self._backupentries, False,
+                          checkambigfiles=self.checkambigfiles)
                 self.report(_("rollback completed\n"))
             except BaseException:
                 self.report(_("rollback failed - please run hg recover\n"))
         finally:
             self.journal = None
             self.releasefn(self, False) # notify failure of transaction
+            self.releasefn = None # Help prevent cycles.
 
-def rollback(opener, vfsmap, file, report):
+def rollback(opener, vfsmap, file, report, checkambigfiles=None):
     """Rolls back the transaction contained in the given file
 
     Reads the entries in the specified file, and the corresponding
@@ -565,6 +598,10 @@ def rollback(opener, vfsmap, file, report):
     file\0offset pairs, delimited by newlines. The corresponding
     '*.backupfiles' file should contain a list of file\0backupfile
     pairs, delimited by \0.
+
+    `checkambigfiles` is a set of (path, vfs-location) tuples,
+    which determine whether file stat ambiguity should be avoided at
+    restoring corresponded files.
     """
     entries = []
     backupentries = []
@@ -596,4 +633,5 @@ def rollback(opener, vfsmap, file, report):
                 report(_("journal was created by a different version of "
                          "Mercurial\n"))
 
-    _playback(file, report, opener, vfsmap, entries, backupentries)
+    _playback(file, report, opener, vfsmap, entries, backupentries,
+              checkambigfiles=checkambigfiles)

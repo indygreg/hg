@@ -53,6 +53,7 @@ def tokenize(program, start, end, term=None):
     """Parse a template expression into a stream of tokens, which must end
     with term if specified"""
     pos = start
+    program = pycompat.bytestr(program)
     while pos < end:
         c = program[pos]
         if c.isspace(): # skip inter-token whitespace
@@ -370,7 +371,7 @@ def runsymbol(context, mapping, key, default=''):
         except TemplateNotFound:
             v = default
     if callable(v):
-        return v(**mapping)
+        return v(**pycompat.strkwargs(mapping))
     return v
 
 def buildtemplate(exp, context):
@@ -873,7 +874,7 @@ def revset(context, mapping, args):
     repo = ctx.repo()
 
     def query(expr):
-        m = revsetmod.match(repo.ui, expr)
+        m = revsetmod.match(repo.ui, expr, repo=repo)
         return m(repo)
 
     if len(args) > 1:
@@ -959,6 +960,9 @@ def shortest(context, mapping, args):
                 return True
         except error.RevlogError:
             return False
+        except error.WdirUnsupported:
+            # single 'ff...' match
+            return True
 
     shortest = node
     startlength = max(6, minlength)
@@ -1097,21 +1101,21 @@ stringify = templatefilters.stringify
 def _flatten(thing):
     '''yield a single stream from a possibly nested set of iterators'''
     thing = templatekw.unwraphybrid(thing)
-    if isinstance(thing, str):
+    if isinstance(thing, bytes):
         yield thing
     elif thing is None:
         pass
     elif not util.safehasattr(thing, '__iter__'):
-        yield str(thing)
+        yield pycompat.bytestr(thing)
     else:
         for i in thing:
             i = templatekw.unwraphybrid(i)
-            if isinstance(i, str):
+            if isinstance(i, bytes):
                 yield i
             elif i is None:
                 pass
             elif not util.safehasattr(i, '__iter__'):
-                yield str(i)
+                yield pycompat.bytestr(i)
             else:
                 for j in _flatten(i):
                     yield j
@@ -1294,7 +1298,12 @@ class templater(object):
                               (self.map[t][1], inst.args[1]))
         return self.cache[t]
 
+    def render(self, mapping):
+        """Render the default unnamed template and return result as string"""
+        return stringify(self('', **mapping))
+
     def __call__(self, t, **mapping):
+        mapping = pycompat.byteskwargs(mapping)
         ttype = t in self.map and self.map[t][0] or 'default'
         if ttype not in self.ecache:
             try:

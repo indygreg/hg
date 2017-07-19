@@ -14,7 +14,7 @@ these may expose other cycles.
 Known-bad files are excluded by -X as some of them would produce unstable
 outputs, which should be fixed later.
 
-  $ hg locate 'set:**.py or grep(r"^#!.*?python")' \
+  $ testrepohg locate 'set:**.py or grep(r"^#!.*?python")' \
   > 'tests/**.t' \
   > -X contrib/debugshell.py \
   > -X contrib/python-zstandard/ \
@@ -24,7 +24,6 @@ outputs, which should be fixed later.
   > -X i18n/posplit \
   > -X tests/test-hgweb-auth.py \
   > -X tests/hypothesishelpers.py \
-  > -X tests/test-ctxmanager.py \
   > -X tests/test-lock.py \
   > -X tests/test-verify-repo-operations.py \
   > -X tests/test-hook.t \
@@ -37,4 +36,4 @@ outputs, which should be fixed later.
   > -X tests/test-hgweb-no-path-info.t \
   > -X tests/test-hgweb-no-request-uri.t \
   > -X tests/test-hgweb-non-interactive.t \
-  > | sed 's-\\-/-g' | python "$import_checker" -
+  > | sed 's-\\-/-g' | $PYTHON "$import_checker" -

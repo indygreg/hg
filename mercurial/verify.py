@@ -49,6 +49,8 @@ class verifier(object):
         self.lrugetctx = util.lrucachefunc(repo.changectx)
         self.refersmf = False
         self.fncachewarned = False
+        # developer config: verify.skipflags
+        self.skipflags = repo.ui.configint('verify', 'skipflags')
 
     def warn(self, msg):
         self.ui.warn(msg + "\n")
@@ -427,16 +429,21 @@ class verifier(object):
                 #  2. hash check: depending on flag processor, we may need to
                 #     use either "text" (external), or "rawtext" (in revlog).
                 try:
-                    l = len(fl.read(n))
-                    rp = fl.renamed(n)
-                    if l != fl.size(i):
-                        # the "L1 == L2" check
-                        if len(fl.revision(n, raw=True)) != fl.rawsize(i):
-                            self.err(lr, _("unpacked size is %s, %s expected") %
-                                     (l, fl.size(i)), f)
+                    skipflags = self.skipflags
+                    if skipflags:
+                        skipflags &= fl.flags(i)
+                    if not skipflags:
+                        fl.read(n) # side effect: read content and do checkhash
+                        rp = fl.renamed(n)
+                    # the "L1 == L2" check
+                    l1 = fl.rawsize(i)
+                    l2 = len(fl.revision(n, raw=True))
+                    if l1 != l2:
+                        self.err(lr, _("unpacked size is %s, %s expected") %
+                                 (l2, l1), f)
                 except error.CensoredNodeError:
                     # experimental config: censor.policy
-                    if ui.config("censor", "policy", "abort") == "abort":
+                    if ui.config("censor", "policy") == "abort":
                         self.err(lr, _("censored file data"), f)
                 except Exception as inst:
                     self.exc(lr, _("unpacking %s") % short(n), inst, f)

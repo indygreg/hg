@@ -21,6 +21,8 @@ from . import (
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
     "(": (21, None, ("group", 1, ")"), ("func", 1, ")"), None),
+    "[": (21, None, None, ("subscript", 1, "]"), None),
+    "#": (21, None, None, ("relation", 21), None),
     "##": (20, None, None, ("_concat", 20), None),
     "~": (18, None, None, ("ancestor", 18), None),
     "^": (18, None, None, ("parent", 18), "parentpost"),
@@ -39,15 +41,16 @@ elements = {
     "=": (3, None, None, ("keyvalue", 3), None),
     ",": (2, None, None, ("list", 2), None),
     ")": (0, None, None, None, None),
+    "]": (0, None, None, None, None),
     "symbol": (0, "symbol", None, None, None),
     "string": (0, "string", None, None, None),
     "end": (0, None, None, None, None),
 }
 
-keywords = set(['and', 'or', 'not'])
+keywords = {'and', 'or', 'not'}
 
-_quoteletters = set(['"', "'"])
-_simpleopletters = set(pycompat.iterbytestr("():=,-|&+!~^%"))
+_quoteletters = {'"', "'"}
+_simpleopletters = set(pycompat.iterbytestr("()[]#:=,-|&+!~^%"))
 
 # default set of valid characters for the initial letter of symbols
 _syminitletters = set(pycompat.iterbytestr(
@@ -236,6 +239,25 @@ def getargsdict(x, funcname, keys):
     return parser.buildargsdict(getlist(x), funcname, parser.splitargspec(keys),
                                 keyvaluenode='keyvalue', keynode='symbol')
 
+def _isnamedfunc(x, funcname):
+    """Check if given tree matches named function"""
+    return x and x[0] == 'func' and getsymbol(x[1]) == funcname
+
+def _isposargs(x, n):
+    """Check if given tree is n-length list of positional arguments"""
+    l = getlist(x)
+    return len(l) == n and all(y and y[0] != 'keyvalue' for y in l)
+
+def _matchnamedfunc(x, funcname):
+    """Return args tree if given tree matches named function; otherwise None
+
+    This can't be used for testing a nullary function since its args tree
+    is also None. Use _isnamedfunc() instead.
+    """
+    if not _isnamedfunc(x, funcname):
+        return
+    return x[2]
+
 # Constants for ordering requirement, used in _analyze():
 #
 # If 'define', any nested functions and operations can change the ordering of
@@ -286,14 +308,10 @@ def _matchonly(revs, bases):
     >>> f('ancestors(A)', 'not ancestors(B)')
     ('list', ('symbol', 'A'), ('symbol', 'B'))
     """
-    if (revs is not None
-        and revs[0] == 'func'
-        and getsymbol(revs[1]) == 'ancestors'
-        and bases is not None
-        and bases[0] == 'not'
-        and bases[1][0] == 'func'
-        and getsymbol(bases[1][1]) == 'ancestors'):
-        return ('list', revs[2], bases[1][2])
+    ta = _matchnamedfunc(revs, 'ancestors')
+    tb = bases and bases[0] == 'not' and _matchnamedfunc(bases[1], 'ancestors')
+    if _isposargs(ta, 1) and _isposargs(tb, 1):
+        return ('list', ta, tb)
 
 def _fixops(x):
     """Rewrite raw parsed tree to resolve ambiguous syntax which cannot be
@@ -316,6 +334,9 @@ def _fixops(x):
         # make number of arguments deterministic:
         # x + y + z -> (or x y z) -> (or (list x y z))
         return (op, _fixops(('list',) + x[1:]))
+    elif op == 'subscript' and x[1][0] == 'relation':
+        # x#y[z] ternary
+        return _fixops(('relsubscript', x[1][1], x[1][2], x[2]))
 
     return (op,) + tuple(_fixops(y) for y in x[1:])
 
@@ -354,10 +375,16 @@ def _analyze(x, order):
         return (op, _analyze(x[1], defineorder), order)
     elif op == 'group':
         return _analyze(x[1], order)
-    elif op in ('dagrange', 'range', 'parent', 'ancestor'):
+    elif op in ('dagrange', 'range', 'parent', 'ancestor', 'relation',
+                'subscript'):
         ta = _analyze(x[1], defineorder)
         tb = _analyze(x[2], defineorder)
         return (op, ta, tb, order)
+    elif op == 'relsubscript':
+        ta = _analyze(x[1], defineorder)
+        tb = _analyze(x[2], defineorder)
+        tc = _analyze(x[3], defineorder)
+        return (op, ta, tb, tc, order)
     elif op == 'list':
         return (op,) + tuple(_analyze(y, order) for y in x[1:])
     elif op == 'keyvalue':
@@ -461,11 +488,19 @@ def _optimize(x, small):
         o = _optimize(x[1], small)
         order = x[2]
         return o[0], (op, o[1], order)
-    elif op in ('dagrange', 'range', 'parent', 'ancestor'):
+    elif op in ('dagrange', 'range'):
         wa, ta = _optimize(x[1], small)
         wb, tb = _optimize(x[2], small)
         order = x[3]
         return wa + wb, (op, ta, tb, order)
+    elif op in ('parent', 'ancestor', 'relation', 'subscript'):
+        w, t = _optimize(x[1], small)
+        order = x[3]
+        return w, (op, t, x[2], order)
+    elif op == 'relsubscript':
+        w, t = _optimize(x[1], small)
+        order = x[4]
+        return w, (op, t, x[2], x[3], order)
     elif op == 'list':
         ws, ts = zip(*(_optimize(y, small) for y in x[1:]))
         return sum(ws), (op,) + ts
@@ -546,14 +581,16 @@ class _aliasrules(parser.basealiasrules):
         if tree[0] == 'func' and tree[1][0] == 'symbol':
             return tree[1][1], getlist(tree[2])
 
-def expandaliases(ui, tree):
-    aliases = _aliasrules.buildmap(ui.configitems('revsetalias'))
+def expandaliases(tree, aliases, warn=None):
+    """Expand aliases in a tree, aliases is a list of (name, value) tuples"""
+    aliases = _aliasrules.buildmap(aliases)
     tree = _aliasrules.expand(aliases, tree)
     # warn about problematic (but not referred) aliases
-    for name, alias in sorted(aliases.iteritems()):
-        if alias.error and not alias.warned:
-            ui.warn(_('warning: %s\n') % (alias.error))
-            alias.warned = True
+    if warn is not None:
+        for name, alias in sorted(aliases.iteritems()):
+            if alias.error and not alias.warned:
+                warn(_('warning: %s\n') % (alias.error))
+                alias.warned = True
     return tree
 
 def foldconcat(tree):

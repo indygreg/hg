@@ -203,7 +203,7 @@ divergent bookmarks
 
 (test that too many divergence of bookmark)
 
-  $ python $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -r 000000000000 "X@${i}"; done
+  $ $PYTHON $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -r 000000000000 "X@${i}"; done
   $ hg pull ../a
   pulling from ../a
   searching for changes
@@ -231,7 +231,7 @@ divergent bookmarks
      @1                        2:0d2164f0ce0d
      @foo                      2:0d2164f0ce0d
 
-  $ python $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -d "X@${i}"; done
+  $ $PYTHON $TESTDIR/seq.py 1 100 | while read i; do hg bookmarks -d "X@${i}"; done
   $ hg bookmarks -d "@1"
 
   $ hg push -f ../a
@@ -475,6 +475,7 @@ Update to a successor works
   $ hg id --debug -r 5
   c922c0139ca03858f655e4a2af4dd02796a63969 tip Y
   $ hg debugobsolete f6fc62dde3c0771e29704af56ba4d8af77abcc2f cccccccccccccccccccccccccccccccccccccccc
+  obsoleted 1 changesets
   $ hg debugobsolete cccccccccccccccccccccccccccccccccccccccc 4efff6d98829d9c824c621afd6e3f01865f5439f
   $ hg push http://localhost:$HGPORT2/
   pushing to http://localhost:$HGPORT2/
@@ -484,6 +485,7 @@ Update to a successor works
   remote: adding file changes
   remote: added 2 changesets with 2 changes to 1 files (+1 heads)
   remote: 2 new obsolescence markers
+  remote: obsoleted 1 changesets
   updating bookmark Y
   $ hg -R ../a book
      @                         1:0d2164f0ce0d
@@ -808,7 +810,7 @@ Check hook preventing push (issue4455)
   > ssh=ssh://user@dummy/issue4455-dest
   > http=http://localhost:$HGPORT/
   > [ui]
-  > ssh=python "$TESTDIR/dummyssh"
+  > ssh=$PYTHON "$TESTDIR/dummyssh"
   > EOF
   $ cat >> ../issue4455-dest/.hg/hgrc << EOF
   > [hooks]

@@ -71,6 +71,7 @@ we don't have to hash them again next time we update.
 
   $ hg up
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "f74e50bd9e55: #2"
   1 other heads for branch "default"
   $ hg debugdirstate --large --nodate
   n 644          7 set                 large1
@@ -86,6 +87,7 @@ prevents unnecessary hashing of content - also after linear/noop update
   n 644         13 set                 large2
   $ hg up
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "f74e50bd9e55: #2"
   1 other heads for branch "default"
   $ hg debugdirstate --large --nodate
   n 644          7 set                 large1
@@ -212,13 +214,11 @@ Test that "hg rollback" restores status of largefiles correctly
   $ hg commit -m 'will be rollback-ed soon'
   $ echo largeY > largeY
   $ hg add --large largeY
-#if windows
+
   $ hg status -A large1
-  large1: * (glob)
-#else
-  $ hg status -A large1
-  large1: No such file or directory
-#endif
+  large1: The system cannot find the file specified (windows !)
+  large1: No such file or directory (no-windows !)
+
   $ hg status -A large2
   ? large2
   $ hg status -A largeX
@@ -307,39 +307,33 @@ automated commit like rebase/transplant
   $ hg rebase -s 1 -d 2 --keep
   rebasing 1:72518492caa6 "#1"
   rebasing 4:07d6153b5c04 "#4" (tip)
-#if windows
+
   $ hg status -A large1
-  large1: * (glob)
-#else
-  $ hg status -A large1
-  large1: No such file or directory
-#endif
+  large1: The system cannot find the file specified (windows !)
+  large1: No such file or directory (no-windows !)
+
   $ hg status -A largeX
   C largeX
   $ hg strip -q 5
 
   $ hg update -q -C 2
   $ hg transplant -q 1 4
-#if windows
+
   $ hg status -A large1
-  large1: * (glob)
-#else
-  $ hg status -A large1
-  large1: No such file or directory
-#endif
+  large1: The system cannot find the file specified (windows !)
+  large1: No such file or directory (no-windows !)
+
   $ hg status -A largeX
   C largeX
   $ hg strip -q 5
 
   $ hg update -q -C 2
   $ hg transplant -q --merge 1 --merge 4
-#if windows
+
   $ hg status -A large1
-  large1: * (glob)
-#else
-  $ hg status -A large1
-  large1: No such file or directory
-#endif
+  large1: The system cannot find the file specified (windows !)
+  large1: No such file or directory (no-windows !)
+
   $ hg status -A largeX
   C largeX
   $ hg strip -q 5
@@ -471,6 +465,7 @@ Test that the internal linear merging works correctly
   keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or
   take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b? l
   2 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  updated to "d65e59e952a9: #5"
   1 other heads for branch "default"
 
   $ hg status -A large1
@@ -505,6 +500,7 @@ Test that the internal linear merging works correctly
   keep (l)ocal ba94c2efe5b7c5e0af8d189295ce00553b0612b7 or
   take (o)ther e5bb990443d6a92aaf7223813720f7566c9dd05b? l
   2 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  updated to "d65e59e952a9: #5"
   1 other heads for branch "default"
 
   $ hg status -A large1

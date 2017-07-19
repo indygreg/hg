@@ -13,13 +13,20 @@ import zlib
 
 from .i18n import _
 from . import (
-    base85,
-    bdiff,
     error,
-    mpatch,
+    policy,
     pycompat,
     util,
 )
+
+bdiff = policy.importmod(r'bdiff')
+mpatch = policy.importmod(r'mpatch')
+
+blocks = bdiff.blocks
+fixws = bdiff.fixws
+patches = mpatch.patches
+patchedsize = mpatch.patchedsize
+textdiff = bdiff.bdiff
 
 def splitnewlines(text):
     '''like str.splitlines, but only split on newlines.'''
@@ -77,6 +84,7 @@ class diffopts(object):
 
     def copy(self, **kwargs):
         opts = dict((k, getattr(self, k)) for k in self.defaults)
+        opts = pycompat.strkwargs(opts)
         opts.update(kwargs)
         return diffopts(**opts)
 
@@ -426,7 +434,7 @@ def b85diff(to, tn):
             l = chr(ord('A') + l - 1)
         else:
             l = chr(l - 26 + ord('a') - 1)
-        return '%c%s\n' % (l, base85.b85encode(line, True))
+        return '%c%s\n' % (l, util.b85encode(line, True))
 
     def chunk(text, csize=52):
         l = len(text)
@@ -478,7 +486,3 @@ def trivialdiffheader(length):
 
 def replacediffheader(oldlen, newlen):
     return struct.pack(">lll", 0, oldlen, newlen)
-
-patches = mpatch.patches
-patchedsize = mpatch.patchedsize
-textdiff = bdiff.bdiff

@@ -13,9 +13,14 @@ from mercurial import (
     ancestor,
     debugcommands,
     hg,
+    pycompat,
     ui as uimod,
     util,
 )
+
+if pycompat.ispy3:
+    long = int
+    xrange = range
 
 def buildgraph(rng, nodes=100, rootprob=0.05, mergeprob=0.2, prevprob=0.7):
     '''nodes: total number of nodes in the graph
@@ -37,7 +42,7 @@ def buildgraph(rng, nodes=100, rootprob=0.05, mergeprob=0.2, prevprob=0.7):
                 p1 = i - 1
             else:
                 p1 = rng.randrange(i - 1)
-            p2 = rng.choice(range(0, p1) + range(p1 + 1, i))
+            p2 = rng.choice(list(range(0, p1)) + list(range(p1 + 1, i)))
             graph[i] = [p1, p2]
         elif rng.random() < prevprob:
             graph[i] = [i - 1]
@@ -49,7 +54,7 @@ def buildgraph(rng, nodes=100, rootprob=0.05, mergeprob=0.2, prevprob=0.7):
 def buildancestorsets(graph):
     ancs = [None] * len(graph)
     for i in xrange(len(graph)):
-        ancs[i] = set([i])
+        ancs[i] = {i}
         if graph[i] == [nullrev]:
             continue
         for p in graph[i]:
@@ -212,15 +217,17 @@ def test_lazyancestors():
 
 
 # The C gca algorithm requires a real repo. These are textual descriptions of
-# DAGs that have been known to be problematic.
+# DAGs that have been known to be problematic, and, optionally, known pairs
+# of revisions and their expected ancestor list.
 dagtests = [
-    '+2*2*2/*3/2',
-    '+3*3/*2*2/*4*4/*4/2*4/2*2',
+    ('+2*2*2/*3/2', {}),
+    ('+3*3/*2*2/*4*4/*4/2*4/2*2', {}),
+    ('+2*2*/2*4*/4*/3*2/4', {(6, 7): [3, 5]}),
 ]
 def test_gca():
     u = uimod.ui.load()
-    for i, dag in enumerate(dagtests):
-        repo = hg.repository(u, 'gca%d' % i, create=1)
+    for i, (dag, tests) in enumerate(dagtests):
+        repo = hg.repository(u, b'gca%d' % i, create=1)
         cl = repo.changelog
         if not util.safehasattr(cl.index, 'ancestors'):
             # C version not available
@@ -230,15 +237,21 @@ def test_gca():
         # Compare the results of the Python and C versions. This does not
         # include choosing a winner when more than one gca exists -- we make
         # sure both return exactly the same set of gcas.
+        # Also compare against expected results, if available.
         for a in cl:
             for b in cl:
                 cgcas = sorted(cl.index.ancestors(a, b))
                 pygcas = sorted(ancestor.ancestors(cl.parentrevs, a, b))
-                if cgcas != pygcas:
+                expected = None
+                if (a, b) in tests:
+                    expected = tests[(a, b)]
+                if cgcas != pygcas or (expected and cgcas != expected):
                     print("test_gca: for dag %s, gcas for %d, %d:"
                           % (dag, a, b))
                     print("  C returned:      %s" % cgcas)
                     print("  Python returned: %s" % pygcas)
+                    if expected:
+                        print("  expected:        %s" % expected)
 
 def main():
     seed = None

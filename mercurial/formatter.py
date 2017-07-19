@@ -103,6 +103,8 @@ baz: foo, bar
 
 from __future__ import absolute_import
 
+import collections
+import contextlib
 import itertools
 import os
 
@@ -114,6 +116,7 @@ from .node import (
 
 from . import (
     error,
+    pycompat,
     templatefilters,
     templatekw,
     templater,
@@ -124,6 +127,10 @@ pickle = util.pickle
 
 class _nullconverter(object):
     '''convert non-primitive data types to be processed by formatter'''
+
+    # set to True if context object should be stored as item
+    storecontext = False
+
     @staticmethod
     def formatdate(date, fmt):
         '''convert date tuple to appropriate format'''
@@ -175,9 +182,13 @@ class baseformatter(object):
         return self._converter.formatlist(data, name, fmt, sep)
     def context(self, **ctxs):
         '''insert context objects to be used to render template keywords'''
-        pass
+        ctxs = pycompat.byteskwargs(ctxs)
+        assert all(k == 'ctx' for k in ctxs)
+        if self._converter.storecontext:
+            self._item.update(ctxs)
     def data(self, **data):
         '''insert data into item that's not shown in default output'''
+        data = pycompat.byteskwargs(data)
         self._item.update(data)
     def write(self, fields, deftext, *fielddata, **opts):
         '''do default text output while assigning data to item'''
@@ -204,6 +215,10 @@ class baseformatter(object):
         if self._item is not None:
             self._showitem()
 
+def nullformatter(ui, topic):
+    '''formatter that prints nothing'''
+    return baseformatter(ui, topic, opts={}, converter=_nullconverter)
+
 class _nestedformatter(baseformatter):
     '''build sub items and store them in the parent formatter'''
     def __init__(self, ui, converter, data):
@@ -220,6 +235,9 @@ def _iteritems(data):
 
 class _plainconverter(object):
     '''convert non-primitive data types to text'''
+
+    storecontext = False
+
     @staticmethod
     def formatdate(date, fmt):
         '''stringify date tuple in the given format'''
@@ -235,24 +253,28 @@ class _plainconverter(object):
 
 class plainformatter(baseformatter):
     '''the default text output scheme'''
-    def __init__(self, ui, topic, opts):
+    def __init__(self, ui, out, topic, opts):
         baseformatter.__init__(self, ui, topic, opts, _plainconverter)
         if ui.debugflag:
             self.hexfunc = hex
         else:
             self.hexfunc = short
+        if ui is out:
+            self._write = ui.write
+        else:
+            self._write = lambda s, **opts: out.write(s)
     def startitem(self):
         pass
     def data(self, **data):
         pass
     def write(self, fields, deftext, *fielddata, **opts):
-        self._ui.write(deftext % fielddata, **opts)
+        self._write(deftext % fielddata, **opts)
     def condwrite(self, cond, fields, deftext, *fielddata, **opts):
         '''do conditional write'''
         if cond:
-            self._ui.write(deftext % fielddata, **opts)
+            self._write(deftext % fielddata, **opts)
     def plain(self, text, **opts):
-        self._ui.write(text, **opts)
+        self._write(text, **opts)
     def isplain(self):
         return True
     def nested(self, field):
@@ -311,6 +333,9 @@ class jsonformatter(baseformatter):
 
 class _templateconverter(object):
     '''convert non-primitive data types to be processed by templater'''
+
+    storecontext = True
+
     @staticmethod
     def formatdate(date, fmt):
         '''return date tuple'''
@@ -335,49 +360,84 @@ class templateformatter(baseformatter):
     def __init__(self, ui, out, topic, opts):
         baseformatter.__init__(self, ui, topic, opts, _templateconverter)
         self._out = out
-        self._topic = topic
-        self._t = gettemplater(ui, topic, opts.get('template', ''),
-                               cache=templatekw.defaulttempl)
+        spec = lookuptemplate(ui, topic, opts.get('template', ''))
+        self._tref = spec.ref
+        self._t = loadtemplater(ui, spec, cache=templatekw.defaulttempl)
+        self._parts = templatepartsmap(spec, self._t,
+                                       ['docheader', 'docfooter', 'separator'])
         self._counter = itertools.count()
         self._cache = {}  # for templatekw/funcs to store reusable data
-    def context(self, **ctxs):
-        '''insert context objects to be used to render template keywords'''
-        assert all(k == 'ctx' for k in ctxs)
-        self._item.update(ctxs)
+        self._renderitem('docheader', {})
+
     def _showitem(self):
+        item = self._item.copy()
+        item['index'] = index = next(self._counter)
+        if index > 0:
+            self._renderitem('separator', {})
+        self._renderitem(self._tref, item)
+
+    def _renderitem(self, part, item):
+        if part not in self._parts:
+            return
+        ref = self._parts[part]
+
         # TODO: add support for filectx. probably each template keyword or
         # function will have to declare dependent resources. e.g.
         # @templatekeyword(..., requires=('ctx',))
         props = {}
-        if 'ctx' in self._item:
+        if 'ctx' in item:
             props.update(templatekw.keywords)
-        props['index'] = next(self._counter)
         # explicitly-defined fields precede templatekw
-        props.update(self._item)
-        if 'ctx' in self._item:
+        props.update(item)
+        if 'ctx' in item:
             # but template resources must be always available
             props['templ'] = self._t
             props['repo'] = props['ctx'].repo()
             props['revcache'] = {}
-        g = self._t(self._topic, ui=self._ui, cache=self._cache, **props)
+        props = pycompat.strkwargs(props)
+        g = self._t(ref, ui=self._ui, cache=self._cache, **props)
         self._out.write(templater.stringify(g))
 
+    def end(self):
+        baseformatter.end(self)
+        self._renderitem('docfooter', {})
+
+templatespec = collections.namedtuple(r'templatespec',
+                                      r'ref tmpl mapfile')
+
 def lookuptemplate(ui, topic, tmpl):
+    """Find the template matching the given -T/--template spec 'tmpl'
+
+    'tmpl' can be any of the following:
+
+     - a literal template (e.g. '{rev}')
+     - a map-file name or path (e.g. 'changelog')
+     - a reference to [templates] in config file
+     - a path to raw template file
+
+    A map file defines a stand-alone template environment. If a map file
+    selected, all templates defined in the file will be loaded, and the
+    template matching the given topic will be rendered. No aliases will be
+    loaded from user config.
+
+    If no map file selected, all templates in [templates] section will be
+    available as well as aliases in [templatealias].
+    """
+
     # looks like a literal template?
     if '{' in tmpl:
-        return tmpl, None
+        return templatespec('', tmpl, None)
 
     # perhaps a stock style?
     if not os.path.split(tmpl)[0]:
         mapname = (templater.templatepath('map-cmdline.' + tmpl)
                    or templater.templatepath(tmpl))
         if mapname and os.path.isfile(mapname):
-            return None, mapname
+            return templatespec(topic, None, mapname)
 
     # perhaps it's a reference to [templates]
-    t = ui.config('templates', tmpl)
-    if t:
-        return templater.unquotestring(t), None
+    if ui.config('templates', tmpl):
+        return templatespec(tmpl, None, None)
 
     if tmpl == 'list':
         ui.write(_("available styles: %s\n") % templater.stylelist())
@@ -387,42 +447,84 @@ def lookuptemplate(ui, topic, tmpl):
     if ('/' in tmpl or '\\' in tmpl) and os.path.isfile(tmpl):
         # is it a mapfile for a style?
         if os.path.basename(tmpl).startswith("map-"):
-            return None, os.path.realpath(tmpl)
-        tmpl = open(tmpl).read()
-        return tmpl, None
+            return templatespec(topic, None, os.path.realpath(tmpl))
+        with util.posixfile(tmpl, 'rb') as f:
+            tmpl = f.read()
+        return templatespec('', tmpl, None)
 
     # constant string?
-    return tmpl, None
+    return templatespec('', tmpl, None)
 
-def gettemplater(ui, topic, spec, cache=None):
-    tmpl, mapfile = lookuptemplate(ui, topic, spec)
-    assert not (tmpl and mapfile)
-    if mapfile:
-        return templater.templater.frommapfile(mapfile, cache=cache)
-    return maketemplater(ui, topic, tmpl, cache=cache)
+def templatepartsmap(spec, t, partnames):
+    """Create a mapping of {part: ref}"""
+    partsmap = {spec.ref: spec.ref}  # initial ref must exist in t
+    if spec.mapfile:
+        partsmap.update((p, p) for p in partnames if p in t)
+    elif spec.ref:
+        for part in partnames:
+            ref = '%s:%s' % (spec.ref, part)  # select config sub-section
+            if ref in t:
+                partsmap[part] = ref
+    return partsmap
 
-def maketemplater(ui, topic, tmpl, cache=None):
+def loadtemplater(ui, spec, cache=None):
+    """Create a templater from either a literal template or loading from
+    a map file"""
+    assert not (spec.tmpl and spec.mapfile)
+    if spec.mapfile:
+        return templater.templater.frommapfile(spec.mapfile, cache=cache)
+    return maketemplater(ui, spec.tmpl, cache=cache)
+
+def maketemplater(ui, tmpl, cache=None):
     """Create a templater from a string template 'tmpl'"""
     aliases = ui.configitems('templatealias')
     t = templater.templater(cache=cache, aliases=aliases)
+    t.cache.update((k, templater.unquotestring(v))
+                   for k, v in ui.configitems('templates'))
     if tmpl:
-        t.cache[topic] = tmpl
+        t.cache[''] = tmpl
     return t
 
-def formatter(ui, topic, opts):
+def formatter(ui, out, topic, opts):
     template = opts.get("template", "")
     if template == "json":
-        return jsonformatter(ui, ui, topic, opts)
+        return jsonformatter(ui, out, topic, opts)
     elif template == "pickle":
-        return pickleformatter(ui, ui, topic, opts)
+        return pickleformatter(ui, out, topic, opts)
     elif template == "debug":
-        return debugformatter(ui, ui, topic, opts)
+        return debugformatter(ui, out, topic, opts)
     elif template != "":
-        return templateformatter(ui, ui, topic, opts)
+        return templateformatter(ui, out, topic, opts)
     # developer config: ui.formatdebug
     elif ui.configbool('ui', 'formatdebug'):
-        return debugformatter(ui, ui, topic, opts)
+        return debugformatter(ui, out, topic, opts)
     # deprecated config: ui.formatjson
     elif ui.configbool('ui', 'formatjson'):
-        return jsonformatter(ui, ui, topic, opts)
-    return plainformatter(ui, topic, opts)
+        return jsonformatter(ui, out, topic, opts)
+    return plainformatter(ui, out, topic, opts)
+
+@contextlib.contextmanager
+def openformatter(ui, filename, topic, opts):
+    """Create a formatter that writes outputs to the specified file
+
+    Must be invoked using the 'with' statement.
+    """
+    with util.posixfile(filename, 'wb') as out:
+        with formatter(ui, out, topic, opts) as fm:
+            yield fm
+
+@contextlib.contextmanager
+def _neverending(fm):
+    yield fm
+
+def maybereopen(fm, filename, opts):
+    """Create a formatter backed by file if filename specified, else return
+    the given formatter
+
+    Must be invoked using the 'with' statement. This will never call fm.end()
+    of the given formatter.
+    """
+    if filename:
+        return openformatter(fm._ui, filename, fm._topic, opts)
+    else:
+        return _neverending(fm)

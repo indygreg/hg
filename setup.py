@@ -5,8 +5,8 @@
 # 'python setup.py --help' for more options
 
 import sys, platform
-if getattr(sys, 'version_info', (0, 0, 0)) < (2, 6, 0, 'final'):
-    raise SystemExit("Mercurial requires Python 2.6 or later.")
+if sys.version_info < (2, 7, 0, 'final'):
+    raise SystemExit('Mercurial requires Python 2.7 or later.')
 
 if sys.version_info[0] >= 3:
     printf = eval('print')
@@ -77,6 +77,7 @@ from distutils.command.build import build
 from distutils.command.build_ext import build_ext
 from distutils.command.build_py import build_py
 from distutils.command.build_scripts import build_scripts
+from distutils.command.install import install
 from distutils.command.install_lib import install_lib
 from distutils.command.install_scripts import install_scripts
 from distutils.spawn import spawn, find_executable
@@ -142,66 +143,114 @@ except ImportError:
     py2exeloaded = False
 
 def runcmd(cmd, env):
-    if (sys.platform == 'plan9'
-       and (sys.version_info[0] == 2 and sys.version_info[1] < 7)):
-        # subprocess kludge to work around issues in half-baked Python
-        # ports, notably bichued/python:
-        _, out, err = os.popen3(cmd)
-        return str(out), str(err)
-    else:
-        p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                             stderr=subprocess.PIPE, env=env)
-        out, err = p.communicate()
-        return out, err
+    p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                         stderr=subprocess.PIPE, env=env)
+    out, err = p.communicate()
+    return p.returncode, out, err
 
-def runhg(cmd, env):
-    out, err = runcmd(cmd, env)
-    # If root is executing setup.py, but the repository is owned by
-    # another user (as in "sudo python setup.py install") we will get
-    # trust warnings since the .hg/hgrc file is untrusted. That is
-    # fine, we don't want to load it anyway.  Python may warn about
-    # a missing __init__.py in mercurial/locale, we also ignore that.
-    err = [e for e in err.splitlines()
-           if not e.startswith(b'not trusting file') \
-              and not e.startswith(b'warning: Not importing') \
-              and not e.startswith(b'obsolete feature not enabled')]
-    if err:
-        printf("stderr from '%s':" % (' '.join(cmd)), file=sys.stderr)
-        printf(b'\n'.join([b'  ' + e for e in err]), file=sys.stderr)
-        return ''
-    return out
+class hgcommand(object):
+    def __init__(self, cmd, env):
+        self.cmd = cmd
+        self.env = env
+
+    def run(self, args):
+        cmd = self.cmd + args
+        returncode, out, err = runcmd(cmd, self.env)
+        # If root is executing setup.py, but the repository is owned by
+        # another user (as in "sudo python setup.py install") we will get
+        # trust warnings since the .hg/hgrc file is untrusted. That is
+        # fine, we don't want to load it anyway.  Python may warn about
+        # a missing __init__.py in mercurial/locale, we also ignore that.
+        err = [e for e in err.splitlines()
+               if not e.startswith(b'not trusting file') \
+                  and not e.startswith(b'warning: Not importing') \
+                  and not e.startswith(b'obsolete feature not enabled')]
+        if err or returncode != 0:
+            printf("stderr from '%s':" % (' '.join(cmd)), file=sys.stderr)
+            printf(b'\n'.join([b'  ' + e for e in err]), file=sys.stderr)
+            return ''
+        return out
+
+def findhg():
+    """Try to figure out how we should invoke hg for examining the local
+    repository contents.
+
+    Returns an hgcommand object."""
+    # By default, prefer the "hg" command in the user's path.  This was
+    # presumably the hg command that the user used to create this repository.
+    #
+    # This repository may require extensions or other settings that would not
+    # be enabled by running the hg script directly from this local repository.
+    hgenv = os.environ.copy()
+    # Use HGPLAIN to disable hgrc settings that would change output formatting,
+    # and disable localization for the same reasons.
+    hgenv['HGPLAIN'] = '1'
+    hgenv['LANGUAGE'] = 'C'
+    hgcmd = ['hg']
+    # Run a simple "hg log" command just to see if using hg from the user's
+    # path works and can successfully interact with this repository.
+    check_cmd = ['log', '-r.', '-Ttest']
+    try:
+        retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
+    except EnvironmentError:
+        retcode = -1
+    if retcode == 0:
+        return hgcommand(hgcmd, hgenv)
+
+    # Fall back to trying the local hg installation.
+    hgenv = localhgenv()
+    # Don't source any system hgrc files when using the local hg.
+    hgenv['HGRCPATH'] = ''
+    hgcmd = [sys.executable, 'hg']
+    try:
+        retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
+    except EnvironmentError:
+        retcode = -1
+    if retcode == 0:
+        return hgcommand(hgcmd, hgenv)
+
+    raise SystemExit('Unable to find a working hg binary to extract the '
+                     'version from the repository tags')
+
+def localhgenv():
+    """Get an environment dictionary to use for invoking or importing
+    mercurial from the local repository."""
+    # Execute hg out of this directory with a custom environment which takes
+    # care to not use any hgrc files and do no localization.
+    env = {'HGMODULEPOLICY': 'py',
+           'HGRCPATH': '',
+           'LANGUAGE': 'C',
+           'PATH': ''} # make pypi modules that use os.environ['PATH'] happy
+    if 'LD_LIBRARY_PATH' in os.environ:
+        env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
+    if 'SystemRoot' in os.environ:
+        # SystemRoot is required by Windows to load various DLLs.  See:
+        # https://bugs.python.org/issue13524#msg148850
+        env['SystemRoot'] = os.environ['SystemRoot']
+    return env
 
 version = ''
 
-# Execute hg out of this directory with a custom environment which takes care
-# to not use any hgrc files and do no localization.
-env = {'HGMODULEPOLICY': 'py',
-       'HGRCPATH': '',
-       'LANGUAGE': 'C',
-       'PATH': ''} # make pypi modules that use os.environ['PATH'] happy
-if 'LD_LIBRARY_PATH' in os.environ:
-    env['LD_LIBRARY_PATH'] = os.environ['LD_LIBRARY_PATH']
-if 'SystemRoot' in os.environ:
-    # Copy SystemRoot into the custom environment for Python 2.6
-    # under Windows. Otherwise, the subprocess will fail with
-    # error 0xc0150004. See: http://bugs.python.org/issue3440
-    env['SystemRoot'] = os.environ['SystemRoot']
-
 if os.path.isdir('.hg'):
-    cmd = [sys.executable, 'hg', 'log', '-r', '.', '--template', '{tags}\n']
-    numerictags = [t for t in runhg(cmd, env).split() if t[0].isdigit()]
-    hgid = runhg([sys.executable, 'hg', 'id', '-i'], env).strip()
+    hg = findhg()
+    cmd = ['log', '-r', '.', '--template', '{tags}\n']
+    numerictags = [t for t in hg.run(cmd).split() if t[0:1].isdigit()]
+    hgid = hg.run(['id', '-i']).strip()
+    if not hgid:
+        # Bail out if hg is having problems interacting with this repository,
+        # rather than falling through and producing a bogus version number.
+        # Continuing with an invalid version number will break extensions
+        # that define minimumhgversion.
+        raise SystemExit('Unable to determine hg version from local repository')
     if numerictags: # tag(s) found
         version = numerictags[-1]
         if hgid.endswith('+'): # propagate the dirty status to the tag
             version += '+'
     else: # no tag found
-        ltagcmd = [sys.executable, 'hg', 'parents', '--template',
-                   '{latesttag}']
-        ltag = runhg(ltagcmd, env)
-        changessincecmd = [sys.executable, 'hg', 'log', '-T', 'x\n', '-r',
-                           "only(.,'%s')" % ltag]
-        changessince = len(runhg(changessincecmd, env).splitlines())
+        ltagcmd = ['parents', '--template', '{latesttag}']
+        ltag = hg.run(ltagcmd)
+        changessincecmd = ['log', '-T', 'x\n', '-r', "only(.,'%s')" % ltag]
+        changessince = len(hg.run(changessincecmd).splitlines())
         version = '%s+%s-%s' % (ltag, changessince, hgid)
     if version.endswith('+'):
         version += time.strftime('%Y%m%d')
@@ -353,15 +402,15 @@ class hgbuildpy(build_py):
             self.distribution.ext_modules = []
         elif self.distribution.cffi:
             from mercurial.cffi import (
-                bdiff,
-                mpatch,
+                bdiffbuild,
+                mpatchbuild,
             )
-            exts = [mpatch.ffi.distutils_extension(),
-                    bdiff.ffi.distutils_extension()]
+            exts = [mpatchbuild.ffi.distutils_extension(),
+                    bdiffbuild.ffi.distutils_extension()]
             # cffi modules go here
             if sys.platform == 'darwin':
-                from mercurial.cffi import osutil
-                exts.append(osutil.ffi.distutils_extension())
+                from mercurial.cffi import osutilbuild
+                exts.append(osutilbuild.ffi.distutils_extension())
             self.distribution.ext_modules = exts
         else:
             h = os.path.join(get_python_inc(), 'Python.h')
@@ -370,11 +419,17 @@ class hgbuildpy(build_py):
                                  'Mercurial but weren\'t found in %s' % h)
 
     def run(self):
+        basepath = os.path.join(self.build_lib, 'mercurial')
+        self.mkpath(basepath)
+
         if self.distribution.pure:
             modulepolicy = 'py'
+        elif self.build_lib == '.':
+            # in-place build should run without rebuilding C extensions
+            modulepolicy = 'allow'
         else:
             modulepolicy = 'c'
-        with open("mercurial/__modulepolicy__.py", "w") as f:
+        with open(os.path.join(basepath, '__modulepolicy__.py'), "w") as f:
             f.write('# this file is autogenerated by setup.py\n')
             f.write('modulepolicy = b"%s"\n' % modulepolicy)
 
@@ -399,8 +454,9 @@ class buildhgextindex(Command):
         # here no extension enabled, disabled() lists up everything
         code = ('import pprint; from mercurial import extensions; '
                 'pprint.pprint(extensions.disabled())')
-        out, err = runcmd([sys.executable, '-c', code], env)
-        if err:
+        returncode, out, err = runcmd([sys.executable, '-c', code],
+                                      localhgenv())
+        if err or returncode != 0:
             raise DistutilsExecError(err)
 
         with open(self._indexfilename, 'w') as f:
@@ -460,6 +516,25 @@ class buildhgexe(build_ext):
     def hgexepath(self):
         dir = os.path.dirname(self.get_ext_fullpath('dummy'))
         return os.path.join(self.build_temp, dir, 'hg.exe')
+
+class hginstall(install):
+
+    user_options = install.user_options + [
+        ('old-and-unmanageable', None,
+         'noop, present for eggless setuptools compat'),
+        ('single-version-externally-managed', None,
+         'noop, present for eggless setuptools compat'),
+    ]
+
+    # Also helps setuptools not be sad while we refuse to create eggs.
+    single_version_externally_managed = True
+
+    def get_sub_commands(self):
+        # Screen out egg related commands to prevent egg generation.  But allow
+        # mercurial.egg-info generation, since that is part of modern
+        # packaging.
+        excl = {'bdist_egg'}
+        return filter(lambda x: x not in excl, install.get_sub_commands(self))
 
 class hginstalllib(install_lib):
     '''
@@ -572,20 +647,27 @@ cmdclass = {'build': hgbuild,
             'build_py': hgbuildpy,
             'build_scripts': hgbuildscripts,
             'build_hgextindex': buildhgextindex,
+            'install': hginstall,
             'install_lib': hginstalllib,
             'install_scripts': hginstallscripts,
             'build_hgexe': buildhgexe,
             }
 
-packages = ['mercurial', 'mercurial.hgweb', 'mercurial.httpclient',
+packages = ['mercurial',
+            'mercurial.cext',
+            'mercurial.cffi',
+            'mercurial.hgweb',
+            'mercurial.httpclient',
             'mercurial.pure',
             'hgext', 'hgext.convert', 'hgext.fsmonitor',
             'hgext.fsmonitor.pywatchman', 'hgext.highlight',
-            'hgext.largefiles', 'hgext.zeroconf', 'hgext3rd']
+            'hgext.largefiles', 'hgext.zeroconf', 'hgext3rd',
+            'hgdemandimport']
 
 common_depends = ['mercurial/bitmanipulation.h',
                   'mercurial/compat.h',
-                  'mercurial/util.h']
+                  'mercurial/cext/util.h']
+common_include_dirs = ['mercurial']
 
 osutil_cflags = []
 osutil_ldflags = []
@@ -614,22 +696,29 @@ if sys.platform == 'darwin':
     osutil_ldflags += ['-framework', 'ApplicationServices']
 
 extmodules = [
-    Extension('mercurial.base85', ['mercurial/base85.c'],
+    Extension('mercurial.cext.base85', ['mercurial/cext/base85.c'],
+              include_dirs=common_include_dirs,
               depends=common_depends),
-    Extension('mercurial.bdiff', ['mercurial/bdiff.c',
-                                  'mercurial/bdiff_module.c'],
+    Extension('mercurial.cext.bdiff', ['mercurial/bdiff.c',
+                                       'mercurial/cext/bdiff.c'],
+              include_dirs=common_include_dirs,
               depends=common_depends + ['mercurial/bdiff.h']),
-    Extension('mercurial.diffhelpers', ['mercurial/diffhelpers.c'],
+    Extension('mercurial.cext.diffhelpers', ['mercurial/cext/diffhelpers.c'],
+              include_dirs=common_include_dirs,
               depends=common_depends),
-    Extension('mercurial.mpatch', ['mercurial/mpatch.c',
-                                   'mercurial/mpatch_module.c'],
+    Extension('mercurial.cext.mpatch', ['mercurial/mpatch.c',
+                                        'mercurial/cext/mpatch.c'],
+              include_dirs=common_include_dirs,
               depends=common_depends),
-    Extension('mercurial.parsers', ['mercurial/dirs.c',
-                                    'mercurial/manifest.c',
-                                    'mercurial/parsers.c',
-                                    'mercurial/pathencode.c'],
+    Extension('mercurial.cext.parsers', ['mercurial/cext/dirs.c',
+                                         'mercurial/cext/manifest.c',
+                                         'mercurial/cext/parsers.c',
+                                         'mercurial/cext/pathencode.c',
+                                         'mercurial/cext/revlog.c'],
+              include_dirs=common_include_dirs,
               depends=common_depends),
-    Extension('mercurial.osutil', ['mercurial/osutil.c'],
+    Extension('mercurial.cext.osutil', ['mercurial/cext/osutil.c'],
+              include_dirs=common_include_dirs,
               extra_compile_args=osutil_cflags,
               extra_link_args=osutil_ldflags,
               depends=common_depends),
@@ -663,6 +752,23 @@ except ImportError:
     # DiskStation boxes
     class HackedMingw32CCompiler(object):
         pass
+
+if os.name == 'nt':
+    # Allow compiler/linker flags to be added to Visual Studio builds.  Passing
+    # extra_link_args to distutils.extensions.Extension() doesn't have any
+    # effect.
+    from distutils import msvccompiler
+
+    compiler = msvccompiler.MSVCCompiler
+
+    class HackedMSVCCompiler(msvccompiler.MSVCCompiler):
+        def initialize(self):
+            compiler.initialize(self)
+            # "warning LNK4197: export 'func' specified multiple times"
+            self.ldflags_shared.append('/ignore:4197')
+            self.ldflags_shared_debug.append('/ignore:4197')
+
+    msvccompiler.MSVCCompiler = HackedMSVCCompiler
 
 packagedata = {'mercurial': ['locale/*/LC_MESSAGES/hg.mo',
                              'help/*.txt',
@@ -708,7 +814,7 @@ if os.name == 'nt':
     setupversion = version.split('+', 1)[0]
 
 if sys.platform == 'darwin' and os.path.exists('/usr/bin/xcodebuild'):
-    version = runcmd(['/usr/bin/xcodebuild', '-version'], {})[0].splitlines()
+    version = runcmd(['/usr/bin/xcodebuild', '-version'], {})[1].splitlines()
     if version:
         version = version[0]
         if sys.version_info[0] == 3:
@@ -779,7 +885,7 @@ setup(name='mercurial',
       package_data=packagedata,
       cmdclass=cmdclass,
       distclass=hgdist,
-      options={'py2exe': {'packages': ['hgext', 'email']},
+      options={'py2exe': {'packages': ['hgdemandimport', 'hgext', 'email']},
                'bdist_mpkg': {'zipdist': False,
                               'license': 'COPYING',
                               'readme': 'contrib/macosx/Readme.html',

@@ -10,7 +10,7 @@
 
   $ nlinksdir()
   > {
-  >     find $1 -type f | python $TESTTMP/nlinks.py
+  >     find "$@" -type f | $PYTHON $TESTTMP/nlinks.py
   > }
 
 Some implementations of cp can't create hardlinks (replaces 'cp -al' on Linux):
@@ -23,7 +23,7 @@ Some implementations of cp can't create hardlinks (replaces 'cp -al' on Linux):
 
   $ linkcp()
   > {
-  >     python $TESTTMP/linkcp.py $1 $2
+  >     $PYTHON $TESTTMP/linkcp.py $1 $2
   > }
 
 Prepare repo r1:
@@ -168,6 +168,11 @@ Push to repo r1 should break up most hardlinks in r2:
   2 r2/.hg/store/data/f1.i
   [12] r2/\.hg/store/fncache (re)
 
+#if hardlink-whitelisted
+  $ nlinksdir r2/.hg/store/fncache
+  2 r2/.hg/store/fncache
+#endif
+
   $ hg -R r2 verify
   checking changesets
   checking manifests
@@ -193,11 +198,23 @@ Committing a change to f1 in r1 must break up hardlink f1.i in r2:
   1 r2/.hg/store/data/f1.i
   [12] r2/\.hg/store/fncache (re)
 
+#if hardlink-whitelisted
+  $ nlinksdir r2/.hg/store/fncache
+  2 r2/.hg/store/fncache
+#endif
+
+Create a file which exec permissions we will change
+  $ cd r3
+  $ echo "echo hello world" > f3
+  $ hg add f3
+  $ hg ci -mf3
+  $ cd ..
 
   $ cd r3
   $ hg tip --template '{rev}:{node|short}\n'
-  11:a6451b6bc41f
+  12:d3b77733a28a
   $ echo bla > f1
+  $ chmod +x f3
   $ hg ci -m1
   $ cd ..
 
@@ -205,19 +222,26 @@ Create hardlinked copy r4 of r3 (on Linux, we would call 'cp -al'):
 
   $ linkcp r3 r4
 
+'checklink' is produced by hardlinking a symlink, which is undefined whether
+the symlink should be followed or not. It does behave differently on Linux and
+BSD. Just remove it so the test pass on both platforms.
+
+  $ rm -f r4/.hg/cache/checklink
+
 r4 has hardlinks in the working dir (not just inside .hg):
 
   $ nlinksdir r4
   2 r4/.hg/00changelog.i
   2 r4/.hg/branch
+  2 r4/.hg/cache/branch2-base
   2 r4/.hg/cache/branch2-served
   2 r4/.hg/cache/checkisexec (execbit !)
-  3 r4/.hg/cache/checklink (?)
   ? r4/.hg/cache/checklink-target (glob) (symlink !)
   2 r4/.hg/cache/checknoexec (execbit !)
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
   2 r4/.hg/dirstate
+  2 r4/.hg/fsmonitor.state (fsmonitor !)
   2 r4/.hg/hgrc
   2 r4/.hg/last-message.txt
   2 r4/.hg/requires
@@ -226,6 +250,7 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/.hg/store/data/d1/f2.d
   2 r4/.hg/store/data/d1/f2.i
   2 r4/.hg/store/data/f1.i
+  2 r4/.hg/store/data/f3.i
   2 r4/.hg/store/fncache
   2 r4/.hg/store/phaseroots
   2 r4/.hg/store/undo
@@ -241,15 +266,24 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/d1/data1
   2 r4/d1/f2
   2 r4/f1
+  2 r4/f3
 
-Update back to revision 11 in r4 should break hardlink of file f1:
+Update back to revision 12 in r4 should break hardlink of file f1 and f3:
+#if hardlink-whitelisted
+  $ nlinksdir r4/.hg/undo.backup.dirstate r4/.hg/undo.dirstate
+  4 r4/.hg/undo.backup.dirstate
+  4 r4/.hg/undo.dirstate
+#endif
 
-  $ hg -R r4 up 11
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg -R r4 up 12
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved (execbit !)
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved (no-execbit !)
 
   $ nlinksdir r4
   2 r4/.hg/00changelog.i
   1 r4/.hg/branch
+  2 r4/.hg/cache/branch2-base
   2 r4/.hg/cache/branch2-served
   2 r4/.hg/cache/checkisexec (execbit !)
   2 r4/.hg/cache/checklink-target (symlink !)
@@ -257,6 +291,7 @@ Update back to revision 11 in r4 should break hardlink of file f1:
   2 r4/.hg/cache/rbc-names-v1
   2 r4/.hg/cache/rbc-revs-v1
   1 r4/.hg/dirstate
+  1 r4/.hg/fsmonitor.state (fsmonitor !)
   2 r4/.hg/hgrc
   2 r4/.hg/last-message.txt
   2 r4/.hg/requires
@@ -265,6 +300,7 @@ Update back to revision 11 in r4 should break hardlink of file f1:
   2 r4/.hg/store/data/d1/f2.d
   2 r4/.hg/store/data/d1/f2.i
   2 r4/.hg/store/data/f1.i
+  2 r4/.hg/store/data/f3.i
   2 r4/.hg/store/fncache
   2 r4/.hg/store/phaseroots
   2 r4/.hg/store/undo
@@ -280,7 +316,14 @@ Update back to revision 11 in r4 should break hardlink of file f1:
   2 r4/d1/data1
   2 r4/d1/f2
   1 r4/f1
+  1 r4/f3 (execbit !)
+  2 r4/f3 (no-execbit !)
 
+#if hardlink-whitelisted
+  $ nlinksdir r4/.hg/undo.backup.dirstate r4/.hg/undo.dirstate
+  4 r4/.hg/undo.backup.dirstate
+  4 r4/.hg/undo.dirstate
+#endif
 
 Test hardlinking outside hg:
 

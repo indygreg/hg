@@ -11,6 +11,7 @@ import difflib
 import errno
 import os
 import re
+import sys
 
 from .i18n import _
 from .node import (
@@ -26,6 +27,7 @@ from . import (
     changegroup,
     cmdutil,
     copies,
+    debugcommands as debugcommandsmod,
     destutil,
     dirstateguard,
     discovery,
@@ -33,6 +35,7 @@ from . import (
     error,
     exchange,
     extensions,
+    formatter,
     graphmod,
     hbisect,
     help,
@@ -44,6 +47,7 @@ from . import (
     phases,
     pycompat,
     rcutil,
+    registrar,
     revsetlang,
     scmutil,
     server,
@@ -58,14 +62,9 @@ from . import (
 release = lockmod.release
 
 table = {}
+table.update(debugcommandsmod.command._table)
 
-command = cmdutil.command(table)
-
-# label constants
-# until 3.5, bookmarks.current was the advertised name, not
-# bookmarks.active, so we must use both to avoid breaking old
-# custom styles
-activebookmarklabel = 'bookmarks.active bookmarks.current'
+command = registrar.command(table)
 
 # common command options
 
@@ -103,108 +102,21 @@ globalopts = [
      _("when to paginate (boolean, always, auto, or never)"), _('TYPE')),
 ]
 
-dryrunopts = [('n', 'dry-run', None,
-               _('do not perform actions, just print output'))]
-
-remoteopts = [
-    ('e', 'ssh', '',
-     _('specify ssh command to use'), _('CMD')),
-    ('', 'remotecmd', '',
-     _('specify hg command to run on the remote side'), _('CMD')),
-    ('', 'insecure', None,
-     _('do not verify server certificate (ignoring web.cacerts config)')),
-]
-
-walkopts = [
-    ('I', 'include', [],
-     _('include names matching the given patterns'), _('PATTERN')),
-    ('X', 'exclude', [],
-     _('exclude names matching the given patterns'), _('PATTERN')),
-]
-
-commitopts = [
-    ('m', 'message', '',
-     _('use text as commit message'), _('TEXT')),
-    ('l', 'logfile', '',
-     _('read commit message from file'), _('FILE')),
-]
-
-commitopts2 = [
-    ('d', 'date', '',
-     _('record the specified date as commit date'), _('DATE')),
-    ('u', 'user', '',
-     _('record the specified user as committer'), _('USER')),
-]
-
-# hidden for now
-formatteropts = [
-    ('T', 'template', '',
-     _('display with template (EXPERIMENTAL)'), _('TEMPLATE')),
-]
-
-templateopts = [
-    ('', 'style', '',
-     _('display using template map file (DEPRECATED)'), _('STYLE')),
-    ('T', 'template', '',
-     _('display with template'), _('TEMPLATE')),
-]
-
-logopts = [
-    ('p', 'patch', None, _('show patch')),
-    ('g', 'git', None, _('use git extended diff format')),
-    ('l', 'limit', '',
-     _('limit number of changes displayed'), _('NUM')),
-    ('M', 'no-merges', None, _('do not show merges')),
-    ('', 'stat', None, _('output diffstat-style summary of changes')),
-    ('G', 'graph', None, _("show the revision DAG")),
-] + templateopts
-
-diffopts = [
-    ('a', 'text', None, _('treat all files as text')),
-    ('g', 'git', None, _('use git extended diff format')),
-    ('', 'binary', None, _('generate binary diffs in git mode (default)')),
-    ('', 'nodates', None, _('omit dates from diff headers'))
-]
-
-diffwsopts = [
-    ('w', 'ignore-all-space', None,
-     _('ignore white space when comparing lines')),
-    ('b', 'ignore-space-change', None,
-     _('ignore changes in the amount of white space')),
-    ('B', 'ignore-blank-lines', None,
-     _('ignore changes whose lines are all blank')),
-    ]
-
-diffopts2 = [
-    ('', 'noprefix', None, _('omit a/ and b/ prefixes from filenames')),
-    ('p', 'show-function', None, _('show which function each change is in')),
-    ('', 'reverse', None, _('produce a diff that undoes the changes')),
-    ] + diffwsopts + [
-    ('U', 'unified', '',
-     _('number of lines of context to show'), _('NUM')),
-    ('', 'stat', None, _('output diffstat-style summary of changes')),
-    ('', 'root', '', _('produce diffs relative to subdirectory'), _('DIR')),
-]
-
-mergetoolopts = [
-    ('t', 'tool', '', _('specify merge tool')),
-]
-
-similarityopts = [
-    ('s', 'similarity', '',
-     _('guess renamed files by similarity (0<=s<=100)'), _('SIMILARITY'))
-]
-
-subrepoopts = [
-    ('S', 'subrepos', None,
-     _('recurse into subrepositories'))
-]
-
-debugrevlogopts = [
-    ('c', 'changelog', False, _('open changelog')),
-    ('m', 'manifest', False, _('open manifest')),
-    ('', 'dir', '', _('open directory manifest')),
-]
+dryrunopts = cmdutil.dryrunopts
+remoteopts = cmdutil.remoteopts
+walkopts = cmdutil.walkopts
+commitopts = cmdutil.commitopts
+commitopts2 = cmdutil.commitopts2
+formatteropts = cmdutil.formatteropts
+templateopts = cmdutil.templateopts
+logopts = cmdutil.logopts
+diffopts = cmdutil.diffopts
+diffwsopts = cmdutil.diffwsopts
+diffopts2 = cmdutil.diffopts2
+mergetoolopts = cmdutil.mergetoolopts
+similarityopts = cmdutil.similarityopts
+subrepoopts = cmdutil.subrepoopts
+debugrevlogopts = cmdutil.debugrevlogopts
 
 # Commands start here, listed alphabetically
 
@@ -255,7 +167,7 @@ def add(ui, repo, *pats, **opts):
     Returns 0 if all files are successfully added.
     """
 
-    m = scmutil.match(repo[None], pats, opts)
+    m = scmutil.match(repo[None], pats, pycompat.byteskwargs(opts))
     rejected = cmdutil.add(ui, repo, m, "", False, **opts)
     return rejected and 1 or 0
 
@@ -325,6 +237,7 @@ def addremove(ui, repo, *pats, **opts):
 
     Returns 0 if all files are successfully added.
     """
+    opts = pycompat.byteskwargs(opts)
     try:
         sim = float(opts.get('similarity') or 100)
     except ValueError:
@@ -345,7 +258,8 @@ def addremove(ui, repo, *pats, **opts):
     ('d', 'date', None, _('list the date (short with -q)')),
     ('n', 'number', None, _('list the revision number (default)')),
     ('c', 'changeset', None, _('list the changeset')),
-    ('l', 'line-number', None, _('show line number at the first appearance'))
+    ('l', 'line-number', None, _('show line number at the first appearance')),
+    ('', 'skip', [], _('revision to not display (EXPERIMENTAL)'), _('REV')),
     ] + diffwsopts + walkopts + formatteropts,
     _('[-r REV] [-f] [-a] [-u] [-d] [-n] [-c] [-l] FILE...'),
     inferrepo=True)
@@ -368,6 +282,7 @@ def annotate(ui, repo, *pats, **opts):
 
     Returns 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     if not pats:
         raise error.Abort(_('at least one filename or pattern is required'))
 
@@ -378,7 +293,7 @@ def annotate(ui, repo, *pats, **opts):
 
     ctx = scmutil.revsingle(repo, opts.get('rev'))
 
-    fm = ui.formatter('annotate', opts)
+    rootfm = ui.formatter('annotate', opts)
     if ui.quiet:
         datefunc = util.shortdate
     else:
@@ -388,7 +303,7 @@ def annotate(ui, repo, *pats, **opts):
             if node is None:
                 return None
             else:
-                return fm.hexfunc(node)
+                return rootfm.hexfunc(node)
         if opts.get('changeset'):
             # omit "+" suffix which is appended to node hex
             def formatrev(rev):
@@ -404,12 +319,12 @@ def annotate(ui, repo, *pats, **opts):
                     return '%d ' % rev
         def formathex(hex):
             if hex is None:
-                return '%s+' % fm.hexfunc(ctx.p1().node())
+                return '%s+' % rootfm.hexfunc(ctx.p1().node())
             else:
                 return '%s ' % hex
     else:
-        hexfn = fm.hexfunc
-        formatrev = formathex = str
+        hexfn = rootfm.hexfunc
+        formatrev = formathex = pycompat.bytestr
 
     opmap = [('user', ' ', lambda x: x[0].user(), ui.shortuser),
              ('number', ' ', lambda x: x[0].rev(), formatrev),
@@ -430,7 +345,7 @@ def annotate(ui, repo, *pats, **opts):
 
     ui.pager('annotate')
 
-    if fm.isplain():
+    if rootfm.isplain():
         def makefunc(get, fmt):
             return lambda x: fmt(get(x))
     else:
@@ -450,15 +365,24 @@ def annotate(ui, repo, *pats, **opts):
     follow = not opts.get('no_follow')
     diffopts = patch.difffeatureopts(ui, opts, section='annotate',
                                      whitespace=True)
+    skiprevs = opts.get('skip')
+    if skiprevs:
+        skiprevs = scmutil.revrange(repo, skiprevs)
+
     for abs in ctx.walk(m):
         fctx = ctx[abs]
-        if not opts.get('text') and util.binary(fctx.data()):
-            fm.plain(_("%s: binary file\n") % ((pats and m.rel(abs)) or abs))
+        rootfm.startitem()
+        rootfm.data(abspath=abs, path=m.rel(abs))
+        if not opts.get('text') and fctx.isbinary():
+            rootfm.plain(_("%s: binary file\n")
+                         % ((pats and m.rel(abs)) or abs))
             continue
 
+        fm = rootfm.nested('lines')
         lines = fctx.annotate(follow=follow, linenumber=linenumber,
-                              diffopts=diffopts)
+                              skiprevs=skiprevs, diffopts=diffopts)
         if not lines:
+            fm.end()
             continue
         formats = []
         pieces = []
@@ -480,8 +404,9 @@ def annotate(ui, repo, *pats, **opts):
 
         if not lines[-1][1].endswith('\n'):
             fm.plain('\n')
+        fm.end()
 
-    fm.end()
+    rootfm.end()
 
 @command('archive',
     [('', 'no-decode', None, _('do not pass files through decoders')),
@@ -532,6 +457,7 @@ def archive(ui, repo, dest, **opts):
     Returns 0 on success.
     '''
 
+    opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'))
     if not ctx:
         raise error.Abort(_('no working directory: please specify a revision'))
@@ -627,6 +553,7 @@ def backout(ui, repo, node=None, rev=None, **opts):
         release(lock, wlock)
 
 def _dobackout(ui, repo, node=None, rev=None, **opts):
+    opts = pycompat.byteskwargs(opts)
     if opts.get('commit') and opts.get('no_commit'):
         raise error.Abort(_("cannot use --commit with --no-commit"))
     if opts.get('merge') and opts.get('no_commit'):
@@ -702,7 +629,8 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
 
     def commitfunc(ui, repo, message, match, opts):
         editform = 'backout'
-        e = cmdutil.getcommiteditor(editform=editform, **opts)
+        e = cmdutil.getcommiteditor(editform=editform,
+                                    **pycompat.strkwargs(opts))
         if not message:
             # we don't translate commit messages
             message = "Backed out changeset %s" % short(node)
@@ -834,10 +762,23 @@ def bisect(ui, repo, rev=None, extra=None, command=None,
             bad = True
         else:
             reset = True
-    elif extra or good + bad + skip + reset + extend + bool(command) > 1:
+    elif extra:
         raise error.Abort(_('incompatible arguments'))
 
-    cmdutil.checkunfinished(repo)
+    incompatibles = {
+        '--bad': bad,
+        '--command': bool(command),
+        '--extend': extend,
+        '--good': good,
+        '--reset': reset,
+        '--skip': skip,
+    }
+
+    enabled = [x for x in incompatibles if incompatibles[x]]
+
+    if len(enabled) > 1:
+        raise error.Abort(_('%s and %s are incompatible') %
+                          tuple(sorted(enabled)[0:2]))
 
     if reset:
         hbisect.resetstate(repo)
@@ -865,6 +806,7 @@ def bisect(ui, repo, rev=None, extra=None, command=None,
         """common used update sequence"""
         if noupdate:
             return
+        cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
         return hg.clean(repo, node, show_stats=show_stats)
 
@@ -1002,51 +944,11 @@ def bookmark(ui, repo, *names, **opts):
 
           hg book -f @
     '''
-    force = opts.get('force')
-    rev = opts.get('rev')
-    delete = opts.get('delete')
-    rename = opts.get('rename')
-    inactive = opts.get('inactive')
-
-    def checkformat(mark):
-        mark = mark.strip()
-        if not mark:
-            raise error.Abort(_("bookmark names cannot consist entirely of "
-                               "whitespace"))
-        scmutil.checknewlabel(repo, mark, 'bookmark')
-        return mark
-
-    def checkconflict(repo, mark, cur, force=False, target=None):
-        if mark in marks and not force:
-            if target:
-                if marks[mark] == target and target == cur:
-                    # re-activating a bookmark
-                    return
-                anc = repo.changelog.ancestors([repo[target].rev()])
-                bmctx = repo[marks[mark]]
-                divs = [repo[b].node() for b in marks
-                        if b.split('@', 1)[0] == mark.split('@', 1)[0]]
-
-                # allow resolving a single divergent bookmark even if moving
-                # the bookmark across branches when a revision is specified
-                # that contains a divergent bookmark
-                if bmctx.rev() not in anc and target in divs:
-                    bookmarks.deletedivergent(repo, [target], mark)
-                    return
-
-                deletefrom = [b for b in divs
-                              if repo[b].rev() in anc or b == target]
-                bookmarks.deletedivergent(repo, deletefrom, mark)
-                if bookmarks.validdest(repo, bmctx, repo[target]):
-                    ui.status(_("moving bookmark '%s' forward from %s\n") %
-                              (mark, short(bmctx.node())))
-                    return
-            raise error.Abort(_("bookmark '%s' already exists "
-                               "(use -f to force)") % mark)
-        if ((mark in repo.branchmap() or mark == repo.dirstate.branch())
-            and not force):
-            raise error.Abort(
-                _("a bookmark cannot have the name of an existing branch"))
+    force = opts.get(r'force')
+    rev = opts.get(r'rev')
+    delete = opts.get(r'delete')
+    rename = opts.get(r'rename')
+    inactive = opts.get(r'inactive')
 
     if delete and rename:
         raise error.Abort(_("--delete and --rename are incompatible"))
@@ -1058,91 +960,26 @@ def bookmark(ui, repo, *names, **opts):
         raise error.Abort(_("bookmark name required"))
 
     if delete or rename or names or inactive:
-        wlock = lock = tr = None
-        try:
-            wlock = repo.wlock()
-            lock = repo.lock()
-            cur = repo.changectx('.').node()
-            marks = repo._bookmarks
+        with repo.wlock(), repo.lock(), repo.transaction('bookmark') as tr:
             if delete:
-                tr = repo.transaction('bookmark')
-                for mark in names:
-                    if mark not in marks:
-                        raise error.Abort(_("bookmark '%s' does not exist") %
-                                         mark)
-                    if mark == repo._activebookmark:
-                        bookmarks.deactivate(repo)
-                    del marks[mark]
-
+                bookmarks.delete(repo, tr, names)
             elif rename:
-                tr = repo.transaction('bookmark')
                 if not names:
                     raise error.Abort(_("new bookmark name required"))
                 elif len(names) > 1:
                     raise error.Abort(_("only one new bookmark name allowed"))
-                mark = checkformat(names[0])
-                if rename not in marks:
-                    raise error.Abort(_("bookmark '%s' does not exist")
-                                      % rename)
-                checkconflict(repo, mark, cur, force)
-                marks[mark] = marks[rename]
-                if repo._activebookmark == rename and not inactive:
-                    bookmarks.activate(repo, mark)
-                del marks[rename]
+                bookmarks.rename(repo, tr, rename, names[0], force, inactive)
             elif names:
-                tr = repo.transaction('bookmark')
-                newact = None
-                for mark in names:
-                    mark = checkformat(mark)
-                    if newact is None:
-                        newact = mark
-                    if inactive and mark == repo._activebookmark:
-                        bookmarks.deactivate(repo)
-                        return
-                    tgt = cur
-                    if rev:
-                        tgt = scmutil.revsingle(repo, rev).node()
-                    checkconflict(repo, mark, cur, force, tgt)
-                    marks[mark] = tgt
-                if not inactive and cur == marks[newact] and not rev:
-                    bookmarks.activate(repo, newact)
-                elif cur != tgt and newact == repo._activebookmark:
-                    bookmarks.deactivate(repo)
+                bookmarks.addbookmarks(repo, tr, names, rev, force, inactive)
             elif inactive:
-                if len(marks) == 0:
+                if len(repo._bookmarks) == 0:
                     ui.status(_("no bookmarks set\n"))
                 elif not repo._activebookmark:
                     ui.status(_("no active bookmark\n"))
                 else:
                     bookmarks.deactivate(repo)
-            if tr is not None:
-                marks.recordchange(tr)
-                tr.close()
-        finally:
-            lockmod.release(tr, lock, wlock)
     else: # show bookmarks
-        fm = ui.formatter('bookmarks', opts)
-        hexfn = fm.hexfunc
-        marks = repo._bookmarks
-        if len(marks) == 0 and fm.isplain():
-            ui.status(_("no bookmarks set\n"))
-        for bmark, n in sorted(marks.iteritems()):
-            active = repo._activebookmark
-            if bmark == active:
-                prefix, label = '*', activebookmarklabel
-            else:
-                prefix, label = ' ', ''
-
-            fm.startitem()
-            if not ui.quiet:
-                fm.plain(' %s ' % prefix, label=label)
-            fm.write('bookmark', '%s', bmark, label=label)
-            pad = " " * (25 - encoding.colwidth(bmark))
-            fm.condwrite(not ui.quiet, 'rev node', pad + ' %d:%s',
-                         repo.changelog.rev(n), hexfn(n), label=label)
-            fm.data(active=(bmark == active))
-            fm.plain('\n')
-        fm.end()
+        bookmarks.printbookmarks(ui, repo, **opts)
 
 @command('branch',
     [('f', 'force', None,
@@ -1178,6 +1015,7 @@ def branch(ui, repo, label=None, **opts):
 
     Returns 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     if label:
         label = label.strip()
 
@@ -1226,6 +1064,7 @@ def branches(ui, repo, active=False, closed=False, **opts):
     Returns 0.
     """
 
+    opts = pycompat.byteskwargs(opts)
     ui.pager('branches')
     fm = ui.formatter('branches', opts)
     hexfunc = fm.hexfunc
@@ -1309,6 +1148,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
 
     Returns 0 on success, 1 if no changes found.
     """
+    opts = pycompat.byteskwargs(opts)
     revs = None
     if 'rev' in opts:
         revstrings = opts['rev']
@@ -1339,8 +1179,6 @@ def bundle(ui, repo, fname, dest=None, **opts):
         base = ['null']
     else:
         base = scmutil.revrange(repo, opts.get('base'))
-    # TODO: get desired bundlecaps from command line.
-    bundlecaps = None
     if cgversion not in changegroup.supportedoutgoingversions(repo):
         raise error.Abort(_("repository does not support bundle version %s") %
                           cgversion)
@@ -1352,10 +1190,6 @@ def bundle(ui, repo, fname, dest=None, **opts):
         common = [repo.lookup(rev) for rev in base]
         heads = revs and map(repo.lookup, revs) or None
         outgoing = discovery.outgoing(repo, common, heads)
-        cg = changegroup.getchangegroup(repo, 'bundle', outgoing,
-                                        bundlecaps=bundlecaps,
-                                        version=cgversion)
-        outgoing = None
     else:
         dest = ui.expandpath(dest or 'default-push', dest or 'default')
         dest, branches = hg.parseurl(dest, opts.get('branch'))
@@ -1366,10 +1200,9 @@ def bundle(ui, repo, fname, dest=None, **opts):
                                                 onlyheads=heads,
                                                 force=opts.get('force'),
                                                 portable=True)
-        cg = changegroup.getlocalchangegroup(repo, 'bundle', outgoing,
-                                                bundlecaps, version=cgversion)
-    if not cg:
-        scmutil.nochangesfound(ui, repo, outgoing and outgoing.excluded)
+
+    if not outgoing.missing:
+        scmutil.nochangesfound(ui, repo, not base and outgoing.excluded)
         return 1
 
     if cgversion == '01': #bundle1
@@ -1392,15 +1225,22 @@ def bundle(ui, repo, fname, dest=None, **opts):
     if complevel is not None:
         compopts['level'] = complevel
 
-    bundle2.writebundle(ui, cg, fname, bversion, compression=bcompression,
-                        compopts=compopts)
+
+    contentopts = {'cg.version': cgversion}
+    if repo.ui.configbool('experimental', 'evolution.bundle-obsmarker'):
+        contentopts['obsolescence'] = True
+    if repo.ui.configbool('experimental', 'bundle-phases'):
+        contentopts['phases'] = True
+    bundle2.writenewbundle(ui, repo, 'bundle', fname, bversion, outgoing,
+                           contentopts, compression=bcompression,
+                           compopts=compopts)
 
 @command('cat',
     [('o', 'output', '',
      _('print output to file with formatted name'), _('FORMAT')),
     ('r', 'rev', '', _('print the given revision'), _('REV')),
     ('', 'decode', None, _('apply any matching decode filter')),
-    ] + walkopts,
+    ] + walkopts + formatteropts,
     _('[OPTION]... FILE...'),
     inferrepo=True)
 def cat(ui, repo, file1, *pats, **opts):
@@ -1426,9 +1266,17 @@ def cat(ui, repo, file1, *pats, **opts):
     """
     ctx = scmutil.revsingle(repo, opts.get('rev'))
     m = scmutil.match(ctx, (file1,) + pats, opts)
+    fntemplate = opts.pop('output', '')
+    if cmdutil.isstdiofilename(fntemplate):
+        fntemplate = ''
 
-    ui.pager('cat')
-    return cmdutil.cat(ui, repo, ctx, m, '', **opts)
+    if fntemplate:
+        fm = formatter.nullformatter(ui, 'cat')
+    else:
+        ui.pager('cat')
+        fm = ui.formatter('cat', opts)
+    with fm:
+        return cmdutil.cat(ui, repo, ctx, m, fm, fntemplate, '', **opts)
 
 @command('^clone',
     [('U', 'noupdate', None, _('the clone will include an empty working '
@@ -1549,6 +1397,7 @@ def clone(ui, source, dest=None, **opts):
 
     Returns 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     if opts.get('noupdate') and opts.get('updaterev'):
         raise error.Abort(_("cannot specify both --noupdate and --updaterev"))
 
@@ -1639,16 +1488,16 @@ def commit(ui, repo, *pats, **opts):
         release(lock, wlock)
 
 def _docommit(ui, repo, *pats, **opts):
-    opts = pycompat.byteskwargs(opts)
-    if opts.get('interactive'):
-        opts.pop('interactive')
+    if opts.get(r'interactive'):
+        opts.pop(r'interactive')
         ret = cmdutil.dorecord(ui, repo, commit, None, False,
                                cmdutil.recordfilter, *pats,
-                               **pycompat.strkwargs(opts))
+                               **opts)
         # ret can be 0 (no changes to record) or the value returned by
         # commit(), 1 if nothing changed or None on success.
         return 1 if ret == 0 else ret
 
+    opts = pycompat.byteskwargs(opts)
     if opts.get('subrepos'):
         if opts.get('amend'):
             raise error.Abort(_('cannot amend with --subrepos'))
@@ -1769,6 +1618,7 @@ def config(ui, repo, *values, **opts):
 
     """
 
+    opts = pycompat.byteskwargs(opts)
     if opts.get('edit') or opts.get('local') or opts.get('global'):
         if opts.get('local') and opts.get('global'):
             raise error.Abort(_("can't use --local and --global together"))
@@ -1871,8 +1721,45 @@ def copy(ui, repo, *pats, **opts):
 
     Returns 0 on success, 1 if errors are encountered.
     """
+    opts = pycompat.byteskwargs(opts)
     with repo.wlock(False):
         return cmdutil.copy(ui, repo, pats, opts)
+
+@command('debugcommands', [], _('[COMMAND]'), norepo=True)
+def debugcommands(ui, cmd='', *args):
+    """list all available commands and options"""
+    for cmd, vals in sorted(table.iteritems()):
+        cmd = cmd.split('|')[0].strip('^')
+        opts = ', '.join([i[1] for i in vals[1]])
+        ui.write('%s: %s\n' % (cmd, opts))
+
+@command('debugcomplete',
+    [('o', 'options', None, _('show the command options'))],
+    _('[-o] CMD'),
+    norepo=True)
+def debugcomplete(ui, cmd='', **opts):
+    """returns the completion list associated with the given command"""
+
+    if opts.get('options'):
+        options = []
+        otables = [globalopts]
+        if cmd:
+            aliases, entry = cmdutil.findcmd(cmd, table, False)
+            otables.append(entry[1])
+        for t in otables:
+            for o in t:
+                if "(DEPRECATED)" in o[3]:
+                    continue
+                if o[0]:
+                    options.append('-%s' % o[0])
+                options.append('--%s' % o[1])
+        ui.write("%s\n" % "\n".join(options))
+        return
+
+    cmdlist, unused_allcmds = cmdutil.findpossible(cmd, table)
+    if ui.verbose:
+        cmdlist = [' '.join(c[0]) for c in cmdlist.values()]
+    ui.write("%s\n" % "\n".join(sorted(cmdlist)))
 
 @command('^diff',
     [('r', 'rev', [], _('revision'), _('REV')),
@@ -1938,6 +1825,7 @@ def diff(ui, repo, *pats, **opts):
     Returns 0 on success.
     """
 
+    opts = pycompat.byteskwargs(opts)
     revs = opts.get('rev')
     change = opts.get('change')
     stat = opts.get('stat')
@@ -2041,7 +1929,7 @@ def export(ui, repo, *changesets, **opts):
     else:
         ui.note(_('exporting patch:\n'))
     ui.pager('export')
-    cmdutil.export(repo, revs, template=opts.get('output'),
+    cmdutil.export(repo, revs, fntemplate=opts.get('output'),
                  switch_parent=opts.get('switch_parent'),
                  opts=patch.diffallopts(ui, opts))
 
@@ -2094,7 +1982,9 @@ def files(ui, repo, *pats, **opts):
     Returns 0 if a match is found, 1 otherwise.
 
     """
-    ctx = scmutil.revsingle(repo, opts.get(r'rev'), None)
+
+    opts = pycompat.byteskwargs(opts)
+    ctx = scmutil.revsingle(repo, opts.get('rev'), None)
 
     end = '\n'
     if opts.get('print0'):
@@ -2136,6 +2026,7 @@ def forget(ui, repo, *pats, **opts):
     Returns 0 on success.
     """
 
+    opts = pycompat.byteskwargs(opts)
     if not pats:
         raise error.Abort(_('no files specified'))
 
@@ -2220,6 +2111,7 @@ def graft(ui, repo, *revs, **opts):
         return _dograft(ui, repo, *revs, **opts)
 
 def _dograft(ui, repo, *revs, **opts):
+    opts = pycompat.byteskwargs(opts)
     if revs and opts.get('rev'):
         ui.warn(_('warning: inconsistent use of --rev might give unexpected '
                   'revision ordering!\n'))
@@ -2232,7 +2124,8 @@ def _dograft(ui, repo, *revs, **opts):
     if not opts.get('date') and opts.get('currentdate'):
         opts['date'] = "%d %d" % util.makedate()
 
-    editor = cmdutil.getcommiteditor(editform='graft', **opts)
+    editor = cmdutil.getcommiteditor(editform='graft',
+                                     **pycompat.strkwargs(opts))
 
     cont = False
     if opts.get('continue'):
@@ -2439,6 +2332,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     Returns 0 if a match is found, 1 otherwise.
     """
+    opts = pycompat.byteskwargs(opts)
     reflags = re.M
     if opts.get('ignore_case'):
         reflags |= re.I
@@ -2685,6 +2579,7 @@ def heads(ui, repo, *branchrevs, **opts):
     Returns 0 if matching heads are found, 1 if not.
     """
 
+    opts = pycompat.byteskwargs(opts)
     start = None
     if 'rev' in opts:
         start = scmutil.revsingle(repo, opts['rev'], None).node()
@@ -2743,7 +2638,7 @@ def help_(ui, name=None, **opts):
     Returns 0 if successful.
     """
 
-    keep = opts.get('system') or []
+    keep = opts.get(r'system') or []
     if len(keep) == 0:
         if pycompat.sysplatform.startswith('win'):
             keep.append('windows')
@@ -2757,7 +2652,8 @@ def help_(ui, name=None, **opts):
     if ui.verbose:
         keep.append('verbose')
 
-    formatted = help.formattedhelp(ui, name, keep=keep, **opts)
+    commands = sys.modules[__name__]
+    formatted = help.formattedhelp(ui, commands, name, keep=keep, **opts)
     ui.pager('help')
     ui.write(formatted)
 
@@ -2770,7 +2666,7 @@ def help_(ui, name=None, **opts):
     ('b', 'branch', None, _('show branch')),
     ('t', 'tags', None, _('show tags')),
     ('B', 'bookmarks', None, _('show bookmarks')),
-    ] + remoteopts,
+    ] + remoteopts + formatteropts,
     _('[-nibtB] [-r REV] [SOURCE]'),
     optionalrepo=True)
 def identify(ui, repo, source=None, rev=None,
@@ -2810,6 +2706,7 @@ def identify(ui, repo, source=None, rev=None,
     Returns 0 if successful.
     """
 
+    opts = pycompat.byteskwargs(opts)
     if not repo and not source:
         raise error.Abort(_("there is no Mercurial repository here "
                            "(.hg not found)"))
@@ -2828,6 +2725,9 @@ def identify(ui, repo, source=None, rev=None,
         repo = peer.local()
         revs, checkout = hg.addbranchrevs(repo, peer, branches, None)
 
+    fm = ui.formatter('identify', opts)
+    fm.startitem()
+
     if not repo:
         if num or branch or tags:
             raise error.Abort(
@@ -2838,8 +2738,10 @@ def identify(ui, repo, source=None, rev=None,
             rev = "tip"
 
         remoterev = peer.lookup(rev)
+        hexrev = hexfunc(remoterev)
         if default or id:
-            output = [hexfunc(remoterev)]
+            output = [hexrev]
+        fm.data(id=hexrev)
 
         def getbms():
             bms = []
@@ -2851,13 +2753,17 @@ def identify(ui, repo, source=None, rev=None,
 
             return sorted(bms)
 
+        bms = getbms()
         if bookmarks:
-            output.extend(getbms())
+            output.extend(bms)
         elif default and not ui.quiet:
             # multiple bookmarks for a single parent separated by '/'
-            bm = '/'.join(getbms())
+            bm = '/'.join(bms)
             if bm:
                 output.append(bm)
+
+        fm.data(node=hex(remoterev))
+        fm.data(bookmarks=fm.formatlist(bms, name='bookmark'))
     else:
         ctx = scmutil.revsingle(repo, rev, None)
 
@@ -2868,22 +2774,35 @@ def identify(ui, repo, source=None, rev=None,
             for p in parents:
                 taglist.extend(p.tags())
 
-            changed = ""
-            if default or id or num:
-                if (any(repo.status())
-                    or any(ctx.sub(s).dirty() for s in ctx.substate)):
-                    changed = '+'
+            dirty = ""
+            if ctx.dirty(missing=True, merge=False, branch=False):
+                dirty = '+'
+            fm.data(dirty=dirty)
+
+            hexoutput = [hexfunc(p.node()) for p in parents]
             if default or id:
-                output = ["%s%s" %
-                  ('+'.join([hexfunc(p.node()) for p in parents]), changed)]
+                output = ["%s%s" % ('+'.join(hexoutput), dirty)]
+            fm.data(id="%s%s" % ('+'.join(hexoutput), dirty))
+
             if num:
-                output.append("%s%s" %
-                  ('+'.join([str(p.rev()) for p in parents]), changed))
+                numoutput = ["%d" % p.rev() for p in parents]
+                output.append("%s%s" % ('+'.join(numoutput), dirty))
+
+            fn = fm.nested('parents')
+            for p in parents:
+                fn.startitem()
+                fn.data(rev=p.rev())
+                fn.data(node=p.hex())
+                fn.context(ctx=p)
+            fn.end()
         else:
+            hexoutput = hexfunc(ctx.node())
             if default or id:
-                output = [hexfunc(ctx.node())]
+                output = [hexoutput]
+            fm.data(id=hexoutput)
+
             if num:
-                output.append(str(ctx.rev()))
+                output.append(pycompat.bytestr(ctx.rev()))
             taglist = ctx.tags()
 
         if default and not ui.quiet:
@@ -2910,7 +2829,14 @@ def identify(ui, repo, source=None, rev=None,
             if bookmarks:
                 output.extend(ctx.bookmarks())
 
-    ui.write("%s\n" % ' '.join(output))
+        fm.data(node=ctx.hex())
+        fm.data(branch=ctx.branch())
+        fm.data(tags=fm.formatlist(taglist, name='tag', sep=':'))
+        fm.data(bookmarks=fm.formatlist(ctx.bookmarks(), name='bookmark'))
+        fm.context(ctx=ctx)
+
+    fm.plain("%s\n" % ' '.join(output))
+    fm.end()
 
 @command('import|patch',
     [('p', 'strip', 1,
@@ -3033,6 +2959,7 @@ def import_(ui, repo, patch1=None, *patches, **opts):
     Returns 0 on success, 1 on partial success (see --partial).
     """
 
+    opts = pycompat.byteskwargs(opts)
     if not patch1:
         raise error.Abort(_('need at least one patch to import'))
 
@@ -3237,6 +3164,7 @@ def init(ui, dest=".", **opts):
 
     Returns 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     hg.peer(ui, opts, ui.expandpath(dest), create=True)
 
 @command('locate',
@@ -3267,6 +3195,7 @@ def locate(ui, repo, *pats, **opts):
 
     Returns 0 if a match is found, 1 otherwise.
     """
+    opts = pycompat.byteskwargs(opts)
     if opts.get('print0'):
         end = '\0'
     else:
@@ -3473,6 +3402,7 @@ def manifest(ui, repo, node=None, rev=None, **opts):
 
     Returns 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     fm = ui.formatter('manifest', opts)
 
     if opts.get('all'):
@@ -3551,6 +3481,7 @@ def merge(ui, repo, node=None, **opts):
     Returns 0 on success, 1 if there are unresolved files.
     """
 
+    opts = pycompat.byteskwargs(opts)
     if opts.get('rev') and node:
         raise error.Abort(_("please specify just one revision"))
     if not node:
@@ -3630,6 +3561,7 @@ def outgoing(ui, repo, dest=None, **opts):
 
     Returns 0 if there are outgoing changes, 1 otherwise.
     """
+    opts = pycompat.byteskwargs(opts)
     if opts.get('graph'):
         cmdutil.checkunsupportedgraphflags([], opts)
         o, other = hg._outgoing(ui, repo, dest, opts)
@@ -3687,6 +3619,7 @@ def parents(ui, repo, file_=None, **opts):
     Returns 0 on success.
     """
 
+    opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'), None)
 
     if file_:
@@ -3749,6 +3682,8 @@ def paths(ui, repo, search=None, **opts):
 
     Returns 0 on success.
     """
+
+    opts = pycompat.byteskwargs(opts)
     ui.pager('paths')
     if search:
         pathitems = [(name, path) for name, path in ui.paths.iteritems()
@@ -3811,6 +3746,7 @@ def phase(ui, repo, *revs, **opts):
 
     (For more information about the phases concept, see :hg:`help phases`.)
     """
+    opts = pycompat.byteskwargs(opts)
     # search for a unique phase argument
     targetphase = None
     for idx, name in enumerate(phases.phasenames):
@@ -3943,6 +3879,7 @@ def pull(ui, repo, source="default", **opts):
     Returns 0 on success, 1 if an update had unresolved files.
     """
 
+    opts = pycompat.byteskwargs(opts)
     if ui.configbool('commands', 'update.requiredest') and opts.get('update'):
         msg = _('update destination required by configuration')
         hint = _('use hg pull followed by hg update DEST')
@@ -4073,6 +4010,7 @@ def push(ui, repo, dest=None, **opts):
     Returns 0 if push was successful, 1 if nothing to push.
     """
 
+    opts = pycompat.byteskwargs(opts)
     if opts.get('bookmark'):
         ui.setconfig('bookmarks', 'pushing', opts['bookmark'], 'push')
         for b in opts['bookmark']:
@@ -4198,6 +4136,7 @@ def remove(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if any warnings encountered.
     """
 
+    opts = pycompat.byteskwargs(opts)
     after, force = opts.get('after'), opts.get('force')
     if not pats and not after:
         raise error.Abort(_('no files specified'))
@@ -4227,6 +4166,7 @@ def rename(ui, repo, *pats, **opts):
 
     Returns 0 on success, 1 if errors are encountered.
     """
+    opts = pycompat.byteskwargs(opts)
     with repo.wlock(False):
         return cmdutil.copy(ui, repo, pats, opts, rename=True)
 
@@ -4281,6 +4221,7 @@ def resolve(ui, repo, *pats, **opts):
     Returns 0 on success, 1 if any files fail a resolve attempt.
     """
 
+    opts = pycompat.byteskwargs(opts)
     flaglist = 'all mark unmark list no_status'.split()
     all, mark, unmark, show, nostatus = \
         [opts.get(o) for o in flaglist]
@@ -4583,11 +4524,11 @@ def rollback(ui, repo, **opts):
 
     Returns 0 on success, 1 if no rollback data is available.
     """
-    if not ui.configbool('ui', 'rollback', True):
+    if not ui.configbool('ui', 'rollback'):
         raise error.Abort(_('rollback is disabled because it is unsafe'),
                           hint=('see `hg help -v rollback` for information'))
-    return repo.rollback(dryrun=opts.get('dry_run'),
-                         force=opts.get('force'))
+    return repo.rollback(dryrun=opts.get(r'dry_run'),
+                         force=opts.get(r'force'))
 
 @command('root', [])
 def root(ui, repo):
@@ -4652,6 +4593,7 @@ def serve(ui, repo, **opts):
     Returns 0 on success.
     """
 
+    opts = pycompat.byteskwargs(opts)
     if opts["stdio"] and opts["cmdserver"]:
         raise error.Abort(_("cannot use --stdio with --cmdserver"))
 
@@ -4675,6 +4617,7 @@ def serve(ui, repo, **opts):
     ('u', 'unknown', None, _('show only unknown (not tracked) files')),
     ('i', 'ignored', None, _('show only ignored files')),
     ('n', 'no-status', None, _('hide status prefix')),
+    ('t', 'terse', '', _('show the terse output (EXPERIMENTAL)')),
     ('C', 'copies', None, _('show source of copied files')),
     ('0', 'print0', None, _('end filenames with NUL, for use with xargs')),
     ('', 'rev', [], _('show difference from revision'), _('REV')),
@@ -4720,6 +4663,16 @@ def status(ui, repo, *pats, **opts):
 
     .. container:: verbose
 
+      The -t/--terse option abbreviates the output by showing directory name
+      if all the files in it share the same status. The option expects a value
+      which can be a string formed by using 'm', 'a', 'r', 'd', 'u', 'i', 'c'
+      where, 'm' stands for 'modified', 'a' for 'added', 'r' for 'removed',
+      'd' for 'deleted', 'u' for 'unknown', 'i' for 'ignored' and 'c' for clean.
+
+      It terses the output of only those status which are passed. The ignored
+      files are not considered while tersing until 'i' is there in --terse value
+      or the --ignored option is used.
+
       Examples:
 
       - show changes in the working directory relative to a
@@ -4746,9 +4699,13 @@ def status(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     revs = opts.get('rev')
     change = opts.get('change')
+    terse = opts.get('terse')
 
     if revs and change:
         msg = _('cannot specify --rev and --change at the same time')
+        raise error.Abort(msg)
+    elif revs and terse:
+        msg = _('cannot use --terse with --rev')
         raise error.Abort(msg)
     elif change:
         node2 = scmutil.revsingle(repo, change, None).node()
@@ -4770,6 +4727,7 @@ def status(ui, repo, *pats, **opts):
     show = [k for k in states if opts.get(k)]
     if opts.get('all'):
         show += ui.quiet and (states[:4] + ['clean']) or states
+
     if not show:
         if ui.quiet:
             show = states[:4]
@@ -4780,6 +4738,9 @@ def status(ui, repo, *pats, **opts):
     stat = repo.status(node1, node2, m,
                        'ignored' in show, 'clean' in show, 'unknown' in show,
                        opts.get('subrepos'))
+    if terse:
+        stat = cmdutil.tersestatus(repo.root, stat, terse,
+                                    repo.dirstate._ignore, opts.get('ignored'))
     changestates = zip(states, pycompat.iterbytestr('MAR!?IC'), stat)
 
     if (opts.get('all') or opts.get('copies')
@@ -4817,6 +4778,7 @@ def summary(ui, repo, **opts):
     Returns 0 on success.
     """
 
+    opts = pycompat.byteskwargs(opts)
     ui.pager('summary')
     ctx = repo[None]
     parents = ctx.parents()
@@ -4830,9 +4792,9 @@ def summary(ui, repo, **opts):
         s = ' '.join(e.recordtypes)
         ui.warn(
             _('warning: merge state has unsupported record types: %s\n') % s)
-        unresolved = 0
+        unresolved = []
     else:
-        unresolved = [f for f in ms if ms[f] == 'u']
+        unresolved = list(ms.unresolved())
 
     for p in parents:
         # label with log.changeset (instead of log.parent) since this
@@ -4875,10 +4837,10 @@ def summary(ui, repo, **opts):
         ui.write(_('bookmarks:'), label='log.bookmark')
         if active is not None:
             if active in marks:
-                ui.write(' *' + active, label=activebookmarklabel)
+                ui.write(' *' + active, label=bookmarks.activebookmarklabel)
                 marks.remove(active)
             else:
-                ui.write(' [%s]' % active, label=activebookmarklabel)
+                ui.write(' [%s]' % active, label=bookmarks.activebookmarklabel)
         for m in marks:
             ui.write(' ' + m, label='log.bookmark')
         ui.write('\n', label='log.bookmark')
@@ -5125,6 +5087,7 @@ def tag(ui, repo, name1, *names, **opts):
 
     Returns 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     wlock = lock = None
     try:
         wlock = repo.wlock()
@@ -5189,7 +5152,8 @@ def tag(ui, repo, name1, *names, **opts):
             editform = 'tag.remove'
         else:
             editform = 'tag.add'
-        editor = cmdutil.getcommiteditor(editform=editform, **opts)
+        editor = cmdutil.getcommiteditor(editform=editform,
+                                         **pycompat.strkwargs(opts))
 
         # don't allow tagging the null rev
         if (not opts.get('remove') and
@@ -5212,6 +5176,7 @@ def tags(ui, repo, **opts):
     Returns 0 on success.
     """
 
+    opts = pycompat.byteskwargs(opts)
     ui.pager('tags')
     fm = ui.formatter('tags', opts)
     hexfunc = fm.hexfunc
@@ -5256,6 +5221,7 @@ def tip(ui, repo, **opts):
 
     Returns 0 on success.
     """
+    opts = pycompat.byteskwargs(opts)
     displayer = cmdutil.show_changeset(ui, repo, opts)
     displayer.show(repo['tip'])
     displayer.close()
@@ -5277,33 +5243,28 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
         for fname in fnames:
             f = hg.openpath(ui, fname)
             gen = exchange.readbundle(ui, f, fname)
-            if isinstance(gen, bundle2.unbundle20):
-                tr = repo.transaction('unbundle')
-                try:
-                    op = bundle2.applybundle(repo, gen, tr, source='unbundle',
-                                             url='bundle:' + fname)
-                    tr.close()
-                except error.BundleUnknownFeatureError as exc:
-                    raise error.Abort(_('%s: unknown bundle feature, %s')
-                                      % (fname, exc),
-                                      hint=_("see https://mercurial-scm.org/"
-                                             "wiki/BundleFeature for more "
-                                             "information"))
-                finally:
-                    if tr:
-                        tr.release()
-                changes = [r.get('return', 0)
-                           for r in op.records['changegroup']]
-                modheads = changegroup.combineresults(changes)
-            elif isinstance(gen, streamclone.streamcloneapplier):
+            if isinstance(gen, streamclone.streamcloneapplier):
                 raise error.Abort(
                         _('packed bundles cannot be applied with '
                           '"hg unbundle"'),
                         hint=_('use "hg debugapplystreamclonebundle"'))
-            else:
-                modheads = gen.apply(repo, 'unbundle', 'bundle:' + fname)
+            url = 'bundle:' + fname
+            try:
+                txnname = 'unbundle'
+                if not isinstance(gen, bundle2.unbundle20):
+                    txnname = 'unbundle\n%s' % util.hidepassword(url)
+                with repo.transaction(txnname) as tr:
+                    op = bundle2.applybundle(repo, gen, tr, source='unbundle',
+                                             url=url)
+            except error.BundleUnknownFeatureError as exc:
+                raise error.Abort(
+                    _('%s: unknown bundle feature, %s') % (fname, exc),
+                    hint=_("see https://mercurial-scm.org/"
+                           "wiki/BundleFeature for more "
+                           "information"))
+            modheads = bundle2.combinechangegroupresults(op)
 
-    return postincoming(ui, repo, modheads, opts.get('update'), None, None)
+    return postincoming(ui, repo, modheads, opts.get(r'update'), None, None)
 
 @command('^update|up|checkout|co',
     [('C', 'clean', None, _('discard uncommitted changes (no backup)')),
@@ -5430,6 +5391,7 @@ def verify(ui, repo):
 @command('version', [] + formatteropts, norepo=True)
 def version_(ui, **opts):
     """output version and copyright information"""
+    opts = pycompat.byteskwargs(opts)
     if ui.verbose:
         ui.pager('version')
     fm = ui.formatter("version", opts)

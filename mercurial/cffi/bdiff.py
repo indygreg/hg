@@ -1,31 +1,76 @@
+# bdiff.py - CFFI implementation of bdiff.c
+#
+# Copyright 2016 Maciej Fijalkowski <fijall@gmail.com>
+#
+# This software may be used and distributed according to the terms of the
+# GNU General Public License version 2 or any later version.
+
 from __future__ import absolute_import
 
-import cffi
-import os
+import struct
 
-ffi = cffi.FFI()
-ffi.set_source("_bdiff_cffi",
-    open(os.path.join(os.path.join(os.path.dirname(__file__), '..'),
-        'bdiff.c')).read(), include_dirs=['mercurial'])
-ffi.cdef("""
-struct bdiff_line {
-    int hash, n, e;
-    ssize_t len;
-    const char *l;
-};
+from ..pure.bdiff import *
+from . import _bdiff
 
-struct bdiff_hunk;
-struct bdiff_hunk {
-    int a1, a2, b1, b2;
-    struct bdiff_hunk *next;
-};
+ffi = _bdiff.ffi
+lib = _bdiff.lib
 
-int bdiff_splitlines(const char *a, ssize_t len, struct bdiff_line **lr);
-int bdiff_diff(struct bdiff_line *a, int an, struct bdiff_line *b, int bn,
-    struct bdiff_hunk *base);
-void bdiff_freehunks(struct bdiff_hunk *l);
-void free(void*);
-""")
+def blocks(sa, sb):
+    a = ffi.new("struct bdiff_line**")
+    b = ffi.new("struct bdiff_line**")
+    ac = ffi.new("char[]", str(sa))
+    bc = ffi.new("char[]", str(sb))
+    l = ffi.new("struct bdiff_hunk*")
+    try:
+        an = lib.bdiff_splitlines(ac, len(sa), a)
+        bn = lib.bdiff_splitlines(bc, len(sb), b)
+        if not a[0] or not b[0]:
+            raise MemoryError
+        count = lib.bdiff_diff(a[0], an, b[0], bn, l)
+        if count < 0:
+            raise MemoryError
+        rl = [None] * count
+        h = l.next
+        i = 0
+        while h:
+            rl[i] = (h.a1, h.a2, h.b1, h.b2)
+            h = h.next
+            i += 1
+    finally:
+        lib.free(a[0])
+        lib.free(b[0])
+        lib.bdiff_freehunks(l.next)
+    return rl
 
-if __name__ == '__main__':
-    ffi.compile()
+def bdiff(sa, sb):
+    a = ffi.new("struct bdiff_line**")
+    b = ffi.new("struct bdiff_line**")
+    ac = ffi.new("char[]", str(sa))
+    bc = ffi.new("char[]", str(sb))
+    l = ffi.new("struct bdiff_hunk*")
+    try:
+        an = lib.bdiff_splitlines(ac, len(sa), a)
+        bn = lib.bdiff_splitlines(bc, len(sb), b)
+        if not a[0] or not b[0]:
+            raise MemoryError
+        count = lib.bdiff_diff(a[0], an, b[0], bn, l)
+        if count < 0:
+            raise MemoryError
+        rl = []
+        h = l.next
+        la = lb = 0
+        while h:
+            if h.a1 != la or h.b1 != lb:
+                lgt = (b[0] + h.b1).l - (b[0] + lb).l
+                rl.append(struct.pack(">lll", (a[0] + la).l - a[0].l,
+                                      (a[0] + h.a1).l - a[0].l, lgt))
+                rl.append(str(ffi.buffer((b[0] + lb).l, lgt)))
+            la = h.a2
+            lb = h.b2
+            h = h.next
+
+    finally:
+        lib.free(a[0])
+        lib.free(b[0])
+        lib.bdiff_freehunks(l.next)
+    return "".join(rl)

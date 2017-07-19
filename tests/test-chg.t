@@ -89,7 +89,7 @@ enable pager extension globally, but spawns the master server with no tty:
   > [extensions]
   > pager =
   > [pager]
-  > pager = python $TESTTMP/fakepager.py
+  > pager = $PYTHON $TESTTMP/fakepager.py
   > EOF
   $ chg version > /dev/null
   $ touch foo
@@ -105,10 +105,10 @@ pager should be enabled if the attached client has a tty:
 chg waits for pager if runcommand raises
 
   $ cat > $TESTTMP/crash.py <<EOF
-  > from mercurial import cmdutil
+  > from mercurial import registrar
   > cmdtable = {}
-  > command = cmdutil.command(cmdtable)
-  > @command('crash')
+  > command = registrar.command(cmdtable)
+  > @command(b'crash')
   > def pagercrash(ui, repo, *pats, **opts):
   >     ui.write('going to crash\n')
   >     raise Exception('.')

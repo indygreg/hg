@@ -114,6 +114,7 @@ Interactive merge:
 
   $ hg co -C
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --config ui.interactive=true <<EOF
@@ -178,6 +179,7 @@ Interactive merge with bad input:
 
   $ hg co -C
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --config ui.interactive=true <<EOF
@@ -254,6 +256,7 @@ Interactive merge with not enough input:
 
   $ hg co -C
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --config ui.interactive=true <<EOF
@@ -316,6 +319,7 @@ Choose local versions of files
 
   $ hg co -C
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --tool :local
@@ -364,6 +368,7 @@ Choose other versions of files
 
   $ hg co -C
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --tool :other
@@ -412,6 +417,7 @@ Fail
 
   $ hg co -C
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --tool :fail
@@ -463,6 +469,7 @@ Force prompts with no input (should be similar to :fail)
 
   $ hg co -C
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --config ui.interactive=True --tool :prompt
@@ -470,8 +477,7 @@ Force prompts with no input (should be similar to :fail)
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
   other [merge rev] changed file2 which local [working copy] deleted
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
-  no tool found to merge file3
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? 
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
   [1]
@@ -522,6 +528,7 @@ Force prompts
 
   $ hg co -C
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --tool :prompt
@@ -529,8 +536,7 @@ Force prompts
   use (c)hanged version, (d)elete, or leave (u)nresolved? u
   other [merge rev] changed file2 which local [working copy] deleted
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
-  no tool found to merge file3
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? u
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? u
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
   use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
   [1]
@@ -579,6 +585,7 @@ Choose to merge all files
 
   $ hg co -C
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "13910f48cf7b: changed file1, removed file2, changed file3"
   1 other heads for branch "default"
 
   $ hg merge --tool :merge3
@@ -676,8 +683,7 @@ invocations.)
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
   other [merge rev] changed file2 which local [working copy] deleted
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
-  no tool found to merge file3
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? 
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   --- diff of status ---
   (status identical)
   
@@ -705,8 +711,7 @@ invocations.)
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
   other [merge rev] changed file2 which local [working copy] deleted
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
-  no tool found to merge file3
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? 
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   --- diff of status ---
   (status identical)
   
@@ -724,8 +729,7 @@ invocations.)
   use (c)hanged version, (d)elete, or leave (u)nresolved? 
   other [merge rev] changed file2 which local [working copy] deleted
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
-  no tool found to merge file3
-  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved? 
+  keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   --- diff of status ---
   (status identical)
   

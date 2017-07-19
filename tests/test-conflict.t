@@ -120,7 +120,7 @@ Verify line splitting of custom conflict marker which causes multiple lines
 Verify line trimming of custom conflict marker using multi-byte characters
 
   $ hg up -q --clean .
-  $ python <<EOF
+  $ $PYTHON <<EOF
   > fp = open('logfile', 'w')
   > fp.write('12345678901234567890123456789012345678901234567890' +
   >          '1234567890') # there are 5 more columns for 80 columns
@@ -220,6 +220,7 @@ are merging, unlike :local and :other
 
   $ hg up -C
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "e0693e20f496: 123456789012345678901234567890123456789012345678901234567890????"
   1 other heads for branch "default"
   $ printf "\n\nEnd of file\n" >> a
   $ hg ci -m "Add some stuff at the end"
@@ -258,6 +259,7 @@ Now test :merge-other and :merge-local
 
   $ hg up -C
   1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to "18b51d585961: Add some stuff at the beginning"
   1 other heads for branch "default"
   $ hg merge --tool :merge-local
   merging a

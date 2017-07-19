@@ -44,18 +44,33 @@ from mercurial.i18n import _
 from mercurial.node import hex
 
 from mercurial import (
-    cmdutil,
+    registrar,
     ui as uimod,
     util,
 )
 
-cmdtable = {}
-command = cmdutil.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
+
+cmdtable = {}
+command = registrar.command(cmdtable)
+
+configtable = {}
+configitem = registrar.configitem(configtable)
+
+configitem('blackbox', 'dirty',
+    default=False,
+)
+configitem('blackbox', 'maxsize',
+    default='1 MB',
+)
+configitem('blackbox', 'logsource',
+    default=False,
+)
+
 lastui = None
 
 filehandles = {}
@@ -118,7 +133,7 @@ def wrapui(ui):
                                    (newpath, oldpath, err.strerror))
 
             fp = _openlog(self._bbvfs)
-            maxsize = self.configbytes('blackbox', 'maxsize', 1048576)
+            maxsize = self.configbytes('blackbox', 'maxsize')
             if maxsize > 0:
                 st = self._bbvfs.fstat(fp)
                 if st.st_size >= maxsize:
@@ -171,9 +186,10 @@ def wrapui(ui):
                 return
             try:
                 ui._bbinlog = True
-                date = util.datestr(None, '%Y/%m/%d %H:%M:%S')
+                default = self.configdate('devel', 'default-date')
+                date = util.datestr(default, '%Y/%m/%d %H:%M:%S')
                 user = util.getuser()
-                pid = str(util.getpid())
+                pid = '%d' % util.getpid()
                 formattedmsg = msg[0] % msg[1:]
                 rev = '(unknown)'
                 changed = ''
@@ -181,12 +197,10 @@ def wrapui(ui):
                     ctx = ui._bbrepo[None]
                     parents = ctx.parents()
                     rev = ('+'.join([hex(p.node()) for p in parents]))
-                    if (ui.configbool('blackbox', 'dirty', False) and (
-                        any(ui._bbrepo.status()) or
-                        any(ctx.sub(s).dirty() for s in ctx.substate)
-                    )):
+                    if (ui.configbool('blackbox', 'dirty') and
+                        ctx.dirty(missing=True, merge=False, branch=False)):
                         changed = '+'
-                if ui.configbool('blackbox', 'logsource', False):
+                if ui.configbool('blackbox', 'logsource'):
                     src = ' [%s]' % event
                 else:
                     src = ''
@@ -220,6 +234,7 @@ def reposetup(ui, repo):
 
     if util.safehasattr(ui, 'setrepo'):
         ui.setrepo(repo)
+    repo._wlockfreeprefix.add('blackbox.log')
 
 @command('^blackbox',
     [('l', 'limit', 10, _('the number of events to show')),

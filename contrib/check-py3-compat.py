@@ -10,6 +10,7 @@
 from __future__ import absolute_import, print_function
 
 import ast
+import importlib
 import os
 import sys
 import traceback
@@ -40,7 +41,6 @@ def check_compat_py2(f):
 
 def check_compat_py3(f):
     """Check Python 3 compatibility of a file with Python 3."""
-    import importlib  # not available on Python 2.6
     with open(f, 'rb') as fh:
         content = fh.read()
 
@@ -51,11 +51,12 @@ def check_compat_py3(f):
         return
 
     # Try to import the module.
-    # For now we only support mercurial.* and hgext.* modules because figuring
-    # out module paths for things not in a package can be confusing.
-    if f.startswith(('hgext/', 'mercurial/')) and not f.endswith('__init__.py'):
+    # For now we only support modules in packages because figuring out module
+    # paths for things not in a package can be confusing.
+    if (f.startswith(('hgdemandimport/', 'hgext/', 'mercurial/'))
+        and not f.endswith('__init__.py')):
         assert f.endswith('.py')
-        name = f.replace('/', '.')[:-3].replace('.pure.', '.')
+        name = f.replace('/', '.')[:-3]
         try:
             importlib.import_module(name)
         except Exception as e:

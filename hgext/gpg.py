@@ -14,16 +14,16 @@ import tempfile
 from mercurial.i18n import _
 from mercurial import (
     cmdutil,
-    commands,
     error,
     match,
     node as hgnode,
     pycompat,
+    registrar,
     util,
 )
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -221,7 +221,7 @@ def keystr(ui, key):
           ('m', 'message', '',
            _('use text as commit message'), _('TEXT')),
           ('e', 'edit', False, _('invoke editor on commit messages')),
-         ] + commands.commitopts2,
+         ] + cmdutil.commitopts2,
          _('hg sign [OPTION]... [REV]...'))
 def sign(ui, repo, *revs, **opts):
     """add a signature for the current or given revision

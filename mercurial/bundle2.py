@@ -158,6 +158,7 @@ from . import (
     changegroup,
     error,
     obsolete,
+    phases,
     pushkey,
     pycompat,
     tags,
@@ -178,18 +179,20 @@ _fpartid = '>I'
 _fpayloadsize = '>i'
 _fpartparamcount = '>BB'
 
+_fphasesentry = '>i20s'
+
 preferedchunksize = 4096
 
 _parttypeforbidden = re.compile('[^a-zA-Z0-9_:-]')
 
 def outdebug(ui, message):
     """debug regarding output stream (bundling)"""
-    if ui.configbool('devel', 'bundle2.debug', False):
+    if ui.configbool('devel', 'bundle2.debug'):
         ui.debug('bundle2-output: %s\n' % message)
 
 def indebug(ui, message):
     """debug on input stream (unbundling)"""
-    if ui.configbool('devel', 'bundle2.debug', False):
+    if ui.configbool('devel', 'bundle2.debug'):
         ui.debug('bundle2-input: %s\n' % message)
 
 def validateparttype(parttype):
@@ -307,14 +310,20 @@ def _notransaction():
     to be created"""
     raise TransactionUnavailable()
 
-def applybundle(repo, unbundler, tr, source=None, url=None, op=None):
+def applybundle(repo, unbundler, tr, source=None, url=None, **kwargs):
     # transform me into unbundler.apply() as soon as the freeze is lifted
-    tr.hookargs['bundle2'] = '1'
-    if source is not None and 'source' not in tr.hookargs:
-        tr.hookargs['source'] = source
-    if url is not None and 'url' not in tr.hookargs:
-        tr.hookargs['url'] = url
-    return processbundle(repo, unbundler, lambda: tr, op=op)
+    if isinstance(unbundler, unbundle20):
+        tr.hookargs['bundle2'] = '1'
+        if source is not None and 'source' not in tr.hookargs:
+            tr.hookargs['source'] = source
+        if url is not None and 'url' not in tr.hookargs:
+            tr.hookargs['url'] = url
+        return processbundle(repo, unbundler, lambda: tr)
+    else:
+        # the transactiongetter won't be used, but we might as well set it
+        op = bundleoperation(repo, lambda: tr)
+        _processchangegroup(op, unbundler, tr, source, url, **kwargs)
+        return op
 
 def processbundle(repo, unbundler, transactiongetter=None, op=None):
     """This function process a bundle, apply effect to/from a repo
@@ -340,8 +349,8 @@ def processbundle(repo, unbundler, transactiongetter=None, op=None):
     if repo.ui.debugflag:
         msg = ['bundle2-input-bundle:']
         if unbundler.params:
-            msg.append(' %i params')
-        if op.gettransaction is None:
+            msg.append(' %i params' % len(unbundler.params))
+        if op.gettransaction is None or op.gettransaction is _notransaction:
             msg.append(' no-transaction')
         else:
             msg.append(' with-transaction')
@@ -391,6 +400,13 @@ def processbundle(repo, unbundler, transactiongetter=None, op=None):
         repo.ui.debug('bundle2-input-bundle: %i parts total\n' % nbpart)
 
     return op
+
+def _processchangegroup(op, cg, tr, source, url, **kwargs):
+    ret = cg.apply(op.repo, tr, source, url, **kwargs)
+    op.records.add('changegroup', {
+        'return': ret,
+    })
+    return ret
 
 def _processpart(op, part):
     """process a single part from a bundle
@@ -661,6 +677,9 @@ def getunbundler(ui, fp, magicstring=None):
         magicstring = changegroup.readexactly(fp, 4)
     magic, version = magicstring[0:2], magicstring[2:4]
     if magic != 'HG':
+        ui.debug(
+            "error: invalid magic: %r (version %r), should be 'HG'\n"
+            % (magic, version))
         raise error.Abort(_('not a Mercurial bundle'))
     unbundlerclass = formatmap.get(version)
     if unbundlerclass is None:
@@ -1005,7 +1024,7 @@ class bundlepart(object):
             # backup exception data for later
             ui.debug('bundle2-input-stream-interrupt: encoding exception %s'
                      % exc)
-            exc_info = sys.exc_info()
+            tb = sys.exc_info()[2]
             msg = 'unexpected error: %s' % exc
             interpart = bundlepart('error:abort', [('message', msg)],
                                    mandatory=False)
@@ -1016,10 +1035,7 @@ class bundlepart(object):
             outdebug(ui, 'closing payload chunk')
             # abort current part payload
             yield _pack(_fpayloadsize, 0)
-            if pycompat.ispy3:
-                raise exc_info[0](exc_info[1]).with_traceback(exc_info[2])
-            else:
-                exec("""raise exc_info[0], exc_info[1], exc_info[2]""")
+            pycompat.raisewithtb(exc, tb)
         # end of payload
         outdebug(ui, 'closing payload chunk')
         yield _pack(_fpayloadsize, 0)
@@ -1326,6 +1342,9 @@ def getrepocaps(repo, allowpushback=False):
         caps['obsmarkers'] = supportedformat
     if allowpushback:
         caps['pushback'] = ()
+    cpmode = repo.ui.config('server', 'concurrent-push-mode')
+    if cpmode == 'check-related':
+        caps['checkheads'] = ('related',)
     return caps
 
 def bundle2caps(remote):
@@ -1341,6 +1360,102 @@ def obsmarkersversion(caps):
     """
     obscaps = caps.get('obsmarkers', ())
     return [int(c[1:]) for c in obscaps if c.startswith('V')]
+
+def writenewbundle(ui, repo, source, filename, bundletype, outgoing, opts,
+                   vfs=None, compression=None, compopts=None):
+    if bundletype.startswith('HG10'):
+        cg = changegroup.getchangegroup(repo, source, outgoing, version='01')
+        return writebundle(ui, cg, filename, bundletype, vfs=vfs,
+                           compression=compression, compopts=compopts)
+    elif not bundletype.startswith('HG20'):
+        raise error.ProgrammingError('unknown bundle type: %s' % bundletype)
+
+    caps = {}
+    if 'obsolescence' in opts:
+        caps['obsmarkers'] = ('V1',)
+    bundle = bundle20(ui, caps)
+    bundle.setcompression(compression, compopts)
+    _addpartsfromopts(ui, repo, bundle, source, outgoing, opts)
+    chunkiter = bundle.getchunks()
+
+    return changegroup.writechunks(ui, chunkiter, filename, vfs=vfs)
+
+def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
+    # We should eventually reconcile this logic with the one behind
+    # 'exchange.getbundle2partsgenerator'.
+    #
+    # The type of input from 'getbundle' and 'writenewbundle' are a bit
+    # different right now. So we keep them separated for now for the sake of
+    # simplicity.
+
+    # we always want a changegroup in such bundle
+    cgversion = opts.get('cg.version')
+    if cgversion is None:
+        cgversion = changegroup.safeversion(repo)
+    cg = changegroup.getchangegroup(repo, source, outgoing,
+                                    version=cgversion)
+    part = bundler.newpart('changegroup', data=cg.getchunks())
+    part.addparam('version', cg.version)
+    if 'clcount' in cg.extras:
+        part.addparam('nbchanges', str(cg.extras['clcount']),
+                      mandatory=False)
+    if opts.get('phases') and repo.revs('%ln and secret()',
+                                        outgoing.missingheads):
+        part.addparam('targetphase', '%d' % phases.secret, mandatory=False)
+
+    addparttagsfnodescache(repo, bundler, outgoing)
+
+    if opts.get('obsolescence', False):
+        obsmarkers = repo.obsstore.relevantmarkers(outgoing.missing)
+        buildobsmarkerspart(bundler, obsmarkers)
+
+    if opts.get('phases', False):
+        headsbyphase = phases.subsetphaseheads(repo, outgoing.missing)
+        phasedata = []
+        for phase in phases.allphases:
+            for head in headsbyphase[phase]:
+                phasedata.append(_pack(_fphasesentry, phase, head))
+        bundler.newpart('phase-heads', data=''.join(phasedata))
+
+def addparttagsfnodescache(repo, bundler, outgoing):
+    # we include the tags fnode cache for the bundle changeset
+    # (as an optional parts)
+    cache = tags.hgtagsfnodescache(repo.unfiltered())
+    chunks = []
+
+    # .hgtags fnodes are only relevant for head changesets. While we could
+    # transfer values for all known nodes, there will likely be little to
+    # no benefit.
+    #
+    # We don't bother using a generator to produce output data because
+    # a) we only have 40 bytes per head and even esoteric numbers of heads
+    # consume little memory (1M heads is 40MB) b) we don't want to send the
+    # part if we don't have entries and knowing if we have entries requires
+    # cache lookups.
+    for node in outgoing.missingheads:
+        # Don't compute missing, as this may slow down serving.
+        fnode = cache.getfnode(node, computemissing=False)
+        if fnode is not None:
+            chunks.extend([node, fnode])
+
+    if chunks:
+        bundler.newpart('hgtagsfnodes', data=''.join(chunks))
+
+def buildobsmarkerspart(bundler, markers):
+    """add an obsmarker part to the bundler with <markers>
+
+    No part is created if markers is empty.
+    Raises ValueError if the bundler doesn't support any known obsmarker format.
+    """
+    if not markers:
+        return None
+
+    remoteversions = obsmarkersversion(bundler.capabilities)
+    version = obsolete.commonversion(remoteversions)
+    if version is None:
+        raise ValueError('bundler does not support common obsmarker format')
+    stream = obsolete.encodemarkers(markers, True, version=version)
+    return bundler.newpart('obsmarkers', data=stream)
 
 def writebundle(ui, cg, filename, bundletype, vfs=None, compression=None,
                 compopts=None):
@@ -1382,19 +1497,36 @@ def writebundle(ui, cg, filename, bundletype, vfs=None, compression=None,
     # in case of sshrepo because we don't know the end of the stream
     return changegroup.writechunks(ui, chunkiter, filename, vfs=vfs)
 
-@parthandler('changegroup', ('version', 'nbchanges', 'treemanifest'))
+def combinechangegroupresults(op):
+    """logic to combine 0 or more addchangegroup results into one"""
+    results = [r.get('return', 0)
+               for r in op.records['changegroup']]
+    changedheads = 0
+    result = 1
+    for ret in results:
+        # If any changegroup result is 0, return 0
+        if ret == 0:
+            result = 0
+            break
+        if ret < -1:
+            changedheads += ret + 1
+        elif ret > 1:
+            changedheads += ret - 1
+    if changedheads > 0:
+        result = 1 + changedheads
+    elif changedheads < 0:
+        result = -1 + changedheads
+    return result
+
+@parthandler('changegroup', ('version', 'nbchanges', 'treemanifest',
+                             'targetphase'))
 def handlechangegroup(op, inpart):
     """apply a changegroup part on the repo
 
     This is a very early implementation that will massive rework before being
     inflicted to any end-user.
     """
-    # Make sure we trigger a transaction creation
-    #
-    # The addchangegroup function will get a transaction object by itself, but
-    # we need to make sure we trigger the creation of a transaction object used
-    # for the whole processing scope.
-    op.gettransaction()
+    tr = op.gettransaction()
     unpackerversion = inpart.params.get('version', '01')
     # We should raise an appropriate exception here
     cg = changegroup.getunbundler(unpackerversion, inpart, None)
@@ -1412,8 +1544,12 @@ def handlechangegroup(op, inpart):
         op.repo.requirements.add('treemanifest')
         op.repo._applyopenerreqs()
         op.repo._writerequirements()
-    ret = cg.apply(op.repo, 'bundle2', 'bundle2', expectedtotal=nbchangesets)
-    op.records.add('changegroup', {'return': ret})
+    extrakwargs = {}
+    targetphase = inpart.params.get('targetphase')
+    if targetphase is not None:
+        extrakwargs['targetphase'] = int(targetphase)
+    ret = _processchangegroup(op, cg, tr, 'bundle2', 'bundle2',
+                              expectedtotal=nbchangesets, **extrakwargs)
     if op.reply is not None:
         # This is definitely not the final form of this
         # return. But one need to start somewhere.
@@ -1470,19 +1606,13 @@ def handleremotechangegroup(op, inpart):
 
     real_part = util.digestchecker(url.open(op.ui, raw_url), size, digests)
 
-    # Make sure we trigger a transaction creation
-    #
-    # The addchangegroup function will get a transaction object by itself, but
-    # we need to make sure we trigger the creation of a transaction object used
-    # for the whole processing scope.
-    op.gettransaction()
+    tr = op.gettransaction()
     from . import exchange
     cg = exchange.readbundle(op.repo.ui, real_part, raw_url)
     if not isinstance(cg, changegroup.cg1unpacker):
         raise error.Abort(_('%s: not a bundle version 1.0') %
             util.hidepassword(raw_url))
-    ret = cg.apply(op.repo, 'bundle2', 'bundle2')
-    op.records.add('changegroup', {'return': ret})
+    ret = _processchangegroup(op, cg, tr, 'bundle2', 'bundle2')
     if op.reply is not None:
         # This is definitely not the final form of this
         # return. But one need to start somewhere.
@@ -1520,6 +1650,35 @@ def handlecheckheads(op, inpart):
     if sorted(heads) != sorted(op.repo.heads()):
         raise error.PushRaced('repository changed while pushing - '
                               'please try again')
+
+@parthandler('check:updated-heads')
+def handlecheckupdatedheads(op, inpart):
+    """check for race on the heads touched by a push
+
+    This is similar to 'check:heads' but focus on the heads actually updated
+    during the push. If other activities happen on unrelated heads, it is
+    ignored.
+
+    This allow server with high traffic to avoid push contention as long as
+    unrelated parts of the graph are involved."""
+    h = inpart.read(20)
+    heads = []
+    while len(h) == 20:
+        heads.append(h)
+        h = inpart.read(20)
+    assert not h
+    # trigger a transaction so that we are guaranteed to have the lock now.
+    if op.ui.configbool('experimental', 'bundle2lazylocking'):
+        op.gettransaction()
+
+    currentheads = set()
+    for ls in op.repo.branchmap().itervalues():
+        currentheads.update(ls)
+
+    for h in heads:
+        if h not in currentheads:
+            raise error.PushRaced('repository changed while pushing - '
+                                  'please try again')
 
 @parthandler('output')
 def handleoutput(op, inpart):
@@ -1610,6 +1769,25 @@ def handlepushkey(op, inpart):
                 kwargs[key] = inpart.params[key]
         raise error.PushkeyFailed(partid=str(inpart.id), **kwargs)
 
+def _readphaseheads(inpart):
+    headsbyphase = [[] for i in phases.allphases]
+    entrysize = struct.calcsize(_fphasesentry)
+    while True:
+        entry = inpart.read(entrysize)
+        if len(entry) < entrysize:
+            if entry:
+                raise error.Abort(_('bad phase-heads bundle part'))
+            break
+        phase, node = struct.unpack(_fphasesentry, entry)
+        headsbyphase[phase].append(node)
+    return headsbyphase
+
+@parthandler('phase-heads')
+def handlephases(op, inpart):
+    """apply phases from bundle part to repo"""
+    headsbyphase = _readphaseheads(inpart)
+    phases.updatephases(op.repo.unfiltered(), op.gettransaction(), headsbyphase)
+
 @parthandler('reply:pushkey', ('return', 'in-reply-to'))
 def handlepushkeyreply(op, inpart):
     """retrieve the result of a pushkey request"""
@@ -1622,7 +1800,7 @@ def handleobsmarker(op, inpart):
     """add a stream of obsmarkers to the repo"""
     tr = op.gettransaction()
     markerdata = inpart.read()
-    if op.ui.config('experimental', 'obsmarkers-exchange-debug', False):
+    if op.ui.config('experimental', 'obsmarkers-exchange-debug'):
         op.ui.write(('obsmarker-exchange: %i bytes received\n')
                     % len(markerdata))
     # The mergemarkers call will crash if marker creation is not enabled.

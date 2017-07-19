@@ -83,7 +83,7 @@ Many new:
   taking initial sample
   searching: 2 queries
   query 2; still undecided: 29, sample size is: 29
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: bebd167eb94d
   
   % -- b -> a tree
@@ -99,9 +99,8 @@ Many new:
   taking initial sample
   searching: 2 queries
   query 2; still undecided: 2, sample size is: 2
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: bebd167eb94d
-
 
 Both sides many new with stub:
 
@@ -122,7 +121,7 @@ Both sides many new with stub:
   taking initial sample
   searching: 2 queries
   query 2; still undecided: 29, sample size is: 29
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: 2dc09a01254d
   
   % -- b -> a tree
@@ -138,7 +137,7 @@ Both sides many new with stub:
   taking initial sample
   searching: 2 queries
   query 2; still undecided: 29, sample size is: 29
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: 2dc09a01254d
 
 
@@ -161,7 +160,7 @@ Both many new:
   taking quick initial sample
   searching: 2 queries
   query 2; still undecided: 31, sample size is: 31
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -177,7 +176,7 @@ Both many new:
   taking quick initial sample
   searching: 2 queries
   query 2; still undecided: 31, sample size is: 31
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: 66f7d451a68b
 
 
@@ -200,7 +199,7 @@ Both many new skewed:
   taking quick initial sample
   searching: 2 queries
   query 2; still undecided: 51, sample size is: 51
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: 66f7d451a68b
   
   % -- b -> a tree
@@ -216,7 +215,7 @@ Both many new skewed:
   taking quick initial sample
   searching: 2 queries
   query 2; still undecided: 31, sample size is: 31
-  2 total queries
+  2 total queries in *.????s (glob)
   common heads: 66f7d451a68b
 
 
@@ -242,7 +241,7 @@ Both many new on top of long history:
   sampling from both directions
   searching: 3 queries
   query 3; still undecided: 31, sample size is: 31
-  3 total queries
+  3 total queries in *.????s (glob)
   common heads: 7ead0cba2838
   
   % -- b -> a tree
@@ -261,7 +260,7 @@ Both many new on top of long history:
   sampling from both directions
   searching: 3 queries
   query 3; still undecided: 15, sample size is: 15
-  3 total queries
+  3 total queries in *.????s (glob)
   common heads: 7ead0cba2838
 
 
@@ -324,7 +323,7 @@ One with >200 heads, which used to use up all of the sample:
   sampling from both directions
   searching: 6 queries
   query 6; still undecided: \d+, sample size is: \d+ (re)
-  6 total queries
+  6 total queries in *.????s (glob)
   common heads: 3ee37d65064a
 
 Test actual protocol when pulling one new head in addition to common heads
@@ -364,9 +363,9 @@ Issue 4438 - test coverage for 3ef893520a85 issues.
 #if false
 generate new bundles:
   $ hg init r1
-  $ for i in `python $TESTDIR/seq.py 101`; do hg -R r1 up -qr null && hg -R r1 branch -q b$i && hg -R r1 ci -qmb$i; done
+  $ for i in `$PYTHON $TESTDIR/seq.py 101`; do hg -R r1 up -qr null && hg -R r1 branch -q b$i && hg -R r1 ci -qmb$i; done
   $ hg clone -q r1 r2
-  $ for i in `python $TESTDIR/seq.py 10`; do hg -R r1 up -qr null && hg -R r1 branch -q c$i && hg -R r1 ci -qmc$i; done
+  $ for i in `$PYTHON $TESTDIR/seq.py 10`; do hg -R r1 up -qr null && hg -R r1 branch -q c$i && hg -R r1 ci -qmc$i; done
   $ hg -R r2 branch -q r2change && hg -R r2 ci -qmr2change
   $ hg -R r1 bundle -qa $TESTDIR/bundles/issue4438-r1.hg
   $ hg -R r2 bundle -qa $TESTDIR/bundles/issue4438-r2.hg
@@ -399,8 +398,13 @@ fixed in 86c35b7ae300:
   > unrandomsample = $TESTTMP/unrandomsample.py
   > EOF
 
-  $ hg -R r1 outgoing r2 -T'{rev} '
+  $ hg -R r1 outgoing r2 -T'{rev} ' --config extensions.blackbox=
   comparing with r2
   searching for changes
   101 102 103 104 105 106 107 108 109 110  (no-eol)
+  $ hg -R r1 --config extensions.blackbox= blackbox
+  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> outgoing r2 *-T{rev} * (glob)
+  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> found 101 common and 1 unknown server heads, 2 roundtrips in *.????s (glob)
+  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> -R r1 outgoing r2 *-T{rev} * --config *extensions.blackbox=* exited 0 after *.?? seconds (glob)
+  * @5d0b986a083e0d91f116de4691e2aaa54d5bbec0 (*)> blackbox (glob)
   $ cd ..

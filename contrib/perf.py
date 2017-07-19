@@ -23,10 +23,10 @@ import functools
 import gc
 import os
 import random
+import struct
 import sys
 import time
 from mercurial import (
-    bdiff,
     changegroup,
     cmdutil,
     commands,
@@ -35,6 +35,7 @@ from mercurial import (
     extensions,
     mdiff,
     merge,
+    revlog,
     util,
 )
 
@@ -49,6 +50,11 @@ try:
     from mercurial import obsolete # since 2.3 (or ad0d6c2b3279)
 except ImportError:
     pass
+try:
+    from mercurial import registrar # since 3.7 (or 37d50250b696)
+    dir(registrar) # forcibly load it
+except ImportError:
+    registrar = None
 try:
     from mercurial import repoview # since 2.5 (or 3a6ddacb7198)
 except ImportError:
@@ -81,18 +87,20 @@ else:
 # available, because commands.formatteropts has been available since
 # 3.2 (or 7a7eed5176a4), even though formatting itself has been
 # available since 2.2 (or ae5f92e154d3)
-formatteropts = getattr(commands, "formatteropts", [])
+formatteropts = getattr(cmdutil, "formatteropts",
+                        getattr(commands, "formatteropts", []))
 
 # for "historical portability":
 # use locally defined option list, if debugrevlogopts isn't available,
 # because commands.debugrevlogopts has been available since 3.7 (or
 # 5606f7d0d063), even though cmdutil.openrevlog() has been available
 # since 1.9 (or a79fea6b3e77).
-revlogopts = getattr(commands, "debugrevlogopts", [
+revlogopts = getattr(cmdutil, "debugrevlogopts",
+                     getattr(commands, "debugrevlogopts", [
         ('c', 'changelog', False, ('open changelog')),
         ('m', 'manifest', False, ('open manifest')),
         ('', 'dir', False, ('open directory manifest')),
-        ])
+        ]))
 
 cmdtable = {}
 
@@ -102,7 +110,9 @@ cmdtable = {}
 def parsealiases(cmd):
     return cmd.lstrip("^").split("|")
 
-if safehasattr(cmdutil, 'command'):
+if safehasattr(registrar, 'command'):
+    command = registrar.command(cmdtable)
+elif safehasattr(cmdutil, 'command'):
     import inspect
     command = cmdutil.command(cmdtable)
     if 'norepo' not in inspect.getargspec(command)[0]:
@@ -347,6 +357,14 @@ def repocleartagscachefunc(repo):
     # - perf.py itself has been available since 1.1 (or eb240755386d)
     raise error.Abort(("tags API of this hg command is unknown"))
 
+# utilities to clear cache
+
+def clearfilecache(repo, attrname):
+    unfi = repo.unfiltered()
+    if attrname in vars(unfi):
+        delattr(unfi, attrname)
+    unfi._filecache.pop(attrname, None)
+
 # perf commands
 
 @command('perfwalk', formatteropts)
@@ -446,6 +464,16 @@ def perfancestorset(ui, repo, revset, **opts):
         s = repo.changelog.ancestors(heads)
         for rev in revs:
             rev in s
+    timer(d)
+    fm.end()
+
+@command('perfbookmarks', formatteropts)
+def perfbookmarks(ui, repo, **opts):
+    """benchmark parsing bookmarks from disk to memory"""
+    timer, fm = gettimer(ui, opts)
+    def d():
+        clearfilecache(repo, '_bookmarks')
+        repo._bookmarks
     timer(d)
     fm.end()
 
@@ -573,6 +601,24 @@ def perfpathcopies(ui, repo, rev1, rev2, **opts):
     timer(d)
     fm.end()
 
+@command('perfphases',
+         [('', 'full', False, 'include file reading time too'),
+         ], "")
+def perfphases(ui, repo, **opts):
+    """benchmark phasesets computation"""
+    timer, fm = gettimer(ui, opts)
+    _phases = repo._phasecache
+    full = opts.get('full')
+    def d():
+        phases = _phases
+        if full:
+            clearfilecache(repo, '_phasecache')
+            phases = repo._phasecache
+        phases.invalidate()
+        phases.loadphaserevs(repo)
+    timer(d)
+    fm.end()
+
 @command('perfmanifest', [], 'REV')
 def perfmanifest(ui, repo, rev, **opts):
     timer, fm = gettimer(ui, opts)
@@ -615,7 +661,7 @@ def perfstartup(ui, repo, **opts):
         if os.name != 'nt':
             os.system("HGRCPATH= %s version -q > /dev/null" % cmd)
         else:
-            os.environ['HGRCPATH'] = ''
+            os.environ['HGRCPATH'] = ' '
             os.system("%s version -q > NUL" % cmd)
     timer(d)
     fm.end()
@@ -812,7 +858,7 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, **opts):
 
     def d():
         for pair in textpairs:
-            bdiff.bdiff(*pair)
+            mdiff.textdiff(*pair)
 
     timer, fm = gettimer(ui, opts)
     timer(d)
@@ -838,12 +884,129 @@ def perfdiffwd(ui, repo, **opts):
         timer(d, title)
     fm.end()
 
-@command('perfrevlog', revlogopts + formatteropts +
+@command('perfrevlogindex', revlogopts + formatteropts,
+         '-c|-m|FILE')
+def perfrevlogindex(ui, repo, file_=None, **opts):
+    """Benchmark operations against a revlog index.
+
+    This tests constructing a revlog instance, reading index data,
+    parsing index data, and performing various operations related to
+    index data.
+    """
+
+    rl = cmdutil.openrevlog(repo, 'perfrevlogindex', file_, opts)
+
+    opener = getattr(rl, 'opener')  # trick linter
+    indexfile = rl.indexfile
+    data = opener.read(indexfile)
+
+    header = struct.unpack('>I', data[0:4])[0]
+    version = header & 0xFFFF
+    if version == 1:
+        revlogio = revlog.revlogio()
+        inline = header & (1 << 16)
+    else:
+        raise error.Abort(('unsupported revlog version: %d') % version)
+
+    rllen = len(rl)
+
+    node0 = rl.node(0)
+    node25 = rl.node(rllen // 4)
+    node50 = rl.node(rllen // 2)
+    node75 = rl.node(rllen // 4 * 3)
+    node100 = rl.node(rllen - 1)
+
+    allrevs = range(rllen)
+    allrevsrev = list(reversed(allrevs))
+    allnodes = [rl.node(rev) for rev in range(rllen)]
+    allnodesrev = list(reversed(allnodes))
+
+    def constructor():
+        revlog.revlog(opener, indexfile)
+
+    def read():
+        with opener(indexfile) as fh:
+            fh.read()
+
+    def parseindex():
+        revlogio.parseindex(data, inline)
+
+    def getentry(revornode):
+        index = revlogio.parseindex(data, inline)[0]
+        index[revornode]
+
+    def getentries(revs, count=1):
+        index = revlogio.parseindex(data, inline)[0]
+
+        for i in range(count):
+            for rev in revs:
+                index[rev]
+
+    def resolvenode(node):
+        nodemap = revlogio.parseindex(data, inline)[1]
+        # This only works for the C code.
+        if nodemap is None:
+            return
+
+        try:
+            nodemap[node]
+        except error.RevlogError:
+            pass
+
+    def resolvenodes(nodes, count=1):
+        nodemap = revlogio.parseindex(data, inline)[1]
+        if nodemap is None:
+            return
+
+        for i in range(count):
+            for node in nodes:
+                try:
+                    nodemap[node]
+                except error.RevlogError:
+                    pass
+
+    benches = [
+        (constructor, 'revlog constructor'),
+        (read, 'read'),
+        (parseindex, 'create index object'),
+        (lambda: getentry(0), 'retrieve index entry for rev 0'),
+        (lambda: resolvenode('a' * 20), 'look up missing node'),
+        (lambda: resolvenode(node0), 'look up node at rev 0'),
+        (lambda: resolvenode(node25), 'look up node at 1/4 len'),
+        (lambda: resolvenode(node50), 'look up node at 1/2 len'),
+        (lambda: resolvenode(node75), 'look up node at 3/4 len'),
+        (lambda: resolvenode(node100), 'look up node at tip'),
+        # 2x variation is to measure caching impact.
+        (lambda: resolvenodes(allnodes),
+         'look up all nodes (forward)'),
+        (lambda: resolvenodes(allnodes, 2),
+         'look up all nodes 2x (forward)'),
+        (lambda: resolvenodes(allnodesrev),
+         'look up all nodes (reverse)'),
+        (lambda: resolvenodes(allnodesrev, 2),
+         'look up all nodes 2x (reverse)'),
+        (lambda: getentries(allrevs),
+         'retrieve all index entries (forward)'),
+        (lambda: getentries(allrevs, 2),
+         'retrieve all index entries 2x (forward)'),
+        (lambda: getentries(allrevsrev),
+         'retrieve all index entries (reverse)'),
+        (lambda: getentries(allrevsrev, 2),
+         'retrieve all index entries 2x (reverse)'),
+    ]
+
+    for fn, title in benches:
+        timer, fm = gettimer(ui, opts)
+        timer(fn, title=title)
+        fm.end()
+
+@command('perfrevlogrevisions', revlogopts + formatteropts +
          [('d', 'dist', 100, 'distance between the revisions'),
           ('s', 'startrev', 0, 'revision to start reading at'),
           ('', 'reverse', False, 'read in reverse')],
          '-c|-m|FILE')
-def perfrevlog(ui, repo, file_=None, startrev=0, reverse=False, **opts):
+def perfrevlogrevisions(ui, repo, file_=None, startrev=0, reverse=False,
+                        **opts):
     """Benchmark reading a series of revisions from a revlog.
 
     By default, we read every ``-d/--dist`` revision from 0 to tip of
@@ -851,23 +1014,26 @@ def perfrevlog(ui, repo, file_=None, startrev=0, reverse=False, **opts):
 
     The start revision can be defined via ``-s/--startrev``.
     """
-    timer, fm = gettimer(ui, opts)
-    _len = getlen(ui)
+    rl = cmdutil.openrevlog(repo, 'perfrevlogrevisions', file_, opts)
+    rllen = getlen(ui)(rl)
 
     def d():
-        r = cmdutil.openrevlog(repo, 'perfrevlog', file_, opts)
+        rl.clearcaches()
 
-        startrev = 0
-        endrev = _len(r)
+        beginrev = startrev
+        endrev = rllen
         dist = opts['dist']
 
         if reverse:
-            startrev, endrev = endrev, startrev
+            beginrev, endrev = endrev, beginrev
             dist = -1 * dist
 
-        for x in xrange(startrev, endrev, dist):
-            r.revision(r.node(x))
+        for x in xrange(beginrev, endrev, dist):
+            # Old revisions don't support passing int.
+            n = rl.node(x)
+            rl.revision(n)
 
+    timer, fm = gettimer(ui, opts)
     timer(d)
     fm.end()
 
@@ -885,9 +1051,15 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
     This command measures the time it takes to read+decompress and recompress
     chunks in a revlog. It effectively isolates I/O and compression performance.
     For measurements of higher-level operations like resolving revisions,
-    see ``perfrevlog`` and ``perfrevlogrevision``.
+    see ``perfrevlogrevisions`` and ``perfrevlogrevision``.
     """
     rl = cmdutil.openrevlog(repo, 'perfrevlogchunks', file_, opts)
+
+    # _chunkraw was renamed to _getsegmentforrevs.
+    try:
+        segmentforrevs = rl._getsegmentforrevs
+    except AttributeError:
+        segmentforrevs = rl._chunkraw
 
     # Verify engines argument.
     if engines:
@@ -919,22 +1091,22 @@ def perfrevlogchunks(ui, repo, file_=None, engines=None, startrev=0, **opts):
     def doread():
         rl.clearcaches()
         for rev in revs:
-            rl._chunkraw(rev, rev)
+            segmentforrevs(rev, rev)
 
     def doreadcachedfh():
         rl.clearcaches()
         fh = rlfh(rl)
         for rev in revs:
-            rl._chunkraw(rev, rev, df=fh)
+            segmentforrevs(rev, rev, df=fh)
 
     def doreadbatch():
         rl.clearcaches()
-        rl._chunkraw(revs[0], revs[-1])
+        segmentforrevs(revs[0], revs[-1])
 
     def doreadbatchcachedfh():
         rl.clearcaches()
         fh = rlfh(rl)
-        rl._chunkraw(revs[0], revs[-1], df=fh)
+        segmentforrevs(revs[0], revs[-1], df=fh)
 
     def dochunk():
         rl.clearcaches()
@@ -1003,6 +1175,13 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         raise error.CommandError('perfrevlogrevision', 'invalid arguments')
 
     r = cmdutil.openrevlog(repo, 'perfrevlogrevision', file_, opts)
+
+    # _chunkraw was renamed to _getsegmentforrevs.
+    try:
+        segmentforrevs = r._getsegmentforrevs
+    except AttributeError:
+        segmentforrevs = r._chunkraw
+
     node = r.lookup(rev)
     rev = r.rev(node)
 
@@ -1034,7 +1213,7 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
     def doread(chain):
         if not cache:
             r.clearcaches()
-        r._chunkraw(chain[0], chain[-1])
+        segmentforrevs(chain[0], chain[-1])
 
     def dorawchunks(data, chain):
         if not cache:
@@ -1062,7 +1241,7 @@ def perfrevlogrevision(ui, repo, file_, rev=None, cache=None, **opts):
         r.revision(node)
 
     chain = r._deltachain(rev)[0]
-    data = r._chunkraw(chain[0], chain[-1])[1]
+    data = segmentforrevs(chain[0], chain[-1])[1]
     rawchunks = getrawchunks(data, chain)
     bins = r._chunks(chain)
     text = str(bins[0])
@@ -1105,7 +1284,9 @@ def perfrevset(ui, repo, expr, clear=False, contexts=False, **opts):
     timer(d)
     fm.end()
 
-@command('perfvolatilesets', formatteropts)
+@command('perfvolatilesets',
+         [('', 'clear-obsstore', False, 'drop obsstore between each call.'),
+         ] + formatteropts)
 def perfvolatilesets(ui, repo, *names, **opts):
     """benchmark the computation of various volatile set
 
@@ -1116,6 +1297,8 @@ def perfvolatilesets(ui, repo, *names, **opts):
     def getobs(name):
         def d():
             repo.invalidatevolatilesets()
+            if opts['clear_obsstore']:
+                clearfilecache(repo, 'obsstore')
             obsolete.getrevs(repo, name)
         return d
 
@@ -1129,6 +1312,8 @@ def perfvolatilesets(ui, repo, *names, **opts):
     def getfiltered(name):
         def d():
             repo.invalidatevolatilesets()
+            if opts['clear_obsstore']:
+                clearfilecache(repo, 'obsstore')
             repoview.filterrevs(repo, name)
         return d
 
@@ -1143,8 +1328,10 @@ def perfvolatilesets(ui, repo, *names, **opts):
 @command('perfbranchmap',
          [('f', 'full', False,
            'Includes build time of subset'),
+          ('', 'clear-revbranch', False,
+           'purge the revbranch cache between computation'),
          ] + formatteropts)
-def perfbranchmap(ui, repo, full=False, **opts):
+def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
     """benchmark the update of a branchmap
 
     This benchmarks the full repo.branchmap() call with read and write disabled
@@ -1157,6 +1344,8 @@ def perfbranchmap(ui, repo, full=False, **opts):
         else:
             view = repo.filtered(filtername)
         def d():
+            if clear_revbranch:
+                repo.revbranchcache()._clear()
             if full:
                 view._branchcaches.clear()
             else:

@@ -1,35 +1,48 @@
+# mpatch.py - CFFI implementation of mpatch.c
+#
+# Copyright 2016 Maciej Fijalkowski <fijall@gmail.com>
+#
+# This software may be used and distributed according to the terms of the
+# GNU General Public License version 2 or any later version.
+
 from __future__ import absolute_import
 
-import cffi
-import os
+from ..pure.mpatch import *
+from ..pure.mpatch import mpatchError  # silence pyflakes
+from . import _mpatch
 
-ffi = cffi.FFI()
-mpatch_c = os.path.join(os.path.join(os.path.dirname(__file__), '..',
-                                     'mpatch.c'))
-ffi.set_source("_mpatch_cffi", open(mpatch_c).read(),
-               include_dirs=["mercurial"])
-ffi.cdef("""
+ffi = _mpatch.ffi
+lib = _mpatch.lib
 
-struct mpatch_frag {
-       int start, end, len;
-       const char *data;
-};
+@ffi.def_extern()
+def cffi_get_next_item(arg, pos):
+    all, bins = ffi.from_handle(arg)
+    container = ffi.new("struct mpatch_flist*[1]")
+    to_pass = ffi.new("char[]", str(bins[pos]))
+    all.append(to_pass)
+    r = lib.mpatch_decode(to_pass, len(to_pass) - 1, container)
+    if r < 0:
+        return ffi.NULL
+    return container[0]
 
-struct mpatch_flist {
-       struct mpatch_frag *base, *head, *tail;
-};
-
-extern "Python" struct mpatch_flist* cffi_get_next_item(void*, ssize_t);
-
-int mpatch_decode(const char *bin, ssize_t len, struct mpatch_flist** res);
-ssize_t mpatch_calcsize(size_t len, struct mpatch_flist *l);
-void mpatch_lfree(struct mpatch_flist *a);
-static int mpatch_apply(char *buf, const char *orig, size_t len,
-                        struct mpatch_flist *l);
-struct mpatch_flist *mpatch_fold(void *bins,
-                       struct mpatch_flist* (*get_next_item)(void*, ssize_t),
-                       ssize_t start, ssize_t end);
-""")
-
-if __name__ == '__main__':
-    ffi.compile()
+def patches(text, bins):
+    lgt = len(bins)
+    all = []
+    if not lgt:
+        return text
+    arg = (all, bins)
+    patch = lib.mpatch_fold(ffi.new_handle(arg),
+                            lib.cffi_get_next_item, 0, lgt)
+    if not patch:
+        raise mpatchError("cannot decode chunk")
+    outlen = lib.mpatch_calcsize(len(text), patch)
+    if outlen < 0:
+        lib.mpatch_lfree(patch)
+        raise mpatchError("inconsistency detected")
+    buf = ffi.new("char[]", outlen)
+    if lib.mpatch_apply(buf, text, len(text), patch) < 0:
+        lib.mpatch_lfree(patch)
+        raise mpatchError("error applying patches")
+    res = ffi.buffer(buf, outlen)[:]
+    lib.mpatch_lfree(patch)
+    return res

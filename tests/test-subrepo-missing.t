@@ -34,7 +34,6 @@ delete .hgsub and revert it
   $ hg revert .hgsub
   warning: subrepo spec file '.hgsub' not found
   warning: subrepo spec file '.hgsub' not found
-  warning: subrepo spec file '.hgsub' not found
 
 delete .hgsubstate and revert it
 
@@ -93,7 +92,7 @@ check that we can update parent repo with missing (amended) subrepo revision
   $ hg commit --amend -m "addb (amended)"
   $ cd ..
   $ hg update --clean .
-  revision 102a90ea7b4a in subrepo subrepo is hidden
+  revision 102a90ea7b4a in subrepository "subrepo" is hidden
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 check that --hidden is propagated to the subrepo
@@ -109,7 +108,7 @@ check that --hidden is propagated to the subrepo
 verify will warn if locked-in subrepo revisions are hidden or missing
 
   $ hg ci -m "amended subrepo (again)"
-  $ hg --config extensions.strip= --hidden strip -R subrepo -qr 'tip'
+  $ hg --config extensions.strip= --hidden strip -R subrepo -qr 'tip' --config devel.strip-obsmarkers=no
   $ hg verify
   checking changesets
   checking manifests

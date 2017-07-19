@@ -112,7 +112,7 @@ Solve the conflict and go on:
   $ hg rebase --continue
   already rebased 1:27547f69f254 "B" as 45396c49d53b
   rebasing 2:965c486023db "C"
-  warning: new changesets detected on source branch, not stripping
+  warning: orphaned descendants detected, not stripping 27547f69f254, 965c486023db
 
   $ hg tglogp
   o  7:draft 'C'
@@ -186,7 +186,7 @@ Force a commit on B' during the interruption:
 Abort the rebasing:
 
   $ hg rebase --abort
-  warning: new changesets detected on target branch, can't strip
+  warning: new changesets detected on destination branch, can't strip
   rebase aborted
 
   $ hg tglog
@@ -271,7 +271,6 @@ Abort the rebasing:
   |/
   o  0:public 'A'
   
-
 Test rebase interrupted by hooks
 
   $ hg up 2
@@ -312,7 +311,7 @@ Test rebase interrupted by hooks
   $ hg rebase --continue
   already rebased 2:965c486023db "C" as 401ccec5e39f
   rebasing 6:a0b2430ebfb8 "F"
-  saved backup bundle to $TESTTMP/hook-precommit/.hg/strip-backup/965c486023db-aa6250e7-backup.hg (glob)
+  saved backup bundle to $TESTTMP/hook-precommit/.hg/strip-backup/965c486023db-aa6250e7-rebase.hg (glob)
   $ hg tglogp
   @  6:secret 'F'
   |
@@ -334,7 +333,12 @@ Test rebase interrupted by hooks
 
   $ cp -R a3 hook-pretxncommit
   $ cd hook-pretxncommit
-  $ hg rebase --source 2 --dest 5 --tool internal:other --config 'hooks.pretxncommit=hg log -r $HG_NODE | grep "summary:     C"'
+#if windows
+  $ NODE="%HG_NODE%"
+#else
+  $ NODE="\$HG_NODE"
+#endif
+  $ hg rebase --source 2 --dest 5 --tool internal:other --config "hooks.pretxncommit=hg log -r $NODE | grep \"summary:     C\""
   rebasing 2:965c486023db "C"
   summary:     C
   rebasing 6:a0b2430ebfb8 "F" (tip)
@@ -362,7 +366,7 @@ Test rebase interrupted by hooks
   $ hg rebase --continue
   already rebased 2:965c486023db "C" as 401ccec5e39f
   rebasing 6:a0b2430ebfb8 "F"
-  saved backup bundle to $TESTTMP/hook-pretxncommit/.hg/strip-backup/965c486023db-aa6250e7-backup.hg (glob)
+  saved backup bundle to $TESTTMP/hook-pretxncommit/.hg/strip-backup/965c486023db-aa6250e7-rebase.hg (glob)
   $ hg tglogp
   @  6:secret 'F'
   |
@@ -412,7 +416,7 @@ Test rebase interrupted by hooks
   $ hg rebase --continue
   already rebased 2:965c486023db "C" as 401ccec5e39f
   rebasing 6:a0b2430ebfb8 "F"
-  saved backup bundle to $TESTTMP/hook-pretxnclose/.hg/strip-backup/965c486023db-aa6250e7-backup.hg (glob)
+  saved backup bundle to $TESTTMP/hook-pretxnclose/.hg/strip-backup/965c486023db-aa6250e7-rebase.hg (glob)
   $ hg tglogp
   @  6:secret 'F'
   |
@@ -429,3 +433,33 @@ Test rebase interrupted by hooks
   o  0:public 'A'
   
   $ cd ..
+
+Make sure merge state is cleaned up after a no-op rebase merge (issue5494)
+  $ hg init repo
+  $ cd repo
+  $ echo a > a
+  $ hg commit -qAm base
+  $ echo b >> a
+  $ hg commit -qm b
+  $ hg up '.^'
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo c >> a
+  $ hg commit -qm c
+  $ hg rebase -s 1 -d 2 --noninteractive
+  rebasing 1:fdaca8533b86 "b"
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ echo a > a
+  $ echo c >> a
+  $ hg resolve --mark a
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue
+  rebasing 1:fdaca8533b86 "b"
+  note: rebase of 1:fdaca8533b86 created no changes to commit
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/fdaca8533b86-7fd70513-rebase.hg (glob)
+  $ hg resolve --list
+  $ test -f .hg/merge
+  [1]

@@ -26,6 +26,7 @@ from mercurial import (
     node,
     pycompat,
     scmutil,
+    sparse,
     util,
     vfs as vfsmod,
 )
@@ -57,10 +58,9 @@ def link(src, dest):
         util.oslink(src, dest)
     except OSError:
         # if hardlinks fail, fallback on atomic copy
-        with open(src, 'rb') as srcf:
-            with util.atomictempfile(dest) as dstf:
-                for chunk in util.filechunkiter(srcf):
-                    dstf.write(chunk)
+        with open(src, 'rb') as srcf, util.atomictempfile(dest) as dstf:
+            for chunk in util.filechunkiter(srcf):
+                dstf.write(chunk)
         os.chmod(dest, os.stat(src).st_mode)
 
 def usercachepath(ui, hash):
@@ -147,7 +147,8 @@ def openlfdirstate(ui, repo, create=True):
     lfstoredir = longname
     opener = vfsmod.vfs(vfs.join(lfstoredir))
     lfdirstate = largefilesdirstate(opener, ui, repo.root,
-                                     repo.dirstate._validate)
+                                    repo.dirstate._validate,
+                                    lambda: sparse.matcher(repo))
 
     # If the largefiles dirstate does not exist, populate and create
     # it. This ensures that we create it on the first meaningful
@@ -234,10 +235,9 @@ def copyfromcache(repo, hash, filename):
     wvfs.makedirs(wvfs.dirname(wvfs.join(filename)))
     # The write may fail before the file is fully written, but we
     # don't use atomic writes in the working copy.
-    with open(path, 'rb') as srcfd:
-        with wvfs(filename, 'wb') as destfd:
-            gothash = copyandhash(
-                util.filechunkiter(srcfd), destfd)
+    with open(path, 'rb') as srcfd, wvfs(filename, 'wb') as destfd:
+        gothash = copyandhash(
+            util.filechunkiter(srcfd), destfd)
     if gothash != hash:
         repo.ui.warn(_('%s: data corruption in %s with hash %s\n')
                      % (filename, path, gothash))
@@ -296,8 +296,6 @@ def getstandinmatcher(repo, rmatcher=None):
         if not pats:
             pats = [wvfs.join(standindir)]
         match = scmutil.match(repo[None], pats, badfn=badfn)
-        # if pats is empty, it would incorrectly always match, so clear _always
-        match._always = False
     else:
         # no patterns: relative to repo root
         match = scmutil.match(repo[None], [wvfs.join(standindir)], badfn=badfn)

@@ -22,6 +22,18 @@ allowsymbolimports = (
     'mercurial.hgweb.request',
     'mercurial.i18n',
     'mercurial.node',
+    # for cffi modules to re-export pure functions
+    'mercurial.pure.base85',
+    'mercurial.pure.bdiff',
+    'mercurial.pure.diffhelpers',
+    'mercurial.pure.mpatch',
+    'mercurial.pure.osutil',
+    'mercurial.pure.parsers',
+)
+
+# Whitelist of symbols that can be directly imported.
+directsymbols = (
+    'demandimport',
 )
 
 # Modules that must be aliased because they are commonly confused with
@@ -55,13 +67,11 @@ def walklocal(root):
             todo.extend(ast.iter_child_nodes(node))
         yield node, newscope
 
-def dotted_name_of_path(path, trimpure=False):
+def dotted_name_of_path(path):
     """Given a relative path to a source file, return its dotted module name.
 
     >>> dotted_name_of_path('mercurial/error.py')
     'mercurial.error'
-    >>> dotted_name_of_path('mercurial/pure/parsers.py', trimpure=True)
-    'mercurial.parsers'
     >>> dotted_name_of_path('zlibmodule.so')
     'zlib'
     """
@@ -69,8 +79,6 @@ def dotted_name_of_path(path, trimpure=False):
     parts[-1] = parts[-1].split('.', 1)[0] # remove .py and .so and .ARCH.so
     if parts[-1].endswith('module'):
         parts[-1] = parts[-1][:-6]
-    if trimpure:
-        return '.'.join(p for p in parts if p != 'pure')
     return '.'.join(parts)
 
 def fromlocalfunc(modulename, localmods):
@@ -80,9 +88,8 @@ def fromlocalfunc(modulename, localmods):
     `modulename` is an `dotted_name_of_path()`-ed source file path,
     which may have `.__init__` at the end of it, of the target source.
 
-    `localmods` is a dict (or set), of which key is an absolute
-    `dotted_name_of_path()`-ed source file path of locally defined (=
-    Mercurial specific) modules.
+    `localmods` is a set of absolute `dotted_name_of_path()`-ed source file
+    paths of locally defined (= Mercurial specific) modules.
 
     This function assumes that module names not existing in
     `localmods` are from the Python standard library.
@@ -106,9 +113,9 @@ def fromlocalfunc(modulename, localmods):
     convenient, even though this is also equivalent to "absname !=
     dottednpath")
 
-    >>> localmods = {'foo.__init__': True, 'foo.foo1': True,
-    ...              'foo.bar.__init__': True, 'foo.bar.bar1': True,
-    ...              'baz.__init__': True, 'baz.baz1': True }
+    >>> localmods = {'foo.__init__', 'foo.foo1',
+    ...              'foo.bar.__init__', 'foo.bar.bar1',
+    ...              'baz.__init__', 'baz.baz1'}
     >>> fromlocal = fromlocalfunc('foo.xxx', localmods)
     >>> # relative
     >>> fromlocal('foo1')
@@ -163,6 +170,16 @@ def fromlocalfunc(modulename, localmods):
         return False
     return fromlocal
 
+def populateextmods(localmods):
+    """Populate C extension modules based on pure modules"""
+    newlocalmods = set(localmods)
+    for n in localmods:
+        if n.startswith('mercurial.pure.'):
+            m = n[len('mercurial.pure.'):]
+            newlocalmods.add('mercurial.cext.' + m)
+            newlocalmods.add('mercurial.cffi._' + m)
+    return newlocalmods
+
 def list_stdlib_modules():
     """List the modules present in the stdlib.
 
@@ -203,7 +220,7 @@ def list_stdlib_modules():
         yield m
     for m in ['cffi']:
         yield m
-    stdlib_prefixes = set([sys.prefix, sys.exec_prefix])
+    stdlib_prefixes = {sys.prefix, sys.exec_prefix}
     # We need to supplement the list of prefixes for the search to work
     # when run from within a virtualenv.
     for mod in (BaseHTTPServer, zlib):
@@ -227,7 +244,8 @@ def list_stdlib_modules():
         for top, dirs, files in os.walk(libpath):
             for i, d in reversed(list(enumerate(dirs))):
                 if (not os.path.exists(os.path.join(top, d, '__init__.py'))
-                    or top == libpath and d in ('hgext', 'mercurial')):
+                    or top == libpath and d in ('hgdemandimport', 'hgext',
+                                                'mercurial')):
                     del dirs[i]
             for name in files:
                 if not name.endswith(('.py', '.so', '.pyc', '.pyo', '.pyd')):
@@ -249,7 +267,7 @@ def imported_modules(source, modulename, f, localmods, ignore_nested=False):
     Args:
       source: The python source to examine as a string.
       modulename: of specified python source (may have `__init__`)
-      localmods: dict of locally defined module names (may have `__init__`)
+      localmods: set of locally defined module names (may have `__init__`)
       ignore_nested: If true, import statements that do not start in
                      column zero will be ignored.
 
@@ -468,10 +486,11 @@ def verify_modern_convention(module, root, localmods, root_col_offset=0):
             found = fromlocal(node.module, node.level)
             if found and found[2]:  # node.module is a package
                 prefix = found[0] + '.'
-                symbols = [n.name for n in node.names
-                           if not fromlocal(prefix + n.name)]
+                symbols = (n.name for n in node.names
+                           if not fromlocal(prefix + n.name))
             else:
-                symbols = [n.name for n in node.names]
+                symbols = (n.name for n in node.names)
+            symbols = [sym for sym in symbols if sym not in directsymbols]
             if node.module and node.col_offset == root_col_offset:
                 if symbols and fullname not in allowsymbolimports:
                     yield msg('direct symbol import %s from %s',
@@ -687,13 +706,14 @@ def main(argv):
     if argv[1] == '-':
         argv = argv[:1]
         argv.extend(l.rstrip() for l in sys.stdin.readlines())
-    localmods = {}
+    localmodpaths = {}
     used_imports = {}
     any_errors = False
     for source_path in argv[1:]:
-        modname = dotted_name_of_path(source_path, trimpure=True)
-        localmods[modname] = source_path
-    for localmodname, source_path in sorted(localmods.items()):
+        modname = dotted_name_of_path(source_path)
+        localmodpaths[modname] = source_path
+    localmods = populateextmods(localmodpaths)
+    for localmodname, source_path in sorted(localmodpaths.items()):
         for src, modname, name, line in sources(source_path, localmodname):
             try:
                 used_imports[modname] = sorted(

@@ -118,12 +118,16 @@ Repeat with cold tag cache:
 
 And again, but now unable to write tag cache or lock file:
 
-#if unix-permissions
+#if unix-permissions no-fsmonitor
+
   $ rm -f .hg/cache/tags2-visible .hg/cache/hgtagsfnodes1
   $ chmod 555 .hg/cache
   $ hg identify
   b9154636be93 tip
   $ chmod 755 .hg/cache
+
+(this block should be protected by no-fsmonitor, because "chmod 555 .hg"
+makes watchman fail at accessing to files under .hg)
 
   $ chmod 555 .hg
   $ hg identify
@@ -671,13 +675,11 @@ Cloning should pull down hgtags fnodes mappings and write the cache file
 Missing tags2* files means the cache wasn't written through the normal mechanism.
 
   $ ls tagsclient/.hg/cache
-  branch2-served
+  branch2-base
   checkisexec (execbit !)
   checklink (symlink !)
   checklink-target (symlink !)
   hgtagsfnodes1
-  rbc-names-v1
-  rbc-revs-v1
 
 Cache should contain the head only, even though other nodes have tags data
 
@@ -698,13 +700,11 @@ Running hg tags should produce tags2* file and not change cache
   0.1                                0:96ee1d7354c4
 
   $ ls tagsclient/.hg/cache
-  branch2-served
+  branch2-base
   checkisexec (execbit !)
   checklink (symlink !)
   checklink-target (symlink !)
   hgtagsfnodes1
-  rbc-names-v1
-  rbc-revs-v1
   tags2-visible
 
   $ f --size --hexdump tagsclient/.hg/cache/hgtagsfnodes1
@@ -716,3 +716,23 @@ Running hg tags should produce tags2* file and not change cache
   0040: ff ff ff ff ff ff ff ff 40 f0 35 8c 19 e0 a7 d3 |........@.5.....|
   0050: 8a 5c 6a 82 4d cf fb a5 87 d0 2f a3 1e 4f 2f 8a |.\j.M...../..O/.|
 
+Check that the bundle includes cache data
+
+  $ hg -R tagsclient bundle --all ./test-cache-in-bundle-all-rev.hg
+  4 changesets found
+  $ hg debugbundle ./test-cache-in-bundle-all-rev.hg
+  Stream params: sortdict([('Compression', 'BZ')])
+  changegroup -- "sortdict([('version', '02'), ('nbchanges', '4')])"
+      96ee1d7354c4ad7372047672c36a1f561e3a6a4c
+      c4dab0c2fd337eb9191f80c3024830a4889a8f34
+      f63cc8fe54e4d326f8d692805d70e092f851ddb1
+      40f0358cb314c824a5929ee527308d90e023bc10
+  hgtagsfnodes -- 'sortdict()'
+
+Check that local clone includes cache data
+
+  $ hg clone tagsclient tags-local-clone
+  updating to branch default
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ (cd tags-local-clone/.hg/cache/; ls -1 tag*)
+  tags2-visible

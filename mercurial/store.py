@@ -15,11 +15,13 @@ import stat
 from .i18n import _
 from . import (
     error,
-    parsers,
+    policy,
     pycompat,
     util,
     vfs as vfsmod,
 )
+
+parsers = policy.importmod(r'parsers')
 
 # This avoids a collision between a file named foo and a dir named
 # foo.i or foo.d
@@ -473,9 +475,9 @@ class fncache(object):
             self._load()
         return iter(self.entries)
 
-class _fncachevfs(vfsmod.abstractvfs, vfsmod.auditvfs):
+class _fncachevfs(vfsmod.abstractvfs, vfsmod.proxyvfs):
     def __init__(self, vfs, fnc, encode):
-        vfsmod.auditvfs.__init__(self, vfs)
+        vfsmod.proxyvfs.__init__(self, vfs)
         self.fncache = fnc
         self.encode = encode
 

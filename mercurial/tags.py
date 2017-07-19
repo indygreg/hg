@@ -362,7 +362,7 @@ def _updatetags(filetags, alltags, tagtype=None, tagtypes=None):
 
 def _filename(repo):
     """name of a tagcache file for a given repo or repoview"""
-    filename = 'cache/tags2'
+    filename = 'tags2'
     if repo.filtername:
         filename = '%s-%s' % (filename, repo.filtername)
     return filename
@@ -386,7 +386,7 @@ def _readtagcache(ui, repo):
     info from each returned head. (See findglobaltags().)
     '''
     try:
-        cachefile = repo.vfs(_filename(repo), 'r')
+        cachefile = repo.cachevfs(_filename(repo), 'r')
         # force reading the file for static-http
         cachelines = iter(cachefile)
     except IOError:
@@ -486,11 +486,11 @@ def _getfnodes(ui, repo, nodes):
 def _writetagcache(ui, repo, valid, cachetags):
     filename = _filename(repo)
     try:
-        cachefile = repo.vfs(filename, 'w', atomictemp=True)
+        cachefile = repo.cachevfs(filename, 'w', atomictemp=True)
     except (OSError, IOError):
         return
 
-    ui.log('tagscache', 'writing .hg/%s with %d tags\n',
+    ui.log('tagscache', 'writing .hg/cache/%s with %d tags\n',
            filename, len(cachetags))
 
     if valid[2]:
@@ -539,9 +539,10 @@ def tag(repo, names, node, message, local, user, date, editor=False):
             raise error.Abort(_('working copy of .hgtags is changed'),
                              hint=_('please commit .hgtags manually'))
 
-    repo.tags() # instantiate the cache
-    _tag(repo.unfiltered(), names, node, message, local, user, date,
-         editor=editor)
+    with repo.wlock():
+        repo.tags() # instantiate the cache
+        _tag(repo.unfiltered(), names, node, message, local, user, date,
+             editor=editor)
 
 def _tag(repo, names, node, message, local, user, date, extra=None,
          editor=False):
@@ -616,7 +617,7 @@ def _tag(repo, names, node, message, local, user, date, extra=None,
 
     return tagnode
 
-_fnodescachefile = 'cache/hgtagsfnodes1'
+_fnodescachefile = 'hgtagsfnodes1'
 _fnodesrecsize = 4 + 20 # changeset fragment + filenode
 _fnodesmissingrec = '\xff' * 24
 
@@ -650,7 +651,7 @@ class hgtagsfnodescache(object):
 
 
         try:
-            data = repo.vfs.read(_fnodescachefile)
+            data = repo.cachevfs.read(_fnodescachefile)
         except (OSError, IOError):
             data = ""
         self._raw = bytearray(data)
@@ -758,13 +759,12 @@ class hgtagsfnodescache(object):
         try:
             lock = repo.wlock(wait=False)
         except error.LockError:
-            repo.ui.log('tagscache',
-                        'not writing .hg/%s because lock cannot be acquired\n' %
-                        (_fnodescachefile))
+            repo.ui.log('tagscache', 'not writing .hg/cache/%s because '
+                        'lock cannot be acquired\n' % (_fnodescachefile))
             return
 
         try:
-            f = repo.vfs.open(_fnodescachefile, 'ab')
+            f = repo.cachevfs.open(_fnodescachefile, 'ab')
             try:
                 # if the file has been truncated
                 actualoffset = f.tell()
@@ -774,7 +774,7 @@ class hgtagsfnodescache(object):
                 f.seek(self._dirtyoffset)
                 f.truncate()
                 repo.ui.log('tagscache',
-                            'writing %d bytes to %s\n' % (
+                            'writing %d bytes to cache/%s\n' % (
                             len(data), _fnodescachefile))
                 f.write(data)
                 self._dirtyoffset = None
@@ -782,7 +782,7 @@ class hgtagsfnodescache(object):
                 f.close()
         except (IOError, OSError) as inst:
             repo.ui.log('tagscache',
-                        "couldn't write %s: %s\n" % (
+                        "couldn't write cache/%s: %s\n" % (
                         _fnodescachefile, inst))
         finally:
             lock.release()

@@ -124,9 +124,11 @@ class statichttprepository(localrepo.localrepository):
 
         vfsclass = build_opener(ui, authinfo)
         self.vfs = vfsclass(self.path)
+        self.cachevfs = vfsclass(self.vfs.join('cache'))
         self._phasedefaults = []
 
         self.names = namespaces.namespaces()
+        self.filtername = None
 
         try:
             requirements = scmutil.readrequires(self.vfs, self.supported)
@@ -164,6 +166,8 @@ class statichttprepository(localrepo.localrepository):
         self.encodepats = None
         self.decodepats = None
         self._transref = None
+        # Cache of types representing filtered repos.
+        self._filteredrepotypes = {}
 
     def _restrictcapabilities(self, caps):
         caps = super(statichttprepository, self)._restrictcapabilities(caps)

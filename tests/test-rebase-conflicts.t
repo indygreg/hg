@@ -3,6 +3,7 @@
   > usegeneraldelta=yes
   > [extensions]
   > rebase=
+  > drawdag=$TESTDIR/drawdag.py
   > 
   > [phases]
   > publish=False
@@ -86,7 +87,7 @@ Conclude rebase:
   already rebased 3:3163e20567cc "L1" as 3e046f2ecedb
   rebasing 4:46f0b057b5c0 "L2"
   rebasing 5:8029388f38dc "L3" (mybook)
-  saved backup bundle to $TESTTMP/a/.hg/strip-backup/3163e20567cc-5ca4656e-backup.hg (glob)
+  saved backup bundle to $TESTTMP/a/.hg/strip-backup/3163e20567cc-5ca4656e-rebase.hg (glob)
 
   $ hg tglog
   @  5:secret 'L3'  mybook
@@ -248,11 +249,12 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   f1.txt
   committing manifest
   committing changelog
+  updating the branch cache
   rebased as 19c888675e13
   rebasing 10:2f2496ddf49d "merge" (tip)
    future parents are 11 and 7
   rebase status stored
-   already in target
+   already in destination
    merge against 10:2f2496ddf49d
      detach base 9:e31216eec445
     searching for copies back to rev 3
@@ -267,6 +269,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   f1.txt
   committing manifest
   committing changelog
+  updating the branch cache
   rebased as 2a7f09cac94c
   rebase merging completed
   update back to initial working directory parent
@@ -281,16 +284,18 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   list of changesets:
   e31216eec445e44352c5f01588856059466a24c9
   2f2496ddf49d69b5ef23ad8cf9fb2e0e4faf0ac2
-  bundle2-output-bundle: "HG20", (1 params) 1 parts total
+  bundle2-output-bundle: "HG20", (1 params) 2 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
-  saved backup bundle to $TESTTMP/issue4041/.hg/strip-backup/e31216eec445-15f7a814-backup.hg (glob)
+  bundle2-output-part: "phase-heads" 24 bytes payload
+  saved backup bundle to $TESTTMP/issue4041/.hg/strip-backup/e31216eec445-15f7a814-rebase.hg (glob)
   3 changesets found
   list of changesets:
   4c9fbe56a16f30c0d5dcc40ec1a97bbe3325209c
   19c888675e133ab5dff84516926a65672eaf04d9
   2a7f09cac94c7f4b73ebd5cd1a62d3b2e8e336bf
-  bundle2-output-bundle: "HG20", 1 parts total
+  bundle2-output-bundle: "HG20", 2 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
+  bundle2-output-part: "phase-heads" 24 bytes payload
   adding branch
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "changegroup" (params: 1 mandatory 1 advisory) supported
@@ -303,11 +308,12 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   adding f1.txt revisions
   added 2 changesets with 2 changes to 1 files
   bundle2-input-part: total payload size 1686
-  bundle2-input-bundle: 0 parts total
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-bundle: 1 parts total
+  updating the branch cache
   invalid branchheads cache (served): tip differs
-  history modification detected - truncating revision branch cache to revision 9
   rebase completed
-  truncating cache/rbc-revs-v1 to 72
 
 Test minimization of merge conflicts
   $ hg up -q null
@@ -360,3 +366,54 @@ Test minimization of merge conflicts
   +b
   +c
   +>>>>>>> source: 7bc217434fc1 - test: abc
+
+Test rebase with obsstore turned on and off (issue5606)
+
+  $ cd $TESTTMP
+  $ hg init b
+  $ cd b
+  $ hg debugdrawdag <<'EOS'
+  > D
+  > |
+  > C
+  > |
+  > B E
+  > |/
+  > A
+  > EOS
+
+  $ hg update E -q
+  $ echo 3 > B
+  $ hg commit --amend -m E -A B -q
+  $ hg rebase -r B+D -d . --config experimental.evolution=all
+  rebasing 1:112478962961 "B" (B)
+  merging B
+  warning: conflicts while merging B! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+
+  $ echo 4 > B
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue --config experimental.evolution=none
+  rebasing 1:112478962961 "B" (B)
+  not rebasing ignored 2:26805aba1e60 "C" (C)
+  rebasing 3:f585351a92f8 "D" (D)
+  warning: orphaned descendants detected, not stripping 112478962961
+  saved backup bundle to $TESTTMP/b/.hg/strip-backup/f585351a92f8-e536a9e4-rebase.hg (glob)
+
+  $ rm .hg/localtags
+  $ hg tglog
+  o  5:draft 'D'
+  |
+  o  4:draft 'B'
+  |
+  @  3:draft 'E'
+  |
+  | o  2:draft 'C'
+  | |
+  | o  1:draft 'B'
+  |/
+  o  0:draft 'A'
+  

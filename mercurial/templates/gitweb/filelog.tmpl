@@ -13,6 +13,7 @@
 </div>
 
 <div class="page_nav">
+<div>
 <a href="{url|urlescape}summary{sessionvars%urlparameter}">summary</a> |
 <a href="{url|urlescape}shortlog{sessionvars%urlparameter}">shortlog</a> |
 <a href="{url|urlescape}log{sessionvars%urlparameter}">changelog</a> |
@@ -30,6 +31,8 @@ revisions |
 <br/>
 {nav%filenav}
 </div>
+{searchform}
+</div>
 
 <div class="title" >
   {file|urlescape}{if(linerange,
@@ -40,7 +43,7 @@ revisions |
 {entries%filelogentry}
 </table>
 
-<div class="page_nav">
+<div class="extra_nav">
 <a href="{url|urlescape}log/{symrev}/{file|urlescape}{lessvars%urlparameter}">less</a>
 <a href="{url|urlescape}log/{symrev}/{file|urlescape}{morevars%urlparameter}">more</a>
 {nav%filenav}

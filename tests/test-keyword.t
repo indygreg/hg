@@ -178,6 +178,7 @@ Commit with several checks
   committing manifest
   committing changelog
   overwriting a expanding keywords
+  updating the branch cache
   committed changeset 1:ef63ca68695bc9495032c6fda1350c71e6d256e9
   running hook commit.test: cp a hooktest
   $ hg status
@@ -650,6 +651,7 @@ Commit and show expansion in original and copy
   committing manifest
   committing changelog
   overwriting c expanding keywords
+  updating the branch cache
   committed changeset 2:25736cf2f5cbe41f6be4e6784ef6ecf9f3bbcc7d
   $ cat a c
   expand $Id: a,v ef63ca68695b 1970/01/01 00:00:00 user $
@@ -823,6 +825,7 @@ Commit with multi-line message and custom expansion
   committing manifest
   committing changelog
   overwriting a expanding keywords
+  updating the branch cache
   committed changeset 2:bb948857c743469b22bbf51f7ec8112279ca5d83
   $ rm log
 
@@ -866,6 +869,7 @@ remove with status checks
   committing files:
   committing manifest
   committing changelog
+  updating the branch cache
   committed changeset 3:d14c712653769de926994cf7fbb06c8fbd68f012
   $ hg status
   ? c
@@ -941,6 +945,7 @@ Imported patch should not be rejected
   committing manifest
   committing changelog
   overwriting a expanding keywords
+  updating the branch cache
   committed changeset 2:85e279d709ffc28c9fdd1b868570985fc3d87082
   $ hg export -o ../rejecttest.diff tip
   $ cd ../Test
@@ -985,6 +990,7 @@ kwexpand x/a should abort
   committing manifest
   committing changelog
   overwriting x/a expanding keywords
+  updating the branch cache
   committed changeset 3:b4560182a3f9a358179fd2d835c15e9da379c1e4
   $ cat a
   expand $Id: x/a b4560182a3f9 Thu, 01 Jan 1970 00:00:03 +0000 user $
@@ -1012,7 +1018,8 @@ kwexpand nonexistent
 #if serve
 hg serve
  - expand with hgweb file
- - no expansion with hgweb annotate/changeset/filediff
+ - no expansion with hgweb annotate/changeset/filediff/comparison
+ - expand with hgweb file, again
  - check errors
 
   $ hg serve -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
@@ -1072,6 +1079,25 @@ hg serve
   
   
   
+  $ get-with-headers.py localhost:$HGPORT 'comparison/bb948857c743/a' | grep '\$[a-zA-Z]'
+  <td class="source equal"><a href="#l1r1">     1</a> expand $Id$</td>
+  <td class="source equal"><a href="#l1r1">     1</a> expand $Id$</td>
+  <td class="source equal"><a href="#l2r2">     2</a> do not process $Id:</td>
+  <td class="source equal"><a href="#l2r2">     2</a> do not process $Id:</td>
+  <td class="source insert"><a href="#r4">     4</a> $Xinfo$</td>
+
+(check "kwweb_skip"-ed webcommand doesn't suppress expanding keywords
+at subsequent webcommands)
+
+  $ get-with-headers.py localhost:$HGPORT 'file/tip/a/?style=raw'
+  200 Script output follows
+  
+  expand $Id: a bb948857c743 Thu, 01 Jan 1970 00:00:02 +0000 user $
+  do not process $Id:
+  xxx $
+  $Xinfo: User Name <user@example.com>: firstline $
+
+  $ killdaemons.py
   $ cat errors.log
 #endif
 
@@ -1372,4 +1398,78 @@ Test restricted mode with fetch (with merge)
    $Xinfo$
   +xxxx
 
+Test that patch.diff(), which is implied by "hg diff" or so, doesn't
+suppress expanding keywords at subsequent commands
+
+#if windows
+  $ PYTHONPATH="$TESTDIR/../contrib;$PYTHONPATH"
+#else
+  $ PYTHONPATH="$TESTDIR/../contrib:$PYTHONPATH"
+#endif
+  $ export PYTHONPATH
+
+  $ grep -v '^promptecho ' < $HGRCPATH >> $HGRCPATH.new
+  $ mv $HGRCPATH.new $HGRCPATH
+
+  >>> from __future__ import print_function
+  >>> from hgclient import readchannel, runcommand, check
+  >>> @check
+  ... def check(server):
+  ...     # hello block
+  ...     readchannel(server)
+  ... 
+  ...     runcommand(server, ['cat', 'm'])
+  ...     runcommand(server, ['diff', '-c', '.', 'm'])
+  ...     runcommand(server, ['cat', 'm'])
+  *** runcommand cat m
+  $Id: m 800511b3a22d Thu, 01 Jan 1970 00:00:00 +0000 test $
+  bar
+  *** runcommand diff -c . m
+  *** runcommand cat m
+  $Id: m 800511b3a22d Thu, 01 Jan 1970 00:00:00 +0000 test $
+  bar
+
   $ cd ..
+
+#if serve
+
+Test that keywords are expanded only in repositories, which enable
+keyword extension, even if multiple repositories are served in a
+process
+
+  $ cat >> fetch-merge/.hg/hgrc <<EOF
+  > [extensions]
+  > keyword = !
+  > EOF
+
+  $ cat > paths.conf <<EOF
+  > [paths]
+  > enabled=Test
+  > disabled=fetch-merge
+  > EOF
+
+  $ hg serve -p $HGPORT -d --pid-file=hg.pid -A access.log -E error.log --webdir-conf paths.conf
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ get-with-headers.py localhost:$HGPORT 'enabled/file/tip/m/?style=raw'
+  200 Script output follows
+  
+  $Id: m 800511b3a22d Thu, 01 Jan 1970 00:00:00 +0000 test $
+  bar
+
+  $ get-with-headers.py localhost:$HGPORT 'disabled/file/tip/m/?style=raw'
+  200 Script output follows
+  
+  $Id$
+  bar
+
+(check expansion again, for safety)
+
+  $ get-with-headers.py localhost:$HGPORT 'enabled/file/tip/m/?style=raw'
+  200 Script output follows
+  
+  $Id: m 800511b3a22d Thu, 01 Jan 1970 00:00:00 +0000 test $
+  bar
+
+  $ killdaemons.py
+#endif

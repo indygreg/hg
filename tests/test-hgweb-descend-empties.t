@@ -76,9 +76,10 @@ manifest with descending (paper)
    <span class="tag">tip</span> 
   </h3>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -195,9 +196,10 @@ manifest with descending (coal)
    <span class="tag">tip</span> 
   </h3>
   
+  
   <form class="search" action="/log">
   <input type="hidden" name="style" value="coal" />
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -287,13 +289,14 @@ manifest with descending (monoblue)
       <div class="page-header">
           <h1 class="breadcrumb"><a href="/">Mercurial</a>  / files</h1>
   
-          <form action="/log">
-              <input type="hidden" name="style" value="monoblue" />
-              <dl class="search">
-                  <dt><label>Search: </label></dt>
-                  <dd><input type="text" name="rev" /></dd>
-              </dl>
-          </form>
+          
+  <form action="/log">
+  <input type="hidden" name="style" value="monoblue" />
+  <dl class="search">
+  <dt><label>Search: </label></dt>
+  <dd><input type="text" name="rev" value="" /></dd>
+  </dl>
+  </form>
   
           <ul class="page-nav">
               <li><a href="/summary?style=monoblue">summary</a></li>
@@ -405,6 +408,7 @@ manifest with descending (gitweb)
   </div>
   
   <div class="page_nav">
+  <div>
   <a href="/summary?style=gitweb">summary</a> |
   <a href="/shortlog?style=gitweb">shortlog</a> |
   <a href="/log?style=gitweb">changelog</a> |
@@ -415,7 +419,16 @@ manifest with descending (gitweb)
   files |
   <a href="/rev/tip?style=gitweb">changeset</a>  |
   <a href="/help?style=gitweb">help</a>
-  <br/>
+  </div>
+  
+  <div class="search">
+  <form id="searchform" action="/log">
+  <input type="hidden" name="style" value="gitweb" />
+  <input name="rev" type="text" value="" size="40" />
+  <div id="hint">Find changesets by keywords (author, files, the commit message), revision
+  number or hash, or <a href="/help/revsets">revset expression</a>.</div>
+  </form>
+  </div>
   </div>
   
   <div class="title">/ <span class="logtags"><span class="branchtag" title="default">default</span> <span class="tagtag" title="tip">tip</span> </span></div>

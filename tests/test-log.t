@@ -47,7 +47,8 @@ changeset graph
 
 Make sure largefiles doesn't interfere with logging a regular file
   $ hg --debug log a -T '{rev}: {desc}\n' --config extensions.largefiles=
-  updated patterns: ['.hglf/a', 'a']
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
+  updated patterns: .hglf/a, a
   0: a
   $ hg log a
   changeset:   0:9161b9aeaf16
@@ -67,7 +68,8 @@ Make sure largefiles doesn't interfere with logging a regular file
   summary:     a
   
   $ hg --debug log glob:a* -T '{rev}: {desc}\n' --config extensions.largefiles=
-  updated patterns: ['glob:.hglf/a*', 'glob:a*']
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
+  updated patterns: glob:.hglf/a*, glob:a*
   3: d
   0: a
 
@@ -1705,6 +1707,7 @@ enable obsolete to test hidden feature
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
   $ hg debugobsolete a765632148dc55d38c35c4f247c618701886cb2f
+  obsoleted 1 changesets
   $ hg up null -q
   $ hg log --template='{rev}:{node}\n'
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
@@ -1752,6 +1755,7 @@ test hidden revision 0 (issue5385)
   $ hg bookmark -d X@foo
   $ hg up null -q
   $ hg debugobsolete 9f758d63dcde62d547ebfb08e1e7ee96535f2b05
+  obsoleted 1 changesets
   $ echo f > b
   $ hg ci -Am'b' -d '2 0'
   adding b
@@ -1788,7 +1792,7 @@ test -u/-k for problematic encoding
   $ hg init problematicencoding
   $ cd problematicencoding
 
-  $ python > setup.sh <<EOF
+  $ $PYTHON > setup.sh <<EOF
   > print u'''
   > echo a > text
   > hg add text
@@ -1804,7 +1808,7 @@ test -u/-k for problematic encoding
   $ sh < setup.sh
 
 test in problematic encoding
-  $ python > test.sh <<EOF
+  $ $PYTHON > test.sh <<EOF
   > print u'''
   > hg --encoding cp932 log --template '{rev}\\n' -u '\u30A2'
   > echo ====
@@ -2077,6 +2081,7 @@ hg log -f dir across branches
   
 Ensure that largefiles doesn't interfere with following a normal file
   $ hg  --config extensions.largefiles= log -f d -T '{desc}' -G
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   @  c
   |
   o  a
@@ -2204,6 +2209,7 @@ Test that we use the first non-hidden changeset in that case.
   $ hg log -T '{node}\n' -r 1
   2294ae80ad8447bc78383182eeac50cb049df623
   $ hg debugobsolete 2294ae80ad8447bc78383182eeac50cb049df623
+  obsoleted 1 changesets
   $ hg log -G
   o  changeset:   4:50b9b36e9c5d
   |  tag:         tip
@@ -2253,6 +2259,7 @@ Even when a head revision is linkrev-shadowed.
   $ hg log -T '{node}\n' -r 4
   50b9b36e9c5df2c6fc6dcefa8ad0da929e84aed2
   $ hg debugobsolete 50b9b36e9c5df2c6fc6dcefa8ad0da929e84aed2
+  obsoleted 1 changesets
   $ hg log -G a
   @  changeset:   3:15b2327059e5
   :  tag:         tip

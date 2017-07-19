@@ -2,15 +2,15 @@
 
 Set up history and working copy
 
-  $ python $TESTDIR/generate-working-copy-states.py state 2 1
+  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 1
   $ hg addremove -q --similarity 0
   $ hg commit -m first
 
-  $ python $TESTDIR/generate-working-copy-states.py state 2 2
+  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 2
   $ hg addremove -q --similarity 0
   $ hg commit -m second
 
-  $ python $TESTDIR/generate-working-copy-states.py state 2 wc
+  $ $PYTHON $TESTDIR/generate-working-copy-states.py state 2 wc
   $ hg addremove -q --similarity 0
   $ hg forget *_*_*-untracked
   $ rm *_*_missing-*
@@ -81,6 +81,7 @@ Test log
   
 Largefiles doesn't crash
   $ hg log -T '{rev}\n' --stat 'set:modified()' --config extensions.largefiles=
+  The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
   1
    content1_content2_content1-tracked |  2 +-
    content1_content2_content3-tracked |  2 +-

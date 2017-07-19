@@ -1,19 +1,53 @@
-# The test-repo is a live hg repository which may have evolution
-# markers created, e.g. when a ~/.hgrc enabled evolution.
+# In most cases, the mercurial repository can be read by the bundled hg, but
+# that isn't always true because third-party extensions may change the store
+# format, for example. In which case, the system hg installation is used.
 #
-# Tests are run using a custom HGRCPATH, which do not
-# enable evolution markers by default.
+# We want to use the hg version being tested when interacting with the test
+# repository, and the system hg when interacting with the mercurial source code
+# repository.
 #
-# If test-repo includes evolution markers, and we do not
-# enable evolution markers, hg will occasionally complain
-# when it notices them, which disrupts tests resulting in
-# sporadic failures.
+# The mercurial source repository was typically orignally cloned with the
+# system mercurial installation, and may require extensions or settings from
+# the system installation.
+syshg () {
+    (
+        syshgenv
+        exec hg "$@"
+    )
+}
+
+# Revert the environment so that running "hg" runs the system hg
+# rather than the test hg installation.
+syshgenv () {
+    . "$HGTEST_RESTOREENV"
+    HGPLAIN=1
+    export HGPLAIN
+}
+
+# The test-repo is a live hg repository which may have evolution markers
+# created, e.g. when a ~/.hgrc enabled evolution.
 #
-# Since we aren't performing any write operations on the
-# test-repo, there's no harm in telling hg that we support
-# evolution markers, which is what the following lines
-# for the hgrc file do:
-cat >> $HGRCPATH << EOF
+# Tests may be run using a custom HGRCPATH, which do not enable evolution
+# markers by default.
+#
+# If test-repo includes evolution markers, and we do not enable evolution
+# markers, hg will occasionally complain when it notices them, which disrupts
+# tests resulting in sporadic failures.
+#
+# Since we aren't performing any write operations on the test-repo, there's
+# no harm in telling hg that we support evolution markers, which is what the
+# following lines for the hgrc file do:
+cat >> "$HGRCPATH" << EOF
 [experimental]
-evolution=createmarkers
+evolution = createmarkers
 EOF
+
+# Use the system hg command if the bundled hg can't read the repository with
+# no warning nor error.
+if [ -n "`hg id -R "$TESTDIR/.." 2>&1 >/dev/null`" ]; then
+    alias testrepohg=syshg
+    alias testrepohgenv=syshgenv
+else
+    alias testrepohg=hg
+    alias testrepohgenv=:
+fi

@@ -11,8 +11,11 @@ lines = []
 for line in sys.stdin:
     # We blacklist tests that are too noisy for us
     pats = [
-        r"undefined name '(WindowsError|memoryview)'",
+        r"undefined name 'WindowsError'",
         r"redefinition of unused '[^']+' from line",
+        # for cffi, allow re-exports from pure.*
+        r"cffi/[^:]*:.*\bimport \*' used",
+        r"cffi/[^:]*:.*\*' imported but unused",
     ]
 
     keep = True
@@ -32,8 +35,3 @@ for line in sys.stdin:
 for line in lines:
     sys.stdout.write(line)
 print()
-
-# self test of "undefined name" detection for other than 'memoryview'
-if False:
-    print(memoryview)
-    print(undefinedname)

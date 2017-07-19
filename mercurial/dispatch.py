@@ -25,30 +25,24 @@ from . import (
     cmdutil,
     color,
     commands,
-    debugcommands,
     demandimport,
     encoding,
     error,
     extensions,
     fancyopts,
-    fileset,
     help,
     hg,
     hook,
     profiling,
     pycompat,
-    revset,
     scmutil,
-    templatefilters,
-    templatekw,
-    templater,
     ui as uimod,
     util,
 )
 
 class request(object):
     def __init__(self, args, ui=None, repo=None, fin=None, fout=None,
-                 ferr=None):
+                 ferr=None, prereposetups=None):
         self.args = args
         self.ui = ui
         self.repo = repo
@@ -57,6 +51,10 @@ class request(object):
         self.fin = fin
         self.fout = fout
         self.ferr = ferr
+
+        # reposetups which run before extensions, useful for chg to pre-fill
+        # low-level repo state (for example, changelog) before extensions.
+        self.prereposetups = prereposetups or []
 
     def _runexithandlers(self):
         exc = None
@@ -85,13 +83,13 @@ def run():
         status = -1
     if util.safehasattr(req.ui, 'fout'):
         try:
-            req.ui.fout.close()
+            req.ui.fout.flush()
         except IOError as err:
             status = -1
     if util.safehasattr(req.ui, 'ferr'):
         if err is not None and err.errno != errno.EPIPE:
             req.ui.ferr.write('abort: %s\n' % err.strerror)
-        req.ui.ferr.close()
+        req.ui.ferr.flush()
     sys.exit(status & 255)
 
 def _getsimilar(symbols, value):
@@ -162,9 +160,18 @@ def dispatch(req):
     ret = None
     try:
         ret = _runcatch(req)
-    except KeyboardInterrupt:
+    except error.ProgrammingError as inst:
+        req.ui.warn(_('** ProgrammingError: %s\n') % inst)
+        if inst.hint:
+            req.ui.warn(_('** (%s)\n') % inst.hint)
+        raise
+    except KeyboardInterrupt as inst:
         try:
-            req.ui.warn(_("interrupted!\n"))
+            if isinstance(inst, error.SignalInterrupt):
+                msg = _("killed!\n")
+            else:
+                msg = _("interrupted!\n")
+            req.ui.warn(msg)
         except error.SignalInterrupt:
             # maybe pager would quit without consuming all the output, and
             # SIGPIPE was raised. we cannot print anything in this case.
@@ -179,7 +186,7 @@ def dispatch(req):
         if req.ui.logblockedtimes:
             req.ui._blockedtimes['command_duration'] = duration * 1000
             req.ui.log('uiblocked', 'ui blocked ms', **req.ui._blockedtimes)
-        req.ui.log("commandfinish", "%s exited %s after %0.2f seconds\n",
+        req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
                    msg, ret or 0, duration)
         try:
             req._runexithandlers()
@@ -307,7 +314,8 @@ def _callcatch(ui, func):
     except error.CommandError as inst:
         if inst.args[0]:
             ui.pager('help')
-            ui.warn(_("hg %s: %s\n") % (inst.args[0], inst.args[1]))
+            msgbytes = pycompat.bytestr(inst.args[1])
+            ui.warn(_("hg %s: %s\n") % (inst.args[0], msgbytes))
             commands.help_(ui, inst.args[0], full=False, command=True)
         else:
             ui.pager('help')
@@ -321,7 +329,8 @@ def _callcatch(ui, func):
         try:
             # check if the command is in a disabled extension
             # (but don't check for extensions themselves)
-            formatted = help.formattedhelp(ui, inst.args[0], unknowncmd=True)
+            formatted = help.formattedhelp(ui, commands, inst.args[0],
+                                           unknowncmd=True)
             ui.warn(nocmdmsg)
             ui.write(formatted)
         except (error.UnknownCommand, error.Abort):
@@ -475,7 +484,8 @@ class cmdalias(object):
         return aliasargs(self.fn, args)
 
     def __getattr__(self, name):
-        adefaults = {'norepo': True, 'optionalrepo': False, 'inferrepo': False}
+        adefaults = {r'norepo': True,
+                     r'optionalrepo': False, r'inferrepo': False}
         if name not in adefaults:
             raise AttributeError(name)
         if self.badalias or util.safehasattr(self, 'shell'):
@@ -710,24 +720,6 @@ def _checkshellalias(lui, ui, args):
         return lambda: runcommand(lui, None, cmd, args[:1], ui, options, d,
                                   [], {})
 
-_loaded = set()
-
-# list of (objname, loadermod, loadername) tuple:
-# - objname is the name of an object in extension module, from which
-#   extra information is loaded
-# - loadermod is the module where loader is placed
-# - loadername is the name of the function, which takes (ui, extensionname,
-#   extraobj) arguments
-extraloaders = [
-    ('cmdtable', commands, 'loadcmdtable'),
-    ('colortable', color, 'loadcolortable'),
-    ('filesetpredicate', fileset, 'loadpredicate'),
-    ('revsetpredicate', revset, 'loadpredicate'),
-    ('templatefilter', templatefilters, 'loadfilter'),
-    ('templatefunc', templater, 'loadfunction'),
-    ('templatekeyword', templatekw, 'loadkeyword'),
-]
-
 def _dispatch(req):
     args = req.args
     ui = req.ui
@@ -740,11 +732,7 @@ def _dispatch(req):
     rpath = _earlygetopt(["-R", "--repository", "--repo"], args)
     path, lui = _getlocal(ui, rpath)
 
-    # Side-effect of accessing is debugcommands module is guaranteed to be
-    # imported and commands.table is populated.
-    debugcommands.command
-
-    uis = set([ui, lui])
+    uis = {ui, lui}
 
     if req.repo:
         uis.add(req.repo.ui)
@@ -753,23 +741,15 @@ def _dispatch(req):
         for ui_ in uis:
             ui_.setconfig('profiling', 'enabled', 'true', '--profile')
 
-    with profiling.maybeprofile(lui):
+    profile = lui.configbool('profiling', 'enabled')
+    with profiling.profile(lui, enabled=profile) as profiler:
         # Configure extensions in phases: uisetup, extsetup, cmdtable, and
-        # reposetup. Programs like TortoiseHg will call _dispatch several
-        # times so we keep track of configured extensions in _loaded.
+        # reposetup
         extensions.loadall(lui)
-        exts = [ext for ext in extensions.extensions() if ext[0] not in _loaded]
         # Propagate any changes to lui.__class__ by extensions
         ui.__class__ = lui.__class__
 
         # (uisetup and extsetup are handled in extensions.loadall)
-
-        for name, module in exts:
-            for objname, loadermod, loadername in extraloaders:
-                extraobj = getattr(module, objname, None)
-                if extraobj is not None:
-                    getattr(loadermod, loadername)(ui, name, extraobj)
-            _loaded.add(name)
 
         # (reposetup is handled in hg.repository)
 
@@ -816,6 +796,8 @@ def _dispatch(req):
                     _("time: real %.3f secs (user %.3f+%.3f sys %.3f+%.3f)\n") %
                     (t[4]-s[4], t[0]-s[0], t[2]-s[2], t[1]-s[1], t[3]-s[3]))
             ui.atexit(print_time)
+        if options["profile"]:
+            profiler.start()
 
         if options['verbose'] or options['debug'] or options['quiet']:
             for opt in ('verbose', 'debug', 'quiet'):
@@ -871,7 +853,8 @@ def _dispatch(req):
                 repo.ui.ferr = ui.ferr
             else:
                 try:
-                    repo = hg.repository(ui, path=path)
+                    repo = hg.repository(ui, path=path,
+                                         presetupfuncs=req.prereposetups)
                     if not repo.local():
                         raise error.Abort(_("repository '%s' is not local")
                                           % path)
@@ -933,7 +916,7 @@ def _exceptionwarning(ui):
     # version number and try updating.
     ct = util.versiontuple(n=2)
     worst = None, ct, ''
-    if ui.config('ui', 'supportcontact', None) is None:
+    if ui.config('ui', 'supportcontact') is None:
         for name, mod in extensions.extensions():
             testedwith = getattr(mod, 'testedwith', '')
             if pycompat.ispy3 and isinstance(testedwith, str):
@@ -967,7 +950,7 @@ def _exceptionwarning(ui):
                      '** If that fixes the bug please report it to %s\n')
                    % (name, testedwith, name, report))
     else:
-        bugtracker = ui.config('ui', 'supportcontact', None)
+        bugtracker = ui.config('ui', 'supportcontact')
         if bugtracker is None:
             bugtracker = _("https://mercurial-scm.org/wiki/BugTracker")
         warning = (_("** unknown exception encountered, "

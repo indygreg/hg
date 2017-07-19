@@ -747,6 +747,7 @@ Logs and changes
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
   <h3>log</h3>
   
+  
   <form class="search" action="/log">
   
   <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
@@ -882,9 +883,10 @@ Logs and changes
    <span class="tag">1.0</span> <span class="tag">anotherthing</span> 
   </h3>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -1025,9 +1027,10 @@ Logs and changes
   
   </p>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" value="base"></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="base" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -1312,9 +1315,10 @@ File-related
    
   </h3>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -1343,8 +1347,13 @@ File-related
   <div class="overflow">
   <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink" href="javascript:toggleLinewrap()">on</a></div>
   <div class="sourcefirst"> line source</div>
-  <pre class="sourcelines stripes4 wrap bottomline" data-logurl="/log/1/foo" data-ishead="0">
-  <span id="l1">foo</span><a href="#l1"></a></pre>
+  <pre class="sourcelines stripes4 wrap bottomline"
+       data-logurl="/log/1/foo"
+       data-selectabletag="SPAN"
+       data-ishead="0">
+  
+  <span id="l1">foo</span><a href="#l1"></a>
+  </pre>
   </div>
   
   <script type="text/javascript" src="/static/followlines.js"></script>
@@ -1440,9 +1449,10 @@ File-related
    <span class="branchname">stable</span> 
   </h3>
   
+  
   <form class="search" action="/log">
   
-  <p><input name="rev" id="search1" type="text" size="30" /></p>
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
   <div id="hint">Find changesets by keywords (author, files, the commit message), revision
   number or hash, or <a href="/help/revsets">revset expression</a>.</div>
   </form>
@@ -1471,8 +1481,13 @@ File-related
   <div class="overflow">
   <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink" href="javascript:toggleLinewrap()">on</a></div>
   <div class="sourcefirst"> line source</div>
-  <pre class="sourcelines stripes4 wrap bottomline" data-logurl="/log/2/foo" data-ishead="1">
-  <span id="l1">another</span><a href="#l1"></a></pre>
+  <pre class="sourcelines stripes4 wrap bottomline"
+       data-logurl="/log/2/foo"
+       data-selectabletag="SPAN"
+       data-ishead="1">
+  
+  <span id="l1">another</span><a href="#l1"></a>
+  </pre>
   </div>
   
   <script type="text/javascript" src="/static/followlines.js"></script>
@@ -1528,15 +1543,10 @@ Overviews
   <div class="page_header">
   <a href="https://mercurial-scm.org/" title="Mercurial" style="float: right;">Mercurial</a>
   <a href="/">Mercurial</a>  / summary
-  <form action="/log">
-  <input type="hidden" name="style" value="gitweb" />
-  <div class="search">
-  <input type="text" name="rev"  />
-  </div>
-  </form>
   </div>
   
   <div class="page_nav">
+  <div>
   summary |
   <a href="/shortlog?style=gitweb">shortlog</a> |
   <a href="/log?style=gitweb">changelog</a> |
@@ -1546,7 +1556,16 @@ Overviews
   <a href="/branches?style=gitweb">branches</a> |
   <a href="/file?style=gitweb">files</a> |
   <a href="/help?style=gitweb">help</a>
-  <br/>
+  </div>
+  
+  <div class="search">
+  <form id="searchform" action="/log">
+  <input type="hidden" name="style" value="gitweb" />
+  <input name="rev" type="text" value="" size="40" />
+  <div id="hint">Find changesets by keywords (author, files, the commit message), revision
+  number or hash, or <a href="/help/revsets">revset expression</a>.</div>
+  </form>
+  </div>
   </div>
   
   <div class="title">&nbsp;</div>
@@ -1729,13 +1748,8 @@ Overviews
   <a href="/">Mercurial</a>  / graph
   </div>
   
-  <form action="/log">
-  <input type="hidden" name="style" value="gitweb" />
-  <div class="search">
-  <input type="text" name="rev"  />
-  </div>
-  </form>
   <div class="page_nav">
+  <div>
   <a href="/summary?style=gitweb">summary</a> |
   <a href="/shortlog/tip?style=gitweb">shortlog</a> |
   <a href="/log/tip?style=gitweb">changelog</a> |
@@ -1748,7 +1762,17 @@ Overviews
   <br/>
   <a href="/graph/tip?revcount=30&style=gitweb">less</a>
   <a href="/graph/tip?revcount=120&style=gitweb">more</a>
-  | <a href="/graph/2ef0ac749a14?style=gitweb">(0)</a> <a href="/graph/tip?style=gitweb">tip</a> <br/>
+  | <a href="/graph/2ef0ac749a14?style=gitweb">(0)</a> <a href="/graph/tip?style=gitweb">tip</a> 
+  </div>
+  
+  <div class="search">
+  <form id="searchform" action="/log">
+  <input type="hidden" name="style" value="gitweb" />
+  <input name="rev" type="text" value="" size="40" />
+  <div id="hint">Find changesets by keywords (author, files, the commit message), revision
+  number or hash, or <a href="/help/revsets">revset expression</a>.</div>
+  </form>
+  </div>
   </div>
   
   <div class="title">&nbsp;</div>
@@ -1818,7 +1842,7 @@ Overviews
   // stop hiding script -->
   </script>
   
-  <div class="page_nav">
+  <div class="extra_nav">
   <a href="/graph/tip?revcount=30&style=gitweb">less</a>
   <a href="/graph/tip?revcount=120&style=gitweb">more</a>
   | <a href="/graph/2ef0ac749a14?style=gitweb">(0)</a> <a href="/graph/tip?style=gitweb">tip</a> 
@@ -2241,7 +2265,7 @@ bookmarks view doesn't choke on bookmarks on secret changesets (issue3774)
   $ . "$TESTDIR/cgienv"
   $ PATH_INFO=/bookmarks; export PATH_INFO
   $ QUERY_STRING='style=raw'
-  $ python hgweb.cgi | grep -v ETag:
+  $ $PYTHON hgweb.cgi | grep -v ETag:
   Status: 200 Script output follows\r (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
   \r (esc)
@@ -2250,7 +2274,7 @@ listbookmarks hides secret bookmarks
 
   $ PATH_INFO=/; export PATH_INFO
   $ QUERY_STRING='cmd=listkeys&namespace=bookmarks'
-  $ python hgweb.cgi
+  $ $PYTHON hgweb.cgi
   Status: 200 Script output follows\r (esc)
   Content-Type: application/mercurial-0.1\r (esc)
   Content-Length: 0\r (esc)
@@ -2260,7 +2284,7 @@ search works with filtering
 
   $ PATH_INFO=/log; export PATH_INFO
   $ QUERY_STRING='rev=babar'
-  $ python hgweb.cgi > search
+  $ $PYTHON hgweb.cgi > search
   $ grep Status search
   Status: 200 Script output follows\r (esc)
 
@@ -2268,7 +2292,7 @@ summary works with filtering (issue3810)
 
   $ PATH_INFO=/summary; export PATH_INFO
   $ QUERY_STRING='style=monoblue'; export QUERY_STRING
-  $ python hgweb.cgi > summary.out
+  $ $PYTHON hgweb.cgi > summary.out
   $ grep "^Status" summary.out
   Status: 200 Script output follows\r (esc)
 
@@ -2279,7 +2303,7 @@ proper status for filtered revision
 
   $ PATH_INFO=/rev/5; export PATH_INFO
   $ QUERY_STRING='style=raw'
-  $ python hgweb.cgi #> search
+  $ $PYTHON hgweb.cgi #> search
   Status: 404 Not Found\r (esc)
   ETag: W/"*"\r (glob) (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
@@ -2293,7 +2317,7 @@ proper status for filtered revision
 
   $ PATH_INFO=/rev/4; export PATH_INFO
   $ QUERY_STRING='style=raw'
-  $ python hgweb.cgi #> search
+  $ $PYTHON hgweb.cgi #> search
   Status: 404 Not Found\r (esc)
   ETag: W/"*"\r (glob) (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
@@ -2321,11 +2345,11 @@ filtered '0' changeset
   $ hg phase --force --secret 0
   $ PATH_INFO=/graph/; export PATH_INFO
   $ QUERY_STRING=''
-  $ python hgweb.cgi | grep Status
+  $ $PYTHON hgweb.cgi | grep Status
   Status: 200 Script output follows\r (esc)
 (check rendered revision)
   $ QUERY_STRING='style=raw'
-  $ python hgweb.cgi | grep -v ETag
+  $ $PYTHON hgweb.cgi | grep -v ETag
   Status: 200 Script output follows\r (esc)
   Content-Type: text/plain; charset=ascii\r (esc)
   \r (esc)

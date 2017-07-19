@@ -18,13 +18,13 @@ from mercurial.i18n import _
 
 from mercurial import (
     cmdutil,
-    commands,
     context,
     error,
     hg,
     lock,
     match as matchmod,
     node,
+    registrar,
     scmutil,
     util,
 )
@@ -44,7 +44,7 @@ release = lock.release
 # -- Commands ----------------------------------------------------------
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 
 @command('lfconvert',
     [('s', 'size', '',
@@ -541,7 +541,7 @@ def updatelfiles(ui, repo, filelist=None, printmessage=None,
 
 @command('lfpull',
     [('r', 'rev', [], _('pull largefiles for these revisions'))
-    ] + commands.remoteopts,
+    ] + cmdutil.remoteopts,
     _('-r REV... [-e CMD] [--remotecmd CMD] [SOURCE]'))
 def lfpull(ui, repo, source="default", **opts):
     """pull largefiles for the specified revisions from the specified source

@@ -116,6 +116,7 @@ testpats = [
     (r'printf.*[^\\]\\x', "don't use printf \\x, use Python"),
     (r'\$\(.*\)', "don't use $(expr), use `expr`"),
     (r'rm -rf \*', "don't use naked rm -rf, target a directory"),
+    (r'\[[^\]]+==', '[ foo == bar ] is a bashism, use [ foo = bar ] instead'),
     (r'(^|\|\s*)grep (-\w\s+)*[^|]*[(|]\w',
      "use egrep for extended grep syntax"),
     (r'/bin/', "don't use explicit paths for tools"),
@@ -137,6 +138,7 @@ testpats = [
      "put a backslash-escaped newline after sed 'i' command"),
     (r'^diff *-\w*[uU].*$\n(^  \$ |^$)', "prefix diff -u/-U with cmp"),
     (r'^\s+(if)? diff *-\w*[uU]', "prefix diff -u/-U with cmp"),
+    (r'[\s="`\']python\s(?!bindings)', "don't use 'python', use '$PYTHON'"),
     (r'seq ', "don't use 'seq', use $TESTDIR/seq.py"),
     (r'\butil\.Abort\b', "directly use error.Abort"),
     (r'\|&', "don't use |&, use 2>&1"),
@@ -144,6 +146,7 @@ testpats = [
     (r'\bsed\b.*[^\\]\\n', "don't use 'sed ... \\n', use a \\ and a newline"),
     (r'env.*-u', "don't use 'env -u VAR', use 'unset VAR'"),
     (r'cp.* -r ', "don't use 'cp -r', use 'cp -R'"),
+    (r'grep.* -[ABC] ', "don't use grep's context flags"),
   ],
   # warnings
   [
@@ -298,8 +301,10 @@ pypats = [
      "comparison with singleton, use 'is' or 'is not' instead"),
     (r'^\s*(while|if) [01]:',
      "use True/False for constant Boolean expression"),
+    (r'^\s*if False(:| +and)', 'Remove code instead of using `if False`'),
     (r'(?:(?<!def)\s+|\()hasattr\(',
-     'hasattr(foo, bar) is broken, use util.safehasattr(foo, bar) instead'),
+     'hasattr(foo, bar) is broken on py2, use util.safehasattr(foo, bar) '
+     'instead', r'#.*hasattr-py3-only'),
     (r'opener\([^)]*\).read\(',
      "use opener.read() instead"),
     (r'opener\([^)]*\).write\(',
@@ -338,6 +343,8 @@ pypats = [
     (r'^import pickle', "don't use pickle, use util.pickle"),
     (r'^import httplib', "don't use httplib, use util.httplib"),
     (r'^import BaseHTTPServer', "use util.httpserver instead"),
+    (r'^(from|import) mercurial\.(cext|pure|cffi)',
+     "use mercurial.policy.importmod instead"),
     (r'\.next\(\)', "don't use .next(), use next(...)"),
     (r'([a-z]*).revision\(\1\.node\(',
      "don't convert rev to node before passing to revision(nodeorrev)"),
@@ -474,7 +481,7 @@ allfilespats = [
 
 py3pats = [
   [
-    (r'os\.environ', "use encoding.environ instead (py3)"),
+    (r'os\.environ', "use encoding.environ instead (py3)", r'#.*re-exports'),
     (r'os\.name', "use pycompat.osname instead (py3)"),
     (r'os\.getcwd', "use pycompat.getcwd instead (py3)"),
     (r'os\.sep', "use pycompat.ossep instead (py3)"),
@@ -492,8 +499,8 @@ py3pats = [
 checks = [
     ('python', r'.*\.(py|cgi)$', r'^#!.*python', pyfilters, pypats),
     ('python', r'.*hgext.*\.py$', '', [], pyextnfpats),
-    ('python 3', r'.*(hgext|mercurial).*(?<!pycompat)\.py', '',
-            pyfilters, py3pats),
+    ('python 3', r'.*(hgext|mercurial)/(?!demandimport|policy|pycompat).*\.py',
+     '', pyfilters, py3pats),
     ('test script', r'(.*/)?test-[^.~]*$', '', testfilters, testpats),
     ('c', r'.*\.[ch]$', '', cfilters, cpats),
     ('unified test', r'.*\.t$', '', utestfilters, utestpats),

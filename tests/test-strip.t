@@ -2,6 +2,7 @@
   $ echo "usegeneraldelta=yes" >> $HGRCPATH
   $ echo "[extensions]" >> $HGRCPATH
   $ echo "strip=" >> $HGRCPATH
+  $ echo "drawdag=$TESTDIR/drawdag.py" >> $HGRCPATH
 
   $ restore() {
   >     hg unbundle -q .hg/strip-backup/*
@@ -213,6 +214,8 @@
   Stream params: sortdict([('Compression', 'BZ')])
   changegroup -- "sortdict([('version', '02'), ('nbchanges', '1')])"
       264128213d290d868c54642d13aeaa3675551a78
+  phase-heads -- 'sortdict()'
+      264128213d290d868c54642d13aeaa3675551a78 draft
   $ hg pull .hg/strip-backup/*
   pulling from .hg/strip-backup/264128213d29-0b39d6bf-backup.hg
   searching for changes
@@ -287,6 +290,7 @@ after strip of merge parent
 
   $ hg up
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "264128213d29: c"
   1 other heads for branch "default"
   $ hg log -G
   @  changeset:   4:264128213d29
@@ -838,9 +842,11 @@ check strip behavior
   list of changesets:
   6625a516847449b6f0fa3737b9ba56e9f0f3032c
   d8db9d1372214336d2b5570f20ee468d2c72fa8b
-  bundle2-output-bundle: "HG20", (1 params) 1 parts total
+  bundle2-output-bundle: "HG20", (1 params) 2 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
+  bundle2-output-part: "phase-heads" 24 bytes payload
   saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/6625a5168474-345bb43d-backup.hg (glob)
+  updating the branch cache
   invalid branchheads cache (served): tip differs
   truncating cache/rbc-revs-v1 to 24
   $ hg log -G
@@ -922,7 +928,7 @@ Error during post-close callback of the strip transaction
   > def reposetup(ui, repo):
   >     class crashstriprepo(repo.__class__):
   >         def transaction(self, desc, *args, **kwargs):
-  >             tr = super(crashstriprepo, self).transaction(self, desc, *args, **kwargs)
+  >             tr = super(crashstriprepo, self).transaction(desc, *args, **kwargs)
   >             if desc == 'strip':
   >                 def crash(tra): raise error.Abort('boom')
   >                 tr.addpostclose('crash', crash)
@@ -935,4 +941,159 @@ Error during post-close callback of the strip transaction
   abort: boom
   [255]
 
+Use delayedstrip to strip inside a transaction
 
+  $ cd $TESTTMP
+  $ hg init delayedstrip
+  $ cd delayedstrip
+  $ hg debugdrawdag <<'EOS'
+  >   D
+  >   |
+  >   C F H    # Commit on top of "I",
+  >   | |/|    # Strip B+D+I+E+G+H+Z
+  > I B E G
+  >  \|/
+  >   A   Z
+  > EOS
+  $ cp -R . ../scmutilcleanup
+
+  $ hg up -C I
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo 3 >> I
+  $ cat > $TESTTMP/delayedstrip.py <<EOF
+  > from mercurial import repair, commands
+  > def reposetup(ui, repo):
+  >     def getnodes(expr):
+  >         return [repo.changelog.node(r) for r in repo.revs(expr)]
+  >     with repo.wlock():
+  >         with repo.lock():
+  >             with repo.transaction('delayedstrip'):
+  >                 repair.delayedstrip(ui, repo, getnodes('B+I+Z+D+E'), 'J')
+  >                 repair.delayedstrip(ui, repo, getnodes('G+H+Z'), 'I')
+  >                 commands.commit(ui, repo, message='J', date='0 0')
+  > EOF
+  $ hg log -r . -T '\n' --config extensions.t=$TESTTMP/delayedstrip.py
+  warning: orphaned descendants detected, not stripping 08ebfeb61bac, 112478962961, 7fb047a69f22
+  saved backup bundle to $TESTTMP/delayedstrip/.hg/strip-backup/f585351a92f8-17475721-I.hg (glob)
+  
+  $ hg log -G -T '{rev}:{node|short} {desc}' -r 'sort(all(), topo)'
+  @  6:2f2d51af6205 J
+  |
+  o  3:08ebfeb61bac I
+  |
+  | o  5:64a8289d2492 F
+  | |
+  | o  2:7fb047a69f22 E
+  |/
+  | o  4:26805aba1e60 C
+  | |
+  | o  1:112478962961 B
+  |/
+  o  0:426bada5c675 A
+  
+Test high-level scmutil.cleanupnodes API
+
+  $ cd $TESTTMP/scmutilcleanup
+  $ hg debugdrawdag <<'EOS'
+  >   D2  F2  G2   # D2, F2, G2 are replacements for D, F, G
+  >   |   |   |
+  >   C   H   G
+  > EOS
+  $ for i in B C D F G I Z; do
+  >     hg bookmark -i -r $i b-$i
+  > done
+  $ hg bookmark -i -r E 'b-F@divergent1'
+  $ hg bookmark -i -r H 'b-F@divergent2'
+  $ hg bookmark -i -r G 'b-F@divergent3'
+  $ cp -R . ../scmutilcleanup.obsstore
+
+  $ cat > $TESTTMP/scmutilcleanup.py <<EOF
+  > from mercurial import scmutil
+  > def reposetup(ui, repo):
+  >     def nodes(expr):
+  >         return [repo.changelog.node(r) for r in repo.revs(expr)]
+  >     def node(expr):
+  >         return nodes(expr)[0]
+  >     with repo.wlock():
+  >         with repo.lock():
+  >             with repo.transaction('delayedstrip'):
+  >                 mapping = {node('F'): [node('F2')],
+  >                            node('D'): [node('D2')],
+  >                            node('G'): [node('G2')]}
+  >                 scmutil.cleanupnodes(repo, mapping, 'replace')
+  >                 scmutil.cleanupnodes(repo, nodes('((B::)+I+Z)-D2'), 'replace')
+  > EOF
+  $ hg log -r . -T '\n' --config extensions.t=$TESTTMP/scmutilcleanup.py
+  warning: orphaned descendants detected, not stripping 112478962961, 1fc8102cda62, 26805aba1e60
+  saved backup bundle to $TESTTMP/scmutilcleanup/.hg/strip-backup/f585351a92f8-73fb7c03-replace.hg (glob)
+  
+  $ hg log -G -T '{rev}:{node|short} {desc} {bookmarks}' -r 'sort(all(), topo)'
+  o  8:1473d4b996d1 G2 b-F@divergent3 b-G
+  |
+  | o  7:d11b3456a873 F2 b-F
+  | |
+  | o  5:5cb05ba470a7 H
+  |/|
+  | o  3:7fb047a69f22 E b-F@divergent1
+  | |
+  | | o  6:7c78f703e465 D2 b-D
+  | | |
+  | | o  4:26805aba1e60 C
+  | | |
+  | | o  2:112478962961 B
+  | |/
+  o |  1:1fc8102cda62 G
+   /
+  o  0:426bada5c675 A b-B b-C b-I
+  
+  $ hg bookmark
+     b-B                       0:426bada5c675
+     b-C                       0:426bada5c675
+     b-D                       6:7c78f703e465
+     b-F                       7:d11b3456a873
+     b-F@divergent1            3:7fb047a69f22
+     b-F@divergent3            8:1473d4b996d1
+     b-G                       8:1473d4b996d1
+     b-I                       0:426bada5c675
+     b-Z                       -1:000000000000
+
+Test the above using obsstore "by the way". Not directly related to strip, but
+we have reusable code here
+
+  $ cd $TESTTMP/scmutilcleanup.obsstore
+  $ cat >> .hg/hgrc <<EOF
+  > [experimental]
+  > evolution=all
+  > evolution.track-operation=1
+  > EOF
+
+  $ hg log -r . -T '\n' --config extensions.t=$TESTTMP/scmutilcleanup.py
+  
+  $ rm .hg/localtags
+  $ hg log -G -T '{rev}:{node|short} {desc} {bookmarks}' -r 'sort(all(), topo)'
+  o  12:1473d4b996d1 G2 b-F@divergent3 b-G
+  |
+  | o  11:d11b3456a873 F2 b-F
+  | |
+  | o  8:5cb05ba470a7 H
+  |/|
+  | o  4:7fb047a69f22 E b-F@divergent1
+  | |
+  | | o  10:7c78f703e465 D2 b-D
+  | | |
+  | | x  6:26805aba1e60 C
+  | | |
+  | | x  3:112478962961 B
+  | |/
+  x |  1:1fc8102cda62 G
+   /
+  o  0:426bada5c675 A b-B b-C b-I
+  
+  $ hg debugobsolete
+  1fc8102cda6204549f031015641606ccf5513ec3 1473d4b996d1d1b121de6b39fab6a04fbf9d873e 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
+  64a8289d249234b9886244d379f15e6b650b28e3 d11b3456a873daec7c7bc53e5622e8df6d741bd2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
+  f585351a92f85104bff7c284233c338b10eb1df7 7c78f703e465d73102cc8780667ce269c5208a40 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
+  48b9aae0607f43ff110d84e6883c151942add5ab 0 {0000000000000000000000000000000000000000} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
+  112478962961147124edd43549aedd1a335e44bf 0 {426bada5c67598ca65036d57d9e4b64b0c1ce7a0} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
+  08ebfeb61bac6e3f12079de774d285a0d6689eba 0 {426bada5c67598ca65036d57d9e4b64b0c1ce7a0} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
+  26805aba1e600a82e93661149f2313866a221a7b 0 {112478962961147124edd43549aedd1a335e44bf} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}

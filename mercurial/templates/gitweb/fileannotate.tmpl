@@ -13,6 +13,7 @@
 </div>
 
 <div class="page_nav">
+<div>
 <a href="{url|urlescape}summary{sessionvars%urlparameter}">summary</a> |
 <a href="{url|urlescape}shortlog{sessionvars%urlparameter}">shortlog</a> |
 <a href="{url|urlescape}log{sessionvars%urlparameter}">changelog</a> |
@@ -30,7 +31,8 @@ annotate |
 <a href="{url|urlescape}comparison/{symrev}/{file|urlescape}{sessionvars%urlparameter}">comparison</a> |
 <a href="{url|urlescape}raw-file/{symrev}/{file|urlescape}">raw</a> |
 <a href="{url|urlescape}help{sessionvars%urlparameter}">help</a>
-<br/>
+</div>
+{searchform}
 </div>
 
 <div class="title">{file|escape}</div>
@@ -59,13 +61,18 @@ annotate |
 </table>
 </div>
 
-<div class="page_path description">
-{desc|strip|escape|websub|addbreaks|nonempty}
-</div>
+<div class="page_path description">{desc|strip|escape|websub|nonempty}</div>
 <div class="page_body">
 <table>
+<tbody class="sourcelines"
+       data-logurl="{url|urlescape}log/{symrev}/{file|urlescape}"
+       data-selectabletag="TR"
+       data-ishead="{ishead}">
 {annotate%annotateline}
+</tbody>
 </table>
 </div>
+
+<script type="text/javascript" src="{staticurl|urlescape}followlines.js"></script>
 
 {footer}

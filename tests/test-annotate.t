@@ -56,21 +56,18 @@ annotate (JSON)
   $ hg annotate -Tjson a
   [
    {
-    "line": "a\n",
-    "rev": 0
+    "abspath": "a",
+    "lines": [{"line": "a\n", "rev": 0}],
+    "path": "a"
    }
   ]
 
   $ hg annotate -Tjson -cdfnul a
   [
    {
-    "date": [1.0, 0],
-    "file": "a",
-    "line": "a\n",
-    "line_number": 1,
-    "node": "8435f90966e442695d2ded29fdade2bac5ad8065",
-    "rev": 0,
-    "user": "nobody"
+    "abspath": "a",
+    "lines": [{"date": [1.0, 0], "file": "a", "line": "a\n", "line_number": 1, "node": "8435f90966e442695d2ded29fdade2bac5ad8065", "rev": 0, "user": "nobody"}],
+    "path": "a"
    }
   ]
 
@@ -87,6 +84,37 @@ annotate (JSON)
   > b6
   > EOF
   $ hg ci -mb2 -d '2 0'
+
+annotate multiple files (JSON)
+
+  $ hg annotate -Tjson a b
+  [
+   {
+    "abspath": "a",
+    "lines": [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}],
+    "path": "a"
+   },
+   {
+    "abspath": "b",
+    "lines": [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}, {"line": "b4\n", "rev": 3}, {"line": "b5\n", "rev": 3}, {"line": "b6\n", "rev": 3}],
+    "path": "b"
+   }
+  ]
+
+annotate multiple files (template)
+
+  $ hg annotate -T'== {abspath} ==\n{lines % "{rev}: {line}"}' a b
+  == a ==
+  0: a
+  1: a
+  1: a
+  == b ==
+  0: a
+  1: a
+  1: a
+  3: b4
+  3: b5
+  3: b6
 
 annotate -n b
 
@@ -216,6 +244,79 @@ annotate after rename merge with -l
   4 b:5: c
   3 b:5: b5
   7 b:7: d
+
+--skip nothing (should be the same as no --skip at all)
+
+  $ hg annotate -nlf b --skip '1::0'
+  0 a:1: a
+  6 b:2: z
+  1 a:3: a
+  3 b:4: b4
+  4 b:5: c
+  3 b:5: b5
+  7 b:7: d
+
+--skip a modified line. Note a slight behavior difference in pure - this is
+because the pure code comes up with slightly different deltas internally.
+
+  $ hg annotate -nlf b --skip 6
+  0 a:1: a
+  1 a:2: z (no-pure !)
+  0 a:1: z (pure !)
+  1 a:3: a
+  3 b:4: b4
+  4 b:5: c
+  3 b:5: b5
+  7 b:7: d
+
+--skip added lines (and test multiple skip)
+
+  $ hg annotate -nlf b --skip 3
+  0 a:1: a
+  6 b:2: z
+  1 a:3: a
+  1 a:3: b4
+  4 b:5: c
+  1 a:3: b5
+  7 b:7: d
+
+  $ hg annotate -nlf b --skip 4
+  0 a:1: a
+  6 b:2: z
+  1 a:3: a
+  3 b:4: b4
+  1 a:3: c
+  3 b:5: b5
+  7 b:7: d
+
+  $ hg annotate -nlf b --skip 3 --skip 4
+  0 a:1: a
+  6 b:2: z
+  1 a:3: a
+  1 a:3: b4
+  1 a:3: c
+  1 a:3: b5
+  7 b:7: d
+
+  $ hg annotate -nlf b --skip 'merge()'
+  0 a:1: a
+  6 b:2: z
+  1 a:3: a
+  3 b:4: b4
+  4 b:5: c
+  3 b:5: b5
+  3 b:5: d
+
+--skip everything -- use the revision the file was introduced in
+
+  $ hg annotate -nlf b --skip 'all()'
+  0 a:1: a
+  0 a:1: z
+  0 a:1: a
+  0 a:1: b4
+  0 a:1: c
+  0 a:1: b5
+  0 a:1: d
 
 Issue2807: alignment of line numbers with -l
 
@@ -429,14 +530,9 @@ annotate modified file
   $ hg annotate -ncr "wdir()" -Tjson foo
   [
    {
-    "line": "foo\n",
-    "node": "472b18db256d1e8282064eab4bfdaf48cbfe83cd",
-    "rev": 11
-   },
-   {
-    "line": "foofoo\n",
-    "node": null,
-    "rev": null
+    "abspath": "foo",
+    "lines": [{"line": "foo\n", "node": "472b18db256d1e8282064eab4bfdaf48cbfe83cd", "rev": 11}, {"line": "foofoo\n", "node": null, "rev": null}],
+    "path": "foo"
    }
   ]
 
@@ -457,28 +553,20 @@ annotate renamed file
 annotate missing file
 
   $ rm baz
-#if windows
+
   $ hg annotate -ncr "wdir()" baz
-  abort: $TESTTMP\repo\baz: The system cannot find the file specified
+  abort: $TESTTMP\repo\baz: The system cannot find the file specified (windows !)
+  abort: No such file or directory: $TESTTMP/repo/baz (no-windows !)
   [255]
-#else
-  $ hg annotate -ncr "wdir()" baz
-  abort: No such file or directory: $TESTTMP/repo/baz
-  [255]
-#endif
 
 annotate removed file
 
   $ hg rm baz
-#if windows
+
   $ hg annotate -ncr "wdir()" baz
-  abort: $TESTTMP\repo\baz: The system cannot find the file specified
+  abort: $TESTTMP\repo\baz: The system cannot find the file specified (windows !)
+  abort: No such file or directory: $TESTTMP/repo/baz (no-windows !)
   [255]
-#else
-  $ hg annotate -ncr "wdir()" baz
-  abort: No such file or directory: $TESTTMP/repo/baz
-  [255]
-#endif
 
   $ hg revert --all --no-backup --quiet
   $ hg id -n
@@ -629,6 +717,65 @@ we follow all branches in descending direction
   |
   ~
 
+Issue5595: on a merge changeset with different line ranges depending on
+parent, be conservative and use the surrounding interval to avoid loosing
+track of possible further descendants in specified range.
+
+  $ hg up 23 --quiet
+  $ hg cat baz -r 24
+  0
+  0
+  1 baz:1
+  2 baz:2
+  3+ baz:3
+  4 baz:4
+  5
+  6
+  $ cat > baz << EOF
+  > 0
+  > 0
+  > a
+  > b
+  > 3+ baz:3
+  > 4 baz:4
+  > y
+  > z
+  > EOF
+  $ hg ci -m 'baz: mostly rewrite with some content from 24'
+  created new head
+  $ hg merge --tool :merge-other 24
+  merging baz
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m 'merge forgetting about baz rewrite'
+  $ cat > baz << EOF
+  > 0
+  > 0
+  > 1 baz:1
+  > 2+ baz:2
+  > 3+ baz:3
+  > 4 baz:4
+  > 5
+  > 6
+  > EOF
+  $ hg ci -m 'baz: narrow change (2->2+)'
+  $ hg log -T '{rev}: {desc}\n' -r 'followlines(baz, 3:4, startrev=20, descend=True)' --graph
+  @  33: baz: narrow change (2->2+)
+  |
+  o    32: merge forgetting about baz rewrite
+  |\
+  | o  31: baz: mostly rewrite with some content from 24
+  | :
+  | : o  30: baz:3->+3
+  | :/
+  +---o  27: baz:3+->3-
+  | :
+  o :  24: baz:3->3+
+  :/
+  o    20: baz:4
+  |\
+  ~ ~
+
 check error cases
   $ hg up 24 --quiet
   $ hg log -r 'followlines()'
@@ -665,11 +812,33 @@ check error cases
   abort: line range exceeds file size
   [255]
   $ hg log -r 'followlines(baz, 2:4, startrev=20, descend=[1])'
-  hg: parse error at 43: syntax error in revset 'followlines(baz, 2:4, startrev=20, descend=[1])'
+  hg: parse error at 43: not a prefix: [
   [255]
   $ hg log -r 'followlines(baz, 2:4, startrev=20, descend=a)'
   hg: parse error: descend argument must be a boolean
   [255]
+
+Test empty annotate output
+
+  $ printf '\0' > binary
+  $ touch empty
+  $ hg ci -qAm 'add binary and empty files'
+
+  $ hg annotate binary empty
+  binary: binary file
+
+  $ hg annotate -Tjson binary empty
+  [
+   {
+    "abspath": "binary",
+    "path": "binary"
+   },
+   {
+    "abspath": "empty",
+    "lines": [],
+    "path": "empty"
+   }
+  ]
 
 Test annotate with whitespace options
 

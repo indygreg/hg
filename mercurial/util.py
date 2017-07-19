@@ -19,6 +19,7 @@ import bz2
 import calendar
 import codecs
 import collections
+import contextlib
 import datetime
 import errno
 import gc
@@ -45,10 +46,16 @@ from . import (
     encoding,
     error,
     i18n,
-    osutil,
-    parsers,
+    policy,
     pycompat,
 )
+
+base85 = policy.importmod(r'base85')
+osutil = policy.importmod(r'osutil')
+parsers = policy.importmod(r'parsers')
+
+b85decode = base85.b85decode
+b85encode = base85.b85encode
 
 cookielib = pycompat.cookielib
 empty = pycompat.empty
@@ -105,6 +112,7 @@ groupname = platform.groupname
 hidewindow = platform.hidewindow
 isexec = platform.isexec
 isowner = platform.isowner
+listdir = osutil.listdir
 localpath = platform.localpath
 lookupreg = platform.lookupreg
 makedir = platform.makedir
@@ -141,6 +149,15 @@ testpid = platform.testpid
 umask = platform.umask
 unlink = platform.unlink
 username = platform.username
+
+try:
+    recvfds = osutil.recvfds
+except AttributeError:
+    pass
+try:
+    setprocname = osutil.setprocname
+except AttributeError:
+    pass
 
 # Python compatibility
 
@@ -278,16 +295,10 @@ class digestchecker(object):
 try:
     buffer = buffer
 except NameError:
-    if not pycompat.ispy3:
-        def buffer(sliceable, offset=0, length=None):
-            if length is not None:
-                return sliceable[offset:offset + length]
-            return sliceable[offset:]
-    else:
-        def buffer(sliceable, offset=0, length=None):
-            if length is not None:
-                return memoryview(sliceable)[offset:offset + length]
-            return memoryview(sliceable)[offset:]
+    def buffer(sliceable, offset=0, length=None):
+        if length is not None:
+            return memoryview(sliceable)[offset:offset + length]
+        return memoryview(sliceable)[offset:]
 
 closefds = pycompat.osname == 'posix'
 
@@ -556,54 +567,40 @@ def cachefunc(func):
 
     return f
 
-class sortdict(dict):
-    '''a simple sorted dictionary'''
-    def __init__(self, data=None):
-        self._list = []
-        if data:
-            self.update(data)
-    def copy(self):
-        return sortdict(self)
-    def __setitem__(self, key, val):
+class sortdict(collections.OrderedDict):
+    '''a simple sorted dictionary
+
+    >>> d1 = sortdict([('a', 0), ('b', 1)])
+    >>> d2 = d1.copy()
+    >>> d2
+    sortdict([('a', 0), ('b', 1)])
+    >>> d2.update([('a', 2)])
+    >>> d2.keys() # should still be in last-set order
+    ['b', 'a']
+    '''
+
+    def __setitem__(self, key, value):
         if key in self:
-            self._list.remove(key)
-        self._list.append(key)
-        dict.__setitem__(self, key, val)
-    def __iter__(self):
-        return self._list.__iter__()
-    def update(self, src):
-        if isinstance(src, dict):
-            src = src.iteritems()
-        for k, v in src:
-            self[k] = v
-    def clear(self):
-        dict.clear(self)
-        self._list = []
-    def items(self):
-        return [(k, self[k]) for k in self._list]
-    def __delitem__(self, key):
-        dict.__delitem__(self, key)
-        self._list.remove(key)
-    def pop(self, key, *args, **kwargs):
-        try:
-            self._list.remove(key)
-        except ValueError:
-            pass
-        return dict.pop(self, key, *args, **kwargs)
-    def keys(self):
-        return self._list[:]
-    def iterkeys(self):
-        return self._list.__iter__()
-    def iteritems(self):
-        for k in self._list:
-            yield k, self[k]
-    def insert(self, index, key, val):
-        self._list.insert(index, key)
-        dict.__setitem__(self, key, val)
-    def __repr__(self):
-        if not self:
-            return '%s()' % self.__class__.__name__
-        return '%s(%r)' % (self.__class__.__name__, self.items())
+            del self[key]
+        super(sortdict, self).__setitem__(key, value)
+
+@contextlib.contextmanager
+def acceptintervention(tr=None):
+    """A context manager that closes the transaction on InterventionRequired
+
+    If no transaction was provided, this simply runs the body and returns
+    """
+    if not tr:
+        yield
+        return
+    try:
+        yield
+        tr.close()
+    except error.InterventionRequired:
+        tr.close()
+        raise
+    finally:
+        tr.release()
 
 class _lrucachenode(object):
     """A node in a doubly linked list.
@@ -1049,28 +1046,20 @@ def system(cmd, environ=None, cwd=None, out=None):
     except Exception:
         pass
     cmd = quotecommand(cmd)
-    if pycompat.sysplatform == 'plan9' and (sys.version_info[0] == 2
-                                    and sys.version_info[1] < 7):
-        # subprocess kludge to work around issues in half-baked Python
-        # ports, notably bichued/python:
-        if not cwd is None:
-            os.chdir(cwd)
-        rc = os.system(cmd)
+    env = shellenviron(environ)
+    if out is None or _isstdout(out):
+        rc = subprocess.call(cmd, shell=True, close_fds=closefds,
+                             env=env, cwd=cwd)
     else:
-        env = shellenviron(environ)
-        if out is None or _isstdout(out):
-            rc = subprocess.call(cmd, shell=True, close_fds=closefds,
-                                 env=env, cwd=cwd)
-        else:
-            proc = subprocess.Popen(cmd, shell=True, close_fds=closefds,
-                                    env=env, cwd=cwd, stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT)
-            for line in iter(proc.stdout.readline, ''):
-                out.write(line)
-            proc.wait()
-            rc = proc.returncode
-        if pycompat.sysplatform == 'OpenVMS' and rc & 1:
-            rc = 0
+        proc = subprocess.Popen(cmd, shell=True, close_fds=closefds,
+                                env=env, cwd=cwd, stdout=subprocess.PIPE,
+                                stderr=subprocess.STDOUT)
+        for line in iter(proc.stdout.readline, ''):
+            out.write(line)
+        proc.wait()
+        rc = proc.returncode
+    if pycompat.sysplatform == 'OpenVMS' and rc & 1:
+        rc = 0
     return rc
 
 def checksignature(func):
@@ -1086,7 +1075,7 @@ def checksignature(func):
     return check
 
 # a whilelist of known filesystems where hardlink works reliably
-_hardlinkfswhitelist = set([
+_hardlinkfswhitelist = {
     'btrfs',
     'ext2',
     'ext3',
@@ -1098,7 +1087,7 @@ _hardlinkfswhitelist = set([
     'ufs',
     'xfs',
     'zfs',
-])
+}
 
 def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
     '''copy a file, preserving mode and optionally other stat info like
@@ -1114,7 +1103,7 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
     oldstat = None
     if os.path.lexists(dest):
         if checkambig:
-            oldstat = checkambig and filestat(dest)
+            oldstat = checkambig and filestat.frompath(dest)
         unlink(dest)
     if hardlink:
         # Hardlinks are problematic on CIFS (issue4546), do not allow hardlinks
@@ -1144,7 +1133,7 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
             else:
                 shutil.copymode(src, dest)
                 if oldstat and oldstat.stat:
-                    newstat = filestat(dest)
+                    newstat = filestat.frompath(dest)
                     if newstat.isambig(oldstat):
                         # stat of copied file is ambiguous to original one
                         advanced = (oldstat.stat.st_mtime + 1) & 0x7fffffff
@@ -1164,7 +1153,7 @@ def copyfiles(src, dst, hardlink=None, progress=lambda t, pos: None):
                         os.stat(os.path.dirname(dst)).st_dev)
         topic = gettopic()
         os.mkdir(dst)
-        for name, kind in osutil.listdir(src):
+        for name, kind in listdir(src):
             srcname = os.path.join(src, name)
             dstname = os.path.join(dst, name)
             def nprog(t, pos):
@@ -1192,7 +1181,7 @@ def copyfiles(src, dst, hardlink=None, progress=lambda t, pos: None):
 
     return hardlink, num
 
-_winreservednames = '''con prn aux nul
+_winreservednames = b'''con prn aux nul
     com1 com2 com3 com4 com5 com6 com7 com8 com9
     lpt1 lpt2 lpt3 lpt4 lpt5 lpt6 lpt7 lpt8 lpt9'''.split()
 _winreservedchars = ':*?"<>|'
@@ -1522,13 +1511,23 @@ class filestat(object):
     exists. Otherwise, it is None. This can avoid preparative
     'exists()' examination on client side of this class.
     """
-    def __init__(self, path):
+    def __init__(self, stat):
+        self.stat = stat
+
+    @classmethod
+    def frompath(cls, path):
         try:
-            self.stat = os.stat(path)
+            stat = os.stat(path)
         except OSError as err:
             if err.errno != errno.ENOENT:
                 raise
-            self.stat = None
+            stat = None
+        return cls(stat)
+
+    @classmethod
+    def fromfp(cls, fp):
+        stat = os.fstat(fp.fileno())
+        return cls(stat)
 
     __hash__ = object.__hash__
 
@@ -1540,6 +1539,10 @@ class filestat(object):
             return (self.stat.st_size == old.stat.st_size and
                     self.stat.st_ctime == old.stat.st_ctime and
                     self.stat.st_mtime == old.stat.st_mtime)
+        except AttributeError:
+            pass
+        try:
+            return self.stat is None and old.stat is None
         except AttributeError:
             return False
 
@@ -1584,7 +1587,10 @@ class filestat(object):
         'old' should be previous filestat of 'path'.
 
         This skips avoiding ambiguity, if a process doesn't have
-        appropriate privileges for 'path'.
+        appropriate privileges for 'path'. This returns False in this
+        case.
+
+        Otherwise, this returns True, as "ambiguity is avoided".
         """
         advanced = (old.stat.st_mtime + 1) & 0x7fffffff
         try:
@@ -1593,8 +1599,9 @@ class filestat(object):
             if inst.errno == errno.EPERM:
                 # utime() on the file created by another user causes EPERM,
                 # if a process doesn't have appropriate privileges
-                return
+                return False
             raise
+        return True
 
     def __ne__(self, other):
         return not self == other
@@ -1630,10 +1637,10 @@ class atomictempfile(object):
         if not self._fp.closed:
             self._fp.close()
             filename = localpath(self.__name)
-            oldstat = self._checkambig and filestat(filename)
+            oldstat = self._checkambig and filestat.frompath(filename)
             if oldstat and oldstat.stat:
                 rename(self._tempname, filename)
-                newstat = filestat(filename)
+                newstat = filestat.frompath(filename)
                 if newstat.isambig(oldstat):
                     # stat of changed file is ambiguous to original one
                     advanced = (oldstat.stat.st_mtime + 1) & 0x7fffffff
@@ -1727,8 +1734,7 @@ class chunkbuffer(object):
     iterator over chunks of arbitrary size."""
 
     def __init__(self, in_iter):
-        """in_iter is the iterator that's iterating over the input chunks.
-        targetsize is how big a buffer to try to maintain."""
+        """in_iter is the iterator that's iterating over the input chunks."""
         def splitbig(chunks):
             for chunk in chunks:
                 if len(chunk) > 2**20:
@@ -1917,6 +1923,7 @@ def strdate(string, format, defaults=None):
     # add missing elements from defaults
     usenow = False # default to using biased defaults
     for part in ("S", "M", "HI", "d", "mb", "yY"): # decreasing specificity
+        part = pycompat.bytestr(part)
         found = [True for p in part if ("%"+p) in format]
         if not found:
             date += "@" + defaults[part][usenow]
@@ -1926,7 +1933,8 @@ def strdate(string, format, defaults=None):
             # elements are relative to today
             usenow = True
 
-    timetuple = time.strptime(date, format)
+    timetuple = time.strptime(encoding.strfromlocal(date),
+                              encoding.strfromlocal(format))
     localunixtime = int(calendar.timegm(timetuple))
     if offset is None:
         # local timezone
@@ -1984,13 +1992,13 @@ def parsedate(date, formats=None, bias=None):
             # this piece is for rounding the specific end of unknowns
             b = bias.get(part)
             if b is None:
-                if part[0] in "HMS":
+                if part[0:1] in "HMS":
                     b = "00"
                 else:
                     b = "0"
 
             # this piece is for matching the generic end to today's date
-            n = datestr(now, "%" + part[0])
+            n = datestr(now, "%" + part[0:1])
 
             defaults[part] = (b, n)
 
@@ -2002,15 +2010,15 @@ def parsedate(date, formats=None, bias=None):
             else:
                 break
         else:
-            raise Abort(_('invalid date: %r') % date)
+            raise error.ParseError(_('invalid date: %r') % date)
     # validate explicit (probably user-specified) date and
     # time zone offset. values must fit in signed 32 bits for
     # current 32-bit linux runtimes. timezones go from UTC-12
     # to UTC+14
     if when < -0x80000000 or when > 0x7fffffff:
-        raise Abort(_('date exceeds 32 bits: %d') % when)
+        raise error.ParseError(_('date exceeds 32 bits: %d') % when)
     if offset < -50400 or offset > 43200:
-        raise Abort(_('impossible time zone offset: %d') % offset)
+        raise error.ParseError(_('impossible time zone offset: %d') % offset)
     return when, offset
 
 def matchdate(date):
@@ -2328,7 +2336,7 @@ def MBTextWrapper(**kwargs):
 
                 # First chunk on line is whitespace -- drop it, unless this
                 # is the very beginning of the text (i.e. no lines started yet).
-                if self.drop_whitespace and chunks[-1].strip() == '' and lines:
+                if self.drop_whitespace and chunks[-1].strip() == r'' and lines:
                     del chunks[-1]
 
                 while chunks:
@@ -2350,13 +2358,13 @@ def MBTextWrapper(**kwargs):
 
                 # If the last chunk on this line is all whitespace, drop it.
                 if (self.drop_whitespace and
-                    cur_line and cur_line[-1].strip() == ''):
+                    cur_line and cur_line[-1].strip() == r''):
                     del cur_line[-1]
 
                 # Convert current line back to a string and store it in list
                 # of all lines (return value).
                 if cur_line:
-                    lines.append(indent + ''.join(cur_line))
+                    lines.append(indent + r''.join(cur_line))
 
             return lines
 
@@ -2745,7 +2753,7 @@ class url(object):
                 attrs.append('%s: %r' % (a, v))
         return '<url %s>' % ', '.join(attrs)
 
-    def __str__(self):
+    def __bytes__(self):
         r"""Join the URL's components back into a URL string.
 
         Examples:
@@ -2779,9 +2787,6 @@ class url(object):
         >>> print url(r'file:///D:\data\hg')
         file:///D:\data\hg
         """
-        return encoding.strfromlocal(self.__bytes__())
-
-    def __bytes__(self):
         if self._localpath:
             s = self.path
             if self.scheme == 'bundle':
@@ -2825,6 +2830,8 @@ class url(object):
             s += '#' + urlreq.quote(self.fragment, safe=self._safepchars)
         return s
 
+    __str__ = encoding.strmethod(__bytes__)
+
     def authinfo(self):
         user, passwd = self.user, self.passwd
         try:
@@ -2846,7 +2853,7 @@ class url(object):
             return True # remote URL
         if hasdriveletter(self.path):
             return True # absolute for our purposes - can't be joined()
-        if self.path.startswith(r'\\'):
+        if self.path.startswith(br'\\'):
             return True # Windows UNC path
         if self.path.startswith('/'):
             return True # POSIX-style
@@ -3057,66 +3064,6 @@ def finddirs(path):
     while pos != -1:
         yield path[:pos]
         pos = path.rfind('/', 0, pos)
-
-class ctxmanager(object):
-    '''A context manager for use in 'with' blocks to allow multiple
-    contexts to be entered at once.  This is both safer and more
-    flexible than contextlib.nested.
-
-    Once Mercurial supports Python 2.7+, this will become mostly
-    unnecessary.
-    '''
-
-    def __init__(self, *args):
-        '''Accepts a list of no-argument functions that return context
-        managers.  These will be invoked at __call__ time.'''
-        self._pending = args
-        self._atexit = []
-
-    def __enter__(self):
-        return self
-
-    def enter(self):
-        '''Create and enter context managers in the order in which they were
-        passed to the constructor.'''
-        values = []
-        for func in self._pending:
-            obj = func()
-            values.append(obj.__enter__())
-            self._atexit.append(obj.__exit__)
-        del self._pending
-        return values
-
-    def atexit(self, func, *args, **kwargs):
-        '''Add a function to call when this context manager exits.  The
-        ordering of multiple atexit calls is unspecified, save that
-        they will happen before any __exit__ functions.'''
-        def wrapper(exc_type, exc_val, exc_tb):
-            func(*args, **kwargs)
-        self._atexit.append(wrapper)
-        return func
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        '''Context managers are exited in the reverse order from which
-        they were created.'''
-        received = exc_type is not None
-        suppressed = False
-        pending = None
-        self._atexit.reverse()
-        for exitfunc in self._atexit:
-            try:
-                if exitfunc(exc_type, exc_val, exc_tb):
-                    suppressed = True
-                    exc_type = None
-                    exc_val = None
-                    exc_tb = None
-            except BaseException:
-                pending = sys.exc_info()
-                exc_type, exc_val, exc_tb = pending = sys.exc_info()
-        del self._atexit
-        if pending:
-            raise exc_val
-        return received and suppressed
 
 # compression code
 

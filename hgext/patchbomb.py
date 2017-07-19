@@ -89,6 +89,8 @@ from mercurial import (
     mail,
     node as nodemod,
     patch,
+    registrar,
+    repair,
     scmutil,
     templater,
     util,
@@ -96,7 +98,7 @@ from mercurial import (
 stringio = util.stringio
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -110,16 +112,20 @@ def _addpullheader(seq, ctx):
     # experimental config: patchbomb.publicurl
     # waiting for some logic that check that the changeset are available on the
     # destination before patchbombing anything.
-    pullurl = repo.ui.config('patchbomb', 'publicurl')
-    if pullurl is not None:
+    publicurl = repo.ui.config('patchbomb', 'publicurl')
+    if publicurl:
         return ('Available At %s\n'
-                '#              hg pull %s -r %s' % (pullurl, pullurl, ctx))
+                '#              hg pull %s -r %s' % (publicurl, publicurl, ctx))
     return None
 
 def uisetup(ui):
     cmdutil.extraexport.append('pullurl')
     cmdutil.extraexportmap['pullurl'] = _addpullheader
 
+def reposetup(ui, repo):
+    if not repo.local():
+        return
+    repo._wlockfreeprefix.add('last-email.txt')
 
 def prompt(ui, prompt, default=None, rest=':'):
     if default:
@@ -441,6 +447,7 @@ emailopts = [
     ('o', 'outgoing', None,
      _('send changes not found in the target repository')),
     ('b', 'bundle', None, _('send changes not in target as a binary bundle')),
+    ('B', 'bookmark', '', _('send changes only reachable by given bookmark')),
     ('', 'bundlename', 'bundle',
      _('name of the bundle attachment file'), _('NAME')),
     ('r', 'rev', [], _('a revision to send'), _('REV')),
@@ -449,7 +456,7 @@ emailopts = [
     ('', 'base', [], _('a base changeset to specify instead of a destination '
        '(with -b/--bundle)'), _('REV')),
     ('', 'intro', None, _('send an introduction email for a single patch')),
-    ] + emailopts + commands.remoteopts,
+    ] + emailopts + cmdutil.remoteopts,
     _('hg email [OPTION]... [DEST]...'))
 def email(ui, repo, *revs, **opts):
     '''send changesets by email
@@ -478,6 +485,9 @@ def email(ui, repo, *revs, **opts):
     will be created. You can include a patch both as text in the email
     body and as a regular or an inline attachment by combining the
     -a/--attach or -i/--inline with the --body option.
+
+    With -B/--bookmark changesets reachable by the given bookmark are
+    selected.
 
     With -o/--outgoing, emails will be generated for patches not found
     in the destination repository (or only those which are ancestors
@@ -517,6 +527,8 @@ def email(ui, repo, *revs, **opts):
       hg email -o -r 3000       # send all ancestors of 3000 not in default
       hg email -o -r 3000 DEST  # send all ancestors of 3000 not in DEST
 
+      hg email -B feature       # send all ancestors of feature bookmark
+
       hg email -b               # send bundle of all patches not in default
       hg email -b DEST          # send bundle of all patches not in DEST
       hg email -b -r 3000       # bundle of all ancestors of 3000 not in default
@@ -539,17 +551,20 @@ def email(ui, repo, *revs, **opts):
     mbox = opts.get('mbox')
     outgoing = opts.get('outgoing')
     rev = opts.get('rev')
+    bookmark = opts.get('bookmark')
 
     if not (opts.get('test') or mbox):
         # really sending
         mail.validateconfig(ui)
 
-    if not (revs or rev or outgoing or bundle):
-        raise error.Abort(_('specify at least one changeset with -r or -o'))
+    if not (revs or rev or outgoing or bundle or bookmark):
+        raise error.Abort(_('specify at least one changeset with -B, -r or -o'))
 
     if outgoing and bundle:
         raise error.Abort(_("--outgoing mode always on with --bundle;"
                            " do not re-specify --outgoing"))
+    if rev and bookmark:
+        raise error.Abort(_("-r and -B are mutually exclusive"))
 
     if outgoing or bundle:
         if len(revs) > 1:
@@ -564,6 +579,10 @@ def email(ui, repo, *revs, **opts):
         if revs:
             raise error.Abort(_('use only one form to specify the revision'))
         revs = rev
+    elif bookmark:
+        if bookmark not in repo._bookmarks:
+            raise error.Abort(_("bookmark '%s' not found") % bookmark)
+        revs = repair.stripbmrevset(repo, bookmark)
 
     revs = scmutil.revrange(repo, revs)
     if outgoing:
@@ -573,7 +592,7 @@ def email(ui, repo, *revs, **opts):
 
     # check if revision exist on the public destination
     publicurl = repo.ui.config('patchbomb', 'publicurl')
-    if publicurl is not None:
+    if publicurl:
         repo.ui.debug('checking that revision exist in the public repo')
         try:
             publicpeer = hg.peer(repo, {}, publicurl)
@@ -645,15 +664,17 @@ def email(ui, repo, *revs, **opts):
         if addr:
             showaddrs.append('%s: %s' % (header, addr))
             return mail.addrlistencode(ui, [addr], _charsets, opts.get('test'))
-        else:
-            return default
+        elif default:
+            return mail.addrlistencode(
+                ui, [default], _charsets, opts.get('test'))
+        return []
 
     to = getaddrs('To', ask=True)
     if not to:
         # we can get here in non-interactive mode
         raise error.Abort(_('no recipient addresses provided'))
-    cc = getaddrs('Cc', ask=True, default='') or []
-    bcc = getaddrs('Bcc') or []
+    cc = getaddrs('Cc', ask=True, default='')
+    bcc = getaddrs('Bcc')
     replyto = getaddrs('Reply-To')
 
     confirm = ui.configbool('patchbomb', 'confirm')

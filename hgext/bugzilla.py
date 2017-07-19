@@ -301,8 +301,10 @@ from mercurial.i18n import _
 from mercurial.node import short
 from mercurial import (
     cmdutil,
+    configitems,
     error,
     mail,
+    registrar,
     url,
     util,
 )
@@ -314,6 +316,75 @@ xmlrpclib = util.xmlrpclib
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
+
+configtable = {}
+configitem = registrar.configitem(configtable)
+
+configitem('bugzilla', 'apikey',
+    default='',
+)
+configitem('bugzilla', 'bzdir',
+    default='/var/www/html/bugzilla',
+)
+configitem('bugzilla', 'bzemail',
+    default=None,
+)
+configitem('bugzilla', 'bzurl',
+    default='http://localhost/bugzilla/',
+)
+configitem('bugzilla', 'bzuser',
+    default=None,
+)
+configitem('bugzilla', 'db',
+    default='bugs',
+)
+configitem('bugzilla', 'fixregexp',
+    default=(r'fix(?:es)?\s*(?:bugs?\s*)?,?\s*'
+             r'(?:nos?\.?|num(?:ber)?s?)?\s*'
+             r'(?P<ids>(?:#?\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
+             r'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
+)
+configitem('bugzilla', 'fixresolution',
+    default='FIXED',
+)
+configitem('bugzilla', 'fixstatus',
+    default='RESOLVED',
+)
+configitem('bugzilla', 'host',
+    default='localhost',
+)
+configitem('bugzilla', 'notify',
+    default=configitems.dynamicdefault,
+)
+configitem('bugzilla', 'password',
+    default=None,
+)
+configitem('bugzilla', 'regexp',
+    default=(r'bugs?\s*,?\s*(?:#|nos?\.?|num(?:ber)?s?)?\s*'
+             r'(?P<ids>(?:\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
+             r'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
+)
+configitem('bugzilla', 'strip',
+    default=0,
+)
+configitem('bugzilla', 'style',
+    default=None,
+)
+configitem('bugzilla', 'template',
+    default=None,
+)
+configitem('bugzilla', 'timeout',
+    default=5,
+)
+configitem('bugzilla', 'user',
+    default='bugs',
+)
+configitem('bugzilla', 'usermap',
+    default=None,
+)
+configitem('bugzilla', 'version',
+    default=None,
+)
 
 class bzaccess(object):
     '''Base class for access to Bugzilla.'''
@@ -389,11 +460,11 @@ class bzmysql(bzaccess):
 
         bzaccess.__init__(self, ui)
 
-        host = self.ui.config('bugzilla', 'host', 'localhost')
-        user = self.ui.config('bugzilla', 'user', 'bugs')
+        host = self.ui.config('bugzilla', 'host')
+        user = self.ui.config('bugzilla', 'user')
         passwd = self.ui.config('bugzilla', 'password')
-        db = self.ui.config('bugzilla', 'db', 'bugs')
-        timeout = int(self.ui.config('bugzilla', 'timeout', 5))
+        db = self.ui.config('bugzilla', 'db')
+        timeout = int(self.ui.config('bugzilla', 'timeout'))
         self.ui.note(_('connecting to %s:%s as %s, password %s\n') %
                      (host, db, user, '*' * len(passwd)))
         self.conn = bzmysql._MySQLdb.connect(host=host,
@@ -449,8 +520,7 @@ class bzmysql(bzaccess):
         for id in bugs.keys():
             self.ui.status(_('  bug %s\n') % id)
             cmdfmt = self.ui.config('bugzilla', 'notify', self.default_notify)
-            bzdir = self.ui.config('bugzilla', 'bzdir',
-                                   '/var/www/html/bugzilla')
+            bzdir = self.ui.config('bugzilla', 'bzdir')
             try:
                 # Backwards-compatible with old notify string, which
                 # took one string. This will throw with a new format
@@ -636,16 +706,14 @@ class bzxmlrpc(bzaccess):
     def __init__(self, ui):
         bzaccess.__init__(self, ui)
 
-        bzweb = self.ui.config('bugzilla', 'bzurl',
-                               'http://localhost/bugzilla/')
+        bzweb = self.ui.config('bugzilla', 'bzurl')
         bzweb = bzweb.rstrip("/") + "/xmlrpc.cgi"
 
-        user = self.ui.config('bugzilla', 'user', 'bugs')
+        user = self.ui.config('bugzilla', 'user')
         passwd = self.ui.config('bugzilla', 'password')
 
-        self.fixstatus = self.ui.config('bugzilla', 'fixstatus', 'RESOLVED')
-        self.fixresolution = self.ui.config('bugzilla', 'fixresolution',
-                                            'FIXED')
+        self.fixstatus = self.ui.config('bugzilla', 'fixstatus')
+        self.fixresolution = self.ui.config('bugzilla', 'fixresolution')
 
         self.bzproxy = xmlrpclib.ServerProxy(bzweb, self.transport(bzweb))
         ver = self.bzproxy.Bugzilla.version()['version'].split('.')
@@ -758,7 +826,7 @@ class bzxmlrpcemail(bzxmlrpc):
         matches = self.bzproxy.User.get({'match': [user],
                                          'token': self.bztoken})
         if not matches['users']:
-            user = self.ui.config('bugzilla', 'user', 'bugs')
+            user = self.ui.config('bugzilla', 'user')
             matches = self.bzproxy.User.get({'match': [user],
                                              'token': self.bztoken})
             if not matches['users']:
@@ -797,15 +865,13 @@ class bzrestapi(bzaccess):
     """
     def __init__(self, ui):
         bzaccess.__init__(self, ui)
-        bz = self.ui.config('bugzilla', 'bzurl',
-                            'http://localhost/bugzilla/')
+        bz = self.ui.config('bugzilla', 'bzurl')
         self.bzroot = '/'.join([bz, 'rest'])
-        self.apikey = self.ui.config('bugzilla', 'apikey', '')
-        self.user = self.ui.config('bugzilla', 'user', 'bugs')
+        self.apikey = self.ui.config('bugzilla', 'apikey')
+        self.user = self.ui.config('bugzilla', 'user')
         self.passwd = self.ui.config('bugzilla', 'password')
-        self.fixstatus = self.ui.config('bugzilla', 'fixstatus', 'RESOLVED')
-        self.fixresolution = self.ui.config('bugzilla', 'fixresolution',
-                                            'FIXED')
+        self.fixstatus = self.ui.config('bugzilla', 'fixstatus')
+        self.fixresolution = self.ui.config('bugzilla', 'fixresolution')
 
     def apiurl(self, targets, include_fields=None):
         url = '/'.join([self.bzroot] + [str(t) for t in targets])
@@ -930,15 +996,6 @@ class bugzilla(object):
         'restapi': bzrestapi,
         }
 
-    _default_bug_re = (r'bugs?\s*,?\s*(?:#|nos?\.?|num(?:ber)?s?)?\s*'
-                       r'(?P<ids>(?:\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
-                       r'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
-
-    _default_fix_re = (r'fix(?:es)?\s*(?:bugs?\s*)?,?\s*'
-                       r'(?:nos?\.?|num(?:ber)?s?)?\s*'
-                       r'(?P<ids>(?:#?\d+\s*(?:,?\s*(?:and)?)?\s*)+)'
-                       r'\.?\s*(?:h(?:ours?)?\s*(?P<hours>\d*(?:\.\d+)?))?')
-
     def __init__(self, ui, repo):
         self.ui = ui
         self.repo = repo
@@ -952,11 +1009,9 @@ class bugzilla(object):
         self.bzdriver = bzclass(self.ui)
 
         self.bug_re = re.compile(
-            self.ui.config('bugzilla', 'regexp',
-                           bugzilla._default_bug_re), re.IGNORECASE)
+            self.ui.config('bugzilla', 'regexp'), re.IGNORECASE)
         self.fix_re = re.compile(
-            self.ui.config('bugzilla', 'fixregexp',
-                           bugzilla._default_fix_re), re.IGNORECASE)
+            self.ui.config('bugzilla', 'fixregexp'), re.IGNORECASE)
         self.split_re = re.compile(r'\D+')
 
     def find_bugs(self, ctx):
@@ -1023,7 +1078,7 @@ class bugzilla(object):
         def webroot(root):
             '''strip leading prefix of repo root and turn into
             url-safe path.'''
-            count = int(self.ui.config('bugzilla', 'strip', 0))
+            count = int(self.ui.config('bugzilla', 'strip'))
             root = util.pconvert(root)
             while count > 0:
                 c = root.find('/')
@@ -1040,8 +1095,9 @@ class bugzilla(object):
         if not mapfile and not tmpl:
             tmpl = _('changeset {node|short} in repo {root} refers '
                      'to bug {bug}.\ndetails:\n\t{desc|tabindent}')
-        t = cmdutil.changeset_templater(self.ui, self.repo,
-                                        False, None, tmpl, mapfile, False)
+        spec = cmdutil.logtemplatespec(tmpl, mapfile)
+        t = cmdutil.changeset_templater(self.ui, self.repo, spec,
+                                        False, None, False)
         self.ui.pushbuffer()
         t.show(ctx, changes=ctx.changeset(),
                bug=str(bugid),

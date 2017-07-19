@@ -21,10 +21,11 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     commands,
+    registrar,
 )
 
 cmdtable = {}
-command = cmdutil.command(cmdtable)
+command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -51,7 +52,7 @@ testedwith = 'ships-with-hg-core'
      _('show changesets within the given named branch'), _('BRANCH')),
     ('P', 'prune', [],
      _('do not display revision or any of its ancestors'), _('REV')),
-    ] + commands.logopts + commands.walkopts,
+    ] + cmdutil.logopts + cmdutil.walkopts,
     _('[OPTION]... [FILE]'),
     inferrepo=True)
 def glog(ui, repo, *pats, **opts):

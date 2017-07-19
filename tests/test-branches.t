@@ -530,6 +530,45 @@ template output:
   a: Adding b branch head 2
   default: Adding root node
 
+  $ cat <<'EOF' > "$TESTTMP/map-myjson"
+  > docheader = '\{\n'
+  > docfooter = '\n}\n'
+  > separator = ',\n'
+  > branches = ' {dict(branch, node|short)|json}'
+  > EOF
+  $ hg branches -T "$TESTTMP/map-myjson"
+  {
+   {"branch": "b", "node": "e23b5505d1ad"},
+   {"branch": "a branch *", "node": "10ff5895aa57"}, (glob)
+   {"branch": "a", "node": "d8cbc61dbaa6"},
+   {"branch": "default", "node": "19709c5a4e75"}
+  }
+
+  $ cat <<'EOF' >> .hg/hgrc
+  > [templates]
+  > myjson = ' {dict(branch, node|short)|json}'
+  > myjson:docheader = '\{\n'
+  > myjson:docfooter = '\n}\n'
+  > myjson:separator = ',\n'
+  > EOF
+  $ hg branches -T myjson
+  {
+   {"branch": "b", "node": "e23b5505d1ad"},
+   {"branch": "a branch *", "node": "10ff5895aa57"}, (glob)
+   {"branch": "a", "node": "d8cbc61dbaa6"},
+   {"branch": "default", "node": "19709c5a4e75"}
+  }
+
+  $ cat <<'EOF' >> .hg/hgrc
+  > [templates]
+  > :docheader = 'should not be selected as a docheader for literal templates\n'
+  > EOF
+  $ hg branches -T '{branch}\n'
+  b
+  a branch name much longer than the default justification used by branches
+  a
+  default
+
 Tests of revision branch name caching
 
 We rev branch cache is updated automatically. In these tests we use a trick to

@@ -92,15 +92,15 @@ class progbar(object):
         self.startvals = {}
         self.printed = False
         self.lastprint = time.time() + float(self.ui.config(
-            'progress', 'delay', default=3))
+            'progress', 'delay'))
         self.curtopic = None
         self.lasttopic = None
         self.indetcount = 0
         self.refresh = float(self.ui.config(
-            'progress', 'refresh', default=0.1))
+            'progress', 'refresh'))
         self.changedelay = max(3 * self.refresh,
                                float(self.ui.config(
-                                   'progress', 'changedelay', default=1)))
+                                   'progress', 'changedelay')))
         self.order = self.ui.configlist(
             'progress', 'format',
             default=['topic', 'bar', 'number', 'estimate'])
@@ -191,7 +191,7 @@ class progbar(object):
     def complete(self):
         if not shouldprint(self.ui):
             return
-        if self.ui.configbool('progress', 'clear-complete', default=True):
+        if self.ui.configbool('progress', 'clear-complete'):
             self.clear()
         else:
             self._writeerr('\n')
@@ -217,7 +217,7 @@ class progbar(object):
             elapsed = now - self.starttimes[topic]
             # experimental config: progress.estimate
             if elapsed > float(
-                self.ui.config('progress', 'estimate', default=2)):
+                self.ui.config('progress', 'estimate')):
                 seconds = (elapsed * (target - delta)) // delta + 1
                 return fmtremaining(seconds)
         return ''
@@ -227,7 +227,7 @@ class progbar(object):
         delta = pos - initialpos
         elapsed = now - self.starttimes[topic]
         if elapsed > float(
-            self.ui.config('progress', 'estimate', default=2)):
+            self.ui.config('progress', 'estimate')):
             return _('%d %s/sec') % (delta / elapsed, unit)
         return ''
 

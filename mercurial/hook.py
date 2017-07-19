@@ -13,6 +13,7 @@ import sys
 from .i18n import _
 from . import (
     demandimport,
+    encoding,
     error,
     extensions,
     pycompat,
@@ -31,7 +32,7 @@ def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
 
     if callable(funcname):
         obj = funcname
-        funcname = obj.__module__ + "." + obj.__name__
+        funcname = pycompat.sysbytes(obj.__module__ + r"." + obj.__name__)
     else:
         d = funcname.rfind('.')
         if d == -1:
@@ -97,7 +98,7 @@ def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
                          (hname, exc.args[0]))
         else:
             ui.warn(_('error: %s hook raised an exception: '
-                           '%s\n') % (hname, exc))
+                      '%s\n') % (hname, encoding.strtolocal(str(exc))))
         if throw:
             raise
         if not ui.tracebackflag:
@@ -204,6 +205,7 @@ def hook(ui, repo, htype, throw=False, **args):
     return r
 
 def runhooks(ui, repo, htype, hooks, throw=False, **args):
+    args = pycompat.byteskwargs(args)
     res = {}
     oldstdout = -1
 

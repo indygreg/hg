@@ -135,9 +135,17 @@ extension and python hooks - use the eol extension for a pythonhook
   $ echo '[hooks]' >> .hg/hgrc
   $ echo 'update = echo hooked' >> .hg/hgrc
   $ hg update
+  The fsmonitor extension is incompatible with the eol extension and has been disabled. (fsmonitor !)
   hooked
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "d02f48003e62: c"
   1 other heads for branch "default"
+  $ cat >> .hg/hgrc <<EOF
+  > [extensions]
+  > # disable eol, because it is not needed for subsequent tests
+  > # (in addition, keeping it requires extra care for fsmonitor)
+  > eol=!
+  > EOF
   $ hg blackbox -l 6
   1970/01/01 00:00:00 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> update
   1970/01/01 00:00:00 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> writing .hg/cache/tags2-visible with 0 tags
@@ -171,7 +179,7 @@ log rotation
   $ sed -e 's/\(.*test1.*\)/#\1/; s#\(.*commit2.*\)#os.rmdir(".hg/blackbox.log")\
   > os.rename(".hg/blackbox.log-", ".hg/blackbox.log")\
   > \1#' $TESTDIR/test-dispatch.py > ../test-dispatch.py
-  $ python $TESTDIR/blackbox-readonly-dispatch.py
+  $ $PYTHON $TESTDIR/blackbox-readonly-dispatch.py
   running: add foo
   result: 0
   running: commit -m commit1 -d 2000-01-01 foo
@@ -195,8 +203,8 @@ log rotation
   result: None
   $ hg blackbox
   1970/01/01 00:00:00 bob @0e46349438790c460c5c9f7546bfcd39b267bbd2 (5000)> commit -m commit2 -d 2000-01-02 foo
-  1970/01/01 00:00:00 bob @0e46349438790c460c5c9f7546bfcd39b267bbd2 (5000)> updated served branch cache in * seconds (glob)
-  1970/01/01 00:00:00 bob @0e46349438790c460c5c9f7546bfcd39b267bbd2 (5000)> wrote served branch cache with 1 labels and 1 nodes
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updated served branch cache in * seconds (glob)
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> wrote served branch cache with 1 labels and 1 nodes
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> commit -m commit2 -d 2000-01-02 foo exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> log -r 0
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> writing .hg/cache/tags2-visible with 0 tags

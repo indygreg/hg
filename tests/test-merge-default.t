@@ -33,6 +33,7 @@ Should fail because not at a head:
 
   $ hg up
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "f25cbe84d8b3: e"
   2 other heads for branch "default"
 
 Should fail because > 2 heads:
@@ -48,6 +49,18 @@ Should succeed:
   $ hg merge 2
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
+  $ hg id -Tjson
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "dirty": "+",
+    "id": "f25cbe84d8b3+2d95304fed5d+",
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "parents": [{"node": "f25cbe84d8b320e298e7703f18a25a3959518c23", "rev": 4}, {"node": "2d95304fed5d89bc9d70b2a0d02f0d567469c3ab", "rev": 2}],
+    "tags": ["tip"]
+   }
+  ]
   $ hg commit -mm1
 
 Should succeed - 2 heads:
@@ -63,6 +76,17 @@ Should succeed - 2 heads:
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg commit -mm2
+
+  $ hg id -r 1 -Tjson
+  [
+   {
+    "bookmarks": [],
+    "branch": "default",
+    "id": "1846eede8b68",
+    "node": "1846eede8b6886d8cc8a88c96a687b7fe8f3b9d1",
+    "tags": []
+   }
+  ]
 
 Should fail because at tip:
 

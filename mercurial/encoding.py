@@ -14,6 +14,7 @@ import unicodedata
 
 from . import (
     error,
+    policy,
     pycompat,
 )
 
@@ -29,10 +30,7 @@ _ignore = [unichr(int(x, 16)).encode("utf-8") for x in
            "200c 200d 200e 200f 202a 202b 202c 202d 202e "
            "206a 206b 206c 206d 206e 206f feff".split()]
 # verify the next function will work
-if pycompat.ispy3:
-    assert set(i[0] for i in _ignore) == set([ord(b'\xe2'), ord(b'\xef')])
-else:
-    assert set(i[0] for i in _ignore) == set(["\xe2", "\xef"])
+assert all(i.startswith(("\xe2", "\xef")) for i in _ignore)
 
 def hfsignoreclean(s):
     """Remove codepoints ignored by HFS+ from s.
@@ -51,43 +49,18 @@ def hfsignoreclean(s):
 # the process environment
 _nativeenviron = (not pycompat.ispy3 or os.supports_bytes_environ)
 if not pycompat.ispy3:
-    environ = os.environ
+    environ = os.environ  # re-exports
 elif _nativeenviron:
-    environ = os.environb
+    environ = os.environb  # re-exports
 else:
     # preferred encoding isn't known yet; use utf-8 to avoid unicode error
     # and recreate it once encoding is settled
     environ = dict((k.encode(u'utf-8'), v.encode(u'utf-8'))
-                   for k, v in os.environ.items())
-
-def _getpreferredencoding():
-    '''
-    On darwin, getpreferredencoding ignores the locale environment and
-    always returns mac-roman. http://bugs.python.org/issue6202 fixes this
-    for Python 2.7 and up. This is the same corrected code for earlier
-    Python versions.
-
-    However, we can't use a version check for this method, as some distributions
-    patch Python to fix this. Instead, we use it as a 'fixer' for the mac-roman
-    encoding, as it is unlikely that this encoding is the actually expected.
-    '''
-    try:
-        locale.CODESET
-    except AttributeError:
-        # Fall back to parsing environment variables :-(
-        return locale.getdefaultlocale()[1]
-
-    oldloc = locale.setlocale(locale.LC_CTYPE)
-    locale.setlocale(locale.LC_CTYPE, "")
-    result = locale.nl_langinfo(locale.CODESET)
-    locale.setlocale(locale.LC_CTYPE, oldloc)
-
-    return result
+                   for k, v in os.environ.items())  # re-exports
 
 _encodingfixers = {
     '646': lambda: 'ascii',
     'ANSI_X3.4-1968': lambda: 'ascii',
-    'mac-roman': _getpreferredencoding
 }
 
 try:
@@ -204,25 +177,34 @@ def unifromlocal(s):
     """Convert a byte string of local encoding to a unicode string"""
     return fromlocal(s).decode('utf-8')
 
+def unimethod(bytesfunc):
+    """Create a proxy method that forwards __unicode__() and __str__() of
+    Python 3 to __bytes__()"""
+    def unifunc(obj):
+        return unifromlocal(bytesfunc(obj))
+    return unifunc
+
 # converter functions between native str and byte string. use these if the
 # character encoding is not aware (e.g. exception message) or is known to
 # be locale dependent (e.g. date formatting.)
 if pycompat.ispy3:
     strtolocal = unitolocal
     strfromlocal = unifromlocal
+    strmethod = unimethod
 else:
     strtolocal = pycompat.identity
     strfromlocal = pycompat.identity
+    strmethod = pycompat.identity
 
 if not _nativeenviron:
     # now encoding and helper functions are available, recreate the environ
     # dict to be exported to other modules
     environ = dict((tolocal(k.encode(u'utf-8')), tolocal(v.encode(u'utf-8')))
-                   for k, v in os.environ.items())
+                   for k, v in os.environ.items())  # re-exports
 
 # How to treat ambiguous-width characters. Set to 'wide' to treat as wide.
-wide = (environ.get("HGENCODINGAMBIGUOUS", "narrow") == "wide"
-        and "WFA" or "WF")
+_wide = _sysstr(environ.get("HGENCODINGAMBIGUOUS", "narrow") == "wide"
+                and "WFA" or "WF")
 
 def colwidth(s):
     "Find the column width of a string for display in the local encoding"
@@ -232,7 +214,7 @@ def ucolwidth(d):
     "Find the column width of a Unicode string for display"
     eaw = getattr(unicodedata, 'east_asian_width', None)
     if eaw is not None:
-        return sum([eaw(c) in wide and 2 or 1 for c in d])
+        return sum([eaw(c) in _wide and 2 or 1 for c in d])
     return len(d)
 
 def getcols(s, start, c):
@@ -346,7 +328,7 @@ def _asciilower(s):
 def asciilower(s):
     # delay importing avoids cyclic dependency around "parsers" in
     # pure Python build (util => i18n => encoding => parsers => util)
-    from . import parsers
+    parsers = policy.importmod(r'parsers')
     impl = getattr(parsers, 'asciilower', _asciilower)
     global asciilower
     asciilower = impl
@@ -362,7 +344,7 @@ def _asciiupper(s):
 def asciiupper(s):
     # delay importing avoids cyclic dependency around "parsers" in
     # pure Python build (util => i18n => encoding => parsers => util)
-    from . import parsers
+    parsers = policy.importmod(r'parsers')
     impl = getattr(parsers, 'asciiupper', _asciiupper)
     global asciiupper
     asciiupper = impl
@@ -429,7 +411,7 @@ class normcasespecs(object):
 
 _jsonmap = []
 _jsonmap.extend("\\u%04x" % x for x in range(32))
-_jsonmap.extend(chr(x) for x in range(32, 127))
+_jsonmap.extend(pycompat.bytechr(x) for x in range(32, 127))
 _jsonmap.append('\\u007f')
 _jsonmap[0x09] = '\\t'
 _jsonmap[0x0a] = '\\n'
@@ -441,7 +423,7 @@ _jsonmap[0x0d] = '\\r'
 _paranoidjsonmap = _jsonmap[:]
 _paranoidjsonmap[0x3c] = '\\u003c'  # '<' (e.g. escape "</script>")
 _paranoidjsonmap[0x3e] = '\\u003e'  # '>'
-_jsonmap.extend(chr(x) for x in range(128, 256))
+_jsonmap.extend(pycompat.bytechr(x) for x in range(128, 256))
 
 def jsonescape(s, paranoid=False):
     '''returns a string suitable for JSON

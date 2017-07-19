@@ -415,7 +415,7 @@ effect and style see :hg:`help color`.
 ``mode``
     String: control the method used to output color. One of ``auto``, ``ansi``,
     ``win32``, ``terminfo`` or ``debug``. In auto mode, Mercurial will
-    use ANSI mode by default (or win32 mode on Windows) if it detects a
+    use ANSI mode by default (or win32 mode prior to Windows 10) if it detects a
     terminal. Any invalid value will disable color.
 
 ``pagermode``
@@ -1133,6 +1133,7 @@ The following per-host settings can be defined.
     A list of hashes of the DER encoded peer/remote certificate. Values have
     the form ``algorithm``:``fingerprint``. e.g.
     ``sha256:c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2``.
+    In addition, colons (``:``) can appear in the fingerprint part.
 
     The following algorithms/prefixes are supported: ``sha1``, ``sha256``,
     ``sha512``.
@@ -1182,6 +1183,7 @@ For example::
     [hostsecurity]
     hg.example.com:fingerprints = sha256:c3ab8ff13720e8ad9047dd39466b3c8974e592c2fa383d4a3960714caef0c4f2
     hg2.example.com:fingerprints = sha1:914f1aff87249c09b6859b88b1906d30756491ca, sha1:fc:e2:8d:d9:51:cd:cb:c1:4d:18:6b:b7:44:8d:49:72:57:e6:cd:33
+    hg3.example.com:fingerprints = sha256:9a:b0:dc:e2:75:ad:8a:b7:84:58:e5:1f:07:32:f1:87:e6:bd:24:22:af:b7:ce:8e:9c:b4:10:cf:b9:f4:0e:d2
     foo.example.com:verifycertsfile = /etc/ssl/trusted-ca-certs.pem
 
 To change the default minimum protocol version to TLS 1.2 but to allow TLS 1.1
@@ -1572,6 +1574,28 @@ profiling is done using lsprof.
     Specific to the ``ls`` instrumenting profiler.
     (default: 5)
 
+``showmin``
+    Minimum fraction of samples an entry must have for it to be displayed.
+    Can be specified as a float between ``0.0`` and ``1.0`` or can have a
+    ``%`` afterwards to allow values up to ``100``. e.g. ``5%``.
+
+    Only used by the ``stat`` profiler.
+
+    For the ``hotpath`` format, default is ``0.05``.
+    For the ``chrome`` format, default is ``0.005``.
+
+    The option is unused on other formats.
+
+``showmax``
+    Maximum fraction of samples an entry can have before it is ignored in
+    display. Values format is the same as ``showmin``.
+
+    Only used by the ``stat`` profiler.
+
+    For the ``chrome`` format, default is ``0.999``.
+
+    The option is unused on other formats.
+
 ``progress``
 ------------
 
@@ -1657,9 +1681,30 @@ Controls generic server settings.
     the write lock while determining what data to transfer.
     (default: True)
 
+``uncompressedallowsecret``
+    Whether to allow stream clones when the repository contains secret
+    changesets. (default: False)
+
 ``preferuncompressed``
     When set, clients will try to use the uncompressed streaming
     protocol. (default: False)
+
+``disablefullbundle``
+    When set, servers will refuse attempts to do pull-based clones.
+    If this option is set, ``preferuncompressed`` and/or clone bundles
+    are highly recommended. Partial clones will still be allowed.
+    (default: False)
+
+``concurrent-push-mode``
+    Level of allowed race condition between two pushing clients.
+
+    - 'strict': push is abort if another client touched the repository
+      while the push was preparing. (default)
+    - 'check-related': push is only aborted if it affects head that got also
+      affected while the push was preparing.
+
+    This requires compatible client (version 4.3 and later). Old client will
+    use 'strict'.
 
 ``validate``
     Whether to validate the completeness of pushed changesets by
@@ -2059,6 +2104,15 @@ User interface controls.
     occurs. Setting this to True will make Mercurial print a traceback
     on all exceptions, even those recognized by Mercurial (such as
     IOError or MemoryError). (default: False)
+
+``tweakdefaults``
+
+    By default Mercurial's behavior changes very little from release
+    to release, but over time the recommended config settings
+    shift. Enable this config to opt in to get automatic tweaks to
+    Mercurial's behavior over time. This config setting will have no
+    effet if ``HGPLAIN` is set or ``HGPLAINEXCEPT`` is set and does
+    not include ``tweakdefaults``. (default: False)
 
 ``username``
     The committer of a changeset created when running "commit".

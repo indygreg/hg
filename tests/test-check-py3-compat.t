@@ -3,7 +3,9 @@
   $ . "$TESTDIR/helpers-testrepo.sh"
   $ cd "$TESTDIR"/..
 
-  $ hg files 'set:(**.py)' | sed 's|\\|/|g' | xargs python contrib/check-py3-compat.py
+  $ testrepohg files 'set:(**.py)' \
+  > -X hgdemandimport/demandimportpy2.py \
+  > | sed 's|\\|/|g' | xargs $PYTHON contrib/check-py3-compat.py
   contrib/python-zstandard/setup.py not using absolute_import
   contrib/python-zstandard/setup_zstd.py not using absolute_import
   contrib/python-zstandard/tests/common.py not using absolute_import
@@ -22,15 +24,17 @@
   tests/test-demandimport.py not using absolute_import
 
 #if py3exe
-  $ hg files 'set:(**.py) - grep(pygments)' -X hgext/fsmonitor/pywatchman \
+  $ testrepohg files 'set:(**.py) - grep(pygments)' \
+  > -X hgdemandimport/demandimportpy2.py \
+  > -X hgext/fsmonitor/pywatchman \
   > | sed 's|\\|/|g' | xargs $PYTHON3 contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
   hgext/convert/transport.py: error importing: <*Error> No module named 'svn.client' (error at transport.py:*) (glob)
-  hgext/fsmonitor/state.py: error importing: <SyntaxError> from __future__ imports must occur at the beginning of the file (__init__.py, line 30) (error at __init__.py:*)
-  hgext/fsmonitor/watchmanclient.py: error importing: <SyntaxError> from __future__ imports must occur at the beginning of the file (__init__.py, line 30) (error at __init__.py:*)
-  mercurial/cffi/bdiff.py: error importing: <*Error> No module named 'mercurial.cffi' (error at check-py3-compat.py:*) (glob)
-  mercurial/cffi/mpatch.py: error importing: <*Error> No module named 'mercurial.cffi' (error at check-py3-compat.py:*) (glob)
-  mercurial/cffi/osutil.py: error importing: <*Error> No module named 'mercurial.cffi' (error at check-py3-compat.py:*) (glob)
+  mercurial/cffi/bdiff.py: error importing: <ImportError> cannot import name '_bdiff' (error at bdiff.py:*)
+  mercurial/cffi/bdiffbuild.py: error importing: <ImportError> No module named 'cffi' (error at bdiffbuild.py:*)
+  mercurial/cffi/mpatch.py: error importing: <ImportError> cannot import name '_mpatch' (error at mpatch.py:*)
+  mercurial/cffi/mpatchbuild.py: error importing: <ImportError> No module named 'cffi' (error at mpatchbuild.py:*)
+  mercurial/cffi/osutilbuild.py: error importing: <ImportError> No module named 'cffi' (error at osutilbuild.py:*)
   mercurial/scmwindows.py: error importing: <*Error> No module named 'msvcrt' (error at win32.py:*) (glob)
   mercurial/win32.py: error importing: <*Error> No module named 'msvcrt' (error at win32.py:*) (glob)
   mercurial/windows.py: error importing: <*Error> No module named 'msvcrt' (error at windows.py:*) (glob)
@@ -38,7 +42,7 @@
 #endif
 
 #if py3exe py3pygments
-  $ hg files 'set:(**.py) and grep(pygments)' | sed 's|\\|/|g' \
+  $ testrepohg files 'set:(**.py) and grep(pygments)' | sed 's|\\|/|g' \
   > | xargs $PYTHON3 contrib/check-py3-compat.py \
   > | sed 's/[0-9][0-9]*)$/*)/'
 #endif

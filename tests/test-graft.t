@@ -177,6 +177,7 @@ Graft out of order, skipping a merge and a duplicate
   b
   committing manifest
   committing changelog
+  updating the branch cache
   grafting 5:97f8bfe72746 "5"
     searching for copies back to rev 1
     unmatched files in other (from topological common ancestor):
@@ -186,11 +187,11 @@ Graft out of order, skipping a merge and a duplicate
    ancestor: 4c60f11aa304, local: 6b9e5368ca4e+, remote: 97f8bfe72746
    e: remote is newer -> g
   getting e
-   b: remote unchanged -> k
   committing files:
   e
   committing manifest
   committing changelog
+  updating the branch cache
   $ HGEDITOR=cat hg graft 4 3 --log --debug
   scanning for duplicate grafts
   grafting 4:9c233e8e184d "4"
@@ -203,7 +204,6 @@ Graft out of order, skipping a merge and a duplicate
    preserving e for resolve of e
    d: remote is newer -> g
   getting d
-   b: remote unchanged -> k
    e: versions differ -> m (premerge)
   picked tool ':merge' for e (binary False symlink False changedelete False)
   merging e

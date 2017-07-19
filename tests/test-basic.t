@@ -1,11 +1,9 @@
 Create a repository:
 
   $ hg config
-  defaults.backout=-d "0 0"
-  defaults.commit=-d "0 0"
-  defaults.shelve=--date "0 0"
-  defaults.tag=-d "0 0"
   devel.all-warnings=true
+  devel.default-date=0 0
+  extensions.fsmonitor= (fsmonitor !)
   largefiles.usercache=$TESTTMP/.cache/largefiles (glob)
   ui.slash=True
   ui.interactive=False
@@ -63,7 +61,7 @@ Verify that updating to revision 0 via commands.update() works properly
   > EOF
   $ hg up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ python ./update_to_rev0.py
+  $ $PYTHON ./update_to_rev0.py
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg identify -n
   0

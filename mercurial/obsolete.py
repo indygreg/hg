@@ -74,13 +74,15 @@ import struct
 
 from .i18n import _
 from . import (
-    base85,
     error,
     node,
-    parsers,
+    obsutil,
     phases,
+    policy,
     util,
 )
+
+parsers = policy.importmod(r'parsers')
 
 _pack = struct.pack
 _unpack = struct.unpack
@@ -95,6 +97,27 @@ _enabled = False
 createmarkersopt = 'createmarkers'
 allowunstableopt = 'allowunstable'
 exchangeopt = 'exchange'
+
+def isenabled(repo, option):
+    """Returns True if the given repository has the given obsolete option
+    enabled.
+    """
+    result = set(repo.ui.configlist('experimental', 'evolution'))
+    if 'all' in result:
+        return True
+
+    # For migration purposes, temporarily return true if the config hasn't been
+    # set but _enabled is true.
+    if len(result) == 0 and _enabled:
+        return True
+
+    # createmarkers must be enabled if other options are enabled
+    if ((allowunstableopt in result or exchangeopt in result) and
+        not createmarkersopt in result):
+        raise error.Abort(_("'createmarkers' obsolete option must be enabled "
+                           "if other obsolete options are enabled"))
+
+    return option in result
 
 ### obsolescence marker flag
 
@@ -155,10 +178,9 @@ _fm0node = '20s'
 _fm0fsize = _calcsize(_fm0fixed)
 _fm0fnodesize = _calcsize(_fm0node)
 
-def _fm0readmarkers(data, off):
+def _fm0readmarkers(data, off, stop):
     # Loop on markers
-    l = len(data)
-    while off + _fm0fsize <= l:
+    while off < stop:
         # read fixed part
         cur = data[off:off + _fm0fsize]
         off += _fm0fsize
@@ -218,8 +240,8 @@ def _fm0encodeonemarker(marker):
         if not parents:
             # mark that we explicitly recorded no parents
             metadata['p0'] = ''
-        for i, p in enumerate(parents):
-            metadata['p%i' % (i + 1)] = node.hex(p)
+        for i, p in enumerate(parents, 1):
+            metadata['p%i' % i] = node.hex(p)
     metadata = _fm0encodemeta(metadata)
     numsuc = len(sucs)
     format = _fm0fixed + (_fm0node * numsuc)
@@ -294,7 +316,7 @@ _fm1parentmask = (_fm1parentnone << _fm1parentshift)
 _fm1metapair = 'BB'
 _fm1metapairsize = _calcsize('BB')
 
-def _fm1purereadmarkers(data, off):
+def _fm1purereadmarkers(data, off, stop):
     # make some global constants local for performance
     noneflag = _fm1parentnone
     sha2flag = usingsha256
@@ -308,10 +330,9 @@ def _fm1purereadmarkers(data, off):
     unpack = _unpack
 
     # Loop on markers
-    stop = len(data) - _fm1fsize
     ufixed = struct.Struct(_fm1fixed).unpack
 
-    while off <= stop:
+    while off < stop:
         # read fixed part
         o1 = off + fsize
         t, secs, tz, flags, numsuc, numpar, nummeta, prec = ufixed(data[off:o1])
@@ -405,11 +426,10 @@ def _fm1encodeonemarker(marker):
         data.append(value)
     return ''.join(data)
 
-def _fm1readmarkers(data, off):
+def _fm1readmarkers(data, off, stop):
     native = getattr(parsers, 'fm1readmarkers', None)
     if not native:
-        return _fm1purereadmarkers(data, off)
-    stop = len(data) - _fm1fsize
+        return _fm1purereadmarkers(data, off, stop)
     return native(data, off, stop)
 
 # mapping to read/write various marker formats
@@ -417,67 +437,33 @@ def _fm1readmarkers(data, off):
 formats = {_fm0version: (_fm0readmarkers, _fm0encodeonemarker),
            _fm1version: (_fm1readmarkers, _fm1encodeonemarker)}
 
+def _readmarkerversion(data):
+    return _unpack('>B', data[0:1])[0]
+
 @util.nogc
-def _readmarkers(data):
+def _readmarkers(data, off=None, stop=None):
     """Read and enumerate markers from raw data"""
-    off = 0
-    diskversion = _unpack('>B', data[off:off + 1])[0]
-    off += 1
+    diskversion = _readmarkerversion(data)
+    if not off:
+        off = 1  # skip 1 byte version number
+    if stop is None:
+        stop = len(data)
     if diskversion not in formats:
-        raise error.Abort(_('parsing obsolete marker: unknown version %r')
-                         % diskversion)
-    return diskversion, formats[diskversion][0](data, off)
+        msg = _('parsing obsolete marker: unknown version %r') % diskversion
+        raise error.UnknownVersion(msg, version=diskversion)
+    return diskversion, formats[diskversion][0](data, off, stop)
+
+def encodeheader(version=_fm0version):
+    return _pack('>B', version)
 
 def encodemarkers(markers, addheader=False, version=_fm0version):
     # Kept separate from flushmarkers(), it will be reused for
     # markers exchange.
     encodeone = formats[version][1]
     if addheader:
-        yield _pack('>B', version)
+        yield encodeheader(version)
     for marker in markers:
         yield encodeone(marker)
-
-
-class marker(object):
-    """Wrap obsolete marker raw data"""
-
-    def __init__(self, repo, data):
-        # the repo argument will be used to create changectx in later version
-        self._repo = repo
-        self._data = data
-        self._decodedmeta = None
-
-    def __hash__(self):
-        return hash(self._data)
-
-    def __eq__(self, other):
-        if type(other) != type(self):
-            return False
-        return self._data == other._data
-
-    def precnode(self):
-        """Precursor changeset node identifier"""
-        return self._data[0]
-
-    def succnodes(self):
-        """List of successor changesets node identifiers"""
-        return self._data[1]
-
-    def parentnodes(self):
-        """Parents of the precursors (None if not recorded)"""
-        return self._data[5]
-
-    def metadata(self):
-        """Decoded metadata dictionary"""
-        return dict(self._data[3])
-
-    def date(self):
-        """Creation date as (unixtime, offset)"""
-        return self._data[4]
-
-    def flags(self):
-        """The flags field of the marker"""
-        return self._data[2]
 
 @util.nogc
 def _addsuccessors(successors, markers):
@@ -531,7 +517,7 @@ class obsstore(object):
         # caches for various obsolescence related cache
         self.caches = {}
         self.svfs = svfs
-        self._version = defaultformat
+        self._defaultformat = defaultformat
         self._readonly = readonly
 
     def __iter__(self):
@@ -562,7 +548,7 @@ class obsstore(object):
         return self._readonly
 
     def create(self, transaction, prec, succs=(), flag=0, parents=None,
-               date=None, metadata=None):
+               date=None, metadata=None, ui=None):
         """obsolete: add a new obsolete marker
 
         * ensuring it is hashable
@@ -581,6 +567,10 @@ class obsstore(object):
             if 'date' in metadata:
                 # as a courtesy for out-of-tree extensions
                 date = util.parsedate(metadata.pop('date'))
+            elif ui is not None:
+                date = ui.configdate('devel', 'default-date')
+                if date is None:
+                    date = util.makedate()
             else:
                 date = util.makedate()
         if len(prec) != 20:
@@ -604,10 +594,11 @@ class obsstore(object):
         if self._readonly:
             raise error.Abort(_('creating obsolete markers is not enabled on '
                               'this repo'))
-        known = set(self._all)
+        known = set()
+        getsuccessors = self.successors.get
         new = []
         for m in markers:
-            if m not in known:
+            if m not in getsuccessors(m[0], ()) and m not in known:
                 known.add(m)
                 new.append(m)
         if new:
@@ -616,13 +607,16 @@ class obsstore(object):
                 offset = f.tell()
                 transaction.add('obsstore', offset)
                 # offset == 0: new file - add the version header
-                for bytes in encodemarkers(new, offset == 0, self._version):
-                    f.write(bytes)
+                data = b''.join(encodemarkers(new, offset == 0, self._version))
+                f.write(data)
             finally:
                 # XXX: f.close() == filecache invalidation == obsstore rebuilt.
                 # call 'filecacheentry.refresh()'  here
                 f.close()
-            self._addmarkers(new)
+            addedmarkers = transaction.changes.get('obsmarkers')
+            if addedmarkers is not None:
+                addedmarkers.update(new)
+            self._addmarkers(new, data)
             # new marker *may* have changed several set. invalidate the cache.
             self.caches.clear()
         # records the number of new markers for the transaction hooks
@@ -638,8 +632,19 @@ class obsstore(object):
         return self.add(transaction, markers)
 
     @propertycache
+    def _data(self):
+        return self.svfs.tryread('obsstore')
+
+    @propertycache
+    def _version(self):
+        if len(self._data) >= 1:
+            return _readmarkerversion(self._data)
+        else:
+            return self._defaultformat
+
+    @propertycache
     def _all(self):
-        data = self.svfs.tryread('obsstore')
+        data = self._data
         if not data:
             return []
         self._version, markers = _readmarkers(data)
@@ -668,8 +673,9 @@ class obsstore(object):
     def _cached(self, attr):
         return attr in self.__dict__
 
-    def _addmarkers(self, markers):
+    def _addmarkers(self, markers, rawdata):
         markers = list(markers) # to allow repeated iteration
+        self._data = self._data + rawdata
         self._all.extend(markers)
         if self._cached('successors'):
             _addsuccessors(self.successors, markers)
@@ -694,6 +700,7 @@ class obsstore(object):
         seenmarkers = set()
         seennodes = set(pendingnodes)
         precursorsmarkers = self.precursors
+        succsmarkers = self.successors
         children = self.children
         while pendingnodes:
             direct = set()
@@ -701,12 +708,30 @@ class obsstore(object):
                 direct.update(precursorsmarkers.get(current, ()))
                 pruned = [m for m in children.get(current, ()) if not m[1]]
                 direct.update(pruned)
+                pruned = [m for m in succsmarkers.get(current, ()) if not m[1]]
+                direct.update(pruned)
             direct -= seenmarkers
             pendingnodes = set([m[0] for m in direct])
             seenmarkers |= direct
             pendingnodes -= seennodes
             seennodes |= pendingnodes
         return seenmarkers
+
+def makestore(ui, repo):
+    """Create an obsstore instance from a repo."""
+    # read default format for new obsstore.
+    # developer config: format.obsstore-version
+    defaultformat = ui.configint('format', 'obsstore-version')
+    # rely on obsstore class default when possible.
+    kwargs = {}
+    if defaultformat is not None:
+        kwargs['defaultformat'] = defaultformat
+    readonly = not isenabled(repo, createmarkersopt)
+    store = obsstore(repo.svfs, readonly=readonly, **kwargs)
+    if store and readonly:
+        ui.warn(_('obsolete feature not enabled but %i markers found!\n')
+                % len(list(store)))
+    return store
 
 def commonversion(versions):
     """Return the newest version listed in both versions and our local formats.
@@ -744,7 +769,7 @@ def _pushkeyescape(markers):
         currentlen += len(nextdata)
     for idx, part in enumerate(reversed(parts)):
         data = ''.join([_pack('>B', _fm0version)] + part)
-        keys['dump%i' % idx] = base85.b85encode(data)
+        keys['dump%i' % idx] = util.b85encode(data)
     return keys
 
 def listmarkers(repo):
@@ -757,11 +782,11 @@ def pushmarker(repo, key, old, new):
     """Push markers over pushkey"""
     if not key.startswith('dump'):
         repo.ui.warn(_('unknown key: %r') % key)
-        return 0
+        return False
     if old:
         repo.ui.warn(_('unexpected old value for %r') % key)
-        return 0
-    data = base85.b85decode(new)
+        return False
+    data = util.b85decode(new)
     lock = repo.lock()
     try:
         tr = repo.transaction('pushkey: obsolete markers')
@@ -769,322 +794,56 @@ def pushmarker(repo, key, old, new):
             repo.obsstore.mergemarkers(tr, data)
             repo.invalidatevolatilesets()
             tr.close()
-            return 1
+            return True
         finally:
             tr.release()
     finally:
         lock.release()
 
-def getmarkers(repo, nodes=None):
-    """returns markers known in a repository
-
-    If <nodes> is specified, only markers "relevant" to those nodes are are
-    returned"""
-    if nodes is None:
-        rawmarkers = repo.obsstore
-    else:
-        rawmarkers = repo.obsstore.relevantmarkers(nodes)
-
-    for markerdata in rawmarkers:
-        yield marker(repo, markerdata)
-
-def relevantmarkers(repo, node):
-    """all obsolete markers relevant to some revision"""
-    for markerdata in repo.obsstore.relevantmarkers(node):
-        yield marker(repo, markerdata)
-
-
-def precursormarkers(ctx):
-    """obsolete marker marking this changeset as a successors"""
-    for data in ctx.repo().obsstore.precursors.get(ctx.node(), ()):
-        yield marker(ctx.repo(), data)
-
-def successormarkers(ctx):
-    """obsolete marker making this changeset obsolete"""
-    for data in ctx.repo().obsstore.successors.get(ctx.node(), ()):
-        yield marker(ctx.repo(), data)
+# keep compatibility for the 4.3 cycle
+def allprecursors(obsstore, nodes, ignoreflags=0):
+    movemsg = 'obsolete.allprecursors moved to obsutil.allprecursors'
+    util.nouideprecwarn(movemsg, '4.3')
+    return obsutil.allprecursors(obsstore, nodes, ignoreflags)
 
 def allsuccessors(obsstore, nodes, ignoreflags=0):
-    """Yield node for every successor of <nodes>.
+    movemsg = 'obsolete.allsuccessors moved to obsutil.allsuccessors'
+    util.nouideprecwarn(movemsg, '4.3')
+    return obsutil.allsuccessors(obsstore, nodes, ignoreflags)
 
-    Some successors may be unknown locally.
+def marker(repo, data):
+    movemsg = 'obsolete.marker moved to obsutil.marker'
+    repo.ui.deprecwarn(movemsg, '4.3')
+    return obsutil.marker(repo, data)
 
-    This is a linear yield unsuited to detecting split changesets. It includes
-    initial nodes too."""
-    remaining = set(nodes)
-    seen = set(remaining)
-    while remaining:
-        current = remaining.pop()
-        yield current
-        for mark in obsstore.successors.get(current, ()):
-            # ignore marker flagged with specified flag
-            if mark[2] & ignoreflags:
-                continue
-            for suc in mark[1]:
-                if suc not in seen:
-                    seen.add(suc)
-                    remaining.add(suc)
+def getmarkers(repo, nodes=None, exclusive=False):
+    movemsg = 'obsolete.getmarkers moved to obsutil.getmarkers'
+    repo.ui.deprecwarn(movemsg, '4.3')
+    return obsutil.getmarkers(repo, nodes=nodes, exclusive=exclusive)
 
-def allprecursors(obsstore, nodes, ignoreflags=0):
-    """Yield node for every precursors of <nodes>.
-
-    Some precursors may be unknown locally.
-
-    This is a linear yield unsuited to detecting folded changesets. It includes
-    initial nodes too."""
-
-    remaining = set(nodes)
-    seen = set(remaining)
-    while remaining:
-        current = remaining.pop()
-        yield current
-        for mark in obsstore.precursors.get(current, ()):
-            # ignore marker flagged with specified flag
-            if mark[2] & ignoreflags:
-                continue
-            suc = mark[0]
-            if suc not in seen:
-                seen.add(suc)
-                remaining.add(suc)
+def exclusivemarkers(repo, nodes):
+    movemsg = 'obsolete.exclusivemarkers moved to obsutil.exclusivemarkers'
+    repo.ui.deprecwarn(movemsg, '4.3')
+    return obsutil.exclusivemarkers(repo, nodes)
 
 def foreground(repo, nodes):
-    """return all nodes in the "foreground" of other node
-
-    The foreground of a revision is anything reachable using parent -> children
-    or precursor -> successor relation. It is very similar to "descendant" but
-    augmented with obsolescence information.
-
-    Beware that possible obsolescence cycle may result if complex situation.
-    """
-    repo = repo.unfiltered()
-    foreground = set(repo.set('%ln::', nodes))
-    if repo.obsstore:
-        # We only need this complicated logic if there is obsolescence
-        # XXX will probably deserve an optimised revset.
-        nm = repo.changelog.nodemap
-        plen = -1
-        # compute the whole set of successors or descendants
-        while len(foreground) != plen:
-            plen = len(foreground)
-            succs = set(c.node() for c in foreground)
-            mutable = [c.node() for c in foreground if c.mutable()]
-            succs.update(allsuccessors(repo.obsstore, mutable))
-            known = (n for n in succs if n in nm)
-            foreground = set(repo.set('%ln::', known))
-    return set(c.node() for c in foreground)
-
+    movemsg = 'obsolete.foreground moved to obsutil.foreground'
+    repo.ui.deprecwarn(movemsg, '4.3')
+    return obsutil.foreground(repo, nodes)
 
 def successorssets(repo, initialnode, cache=None):
-    """Return set of all latest successors of initial nodes
-
-    The successors set of a changeset A are the group of revisions that succeed
-    A. It succeeds A as a consistent whole, each revision being only a partial
-    replacement. The successors set contains non-obsolete changesets only.
-
-    This function returns the full list of successor sets which is why it
-    returns a list of tuples and not just a single tuple. Each tuple is a valid
-    successors set. Note that (A,) may be a valid successors set for changeset A
-    (see below).
-
-    In most cases, a changeset A will have a single element (e.g. the changeset
-    A is replaced by A') in its successors set. Though, it is also common for a
-    changeset A to have no elements in its successor set (e.g. the changeset
-    has been pruned). Therefore, the returned list of successors sets will be
-    [(A',)] or [], respectively.
-
-    When a changeset A is split into A' and B', however, it will result in a
-    successors set containing more than a single element, i.e. [(A',B')].
-    Divergent changesets will result in multiple successors sets, i.e. [(A',),
-    (A'')].
-
-    If a changeset A is not obsolete, then it will conceptually have no
-    successors set. To distinguish this from a pruned changeset, the successor
-    set will contain itself only, i.e. [(A,)].
-
-    Finally, successors unknown locally are considered to be pruned (obsoleted
-    without any successors).
-
-    The optional `cache` parameter is a dictionary that may contain precomputed
-    successors sets. It is meant to reuse the computation of a previous call to
-    `successorssets` when multiple calls are made at the same time. The cache
-    dictionary is updated in place. The caller is responsible for its life
-    span. Code that makes multiple calls to `successorssets` *must* use this
-    cache mechanism or suffer terrible performance.
-    """
-
-    succmarkers = repo.obsstore.successors
-
-    # Stack of nodes we search successors sets for
-    toproceed = [initialnode]
-    # set version of above list for fast loop detection
-    # element added to "toproceed" must be added here
-    stackedset = set(toproceed)
-    if cache is None:
-        cache = {}
-
-    # This while loop is the flattened version of a recursive search for
-    # successors sets
-    #
-    # def successorssets(x):
-    #    successors = directsuccessors(x)
-    #    ss = [[]]
-    #    for succ in directsuccessors(x):
-    #        # product as in itertools cartesian product
-    #        ss = product(ss, successorssets(succ))
-    #    return ss
-    #
-    # But we can not use plain recursive calls here:
-    # - that would blow the python call stack
-    # - obsolescence markers may have cycles, we need to handle them.
-    #
-    # The `toproceed` list act as our call stack. Every node we search
-    # successors set for are stacked there.
-    #
-    # The `stackedset` is set version of this stack used to check if a node is
-    # already stacked. This check is used to detect cycles and prevent infinite
-    # loop.
-    #
-    # successors set of all nodes are stored in the `cache` dictionary.
-    #
-    # After this while loop ends we use the cache to return the successors sets
-    # for the node requested by the caller.
-    while toproceed:
-        # Every iteration tries to compute the successors sets of the topmost
-        # node of the stack: CURRENT.
-        #
-        # There are four possible outcomes:
-        #
-        # 1) We already know the successors sets of CURRENT:
-        #    -> mission accomplished, pop it from the stack.
-        # 2) Node is not obsolete:
-        #    -> the node is its own successors sets. Add it to the cache.
-        # 3) We do not know successors set of direct successors of CURRENT:
-        #    -> We add those successors to the stack.
-        # 4) We know successors sets of all direct successors of CURRENT:
-        #    -> We can compute CURRENT successors set and add it to the
-        #       cache.
-        #
-        current = toproceed[-1]
-        if current in cache:
-            # case (1): We already know the successors sets
-            stackedset.remove(toproceed.pop())
-        elif current not in succmarkers:
-            # case (2): The node is not obsolete.
-            if current in repo:
-                # We have a valid last successors.
-                cache[current] = [(current,)]
-            else:
-                # Final obsolete version is unknown locally.
-                # Do not count that as a valid successors
-                cache[current] = []
-        else:
-            # cases (3) and (4)
-            #
-            # We proceed in two phases. Phase 1 aims to distinguish case (3)
-            # from case (4):
-            #
-            #     For each direct successors of CURRENT, we check whether its
-            #     successors sets are known. If they are not, we stack the
-            #     unknown node and proceed to the next iteration of the while
-            #     loop. (case 3)
-            #
-            #     During this step, we may detect obsolescence cycles: a node
-            #     with unknown successors sets but already in the call stack.
-            #     In such a situation, we arbitrary set the successors sets of
-            #     the node to nothing (node pruned) to break the cycle.
-            #
-            #     If no break was encountered we proceed to phase 2.
-            #
-            # Phase 2 computes successors sets of CURRENT (case 4); see details
-            # in phase 2 itself.
-            #
-            # Note the two levels of iteration in each phase.
-            # - The first one handles obsolescence markers using CURRENT as
-            #   precursor (successors markers of CURRENT).
-            #
-            #   Having multiple entry here means divergence.
-            #
-            # - The second one handles successors defined in each marker.
-            #
-            #   Having none means pruned node, multiple successors means split,
-            #   single successors are standard replacement.
-            #
-            for mark in sorted(succmarkers[current]):
-                for suc in mark[1]:
-                    if suc not in cache:
-                        if suc in stackedset:
-                            # cycle breaking
-                            cache[suc] = []
-                        else:
-                            # case (3) If we have not computed successors sets
-                            # of one of those successors we add it to the
-                            # `toproceed` stack and stop all work for this
-                            # iteration.
-                            toproceed.append(suc)
-                            stackedset.add(suc)
-                            break
-                else:
-                    continue
-                break
-            else:
-                # case (4): we know all successors sets of all direct
-                # successors
-                #
-                # Successors set contributed by each marker depends on the
-                # successors sets of all its "successors" node.
-                #
-                # Each different marker is a divergence in the obsolescence
-                # history. It contributes successors sets distinct from other
-                # markers.
-                #
-                # Within a marker, a successor may have divergent successors
-                # sets. In such a case, the marker will contribute multiple
-                # divergent successors sets. If multiple successors have
-                # divergent successors sets, a Cartesian product is used.
-                #
-                # At the end we post-process successors sets to remove
-                # duplicated entry and successors set that are strict subset of
-                # another one.
-                succssets = []
-                for mark in sorted(succmarkers[current]):
-                    # successors sets contributed by this marker
-                    markss = [[]]
-                    for suc in mark[1]:
-                        # cardinal product with previous successors
-                        productresult = []
-                        for prefix in markss:
-                            for suffix in cache[suc]:
-                                newss = list(prefix)
-                                for part in suffix:
-                                    # do not duplicated entry in successors set
-                                    # first entry wins.
-                                    if part not in newss:
-                                        newss.append(part)
-                                productresult.append(newss)
-                        markss = productresult
-                    succssets.extend(markss)
-                # remove duplicated and subset
-                seen = []
-                final = []
-                candidate = sorted(((set(s), s) for s in succssets if s),
-                                   key=lambda x: len(x[1]), reverse=True)
-                for setversion, listversion in candidate:
-                    for seenset in seen:
-                        if setversion.issubset(seenset):
-                            break
-                    else:
-                        final.append(listversion)
-                        seen.append(setversion)
-                final.reverse() # put small successors set first
-                cache[current] = final
-    return cache[initialnode]
+    movemsg = 'obsolete.successorssets moved to obsutil.successorssets'
+    repo.ui.deprecwarn(movemsg, '4.3')
+    return obsutil.successorssets(repo, initialnode, cache=cache)
 
 # mapping of 'set-name' -> <function to compute this set>
 cachefuncs = {}
 def cachefor(name):
     """Decorator to register a function as computing the cache for a set"""
     def decorator(func):
-        assert name not in cachefuncs
+        if name in cachefuncs:
+            msg = "duplicated registration for volatileset '%s' (existing: %r)"
+            raise error.ProgrammingError(msg % (name, cachefuncs[name]))
         cachefuncs[name] = func
         return func
     return decorator
@@ -1118,30 +877,34 @@ def clearobscaches(repo):
     if 'obsstore' in repo._filecache:
         repo.obsstore.caches.clear()
 
+def _mutablerevs(repo):
+    """the set of mutable revision in the repository"""
+    return repo._phasecache.getrevset(repo, (phases.draft, phases.secret))
+
 @cachefor('obsolete')
 def _computeobsoleteset(repo):
     """the set of obsolete revisions"""
-    obs = set()
     getnode = repo.changelog.node
-    notpublic = repo._phasecache.getrevset(repo, (phases.draft, phases.secret))
-    for r in notpublic:
-        if getnode(r) in repo.obsstore.successors:
-            obs.add(r)
+    notpublic = _mutablerevs(repo)
+    isobs = repo.obsstore.successors.__contains__
+    obs = set(r for r in notpublic if isobs(getnode(r)))
     return obs
 
 @cachefor('unstable')
 def _computeunstableset(repo):
     """the set of non obsolete revisions with obsolete parents"""
-    revs = [(ctx.rev(), ctx) for ctx in
-            repo.set('(not public()) and (not obsolete())')]
-    revs.sort(key=lambda x:x[0])
+    pfunc = repo.changelog.parentrevs
+    mutable = _mutablerevs(repo)
+    obsolete = getrevs(repo, 'obsolete')
+    others = mutable - obsolete
     unstable = set()
-    for rev, ctx in revs:
+    for r in sorted(others):
         # A rev is unstable if one of its parent is obsolete or unstable
         # this works since we traverse following growing rev order
-        if any((x.obsolete() or (x.rev() in unstable))
-                for x in ctx.parents()):
-            unstable.add(rev)
+        for p in pfunc(r):
+            if p in obsolete or p in unstable:
+                unstable.add(r)
+                break
     return unstable
 
 @cachefor('suspended')
@@ -1170,7 +933,7 @@ def _computebumpedset(repo):
         # We only evaluate mutable, non-obsolete revision
         node = ctx.node()
         # (future) A cache of precursors may worth if split is very common
-        for pnode in allprecursors(repo.obsstore, [node],
+        for pnode in obsutil.allprecursors(repo.obsstore, [node],
                                    ignoreflags=bumpedfix):
             prev = torev(pnode) # unfiltered! but so is phasecache
             if (prev is not None) and (phase(repo, prev) <= public):
@@ -1196,7 +959,7 @@ def _computedivergentset(repo):
                 continue # emergency cycle hanging prevention
             seen.add(prec)
             if prec not in newermap:
-                successorssets(repo, prec, newermap)
+                obsutil.successorssets(repo, prec, cache=newermap)
             newer = [n for n in newermap[prec] if n]
             if len(newer) > 1:
                 divergent.add(ctx.rev())
@@ -1205,7 +968,8 @@ def _computedivergentset(repo):
     return divergent
 
 
-def createmarkers(repo, relations, flag=0, date=None, metadata=None):
+def createmarkers(repo, relations, flag=0, date=None, metadata=None,
+                  operation=None):
     """Add obsolete markers between changesets in a repo
 
     <relations> must be an iterable of (<old>, (<new>, ...)[,{metadata}])
@@ -1226,6 +990,10 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None):
         metadata = {}
     if 'user' not in metadata:
         metadata['user'] = repo.ui.username()
+    useoperation = repo.ui.configbool('experimental',
+        'evolution.track-operation')
+    if useoperation and operation:
+        metadata['operation'] = operation
     tr = repo.transaction('add-obsolescence-marker')
     try:
         markerargs = []
@@ -1258,29 +1026,9 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None):
         for args in markerargs:
             nprec, nsucs, npare, localmetadata = args
             repo.obsstore.create(tr, nprec, nsucs, flag, parents=npare,
-                                 date=date, metadata=localmetadata)
+                                 date=date, metadata=localmetadata,
+                                 ui=repo.ui)
             repo.filteredrevcache.clear()
         tr.close()
     finally:
         tr.release()
-
-def isenabled(repo, option):
-    """Returns True if the given repository has the given obsolete option
-    enabled.
-    """
-    result = set(repo.ui.configlist('experimental', 'evolution'))
-    if 'all' in result:
-        return True
-
-    # For migration purposes, temporarily return true if the config hasn't been
-    # set but _enabled is true.
-    if len(result) == 0 and _enabled:
-        return True
-
-    # createmarkers must be enabled if other options are enabled
-    if ((allowunstableopt in result or exchangeopt in result) and
-        not createmarkersopt in result):
-        raise error.Abort(_("'createmarkers' obsolete option must be enabled "
-                           "if other obsolete options are enabled"))
-
-    return option in result

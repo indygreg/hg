@@ -13,6 +13,7 @@ from .i18n import _
 from . import (
     branchmap,
     error,
+    phases,
     store,
     util,
 )
@@ -80,11 +81,21 @@ def canperformstreamclone(pullop, bailifbundle2supported=False):
         streamreqs = remote.capable('streamreqs')
         # This is weird and shouldn't happen with modern servers.
         if not streamreqs:
+            pullop.repo.ui.warn(_(
+                'warning: stream clone requested but server has them '
+                'disabled\n'))
             return False, None
 
         streamreqs = set(streamreqs.split(','))
         # Server requires something we don't support. Bail.
-        if streamreqs - repo.supportedformats:
+        missingreqs = streamreqs - repo.supportedformats
+        if missingreqs:
+            pullop.repo.ui.warn(_(
+                'warning: stream clone requested but client is missing '
+                'requirements: %s\n') % ', '.join(sorted(missingreqs)))
+            pullop.repo.ui.warn(
+                _('(see https://www.mercurial-scm.org/wiki/MissingRequirement '
+                  'for more information)\n'))
             return False, None
         requirements = streamreqs
 
@@ -152,9 +163,18 @@ def maybeperformlegacystreamclone(pullop):
 
         repo.invalidate()
 
-def allowservergeneration(ui):
+def allowservergeneration(repo):
     """Whether streaming clones are allowed from the server."""
-    return ui.configbool('server', 'uncompressed', True, untrusted=True)
+    if not repo.ui.configbool('server', 'uncompressed', untrusted=True):
+        return False
+
+    # The way stream clone works makes it impossible to hide secret changesets.
+    # So don't allow this by default.
+    secret = phases.hassecret(repo)
+    if secret:
+        return repo.ui.configbool('server', 'uncompressedallowsecret')
+
+    return True
 
 # This is it's own function so extensions can override it.
 def _walkstreamfiles(repo):
@@ -193,25 +213,22 @@ def generatev1(repo):
                   (len(entries), total_bytes))
 
     svfs = repo.svfs
-    oldaudit = svfs.mustaudit
     debugflag = repo.ui.debugflag
-    svfs.mustaudit = False
 
     def emitrevlogdata():
-        try:
-            for name, size in entries:
-                if debugflag:
-                    repo.ui.debug('sending %s (%d bytes)\n' % (name, size))
-                # partially encode name over the wire for backwards compat
-                yield '%s\0%d\n' % (store.encodedir(name), size)
+        for name, size in entries:
+            if debugflag:
+                repo.ui.debug('sending %s (%d bytes)\n' % (name, size))
+            # partially encode name over the wire for backwards compat
+            yield '%s\0%d\n' % (store.encodedir(name), size)
+            # auditing at this stage is both pointless (paths are already
+            # trusted by the local repo) and expensive
+            with svfs(name, 'rb', auditpath=False) as fp:
                 if size <= 65536:
-                    with svfs(name, 'rb') as fp:
-                        yield fp.read(size)
+                    yield fp.read(size)
                 else:
-                    for chunk in util.filechunkiter(svfs(name), limit=size):
+                    for chunk in util.filechunkiter(fp, limit=size):
                         yield chunk
-        finally:
-            svfs.mustaudit = oldaudit
 
     return len(entries), total_bytes, emitrevlogdata()
 

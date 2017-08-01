@@ -4,10 +4,28 @@
 # 'python setup.py install', or
 # 'python setup.py --help' for more options
 
-import sys, platform
-if sys.version_info < (2, 7, 0, 'final'):
-    raise SystemExit('Mercurial requires Python 2.7 or later.')
+import os
 
+supportedpy = '~= 2.7'
+if os.environ.get('HGALLOWPYTHON3', ''):
+    # Mercurial will never work on Python 3 before 3.5 due to a lack
+    # of % formatting on bytestrings, and can't work on 3.6.0 or 3.6.1
+    # due to a bug in % formatting in bytestrings.
+    #
+    # TODO: when we actually work on Python 3, use this string as the
+    # actual supportedpy string.
+    supportedpy = ','.join([
+        '>=2.7',
+        '!=3.0.*',
+        '!=3.1.*',
+        '!=3.2.*',
+        '!=3.3.*',
+        '!=3.4.*',
+        '!=3.6.0',
+        '!=3.6.1',
+    ])
+
+import sys, platform
 if sys.version_info[0] >= 3:
     printf = eval('print')
     libdir_escape = 'unicode_escape'
@@ -17,6 +35,33 @@ else:
         f = kwargs.get('file', sys.stdout)
         end = kwargs.get('end', '\n')
         f.write(b' '.join(args) + end)
+
+# Attempt to guide users to a modern pip - this means that 2.6 users
+# should have a chance of getting a 4.2 release, and when we ratchet
+# the version requirement forward again hopefully everyone will get
+# something that works for them.
+if sys.version_info < (2, 7, 0, 'final'):
+    pip_message = ('This may be due to an out of date pip. '
+                   'Make sure you have pip >= 9.0.1.')
+    try:
+        import pip
+        pip_version = tuple([int(x) for x in pip.__version__.split('.')[:3]])
+        if pip_version < (9, 0, 1) :
+            pip_message = (
+                'Your pip version is out of date, please install '
+                'pip >= 9.0.1. pip {} detected.'.format(pip.__version__))
+        else:
+            # pip is new enough - it must be something else
+            pip_message = ''
+    except Exception:
+        pass
+    error = """
+Mercurial does not support Python older than 2.7.
+Python {py} detected.
+{pip}
+""".format(py=sys.version_info, pip=pip_message)
+    printf(error, file=sys.stderr)
+    sys.exit(1)
 
 # Solaris Python packaging brain damage
 try:
@@ -58,7 +103,7 @@ else:
 ispypy = "PyPy" in sys.version
 
 import ctypes
-import os, stat, subprocess, time
+import stat, subprocess, time
 import re
 import shutil
 import tempfile
@@ -66,7 +111,8 @@ from distutils import log
 # We have issues with setuptools on some platforms and builders. Until
 # those are resolved, setuptools is opt-in except for platforms where
 # we don't have issues.
-if os.name == 'nt' or 'FORCE_SETUPTOOLS' in os.environ:
+issetuptools = (os.name == 'nt' or 'FORCE_SETUPTOOLS' in os.environ)
+if issetuptools:
     from setuptools import setup
 else:
     from distutils.core import setup
@@ -156,20 +202,24 @@ class hgcommand(object):
     def run(self, args):
         cmd = self.cmd + args
         returncode, out, err = runcmd(cmd, self.env)
-        # If root is executing setup.py, but the repository is owned by
-        # another user (as in "sudo python setup.py install") we will get
-        # trust warnings since the .hg/hgrc file is untrusted. That is
-        # fine, we don't want to load it anyway.  Python may warn about
-        # a missing __init__.py in mercurial/locale, we also ignore that.
-        err = [e for e in err.splitlines()
-               if not e.startswith(b'not trusting file') \
-                  and not e.startswith(b'warning: Not importing') \
-                  and not e.startswith(b'obsolete feature not enabled')]
+        err = filterhgerr(err)
         if err or returncode != 0:
             printf("stderr from '%s':" % (' '.join(cmd)), file=sys.stderr)
-            printf(b'\n'.join([b'  ' + e for e in err]), file=sys.stderr)
+            printf(err, file=sys.stderr)
             return ''
         return out
+
+def filterhgerr(err):
+    # If root is executing setup.py, but the repository is owned by
+    # another user (as in "sudo python setup.py install") we will get
+    # trust warnings since the .hg/hgrc file is untrusted. That is
+    # fine, we don't want to load it anyway.  Python may warn about
+    # a missing __init__.py in mercurial/locale, we also ignore that.
+    err = [e for e in err.splitlines()
+           if (not e.startswith(b'not trusting file')
+               and not e.startswith(b'warning: Not importing')
+               and not e.startswith(b'obsolete feature not enabled'))]
+    return b'\n'.join(b'  ' + e for e in err)
 
 def findhg():
     """Try to figure out how we should invoke hg for examining the local
@@ -194,7 +244,7 @@ def findhg():
         retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
     except EnvironmentError:
         retcode = -1
-    if retcode == 0:
+    if retcode == 0 and not filterhgerr(err):
         return hgcommand(hgcmd, hgenv)
 
     # Fall back to trying the local hg installation.
@@ -206,7 +256,7 @@ def findhg():
         retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)
     except EnvironmentError:
         retcode = -1
-    if retcode == 0:
+    if retcode == 0 and not filterhgerr(err):
         return hgcommand(hgcmd, hgenv)
 
     raise SystemExit('Unable to find a working hg binary to extract the '
@@ -533,7 +583,7 @@ class hginstall(install):
         # Screen out egg related commands to prevent egg generation.  But allow
         # mercurial.egg-info generation, since that is part of modern
         # packaging.
-        excl = {'bdist_egg'}
+        excl = set(['bdist_egg'])
         return filter(lambda x: x not in excl, install.get_sub_commands(self))
 
 class hginstalllib(install_lib):
@@ -798,6 +848,8 @@ setupversion = version.decode('ascii')
 
 extra = {}
 
+if issetuptools:
+    extra['python_requires'] = supportedpy
 if py2exeloaded:
     extra['console'] = [
         {'script':'hg',
@@ -885,7 +937,12 @@ setup(name='mercurial',
       package_data=packagedata,
       cmdclass=cmdclass,
       distclass=hgdist,
-      options={'py2exe': {'packages': ['hgdemandimport', 'hgext', 'email']},
+      options={'py2exe': {'packages': ['hgdemandimport', 'hgext', 'email',
+                                       # implicitly imported per module policy
+                                       # (cffi wouldn't be used as a frozen exe)
+                                       'mercurial.cext',
+                                       #'mercurial.cffi',
+                                       'mercurial.pure']},
                'bdist_mpkg': {'zipdist': False,
                               'license': 'COPYING',
                               'readme': 'contrib/macosx/Readme.html',

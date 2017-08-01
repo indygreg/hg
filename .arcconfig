@@ -1,0 +1,6 @@
+{
+    "conduit_uri": "https://phab.mercurial-scm.org/api",
+    "repository.callsign": "HG",
+    "arc.land.onto.default": "@",
+    "base": "hg:.^"
+}

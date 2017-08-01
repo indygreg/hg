@@ -9,6 +9,7 @@
   $ export KEEPMPKG
 
   $ cd "$TESTDIR"/..
+  $ contrib/genosxversion.py --selftest ignoredarg
   $ make osx > "$OUTPUTDIR/build.log" 2>&1
   $ cd "$OUTPUTDIR"
   $ ls -d *.pkg
@@ -27,6 +28,12 @@ We've had problems with the filter logic in the past. Make sure no
 Spot-check some randomly selected files:
   $ grep bdiff boms.txt | cut -d '	' -f 1,2,3
   ./Library/Python/2.7/site-packages/mercurial/cext/bdiff.so	100755	0/0
+  ./Library/Python/2.7/site-packages/mercurial/cffi/bdiff.py	100644	0/0
+  ./Library/Python/2.7/site-packages/mercurial/cffi/bdiff.pyc	100644	0/0
+  ./Library/Python/2.7/site-packages/mercurial/cffi/bdiff.pyo	100644	0/0
+  ./Library/Python/2.7/site-packages/mercurial/cffi/bdiffbuild.py	100644	0/0
+  ./Library/Python/2.7/site-packages/mercurial/cffi/bdiffbuild.pyc	100644	0/0
+  ./Library/Python/2.7/site-packages/mercurial/cffi/bdiffbuild.pyo	100644	0/0
   ./Library/Python/2.7/site-packages/mercurial/pure/bdiff.py	100644	0/0
   ./Library/Python/2.7/site-packages/mercurial/pure/bdiff.pyc	100644	0/0
   ./Library/Python/2.7/site-packages/mercurial/pure/bdiff.pyo	100644	0/0

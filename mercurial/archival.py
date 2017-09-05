@@ -321,7 +321,7 @@ def archive(repo, dest, node, kind, decode=True, match=None,
         if match(name):
             write(name, 0o644, False, lambda: buildmetadata(ctx))
 
-    files = [f for f in ctx.manifest().keys() if match(f)]
+    files = [f for f in ctx.manifest().matches(match)]
     total = len(files)
     if total:
         files.sort()

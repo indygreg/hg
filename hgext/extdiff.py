@@ -139,7 +139,7 @@ def snapshot(ui, repo, files, node, tmproot, listsubrepos):
         repo.ui.setconfig("ui", "archivemeta", False)
 
         archival.archive(repo, base, node, 'files',
-                         matchfn=scmutil.matchfiles(repo, files),
+                         match=scmutil.matchfiles(repo, files),
                          subrepos=listsubrepos)
 
         for fn in sorted(files):

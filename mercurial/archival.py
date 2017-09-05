@@ -274,7 +274,7 @@ archivers = {
     'zip': zipit,
     }
 
-def archive(repo, dest, node, kind, decode=True, matchfn=None,
+def archive(repo, dest, node, kind, decode=True, match=None,
             prefix='', mtime=None, subrepos=False):
     '''create archive of repo as it was at node.
 
@@ -286,7 +286,7 @@ def archive(repo, dest, node, kind, decode=True, matchfn=None,
     decode tells whether to put files through decode filters from
     hgrc.
 
-    matchfn is function to filter names of files to write to archive.
+    match is a matcher to filter names of files to write to archive.
 
     prefix is name of path to put before every archive member.
 
@@ -315,11 +315,11 @@ def archive(repo, dest, node, kind, decode=True, matchfn=None,
 
     if repo.ui.configbool("ui", "archivemeta"):
         name = '.hg_archival.txt'
-        if not matchfn or matchfn(name):
+        if not match or match(name):
             write(name, 0o644, False, lambda: buildmetadata(ctx))
 
-    if matchfn:
-        files = [f for f in ctx.manifest().keys() if matchfn(f)]
+    if match:
+        files = [f for f in ctx.manifest().keys() if match(f)]
     else:
         files = ctx.manifest().keys()
     total = len(files)
@@ -339,7 +339,7 @@ def archive(repo, dest, node, kind, decode=True, matchfn=None,
     if subrepos:
         for subpath in sorted(ctx.substate):
             sub = ctx.workingsub(subpath)
-            submatch = matchmod.subdirmatcher(subpath, matchfn)
+            submatch = matchmod.subdirmatcher(subpath, match)
             total += sub.archive(archiver, prefix, submatch, decode)
 
     if total == 0:

@@ -1216,8 +1216,7 @@ def archive(web):
 
     bodyfh = web.res.getbodyfile()
 
-    archival.archive(web.repo, bodyfh, cnode, artype, prefix=name,
-                     matchfn=match,
+    archival.archive(web.repo, bodyfh, cnode, artype, prefix=name, match=match,
                      subrepos=web.configbool("web", "archivesubrepos"))
 
     return []

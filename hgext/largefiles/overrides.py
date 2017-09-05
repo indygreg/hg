@@ -929,12 +929,12 @@ def hgwebarchive(orig, web):
     finally:
         web.repo.lfstatus = False
 
-def overridearchive(orig, repo, dest, node, kind, decode=True, matchfn=None,
+def overridearchive(orig, repo, dest, node, kind, decode=True, match=None,
             prefix='', mtime=None, subrepos=None):
     # For some reason setting repo.lfstatus in hgwebarchive only changes the
     # unfiltered repo's attr, so check that as well.
     if not repo.lfstatus and not repo.unfiltered().lfstatus:
-        return orig(repo, dest, node, kind, decode, matchfn, prefix, mtime,
+        return orig(repo, dest, node, kind, decode, match, prefix, mtime,
                     subrepos)
 
     # No need to lock because we are only reading history and
@@ -955,7 +955,7 @@ def overridearchive(orig, repo, dest, node, kind, decode=True, matchfn=None,
         prefix = archival.tidyprefix(dest, kind, prefix)
 
     def write(name, mode, islink, getdata):
-        if matchfn and not matchfn(name):
+        if match and not match(name):
             return
         data = getdata()
         if decode:
@@ -991,7 +991,7 @@ def overridearchive(orig, repo, dest, node, kind, decode=True, matchfn=None,
     if subrepos:
         for subpath in sorted(ctx.substate):
             sub = ctx.workingsub(subpath)
-            submatch = matchmod.subdirmatcher(subpath, matchfn)
+            submatch = matchmod.subdirmatcher(subpath, match)
             sub._repo.lfstatus = True
             sub.archive(archiver, prefix, submatch)
 

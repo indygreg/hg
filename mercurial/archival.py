@@ -313,15 +313,15 @@ def archive(repo, dest, node, kind, decode=True, match=None,
     ctx = repo[node]
     archiver = archivers[kind](dest, mtime or ctx.date()[0])
 
+    if not match:
+        match = scmutil.matchall(repo)
+
     if repo.ui.configbool("ui", "archivemeta"):
         name = '.hg_archival.txt'
-        if not match or match(name):
+        if match(name):
             write(name, 0o644, False, lambda: buildmetadata(ctx))
 
-    if match:
-        files = [f for f in ctx.manifest().keys() if match(f)]
-    else:
-        files = ctx.manifest().keys()
+    files = [f for f in ctx.manifest().keys() if match(f)]
     total = len(files)
     if total:
         files.sort()

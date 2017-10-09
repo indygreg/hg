@@ -342,13 +342,15 @@ class convert_git(common.converter_source, common.commandline):
                 p = v.split()
                 tm, tz = p[-2:]
                 author = " ".join(p[:-2])
-                if author[0] == "<": author = author[1:-1]
+                if author[0] == "<":
+                    author = author[1:-1]
                 author = self.recode(author)
             if n == "committer":
                 p = v.split()
                 tm, tz = p[-2:]
                 committer = " ".join(p[:-2])
-                if committer[0] == "<": committer = committer[1:-1]
+                if committer[0] == "<":
+                    committer = committer[1:-1]
                 committer = self.recode(committer)
             if n == "parent":
                 parents.append(v)

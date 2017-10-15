@@ -1002,7 +1002,9 @@ def bookmark(ui, repo, *names, **opts):
 @command('branch',
     [('f', 'force', None,
      _('set branch name even if it shadows an existing branch')),
-    ('C', 'clean', None, _('reset branch name to parent branch name'))],
+     ('C', 'clean', None, _('reset branch name to parent branch name')),
+     ('r', 'rev', [], _('change branches of the given revs (EXPERIMENTAL)')),
+    ],
     _('[-fC] [NAME]'))
 def branch(ui, repo, label=None, **opts):
     """set or show the current branch name
@@ -1034,10 +1036,13 @@ def branch(ui, repo, label=None, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
+    revs = opts.get('rev')
     if label:
         label = label.strip()
 
     if not opts.get('clean') and not label:
+        if revs:
+            raise error.Abort(_("no branch name specified for the revisions"))
         ui.write("%s\n" % repo.dirstate.branch())
         return
 
@@ -1047,13 +1052,23 @@ def branch(ui, repo, label=None, **opts):
             repo.dirstate.setbranch(label)
             ui.status(_('reset working directory to branch %s\n') % label)
         elif label:
+
+            scmutil.checknewlabel(repo, label, 'branch')
+            if revs:
+                # XXX: we should allow setting name to existing branch if the
+                # branch of root of the revs is same as the new branch name
+                if label in repo.branchmap():
+                    raise error.Abort(_('a branch of the same'
+                                        ' name already exists'))
+                return cmdutil.changebranch(ui, repo, revs, label)
+
             if not opts.get('force') and label in repo.branchmap():
                 if label not in [p.branch() for p in repo[None].parents()]:
                     raise error.Abort(_('a branch of the same name already'
                                        ' exists'),
                                      # i18n: "it" refers to an existing branch
                                      hint=_("use 'hg update' to switch to it"))
-            scmutil.checknewlabel(repo, label, 'branch')
+
             repo.dirstate.setbranch(label)
             ui.status(_('marked working directory as branch %s\n') % label)
 

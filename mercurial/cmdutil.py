@@ -42,6 +42,7 @@ from . import (
     revlog,
     revset,
     revsetlang,
+    rewriteutil,
     scmutil,
     smartset,
     templatekw,
@@ -712,6 +713,92 @@ def findcmd(cmd, table, strict=True):
         return list(choice.values())[0]
 
     raise error.UnknownCommand(cmd, allcmds)
+
+def changebranch(ui, repo, revs, label):
+    """ Change the branch name of given revs to label """
+
+    with repo.wlock(), repo.lock(), repo.transaction('branches'):
+        # abort in case of uncommitted merge or dirty wdir
+        bailifchanged(repo)
+        revs = scmutil.revrange(repo, revs)
+        if not revs:
+            raise error.Abort("empty revision set")
+        roots = repo.revs('roots(%ld)', revs)
+        if len(roots) > 1:
+            raise error.Abort(_("cannot change branch of non-linear revisions"))
+        rewriteutil.precheck(repo, revs, 'change branch of')
+        if repo.revs('merge() and %ld', revs):
+            raise error.Abort(_("cannot change branch of a merge commit"))
+        if repo.revs('obsolete() and %ld', revs):
+            raise error.Abort(_("cannot change branch of a obsolete changeset"))
+
+        # make sure only topological heads
+        if repo.revs('heads(%ld) - head()', revs):
+            raise error.Abort(_("cannot change branch in middle of a stack"))
+
+        replacements = {}
+        # avoid import cycle mercurial.cmdutil -> mercurial.context ->
+        # mercurial.subrepo -> mercurial.cmdutil
+        from . import context
+        for rev in revs:
+            ctx = repo[rev]
+            oldbranch = ctx.branch()
+            # check if ctx has same branch
+            if oldbranch == label:
+                continue
+
+            def filectxfn(repo, newctx, path):
+                try:
+                    return ctx[path]
+                except error.ManifestLookupError:
+                    return None
+
+            ui.debug("changing branch of '%s' from '%s' to '%s'\n"
+                     % (hex(ctx.node()), oldbranch, label))
+            extra = ctx.extra()
+            extra['branch_change'] = hex(ctx.node())
+            # While changing branch of set of linear commits, make sure that
+            # we base our commits on new parent rather than old parent which
+            # was obsoleted while changing the branch
+            p1 = ctx.p1().node()
+            p2 = ctx.p2().node()
+            if p1 in replacements:
+                p1 = replacements[p1][0]
+            if p2 in replacements:
+                p2 = replacements[p2][0]
+
+            mc = context.memctx(repo, (p1, p2),
+                                ctx.description(),
+                                ctx.files(),
+                                filectxfn,
+                                user=ctx.user(),
+                                date=ctx.date(),
+                                extra=extra,
+                                branch=label)
+
+            commitphase = ctx.phase()
+            overrides = {('phases', 'new-commit'): commitphase}
+            with repo.ui.configoverride(overrides, 'branch-change'):
+                newnode = repo.commitctx(mc)
+
+            replacements[ctx.node()] = (newnode,)
+            ui.debug('new node id is %s\n' % hex(newnode))
+
+        # create obsmarkers and move bookmarks
+        scmutil.cleanupnodes(repo, replacements, 'branch-change')
+
+        # move the working copy too
+        wctx = repo[None]
+        # in-progress merge is a bit too complex for now.
+        if len(wctx.parents()) == 1:
+            newid = replacements.get(wctx.p1().node())
+            if newid is not None:
+                # avoid import cycle mercurial.cmdutil -> mercurial.hg ->
+                # mercurial.cmdutil
+                from . import hg
+                hg.update(repo, newid[0], quietempty=True)
+
+        ui.status(_("changed branch on %d changesets\n") % len(replacements))
 
 def findrepo(p):
     while not os.path.isdir(os.path.join(p, ".hg")):

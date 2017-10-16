@@ -86,8 +86,8 @@ debugdelta chain with sparse read enabled
   > sparse-read = True
   > EOF
   $ hg debugdeltachain -m
-      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity
-        0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
+        0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
 
   $ hg debugdeltachain -m -T '{rev} {chainid} {chainlen} {readsize} {largestblock} {readdensity}\n'
   0 1 1 44 44 1.0
@@ -109,9 +109,41 @@ debugdelta chain with sparse read enabled
     "readdensity": 1.0,
     "readsize": 44,
     "rev": 0,
+    "srchunks": 1,
     "uncompsize": 43
    }
   ]
+
+  $ printf "This test checks things.\n" >> a
+  $ hg ci -m a
+  $ hg branch other
+  marked working directory as branch other
+  (branches are permanent and global, did you want a bookmark?)
+  $ for i in `$TESTDIR/seq.py 5`; do
+  >   printf "shorter ${i}" >> a
+  >   hg ci -m "a other:$i"
+  >   hg up -q default
+  >   printf "for the branch default we want longer chains: ${i}" >> a
+  >   hg ci -m "a default:$i"
+  >   hg up -q other
+  > done
+  $ hg debugdeltachain a -T '{rev} {srchunks}\n' \
+  >    --config experimental.sparse-read.density-threshold=0.50 \
+  >    --config experimental.sparse-read.min-gap-size=0
+  0 1
+  1 1
+  2 1
+  3 1
+  4 1
+  5 1
+  6 1
+  7 1
+  8 1
+  9 1
+  10 2
+  11 1
+  $ hg --config extensions.strip= strip --no-backup -r 1
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Test max chain len
   $ cat >> $HGRCPATH << EOF

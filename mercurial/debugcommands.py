@@ -600,6 +600,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                        (sum of the sizes of all the blocks)
     :``largestblock``: size of the largest block of data read from the disk
     :``readdensity``:  density of useful bytes in the data read from the disk
+    :``srchunks``:  in how many data hunks the whole revision would be read
 
     The sparse read can be enabled with experimental.sparse-read = True
     """
@@ -645,7 +646,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
              'size    rawsize  chainsize     ratio   lindist extradist '
              'extraratio')
     if withsparseread:
-        fm.plain('   readsize largestblk rddensity')
+        fm.plain('   readsize largestblk rddensity srchunks')
     fm.plain('\n')
 
     chainbases = {}
@@ -693,11 +694,17 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 
             readdensity = float(chainsize) / float(readsize)
 
-            fm.write('readsize largestblock readdensity',
-                     ' %10d %10d %9.5f',
-                     readsize, largestblock, readdensity,
+            if util.safehasattr(revlog, '_slicechunk'):
+                revchunks = tuple(revlog._slicechunk(r, chain))
+            else:
+                revchunks = (chain,)
+            srchunks = len(revchunks)
+
+            fm.write('readsize largestblock readdensity srchunks',
+                     ' %10d %10d %9.5f %8d',
+                     readsize, largestblock, readdensity, srchunks,
                      readsize=readsize, largestblock=largestblock,
-                     readdensity=readdensity)
+                     readdensity=readdensity, srchunks=srchunks)
 
         fm.plain('\n')
 

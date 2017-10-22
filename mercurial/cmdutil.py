@@ -2528,13 +2528,7 @@ def getlogrevs(repo, pats, opts):
         matcher = revset.match(repo.ui, expr)
         revs = matcher(repo, revs)
     if limit is not None:
-        limitedrevs = []
-        for idx, rev in enumerate(revs):
-            if idx >= limit:
-                break
-            limitedrevs.append(rev)
-        revs = smartset.baseset(limitedrevs)
-
+        revs = revs.slice(0, limit)
     return revs, expr, filematcher
 
 def _parselinerangelogopt(repo, opts):

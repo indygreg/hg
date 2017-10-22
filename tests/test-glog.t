@@ -90,10 +90,16 @@ o  (0) root
   >   revsetlang,
   > )
   > 
+  > def logrevset(repo, pats, opts):
+  >     revs = cmdutil._logrevs(repo, opts)
+  >     if not revs:
+  >         return None
+  >     return cmdutil._makelogrevset(repo, pats, opts, revs)[0]
+  > 
   > def uisetup(ui):
   >     def printrevset(orig, ui, repo, *pats, **opts):
   >         if opts.get('print_revset'):
-  >             expr = cmdutil.getlogrevs(repo, pats, opts)[1]
+  >             expr = logrevset(repo, pats, opts)
   >             if expr:
   >                 tree = revsetlang.parse(expr)
   >             else:

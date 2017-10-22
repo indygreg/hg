@@ -3410,7 +3410,7 @@ def log(ui, repo, *pats, **opts):
         del opts['follow']
 
     repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
-    revs, expr, filematcher = cmdutil.getlogrevs(repo, pats, opts)
+    revs, filematcher = cmdutil.getlogrevs(repo, pats, opts)
     hunksfilter = None
 
     if opts.get('graph'):

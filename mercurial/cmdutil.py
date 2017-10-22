@@ -2505,17 +2505,16 @@ def _logrevs(repo, opts):
     return revs
 
 def getlogrevs(repo, pats, opts):
-    """Return (revs, expr, filematcher) where revs is an iterable of
-    revision numbers, expr is a revset string built from log options
-    and file patterns or None, and used to filter 'revs'. If --stat or
-    --patch are not passed filematcher is None. Otherwise it is a
-    callable taking a revision number and returning a match objects
+    """Return (revs, filematcher) where revs is a smartset
+
+    If --stat or --patch is not passed, filematcher is None. Otherwise it
+    is a callable taking a revision number and returning a match objects
     filtering the files to be detailed when displaying the revision.
     """
     limit = loglimit(opts)
     revs = _logrevs(repo, opts)
     if not revs:
-        return smartset.baseset(), None, None
+        return smartset.baseset(), None
     expr, filematcher = _makelogrevset(repo, pats, opts, revs)
     if opts.get('graph') and opts.get('rev'):
         # User-specified revs might be unsorted, but don't sort before
@@ -2527,7 +2526,7 @@ def getlogrevs(repo, pats, opts):
         revs = matcher(repo, revs)
     if limit is not None:
         revs = revs.slice(0, limit)
-    return revs, expr, filematcher
+    return revs, filematcher
 
 def _parselinerangelogopt(repo, opts):
     """Parse --line-range log option and return a list of tuples (filename,

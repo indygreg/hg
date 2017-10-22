@@ -3433,9 +3433,6 @@ def log(ui, repo, *pats, **opts):
         elif filematcher is None:
             filematcher = lrfilematcher
 
-    limit = cmdutil.loglimit(opts)
-    count = 0
-
     getrenamed = None
     if opts.get('copies'):
         endrev = None
@@ -3446,8 +3443,6 @@ def log(ui, repo, *pats, **opts):
     ui.pager('log')
     displayer = cmdutil.show_changeset(ui, repo, opts, buffered=True)
     for rev in revs:
-        if count == limit:
-            break
         ctx = repo[rev]
         copies = None
         if getrenamed is not None and rev:
@@ -3466,8 +3461,7 @@ def log(ui, repo, *pats, **opts):
             revhunksfilter = None
         displayer.show(ctx, copies=copies, matchfn=revmatchfn,
                        hunksfilterfn=revhunksfilter)
-        if displayer.flush(ctx):
-            count += 1
+        displayer.flush(ctx)
 
     displayer.close()
 

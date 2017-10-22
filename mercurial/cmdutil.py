@@ -1585,8 +1585,6 @@ class changeset_printer(object):
         if rev in self.hunk:
             self.ui.write(self.hunk[rev])
             del self.hunk[rev]
-            return 1
-        return 0
 
     def close(self):
         if self.footer:

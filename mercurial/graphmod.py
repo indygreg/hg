@@ -48,9 +48,6 @@ def dagwalker(repo, revs):
     returned.
 
     """
-    if not revs:
-        return
-
     gpcache = {}
 
     for rev in revs:

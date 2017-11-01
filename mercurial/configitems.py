@@ -106,7 +106,10 @@ dynamicdefault = object()
 # Registering actual config items
 
 def getitemregister(configtable):
-    return functools.partial(_register, configtable)
+    f = functools.partial(_register, configtable)
+    # export pseudo enum as configitem.*
+    f.dynamicdefault = dynamicdefault
+    return f
 
 coreconfigitem = getitemregister(coreitems)
 
@@ -312,6 +315,9 @@ coreconfigitem('email', 'method',
     default='smtp',
 )
 coreconfigitem('email', 'reply-to',
+    default=None,
+)
+coreconfigitem('email', 'to',
     default=None,
 )
 coreconfigitem('experimental', 'archivemetatemplate',
@@ -571,6 +577,9 @@ coreconfigitem('merge', 'checkunknown',
 )
 coreconfigitem('merge', 'checkignored',
     default='abort',
+)
+coreconfigitem('experimental', 'merge.checkpathconflicts',
+    default=False,
 )
 coreconfigitem('merge', 'followcopies',
     default=True,
@@ -844,6 +853,9 @@ coreconfigitem('ui', 'debug',
 )
 coreconfigitem('ui', 'debugger',
     default=None,
+)
+coreconfigitem('ui', 'editor',
+    default=dynamicdefault,
 )
 coreconfigitem('ui', 'fallbackencoding',
     default=None,

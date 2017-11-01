@@ -116,7 +116,7 @@ def findexternaltool(ui, tool):
             continue
         p = util.lookupreg(k, _toolstr(ui, tool, "regname"))
         if p:
-            p = util.findexe(p + _toolstr(ui, tool, "regappend"))
+            p = util.findexe(p + _toolstr(ui, tool, "regappend", ""))
             if p:
                 return p
     exe = _toolstr(ui, tool, "executable", tool)
@@ -459,7 +459,7 @@ def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     ``a.txt.other`` and ``a.txt.base`` and they will be placed in the
     same directory as ``a.txt``.
 
-    This implies permerge. Therefore, files aren't dumped, if premerge
+    This implies premerge. Therefore, files aren't dumped, if premerge
     runs successfully. Use :forcedump to forcibly write files out.
     """
     a = _workingpath(repo, fcd)

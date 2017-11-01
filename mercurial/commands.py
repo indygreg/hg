@@ -2072,7 +2072,7 @@ def graft(ui, repo, *revs, **opts):
       (grafted from CHANGESETHASH)
 
     If --force is specified, revisions will be grafted even if they
-    are already ancestors of or have been grafted to the destination.
+    are already ancestors of, or have been grafted to, the destination.
     This is useful when the revisions have since been backed out.
 
     If a graft merge results in conflicts, the graft process is
@@ -3075,7 +3075,7 @@ def incoming(ui, repo, source="default", **opts):
 
     Show new changesets found in the specified path/URL or the default
     pull location. These are the changesets that would have been pulled
-    if a pull at the time you issued this command.
+    by :hg:`pull` at the time you issued this command.
 
     See pull for valid source format details.
 
@@ -3808,8 +3808,8 @@ def phase(ui, repo, *revs, **opts):
     With one of -p/--public, -d/--draft or -s/--secret, change the
     phase value of the specified revisions.
 
-    Unless -f/--force is specified, :hg:`phase` won't move changeset from a
-    lower phase to an higher phase. Phases are ordered as follows::
+    Unless -f/--force is specified, :hg:`phase` won't move changesets from a
+    lower phase to a higher phase. Phases are ordered as follows::
 
         public < draft < secret
 
@@ -4787,9 +4787,9 @@ def status(ui, repo, *pats, **opts):
       for 'added', 'r' for 'removed', 'd' for 'deleted', 'u' for 'unknown', 'i'
       for 'ignored' and 'c' for clean.
 
-      It abbreviates only those statuses which are passed. Note that ignored
-      files are not displayed with '--terse i' unless the -i/--ignored option is
-      also used.
+      It abbreviates only those statuses which are passed. Note that clean and
+      ignored files are not displayed with '--terse ic' unless the -c/--clean
+      and -i/--ignored options are also used.
 
       The -v/--verbose option shows information when the repository is in an
       unfinished merge, shelve, rebase state etc. You can have this behavior
@@ -5489,7 +5489,7 @@ def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
 
     if len([x for x in (clean, check, merge) if x]) > 1:
         raise error.Abort(_("can only specify one of -C/--clean, -c/--check, "
-                            "or -m/merge"))
+                            "or -m/--merge"))
 
     updatecheck = None
     if check:

@@ -158,11 +158,15 @@ def topicmatch(ui, commands, kw):
         extensions.disabled().iteritems()):
         if not docs:
             continue
-        mod = extensions.load(ui, name, '')
         name = name.rpartition('.')[-1]
         if lowercontains(name) or lowercontains(docs):
             # extension docs are already translated
             results['extensions'].append((name, docs.splitlines()[0]))
+        try:
+            mod = extensions.load(ui, name, '')
+        except ImportError:
+            # debug message would be printed in extensions.load()
+            continue
         for cmd, entry in getattr(mod, 'cmdtable', {}).iteritems():
             if kw in cmd or (len(entry) > 2 and lowercontains(entry[2])):
                 cmdname = cmd.partition('|')[0].lstrip('^')
@@ -198,6 +202,8 @@ internalstable = sorted([
      loaddoc('censor', subdir='internals')),
     (['changegroups'], _('Changegroups'),
      loaddoc('changegroups', subdir='internals')),
+    (['config'], _('Config Registrar'),
+     loaddoc('config', subdir='internals')),
     (['requirements'], _('Repository Requirements'),
      loaddoc('requirements', subdir='internals')),
     (['revlogs'], _('Revision Logs'),

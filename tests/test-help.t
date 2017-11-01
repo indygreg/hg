@@ -980,6 +980,7 @@ internals topic renders index of available sub-topics
        bundles       Bundles
        censor        Censor
        changegroups  Changegroups
+       config        Config Registrar
        requirements  Repository Requirements
        revlogs       Revision Logs
        wireprotocol  Wire Protocol
@@ -1792,7 +1793,7 @@ Test dynamic list of merge tools only shows up once
         accordingly be named "a.txt.local", "a.txt.other" and "a.txt.base" and
         they will be placed in the same directory as "a.txt".
   
-        This implies permerge. Therefore, files aren't dumped, if premerge runs
+        This implies premerge. Therefore, files aren't dumped, if premerge runs
         successfully. Use :forcedump to forcibly write files out.
   
       ":fail"
@@ -1875,7 +1876,7 @@ Test dynamic list of merge tools only shows up once
       Note:
          After selecting a merge program, Mercurial will by default attempt to
          merge the files using a simple merge algorithm first. Only if it
-         doesn't succeed because of conflicting changes Mercurial will actually
+         doesn't succeed because of conflicting changes will Mercurial actually
          execute the merge program. Whether to use the simple merge algorithm
          first can be controlled by the premerge setting of the merge tool.
          Premerge is enabled by default unless the file is binary or a symlink.
@@ -3052,6 +3053,13 @@ Sub-topic indexes rendered properly
   </a>
   </td><td>
   Changegroups
+  </td></tr>
+  <tr><td>
+  <a href="/help/internals.config">
+  config
+  </a>
+  </td><td>
+  Config Registrar
   </td></tr>
   <tr><td>
   <a href="/help/internals.requirements">

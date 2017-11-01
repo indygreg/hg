@@ -129,7 +129,7 @@ class dirstate(object):
     def _map(self):
         '''Return the dirstate contents as a map from filename to
         (state, mode, size, time).'''
-        self._read()
+        self._map = dirstatemap(self._ui, self._opener, self._root)
         return self._map
 
     @property
@@ -352,10 +352,6 @@ class dirstate(object):
         except: # re-raises
             f.discard()
             raise
-
-    def _read(self):
-        self._map = dirstatemap(self._ui, self._opener, self._root)
-        self._map.read()
 
     def invalidate(self):
         '''Causes the next access to reread the dirstate.
@@ -593,8 +589,7 @@ class dirstate(object):
         return path
 
     def clear(self):
-        self._map = dirstatemap(self._ui, self._opener, self._root)
-        self._map.setparents(nullid, nullid)
+        self._map.clear()
         self._lastnormaltime = 0
         self._updatedfiles.clear()
         self._dirty = True
@@ -1058,6 +1053,9 @@ class dirstate(object):
         removed, deleted, clean = [], [], []
 
         dmap = self._map
+        dmap.preload()
+        dcontains = dmap.__contains__
+        dget = dmap.__getitem__
         ladd = lookup.append            # aka "unsure"
         madd = modified.append
         aadd = added.append
@@ -1079,7 +1077,7 @@ class dirstate(object):
         full = listclean or match.traversedir is not None
         for fn, st in self.walk(match, subrepos, listunknown, listignored,
                                 full=full).iteritems():
-            if fn not in dmap:
+            if not dcontains(fn):
                 if (listignored or mexact(fn)) and dirignore(fn):
                     if listignored:
                         iadd(fn)
@@ -1094,7 +1092,7 @@ class dirstate(object):
             # a list, but falls back to creating a full-fledged iterator in
             # general. That is much slower than simply accessing and storing the
             # tuple members one by one.
-            t = dmap[fn]
+            t = dget(fn)
             state = t[0]
             mode = t[1]
             size = t[2]
@@ -1189,7 +1187,11 @@ class dirstate(object):
         # changes of dirstate out after restoring from backup file
         self.invalidate()
         filename = self._actualfilename(tr)
-        self._opener.rename(backupname, filename, checkambig=True)
+        o = self._opener
+        if util.samefile(o.join(backupname), o.join(filename)):
+            o.unlink(backupname)
+        else:
+            o.rename(backupname, filename, checkambig=True)
 
     def clearbackup(self, tr, backupname):
         '''Clear backup file'''
@@ -1202,13 +1204,28 @@ class dirstatemap(object):
         self._root = root
         self._filename = 'dirstate'
 
-        self._map = {}
-        self.copymap = {}
         self._parents = None
         self._dirtyparents = False
 
         # for consistent view between _pl() and _read() invocations
         self._pendingmode = None
+
+    @propertycache
+    def _map(self):
+        self._map = {}
+        self.read()
+        return self._map
+
+    @propertycache
+    def copymap(self):
+        self.copymap = {}
+        self._map
+        return self.copymap
+
+    def clear(self):
+        self._map.clear()
+        self.copymap.clear()
+        self.setparents(nullid, nullid)
 
     def iteritems(self):
         return self._map.iteritems()
@@ -1236,6 +1253,10 @@ class dirstatemap(object):
 
     def keys(self):
         return self._map.keys()
+
+    def preload(self):
+        """Loads the underlying data, if it's not already loaded"""
+        self._map
 
     def nonnormalentries(self):
         '''Compute the nonnormal dirstate entries from the dmap'''
@@ -1363,6 +1384,13 @@ class dirstatemap(object):
         if not self._dirtyparents:
             self.setparents(*p)
 
+        # Avoid excess attribute lookups by fast pathing certain checks
+        self.__contains__ = self._map.__contains__
+        self.__getitem__ = self._map.__getitem__
+        self.__setitem__ = self._map.__setitem__
+        self.__delitem__ = self._map.__delitem__
+        self.get = self._map.get
+
     def write(self, st, now):
         st.write(parsers.pack_dirstate(self._map, self.copymap,
                                        self.parents(), now))
@@ -1384,7 +1412,7 @@ class dirstatemap(object):
 
     @propertycache
     def identity(self):
-        self.read()
+        self._map
         return self.identity
 
     @propertycache

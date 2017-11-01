@@ -218,7 +218,8 @@ def filterhgerr(err):
     err = [e for e in err.splitlines()
            if (not e.startswith(b'not trusting file')
                and not e.startswith(b'warning: Not importing')
-               and not e.startswith(b'obsolete feature not enabled'))]
+               and not e.startswith(b'obsolete feature not enabled')
+               and not e.startswith(b'devel-warn:'))]
     return b'\n'.join(b'  ' + e for e in err)
 
 def findhg():
@@ -249,8 +250,6 @@ def findhg():
 
     # Fall back to trying the local hg installation.
     hgenv = localhgenv()
-    # Don't source any system hgrc files when using the local hg.
-    hgenv['HGRCPATH'] = ''
     hgcmd = [sys.executable, 'hg']
     try:
         retcode, out, err = runcmd(hgcmd + check_cmd, hgenv)

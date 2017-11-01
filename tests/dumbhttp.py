@@ -26,12 +26,16 @@ if os.environ.get('HGIPV6', '0') == '1':
 else:
     simplehttpserver = httpserver.httpserver
 
+class _httprequesthandler(httpserver.simplehttprequesthandler):
+    def log_message(self, format, *args):
+        httpserver.simplehttprequesthandler.log_message(self, format, *args)
+        sys.stderr.flush()
+
 class simplehttpservice(object):
     def __init__(self, host, port):
         self.address = (host, port)
     def init(self):
-        self.httpd = simplehttpserver(
-            self.address, httpserver.simplehttprequesthandler)
+        self.httpd = simplehttpserver(self.address, _httprequesthandler)
     def run(self):
         self.httpd.serve_forever()
 
@@ -41,6 +45,7 @@ if __name__ == '__main__':
         help='TCP port to listen on', metavar='PORT')
     parser.add_option('-H', '--host', dest='host', default='localhost',
         help='hostname or IP to listen on', metavar='HOST')
+    parser.add_option('--logfile', help='file name of access/error log')
     parser.add_option('--pid', dest='pid',
         help='file name where the PID of the server is stored')
     parser.add_option('-f', '--foreground', dest='foreground',
@@ -52,6 +57,9 @@ if __name__ == '__main__':
 
     signal.signal(signal.SIGTERM, lambda x, y: sys.exit(0))
 
+    if options.foreground and options.logfile:
+        parser.error("options --logfile and --foreground are mutually "
+                     "exclusive")
     if options.foreground and options.pid:
         parser.error("options --pid and --foreground are mutually exclusive")
 
@@ -60,4 +68,5 @@ if __name__ == '__main__':
             'daemon_postexec': options.daemon_postexec}
     service = simplehttpservice(options.host, options.port)
     server.runservice(opts, initfn=service.init, runfn=service.run,
+                      logfile=options.logfile,
                       runargs=[sys.executable, __file__] + sys.argv[1:])

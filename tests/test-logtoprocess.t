@@ -121,4 +121,4 @@ resulting file will not exists. If not, we will touch the file and see it.
   $ touch $TESTTMP/wait-for-touched
   $ sleep 0.2
   $ test -f $TESTTMP/touched && echo "SUCCESS Pager is not waiting on ltp" || echo "FAIL Pager is waiting on ltp"
-  FAIL Pager is waiting on ltp
+  SUCCESS Pager is not waiting on ltp

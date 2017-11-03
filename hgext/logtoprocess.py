@@ -83,11 +83,16 @@ def uisetup(ui):
             else:
                 newsession = {'start_new_session': True}
             try:
-                # connect stdin to devnull to make sure the subprocess can't
-                # muck up that stream for mercurial.
+                # connect std* to devnull to make sure the subprocess can't
+                # muck up these stream for mercurial.
+                # Connect all the streams to be more close to Windows behavior
+                # and pager will wait for scripts to end if we don't do that
+                nullrfd = open(os.devnull, 'r')
+                nullwfd = open(os.devnull, 'w')
                 subprocess.Popen(
                     procutil.tonativestr(script),
-                    shell=True, stdin=open(os.devnull, 'r'),
+                    shell=True, stdin=nullrfd,
+                    stdout=nullwfd, stderr=nullwfd,
                     env=procutil.tonativeenv(env),
                     close_fds=True, **newsession)
             finally:

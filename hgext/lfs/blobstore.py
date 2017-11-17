@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import hashlib
 import json
 import os
 import re
@@ -99,8 +100,11 @@ class local(object):
         self.cachevfs = lfsvfs(usercache)
         self.ui = repo.ui
 
-    def write(self, oid, data):
+    def write(self, oid, data, verify=True):
         """Write blob to local blobstore."""
+        if verify:
+            _verify(oid, data)
+
         with self.vfs(oid, 'wb', atomictemp=True) as fp:
             fp.write(data)
 
@@ -110,14 +114,23 @@ class local(object):
             self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
             lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
 
-    def read(self, oid):
+    def read(self, oid, verify=True):
         """Read blob from local blobstore."""
         if not self.vfs.exists(oid):
-            lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
+            blob = self._read(self.cachevfs, oid, verify)
             self.ui.note(_('lfs: found %s in the usercache\n') % oid)
+            lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
         else:
             self.ui.note(_('lfs: found %s in the local lfs store\n') % oid)
-        return self.vfs.read(oid)
+            blob = self._read(self.vfs, oid, verify)
+        return blob
+
+    def _read(self, vfs, oid, verify):
+        """Read blob (after verifying) from the given store"""
+        blob = vfs.read(oid)
+        if verify:
+            _verify(oid, blob)
+        return blob
 
     def has(self, oid):
         """Returns True if the local blobstore contains the requested blob,
@@ -233,6 +246,8 @@ class _gitlfsremote(object):
         request = util.urlreq.request(href)
         if action == 'upload':
             # If uploading blobs, read data from local blobstore.
+            with localstore.vfs(oid) as fp:
+                _verifyfile(oid, fp)
             request.data = filewithprogress(localstore.vfs(oid), None)
             request.get_method = lambda: 'PUT'
 
@@ -253,7 +268,7 @@ class _gitlfsremote(object):
 
         if action == 'download':
             # If downloading blobs, store downloaded data to local blobstore
-            localstore.write(oid, response)
+            localstore.write(oid, response, verify=True)
 
     def _batch(self, pointers, localstore, action):
         if action not in ['upload', 'download']:
@@ -324,14 +339,14 @@ class _dummyremote(object):
 
     def writebatch(self, pointers, fromstore):
         for p in pointers:
-            content = fromstore.read(p.oid())
+            content = fromstore.read(p.oid(), verify=True)
             with self.vfs(p.oid(), 'wb', atomictemp=True) as fp:
                 fp.write(content)
 
     def readbatch(self, pointers, tostore):
         for p in pointers:
             content = self.vfs.read(p.oid())
-            tostore.write(p.oid(), content)
+            tostore.write(p.oid(), content, verify=True)
 
 class _nullremote(object):
     """Null store storing blobs to /dev/null."""
@@ -367,6 +382,24 @@ _storemap = {
     'null': _nullremote,
     None: _promptremote,
 }
+
+def _verify(oid, content):
+    realoid = hashlib.sha256(content).hexdigest()
+    if realoid != oid:
+        raise error.Abort(_('detected corrupt lfs object: %s') % oid,
+                          hint=_('run hg verify'))
+
+def _verifyfile(oid, fp):
+    sha256 = hashlib.sha256()
+    while True:
+        data = fp.read(1024 * 1024)
+        if not data:
+            break
+        sha256.update(data)
+    realoid = sha256.hexdigest()
+    if realoid != oid:
+        raise error.Abort(_('detected corrupt lfs object: %s') % oid,
+                          hint=_('run hg verify'))
 
 def remote(repo):
     """remotestore factory. return a store in _storemap depending on config"""

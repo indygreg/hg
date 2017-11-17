@@ -704,18 +704,17 @@ Damaging a file required by the update destination fails the update.
   updating to branch default
   resolving manifests
   getting l
-  lfs: adding 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b to the usercache
-  lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-  abort: integrity check failed on data/l.i:3!
+  abort: detected corrupt lfs object: 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
+  (run hg verify)
   [255]
 
-BUG: A corrupted lfs blob either shouldn't be created after a transfer from a
-file://remotestore, or it shouldn't be left behind.
+A corrupted lfs blob is not transferred from a file://remotestore to the
+usercache or local store.
 
-  $ cat emptycache/22/f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b | $TESTDIR/f --sha256
-  sha256=40f67c7e91d554db4bc500f8f62c2e40f9f61daa5b62388e577bbae26f5396ff
-  $ cat fromcorrupt2/.hg/store/lfs/objects/22/f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b | $TESTDIR/f --sha256
-  sha256=40f67c7e91d554db4bc500f8f62c2e40f9f61daa5b62388e577bbae26f5396ff
+  $ test -f emptycache/22/f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
+  [1]
+  $ test -f fromcorrupt2/.hg/store/lfs/objects/22/f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
+  [1]
 
   $ hg -R fromcorrupt2 verify
   checking changesets
@@ -723,14 +722,13 @@ file://remotestore, or it shouldn't be left behind.
   crosschecking files in changesets and manifests
   checking files
    l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
-   l@4: unpacking 6f1ff1f39c11: integrity check failed on data/l.i:3
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
   4 files, 5 changesets, 10 total revisions
-  3 integrity errors encountered!
+  2 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
 
-BUG: push will happily send corrupt files upstream.  (The alternate dummy remote
+Corrupt local files are not sent upstream.  (The alternate dummy remote
 avoids the corrupt lfs object in the original remote.)
 
   $ mkdir $TESTTMP/dummy-remote2
@@ -742,18 +740,9 @@ avoids the corrupt lfs object in the original remote.)
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
-  5 changesets found
-  uncompressed size of bundle content:
-       997 (changelog)
-      1032 (manifests)
-       841  l
-       272  large
-       788  s
-       139  small
-  adding changesets
-  adding manifests
-  adding file changes
-  added 5 changesets with 10 changes to 4 files
+  abort: detected corrupt lfs object: 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
+  (run hg verify)
+  [255]
 
   $ hg -R fromcorrupt2 --config lfs.url=file:///$TESTTMP/dummy-remote2 verify -v
   repository uses revlog format 1
@@ -764,27 +753,21 @@ avoids the corrupt lfs object in the original remote.)
   lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
    l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-   l@4: unpacking 6f1ff1f39c11: integrity check failed on data/l.i:3
   lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   4 files, 5 changesets, 10 total revisions
-  3 integrity errors encountered!
+  2 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
 
   $ cat $TESTTMP/dummy-remote2/22/f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b | $TESTDIR/f --sha256
-  sha256=40f67c7e91d554db4bc500f8f62c2e40f9f61daa5b62388e577bbae26f5396ff
+  sha256=22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
   $ cat fromcorrupt2/.hg/store/lfs/objects/22/f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b | $TESTDIR/f --sha256
-  sha256=40f67c7e91d554db4bc500f8f62c2e40f9f61daa5b62388e577bbae26f5396ff
-
-  $ cat $TESTTMP/dummy-remote2/66/100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
-  LONGER-THAN-TEN-BYTES-WILL-TRIGGER-LFS
-  damage
-  $ cat $TESTTMP/dummy-remote2/22/f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
-  RESTORE-TO-BE-LARGE
-  damage
+  sha256=22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
+  $ test -f $TESTTMP/dummy-remote2/66/100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
+  [1]
 
 Accessing a corrupt file will complain
 

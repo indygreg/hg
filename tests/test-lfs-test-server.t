@@ -105,16 +105,15 @@ Clear the cache to force a download
   lfs: found 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 in the local lfs store
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-Test a corrupt file download, but clear the cache first to force a download
-
-XXX: ideally, the validation would occur before polluting the usercache and
-local store, with a clearer error message.
+Test a corrupt file download, but clear the cache first to force a download.
 
   $ rm -rf `hg config lfs.usercache`
   $ cp $TESTTMP/lfs-content/d1/1e/1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 blob
   $ echo 'damage' > $TESTTMP/lfs-content/d1/1e/1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   $ rm ../repo1/.hg/store/lfs/objects/d1/1e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   $ rm ../repo1/*
+
+XXX: suggesting `hg verify` won't help with a corrupt file on the lfs server.
   $ hg --repo ../repo1 update -C tip -v
   resolving manifests
   getting a
@@ -123,18 +122,16 @@ local store, with a clearer error message.
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
   getting c
   lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
-  lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
-  lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
-  lfs: found d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 in the local lfs store
-  abort: integrity check failed on data/c.i:0!
+  abort: detected corrupt lfs object: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  (run hg verify)
   [255]
 
-BUG: the corrupted blob was added to the usercache and local store
+The corrupted blob is not added to the usercache or local store
 
-  $ cat ../repo1/.hg/store/lfs/objects/d1/1e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 | $TESTDIR/f --sha256
-  sha256=fa82ca222fc9813afad3559637960bf311170cdd80ed35287f4623eb2320a660
-  $ cat `hg config lfs.usercache`/d1/1e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 | $TESTDIR/f --sha256
-  sha256=fa82ca222fc9813afad3559637960bf311170cdd80ed35287f4623eb2320a660
+  $ test -f ../repo1/.hg/store/lfs/objects/d1/1e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  [1]
+  $ test -f `hg config lfs.usercache`/d1/1e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  [1]
   $ cp blob $TESTTMP/lfs-content/d1/1e/1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
 
 Test a corrupted file upload
@@ -146,7 +143,8 @@ Test a corrupted file upload
   pushing to ../repo1
   searching for changes
   lfs: uploading e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0 (17 bytes)
-  abort: HTTP error: HTTP Error 500: Internal Server Error (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)!
+  abort: detected corrupt lfs object: e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0
+  (run hg verify)
   [255]
 
 Check error message when the remote missed a blob:

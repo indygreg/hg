@@ -54,7 +54,9 @@ def readfromstore(self, text):
     if not store.has(oid):
         p.filename = getattr(self, 'indexfile', None)
         self.opener.lfsremoteblobstore.readbatch([p], store)
-    text = store.read(oid)
+
+    # The caller will validate the content
+    text = store.read(oid, verify=False)
 
     # pack hg filelog metadata
     hgmeta = {}
@@ -76,7 +78,7 @@ def writetostore(self, text):
 
     # git-lfs only supports sha256
     oid = hashlib.sha256(text).hexdigest()
-    self.opener.lfslocalblobstore.write(oid, text)
+    self.opener.lfslocalblobstore.write(oid, text, verify=False)
 
     # replace contents with metadata
     longoid = 'sha256:%s' % oid

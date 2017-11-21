@@ -1032,7 +1032,19 @@ check obsolete changeset
           <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="obsoletetag" title="obsolete">obsolete</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=spartan' | grep 'class="obsolete"'
     <th class="obsolete">obsolete:</th>
-    <td class="obsolete">yes</td>
+    <td class="obsolete">pruned</td>
+
+check an obsolete changeset that has been rewritten
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=paper' | grep rewritten
+   <td>rewritten as 6:3de5eca88c00</td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=coal' | grep rewritten
+   <td>rewritten as 6:3de5eca88c00</td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=gitweb' | grep rewritten
+  <tr><td>obsolete</td><td>rewritten as 6:3de5eca88c00</td></tr>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=monoblue' | grep rewritten
+          <dt>obsolete</dt><dd>rewritten as 6:3de5eca88c00</dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=spartan' | grep rewritten
+   <td class="obsolete">rewritten as 6:3de5eca88c00</td>
 
 check changeset with instabilities
 

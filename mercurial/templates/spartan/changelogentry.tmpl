@@ -24,7 +24,7 @@
  </tr>')}
  {if(obsolete, '<tr>
   <th class="obsolete">obsolete:</th>
-  <td class="obsolete">yes</td>
+  <td class="obsolete">{succsandmarkers%obsfateentry}</td>
  </tr>')}
  {ifeq(count(instabilities), '0', '', '<tr>
   <th class="instabilities">instabilities:</th>

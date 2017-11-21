@@ -32,6 +32,7 @@ from .. import (
     pathutil,
     pycompat,
     templatefilters,
+    templatekw,
     ui as uimod,
     util,
 )
@@ -351,6 +352,9 @@ def linerange(req):
 def formatlinerange(fromline, toline):
     return '%d:%d' % (fromline + 1, toline)
 
+def succsandmarkers(repo, ctx):
+    return templatekw.showsuccsandmarkers(repo, ctx)
+
 def commonentry(repo, ctx):
     node = ctx.node()
     return {
@@ -362,6 +366,7 @@ def commonentry(repo, ctx):
         'extra': ctx.extra(),
         'phase': ctx.phasestr(),
         'obsolete': ctx.obsolete(),
+        'succsandmarkers': lambda **x: succsandmarkers(repo, ctx),
         'instabilities': [{"instability": i} for i in ctx.instabilities()],
         'branch': nodebranchnodefault(ctx),
         'inbranch': nodeinbranch(repo, ctx),

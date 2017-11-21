@@ -209,6 +209,11 @@ changelogbranchhead = '<span class="branchhead">{name|escape}</span> '
 changelogbranchname = '<span class="branchname">{name|escape}</span> '
 alltags = '{phasetag}{obsoletetag}{instabilities%instabilitytag}{inbranch%changelogbranchname}{branches%changelogbranchhead}{tags%changelogtag}{bookmarks%changelogtag}'
 
+obsfatesuccessors = '{if(successors, ' as ')}{join(successors, ', ')}'
+obsfateverb = '{obsfateverb(successors, markers)}'
+obsfateoperations = '{if(obsfateoperations(markers), ' using {join(obsfateoperations(markers), ', ')}')}'
+obsfateentry = '{obsfateverb}{obsfateoperations}{obsfatesuccessors}'
+
 filediffparent = '
   <tr>
     <th class="parent">parent {rev}:</th>

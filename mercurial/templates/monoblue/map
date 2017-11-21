@@ -229,6 +229,10 @@ branchtag = '<span class="branchtag" title="{name|escape}">{name|escape}</span> 
 inbranchtag = '<span class="inbranchtag" title="{name|escape}">{name|escape}</span> '
 bookmarktag = '<span class="bookmarktag" title="{name|escape}">{name|escape}</span> '
 alltags = '<span class="logtags">{phasetag}{obsoletetag}{instabilities%instabilitytag}{inbranch%inbranchtag}{branches%branchtag}{tags%tagtag}{bookmarks%bookmarktag}</span>'
+obsfatesuccessors = '{if(successors, ' as ')}{join(successors, ', ')}'
+obsfateverb = '{obsfateverb(successors, markers)}'
+obsfateoperations = '{if(obsfateoperations(markers), ' using {join(obsfateoperations(markers), ', ')}')}'
+obsfateentry = '{obsfateverb}{obsfateoperations}{obsfatesuccessors}'
 shortlogentry = '
   <tr class="parity{parity}">
     <td class="nowrap age">{date|rfc822date}</td>

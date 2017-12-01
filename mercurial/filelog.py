@@ -135,7 +135,9 @@ class filelog(object):
             return False
         t = self.revision(node)
         m = revlog.parsemeta(t)[0]
-        if m and "copy" in m:
+        # copy and copyrev occur in pairs. In rare cases due to bugs,
+        # one can occur without the other.
+        if m and "copy" in m and "copyrev" in m:
             return (m["copy"], revlog.bin(m["copyrev"]))
         return False
 

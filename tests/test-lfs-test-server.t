@@ -146,12 +146,7 @@ Test a corrupted file upload
   pushing to ../repo1
   searching for changes
   lfs: uploading e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0 (17 bytes)
-  lfs: failed: LfsRemoteError('HTTP error: HTTP Error 500: Internal Server Error (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)',) (remaining retry 5)
-  lfs: failed: LfsRemoteError('HTTP error: HTTP Error 404: Not Found (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)',) (remaining retry 4)
-  lfs: failed: LfsRemoteError('HTTP error: HTTP Error 404: Not Found (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)',) (remaining retry 3)
-  lfs: failed: LfsRemoteError('HTTP error: HTTP Error 404: Not Found (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)',) (remaining retry 2)
-  lfs: failed: LfsRemoteError('HTTP error: HTTP Error 404: Not Found (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)',) (remaining retry 1)
-  abort: HTTP error: HTTP Error 404: Not Found (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)!
+  abort: HTTP error: HTTP Error 500: Internal Server Error (oid=e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0, action=upload)!
   [255]
 
 Check error message when the remote missed a blob:

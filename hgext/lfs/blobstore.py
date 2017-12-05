@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import json
 import os
 import re
+import socket
 
 from mercurial.i18n import _
 
@@ -286,7 +287,7 @@ class _gitlfsremote(object):
                         self._basictransfer(obj, action, localstore)
                         yield 1, obj.get('oid')
                         break
-                    except Exception as ex:
+                    except socket.error as ex:
                         if retry > 0:
                             if self.ui.verbose:
                                 self.ui.write(

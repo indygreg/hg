@@ -3280,7 +3280,7 @@ def log(ui, repo, *pats, **opts):
     File history is shown without following rename or copy history of
     files. Use -f/--follow with a filename to follow history across
     renames and copies. --follow without a filename will only show
-    ancestors or descendants of the starting revision.
+    ancestors of the starting revision.
 
     By default this command prints revision number and changeset id,
     tags, non-trivial parents, user, date and time, and a summary for

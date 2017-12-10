@@ -95,7 +95,7 @@ o  (0) root
   >     revs = cmdutil._logrevs(repo, opts)
   >     if not revs:
   >         return None
-  >     return cmdutil._makelogrevset(repo, pats, opts, revs)[0]
+  >     return cmdutil._makelogrevset(repo, pats, opts)[0]
   > 
   > def uisetup(ui):
   >     def printrevset(orig, repo, pats, opts):
@@ -1867,9 +1867,7 @@ Test --follow-first
   []
   (func
     (symbol '_firstancestors')
-    (func
-      (symbol 'rev')
-      (symbol '6')))
+    (symbol '.'))
   <filteredset
     <spanset- 0:7>,
     <generatorsetdesc+>>

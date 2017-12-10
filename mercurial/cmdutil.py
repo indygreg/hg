@@ -2359,8 +2359,6 @@ _opt2logrevset = {
     'only_merges':      ('merge()', None),
     '_ancestors':       ('ancestors(%r)', None),
     '_fancestors':      ('_firstancestors(%r)', None),
-    '_descendants':     ('descendants(%r)', None),
-    '_fdescendants':    ('_firstdescendants(%r)', None),
     '_matchfiles':      (None, '_matchfiles(%ps)'),
     'date':             ('date(%s)', None),
     'branch':           ('branch(%s)', '%lr'),
@@ -2372,7 +2370,7 @@ _opt2logrevset = {
     'user':             ('user(%s)', '%lr'),
 }
 
-def _makelogrevset(repo, pats, opts, revs):
+def _makelogrevset(repo, pats, opts):
     """Return (expr, filematcher) where expr is a revset string built
     from log options and file patterns or None. If --stat or --patch
     are not passed filematcher is None. Otherwise it is a callable
@@ -2386,10 +2384,6 @@ def _makelogrevset(repo, pats, opts, revs):
         followfirst = 1
     else:
         followfirst = 0
-    # --follow with FILE behavior depends on revs...
-    it = iter(revs)
-    startrev = next(it)
-    followdescendants = startrev < next(it, startrev)
 
     # branch and only_branch are really aliases and must be handled at
     # the same time
@@ -2434,8 +2428,8 @@ def _makelogrevset(repo, pats, opts, revs):
                 slowpath = False
 
     fpats = ('_patsfollow', '_patsfollowfirst')
-    fnopats = (('_ancestors', '_fancestors'),
-               ('_descendants', '_fdescendants'))
+    fnopats = ('_ancestors', '_fancestors')
+
     if slowpath:
         # See walkchangerevs() slow path.
         #
@@ -2454,7 +2448,7 @@ def _makelogrevset(repo, pats, opts, revs):
             matchargs.append('x:' + p)
         opts['_matchfiles'] = matchargs
         if follow:
-            opts[fnopats[0][followfirst]] = '.'
+            opts[fnopats[followfirst]] = '.'
     else:
         if follow:
             if pats:
@@ -2462,8 +2456,8 @@ def _makelogrevset(repo, pats, opts, revs):
                 # manifest entry, so use match.files(), not pats.
                 opts[fpats[followfirst]] = list(match.files())
             else:
-                op = fnopats[followdescendants][followfirst]
-                opts[op] = 'rev(%d)' % startrev
+                op = fnopats[followfirst]
+                opts[op] = '.'
         else:
             opts['_patslog'] = list(pats)
 
@@ -2505,8 +2499,6 @@ def _makelogrevset(repo, pats, opts, revs):
     return expr, filematcher
 
 def _logrevs(repo, opts):
-    # Default --rev value depends on --follow but --follow behavior
-    # depends on revisions resolved from --rev...
     follow = opts.get('follow') or opts.get('follow_first')
     if opts.get('rev'):
         revs = scmutil.revrange(repo, opts['rev'])
@@ -2530,7 +2522,7 @@ def getlogrevs(repo, pats, opts):
     revs = _logrevs(repo, opts)
     if not revs:
         return smartset.baseset(), None
-    expr, filematcher = _makelogrevset(repo, pats, opts, revs)
+    expr, filematcher = _makelogrevset(repo, pats, opts)
     if opts.get('graph') and opts.get('rev'):
         # User-specified revs might be unsorted, but don't sort before
         # _makelogrevset because it might depend on the order of revs

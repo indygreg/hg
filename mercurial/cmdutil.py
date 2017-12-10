@@ -2518,10 +2518,19 @@ def getlogrevs(repo, pats, opts):
     is a callable taking a revision number and returning a match objects
     filtering the files to be detailed when displaying the revision.
     """
+    follow = opts.get('follow') or opts.get('follow_first')
+    followfirst = opts.get('follow_first')
+    if opts.get('rev'):
+        # TODO: do not mutate opts here
+        opts.pop('follow', None)
+        opts.pop('follow_first', None)
     limit = loglimit(opts)
     revs = _logrevs(repo, opts)
     if not revs:
         return smartset.baseset(), None
+    if opts.get('rev') and follow:
+        revs = dagop.revancestors(repo, revs, followfirst=followfirst)
+        revs.reverse()
     expr, filematcher = _makelogrevset(repo, pats, opts)
     if opts.get('graph') and opts.get('rev'):
         # User-specified revs might be unsorted, but don't sort before

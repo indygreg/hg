@@ -715,6 +715,15 @@ log -f -r '1 + 4'
   date:        Thu Jan 01 00:00:01 1970 +0000
   summary:     base
   
+
+log -fr with aliases: 'A' should be expanded, but 'reverse()' should have no
+effect
+
+  $ hg log --config 'revsetalias.reverse(x)=x' --config 'revsetalias.A=1+4' -qfrA
+  4:ddb82e70d1a1
+  1:3d5bf5654eda
+  0:67e992f2c4f3
+
 log -r "follow('set:grep(b2)')"
 
   $ hg log -r "follow('set:grep(b2)')"

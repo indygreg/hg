@@ -3405,14 +3405,6 @@ def log(ui, repo, *pats, **opts):
             _('FILE arguments are not compatible with --line-range option')
         )
 
-    if opts.get('follow_first') and opts.get('rev'):
-        opts['rev'] = [revsetlang.formatspec('reverse(_firstancestors(%lr))',
-                                             opts.get('rev'))]
-        del opts['follow_first']
-    elif opts.get('follow') and opts.get('rev'):
-        opts['rev'] = [revsetlang.formatspec('reverse(::%lr)', opts.get('rev'))]
-        del opts['follow']
-
     repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
     revs, filematcher = cmdutil.getlogrevs(repo, pats, opts)
     hunksfilter = None

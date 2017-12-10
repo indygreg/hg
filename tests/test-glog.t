@@ -2295,28 +2295,28 @@ changessincelatesttag with no prior tag
   -f
   +g
   $ testlog --follow -r6 -r8 -r5 -r7 -r4
-  ['reverse(::(((6) or (8)) or ((5) or ((7) or (4)))))']
+  ['6', '8', '5', '7', '4']
   []
   <generatorsetdesc->
 
 Test --follow-first and forward --rev
 
   $ testlog --follow-first -r6 -r8 -r5 -r7 -r4
-  ['reverse(_firstancestors((((6) or (8)) or ((5) or ((7) or (4))))))']
+  ['6', '8', '5', '7', '4']
   []
   <generatorsetdesc->
 
 Test --follow and backward --rev
 
   $ testlog --follow -r6 -r5 -r7 -r8 -r4
-  ['reverse(::(((6) or (5)) or ((7) or ((8) or (4)))))']
+  ['6', '5', '7', '8', '4']
   []
   <generatorsetdesc->
 
 Test --follow-first and backward --rev
 
   $ testlog --follow-first -r6 -r5 -r7 -r8 -r4
-  ['reverse(_firstancestors((((6) or (5)) or ((7) or ((8) or (4))))))']
+  ['6', '5', '7', '8', '4']
   []
   <generatorsetdesc->
 

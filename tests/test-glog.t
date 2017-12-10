@@ -2304,22 +2304,9 @@ changessincelatesttag with no prior tag
 Test --follow-first and forward --rev
 
   $ testlog --follow-first -r6 -r8 -r5 -r7 -r4
-  ['6', '8', '5', '7', '4']
-  (func
-    (symbol '_firstdescendants')
-    (func
-      (symbol 'rev')
-      (symbol '6')))
-  <filteredset
-    <baseset- [4, 5, 6, 7, 8]>,
-    <generatorsetasc+>>
-  --- log.nodes	* (glob)
-  +++ glog.nodes	* (glob)
-  @@ -1,3 +1,3 @@
-  -nodetag 6
-   nodetag 8
-   nodetag 7
-  +nodetag 6
+  ['reverse(_firstancestors((((6) or (8)) or ((5) or ((7) or (4))))))']
+  []
+  <generatorsetdesc->
 
 Test --follow and backward --rev
 
@@ -2331,15 +2318,9 @@ Test --follow and backward --rev
 Test --follow-first and backward --rev
 
   $ testlog --follow-first -r6 -r5 -r7 -r8 -r4
-  ['6', '5', '7', '8', '4']
-  (func
-    (symbol '_firstancestors')
-    (func
-      (symbol 'rev')
-      (symbol '6')))
-  <filteredset
-    <baseset- [4, 5, 6, 7, 8]>,
-    <generatorsetdesc+>>
+  ['reverse(_firstancestors((((6) or (5)) or ((7) or ((8) or (4))))))']
+  []
+  <generatorsetdesc->
 
 Test --follow with --rev of graphlog extension
 

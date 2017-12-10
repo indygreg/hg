@@ -2032,6 +2032,21 @@ def increasingwindows(windowsize=8, sizelimit=512):
         if windowsize < sizelimit:
             windowsize *= 2
 
+def _walkrevs(repo, opts):
+    # Default --rev value depends on --follow but --follow behavior
+    # depends on revisions resolved from --rev...
+    follow = opts.get('follow') or opts.get('follow_first')
+    if opts.get('rev'):
+        revs = scmutil.revrange(repo, opts['rev'])
+    elif follow and repo.dirstate.p1() == nullid:
+        revs = smartset.baseset()
+    elif follow:
+        revs = repo.revs('reverse(:.)')
+    else:
+        revs = smartset.spanset(repo)
+        revs.reverse()
+    return revs
+
 class FileWalkError(Exception):
     pass
 
@@ -2186,7 +2201,7 @@ def walkchangerevs(repo, match, opts, prepare):
     function on each context in the window in forward order.'''
 
     follow = opts.get('follow') or opts.get('follow_first')
-    revs = _logrevs(repo, opts)
+    revs = _walkrevs(repo, opts)
     if not revs:
         return []
     wanted = set()

@@ -452,6 +452,12 @@ coreconfigitem('experimental', 'copytrace.sourcecommitlimit',
 coreconfigitem('experimental', 'crecordtest',
     default=None,
 )
+coreconfigitem('experimental', 'directaccess',
+    default=False,
+)
+coreconfigitem('experimental', 'directaccess.revnums',
+    default=False,
+)
 coreconfigitem('experimental', 'editortmpinhg',
     default=False,
 )

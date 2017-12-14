@@ -661,3 +661,34 @@ def funcsused(tree):
         if tree[0] == 'func':
             funcs.add(tree[1][1])
         return funcs
+
+_hashre = util.re.compile('[0-9a-fA-F]{1,40}$')
+
+def _ishashlikesymbol(symbol):
+    """returns true if the symbol looks like a hash"""
+    return _hashre.match(symbol)
+
+def gethashlikesymbols(tree):
+    """returns the list of symbols of the tree that look like hashes
+
+    >>> gethashlikesymbols(('dagrange', ('symbol', '3'), ('symbol', 'abe3ff')))
+    ['3', 'abe3ff']
+    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '.')))
+    []
+    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '34')))
+    ['34']
+    >>> gethashlikesymbols(('symbol', 'abe3ffZ'))
+    []
+    """
+    if not tree:
+        return []
+
+    if tree[0] == "symbol":
+        if _ishashlikesymbol(tree[1]):
+            return [tree[1]]
+    elif len(tree) >= 3:
+        results = []
+        for subtree in tree[1:]:
+            results += gethashlikesymbols(subtree)
+        return results
+    return []

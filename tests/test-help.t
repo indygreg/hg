@@ -919,6 +919,8 @@ Test list of internal help commands
                  show the contents of the current dirstate
    debugdiscovery
                  runs the changeset discovery protocol in isolation
+   debugdownload
+                 download a resource using Mercurial logic and config
    debugextensions
                  show information about active extensions
    debugfileset  parse and apply a fileset specification

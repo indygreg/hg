@@ -69,6 +69,7 @@ from . import (
     templater,
     treediscovery,
     upgrade,
+    url as urlmod,
     util,
     vfs as vfsmod,
 )
@@ -785,6 +786,30 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
     remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
     localrevs = opts['rev']
     doit(localrevs, remoterevs)
+
+_chunksize = 4 << 10
+
+@command('debugdownload',
+    [
+        ('o', 'output', '', _('path')),
+    ],
+    norepo=True)
+def debugdownload(ui, url, output=None, **opts):
+    """download a resource using Mercurial logic and config
+    """
+    fh = urlmod.open(ui, url, output)
+
+    dest = ui
+    if output:
+        dest = open(output, "wb", _chunksize)
+    try:
+        data = fh.read(_chunksize)
+        while data:
+            dest.write(data)
+            data = fh.read(_chunksize)
+    finally:
+        if output:
+            dest.close()
 
 @command('debugextensions', cmdutil.formatteropts, [], norepo=True)
 def debugextensions(ui, **opts):

@@ -85,6 +85,7 @@ Show debug commands if there are no other candidates
   debugdeltachain
   debugdirstate
   debugdiscovery
+  debugdownload
   debugextensions
   debugfileset
   debugformat
@@ -263,6 +264,7 @@ Show all commands + options
   debugdeltachain: changelog, manifest, dir, template
   debugdirstate: nodates, datesort
   debugdiscovery: old, nonheads, rev, ssh, remotecmd, insecure
+  debugdownload: output
   debugextensions: template
   debugfileset: rev
   debugformat: template

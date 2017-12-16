@@ -603,12 +603,12 @@ test that custom environment is passed down to ssh executable
   > echo \$VAR >&2
   > EOF
   $ chmod +x dumpenv
-  $ hg pull ssh://something --config ui.ssh="./dumpenv"
+  $ hg pull ssh://something --config ui.ssh="sh dumpenv"
   pulling from ssh://something/
   remote: 
   abort: no suitable response from remote hg!
   [255]
-  $ hg pull ssh://something --config ui.ssh="./dumpenv" --config sshenv.VAR=17
+  $ hg pull ssh://something --config ui.ssh="sh dumpenv" --config sshenv.VAR=17
   pulling from ssh://something/
   remote: 17
   abort: no suitable response from remote hg!

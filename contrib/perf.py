@@ -25,7 +25,9 @@ import os
 import random
 import struct
 import sys
+import threading
 import time
+import util.queue
 from mercurial import (
     changegroup,
     cmdutil,
@@ -933,11 +935,25 @@ def perffncacheencode(ui, repo, **opts):
     timer(d)
     fm.end()
 
+def _bdiffworker(q, ready, done):
+    while not done.is_set():
+        pair = q.get()
+        while pair is not None:
+            mdiff.textdiff(*pair)
+            q.task_done()
+            pair = q.get()
+        q.task_done() # for the None one
+        with ready:
+            ready.wait()
+
 @command('perfbdiff', revlogopts + formatteropts + [
     ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
-    ('', 'alldata', False, 'test bdiffs for all associated revisions')],
+    ('', 'alldata', False, 'test bdiffs for all associated revisions'),
+    ('', 'threads', 0, 'number of thread to use (disable with 0)'),
+    ],
+
     '-c|-m|FILE REV')
-def perfbdiff(ui, repo, file_, rev=None, count=None, **opts):
+def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     """benchmark a bdiff between revisions
 
     By default, benchmark a bdiff between its delta parent and itself.
@@ -983,13 +999,38 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, **opts):
             dp = r.deltaparent(rev)
             textpairs.append((r.revision(dp), r.revision(rev)))
 
-    def d():
-        for pair in textpairs:
-            mdiff.textdiff(*pair)
-
+    withthreads = threads > 0
+    if not withthreads:
+        def d():
+            for pair in textpairs:
+                mdiff.textdiff(*pair)
+    else:
+        q = util.queue()
+        for i in xrange(threads):
+            q.put(None)
+        ready = threading.Condition()
+        done = threading.Event()
+        for i in xrange(threads):
+            threading.Thread(target=_bdiffworker, args=(q, ready, done)).start()
+        q.join()
+        def d():
+            for pair in textpairs:
+                q.put(pair)
+            for i in xrange(threads):
+                q.put(None)
+            with ready:
+                ready.notify_all()
+            q.join()
     timer, fm = gettimer(ui, opts)
     timer(d)
     fm.end()
+
+    if withthreads:
+        done.set()
+        for i in xrange(threads):
+            q.put(None)
+        with ready:
+            ready.notify_all()
 
 @command('perfdiffwd', formatteropts)
 def perfdiffwd(ui, repo, **opts):

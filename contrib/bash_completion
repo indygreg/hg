@@ -296,7 +296,7 @@ _hg_command_specific()
         merge)
             _hg_labels
         ;;
-        commit|ci|record)
+        commit|ci|record|amend)
             _hg_status "mar"
         ;;
         remove|rm)

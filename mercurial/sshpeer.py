@@ -18,9 +18,9 @@ from . import (
 )
 
 def _serverquote(s):
+    """quote a string for the remote shell ... which we assume is sh"""
     if not s:
         return s
-    '''quote a string for the remote shell ... which we assume is sh'''
     if re.match('[a-zA-Z0-9@%_+=:,./-]*$', s):
         return s
     return "'%s'" % s.replace("'", "'\\''")

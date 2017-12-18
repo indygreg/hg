@@ -84,6 +84,7 @@ def read(repo):
 # This create and ordering used for branchmap purpose.
 # the ordering may be partial
 subsettable = {None: 'visible',
+               'visible-hidden': 'visible',
                'visible': 'served',
                'served': 'immutable',
                'immutable': 'base'}

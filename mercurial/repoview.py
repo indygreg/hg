@@ -143,6 +143,7 @@ def computeimpactable(repo, visibilityexceptions=None):
 # Otherwise your filter will have to recompute all its branches cache
 # from scratch (very slow).
 filtertable = {'visible': computehidden,
+               'visible-hidden': computehidden,
                'served': computeunserved,
                'immutable':  computemutable,
                'base':  computeimpactable}

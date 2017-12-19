@@ -158,11 +158,22 @@ githelp for grep with pattern and path
 
 githelp for reset, checking ~ in git becomes ~1 in mercurial
   $ hg githelp -- reset HEAD~
-  hg reset .~1
+  hg update .~1
   $ hg githelp -- reset "HEAD^"
-  hg reset .^
+  hg update .^
   $ hg githelp -- reset HEAD~3
-  hg reset .~3
+  hg update .~3
+
+  $ hg githelp -- reset --mixed HEAD
+  NOTE: --mixed has no meaning since Mercurial has no staging area
+  
+  hg update .
+  $ hg githelp -- reset --soft HEAD
+  NOTE: --soft has no meaning since Mercurial has no staging area
+  
+  hg update .
+  $ hg githelp -- reset --hard HEAD
+  hg update --clean .
 
 githelp for git show --name-status
   $ hg githelp -- git show --name-status

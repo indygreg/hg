@@ -807,12 +807,16 @@ def reset(ui, repo, *args, **kwargs):
     hard = opts.get('hard')
 
     if opts.get('mixed'):
-        ui.status(_('NOTE: --mixed has no meaning since mercurial has no ' +
+        ui.status(_('NOTE: --mixed has no meaning since Mercurial has no '
+                    'staging area\n\n'))
+    if opts.get('soft'):
+        ui.status(_('NOTE: --soft has no meaning since Mercurial has no '
                     'staging area\n\n'))
 
-    cmd = Command('reset')
+    cmd = Command('update')
     if hard:
         cmd.append('--clean')
+
     cmd.append(commit)
 
     ui.status((str(cmd)), "\n")

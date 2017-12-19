@@ -271,3 +271,15 @@ githelp for add
   note: use hg addremove to remove files that have been deleted.
   
   hg add
+
+githelp for reflog
+
+  $ hg githelp -- git reflog
+  hg journal
+  
+  note: in hg commits can be deleted from repo but we always have backups.
+
+  $ hg githelp -- git reflog --all
+  hg journal --all
+  
+  note: in hg commits can be deleted from repo but we always have backups.

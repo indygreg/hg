@@ -793,9 +793,7 @@ def reflog(ui, repo, *args, **kwargs):
 
     ui.status(str(cmd), "\n\n")
     ui.status(_("note: in hg commits can be deleted from repo but we always"
-              " have backups.\n"
-              "Please use 'hg backups --restore' or 'hg reset'" +
-              " to restore from backups.\n"))
+              " have backups.\n"))
 
 def reset(ui, repo, *args, **kwargs):
     cmdoptions = [

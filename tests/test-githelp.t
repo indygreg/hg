@@ -34,12 +34,12 @@ githelp should fail nicely if we don't give it arguments
 
 githelp on a command with options should succeed
   $ hg githelp -- commit -pm "abc"
-  hg record -m 'abc'
+  hg commit --interactive -m 'abc'
 
 githelp on a command with standalone unrecognized option should succeed with warning
   $ hg githelp -- commit -p -v
   ignoring unknown option -v
-  hg record
+  hg commit --interactive
 
 githelp on a command with unrecognized option packed with other options should fail with error
   $ hg githelp -- commit -pv

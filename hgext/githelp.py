@@ -415,7 +415,7 @@ def commit(ui, repo, *args, **kwargs):
 
     cmd = Command('commit')
     if opts.get('patch'):
-        cmd = Command('record')
+        cmd = Command('commit --interactive')
 
     if opts.get('amend'):
         if opts.get('no_edit'):

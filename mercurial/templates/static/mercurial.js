@@ -90,11 +90,68 @@ Graph.prototype = {
 
 	},
 
-	vertex: function(x, y, radius, color, parity, cur) {
+	graphNodeCurrent: function(x, y, radius) {
+		this.ctx.lineWidth = 2;
 		this.ctx.beginPath();
-		this.setColor(color, 0.25, 0.75);
+		this.ctx.arc(x, y, radius * 1.75, 0, Math.PI * 2, true);
+		this.ctx.stroke();
+	},
+
+	graphNodeClosing: function(x, y, radius) {
+		this.ctx.fillRect(x - radius, y - 1.5, radius * 2, 3);
+	},
+
+	graphNodeUnstable: function(x, y, radius) {
+		var x30 = radius * Math.cos(Math.PI / 6);
+		var y30 = radius * Math.sin(Math.PI / 6);
+		this.ctx.lineWidth = 2;
+		this.ctx.beginPath();
+		this.ctx.moveTo(x, y - radius);
+		this.ctx.lineTo(x, y + radius);
+		this.ctx.moveTo(x - x30, y - y30);
+		this.ctx.lineTo(x + x30, y + y30);
+		this.ctx.moveTo(x - x30, y + y30);
+		this.ctx.lineTo(x + x30, y - y30);
+		this.ctx.stroke();
+	},
+
+	graphNodeObsolete: function(x, y, radius) {
+		var p45 = radius * Math.cos(Math.PI / 4);
+		this.ctx.lineWidth = 3;
+		this.ctx.beginPath();
+		this.ctx.moveTo(x - p45, y - p45);
+		this.ctx.lineTo(x + p45, y + p45);
+		this.ctx.moveTo(x - p45, y + p45);
+		this.ctx.lineTo(x + p45, y - p45);
+		this.ctx.stroke();
+	},
+
+	graphNodeNormal: function(x, y, radius) {
+		this.ctx.beginPath();
 		this.ctx.arc(x, y, radius, 0, Math.PI * 2, true);
 		this.ctx.fill();
+	},
+
+	vertex: function(x, y, radius, color, parity, cur) {
+		this.ctx.save();
+		this.setColor(color, 0.25, 0.75);
+		if (cur.graphnode[0] === '@') {
+			this.graphNodeCurrent(x, y, radius);
+		}
+		switch (cur.graphnode.substr(-1)) {
+			case '_':
+				this.graphNodeClosing(x, y, radius);
+				break;
+			case '*':
+				this.graphNodeUnstable(x, y, radius);
+				break;
+			case 'x':
+				this.graphNodeObsolete(x, y, radius);
+				break;
+			default:
+				this.graphNodeNormal(x, y, radius);
+		}
+		this.ctx.restore();
 
 		var left = (this.bg_height - this.box_size) + (this.columns + 1) * this.box_size;
 		var item = document.querySelector('[data-node="' + cur.node + '"]');

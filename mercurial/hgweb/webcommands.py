@@ -13,7 +13,7 @@ import os
 import re
 
 from ..i18n import _
-from ..node import hex, short
+from ..node import hex, nullid, short
 
 from .common import (
     ErrorResponse,
@@ -1248,6 +1248,24 @@ def graph(web, req, tmpl):
         tree = list(item for item in graphmod.colored(dag, web.repo)
                     if item[1] == graphmod.CHANGESET)
 
+    def nodecurrent(ctx):
+        wpnodes = web.repo.dirstate.parents()
+        if wpnodes[1] == nullid:
+            wpnodes = wpnodes[:1]
+        if ctx.node() in wpnodes:
+            return '@'
+        return ''
+
+    def nodesymbol(ctx):
+        if ctx.obsolete():
+            return 'x'
+        elif ctx.isunstable():
+            return '*'
+        elif ctx.closesbranch():
+            return '_'
+        else:
+            return 'o'
+
     def fulltree():
         pos = web.repo[graphtop].rev()
         tree = []
@@ -1260,6 +1278,7 @@ def graph(web, req, tmpl):
 
     def jsdata():
         return [{'node': pycompat.bytestr(ctx),
+                 'graphnode': nodecurrent(ctx) + nodesymbol(ctx),
                  'vertex': vtx,
                  'edges': edges}
                 for (id, type, ctx, vtx, edges) in fulltree()]

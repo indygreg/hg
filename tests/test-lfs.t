@@ -59,6 +59,7 @@
   $ hg push -v | egrep -v '^(uncompressed| )'
   pushing to $TESTTMP/server
   searching for changes
+  lfs: found f11e77c257047a398492d8d6cb9f6acf3aa7c4384bb23080b43546053e183e4b in the local lfs store
   2 changesets found
   adding changesets
   adding manifests
@@ -192,6 +193,7 @@
   $ echo SMALL > small
   $ hg commit -Aqm 'create a lfs file' large small
   $ hg debuglfsupload -r 'all()' -v
+  lfs: found 8e92251415339ae9b148c8da89ed5ec665905166a1ab11b09dca8fad83344738 in the local lfs store
 
   $ cd ..
 
@@ -316,6 +318,10 @@
   $ hg commit -m branching -q
 
   $ hg bundle --base 1 bundle.hg -v
+  lfs: found 5ab7a3739a5feec94a562d070a14f36dba7cad17e5484a4a89eea8e5f3166888 in the local lfs store
+  lfs: found a9c7d1cd6ce2b9bbdf46ed9a862845228717b921c089d0d42e3bcaed29eb612e in the local lfs store
+  lfs: found f693890c49c409ec33673b71e53f297681f76c1166daf33b2ad7ebf8b1d3237e in the local lfs store
+  lfs: found fda198fea753eb66a252e9856915e1f5cddbe41723bd4b695ece2604ad3c9f75 in the local lfs store
   4 changesets found
   uncompressed size of bundle content:
        * (changelog) (glob)

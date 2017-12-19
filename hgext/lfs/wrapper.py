@@ -279,7 +279,7 @@ def extractpointers(repo, revs):
         ctx = repo[r]
         for p in pointersfromctx(ctx).values():
             pointers[p.oid()] = p
-    return pointers.values()
+    return sorted(pointers.values())
 
 def pointersfromctx(ctx):
     """return a dict {path: pointer} for given single changectx"""

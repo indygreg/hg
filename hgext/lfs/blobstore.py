@@ -96,6 +96,7 @@ class local(object):
         self.vfs = lfsvfs(fullpath)
         usercache = lfutil._usercachedir(repo.ui, 'lfs')
         self.cachevfs = lfsvfs(usercache)
+        self.ui = repo.ui
 
     def write(self, oid, data):
         """Write blob to local blobstore."""
@@ -105,12 +106,16 @@ class local(object):
         # XXX: should we verify the content of the cache, and hardlink back to
         # the local store on success, but truncate, write and link on failure?
         if not self.cachevfs.exists(oid):
+            self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
             lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
 
     def read(self, oid):
         """Read blob from local blobstore."""
         if not self.vfs.exists(oid):
             lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
+            self.ui.note(_('lfs: found %s in the usercache\n') % oid)
+        else:
+            self.ui.note(_('lfs: found %s in the local lfs store\n') % oid)
         return self.vfs.read(oid)
 
     def has(self, oid):

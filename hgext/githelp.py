@@ -23,7 +23,6 @@ import re
 from mercurial.i18n import _
 from mercurial import (
     error,
-    extensions,
     fancyopts,
     registrar,
     util,
@@ -197,13 +196,7 @@ def blame(ui, repo, *args, **kwargs):
     cmdoptions = [
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
-    try:
-        # If tweakdefaults is enabled then we have access to -p, which adds
-        # Phabricator diff ID
-        extensions.find('tweakdefaults')
-        cmd = Command('annotate -pudl')
-    except KeyError:
-        cmd = Command('annotate -udl')
+    cmd = Command('annotate -udl')
     cmd.extend([convert(v) for v in args])
     ui.status((str(cmd)), "\n")
 

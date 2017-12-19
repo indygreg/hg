@@ -156,18 +156,12 @@ def add(ui, repo, *args, **kwargs):
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if (opts.get('patch')):
-        ui.status(_("note: hg crecord has a better UI to record changes\n"))
-        ui.status(_("note: record and crecord will commit when complete, "
-                    "as there is no staging area in mercurial\n\n"))
-        cmd = Command('record')
+        ui.status(_("note: Mercurial will commit when complete, "
+                    "as there is no staging area in Mercurial\n\n"))
+        cmd = Command('commit --interactive')
     else:
         cmd = Command("add")
 
-        if not opts.get('all'):
-            cmd.extend(args)
-        else:
-            ui.status(_("note: use hg addremove to remove files that have "
-                        "been deleted.\n\n"))
         if not opts.get('all'):
             cmd.extend(args)
         else:

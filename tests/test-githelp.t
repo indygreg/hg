@@ -256,3 +256,18 @@ git merge-base
 githelp for git blame
   $ hg githelp -- git blame
   hg annotate -udl
+
+githelp for add
+
+  $ hg githelp -- git add
+  hg add
+
+  $ hg githelp -- git add -p
+  note: Mercurial will commit when complete, as there is no staging area in Mercurial
+  
+  hg commit --interactive
+
+  $ hg githelp -- git add --all
+  note: use hg addremove to remove files that have been deleted.
+  
+  hg add

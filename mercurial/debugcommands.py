@@ -2307,10 +2307,6 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
     cache = {}
     ctx2str = str
     node2str = short
-    if ui.debug():
-        def ctx2str(ctx):
-            return ctx.hex()
-        node2str = hex
     for rev in scmutil.revrange(repo, revs):
         ctx = repo[rev]
         ui.write('%s\n'% ctx2str(ctx))

@@ -1279,7 +1279,9 @@ def cat(ui, repo, file1, *pats, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'))
+    rev = opts.get('rev')
+    repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    ctx = scmutil.revsingle(repo, rev)
     m = scmutil.match(ctx, (file1,) + pats, opts)
     fntemplate = opts.pop('output', '')
     if cmdutil.isstdiofilename(fntemplate):
@@ -1840,9 +1842,11 @@ def diff(ui, repo, *pats, **opts):
         msg = _('cannot specify --rev and --change at the same time')
         raise error.Abort(msg)
     elif change:
+        repo = scmutil.unhidehashlikerevs(repo, [change], 'nowarn')
         node2 = scmutil.revsingle(repo, change, None).node()
         node1 = repo[node2].p1().node()
     else:
+        repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
         node1, node2 = scmutil.revpair(repo, revs)
 
     if reverse:
@@ -1926,6 +1930,7 @@ def export(ui, repo, *changesets, **opts):
     changesets += tuple(opts.get('rev', []))
     if not changesets:
         changesets = ['.']
+    repo = scmutil.unhidehashlikerevs(repo, changesets, 'nowarn')
     revs = scmutil.revrange(repo, changesets)
     if not revs:
         raise error.Abort(_("export requires at least one changeset"))
@@ -1989,7 +1994,9 @@ def files(ui, repo, *pats, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'), None)
+    rev = opts.get('rev')
+    repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    ctx = scmutil.revsingle(repo, rev, None)
 
     end = '\n'
     if opts.get('print0'):
@@ -2586,8 +2593,10 @@ def heads(ui, repo, *branchrevs, **opts):
 
     opts = pycompat.byteskwargs(opts)
     start = None
-    if 'rev' in opts:
-        start = scmutil.revsingle(repo, opts['rev'], None).node()
+    rev = opts.get('rev')
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+        start = scmutil.revsingle(repo, rev, None).node()
 
     if opts.get('topo'):
         heads = [repo[h] for h in repo.heads(start)]
@@ -2770,6 +2779,7 @@ def identify(ui, repo, source=None, rev=None,
         fm.data(node=hex(remoterev))
         fm.data(bookmarks=fm.formatlist(bms, name='bookmark'))
     else:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
         ctx = scmutil.revsingle(repo, rev, None)
 
         if ctx.rev() is None:
@@ -3395,6 +3405,7 @@ def log(ui, repo, *pats, **opts):
             raise error.Abort(_('graph not supported with line range patterns'))
         return cmdutil.graphlog(ui, repo, pats, opts)
 
+    repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
     revs, expr, filematcher = cmdutil.getlogrevs(repo, pats, opts)
     hunksfilter = None
 
@@ -3502,6 +3513,7 @@ def manifest(ui, repo, node=None, rev=None, **opts):
 
     char = {'l': '@', 'x': '*', '': ''}
     mode = {'l': '644', 'x': '755', '': '644'}
+    repo = scmutil.unhidehashlikerevs(repo, [node], 'nowarn')
     ctx = scmutil.revsingle(repo, node)
     mf = ctx.manifest()
     ui.pager('manifest')
@@ -3689,7 +3701,9 @@ def parents(ui, repo, file_=None, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'), None)
+    rev = opts.get('rev')
+    repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    ctx = scmutil.revsingle(repo, rev, None)
 
     if file_:
         m = scmutil.match(ctx, (file_,), opts)
@@ -4841,9 +4855,11 @@ def status(ui, repo, *pats, **opts):
         msg = _('cannot use --terse with --rev')
         raise error.Abort(msg)
     elif change:
+        repo = scmutil.unhidehashlikerevs(repo, [change], 'nowarn')
         node2 = scmutil.revsingle(repo, change, None).node()
         node1 = repo[node2].p1().node()
     else:
+        repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
         node1, node2 = scmutil.revpair(repo, revs)
 
     if pats or ui.configbool('commands', 'status.relative'):

@@ -261,6 +261,7 @@ Test extension help:
        eol           automatically manage newlines in repository files
        extdiff       command to allow external programs to compare revisions
        factotum      http authentication with factotum
+       githelp       try mapping git commands to Mercurial commands
        gpg           commands to sign and verify changesets
        hgk           browse the repository in a graphical way
        highlight     syntax highlighting for hgweb (requires Pygments)

@@ -2056,7 +2056,7 @@ def handleobsmarker(op, inpart):
     # The mergemarkers call will crash if marker creation is not enabled.
     # we want to avoid this if the part is advisory.
     if not inpart.mandatory and op.repo.obsstore.readonly:
-        op.repo.ui.debug('ignoring obsolescence markers, feature not enabled')
+        op.repo.ui.debug('ignoring obsolescence markers, feature not enabled\n')
         return
     new = op.repo.obsstore.mergemarkers(tr, markerdata)
     op.repo.invalidatevolatilesets()

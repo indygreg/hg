@@ -632,7 +632,7 @@ def email(ui, repo, *revs, **opts):
     # check if revision exist on the public destination
     publicurl = repo.ui.config('patchbomb', 'publicurl')
     if publicurl:
-        repo.ui.debug('checking that revision exist in the public repo')
+        repo.ui.debug('checking that revision exist in the public repo\n')
         try:
             publicpeer = hg.peer(repo, {}, publicurl)
         except error.RepoError:
@@ -640,7 +640,7 @@ def email(ui, repo, *revs, **opts):
                               % publicurl)
             raise
         if not publicpeer.capable('known'):
-            repo.ui.debug('skipping existence checks: public repo too old')
+            repo.ui.debug('skipping existence checks: public repo too old\n')
         else:
             out = [repo[r] for r in revs]
             known = publicpeer.known(h.node() for h in out)

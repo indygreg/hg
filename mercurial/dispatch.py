@@ -451,7 +451,7 @@ class cmdalias(object):
                         return m.group()
                     else:
                         ui.debug("No argument found for substitution "
-                                 "of %i variable in alias '%s' definition."
+                                 "of %i variable in alias '%s' definition.\n"
                                  % (int(m.groups()[0]), self.name))
                         return ''
                 cmd = re.sub(br'\$(\d+|\$)', _checkvar, self.definition[1:])

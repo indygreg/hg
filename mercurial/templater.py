@@ -382,9 +382,7 @@ def _runrecursivesymbol(context, mapping, key):
     raise error.Abort(_("recursive reference '%s' in template") % key)
 
 def runsymbol(context, mapping, key, default=''):
-    v = mapping.get(key)
-    if v is None:
-        v = context._defaults.get(key)
+    v = context.symbol(mapping, key)
     if v is None:
         # put poison to cut recursion. we can't move this to parsing phase
         # because "x = {x}" is allowed if "x" is a keyword. (issue4758)
@@ -626,7 +624,7 @@ def diff(context, mapping, args):
                 return [s]
         return []
 
-    ctx = mapping['ctx']
+    ctx = context.resource(mapping, 'ctx')
     chunks = ctx.diff(match=ctx.match([], getpatterns(0), getpatterns(1)))
 
     return ''.join(chunks)
@@ -639,8 +637,8 @@ def extdata(context, mapping, args):
         raise error.ParseError(_('extdata expects one argument'))
 
     source = evalstring(context, mapping, args['source'])
-    cache = mapping['cache'].setdefault('extdata', {})
-    ctx = mapping['ctx']
+    cache = context.resource(mapping, 'cache').setdefault('extdata', {})
+    ctx = context.resource(mapping, 'ctx')
     if source in cache:
         data = cache[source]
     else:
@@ -656,7 +654,7 @@ def files(context, mapping, args):
         raise error.ParseError(_("files expects one argument"))
 
     raw = evalstring(context, mapping, args[0])
-    ctx = mapping['ctx']
+    ctx = context.resource(mapping, 'ctx')
     m = ctx.match([raw])
     files = list(ctx.matches(m))
     return templatekw.showlist("file", files, mapping)
@@ -692,7 +690,7 @@ def formatnode(context, mapping, args):
         # i18n: "formatnode" is a keyword
         raise error.ParseError(_("formatnode expects one argument"))
 
-    ui = mapping['ui']
+    ui = context.resource(mapping, 'ui')
     node = evalstring(context, mapping, args[0])
     if ui.debugflag:
         return node
@@ -858,7 +856,7 @@ def label(context, mapping, args):
         # i18n: "label" is a keyword
         raise error.ParseError(_("label expects two arguments"))
 
-    ui = mapping['ui']
+    ui = context.resource(mapping, 'ui')
     thing = evalstring(context, mapping, args[1])
     # preserve unknown symbol as literal so effects like 'red', 'bold',
     # etc. don't need to be quoted
@@ -1030,7 +1028,7 @@ def relpath(context, mapping, args):
         # i18n: "relpath" is a keyword
         raise error.ParseError(_("relpath expects one argument"))
 
-    repo = mapping['ctx'].repo()
+    repo = context.resource(mapping, 'ctx').repo()
     path = evalstring(context, mapping, args[0])
     return repo.pathto(path)
 
@@ -1043,7 +1041,7 @@ def revset(context, mapping, args):
         raise error.ParseError(_("revset expects one or more arguments"))
 
     raw = evalstring(context, mapping, args[0])
-    ctx = mapping['ctx']
+    ctx = context.resource(mapping, 'ctx')
     repo = ctx.repo()
 
     def query(expr):
@@ -1055,7 +1053,8 @@ def revset(context, mapping, args):
         revs = query(revsetlang.formatspec(raw, *formatargs))
         revs = list(revs)
     else:
-        revsetcache = mapping['cache'].setdefault("revsetcache", {})
+        cache = context.resource(mapping, 'cache')
+        revsetcache = cache.setdefault("revsetcache", {})
         if raw in revsetcache:
             revs = revsetcache[raw]
         else:
@@ -1116,7 +1115,7 @@ def shortest(context, mapping, args):
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    cl = mapping['ctx']._repo.unfiltered().changelog
+    cl = context.resource(mapping, 'ctx')._repo.unfiltered().changelog
     return cl.shortest(node, minlength)
 
 @templatefunc('strip(text[, chars])')
@@ -1301,6 +1300,18 @@ class engine(object):
         self._defaults = defaults
         self._aliasmap = _aliasrules.buildmap(aliases)
         self._cache = {}  # key: (func, data)
+
+    def symbol(self, mapping, key):
+        """Resolve symbol to value or function; None if nothing found"""
+        v = mapping.get(key)
+        if v is None:
+            v = self._defaults.get(key)
+        return v
+
+    def resource(self, mapping, key):
+        """Return internal data (e.g. cache) used for keyword/function
+        evaluation"""
+        return mapping[key]
 
     def _load(self, t):
         '''load, parse, and cache a template'''

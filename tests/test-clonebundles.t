@@ -517,3 +517,30 @@ A manifest with a gzip bundle and a stream clone with unsupported requirements
   transferred 613 bytes in * seconds (*) (glob)
   searching for changes
   no changes found
+
+Test clone bundle retrieved through bundle2
+
+  $ cat << EOF >> $HGRCPATH
+  > [extensions]
+  > largefiles=
+  > EOF
+  $ killdaemons.py
+  $ hg -R server serve -d -p $HGPORT --pid-file hg.pid --accesslog access.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ hg -R server debuglfput gz-a.hg
+  f6eca29e25359f6a92f1ea64527cdcf1b5abe62a
+
+  $ cat > server/.hg/clonebundles.manifest << EOF
+  > largefile://f6eca29e25359f6a92f1ea64527cdcf1b5abe62a BUNDLESPEC=gzip-v2
+  > EOF
+
+  $ hg clone -U http://localhost:$HGPORT largefile-provided --traceback
+  applying clone bundle from largefile://f6eca29e25359f6a92f1ea64527cdcf1b5abe62a
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files
+  finished applying clone bundle
+  searching for changes
+  no changes found

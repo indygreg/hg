@@ -659,6 +659,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
                 checkout = revs[0]
             local = destpeer.local()
             if local:
+                u = util.url(abspath)
+                defaulturl = bytes(u)
+                local.ui.setconfig('paths', 'default', defaulturl, 'clone')
                 if not stream:
                     if pull:
                         stream = False

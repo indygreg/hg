@@ -593,3 +593,12 @@ def lfpull(ui, repo, source="default", **opts):
         (cached, missing) = cachelfiles(ui, repo, rev)
         numcached += len(cached)
     ui.status(_("%d largefiles cached\n") % numcached)
+
+@command('debuglfput',
+    [] + cmdutil.remoteopts,
+    _('FILE'))
+def debuglfput(ui, repo, filepath, **kwargs):
+    hash = lfutil.hashfile(filepath)
+    storefactory.openstore(repo).put(filepath, hash)
+    ui.write('%s\n' % hash)
+    return 0

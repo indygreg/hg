@@ -38,6 +38,9 @@ Tests of the file helper tool
   $ f foo
   foo:
 
+  $ f --sha1 foo
+  foo: sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
+
 #if symlink
   $ f foo --mode
   foo: mode=644

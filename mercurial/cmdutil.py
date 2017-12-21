@@ -1886,7 +1886,6 @@ class changeset_templater(changeset_printer):
         '''show a single changeset or file revision'''
         props = props.copy()
         props.update(templatekw.keywords)
-        props['templ'] = self.t
         props['ctx'] = ctx
         props['repo'] = self.repo
         props['ui'] = self.repo.ui
@@ -2663,7 +2662,6 @@ def _graphnodeformatter(ui, displayer):
     if isinstance(displayer, changeset_templater):
         cache = displayer.cache  # reuse cache of slow templates
     props = templatekw.keywords.copy()
-    props['templ'] = templ
     props['cache'] = cache
     def formatnode(repo, ctx):
         props['ctx'] = ctx

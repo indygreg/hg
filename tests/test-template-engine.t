@@ -4,8 +4,9 @@
   > from mercurial import templater
   > 
   > class mytemplater(object):
-  >     def __init__(self, loader, filters, defaults, aliases):
+  >     def __init__(self, loader, filters, defaults, resources, aliases):
   >         self.loader = loader
+  >         self._resources = resources
   > 
   >     def process(self, t, map):
   >         tmpl = self.loader(t)
@@ -13,7 +14,9 @@
   >             if k in ('templ', 'ctx', 'repo', 'revcache', 'cache', 'troubles'):
   >                 continue
   >             if hasattr(v, '__call__'):
-  >                 v = v(**map)
+  >                 props = self._resources.copy()
+  >                 props.update(map)
+  >                 v = v(**props)
   >             v = templater.stringify(v)
   >             tmpl = tmpl.replace('{{%s}}' % k, v)
   >         yield tmpl

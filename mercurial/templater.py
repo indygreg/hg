@@ -393,7 +393,11 @@ def runsymbol(context, mapping, key, default=''):
         except TemplateNotFound:
             v = default
     if callable(v):
-        return v(**pycompat.strkwargs(mapping))
+        # TODO: templatekw functions will be updated to take (context, mapping)
+        # pair instead of **props
+        props = context._resources.copy()
+        props.update(mapping)
+        return v(**props)
     return v
 
 def buildtemplate(exp, context):
@@ -657,7 +661,10 @@ def files(context, mapping, args):
     ctx = context.resource(mapping, 'ctx')
     m = ctx.match([raw])
     files = list(ctx.matches(m))
-    return templatekw.showlist("file", files, mapping)
+    # TODO: pass (context, mapping) pair to keyword function
+    props = context._resources.copy()
+    props.update(mapping)
+    return templatekw.showlist("file", files, props)
 
 @templatefunc('fill(text[, width[, initialident[, hangindent]]])')
 def fill(context, mapping, args):
@@ -878,7 +885,10 @@ def latesttag(context, mapping, args):
     if len(args) == 1:
         pattern = evalstring(context, mapping, args[0])
 
-    return templatekw.showlatesttags(pattern, **pycompat.strkwargs(mapping))
+    # TODO: pass (context, mapping) pair to keyword function
+    props = context._resources.copy()
+    props.update(mapping)
+    return templatekw.showlatesttags(pattern, **pycompat.strkwargs(props))
 
 @templatefunc('localdate(date[, tz])')
 def localdate(context, mapping, args):
@@ -1062,8 +1072,11 @@ def revset(context, mapping, args):
             revs = list(revs)
             revsetcache[raw] = revs
 
+    # TODO: pass (context, mapping) pair to keyword function
+    props = context._resources.copy()
+    props.update(mapping)
     return templatekw.showrevslist("revision", revs,
-                                   **pycompat.strkwargs(mapping))
+                                   **pycompat.strkwargs(props))
 
 @templatefunc('rstdoc(text, style)')
 def rstdoc(context, mapping, args):
@@ -1290,14 +1303,18 @@ class engine(object):
     filter uses function to transform value. syntax is
     {key|filter1|filter2|...}.'''
 
-    def __init__(self, loader, filters=None, defaults=None, aliases=()):
+    def __init__(self, loader, filters=None, defaults=None, resources=None,
+                 aliases=()):
         self._loader = loader
         if filters is None:
             filters = {}
         self._filters = filters
         if defaults is None:
             defaults = {}
+        if resources is None:
+            resources = {}
         self._defaults = defaults
+        self._resources = resources
         self._aliasmap = _aliasrules.buildmap(aliases)
         self._cache = {}  # key: (func, data)
 
@@ -1311,7 +1328,12 @@ class engine(object):
     def resource(self, mapping, key):
         """Return internal data (e.g. cache) used for keyword/function
         evaluation"""
-        return mapping[key]
+        v = mapping.get(key)
+        if v is None:
+            v = self._resources.get(key)
+        if v is None:
+            raise KeyError
+        return v
 
     def _load(self, t):
         '''load, parse, and cache a template'''
@@ -1406,17 +1428,21 @@ class TemplateNotFound(error.Abort):
 
 class templater(object):
 
-    def __init__(self, filters=None, defaults=None, cache=None, aliases=(),
-                 minchunk=1024, maxchunk=65536):
+    def __init__(self, filters=None, defaults=None, resources=None,
+                 cache=None, aliases=(), minchunk=1024, maxchunk=65536):
         '''set up template engine.
         filters is dict of functions. each transforms a value into another.
         defaults is dict of default map definitions.
+        resources is dict of internal data (e.g. cache), which are inaccessible
+        from user template.
         aliases is list of alias (name, replacement) pairs.
         '''
         if filters is None:
             filters = {}
         if defaults is None:
             defaults = {}
+        if resources is None:
+            resources = {}
         if cache is None:
             cache = {}
         self.cache = cache.copy()
@@ -1424,15 +1450,17 @@ class templater(object):
         self.filters = templatefilters.filters.copy()
         self.filters.update(filters)
         self.defaults = defaults
+        self._resources = {'templ': self}
+        self._resources.update(resources)
         self._aliases = aliases
         self.minchunk, self.maxchunk = minchunk, maxchunk
         self.ecache = {}
 
     @classmethod
-    def frommapfile(cls, mapfile, filters=None, defaults=None, cache=None,
-                    minchunk=1024, maxchunk=65536):
+    def frommapfile(cls, mapfile, filters=None, defaults=None, resources=None,
+                    cache=None, minchunk=1024, maxchunk=65536):
         """Create templater from the specified map file"""
-        t = cls(filters, defaults, cache, [], minchunk, maxchunk)
+        t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
         cache, tmap, aliases = _readmapfile(mapfile)
         t.cache.update(cache)
         t.map = tmap
@@ -1469,7 +1497,7 @@ class templater(object):
             except KeyError:
                 raise error.Abort(_('invalid template engine: %s') % ttype)
             self.ecache[ttype] = ecls(self.load, self.filters, self.defaults,
-                                      self._aliases)
+                                      self._resources, self._aliases)
         proc = self.ecache[ttype]
 
         stream = proc.process(t, mapping)

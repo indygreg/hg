@@ -204,6 +204,10 @@ never cause crash:
   $ hg log -r 'wdir()' -T '{manifest}\n'
   
 
+Internal resources shouldn't be exposed (issue5699):
+
+  $ hg log -r. -T '{cache}{repo}{templ}{ui}'
+
 Quoting for ui.logtemplate
 
   $ hg tip --config "ui.logtemplate={rev}\n"

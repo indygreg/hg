@@ -1843,10 +1843,11 @@ class changeset_templater(changeset_printer):
         diffopts = diffopts or {}
 
         changeset_printer.__init__(self, ui, repo, matchfn, diffopts, buffered)
-        self.t = formatter.loadtemplater(ui, tmplspec,
+        tres = formatter.templateresources(ui, repo)
+        self.t = formatter.loadtemplater(ui, tmplspec, resources=tres,
                                          cache=templatekw.defaulttempl)
         self._counter = itertools.count()
-        self.cache = {}
+        self.cache = tres['cache']  # shared with _graphnodeformatter()
 
         self._tref = tmplspec.ref
         self._parts = {'header': '', 'footer': '',
@@ -1887,11 +1888,8 @@ class changeset_templater(changeset_printer):
         props = props.copy()
         props.update(templatekw.keywords)
         props['ctx'] = ctx
-        props['repo'] = self.repo
-        props['ui'] = self.repo.ui
         props['index'] = index = next(self._counter)
         props['revcache'] = {'copies': copies}
-        props['cache'] = self.cache
         props = pycompat.strkwargs(props)
 
         # write separator, which wouldn't work well with the header part below
@@ -2657,16 +2655,14 @@ def _graphnodeformatter(ui, displayer):
         return templatekw.showgraphnode  # fast path for "{graphnode}"
 
     spec = templater.unquotestring(spec)
-    templ = formatter.maketemplater(ui, spec)
-    cache = {}
+    tres = formatter.templateresources(ui)
     if isinstance(displayer, changeset_templater):
-        cache = displayer.cache  # reuse cache of slow templates
+        tres['cache'] = displayer.cache  # reuse cache of slow templates
+    templ = formatter.maketemplater(ui, spec, resources=tres)
     props = templatekw.keywords.copy()
-    props['cache'] = cache
     def formatnode(repo, ctx):
         props['ctx'] = ctx
         props['repo'] = repo
-        props['ui'] = repo.ui
         props['revcache'] = {}
         return templ.render(props)
     return formatnode

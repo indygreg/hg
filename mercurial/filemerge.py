@@ -581,7 +581,8 @@ def _formatlabels(repo, fcd, fco, fca, labels):
     ui = repo.ui
     template = ui.config('ui', 'mergemarkertemplate')
     template = templater.unquotestring(template)
-    tmpl = formatter.maketemplater(ui, template)
+    tres = formatter.templateresources(ui, repo)
+    tmpl = formatter.maketemplater(ui, template, resources=tres)
 
     pad = max(len(l) for l in labels)
 

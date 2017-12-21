@@ -252,7 +252,9 @@ def showstack(ui, repo, displayer):
     # our simplicity and the customizations required.
     # TODO use proper graph symbols from graphmod
 
-    shortesttmpl = formatter.maketemplater(ui, '{shortest(node, %d)}' % nodelen)
+    tres = formatter.templateresources(ui, repo)
+    shortesttmpl = formatter.maketemplater(ui, '{shortest(node, %d)}' % nodelen,
+                                           resources=tres)
     def shortest(ctx):
         return shortesttmpl.render({'ctx': ctx, 'node': ctx.hex()})
 
@@ -438,7 +440,10 @@ def longestshortest(repo, revs, minlen=4):
     If we fail to do this, a value of e.g. ``10023`` could mean either
     revision 10023 or node ``10023abc...``.
     """
-    tmpl = formatter.maketemplater(repo.ui, '{shortest(node, %d)}' % minlen)
+    tres = formatter.templateresources(repo.ui, repo)
+    tmpl = formatter.maketemplater(repo.ui, '{shortest(node, %d)}' % minlen,
+                                   resources=tres)
+
     lens = [minlen]
     for rev in revs:
         ctx = repo[rev]

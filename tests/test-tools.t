@@ -13,6 +13,7 @@ Tests of the file helper tool
                           check if file is newer (or same)
     -r, --recurse         recurse into directories
     -S, --sha1            show sha1 hash of the content
+    --sha256              show sha256 hash of the content
     -M, --md5             show md5 hash of the content
     -D, --dump            dump file content
     -H, --hexdump         hexdump file content
@@ -40,6 +41,9 @@ Tests of the file helper tool
 
   $ f --sha1 foo
   foo: sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
+
+  $ f --sha256 foo
+  foo: sha256=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c
 
 #if symlink
   $ f foo --mode

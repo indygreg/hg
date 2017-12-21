@@ -34,3 +34,21 @@ Check other kind of compatible url
   $ hg debugdownload ./null.txt
   1 0000000000000000000000000000000000000000
 
+Test largefile URL
+------------------
+
+  $ cat << EOF >> $HGRCPATH
+  > [extensions]
+  > largefiles=
+  > EOF
+
+  $ killdaemons.py
+  $ rm -f error.log hg1.pid
+  $ hg serve -R server -p $HGPORT -d --pid-file=hg1.pid -E error.log
+  $ cat hg1.pid >> $DAEMON_PIDS
+
+  $ hg -R server debuglfput null.txt
+  a57b57b39ee4dc3da1e03526596007f480ecdbe8
+
+  $ hg --traceback debugdownload "largefile://a57b57b39ee4dc3da1e03526596007f480ecdbe8" --config paths.default=http://localhost:$HGPORT/
+  1 0000000000000000000000000000000000000000

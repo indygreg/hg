@@ -27,7 +27,9 @@ class remotestore(basestore.basestore):
     '''a largefile store accessed over a network'''
     def __init__(self, ui, repo, url):
         super(remotestore, self).__init__(ui, repo, url)
-        self._lstore = localstore.localstore(self.ui, self.repo, self.repo)
+        self._lstore = None
+        if repo is not None:
+            self._lstore = localstore.localstore(self.ui, self.repo, self.repo)
 
     def put(self, source, hash):
         if self.sendfile(source, hash):

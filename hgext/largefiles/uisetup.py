@@ -31,6 +31,7 @@ from mercurial import (
     sshpeer,
     subrepo,
     upgrade,
+    url,
     wireproto,
 )
 
@@ -159,6 +160,9 @@ def uisetup(ui):
                             overrides.postcommitstatus)
     extensions.wrapfunction(scmutil, 'marktouched',
                             overrides.scmutilmarktouched)
+
+    extensions.wrapfunction(url, 'open',
+                            overrides.openlargefile)
 
     # create the new wireproto commands ...
     wireproto.commands['putlfile'] = (proto.putlfile, 'sha')

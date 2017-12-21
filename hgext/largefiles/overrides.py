@@ -1479,3 +1479,14 @@ def upgraderequirements(orig, repo):
     if 'largefiles' in repo.requirements:
         reqs.add('largefiles')
     return reqs
+
+_lfscheme = 'largefile://'
+def openlargefile(orig, ui, url_, data=None):
+    if url_.startswith(_lfscheme):
+        if data:
+            msg = "cannot use data on a 'largefile://' url"
+            raise error.ProgrammingError(msg)
+        lfid = url_[len(_lfscheme):]
+        return storefactory.getlfile(ui, lfid)
+    else:
+        return orig(ui, url_, data=data)

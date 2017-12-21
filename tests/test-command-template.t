@@ -206,7 +206,13 @@ never cause crash:
 
 Internal resources shouldn't be exposed (issue5699):
 
-  $ hg log -r. -T '{cache}{repo}{templ}{ui}'
+  $ hg log -r. -T '{cache}{ctx}{repo}{revcache}{templ}{ui}'
+
+Never crash on internal resource not available:
+
+  $ hg --cwd .. debugtemplate '{"c0bebeef"|shortest}\n'
+  abort: template resource not available: ctx
+  [255]
 
 Quoting for ui.logtemplate
 

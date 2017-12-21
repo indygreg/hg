@@ -1320,7 +1320,9 @@ class engine(object):
 
     def symbol(self, mapping, key):
         """Resolve symbol to value or function; None if nothing found"""
-        v = mapping.get(key)
+        v = None
+        if key not in self._resources:
+            v = mapping.get(key)
         if v is None:
             v = self._defaults.get(key)
         return v
@@ -1328,11 +1330,13 @@ class engine(object):
     def resource(self, mapping, key):
         """Return internal data (e.g. cache) used for keyword/function
         evaluation"""
-        v = mapping.get(key)
+        v = None
+        if key in self._resources:
+            v = mapping.get(key)
         if v is None:
             v = self._resources.get(key)
         if v is None:
-            raise KeyError
+            raise error.Abort(_('template resource not available: %s') % key)
         return v
 
     def _load(self, t):

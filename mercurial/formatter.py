@@ -94,14 +94,14 @@ Nested example:
 
 >>> def subrepos(ui, fm):
 ...     fm.startitem()
-...     fm.write(b'repo', b'[%s]\\n', b'baz')
+...     fm.write(b'reponame', b'[%s]\\n', b'baz')
 ...     files(ui, fm.nested(b'files'))
 ...     fm.end()
 >>> show(subrepos)
 [baz]
 foo
 bar
->>> show(subrepos, template=b'{repo}: {join(files % "{path}", ", ")}\\n')
+>>> show(subrepos, template=b'{reponame}: {join(files % "{path}", ", ")}\\n')
 baz: foo, bar
 """
 
@@ -491,7 +491,9 @@ def templateresources(ui, repo=None):
     and function"""
     return {
         'cache': {},  # for templatekw/funcs to store reusable data
+        'ctx': None,
         'repo': repo,
+        'revcache': None,  # per-ctx cache; set later
         'ui': ui,
     }
 

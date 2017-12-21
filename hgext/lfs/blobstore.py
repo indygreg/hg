@@ -114,6 +114,26 @@ class local(object):
 
         return self.vfs(oid, 'rb')
 
+    def download(self, oid, src):
+        """Read the blob from the remote source in chunks, verify the content,
+        and write to this local blobstore."""
+        sha256 = hashlib.sha256()
+
+        with self.vfs(oid, 'wb', atomictemp=True) as fp:
+            for chunk in util.filechunkiter(src, size=1048576):
+                fp.write(chunk)
+                sha256.update(chunk)
+
+            realoid = sha256.hexdigest()
+            if realoid != oid:
+                raise error.Abort(_('corrupt remote lfs object: %s') % oid)
+
+        # XXX: should we verify the content of the cache, and hardlink back to
+        # the local store on success, but truncate, write and link on failure?
+        if not self.cachevfs.exists(oid):
+            self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
+            lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
+
     def write(self, oid, data, verify=True):
         """Write blob to local blobstore."""
         if verify:

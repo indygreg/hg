@@ -213,6 +213,7 @@ h3 {
 }
 
 .bigtable td {
+  padding: 1px 4px;
   vertical-align: top;
 }
 
@@ -431,7 +432,6 @@ span.followlines-select .btn-followlines {
   text-align: right;
   font-weight: normal;
   color: #999;
-  margin-right: .5em;
   vertical-align: top;
 }
 

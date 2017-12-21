@@ -111,15 +111,23 @@ class local(object):
         # XXX: should we verify the content of the cache, and hardlink back to
         # the local store on success, but truncate, write and link on failure?
         if not self.cachevfs.exists(oid):
-            self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
-            lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
+            if verify or hashlib.sha256(data).hexdigest() == oid:
+                self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
+                lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
 
     def read(self, oid, verify=True):
         """Read blob from local blobstore."""
         if not self.vfs.exists(oid):
             blob = self._read(self.cachevfs, oid, verify)
-            self.ui.note(_('lfs: found %s in the usercache\n') % oid)
-            lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
+
+            # Even if revlog will verify the content, it needs to be verified
+            # now before making the hardlink to avoid propagating corrupt blobs.
+            # Don't abort if corruption is detected, because `hg verify` will
+            # give more useful info about the corruption- simply don't add the
+            # hardlink.
+            if verify or hashlib.sha256(blob).hexdigest() == oid:
+                self.ui.note(_('lfs: found %s in the usercache\n') % oid)
+                lfutil.link(self.cachevfs.join(oid), self.vfs.join(oid))
         else:
             self.ui.note(_('lfs: found %s in the local lfs store\n') % oid)
             blob = self._read(self.vfs, oid, verify)

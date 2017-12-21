@@ -658,8 +658,8 @@ the (uncorrupted) remote store.
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   4 files, 5 changesets, 10 total revisions
 
-BUG: Verify will copy/link a corrupted file from the usercache into the local
-store, and poison it.  (The verify with a good remote now fails.)
+Verify will not copy/link a corrupted file from the usercache into the local
+store, and poison it.  (The verify with a good remote now works.)
 
   $ rm -r fromcorrupt/.hg/store/lfs/objects/66/100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
   $ hg -R fromcorrupt verify -v
@@ -668,10 +668,8 @@ store, and poison it.  (The verify with a good remote now fails.)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the usercache
    l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-  lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
@@ -685,17 +683,12 @@ store, and poison it.  (The verify with a good remote now fails.)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
-   l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
+  lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the usercache
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
   lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
-   large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
   4 files, 5 changesets, 10 total revisions
-  2 integrity errors encountered!
-  (first damaged changeset appears to be 0)
-  [1]
 
 Damaging a file required by the update destination fails the update.
 
@@ -739,7 +732,6 @@ avoids the corrupt lfs object in the original remote.)
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store
-  lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
   abort: detected corrupt lfs object: 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e
   (run hg verify)
   [255]
@@ -750,10 +742,8 @@ avoids the corrupt lfs object in the original remote.)
   checking manifests
   crosschecking files in changesets and manifests
   checking files
-  lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
    l@1: unpacking 46a2f24864bc: integrity check failed on data/l.i:0
   lfs: found 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b in the local lfs store
-  lfs: found 66100b384bf761271b407d79fc30cdd0554f3b2c5d944836e936d584b88ce88e in the local lfs store
    large@0: unpacking 2c531e0992ff: integrity check failed on data/large.i:0
   lfs: found 89b6070915a3d573ff3599d1cda305bc5e38549b15c4847ab034169da66e1ca8 in the local lfs store
   lfs: found b1a6ea88da0017a0e77db139a54618986e9a2489bee24af9fe596de9daac498c in the local lfs store

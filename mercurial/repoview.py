@@ -65,7 +65,7 @@ def _revealancestors(pfunc, hidden, revs):
                 hidden.remove(p)
                 stack.append(p)
 
-def computehidden(repo):
+def computehidden(repo, visibilityexceptions=None):
     """compute the set of hidden revision to filter
 
     During most operation hidden should be filtered."""
@@ -74,6 +74,8 @@ def computehidden(repo):
     hidden = hideablerevs(repo)
     if hidden:
         hidden = set(hidden - pinnedrevs(repo))
+        if visibilityexceptions:
+            hidden -= visibilityexceptions
         pfunc = repo.changelog.parentrevs
         mutablephases = (phases.draft, phases.secret)
         mutable = repo._phasecache.getrevset(repo, mutablephases)
@@ -82,7 +84,7 @@ def computehidden(repo):
         _revealancestors(pfunc, hidden, visible)
     return frozenset(hidden)
 
-def computeunserved(repo):
+def computeunserved(repo, visibilityexceptions=None):
     """compute the set of revision that should be filtered when used a server
 
     Secret and hidden changeset should not pretend to be here."""
@@ -100,7 +102,7 @@ def computeunserved(repo):
     else:
         return hiddens
 
-def computemutable(repo):
+def computemutable(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     # fast check to avoid revset call on huge repo
     if any(repo._phasecache.phaseroots[1:]):
@@ -109,7 +111,7 @@ def computemutable(repo):
         return frozenset(r for r in maymutable if getphase(repo, r))
     return frozenset()
 
-def computeimpactable(repo):
+def computeimpactable(repo, visibilityexceptions=None):
     """Everything impactable by mutable revision
 
     The immutable filter still have some chance to get invalidated. This will
@@ -145,10 +147,16 @@ filtertable = {'visible': computehidden,
                'immutable':  computemutable,
                'base':  computeimpactable}
 
-def filterrevs(repo, filtername):
-    """returns set of filtered revision for this filter name"""
+def filterrevs(repo, filtername, visibilityexceptions=None):
+    """returns set of filtered revision for this filter name
+
+    visibilityexceptions is a set of revs which must are exceptions for
+    hidden-state and must be visible. They are dynamic and hence we should not
+    cache it's result"""
     if filtername not in repo.filteredrevcache:
         func = filtertable[filtername]
+        if visibilityexceptions:
+            return func(repo.unfiltered, visibilityexceptions)
         repo.filteredrevcache[filtername] = func(repo.unfiltered())
     return repo.filteredrevcache[filtername]
 
@@ -210,7 +218,7 @@ class repoview(object):
         unfilen = len(unfiindex) - 1
         unfinode = unfiindex[unfilen - 1][7]
 
-        revs = filterrevs(unfi, self.filtername)
+        revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)
         cl = self._clcache
         newkey = (unfilen, unfinode, hash(revs), unfichangelog._delayed)
         # if cl.index is not unfiindex, unfi.changelog would be

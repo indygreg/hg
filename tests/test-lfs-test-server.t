@@ -119,7 +119,6 @@ Test a corrupt file download, but clear the cache first to force a download.
   $ rm ../repo1/.hg/store/lfs/objects/d1/1e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   $ rm ../repo1/*
 
-XXX: suggesting `hg verify` won't help with a corrupt file on the lfs server.
   $ hg --repo ../repo1 update -C tip -v
   resolving manifests
   getting a
@@ -128,8 +127,7 @@ XXX: suggesting `hg verify` won't help with a corrupt file on the lfs server.
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
   getting c
   lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
-  abort: detected corrupt lfs object: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
-  (run hg verify)
+  abort: corrupt remote lfs object: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   [255]
 
 The corrupted blob is not added to the usercache or local store

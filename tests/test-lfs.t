@@ -714,8 +714,7 @@ Damaging a file required by the update destination fails the update.
   updating to branch default
   resolving manifests
   getting l
-  abort: detected corrupt lfs object: 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
-  (run hg verify)
+  abort: corrupt remote lfs object: 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
   [255]
 
 A corrupted lfs blob is not transferred from a file://remotestore to the

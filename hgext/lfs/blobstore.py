@@ -299,18 +299,20 @@ class _gitlfsremote(object):
         response = b''
         try:
             req = self.urlopener.open(request)
-            while True:
-                data = req.read(1048576)
-                if not data:
-                    break
-                response += data
+            if action == 'download':
+                # If downloading blobs, store downloaded data to local blobstore
+                localstore.download(oid, req)
+            else:
+                while True:
+                    data = req.read(1048576)
+                    if not data:
+                        break
+                    response += data
+                if response:
+                    self.ui.debug('lfs %s response: %s' % (action, response))
         except util.urlerr.httperror as ex:
             raise LfsRemoteError(_('HTTP error: %s (oid=%s, action=%s)')
                                  % (ex, oid, action))
-
-        if action == 'download':
-            # If downloading blobs, store downloaded data to local blobstore
-            localstore.write(oid, response, verify=True)
 
     def _batch(self, pointers, localstore, action):
         if action not in ['upload', 'download']:
@@ -385,8 +387,8 @@ class _dummyremote(object):
 
     def readbatch(self, pointers, tostore):
         for p in pointers:
-            content = self.vfs.read(p.oid())
-            tostore.write(p.oid(), content, verify=True)
+            with self.vfs(p.oid(), 'rb') as fp:
+                tostore.download(p.oid(), fp)
 
 class _nullremote(object):
     """Null store storing blobs to /dev/null."""

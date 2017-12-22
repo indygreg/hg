@@ -352,8 +352,8 @@ def linerange(req):
 def formatlinerange(fromline, toline):
     return '%d:%d' % (fromline + 1, toline)
 
-def succsandmarkers(repo, ctx):
-    for item in templatekw.showsuccsandmarkers(repo, ctx):
+def succsandmarkers(repo, ctx, **args):
+    for item in templatekw.showsuccsandmarkers(repo, ctx, **args):
         item['successors'] = _siblings(repo[successor]
                                        for successor in item['successors'])
         yield item
@@ -361,6 +361,11 @@ def succsandmarkers(repo, ctx):
 def commonentry(repo, ctx):
     node = ctx.node()
     return {
+        # TODO: perhaps ctx.changectx() should be assigned if ctx is a
+        # filectx, but I'm not pretty sure if that would always work because
+        # fctx.parents() != fctx.changectx.parents() for example.
+        'ctx': ctx,
+        'revcache': {},
         'rev': ctx.rev(),
         'node': hex(node),
         'author': ctx.user(),
@@ -369,7 +374,7 @@ def commonentry(repo, ctx):
         'extra': ctx.extra(),
         'phase': ctx.phasestr(),
         'obsolete': ctx.obsolete(),
-        'succsandmarkers': lambda **x: succsandmarkers(repo, ctx),
+        'succsandmarkers': succsandmarkers,
         'instabilities': [{"instability": i} for i in ctx.instabilities()],
         'branch': nodebranchnodefault(ctx),
         'inbranch': nodeinbranch(repo, ctx),

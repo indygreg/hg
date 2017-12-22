@@ -27,6 +27,7 @@ from .request import wsgirequest
 from .. import (
     encoding,
     error,
+    formatter,
     hg,
     hook,
     profiling,
@@ -197,7 +198,7 @@ class requestcontext(object):
             return templatefilters.websub(text, self.websubtable)
 
         # create the templater
-
+        # TODO: export all keywords: defaults = templatekw.keywords.copy()
         defaults = {
             'url': req.url,
             'logourl': logourl,
@@ -212,9 +213,11 @@ class requestcontext(object):
             'style': style,
             'nonce': self.nonce,
         }
+        tres = formatter.templateresources(self.repo.ui, self.repo)
         tmpl = templater.templater.frommapfile(mapfile,
                                                filters={'websub': websubfilter},
-                                               defaults=defaults)
+                                               defaults=defaults,
+                                               resources=tres)
         return tmpl
 
 

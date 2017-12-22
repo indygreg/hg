@@ -56,6 +56,11 @@
   > url=file:$TESTTMP/dummy-remote/
   > EOF
 
+TODO: Push to a local non-lfs repo with the extension enabled should add the
+lfs requirement
+
+  $ grep lfs $TESTTMP/server/.hg/requires
+  [1]
   $ hg push -v | egrep -v '^(uncompressed| )'
   pushing to $TESTTMP/server
   searching for changes
@@ -65,6 +70,8 @@
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
+  $ grep lfs $TESTTMP/server/.hg/requires
+  [1]
 
 # Unknown URL scheme
 
@@ -83,6 +90,12 @@
   > EOF
 
 # Pull from server
+
+TODO: Pulling a local lfs repo into a local non-lfs repo with the extension
+enabled should add the lfs requirement
+
+  $ grep lfs .hg/requires $TESTTMP/server/.hg/requires
+  [1]
   $ hg pull default
   pulling from $TESTTMP/server
   requesting all changes
@@ -92,6 +105,8 @@
   added 2 changesets with 2 changes to 2 files
   new changesets b29ba743f89d:00c137947d30
   (run 'hg update' to get a working copy)
+  $ grep lfs .hg/requires $TESTTMP/server/.hg/requires
+  [1]
 
 # Check the blobstore is not yet populated
   $ [ -d .hg/store/lfs/objects ]
@@ -855,3 +870,45 @@ Committing deleted files works:
   $ hg commit -m 'add A' -A A
   $ hg rm A
   $ hg commit -m 'rm A'
+  $ cd ..
+
+TODO: Unbundling adds a requirement to a non-lfs repo, if necessary.
+
+  $ hg bundle -R $TESTTMP/repo-del -qr 0 --base null nolfs.hg
+  $ hg bundle -R convert_lfs2 -qr tip --base null lfs.hg
+  $ hg init unbundle
+  $ hg pull -R unbundle -q nolfs.hg
+  $ grep lfs unbundle/.hg/requires
+  [1]
+  $ hg pull -R unbundle -q lfs.hg
+  $ grep lfs unbundle/.hg/requires
+  [1]
+
+  $ hg init no_lfs
+  $ cat >> no_lfs/.hg/hgrc <<EOF
+  > [experimental]
+  > changegroup3 = True
+  > [extensions]
+  > lfs=!
+  > EOF
+  $ cp -R no_lfs no_lfs2
+
+Pushing from a local lfs repo to a local repo without an lfs requirement and
+with lfs disabled, fails.
+
+  $ hg push -R convert_lfs2 no_lfs
+  pushing to no_lfs
+  abort: required features are not supported in the destination: lfs
+  [255]
+  $ grep lfs no_lfs/.hg/requires
+  [1]
+
+Pulling from a local lfs repo to a local repo without an lfs requirement and
+with lfs disabled, fails.
+
+  $ hg pull -R no_lfs2 convert_lfs2
+  pulling from convert_lfs2
+  abort: required features are not supported in the destination: lfs
+  [255]
+  $ grep lfs no_lfs2/.hg/requires
+  [1]

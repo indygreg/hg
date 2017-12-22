@@ -6,11 +6,14 @@
   > class mytemplater(object):
   >     def __init__(self, loader, filters, defaults, resources, aliases):
   >         self.loader = loader
+  >         self._defaults = defaults
   >         self._resources = resources
   > 
   >     def process(self, t, map):
   >         tmpl = self.loader(t)
-  >         for k, v in map.iteritems():
+  >         props = self._defaults.copy()
+  >         props.update(map)
+  >         for k, v in props.iteritems():
   >             if k in ('templ', 'ctx', 'repo', 'revcache', 'cache', 'troubles'):
   >                 continue
   >             if hasattr(v, '__call__'):

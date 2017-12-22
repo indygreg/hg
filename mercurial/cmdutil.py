@@ -1844,7 +1844,9 @@ class changeset_templater(changeset_printer):
 
         changeset_printer.__init__(self, ui, repo, matchfn, diffopts, buffered)
         tres = formatter.templateresources(ui, repo)
-        self.t = formatter.loadtemplater(ui, tmplspec, resources=tres,
+        self.t = formatter.loadtemplater(ui, tmplspec,
+                                         defaults=templatekw.keywords,
+                                         resources=tres,
                                          cache=templatekw.defaulttempl)
         self._counter = itertools.count()
         self.cache = tres['cache']  # shared with _graphnodeformatter()
@@ -1886,7 +1888,6 @@ class changeset_templater(changeset_printer):
     def _show(self, ctx, copies, matchfn, hunksfilterfn, props):
         '''show a single changeset or file revision'''
         props = props.copy()
-        props.update(templatekw.keywords)
         props['ctx'] = ctx
         props['index'] = index = next(self._counter)
         props['revcache'] = {'copies': copies}
@@ -2658,12 +2659,10 @@ def _graphnodeformatter(ui, displayer):
     tres = formatter.templateresources(ui)
     if isinstance(displayer, changeset_templater):
         tres['cache'] = displayer.cache  # reuse cache of slow templates
-    templ = formatter.maketemplater(ui, spec, resources=tres)
-    props = templatekw.keywords.copy()
+    templ = formatter.maketemplater(ui, spec, defaults=templatekw.keywords,
+                                    resources=tres)
     def formatnode(repo, ctx):
-        props['ctx'] = ctx
-        props['repo'] = repo
-        props['revcache'] = {}
+        props = {'ctx': ctx, 'repo': repo, 'revcache': {}}
         return templ.render(props)
     return formatnode
 

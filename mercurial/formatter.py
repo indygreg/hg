@@ -363,7 +363,8 @@ class templateformatter(baseformatter):
         self._out = out
         spec = lookuptemplate(ui, topic, opts.get('template', ''))
         self._tref = spec.ref
-        self._t = loadtemplater(ui, spec, resources=templateresources(ui),
+        self._t = loadtemplater(ui, spec, defaults=templatekw.keywords,
+                                resources=templateresources(ui),
                                 cache=templatekw.defaulttempl)
         self._parts = templatepartsmap(spec, self._t,
                                        ['docheader', 'docfooter', 'separator'])
@@ -386,8 +387,6 @@ class templateformatter(baseformatter):
         # function will have to declare dependent resources. e.g.
         # @templatekeyword(..., requires=('ctx',))
         props = {}
-        if 'ctx' in item:
-            props.update(templatekw.keywords)
         # explicitly-defined fields precede templatekw
         props.update(item)
         if 'ctx' in item:
@@ -467,19 +466,22 @@ def templatepartsmap(spec, t, partnames):
                 partsmap[part] = ref
     return partsmap
 
-def loadtemplater(ui, spec, resources=None, cache=None):
+def loadtemplater(ui, spec, defaults=None, resources=None, cache=None):
     """Create a templater from either a literal template or loading from
     a map file"""
     assert not (spec.tmpl and spec.mapfile)
     if spec.mapfile:
         frommapfile = templater.templater.frommapfile
-        return frommapfile(spec.mapfile, resources=resources, cache=cache)
-    return maketemplater(ui, spec.tmpl, resources=resources, cache=cache)
+        return frommapfile(spec.mapfile, defaults=defaults, resources=resources,
+                           cache=cache)
+    return maketemplater(ui, spec.tmpl, defaults=defaults, resources=resources,
+                         cache=cache)
 
-def maketemplater(ui, tmpl, resources=None, cache=None):
+def maketemplater(ui, tmpl, defaults=None, resources=None, cache=None):
     """Create a templater from a string template 'tmpl'"""
     aliases = ui.configitems('templatealias')
-    t = templater.templater(resources=resources, cache=cache, aliases=aliases)
+    t = templater.templater(defaults=defaults, resources=resources,
+                            cache=cache, aliases=aliases)
     t.cache.update((k, templater.unquotestring(v))
                    for k, v in ui.configitems('templates'))
     if tmpl:

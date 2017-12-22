@@ -552,8 +552,7 @@ def _formatconflictmarker(ctx, template, label, pad):
     if ctx.node() is None:
         ctx = ctx.p1()
 
-    props = templatekw.keywords.copy()
-    props['ctx'] = ctx
+    props = {'ctx': ctx}
     templateresult = template.render(props)
 
     label = ('%s:' % label).ljust(pad + 1)
@@ -580,7 +579,8 @@ def _formatlabels(repo, fcd, fco, fca, labels):
     template = ui.config('ui', 'mergemarkertemplate')
     template = templater.unquotestring(template)
     tres = formatter.templateresources(ui, repo)
-    tmpl = formatter.maketemplater(ui, template, resources=tres)
+    tmpl = formatter.maketemplater(ui, template, defaults=templatekw.keywords,
+                                   resources=tres)
 
     pad = max(len(l) for l in labels)
 

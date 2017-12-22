@@ -353,7 +353,10 @@ def formatlinerange(fromline, toline):
     return '%d:%d' % (fromline + 1, toline)
 
 def succsandmarkers(repo, ctx):
-    return templatekw.showsuccsandmarkers(repo, ctx)
+    for item in templatekw.showsuccsandmarkers(repo, ctx):
+        item['successors'] = _siblings(repo[successor]
+                                       for successor in item['successors'])
+        yield item
 
 def commonentry(repo, ctx):
     node = ctx.node()

@@ -1036,15 +1036,15 @@ check obsolete changeset
 
 check an obsolete changeset that has been rewritten
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=paper' | grep rewritten
-   <td>rewritten as 6:3de5eca88c00</td>
+   <td>rewritten as <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a> </td>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=coal' | grep rewritten
-   <td>rewritten as 6:3de5eca88c00</td>
+   <td>rewritten as <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a> </td>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=gitweb' | grep rewritten
-  <tr><td>obsolete</td><td>rewritten as 6:3de5eca88c00</td></tr>
+  <tr><td>obsolete</td><td>rewritten as <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a> </td></tr>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=monoblue' | grep rewritten
-          <dt>obsolete</dt><dd>rewritten as 6:3de5eca88c00</dd>
+          <dt>obsolete</dt><dd>rewritten as <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a> </dd>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=spartan' | grep rewritten
-   <td class="obsolete">rewritten as 6:3de5eca88c00</td>
+   <td class="obsolete">rewritten as <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a> </td>
 
 check changeset with instabilities
 

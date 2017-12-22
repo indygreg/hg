@@ -274,6 +274,7 @@ Test extension help:
        purge         command to delete untracked files from the working
                      directory
        relink        recreates hardlinks between repository clones
+       remotenames   showing remotebookmarks and remotebranches in UI
        schemes       extend schemes with shortcuts to repository swarms
        share         share a common history between several working directories
        shelve        save and restore changes to the working directory

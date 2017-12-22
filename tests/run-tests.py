@@ -2404,11 +2404,6 @@ class TestRunner(object):
                 print("error: temp dir %r already exists" % tmpdir)
                 return 1
 
-                # Automatically removing tmpdir sounds convenient, but could
-                # really annoy anyone in the habit of using "--tmpdir=/tmp"
-                # or "--tmpdir=$HOME".
-                #vlog("# Removing temp dir", tmpdir)
-                #shutil.rmtree(tmpdir)
             os.makedirs(tmpdir)
         else:
             d = None

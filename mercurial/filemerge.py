@@ -543,7 +543,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         util.unlink(b)
         util.unlink(c)
 
-def _formatconflictmarker(repo, ctx, template, label, pad):
+def _formatconflictmarker(ctx, template, label, pad):
     """Applies the given template to the ctx, prefixed by the label.
 
     Pad is the minimum width of the label prefix, so that multiple markers
@@ -553,9 +553,7 @@ def _formatconflictmarker(repo, ctx, template, label, pad):
         ctx = ctx.p1()
 
     props = templatekw.keywords.copy()
-    props['templ'] = template
     props['ctx'] = ctx
-    props['repo'] = repo
     templateresult = template.render(props)
 
     label = ('%s:' % label).ljust(pad + 1)
@@ -586,10 +584,10 @@ def _formatlabels(repo, fcd, fco, fca, labels):
 
     pad = max(len(l) for l in labels)
 
-    newlabels = [_formatconflictmarker(repo, cd, tmpl, labels[0], pad),
-                 _formatconflictmarker(repo, co, tmpl, labels[1], pad)]
+    newlabels = [_formatconflictmarker(cd, tmpl, labels[0], pad),
+                 _formatconflictmarker(co, tmpl, labels[1], pad)]
     if len(labels) > 2:
-        newlabels.append(_formatconflictmarker(repo, ca, tmpl, labels[2], pad))
+        newlabels.append(_formatconflictmarker(ca, tmpl, labels[2], pad))
     return newlabels
 
 def partextras(labels):

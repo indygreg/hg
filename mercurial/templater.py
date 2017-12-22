@@ -1434,13 +1434,19 @@ class templater(object):
 
     def __init__(self, filters=None, defaults=None, resources=None,
                  cache=None, aliases=(), minchunk=1024, maxchunk=65536):
-        '''set up template engine.
-        filters is dict of functions. each transforms a value into another.
-        defaults is dict of default map definitions.
-        resources is dict of internal data (e.g. cache), which are inaccessible
-        from user template.
-        aliases is list of alias (name, replacement) pairs.
-        '''
+        """Create template engine optionally with preloaded template fragments
+
+        - ``filters``: a dict of functions to transform a value into another.
+        - ``defaults``: a dict of symbol values/functions; may be overridden
+          by a ``mapping`` dict.
+        - ``resources``: a dict of internal data (e.g. cache), inaccessible
+          from user template; may be overridden by a ``mapping`` dict.
+        - ``cache``: a dict of preloaded template fragments.
+        - ``aliases``: a list of alias (name, replacement) pairs.
+
+        self.cache may be updated later to register additional template
+        fragments.
+        """
         if filters is None:
             filters = {}
         if defaults is None:

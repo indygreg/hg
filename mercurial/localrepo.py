@@ -675,10 +675,10 @@ class localrepository(object):
         Intended to be overwritten by filtered repo."""
         return self
 
-    def filtered(self, name):
+    def filtered(self, name, visibilityexceptions=None):
         """Return a filtered version of a repository"""
         cls = repoview.newtype(self.unfiltered().__class__)
-        return cls(self, name)
+        return cls(self, name, visibilityexceptions)
 
     @repofilecache('bookmarks', 'bookmarks.current')
     def _bookmarks(self):

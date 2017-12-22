@@ -187,11 +187,14 @@ class repoview(object):
     subclasses of `localrepo`. Eg: `bundlerepo` or `statichttprepo`.
     """
 
-    def __init__(self, repo, filtername):
+    def __init__(self, repo, filtername, visibilityexceptions=None):
         object.__setattr__(self, r'_unfilteredrepo', repo)
         object.__setattr__(self, r'filtername', filtername)
         object.__setattr__(self, r'_clcachekey', None)
         object.__setattr__(self, r'_clcache', None)
+        # revs which are exceptions and must not be hidden
+        object.__setattr__(self, r'_visibilityexceptions',
+                           visibilityexceptions)
 
     # not a propertycache on purpose we shall implement a proper cache later
     @property
@@ -227,11 +230,11 @@ class repoview(object):
         """Return an unfiltered version of a repo"""
         return self._unfilteredrepo
 
-    def filtered(self, name):
+    def filtered(self, name, visibilityexceptions=None):
         """Return a filtered version of a repository"""
-        if name == self.filtername:
+        if name == self.filtername and not visibilityexceptions:
             return self
-        return self.unfiltered().filtered(name)
+        return self.unfiltered().filtered(name, visibilityexceptions)
 
     def __repr__(self):
         return r'<%s:%s %r>' % (self.__class__.__name__,

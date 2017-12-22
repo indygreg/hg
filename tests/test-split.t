@@ -431,11 +431,11 @@ Split a non-head without rebase
   |
   o  5:e704349bd21b split 1
   |
-  | o  4:777940761eba d3 d3
+  | *  4:777940761eba d3 d3
   | |
   | @  3:f4a0a8d004cc d2 d2
   | |
-  | o  2:b5c5ea414030 d1 d1
+  | *  2:b5c5ea414030 d1 d1
   | |
   | x  1:1df0d5c5a3ab a2
   |/
@@ -509,13 +509,13 @@ Split a non-head with obsoleted descendants
   |/
   o  11:0947baa74d47 Split B
   |
-  | o  9:88ede1d5ee13 I
+  | *  9:88ede1d5ee13 I
   | |
   | x  6:af8cbf225b7b G1
   | |
   | x  3:be0ef73c17ad D
   | |
-  | | o  8:74863e5b5074 H
+  | | *  8:74863e5b5074 H
   | | |
   | | x  5:ee481a2a1e69 F
   | | |

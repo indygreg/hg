@@ -208,7 +208,7 @@ Create obsmarkers via comments
   > EOS
 
   $ hg log -r 'sort(all(), topo)' -G --hidden -T '{desc} {node}'
-  o  G 711f53bbef0bebd12eb6f0511d5e2e998b984846
+  *  G 711f53bbef0bebd12eb6f0511d5e2e998b984846
   |
   x  F 64a8289d249234b9886244d379f15e6b650b28e3
   |

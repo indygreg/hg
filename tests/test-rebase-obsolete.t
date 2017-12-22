@@ -190,7 +190,7 @@ More complex case where part of the rebase set were already rebased
   $ hg log -G
   @  11:4596109a6a43 D
   |
-  | o  10:5ae4c968c6ac C
+  | *  10:5ae4c968c6ac C
   | |
   | x  9:08483444fef9 D (rewritten using rebase as 11:4596109a6a43)
   | |
@@ -464,7 +464,7 @@ Test that rewriting leaving instability behind is allowed
   |
   o  10:7c6027df6a99 B
   |
-  | o  9:cf44d2f5a9f4 D
+  | *  9:cf44d2f5a9f4 D
   | |
   | x  8:e273c5e7d2d2 C (rewritten using rebase as 11:0d8f238b634c)
   | |
@@ -494,7 +494,7 @@ Test multiple root handling
   |
   | o  12:102b4c1d889b D
   |/
-  | o  10:7c6027df6a99 B
+  | *  10:7c6027df6a99 B
   | |
   | x  7:02de42196ebe H (rewritten using rebase as 13:bfe264faf697)
   | |
@@ -588,7 +588,7 @@ test on rebase dropping a merge
   |
   | o  10:b5313c85b22e D
   |/
-  | o    8:53a6a128b2b7 M
+  | *    8:53a6a128b2b7 M
   | |\
   | | x  7:02de42196ebe H (rewritten using rebase as 11:6c11a6218c97)
   | | |
@@ -623,15 +623,15 @@ Test hidden changesets in the rebase set (issue4504)
   $ hg log -G
   @  15:5ae8a643467b J
   |
-  o  14:9ad579b4a5de I
+  *  14:9ad579b4a5de I
   |
-  | o  12:acd174b7ab39 I
+  | *  12:acd174b7ab39 I
   | |
   | o  11:6c11a6218c97 H
   | |
   o |  10:b5313c85b22e D
   |/
-  | o    8:53a6a128b2b7 M
+  | *    8:53a6a128b2b7 M
   | |\
   | | x  7:02de42196ebe H (rewritten using rebase as 11:6c11a6218c97)
   | | |
@@ -665,21 +665,21 @@ Test hidden changesets in the rebase set (issue4504)
   $ hg log -G
   @  18:bfaedf8eb73b M
   |
-  | o  17:97219452e4bd L
+  | *  17:97219452e4bd L
   | |
   | x  16:fc37a630c901 K (rewritten using amend as 18:bfaedf8eb73b)
   |/
-  | o  15:5ae8a643467b J
+  | *  15:5ae8a643467b J
   | |
   | x  14:9ad579b4a5de I (rewritten using amend as 16:fc37a630c901)
   |/
-  | o  12:acd174b7ab39 I
+  | *  12:acd174b7ab39 I
   | |
   | o  11:6c11a6218c97 H
   | |
   o |  10:b5313c85b22e D
   |/
-  | o    8:53a6a128b2b7 M
+  | *    8:53a6a128b2b7 M
   | |\
   | | x  7:02de42196ebe H (rewritten using rebase as 11:6c11a6218c97)
   | | |
@@ -1016,7 +1016,7 @@ obsolete changeset which successor is in rebase set.
   >     a
   > EOF
   $ hg log -G -r 'a'::
-  o  7:1143e9adc121 f
+  *  7:1143e9adc121 f
   |
   | o  6:d60ebfa0f1cb e
   | |
@@ -1052,7 +1052,7 @@ consequence f (descendant of d) is left behind.
   |
   o  8:67e8f4a16c49 b
   |
-  | o  7:1143e9adc121 f
+  | *  7:1143e9adc121 f
   | |
   | | x  6:d60ebfa0f1cb e (rewritten using rebase as 11:eb6d63fc4ed5)
   | | |
@@ -1085,15 +1085,15 @@ By allowing divergence, we can perform the rebase.
   $ hg log -G -r 'a':: -T instabilities
   o  10:e1744ea07510 f
   |
-  o  9:e2b36ea9a0a0 d (content-divergent)
+  *  9:e2b36ea9a0a0 d (content-divergent)
   |
   o  8:6a0376de376e c
   |
   | x  7:1143e9adc121 f
   | |
-  | | o  6:d60ebfa0f1cb e (orphan)
+  | | *  6:d60ebfa0f1cb e (orphan)
   | | |
-  | | o  5:027ad6c5830d d' (orphan content-divergent)
+  | | *  5:027ad6c5830d d' (orphan content-divergent)
   | | |
   | x |  4:76be324c128b d
   | |/
@@ -1132,7 +1132,7 @@ Similar test on a more complex graph
   >     a
   > EOF
   $ hg log -G -r 'a':
-  o  8:2876ce66c6eb g
+  *  8:2876ce66c6eb g
   |
   | o  7:3ffec603ab53 f
   | |
@@ -1168,7 +1168,7 @@ Similar test on a more complex graph
   |
   o  9:67e8f4a16c49 b
   |
-  | o  8:2876ce66c6eb g
+  | *  8:2876ce66c6eb g
   | |
   | | x  7:3ffec603ab53 f (rewritten using rebase as 12:ef6251596616)
   | | |
@@ -1531,7 +1531,7 @@ parent gets moved:
   | |
   o |  E
   | |
-  | o  C
+  | *  C
   | |
   o |  D2
   | |

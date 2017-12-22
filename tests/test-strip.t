@@ -1288,15 +1288,15 @@ we have reusable code here
 
   $ rm .hg/localtags
   $ hg log -G -T '{rev}:{node|short} {desc} {bookmarks}' -r 'sort(all(), topo)'
-  o  12:1473d4b996d1 G2 b-F@divergent3 b-G
+  *  12:1473d4b996d1 G2 b-F@divergent3 b-G
   |
-  | o  11:d11b3456a873 F2 b-F
+  | *  11:d11b3456a873 F2 b-F
   | |
-  | o  8:5cb05ba470a7 H
+  | *  8:5cb05ba470a7 H
   |/|
   | o  4:7fb047a69f22 E b-F@divergent1
   | |
-  | | o  10:7c78f703e465 D2 b-D
+  | | *  10:7c78f703e465 D2 b-D
   | | |
   | | x  6:26805aba1e60 C
   | | |

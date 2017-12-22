@@ -62,9 +62,9 @@ A_1 have two direct and divergent successors A_1 and A_1
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
   $ hg log -G --hidden
-  o  3:392fd25390da A_2
+  *  3:392fd25390da A_2
   |
-  | o  2:82623d38b9ba A_1
+  | *  2:82623d38b9ba A_1
   |/
   | x  1:007dc284c1f8 A_0 [rewritten as 2:82623d38b9ba; rewritten as 3:392fd25390da]
   |/
@@ -129,7 +129,7 @@ indirect divergence with known changeset
   |
   | x  3:392fd25390da A_2 [rewritten as 4:01f36c5a8fda]
   |/
-  | o  2:82623d38b9ba A_1
+  | *  2:82623d38b9ba A_1
   |/
   | x  1:007dc284c1f8 A_0 [rewritten as 2:82623d38b9ba; rewritten as 3:392fd25390da]
   |/
@@ -181,9 +181,9 @@ indirect divergence with known changeset
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid A_1`
   $ hg debugobsolete `getid A_0` `getid A_2`
   $ hg log -G --hidden
-  o  3:392fd25390da A_2
+  *  3:392fd25390da A_2
   |
-  | o  2:82623d38b9ba A_1
+  | *  2:82623d38b9ba A_1
   |/
   | x  1:007dc284c1f8 A_0 [rewritten as 2:82623d38b9ba; rewritten as 3:392fd25390da]
   |/
@@ -431,11 +431,11 @@ Check more complex obsolescence graft (with divergence)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_5` `getid A_9`
   $ hg log -G --hidden
-  o  10:bed64f5d2f5a A_9
+  *  10:bed64f5d2f5a A_9
   |
-  | o  9:14608b260df8 A_8
+  | *  9:14608b260df8 A_8
   |/
-  | o  8:7ae126973a96 A_7
+  | *  8:7ae126973a96 A_7
   |/
   | x  7:3750ebee865d B_0 [rewritten as 3:392fd25390da]
   | |
@@ -443,7 +443,7 @@ Check more complex obsolescence graft (with divergence)
   |/
   | x  5:6a411f0d7a0a A_4 [rewritten as 6:e442cfc57690]
   |/
-  | o  4:01f36c5a8fda A_3
+  | *  4:01f36c5a8fda A_3
   |/
   | x  3:392fd25390da A_2 [rewritten as 5:6a411f0d7a0a]
   |/
@@ -673,7 +673,7 @@ Use scmutil.cleanupnodes API to create divergence
   $ hg log -G -T '{rev}:{node|short} {desc} {instabilities}' -r 'sort(all(), topo)'
   @  5:1a2a9b5b0030 B2 content-divergent
   |
-  | o  4:70d5a63ca112 B4 content-divergent
+  | *  4:70d5a63ca112 B4 content-divergent
   | |
   | o  1:48b9aae0607f Z
   |

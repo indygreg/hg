@@ -68,7 +68,7 @@ initial
   $ hg log -G --hidden
   @  e5ea8f9c7314 (draft): A1
   |
-  | o  06055a7959d4 (draft): B
+  | *  06055a7959d4 (draft): B
   | |
   | x  28b51eb45704 (draft): A0
   |/

@@ -80,7 +80,7 @@ initial
   |
   @  e5ea8f9c7314 (draft): A1
   |
-  | o  1d0f3cd25300 (draft): C
+  | *  1d0f3cd25300 (draft): C
   | |
   | x  6e72f0a95b5e (draft): B0
   | |

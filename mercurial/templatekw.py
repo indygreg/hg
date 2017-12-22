@@ -538,6 +538,8 @@ def showgraphnode(repo, ctx, **args):
         return '@'
     elif ctx.obsolete():
         return 'x'
+    elif ctx.isunstable():
+        return '*'
     elif ctx.closesbranch():
         return '_'
     else:

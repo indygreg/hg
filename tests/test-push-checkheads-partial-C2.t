@@ -64,7 +64,7 @@ Test setup
   $ hg log -G --hidden
   @  f6082bc4ffef (draft): A1
   |
-  | o  d73caddc5533 (draft): B0
+  | *  d73caddc5533 (draft): B0
   | |
   | x  8aaa48160adc (draft): A0
   |/

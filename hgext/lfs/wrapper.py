@@ -273,9 +273,7 @@ def writenewbundle(orig, ui, repo, source, filename, bundletype, outgoing,
 
 def extractpointers(repo, revs):
     """return a list of lfs pointers added by given revs"""
-    ui = repo.ui
-    if ui.debugflag:
-        ui.write(_('lfs: computing set of blobs to upload\n'))
+    repo.ui.debug('lfs: computing set of blobs to upload\n')
     pointers = {}
     for r in revs:
         ctx = repo[r]

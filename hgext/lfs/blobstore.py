@@ -290,9 +290,9 @@ class _gitlfsremote(object):
             sizes[obj.get('oid')] = obj.get('size', 0)
         topic = {'upload': _('lfs uploading'),
                  'download': _('lfs downloading')}[action]
-        if self.ui.verbose and len(objects) > 1:
-            self.ui.write(_('lfs: need to transfer %d objects (%s)\n')
-                          % (len(objects), util.bytecount(total)))
+        if len(objects) > 1:
+            self.ui.note(_('lfs: need to transfer %d objects (%s)\n')
+                         % (len(objects), util.bytecount(total)))
         self.ui.progress(topic, 0, total=total)
         def transfer(chunk):
             for obj in chunk:
@@ -302,8 +302,8 @@ class _gitlfsremote(object):
                         msg = _('lfs: downloading %s (%s)\n')
                     elif action == 'upload':
                         msg = _('lfs: uploading %s (%s)\n')
-                    self.ui.write(msg % (obj.get('oid'),
-                                  util.bytecount(objsize)))
+                    self.ui.note(msg % (obj.get('oid'),
+                                 util.bytecount(objsize)))
                 retry = self.retry
                 while True:
                     try:
@@ -312,10 +312,9 @@ class _gitlfsremote(object):
                         break
                     except socket.error as ex:
                         if retry > 0:
-                            if self.ui.verbose:
-                                self.ui.write(
-                                    _('lfs: failed: %r (remaining retry %d)\n')
-                                    % (ex, retry))
+                            self.ui.note(
+                                _('lfs: failed: %r (remaining retry %d)\n')
+                                % (ex, retry))
                             retry -= 1
                             continue
                         raise
@@ -326,8 +325,7 @@ class _gitlfsremote(object):
         for _one, oid in oids:
             processed += sizes[oid]
             self.ui.progress(topic, processed, total=total)
-            if self.ui.verbose:
-                self.ui.write(_('lfs: processed: %s\n') % oid)
+            self.ui.note(_('lfs: processed: %s\n') % oid)
         self.ui.progress(topic, pos=None, total=total)
 
     def __del__(self):

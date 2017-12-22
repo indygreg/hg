@@ -20,6 +20,8 @@
   > split=
   > [ui]
   > interactive=1
+  > color=no
+  > paginate=never
   > [diff]
   > git=1
   > unified=0
@@ -57,9 +59,10 @@ Cannot split working directory
   abort: cannot split working directory
   [255]
 
-Generate some content
+Generate some content.  The sed filter drop CR on Windows, which is dropped in
+the a > b line.
 
-  $ $TESTDIR/seq.py 1 5 >> a
+  $ $TESTDIR/seq.py 1 5 | sed 's/\r$//' >> a
   $ hg ci -m a1 -A a -q
   $ hg bookmark -i r1
   $ sed 's/1/11/;s/3/33/;s/5/55/' a > b
@@ -132,7 +135,7 @@ Split a head
   [255]
   $ hg status
 
-  $ HGEDITOR="$PYTHON $TESTTMP/editor.py"
+  $ HGEDITOR="\"$PYTHON\" $TESTTMP/editor.py"
   $ runsplit
   diff --git a/a b/a
   1 hunks, 1 lines changed
@@ -197,7 +200,7 @@ Split a head
   EDITOR: HG: user: test
   EDITOR: HG: branch 'default'
   EDITOR: HG: changed a
-  saved backup bundle to $TESTTMP/a/.hg/strip-backup/1df0d5c5a3ab-8341b760-split.hg (glob) (obsstore-off !)
+  saved backup bundle to $TESTTMP/a/.hg/strip-backup/1df0d5c5a3ab-8341b760-split.hg (obsstore-off !)
 
 #if obsstore-off
   $ hg bookmark

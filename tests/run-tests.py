@@ -2268,6 +2268,50 @@ class TextTestRunner(unittest.TextTestRunner):
                              separators=(',', ': '))
         outf.writelines(("testreport =", jsonout))
 
+def sorttests(testdescs, shuffle=False):
+    """Do an in-place sort of tests."""
+    if shuffle:
+        random.shuffle(testdescs)
+        return
+
+    # keywords for slow tests
+    slow = {b'svn': 10,
+            b'cvs': 10,
+            b'hghave': 10,
+            b'largefiles-update': 10,
+            b'run-tests': 10,
+            b'corruption': 10,
+            b'race': 10,
+            b'i18n': 10,
+            b'check': 100,
+            b'gendoc': 100,
+            b'contrib-perf': 200,
+            }
+    perf = {}
+
+    def sortkey(f):
+        # run largest tests first, as they tend to take the longest
+        f = f['path']
+        try:
+            return perf[f]
+        except KeyError:
+            try:
+                val = -os.stat(f).st_size
+            except OSError as e:
+                if e.errno != errno.ENOENT:
+                    raise
+                perf[f] = -1e9  # file does not exist, tell early
+                return -1e9
+            for kw, mul in slow.items():
+                if kw in f:
+                    val *= mul
+            if f.endswith(b'.py'):
+                val /= 10.0
+            perf[f] = val / 1000.0
+            return perf[f]
+
+    testdescs.sort(key=sortkey)
+
 class TestRunner(object):
     """Holds context for executing tests.
 
@@ -2335,44 +2379,7 @@ class TestRunner(object):
             os.umask(oldmask)
 
     def _run(self, testdescs):
-        if self.options.random:
-            random.shuffle(testdescs)
-        else:
-            # keywords for slow tests
-            slow = {b'svn': 10,
-                    b'cvs': 10,
-                    b'hghave': 10,
-                    b'largefiles-update': 10,
-                    b'run-tests': 10,
-                    b'corruption': 10,
-                    b'race': 10,
-                    b'i18n': 10,
-                    b'check': 100,
-                    b'gendoc': 100,
-                    b'contrib-perf': 200,
-                   }
-            perf = {}
-            def sortkey(f):
-                # run largest tests first, as they tend to take the longest
-                f = f['path']
-                try:
-                    return perf[f]
-                except KeyError:
-                    try:
-                        val = -os.stat(f).st_size
-                    except OSError as e:
-                        if e.errno != errno.ENOENT:
-                            raise
-                        perf[f] = -1e9 # file does not exist, tell early
-                        return -1e9
-                    for kw, mul in slow.items():
-                        if kw in f:
-                            val *= mul
-                    if f.endswith(b'.py'):
-                        val /= 10.0
-                    perf[f] = val / 1000.0
-                    return perf[f]
-            testdescs.sort(key=sortkey)
+        sorttests(testdescs, shuffle=self.options.random)
 
         self._testdir = osenvironb[b'TESTDIR'] = getattr(
             os, 'getcwdb', os.getcwd)()

@@ -226,3 +226,36 @@ Testing the templates provided by remotenames extension
   |
   o  0:18d04c59bb5d [] ()
   
+Testing the revsets provided by remotenames extension
+
+`remotenames` revset
+
+  $ hg log -r "remotenames()" -GT "{rev}:{node|short} {remotenames}\n"
+  @  8:3e1487808078 $TESTTMP/server2/wat default/wat
+  :
+  : o  7:ec2426147f0e $TESTTMP/server2/default default/default
+  : |
+  : o  6:87d6d6676308 $TESTTMP/server2/bar default/bar
+  :/
+  o  3:62615734edd5 $TESTTMP/server2/foo default/foo
+  |
+  ~
+
+`remotebranches` revset
+
+  $ hg log -r "remotebranches()" -GT "{rev}:{node|short} {remotenames}\n"
+  @  8:3e1487808078 $TESTTMP/server2/wat default/wat
+  |
+  ~
+  o  7:ec2426147f0e $TESTTMP/server2/default default/default
+  |
+  ~
+
+`remotebookmarks` revset
+
+  $ hg log -r "remotebookmarks()" -GT "{rev}:{node|short} {remotenames}\n"
+  o  6:87d6d6676308 $TESTTMP/server2/bar default/bar
+  :
+  o  3:62615734edd5 $TESTTMP/server2/foo default/foo
+  |
+  ~

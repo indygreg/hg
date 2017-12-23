@@ -24,6 +24,8 @@ from __future__ import absolute_import
 
 import UserDict
 
+from mercurial.i18n import _
+
 from mercurial.node import (
     bin,
 )
@@ -32,6 +34,8 @@ from mercurial import (
     namespaces,
     pycompat,
     registrar,
+    revsetlang,
+    smartset,
     templatekw,
 )
 
@@ -44,6 +48,7 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 templatekeyword = registrar.templatekeyword()
+revsetpredicate = registrar.revsetpredicate()
 
 configitem('remotenames', 'bookmarks',
     default=True,
@@ -256,3 +261,35 @@ def remotebrancheskw(**args):
 
     return templatekw.showlist('remotebranch', remotebranches, args,
                                plural='remotebranches')
+
+def _revsetutil(repo, subset, x, rtypes):
+    """utility function to return a set of revs based on the rtypes"""
+
+    revs = set()
+    cl = repo.changelog
+    for rtype in rtypes:
+        if rtype in repo.names:
+            ns = repo.names[rtype]
+            for name in ns.listnames(repo):
+                revs.update(ns.nodes(repo, name))
+
+    results = (cl.rev(n) for n in revs if cl.hasnode(n))
+    return subset & smartset.baseset(sorted(results))
+
+@revsetpredicate('remotenames()')
+def remotenamesrevset(repo, subset, x):
+    """All changesets which have a remotename on them."""
+    revsetlang.getargs(x, 0, 0, _("remotenames takes no arguments"))
+    return _revsetutil(repo, subset, x, ('remotebookmarks', 'remotebranches'))
+
+@revsetpredicate('remotebranches()')
+def remotebranchesrevset(repo, subset, x):
+    """All changesets which are branch heads on remotes."""
+    revsetlang.getargs(x, 0, 0, _("remotebranches takes no arguments"))
+    return _revsetutil(repo, subset, x, ('remotebranches',))
+
+@revsetpredicate('remotebookmarks()')
+def remotebmarksrevset(repo, subset, x):
+    """All changesets which have bookmarks on remotes."""
+    revsetlang.getargs(x, 0, 0, _("remotebookmarks takes no arguments"))
+    return _revsetutil(repo, subset, x, ('remotebookmarks',))

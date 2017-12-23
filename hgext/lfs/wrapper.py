@@ -39,6 +39,13 @@ def allsupportedversions(orig, ui):
     versions.add('03')
     return versions
 
+def _capabilities(orig, repo, proto):
+    '''Wrap server command to announce lfs server capability'''
+    caps = orig(repo, proto)
+    # XXX: change to 'lfs=serve' when separate git server isn't required?
+    caps.append('lfs')
+    return caps
+
 def bypasscheckhash(self, text):
     return False
 
@@ -264,6 +271,20 @@ def prepush(pushop):
     the remote blobstore.
     """
     return uploadblobsfromrevs(pushop.repo, pushop.outgoing.missing)
+
+def push(orig, repo, remote, *args, **kwargs):
+    """bail on push if the extension isn't enabled on remote when needed"""
+    if 'lfs' in repo.requirements:
+        # If the remote peer is for a local repo, the requirement tests in the
+        # base class method enforce lfs support.  Otherwise, some revisions in
+        # this repo use lfs, and the remote repo needs the extension loaded.
+        if not remote.local() and not remote.capable('lfs'):
+            # This is a copy of the message in exchange.push() when requirements
+            # are missing between local repos.
+            m = _("required features are not supported in the destination: %s")
+            raise error.Abort(m % 'lfs',
+                              hint=_('enable the lfs extension on the server'))
+    return orig(repo, remote, *args, **kwargs)
 
 def writenewbundle(orig, ui, repo, source, filename, bundletype, outgoing,
                    *args, **kwargs):

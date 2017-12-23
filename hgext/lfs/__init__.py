@@ -49,6 +49,7 @@ from mercurial import (
     scmutil,
     upgrade,
     vfs as vfsmod,
+    wireproto,
 )
 
 from . import (
@@ -168,6 +169,9 @@ def extsetup(ui):
     wrapfunction(changegroup,
                  'allsupportedversions',
                  wrapper.allsupportedversions)
+
+    wrapfunction(exchange, 'push', wrapper.push)
+    wrapfunction(wireproto, '_capabilities', wrapper._capabilities)
 
     wrapfunction(context.basefilectx, 'cmp', wrapper.filectxcmp)
     wrapfunction(context.basefilectx, 'isbinary', wrapper.filectxisbinary)

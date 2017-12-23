@@ -124,10 +124,14 @@ should have an 'lfs' requirement after it picks up its first commit with a blob.
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
 
-TODO: fail more gracefully here
-  $ hg push -q 2>&1 | grep '^[A-Z]' || true
-  Traceback (most recent call last): (lfsremote-off !)
-  ValueError: no common changegroup version (lfsremote-off !)
+#if lfsremote-off
+  $ hg push -q
+  abort: required features are not supported in the destination: lfs
+  (enable the lfs extension on the server)
+  [255]
+#else
+  $ hg push -q
+#endif
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)

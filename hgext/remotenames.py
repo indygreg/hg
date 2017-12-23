@@ -30,7 +30,9 @@ from mercurial.node import (
 from mercurial import (
     logexchange,
     namespaces,
+    pycompat,
     registrar,
+    templatekw,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -41,6 +43,7 @@ testedwith = 'ships-with-hg-core'
 
 configtable = {}
 configitem = registrar.configitem(configtable)
+templatekeyword = registrar.templatekeyword()
 
 configitem('remotenames', 'bookmarks',
     default=True,
@@ -205,3 +208,51 @@ def reposetup(ui, repo):
             nodemap = lambda repo, node:
                 repo._remotenames.nodetobranch().get(node, []))
         repo.names.addnamespace(remotebranchns)
+
+@templatekeyword('remotenames')
+def remotenameskw(**args):
+    """:remotenames: List of strings. List of remote names associated with the
+    changeset.
+    """
+    args = pycompat.byteskwargs(args)
+    repo, ctx = args['repo'], args['ctx']
+
+    remotenames = []
+    if 'remotebookmarks' in repo.names:
+        remotenames = repo.names['remotebookmarks'].names(repo, ctx.node())
+
+    if 'remotebranches' in repo.names:
+        remotenames += repo.names['remotebranches'].names(repo, ctx.node())
+
+    return templatekw.showlist('remotename', remotenames, args,
+                               plural='remotenames')
+
+@templatekeyword('remotebookmarks')
+def remotebookmarkskw(**args):
+    """:remotebookmarks: List of strings. List of remote bookmarks associated
+    with the changeset.
+    """
+    args = pycompat.byteskwargs(args)
+    repo, ctx = args['repo'], args['ctx']
+
+    remotebmarks = []
+    if 'remotebookmarks' in repo.names:
+        remotebmarks = repo.names['remotebookmarks'].names(repo, ctx.node())
+
+    return templatekw.showlist('remotebookmark', remotebmarks, args,
+                               plural='remotebookmarks')
+
+@templatekeyword('remotebranches')
+def remotebrancheskw(**args):
+    """:remotebranches: List of strings. List of remote branches associated
+    with the changeset.
+    """
+    args = pycompat.byteskwargs(args)
+    repo, ctx = args['repo'], args['ctx']
+
+    remotebranches = []
+    if 'remotebranches' in repo.names:
+        remotebranches = repo.names['remotebranches'].names(repo, ctx.node())
+
+    return templatekw.showlist('remotebranch', remotebranches, args,
+                               plural='remotebranches')

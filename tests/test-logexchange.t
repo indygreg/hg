@@ -182,3 +182,47 @@ Pulling form the new server
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     Added a
   
+Testing the templates provided by remotenames extension
+
+`remotenames` keyword
+
+  $ hg log -G -T "{rev}:{node|short} {remotenames}\n"
+  @  8:3e1487808078 $TESTTMP/server2/wat default/wat
+  |
+  | o  7:ec2426147f0e $TESTTMP/server2/default default/default
+  | |
+  | o  6:87d6d6676308 $TESTTMP/server2/bar default/bar
+  | |
+  | o  5:825660c69f0c
+  |/
+  o  4:aa98ab95a928
+  |
+  o  3:62615734edd5 $TESTTMP/server2/foo default/foo
+  |
+  o  2:28ad74487de9
+  |
+  o  1:29becc82797a
+  |
+  o  0:18d04c59bb5d
+  
+`remotebookmarks` and `remotebranches` keywords
+
+  $ hg log -G -T "{rev}:{node|short} [{remotebookmarks}] ({remotebranches})"
+  @  8:3e1487808078 [] ($TESTTMP/server2/wat default/wat)
+  |
+  | o  7:ec2426147f0e [] ($TESTTMP/server2/default default/default)
+  | |
+  | o  6:87d6d6676308 [$TESTTMP/server2/bar default/bar] ()
+  | |
+  | o  5:825660c69f0c [] ()
+  |/
+  o  4:aa98ab95a928 [] ()
+  |
+  o  3:62615734edd5 [$TESTTMP/server2/foo default/foo] ()
+  |
+  o  2:28ad74487de9 [] ()
+  |
+  o  1:29becc82797a [] ()
+  |
+  o  0:18d04c59bb5d [] ()
+  

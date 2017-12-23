@@ -174,9 +174,8 @@ def am(ui, repo, *args, **kwargs):
     cmdoptions=[
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
-    cmd = Command('mimport -m')
-    ui.status(str(cmd), "\n\n")
-    ui.status(_("note: requires the MboxExtension and the MqExtension.\n"))
+    cmd = Command('import')
+    ui.status(str(cmd), "\n")
 
 def apply(ui, repo, *args, **kwargs):
     cmdoptions = [

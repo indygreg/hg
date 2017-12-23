@@ -6,7 +6,19 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-""" showing remotebookmarks and remotebranches in UI """
+""" showing remotebookmarks and remotebranches in UI
+
+By default both remotebookmarks and remotebranches are turned on. Config knob to
+control the individually are as follows.
+
+Config options to tweak the default behaviour:
+
+remotenames.bookmarks
+  Boolean value to enable or disable showing of remotebookmarks
+
+remotenames.branches
+  Boolean value to enable or disable showing of remotebranches
+"""
 
 from __future__ import absolute_import
 
@@ -17,6 +29,8 @@ from mercurial.node import (
 )
 from mercurial import (
     logexchange,
+    namespaces,
+    registrar,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -24,6 +38,16 @@ from mercurial import (
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
+
+configtable = {}
+configitem = registrar.configitem(configtable)
+
+configitem('remotenames', 'bookmarks',
+    default=True,
+)
+configitem('remotenames', 'branches',
+    default=True,
+)
 
 class lazyremotenamedict(UserDict.DictMixin):
     """
@@ -148,3 +172,36 @@ class remotenames(dict):
                 for node in nodes:
                     self._nodetobranch.setdefault(node, []).append(name)
         return self._nodetobranch
+
+def reposetup(ui, repo):
+    if not repo.local():
+        return
+
+    repo._remotenames = remotenames(repo)
+    ns = namespaces.namespace
+
+    if ui.configbool('remotenames', 'bookmarks'):
+        remotebookmarkns = ns(
+            'remotebookmarks',
+            templatename='remotebookmarks',
+            logname='remote bookmark',
+            colorname='remotebookmark',
+            listnames=lambda repo: repo._remotenames.bmarktonodes().keys(),
+            namemap=lambda repo, name:
+                repo._remotenames.bmarktonodes().get(name, []),
+            nodemap=lambda repo, node:
+                repo._remotenames.nodetobmarks().get(node, []))
+        repo.names.addnamespace(remotebookmarkns)
+
+    if ui.configbool('remotenames', 'branches'):
+        remotebranchns = ns(
+            'remotebranches',
+            templatename='remotebranches',
+            logname='remote branch',
+            colorname='remotebranch',
+            listnames = lambda repo: repo._remotenames.branchtonodes().keys(),
+            namemap = lambda repo, name:
+                repo._remotenames.branchtonodes().get(name, []),
+            nodemap = lambda repo, node:
+                repo._remotenames.nodetobranch().get(node, []))
+        repo.names.addnamespace(remotebranchns)

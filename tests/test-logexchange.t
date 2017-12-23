@@ -6,6 +6,9 @@ Testing the functionality to pull remotenames
   > glog = log -G -T '{rev}:{node|short}  {desc}'
   > [experimental]
   > remotenames = True
+  > [extensions]
+  > remotenames =
+  > show =
   > EOF
 
 Making a server repo
@@ -66,6 +69,19 @@ Making a client repo
   ec2426147f0e39dbc9cef599b066be6035ce691d\x00default\x00default (esc)
   3e1487808078543b0af6d10dadf5d46943578db0\x00default\x00wat (esc)
 
+  $ hg show work
+  o  3e14 (wat) (default/wat) added bar
+  |
+  ~
+  @  ec24 (default/default) Added h
+  |
+  ~
+
+  $ hg update "default/wat"
+  1 files updated, 0 files merged, 3 files removed, 0 files unresolved
+  $ hg identify
+  3e1487808078 (wat) tip
+
 Making a new server
 -------------------
 
@@ -106,3 +122,63 @@ Pulling form the new server
   ec2426147f0e39dbc9cef599b066be6035ce691d\x00default\x00default (esc)
   ec2426147f0e39dbc9cef599b066be6035ce691d\x00$TESTTMP/server2\x00default (esc)
   3e1487808078543b0af6d10dadf5d46943578db0\x00$TESTTMP/server2\x00wat (esc)
+
+  $ hg log -G
+  @  changeset:   8:3e1487808078
+  |  branch:      wat
+  |  tag:         tip
+  |  remote branch:$TESTTMP/server2/wat
+  |  remote branch:default/wat
+  |  parent:      4:aa98ab95a928
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added bar
+  |
+  | o  changeset:   7:ec2426147f0e
+  | |  remote branch:$TESTTMP/server2/default
+  | |  remote branch:default/default
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     Added h
+  | |
+  | o  changeset:   6:87d6d6676308
+  | |  bookmark:    bar
+  | |  remote bookmark:$TESTTMP/server2/bar
+  | |  remote bookmark:default/bar
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     Added g
+  | |
+  | o  changeset:   5:825660c69f0c
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     Added f
+  |
+  o  changeset:   4:aa98ab95a928
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     Added e
+  |
+  o  changeset:   3:62615734edd5
+  |  bookmark:    foo
+  |  remote bookmark:$TESTTMP/server2/foo
+  |  remote bookmark:default/foo
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     Added d
+  |
+  o  changeset:   2:28ad74487de9
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     Added c
+  |
+  o  changeset:   1:29becc82797a
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     Added b
+  |
+  o  changeset:   0:18d04c59bb5d
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     Added a
+  

@@ -56,7 +56,7 @@
   > url=file:$TESTTMP/dummy-remote/
   > EOF
 
-TODO: Push to a local non-lfs repo with the extension enabled should add the
+Push to a local non-lfs repo with the extension enabled will add the
 lfs requirement
 
   $ grep lfs $TESTTMP/server/.hg/requires
@@ -70,8 +70,9 @@ lfs requirement
   adding manifests
   adding file changes
   added 2 changesets with 2 changes to 2 files
+  calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
   $ grep lfs $TESTTMP/server/.hg/requires
-  [1]
+  lfs
 
 # Unknown URL scheme
 
@@ -91,11 +92,11 @@ lfs requirement
 
 # Pull from server
 
-TODO: Pulling a local lfs repo into a local non-lfs repo with the extension
-enabled should add the lfs requirement
+Pulling a local lfs repo into a local non-lfs repo with the extension
+enabled adds the lfs requirement
 
   $ grep lfs .hg/requires $TESTTMP/server/.hg/requires
-  [1]
+  $TESTTMP/server/.hg/requires:lfs
   $ hg pull default
   pulling from $TESTTMP/server
   requesting all changes
@@ -106,7 +107,8 @@ enabled should add the lfs requirement
   new changesets b29ba743f89d:00c137947d30
   (run 'hg update' to get a working copy)
   $ grep lfs .hg/requires $TESTTMP/server/.hg/requires
-  [1]
+  .hg/requires:lfs
+  $TESTTMP/server/.hg/requires:lfs
 
 # Check the blobstore is not yet populated
   $ [ -d .hg/store/lfs/objects ]
@@ -872,7 +874,7 @@ Committing deleted files works:
   $ hg commit -m 'rm A'
   $ cd ..
 
-TODO: Unbundling adds a requirement to a non-lfs repo, if necessary.
+Unbundling adds a requirement to a non-lfs repo, if necessary.
 
   $ hg bundle -R $TESTTMP/repo-del -qr 0 --base null nolfs.hg
   $ hg bundle -R convert_lfs2 -qr tip --base null lfs.hg
@@ -882,7 +884,7 @@ TODO: Unbundling adds a requirement to a non-lfs repo, if necessary.
   [1]
   $ hg pull -R unbundle -q lfs.hg
   $ grep lfs unbundle/.hg/requires
-  [1]
+  lfs
 
   $ hg init no_lfs
   $ cat >> no_lfs/.hg/hgrc <<EOF

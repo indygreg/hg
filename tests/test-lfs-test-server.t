@@ -53,6 +53,7 @@
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
+  calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
 
 Clear the cache to force a download
   $ rm -rf `hg config lfs.usercache`

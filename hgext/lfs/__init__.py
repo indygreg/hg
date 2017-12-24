@@ -43,6 +43,7 @@ from mercurial import (
     filelog,
     hg,
     localrepo,
+    node,
     registrar,
     revlog,
     scmutil,
@@ -122,13 +123,21 @@ def reposetup(ui, repo):
     if 'lfs' not in repo.requirements:
         def checkrequireslfs(ui, repo, **kwargs):
             if 'lfs' not in repo.requirements:
-                ctx = repo[kwargs['node']]
+                last = kwargs.get('node_last')
+                _bin = node.bin
+                if last:
+                    s = repo.set('%n:%n', _bin(kwargs['node']), _bin(last))
+                else:
+                    s = repo.set('%n', _bin(kwargs['node']))
+            for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
                 if any(ctx[f].islfs() for f in ctx.files() if f in ctx):
                     repo.requirements.add('lfs')
                     repo._writerequirements()
+                    break
 
         ui.setconfig('hooks', 'commit.lfs', checkrequireslfs, 'lfs')
+        ui.setconfig('hooks', 'pretxnchangegroup.lfs', checkrequireslfs, 'lfs')
 
 def wrapfilelog(filelog):
     wrapfunction = extensions.wrapfunction

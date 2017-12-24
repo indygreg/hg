@@ -130,9 +130,9 @@ consistently added before that can be ratcheted back.
 
 --------------------------------------------------------------------------------
 Case #3: client with lfs content and the extension enabled; server with
-non-lfs content, and the extension state controlled by #testcases.
+non-lfs content, and the extension state controlled by #testcases.  The server
+should have an 'lfs' requirement after it picks up its first commit with a blob.
 
-TODO: add the 'lfs' requirement on the server for each test in lfsremote-on
   $ echo 'this is a big lfs file' > lfs.bin
   $ hg ci -Aqm 'lfs'
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
@@ -144,15 +144,18 @@ TODO: fail more gracefully here
   ValueError: no common changegroup version (lfsremote-off !)
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
+  $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client3_clone
-  $ grep 'lfs' $TESTTMP/client3_clone/.hg/requires $SERVER_REQUIRES
-  [1]
+  $ grep 'lfs' $TESTTMP/client3_clone/.hg/requires $SERVER_REQUIRES || true
+  $TESTTMP/client3_clone/.hg/requires:lfs (lfsremote-on !)
+  $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
 
   $ hg init $TESTTMP/client3_pull
   $ hg -R $TESTTMP/client3_pull pull -q http://localhost:$HGPORT
-  $ grep 'lfs' $TESTTMP/client3_pull/.hg/requires $SERVER_REQUIRES
-  [1]
+  $ grep 'lfs' $TESTTMP/client3_pull/.hg/requires $SERVER_REQUIRES || true
+  $TESTTMP/client3_pull/.hg/requires:lfs (lfsremote-on !)
+  $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
 
 XXX: The difference here is the push failed above when the extension isn't
 enabled on the server.  The extension shouldn't need to mess with changegroup
@@ -185,12 +188,12 @@ lfs content, and the extension enabled.
   $ echo 'non-lfs' > nonlfs2.txt
   $ hg ci -Aqm 'non-lfs'
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg push -q --force
   warning: repository is unrelated
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/server/.hg/requires:lfs
 
 TODO: fail more gracefully.
 
@@ -199,6 +202,7 @@ TODO: fail more gracefully.
   [255]
   $ grep 'lfs' $TESTTMP/client4_clone/.hg/requires $SERVER_REQUIRES
   grep: $TESTTMP/client4_clone/.hg/requires: $ENOENT$
+  $TESTTMP/server/.hg/requires:lfs
   [2]
 
 TODO: fail more gracefully.
@@ -208,7 +212,7 @@ TODO: fail more gracefully.
   abort: HTTP Error 500: Internal Server Error
   [255]
   $ grep 'lfs' $TESTTMP/client4_pull/.hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg identify http://localhost:$HGPORT
   03b080fa9d93
@@ -226,16 +230,18 @@ lfs content, and the extension enabled.
 
   $ hg push -q
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client5_clone
   $ grep 'lfs' $TESTTMP/client5_clone/.hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/client5_clone/.hg/requires:lfs
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg init $TESTTMP/client5_pull
   $ hg -R $TESTTMP/client5_pull pull -q http://localhost:$HGPORT
   $ grep 'lfs' $TESTTMP/client5_pull/.hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/client5_pull/.hg/requires:lfs
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg identify http://localhost:$HGPORT
   c729025cc5e3
@@ -244,23 +250,24 @@ lfs content, and the extension enabled.
 Case #6: client with lfs content and the extension enabled; server with
 lfs content, and the extension enabled.
 
-TODO: add the 'lfs' requirement on the server for each test
-
   $ echo 'this is another lfs file' > lfs2.txt
   $ hg ci -Aqm 'lfs file with lfs client'
 
   $ hg push -q
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client6_clone
   $ grep 'lfs' $TESTTMP/client6_clone/.hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/client6_clone/.hg/requires:lfs
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg init $TESTTMP/client6_pull
   $ hg -R $TESTTMP/client6_pull pull -q http://localhost:$HGPORT
   $ grep 'lfs' $TESTTMP/client6_pull/.hg/requires $SERVER_REQUIRES
-  [1]
+  $TESTTMP/client6_pull/.hg/requires:lfs
+  $TESTTMP/server/.hg/requires:lfs
 
   $ hg identify http://localhost:$HGPORT
   d3b84d50eacb

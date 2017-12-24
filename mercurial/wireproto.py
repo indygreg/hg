@@ -954,21 +954,7 @@ def stream(repo, proto):
     capability with a value representing the version and flags of the repo
     it is serving. Client checks to see if it understands the format.
     '''
-    if not streamclone.allowservergeneration(repo):
-        return '1\n'
-
-    def getstream(it):
-        yield '0\n'
-        for chunk in it:
-            yield chunk
-
-    try:
-        # LockError may be raised before the first result is yielded. Don't
-        # emit output until we're sure we got the lock successfully.
-        it = streamclone.generatev1wireproto(repo)
-        return streamres(gen=getstream(it))
-    except error.LockError:
-        return '2\n'
+    return streamres(streamclone.generatev1wireproto(repo))
 
 @wireprotocommand('unbundle', 'heads')
 def unbundle(repo, proto, heads):

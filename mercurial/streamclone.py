@@ -235,10 +235,26 @@ def generatev1(repo):
 def generatev1wireproto(repo):
     """Emit content for version 1 of streaming clone suitable for the wire.
 
-    This is the data output from ``generatev1()`` with a header line
-    indicating file count and byte size.
+    This is the data output from ``generatev1()`` with 2 header lines. The
+    first line indicates overall success. The 2nd contains the file count and
+    byte size of payload.
+
+    The success line contains "0" for success, "1" for stream generation not
+    allowed, and "2" for error locking the repository (possibly indicating
+    a permissions error for the server process).
     """
-    filecount, bytecount, it = generatev1(repo)
+    if not allowservergeneration(repo):
+        yield '1\n'
+        return
+
+    try:
+        filecount, bytecount, it = generatev1(repo)
+    except error.LockError:
+        yield '2\n'
+        return
+
+    # Indicates successful response.
+    yield '0\n'
     yield '%d %d\n' % (filecount, bytecount)
     for chunk in it:
         yield chunk

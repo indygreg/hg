@@ -28,8 +28,9 @@ from . import (
 
 def supportedoutgoingversions(orig, repo):
     versions = orig(repo)
-    versions.discard('01')
-    versions.discard('02')
+    if 'lfs' in repo.requirements:
+        versions.discard('01')
+        versions.discard('02')
     versions.add('03')
     return versions
 

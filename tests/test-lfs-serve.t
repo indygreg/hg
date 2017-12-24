@@ -70,21 +70,12 @@ non-lfs content, and the extension enabled.
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   [1]
 
-TODO: fail more gracefully, or don't mandate changegroup3 for non-lfs repos.
-
   $ hg clone -q http://localhost:$HGPORT $TESTTMP/client1_clone
-  abort: HTTP Error 500: Internal Server Error
-  [255]
   $ grep 'lfs' $TESTTMP/client1_clone/.hg/requires $SERVER_REQUIRES
-  grep: $TESTTMP/client1_clone/.hg/requires: $ENOENT$
-  [2]
-
-TODO: fail more gracefully, or don't mandate changegroup3 for non-lfs repos.
+  [1]
 
   $ hg init $TESTTMP/client1_pull
   $ hg -R $TESTTMP/client1_pull pull -q http://localhost:$HGPORT
-  abort: HTTP Error 500: Internal Server Error
-  [255]
   $ grep 'lfs' $TESTTMP/client1_pull/.hg/requires $SERVER_REQUIRES
   [1]
 
@@ -104,10 +95,10 @@ non-lfs content, and the extension state controlled by #testcases.
   $ echo 'non-lfs' > nonlfs2.txt
   $ hg ci -Aqm 'non-lfs file with lfs client'
 
-TODO: fail more gracefully here
-  $ hg push -q 2>&1 | grep '^[A-Z]' || true
-  Traceback (most recent call last): (lfsremote-off !)
-  ValueError: no common changegroup version (lfsremote-off !)
+Since no lfs content has been added yet, the push is allowed, even when the
+extension is not enabled remotely.
+
+  $ hg push -q
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   [1]
 
@@ -120,13 +111,8 @@ TODO: fail more gracefully here
   $ grep 'lfs' $TESTTMP/client2_pull/.hg/requires $SERVER_REQUIRES
   [1]
 
-XXX: The difference here is the push failed above when the extension isn't
-enabled on the server.  The extension shouldn't need to mess with changegroup
-versions if there is no lfs content.  But the requirement needs to be
-consistently added before that can be ratcheted back.
   $ hg identify http://localhost:$HGPORT
-  1477875038c6 (lfsremote-on !)
-  000000000000 (lfsremote-off !)
+  1477875038c6
 
 --------------------------------------------------------------------------------
 Case #3: client with lfs content and the extension enabled; server with
@@ -157,13 +143,11 @@ TODO: fail more gracefully here
   $TESTTMP/client3_pull/.hg/requires:lfs (lfsremote-on !)
   $TESTTMP/server/.hg/requires:lfs (lfsremote-on !)
 
-XXX: The difference here is the push failed above when the extension isn't
-enabled on the server.  The extension shouldn't need to mess with changegroup
-versions if there is no lfs content.  But the requirement needs to be
-consistently added before that can be ratcheted back.
+The difference here is the push failed above when the extension isn't
+enabled on the server.
   $ hg identify http://localhost:$HGPORT
   8374dc4052cb (lfsremote-on !)
-  000000000000 (lfsremote-off !)
+  1477875038c6 (lfsremote-off !)
 
 Don't bother testing the lfsremote-off cases- the server won't be able
 to launch if there's lfs content and the extension is disabled.
@@ -286,10 +270,6 @@ Misc: process dies early if a requirement exists and the extension is disabled
 
 #if lfsremote-on
   $ cat $TESTTMP/errors.log | grep '^[A-Z]'
-  Traceback (most recent call last):
-  ValueError: no common changegroup version
-  Traceback (most recent call last):
-  ValueError: no common changegroup version
   Traceback (most recent call last):
   ValueError: no common changegroup version
   Traceback (most recent call last):

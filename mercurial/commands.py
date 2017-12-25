@@ -5442,8 +5442,7 @@ def unbundle(ui, repo, fname1, *fnames, **opts):
     ('r', 'rev', '', _('revision'), _('REV'))
      ] + mergetoolopts,
     _('[-C|-c|-m] [-d DATE] [[-r] REV]'))
-def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
-           merge=None, tool=None):
+def update(ui, repo, node=None, **opts):
     """update working directory (or switch revisions)
 
     Update the repository's working directory to the specified
@@ -5498,6 +5497,11 @@ def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
 
     Returns 0 on success, 1 if there are unresolved files.
     """
+    rev = opts.get(r'rev')
+    date = opts.get(r'date')
+    clean = opts.get(r'clean')
+    check = opts.get(r'check')
+    merge = opts.get(r'merge')
     if rev and node:
         raise error.Abort(_("please specify just one revision"))
 
@@ -5542,7 +5546,7 @@ def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
                 obsfatemsg = obsutil._getfilteredreason(repo, ctxstr, ctx)
                 ui.warn("(%s)\n" % obsfatemsg)
 
-        repo.ui.setconfig('ui', 'forcemerge', tool, 'update')
+        repo.ui.setconfig('ui', 'forcemerge', opts.get(r'tool'), 'update')
 
         return hg.updatetotally(ui, repo, rev, brev, clean=clean,
                                 updatecheck=updatecheck)

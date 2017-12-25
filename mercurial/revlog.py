@@ -622,11 +622,13 @@ class revlog(object):
 
     def parentrevs(self, rev):
         try:
-            return self.index[rev][5:7]
+            entry = self.index[rev]
         except IndexError:
             if rev == wdirrev:
                 raise error.WdirUnsupported
             raise
+
+        return entry[5], entry[6]
 
     def node(self, rev):
         try:

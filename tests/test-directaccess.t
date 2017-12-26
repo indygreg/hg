@@ -152,6 +152,19 @@ Testing with hash
   $ hg up 3
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
+`hg revert`
+
+  $ hg revert -r 28ad74 --all
+  reverting c
+
+  $ hg diff
+  diff -r 2443a0e66469 c
+  --- a/c	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/c	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,2 +1,1 @@
+   foo
+  -bar
+
 Commands with undefined cmdtype should not work right now
 
   $ hg phase -r 28ad74

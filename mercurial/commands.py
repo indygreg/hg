@@ -4588,7 +4588,10 @@ def revert(ui, repo, *pats, **opts):
         raise error.Abort(_('uncommitted merge with no revision specified'),
                          hint=_("use 'hg update' or see 'hg help revert'"))
 
-    ctx = scmutil.revsingle(repo, opts.get('rev'))
+    rev = opts.get('rev')
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    ctx = scmutil.revsingle(repo, rev)
 
     if (not (pats or opts.get('include') or opts.get('exclude') or
              opts.get('all') or opts.get('interactive'))):

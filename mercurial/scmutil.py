@@ -1319,7 +1319,7 @@ def unhidehashlikerevs(repo, specs, hiddentype):
                                                      'directaccess'):
         return repo
 
-    if not repo.filtername.startswith('visible'):
+    if repo.filtername not in ('visible', 'visible-hidden'):
         return repo
 
     symbols = set()
@@ -1345,6 +1345,8 @@ def unhidehashlikerevs(repo, specs, hiddentype):
         repo.ui.warn(_("warning: accessing hidden changesets for write "
                        "operation: %s\n") % revstr)
 
+    # we have to use new filtername to separate branch/tags cache until we can
+    # disbale these cache when revisions are dynamically pinned.
     return repo.filtered('visible-hidden', revs)
 
 def _getrevsfromsymbols(repo, symbols):

@@ -1280,7 +1280,8 @@ def cat(ui, repo, file1, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     rev = opts.get('rev')
-    repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
     ctx = scmutil.revsingle(repo, rev)
     m = scmutil.match(ctx, (file1,) + pats, opts)
     fntemplate = opts.pop('output', '')
@@ -1995,7 +1996,8 @@ def files(ui, repo, *pats, **opts):
 
     opts = pycompat.byteskwargs(opts)
     rev = opts.get('rev')
-    repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
     ctx = scmutil.revsingle(repo, rev, None)
 
     end = '\n'
@@ -2779,7 +2781,8 @@ def identify(ui, repo, source=None, rev=None,
         fm.data(node=hex(remoterev))
         fm.data(bookmarks=fm.formatlist(bms, name='bookmark'))
     else:
-        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+        if rev:
+            repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
         ctx = scmutil.revsingle(repo, rev, None)
 
         if ctx.rev() is None:
@@ -3513,7 +3516,8 @@ def manifest(ui, repo, node=None, rev=None, **opts):
 
     char = {'l': '@', 'x': '*', '': ''}
     mode = {'l': '644', 'x': '755', '': '644'}
-    repo = scmutil.unhidehashlikerevs(repo, [node], 'nowarn')
+    if node:
+        repo = scmutil.unhidehashlikerevs(repo, [node], 'nowarn')
     ctx = scmutil.revsingle(repo, node)
     mf = ctx.manifest()
     ui.pager('manifest')
@@ -3702,7 +3706,8 @@ def parents(ui, repo, file_=None, **opts):
 
     opts = pycompat.byteskwargs(opts)
     rev = opts.get('rev')
-    repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
     ctx = scmutil.revsingle(repo, rev, None)
 
     if file_:

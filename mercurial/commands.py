@@ -5528,7 +5528,11 @@ def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
 
         # if we defined a bookmark, we have to remember the original name
         brev = rev
-        rev = scmutil.revsingle(repo, rev, rev).rev()
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+        ctx = scmutil.revsingle(repo, rev, rev)
+        rev = ctx.rev()
+        if ctx.hidden():
+            ui.warn(_("updating to a hidden changeset %s\n") % ctx.hex()[:12])
 
         repo.ui.setconfig('ui', 'forcemerge', tool, 'update')
 

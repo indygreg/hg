@@ -143,6 +143,15 @@ Testing with hash
   $ hg status --change 28ad74
   A c
 
+`hg update`
+
+  $ hg up 28ad74
+  updating to a hidden changeset 28ad74487de9
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg up 3
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
 Commands with undefined cmdtype should not work right now
 
   $ hg phase -r 28ad74

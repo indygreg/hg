@@ -280,6 +280,7 @@ a working copy parent. We should be moved back to the starting commit as usual
 even though it is hidden (until we're moved there).
 
   $ hg --hidden up -qr 'first(hidden())'
+  updating to a hidden changeset 42ccdea3bb16
   $ hg rebase --rev 13 --dest 15
   rebasing 13:98f6af4ee953 "C"
   $ hg log -G
@@ -610,6 +611,7 @@ test on rebase dropping a merge
 Test hidden changesets in the rebase set (issue4504)
 
   $ hg up --hidden 9
+  updating to a hidden changeset 4bde274eefcf
   3 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ echo J > J
   $ hg add J
@@ -725,6 +727,7 @@ setup
   $ hg commit --amend -m B1
   $ hg commit --amend -m B2
   $ hg up --hidden 'desc(B0)'
+  updating to a hidden changeset a8b11f55fb19
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo C > C
   $ hg add C
@@ -748,6 +751,7 @@ Rebase finds its way in a chain of marker
 Even when the chain include missing node
 
   $ hg up --hidden 'desc(B0)'
+  updating to a hidden changeset a8b11f55fb19
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ echo D > D
   $ hg add D
@@ -862,6 +866,7 @@ If a rebase is going to create divergence, it should abort
   $ hg add bar
   $ hg commit --amend -m "10'"
   $ hg up 10 --hidden
+  updating to a hidden changeset 121d9e3bc4c6
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ echo "bar" > foo
   $ hg add foo
@@ -1595,6 +1600,7 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
   $ rm .hg/localtags
 
   $ hg update -q $C --hidden
+  updating to a hidden changeset 7829726be4dc
   $ hg rebase -s $B -d $D
   rebasing 1:2ec65233581b "B"
   merging D

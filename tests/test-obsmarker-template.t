@@ -75,6 +75,7 @@ Test setup
 Check templates
 ---------------
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -146,6 +147,7 @@ Predecessors template should show current revision as it is the working copy
      summary:     ROOT
   
   $ hg up 'desc(A1)' --hidden
+  updating to a hidden changeset a468dc9b3633
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -413,6 +415,7 @@ Check templates
 ---------------
 
   $ hg up 'obsolete()' --hidden
+  updating to a hidden changeset 471597cad322
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -620,6 +623,7 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -644,6 +648,7 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
   $ hg up 'desc(B0)' --hidden
+  updating to a hidden changeset 0dec01379d3b
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show both predecessors as they should be both
@@ -809,6 +814,7 @@ Test setup
      summary:     ROOT
   
   $ hg update --hidden 'desc(A0)'
+  updating to a hidden changeset 471f378eab4c
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m "A2"
   $ hg log --hidden -G
@@ -880,6 +886,7 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -1144,6 +1151,7 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -1168,6 +1176,7 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
   $ hg up 'desc(B0)' --hidden
+  updating to a hidden changeset 0dec01379d3b
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should both predecessors as they are visible
@@ -1198,6 +1207,7 @@ Predecessors template should both predecessors as they are visible
   o  ea207398892e
   
   $ hg up 'desc(B1)' --hidden
+  updating to a hidden changeset b7ea6d14e664
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should both predecessors as they are visible
@@ -1599,6 +1609,7 @@ Check templates
   
 
   $ hg up -r "desc(B0)" --hidden
+  updating to a hidden changeset 0dec01379d3b
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg tlog
   o  f897c6137566
@@ -2059,6 +2070,7 @@ Check templates
   o  ea207398892e
   
   $ hg up --hidden 4
+  updating to a hidden changeset 9bd10a0775e4
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg rebase -r 7 -d 8 --config extensions.rebase=
   rebasing 7:ba2ed02b0c9a "Add A,B,C"
@@ -2303,6 +2315,7 @@ Test setup
   obsoleted 1 changesets
 
   $ hg up -r "desc(A0)" --hidden
+  updating to a hidden changeset 471f378eab4c
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m "A2"
   $ hg debugobsolete --record-parent `getid "."`
@@ -2312,6 +2325,7 @@ Check output
 ------------
 
   $ hg up "desc(A0)" --hidden
+  updating to a hidden changeset 471f378eab4c
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg tlog
   @  471f378eab4c
@@ -2465,6 +2479,7 @@ Check templates
 ---------------
 
   $ hg up 'desc("A0")' --hidden
+  updating to a hidden changeset 471597cad322
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 # todo: the obsfate output is not ideal
@@ -2476,6 +2491,7 @@ Check templates
   o  ea207398892e
   
   $ hg up -r 'desc("A2")' --hidden
+  updating to a hidden changeset 0d0ef4bdf70e
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg fatelog --hidden

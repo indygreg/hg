@@ -772,6 +772,16 @@ class generatorset(abstractsmartset):
     >>> xs.last()  # cached
     4
     """
+    def __new__(cls, gen, iterasc=None):
+        if iterasc is None:
+            typ = cls
+        elif iterasc:
+            typ = _generatorsetasc
+        else:
+            typ = _generatorsetdesc
+
+        return super(generatorset, cls).__new__(typ)
+
     def __init__(self, gen, iterasc=None):
         """
         gen: a generator producing the values for the generatorset.
@@ -782,13 +792,6 @@ class generatorset(abstractsmartset):
         self._genlist = []
         self._finished = False
         self._ascending = True
-        if iterasc is not None:
-            if iterasc:
-                self.fastasc = self._iterator
-                self.__contains__ = self._asccontains
-            else:
-                self.fastdesc = self._iterator
-                self.__contains__ = self._desccontains
 
     def __nonzero__(self):
         # Do not use 'for r in self' because it will enforce the iteration
@@ -810,36 +813,6 @@ class generatorset(abstractsmartset):
         for l in self._consumegen():
             if l == x:
                 return True
-
-        self._cache[x] = False
-        return False
-
-    def _asccontains(self, x):
-        """version of contains optimised for ascending generator"""
-        if x in self._cache:
-            return self._cache[x]
-
-        # Use new values only, as existing values would be cached.
-        for l in self._consumegen():
-            if l == x:
-                return True
-            if l > x:
-                break
-
-        self._cache[x] = False
-        return False
-
-    def _desccontains(self, x):
-        """version of contains optimised for descending generator"""
-        if x in self._cache:
-            return self._cache[x]
-
-        # Use new values only, as existing values would be cached.
-        for l in self._consumegen():
-            if l == x:
-                return True
-            if l < x:
-                break
 
         self._cache[x] = False
         return False
@@ -947,7 +920,45 @@ class generatorset(abstractsmartset):
 
     def __repr__(self):
         d = {False: '-', True: '+'}[self._ascending]
-        return '<%s%s>' % (type(self).__name__, d)
+        return '<%s%s>' % (type(self).__name__.lstrip('_'), d)
+
+class _generatorsetasc(generatorset):
+    """Special case of generatorset optimized for ascending generators."""
+
+    fastasc = generatorset._iterator
+
+    def __contains__(self, x):
+        if x in self._cache:
+            return self._cache[x]
+
+        # Use new values only, as existing values would be cached.
+        for l in self._consumegen():
+            if l == x:
+                return True
+            if l > x:
+                break
+
+        self._cache[x] = False
+        return False
+
+class _generatorsetdesc(generatorset):
+    """Special case of generatorset optimized for descending generators."""
+
+    fastdesc = generatorset._iterator
+
+    def __contains__(self, x):
+        if x in self._cache:
+            return self._cache[x]
+
+        # Use new values only, as existing values would be cached.
+        for l in self._consumegen():
+            if l == x:
+                return True
+            if l < x:
+                break
+
+        self._cache[x] = False
+        return False
 
 def spanset(repo, start=0, end=None):
     """Create a spanset that represents a range of repository revisions

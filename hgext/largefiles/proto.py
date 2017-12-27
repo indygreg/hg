@@ -28,7 +28,6 @@ LARGEFILES_REQUIRED_MSG = ('\nThis repository uses the largefiles extension.'
                            'file.\n')
 
 # these will all be replaced by largefiles.uisetup
-capabilitiesorig = None
 ssholdcallstream = None
 httpoldcallstream = None
 
@@ -161,9 +160,11 @@ def wirereposetup(ui, repo):
     repo.__class__ = lfileswirerepository
 
 # advertise the largefiles=serve capability
-def capabilities(repo, proto):
-    '''Wrap server command to announce largefile server capability'''
-    return capabilitiesorig(repo, proto) + ' largefiles=serve'
+def _capabilities(orig, repo, proto):
+    '''announce largefile server capability'''
+    caps = orig(repo, proto)
+    caps.append('largefiles=serve')
+    return caps
 
 def heads(repo, proto):
     '''Wrap server command - largefile capable clients will know to call

@@ -166,7 +166,6 @@ def uisetup(ui):
     wireproto.commands['statlfile'] = (proto.statlfile, 'sha')
 
     # ... and wrap some existing ones
-    wireproto.commands['capabilities'] = (proto.capabilities, '')
     wireproto.commands['heads'] = (proto.heads, '')
     wireproto.commands['lheads'] = (wireproto.heads, '')
 
@@ -178,10 +177,7 @@ def uisetup(ui):
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 
-    # the hello wireproto command uses wireproto.capabilities, so it won't see
-    # our largefiles capability unless we replace the actual function as well.
-    proto.capabilitiesorig = wireproto.capabilities
-    wireproto.capabilities = proto.capabilities
+    extensions.wrapfunction(wireproto, '_capabilities', proto._capabilities)
 
     # can't do this in reposetup because it needs to have happened before
     # wirerepo.__init__ is called

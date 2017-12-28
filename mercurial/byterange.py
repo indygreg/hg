@@ -416,7 +416,7 @@ def range_header_to_tuple(range_header):
     if range_header is None:
         return None
     if _rangere is None:
-        _rangere = re.compile(r'^bytes=(\d{1,})-(\d*)')
+        _rangere = re.compile(br'^bytes=(\d{1,})-(\d*)')
     match = _rangere.match(range_header)
     if match:
         tup = range_tuple_normalize(match.group(1, 2))

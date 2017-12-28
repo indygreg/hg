@@ -100,7 +100,7 @@ def wsclean(opts, text, blank=True):
     if blank and opts.ignoreblanklines:
         text = re.sub('\n+', '\n', text).strip('\n')
     if opts.ignorewseol:
-        text = re.sub(r'[ \t\r\f]+\n', r'\n', text)
+        text = re.sub(br'[ \t\r\f]+\n', r'\n', text)
     return text
 
 def splitblock(base1, lines1, base2, lines2, opts):

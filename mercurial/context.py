@@ -1122,7 +1122,7 @@ class basefilectx(object):
                 hist[f] = curr
                 del pcache[f]
 
-        return zip(hist[base][0], hist[base][1].splitlines(True))
+        return pycompat.ziplist(hist[base][0], hist[base][1].splitlines(True))
 
     def ancestors(self, followfirst=False):
         visit = {}

@@ -180,7 +180,7 @@ def debugbuilddag(ui, repo, text=None,
         ui.progress(_('building'), id, unit=_('revisions'), total=total)
         for type, data in dagparser.parsedag(text):
             if type == 'n':
-                ui.note(('node %s\n' % str(data)))
+                ui.note(('node %s\n' % pycompat.bytestr(data)))
                 id, ps = data
 
                 files = []

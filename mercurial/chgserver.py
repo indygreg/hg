@@ -55,6 +55,7 @@ from . import (
     encoding,
     error,
     extensions,
+    node,
     pycompat,
     util,
 )
@@ -63,7 +64,7 @@ _log = commandserver.log
 
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
-    return hashlib.sha1(str(items)).hexdigest()
+    return node.hex(hashlib.sha1(str(items)).digest())
 
 # sensitive config sections affecting confighash
 _configsections = [

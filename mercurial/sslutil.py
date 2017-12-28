@@ -17,6 +17,7 @@ import ssl
 from .i18n import _
 from . import (
     error,
+    node,
     pycompat,
     util,
 )
@@ -808,9 +809,9 @@ def validatesocket(sock):
     # If a certificate fingerprint is pinned, use it and only it to
     # validate the remote cert.
     peerfingerprints = {
-        'sha1': hashlib.sha1(peercert).hexdigest(),
-        'sha256': hashlib.sha256(peercert).hexdigest(),
-        'sha512': hashlib.sha512(peercert).hexdigest(),
+        'sha1': node.hex(hashlib.sha1(peercert).digest()),
+        'sha256': node.hex(hashlib.sha256(peercert).digest()),
+        'sha512': node.hex(hashlib.sha512(peercert).digest()),
     }
 
     def fmtfingerprint(s):

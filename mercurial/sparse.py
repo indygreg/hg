@@ -12,7 +12,10 @@ import hashlib
 import os
 
 from .i18n import _
-from .node import nullid
+from .node import (
+    hex,
+    nullid,
+)
 from . import (
     error,
     match as matchmod,
@@ -173,12 +176,12 @@ def configsignature(repo, includetemp=True):
         tempsignature = '0'
 
     if signature is None or (includetemp and tempsignature is None):
-        signature = hashlib.sha1(repo.vfs.tryread('sparse')).hexdigest()
+        signature = hex(hashlib.sha1(repo.vfs.tryread('sparse')).digest())
         cache['signature'] = signature
 
         if includetemp:
             raw = repo.vfs.tryread('tempsparse')
-            tempsignature = hashlib.sha1(raw).hexdigest()
+            tempsignature = hex(hashlib.sha1(raw).digest())
             cache['tempsignature'] = tempsignature
 
     return '%s %s' % (signature, tempsignature)

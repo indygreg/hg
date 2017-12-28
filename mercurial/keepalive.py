@@ -92,6 +92,7 @@ import threading
 
 from .i18n import _
 from . import (
+    node,
     pycompat,
     urllibcompat,
     util,
@@ -607,7 +608,7 @@ def continuity(url):
     foo = fo.read()
     fo.close()
     m = md5(foo)
-    print(format % ('normal urllib', m.hexdigest()))
+    print(format % ('normal urllib', node.hex(m.digest())))
 
     # now install the keepalive handler and try again
     opener = urlreq.buildopener(HTTPHandler())
@@ -617,7 +618,7 @@ def continuity(url):
     foo = fo.read()
     fo.close()
     m = md5(foo)
-    print(format % ('keepalive read', m.hexdigest()))
+    print(format % ('keepalive read', node.hex(m.digest())))
 
     fo = urlreq.urlopen(url)
     foo = ''
@@ -629,7 +630,7 @@ def continuity(url):
             break
     fo.close()
     m = md5(foo)
-    print(format % ('keepalive readline', m.hexdigest()))
+    print(format % ('keepalive readline', node.hex(m.digest())))
 
 def comp(N, url):
     print('  making %i connections to:\n  %s' % (N, url))

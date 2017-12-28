@@ -569,7 +569,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
                             'unable to resolve identity of remote)\n'))
         elif sharenamemode == 'remote':
             sharepath = os.path.join(
-                sharepool, hashlib.sha1(source).hexdigest())
+                sharepool, node.hex(hashlib.sha1(source).digest()))
         else:
             raise error.Abort(_('unknown share naming mode: %s') %
                               sharenamemode)

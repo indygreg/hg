@@ -55,7 +55,7 @@ def _expandedabspath(path):
 
 def _getstorehashcachename(remotepath):
     '''get a unique filename for the store hash cache of a remote repository'''
-    return hashlib.sha1(_expandedabspath(remotepath)).hexdigest()[0:12]
+    return node.hex(hashlib.sha1(_expandedabspath(remotepath)).digest())[0:12]
 
 class SubrepoAbort(error.Abort):
     """Exception class used to avoid handling a subrepo error more than once"""
@@ -789,7 +789,7 @@ class hgsubrepo(abstractsubrepo):
         yield '# %s\n' % _expandedabspath(remotepath)
         vfs = self._repo.vfs
         for relname in filelist:
-            filehash = hashlib.sha1(vfs.tryread(relname)).hexdigest()
+            filehash = node.hex(hashlib.sha1(vfs.tryread(relname)).digest())
             yield '%s = %s\n' % (relname, filehash)
 
     @propertycache

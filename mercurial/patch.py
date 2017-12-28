@@ -2654,7 +2654,7 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
         l = len(text)
         s = hashlib.sha1('blob %d\0' % l)
         s.update(text)
-        return s.hexdigest()
+        return hex(s.digest())
 
     if opts.noprefix:
         aprefix = bprefix = ''

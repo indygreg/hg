@@ -49,6 +49,7 @@ from . import (
     encoding,
     error,
     i18n,
+    node as nodemod,
     policy,
     pycompat,
     urllibcompat,
@@ -265,7 +266,7 @@ class digester(object):
     def __getitem__(self, key):
         if key not in DIGESTS:
             raise Abort(_('unknown digest type: %s') % k)
-        return self._hashes[key].hexdigest()
+        return nodemod.hex(self._hashes[key].digest())
 
     def __iter__(self):
         return iter(self._hashes)

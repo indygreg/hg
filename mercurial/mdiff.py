@@ -356,7 +356,7 @@ def _unidiff(t1, t2, opts=defaultopts):
             # the previous hunk context until we find a line starting with an
             # alphanumeric char.
             for i in xrange(astart - 1, lastpos - 1, -1):
-                if l1[i][0].isalnum():
+                if l1[i][0:1].isalnum():
                     func = ' ' + l1[i].rstrip()[:40]
                     lastfunc[1] = func
                     break

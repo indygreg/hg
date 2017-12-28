@@ -13,9 +13,9 @@ if sys.argv[1] != "user@dummy":
 os.environ["SSH_CLIENT"] = "%s 1 2" % os.environ.get('LOCALIP', '127.0.0.1')
 
 log = open("dummylog", "ab")
-log.write("Got arguments")
+log.write(b"Got arguments")
 for i, arg in enumerate(sys.argv[1:]):
-    log.write(" %d:%s" % (i + 1, arg))
+    log.write(b" %d:%s" % (i + 1, arg))
 log.write("\n")
 log.close()
 hgcmd = sys.argv[2]

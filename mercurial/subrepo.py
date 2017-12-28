@@ -811,7 +811,7 @@ class hgsubrepo(abstractsubrepo):
         with self._repo.lock():
             storehash = list(self._calcstorehash(remotepath))
             vfs = self._cachestorehashvfs
-            vfs.writelines(cachefile, storehash, mode='w', notindexed=True)
+            vfs.writelines(cachefile, storehash, mode='wb', notindexed=True)
 
     def _getctx(self):
         '''fetch the context for this subrepo revision, possibly a workingctx
@@ -841,7 +841,7 @@ class hgsubrepo(abstractsubrepo):
             if defpath != defpushpath:
                 addpathconfig('default-push', defpushpath)
 
-            fp = self._repo.vfs("hgrc", "w", text=True)
+            fp = self._repo.vfs("hgrc", "wb", text=True)
             try:
                 fp.write(''.join(lines))
             finally:

@@ -397,7 +397,7 @@ def runsymbol(context, mapping, key, default=''):
         # pair instead of **props
         props = context._resources.copy()
         props.update(mapping)
-        return v(**props)
+        return v(**pycompat.strkwargs(props))
     return v
 
 def buildtemplate(exp, context):

@@ -7,7 +7,7 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
-import email
+import email.parser as emailparser
 import os
 import shutil
 import stat
@@ -63,7 +63,7 @@ class gnuarch_source(common.converter_source, common.commandline):
         self.changes = {}
         self.parents = {}
         self.tags = {}
-        self.catlogparser = email.Parser.Parser()
+        self.catlogparser = emailparser.Parser()
         self.encoding = encoding.encoding
         self.archives = []
 

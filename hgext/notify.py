@@ -135,6 +135,7 @@ web.baseurl
 from __future__ import absolute_import
 
 import email
+import email.parser as emailparser
 import fnmatch
 import socket
 import time
@@ -339,7 +340,7 @@ class notifier(object):
                           'and revset\n')
             return
 
-        p = email.Parser.Parser()
+        p = emailparser.Parser()
         try:
             msg = p.parsestr(data)
         except email.Errors.MessageParseError as inst:

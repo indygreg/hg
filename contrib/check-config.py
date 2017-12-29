@@ -49,7 +49,7 @@ def main(args):
         confsect = ''
         carryover = ''
         linenum = 0
-        for l in open(f):
+        for l in open(f, 'rb'):
             linenum += 1
 
             # check topic-like bits

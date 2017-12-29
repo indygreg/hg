@@ -2443,7 +2443,7 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
     modified = sorted(modifiedset)
     added = sorted(addedset)
     removed = sorted(removedset)
-    for dst, src in copy.items():
+    for dst, src in list(copy.items()):
         if src not in ctx1:
             # Files merged in during a merge and then copied/renamed are
             # reported as copies. We want to show them in the diff as additions.

@@ -223,6 +223,24 @@ except AttributeError:
 _kernel32.SetFileAttributesA.argtypes = [_LPCSTR, _DWORD]
 _kernel32.SetFileAttributesA.restype = _BOOL
 
+_DRIVE_UNKNOWN = 0
+_DRIVE_NO_ROOT_DIR = 1
+_DRIVE_REMOVABLE = 2
+_DRIVE_FIXED = 3
+_DRIVE_REMOTE = 4
+_DRIVE_CDROM = 5
+_DRIVE_RAMDISK = 6
+
+_kernel32.GetDriveTypeA.argtypes = [_LPCSTR]
+_kernel32.GetDriveTypeA.restype = _UINT
+
+_kernel32.GetVolumeInformationA.argtypes = [_LPCSTR, ctypes.c_void_p, _DWORD,
+    ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, _DWORD]
+_kernel32.GetVolumeInformationA.restype = _BOOL
+
+_kernel32.GetVolumePathNameA.argtypes = [_LPCSTR, ctypes.c_void_p, _DWORD]
+_kernel32.GetVolumePathNameA.restype = _BOOL
+
 _kernel32.OpenProcess.argtypes = [_DWORD, _BOOL, _DWORD]
 _kernel32.OpenProcess.restype = _HANDLE
 
@@ -409,6 +427,37 @@ def executablepath():
     elif len == size:
         raise ctypes.WinError(_ERROR_INSUFFICIENT_BUFFER)
     return buf.value
+
+def getfstype(path):
+    """Get the filesystem type name from a directory or file (best-effort)
+
+    Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
+    """
+    # realpath() calls GetFullPathName()
+    realpath = os.path.realpath(path)
+
+    size = len(realpath) + 1
+    buf = ctypes.create_string_buffer(size)
+
+    if not _kernel32.GetVolumePathNameA(realpath, ctypes.byref(buf), size):
+        raise ctypes.WinError() # Note: WinError is a function
+
+    t = _kernel32.GetDriveTypeA(buf.value)
+
+    if t == _DRIVE_REMOTE:
+        return 'cifs'
+    elif t not in (_DRIVE_REMOVABLE, _DRIVE_FIXED, _DRIVE_CDROM,
+                   _DRIVE_RAMDISK):
+        return None
+
+    size = 256
+    name = ctypes.create_string_buffer(size)
+
+    if not _kernel32.GetVolumeInformationA(buf.value, None, 0, None, None, None,
+                                           ctypes.byref(name), size):
+        raise ctypes.WinError() # Note: WinError is a function
+
+    return name.value
 
 def getuser():
     '''return name of current user'''

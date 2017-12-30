@@ -32,6 +32,7 @@ except ImportError:
 osutil = policy.importmod(r'osutil')
 
 executablepath = win32.executablepath
+getfstype = win32.getfstype
 getuser = win32.getuser
 hidewindow = win32.hidewindow
 makedir = win32.makedir
@@ -225,13 +226,6 @@ def checkexec(path):
 
 def checklink(path):
     return False
-
-def getfstype(dirpath):
-    '''Get the filesystem type name from a directory (best-effort)
-
-    Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
-    '''
-    return None
 
 def setbinary(fd):
     # When run without console, pipes may expose invalid

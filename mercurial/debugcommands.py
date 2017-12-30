@@ -911,6 +911,8 @@ def debugformat(ui, repo, **opts):
 @command('debugfsinfo', [], _('[PATH]'), norepo=True)
 def debugfsinfo(ui, path="."):
     """show information detected about current filesystem"""
+    ui.write(('path: %s\n') % path)
+    ui.write(('mounted on: %s\n') % (util.getfsmountpoint(path) or '(unknown)'))
     ui.write(('exec: %s\n') % (util.checkexec(path) and 'yes' or 'no'))
     ui.write(('fstype: %s\n') % (util.getfstype(path) or '(unknown)'))
     ui.write(('symlink: %s\n') % (util.checklink(path) and 'yes' or 'no'))

@@ -305,6 +305,13 @@ def checkosfilename(path):
     Returns None if the path is ok, or a UI string describing the problem.'''
     return None # on posix platforms, every path is ok
 
+def getfsmountpoint(dirpath):
+    '''Get the filesystem mount point from a directory (best-effort)
+
+    Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
+    '''
+    return getattr(osutil, 'getfsmountpoint', lambda x: None)(dirpath)
+
 def getfstype(dirpath):
     '''Get the filesystem type name from a directory (best-effort)
 

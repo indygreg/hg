@@ -109,6 +109,7 @@ executablepath = platform.executablepath
 expandglobs = platform.expandglobs
 explainexit = platform.explainexit
 findexe = platform.findexe
+getfsmountpoint = platform.getfsmountpoint
 getfstype = platform.getfstype
 gethgcmd = platform.gethgcmd
 getuser = platform.getuser

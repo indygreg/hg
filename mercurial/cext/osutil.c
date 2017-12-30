@@ -1112,6 +1112,24 @@ static PyObject *getfstype(PyObject *self, PyObject *args)
 }
 #endif /* defined(HAVE_LINUX_STATFS) || defined(HAVE_BSD_STATFS) */
 
+#if defined(HAVE_BSD_STATFS)
+/* given a directory path, return filesystem mount point (best-effort) */
+static PyObject *getfsmountpoint(PyObject *self, PyObject *args)
+{
+	const char *path = NULL;
+	struct statfs buf;
+	int r;
+	if (!PyArg_ParseTuple(args, "s", &path))
+		return NULL;
+
+	memset(&buf, 0, sizeof(buf));
+	r = statfs(path, &buf);
+	if (r != 0)
+		return PyErr_SetFromErrno(PyExc_OSError);
+	return Py_BuildValue("s", buf.f_mntonname);
+}
+#endif /* defined(HAVE_BSD_STATFS) */
+
 static PyObject *unblocksignal(PyObject *self, PyObject *args)
 {
 	int sig = 0;
@@ -1311,6 +1329,10 @@ static PyMethodDef methods[] = {
 	{"getfstype", (PyCFunction)getfstype, METH_VARARGS,
 	 "get filesystem type (best-effort)\n"},
 #endif
+#if defined(HAVE_BSD_STATFS)
+	{"getfsmountpoint", (PyCFunction)getfsmountpoint, METH_VARARGS,
+	 "get filesystem mount point (best-effort)\n"},
+#endif
 	{"unblocksignal", (PyCFunction)unblocksignal, METH_VARARGS,
 	 "change signal mask to unblock a given signal\n"},
 #endif /* ndef _WIN32 */
@@ -1323,7 +1345,7 @@ static PyMethodDef methods[] = {
 	{NULL, NULL}
 };
 
-static const int version = 2;
+static const int version = 3;
 
 #ifdef IS_PY3K
 static struct PyModuleDef osutil_module = {

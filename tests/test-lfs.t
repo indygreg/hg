@@ -4,6 +4,7 @@
   > [extensions]
   > lfs=
   > [lfs]
+  > # Test deprecated config
   > threshold=1000B
   > EOF
 
@@ -140,7 +141,7 @@ enabled adds the lfs requirement
   $ cd repo3
   $ cat >> .hg/hgrc << EOF
   > [lfs]
-  > threshold=10B
+  > track=size(">10B")
   > EOF
 
   $ echo LONGER-THAN-TEN-BYTES-WILL-TRIGGER-LFS > large
@@ -203,7 +204,7 @@ enabled adds the lfs requirement
   $ cd repo6
   $ cat >> .hg/hgrc << EOF
   > [lfs]
-  > threshold=30B
+  > track=size(">30B")
   > EOF
 
   $ echo LARGE-BECAUSE-IT-IS-MORE-THAN-30-BYTES > large
@@ -239,7 +240,7 @@ enabled adds the lfs requirement
   $ cd repo8
   $ cat >> .hg/hgrc << EOF
   > [lfs]
-  > threshold=10B
+  > track=size(">10B")
   > EOF
 
   $ echo THIS-IS-LFS-BECAUSE-10-BYTES > a1
@@ -320,7 +321,7 @@ enabled adds the lfs requirement
   $ cd repo9
   $ cat >> .hg/hgrc << EOF
   > [lfs]
-  > threshold=10B
+  > track=size(">10B")
   > [diff]
   > git=1
   > EOF
@@ -454,7 +455,7 @@ enabled adds the lfs requirement
   > [extensions]
   > lfs=
   > [lfs]
-  > threshold=1
+  > track=all()
   > EOF
   $ $PYTHON <<'EOF'
   > def write(path, content):
@@ -539,6 +540,47 @@ enabled adds the lfs requirement
   
   $ [ -d .hg/store/lfs/objects ]
   [1]
+
+  $ cd ..
+
+# Test filter
+
+  $ hg init repo11
+  $ cd repo11
+  $ cat >> .hg/hgrc << EOF
+  > [lfs]
+  > track=(**.a & size(">5B")) | (**.b & !size(">5B"))
+  >      | (**.c & "path:d" & !"path:d/c.c") | size(">10B")
+  > EOF
+
+  $ mkdir a
+  $ echo aaaaaa > a/1.a
+  $ echo a > a/2.a
+  $ echo aaaaaa > 1.b
+  $ echo a > 2.b
+  $ echo a > 1.c
+  $ mkdir d
+  $ echo a > d/c.c
+  $ echo a > d/d.c
+  $ echo aaaaaaaaaaaa > x
+  $ hg add . -q
+  $ hg commit -m files
+
+  $ for p in a/1.a a/2.a 1.b 2.b 1.c d/c.c d/d.c x; do
+  >   if hg debugdata $p 0 2>&1 | grep git-lfs >/dev/null; then
+  >     echo "${p}: is lfs"
+  >   else
+  >     echo "${p}: not lfs"
+  >   fi
+  > done
+  a/1.a: is lfs
+  a/2.a: not lfs
+  1.b: not lfs
+  2.b: is lfs
+  1.c: not lfs
+  d/c.c: not lfs
+  d/d.c: is lfs
+  x: is lfs
 
   $ cd ..
 

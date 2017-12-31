@@ -123,14 +123,14 @@ def _islfs(rlog, node=None, rev=None):
 def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
                        cachedelta=None, node=None,
                        flags=revlog.REVIDX_DEFAULT_FLAGS, **kwds):
-    threshold = self.opener.options['lfsthreshold']
     textlen = len(text)
     # exclude hg rename meta from file size
     meta, offset = filelog.parsemeta(text)
     if offset:
         textlen -= offset
 
-    if threshold and textlen > threshold:
+    lfstrack = self.opener.options['lfstrack']
+    if lfstrack(self.filename, textlen):
         flags |= revlog.REVIDX_EXTSTORED
 
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,

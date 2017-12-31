@@ -30,7 +30,7 @@
   > lfs=
   > [lfs]
   > url=http://foo:bar@$LFS_HOST/
-  > threshold=1
+  > track=all()
   > EOF
 
   $ hg init repo1

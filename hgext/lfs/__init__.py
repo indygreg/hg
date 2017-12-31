@@ -19,8 +19,23 @@ Configs::
     # (default: unset)
     url = https://example.com/lfs
 
-    # size of a file to make it use LFS
-    threshold = 10M
+    # Which files to track in LFS.  Path tests are "**.extname" for file
+    # extensions, and "path:under/some/directory" for path prefix.  Both
+    # are relative to the repository root, and the latter must be quoted.
+    # File size can be tested with the "size()" fileset, and tests can be
+    # joined with fileset operators.  (See "hg help filesets.operators".)
+    #
+    # Some examples:
+    # - all()                       # everything
+    # - none()                      # nothing
+    # - size(">20MB")               # larger than 20MB
+    # - !**.txt                     # anything not a *.txt file
+    # - **.zip | **.tar.gz | **.7z  # some types of compressed files
+    # - "path:bin"                  # files under "bin" in the project root
+    # - (**.php & size(">2MB")) | (**.js & size(">5MB")) | **.tar.gz
+    #     | ("path:bin" & !"path:/bin/README") | size(">1GB")
+    # (default: none())
+    track = size(">10M")
 
     # how many times to retry before giving up on transferring an object
     retry = 5
@@ -41,8 +56,10 @@ from mercurial import (
     exchange,
     extensions,
     filelog,
+    fileset,
     hg,
     localrepo,
+    minifileset,
     node,
     registrar,
     revlog,
@@ -76,8 +93,12 @@ configitem('lfs', 'url',
 configitem('lfs', 'usercache',
     default=None,
 )
+# Deprecated
 configitem('lfs', 'threshold',
     default=None,
+)
+configitem('lfs', 'track',
+    default='none()',
 )
 configitem('lfs', 'retry',
     default=5,
@@ -100,9 +121,15 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    threshold = repo.ui.configbytes('lfs', 'threshold')
+    trackspec = repo.ui.config('lfs', 'track')
 
-    repo.svfs.options['lfsthreshold'] = threshold
+    # deprecated config: lfs.threshold
+    threshold = repo.ui.configbytes('lfs', 'threshold')
+    if threshold:
+        fileset.parse(trackspec)  # make sure syntax errors are confined
+        trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
+
+    repo.svfs.options['lfstrack'] = minifileset.compile(trackspec)
     repo.svfs.lfslocalblobstore = blobstore.local(repo)
     repo.svfs.lfsremoteblobstore = blobstore.remote(repo)
 

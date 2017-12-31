@@ -1206,6 +1206,7 @@ _hardlinkfswhitelist = {
     'ext4',
     'hfs',
     'jfs',
+    'NTFS',
     'reiserfs',
     'tmpfs',
     'ufs',

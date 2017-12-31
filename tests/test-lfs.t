@@ -489,8 +489,8 @@ enabled adds the lfs requirement
 
 # Test fctx.cmp fastpath - diff without LFS blobs
 
-  $ hg init repo11
-  $ cd repo11
+  $ hg init repo12
+  $ cd repo12
   $ cat >> .hg/hgrc <<EOF
   > [lfs]
   > threshold=1
@@ -520,8 +520,8 @@ enabled adds the lfs requirement
 
   $ cd ..
 
-  $ hg clone repo11 repo12 --noupdate
-  $ cd repo12
+  $ hg clone repo12 repo13 --noupdate
+  $ cd repo13
   $ hg log --removed -p a -T '{desc}\n' --config diff.nobinary=1 --git
   2
   diff --git a/a b/a
@@ -590,37 +590,37 @@ enabled adds the lfs requirement
   repo: repo9
   repo: repo10
 
-repo12 doesn't have any cached lfs files and its source never pushed its
+repo13 doesn't have any cached lfs files and its source never pushed its
 files.  Therefore, the files don't exist in the remote store.  Use the files in
 the user cache.
 
-  $ test -d $TESTTMP/repo12/.hg/store/lfs/objects
+  $ test -d $TESTTMP/repo13/.hg/store/lfs/objects
   [1]
 
-  $ hg --config extensions.share= share repo12 repo13
+  $ hg --config extensions.share= share repo13 repo14
   updating working directory
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg -R repo13 -q verify
+  $ hg -R repo14 -q verify
 
-  $ hg clone repo12 repo14
+  $ hg clone repo13 repo15
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg -R repo14 -q verify
+  $ hg -R repo15 -q verify
 
 If the source repo doesn't have the blob (maybe it was pulled or cloned with
 --noupdate), the blob is still accessible via the global cache to send to the
 remote store.
 
-  $ rm -rf $TESTTMP/repo14/.hg/store/lfs
-  $ hg init repo15
-  $ hg -R repo14 push repo15
-  pushing to repo15
+  $ rm -rf $TESTTMP/repo15/.hg/store/lfs
+  $ hg init repo16
+  $ hg -R repo15 push repo16
+  pushing to repo16
   searching for changes
   adding changesets
   adding manifests
   adding file changes
   added 3 changesets with 2 changes to 1 files
-  $ hg -R repo14 -q verify
+  $ hg -R repo15 -q verify
 
 Test damaged file scenarios.  (This also damages the usercache because of the
 hardlinks.)

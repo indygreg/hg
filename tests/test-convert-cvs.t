@@ -80,7 +80,12 @@ An arbitrary (U.S.) time zone is used here.  TZ=US/Hawaii is selected
 since it does not use DST (unlike other U.S. time zones) and is always
 a fixed difference from UTC.
 
-  $ TZ=US/Hawaii hg convert --config convert.localtimezone=True src src-hg
+This choice is limited to work on Linux environments. At least on
+FreeBSD 11 this timezone is not known. A better choice is
+TZ=Pacific/Johnston. On Linux "US/Hawaii" is just a symlink to this
+name and also it is known on FreeBSD and on Solaris.
+
+  $ TZ=Pacific/Johnston hg convert --config convert.localtimezone=True src src-hg
   initializing destination src-hg repository
   connecting to $TESTTMP/cvsrepo
   scanning source...
@@ -170,7 +175,7 @@ commit new file revisions
 
 convert again
 
-  $ TZ=US/Hawaii hg convert --config convert.localtimezone=True src src-hg
+  $ TZ=Pacific/Johnston hg convert --config convert.localtimezone=True src src-hg
   connecting to $TESTTMP/cvsrepo
   scanning source...
   collecting CVS rlog
@@ -231,7 +236,7 @@ commit branch
 
 convert again
 
-  $ TZ=US/Hawaii hg convert --config convert.localtimezone=True src src-hg
+  $ TZ=Pacific/Johnston hg convert --config convert.localtimezone=True src src-hg
   connecting to $TESTTMP/cvsrepo
   scanning source...
   collecting CVS rlog
@@ -249,7 +254,7 @@ convert again
 
 convert again with --filemap
 
-  $ TZ=US/Hawaii hg convert --config convert.localtimezone=True --filemap filemap src src-filemap
+  $ TZ=Pacific/Johnston hg convert --config convert.localtimezone=True --filemap filemap src src-filemap
   connecting to $TESTTMP/cvsrepo
   scanning source...
   collecting CVS rlog
@@ -296,7 +301,7 @@ commit new file revisions with some fuzz
 
 convert again
 
-  $ TZ=US/Hawaii hg convert --config convert.cvsps.fuzz=2 --config convert.localtimezone=True src src-hg
+  $ TZ=Pacific/Johnston hg convert --config convert.cvsps.fuzz=2 --config convert.localtimezone=True src src-hg
   connecting to $TESTTMP/cvsrepo
   scanning source...
   collecting CVS rlog

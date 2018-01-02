@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 import ctypes
+import ctypes.wintypes as wintypes
 import errno
 import msvcrt
 import os
@@ -33,6 +34,7 @@ _LPCSTR = _LPSTR = ctypes.c_char_p
 _HANDLE = ctypes.c_void_p
 _HWND = _HANDLE
 _PCCERT_CONTEXT = ctypes.c_void_p
+_MAX_PATH = wintypes.MAX_PATH
 
 _INVALID_HANDLE_VALUE = _HANDLE(-1).value
 
@@ -460,7 +462,7 @@ def getfstype(path):
                    _DRIVE_RAMDISK):
         return None
 
-    size = 256
+    size = _MAX_PATH + 1
     name = ctypes.create_string_buffer(size)
 
     if not _kernel32.GetVolumeInformationA(volume, None, 0, None, None, None,

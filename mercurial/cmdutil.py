@@ -2342,19 +2342,19 @@ def _makenofollowlogfilematcher(repo, pats, opts):
 _opt2logrevset = {
     'no_merges':        ('not merge()', None),
     'only_merges':      ('merge()', None),
-    '_ancestors':       ('ancestors(%(val)s)', None),
-    '_fancestors':      ('_firstancestors(%(val)s)', None),
-    '_descendants':     ('descendants(%(val)s)', None),
-    '_fdescendants':    ('_firstdescendants(%(val)s)', None),
-    '_matchfiles':      ('_matchfiles(%(val)s)', None),
-    'date':             ('date(%(val)r)', None),
-    'branch':           ('branch(%(val)r)', '%lr'),
-    '_patslog':         ('filelog(%(val)r)', '%lr'),
-    '_patsfollow':      ('follow(%(val)r)', '%lr'),
-    '_patsfollowfirst': ('_followfirst(%(val)r)', '%lr'),
-    'keyword':          ('keyword(%(val)r)', '%lr'),
-    'prune':            ('ancestors(%(val)r)', 'not %lr'),
-    'user':             ('user(%(val)r)', '%lr'),
+    '_ancestors':       ('ancestors(%r)', None),
+    '_fancestors':      ('_firstancestors(%r)', None),
+    '_descendants':     ('descendants(%r)', None),
+    '_fdescendants':    ('_firstdescendants(%r)', None),
+    '_matchfiles':      (None, '_matchfiles(%ps)'),
+    'date':             ('date(%s)', None),
+    'branch':           ('branch(%s)', '%lr'),
+    '_patslog':         ('filelog(%s)', '%lr'),
+    '_patsfollow':      ('follow(%s)', '%lr'),
+    '_patsfollowfirst': ('_followfirst(%s)', '%lr'),
+    'keyword':          ('keyword(%s)', '%lr'),
+    'prune':            ('ancestors(%s)', 'not %lr'),
+    'user':             ('user(%s)', '%lr'),
 }
 
 def _makelogrevset(repo, pats, opts, revs):
@@ -2437,7 +2437,6 @@ def _makelogrevset(repo, pats, opts, revs):
             matchargs.append('i:' + p)
         for p in opts.get('exclude', []):
             matchargs.append('x:' + p)
-        matchargs = ','.join(('%r' % p) for p in matchargs)
         opts['_matchfiles'] = matchargs
         if follow:
             opts[fnopats[0][followfirst]] = '.'
@@ -2475,15 +2474,14 @@ def _makelogrevset(repo, pats, opts, revs):
         if op not in _opt2logrevset:
             continue
         revop, listop = _opt2logrevset[op]
-        if '%(val)' not in revop:
+        if revop and '%' not in revop:
             expr.append(revop)
+        elif not listop:
+            expr.append(revsetlang.formatspec(revop, val))
         else:
-            if not listop:
-                e = revop % {'val': val}
-            else:
-                e = [revop % {'val': v} for v in val]
-                e = revsetlang.formatspec(listop, e)
-            expr.append(e)
+            if revop:
+                val = [revsetlang.formatspec(revop, v) for v in val]
+            expr.append(revsetlang.formatspec(listop, val))
 
     if expr:
         expr = '(' + ' and '.join(expr) + ')'

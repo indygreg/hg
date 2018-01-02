@@ -593,6 +593,14 @@ def _formatlistexp(s, t):
     m = l // 2
     return '(%s or %s)' % (_formatlistexp(s[:m], t), _formatlistexp(s[m:], t))
 
+def _formatparamexp(args, t):
+    return ', '.join(_formatargtype(t, a) for a in args)
+
+_formatlistfuncs = {
+    'l': _formatlistexp,
+    'p': _formatparamexp,
+}
+
 def formatspec(expr, *args):
     '''
     This is a convenience function for using revsets internally, and
@@ -608,7 +616,8 @@ def formatspec(expr, *args):
     %n = hex(arg), single-quoted
     %% = a literal '%'
 
-    Prefixing the type with 'l' specifies a parenthesized list of that type.
+    Prefixing the type with 'l' specifies a parenthesized list of that type,
+    and 'p' specifies a list of function parameters of that type.
 
     >>> formatspec(b'%r:: and %lr', b'10 or 11', (b"this()", b"that()"))
     '(10 or 11):: and ((this()) or (that()))'
@@ -624,6 +633,8 @@ def formatspec(expr, *args):
     "branch('default')"
     >>> formatspec(b'root(%ls)', [b'a', b'b', b'c', b'd'])
     "root(_list('a\\\\x00b\\\\x00c\\\\x00d'))"
+    >>> formatspec(b'sort(%r, %ps)', b':', [b'desc', b'user'])
+    "sort((:), 'desc', 'user')"
     >>> formatspec('%ls', ['a', "'"])
     "_list('a\\\\x00\\\\'')"
     '''
@@ -651,7 +662,8 @@ def formatspec(expr, *args):
             arg = next(argiter)
         except StopIteration:
             raise error.ParseError(_('missing argument for revspec'))
-        if d == 'l':
+        f = _formatlistfuncs.get(d)
+        if f:
             # a list of some type
             pos += 1
             try:
@@ -659,7 +671,7 @@ def formatspec(expr, *args):
             except IndexError:
                 raise error.ParseError(_('incomplete revspec format character'))
             try:
-                ret.append(_formatlistexp(list(arg), d))
+                ret.append(f(list(arg), d))
             except (TypeError, ValueError):
                 raise error.ParseError(_('invalid argument for revspec'))
         else:

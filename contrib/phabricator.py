@@ -865,3 +865,17 @@ def phabupdate(ui, repo, spec, **opts):
             params = {'objectIdentifier': drev[r'phid'],
                       'transactions': actions}
             callconduit(repo, 'differential.revision.edit', params)
+
+templatekeyword = registrar.templatekeyword()
+
+@templatekeyword('phabreview')
+def template_review(repo, ctx, revcache, **args):
+    """:phabreview: Object describing the review for this changeset.
+    Has attributes `url` and `id`.
+    """
+    m = _differentialrevisiondescre.search(ctx.description())
+    if m:
+        return {
+            'url': m.group('url'),
+            'id': "D{}".format(m.group('id')),
+        }

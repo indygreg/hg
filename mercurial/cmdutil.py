@@ -2352,7 +2352,7 @@ _opt2logrevset = {
     '_patsfollow':      ('follow(%(val)r)', ' or '),
     '_patsfollowfirst': ('_followfirst(%(val)r)', ' or '),
     'keyword':          ('keyword(%(val)r)', ' or '),
-    'prune':            ('not (%(val)r or ancestors(%(val)r))', ' and '),
+    'prune':            ('not ancestors(%(val)r)', ' and '),
     'user':             ('user(%(val)r)', ' or '),
 }
 

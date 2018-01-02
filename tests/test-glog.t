@@ -1573,34 +1573,24 @@ glog always reorders nodes which explains the difference with log
   []
   (and
     (not
-      (or
-        (list
-          (string '31')
-          (func
-            (symbol 'ancestors')
-            (string '31')))))
+      (func
+        (symbol 'ancestors')
+        (string '31')))
     (not
-      (or
-        (list
-          (string '32')
-          (func
-            (symbol 'ancestors')
-            (string '32'))))))
+      (func
+        (symbol 'ancestors')
+        (string '32'))))
   <filteredset
     <filteredset
       <spanset- 0:37>,
       <not
-        <addset
-          <baseset [31]>,
-          <filteredset
-            <spanset- 0:37>,
-            <generatorsetdesc+>>>>>,
-    <not
-      <addset
-        <baseset [32]>,
         <filteredset
           <spanset- 0:37>,
-          <generatorsetdesc+>>>>>
+          <generatorsetdesc+>>>>,
+    <not
+      <filteredset
+        <spanset- 0:37>,
+        <generatorsetdesc+>>>>
 
 Dedicated repo for --follow and paths filtering. The g is crafted to
 have 2 filelog topological heads in a linear changeset graph.

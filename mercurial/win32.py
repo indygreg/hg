@@ -439,7 +439,9 @@ def getvolumename(path):
     # realpath() calls GetFullPathName()
     realpath = os.path.realpath(path)
 
-    size = len(realpath) + 1
+    # allocate at least MAX_PATH long since GetVolumePathName('c:\\', buf, 4)
+    # somehow fails on Windows XP
+    size = max(len(realpath), _MAX_PATH) + 1
     buf = ctypes.create_string_buffer(size)
 
     if not _kernel32.GetVolumePathNameA(realpath, ctypes.byref(buf), size):

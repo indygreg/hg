@@ -41,6 +41,7 @@ from . import (
     registrar,
     revlog,
     revset,
+    revsetlang,
     scmutil,
     smartset,
     templatekw,
@@ -2347,13 +2348,13 @@ _opt2logrevset = {
     '_fdescendants':    ('_firstdescendants(%(val)s)', None),
     '_matchfiles':      ('_matchfiles(%(val)s)', None),
     'date':             ('date(%(val)r)', None),
-    'branch':           ('branch(%(val)r)', ' or '),
-    '_patslog':         ('filelog(%(val)r)', ' or '),
-    '_patsfollow':      ('follow(%(val)r)', ' or '),
-    '_patsfollowfirst': ('_followfirst(%(val)r)', ' or '),
-    'keyword':          ('keyword(%(val)r)', ' or '),
-    'prune':            ('not ancestors(%(val)r)', ' and '),
-    'user':             ('user(%(val)r)', ' or '),
+    'branch':           ('branch(%(val)r)', '%lr'),
+    '_patslog':         ('filelog(%(val)r)', '%lr'),
+    '_patsfollow':      ('follow(%(val)r)', '%lr'),
+    '_patsfollowfirst': ('_followfirst(%(val)r)', '%lr'),
+    'keyword':          ('keyword(%(val)r)', '%lr'),
+    'prune':            ('ancestors(%(val)r)', 'not %lr'),
+    'user':             ('user(%(val)r)', '%lr'),
 }
 
 def _makelogrevset(repo, pats, opts, revs):
@@ -2473,14 +2474,15 @@ def _makelogrevset(repo, pats, opts, revs):
             continue
         if op not in _opt2logrevset:
             continue
-        revop, andor = _opt2logrevset[op]
+        revop, listop = _opt2logrevset[op]
         if '%(val)' not in revop:
             expr.append(revop)
         else:
-            if not isinstance(val, list):
+            if not listop:
                 e = revop % {'val': val}
             else:
-                e = '(' + andor.join((revop % {'val': v}) for v in val) + ')'
+                e = [revop % {'val': v} for v in val]
+                e = revsetlang.formatspec(listop, e)
             expr.append(e)
 
     if expr:

@@ -2338,6 +2338,24 @@ def _makenofollowlogfilematcher(repo, pats, opts):
     '''hook for extensions to override the filematcher for non-follow cases'''
     return None
 
+_opt2logrevset = {
+    'no_merges':        ('not merge()', None),
+    'only_merges':      ('merge()', None),
+    '_ancestors':       ('ancestors(%(val)s)', None),
+    '_fancestors':      ('_firstancestors(%(val)s)', None),
+    '_descendants':     ('descendants(%(val)s)', None),
+    '_fdescendants':    ('_firstdescendants(%(val)s)', None),
+    '_matchfiles':      ('_matchfiles(%(val)s)', None),
+    'date':             ('date(%(val)r)', None),
+    'branch':           ('branch(%(val)r)', ' or '),
+    '_patslog':         ('filelog(%(val)r)', ' or '),
+    '_patsfollow':      ('follow(%(val)r)', ' or '),
+    '_patsfollowfirst': ('_followfirst(%(val)r)', ' or '),
+    'keyword':          ('keyword(%(val)r)', ' or '),
+    'prune':            ('not (%(val)r or ancestors(%(val)r))', ' and '),
+    'user':             ('user(%(val)r)', ' or '),
+}
+
 def _makelogrevset(repo, pats, opts, revs):
     """Return (expr, filematcher) where expr is a revset string built
     from log options and file patterns or None. If --stat or --patch
@@ -2345,24 +2363,6 @@ def _makelogrevset(repo, pats, opts, revs):
     taking a revision number and returning a match objects filtering
     the files to be detailed when displaying the revision.
     """
-    opt2revset = {
-        'no_merges':        ('not merge()', None),
-        'only_merges':      ('merge()', None),
-        '_ancestors':       ('ancestors(%(val)s)', None),
-        '_fancestors':      ('_firstancestors(%(val)s)', None),
-        '_descendants':     ('descendants(%(val)s)', None),
-        '_fdescendants':    ('_firstdescendants(%(val)s)', None),
-        '_matchfiles':      ('_matchfiles(%(val)s)', None),
-        'date':             ('date(%(val)r)', None),
-        'branch':           ('branch(%(val)r)', ' or '),
-        '_patslog':         ('filelog(%(val)r)', ' or '),
-        '_patsfollow':      ('follow(%(val)r)', ' or '),
-        '_patsfollowfirst': ('_followfirst(%(val)r)', ' or '),
-        'keyword':          ('keyword(%(val)r)', ' or '),
-        'prune':            ('not (%(val)r or ancestors(%(val)r))', ' and '),
-        'user':             ('user(%(val)r)', ' or '),
-        }
-
     opts = dict(opts)
     # follow or not follow?
     follow = opts.get('follow') or opts.get('follow_first')
@@ -2471,9 +2471,9 @@ def _makelogrevset(repo, pats, opts, revs):
     for op, val in sorted(opts.iteritems()):
         if not val:
             continue
-        if op not in opt2revset:
+        if op not in _opt2logrevset:
             continue
-        revop, andor = opt2revset[op]
+        revop, andor = _opt2logrevset[op]
         if '%(val)' not in revop:
             expr.append(revop)
         else:

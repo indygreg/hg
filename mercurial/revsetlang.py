@@ -555,6 +555,44 @@ def _quote(s):
     """
     return "'%s'" % util.escapestr(pycompat.bytestr(s))
 
+def _formatargtype(c, arg):
+    if c == 'd':
+        return '%d' % int(arg)
+    elif c == 's':
+        return _quote(arg)
+    elif c == 'r':
+        parse(arg) # make sure syntax errors are confined
+        return '(%s)' % arg
+    elif c == 'n':
+        return _quote(node.hex(arg))
+    elif c == 'b':
+        try:
+            return _quote(arg.branch())
+        except AttributeError:
+            raise TypeError
+    raise error.ParseError(_('unexpected revspec format character %s') % c)
+
+def _formatlistexp(s, t):
+    l = len(s)
+    if l == 0:
+        return "_list('')"
+    elif l == 1:
+        return _formatargtype(t, s[0])
+    elif t == 'd':
+        return "_intlist('%s')" % "\0".join('%d' % int(a) for a in s)
+    elif t == 's':
+        return "_list(%s)" % _quote("\0".join(s))
+    elif t == 'n':
+        return "_hexlist('%s')" % "\0".join(node.hex(a) for a in s)
+    elif t == 'b':
+        try:
+            return "_list('%s')" % "\0".join(a.branch() for a in s)
+        except AttributeError:
+            raise TypeError
+
+    m = l // 2
+    return '(%s or %s)' % (_formatlistexp(s[:m], t), _formatlistexp(s[m:], t))
+
 def formatspec(expr, *args):
     '''
     This is a convenience function for using revsets internally, and
@@ -589,45 +627,6 @@ def formatspec(expr, *args):
     >>> formatspec('%ls', ['a', "'"])
     "_list('a\\\\x00\\\\'')"
     '''
-
-    def argtype(c, arg):
-        if c == 'd':
-            return '%d' % int(arg)
-        elif c == 's':
-            return _quote(arg)
-        elif c == 'r':
-            parse(arg) # make sure syntax errors are confined
-            return '(%s)' % arg
-        elif c == 'n':
-            return _quote(node.hex(arg))
-        elif c == 'b':
-            try:
-                return _quote(arg.branch())
-            except AttributeError:
-                raise TypeError
-        raise error.ParseError(_('unexpected revspec format character %s') % c)
-
-    def listexp(s, t):
-        l = len(s)
-        if l == 0:
-            return "_list('')"
-        elif l == 1:
-            return argtype(t, s[0])
-        elif t == 'd':
-            return "_intlist('%s')" % "\0".join('%d' % int(a) for a in s)
-        elif t == 's':
-            return "_list(%s)" % _quote("\0".join(s))
-        elif t == 'n':
-            return "_hexlist('%s')" % "\0".join(node.hex(a) for a in s)
-        elif t == 'b':
-            try:
-                return "_list('%s')" % "\0".join(a.branch() for a in s)
-            except AttributeError:
-                raise TypeError
-
-        m = l // 2
-        return '(%s or %s)' % (listexp(s[:m], t), listexp(s[m:], t))
-
     expr = pycompat.bytestr(expr)
     argiter = iter(args)
     ret = []
@@ -660,12 +659,12 @@ def formatspec(expr, *args):
             except IndexError:
                 raise error.ParseError(_('incomplete revspec format character'))
             try:
-                ret.append(listexp(list(arg), d))
+                ret.append(_formatlistexp(list(arg), d))
             except (TypeError, ValueError):
                 raise error.ParseError(_('invalid argument for revspec'))
         else:
             try:
-                ret.append(argtype(d, arg))
+                ret.append(_formatargtype(d, arg))
             except (TypeError, ValueError):
                 raise error.ParseError(_('invalid argument for revspec'))
         pos += 1

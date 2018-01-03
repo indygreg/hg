@@ -2322,6 +2322,55 @@ def walkchangerevs(repo, match, opts, prepare):
 
     return iterate()
 
+def _makelogmatcher(repo, pats, opts):
+    """Build matcher and expanded patterns from log options
+
+    Returns (match, pats, slowpath) where
+    - match: a matcher built from the given pats and -I/-X opts
+    - pats: patterns used (globs are expanded on Windows)
+    - slowpath: True if patterns aren't as simple as scanning filelogs
+    """
+    # pats/include/exclude are passed to match.match() directly in
+    # _matchfiles() revset but walkchangerevs() builds its matcher with
+    # scmutil.match(). The difference is input pats are globbed on
+    # platforms without shell expansion (windows).
+    wctx = repo[None]
+    match, pats = scmutil.matchandpats(wctx, pats, opts)
+    slowpath = match.anypats() or (not match.always() and opts.get('removed'))
+    if not slowpath:
+        follow = opts.get('follow') or opts.get('follow_first')
+        for f in match.files():
+            if follow and f not in wctx:
+                # If the file exists, it may be a directory, so let it
+                # take the slow path.
+                if os.path.exists(repo.wjoin(f)):
+                    slowpath = True
+                    continue
+                else:
+                    raise error.Abort(_('cannot follow file not in parent '
+                                        'revision: "%s"') % f)
+            filelog = repo.file(f)
+            if not filelog:
+                # A zero count may be a directory or deleted file, so
+                # try to find matching entries on the slow path.
+                if follow:
+                    raise error.Abort(
+                        _('cannot follow nonexistent file: "%s"') % f)
+                slowpath = True
+
+        # We decided to fall back to the slowpath because at least one
+        # of the paths was not a file. Check to see if at least one of them
+        # existed in history - in that case, we'll continue down the
+        # slowpath; otherwise, we can turn off the slowpath
+        if slowpath:
+            for path in match.files():
+                if path == '.' or path in repo.store:
+                    break
+            else:
+                slowpath = False
+
+    return match, pats, slowpath
+
 def _makefollowlogfilematcher(repo, files, followfirst):
     # When displaying a revision with --patch --follow FILE, we have
     # to know which file of the revision must be diffed. With
@@ -2370,7 +2419,7 @@ _opt2logrevset = {
     'user':             ('user(%s)', '%lr'),
 }
 
-def _makelogrevset(repo, pats, opts):
+def _makelogrevset(repo, match, pats, slowpath, opts):
     """Return (expr, filematcher) where expr is a revset string built
     from log options and file patterns or None. If --stat or --patch
     are not passed filematcher is None. Otherwise it is a callable
@@ -2389,43 +2438,6 @@ def _makelogrevset(repo, pats, opts):
     # the same time
     opts['branch'] = opts.get('branch', []) + opts.get('only_branch', [])
     opts['branch'] = [repo.lookupbranch(b) for b in opts['branch']]
-    # pats/include/exclude are passed to match.match() directly in
-    # _matchfiles() revset but walkchangerevs() builds its matcher with
-    # scmutil.match(). The difference is input pats are globbed on
-    # platforms without shell expansion (windows).
-    wctx = repo[None]
-    match, pats = scmutil.matchandpats(wctx, pats, opts)
-    slowpath = match.anypats() or (not match.always() and opts.get('removed'))
-    if not slowpath:
-        for f in match.files():
-            if follow and f not in wctx:
-                # If the file exists, it may be a directory, so let it
-                # take the slow path.
-                if os.path.exists(repo.wjoin(f)):
-                    slowpath = True
-                    continue
-                else:
-                    raise error.Abort(_('cannot follow file not in parent '
-                                       'revision: "%s"') % f)
-            filelog = repo.file(f)
-            if not filelog:
-                # A zero count may be a directory or deleted file, so
-                # try to find matching entries on the slow path.
-                if follow:
-                    raise error.Abort(
-                        _('cannot follow nonexistent file: "%s"') % f)
-                slowpath = True
-
-        # We decided to fall back to the slowpath because at least one
-        # of the paths was not a file. Check to see if at least one of them
-        # existed in history - in that case, we'll continue down the
-        # slowpath; otherwise, we can turn off the slowpath
-        if slowpath:
-            for path in match.files():
-                if path == '.' or path in repo.store:
-                    break
-            else:
-                slowpath = False
 
     fpats = ('_patsfollow', '_patsfollowfirst')
     fnopats = ('_ancestors', '_fancestors')
@@ -2528,10 +2540,11 @@ def getlogrevs(repo, pats, opts):
     revs = _logrevs(repo, opts)
     if not revs:
         return smartset.baseset(), None
+    match, pats, slowpath = _makelogmatcher(repo, pats, opts)
     if opts.get('rev') and follow:
         revs = dagop.revancestors(repo, revs, followfirst=followfirst)
         revs.reverse()
-    expr, filematcher = _makelogrevset(repo, pats, opts)
+    expr, filematcher = _makelogrevset(repo, match, pats, slowpath, opts)
     if opts.get('graph') and opts.get('rev'):
         # User-specified revs might be unsorted, but don't sort before
         # _makelogrevset because it might depend on the order of revs

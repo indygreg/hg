@@ -38,7 +38,11 @@
   $ echo THIS-IS-LFS > a
   $ hg commit -m a -A a
 
+A push can be serviced directly from the usercache if it isn't in the local
+store.
+
   $ hg init ../repo2
+  $ mv .hg/store/lfs .hg/store/lfs_
   $ hg push ../repo2 -v
   pushing to ../repo2
   searching for changes
@@ -54,6 +58,7 @@
   adding file changes
   added 1 changesets with 1 changes to 1 files
   calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
+  $ mv .hg/store/lfs_ .hg/store/lfs
 
 Clear the cache to force a download
   $ rm -rf `hg config lfs.usercache`

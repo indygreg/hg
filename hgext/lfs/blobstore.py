@@ -262,9 +262,9 @@ class _gitlfsremote(object):
         request = util.urlreq.request(href)
         if action == 'upload':
             # If uploading blobs, read data from local blobstore.
-            with localstore.vfs(oid) as fp:
+            with localstore.open(oid) as fp:
                 _verifyfile(oid, fp)
-            request.data = filewithprogress(localstore.vfs(oid), None)
+            request.data = filewithprogress(localstore.open(oid), None)
             request.get_method = lambda: 'PUT'
 
         for k, v in headers:

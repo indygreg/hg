@@ -100,6 +100,14 @@ class local(object):
         self.cachevfs = lfsvfs(usercache)
         self.ui = repo.ui
 
+    def open(self, oid):
+        """Open a read-only file descriptor to the named blob, in either the
+        usercache or the local store."""
+        if self.cachevfs.exists(oid):
+            return self.cachevfs(oid, 'rb')
+
+        return self.vfs(oid, 'rb')
+
     def write(self, oid, data, verify=True):
         """Write blob to local blobstore."""
         if verify:

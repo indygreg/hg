@@ -2322,8 +2322,10 @@ def walkchangerevs(repo, match, opts, prepare):
 
     return iterate()
 
-def _makelogmatcher(repo, pats, opts):
+def _makelogmatcher(repo, revs, pats, opts):
     """Build matcher and expanded patterns from log options
+
+    If --follow, revs are the revisions to follow from.
 
     Returns (match, pats, slowpath) where
     - match: a matcher built from the given pats and -I/-X opts
@@ -2339,8 +2341,17 @@ def _makelogmatcher(repo, pats, opts):
     slowpath = match.anypats() or (not match.always() and opts.get('removed'))
     if not slowpath:
         follow = opts.get('follow') or opts.get('follow_first')
+        startctxs = []
+        if follow and opts.get('rev'):
+            startctxs = [repo[r] for r in revs]
         for f in match.files():
-            if follow and f not in wctx:
+            if follow and startctxs:
+                # No idea if the path was a directory at that revision, so
+                # take the slow path.
+                if any(f not in c for c in startctxs):
+                    slowpath = True
+                    continue
+            elif follow and f not in wctx:
                 # If the file exists, it may be a directory, so let it
                 # take the slow path.
                 if os.path.exists(repo.wjoin(f)):
@@ -2518,17 +2529,13 @@ def getlogrevs(repo, pats, opts):
     """
     follow = opts.get('follow') or opts.get('follow_first')
     followfirst = opts.get('follow_first')
-    if opts.get('rev'):
-        # TODO: do not mutate opts here
-        opts.pop('follow', None)
-        opts.pop('follow_first', None)
     limit = loglimit(opts)
     revs = _logrevs(repo, opts)
     if not revs:
         return smartset.baseset(), None
-    match, pats, slowpath = _makelogmatcher(repo, pats, opts)
+    match, pats, slowpath = _makelogmatcher(repo, revs, pats, opts)
     if follow:
-        if opts.get('rev') or slowpath or not pats:
+        if slowpath or not pats:
             revs = dagop.revancestors(repo, revs, followfirst=followfirst)
         else:
             revs = _fileancestors(repo, revs, match, followfirst)

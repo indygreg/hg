@@ -465,6 +465,104 @@ log -vf dir/b
   2
   0
 
+follow files from the specified revisions (issue4959)
+
+  $ hg log -G -T '{rev} {files},{file_copies % " {source}->{name}"}\n'
+  @  4 dir/b e, dir/b->e
+  |
+  o  3 a b d g, a->b f->g
+  |
+  o  2 b dir/b f g, b->dir/b
+  |
+  o  1 b g, a->b f->g
+  |
+  o  0 a f,
+  
+
+  $ hg log -T '{rev}\n' -fr 4 e
+  4
+  2
+  1
+  0
+  $ hg log -T '{rev}\n' -fr 2 g
+  2
+  1
+  0
+  $ hg log -T '{rev}\n' -fr '2+3' g
+  3
+  2
+  1
+  0
+
+follow files from the specified revisions with glob patterns (issue5053)
+(BROKEN: should follow copies from e@4)
+
+  $ hg log -T '{rev}\n' -fr4 e -X '[abcdfg]'
+  4
+  2 (false !)
+  1 (false !)
+  0 (false !)
+
+follow files from the specified revisions with missing patterns
+(BROKEN: should follow copies from e@4)
+
+  $ hg log -T '{rev}\n' -fr4 e x
+  4
+  2 (false !)
+  1 (false !)
+  0 (false !)
+
+follow files from the specified revisions across copies with -p/--patch
+
+  $ hg log -T '== rev: {rev},{file_copies % " {source}->{name}"} ==\n' -fpr 4 e g
+  == rev: 4, dir/b->e ==
+  diff -r 2ca5ba701980 -r 7e4639b4691b e
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/e	Thu Jan 01 00:00:05 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  
+  == rev: 3, a->b f->g ==
+  diff -r f8954cd4dc1f -r 2ca5ba701980 g
+  --- a/g	Thu Jan 01 00:00:03 1970 +0000
+  +++ b/g	Thu Jan 01 00:00:04 1970 +0000
+  @@ -1,2 +1,2 @@
+   f
+  -g
+  +f
+  
+  == rev: 2, b->dir/b ==
+  diff -r d89b0a12d229 -r f8954cd4dc1f dir/b
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/dir/b	Thu Jan 01 00:00:03 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  diff -r d89b0a12d229 -r f8954cd4dc1f f
+  --- a/f	Thu Jan 01 00:00:02 1970 +0000
+  +++ b/f	Thu Jan 01 00:00:03 1970 +0000
+  @@ -1,1 +1,2 @@
+   f
+  +f
+  
+  == rev: 1, a->b f->g ==
+  diff -r 9161b9aeaf16 -r d89b0a12d229 b
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:02 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  
+  == rev: 0, ==
+  diff -r 000000000000 -r 9161b9aeaf16 a
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:01 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  diff -r 000000000000 -r 9161b9aeaf16 f
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/f	Thu Jan 01 00:00:01 1970 +0000
+  @@ -0,0 +1,1 @@
+  +f
+  
 
 log copies with --copies
 
@@ -1724,11 +1822,6 @@ Also check when maxrev < lastrevfilelog
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     add foo, related
-  
-  changeset:   2:c4c64aedf0f7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     add unrelated old foo
   
   $ cd ..
 

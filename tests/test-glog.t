@@ -1724,20 +1724,14 @@ Test --follow on a directory
   $ hg up -q '.^'
   $ testlog -f dir
   []
-  (and
-    (func
-      (symbol 'ancestors')
-      (symbol '.'))
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'p:dir'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:dir')))
   <filteredset
-    <filteredset
-      <spanset- 0:4>,
-      <generatorsetdesc+>>,
+    <generatorsetdesc->,
     <matchfiles patterns=['dir'], include=[] exclude=[], default='relpath', rev=None>>
   $ hg up -q tip
 
@@ -1752,20 +1746,14 @@ Test --follow and patterns
 
   $ testlog -f 'glob:*'
   []
-  (and
-    (func
-      (symbol 'ancestors')
-      (symbol '.'))
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'p:glob:*'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:glob:*')))
   <filteredset
-    <filteredset
-      <spanset- 0:5>,
-      <generatorsetdesc+>>,
+    <generatorsetdesc->,
     <matchfiles patterns=['glob:*'], include=[] exclude=[], default='relpath', rev=None>>
 
 Test --follow on a single rename
@@ -1773,36 +1761,24 @@ Test --follow on a single rename
   $ hg up -q 2
   $ testlog -f a
   []
-  (func
-    (symbol 'follow')
-    (string 'a'))
-  <filteredset
-    <spanset- 0:3>,
-    <generatorsetdesc+>>
+  []
+  <generatorsetdesc->
 
 Test --follow and multiple renames
 
   $ hg up -q tip
   $ testlog -f e
   []
-  (func
-    (symbol 'follow')
-    (string 'e'))
-  <filteredset
-    <spanset- 0:5>,
-    <generatorsetdesc+>>
+  []
+  <generatorsetdesc->
 
 Test --follow and multiple filelog heads
 
   $ hg up -q 2
   $ testlog -f g
   []
-  (func
-    (symbol 'follow')
-    (string 'g'))
-  <filteredset
-    <spanset- 0:3>,
-    <generatorsetdesc+>>
+  []
+  <generatorsetdesc->
   $ cat log.nodes
   nodetag 2
   nodetag 1
@@ -1810,12 +1786,8 @@ Test --follow and multiple filelog heads
   $ hg up -q tip
   $ testlog -f g
   []
-  (func
-    (symbol 'follow')
-    (string 'g'))
-  <filteredset
-    <spanset- 0:5>,
-    <generatorsetdesc+>>
+  []
+  <generatorsetdesc->
   $ cat log.nodes
   nodetag 3
   nodetag 2
@@ -1825,19 +1797,8 @@ Test --follow and multiple files
 
   $ testlog -f g e
   []
-  (or
-    (list
-      (func
-        (symbol 'follow')
-        (string 'g'))
-      (func
-        (symbol 'follow')
-        (string 'e'))))
-  <filteredset
-    <spanset- 0:5>,
-    <addset
-      <generatorsetdesc+>,
-      <generatorsetdesc+>>>
+  []
+  <generatorsetdesc->
   $ cat log.nodes
   nodetag 4
   nodetag 3
@@ -1866,23 +1827,15 @@ Test --follow-first
   $ hg ci -m "merge 5 and 4"
   $ testlog --follow-first
   []
-  (func
-    (symbol '_firstancestors')
-    (symbol '.'))
-  <filteredset
-    <spanset- 0:7>,
-    <generatorsetdesc+>>
+  []
+  <generatorsetdesc->
 
 Cannot compare with log --follow-first FILE as it never worked
 
   $ hg log -G --print-revset --follow-first e
   []
-  (func
-    (symbol '_followfirst')
-    (string 'e'))
-  <filteredset
-    <spanset- 0:7>,
-    <generatorsetdesc+>>
+  []
+  <generatorsetdesc->
   $ hg log -G --follow-first e --template '{rev} {desc|firstline}\n'
   @    6 merge 5 and 4
   |\
@@ -1958,20 +1911,14 @@ Test --removed
     <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=None>>
   $ testlog --removed --follow a
   []
-  (and
-    (func
-      (symbol 'ancestors')
-      (symbol '.'))
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'p:a'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:a')))
   <filteredset
-    <filteredset
-      <spanset- 0:5>,
-      <generatorsetdesc+>>,
+    <generatorsetdesc->,
     <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=None>>
 
 Test --patch and --stat with --follow and --follow-first
@@ -2353,12 +2300,8 @@ Test subdir
     <spanset- 0:9>, set([1])>
   $ testlog -f ../b
   []
-  (func
-    (symbol 'follow')
-    (string 'b'))
-  <filteredset
-    <spanset- 0:4>,
-    <generatorsetdesc+>>
+  []
+  <generatorsetdesc->
   $ cd ..
 
 Test --hidden

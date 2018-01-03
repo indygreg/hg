@@ -2371,6 +2371,13 @@ def _makelogmatcher(repo, pats, opts):
 
     return match, pats, slowpath
 
+def _fileancestors(repo, revs, match, followfirst):
+    fctxs = []
+    for r in revs:
+        ctx = repo[r]
+        fctxs.extend(ctx[f].introfilectx() for f in ctx.walk(match))
+    return dagop.filerevancestors(fctxs, followfirst=followfirst)
+
 def _makefollowlogfilematcher(repo, files, followfirst):
     # When displaying a revision with --patch --follow FILE, we have
     # to know which file of the revision must be diffed. With
@@ -2406,14 +2413,10 @@ def _makenofollowlogfilematcher(repo, pats, opts):
 _opt2logrevset = {
     'no_merges':        ('not merge()', None),
     'only_merges':      ('merge()', None),
-    '_ancestors':       ('ancestors(%r)', None),
-    '_fancestors':      ('_firstancestors(%r)', None),
     '_matchfiles':      (None, '_matchfiles(%ps)'),
     'date':             ('date(%s)', None),
     'branch':           ('branch(%s)', '%lr'),
     '_patslog':         ('filelog(%s)', '%lr'),
-    '_patsfollow':      ('follow(%s)', '%lr'),
-    '_patsfollowfirst': ('_followfirst(%s)', '%lr'),
     'keyword':          ('keyword(%s)', '%lr'),
     'prune':            ('ancestors(%s)', 'not %lr'),
     'user':             ('user(%s)', '%lr'),
@@ -2429,18 +2432,11 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
     opts = dict(opts)
     # follow or not follow?
     follow = opts.get('follow') or opts.get('follow_first')
-    if opts.get('follow_first'):
-        followfirst = 1
-    else:
-        followfirst = 0
 
     # branch and only_branch are really aliases and must be handled at
     # the same time
     opts['branch'] = opts.get('branch', []) + opts.get('only_branch', [])
     opts['branch'] = [repo.lookupbranch(b) for b in opts['branch']]
-
-    fpats = ('_patsfollow', '_patsfollowfirst')
-    fnopats = ('_ancestors', '_fancestors')
 
     if slowpath:
         # See walkchangerevs() slow path.
@@ -2459,19 +2455,8 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
         for p in opts.get('exclude', []):
             matchargs.append('x:' + p)
         opts['_matchfiles'] = matchargs
-        if follow:
-            opts[fnopats[followfirst]] = '.'
-    else:
-        if follow:
-            if pats:
-                # follow() revset interprets its file argument as a
-                # manifest entry, so use match.files(), not pats.
-                opts[fpats[followfirst]] = list(match.files())
-            else:
-                op = fnopats[followfirst]
-                opts[op] = '.'
-        else:
-            opts['_patslog'] = list(pats)
+    elif not follow:
+        opts['_patslog'] = list(pats)
 
     filematcher = None
     if opts.get('patch') or opts.get('stat'):
@@ -2482,7 +2467,7 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
             # _makefollowlogfilematcher expects its files argument to be
             # relative to the repo root, so use match.files(), not pats.
             filematcher = _makefollowlogfilematcher(repo, match.files(),
-                                                    followfirst)
+                                                    opts.get('follow_first'))
         else:
             filematcher = _makenofollowlogfilematcher(repo, pats, opts)
             if filematcher is None:
@@ -2511,13 +2496,14 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
     return expr, filematcher
 
 def _logrevs(repo, opts):
+    """Return the initial set of revisions to be filtered or followed"""
     follow = opts.get('follow') or opts.get('follow_first')
     if opts.get('rev'):
         revs = scmutil.revrange(repo, opts['rev'])
     elif follow and repo.dirstate.p1() == nullid:
         revs = smartset.baseset()
     elif follow:
-        revs = repo.revs('reverse(:.)')
+        revs = repo.revs('.')
     else:
         revs = smartset.spanset(repo)
         revs.reverse()
@@ -2541,8 +2527,11 @@ def getlogrevs(repo, pats, opts):
     if not revs:
         return smartset.baseset(), None
     match, pats, slowpath = _makelogmatcher(repo, pats, opts)
-    if opts.get('rev') and follow:
-        revs = dagop.revancestors(repo, revs, followfirst=followfirst)
+    if follow:
+        if opts.get('rev') or slowpath or not pats:
+            revs = dagop.revancestors(repo, revs, followfirst=followfirst)
+        else:
+            revs = _fileancestors(repo, revs, match, followfirst)
         revs.reverse()
     expr, filematcher = _makelogrevset(repo, match, pats, slowpath, opts)
     if opts.get('graph') and opts.get('rev'):

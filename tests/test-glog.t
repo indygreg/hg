@@ -88,6 +88,7 @@ o  (0) root
   >   commands,
   >   extensions,
   >   revsetlang,
+  >   smartset,
   > )
   > 
   > def logrevset(repo, pats, opts):
@@ -99,6 +100,7 @@ o  (0) root
   > def uisetup(ui):
   >     def printrevset(orig, ui, repo, *pats, **opts):
   >         if opts.get('print_revset'):
+  >             revs = cmdutil.getlogrevs(repo, pats, opts)[0]
   >             expr = logrevset(repo, pats, opts)
   >             if expr:
   >                 tree = revsetlang.parse(expr)
@@ -107,6 +109,7 @@ o  (0) root
   >                 tree = []
   >             ui.write('%r\n' % (opts.get('rev', []),))
   >             ui.write(revsetlang.prettyformat(tree) + '\n')
+  >             ui.write(smartset.prettyformat(revs) + '\n')
   >             return 0
   >         return orig(ui, repo, *pats, **opts)
   >     entry = extensions.wrapcommand(commands.table, 'log', printrevset)
@@ -1452,6 +1455,7 @@ glog always reorders nodes which explains the difference with log
   $ testlog -r 27 -r 25 -r 21 -r 34 -r 32 -r 31
   ['27', '25', '21', '34', '32', '31']
   []
+  <baseset- [21, 25, 27, 31, 32, 34]>
   --- log.nodes	* (glob)
   +++ glog.nodes	* (glob)
   @@ -1,6 +1,6 @@
@@ -1474,6 +1478,15 @@ glog always reorders nodes which explains the difference with log
       (func
         (symbol 'user')
         (string 'not-a-user'))))
+  <filteredset
+    <spanset- 0:37>,
+    <addset
+      <filteredset
+        <fullreposet+ 0:37>,
+        <user 'test'>>,
+      <filteredset
+        <fullreposet+ 0:37>,
+        <user 'not-a-user'>>>>
   $ testlog -b not-a-branch
   abort: unknown revision 'not-a-branch'!
   abort: unknown revision 'not-a-branch'!
@@ -1491,6 +1504,19 @@ glog always reorders nodes which explains the difference with log
       (func
         (symbol 'branch')
         (string 'branch'))))
+  <filteredset
+    <spanset- 0:37>,
+    <addset
+      <filteredset
+        <fullreposet+ 0:37>,
+        <branch 'default'>>,
+      <addset
+        <filteredset
+          <fullreposet+ 0:37>,
+          <branch 'branch'>>,
+        <filteredset
+          <fullreposet+ 0:37>,
+          <branch 'branch'>>>>>
   $ testlog -k expand -k merge
   []
   (or
@@ -1501,22 +1527,43 @@ glog always reorders nodes which explains the difference with log
       (func
         (symbol 'keyword')
         (string 'merge'))))
+  <filteredset
+    <spanset- 0:37>,
+    <addset
+      <filteredset
+        <fullreposet+ 0:37>,
+        <keyword 'expand'>>,
+      <filteredset
+        <fullreposet+ 0:37>,
+        <keyword 'merge'>>>>
   $ testlog --only-merges
   []
   (func
     (symbol 'merge')
     None)
+  <filteredset
+    <spanset- 0:37>,
+    <merge>>
   $ testlog --no-merges
   []
   (not
     (func
       (symbol 'merge')
       None))
+  <filteredset
+    <spanset- 0:37>,
+    <not
+      <filteredset
+        <spanset- 0:37>,
+        <merge>>>>
   $ testlog --date '2 0 to 4 0'
   []
   (func
     (symbol 'date')
     (string '2 0 to 4 0'))
+  <filteredset
+    <spanset- 0:37>,
+    <date '2 0 to 4 0'>>
   $ hg log -G -d 'brace ) in a date'
   hg: parse error: invalid date: 'brace ) in a date'
   [255]
@@ -1537,6 +1584,21 @@ glog always reorders nodes which explains the difference with log
           (func
             (symbol 'ancestors')
             (string '32'))))))
+  <filteredset
+    <filteredset
+      <spanset- 0:37>,
+      <not
+        <addset
+          <baseset [31]>,
+          <filteredset
+            <spanset- 0:37>,
+            <generatorsetdesc+>>>>>,
+    <not
+      <addset
+        <baseset [32]>,
+        <filteredset
+          <spanset- 0:37>,
+          <generatorsetdesc+>>>>>
 
 Dedicated repo for --follow and paths filtering. The g is crafted to
 have 2 filelog topological heads in a linear changeset graph.
@@ -1547,9 +1609,11 @@ have 2 filelog topological heads in a linear changeset graph.
   $ testlog --follow
   []
   []
+  <baseset []>
   $ testlog -rnull
   ['null']
   []
+  <baseset [-1]>
   $ echo a > a
   $ echo aa > aa
   $ echo f > f
@@ -1586,6 +1650,8 @@ have 2 filelog topological heads in a linear changeset graph.
   (func
     (symbol 'filelog')
     (string 'a'))
+  <filteredset
+    <spanset- 0:5>, set([0])>
   $ testlog a b
   []
   (or
@@ -1596,6 +1662,11 @@ have 2 filelog topological heads in a linear changeset graph.
       (func
         (symbol 'filelog')
         (string 'b'))))
+  <filteredset
+    <spanset- 0:5>,
+    <addset
+      <baseset+ [0]>,
+      <baseset+ [1]>>>
 
 Test falling back to slow path for non-existing files
 
@@ -1608,6 +1679,9 @@ Test falling back to slow path for non-existing files
       (string 'd:relpath')
       (string 'p:a')
       (string 'p:c')))
+  <filteredset
+    <spanset- 0:5>,
+    <matchfiles patterns=['a', 'c'], include=[] exclude=[], default='relpath', rev=None>>
 
 Test multiple --include/--exclude/paths
 
@@ -1624,6 +1698,9 @@ Test multiple --include/--exclude/paths
       (string 'i:e')
       (string 'x:b')
       (string 'x:e')))
+  <filteredset
+    <spanset- 0:5>,
+    <matchfiles patterns=['a', 'e'], include=['a', 'e'] exclude=['b', 'e'], default='relpath', rev=None>>
 
 Test glob expansion of pats
 
@@ -1638,6 +1715,8 @@ Test glob expansion of pats
   (func
     (symbol 'filelog')
     (string 'aa'))
+  <filteredset
+    <spanset- 0:5>, set([0])>
 
 Test --follow on a non-existent directory
 
@@ -1661,6 +1740,11 @@ Test --follow on a directory
         (string 'r:')
         (string 'd:relpath')
         (string 'p:dir'))))
+  <filteredset
+    <filteredset
+      <spanset- 0:4>,
+      <generatorsetdesc+>>,
+    <matchfiles patterns=['dir'], include=[] exclude=[], default='relpath', rev=None>>
   $ hg up -q tip
 
 Test --follow on file not in parent revision
@@ -1684,6 +1768,11 @@ Test --follow and patterns
         (string 'r:')
         (string 'd:relpath')
         (string 'p:glob:*'))))
+  <filteredset
+    <filteredset
+      <spanset- 0:5>,
+      <generatorsetdesc+>>,
+    <matchfiles patterns=['glob:*'], include=[] exclude=[], default='relpath', rev=None>>
 
 Test --follow on a single rename
 
@@ -1693,6 +1782,9 @@ Test --follow on a single rename
   (func
     (symbol 'follow')
     (string 'a'))
+  <filteredset
+    <spanset- 0:3>,
+    <generatorsetdesc+>>
 
 Test --follow and multiple renames
 
@@ -1702,6 +1794,9 @@ Test --follow and multiple renames
   (func
     (symbol 'follow')
     (string 'e'))
+  <filteredset
+    <spanset- 0:5>,
+    <generatorsetdesc+>>
 
 Test --follow and multiple filelog heads
 
@@ -1711,6 +1806,9 @@ Test --follow and multiple filelog heads
   (func
     (symbol 'follow')
     (string 'g'))
+  <filteredset
+    <spanset- 0:3>,
+    <generatorsetdesc+>>
   $ cat log.nodes
   nodetag 2
   nodetag 1
@@ -1721,6 +1819,9 @@ Test --follow and multiple filelog heads
   (func
     (symbol 'follow')
     (string 'g'))
+  <filteredset
+    <spanset- 0:5>,
+    <generatorsetdesc+>>
   $ cat log.nodes
   nodetag 3
   nodetag 2
@@ -1738,6 +1839,11 @@ Test --follow and multiple files
       (func
         (symbol 'follow')
         (string 'e'))))
+  <filteredset
+    <spanset- 0:5>,
+    <addset
+      <generatorsetdesc+>,
+      <generatorsetdesc+>>>
   $ cat log.nodes
   nodetag 4
   nodetag 3
@@ -1751,6 +1857,7 @@ Test --follow null parent
   $ testlog -f
   []
   []
+  <baseset []>
 
 Test --follow-first
 
@@ -1770,6 +1877,9 @@ Test --follow-first
     (func
       (symbol 'rev')
       (symbol '6')))
+  <filteredset
+    <spanset- 0:7>,
+    <generatorsetdesc+>>
 
 Cannot compare with log --follow-first FILE as it never worked
 
@@ -1778,6 +1888,9 @@ Cannot compare with log --follow-first FILE as it never worked
   (func
     (symbol '_followfirst')
     (string 'e'))
+  <filteredset
+    <spanset- 0:7>,
+    <generatorsetdesc+>>
   $ hg log -G --follow-first e --template '{rev} {desc|firstline}\n'
   @    6 merge 5 and 4
   |\
@@ -1815,6 +1928,9 @@ Test "set:..." and parent revision
       (string 'r:')
       (string 'd:relpath')
       (string 'p:set:copied()')))
+  <filteredset
+    <spanset- 0:7>,
+    <matchfiles patterns=['set:copied()'], include=[] exclude=[], default='relpath', rev=None>>
   $ testlog --include "set:copied()"
   []
   (func
@@ -1823,15 +1939,20 @@ Test "set:..." and parent revision
       (string 'r:')
       (string 'd:relpath')
       (string 'i:set:copied()')))
+  <filteredset
+    <spanset- 0:7>,
+    <matchfiles patterns=[], include=['set:copied()'] exclude=[], default='relpath', rev=None>>
   $ testlog -r "sort(file('set:copied()'), -rev)"
   ["sort(file('set:copied()'), -rev)"]
   []
+  <baseset []>
 
 Test --removed
 
   $ testlog --removed
   []
   []
+  <spanset- 0:7>
   $ testlog --removed a
   []
   (func
@@ -1840,6 +1961,9 @@ Test --removed
       (string 'r:')
       (string 'd:relpath')
       (string 'p:a')))
+  <filteredset
+    <spanset- 0:7>,
+    <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=None>>
   $ testlog --removed --follow a
   []
   (and
@@ -1852,6 +1976,11 @@ Test --removed
         (string 'r:')
         (string 'd:relpath')
         (string 'p:a'))))
+  <filteredset
+    <filteredset
+      <spanset- 0:5>,
+      <generatorsetdesc+>>,
+    <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=None>>
 
 Test --patch and --stat with --follow and --follow-first
 
@@ -1955,6 +2084,7 @@ Test old-style --rev
   $ testlog -r 'foo-bar'
   ['foo-bar']
   []
+  <baseset [6]>
 
 Test --follow and forward --rev
 
@@ -2180,6 +2310,9 @@ changessincelatesttag with no prior tag
     (func
       (symbol 'rev')
       (symbol '6')))
+  <filteredset
+    <baseset- [4, 5, 6, 7, 8]>,
+    <generatorsetasc+>>
 
 Test --follow-first and forward --rev
 
@@ -2190,6 +2323,9 @@ Test --follow-first and forward --rev
     (func
       (symbol 'rev')
       (symbol '6')))
+  <filteredset
+    <baseset- [4, 5, 6, 7, 8]>,
+    <generatorsetasc+>>
   --- log.nodes	* (glob)
   +++ glog.nodes	* (glob)
   @@ -1,3 +1,3 @@
@@ -2207,6 +2343,9 @@ Test --follow and backward --rev
     (func
       (symbol 'rev')
       (symbol '6')))
+  <filteredset
+    <baseset- [4, 5, 6, 7, 8]>,
+    <generatorsetdesc+>>
 
 Test --follow-first and backward --rev
 
@@ -2217,6 +2356,9 @@ Test --follow-first and backward --rev
     (func
       (symbol 'rev')
       (symbol '6')))
+  <filteredset
+    <baseset- [4, 5, 6, 7, 8]>,
+    <generatorsetdesc+>>
 
 Test --follow with --rev of graphlog extension
 
@@ -2238,16 +2380,24 @@ Test subdir
       (string 'r:')
       (string 'd:relpath')
       (string 'p:.')))
+  <filteredset
+    <spanset- 0:9>,
+    <matchfiles patterns=['.'], include=[] exclude=[], default='relpath', rev=None>>
   $ testlog ../b
   []
   (func
     (symbol 'filelog')
     (string '../b'))
+  <filteredset
+    <spanset- 0:9>, set([1])>
   $ testlog -f ../b
   []
   (func
     (symbol 'follow')
     (string 'b'))
+  <filteredset
+    <spanset- 0:4>,
+    <generatorsetdesc+>>
   $ cd ..
 
 Test --hidden
@@ -2263,9 +2413,11 @@ Test --hidden
   $ testlog
   []
   []
+  <spanset- 0:9>
   $ testlog --hidden
   []
   []
+  <spanset- 0:9>
   $ hg log -G --template '{rev} {desc}\n'
   o  7 Added tag foo-bar for changeset fc281d8ff18d
   |

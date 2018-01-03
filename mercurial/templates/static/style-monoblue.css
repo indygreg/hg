@@ -502,7 +502,7 @@ ul#graphnodes li, ul#nodebgs li {
 }
 
 ul#graphnodes li .info {
-	display: block;
+	margin-top: 2px;
 }
 /** end of canvas **/
 

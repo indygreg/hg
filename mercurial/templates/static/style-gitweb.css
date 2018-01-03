@@ -322,7 +322,6 @@ ul#graphnodes {
 }
 
 ul#graphnodes li .info {
-	display: block;
 	font-size: 100%;
 	font-style: italic;
 }

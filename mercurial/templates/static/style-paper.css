@@ -479,7 +479,6 @@ ul#graphnodes li, ul#nodebgs li {
 }
 
 ul#graphnodes li .info {
-	display: block;
 	font-size: 70%;
 }
 

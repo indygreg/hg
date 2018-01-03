@@ -115,6 +115,5 @@ ul#graphnodes {
 }
 
 ul#graphnodes li .info {
-	display: block;
 	font-size: 70%;
 }

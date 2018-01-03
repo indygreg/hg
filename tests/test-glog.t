@@ -102,6 +102,7 @@ o  (0) root
   >             expr = logrevset(repo, pats, opts)
   >             if expr:
   >                 tree = revsetlang.parse(expr)
+  >                 tree = revsetlang.analyze(tree)
   >             else:
   >                 tree = []
   >             ui.write('%r\n' % (opts.get('rev', []),))
@@ -1465,90 +1466,77 @@ glog always reorders nodes which explains the difference with log
   +nodetag 21
   $ testlog -u test -u not-a-user
   []
-  (group
-    (group
-      (or
-        (list
-          (func
-            (symbol 'user')
-            (string 'test'))
-          (func
-            (symbol 'user')
-            (string 'not-a-user'))))))
+  (or
+    (list
+      (func
+        (symbol 'user')
+        (string 'test'))
+      (func
+        (symbol 'user')
+        (string 'not-a-user'))))
   $ testlog -b not-a-branch
   abort: unknown revision 'not-a-branch'!
   abort: unknown revision 'not-a-branch'!
   abort: unknown revision 'not-a-branch'!
   $ testlog -b 35 -b 36 --only-branch branch
   []
-  (group
-    (group
-      (or
-        (list
-          (func
-            (symbol 'branch')
-            (string 'default'))
-          (func
-            (symbol 'branch')
-            (string 'branch'))
-          (func
-            (symbol 'branch')
-            (string 'branch'))))))
+  (or
+    (list
+      (func
+        (symbol 'branch')
+        (string 'default'))
+      (func
+        (symbol 'branch')
+        (string 'branch'))
+      (func
+        (symbol 'branch')
+        (string 'branch'))))
   $ testlog -k expand -k merge
   []
-  (group
-    (group
-      (or
-        (list
-          (func
-            (symbol 'keyword')
-            (string 'expand'))
-          (func
-            (symbol 'keyword')
-            (string 'merge'))))))
+  (or
+    (list
+      (func
+        (symbol 'keyword')
+        (string 'expand'))
+      (func
+        (symbol 'keyword')
+        (string 'merge'))))
   $ testlog --only-merges
   []
-  (group
+  (func
+    (symbol 'merge')
+    None)
+  $ testlog --no-merges
+  []
+  (not
     (func
       (symbol 'merge')
       None))
-  $ testlog --no-merges
-  []
-  (group
-    (not
-      (func
-        (symbol 'merge')
-        None)))
   $ testlog --date '2 0 to 4 0'
   []
-  (group
-    (func
-      (symbol 'date')
-      (string '2 0 to 4 0')))
+  (func
+    (symbol 'date')
+    (string '2 0 to 4 0'))
   $ hg log -G -d 'brace ) in a date'
   hg: parse error: invalid date: 'brace ) in a date'
   [255]
   $ testlog --prune 31 --prune 32
   []
-  (group
-    (group
-      (and
-        (not
-          (group
-            (or
-              (list
-                (string '31')
-                (func
-                  (symbol 'ancestors')
-                  (string '31'))))))
-        (not
-          (group
-            (or
-              (list
-                (string '32')
-                (func
-                  (symbol 'ancestors')
-                  (string '32')))))))))
+  (and
+    (not
+      (or
+        (list
+          (string '31')
+          (func
+            (symbol 'ancestors')
+            (string '31')))))
+    (not
+      (or
+        (list
+          (string '32')
+          (func
+            (symbol 'ancestors')
+            (string '32'))))))
 
 Dedicated repo for --follow and paths filtering. The g is crafted to
 have 2 filelog topological heads in a linear changeset graph.
@@ -1595,53 +1583,47 @@ have 2 filelog topological heads in a linear changeset graph.
 
   $ testlog a
   []
-  (group
-    (group
-      (func
-        (symbol 'filelog')
-        (string 'a'))))
+  (func
+    (symbol 'filelog')
+    (string 'a'))
   $ testlog a b
   []
-  (group
-    (group
-      (or
-        (list
-          (func
-            (symbol 'filelog')
-            (string 'a'))
-          (func
-            (symbol 'filelog')
-            (string 'b'))))))
+  (or
+    (list
+      (func
+        (symbol 'filelog')
+        (string 'a'))
+      (func
+        (symbol 'filelog')
+        (string 'b'))))
 
 Test falling back to slow path for non-existing files
 
   $ testlog a c
   []
-  (group
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'p:a')
-        (string 'p:c'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:a')
+      (string 'p:c')))
 
 Test multiple --include/--exclude/paths
 
   $ testlog --include a --include e --exclude b --exclude e a e
   []
-  (group
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'p:a')
-        (string 'p:e')
-        (string 'i:a')
-        (string 'i:e')
-        (string 'x:b')
-        (string 'x:e'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:a')
+      (string 'p:e')
+      (string 'i:a')
+      (string 'i:e')
+      (string 'x:b')
+      (string 'x:e')))
 
 Test glob expansion of pats
 
@@ -1653,11 +1635,9 @@ Test glob expansion of pats
   >    testlog a*;
   > fi;
   []
-  (group
-    (group
-      (func
-        (symbol 'filelog')
-        (string 'aa'))))
+  (func
+    (symbol 'filelog')
+    (string 'aa'))
 
 Test --follow on a non-existent directory
 
@@ -1671,17 +1651,16 @@ Test --follow on a directory
   $ hg up -q '.^'
   $ testlog -f dir
   []
-  (group
-    (and
-      (func
-        (symbol 'ancestors')
-        (symbol '.'))
-      (func
-        (symbol '_matchfiles')
-        (list
-          (string 'r:')
-          (string 'd:relpath')
-          (string 'p:dir')))))
+  (and
+    (func
+      (symbol 'ancestors')
+      (symbol '.'))
+    (func
+      (symbol '_matchfiles')
+      (list
+        (string 'r:')
+        (string 'd:relpath')
+        (string 'p:dir'))))
   $ hg up -q tip
 
 Test --follow on file not in parent revision
@@ -1695,50 +1674,43 @@ Test --follow and patterns
 
   $ testlog -f 'glob:*'
   []
-  (group
-    (and
-      (func
-        (symbol 'ancestors')
-        (symbol '.'))
-      (func
-        (symbol '_matchfiles')
-        (list
-          (string 'r:')
-          (string 'd:relpath')
-          (string 'p:glob:*')))))
+  (and
+    (func
+      (symbol 'ancestors')
+      (symbol '.'))
+    (func
+      (symbol '_matchfiles')
+      (list
+        (string 'r:')
+        (string 'd:relpath')
+        (string 'p:glob:*'))))
 
 Test --follow on a single rename
 
   $ hg up -q 2
   $ testlog -f a
   []
-  (group
-    (group
-      (func
-        (symbol 'follow')
-        (string 'a'))))
+  (func
+    (symbol 'follow')
+    (string 'a'))
 
 Test --follow and multiple renames
 
   $ hg up -q tip
   $ testlog -f e
   []
-  (group
-    (group
-      (func
-        (symbol 'follow')
-        (string 'e'))))
+  (func
+    (symbol 'follow')
+    (string 'e'))
 
 Test --follow and multiple filelog heads
 
   $ hg up -q 2
   $ testlog -f g
   []
-  (group
-    (group
-      (func
-        (symbol 'follow')
-        (string 'g'))))
+  (func
+    (symbol 'follow')
+    (string 'g'))
   $ cat log.nodes
   nodetag 2
   nodetag 1
@@ -1746,11 +1718,9 @@ Test --follow and multiple filelog heads
   $ hg up -q tip
   $ testlog -f g
   []
-  (group
-    (group
-      (func
-        (symbol 'follow')
-        (string 'g'))))
+  (func
+    (symbol 'follow')
+    (string 'g'))
   $ cat log.nodes
   nodetag 3
   nodetag 2
@@ -1760,16 +1730,14 @@ Test --follow and multiple files
 
   $ testlog -f g e
   []
-  (group
-    (group
-      (or
-        (list
-          (func
-            (symbol 'follow')
-            (string 'g'))
-          (func
-            (symbol 'follow')
-            (string 'e'))))))
+  (or
+    (list
+      (func
+        (symbol 'follow')
+        (string 'g'))
+      (func
+        (symbol 'follow')
+        (string 'e'))))
   $ cat log.nodes
   nodetag 4
   nodetag 3
@@ -1797,22 +1765,19 @@ Test --follow-first
   $ hg ci -m "merge 5 and 4"
   $ testlog --follow-first
   []
-  (group
+  (func
+    (symbol '_firstancestors')
     (func
-      (symbol '_firstancestors')
-      (func
-        (symbol 'rev')
-        (symbol '6'))))
+      (symbol 'rev')
+      (symbol '6')))
 
 Cannot compare with log --follow-first FILE as it never worked
 
   $ hg log -G --print-revset --follow-first e
   []
-  (group
-    (group
-      (func
-        (symbol '_followfirst')
-        (string 'e'))))
+  (func
+    (symbol '_followfirst')
+    (string 'e'))
   $ hg log -G --follow-first e --template '{rev} {desc|firstline}\n'
   @    6 merge 5 and 4
   |\
@@ -1844,22 +1809,20 @@ Test "set:..." and parent revision
   $ hg up -q 4
   $ testlog "set:copied()"
   []
-  (group
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'p:set:copied()'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:set:copied()')))
   $ testlog --include "set:copied()"
   []
-  (group
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'i:set:copied()'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'i:set:copied()')))
   $ testlog -r "sort(file('set:copied()'), -rev)"
   ["sort(file('set:copied()'), -rev)"]
   []
@@ -1871,26 +1834,24 @@ Test --removed
   []
   $ testlog --removed a
   []
-  (group
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:a')))
+  $ testlog --removed --follow a
+  []
+  (and
+    (func
+      (symbol 'ancestors')
+      (symbol '.'))
     (func
       (symbol '_matchfiles')
       (list
         (string 'r:')
         (string 'd:relpath')
         (string 'p:a'))))
-  $ testlog --removed --follow a
-  []
-  (group
-    (and
-      (func
-        (symbol 'ancestors')
-        (symbol '.'))
-      (func
-        (symbol '_matchfiles')
-        (list
-          (string 'r:')
-          (string 'd:relpath')
-          (string 'p:a')))))
 
 Test --patch and --stat with --follow and --follow-first
 
@@ -2214,23 +2175,21 @@ changessincelatesttag with no prior tag
   +g
   $ testlog --follow -r6 -r8 -r5 -r7 -r4
   ['6', '8', '5', '7', '4']
-  (group
+  (func
+    (symbol 'descendants')
     (func
-      (symbol 'descendants')
-      (func
-        (symbol 'rev')
-        (symbol '6'))))
+      (symbol 'rev')
+      (symbol '6')))
 
 Test --follow-first and forward --rev
 
   $ testlog --follow-first -r6 -r8 -r5 -r7 -r4
   ['6', '8', '5', '7', '4']
-  (group
+  (func
+    (symbol '_firstdescendants')
     (func
-      (symbol '_firstdescendants')
-      (func
-        (symbol 'rev')
-        (symbol '6'))))
+      (symbol 'rev')
+      (symbol '6')))
   --- log.nodes	* (glob)
   +++ glog.nodes	* (glob)
   @@ -1,3 +1,3 @@
@@ -2243,23 +2202,21 @@ Test --follow and backward --rev
 
   $ testlog --follow -r6 -r5 -r7 -r8 -r4
   ['6', '5', '7', '8', '4']
-  (group
+  (func
+    (symbol 'ancestors')
     (func
-      (symbol 'ancestors')
-      (func
-        (symbol 'rev')
-        (symbol '6'))))
+      (symbol 'rev')
+      (symbol '6')))
 
 Test --follow-first and backward --rev
 
   $ testlog --follow-first -r6 -r5 -r7 -r8 -r4
   ['6', '5', '7', '8', '4']
-  (group
+  (func
+    (symbol '_firstancestors')
     (func
-      (symbol '_firstancestors')
-      (func
-        (symbol 'rev')
-        (symbol '6'))))
+      (symbol 'rev')
+      (symbol '6')))
 
 Test --follow with --rev of graphlog extension
 
@@ -2275,27 +2232,22 @@ Test subdir
   $ cd dir
   $ testlog .
   []
-  (group
-    (func
-      (symbol '_matchfiles')
-      (list
-        (string 'r:')
-        (string 'd:relpath')
-        (string 'p:.'))))
+  (func
+    (symbol '_matchfiles')
+    (list
+      (string 'r:')
+      (string 'd:relpath')
+      (string 'p:.')))
   $ testlog ../b
   []
-  (group
-    (group
-      (func
-        (symbol 'filelog')
-        (string '../b'))))
+  (func
+    (symbol 'filelog')
+    (string '../b'))
   $ testlog -f ../b
   []
-  (group
-    (group
-      (func
-        (symbol 'follow')
-        (string 'b'))))
+  (func
+    (symbol 'follow')
+    (string 'b'))
   $ cd ..
 
 Test --hidden

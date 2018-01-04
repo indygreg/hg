@@ -2388,35 +2388,21 @@ def _fileancestors(repo, revs, match, followfirst):
     for r in revs:
         ctx = repo[r]
         fctxs.extend(ctx[f].introfilectx() for f in ctx.walk(match))
-    return dagop.filerevancestors(fctxs, followfirst=followfirst)
 
-def _makefollowlogfilematcher(repo, files, followfirst):
     # When displaying a revision with --patch --follow FILE, we have
     # to know which file of the revision must be diffed. With
     # --follow, we want the names of the ancestors of FILE in the
-    # revision, stored in "fcache". "fcache" is populated by
-    # reproducing the graph traversal already done by --follow revset
-    # and relating revs to file names (which is not "correct" but
-    # good enough).
+    # revision, stored in "fcache". "fcache" is populated as a side effect
+    # of the graph traversal.
     fcache = {}
-    fcacheready = [False]
-    pctx = repo['.']
-
-    def populate():
-        for fn in files:
-            fctx = pctx[fn]
-            fcache.setdefault(fctx.introrev(), set()).add(fctx.path())
-            for c in fctx.ancestors(followfirst=followfirst):
-                fcache.setdefault(c.rev(), set()).add(c.path())
-
     def filematcher(rev):
-        if not fcacheready[0]:
-            # Lazy initialization
-            fcacheready[0] = True
-            populate()
         return scmutil.matchfiles(repo, fcache.get(rev, []))
 
-    return filematcher
+    def revgen():
+        for rev, cs in dagop.filectxancestors(fctxs, followfirst=followfirst):
+            fcache[rev] = [c.path() for c in cs]
+            yield rev
+    return smartset.generatorset(revgen(), iterasc=False), filematcher
 
 def _makenofollowlogfilematcher(repo, pats, opts):
     '''hook for extensions to override the filematcher for non-follow cases'''
@@ -2435,12 +2421,7 @@ _opt2logrevset = {
 }
 
 def _makelogrevset(repo, match, pats, slowpath, opts):
-    """Return (expr, filematcher) where expr is a revset string built
-    from log options and file patterns or None. If --stat or --patch
-    are not passed filematcher is None. Otherwise it is a callable
-    taking a revision number and returning a match objects filtering
-    the files to be detailed when displaying the revision.
-    """
+    """Return a revset string built from log options and file patterns"""
     opts = dict(opts)
     # follow or not follow?
     follow = opts.get('follow') or opts.get('follow_first')
@@ -2470,21 +2451,6 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
     elif not follow:
         opts['_patslog'] = list(pats)
 
-    filematcher = None
-    if opts.get('patch') or opts.get('stat'):
-        # When following files, track renames via a special matcher.
-        # If we're forced to take the slowpath it means we're following
-        # at least one pattern/directory, so don't bother with rename tracking.
-        if follow and not match.always() and not slowpath:
-            # _makefollowlogfilematcher expects its files argument to be
-            # relative to the repo root, so use match.files(), not pats.
-            filematcher = _makefollowlogfilematcher(repo, match.files(),
-                                                    opts.get('follow_first'))
-        else:
-            filematcher = _makenofollowlogfilematcher(repo, pats, opts)
-            if filematcher is None:
-                filematcher = lambda rev: match
-
     expr = []
     for op, val in sorted(opts.iteritems()):
         if not val:
@@ -2505,7 +2471,7 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
         expr = '(' + ' and '.join(expr) + ')'
     else:
         expr = None
-    return expr, filematcher
+    return expr
 
 def _logrevs(repo, opts):
     """Return the initial set of revisions to be filtered or followed"""
@@ -2524,9 +2490,8 @@ def _logrevs(repo, opts):
 def getlogrevs(repo, pats, opts):
     """Return (revs, filematcher) where revs is a smartset
 
-    If --stat or --patch is not passed, filematcher is None. Otherwise it
-    is a callable taking a revision number and returning a match objects
-    filtering the files to be detailed when displaying the revision.
+    filematcher is a callable taking a revision number and returning a match
+    objects filtering the files to be detailed when displaying the revision.
     """
     follow = opts.get('follow') or opts.get('follow_first')
     followfirst = opts.get('follow_first')
@@ -2535,13 +2500,20 @@ def getlogrevs(repo, pats, opts):
     if not revs:
         return smartset.baseset(), None
     match, pats, slowpath = _makelogmatcher(repo, revs, pats, opts)
+    filematcher = None
     if follow:
         if slowpath or match.always():
             revs = dagop.revancestors(repo, revs, followfirst=followfirst)
         else:
-            revs = _fileancestors(repo, revs, match, followfirst)
+            revs, filematcher = _fileancestors(repo, revs, match, followfirst)
         revs.reverse()
-    expr, filematcher = _makelogrevset(repo, match, pats, slowpath, opts)
+    if filematcher is None:
+        filematcher = _makenofollowlogfilematcher(repo, pats, opts)
+    if filematcher is None:
+        def filematcher(rev):
+            return match
+
+    expr = _makelogrevset(repo, match, pats, slowpath, opts)
     if opts.get('graph') and opts.get('rev'):
         # User-specified revs might be unsorted, but don't sort before
         # _makelogrevset because it might depend on the order of revs

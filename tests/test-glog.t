@@ -96,7 +96,7 @@ o  (0) root
   >     if not revs:
   >         return None
   >     match, pats, slowpath = cmdutil._makelogmatcher(repo, revs, pats, opts)
-  >     return cmdutil._makelogrevset(repo, match, pats, slowpath, opts)[0]
+  >     return cmdutil._makelogrevset(repo, match, pats, slowpath, opts)
   > 
   > def uisetup(ui):
   >     def printrevset(orig, repo, pats, opts):

@@ -2535,7 +2535,7 @@ def getlogrevs(repo, pats, opts):
         return smartset.baseset(), None
     match, pats, slowpath = _makelogmatcher(repo, revs, pats, opts)
     if follow:
-        if slowpath or not pats:
+        if slowpath or match.always():
             revs = dagop.revancestors(repo, revs, followfirst=followfirst)
         else:
             revs = _fileancestors(repo, revs, match, followfirst)

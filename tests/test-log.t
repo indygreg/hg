@@ -1252,6 +1252,16 @@ User
   
   $ hg log -u "user3"
 
+"-u USER" shouldn't be overridden by "user(USER)" alias
+
+  $ hg log --config 'revsetalias.user(x)=branch(x)' -u default
+  $ hg log --config 'revsetalias.user(x)=branch(x)' -u user1
+  changeset:   0:29a4c94f1924
+  user:        User One <user1@example.org>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     a
+  
+
   $ cd ..
 
   $ hg init branches

@@ -2523,7 +2523,7 @@ def getlogrevs(repo, pats, opts):
         if not (revs.isdescending() or revs.istopo()):
             revs.sort(reverse=True)
     if expr:
-        matcher = revset.match(repo.ui, expr)
+        matcher = revset.match(None, expr)
         revs = matcher(repo, revs)
     if limit is not None:
         revs = revs.slice(0, limit)

@@ -98,21 +98,23 @@ o  (0) root
   >     return cmdutil._makelogrevset(repo, pats, opts, revs)[0]
   > 
   > def uisetup(ui):
-  >     def printrevset(orig, ui, repo, *pats, **opts):
+  >     def printrevset(orig, repo, pats, opts):
+  >         revs, filematcher = orig(repo, pats, opts)
   >         if opts.get('print_revset'):
-  >             revs = cmdutil.getlogrevs(repo, pats, opts)[0]
   >             expr = logrevset(repo, pats, opts)
   >             if expr:
   >                 tree = revsetlang.parse(expr)
   >                 tree = revsetlang.analyze(tree)
   >             else:
   >                 tree = []
+  >             ui = repo.ui
   >             ui.write('%r\n' % (opts.get('rev', []),))
   >             ui.write(revsetlang.prettyformat(tree) + '\n')
   >             ui.write(smartset.prettyformat(revs) + '\n')
-  >             return 0
-  >         return orig(ui, repo, *pats, **opts)
-  >     entry = extensions.wrapcommand(commands.table, 'log', printrevset)
+  >             revs = smartset.baseset()  # display no revisions
+  >         return revs, filematcher
+  >     extensions.wrapfunction(cmdutil, 'getlogrevs', printrevset)
+  >     aliases, entry = cmdutil.findcmd('log', commands.table)
   >     entry[1].append(('', 'print-revset', False,
   >                      'print generated revset and exit (DEPRECATED)'))
   > EOF
@@ -2304,15 +2306,9 @@ changessincelatesttag with no prior tag
   -f
   +g
   $ testlog --follow -r6 -r8 -r5 -r7 -r4
-  ['6', '8', '5', '7', '4']
-  (func
-    (symbol 'descendants')
-    (func
-      (symbol 'rev')
-      (symbol '6')))
-  <filteredset
-    <baseset- [4, 5, 6, 7, 8]>,
-    <generatorsetasc+>>
+  ['reverse(::(((6) or (8)) or ((5) or ((7) or (4)))))']
+  []
+  <generatorsetdesc->
 
 Test --follow-first and forward --rev
 
@@ -2337,15 +2333,9 @@ Test --follow-first and forward --rev
 Test --follow and backward --rev
 
   $ testlog --follow -r6 -r5 -r7 -r8 -r4
-  ['6', '5', '7', '8', '4']
-  (func
-    (symbol 'ancestors')
-    (func
-      (symbol 'rev')
-      (symbol '6')))
-  <filteredset
-    <baseset- [4, 5, 6, 7, 8]>,
-    <generatorsetdesc+>>
+  ['reverse(::(((6) or (5)) or ((7) or ((8) or (4)))))']
+  []
+  <generatorsetdesc->
 
 Test --follow-first and backward --rev
 

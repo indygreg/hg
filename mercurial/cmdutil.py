@@ -1725,7 +1725,8 @@ class changeset_printer(object):
                 diffordiffstat(self.ui, self.repo, diffopts, prev, node,
                                match=matchfn, stat=False,
                                hunksfilterfn=hunksfilterfn)
-            self.ui.write("\n")
+            if stat or diff:
+                self.ui.write("\n")
 
 class jsonchangeset(changeset_printer):
     '''format changeset information.'''

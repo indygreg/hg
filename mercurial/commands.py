@@ -3409,14 +3409,14 @@ def log(ui, repo, *pats, **opts):
         opts['rev'] = [revsetlang.formatspec('reverse(::%lr)', opts.get('rev'))]
         del opts['follow']
 
-    if opts.get('graph'):
-        if linerange:
-            raise error.Abort(_('graph not supported with line range patterns'))
-        return cmdutil.graphlog(ui, repo, pats, opts)
-
     repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
     revs, expr, filematcher = cmdutil.getlogrevs(repo, pats, opts)
     hunksfilter = None
+
+    if opts.get('graph'):
+        if linerange:
+            raise error.Abort(_('graph not supported with line range patterns'))
+        return cmdutil.graphlog(ui, repo, revs, filematcher, opts)
 
     if linerange:
         revs, lrfilematcher, hunksfilter = cmdutil.getloglinerangerevs(

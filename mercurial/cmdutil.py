@@ -2506,7 +2506,7 @@ def _logrevs(repo, opts):
         revs.reverse()
     return revs
 
-def getgraphlogrevs(repo, pats, opts):
+def getlogrevs(repo, pats, opts):
     """Return (revs, expr, filematcher) where revs is an iterable of
     revision numbers, expr is a revset string built from log options
     and file patterns or None, and used to filter 'revs'. If --stat or
@@ -2519,7 +2519,7 @@ def getgraphlogrevs(repo, pats, opts):
     if not revs:
         return smartset.baseset(), None, None
     expr, filematcher = _makelogrevset(repo, pats, opts, revs)
-    if opts.get('rev'):
+    if opts.get('graph') and opts.get('rev'):
         # User-specified revs might be unsorted, but don't sort before
         # _makelogrevset because it might depend on the order of revs
         if not (revs.isdescending() or revs.istopo()):
@@ -2533,32 +2533,6 @@ def getgraphlogrevs(repo, pats, opts):
             if idx >= limit:
                 break
             limitedrevs.append(rev)
-        revs = smartset.baseset(limitedrevs)
-
-    return revs, expr, filematcher
-
-def getlogrevs(repo, pats, opts):
-    """Return (revs, expr, filematcher) where revs is an iterable of
-    revision numbers, expr is a revset string built from log options
-    and file patterns or None, and used to filter 'revs'. If --stat or
-    --patch are not passed filematcher is None. Otherwise it is a
-    callable taking a revision number and returning a match objects
-    filtering the files to be detailed when displaying the revision.
-    """
-    limit = loglimit(opts)
-    revs = _logrevs(repo, opts)
-    if not revs:
-        return smartset.baseset([]), None, None
-    expr, filematcher = _makelogrevset(repo, pats, opts, revs)
-    if expr:
-        matcher = revset.match(repo.ui, expr)
-        revs = matcher(repo, revs)
-    if limit is not None:
-        limitedrevs = []
-        for idx, r in enumerate(revs):
-            if limit <= idx:
-                break
-            limitedrevs.append(r)
         revs = smartset.baseset(limitedrevs)
 
     return revs, expr, filematcher
@@ -2719,9 +2693,8 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None,
             lines = []
     displayer.close()
 
-def graphlog(ui, repo, pats, opts):
+def graphlog(ui, repo, revs, filematcher, opts):
     # Parameters are identical to log command ones
-    revs, expr, filematcher = getgraphlogrevs(repo, pats, opts)
     revdag = graphmod.dagwalker(repo, revs)
 
     getrenamed = None

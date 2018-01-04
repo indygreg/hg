@@ -93,7 +93,7 @@ o  (0) root
   > def uisetup(ui):
   >     def printrevset(orig, ui, repo, *pats, **opts):
   >         if opts.get('print_revset'):
-  >             expr = cmdutil.getgraphlogrevs(repo, pats, opts)[1]
+  >             expr = cmdutil.getlogrevs(repo, pats, opts)[1]
   >             if expr:
   >                 tree = revsetlang.parse(expr)
   >             else:

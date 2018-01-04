@@ -581,6 +581,13 @@ class curseschunkselector(object):
         # maps custom nicknames of color-pairs to curses color-pair values
         self.colorpairnames = {}
 
+        # Honor color setting of ui section. Keep colored setup as
+        # long as not explicitly set to a falsy value - especially,
+        # when not set at all. This is to stay most compatible with
+        # previous (color only) behaviour.
+        uicolor = util.parsebool(self.ui.config('ui', 'color'))
+        self.usecolor = uicolor is not False
+
         # the currently selected header, hunk, or hunk-line
         self.currentselecteditem = self.headerlist[0]
 
@@ -1371,11 +1378,19 @@ class curseschunkselector(object):
                 colorpair = self.colorpairs[(fgcolor, bgcolor)]
             else:
                 pairindex = len(self.colorpairs) + 1
-                curses.init_pair(pairindex, fgcolor, bgcolor)
-                colorpair = self.colorpairs[(fgcolor, bgcolor)] = (
-                    curses.color_pair(pairindex))
-                if name is not None:
-                    self.colorpairnames[name] = curses.color_pair(pairindex)
+                if self.usecolor:
+                    curses.init_pair(pairindex, fgcolor, bgcolor)
+                    colorpair = self.colorpairs[(fgcolor, bgcolor)] = (
+                        curses.color_pair(pairindex))
+                    if name is not None:
+                        self.colorpairnames[name] = curses.color_pair(pairindex)
+                else:
+                    cval = 0
+                    if name is not None:
+                        if name == 'selected':
+                            cval = curses.A_REVERSE
+                        self.colorpairnames[name] = cval
+                    colorpair = self.colorpairs[(fgcolor, bgcolor)] = cval
 
         # add attributes if possible
         if attrlist is None:

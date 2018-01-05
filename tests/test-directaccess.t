@@ -148,6 +148,11 @@ Testing with hash
   $ hg status --change 28ad74
   A c
 
+`hg archive`
+
+This should not throw error
+  $ hg archive -r 28ad74 foo
+
 `hg update`
 
   $ hg up 28ad74

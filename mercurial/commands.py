@@ -467,7 +467,10 @@ def archive(ui, repo, dest, **opts):
     '''
 
     opts = pycompat.byteskwargs(opts)
-    ctx = scmutil.revsingle(repo, opts.get('rev'))
+    rev = opts.get('rev')
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    ctx = scmutil.revsingle(repo, rev)
     if not ctx:
         raise error.Abort(_('no working directory: please specify a revision'))
     node = ctx.node()

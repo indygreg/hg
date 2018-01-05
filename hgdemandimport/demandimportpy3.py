@@ -46,7 +46,7 @@ class _lazyloaderex(importlib.util.LazyLoader):
             super().exec_module(module)
 
 # This is 3.6+ because with Python 3.5 it isn't possible to lazily load
-# extensions. See the discussion in https://python.org/sf/26186 for more.
+# extensions. See the discussion in https://bugs.python.org/issue26186 for more.
 _extensions_loader = _lazyloaderex.factory(
     importlib.machinery.ExtensionFileLoader)
 _bytecode_loader = _lazyloaderex.factory(

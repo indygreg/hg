@@ -1240,16 +1240,17 @@ def debuginstall(ui, **opts):
     # editor
     editor = ui.geteditor()
     editor = util.expandpath(editor)
-    fm.write('editor', _("checking commit editor... (%s)\n"), editor)
-    cmdpath = util.findexe(pycompat.shlexsplit(editor)[0])
+    editorbin = pycompat.shlexsplit(editor)[0]
+    fm.write('editor', _("checking commit editor... (%s)\n"), editorbin)
+    cmdpath = util.findexe(editorbin)
     fm.condwrite(not cmdpath and editor == 'vi', 'vinotfound',
                  _(" No commit editor set and can't find %s in PATH\n"
                    " (specify a commit editor in your configuration"
-                   " file)\n"), not cmdpath and editor == 'vi' and editor)
+                   " file)\n"), not cmdpath and editor == 'vi' and editorbin)
     fm.condwrite(not cmdpath and editor != 'vi', 'editornotfound',
                  _(" Can't find editor '%s' in PATH\n"
                    " (specify a commit editor in your configuration"
-                   " file)\n"), not cmdpath and editor)
+                   " file)\n"), not cmdpath and editorbin)
     if not cmdpath and editor != 'vi':
         problems += 1
 

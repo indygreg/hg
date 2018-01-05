@@ -50,21 +50,14 @@
 <noscript><p>The revision graph only works with JavaScript-enabled browsers.</p></noscript>
 
 <div id="wrapper">
-<ul id="nodebgs" class="stripes2"></ul>
 <canvas id="graph"></canvas>
-<ul id="graphnodes">{nodes%graphentry}</ul>
+<ul id="graphnodes" class="stripes2">{nodes%graphentry}</ul>
 </div>
 
 <script type="text/javascript"{if(nonce, ' nonce="{nonce}"')}>
 var data = {jsdata|json};
 var graph = new Graph();
 graph.scale({bg_height});
-
-graph.vertex = function(x, y, radius, color, parity, cur) \{
-	Graph.prototype.vertex.apply(this, arguments);
-	return ['<li class="bg"></li>', ''];
-}
-
 graph.render(data);
 </script>
 

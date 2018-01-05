@@ -294,21 +294,14 @@ Some tests for hgweb in an empty repository
   <noscript><p>The revision graph only works with JavaScript-enabled browsers.</p></noscript>
   
   <div id="wrapper">
-  <ul id="nodebgs" class="stripes2"></ul>
   <canvas id="graph"></canvas>
-  <ul id="graphnodes"></ul>
+  <ul id="graphnodes" class="stripes2"></ul>
   </div>
   
   <script type="text/javascript">
   var data = [];
   var graph = new Graph();
   graph.scale(39);
-  
-  graph.vertex = function(x, y, radius, color, parity, cur) {
-  	Graph.prototype.vertex.apply(this, arguments);
-  	return ['<li class="bg"></li>', ''];
-  }
-  
   graph.render(data);
   </script>
   

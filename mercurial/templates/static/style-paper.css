@@ -460,22 +460,19 @@ canvas {
 }
 
 ul#graphnodes {
-	position: absolute;
-	z-index: 10;
-	top: -1.0em;
-	list-style: none inside none;
-	padding: 0;
-}
-
-ul#nodebgs {
 	list-style: none inside none;
 	padding: 0;
 	margin: 0;
-	top: -0.7em;
 }
 
-ul#graphnodes li, ul#nodebgs li {
+ul#graphnodes li {
 	height: 39px;
+	overflow: visible;
+}
+
+ul#graphnodes li .fg {
+	position: absolute;
+	z-index: 10;
 }
 
 ul#graphnodes li .info {

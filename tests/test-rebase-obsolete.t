@@ -1496,6 +1496,7 @@ equivalents in destination
   $ hg log -r .  # working dir is at rev 3 (successor of 2)
   3:be1832deae9a b (no-eol)
   $ hg book -r 2 mybook --hidden  # rev 2 has a bookmark on it now
+  bookmarking hidden changeset 1e9a3c00cbe9
   $ hg up 2 && hg log -r .  # working dir is at rev 2 again
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   2:1e9a3c00cbe9 b (rewritten using rebase as 3:be1832deae9a) (no-eol)

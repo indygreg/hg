@@ -830,6 +830,7 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     cur = repo.changectx('.').node()
     newact = None
     changes = []
+    hiddenrevs = set()
     for mark in names:
         mark = checkformat(repo, mark)
         if newact is None:
@@ -839,10 +840,17 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
             return
         tgt = cur
         if rev:
-            tgt = scmutil.revsingle(repo, rev).node()
+            repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+            ctx = scmutil.revsingle(repo, rev)
+            if ctx.hidden():
+                hiddenrevs.add(ctx.hex()[:12])
+            tgt = ctx.node()
         for bm in marks.checkconflict(mark, force, tgt):
             changes.append((bm, None))
         changes.append((mark, tgt))
+    if hiddenrevs:
+        repo.ui.warn(_("bookmarking hidden changeset %s\n") %
+                     ', '.join(hiddenrevs))
     marks.applychanges(repo, tr, changes)
     if not inactive and cur == marks[newact] and not rev:
         activate(repo, newact)

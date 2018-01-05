@@ -1333,6 +1333,7 @@ bookmarks change
   $ echo "hello" > b
   $ hg commit --amend -m "message"
   $ hg book bookb -r 13bedc178fce --hidden
+  bookmarking hidden changeset 13bedc178fce
   $ hg log -r 13bedc178fce
   4:13bedc178fce (draft *obsolete*) [ bookb] add b [rewritten using amend as 5:a9b1f8652753]
   $ hg book -d bookb

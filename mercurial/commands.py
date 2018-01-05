@@ -293,7 +293,10 @@ def annotate(ui, repo, *pats, **opts):
         # to mimic the behavior of Mercurial before version 1.5
         opts['file'] = True
 
-    ctx = scmutil.revsingle(repo, opts.get('rev'))
+    rev = opts.get('rev')
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+    ctx = scmutil.revsingle(repo, rev)
 
     rootfm = ui.formatter('annotate', opts)
     if ui.quiet:

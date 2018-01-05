@@ -138,6 +138,11 @@ Testing with hash
   $ hg identify -r 28ad74
   28ad74487de9
 
+`hg annotate`
+
+  $ hg annotate -r 28ad74 a
+  0: foo
+
 `hg status`
 
   $ hg status --change 28ad74

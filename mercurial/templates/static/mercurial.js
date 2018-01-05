@@ -40,7 +40,6 @@ Graph.prototype = {
 		this.bg = [0, 4];
 		this.cell = [2, 0];
 		this.columns = 0;
-		document.getElementById('nodebgs').innerHTML = '';
 	},
 
 	scale: function(height) {
@@ -102,14 +101,10 @@ Graph.prototype = {
 		if (item) {
 			item.style.paddingLeft = left + 'px';
 		}
-
-		return ['', ''];
 	},
 
 	render: function(data) {
 
-		var backgrounds = '';
-		var nodedata = '';
 		var i, j, cur, line, start, end, color, x, y, x0, y0, x1, y1, column, radius;
 
 		var cols = 0;
@@ -172,16 +167,11 @@ Graph.prototype = {
 			radius = this.box_size / 8;
 			x = this.cell[0] + this.box_size * column + this.box_size / 2;
 			y = this.bg[1] - this.bg_height / 2;
-			var add = this.vertex(x, y, radius, color, parity, cur);
-			backgrounds += add[0];
-			nodedata += add[1];
+			this.vertex(x, y, radius, color, parity, cur);
 
 			if (fold) this.columns -= 1;
 
 		}
-
-		document.getElementById('nodebgs').innerHTML += backgrounds;
-		document.getElementById('graphnodes').innerHTML += nodedata;
 
 	}
 

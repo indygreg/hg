@@ -1781,35 +1781,42 @@ Overviews
   <noscript>The revision graph only works with JavaScript-enabled browsers.</noscript>
   
   <div id="wrapper">
-  <ul id="nodebgs"></ul>
   <canvas id="graph"></canvas>
-  <ul id="graphnodes"><li data-node="cad8025a2e87">
-   <span class="desc">
-    <a class="list" href="/rev/cad8025a2e87?style=gitweb"><b>branch commit with null character: </b></a>
-   </span>
-   <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="something">something</span> </span>
-   <div class="info">1970-01-01, by test</div>
+  <ul id="graphnodes"><li class="parity0" data-node="cad8025a2e87">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/cad8025a2e87?style=gitweb"><b>branch commit with null character: </b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="something">something</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
   </li>
-  <li data-node="1d22e65f027e">
-   <span class="desc">
-    <a class="list" href="/rev/1d22e65f027e?style=gitweb"><b>branch</b></a>
-   </span>
-   <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="stable">stable</span> </span>
-   <div class="info">1970-01-01, by test</div>
+  <li class="parity1" data-node="1d22e65f027e">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/1d22e65f027e?style=gitweb"><b>branch</b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="stable">stable</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
   </li>
-  <li data-node="a4f92ed23982">
-   <span class="desc">
-    <a class="list" href="/rev/a4f92ed23982?style=gitweb"><b>Added tag 1.0 for changeset 2ef0ac749a14</b></a>
-   </span>
-   <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> </span>
-   <div class="info">1970-01-01, by test</div>
+  <li class="parity0" data-node="a4f92ed23982">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/a4f92ed23982?style=gitweb"><b>Added tag 1.0 for changeset 2ef0ac749a14</b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
   </li>
-  <li data-node="2ef0ac749a14">
-   <span class="desc">
-    <a class="list" href="/rev/2ef0ac749a14?style=gitweb"><b>base</b></a>
-   </span>
-   <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="tagtag" title="1.0">1.0</span> <span class="bookmarktag" title="anotherthing">anotherthing</span> </span>
-   <div class="info">1970-01-01, by test</div>
+  <li class="parity1" data-node="2ef0ac749a14">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/2ef0ac749a14?style=gitweb"><b>base</b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="tagtag" title="1.0">1.0</span> <span class="bookmarktag" title="anotherthing">anotherthing</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
   </li>
   </ul>
   </div>
@@ -1818,12 +1825,6 @@ Overviews
   var data = [{"edges": [[0, 0, 1, 3, "FF0000"]], "node": "cad8025a2e87", "vertex": [0, 1]}, {"edges": [[0, 0, 1, 3, ""]], "node": "1d22e65f027e", "vertex": [0, 1]}, {"edges": [[0, 0, 1, 3, ""]], "node": "a4f92ed23982", "vertex": [0, 1]}, {"edges": [], "node": "2ef0ac749a14", "vertex": [0, 1]}];
   var graph = new Graph();
   graph.scale(39);
-  
-  graph.vertex = function(x, y, radius, color, parity, cur) {
-  	Graph.prototype.vertex.apply(this, arguments);
-  	return ['<li class="bg parity' + parity + '"></li>', ''];
-  }
-  
   graph.render(data);
   </script>
   

@@ -340,7 +340,7 @@ static file
 
   $ get-with-headers.py --twice localhost:$HGPORT 'static/style-gitweb.css' - date etag server
   200 Script output follows
-  content-length: 9135
+  content-length: 9118
   content-type: text/css
   
   body { font-family: sans-serif; font-size: 12px; border:solid #d9d8d1; border-width:1px; margin:10px; background: white; color: black; }
@@ -647,23 +647,22 @@ static file
   	margin: 0;
   }
   
-  ul#nodebgs {
+  ul#graphnodes {
   	list-style: none inside none;
   	padding: 0;
   	margin: 0;
-  	top: -0.7em;
   }
   
-  ul#graphnodes li, ul#nodebgs li {
-  	height: 39px;
+  ul#graphnodes li {
+  	position: relative;
+  	height: 37px;
+  	overflow: visible;
+  	padding-top: 2px;
   }
   
-  ul#graphnodes {
+  ul#graphnodes li .fg {
   	position: absolute;
   	z-index: 10;
-  	top: -0.8em;
-  	list-style: none inside none;
-  	padding: 0;
   }
   
   ul#graphnodes li .info {

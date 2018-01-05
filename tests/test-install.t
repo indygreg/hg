@@ -98,7 +98,7 @@ path variables are expanded (~ is the same as $TESTTMP)
 #if execbit
   $ chmod 755 tools/testeditor.exe
 #endif
-  $ hg debuginstall --config ui.editor=~/tools/testeditor.exe
+  $ HGEDITOR="~/tools/testeditor.exe" hg debuginstall
   checking encoding (ascii)...
   checking Python executable (*) (glob)
   checking Python version (*) (glob)
@@ -116,7 +116,7 @@ path variables are expanded (~ is the same as $TESTTMP)
   checking "re2" regexp engine \((available|missing)\) (re)
   checking templates (*mercurial?templates)... (glob)
   checking default template (*mercurial?templates?map-cmdline.default) (glob)
-  checking commit editor... (* -c "import sys; sys.exit(0)") (glob)
+  checking commit editor... ($TESTTMP/tools/testeditor.exe)
   checking username (test)
   no problems detected
 

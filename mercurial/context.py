@@ -36,6 +36,7 @@ from . import (
     match as matchmod,
     mdiff,
     obsolete as obsmod,
+    obsutil,
     patch,
     pathutil,
     phases,
@@ -433,8 +434,21 @@ def _filterederror(repo, changeid):
     This is extracted in a function to help extensions (eg: evolve) to
     experiment with various message variants."""
     if repo.filtername.startswith('visible'):
-        msg = _("hidden revision '%s'") % changeid
+
+        # Check if the changeset is obsolete
+        unfilteredrepo = repo.unfiltered()
+        ctx = unfilteredrepo[changeid]
+
+        # If the changeset is obsolete, enrich the hint with the reason that
+        # made this changeset not visible
+        if ctx.obsolete():
+            reason = obsutil._getfilteredreason(unfilteredrepo, ctx)
+            msg = _("hidden revision '%s' %s") % (changeid, reason)
+        else:
+            msg = _("hidden revision '%s'") % changeid
+
         hint = _('use --hidden to access hidden revisions')
+
         return error.FilteredRepoLookupError(msg, hint=hint)
     msg = _("filtered revision '%s' (not in '%s' subset)")
     msg %= (changeid, repo.filtername)

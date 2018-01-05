@@ -197,7 +197,7 @@ check that various commands work well with filtering
   abort: unknown revision '6'!
   [255]
   $ hg log -r 4
-  abort: hidden revision '4'!
+  abort: hidden revision '4' was rewritten as: 5601fb93a350!
   (use --hidden to access hidden revisions)
   [255]
   $ hg debugrevspec 'rev(6)'
@@ -1337,7 +1337,7 @@ bookmarks change
   4:13bedc178fce (draft *obsolete*) [ bookb] add b [rewritten using amend as 5:a9b1f8652753]
   $ hg book -d bookb
   $ hg log -r 13bedc178fce
-  abort: hidden revision '13bedc178fce'!
+  abort: hidden revision '13bedc178fce' was rewritten as: a9b1f8652753!
   (use --hidden to access hidden revisions)
   [255]
 

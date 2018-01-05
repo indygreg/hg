@@ -9,9 +9,11 @@ from __future__ import absolute_import
 
 import re
 
+from .i18n import _
 from . import (
+    node as nodemod,
     phases,
-    util
+    util,
 )
 
 class marker(object):
@@ -751,6 +753,32 @@ def successorsandmarkers(repo, ctx):
 
     return values
 
+def _getobsfate(successorssets):
+    """ Compute a changeset obsolescence fate based on its successorssets.
+    Successors can be the tipmost ones or the immediate ones. This function
+    return values are not meant to be shown directly to users, it is meant to
+    be used by internal functions only.
+    Returns one fate from the following values:
+    - pruned
+    - diverged
+    - superseded
+    - superseded_split
+    """
+
+    if len(successorssets) == 0:
+        # The commit has been pruned
+        return 'pruned'
+    elif len(successorssets) > 1:
+        return 'diverged'
+    else:
+        # No divergence, only one set of successors
+        successors = successorssets[0]
+
+        if len(successors) == 1:
+            return 'superseded'
+        else:
+            return 'superseded_split'
+
 def obsfateverb(successorset, markers):
     """ Return the verb summarizing the successorset and potentially using
     information from the markers
@@ -836,3 +864,34 @@ def obsfateprinter(successors, markers, ui):
             line.append(" (between %s and %s)" % (fmtmin_date, fmtmax_date))
 
     return "".join(line)
+
+def _getfilteredreason(unfilteredrepo, ctx):
+    """return a human-friendly string on why a obsolete changeset is hidden
+    """
+    successors = successorssets(unfilteredrepo, ctx.node())
+    fate = _getobsfate(successors)
+
+    # Be more precise in case the revision is superseded
+    if fate == 'pruned':
+        reason = _('is pruned')
+    elif fate == 'diverged':
+        reason = _('has diverged')
+    elif fate == 'superseded':
+        reason = _("was rewritten as: %s") % nodemod.short(successors[0][0])
+    elif fate == 'superseded_split':
+
+        succs = []
+        for node_id in successors[0]:
+            succs.append(nodemod.short(node_id))
+
+        if len(succs) <= 2:
+            reason = _("was split as: %s") % ", ".join(succs)
+        else:
+            firstsuccessors = ", ".join(succs[:2])
+            remainingnumber = len(succs) - 2
+
+            args = (firstsuccessors, remainingnumber)
+            successorsmsg = _("%s and %d more") % args
+            reason = _("was split as: %s") % successorsmsg
+
+    return reason

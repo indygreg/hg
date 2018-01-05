@@ -1265,6 +1265,7 @@ def graph(web, req, tmpl):
                 for (id, type, ctx, vtx, edges) in fulltree()]
 
     def nodes():
+        parity = paritygen(web.stripecount)
         for row, (id, type, ctx, vtx, edges) in enumerate(tree):
             entry = webutil.commonentry(web.repo, ctx)
             edgedata = [{'col': edge[0],
@@ -1276,6 +1277,7 @@ def graph(web, req, tmpl):
 
             entry.update({'col': vtx[0],
                           'color': (vtx[1] - 1) % 6 + 1,
+                          'parity': next(parity),
                           'edges': edgedata,
                           'row': row,
                           'nextrow': row + 1})

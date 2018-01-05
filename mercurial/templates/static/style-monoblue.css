@@ -478,27 +478,29 @@ canvas {
 	top: -0.7em;
 }
 
-ul#nodebgs li.parity0 {
+ul#graphnodes li.parity0 {
     background: #F1F6F7;
 }
 
-ul#nodebgs li.parity1 {
+ul#graphnodes li.parity1 {
     background: #FFFFFF;
 }
 
 ul#graphnodes {
+	list-style: none inside none;
+	margin: 0;
+	padding: 0;
+}
+
+ul#graphnodes li {
+	height: 37px;
+	overflow: visible;
+	padding-top: 2px;
+}
+
+ul#graphnodes li .fg {
 	position: absolute;
 	z-index: 10;
-	top: 7px;
-	list-style: none inside none;
-}
-
-ul#nodebgs {
-	list-style: none inside none;
-}
-
-ul#graphnodes li, ul#nodebgs li {
-	height: 39px;
 }
 
 ul#graphnodes li .info {

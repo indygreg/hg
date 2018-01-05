@@ -1334,6 +1334,9 @@ class TTest(Test):
             script.append(b'alias hg="%s"\n' % self._hgcommand)
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
+        if self._case:
+            script.append(b'TESTCASE=%s\n' % shellquote(self._case))
+            script.append(b'export TESTCASE\n')
 
         n = 0
         for n, l in enumerate(lines):

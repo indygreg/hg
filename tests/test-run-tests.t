@@ -1533,6 +1533,26 @@ Test cases in .t files
   python hash seed: * (glob)
   [1]
 
+Test TESTCASE variable
+
+  $ cat > test-cases-ab.t <<'EOF'
+  >   $ dostuff() {
+  >   >   echo "In case $TESTCASE"
+  >   > }
+  > #testcases A B
+  > #if A
+  >   $ dostuff
+  >   In case A
+  > #endif
+  > #if B
+  >   $ dostuff
+  >   In case B
+  > #endif
+  > EOF
+  $ rt test-cases-ab.t
+  ..
+  # Ran 2 tests, 0 skipped, 0 failed.
+
 Test automatic pattern replacement
 
   $ cat << EOF >> common-pattern.py

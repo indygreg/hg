@@ -31,7 +31,6 @@ navigate: <small class="navigate">{changenav%navgraph}</small>
 <noscript>The revision graph only works with JavaScript-enabled browsers.</noscript>
 
 <div id="wrapper">
-<ul id="nodebgs"></ul>
 <canvas id="graph"></canvas>
 <ul id="graphnodes">{nodes%graphentry}</ul>
 </div>
@@ -40,12 +39,6 @@ navigate: <small class="navigate">{changenav%navgraph}</small>
 var data = {jsdata|json};
 var graph = new Graph();
 graph.scale({bg_height});
-
-graph.vertex = function(x, y, radius, color, parity, cur) \{
-	Graph.prototype.vertex.apply(this, arguments);
-	return ['<li class="bg parity' + parity + '"></li>', ''];
-}
-
 graph.render(data);
 </script>
 

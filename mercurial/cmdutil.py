@@ -891,13 +891,14 @@ def getcommiteditor(edit=False, finishdesc=None, extramsg=None,
     else:
         return commiteditor
 
-def makefilename(ctx, pat, desc=None,
+def makefilename(ctx, pat,
                   total=None, seqno=None, revwidth=None, pathname=None):
     expander = {
         'H': lambda: ctx.hex(),
         'R': lambda: '%d' % ctx.rev(),
         'h': lambda: short(ctx.node()),
-        'm': lambda: re.sub('[^\w]', '_', desc or ''),
+        'm': lambda: re.sub('[^\w]', '_',
+                            ctx.description().rstrip().splitlines()[0]),
         'r': lambda: ('%d' % ctx.rev()).zfill(revwidth or 0),
         '%': lambda: '%',
         'b': lambda: os.path.basename(ctx.repo().root),
@@ -954,7 +955,7 @@ class _unclosablefile(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         pass
 
-def makefileobj(ctx, pat, desc=None, total=None,
+def makefileobj(ctx, pat, total=None,
                 seqno=None, revwidth=None, mode='wb', modemap=None,
                 pathname=None):
 
@@ -967,7 +968,7 @@ def makefileobj(ctx, pat, desc=None, total=None,
         else:
             fp = repo.ui.fin
         return _unclosablefile(fp)
-    fn = makefilename(ctx, pat, desc, total, seqno, revwidth, pathname)
+    fn = makefilename(ctx, pat, total, seqno, revwidth, pathname)
     if modemap is not None:
         mode = modemap.get(fn, mode)
         if mode == 'wb':
@@ -1542,9 +1543,7 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
         ctx = repo[rev]
         fo = None
         if not fp and fntemplate:
-            desc_lines = ctx.description().rstrip().split('\n')
-            desc = desc_lines[0]    #Commit always has a first line.
-            fo = makefileobj(ctx, fntemplate, desc=desc,
+            fo = makefileobj(ctx, fntemplate,
                              total=total, seqno=seqno, revwidth=revwidth,
                              mode='wb', modemap=filemode)
             dest = fo.name

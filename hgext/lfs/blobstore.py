@@ -103,6 +103,12 @@ class local(object):
     def open(self, oid):
         """Open a read-only file descriptor to the named blob, in either the
         usercache or the local store."""
+        # The usercache is the most likely place to hold the file.  Commit will
+        # write to both it and the local store, as will anything that downloads
+        # the blobs.  However, things like clone without an update won't
+        # populate the local store.  For an init + push of a local clone,
+        # the usercache is the only place it _could_ be.  If not present, the
+        # missing file msg here will indicate the local repo, not the usercache.
         if self.cachevfs.exists(oid):
             return self.cachevfs(oid, 'rb')
 

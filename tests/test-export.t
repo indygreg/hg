@@ -186,10 +186,44 @@ Checking if only alphanumeric characters are used in the file name (%m option):
   exporting patch:
   ___________0123456789_______ABCDEFGHIJKLMNOPQRSTUVWXYZ______abcdefghijklmnopqrstuvwxyz____.patch
 
+Template fragments in file name:
+
+  $ hg export -v -o '{node|shortest}.patch' tip
+  exporting patch:
+  197e.patch
+
+Backslash should be preserved because it is a directory separator on Windows:
+
+  $ mkdir out
+  $ hg export -v -o 'out\{node|shortest}.patch' tip
+  exporting patch:
+  out\197e.patch
+
+Still backslash is taken as an escape character in inner template strings:
+
+  $ hg export -v -o '{"out\{foo}.patch"}' tip
+  exporting patch:
+  out{foo}.patch
+
 Invalid pattern in file name:
 
   $ hg export -o '%x.patch' tip
   abort: invalid format spec '%x' in output filename
+  [255]
+  $ hg export -o '%' tip
+  abort: incomplete format spec in output filename
+  [255]
+  $ hg export -o '%{"foo"}' tip
+  abort: incomplete format spec in output filename
+  [255]
+  $ hg export -o '%m{' tip
+  hg: parse error at 3: unterminated template expansion
+  [255]
+  $ hg export -o '%\' tip
+  abort: invalid format spec '%\' in output filename
+  [255]
+  $ hg export -o '\%' tip
+  abort: incomplete format spec in output filename
   [255]
 
 Catch exporting unknown revisions (especially empty revsets, see issue3353)

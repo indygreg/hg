@@ -1285,7 +1285,9 @@ def cat(ui, repo, file1, *pats, **opts):
     no revision is given, the parent of the working directory is used.
 
     Output may be to a file, in which case the name of the file is
-    given using a format string. The formatting rules as follows:
+    given using a template string. See :hg:`help templates`. In addition
+    to the common template keywords, the following formatting rules are
+    supported:
 
     :``%%``: literal "%" character
     :``%s``: basename of file being printed
@@ -1296,6 +1298,7 @@ def cat(ui, repo, file1, *pats, **opts):
     :``%h``: short-form changeset hash (12 hexadecimal digits)
     :``%r``: zero-padded changeset revision number
     :``%b``: basename of the exporting repository
+    :``\\``: literal "\\" character
 
     Returns 0 on success.
     """
@@ -1901,7 +1904,9 @@ def export(ui, repo, *changesets, **opts):
        first parent only.
 
     Output may be to a file, in which case the name of the file is
-    given using a format string. The formatting rules are as follows:
+    given using a template string. See :hg:`help templates`. In addition
+    to the common template keywords, the following formatting rules are
+    supported:
 
     :``%%``: literal "%" character
     :``%H``: changeset hash (40 hexadecimal digits)
@@ -1912,6 +1917,7 @@ def export(ui, repo, *changesets, **opts):
     :``%m``: first line of the commit message (only alphanumeric characters)
     :``%n``: zero-padded sequence number, starting at 1
     :``%r``: zero-padded changeset revision number
+    :``\\``: literal "\\" character
 
     Without the -a/--text option, export will avoid generating diffs
     of files it detects as binary. With -a, export will generate a

@@ -42,6 +42,7 @@ from . import (
     scmutil,
     smartset,
     subrepoutil,
+    templatekw,
     templater,
     util,
     vfs as vfsmod,
@@ -891,45 +892,97 @@ def getcommiteditor(edit=False, finishdesc=None, extramsg=None,
     else:
         return commiteditor
 
-def makefilename(ctx, pat,
-                  total=None, seqno=None, revwidth=None, pathname=None):
+def rendertemplate(ctx, tmpl, props=None):
+    """Expand a literal template 'tmpl' byte-string against one changeset
+
+    Each props item must be a stringify-able value or a callable returning
+    such value, i.e. no bare list nor dict should be passed.
+    """
+    repo = ctx.repo()
+    tres = formatter.templateresources(repo.ui, repo)
+    t = formatter.maketemplater(repo.ui, tmpl, defaults=templatekw.keywords,
+                                resources=tres)
+    mapping = {'ctx': ctx, 'revcache': {}}
+    if props:
+        mapping.update(props)
+    return t.render(mapping)
+
+def _buildfntemplate(pat, total=None, seqno=None, revwidth=None, pathname=None):
+    r"""Convert old-style filename format string to template string
+
+    >>> _buildfntemplate(b'foo-%b-%n.patch', seqno=0)
+    'foo-{reporoot|basename}-{seqno}.patch'
+    >>> _buildfntemplate(b'%R{tags % "{tag}"}%H')
+    '{rev}{tags % "{tag}"}{node}'
+
+    '\' in outermost strings has to be escaped because it is a directory
+    separator on Windows:
+
+    >>> _buildfntemplate(b'c:\\tmp\\%R\\%n.patch', seqno=0)
+    'c:\\\\tmp\\\\{rev}\\\\{seqno}.patch'
+    >>> _buildfntemplate(b'\\\\foo\\bar.patch')
+    '\\\\\\\\foo\\\\bar.patch'
+    >>> _buildfntemplate(b'\\{tags % "{tag}"}')
+    '\\\\{tags % "{tag}"}'
+
+    but inner strings follow the template rules (i.e. '\' is taken as an
+    escape character):
+
+    >>> _buildfntemplate(br'{"c:\tmp"}', seqno=0)
+    '{"c:\\tmp"}'
+    """
     expander = {
-        'H': lambda: ctx.hex(),
-        'R': lambda: '%d' % ctx.rev(),
-        'h': lambda: short(ctx.node()),
-        'm': lambda: re.sub('[^\w]', '_',
-                            ctx.description().strip().splitlines()[0]),
-        'r': lambda: ('%d' % ctx.rev()).zfill(revwidth or 0),
-        '%': lambda: '%',
-        'b': lambda: os.path.basename(ctx.repo().root),
-        }
+        b'H': b'{node}',
+        b'R': b'{rev}',
+        b'h': b'{node|short}',
+        b'm': br'{sub(r"[^\w]", "_", desc|firstline)}',
+        b'r': b'{if(revwidth, pad(rev, revwidth, "0", left=True), rev)}',
+        b'%': b'%',
+        b'b': b'{reporoot|basename}',
+    }
     if total is not None:
-        expander['N'] = lambda: '%d' % total
+        expander[b'N'] = b'{total}'
     if seqno is not None:
-        expander['n'] = lambda: '%d' % seqno
+        expander[b'n'] = b'{seqno}'
     if total is not None and seqno is not None:
-        expander['n'] = (lambda: ('%d' % seqno).zfill(len('%d' % total)))
+        expander[b'n'] = b'{pad(seqno, total|stringify|count, "0", left=True)}'
     if pathname is not None:
-        expander['s'] = lambda: os.path.basename(pathname)
-        expander['d'] = lambda: os.path.dirname(pathname) or '.'
-        expander['p'] = lambda: pathname
+        expander[b's'] = b'{pathname|basename}'
+        expander[b'd'] = b'{if(pathname|dirname, pathname|dirname, ".")}'
+        expander[b'p'] = b'{pathname}'
 
     newname = []
-    patlen = len(pat)
-    i = 0
-    while i < patlen:
-        c = pat[i:i + 1]
-        if c == '%':
-            i += 1
-            c = pat[i:i + 1]
+    for typ, start, end in templater.scantemplate(pat, raw=True):
+        if typ != b'string':
+            newname.append(pat[start:end])
+            continue
+        i = start
+        while i < end:
+            n = pat.find(b'%', i, end)
+            if n < 0:
+                newname.append(util.escapestr(pat[i:end]))
+                break
+            newname.append(util.escapestr(pat[i:n]))
+            if n + 2 > end:
+                raise error.Abort(_("incomplete format spec in output "
+                                    "filename"))
+            c = pat[n + 1:n + 2]
+            i = n + 2
             try:
-                c = expander[c]()
+                newname.append(expander[c])
             except KeyError:
                 raise error.Abort(_("invalid format spec '%%%s' in output "
                                     "filename") % c)
-        newname.append(c)
-        i += 1
     return ''.join(newname)
+
+def makefilename(ctx, pat, **props):
+    if not pat:
+        return pat
+    tmpl = _buildfntemplate(pat, **props)
+    # BUG: alias expansion shouldn't be made against template fragments
+    # rewritten from %-format strings, but we have no easy way to partially
+    # disable the expansion.
+    return rendertemplate(ctx, tmpl, pycompat.byteskwargs(props))
 
 def isstdiofilename(pat):
     """True if the given pat looks like a filename denoting stdin/stdout"""

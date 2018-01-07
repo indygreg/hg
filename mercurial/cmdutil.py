@@ -903,34 +903,33 @@ def makefilename(ctx, pat,
         '%': lambda: '%',
         'b': lambda: os.path.basename(ctx.repo().root),
         }
+    if total is not None:
+        expander['N'] = lambda: '%d' % total
+    if seqno is not None:
+        expander['n'] = lambda: '%d' % seqno
+    if total is not None and seqno is not None:
+        expander['n'] = (lambda: ('%d' % seqno).zfill(len('%d' % total)))
+    if pathname is not None:
+        expander['s'] = lambda: os.path.basename(pathname)
+        expander['d'] = lambda: os.path.dirname(pathname) or '.'
+        expander['p'] = lambda: pathname
 
-    try:
-        if total is not None:
-            expander['N'] = lambda: '%d' % total
-        if seqno is not None:
-            expander['n'] = lambda: '%d' % seqno
-        if total is not None and seqno is not None:
-            expander['n'] = (lambda: ('%d' % seqno).zfill(len('%d' % total)))
-        if pathname is not None:
-            expander['s'] = lambda: os.path.basename(pathname)
-            expander['d'] = lambda: os.path.dirname(pathname) or '.'
-            expander['p'] = lambda: pathname
-
-        newname = []
-        patlen = len(pat)
-        i = 0
-        while i < patlen:
-            c = pat[i:i + 1]
-            if c == '%':
-                i += 1
-                c = pat[i:i + 1]
-                c = expander[c]()
-            newname.append(c)
+    newname = []
+    patlen = len(pat)
+    i = 0
+    while i < patlen:
+        c = pat[i:i + 1]
+        if c == '%':
             i += 1
-        return ''.join(newname)
-    except KeyError as inst:
-        raise error.Abort(_("invalid format spec '%%%s' in output filename") %
-                         inst.args[0])
+            c = pat[i:i + 1]
+            try:
+                c = expander[c]()
+            except KeyError:
+                raise error.Abort(_("invalid format spec '%%%s' in output "
+                                    "filename") % c)
+        newname.append(c)
+        i += 1
+    return ''.join(newname)
 
 def isstdiofilename(pat):
     """True if the given pat looks like a filename denoting stdin/stdout"""

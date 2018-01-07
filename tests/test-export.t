@@ -186,6 +186,12 @@ Checking if only alphanumeric characters are used in the file name (%m option):
   exporting patch:
   ____________0123456789_______ABCDEFGHIJKLMNOPQRSTUVWXYZ______abcdefghijklmnopqrstuvwxyz____.patch
 
+Invalid pattern in file name:
+
+  $ hg export -o '%x.patch' tip
+  abort: invalid format spec '%x' in output filename
+  [255]
+
 Catch exporting unknown revisions (especially empty revsets, see issue3353)
 
   $ hg export

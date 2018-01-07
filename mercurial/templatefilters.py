@@ -100,6 +100,13 @@ def count(i):
     """List or text. Returns the length as an integer."""
     return len(i)
 
+@templatefilter('dirname')
+def dirname(path):
+    """Any text. Treats the text as a path, and strips the last
+    component of the path after splitting by the path separator.
+    """
+    return os.path.dirname(path)
+
 @templatefilter('domain')
 def domain(author):
     """Any text. Finds the first string that looks like an email

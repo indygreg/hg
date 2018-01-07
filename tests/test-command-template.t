@@ -2232,6 +2232,10 @@ Filename filters:
 
   $ hg debugtemplate '{"foo/bar"|basename}|{"foo/"|basename}|{"foo"|basename}|\n'
   bar||foo|
+  $ hg debugtemplate '{"foo/bar"|dirname}|{"foo/"|dirname}|{"foo"|dirname}|\n'
+  foo|foo||
+  $ hg debugtemplate '{"foo/bar"|stripdir}|{"foo/"|stripdir}|{"foo"|stripdir}|\n'
+  foo|foo|foo|
 
 Add a dummy commit to make up for the instability of the above:
 

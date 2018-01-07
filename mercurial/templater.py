@@ -172,6 +172,26 @@ def _parsetemplate(tmpl, start, stop, quote=''):
             raise error.ProgrammingError('unexpected type: %s' % typ)
     raise error.ProgrammingError('unterminated scanning of template')
 
+def scantemplate(tmpl):
+    """Scan (type, start, end) positions of outermost elements in template
+
+    >>> list(scantemplate(b'foo{bar}"baz'))
+    [('string', 0, 3), ('template', 3, 8), ('string', 8, 12)]
+    >>> list(scantemplate(b'outer{"inner"}outer'))
+    [('string', 0, 5), ('template', 5, 14), ('string', 14, 19)]
+    >>> list(scantemplate(b'foo\\{escaped}'))
+    [('string', 0, 5), ('string', 5, 13)]
+    """
+    last = None
+    for typ, val, pos in _scantemplate(tmpl, 0, len(tmpl)):
+        if last:
+            yield last + (pos,)
+        if typ == 'end':
+            return
+        else:
+            last = (typ, pos)
+    raise error.ProgrammingError('unterminated scanning of template')
+
 def _scantemplate(tmpl, start, stop, quote=''):
     """Parse template string into chunks of strings and template expressions"""
     sepchars = '{' + quote

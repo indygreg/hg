@@ -2218,6 +2218,11 @@ Age filter:
   $ cd ..
   $ rm -rf unstable-hash
 
+Filename filters:
+
+  $ hg debugtemplate '{"foo/bar"|basename}|{"foo/"|basename}|{"foo"|basename}|\n'
+  bar||foo|
+
 Add a dummy commit to make up for the instability of the above:
 
   $ echo a > a

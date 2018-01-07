@@ -90,9 +90,8 @@ def age(date, abbrev=False):
 @templatefilter('basename')
 def basename(path):
     """Any text. Treats the text as a path, and returns the last
-    component of the path after splitting by the path separator
-    (ignoring trailing separators). For example, "foo/bar/baz" becomes
-    "baz" and "foo/bar//" becomes "bar".
+    component of the path after splitting by the path separator.
+    For example, "foo/bar/baz" becomes "baz" and "foo/bar//" becomes "".
     """
     return os.path.basename(path)
 

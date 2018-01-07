@@ -43,6 +43,8 @@ class filelog(revlog.revlog):
     def __init__(self, opener, path):
         super(filelog, self).__init__(opener,
                         "/".join(("data", path + ".i")))
+        # full name of the user visible file, relative to the repository root
+        self.filename = path
 
     def read(self, node):
         t = self.revision(node)

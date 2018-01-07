@@ -134,20 +134,20 @@ class local(object):
             self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
             lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
 
-    def write(self, oid, data, verify=True):
-        """Write blob to local blobstore."""
-        if verify:
-            _verify(oid, data)
+    def write(self, oid, data):
+        """Write blob to local blobstore.
 
+        This should only be called from the filelog during a commit or similar.
+        As such, there is no need to verify the data.  Imports from a remote
+        store must use ``download()`` instead."""
         with self.vfs(oid, 'wb', atomictemp=True) as fp:
             fp.write(data)
 
         # XXX: should we verify the content of the cache, and hardlink back to
         # the local store on success, but truncate, write and link on failure?
         if not self.cachevfs.exists(oid):
-            if verify or hashlib.sha256(data).hexdigest() == oid:
-                self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
-                lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
+            self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
+            lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
 
     def read(self, oid, verify=True):
         """Read blob from local blobstore."""

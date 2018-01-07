@@ -86,7 +86,7 @@ def writetostore(self, text):
 
     # git-lfs only supports sha256
     oid = hashlib.sha256(text).hexdigest()
-    self.opener.lfslocalblobstore.write(oid, text, verify=False)
+    self.opener.lfslocalblobstore.write(oid, text)
 
     # replace contents with metadata
     longoid = 'sha256:%s' % oid

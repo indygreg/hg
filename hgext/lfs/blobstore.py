@@ -240,7 +240,7 @@ class _gitlfsremote(object):
                     filename = getattr(p, 'filename', 'unknown')
                     raise LfsRemoteError(
                         _(('LFS server error. Remote object '
-                          'for file %s not found: %r')) % (filename, response))
+                          'for "%s" not found: %r')) % (filename, response))
                 raise LfsRemoteError(_('LFS server error: %r') % response)
 
     def _extractobjects(self, response, pointers, action):

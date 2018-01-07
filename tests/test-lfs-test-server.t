@@ -185,7 +185,7 @@ Check error message when object does not exist:
   $ rm -rf `hg config lfs.usercache`
   $ hg --config 'lfs.url=https://dewey-lfs.vip.facebook.com/lfs' clone test test2
   updating to branch default
-  abort: LFS server error. Remote object for file data/a.i not found:(.*)! (re)
+  abort: LFS server error. Remote object for "a" not found:(.*)! (re)
   [255]
 
   $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS

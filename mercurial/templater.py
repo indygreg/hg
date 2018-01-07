@@ -161,6 +161,19 @@ def _parsetemplate(tmpl, start, stop, quote=''):
     ([('string', 'foo\\')], 6)
     """
     parsed = []
+    for typ, val, pos in _scantemplate(tmpl, start, stop, quote):
+        if typ == 'string':
+            parsed.append((typ, val))
+        elif typ == 'template':
+            parsed.append(val)
+        elif typ == 'end':
+            return parsed, pos
+        else:
+            raise error.ProgrammingError('unexpected type: %s' % typ)
+    raise error.ProgrammingError('unterminated scanning of template')
+
+def _scantemplate(tmpl, start, stop, quote=''):
+    """Parse template string into chunks of strings and template expressions"""
     sepchars = '{' + quote
     pos = start
     p = parser.parser(elements)
@@ -168,29 +181,30 @@ def _parsetemplate(tmpl, start, stop, quote=''):
         n = min((tmpl.find(c, pos, stop) for c in sepchars),
                 key=lambda n: (n < 0, n))
         if n < 0:
-            parsed.append(('string', parser.unescapestr(tmpl[pos:stop])))
+            yield ('string', parser.unescapestr(tmpl[pos:stop]), pos)
             pos = stop
             break
         c = tmpl[n:n + 1]
         bs = (n - pos) - len(tmpl[pos:n].rstrip('\\'))
         if bs % 2 == 1:
             # escaped (e.g. '\{', '\\\{', but not '\\{')
-            parsed.append(('string', parser.unescapestr(tmpl[pos:n - 1]) + c))
+            yield ('string', parser.unescapestr(tmpl[pos:n - 1]) + c, pos)
             pos = n + 1
             continue
         if n > pos:
-            parsed.append(('string', parser.unescapestr(tmpl[pos:n])))
+            yield ('string', parser.unescapestr(tmpl[pos:n]), pos)
         if c == quote:
-            return parsed, n + 1
+            yield ('end', None, n + 1)
+            return
 
         parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, '}'))
         if not tmpl.endswith('}', n + 1, pos):
             raise error.ParseError(_("invalid token"), pos)
-        parsed.append(parseres)
+        yield ('template', parseres, n)
 
     if quote:
         raise error.ParseError(_("unterminated string"), start)
-    return parsed, pos
+    yield ('end', None, pos)
 
 def _unnesttemplatelist(tree):
     """Expand list of templates to node tuple

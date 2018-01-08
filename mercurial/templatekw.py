@@ -726,6 +726,11 @@ def showpredecessors(repo, ctx, **args):
                    lambda x: {'ctx': repo[x], 'revcache': {}},
                    lambda x: scmutil.formatchangeid(repo[x]))
 
+@templatekeyword('reporoot')
+def showreporoot(repo, **args):
+    """String. The root directory of the current repository."""
+    return repo.root
+
 @templatekeyword("successorssets")
 def showsuccessorssets(repo, ctx, **args):
     """Returns a string of sets of successors for a changectx. Format used

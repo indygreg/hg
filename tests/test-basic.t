@@ -87,6 +87,13 @@ Verify should succeed:
   checking files
   1 files, 1 changesets, 1 total revisions
 
+Repository root:
+
+  $ hg root
+  $TESTTMP/t
+  $ hg log -l1 -T '{reporoot}\n'
+  $TESTTMP/t
+
 At the end...
 
   $ cd ..

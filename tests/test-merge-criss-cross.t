@@ -111,7 +111,7 @@ Criss cross merging
   picked tool ':dump' for f2 (binary False symlink False changedelete False)
   my f2@6373bbfdae1d+ other f2@e673248094b1 ancestor f2@0f6b37dbe527
   3 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ f --dump --recurse *
@@ -158,7 +158,7 @@ Criss cross merging
   getting d1/f3 to d2/f3
   merging f2
   3 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
 Redo merge with merge.preferancestor="*" to enable bid merge

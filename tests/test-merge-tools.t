@@ -71,7 +71,7 @@ running from a devel copy, not a temp installation
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -98,7 +98,7 @@ simplest hgrc using false for merge:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -120,7 +120,7 @@ unexecutable file in $PATH shouldn't be found:
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ rm false
 
@@ -134,7 +134,7 @@ executable directory in $PATH shouldn't be found:
   merging f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ rmdir false
 
@@ -170,7 +170,7 @@ unless lowered on command line:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -193,7 +193,7 @@ or false set higher on command line:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -215,7 +215,7 @@ or true set to disabled:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -238,7 +238,7 @@ or true.executable not found in PATH:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -261,7 +261,7 @@ or true.executable with bogus path:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -371,7 +371,7 @@ merge-patterns specifies new tool false:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -397,7 +397,7 @@ merge-patterns specifies executable not found in PATH and gets warning:
   couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -423,7 +423,7 @@ merge-patterns specifies executable with bogus path and gets warning:
   couldn't find merge tool true (for pattern f)
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -449,7 +449,7 @@ ui.merge specifies false:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -471,7 +471,7 @@ ui.merge specifies internal:fail:
   # hg update -C 1
   $ hg merge -r 2 --config ui.merge=internal:fail
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -533,7 +533,7 @@ ui.merge specifies internal:prompt:
   $ hg merge -r 2 --config ui.merge=internal:prompt
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -557,7 +557,7 @@ ui.merge specifies :prompt, with 'leave unresolved' chosen
   > EOF
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? u
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -579,7 +579,7 @@ prompt with EOF
   $ hg merge -r 2 --config ui.merge=internal:prompt --config ui.interactive=true
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for f? 
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -637,7 +637,7 @@ ui.merge specifies internal:dump:
   $ hg merge -r 2 --config ui.merge=internal:dump
   merging f
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -707,7 +707,7 @@ be merged easily
   $ hg merge -r 3 --config ui.merge=internal:forcedump
   merging f
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -749,7 +749,7 @@ ui.merge specifies internal:other but is overruled by pattern for false:
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -775,7 +775,7 @@ ui.merge specifies internal:other but is overruled by --tool=false
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -800,7 +800,7 @@ HGMERGE specifies internal:other but is overruled by --tool=false
   merging f
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -1240,7 +1240,7 @@ cat is a bad merge-tool and doesn't change:
   was merge successful (yn)? n
   merging f failed!
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ aftermerge
   # cat f
@@ -1265,7 +1265,7 @@ internal merge cannot handle symlinks and shouldn't try:
   warning: internal :merge cannot merge symlinks for f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
 #endif

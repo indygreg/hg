@@ -138,7 +138,7 @@ Test that "hg merge" updates largefiles from "other" correctly
   getting changed largefiles
   1 largefiles updated, 0 removed
   0 files updated, 1 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg status -A large1
   M large1

@@ -14,7 +14,10 @@ import os
 import shutil
 
 from .i18n import _
-from .node import nullid
+from .node import (
+    hex,
+    nullid,
+)
 
 from . import (
     bookmarks,
@@ -844,16 +847,32 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
 
     return ret
 
-def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None):
+def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
+          abort=False):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
-    stats = mergemod.update(repo, node, True, force, mergeforce=mergeforce,
-                            labels=labels)
+    if not abort:
+        stats = mergemod.update(repo, node, True, force, mergeforce=mergeforce,
+                                labels=labels)
+    else:
+        ms = mergemod.mergestate.read(repo)
+        if ms.active():
+            # there were conflicts
+            node = hex(ms._local)
+        else:
+            # there were no conficts, mergestate was not stored
+            node = repo['.'].hex()
+
+        repo.ui.status(_("aborting the merge, updating back to"
+                         " %s\n") % node[:12])
+        stats = mergemod.update(repo, node, branchmerge=False, force=True,
+                                labels=labels)
+
     _showstats(repo, stats)
     if stats[3]:
         repo.ui.status(_("use 'hg resolve' to retry unresolved file merges "
-                         "or 'hg update -C .' to abandon\n"))
-    elif remind:
+                         "or 'hg merge --abort' to abandon\n"))
+    elif remind and not abort:
         repo.ui.status(_("(branch merge, don't forget to commit)\n"))
     return stats[3] > 0
 

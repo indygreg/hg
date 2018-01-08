@@ -3530,7 +3530,8 @@ def manifest(ui, repo, node=None, rev=None, **opts):
       _('force a merge including outstanding changes (DEPRECATED)')),
     ('r', 'rev', '', _('revision to merge'), _('REV')),
     ('P', 'preview', None,
-     _('review revisions to merge (no merge is performed)'))
+     _('review revisions to merge (no merge is performed)')),
+    ('', 'abort', None, _('abort the ongoing merge')),
      ] + mergetoolopts,
     _('[-P] [[-r] REV]'))
 def merge(ui, repo, node=None, **opts):
@@ -3555,7 +3556,7 @@ def merge(ui, repo, node=None, **opts):
 
     See :hg:`help resolve` for information on handling file conflicts.
 
-    To undo an uncommitted merge, use :hg:`update --clean .` which
+    To undo an uncommitted merge, use :hg:`merge --abort` which
     will check out a clean copy of the original merge parent, losing
     all changes.
 
@@ -3563,6 +3564,16 @@ def merge(ui, repo, node=None, **opts):
     """
 
     opts = pycompat.byteskwargs(opts)
+    abort = opts.get('abort')
+    if abort and repo.dirstate.p2() == nullid:
+        cmdutil.wrongtooltocontinue(repo, _('merge'))
+    if abort:
+        if node:
+            raise error.Abort(_("cannot specify a node with --abort"))
+        if opts.get('rev'):
+            raise error.Abort(_("cannot specify both --rev and --abort"))
+        if opts.get('preview'):
+            raise error.Abort(_("cannot specify --preview with --abort"))
     if opts.get('rev') and node:
         raise error.Abort(_("please specify just one revision"))
     if not node:
@@ -3571,7 +3582,7 @@ def merge(ui, repo, node=None, **opts):
     if node:
         node = scmutil.revsingle(repo, node).node()
 
-    if not node:
+    if not node and not abort:
         node = repo[destutil.destmerge(repo)].node()
 
     if opts.get('preview'):
@@ -3592,7 +3603,7 @@ def merge(ui, repo, node=None, **opts):
         force = opts.get('force')
         labels = ['working copy', 'merge rev']
         return hg.merge(repo, node, force=force, mergeforce=force,
-                        labels=labels)
+                        labels=labels, abort=abort)
     finally:
         ui.setconfig('ui', 'forcemerge', '', 'merge')
 

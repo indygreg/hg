@@ -229,7 +229,7 @@ Show all commands + options
   forget: include, exclude
   init: ssh, remotecmd, insecure
   log: follow, follow-first, date, copies, keyword, rev, line-range, removed, only-merges, user, only-branch, branch, prune, patch, git, limit, no-merges, stat, graph, style, template, include, exclude
-  merge: force, rev, preview, tool
+  merge: force, rev, preview, abort, tool
   pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
   push: force, rev, bookmark, branch, new-branch, pushvars, ssh, remotecmd, insecure
   remove: after, force, subrepos, include, exclude

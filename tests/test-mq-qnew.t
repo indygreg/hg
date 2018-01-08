@@ -162,7 +162,7 @@ plain headers
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   (no more unresolved files)
   abort: cannot manage merge changesets
   $ rm -r sandbox
@@ -241,7 +241,7 @@ hg headers
   merging a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   (no more unresolved files)
   abort: cannot manage merge changesets
   $ rm -r sandbox

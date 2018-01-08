@@ -216,7 +216,7 @@ Merge with remote
   warning: conflicts while merging missing_content2_missing_content4-tracked! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging missing_content2_missing_content4-untracked! (edit, then use 'hg resolve --mark')
   18 files updated, 3 files merged, 8 files removed, 35 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
 
 Check which files need to be resolved (should correspond to the output above).
 This should be the files for which the base (1st filename segment), the remote

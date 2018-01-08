@@ -42,7 +42,7 @@ Symlink is local parent, executable is other:
   warning: internal :merge cannot merge symlinks for a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ tellmeabout a
@@ -75,7 +75,7 @@ Symlink is other parent, executable is local:
   warning: internal :union cannot merge symlinks for a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ tellmeabout a
@@ -98,7 +98,7 @@ Symlink is other parent, executable is local:
   warning: internal :merge3 cannot merge symlinks for a
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ tellmeabout a
@@ -120,7 +120,7 @@ Symlink is other parent, executable is local:
   my a@3574f3e69b1c+ other a@521a1e40188f ancestor a@c334dc3be0da
   warning: internal :merge-local cannot merge symlinks for a
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ tellmeabout a
@@ -142,7 +142,7 @@ Symlink is other parent, executable is local:
   my a@3574f3e69b1c+ other a@521a1e40188f ancestor a@c334dc3be0da
   warning: internal :merge-other cannot merge symlinks for a
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ tellmeabout a
@@ -211,7 +211,7 @@ where that was what happened.
   warning: internal :merge cannot merge symlinks for f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ tellmeabout f
   f is a symlink:
@@ -223,7 +223,7 @@ where that was what happened.
   warning: internal :merge cannot merge symlinks for f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ tellmeabout f
   f is a plain file with content:
@@ -250,7 +250,7 @@ Test removed 'x' flag merged with change to symlink
   warning: internal :merge cannot merge symlinks for f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ tellmeabout f
   f is a symlink:
@@ -262,7 +262,7 @@ Test removed 'x' flag merged with change to symlink
   warning: internal :merge cannot merge symlinks for f
   warning: conflicts while merging f! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ tellmeabout f
   f is a plain file with content:
@@ -354,7 +354,7 @@ h: l vs l, different
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
   3 files updated, 0 files merged, 0 files removed, 6 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg resolve -l
   U a
@@ -416,7 +416,7 @@ h: l vs l, different
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging bx! (edit, then use 'hg resolve --mark')
   3 files updated, 0 files merged, 0 files removed, 6 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ tellmeabout a
   a is a plain file with content:

@@ -34,7 +34,7 @@ failing merge
   $ hg up -qC 2
   $ hg merge --tool=internal:fail 1
   0 files updated, 0 files merged, 0 files removed, 2 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
 resolve -l should contain unresolved entries
@@ -223,7 +223,7 @@ get back to conflicting state
   $ hg up -qC 2
   $ hg merge --tool=internal:fail 1
   0 files updated, 0 files merged, 0 files removed, 2 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
 resolve without arguments should suggest --all

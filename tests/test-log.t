@@ -1695,7 +1695,7 @@ log -p -R repo
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ echo 'merge 1' > foo
   $ hg resolve -m foo
@@ -1706,7 +1706,7 @@ log -p -R repo
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ echo 'merge 2' > foo
   $ hg resolve -m foo

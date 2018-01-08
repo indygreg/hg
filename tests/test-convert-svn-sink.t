@@ -384,7 +384,7 @@ Branchy history
   merging b
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   2 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg --cwd b revert -r 2 b
   $ hg --cwd b resolve -m b

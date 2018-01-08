@@ -150,7 +150,7 @@ def topicmatch(ui, commands, kw):
             doclines = docs.splitlines()
             if doclines:
                 summary = doclines[0]
-            cmdname = cmd.partition('|')[0].lstrip('^')
+            cmdname = cmdutil.parsealiases(cmd)[0]
             if filtercmd(ui, cmdname, kw, docs):
                 continue
             results['commands'].append((cmdname, summary))
@@ -170,7 +170,7 @@ def topicmatch(ui, commands, kw):
             continue
         for cmd, entry in getattr(mod, 'cmdtable', {}).iteritems():
             if kw in cmd or (len(entry) > 2 and lowercontains(entry[2])):
-                cmdname = cmd.partition('|')[0].lstrip('^')
+                cmdname = cmdutil.parsealiases(cmd)[0]
                 cmddoc = pycompat.getdoc(entry[0])
                 if cmddoc:
                     cmddoc = gettext(cmddoc).splitlines()[0]
@@ -328,7 +328,7 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             # py3k fix: except vars can't be used outside the scope of the
             # except block, nor can be used inside a lambda. python issue4617
             prefix = inst.args[0]
-            select = lambda c: c.lstrip('^').startswith(prefix)
+            select = lambda c: cmdutil.parsealiases(c)[0].startswith(prefix)
             rst = helplist(select)
             return rst
 
@@ -419,15 +419,18 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         h = {}
         cmds = {}
         for c, e in commands.table.iteritems():
-            f = c.partition("|")[0]
-            if select and not select(f):
+            fs = cmdutil.parsealiases(c)
+            f = fs[0]
+            p = ''
+            if c.startswith("^"):
+                p = '^'
+            if select and not select(p + f):
                 continue
             if (not select and name != 'shortlist' and
                 e[0].__module__ != commands.__name__):
                 continue
-            if name == "shortlist" and not f.startswith("^"):
+            if name == "shortlist" and not p:
                 continue
-            f = f.lstrip("^")
             doc = pycompat.getdoc(e[0])
             if filtercmd(ui, f, name, doc):
                 continue
@@ -435,7 +438,7 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
             if not doc:
                 doc = _("(no help text available)")
             h[f] = doc.splitlines()[0].rstrip()
-            cmds[f] = c.lstrip("^")
+            cmds[f] = '|'.join(fs)
 
         rst = []
         if not h:

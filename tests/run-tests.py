@@ -1021,7 +1021,7 @@ class Test(unittest.TestCase):
             offset = '' if i == 0 else '%s' % i
             env["HGPORT%s" % offset] = '%s' % (self._startport + i)
         env = os.environ.copy()
-        env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase')
+        env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = self._testtmp
         env['HOME'] = self._testtmp

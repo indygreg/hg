@@ -20,7 +20,6 @@ from .node import (
 from . import (
     encoding,
     error,
-    lock as lockmod,
     obsutil,
     pycompat,
     scmutil,
@@ -414,11 +413,7 @@ def listbookmarks(repo):
     return d
 
 def pushbookmark(repo, key, old, new):
-    w = l = tr = None
-    try:
-        w = repo.wlock()
-        l = repo.lock()
-        tr = repo.transaction('bookmarks')
+    with repo.wlock(), repo.lock(), repo.transaction('bookmarks') as tr:
         marks = repo._bookmarks
         existing = hex(marks.get(key, ''))
         if existing != old and existing != new:
@@ -430,10 +425,7 @@ def pushbookmark(repo, key, old, new):
                 return False
             changes = [(key, repo[new].node())]
         marks.applychanges(repo, tr, changes)
-        tr.close()
         return True
-    finally:
-        lockmod.release(tr, l, w)
 
 def comparebookmarks(repo, srcmarks, dstmarks, targets=None):
     '''Compare bookmarks between srcmarks and dstmarks

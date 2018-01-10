@@ -838,8 +838,7 @@ def pushmarker(repo, key, old, new):
         repo.ui.warn(_('unexpected old value for %r') % key)
         return False
     data = util.b85decode(new)
-    lock = repo.lock()
-    try:
+    with repo.lock():
         tr = repo.transaction('pushkey: obsolete markers')
         try:
             repo.obsstore.mergemarkers(tr, data)
@@ -848,8 +847,6 @@ def pushmarker(repo, key, old, new):
             return True
         finally:
             tr.release()
-    finally:
-        lock.release()
 
 # keep compatibility for the 4.3 cycle
 def allprecursors(obsstore, nodes, ignoreflags=0):

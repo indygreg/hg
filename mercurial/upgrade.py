@@ -631,7 +631,7 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
     elif 'redeltamultibase' in actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
-    if 'redeltafulladd' in actions:
+    elif 'redeltafulladd' in actions:
         deltareuse = revlog.revlog.DELTAREUSEFULLADD
     else:
         deltareuse = revlog.revlog.DELTAREUSEALWAYS

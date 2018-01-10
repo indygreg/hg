@@ -392,14 +392,8 @@ def update(repo, parents, node):
         bmchanges.append((bm, None))
 
     if bmchanges:
-        lock = tr = None
-        try:
-            lock = repo.lock()
-            tr = repo.transaction('bookmark')
+        with repo.lock(), repo.transaction('bookmark') as tr:
             marks.applychanges(repo, tr, bmchanges)
-            tr.close()
-        finally:
-            lockmod.release(tr, lock)
     return bool(bmchanges)
 
 def listbinbookmarks(repo):

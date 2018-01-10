@@ -1081,8 +1081,7 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     saveeffectflag = repo.ui.configbool('experimental',
                                         'evolution.effect-flags')
 
-    tr = repo.transaction('add-obsolescence-marker')
-    try:
+    with repo.transaction('add-obsolescence-marker') as tr:
         markerargs = []
         for rel in relations:
             prec = rel[0]
@@ -1123,6 +1122,3 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
                                  date=date, metadata=localmetadata,
                                  ui=repo.ui)
             repo.filteredrevcache.clear()
-        tr.close()
-    finally:
-        tr.release()

@@ -1345,11 +1345,8 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
                     " %s") % (', '.join(sorted(missing)))
             raise error.Abort(msg)
 
-    wlock = lock = None
-    try:
-        wlock = pullop.repo.wlock()
-        lock = pullop.repo.lock()
-        pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
+    pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
+    with repo.wlock(), repo.lock(), pullop.trmanager:
         # This should ideally be in _pullbundle2(). However, it needs to run
         # before discovery to avoid extra work.
         _maybeapplyclonebundle(pullop)
@@ -1361,9 +1358,6 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
         _pullphase(pullop)
         _pullbookmarks(pullop)
         _pullobsolete(pullop)
-        pullop.trmanager.close()
-    finally:
-        lockmod.release(pullop.trmanager, lock, wlock)
 
     # storing remotenames
     if repo.ui.configbool('experimental', 'remotenames'):

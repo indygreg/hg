@@ -1134,7 +1134,6 @@ class localrepository(object):
                 raise error.ProgrammingError('transaction requires locking')
         tr = self.currenttransaction()
         if tr is not None:
-            scmutil.registersummarycallback(self, tr, desc)
             return tr.nest()
 
         # abort here if the journal already exists

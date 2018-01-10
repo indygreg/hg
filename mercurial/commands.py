@@ -3854,7 +3854,6 @@ def phase(ui, repo, *revs, **opts):
 
     revs = scmutil.revrange(repo, revs)
 
-    lock = None
     ret = 0
     if targetphase is None:
         # display
@@ -3862,10 +3861,7 @@ def phase(ui, repo, *revs, **opts):
             ctx = repo[r]
             ui.write('%i: %s\n' % (ctx.rev(), ctx.phasestr()))
     else:
-        tr = None
-        lock = repo.lock()
-        try:
-            tr = repo.transaction("phase")
+        with repo.lock(), repo.transaction("phase") as tr:
             # set phase
             if not revs:
                 raise error.Abort(_('empty revision set'))
@@ -3878,11 +3874,6 @@ def phase(ui, repo, *revs, **opts):
             phases.advanceboundary(repo, tr, targetphase, nodes)
             if opts['force']:
                 phases.retractboundary(repo, tr, targetphase, nodes)
-            tr.close()
-        finally:
-            if tr is not None:
-                tr.release()
-            lock.release()
         getphase = unfi._phasecache.phase
         newdata = [getphase(unfi, r) for r in unfi]
         changes = sum(newdata[r] != olddata[r] for r in unfi)

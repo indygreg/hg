@@ -2435,12 +2435,27 @@ class TestRunner(object):
             self._tmpbindir = os.path.join(self._hgtmp, b'install', b'bin')
             os.makedirs(self._tmpbindir)
 
-            # This looks redundant with how Python initializes sys.path from
-            # the location of the script being executed.  Needed because the
-            # "hg" specified by --with-hg is not the only Python script
-            # executed in the test suite that needs to import 'mercurial'
-            # ... which means it's not really redundant at all.
-            self._pythondir = self._bindir
+            normbin = os.path.normpath(os.path.abspath(whg))
+            normbin = normbin.replace(os.sep.encode('ascii'), b'/')
+
+            # Other Python scripts in the test harness need to
+            # `import mercurial`. If `hg` is a Python script, we assume
+            # the Mercurial modules are relative to its path and tell the tests
+            # to load Python modules from its directory.
+            with open(whg, 'rb') as fh:
+                initial = fh.read(1024)
+
+            if re.match(b'#!.*python', initial):
+                self._pythondir = self._bindir
+            # If it looks like our in-repo Rust binary, use the source root.
+            # This is a bit hacky. But rhg is still not supported outside the
+            # source directory. So until it is, do the simple thing.
+            elif re.search(b'|/rust/target/[^/]+/hg', normbin):
+                self._pythondir = os.path.dirname(self._testdir)
+            # Fall back to the legacy behavior.
+            else:
+                self._pythondir = self._bindir
+
         else:
             self._installdir = os.path.join(self._hgtmp, b"install")
             self._bindir = os.path.join(self._installdir, b"bin")

@@ -4007,36 +4007,40 @@ def pull(ui, repo, source="default", **opts):
                         "so a rev cannot be specified.")
                 raise error.Abort(err)
 
-        pullopargs.update(opts.get('opargs', {}))
-        modheads = exchange.pull(repo, other, heads=revs,
-                                 force=opts.get('force'),
-                                 bookmarks=opts.get('bookmark', ()),
-                                 opargs=pullopargs).cgresult
+        wlock = util.nullcontextmanager()
+        if opts.get('update'):
+            wlock = repo.wlock()
+        with wlock:
+            pullopargs.update(opts.get('opargs', {}))
+            modheads = exchange.pull(repo, other, heads=revs,
+                                     force=opts.get('force'),
+                                     bookmarks=opts.get('bookmark', ()),
+                                     opargs=pullopargs).cgresult
 
-        # brev is a name, which might be a bookmark to be activated at
-        # the end of the update. In other words, it is an explicit
-        # destination of the update
-        brev = None
+            # brev is a name, which might be a bookmark to be activated at
+            # the end of the update. In other words, it is an explicit
+            # destination of the update
+            brev = None
 
-        if checkout:
-            checkout = str(repo.changelog.rev(checkout))
+            if checkout:
+                checkout = str(repo.changelog.rev(checkout))
 
-            # order below depends on implementation of
-            # hg.addbranchrevs(). opts['bookmark'] is ignored,
-            # because 'checkout' is determined without it.
-            if opts.get('rev'):
-                brev = opts['rev'][0]
-            elif opts.get('branch'):
-                brev = opts['branch'][0]
-            else:
-                brev = branches[0]
-        repo._subtoppath = source
-        try:
-            ret = postincoming(ui, repo, modheads, opts.get('update'),
-                               checkout, brev)
+                # order below depends on implementation of
+                # hg.addbranchrevs(). opts['bookmark'] is ignored,
+                # because 'checkout' is determined without it.
+                if opts.get('rev'):
+                    brev = opts['rev'][0]
+                elif opts.get('branch'):
+                    brev = opts['branch'][0]
+                else:
+                    brev = branches[0]
+            repo._subtoppath = source
+            try:
+                ret = postincoming(ui, repo, modheads, opts.get('update'),
+                                   checkout, brev)
 
-        finally:
-            del repo._subtoppath
+            finally:
+                del repo._subtoppath
 
     finally:
         other.close()

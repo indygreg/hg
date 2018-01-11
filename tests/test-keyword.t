@@ -262,6 +262,7 @@ Pull from bundle and trigger notify
   adding file changes
   added 2 changesets with 3 changes to 3 files
   new changesets a2392c293916:ef63ca68695b
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -314,7 +315,6 @@ Pull from bundle and trigger notify
   +++ b/b	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@
   +ignore $Id$
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ cp $HGRCPATH.nohooks $HGRCPATH
 

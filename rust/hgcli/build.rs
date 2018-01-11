@@ -84,7 +84,7 @@ fn have_shared(config: &PythonConfig) -> bool {
     return dll.exists();
 }
 
-const REQUIRED_CONFIG_FLAGS: [&'static str; 2] = ["Py_USING_UNICODE", "WITH_THREAD"];
+const REQUIRED_CONFIG_FLAGS: [&str; 2] = ["Py_USING_UNICODE", "WITH_THREAD"];
 
 fn main() {
     let config = get_python_config();

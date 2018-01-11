@@ -125,6 +125,9 @@ fn run() -> Result<(), i32> {
     // Set program name. The backing memory needs to live for the duration of the
     // interpreter.
     //
+    // TODO consider storing this in a static or associating with lifetime of
+    // the Python interpreter.
+    //
     // Yes, we use the path to the Python interpreter not argv[0] here. The
     // reason is because Python uses the given path to find the location of
     // Python files. Apparently we could define our own ``Py_GetPath()``

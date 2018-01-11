@@ -27,7 +27,6 @@ import struct
 import sys
 import threading
 import time
-import util.queue
 from mercurial import (
     changegroup,
     cmdutil,

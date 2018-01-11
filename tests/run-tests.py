@@ -2450,7 +2450,7 @@ class TestRunner(object):
             # If it looks like our in-repo Rust binary, use the source root.
             # This is a bit hacky. But rhg is still not supported outside the
             # source directory. So until it is, do the simple thing.
-            elif re.search(b'|/rust/target/[^/]+/hg', normbin):
+            elif re.search(b'/rust/target/[^/]+/hg', normbin):
                 self._pythondir = os.path.dirname(self._testdir)
             # Fall back to the legacy behavior.
             else:

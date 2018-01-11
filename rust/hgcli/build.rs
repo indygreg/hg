@@ -8,9 +8,6 @@
 use std::collections::HashMap;
 use std::env;
 use std::path::Path;
-#[cfg(target_os = "windows")]
-use std::path::PathBuf;
-
 use std::process::Command;
 
 struct PythonConfig {
@@ -77,6 +74,8 @@ fn have_shared(config: &PythonConfig) -> bool {
 
 #[cfg(target_os = "windows")]
 fn have_shared(config: &PythonConfig) -> bool {
+    use std::path::PathBuf;
+
     // python27.dll should exist next to python2.7.exe.
     let mut dll = PathBuf::from(&config.python);
     dll.pop();

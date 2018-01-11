@@ -230,7 +230,6 @@
             <File Id="static.background.png"     Name="background.png" KeyPath="yes" />
             <File Id="static.coal.file.png"      Name="coal-file.png" />
             <File Id="static.coal.folder.png"    Name="coal-folder.png" />
-            <File Id="static.excanvas.js"        Name="excanvas.js" />
             <File Id="static.followlines.js"     Name="followlines.js" />
             <File Id="static.mercurial.js"       Name="mercurial.js" />
             <File Id="static.hgicon.png"         Name="hgicon.png" />

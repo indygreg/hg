@@ -242,7 +242,6 @@ Some tests for hgweb in an empty repository
      href="/atom-log" title="Atom feed for test: log" />
   <link rel="alternate" type="application/rss+xml"
      href="/rss-log" title="RSS feed for test: log" />
-  <!--[if IE]><script type="text/javascript" src="/static/excanvas.js"></script><![endif]-->
   </head>
   <body>
   

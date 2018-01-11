@@ -344,6 +344,34 @@ def _sizetomax(s):
     except ValueError:
         raise error.ParseError(_("couldn't parse size: %s") % s)
 
+def sizematcher(x):
+    """Return a function(size) -> bool from the ``size()`` expression"""
+
+    # i18n: "size" is a keyword
+    expr = getstring(x, _("size requires an expression")).strip()
+    if '-' in expr: # do we have a range?
+        a, b = expr.split('-', 1)
+        a = util.sizetoint(a)
+        b = util.sizetoint(b)
+        return lambda x: x >= a and x <= b
+    elif expr.startswith("<="):
+        a = util.sizetoint(expr[2:])
+        return lambda x: x <= a
+    elif expr.startswith("<"):
+        a = util.sizetoint(expr[1:])
+        return lambda x: x < a
+    elif expr.startswith(">="):
+        a = util.sizetoint(expr[2:])
+        return lambda x: x >= a
+    elif expr.startswith(">"):
+        a = util.sizetoint(expr[1:])
+        return lambda x: x > a
+    elif expr[0].isdigit or expr[0] == '.':
+        a = util.sizetoint(expr)
+        b = _sizetomax(expr)
+        return lambda x: x >= a and x <= b
+    raise error.ParseError(_("couldn't parse size: %s") % expr)
+
 @predicate('size(expression)', callexisting=True)
 def size(mctx, x):
     """File size matches the given expression. Examples:
@@ -353,33 +381,7 @@ def size(mctx, x):
     - size('>= .5MB') - files at least 524288 bytes
     - size('4k - 1MB') - files from 4096 bytes to 1048576 bytes
     """
-
-    # i18n: "size" is a keyword
-    expr = getstring(x, _("size requires an expression")).strip()
-    if '-' in expr: # do we have a range?
-        a, b = expr.split('-', 1)
-        a = util.sizetoint(a)
-        b = util.sizetoint(b)
-        m = lambda x: x >= a and x <= b
-    elif expr.startswith("<="):
-        a = util.sizetoint(expr[2:])
-        m = lambda x: x <= a
-    elif expr.startswith("<"):
-        a = util.sizetoint(expr[1:])
-        m = lambda x: x < a
-    elif expr.startswith(">="):
-        a = util.sizetoint(expr[2:])
-        m = lambda x: x >= a
-    elif expr.startswith(">"):
-        a = util.sizetoint(expr[1:])
-        m = lambda x: x > a
-    elif expr[0].isdigit or expr[0] == '.':
-        a = util.sizetoint(expr)
-        b = _sizetomax(expr)
-        m = lambda x: x >= a and x <= b
-    else:
-        raise error.ParseError(_("couldn't parse size: %s") % expr)
-
+    m = sizematcher(x)
     return [f for f in mctx.existing() if m(mctx.ctx[f].size())]
 
 @predicate('encoding(name)', callexisting=True)

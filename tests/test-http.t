@@ -248,6 +248,53 @@ test http authentication
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   $ hg rollback -q
+  $ hg -R dest push http://user:pass@localhost:$HGPORT2/ --debug
+  pushing to http://user:***@localhost:$HGPORT2/
+  using http://localhost:$HGPORT2/
+  http auth: user user, password ****
+  sending capabilities command
+  query 1; heads
+  sending batch command
+  searching for changes
+  all remote heads known locally
+  preparing listkeys for "phases"
+  sending listkeys command
+  http auth: user user, password ****
+  received listkey for "phases": 58 bytes
+  checking for updated bookmarks
+  preparing listkeys for "bookmarks"
+  sending listkeys command
+  received listkey for "bookmarks": 0 bytes
+  sending branchmap command
+  sending branchmap command
+  preparing listkeys for "bookmarks"
+  sending listkeys command
+  received listkey for "bookmarks": 0 bytes
+  1 changesets found
+  list of changesets:
+  7f4e523d01f2cc3765ac8934da3d14db775ff872
+  bundle2-output-bundle: "HG20", 5 parts total
+  bundle2-output-part: "replycaps" 178 bytes payload
+  bundle2-output-part: "check:phases" 24 bytes payload
+  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
+  bundle2-output-part: "phase-heads" 24 bytes payload
+  sending unbundle command
+  sending 986 bytes
+  bundle2-input-bundle: no-transaction
+  bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
+  bundle2-input-part: "output" (advisory) (params: 0 advisory) supported
+  bundle2-input-part: total payload size 100
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+  bundle2-input-part: "output" (advisory) supported
+  bundle2-input-bundle: 2 parts total
+  preparing listkeys for "phases"
+  sending listkeys command
+  received listkey for "phases": 15 bytes
+  $ hg rollback -q
 
   $ sed 's/.*] "/"/' < ../access.log
   "GET /?cmd=capabilities HTTP/1.1" 200 -
@@ -307,6 +354,16 @@ test http authentication
   "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365* (glob)
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=capabilities HTTP/1.1" 200 -
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
 
   $ cd ..

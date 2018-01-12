@@ -33,6 +33,9 @@ from .node import (
     wdirrev,
 )
 from .i18n import _
+from .thirdparty import (
+    attr,
+)
 from . import (
     ancestor,
     error,
@@ -250,6 +253,16 @@ def _slicechunk(revlog, revs):
     chunk = _trimchunk(revlog, revs, previdx)
     if chunk:
         yield chunk
+
+@attr.s(slots=True, frozen=True)
+class _deltainfo(object):
+    distance = attr.ib()
+    deltalen = attr.ib()
+    data = attr.ib()
+    base = attr.ib()
+    chainbase = attr.ib()
+    chainlen = attr.ib()
+    compresseddeltalen = attr.ib()
 
 # index v0:
 #  4 bytes: offset
@@ -1819,27 +1832,26 @@ class revlog(object):
 
         return compressor.decompress(data)
 
-    def _isgooddelta(self, d, textlen):
+    def _isgooddeltainfo(self, d, textlen):
         """Returns True if the given delta is good. Good means that it is within
         the disk span, disk size, and chain length bounds that we know to be
         performant."""
         if d is None:
             return False
 
-        # - 'dist' is the distance from the base revision -- bounding it limits
-        #   the amount of I/O we need to do.
-        # - 'compresseddeltalen' is the sum of the total size of deltas we need
-        #   to apply -- bounding it limits the amount of CPU we consume.
-        dist, l, data, base, chainbase, chainlen, compresseddeltalen = d
+        # - 'd.distance' is the distance from the base revision -- bounding it
+        #   limits the amount of I/O we need to do.
+        # - 'd.compresseddeltalen' is the sum of the total size of deltas we
+        #   need to apply -- bounding it limits the amount of CPU we consume.
 
         defaultmax = textlen * 4
         maxdist = self._maxdeltachainspan
         if not maxdist:
-            maxdist = dist # ensure the conditional pass
+            maxdist = d.distance # ensure the conditional pass
         maxdist = max(maxdist, defaultmax)
-        if (dist > maxdist or l > textlen or
-            compresseddeltalen > textlen * 2 or
-            (self._maxchainlen and chainlen > self._maxchainlen)):
+        if (d.distance > maxdist or d.deltalen > textlen or
+            d.compresseddeltalen > textlen * 2 or
+            (self._maxchainlen and d.chainlen > self._maxchainlen)):
             return False
 
         return True
@@ -1923,7 +1935,7 @@ class revlog(object):
                 raise
         return btext[0]
 
-    def _builddelta(self, node, rev, p1, p2, btext, cachedelta, fh, flags):
+    def _builddeltainfo(self, node, rev, p1, p2, btext, cachedelta, fh, flags):
         # can we use the cached delta?
         if cachedelta and cachedelta[0] == rev:
             delta = cachedelta[1]
@@ -1949,8 +1961,8 @@ class revlog(object):
         chainlen, compresseddeltalen = self._chaininfo(rev)
         chainlen += 1
         compresseddeltalen += deltalen
-        return (dist, deltalen, (header, data), base,
-                chainbase, chainlen, compresseddeltalen)
+        return _deltainfo(dist, deltalen, (header, data), base,
+                         chainbase, chainlen, compresseddeltalen)
 
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,
                      cachedelta, ifh, dfh, alwayscache=False):
@@ -1981,7 +1993,7 @@ class revlog(object):
         curr = len(self)
         prev = curr - 1
         offset = self.end(prev)
-        delta = None
+        deltainfo = None
         p1r, p2r = self.rev(p1), self.rev(p2)
 
         # full versions are inserted when the needed deltas
@@ -1995,17 +2007,20 @@ class revlog(object):
         for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
             nominateddeltas = []
             for candidaterev in candidaterevs:
-                candidatedelta = self._builddelta(node, candidaterev, p1, p2,
-                                                  btext, cachedelta, fh,
-                                                  flags)
-                if self._isgooddelta(candidatedelta, textlen):
+                candidatedelta = self._builddeltainfo(node, candidaterev, p1,
+                                                      p2, btext, cachedelta,
+                                                      fh, flags)
+                if self._isgooddeltainfo(candidatedelta, textlen):
                     nominateddeltas.append(candidatedelta)
             if nominateddeltas:
-                delta = min(nominateddeltas, key=lambda x: x[1])
+                deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
                 break
 
-        if delta is not None:
-            dist, l, data, base, chainbase, chainlen, compresseddeltalen = delta
+        if deltainfo is not None:
+            base = deltainfo.base
+            chainbase = deltainfo.chainbase
+            data = deltainfo.data
+            l = deltainfo.deltalen
         else:
             rawtext = self._buildtext(node, p1, p2, btext, cachedelta, fh,
                                       flags)

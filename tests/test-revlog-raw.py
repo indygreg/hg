@@ -20,7 +20,7 @@ tvfs.options = {'generaldelta': True, 'revlogv1': True}
 
 # The test wants to control whether to use delta explicitly, based on
 # "storedeltachains".
-revlog.revlog._isgooddelta = lambda self, d, textlen: self.storedeltachains
+revlog.revlog._isgooddeltainfo = lambda self, d, textlen: self.storedeltachains
 
 def abort(msg):
     print('abort: %s' % msg)

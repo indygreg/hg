@@ -144,3 +144,4 @@ We use http because http is better is our racy-est option.
   
 
   $ cd ..
+  $ killdaemons.py

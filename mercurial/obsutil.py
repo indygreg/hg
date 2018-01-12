@@ -865,7 +865,17 @@ def obsfateprinter(successors, markers, ui):
 
     return "".join(line)
 
-def _getfilteredreason(unfilteredrepo, ctx):
+
+filteredmsgtable = {
+    "pruned": _("hidden revision '%s' is pruned"),
+    "diverged": _("hidden revision '%s' has diverged"),
+    "superseded": _("hidden revision '%s' was rewritten as: %s"),
+    "superseded_split": _("hidden revision '%s' was split as: %s"),
+    "superseded_split_several": _("hidden revision '%s' was split as: %s and "
+                                  "%d more"),
+}
+
+def _getfilteredreason(unfilteredrepo, changeid, ctx):
     """return a human-friendly string on why a obsolete changeset is hidden
     """
     successors = successorssets(unfilteredrepo, ctx.node())
@@ -873,11 +883,12 @@ def _getfilteredreason(unfilteredrepo, ctx):
 
     # Be more precise in case the revision is superseded
     if fate == 'pruned':
-        reason = _('is pruned')
+        return filteredmsgtable['pruned'] % changeid
     elif fate == 'diverged':
-        reason = _('has diverged')
+        return filteredmsgtable['diverged'] % changeid
     elif fate == 'superseded':
-        reason = _("was rewritten as: %s") % nodemod.short(successors[0][0])
+        single_successor = nodemod.short(successors[0][0])
+        return filteredmsgtable['superseded'] % (changeid, single_successor)
     elif fate == 'superseded_split':
 
         succs = []
@@ -885,13 +896,11 @@ def _getfilteredreason(unfilteredrepo, ctx):
             succs.append(nodemod.short(node_id))
 
         if len(succs) <= 2:
-            reason = _("was split as: %s") % ", ".join(succs)
+            fmtsuccs = ', '.join(succs)
+            return filteredmsgtable['superseded_split'] % (changeid, fmtsuccs)
         else:
-            firstsuccessors = ", ".join(succs[:2])
+            firstsuccessors = ', '.join(succs[:2])
             remainingnumber = len(succs) - 2
 
-            args = (firstsuccessors, remainingnumber)
-            successorsmsg = _("%s and %d more") % args
-            reason = _("was split as: %s") % successorsmsg
-
-    return reason
+            args = (changeid, firstsuccessors, remainingnumber)
+            return filteredmsgtable['superseded_split_several'] % args

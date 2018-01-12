@@ -442,8 +442,7 @@ def _filterederror(repo, changeid):
         # If the changeset is obsolete, enrich the message with the reason
         # that made this changeset not visible
         if ctx.obsolete():
-            reason = obsutil._getfilteredreason(unfilteredrepo, ctx)
-            msg = _("hidden revision '%s' %s") % (changeid, reason)
+            msg = obsutil._getfilteredreason(unfilteredrepo, changeid, ctx)
         else:
             msg = _("hidden revision '%s'") % changeid
 

@@ -283,6 +283,17 @@ class sshpeer(wireproto.wirepeer):
 
     def _callstream(self, cmd, **args):
         args = pycompat.byteskwargs(args)
+        if (self.ui.debugflag
+            and self.ui.configbool('devel', 'debug.peer-request')):
+            dbg = self.ui.debug
+            line = 'devel-peer-request: %s\n'
+            dbg(line % cmd)
+            for key, value in sorted(args.items()):
+                if not isinstance(value, dict):
+                    dbg(line % '  %s: %d bytes' % (key, len(value)))
+                else:
+                    for dk, dv in sorted(value.items()):
+                        dbg(line % '  %s-%s: %d' % (key, dk, len(dv)))
         self.ui.debug("sending %s command\n" % cmd)
         self._pipeo.write("%s\n" % cmd)
         _func, names = wireproto.commands[cmd]

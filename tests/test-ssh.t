@@ -478,19 +478,32 @@ stderr from remote commands should be printed before stdout from local code (iss
 
 debug output
 
-  $ hg pull --debug ssh://user@dummy/remote
+  $ hg pull --debug ssh://user@dummy/remote --config devel.debug.peer-request=yes
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
+  devel-peer-request: hello
   sending hello command
+  devel-peer-request: between
+  devel-peer-request:   pairs: 81 bytes
   sending between command
   remote: 384
   remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS$ unbundle=HG10GZ,HG10BZ,HG10UN
   remote: 1
   query 1; heads
+  devel-peer-request: batch
+  devel-peer-request:   cmds: 141 bytes
   sending batch command
   searching for changes
   all remote heads known locally
   no changes found
+  devel-peer-request: getbundle
+  devel-peer-request:   bookmarks: 1 bytes
+  devel-peer-request:   bundlecaps: 233 bytes
+  devel-peer-request:   cg: 1 bytes
+  devel-peer-request:   common: 122 bytes
+  devel-peer-request:   heads: 122 bytes
+  devel-peer-request:   listkeys: 9 bytes
+  devel-peer-request:   phases: 1 bytes
   sending getbundle command
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "bookmarks" supported

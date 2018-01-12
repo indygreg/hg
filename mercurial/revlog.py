@@ -1923,6 +1923,35 @@ class revlog(object):
                 raise
         return btext[0]
 
+    def _builddelta(self, node, rev, p1, p2, btext, cachedelta, fh, flags):
+        # can we use the cached delta?
+        if cachedelta and cachedelta[0] == rev:
+            delta = cachedelta[1]
+        else:
+            t = self._buildtext(node, p1, p2, btext, cachedelta, fh, flags)
+            if self.iscensored(rev):
+                # deltas based on a censored revision must replace the
+                # full content in one patch, so delta works everywhere
+                header = mdiff.replacediffheader(self.rawsize(rev), len(t))
+                delta = header + t
+            else:
+                ptext = self.revision(rev, _df=fh, raw=True)
+                delta = mdiff.textdiff(ptext, t)
+        header, data = self.compress(delta)
+        deltalen = len(header) + len(data)
+        chainbase = self.chainbase(rev)
+        offset = self.end(len(self) - 1)
+        dist = deltalen + offset - self.start(chainbase)
+        if self._generaldelta:
+            base = rev
+        else:
+            base = chainbase
+        chainlen, compresseddeltalen = self._chaininfo(rev)
+        chainlen += 1
+        compresseddeltalen += deltalen
+        return (dist, deltalen, (header, data), base,
+                chainbase, chainlen, compresseddeltalen)
+
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,
                      cachedelta, ifh, dfh, alwayscache=False):
         """internal function to add revisions to the log
@@ -1949,34 +1978,6 @@ class revlog(object):
 
         btext = [rawtext]
 
-        def builddelta(rev):
-            # can we use the cached delta?
-            if cachedelta and cachedelta[0] == rev:
-                delta = cachedelta[1]
-            else:
-                t = self._buildtext(node, p1, p2, btext, cachedelta, fh, flags)
-                if self.iscensored(rev):
-                    # deltas based on a censored revision must replace the
-                    # full content in one patch, so delta works everywhere
-                    header = mdiff.replacediffheader(self.rawsize(rev), len(t))
-                    delta = header + t
-                else:
-                    ptext = self.revision(rev, _df=fh, raw=True)
-                    delta = mdiff.textdiff(ptext, t)
-            header, data = self.compress(delta)
-            deltalen = len(header) + len(data)
-            chainbase = self.chainbase(rev)
-            dist = deltalen + offset - self.start(chainbase)
-            if self._generaldelta:
-                base = rev
-            else:
-                base = chainbase
-            chainlen, compresseddeltalen = self._chaininfo(rev)
-            chainlen += 1
-            compresseddeltalen += deltalen
-            return (dist, deltalen, (header, data), base,
-                    chainbase, chainlen, compresseddeltalen)
-
         curr = len(self)
         prev = curr - 1
         offset = self.end(prev)
@@ -1994,7 +1995,9 @@ class revlog(object):
         for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
             nominateddeltas = []
             for candidaterev in candidaterevs:
-                candidatedelta = builddelta(candidaterev)
+                candidatedelta = self._builddelta(node, candidaterev, p1, p2,
+                                                  btext, cachedelta, fh,
+                                                  flags)
                 if self._isgooddelta(candidatedelta, textlen):
                     nominateddeltas.append(candidatedelta)
             if nominateddeltas:

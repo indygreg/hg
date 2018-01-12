@@ -105,6 +105,7 @@ class sshserver(wireproto.abstractserverproto):
     handlers = {
         str: sendresponse,
         wireproto.streamres: sendstream,
+        wireproto.streamres_legacy: sendstream,
         wireproto.pushres: sendpushresponse,
         wireproto.pusherr: sendpusherror,
         wireproto.ooberror: sendooberror,

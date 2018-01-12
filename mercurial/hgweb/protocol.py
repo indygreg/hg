@@ -102,25 +102,20 @@ class webproto(wireproto.abstractserverproto):
             urlreq.quote(self.req.env.get('REMOTE_HOST', '')),
             urlreq.quote(self.req.env.get('REMOTE_USER', '')))
 
-    def responsetype(self, v1compressible=False):
+    def responsetype(self, prefer_uncompressed):
         """Determine the appropriate response type and compression settings.
-
-        The ``v1compressible`` argument states whether the response with
-        application/mercurial-0.1 media types should be zlib compressed.
 
         Returns a tuple of (mediatype, compengine, engineopts).
         """
-        # For now, if it isn't compressible in the old world, it's never
-        # compressible. We can change this to send uncompressed 0.2 payloads
-        # later.
-        if not v1compressible:
-            return HGTYPE, None, None
-
         # Determine the response media type and compression engine based
         # on the request parameters.
         protocaps = decodevaluefromheaders(self.req, r'X-HgProto').split(' ')
 
         if '0.2' in protocaps:
+            # All clients are expected to support uncompressed data.
+            if prefer_uncompressed:
+                return HGTYPE2, util._noopengine(), {}
+
             # Default as defined by wire protocol spec.
             compformats = ['zlib', 'none']
             for cap in protocaps:
@@ -155,7 +150,7 @@ def iscmd(cmd):
 def call(repo, req, cmd):
     p = webproto(req, repo.ui)
 
-    def genversion2(gen, compress, engine, engineopts):
+    def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
         # identifying the compression engine.
         name = engine.wireprotosupport().name
@@ -163,28 +158,27 @@ def call(repo, req, cmd):
         yield struct.pack('B', len(name))
         yield name
 
-        if compress:
-            for chunk in engine.compressstream(gen, opts=engineopts):
-                yield chunk
-        else:
-            for chunk in gen:
-                yield chunk
+        for chunk in gen:
+            yield chunk
 
     rsp = wireproto.dispatch(repo, p, cmd)
     if isinstance(rsp, bytes):
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
+    elif isinstance(rsp, wireproto.streamres_legacy):
+        gen = rsp.gen
+        req.respond(HTTP_OK, HGTYPE)
+        return gen
     elif isinstance(rsp, wireproto.streamres):
         gen = rsp.gen
 
         # This code for compression should not be streamres specific. It
         # is here because we only compress streamres at the moment.
-        mediatype, engine, engineopts = p.responsetype(rsp.v1compressible)
+        mediatype, engine, engineopts = p.responsetype(rsp.prefer_uncompressed)
+        gen = engine.compressstream(gen, engineopts)
 
-        if mediatype == HGTYPE and rsp.v1compressible:
-            gen = engine.compressstream(gen, engineopts)
-        elif mediatype == HGTYPE2:
-            gen = genversion2(gen, rsp.v1compressible, engine, engineopts)
+        if mediatype == HGTYPE2:
+            gen = genversion2(gen, engine, engineopts)
 
         req.respond(HTTP_OK, mediatype)
         return gen

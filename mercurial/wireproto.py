@@ -522,15 +522,26 @@ class streamres(object):
 
     Accepts a generator containing chunks of data to be sent to the client.
 
-    ``v1compressible`` indicates whether this data can be compressed to
-    "version 1" clients (technically: HTTP peers using
-    application/mercurial-0.1 media type). This flag should NOT be used on
-    new commands because new clients should support a more modern compression
-    mechanism.
+    ``prefer_uncompressed`` indicates that the data is expected to be
+    uncompressable and that the stream should therefore use the ``none``
+    engine.
     """
-    def __init__(self, gen=None, v1compressible=False):
+    def __init__(self, gen=None, prefer_uncompressed=False):
         self.gen = gen
-        self.v1compressible = v1compressible
+        self.prefer_uncompressed = prefer_uncompressed
+
+class streamres_legacy(object):
+    """wireproto reply: uncompressed binary stream
+
+    The call was successful and the result is a stream.
+
+    Accepts a generator containing chunks of data to be sent to the client.
+
+    Like ``streamres``, but sends an uncompressed data for "version 1" clients
+    using the application/mercurial-0.1 media type.
+    """
+    def __init__(self, gen=None):
+        self.gen = gen
 
 class pushres(object):
     """wireproto reply: success with simple integer return
@@ -802,7 +813,7 @@ def changegroup(repo, proto, roots):
                                   missingheads=repo.heads())
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
     gen = iter(lambda: cg.read(32768), '')
-    return streamres(gen=gen, v1compressible=True)
+    return streamres(gen=gen)
 
 @wireprotocommand('changegroupsubset', 'bases heads')
 def changegroupsubset(repo, proto, bases, heads):
@@ -812,7 +823,7 @@ def changegroupsubset(repo, proto, bases, heads):
                                   missingheads=heads)
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
     gen = iter(lambda: cg.read(32768), '')
-    return streamres(gen=gen, v1compressible=True)
+    return streamres(gen=gen)
 
 @wireprotocommand('debugwireargs', 'one two *')
 def debugwireargs(repo, proto, one, two, others):
@@ -877,8 +888,8 @@ def getbundle(repo, proto, others):
             advargs.append(('hint', exc.hint))
         bundler.addpart(bundle2.bundlepart('error:abort',
                                            manargs, advargs))
-        return streamres(gen=bundler.getchunks(), v1compressible=True)
-    return streamres(gen=chunks, v1compressible=True)
+        return streamres(gen=bundler.getchunks())
+    return streamres(gen=chunks)
 
 @wireprotocommand('heads')
 def heads(repo, proto):
@@ -955,7 +966,7 @@ def stream(repo, proto):
     capability with a value representing the version and flags of the repo
     it is serving. Client checks to see if it understands the format.
     '''
-    return streamres(streamclone.generatev1wireproto(repo))
+    return streamres_legacy(streamclone.generatev1wireproto(repo))
 
 @wireprotocommand('unbundle', 'heads')
 def unbundle(repo, proto, heads):
@@ -990,7 +1001,7 @@ def unbundle(repo, proto, heads):
             if util.safehasattr(r, 'addpart'):
                 # The return looks streamable, we are in the bundle2 case and
                 # should return a stream.
-                return streamres(gen=r.getchunks())
+                return streamres_legacy(gen=r.getchunks())
             return pushres(r)
 
         finally:
@@ -1054,4 +1065,4 @@ def unbundle(repo, proto, heads):
                                                manargs, advargs))
         except error.PushRaced as exc:
             bundler.newpart('error:pushraced', [('message', str(exc))])
-        return streamres(gen=bundler.getchunks())
+        return streamres_legacy(gen=bundler.getchunks())

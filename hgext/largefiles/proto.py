@@ -75,7 +75,7 @@ def getlfile(repo, proto, sha):
         yield '%d\n' % length
         for chunk in util.filechunkiter(f):
             yield chunk
-    return wireproto.streamres(gen=generator())
+    return wireproto.streamres_legacy(gen=generator())
 
 def statlfile(repo, proto, sha):
     '''Server command for checking if a largefile is present - returns '2\n' if

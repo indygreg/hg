@@ -248,27 +248,57 @@ test http authentication
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   $ hg rollback -q
-  $ hg -R dest push http://user:pass@localhost:$HGPORT2/ --debug
+  $ hg -R dest push http://user:pass@localhost:$HGPORT2/ --debug --config devel.debug.peer-request=yes
   pushing to http://user:***@localhost:$HGPORT2/
   using http://localhost:$HGPORT2/
   http auth: user user, password ****
   sending capabilities command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=capabilities
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   query 1; heads
   sending batch command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=batch
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   68 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   searching for changes
   all remote heads known locally
   preparing listkeys for "phases"
   sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   16 bytes of commands arguments in headers
   http auth: user user, password ****
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "phases": 58 bytes
   checking for updated bookmarks
   preparing listkeys for "bookmarks"
   sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   19 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "bookmarks": 0 bytes
   sending branchmap command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=branchmap
+  devel-peer-request:   Vary X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   sending branchmap command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=branchmap
+  devel-peer-request:   Vary X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   preparing listkeys for "bookmarks"
   sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   19 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "bookmarks": 0 bytes
   1 changesets found
   list of changesets:
@@ -281,6 +311,14 @@ test http authentication
   bundle2-output-part: "phase-heads" 24 bytes payload
   sending unbundle command
   sending 986 bytes
+  devel-peer-request: POST http://localhost:$HGPORT2/?cmd=unbundle
+  devel-peer-request:   Content-length 986
+  devel-peer-request:   Content-type application/mercurial-0.1
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   16 bytes of commands arguments in headers
+  devel-peer-request:   986 bytes of data
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   bundle2-input-bundle: no-transaction
   bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
   bundle2-input-part: "output" (advisory) (params: 0 advisory) supported
@@ -293,6 +331,11 @@ test http authentication
   bundle2-input-bundle: 2 parts total
   preparing listkeys for "phases"
   sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   16 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "phases": 15 bytes
   $ hg rollback -q
 

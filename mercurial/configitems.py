@@ -362,6 +362,9 @@ coreconfigitem('devel', 'user.obsmarker',
 coreconfigitem('devel', 'warn-config-unknown',
     default=None,
 )
+coreconfigitem('devel', 'debug.peer-request',
+    default=False,
+)
 coreconfigitem('diff', 'nodates',
     default=False,
 )

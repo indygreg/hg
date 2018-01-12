@@ -389,14 +389,14 @@ def _abssource(repo, push=False, abort=True):
     if util.safehasattr(repo, '_subparent'):
         source = util.url(repo._subsource)
         if source.isabs():
-            return pycompat.bytestr(source)
+            return bytes(source)
         source.path = posixpath.normpath(source.path)
         parent = _abssource(repo._subparent, push, abort=False)
         if parent:
             parent = util.url(util.pconvert(parent))
             parent.path = posixpath.join(parent.path or '', source.path)
             parent.path = posixpath.normpath(parent.path)
-            return pycompat.bytestr(parent)
+            return bytes(parent)
     else: # recursion reached top repo
         if util.safehasattr(repo, '_subtoppath'):
             return repo._subtoppath

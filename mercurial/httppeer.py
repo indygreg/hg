@@ -161,6 +161,9 @@ class httppeer(wireproto.wirepeer):
                 h.close()
                 getattr(h, "close_all", lambda: None)()
 
+    def _openurl(self, req):
+        return self._urlopener.open(req)
+
     # Begin of _basepeer interface.
 
     @util.propertycache
@@ -298,7 +301,7 @@ class httppeer(wireproto.wirepeer):
             self.ui.debug("sending %s bytes\n" % size)
             req.add_unredirected_header('Content-Length', '%d' % size)
         try:
-            resp = self._urlopener.open(req)
+            resp = self._openurl(req)
         except urlerr.httperror as inst:
             if inst.code == 401:
                 raise error.Abort(_('authorization failed'))

@@ -875,10 +875,10 @@ filteredmsgtable = {
                                   "%d more"),
 }
 
-def _getfilteredreason(unfilteredrepo, changeid, ctx):
+def _getfilteredreason(repo, changeid, ctx):
     """return a human-friendly string on why a obsolete changeset is hidden
     """
-    successors = successorssets(unfilteredrepo, ctx.node())
+    successors = successorssets(repo, ctx.node())
     fate = _getobsfate(successors)
 
     # Be more precise in case the revision is superseded

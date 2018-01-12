@@ -14,7 +14,7 @@ use libc::{c_char, c_int};
 
 use std::env;
 use std::path::PathBuf;
-use std::ffi::CString;
+use std::ffi::{CString, OsStr};
 #[cfg(target_family = "unix")]
 use std::os::unix::ffi::OsStringExt;
 
@@ -62,6 +62,10 @@ fn get_environment() -> Environment {
     }
 }
 
+fn cstring_from_os<T: AsRef<OsStr>>(s: T) -> CString {
+    CString::new(s.as_ref().to_str().unwrap()).unwrap()
+}
+
 // On UNIX, argv starts as an array of char*. So it is easy to convert
 // to C strings.
 #[cfg(target_family = "unix")]
@@ -86,9 +90,7 @@ fn args_to_cstrings() -> Vec<CString> {
 }
 
 fn set_python_home(env: &Environment) {
-    let raw = CString::new(env.python_home.to_str().unwrap())
-        .unwrap()
-        .into_raw();
+    let raw = cstring_from_os(&env.python_home).into_raw();
     unsafe {
         python27_sys::Py_SetPythonHome(raw);
     }
@@ -133,9 +135,7 @@ fn run() -> Result<(), i32> {
     // Python files. Apparently we could define our own ``Py_GetPath()``
     // implementation. But this may require statically linking Python, which is
     // not desirable.
-    let program_name = CString::new(env.python_exe.to_str().unwrap())
-        .unwrap()
-        .as_ptr();
+    let program_name = cstring_from_os(&env.python_exe).as_ptr();
     unsafe {
         python27_sys::Py_SetProgramName(program_name as *mut i8);
     }

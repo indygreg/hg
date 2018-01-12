@@ -16,7 +16,7 @@ use std::env;
 use std::path::PathBuf;
 use std::ffi::{CString, OsStr};
 #[cfg(target_family = "unix")]
-use std::os::unix::ffi::OsStringExt;
+use std::os::unix::ffi::{OsStrExt, OsStringExt};
 
 #[derive(Debug)]
 struct Environment {
@@ -62,6 +62,14 @@ fn get_environment() -> Environment {
     }
 }
 
+// On UNIX, platform string is just bytes and should not contain NUL.
+#[cfg(target_family = "unix")]
+fn cstring_from_os<T: AsRef<OsStr>>(s: T) -> CString {
+    CString::new(s.as_ref().as_bytes()).unwrap()
+}
+
+// TODO convert to ANSI characters?
+#[cfg(target_family = "windows")]
 fn cstring_from_os<T: AsRef<OsStr>>(s: T) -> CString {
     CString::new(s.as_ref().to_str().unwrap()).unwrap()
 }

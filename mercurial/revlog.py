@@ -1882,6 +1882,47 @@ class revlog(object):
                 # fulltext.
                 yield (prev,)
 
+    def _buildtext(self, node, p1, p2, btext, cachedelta, fh, flags):
+        """Builds a fulltext version of a revision
+
+        node:       expected hash of the revision
+        p1, p2:     parent revs of the revision
+        btext:      built text cache consisting of a one-element list
+        cachedelta: (baserev, uncompressed_delta) or None
+        fh:         file handle to either the .i or the .d revlog file,
+                    depending on whether it is inlined or not
+        flags:      flags associated to the revision storage
+
+        One of btext[0] or cachedelta must be set.
+        """
+        if btext[0] is not None:
+            return btext[0]
+        baserev = cachedelta[0]
+        delta = cachedelta[1]
+        # special case deltas which replace entire base; no need to decode
+        # base revision. this neatly avoids censored bases, which throw when
+        # they're decoded.
+        hlen = struct.calcsize(">lll")
+        if delta[:hlen] == mdiff.replacediffheader(self.rawsize(baserev),
+                                                   len(delta) - hlen):
+            btext[0] = delta[hlen:]
+        else:
+            basetext = self.revision(baserev, _df=fh, raw=True)
+            btext[0] = mdiff.patch(basetext, delta)
+
+        try:
+            res = self._processflags(btext[0], flags, 'read', raw=True)
+            btext[0], validatehash = res
+            if validatehash:
+                self.checkhash(btext[0], node, p1=p1, p2=p2)
+            if flags & REVIDX_ISCENSORED:
+                raise RevlogError(_('node %s is not censored') % node)
+        except CensoredNodeError:
+            # must pass the censored index flag to add censored revisions
+            if not flags & REVIDX_ISCENSORED:
+                raise
+        return btext[0]
+
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,
                      cachedelta, ifh, dfh, alwayscache=False):
         """internal function to add revisions to the log
@@ -1907,41 +1948,13 @@ class revlog(object):
             fh = dfh
 
         btext = [rawtext]
-        def buildtext():
-            if btext[0] is not None:
-                return btext[0]
-            baserev = cachedelta[0]
-            delta = cachedelta[1]
-            # special case deltas which replace entire base; no need to decode
-            # base revision. this neatly avoids censored bases, which throw when
-            # they're decoded.
-            hlen = struct.calcsize(">lll")
-            if delta[:hlen] == mdiff.replacediffheader(self.rawsize(baserev),
-                                                       len(delta) - hlen):
-                btext[0] = delta[hlen:]
-            else:
-                basetext = self.revision(baserev, _df=fh, raw=True)
-                btext[0] = mdiff.patch(basetext, delta)
-
-            try:
-                res = self._processflags(btext[0], flags, 'read', raw=True)
-                btext[0], validatehash = res
-                if validatehash:
-                    self.checkhash(btext[0], node, p1=p1, p2=p2)
-                if flags & REVIDX_ISCENSORED:
-                    raise RevlogError(_('node %s is not censored') % node)
-            except CensoredNodeError:
-                # must pass the censored index flag to add censored revisions
-                if not flags & REVIDX_ISCENSORED:
-                    raise
-            return btext[0]
 
         def builddelta(rev):
             # can we use the cached delta?
             if cachedelta and cachedelta[0] == rev:
                 delta = cachedelta[1]
             else:
-                t = buildtext()
+                t = self._buildtext(node, p1, p2, btext, cachedelta, fh, flags)
                 if self.iscensored(rev):
                     # deltas based on a censored revision must replace the
                     # full content in one patch, so delta works everywhere
@@ -1991,7 +2004,8 @@ class revlog(object):
         if delta is not None:
             dist, l, data, base, chainbase, chainlen, compresseddeltalen = delta
         else:
-            rawtext = buildtext()
+            rawtext = self._buildtext(node, p1, p2, btext, cachedelta, fh,
+                                      flags)
             data = self.compress(rawtext)
             l = len(data[1]) + len(data[0])
             base = chainbase = curr
@@ -2005,7 +2019,8 @@ class revlog(object):
         self._writeentry(transaction, ifh, dfh, entry, data, link, offset)
 
         if alwayscache and rawtext is None:
-            rawtext = buildtext()
+            rawtext = self._buildtext(node, p1, p2, btext, cachedelta, fh,
+                                      flags)
 
         if type(rawtext) == str: # only accept immutable objects
             self._cache = (node, curr, rawtext)

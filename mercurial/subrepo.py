@@ -841,11 +841,7 @@ class hgsubrepo(abstractsubrepo):
             if defpath != defpushpath:
                 addpathconfig('default-push', defpushpath)
 
-            fp = self._repo.vfs("hgrc", "wb", text=True)
-            try:
-                fp.write(''.join(lines))
-            finally:
-                fp.close()
+            self._repo.vfs.write('hgrc', util.tonativeeol(''.join(lines)))
 
     @annotatesubrepoerror
     def add(self, ui, match, prefix, explicitonly, **opts):

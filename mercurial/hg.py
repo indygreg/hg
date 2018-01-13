@@ -681,13 +681,10 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
         destrepo = destpeer.local()
         if destrepo:
             template = uimod.samplehgrcs['cloned']
-            fp = destrepo.vfs("hgrc", "wb")
             u = util.url(abspath)
             u.passwd = None
             defaulturl = bytes(u)
-            fp.write(util.tonativeeol(template % defaulturl))
-            fp.close()
-
+            destrepo.vfs.write('hgrc', util.tonativeeol(template % defaulturl))
             destrepo.ui.setconfig('paths', 'default', defaulturl, 'clone')
 
             if ui.configbool('experimental', 'remotenames'):

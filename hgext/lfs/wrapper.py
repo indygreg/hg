@@ -197,8 +197,8 @@ def convertsink(orig, sink):
                         self.repo._writerequirements()
 
                         # Permanently enable lfs locally
-                        with self.repo.vfs('hgrc', 'a', text=True) as fp:
-                            fp.write('\n[extensions]\nlfs=\n')
+                        self.repo.vfs.append(
+                            'hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
 
                 return node
 
@@ -232,8 +232,8 @@ def hgclone(orig, ui, opts, *args, **kwargs):
 
         # If lfs is required for this repo, permanently enable it locally
         if 'lfs' in repo.requirements:
-            with repo.vfs('hgrc', 'a', text=True) as fp:
-                fp.write('\n[extensions]\nlfs=\n')
+            repo.vfs.append('hgrc',
+                            util.tonativeeol('\n[extensions]\nlfs=\n'))
 
     return result
 
@@ -242,8 +242,7 @@ def hgpostshare(orig, sourcerepo, destrepo, bookmarks=True, defaultpath=None):
 
     # If lfs is required for this repo, permanently enable it locally
     if 'lfs' in destrepo.requirements:
-        with destrepo.vfs('hgrc', 'a', text=True) as fp:
-            fp.write('\n[extensions]\nlfs=\n')
+        destrepo.vfs.append('hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
 
 def _canskipupload(repo):
     # if remotestore is a null store, upload is a no-op and can be skipped

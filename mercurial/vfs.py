@@ -170,9 +170,9 @@ class abstractvfs(object):
     def mkdir(self, path=None):
         return os.mkdir(self.join(path))
 
-    def mkstemp(self, suffix='', prefix='tmp', dir=None, text=False):
+    def mkstemp(self, suffix='', prefix='tmp', dir=None):
         fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix,
-                                    dir=self.join(dir), text=text)
+                                    dir=self.join(dir))
         dname, fname = util.split(name)
         if dir:
             return fd, os.path.join(dir, fname)
@@ -333,9 +333,8 @@ class vfs(abstractvfs):
             return
         os.chmod(name, self.createmode & 0o666)
 
-    def __call__(self, path, mode="r", text=False, atomictemp=False,
-                 notindexed=False, backgroundclose=False, checkambig=False,
-                 auditpath=True):
+    def __call__(self, path, mode="r", atomictemp=False, notindexed=False,
+                 backgroundclose=False, checkambig=False, auditpath=True):
         '''Open ``path`` file, which is relative to vfs root.
 
         Newly created directories are marked as "not to be indexed by
@@ -373,7 +372,7 @@ class vfs(abstractvfs):
             self.audit(path, mode=mode)
         f = self.join(path)
 
-        if not text and "b" not in mode:
+        if "b" not in mode:
             mode += "b" # for that other OS
 
         nlink = -1

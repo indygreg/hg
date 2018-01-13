@@ -307,16 +307,13 @@ def postshare(sourcerepo, destrepo, bookmarks=True, defaultpath=None):
     """
     default = defaultpath or sourcerepo.ui.config('paths', 'default')
     if default:
-        fp = destrepo.vfs("hgrc", "w", text=True)
-        fp.write("[paths]\n")
-        fp.write("default = %s\n" % default)
-        fp.close()
+        with destrepo.vfs("hgrc", "w", text=True) as fp:
+            fp.write("[paths]\n")
+            fp.write("default = %s\n" % default)
 
     with destrepo.wlock():
         if bookmarks:
-            fp = destrepo.vfs('shared', 'w')
-            fp.write(sharedbookmarks + '\n')
-            fp.close()
+            destrepo.vfs.write('shared', sharedbookmarks + '\n')
 
 def _postshareupdate(repo, update, checkout=None):
     """Maybe perform a working directory update after a shared repo is created.

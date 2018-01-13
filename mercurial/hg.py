@@ -307,9 +307,9 @@ def postshare(sourcerepo, destrepo, bookmarks=True, defaultpath=None):
     """
     default = defaultpath or sourcerepo.ui.config('paths', 'default')
     if default:
-        with destrepo.vfs("hgrc", "w", text=True) as fp:
-            fp.write("[paths]\n")
-            fp.write("default = %s\n" % default)
+        template = ('[paths]\n'
+                    'default = %s\n')
+        destrepo.vfs.write('hgrc', util.tonativeeol(template % default))
 
     with destrepo.wlock():
         if bookmarks:

@@ -53,6 +53,22 @@ Test operators and basic patterns
   hg: parse error: invalid \x escape
   [255]
 
+Test invalid syntax
+
+  $ fileset -v '"added"()'
+  (func
+    (string 'added')
+    None)
+  hg: parse error: not a symbol
+  [255]
+  $ fileset -v '()()'
+  (func
+    (group
+      None)
+    None)
+  hg: parse error: not a symbol
+  [255]
+
 Test files status
 
   $ rm a1

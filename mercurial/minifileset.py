@@ -56,9 +56,8 @@ def _compile(tree):
             'size': lambda n, s: fileset.sizematcher(tree[2])(s),
         }
 
-        x = tree[1]
-        name = x[1]
-        if x[0] == 'symbol' and name in symbols:
+        name = fileset.getsymbol(tree[1])
+        if name in symbols:
             return symbols[name]
 
         raise error.UnknownIdentifier(name, symbols.keys())

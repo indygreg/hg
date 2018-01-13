@@ -99,6 +99,11 @@ def parse(expr):
         raise error.ParseError(_("invalid token"), pos)
     return tree
 
+def getsymbol(x):
+    if x and x[0] == 'symbol':
+        return x[1]
+    raise error.ParseError(_('not a symbol'))
+
 def getstring(x, err):
     if x and (x[0] == 'string' or x[0] == 'symbol'):
         return x[1]
@@ -225,8 +230,8 @@ def clean(mctx, x):
     return [f for f in mctx.subset if f in s]
 
 def func(mctx, a, b):
-    if a[0] == 'symbol' and a[1] in symbols:
-        funcname = a[1]
+    funcname = getsymbol(a)
+    if funcname in symbols:
         enabled = mctx._existingenabled
         mctx._existingenabled = funcname in _existingcallers
         try:
@@ -237,7 +242,7 @@ def func(mctx, a, b):
     keep = lambda fn: getattr(fn, '__doc__', None) is not None
 
     syms = [s for (s, fn) in symbols.items() if keep(fn)]
-    raise error.UnknownIdentifier(a[1], syms)
+    raise error.UnknownIdentifier(funcname, syms)
 
 def getlist(x):
     if not x:

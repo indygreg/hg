@@ -68,6 +68,17 @@ Test invalid syntax
     None)
   hg: parse error: not a symbol
   [255]
+  $ fileset -v -- '-x'
+  (negate
+    (symbol 'x'))
+  hg: parse error: can't use negate operator in this context
+  [255]
+  $ fileset -v -- '-()'
+  (negate
+    (group
+      None))
+  hg: parse error: can't use negate operator in this context
+  [255]
 
 Test files status
 

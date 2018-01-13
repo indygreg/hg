@@ -136,6 +136,9 @@ def minusset(mctx, x, y):
     yl = set(getset(mctx, y))
     return [f for f in xl if f not in yl]
 
+def negateset(mctx, x):
+    raise error.ParseError(_("can't use negate operator in this context"))
+
 def listset(mctx, a, b):
     raise error.ParseError(_("can't use a list in this context"),
                            hint=_('see hg help "filesets.x or y"'))
@@ -523,6 +526,7 @@ methods = {
     'and': andset,
     'or': orset,
     'minus': minusset,
+    'negate': negateset,
     'list': listset,
     'group': getset,
     'not': notset,

@@ -1935,20 +1935,26 @@ class revlog(object):
                 raise
         return btext[0]
 
+    def _builddeltadiff(self, base, node, p1, p2, btext, cachedelta, fh, flags):
+        t = self._buildtext(node, p1, p2, btext, cachedelta, fh, flags)
+        if self.iscensored(base):
+            # deltas based on a censored revision must replace the
+            # full content in one patch, so delta works everywhere
+            header = mdiff.replacediffheader(self.rawsize(base), len(t))
+            delta = header + t
+        else:
+            ptext = self.revision(base, _df=fh, raw=True)
+            delta = mdiff.textdiff(ptext, t)
+
+        return delta
+
     def _builddeltainfo(self, node, rev, p1, p2, btext, cachedelta, fh, flags):
         # can we use the cached delta?
         if cachedelta and cachedelta[0] == rev:
             delta = cachedelta[1]
         else:
-            t = self._buildtext(node, p1, p2, btext, cachedelta, fh, flags)
-            if self.iscensored(rev):
-                # deltas based on a censored revision must replace the
-                # full content in one patch, so delta works everywhere
-                header = mdiff.replacediffheader(self.rawsize(rev), len(t))
-                delta = header + t
-            else:
-                ptext = self.revision(rev, _df=fh, raw=True)
-                delta = mdiff.textdiff(ptext, t)
+            delta = self._builddeltadiff(rev, node, p1, p2, btext, cachedelta,
+                                         fh, flags)
         header, data = self.compress(delta)
         deltalen = len(header) + len(data)
         chainbase = self.chainbase(rev)

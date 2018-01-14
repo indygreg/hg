@@ -1901,6 +1901,11 @@ class revlog(object):
             raise RevlogError(_("%s: attempt to add wdir revision") %
                               (self.indexfile))
 
+        if self._inline:
+            fh = ifh
+        else:
+            fh = dfh
+
         btext = [rawtext]
         def buildtext():
             if btext[0] is not None:
@@ -1915,10 +1920,6 @@ class revlog(object):
                                                        len(delta) - hlen):
                 btext[0] = delta[hlen:]
             else:
-                if self._inline:
-                    fh = ifh
-                else:
-                    fh = dfh
                 basetext = self.revision(baserev, _df=fh, raw=True)
                 btext[0] = mdiff.patch(basetext, delta)
 
@@ -1947,10 +1948,6 @@ class revlog(object):
                     header = mdiff.replacediffheader(self.rawsize(rev), len(t))
                     delta = header + t
                 else:
-                    if self._inline:
-                        fh = ifh
-                    else:
-                        fh = dfh
                     ptext = self.revision(rev, _df=fh, raw=True)
                     delta = mdiff.textdiff(ptext, t)
             header, data = self.compress(delta)

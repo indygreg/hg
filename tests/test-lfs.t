@@ -17,7 +17,10 @@
 
 # Commit small file
   $ echo s > smallfile
-  $ hg commit -Aqm "add small file"
+  $ echo '**.py = LF' > .hgeol
+  $ hg --config lfs.track='size(">1000B") | "path:.hgeol"' commit -Aqm "add small file"
+  $ hg debugdata .hgeol 0
+  **.py = LF
 
 # Commit large file
   $ echo $LONG > largefile
@@ -70,7 +73,7 @@ lfs requirement
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files
+  added 2 changesets with 3 changes to 3 files
   calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
   $ grep lfs $TESTTMP/server/.hg/requires
   lfs
@@ -104,8 +107,8 @@ enabled adds the lfs requirement
   adding changesets
   adding manifests
   adding file changes
-  added 2 changesets with 2 changes to 2 files
-  new changesets b29ba743f89d:00c137947d30
+  added 2 changesets with 3 changes to 3 files
+  new changesets 0ead593177f7:b88141481348
   (run 'hg update' to get a working copy)
   $ grep lfs .hg/requires $TESTTMP/server/.hg/requires
   .hg/requires:lfs
@@ -117,7 +120,7 @@ enabled adds the lfs requirement
 
 # Update to the last revision containing the large file
   $ hg update
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 # Check the blobstore has been populated on update
   $ find .hg/store/lfs/objects | sort

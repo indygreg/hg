@@ -45,7 +45,7 @@ Configs::
 
     # Which files to track in LFS.  Path tests are "**.extname" for file
     # extensions, and "path:under/some/directory" for path prefix.  Both
-    # are relative to the repository root, and the latter must be quoted.
+    # are relative to the repository root.
     # File size can be tested with the "size()" fileset, and tests can be
     # joined with fileset operators.  (See "hg help filesets.operators".)
     #
@@ -55,9 +55,9 @@ Configs::
     # - size(">20MB")               # larger than 20MB
     # - !**.txt                     # anything not a *.txt file
     # - **.zip | **.tar.gz | **.7z  # some types of compressed files
-    # - "path:bin"                  # files under "bin" in the project root
+    # - path:bin                    # files under "bin" in the project root
     # - (**.php & size(">2MB")) | (**.js & size(">5MB")) | **.tar.gz
-    #     | ("path:bin" & !"path:/bin/README") | size(">1GB")
+    #     | (path:bin & !path:/bin/README) | size(">1GB")
     # (default: none())
     #
     # This is ignored if there is a tracked '.hglfs' file, and this setting

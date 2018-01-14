@@ -27,6 +27,24 @@ Test operators and basic patterns
   (string 're:a\\d')
   a1
   a2
+  $ fileset -v '!re:"a\d"'
+  (not
+    (kindpat
+      (symbol 're')
+      (string 'a\\d')))
+  b1
+  b2
+  $ fileset -v 'path:a1 or glob:b?'
+  (or
+    (kindpat
+      (symbol 'path')
+      (symbol 'a1'))
+    (kindpat
+      (symbol 'glob')
+      (symbol 'b?')))
+  a1
+  b1
+  b2
   $ fileset -v 'a1 or a2'
   (or
     (symbol 'a1')
@@ -78,6 +96,22 @@ Test invalid syntax
     (group
       None))
   hg: parse error: can't use negate operator in this context
+  [255]
+
+  $ fileset '"path":.'
+  hg: parse error: not a symbol
+  [255]
+  $ fileset 'path:foo bar'
+  hg: parse error at 9: invalid token
+  [255]
+  $ fileset 'foo:bar:baz'
+  hg: parse error: not a symbol
+  [255]
+  $ fileset 'foo:bar()'
+  hg: parse error: pattern must be a string
+  [255]
+  $ fileset 'foo:bar'
+  hg: parse error: invalid pattern kind: foo
   [255]
 
 Test files status
@@ -344,6 +378,9 @@ Test with a revision
 #endif
 
   $ fileset -r4 'subrepo("re:su.*")'
+  sub
+  sub2
+  $ fileset -r4 'subrepo(re:su.*)'
   sub
   sub2
   $ fileset -r4 'subrepo("sub")'

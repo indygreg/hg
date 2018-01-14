@@ -17,16 +17,14 @@ def _compile(tree):
     if not tree:
         raise error.ParseError(_("missing argument"))
     op = tree[0]
-    if op in {'symbol', 'string'}:
-        name = fileset.getstring(tree, _('invalid file pattern'))
+    if op in {'symbol', 'string', 'kindpat'}:
+        name = fileset.getpattern(tree, {'path'}, _('invalid file pattern'))
         if name.startswith('**'): # file extension test, ex. "**.tar.gz"
             ext = name[2:]
             for c in ext:
                 if c in '*{}[]?/\\':
                     raise error.ParseError(_('reserved character: %s') % c)
             return lambda n, s: n.endswith(ext)
-        # TODO: teach fileset about 'path:', so that this can be a symbol and
-        # not require quoting.
         elif name.startswith('path:'): # directory or full path test
             p = name[5:] # prefix
             pl = len(p)
@@ -78,7 +76,7 @@ def compile(text):
     for prefix test.  The ``size()`` predicate is borrowed from filesets to test
     file size.  The predicates ``all()`` and ``none()`` are also supported.
 
-    '(**.php & size(">10MB")) | **.zip | ("path:bin" & !"path:bin/README")' for
+    '(**.php & size(">10MB")) | **.zip | (path:bin & !path:bin/README)' for
     example, will catch all php files whose size is greater than 10 MB, all
     files whose name ends with ".zip", and all files under "bin" in the repo
     root except for "bin/README".

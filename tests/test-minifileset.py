@@ -23,7 +23,7 @@ check('none()', [], [('a.php', 123), ('b.txt', 0)])
 check('!!!!((!(!!all())))', [], [('a.php', 123), ('b.txt', 0)])
 
 check('"path:a" & (**.b | **.c)', [('a/b.b', 0), ('a/c.c', 0)], [('b/c.c', 0)])
-check('("path:a" & **.b) | **.c',
+check('(path:a & **.b) | **.c',
       [('a/b.b', 0), ('a/c.c', 0), ('b/c.c', 0)], [])
 
 check('**.bin - size("<20B")', [('b.bin', 21)], [('a.bin', 11), ('b.txt', 21)])

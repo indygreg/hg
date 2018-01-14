@@ -24,6 +24,7 @@ from . import (
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
     "(": (20, None, ("group", 1, ")"), ("func", 1, ")"), None),
+    ":": (15, None, None, ("kindpat", 15), None),
     "-": (5, None, ("negate", 19), ("minus", 5), None),
     "not": (10, None, ("not", 10), None, None),
     "!": (10, None, ("not", 10), None, None),
@@ -50,7 +51,7 @@ def tokenize(program):
         c = program[pos]
         if c.isspace(): # skip inter-token whitespace
             pass
-        elif c in "(),-|&+!": # handle simple operators
+        elif c in "(),-:|&+!": # handle simple operators
             yield (c, None, pos)
         elif (c in '"\'' or c == 'r' and
               program[pos:pos + 2] in ("r'", 'r"')): # handle quoted strings
@@ -110,6 +111,18 @@ def getstring(x, err):
         return x[1]
     raise error.ParseError(err)
 
+def _getkindpat(x, y, allkinds, err):
+    kind = getsymbol(x)
+    pat = getstring(y, err)
+    if kind not in allkinds:
+        raise error.ParseError(_("invalid pattern kind: %s") % kind)
+    return '%s:%s' % (kind, pat)
+
+def getpattern(x, allkinds, err):
+    if x and x[0] == 'kindpat':
+        return _getkindpat(x[1], x[2], allkinds, err)
+    return getstring(x, err)
+
 def getset(mctx, x):
     if not x:
         raise error.ParseError(_("missing argument"))
@@ -118,6 +131,10 @@ def getset(mctx, x):
 def stringset(mctx, x):
     m = mctx.matcher([x])
     return [f for f in mctx.subset if m(f)]
+
+def kindpatset(mctx, x, y):
+    return stringset(mctx, _getkindpat(x, y, matchmod.allpatternkinds,
+                                       _("pattern must be a string")))
 
 def andset(mctx, x, y):
     return getset(mctx.narrow(getset(mctx, x)), y)
@@ -507,8 +524,9 @@ def subrepo(mctx, x):
     ctx = mctx.ctx
     sstate = sorted(ctx.substate)
     if x:
-        # i18n: "subrepo" is a keyword
-        pat = getstring(x, _("subrepo requires a pattern or no arguments"))
+        pat = getpattern(x, matchmod.allpatternkinds,
+                         # i18n: "subrepo" is a keyword
+                         _("subrepo requires a pattern or no arguments"))
         fast = not matchmod.patkind(pat)
         if fast:
             def m(s):
@@ -522,6 +540,7 @@ def subrepo(mctx, x):
 methods = {
     'string': stringset,
     'symbol': stringset,
+    'kindpat': kindpatset,
     'and': andset,
     'or': orset,
     'minus': minusset,

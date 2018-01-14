@@ -279,6 +279,7 @@ class _revisioninfo(object):
     p1 = attr.ib()
     p2 = attr.ib()
     btext = attr.ib()
+    textlen = attr.ib()
     cachedelta = attr.ib()
     flags = attr.ib()
 
@@ -1987,6 +1988,33 @@ class revlog(object):
         return _deltainfo(dist, deltalen, (header, data), deltabase,
                          chainbase, chainlen, compresseddeltalen)
 
+    def _finddeltainfo(self, revinfo, fh):
+        """Find an acceptable delta against a candidate revision
+
+        revinfo: information about the revision (instance of _revisioninfo)
+        fh:      file handle to either the .i or the .d revlog file,
+                 depending on whether it is inlined or not
+
+        Returns the first acceptable candidate revision, as ordered by
+        _getcandidaterevs
+        """
+        cachedelta = revinfo.cachedelta
+        p1 = revinfo.p1
+        p2 = revinfo.p2
+
+        deltainfo = None
+        for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
+            nominateddeltas = []
+            for candidaterev in candidaterevs:
+                candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
+                if self._isgooddeltainfo(candidatedelta, revinfo.textlen):
+                    nominateddeltas.append(candidatedelta)
+            if nominateddeltas:
+                deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
+                break
+
+        return deltainfo
+
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,
                      cachedelta, ifh, dfh, alwayscache=False):
         """internal function to add revisions to the log
@@ -2016,7 +2044,6 @@ class revlog(object):
         curr = len(self)
         prev = curr - 1
         offset = self.end(prev)
-        deltainfo = None
         p1r, p2r = self.rev(p1), self.rev(p2)
 
         # full versions are inserted when the needed deltas
@@ -2027,16 +2054,8 @@ class revlog(object):
         else:
             textlen = len(rawtext)
 
-        revinfo = _revisioninfo(node, p1, p2, btext, cachedelta, flags)
-        for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
-            nominateddeltas = []
-            for candidaterev in candidaterevs:
-                candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
-                if self._isgooddeltainfo(candidatedelta, textlen):
-                    nominateddeltas.append(candidatedelta)
-            if nominateddeltas:
-                deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
-                break
+        revinfo = _revisioninfo(node, p1, p2, btext, textlen, cachedelta, flags)
+        deltainfo = self._finddeltainfo(revinfo, fh)
 
         if deltainfo is not None:
             base = deltainfo.base

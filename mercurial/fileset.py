@@ -12,6 +12,7 @@ import re
 from .i18n import _
 from . import (
     error,
+    match as matchmod,
     merge,
     parser,
     pycompat,
@@ -508,8 +509,6 @@ def subrepo(mctx, x):
     if x:
         # i18n: "subrepo" is a keyword
         pat = getstring(x, _("subrepo requires a pattern or no arguments"))
-
-        from . import match as matchmod # avoid circular import issues
         fast = not matchmod.patkind(pat)
         if fast:
             def m(s):

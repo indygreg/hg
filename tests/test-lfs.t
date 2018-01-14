@@ -826,18 +826,12 @@ Accessing a corrupt file will complain
   abort: integrity check failed on data/large.i:0!
   [255]
 
-lfs -> normal -> lfs round trip conversions are possible.  The threshold for the
-lfs destination is specified here because it was originally listed in the local
-.hgrc, and the global one is too high to trigger lfs usage.  For lfs -> normal,
+lfs -> normal -> lfs round trip conversions are possible.  The 'none()'
+predicate on the command line will override whatever is configured globally and
+locally, and ensures everything converts to a regular file.  For lfs -> normal,
 there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
 
-XXX: There's not a great way to ensure that the conversion to normal files
-actually converts _everything_ to normal.  The extension needs to be loaded for
-the source, but there's no way to disable it for the destination.  The best that
-can be done is to raise the threshold so that lfs isn't used on the destination.
-It doesn't like using '!' to unset the value on the command line.
-
-  $ hg --config extensions.convert= --config lfs.threshold=1000M \
+  $ hg --config extensions.convert= --config 'lfs.track=none()' \
   >    convert repo8 convert_normal
   initializing destination convert_normal repository
   scanning source...

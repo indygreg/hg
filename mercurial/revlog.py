@@ -1844,6 +1844,44 @@ class revlog(object):
 
         return True
 
+    def _getcandidaterevs(self, p1, p2, cachedelta):
+        """
+        Provides revisions that present an interest to be diffed against,
+        grouped by level of easiness.
+        """
+        curr = len(self)
+        prev = curr - 1
+        p1r, p2r = self.rev(p1), self.rev(p2)
+
+        # should we try to build a delta?
+        if prev != nullrev and self.storedeltachains:
+            tested = set()
+            # This condition is true most of the time when processing
+            # changegroup data into a generaldelta repo. The only time it
+            # isn't true is if this is the first revision in a delta chain
+            # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
+            if cachedelta and self._generaldelta and self._lazydeltabase:
+                # Assume what we received from the server is a good choice
+                # build delta will reuse the cache
+                yield (cachedelta[0],)
+                tested.add(cachedelta[0])
+
+            if self._generaldelta:
+                # exclude already lazy tested base if any
+                parents = [p for p in (p1r, p2r)
+                           if p != nullrev and p not in tested]
+                if parents and not self._aggressivemergedeltas:
+                    # Pick whichever parent is closer to us (to minimize the
+                    # chance of having to build a fulltext).
+                    parents = [max(parents)]
+                tested.update(parents)
+                yield parents
+
+            if prev not in tested:
+                # other approach failed try against prev to hopefully save us a
+                # fulltext.
+                yield (prev,)
+
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,
                      cachedelta, ifh, dfh, alwayscache=False):
         """internal function to add revisions to the log
@@ -1943,42 +1981,16 @@ class revlog(object):
         else:
             textlen = len(rawtext)
 
-        # should we try to build a delta?
-        if prev != nullrev and self.storedeltachains:
-            tested = set()
-            # This condition is true most of the time when processing
-            # changegroup data into a generaldelta repo. The only time it
-            # isn't true is if this is the first revision in a delta chain
-            # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
-            if cachedelta and self._generaldelta and self._lazydeltabase:
-                # Assume what we received from the server is a good choice
-                # build delta will reuse the cache
-                candidatedelta = builddelta(cachedelta[0])
-                tested.add(cachedelta[0])
+        for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
+            nominateddeltas = []
+            for candidaterev in candidaterevs:
+                candidatedelta = builddelta(candidaterev)
                 if self._isgooddelta(candidatedelta, textlen):
-                    delta = candidatedelta
-            if delta is None and self._generaldelta:
-                # exclude already lazy tested base if any
-                parents = [p for p in (p1r, p2r)
-                           if p != nullrev and p not in tested]
-                if parents and not self._aggressivemergedeltas:
-                    # Pick whichever parent is closer to us (to minimize the
-                    # chance of having to build a fulltext).
-                    parents = [max(parents)]
-                tested.update(parents)
-                pdeltas = []
-                for p in parents:
-                    pd = builddelta(p)
-                    if self._isgooddelta(pd, textlen):
-                        pdeltas.append(pd)
-                if pdeltas:
-                    delta = min(pdeltas, key=lambda x: x[1])
-            if delta is None and prev not in tested:
-                # other approach failed try against prev to hopefully save us a
-                # fulltext.
-                candidatedelta = builddelta(prev)
-                if self._isgooddelta(candidatedelta, textlen):
-                    delta = candidatedelta
+                    nominateddeltas.append(candidatedelta)
+            if nominateddeltas:
+                delta = min(nominateddeltas, key=lambda x: x[1])
+                break
+
         if delta is not None:
             dist, l, data, base, chainbase, chainlen, compresseddeltalen = delta
         else:

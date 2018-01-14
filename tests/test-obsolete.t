@@ -340,6 +340,17 @@ Should pick the first visible revision as "repo" node
 
   $ cd ..
 
+Can disable transaction summary report
+
+  $ hg init transaction-summary
+  $ cd transaction-summary
+  $ mkcommit a
+  $ mkcommit b
+  $ hg up -q null
+  $ hg --config experimental.evolution.report-instabilities=false debugobsolete `getid a`
+  obsoleted 1 changesets
+  $ cd ..
+
 Exchange Test
 ============================
 

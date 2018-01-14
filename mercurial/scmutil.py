@@ -1260,7 +1260,8 @@ def registersummarycallback(repo, otr, txnname=''):
                 repo.ui.status(_('obsoleted %i changesets\n')
                                % len(obsoleted))
 
-    if obsolete.isenabled(repo, obsolete.createmarkersopt):
+    if (obsolete.isenabled(repo, obsolete.createmarkersopt) and
+        repo.ui.configbool('experimental', 'evolution.report-instabilities')):
         instabilitytypes = [
             ('orphan', 'orphan'),
             ('phase-divergent', 'phasedivergent'),

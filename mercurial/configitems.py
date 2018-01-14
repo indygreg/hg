@@ -487,6 +487,9 @@ coreconfigitem('experimental', 'evolution.exchange',
 coreconfigitem('experimental', 'evolution.bundle-obsmarker',
     default=False,
 )
+coreconfigitem('experimental', 'evolution.report-instabilities',
+    default=True,
+)
 coreconfigitem('experimental', 'evolution.track-operation',
     default=True,
 )

@@ -97,6 +97,7 @@ from mercurial import (
     scmutil,
     templatekw,
     upgrade,
+    util,
     vfs as vfsmod,
     wireproto,
 )
@@ -311,9 +312,16 @@ def lfsfiles(repo, ctx, **args):
     pointers = wrapper.pointersfromctx(ctx) # {path: pointer}
     files = sorted(pointers.keys())
 
+    def lfsattrs(v):
+        # In the file spec, version is first and the other keys are sorted.
+        sortkeyfunc = lambda x: (x[0] != 'version', x)
+        items = sorted(pointers[v].iteritems(), key=sortkeyfunc)
+        return util.sortdict(items)
+
     makemap = lambda v: {
         'file': v,
         'oid': pointers[v].oid(),
+        'lfsattrs': templatekw.hybriddict(lfsattrs(v)),
     }
 
     # TODO: make the separator ', '?

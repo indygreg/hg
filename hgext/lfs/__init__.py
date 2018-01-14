@@ -230,6 +230,7 @@ def lfsfiles(repo, ctx, **args):
 
     makemap = lambda v: {
         'file': v,
+        'oid': pointers[v].oid(),
     }
 
     # TODO: make the separator ', '?

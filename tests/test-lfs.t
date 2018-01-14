@@ -859,10 +859,11 @@ there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
   oid sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
   size 29
   x-is-binary 0
-  $ hg --cwd convert_lfs log -r 'all()' -T '{rev}: {lfs_files % "{file}\n"}'
-  0: a1
-  1: a2
-  2: a2
+  $ hg --cwd convert_lfs \
+  >     log -r 'all()' -T '{rev}: {lfs_files % "{file}: {oid}\n"}'
+  0: a1: 5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
+  1: a2: 5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
+  2: a2: 876dadc86a8542f9798048f2c47f51dbf8e4359aed883e8ec80c5db825f0d943
 
   $ grep 'lfs' convert_lfs/.hg/requires
   lfs

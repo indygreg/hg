@@ -17,7 +17,7 @@ def _compile(tree):
     if not tree:
         raise error.ParseError(_("missing argument"))
     op = tree[0]
-    if op == 'symbol':
+    if op in {'symbol', 'string'}:
         name = fileset.getstring(tree, _('invalid file pattern'))
         if name.startswith('**'): # file extension test, ex. "**.tar.gz"
             ext = name[2:]
@@ -25,17 +25,14 @@ def _compile(tree):
                 if c in '*{}[]?/\\':
                     raise error.ParseError(_('reserved character: %s') % c)
             return lambda n, s: n.endswith(ext)
-        raise error.ParseError(_('invalid symbol: %s') % name)
-    elif op == 'string':
         # TODO: teach fileset about 'path:', so that this can be a symbol and
         # not require quoting.
-        name = fileset.getstring(tree, _('invalid path literal'))
-        if name.startswith('path:'): # directory or full path test
+        elif name.startswith('path:'): # directory or full path test
             p = name[5:] # prefix
             pl = len(p)
             f = lambda n, s: n.startswith(p) and (len(n) == pl or n[pl] == '/')
             return f
-        raise error.ParseError(_("invalid string"),
+        raise error.ParseError(_("unsupported file pattern"),
                                hint=_('paths must be prefixed with "path:"'))
     elif op == 'or':
         func1 = _compile(tree[1])

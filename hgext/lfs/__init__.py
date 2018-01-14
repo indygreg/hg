@@ -7,6 +7,30 @@
 
 """lfs - large file support (EXPERIMENTAL)
 
+The extension reads its configuration from a versioned ``.hglfs``
+configuration file found in the root of the working directory. The
+``.hglfs`` file uses the same syntax as all other Mercurial
+configuration files. It uses a single section, ``[track]``.
+
+The ``[track]`` section specifies which files are stored as LFS (or
+not). Each line is keyed by a file pattern, with a predicate value.
+The first file pattern match is used, so put more specific patterns
+first.  The available predicates are ``all()``, ``none()``, and
+``size()``. See "hg help filesets.size" for the latter.
+
+Example versioned ``.hglfs`` file::
+
+  [track]
+  # No Makefile or python file, anywhere, will be LFS
+  **Makefile = none()
+  **.py = none()
+
+  **.zip = all()
+  **.exe = size(">1MB")
+
+  # Catchall for everything not matched above
+  ** = size(">10MB")
+
 Configs::
 
     [lfs]
@@ -35,6 +59,9 @@ Configs::
     # - (**.php & size(">2MB")) | (**.js & size(">5MB")) | **.tar.gz
     #     | ("path:bin" & !"path:/bin/README") | size(">1GB")
     # (default: none())
+    #
+    # This is ignored if there is a tracked '.hglfs' file, and this setting
+    # will eventually be deprecated and removed.
     track = size(">10M")
 
     # how many times to retry before giving up on transferring an object
@@ -53,7 +80,9 @@ from mercurial import (
     bundle2,
     changegroup,
     cmdutil,
+    config,
     context,
+    error,
     exchange,
     extensions,
     filelog,
@@ -124,12 +153,19 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    repo.svfs.options['lfstrack'] = _trackedmatcher(repo)
     repo.svfs.lfslocalblobstore = blobstore.local(repo)
     repo.svfs.lfsremoteblobstore = blobstore.remote(repo)
 
     # Push hook
     repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
+
+    class lfsrepo(repo.__class__):
+        @localrepo.unfilteredmethod
+        def commitctx(self, ctx, error=False):
+            repo.svfs.options['lfstrack'] = _trackedmatcher(self, ctx)
+            return super(lfsrepo, self).commitctx(ctx, error)
+
+    repo.__class__ = lfsrepo
 
     if 'lfs' not in repo.requirements:
         def checkrequireslfs(ui, repo, **kwargs):
@@ -150,18 +186,58 @@ def reposetup(ui, repo):
         ui.setconfig('hooks', 'commit.lfs', checkrequireslfs, 'lfs')
         ui.setconfig('hooks', 'pretxnchangegroup.lfs', checkrequireslfs, 'lfs')
 
-def _trackedmatcher(repo):
+def _trackedmatcher(repo, ctx):
     """Return a function (path, size) -> bool indicating whether or not to
     track a given file with lfs."""
-    trackspec = repo.ui.config('lfs', 'track')
+    data = ''
 
-    # deprecated config: lfs.threshold
-    threshold = repo.ui.configbytes('lfs', 'threshold')
-    if threshold:
-        fileset.parse(trackspec)  # make sure syntax errors are confined
-        trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
+    if '.hglfs' in ctx.added() or '.hglfs' in ctx.modified():
+        data = ctx['.hglfs'].data()
+    elif '.hglfs' not in ctx.removed():
+        p1 = repo['.']
 
-    return minifileset.compile(trackspec)
+        if '.hglfs' not in p1:
+            # No '.hglfs' in wdir or in parent.  Fallback to config
+            # for now.
+            trackspec = repo.ui.config('lfs', 'track')
+
+            # deprecated config: lfs.threshold
+            threshold = repo.ui.configbytes('lfs', 'threshold')
+            if threshold:
+                fileset.parse(trackspec)  # make sure syntax errors are confined
+                trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
+
+            return minifileset.compile(trackspec)
+
+        data = p1['.hglfs'].data()
+
+    # In removed, or not in parent
+    if not data:
+        return lambda p, s: False
+
+    # Parse errors here will abort with a message that points to the .hglfs file
+    # and line number.
+    cfg = config.config()
+    cfg.parse('.hglfs', data)
+
+    try:
+        rules = [(minifileset.compile(pattern), minifileset.compile(rule))
+                 for pattern, rule in cfg.items('track')]
+    except error.ParseError as e:
+        # The original exception gives no indicator that the error is in the
+        # .hglfs file, so add that.
+
+        # TODO: See if the line number of the file can be made available.
+        raise error.Abort(_('parse error in .hglfs: %s') % e)
+
+    def _match(path, size):
+        for pat, rule in rules:
+            if pat(path, size):
+                return rule(path, size)
+
+        return False
+
+    return _match
 
 def wrapfilelog(filelog):
     wrapfunction = extensions.wrapfunction

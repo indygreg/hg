@@ -937,6 +937,79 @@ Committing deleted files works:
   $ hg commit -m 'add A' -A A
   $ hg rm A
   $ hg commit -m 'rm A'
+
+Bad .hglfs files will block the commit with a useful message
+
+  $ cat > .hglfs << EOF
+  > [track]
+  > **.test = size(">5B")
+  > bad file ... no commit
+  > EOF
+
+  $ echo x > file.txt
+  $ hg ci -Aqm 'should fail'
+  hg: parse error at .hglfs:3: bad file ... no commit
+  [255]
+
+  $ cat > .hglfs << EOF
+  > [track]
+  > **.test = size(">5B")
+  > ** = nonexistent()
+  > EOF
+
+  $ hg ci -Aqm 'should fail'
+  abort: parse error in .hglfs: unknown identifier: nonexistent
+  [255]
+
+'**' works out to mean all files.
+
+  $ cat > .hglfs << EOF
+  > [track]
+  > **.test = size(">5B")
+  > **.exclude = none()
+  > ** = size(">10B")
+  > EOF
+
+The LFS policy takes effect as the .hglfs file is committed
+
+  $ echo 'largefile' > lfs.test
+  $ echo '012345678901234567890' > nolfs.exclude
+  $ echo '01234567890123456' > lfs.catchall
+  $ hg ci -Aqm 'added .hglfs'
+  $ hg log -r . -T '{rev}: {lfs_files % "{file}: {oid}\n"}\n'
+  2: lfs.catchall: d4ec46c2869ba22eceb42a729377432052d9dd75d82fc40390ebaadecee87ee9
+  lfs.test: 5489e6ced8c36a7b267292bde9fd5242a5f80a7482e8f23fa0477393dfaa4d6c
+  
+The existing .hglfs file is used even when it is not in the 'A' or 'M' states
+
+  $ echo 'largefile2' > lfs.test
+  $ echo '012345678901234567890a' > nolfs.exclude
+  $ echo '01234567890123456a' > lfs.catchall
+  $ hg ci -qm 'unmodified .hglfs'
+  $ hg log -r . -T '{rev}: {lfs_files % "{file}: {oid}\n"}\n'
+  3: lfs.catchall: 31f43b9c62b540126b0ad5884dc013d21a61c9329b77de1fceeae2fc58511573
+  lfs.test: 8acd23467967bc7b8cc5a280056589b0ba0b17ff21dbd88a7b6474d6290378a6
+  
+Excluding the .hglfs file from the commit postpones the policy change
+
+  $ hg rm .hglfs
+  $ echo 'largefile3' > lfs.test
+  $ echo '012345678901234567890abc' > nolfs.exclude
+  $ echo '01234567890123456abc' > lfs.catchall
+  $ hg ci -qm 'file test' -X .hglfs
+  $ hg log -r . -T '{rev}: {lfs_files % "{file}: {oid}\n"}\n'
+  4: lfs.catchall: 6747cfb1b83965b4a884e7a6061813ae31e4122028bc6a88d2ac5e5f9e05c5af
+  lfs.test: 3f40b70c2294e91e0fa789ebcf73c5a1d1c7aef270f83e477e40cb0513237e8c
+  
+The policy change takes effect when the .hglfs is committed
+
+  $ echo 'largefile4' > lfs.test
+  $ echo '012345678901234567890abcdef' > nolfs.exclude
+  $ echo '01234567890123456abcdef' > lfs.catchall
+  $ hg ci -qm 'file test'
+  $ hg log -r . -T '{rev}: {lfs_files % "{file}: {oid}\n"}\n'
+  5: 
+
   $ cd ..
 
 Unbundling adds a requirement to a non-lfs repo, if necessary.

@@ -203,8 +203,8 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
             deleteobsmarkers(repo.obsstore, stripobsidx)
             del repo.obsstore
+            repo._phasecache.filterunknown(repo)
 
-        repo._phasecache.filterunknown(repo)
         if tmpbundlefile:
             ui.note(_("adding branch\n"))
             f = vfs.open(tmpbundlefile, "rb")

@@ -264,6 +264,24 @@ class _deltainfo(object):
     chainlen = attr.ib()
     compresseddeltalen = attr.ib()
 
+@attr.s(slots=True, frozen=True)
+class _revisioninfo(object):
+    """Information about a revision that allows building its fulltext
+    node:       expected hash of the revision
+    p1, p2:     parent revs of the revision
+    btext:      built text cache consisting of a one-element list
+    cachedelta: (baserev, uncompressed_delta) or None
+    flags:      flags associated to the revision storage
+
+    One of btext[0] or cachedelta must be set.
+    """
+    node = attr.ib()
+    p1 = attr.ib()
+    p2 = attr.ib()
+    btext = attr.ib()
+    cachedelta = attr.ib()
+    flags = attr.ib()
+
 # index v0:
 #  4 bytes: offset
 #  4 bytes: compressed length
@@ -1894,21 +1912,21 @@ class revlog(object):
                 # fulltext.
                 yield (prev,)
 
-    def _buildtext(self, node, p1, p2, btext, cachedelta, fh, flags):
+    def _buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision
 
-        node:       expected hash of the revision
-        p1, p2:     parent revs of the revision
-        btext:      built text cache consisting of a one-element list
-        cachedelta: (baserev, uncompressed_delta) or None
-        fh:         file handle to either the .i or the .d revlog file,
-                    depending on whether it is inlined or not
-        flags:      flags associated to the revision storage
-
-        One of btext[0] or cachedelta must be set.
+        revinfo: _revisioninfo instance that contains all needed info
+        fh:      file handle to either the .i or the .d revlog file,
+                 depending on whether it is inlined or not
         """
+        btext = revinfo.btext
         if btext[0] is not None:
             return btext[0]
+
+        cachedelta = revinfo.cachedelta
+        flags = revinfo.flags
+        node = revinfo.node
+
         baserev = cachedelta[0]
         delta = cachedelta[1]
         # special case deltas which replace entire base; no need to decode
@@ -1926,7 +1944,7 @@ class revlog(object):
             res = self._processflags(btext[0], flags, 'read', raw=True)
             btext[0], validatehash = res
             if validatehash:
-                self.checkhash(btext[0], node, p1=p1, p2=p2)
+                self.checkhash(btext[0], node, p1=revinfo.p1, p2=revinfo.p2)
             if flags & REVIDX_ISCENSORED:
                 raise RevlogError(_('node %s is not censored') % node)
         except CensoredNodeError:
@@ -1935,8 +1953,8 @@ class revlog(object):
                 raise
         return btext[0]
 
-    def _builddeltadiff(self, base, node, p1, p2, btext, cachedelta, fh, flags):
-        t = self._buildtext(node, p1, p2, btext, cachedelta, fh, flags)
+    def _builddeltadiff(self, base, revinfo, fh):
+        t = self._buildtext(revinfo, fh)
         if self.iscensored(base):
             # deltas based on a censored revision must replace the
             # full content in one patch, so delta works everywhere
@@ -1948,13 +1966,12 @@ class revlog(object):
 
         return delta
 
-    def _builddeltainfo(self, node, base, p1, p2, btext, cachedelta, fh, flags):
+    def _builddeltainfo(self, revinfo, base, fh):
         # can we use the cached delta?
-        if cachedelta and cachedelta[0] == base:
-            delta = cachedelta[1]
+        if revinfo.cachedelta and revinfo.cachedelta[0] == base:
+            delta = revinfo.cachedelta[1]
         else:
-            delta = self._builddeltadiff(base, node, p1, p2, btext, cachedelta,
-                                         fh, flags)
+            delta = self._builddeltadiff(base, revinfo, fh)
         header, data = self.compress(delta)
         deltalen = len(header) + len(data)
         chainbase = self.chainbase(base)
@@ -2010,12 +2027,11 @@ class revlog(object):
         else:
             textlen = len(rawtext)
 
+        revinfo = _revisioninfo(node, p1, p2, btext, cachedelta, flags)
         for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
             nominateddeltas = []
             for candidaterev in candidaterevs:
-                candidatedelta = self._builddeltainfo(node, candidaterev, p1,
-                                                      p2, btext, cachedelta,
-                                                      fh, flags)
+                candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if self._isgooddeltainfo(candidatedelta, textlen):
                     nominateddeltas.append(candidatedelta)
             if nominateddeltas:
@@ -2028,8 +2044,7 @@ class revlog(object):
             data = deltainfo.data
             l = deltainfo.deltalen
         else:
-            rawtext = self._buildtext(node, p1, p2, btext, cachedelta, fh,
-                                      flags)
+            rawtext = self._buildtext(revinfo, fh)
             data = self.compress(rawtext)
             l = len(data[1]) + len(data[0])
             base = chainbase = curr
@@ -2043,8 +2058,7 @@ class revlog(object):
         self._writeentry(transaction, ifh, dfh, entry, data, link, offset)
 
         if alwayscache and rawtext is None:
-            rawtext = self._buildtext(node, p1, p2, btext, cachedelta, fh,
-                                      flags)
+            rawtext = self._buildtext(revinfo, fh)
 
         if type(rawtext) == str: # only accept immutable objects
             self._cache = (node, curr, rawtext)

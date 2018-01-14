@@ -1327,6 +1327,7 @@ class svnsubrepo(abstractsubrepo):
                     return True, True, bool(missing)
         return bool(changes), False, bool(missing)
 
+    @annotatesubrepoerror
     def dirty(self, ignoreupdate=False, missing=False):
         wcchanged = self._wcchanged()
         changed = wcchanged[0] or (missing and wcchanged[2])

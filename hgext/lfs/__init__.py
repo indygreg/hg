@@ -124,15 +124,7 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    trackspec = repo.ui.config('lfs', 'track')
-
-    # deprecated config: lfs.threshold
-    threshold = repo.ui.configbytes('lfs', 'threshold')
-    if threshold:
-        fileset.parse(trackspec)  # make sure syntax errors are confined
-        trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
-
-    repo.svfs.options['lfstrack'] = minifileset.compile(trackspec)
+    repo.svfs.options['lfstrack'] = _trackedmatcher(repo)
     repo.svfs.lfslocalblobstore = blobstore.local(repo)
     repo.svfs.lfsremoteblobstore = blobstore.remote(repo)
 
@@ -157,6 +149,19 @@ def reposetup(ui, repo):
 
         ui.setconfig('hooks', 'commit.lfs', checkrequireslfs, 'lfs')
         ui.setconfig('hooks', 'pretxnchangegroup.lfs', checkrequireslfs, 'lfs')
+
+def _trackedmatcher(repo):
+    """Return a function (path, size) -> bool indicating whether or not to
+    track a given file with lfs."""
+    trackspec = repo.ui.config('lfs', 'track')
+
+    # deprecated config: lfs.threshold
+    threshold = repo.ui.configbytes('lfs', 'threshold')
+    if threshold:
+        fileset.parse(trackspec)  # make sure syntax errors are confined
+        trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
+
+    return minifileset.compile(trackspec)
 
 def wrapfilelog(filelog):
     wrapfunction = extensions.wrapfunction

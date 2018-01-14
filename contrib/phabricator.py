@@ -166,7 +166,7 @@ def getrepophid(repo):
 
 _differentialrevisiontagre = re.compile('\AD([1-9][0-9]*)\Z')
 _differentialrevisiondescre = re.compile(
-    '^Differential Revision:\s*(?:.*)D([1-9][0-9]*)$', re.M)
+    '^Differential Revision:\s*(?P<url>(?:.*)D(?P<id>[1-9][0-9]*))$', re.M)
 
 def getoldnodedrevmap(repo, nodelist):
     """find previous nodes that has been sent to Phabricator
@@ -207,7 +207,7 @@ def getoldnodedrevmap(repo, nodelist):
         # Check commit message
         m = _differentialrevisiondescre.search(ctx.description())
         if m:
-            toconfirm[node] = (1, set(precnodes), int(m.group(1)))
+            toconfirm[node] = (1, set(precnodes), int(m.group('id')))
 
     # Double check if tags are genuine by collecting all old nodes from
     # Phabricator, and expect precursors overlap with it.
@@ -442,7 +442,7 @@ def phabsend(ui, repo, *revs, **opts):
             # Create a local tag to note the association, if commit message
             # does not have it already
             m = _differentialrevisiondescre.search(ctx.description())
-            if not m or int(m.group(1)) != newrevid:
+            if not m or int(m.group('id')) != newrevid:
                 tagname = 'D%d' % newrevid
                 tags.tag(repo, tagname, ctx.node(), message=None, user=None,
                          date=None, local=True)

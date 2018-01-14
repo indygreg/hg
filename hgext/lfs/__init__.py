@@ -61,9 +61,11 @@ from mercurial import (
     localrepo,
     minifileset,
     node,
+    pycompat,
     registrar,
     revlog,
     scmutil,
+    templatekw,
     upgrade,
     vfs as vfsmod,
     wireproto,
@@ -221,8 +223,18 @@ def extsetup(ui):
 @templatekeyword('lfs_files')
 def lfsfiles(repo, ctx, **args):
     """List of strings. LFS files added or modified by the changeset."""
+    args = pycompat.byteskwargs(args)
+
     pointers = wrapper.pointersfromctx(ctx) # {path: pointer}
-    return sorted(pointers.keys())
+    files = sorted(pointers.keys())
+
+    makemap = lambda v: {
+        'file': v,
+    }
+
+    # TODO: make the separator ', '?
+    f = templatekw._showlist('lfs_file', files, args)
+    return templatekw._hybrid(f, files, makemap, pycompat.identity)
 
 @command('debuglfsupload',
          [('r', 'rev', [], _('upload large files introduced by REV'))])

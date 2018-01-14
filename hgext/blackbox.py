@@ -44,6 +44,7 @@ from mercurial.i18n import _
 from mercurial.node import hex
 
 from mercurial import (
+    encoding,
     registrar,
     ui as uimod,
     util,
@@ -182,7 +183,7 @@ def wrapui(ui):
                     fp.write(fmt % args)
             except (IOError, OSError) as err:
                 self.debug('warning: cannot write to blackbox.log: %s\n' %
-                           err.strerror)
+                           encoding.strtolocal(err.strerror))
                 # do not restore _bbinlog intentionally to avoid failed
                 # logging again
             else:

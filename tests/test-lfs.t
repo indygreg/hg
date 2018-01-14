@@ -862,6 +862,21 @@ there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
   $ grep 'lfs' convert_lfs/.hg/requires
   lfs
 
+The hashes in all stages of the conversion are unchanged.
+
+  $ hg -R repo8 log -T '{node|short}\n'
+  0fae949de7fa
+  9cd6bdffdac0
+  7f96794915f7
+  $ hg -R convert_normal log -T '{node|short}\n'
+  0fae949de7fa
+  9cd6bdffdac0
+  7f96794915f7
+  $ hg -R convert_lfs log -T '{node|short}\n'
+  0fae949de7fa
+  9cd6bdffdac0
+  7f96794915f7
+
 This convert is trickier, because it contains deleted files (via `hg mv`)
 
   $ hg --config extensions.convert= --config lfs.threshold=1000M \

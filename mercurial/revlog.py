@@ -1948,26 +1948,26 @@ class revlog(object):
 
         return delta
 
-    def _builddeltainfo(self, node, rev, p1, p2, btext, cachedelta, fh, flags):
+    def _builddeltainfo(self, node, base, p1, p2, btext, cachedelta, fh, flags):
         # can we use the cached delta?
-        if cachedelta and cachedelta[0] == rev:
+        if cachedelta and cachedelta[0] == base:
             delta = cachedelta[1]
         else:
-            delta = self._builddeltadiff(rev, node, p1, p2, btext, cachedelta,
+            delta = self._builddeltadiff(base, node, p1, p2, btext, cachedelta,
                                          fh, flags)
         header, data = self.compress(delta)
         deltalen = len(header) + len(data)
-        chainbase = self.chainbase(rev)
+        chainbase = self.chainbase(base)
         offset = self.end(len(self) - 1)
         dist = deltalen + offset - self.start(chainbase)
         if self._generaldelta:
-            base = rev
+            deltabase = base
         else:
-            base = chainbase
-        chainlen, compresseddeltalen = self._chaininfo(rev)
+            deltabase = chainbase
+        chainlen, compresseddeltalen = self._chaininfo(base)
         chainlen += 1
         compresseddeltalen += deltalen
-        return _deltainfo(dist, deltalen, (header, data), base,
+        return _deltainfo(dist, deltalen, (header, data), deltabase,
                          chainbase, chainlen, compresseddeltalen)
 
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,

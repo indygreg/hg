@@ -1280,6 +1280,9 @@ class svnsubrepo(abstractsubrepo):
             raise error.Abort(_('cannot retrieve svn tool version'))
         return (int(m.group(1)), int(m.group(2)))
 
+    def _svnmissing(self):
+        return not self.wvfs.exists('.svn')
+
     def _wcrevs(self):
         # Get the working directory revision as well as the last
         # commit revision so we can compare the subrepo state with

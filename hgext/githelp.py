@@ -876,23 +876,27 @@ def show(ui, repo, *args, **kwargs):
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
 
-    cmd = Command('show')
     if opts.get('name_status'):
         if opts.get('pretty') == 'format:':
-            cmd = Command('stat')
-            cmd['--change'] = 'tip'
+            cmd = Command('status')
+            cmd['--change'] = '.'
         else:
             cmd = Command('log')
             cmd.append('--style status')
-            cmd.append('-r tip')
+            cmd.append('-r .')
     elif len(args) > 0:
         if ispath(repo, args[0]):
-            cmd.append('.')
+            cmd = Command('cat')
+        else:
+            cmd = Command('export')
         cmd.extend(args)
         if opts.get('unified'):
             cmd.append('--config diff.unified=%d' % (opts['unified'],))
     elif opts.get('unified'):
+        cmd = Command('export')
         cmd.append('--config diff.unified=%d' % (opts['unified'],))
+    else:
+        cmd = Command('export')
 
     ui.status((str(cmd)), "\n")
 

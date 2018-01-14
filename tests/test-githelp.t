@@ -177,39 +177,39 @@ githelp for reset, checking ~ in git becomes ~1 in mercurial
 
 githelp for git show --name-status
   $ hg githelp -- git show --name-status
-  hg log --style status -r tip
+  hg log --style status -r .
 
 githelp for git show --pretty=format: --name-status
   $ hg githelp -- git show --pretty=format: --name-status
-  hg stat --change tip
+  hg status --change .
 
 githelp for show with no arguments
   $ hg githelp -- show
-  hg show
+  hg export
 
 githelp for show with a path
   $ hg githelp -- show test_file
-  hg show . test_file
+  hg cat test_file
 
 githelp for show with not a path:
   $ hg githelp -- show rev
-  hg show rev
+  hg export rev
 
 githelp for show with many arguments
   $ hg githelp -- show argone argtwo
-  hg show argone argtwo
+  hg export argone argtwo
   $ hg githelp -- show test_file argone argtwo
-  hg show . test_file argone argtwo
+  hg cat test_file argone argtwo
 
 githelp for show with --unified options
   $ hg githelp -- show --unified=10
-  hg show --config diff.unified=10
+  hg export --config diff.unified=10
   $ hg githelp -- show -U100
-  hg show --config diff.unified=100
+  hg export --config diff.unified=100
 
 githelp for show with a path and --unified
   $ hg githelp -- show -U20 test_file
-  hg show . test_file --config diff.unified=20
+  hg cat test_file --config diff.unified=20
 
 githelp for stash drop without name
   $ hg githelp -- git stash drop

@@ -247,13 +247,13 @@ class server(object):
         req = dispatch.request(args[:], copiedui, self.repo, self.cin,
                                self.cout, self.cerr)
 
-        ret = (dispatch.dispatch(req) or 0) & 255 # might return None
-
-        # restore old cwd
-        if '--cwd' in args:
-            os.chdir(self.cwd)
-
-        self.cresult.write(struct.pack('>i', int(ret)))
+        try:
+            ret = (dispatch.dispatch(req) or 0) & 255 # might return None
+            self.cresult.write(struct.pack('>i', int(ret)))
+        finally:
+            # restore old cwd
+            if '--cwd' in args:
+                os.chdir(self.cwd)
 
     def getencoding(self):
         """ writes the current encoding to the result channel """

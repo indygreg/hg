@@ -816,7 +816,7 @@ Logs and changes
       ajaxScrollInit(
               '/shortlog/%next%',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },
@@ -1837,7 +1837,7 @@ Overviews
       ajaxScrollInit(
               '/graph/%next%?graphtop=cad8025a2e87f88c06259790adfa15acb4080123&style=gitweb',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },

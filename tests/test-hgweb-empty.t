@@ -96,7 +96,7 @@ Some tests for hgweb in an empty repository
       ajaxScrollInit(
               '/shortlog/%next%',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },
@@ -207,7 +207,7 @@ Some tests for hgweb in an empty repository
       ajaxScrollInit(
               '/shortlog/%next%',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },
@@ -314,7 +314,7 @@ Some tests for hgweb in an empty repository
       ajaxScrollInit(
               '/graph/%next%?graphtop=0000000000000000000000000000000000000000',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },

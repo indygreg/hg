@@ -471,9 +471,6 @@ function ajaxScrollInit(urlFormat,
                         var graph = window.graph;
                         var dataStr = htmlText.match(/^\s*var data = (.*);$/m)[1];
                         var data = JSON.parse(dataStr);
-                        if (data.length < nextPageVar) {
-                            nextPageVar = undefined;
-                        }
                         graph.reset();
                         adoptChildren(doc.querySelector('#graphnodes'), container.querySelector('#graphnodes'));
                         graph.render(data);
@@ -481,7 +478,7 @@ function ajaxScrollInit(urlFormat,
                         adoptChildren(doc.querySelector(containerSelector), container);
                     }
 
-                    nextPageVar = nextPageVarGet(htmlText, nextPageVar);
+                    nextPageVar = nextPageVarGet(htmlText);
                 },
                 function onerror(errorText) {
                     var message = {

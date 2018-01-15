@@ -57,7 +57,7 @@ graph.render(data);
     ajaxScrollInit(
             '{url|urlescape}graph/%next%{graphvars%urlparameter}',
             '{nextentry%"{node}"}', <!-- NEXTHASH
-            function (htmlText, previousVal) \{
+            function (htmlText) \{
                 var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                 return m ? m[1] : null;
             },

@@ -34,15 +34,7 @@ Writes to stdio succeed and fail appropriately
   [255]
 #endif
 
-#if devfull no-chg
-  $ hg status >/dev/full 2>&1
-  [1]
-
-  $ hg status ENOENT 2>/dev/full
-  [1]
-#endif
-
-#if devfull chg
+#if devfull
   $ hg status >/dev/full 2>&1
   [255]
 

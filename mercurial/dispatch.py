@@ -96,10 +96,16 @@ def run():
             err = e
             status = -1
     if util.safehasattr(req.ui, 'ferr'):
-        if err is not None and err.errno != errno.EPIPE:
-            req.ui.ferr.write('abort: %s\n' %
-                              encoding.strtolocal(err.strerror))
-        req.ui.ferr.flush()
+        try:
+            if err is not None and err.errno != errno.EPIPE:
+                req.ui.ferr.write('abort: %s\n' %
+                                  encoding.strtolocal(err.strerror))
+            req.ui.ferr.flush()
+        # There's not much we can do about an I/O error here. So (possibly)
+        # change the status code and move on.
+        except IOError:
+            status = -1
+
     sys.exit(status & 255)
 
 def _initstdio():

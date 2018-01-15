@@ -2022,7 +2022,7 @@ def handlebookmark(op, inpart):
         if pushkeycompat:
             def runhook():
                 for hookargs in allhooks:
-                    op.repo.hook('prepushkey', **hookargs)
+                    op.repo.hook('pushkey', **hookargs)
             op.repo._afterlock(runhook)
 
     elif bookmarksmode == 'records':

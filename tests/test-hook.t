@@ -244,6 +244,7 @@ pushkey hook
   no changes found
   pretxnopen hook: HG_HOOKNAME=pretxnopen HG_HOOKTYPE=pretxnopen HG_TXNID=TXN:$ID$ HG_TXNNAME=push
   pretxnclose hook: HG_BOOKMARK_MOVED=1 HG_BUNDLE2=1 HG_HOOKNAME=pretxnclose HG_HOOKTYPE=pretxnclose HG_PENDING=$TESTTMP/a HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_TXNNAME=push HG_URL=file:$TESTTMP/a
+  pushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=pushkey HG_HOOKTYPE=pushkey HG_KEY=foo HG_NAMESPACE=bookmark HG_NEW=0000000000000000000000000000000000000000 HG_PUSHKEYCOMPAT=1 HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_URL=file:$TESTTMP/a
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_BUNDLE2=1 HG_HOOKNAME=txnclose HG_HOOKTYPE=txnclose HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_TXNNAME=push HG_URL=file:$TESTTMP/a
   exporting bookmark foo
   [1]

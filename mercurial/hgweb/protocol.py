@@ -175,10 +175,7 @@ def call(repo, req, cmd):
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireproto.streamres):
-        if rsp.reader:
-            gen = iter(lambda: rsp.reader.read(32768), '')
-        else:
-            gen = rsp.gen
+        gen = rsp.gen
 
         # This code for compression should not be streamres specific. It
         # is here because we only compress streamres at the moment.

@@ -520,7 +520,7 @@ class streamres(object):
 
     The call was successful and the result is a stream.
 
-    Accepts either a generator or an object with a ``read(size)`` method.
+    Accepts a generator containing chunks of data to be sent to the client.
 
     ``v1compressible`` indicates whether this data can be compressed to
     "version 1" clients (technically: HTTP peers using
@@ -528,9 +528,8 @@ class streamres(object):
     new commands because new clients should support a more modern compression
     mechanism.
     """
-    def __init__(self, gen=None, reader=None, v1compressible=False):
+    def __init__(self, gen=None, v1compressible=False):
         self.gen = gen
-        self.reader = reader
         self.v1compressible = v1compressible
 
 class pushres(object):
@@ -802,7 +801,8 @@ def changegroup(repo, proto, roots):
     outgoing = discovery.outgoing(repo, missingroots=nodes,
                                   missingheads=repo.heads())
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
-    return streamres(reader=cg, v1compressible=True)
+    gen = iter(lambda: cg.read(32768), '')
+    return streamres(gen=gen, v1compressible=True)
 
 @wireprotocommand('changegroupsubset', 'bases heads')
 def changegroupsubset(repo, proto, bases, heads):
@@ -811,7 +811,8 @@ def changegroupsubset(repo, proto, bases, heads):
     outgoing = discovery.outgoing(repo, missingroots=bases,
                                   missingheads=heads)
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
-    return streamres(reader=cg, v1compressible=True)
+    gen = iter(lambda: cg.read(32768), '')
+    return streamres(gen=gen, v1compressible=True)
 
 @wireprotocommand('debugwireargs', 'one two *')
 def debugwireargs(repo, proto, one, two, others):

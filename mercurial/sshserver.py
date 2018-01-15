@@ -76,13 +76,7 @@ class sshserver(wireproto.abstractserverproto):
 
     def sendstream(self, source):
         write = self.fout.write
-
-        if source.reader:
-            gen = iter(lambda: source.reader.read(4096), '')
-        else:
-            gen = source.gen
-
-        for chunk in gen:
+        for chunk in source.gen:
             write(chunk)
         self.fout.flush()
 

@@ -258,6 +258,7 @@ Unamending in middle of a stack
   2 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ echo bar >> f
   $ hg amend
+  3 new orphan changesets
   $ hg rebase -s 6 -d . -q
 
   $ hg glog
@@ -285,12 +286,14 @@ Unamending in middle of a stack
   [255]
 
   $ hg unamend
+  3 new orphan changesets
 
 Trying to unamend a public changeset
 
   $ hg up -C 23
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg phase -r . -p
+  1 new phase-divergent changesets
   $ hg unamend
   abort: cannot unamend public changesets
   (see 'hg help phases' for details)

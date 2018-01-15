@@ -206,6 +206,7 @@ Create obsmarkers via comments
   >    \|/
   >     A
   > EOS
+  1 new orphan changesets
 
   $ hg log -r 'sort(all(), topo)' -G --hidden -T '{desc} {node}'
   *  G 711f53bbef0bebd12eb6f0511d5e2e998b984846

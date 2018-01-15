@@ -61,6 +61,7 @@ A_1 have two direct and divergent successors A_1 and A_1
   $ hg debugobsolete `getid A_0` `getid A_1`
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ hg log -G --hidden
   *  3:392fd25390da A_2
   |
@@ -120,6 +121,7 @@ indirect divergence with known changeset
   $ hg debugobsolete `getid A_0` `getid A_1`
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_2` `getid A_3`
@@ -180,6 +182,7 @@ indirect divergence with known changeset
   obsoleted 1 changesets
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid A_1`
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ hg log -G --hidden
   *  3:392fd25390da A_2
   |
@@ -250,6 +253,7 @@ divergence that converge again is not divergence anymore
   $ hg debugobsolete `getid A_0` `getid A_1`
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_1` `getid A_3`
@@ -430,6 +434,7 @@ Check more complex obsolescence graft (with divergence)
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_5` `getid A_9`
+  4 new content-divergent changesets
   $ hg log -G --hidden
   *  10:bed64f5d2f5a A_9
   |
@@ -670,6 +675,7 @@ Use scmutil.cleanupnodes API to create divergence
 
   $ rm .hg/localtags
   $ hg cleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
+  2 new content-divergent changesets
   $ hg log -G -T '{rev}:{node|short} {desc} {instabilities}' -r 'sort(all(), topo)'
   @  5:1a2a9b5b0030 B2 content-divergent
   |

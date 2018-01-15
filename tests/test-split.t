@@ -417,6 +417,7 @@ Split a non-head without rebase
   [255]
 #else
   $ runsplit -r 1 --no-rebase >/dev/null
+  3 new orphan changesets
   $ hg bookmark
      d1                        2:b5c5ea414030
    * d2                        3:f4a0a8d004cc
@@ -459,6 +460,7 @@ Split a non-head with obsoleted descendants
   >     |
   >     A
   > EOS
+  2 new orphan changesets
   $ eval `hg tags -T '{tag}={node}\n'`
   $ rm .hg/localtags
   $ hg split $B --config experimental.evolution=createmarkers

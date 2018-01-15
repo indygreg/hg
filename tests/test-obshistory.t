@@ -333,6 +333,7 @@ Test setup
 
   $ hg debugobsolete `getid 'desc(A0)'` `getid 'desc(C0)'`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid 'desc(B0)'` `getid 'desc(C0)'`
   obsoleted 1 changesets
 
@@ -412,6 +413,7 @@ Test setup
   updating to a hidden changeset 471f378eab4c
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m "A2"
+  2 new content-divergent changesets
   $ hg log --hidden -G
   @  changeset:   3:65b757b745b9
   |  tag:         tip
@@ -498,6 +500,7 @@ Test setup
 
   $ hg debugobsolete `getid 'desc(A0)'` `getid 'desc(C0)'`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid 'desc(B1)'` `getid 'desc(C0)'`
   obsoleted 1 changesets
 

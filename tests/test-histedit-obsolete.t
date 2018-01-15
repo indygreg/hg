@@ -222,6 +222,7 @@ Test that rewriting leaving instability behind is allowed
   [1]
   $ echo c >> c
   $ hg histedit --continue
+  1 new orphan changesets
 
   $ hg log -r 'orphan()'
   11:c13eb81022ca f (no-eol)

@@ -1636,6 +1636,8 @@ Test obsstore related revsets
   >  \|/   |     # amend: F -> G
   >   A    A  Z  # amend: A -> Z
   > EOS
+  3 new orphan changesets
+  3 new content-divergent changesets
 
   $ hg log -r 'successors(Z)' -T '{desc}\n'
   Z

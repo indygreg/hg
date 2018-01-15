@@ -276,6 +276,7 @@ Bob pulls from Alice and rewrites them
   $ hg up 'desc("c_A")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m 'c_A1'
+  1 new orphan changesets
   $ hg rebase -r 'desc("c_B0")' -d . # no easy way to rewrite the message with the rebase
   rebasing 2:ef908e42ce65 "c_B0"
   $ hg up
@@ -323,6 +324,7 @@ Celeste pulls from Bob and rewrites them again
   $ hg up 'desc("c_A")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m 'c_A2'
+  1 new orphan changesets
   $ hg rebase -r 'desc("c_B1")' -d . # no easy way to rewrite the message with the rebase
   rebasing 2:956063ac4557 "c_B1"
   $ hg up

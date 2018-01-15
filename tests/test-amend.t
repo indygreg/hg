@@ -185,6 +185,7 @@ With allowunstable, amend could work in the middle of a stack
   > EOF
 
   $ hg amend
+  1 new orphan changesets
   $ hg log -T '{rev} {node|short} {desc}\n' -G
   @  3 be169c7e8dbe B
   |

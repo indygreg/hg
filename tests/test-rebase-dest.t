@@ -420,6 +420,7 @@ Resolve instability:
   >     \|          # amend: I -> I2
   >      A
   > EOF
+  6 new orphan changesets
   rebasing 16:5c432343bf59 "J" (J tip)
   rebasing 3:26805aba1e60 "C" (C)
   rebasing 6:f585351a92f8 "D" (D)

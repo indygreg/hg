@@ -71,6 +71,7 @@ marker to obsolete him)
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 1 files (+1 heads)
+  1 new phase-divergent changesets
   new changesets f89bcc95eba5
   (run 'hg heads' to see heads, 'hg merge' to merge)
 

@@ -272,6 +272,7 @@ setup
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A0")'`
   $ hg debugobsolete `getid 'desc("C-A0")'` `getid 'desc("C-A1")'`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete --record-parents `getid 'desc("C-B0")'`
   obsoleted 1 changesets
   $ hg up 'desc("ROOT")'
@@ -601,6 +602,7 @@ setup
   $ hg debugobsolete a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0 `getid 'desc("C-A0")'`
   $ hg debugobsolete `getid 'desc("C-A0")'` `getid 'desc("C-A1")'`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete --record-parents `getid 'desc("C-B0")'`
   obsoleted 1 changesets
 
@@ -770,8 +772,10 @@ setup
   $ hg debugobsolete `getid 'desc("C-A")'` `getid 'desc("C-B")'` `getid 'desc("C-C")'` # record split
   obsoleted 1 changesets
   $ hg debugobsolete `getid 'desc("C-A")'` `getid 'desc("C-D")'` # other divergent
+  3 new content-divergent changesets
   $ hg debugobsolete `getid 'desc("C-A")'` b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0
   $ hg debugobsolete b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0 `getid 'desc("C-E")'`
+  1 new content-divergent changesets
   $ hg debugobsolete `getid 'desc("C-B")'` `getid 'desc("C-E")'`
   obsoleted 1 changesets
   $ hg debugobsolete `getid 'desc("C-C")'` `getid 'desc("C-E")'`
@@ -952,6 +956,7 @@ Actual testing
       b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
       c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   # stripping: saved backup bundle to $TESTTMP/split-fold/.hg/strip-backup/2f20ff6509f0-8adeb22d-backup.hg
+  3 new content-divergent changesets
   ### Backup markers ###
       06dc9da25ef03e1ff7864dded5fcba42eff2a3f0 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
       27ec657ca21dd27c36c99fa75586f72ff0d442f1 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
@@ -1121,6 +1126,7 @@ Bundle multiple revisions
       b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
       c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   # stripping: saved backup bundle to $TESTTMP/split-fold/.hg/strip-backup/9ac430e15fca-36b6476a-backup.hg
+  3 new content-divergent changesets
   ### Backup markers ###
       06dc9da25ef03e1ff7864dded5fcba42eff2a3f0 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
       27ec657ca21dd27c36c99fa75586f72ff0d442f1 2f20ff6509f0e013e90c5c8efd996131c918b0ca 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}

@@ -1222,6 +1222,9 @@ _reportnewcssource = [
     'unbundle',
 ]
 
+# A marker that tells the evolve extension to suppress its own reporting
+_reportstroubledchangesets = True
+
 def registersummarycallback(repo, otr, txnname=''):
     """register a callback to issue a summary after the transaction is closed
     """
@@ -1256,6 +1259,32 @@ def registersummarycallback(repo, otr, txnname=''):
             if obsoleted:
                 repo.ui.status(_('obsoleted %i changesets\n')
                                % len(obsoleted))
+
+    if obsolete.isenabled(repo, obsolete.createmarkersopt):
+        instabilitytypes = [
+            ('orphan', 'orphan'),
+            ('phase-divergent', 'phasedivergent'),
+            ('content-divergent', 'contentdivergent'),
+        ]
+
+        def getinstabilitycounts(repo):
+            filtered = repo.changelog.filteredrevs
+            counts = {}
+            for instability, revset in instabilitytypes:
+                counts[instability] = len(set(obsolete.getrevs(repo, revset)) -
+                                          filtered)
+            return counts
+
+        oldinstabilitycounts = getinstabilitycounts(repo)
+        @reportsummary
+        def reportnewinstabilities(repo, tr):
+            newinstabilitycounts = getinstabilitycounts(repo)
+            for instability, revset in instabilitytypes:
+                delta = (newinstabilitycounts[instability] -
+                         oldinstabilitycounts[instability])
+                if delta > 0:
+                    repo.ui.warn(_('%i new %s changesets\n') %
+                                 (delta, instability))
 
     if txmatch(_reportnewcssource):
         @reportsummary

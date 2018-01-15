@@ -1285,6 +1285,7 @@ we have reusable code here
   > EOF
 
   $ hg testnodescleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
+  4 new orphan changesets
 
   $ rm .hg/localtags
   $ hg log -G -T '{rev}:{node|short} {desc} {bookmarks}' -r 'sort(all(), topo)'

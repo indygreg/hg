@@ -208,6 +208,7 @@ check that various commands work well with filtering
 Check that public changeset are not accounted as obsolete:
 
   $ hg --hidden phase --public 2
+  1 new phase-divergent changesets
   $ hg log -G
   @  5:5601fb93a350 (draft phase-divergent) [tip ] add new_3_c
   |
@@ -519,6 +520,7 @@ detect outgoing obsolete and unstable
   $ mkcommit original_e
   $ hg debugobsolete --record-parents `getid original_d` -d '0 0'
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete | grep `getid original_d`
   94b33453f93bdb8d457ef9b770851a618bf413e1 0 {6f96419950729f3671185b847352890f074f7557} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   $ hg log -r 'obsolete()'
@@ -583,6 +585,7 @@ Don't try to push extinct changeset
   adding file changes
   added 6 changesets with 6 changes to 6 files (+1 heads)
   7 new obsolescence markers
+  1 new orphan changesets
 
 no warning displayed
 
@@ -918,7 +921,9 @@ Several troubles on the same changeset (create an unstable and bumped changeset)
 
   $ hg debugobsolete `getid obsolete_e`
   obsoleted 1 changesets
+  2 new orphan changesets
   $ hg debugobsolete `getid original_c` `getid babar`
+  1 new phase-divergent changesets
   $ hg log --config ui.logtemplate= -r 'phasedivergent() and orphan()'
   changeset:   7:50c51b361e60
   user:        test
@@ -1293,6 +1298,7 @@ Test heads computation on pending index changes with obsolescence markers
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ echo aa > a
   $ hg amendtransient
+  1 new orphan changesets
   [1, 2]
 
 Test cache consistency for the visible filter

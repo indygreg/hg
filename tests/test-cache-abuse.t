@@ -70,6 +70,11 @@ Beat up tags caches:
   $ damage "tags --hidden" tags2
   $ damage tags tags2-visible
   $ damage "tag -f t3" hgtagsfnodes1
+  1 new orphan changesets
+  1 new orphan changesets
+  1 new orphan changesets
+  1 new orphan changesets
+  1 new orphan changesets
 
 Beat up branch caches:
 

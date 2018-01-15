@@ -190,6 +190,7 @@ Uncommit in the middle of a stack, does not move bookmark
   $ hg bookmark
      foo                       9:48e5bd7cd583
   $ hg uncommit
+  3 new orphan changesets
   $ hg status
   M files
   A file-abc
@@ -220,6 +221,7 @@ Partial uncommit in the middle, does not move bookmark
   $ hg bookmark
      foo                       9:48e5bd7cd583
   $ hg uncommit file-ab
+  1 new orphan changesets
   $ hg status
   A file-ab
 

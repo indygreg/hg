@@ -605,6 +605,7 @@ Test that rewriting leaving instability behind is allowed
     babar
   
   $ hg commit --amend
+  1 new orphan changesets
   $ hg log -r 'orphan()'
   changeset:   16:37973c7e0b61
   branch:      a

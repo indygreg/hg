@@ -2756,6 +2756,15 @@ Error on syntax:
   $ hg log -T '{date'
   hg: parse error at 1: unterminated template expansion
   [255]
+  $ hg log -T '{date(}'
+  hg: parse error at 7: not a prefix: end
+  [255]
+  $ hg log -T '{date)}'
+  hg: parse error at 5: invalid token
+  [255]
+  $ hg log -T '{date date}'
+  hg: parse error at 6: invalid token
+  [255]
 
 Behind the scenes, this will throw TypeError
 

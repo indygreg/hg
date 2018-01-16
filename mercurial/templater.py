@@ -184,6 +184,8 @@ def _parsetemplate(tmpl, start, stop, quote=''):
             return parsed, n + 1
 
         parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, '}'))
+        if not tmpl.endswith('}', n + 1, pos):
+            raise error.ParseError(_("invalid token"), pos)
         parsed.append(parseres)
 
     if quote:

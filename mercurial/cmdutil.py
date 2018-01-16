@@ -2436,7 +2436,7 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
         #
         # pats/include/exclude cannot be represented as separate
         # revset expressions as their filtering logic applies at file
-        # level. For instance "-I a -X a" matches a revision touching
+        # level. For instance "-I a -X b" matches a revision touching
         # "a" and "b" while "file(a) and not file(b)" does
         # not. Besides, filesets are evaluated against the working
         # directory.

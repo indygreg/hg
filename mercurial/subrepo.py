@@ -1332,6 +1332,8 @@ class svnsubrepo(abstractsubrepo):
 
     @annotatesubrepoerror
     def dirty(self, ignoreupdate=False, missing=False):
+        if self._svnmissing():
+            return self._state[1] != ''
         wcchanged = self._wcchanged()
         changed = wcchanged[0] or (missing and wcchanged[2])
         if not changed:

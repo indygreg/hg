@@ -162,6 +162,9 @@ This should not throw error
   $ hg up 3
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
+  $ hg up
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
 `hg revert`
 
   $ hg revert -r 28ad74 --all

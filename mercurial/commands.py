@@ -5530,7 +5530,8 @@ def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
 
         # if we defined a bookmark, we have to remember the original name
         brev = rev
-        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+        if rev:
+            repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
         ctx = scmutil.revsingle(repo, rev, rev)
         rev = ctx.rev()
         if ctx.hidden():

@@ -103,6 +103,11 @@ Issue294: hg remove --after dir fails when dir.* also exists
   $ hg files b
   b
 
+-X with explicit path:
+
+  $ hg files b -X b
+  [1]
+
   $ mkdir otherdir
   $ cd otherdir
 

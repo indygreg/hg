@@ -344,6 +344,21 @@
   abort: path 'beans/.hg' is inside nested repo 'beans'
   [255]
 
+Test explicit paths and excludes:
+(BROKEN: nothing should be included, but wctx.walk() does)
+
+  $ hg debugwalk fennel -X fennel
+  matcher: <differencematcher m1=<patternmatcher patterns='(?:fennel(?:/|$))'>, m2=<includematcher includes='(?:fennel(?:/|$))'>>
+  f  fennel  fennel  exact
+  $ hg debugwalk fennel -X 'f*'
+  matcher: <differencematcher m1=<patternmatcher patterns='(?:fennel(?:/|$))'>, m2=<includematcher includes='(?:f[^/]*(?:/|$))'>>
+  f  fennel  fennel  exact
+  $ hg debugwalk beans/black -X 'path:beans'
+  matcher: <differencematcher m1=<patternmatcher patterns='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
+  f  beans/black  beans/black  exact
+  $ hg debugwalk -I 'path:beans/black' -X 'path:beans'
+  matcher: <differencematcher m1=<includematcher includes='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
+
 Test absolute paths:
 
   $ hg debugwalk `pwd`/beans

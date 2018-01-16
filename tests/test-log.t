@@ -102,6 +102,10 @@ log on directory
   summary:     c
   
 
+-X, with explicit path
+
+  $ hg log a -X a
+
 -f, non-existent directory
 
   $ hg log -f dir

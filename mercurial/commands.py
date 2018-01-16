@@ -43,6 +43,7 @@ from . import (
     lock as lockmod,
     merge as mergemod,
     obsolete,
+    obsutil,
     patch,
     phases,
     pycompat,
@@ -5538,7 +5539,12 @@ def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
         ctx = scmutil.revsingle(repo, rev, rev)
         rev = ctx.rev()
         if ctx.hidden():
-            ui.warn(_("updating to a hidden changeset %s\n") % ctx.hex()[:12])
+            ctxstr = ctx.hex()[:12]
+            ui.warn(_("updating to a hidden changeset %s\n") % ctxstr)
+
+            if ctx.obsolete():
+                obsfatemsg = obsutil._getfilteredreason(repo, ctxstr, ctx)
+                ui.warn("(%s)\n" % obsfatemsg)
 
         repo.ui.setconfig('ui', 'forcemerge', tool, 'update')
 

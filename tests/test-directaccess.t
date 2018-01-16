@@ -195,6 +195,7 @@ Setting a bookmark will make that changeset unhidden, so this should come in end
 
   $ hg bookmarks -r 28ad74 book
   bookmarking hidden changeset 28ad74487de9
+  (hidden revision '28ad74487de9' was rewritten as: 2443a0e66469)
 
   $ hg bookmarks
      book                      2:28ad74487de9

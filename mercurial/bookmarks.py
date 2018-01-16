@@ -861,6 +861,11 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
 
     if hiddenrev:
         repo.ui.warn(_("bookmarking hidden changeset %s\n") % hiddenrev)
+
+        if ctx.obsolete():
+            msg = obsutil._getfilteredreason(repo, "%s" % hiddenrev, ctx)
+            repo.ui.warn("(%s)\n" % msg)
+
     marks.applychanges(repo, tr, changes)
     if not inactive and cur == marks[newact] and not rev:
         activate(repo, newact)

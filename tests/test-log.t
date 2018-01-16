@@ -1959,6 +1959,7 @@ bookmarks prevent a changeset being hidden
 
   $ hg bookmark --hidden -r 1 X
   bookmarking hidden changeset a765632148dc
+  (hidden revision 'a765632148dc' is pruned)
   $ hg log --template '{rev}:{node}\n'
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
@@ -1968,6 +1969,7 @@ divergent bookmarks are not hidden
 
   $ hg bookmark --hidden -r 1 X@foo
   bookmarking hidden changeset a765632148dc
+  (hidden revision 'a765632148dc' is pruned)
   $ hg log --template '{rev}:{node}\n'
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05

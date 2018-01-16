@@ -259,6 +259,8 @@ def prettyformat(tree):
 
 def compileexp(exp, context, curmethods):
     """Compile parsed template tree to (func, data) pair"""
+    if not exp:
+        raise error.ParseError(_("missing argument"))
     t = exp[0]
     if t in curmethods:
         return curmethods[t](exp, context)

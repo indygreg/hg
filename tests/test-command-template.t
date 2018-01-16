@@ -2766,6 +2766,16 @@ Error on syntax:
   hg: parse error at 6: invalid token
   [255]
 
+  $ hg log -T '{}'
+  hg: parse error at 2: not a prefix: end
+  [255]
+  $ hg debugtemplate -v '{()}'
+  (template
+    (group
+      None))
+  hg: parse error: missing argument
+  [255]
+
 Behind the scenes, this will throw TypeError
 
   $ hg log -l 3 --template '{date|obfuscate}\n'

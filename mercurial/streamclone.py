@@ -7,7 +7,10 @@
 
 from __future__ import absolute_import
 
+import contextlib
+import os
 import struct
+import tempfile
 
 from .i18n import _
 from . import (
@@ -428,32 +431,77 @@ class streamcloneapplier(object):
     def apply(self, repo):
         return applybundlev1(repo, self._fh)
 
+# type of file to stream
+_fileappend = 0 # append only file
+_filefull = 1   # full snapshot file
+
+# This is it's own function so extensions can override it.
+def _walkstreamfullstorefiles(repo):
+    """list snapshot file from the store"""
+    fnames = []
+    if not repo.publishing():
+        fnames.append('phaseroots')
+    return fnames
+
+def _filterfull(entry, copy, vfs):
+    """actually copy the snapshot files"""
+    name, ftype, data = entry
+    if ftype != _filefull:
+        return entry
+    return (name, ftype, copy(vfs.join(name)))
+
+@contextlib.contextmanager
+def maketempcopies():
+    """return a function to temporary copy file"""
+    files = []
+    try:
+        def copy(src):
+            fd, dst = tempfile.mkstemp()
+            os.close(fd)
+            files.append(dst)
+            util.copyfiles(src, dst, hardlink=True)
+            return dst
+        yield copy
+    finally:
+        for tmp in files:
+            util.tryunlink(tmp)
+
 def _emit(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
+    vfs = repo.svfs
     progress = repo.ui.progress
     progress(_('bundle'), 0, total=totalfilesize, unit=_('bytes'))
-    vfs = repo.svfs
-    try:
-        seen = 0
-        for name, size in entries:
-            yield util.uvarintencode(len(name))
-            fp = vfs(name)
-            try:
-                yield util.uvarintencode(size)
-                yield name
-                if size <= 65536:
-                    chunks = (fp.read(size),)
-                else:
-                    chunks = util.filechunkiter(fp, limit=size)
-                for chunk in chunks:
-                    seen += len(chunk)
-                    progress(_('bundle'), seen, total=totalfilesize,
-                             unit=_('bytes'))
-                    yield chunk
-            finally:
-                fp.close()
-    finally:
-        progress(_('bundle'), None)
+    with maketempcopies() as copy:
+        try:
+            # copy is delayed until we are in the try
+            entries = [_filterfull(e, copy, vfs) for e in entries]
+            yield None # this release the lock on the repository
+            seen = 0
+
+            for name, ftype, data in entries:
+                yield util.uvarintencode(len(name))
+                if ftype == _fileappend:
+                    fp = vfs(name)
+                    size = data
+                elif ftype == _filefull:
+                    fp = open(data, 'rb')
+                    size = util.fstat(fp).st_size
+                try:
+                    yield util.uvarintencode(size)
+                    yield name
+                    if size <= 65536:
+                        chunks = (fp.read(size),)
+                    else:
+                        chunks = util.filechunkiter(fp, limit=size)
+                    for chunk in chunks:
+                        seen += len(chunk)
+                        progress(_('bundle'), seen, total=totalfilesize,
+                                 unit=_('bytes'))
+                        yield chunk
+                finally:
+                    fp.close()
+        finally:
+            progress(_('bundle'), None)
 
 def generatev2(repo):
     """Emit content for version 2 of a streaming clone.
@@ -475,10 +523,16 @@ def generatev2(repo):
         repo.ui.debug('scanning\n')
         for name, ename, size in _walkstreamfiles(repo):
             if size:
-                entries.append((name, size))
+                entries.append((name, _fileappend, size))
                 totalfilesize += size
+        for name in _walkstreamfullstorefiles(repo):
+            if repo.svfs.exists(name):
+                totalfilesize += repo.svfs.lstat(name).st_size
+                entries.append((name, _filefull, None))
 
         chunks = _emit(repo, entries, totalfilesize)
+        first = next(chunks)
+        assert first is None
 
     return len(entries), totalfilesize, chunks
 

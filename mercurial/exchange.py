@@ -1465,6 +1465,7 @@ def _pullbundle2(pullop):
         kwargs['cg'] = False
         kwargs['stream'] = True
         pullop.stepsdone.add('changegroup')
+        pullop.stepsdone.add('phases')
 
     else:
         # pulling changegroup
@@ -1472,15 +1473,15 @@ def _pullbundle2(pullop):
 
         kwargs['cg'] = pullop.fetch
 
-    legacyphase = 'phases' in ui.configlist('devel', 'legacy.exchange')
-    hasbinaryphase = 'heads' in pullop.remotebundle2caps.get('phases', ())
-    if (not legacyphase and hasbinaryphase):
-        kwargs['phases'] = True
-        pullop.stepsdone.add('phases')
+        legacyphase = 'phases' in ui.configlist('devel', 'legacy.exchange')
+        hasbinaryphase = 'heads' in pullop.remotebundle2caps.get('phases', ())
+        if (not legacyphase and hasbinaryphase):
+            kwargs['phases'] = True
+            pullop.stepsdone.add('phases')
 
-    if 'listkeys' in pullop.remotebundle2caps:
-        if 'phases' not in pullop.stepsdone:
-            kwargs['listkeys'] = ['phases']
+        if 'listkeys' in pullop.remotebundle2caps:
+            if 'phases' not in pullop.stepsdone:
+                kwargs['listkeys'] = ['phases']
 
     bookmarksrequested = False
     legacybookmark = 'bookmarks' in ui.configlist('devel', 'legacy.exchange')

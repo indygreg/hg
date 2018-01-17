@@ -100,9 +100,7 @@ Clone with background file closing enabled
   transferred 96.3 KB in * seconds (* */sec) (glob)
   bundle2-input-part: total payload size 110887
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
-  bundle2-input-part: "phase-heads" supported
-  bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 2 parts total
+  bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
 #endif
 
@@ -320,13 +318,13 @@ Clone as non publishing
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (* */sec) (glob)
+  1028 files to transfer, 96.4 KB of data
+  transferred 96.4 KB in * seconds (* */sec) (glob)
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R phase-no-publish phase -r 'all()'
-  0: public
-  1: public
+  0: draft
+  1: draft
 #endif
 
   $ killdaemons.py

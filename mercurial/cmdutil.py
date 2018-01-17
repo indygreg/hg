@@ -2962,6 +2962,18 @@ def remove(ui, repo, m, prefix, after, force, subrepos, warnings=None):
 
     return ret
 
+def _updatecatformatter(fm, ctx, matcher, path, decode):
+    """Hook for adding data to the formatter used by ``hg cat``.
+
+    Extensions (e.g., lfs) can wrap this to inject keywords/data, but must call
+    this method first."""
+    data = ctx[path].data()
+    if decode:
+        data = ctx.repo().wwritedata(path, data)
+    fm.startitem()
+    fm.write('data', '%s', data)
+    fm.data(abspath=path, path=matcher.rel(path))
+
 def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
     err = 1
     opts = pycompat.byteskwargs(opts)
@@ -2977,12 +2989,7 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
             except OSError:
                 pass
         with formatter.maybereopen(basefm, filename, opts) as fm:
-            data = ctx[path].data()
-            if opts.get('decode'):
-                data = repo.wwritedata(path, data)
-            fm.startitem()
-            fm.write('data', '%s', data)
-            fm.data(abspath=path, path=matcher.rel(path))
+            _updatecatformatter(fm, ctx, matcher, path, opts.get('decode'))
 
     # Automation often uses hg cat on single files, so special case it
     # for performance to avoid the cost of parsing the manifest.

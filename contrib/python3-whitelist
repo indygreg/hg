@@ -46,6 +46,7 @@ test-gpg.t
 test-hghave.t
 test-imports-checker.t
 test-issue1089.t
+test-issue1175.t
 test-issue1502.t
 test-issue1802.t
 test-issue1877.t
@@ -75,6 +76,7 @@ test-merge6.t
 test-merge7.t
 test-merge8.t
 test-mq-qimport-fail-cleanup.t
+test-obshistory.t
 test-permissions.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t

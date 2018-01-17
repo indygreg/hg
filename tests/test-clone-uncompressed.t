@@ -171,3 +171,28 @@ actually serving file content
   $ wait
   $ hg -R clone id
   000000000000
+  $ cd ..
+
+Stream repository with bookmarks
+--------------------------------
+
+(revert introduction of secret changeset)
+
+  $ hg -R server phase --draft 'secret()'
+
+add a bookmark
+
+  $ hg -R server bookmark -r tip some-bookmark
+
+clone it
+
+  $ hg clone --stream http://localhost:$HGPORT with-bookmarks
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (*) (glob)
+  searching for changes
+  no changes found
+  updating to branch default
+  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg -R with-bookmarks bookmarks
+     some-bookmark             1:c17445101a72

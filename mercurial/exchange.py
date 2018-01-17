@@ -1461,10 +1461,11 @@ def _pullbundle2(pullop):
     kwargs['common'] = pullop.common
     kwargs['heads'] = pullop.heads or pullop.rheads
 
-    # pulling changegroup
-    pullop.stepsdone.add('changegroup')
+    if True:
+        # pulling changegroup
+        pullop.stepsdone.add('changegroup')
 
-    kwargs['cg'] = pullop.fetch
+        kwargs['cg'] = pullop.fetch
 
     legacyphase = 'phases' in ui.configlist('devel', 'legacy.exchange')
     hasbinaryphase = 'heads' in pullop.remotebundle2caps.get('phases', ())

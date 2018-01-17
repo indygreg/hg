@@ -1747,6 +1747,19 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
 
     return bundler.getchunks()
 
+@getbundle2partsgenerator('stream')
+def _getbundlestream(bundler, repo, source, bundlecaps=None,
+                     b2caps=None, heads=None, common=None, **kwargs):
+    if not kwargs.get('stream', False):
+        return
+    filecount, bytecount, it = streamclone.generatev2(repo)
+    requirements = ' '.join(repo.requirements)
+    part = bundler.newpart('stream', data=it)
+    part.addparam('bytecount', '%d' % bytecount, mandatory=True)
+    part.addparam('filecount', '%d' % filecount, mandatory=True)
+    part.addparam('requirements', requirements, mandatory=True)
+    part.addparam('version', 'v2', mandatory=True)
+
 @getbundle2partsgenerator('changegroup')
 def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
                               b2caps=None, heads=None, common=None, **kwargs):

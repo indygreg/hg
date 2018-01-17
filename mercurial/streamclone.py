@@ -11,10 +11,12 @@ import contextlib
 import os
 import struct
 import tempfile
+import warnings
 
 from .i18n import _
 from . import (
     branchmap,
+    cacheutil,
     error,
     phases,
     store,
@@ -435,6 +437,10 @@ class streamcloneapplier(object):
 _fileappend = 0 # append only file
 _filefull = 1   # full snapshot file
 
+# Source of the file
+_srcstore = 's' # store (svfs)
+_srccache = 'c' # cache (cache)
+
 # This is it's own function so extensions can override it.
 def _walkstreamfullstorefiles(repo):
     """list snapshot file from the store"""
@@ -443,12 +449,12 @@ def _walkstreamfullstorefiles(repo):
         fnames.append('phaseroots')
     return fnames
 
-def _filterfull(entry, copy, vfs):
+def _filterfull(entry, copy, vfsmap):
     """actually copy the snapshot files"""
-    name, ftype, data = entry
+    src, name, ftype, data = entry
     if ftype != _filefull:
         return entry
-    return (name, ftype, copy(vfs.join(name)))
+    return (src, name, ftype, copy(vfsmap[src].join(name)))
 
 @contextlib.contextmanager
 def maketempcopies():
@@ -466,19 +472,33 @@ def maketempcopies():
         for tmp in files:
             util.tryunlink(tmp)
 
+def _makemap(repo):
+    """make a (src -> vfs) map for the repo"""
+    vfsmap = {
+        _srcstore: repo.svfs,
+        _srccache: repo.cachevfs,
+    }
+    # we keep repo.vfs out of the on purpose, ther are too many danger there
+    # (eg: .hg/hgrc)
+    assert repo.vfs not in vfsmap.values()
+
+    return vfsmap
+
 def _emit(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
-    vfs = repo.svfs
+    vfsmap = _makemap(repo)
     progress = repo.ui.progress
     progress(_('bundle'), 0, total=totalfilesize, unit=_('bytes'))
     with maketempcopies() as copy:
         try:
             # copy is delayed until we are in the try
-            entries = [_filterfull(e, copy, vfs) for e in entries]
+            entries = [_filterfull(e, copy, vfsmap) for e in entries]
             yield None # this release the lock on the repository
             seen = 0
 
-            for name, ftype, data in entries:
+            for src, name, ftype, data in entries:
+                vfs = vfsmap[src]
+                yield src
                 yield util.uvarintencode(len(name))
                 if ftype == _fileappend:
                     fp = vfs(name)
@@ -507,10 +527,11 @@ def generatev2(repo):
     """Emit content for version 2 of a streaming clone.
 
     the data stream consists the following entries:
-    1) A varint containing the length of the filename
-    2) A varint containing the length of file data
-    3) N bytes containing the filename (the internal, store-agnostic form)
-    4) N bytes containing the file data
+    1) A char representing the file destination (eg: store or cache)
+    2) A varint containing the length of the filename
+    3) A varint containing the length of file data
+    4) N bytes containing the filename (the internal, store-agnostic form)
+    5) N bytes containing the file data
 
     Returns a 3-tuple of (file count, file size, data iterator).
     """
@@ -523,18 +544,32 @@ def generatev2(repo):
         repo.ui.debug('scanning\n')
         for name, ename, size in _walkstreamfiles(repo):
             if size:
-                entries.append((name, _fileappend, size))
+                entries.append((_srcstore, name, _fileappend, size))
                 totalfilesize += size
         for name in _walkstreamfullstorefiles(repo):
             if repo.svfs.exists(name):
                 totalfilesize += repo.svfs.lstat(name).st_size
-                entries.append((name, _filefull, None))
+                entries.append((_srcstore, name, _filefull, None))
+        for name in cacheutil.cachetocopy(repo):
+            if repo.cachevfs.exists(name):
+                totalfilesize += repo.cachevfs.lstat(name).st_size
+                entries.append((_srccache, name, _filefull, None))
 
         chunks = _emit(repo, entries, totalfilesize)
         first = next(chunks)
         assert first is None
 
     return len(entries), totalfilesize, chunks
+
+@contextlib.contextmanager
+def nested(*ctxs):
+    with warnings.catch_warnings():
+        # For some reason, Python decided 'nested' was deprecated without
+        # replacement. They officially advertised for filtering the deprecation
+        # warning for people who actually need the feature.
+        warnings.filterwarnings("ignore",category=DeprecationWarning)
+        with contextlib.nested(*ctxs):
+            yield
 
 def consumev2(repo, fp, filecount, filesize):
     """Apply the contents from a version 2 streaming clone.
@@ -552,19 +587,23 @@ def consumev2(repo, fp, filecount, filesize):
 
         progress(_('clone'), handledbytes, total=filesize, unit=_('bytes'))
 
-        vfs = repo.svfs
+        vfsmap = _makemap(repo)
 
         with repo.transaction('clone'):
-            with vfs.backgroundclosing(repo.ui):
+            ctxs = (vfs.backgroundclosing(repo.ui)
+                    for vfs in vfsmap.values())
+            with nested(*ctxs):
                 for i in range(filecount):
+                    src = fp.read(1)
+                    vfs = vfsmap[src]
                     namelen = util.uvarintdecodestream(fp)
                     datalen = util.uvarintdecodestream(fp)
 
                     name = fp.read(namelen)
 
                     if repo.ui.debugflag:
-                        repo.ui.debug('adding %s (%s)\n' %
-                                      (name, util.bytecount(datalen)))
+                        repo.ui.debug('adding [%s] %s (%s)\n' %
+                                      (src, name, util.bytecount(datalen)))
 
                     with vfs(name, 'w') as ofp:
                         for chunk in util.filechunkiter(fp, limit=datalen):

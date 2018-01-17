@@ -38,8 +38,13 @@ Basic clone
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.4 KB of data
+  transferred 96.4 KB in * seconds (* */sec) (glob)
+
+  $ ls -1 clone1/.hg/cache
+  branch2-served
+  rbc-names-v1
+  rbc-revs-v1
 #endif
 
 --uncompressed is an alias to --stream
@@ -55,8 +60,8 @@ Basic clone
 #if stream-bundle2
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.4 KB of data
+  transferred 96.4 KB in * seconds (* */sec) (glob)
 #endif
 
 Clone with background file closing enabled
@@ -95,10 +100,11 @@ Clone with background file closing enabled
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "stream" (params: 4 mandatory) supported
   applying stream bundle
-  1027 files to transfer, 96.3 KB of data
+  1030 files to transfer, 96.4 KB of data
   starting 4 threads for background file closing
-  transferred 96.3 KB in * seconds (* */sec) (glob)
-  bundle2-input-part: total payload size 110887
+  starting 4 threads for background file closing
+  transferred 96.4 KB in * seconds (* */sec) (glob)
+  bundle2-input-part: total payload size 112077
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
@@ -136,8 +142,8 @@ Streaming of secrets can be overridden by server config
 #if stream-bundle2
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (* */sec) (glob)
+  1030 files to transfer, 96.4 KB of data
+  transferred 96.4 KB in * seconds (* */sec) (glob)
 #endif
 
   $ killdaemons.py
@@ -253,8 +259,8 @@ clone it
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT with-bookmarks
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (* */sec) (glob)
+  1033 files to transfer, 96.6 KB of data
+  transferred 96.6 KB in * seconds (* */sec) (glob)
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
@@ -283,8 +289,8 @@ Clone as publishing
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT phase-publish
   streaming all changes
-  1027 files to transfer, 96.3 KB of data
-  transferred 96.3 KB in * seconds (* */sec) (glob)
+  1033 files to transfer, 96.6 KB of data
+  transferred 96.6 KB in * seconds (* */sec) (glob)
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
 #endif
@@ -318,8 +324,8 @@ Clone as non publishing
 #if stream-bundle2
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish
   streaming all changes
-  1028 files to transfer, 96.4 KB of data
-  transferred 96.4 KB in * seconds (* */sec) (glob)
+  1034 files to transfer, 96.7 KB of data
+  transferred 96.7 KB in * seconds (* */sec) (glob)
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R phase-no-publish phase -r 'all()'

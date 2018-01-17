@@ -1,5 +1,14 @@
 #require serve
 
+#testcases stream-legacy stream-bundle2
+
+#if stream-bundle2
+  $ cat << EOF >> $HGRCPATH
+  > [experimental]
+  > bundle2.stream = yes
+  > EOF
+#endif
+
 Initialize repository
 the status call is to check for issue5130
 
@@ -18,24 +27,41 @@ the status call is to check for issue5130
 
 Basic clone
 
+#if stream-legacy
   $ hg clone --stream -U http://localhost:$HGPORT clone1
   streaming all changes
   1027 files to transfer, 96.3 KB of data
   transferred 96.3 KB in * seconds (*/sec) (glob)
   searching for changes
   no changes found
+#endif
+#if stream-bundle2
+  $ hg clone --stream -U http://localhost:$HGPORT clone1
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (* */sec) (glob)
+#endif
 
 --uncompressed is an alias to --stream
 
+#if stream-legacy
   $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
   streaming all changes
   1027 files to transfer, 96.3 KB of data
   transferred 96.3 KB in * seconds (*/sec) (glob)
   searching for changes
   no changes found
+#endif
+#if stream-bundle2
+  $ hg clone --uncompressed -U http://localhost:$HGPORT clone1-uncompressed
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (* */sec) (glob)
+#endif
 
 Clone with background file closing enabled
 
+#if stream-legacy
   $ hg --debug --config worker.backgroundclose=true --config worker.backgroundcloseminfilecount=1 clone --stream -U http://localhost:$HGPORT clone-background | grep -v adding
   using http://localhost:$HGPORT/
   sending capabilities command
@@ -57,6 +83,28 @@ Clone with background file closing enabled
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 1 parts total
   checking for updated bookmarks
+#endif
+#if stream-bundle2
+  $ hg --debug --config worker.backgroundclose=true --config worker.backgroundcloseminfilecount=1 clone --stream -U http://localhost:$HGPORT clone-background | grep -v adding
+  using http://localhost:$HGPORT/
+  sending capabilities command
+  query 1; heads
+  sending batch command
+  streaming all changes
+  sending getbundle command
+  bundle2-input-bundle: with-transaction
+  bundle2-input-part: "stream" (params: 4 mandatory) supported
+  applying stream bundle
+  1027 files to transfer, 96.3 KB of data
+  starting 4 threads for background file closing
+  transferred 96.3 KB in * seconds (* */sec) (glob)
+  bundle2-input-part: total payload size 110887
+  bundle2-input-part: "listkeys" (params: 1 mandatory) supported
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-bundle: 2 parts total
+  checking for updated bookmarks
+#endif
 
 Cannot stream clone when there are secret changesets
 
@@ -79,12 +127,20 @@ Streaming of secrets can be overridden by server config
   $ cat hg.pid > $DAEMON_PIDS
   $ cd ..
 
+#if stream-legacy
   $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
   streaming all changes
   1027 files to transfer, 96.3 KB of data
   transferred 96.3 KB in * seconds (*/sec) (glob)
   searching for changes
   no changes found
+#endif
+#if stream-bundle2
+  $ hg clone --stream -U http://localhost:$HGPORT secret-allowed
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (* */sec) (glob)
+#endif
 
   $ killdaemons.py
 
@@ -186,6 +242,7 @@ add a bookmark
 
 clone it
 
+#if stream-legacy
   $ hg clone --stream http://localhost:$HGPORT with-bookmarks
   streaming all changes
   1027 files to transfer, 96.3 KB of data
@@ -194,5 +251,14 @@ clone it
   no changes found
   updating to branch default
   1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#endif
+#if stream-bundle2
+  $ hg clone --stream http://localhost:$HGPORT with-bookmarks
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (* */sec) (glob)
+  updating to branch default
+  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#endif
   $ hg -R with-bookmarks bookmarks
      some-bookmark             1:c17445101a72

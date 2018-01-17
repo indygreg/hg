@@ -431,6 +431,9 @@ coreconfigitem('experimental', 'bundle2-output-capture',
 coreconfigitem('experimental', 'bundle2.pushback',
     default=False,
 )
+coreconfigitem('experimental', 'bundle2.stream',
+    default=False,
+)
 coreconfigitem('experimental', 'bundle2lazylocking',
     default=False,
 )

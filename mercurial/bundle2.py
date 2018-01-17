@@ -1487,6 +1487,7 @@ capabilities = {'HG20': (),
                 'remote-changegroup': ('http', 'https'),
                 'hgtagsfnodes': (),
                 'phases': ('heads',),
+                'stream': ('v2',),
                }
 
 def getrepocaps(repo, allowpushback=False):
@@ -1507,6 +1508,8 @@ def getrepocaps(repo, allowpushback=False):
         caps['checkheads'] = ('related',)
     if 'phases' in repo.ui.configlist('devel', 'legacy.exchange'):
         caps.pop('phases')
+    if not repo.ui.configbool('experimental', 'bundle2.stream'):
+        caps.pop('stream')
     return caps
 
 def bundle2caps(remote):

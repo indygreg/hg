@@ -1455,13 +1455,18 @@ def _pullbundle2(pullop):
 
     # At the moment we don't do stream clones over bundle2. If that is
     # implemented then here's where the check for that will go.
-    streaming = False
+    streaming = streamclone.canperformstreamclone(pullop, bundle2=True)[0]
 
     # declare pull perimeters
     kwargs['common'] = pullop.common
     kwargs['heads'] = pullop.heads or pullop.rheads
 
-    if True:
+    if streaming:
+        kwargs['cg'] = False
+        kwargs['stream'] = True
+        pullop.stepsdone.add('changegroup')
+
+    else:
         # pulling changegroup
         pullop.stepsdone.add('changegroup')
 

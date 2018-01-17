@@ -866,10 +866,11 @@ def getbundle(repo, proto, others):
         if repo.ui.configbool('server', 'disablefullbundle'):
             # Check to see if this is a full clone.
             clheads = set(repo.changelog.heads())
+            changegroup = opts.get('cg', True)
             heads = set(opts.get('heads', set()))
             common = set(opts.get('common', set()))
             common.discard(nullid)
-            if not common and clheads == heads:
+            if changegroup and not common and clheads == heads:
                 raise error.Abort(
                     _('server has pull-based clones disabled'),
                     hint=_('remove --pull if specified or upgrade Mercurial'))

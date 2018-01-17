@@ -700,3 +700,11 @@ def has_fuzzywuzzy():
         return True
     except ImportError:
         return False
+
+@check("clang-libfuzzer", "clang new enough to include libfuzzer")
+def has_clang_libfuzzer():
+    mat = matchoutput('clang --version', 'clang version (\d)')
+    if mat:
+        # libfuzzer is new in clang 6
+        return int(mat.group(1)) > 5
+    return False

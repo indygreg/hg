@@ -1450,23 +1450,31 @@ def _pullbundle2(pullop):
     For now, the only supported data are changegroup."""
     kwargs = {'bundlecaps': caps20to10(pullop.repo)}
 
+    # make ui easier to access
+    ui = pullop.repo.ui
+
     # At the moment we don't do stream clones over bundle2. If that is
     # implemented then here's where the check for that will go.
     streaming = False
 
+    # declare pull perimeters
+    kwargs['common'] = pullop.common
+    kwargs['heads'] = pullop.heads or pullop.rheads
+
     # pulling changegroup
     pullop.stepsdone.add('changegroup')
 
-    kwargs['common'] = pullop.common
-    kwargs['heads'] = pullop.heads or pullop.rheads
     kwargs['cg'] = pullop.fetch
 
-    ui = pullop.repo.ui
     legacyphase = 'phases' in ui.configlist('devel', 'legacy.exchange')
     hasbinaryphase = 'heads' in pullop.remotebundle2caps.get('phases', ())
     if (not legacyphase and hasbinaryphase):
         kwargs['phases'] = True
         pullop.stepsdone.add('phases')
+
+    if 'listkeys' in pullop.remotebundle2caps:
+        if 'phases' not in pullop.stepsdone:
+            kwargs['listkeys'] = ['phases']
 
     bookmarksrequested = False
     legacybookmark = 'bookmarks' in ui.configlist('devel', 'legacy.exchange')
@@ -1482,8 +1490,6 @@ def _pullbundle2(pullop):
         bookmarksrequested = True
 
     if 'listkeys' in pullop.remotebundle2caps:
-        if 'phases' not in pullop.stepsdone:
-            kwargs['listkeys'] = ['phases']
         if 'request-bookmarks' not in pullop.stepsdone:
             # make sure to always includes bookmark data when migrating
             # `hg incoming --bundle` to using this function.

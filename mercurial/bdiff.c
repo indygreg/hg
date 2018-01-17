@@ -41,7 +41,7 @@ int bdiff_splitlines(const char *a, ssize_t len, struct bdiff_line **lr)
 	if (p == plast)
 		i++;
 
-	*lr = l = (struct bdiff_line *)malloc(sizeof(struct bdiff_line) * i);
+	*lr = l = (struct bdiff_line *)calloc(i, sizeof(struct bdiff_line));
 	if (!l)
 		return -1;
 

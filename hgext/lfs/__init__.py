@@ -52,6 +52,7 @@ from mercurial.i18n import _
 from mercurial import (
     bundle2,
     changegroup,
+    cmdutil,
     context,
     exchange,
     extensions,
@@ -169,6 +170,7 @@ def extsetup(ui):
 
     wrapfunction = extensions.wrapfunction
 
+    wrapfunction(cmdutil, '_updatecatformatter', wrapper._updatecatformatter)
     wrapfunction(scmutil, 'wrapconvertsink', wrapper.convertsink)
 
     wrapfunction(upgrade, '_finishdatamigration',

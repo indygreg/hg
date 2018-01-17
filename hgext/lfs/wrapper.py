@@ -179,6 +179,10 @@ def filectxisbinary(orig, self):
 def filectxislfs(self):
     return _islfs(self.filelog(), self.filenode())
 
+def _updatecatformatter(orig, fm, ctx, matcher, path, decode):
+    orig(fm, ctx, matcher, path, decode)
+    fm.data(rawdata=ctx[path].rawdata())
+
 def convertsink(orig, sink):
     sink = orig(sink)
     if sink.repotype == 'hg':

@@ -842,7 +842,7 @@ there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
   0 meta
   $ grep 'lfs' convert_normal/.hg/requires
   [1]
-  $ hg --cwd convert_normal debugdata a1 0
+  $ hg --cwd convert_normal cat a1 -r 0 -T '{rawdata}'
   THIS-IS-LFS-BECAUSE-10-BYTES
 
   $ hg --config extensions.convert= --config lfs.threshold=10B \
@@ -854,6 +854,12 @@ there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
   2 a
   1 b
   0 meta
+
+  $ hg --cwd convert_lfs cat -r 0 a1 -T '{rawdata}'
+  version https://git-lfs.github.com/spec/v1
+  oid sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
+  size 29
+  x-is-binary 0
   $ hg --cwd convert_lfs debugdata a1 0
   version https://git-lfs.github.com/spec/v1
   oid sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024

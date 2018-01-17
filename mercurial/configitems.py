@@ -568,6 +568,9 @@ coreconfigitem('experimental', 'sparse-read.min-gap-size',
 coreconfigitem('experimental', 'treemanifest',
     default=False,
 )
+coreconfigitem('experimental', 'update.atomic-file',
+    default=False,
+)
 coreconfigitem('extensions', '.*',
     default=None,
     generic=True,

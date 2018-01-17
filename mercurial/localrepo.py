@@ -1112,6 +1112,8 @@ class localrepository(object):
                             **kwargs)
             if 'x' in flags:
                 self.wvfs.setflags(filename, False, True)
+            else:
+                self.wvfs.setflags(filename, False, False)
         return len(data)
 
     def wwritedata(self, filename, data):

@@ -1376,7 +1376,9 @@ def batchget(repo, mctx, wctx, actions):
                 if repo.wvfs.lexists(absf):
                     util.rename(absf, orig)
             wctx[f].clearunknown()
-            wctx[f].write(fctx(f).data(), flags, backgroundclose=True)
+            atomictemp = ui.configbool("experimental", "update.atomic-file")
+            wctx[f].write(fctx(f).data(), flags, backgroundclose=True,
+                          atomictemp=atomictemp)
             if i == 100:
                 yield i, f
                 i = 0

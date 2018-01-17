@@ -164,6 +164,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    streamclone,
     tags,
     url,
     util,
@@ -2114,3 +2115,30 @@ def bundle2getvars(op, part):
             key = "USERVAR_" + key
             hookargs[key] = value
         op.addhookargs(hookargs)
+
+@parthandler('stream', ('requirements', 'filecount', 'bytecount', 'version'))
+def handlestreambundle(op, part):
+
+    version = part.params['version']
+    if version != 'v2':
+        raise error.Abort(_('unknown stream bundle version %s') % version)
+    requirements = part.params['requirements'].split()
+    filecount = int(part.params['filecount'])
+    bytecount = int(part.params['bytecount'])
+
+    repo = op.repo
+    if len(repo):
+        msg = _('cannot apply stream clone to non empty repository')
+        raise error.Abort(msg)
+
+    repo.ui.debug('applying stream bundle\n')
+    streamclone.applybundlev2(repo, part, filecount, bytecount,
+                              requirements)
+
+    # new requirements = old non-format requirements +
+    #                    new format-related remote requirements
+    # requirements from the streamed-in repository
+    repo.requirements = set(requirements) | (
+            repo.requirements - repo.supportedformats)
+    repo._applyopenerreqs()
+    repo._writerequirements()

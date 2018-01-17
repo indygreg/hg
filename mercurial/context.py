@@ -1962,10 +1962,11 @@ class workingfilectx(committablefilectx):
         """wraps unlink for a repo's working directory"""
         self._repo.wvfs.unlinkpath(self._path, ignoremissing=ignoremissing)
 
-    def write(self, data, flags, backgroundclose=False):
+    def write(self, data, flags, backgroundclose=False, **kwargs):
         """wraps repo.wwrite"""
         self._repo.wwrite(self._path, data, flags,
-                          backgroundclose=backgroundclose)
+                          backgroundclose=backgroundclose,
+                          **kwargs)
 
     def markcopied(self, src):
         """marks this file a copy of `src`"""
@@ -2149,7 +2150,7 @@ class overlayworkingctx(committablectx):
                               % (path, path, self.p1(), len(matches),
                                  ', '.join(matches.keys())))
 
-    def write(self, path, data, flags=''):
+    def write(self, path, data, flags='', **kwargs):
         if data is None:
             raise error.ProgrammingError("data must be non-None")
         self._auditconflicts(path)
@@ -2327,8 +2328,8 @@ class overlayworkingfilectx(committablefilectx):
     def setflags(self, islink, isexec):
         return self._parent.setflags(self._path, islink, isexec)
 
-    def write(self, data, flags, backgroundclose=False):
-        return self._parent.write(self._path, data, flags)
+    def write(self, data, flags, backgroundclose=False, **kwargs):
+        return self._parent.write(self._path, data, flags, **kwargs)
 
     def remove(self, ignoremissing=False):
         return self._parent.remove(self._path)
@@ -2574,7 +2575,7 @@ class memfilectx(committablefilectx):
         # need to figure out what to do here
         del self._changectx[self._path]
 
-    def write(self, data, flags):
+    def write(self, data, flags, **kwargs):
         """wraps repo.wwrite"""
         self._data = data
 
@@ -2783,7 +2784,7 @@ class arbitraryfilectx(object):
     def remove(self):
         util.unlink(self._path)
 
-    def write(self, data, flags):
+    def write(self, data, flags, **kwargs):
         assert not flags
         with open(self._path, "w") as f:
             f.write(data)

@@ -454,7 +454,7 @@ def _getoutgoing(repo, dest, revs):
 
     revs = [r for r in revs if r >= 0]
     if not revs:
-        revs = [len(repo) - 1]
+        revs = [repo.changelog.tiprev()]
     revs = repo.revs('outgoing(%s) and ::%ld', dest or '', revs)
     if not revs:
         ui.status(_("no changes found\n"))

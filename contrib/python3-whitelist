@@ -21,8 +21,10 @@ test-check-shbang.t
 test-children.t
 test-commit-unresolved.t
 test-completion.t
+test-confused-revert.t
 test-contrib-check-code.t
 test-contrib-check-commit.t
+test-debugindexdot.t
 test-debugrename.t
 test-diff-copy-depth.t
 test-diff-hashes.t
@@ -42,6 +44,7 @@ test-empty.t
 test-encoding-func.py
 test-excessive-merge.t
 test-execute-bit.t
+test-filebranch.t
 test-gpg.t
 test-hghave.t
 test-imports-checker.t
@@ -64,6 +67,7 @@ test-manifest-merging.t
 test-match.py
 test-merge-default.t
 test-merge-internal-tools-pattern.t
+test-merge-local.t
 test-merge-remove.t
 test-merge-revert.t
 test-merge-revert2.t
@@ -77,6 +81,7 @@ test-merge7.t
 test-merge8.t
 test-mq-qimport-fail-cleanup.t
 test-obshistory.t
+test-parents.t
 test-permissions.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t
@@ -106,6 +111,7 @@ test-push-checkheads-unpushed-D5.t
 test-push-checkheads-unpushed-D6.t
 test-push-checkheads-unpushed-D7.t
 test-record.t
+test-rename-after-merge.t
 test-rename-dir-merge.t
 test-rename-merge1.t
 test-rename.t
@@ -117,6 +123,7 @@ test-revlog-packentry.t
 test-run-tests.py
 test-show-stack.t
 test-simple-update.t
+test-single-head.t
 test-sparse-clear.t
 test-sparse-merges.t
 test-sparse-requirement.t

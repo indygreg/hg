@@ -306,7 +306,7 @@ class baseset(abstractsmartset):
         self._istopo = False
 
     def __len__(self):
-        if '_list' in self.__dict__:
+        if r'_list' in self.__dict__:
             return len(self._list)
         else:
             return len(self._set)

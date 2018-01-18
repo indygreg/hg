@@ -52,3 +52,17 @@ Test largefile URL
 
   $ hg --traceback debugdownload "largefile://a57b57b39ee4dc3da1e03526596007f480ecdbe8" --config paths.default=http://localhost:$HGPORT/
   1 0000000000000000000000000000000000000000
+
+from within a repository
+
+  $ hg clone http://localhost:$HGPORT/ client
+  no changes found
+  updating to branch default
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ cd client
+  $ hg path
+  default = http://localhost:$HGPORT/
+  $ hg debugdownload "largefile://a57b57b39ee4dc3da1e03526596007f480ecdbe8"
+  1 0000000000000000000000000000000000000000
+  $ cd ..

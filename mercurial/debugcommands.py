@@ -797,8 +797,8 @@ _chunksize = 4 << 10
     [
         ('o', 'output', '', _('path')),
     ],
-    norepo=True)
-def debugdownload(ui, url, output=None, **opts):
+    optionalrepo=True)
+def debugdownload(ui, repo, url, output=None, **opts):
     """download a resource using Mercurial logic and config
     """
     fh = urlmod.open(ui, url, output)

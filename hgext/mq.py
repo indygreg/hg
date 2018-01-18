@@ -695,7 +695,7 @@ class queue(object):
 
     def savedirty(self):
         def writelist(items, path):
-            fp = self.opener(path, 'w')
+            fp = self.opener(path, 'wb')
             for i in items:
                 fp.write("%s\n" % i)
             fp.close()

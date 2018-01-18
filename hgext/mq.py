@@ -700,7 +700,7 @@ class queue(object):
                 fp.write("%s\n" % i)
             fp.close()
         if self.applieddirty:
-            writelist(map(str, self.applied), self.statuspath)
+            writelist(map(bytes, self.applied), self.statuspath)
             self.applieddirty = False
         if self.seriesdirty:
             writelist(self.fullseries, self.seriespath)

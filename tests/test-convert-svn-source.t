@@ -268,7 +268,7 @@ try converting when we have an svn subrepo and a merge in hg superrepo (issue565
   $ cd withmerge
   $ echo "subrepo = [svn]$SVNREPOURL" >.hgsub
   $ hg add .hgsub
-  $ svn checkout "$SVNREPOURL" subrepo
+  $ svn checkout "$SVNREPOURL" subrepo | sort
   A    subrepo/proj B
   A    subrepo/proj B/mytrunk
   A    subrepo/proj B/mytrunk/letter .txt
@@ -305,7 +305,8 @@ try converting when we have an svn subrepo and a merge in hg superrepo (issue565
   1 Adding file2
   0 merged
   $ cd withmerge-converted
-  $ hg up
+  $ hg up | sort
+  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
   A    subrepo/proj B
   A    subrepo/proj B/mytrunk
   A    subrepo/proj B/mytrunk/letter .txt
@@ -317,7 +318,6 @@ try converting when we have an svn subrepo and a merge in hg superrepo (issue565
   A    subrepo/proj B/tags/v0.2/letter .txt
   A    subrepo/proj B/tags/v0.2/letter2.txt
   Checked out revision 9.
-  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ ls
   file1.txt
   file2.txt

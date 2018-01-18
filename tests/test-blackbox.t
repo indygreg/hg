@@ -193,37 +193,68 @@ log rotation
   > os.rename(".hg/blackbox.log-", ".hg/blackbox.log")\
   > \1#' $TESTDIR/test-dispatch.py > ../test-dispatch.py
   $ $PYTHON $TESTDIR/blackbox-readonly-dispatch.py
-  running: add foo
+  running: --debug add foo
+  warning: cannot write to blackbox.log: Is a directory
+  adding foo
   result: 0
-  running: commit -m commit1 -d 2000-01-01 foo
+  running: --debug commit -m commit1 -d 2000-01-01 foo
+  warning: cannot write to blackbox.log: Is a directory
+  committing files:
+  foo
+  committing manifest
+  committing changelog
+  updating the branch cache
+  committed changeset 0:0e46349438790c460c5c9f7546bfcd39b267bbd2
   result: None
-  running: commit -m commit2 -d 2000-01-02 foo
+  running: --debug commit -m commit2 -d 2000-01-02 foo
+  committing files:
+  foo
+  committing manifest
+  committing changelog
+  updating the branch cache
+  committed changeset 1:45589e459b2edfbf3dbde7e01f611d2c1e7453d7
   result: None
-  running: log -r 0
-  changeset:   0:0e4634943879
+  running: --debug log -r 0
+  changeset:   0:0e46349438790c460c5c9f7546bfcd39b267bbd2
+  phase:       draft
+  parent:      -1:0000000000000000000000000000000000000000
+  parent:      -1:0000000000000000000000000000000000000000
+  manifest:    0:9091aa5df980aea60860a2e39c95182e68d1ddec
   user:        test
   date:        Sat Jan 01 00:00:00 2000 +0000
-  summary:     commit1
+  files+:      foo
+  extra:       branch=default
+  description:
+  commit1
+  
   
   result: None
-  running: log -r tip
-  changeset:   1:45589e459b2e
+  running: --debug log -r tip
+  changeset:   1:45589e459b2edfbf3dbde7e01f611d2c1e7453d7
   tag:         tip
+  phase:       draft
+  parent:      0:0e46349438790c460c5c9f7546bfcd39b267bbd2
+  parent:      -1:0000000000000000000000000000000000000000
+  manifest:    1:895aa9b7886f89dd017a6d62524e1f9180b04df9
   user:        test
   date:        Sun Jan 02 00:00:00 2000 +0000
-  summary:     commit2
+  files:       foo
+  extra:       branch=default
+  description:
+  commit2
+  
   
   result: None
   $ hg blackbox
-  1970/01/01 00:00:00 bob @0e46349438790c460c5c9f7546bfcd39b267bbd2 (5000)> commit -m commit2 -d 2000-01-02 foo
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updating the branch cache
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updated served branch cache in * seconds (glob)
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> wrote served branch cache with 1 labels and 1 nodes
-  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> commit -m commit2 -d 2000-01-02 foo exited 0 after * seconds (glob)
-  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> log -r 0
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug commit -m commit2 -d 2000-01-02 foo exited 0 after *.?? seconds (glob)
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r 0
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> writing .hg/cache/tags2-visible with 0 tags
-  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> log -r 0 exited 0 after * seconds (glob)
-  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> log -r tip
-  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> log -r tip exited 0 after * seconds (glob)
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r 0 exited 0 after *.?? seconds (glob)
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r tip
+  1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> --debug log -r tip exited 0 after *.?? seconds (glob)
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> blackbox
 
 Test log recursion from dirty status check

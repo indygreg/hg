@@ -130,6 +130,11 @@ def wrapui(ui):
         def track(self):
             return self.configlist('blackbox', 'track')
 
+        def debug(self, *msg, **opts):
+            super(blackboxui, self).debug(*msg, **opts)
+            if self.debugflag:
+                self.log('debug', '%s', ''.join(*msg))
+
         def log(self, event, *msg, **opts):
             global lastui
             super(blackboxui, self).log(event, *msg, **opts)

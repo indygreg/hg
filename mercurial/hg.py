@@ -15,7 +15,6 @@ import shutil
 
 from .i18n import _
 from .node import (
-    hex,
     nullid,
 )
 
@@ -858,7 +857,7 @@ def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
         ms = mergemod.mergestate.read(repo)
         if ms.active():
             # there were conflicts
-            node = hex(ms._local)
+            node = ms.localctx.hex()
         else:
             # there were no conficts, mergestate was not stored
             node = repo['.'].hex()

@@ -1341,7 +1341,11 @@ class TTest(Test):
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
         if self._case:
-            script.append(b'TESTCASE=%s\n' % shellquote(self._case))
+            if isinstance(self._case, str):
+                quoted = shellquote(self._case)
+            else:
+                quoted = shellquote(self._case.decode('utf8')).encode('utf8')
+            script.append(b'TESTCASE=%s\n' % quoted)
             script.append(b'export TESTCASE\n')
 
         n = 0

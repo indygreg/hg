@@ -402,7 +402,7 @@ class bundlerepository(localrepo.localrepository):
         # manifestlog implementation did not consume the manifests from the
         # changegroup (ex: it might be consuming trees from a separate bundle2
         # part instead). So we need to manually consume it.
-        if 'filestart' not in self.__dict__:
+        if r'filestart' not in self.__dict__:
             self._consumemanifest()
 
         return self.filestart

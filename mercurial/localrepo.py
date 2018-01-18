@@ -1332,7 +1332,7 @@ class localrepository(object):
             """To be run if transaction is aborted
             """
             reporef().hook('txnabort', throw=False, txnname=desc,
-                           **tr2.hookargs)
+                           **pycompat.strkwargs(tr2.hookargs))
         tr.addabort('txnabort-hook', txnaborthook)
         # avoid eager cache invalidation. in-memory data should be identical
         # to stored data if transaction has no error.

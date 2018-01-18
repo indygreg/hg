@@ -262,3 +262,71 @@ clone it
 #endif
   $ hg -R with-bookmarks bookmarks
      some-bookmark             1:c17445101a72
+
+Stream repository with phases
+-----------------------------
+
+Clone as publishing
+
+  $ hg -R server phase -r 'all()'
+  0: draft
+  1: draft
+
+#if stream-legacy
+  $ hg clone --stream http://localhost:$HGPORT phase-publish
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (*) (glob)
+  searching for changes
+  no changes found
+  updating to branch default
+  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#endif
+#if stream-bundle2
+  $ hg clone --stream http://localhost:$HGPORT phase-publish
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (* */sec) (glob)
+  updating to branch default
+  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#endif
+  $ hg -R phase-publish phase -r 'all()'
+  0: public
+  1: public
+
+Clone as non publishing
+
+  $ cat << EOF >> server/.hg/hgrc
+  > [phases]
+  > publish = False
+  > EOF
+  $ killdaemons.py
+  $ hg -R server serve -p $HGPORT -d --pid-file=hg.pid
+  $ cat hg.pid >> $DAEMON_PIDS
+
+#if stream-legacy
+  $ hg clone --stream http://localhost:$HGPORT phase-no-publish
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (*) (glob)
+  searching for changes
+  no changes found
+  updating to branch default
+  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg -R phase-no-publish phase -r 'all()'
+  0: public
+  1: public
+#endif
+#if stream-bundle2
+  $ hg clone --stream http://localhost:$HGPORT phase-no-publish
+  streaming all changes
+  1027 files to transfer, 96.3 KB of data
+  transferred 96.3 KB in * seconds (* */sec) (glob)
+  updating to branch default
+  1025 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg -R phase-no-publish phase -r 'all()'
+  0: public
+  1: public
+#endif
+
+  $ killdaemons.py

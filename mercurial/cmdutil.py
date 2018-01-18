@@ -2077,6 +2077,19 @@ def show_changeset(ui, repo, opts, buffered=False):
 
     return changeset_templater(ui, repo, spec, match, opts, buffered)
 
+class _regrettablereprbytes(bytes):
+    """Bytes subclass that makes the repr the same on Python 3 as Python 2.
+
+    This is a huge hack.
+    """
+    def __repr__(self):
+        return repr(pycompat.sysstr(self))
+
+def _maybebytestr(v):
+    if pycompat.ispy3 and isinstance(v, bytes):
+        return _regrettablereprbytes(v)
+    return v
+
 def showmarker(fm, marker, index=None):
     """utility function to display obsolescence marker in a readable way
 
@@ -2095,7 +2108,8 @@ def showmarker(fm, marker, index=None):
     fm.write('date', '(%s) ', fm.formatdate(marker.date()))
     meta = marker.metadata().copy()
     meta.pop('date', None)
-    fm.write('metadata', '{%s}', fm.formatdict(meta, fmt='%r: %r', sep=', '))
+    smeta = {_maybebytestr(k): _maybebytestr(v) for k, v in meta.iteritems()}
+    fm.write('metadata', '{%s}', fm.formatdict(smeta, fmt='%r: %r', sep=', '))
     fm.plain('\n')
 
 def finddate(ui, repo, date):

@@ -119,6 +119,9 @@ configitem = registrar.configitem(configtable)
 configitem('experimental', 'lfs.user-agent',
     default=None,
 )
+configitem('experimental', 'lfs.worker-enable',
+    default=False,
+)
 
 configitem('lfs', 'url',
     default=None,

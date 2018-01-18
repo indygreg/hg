@@ -356,8 +356,13 @@ class _gitlfsremote(object):
                             continue
                         raise
 
-        oids = worker.worker(self.ui, 0.1, transfer, (),
-                             sorted(objects, key=lambda o: o.get('oid')))
+        # Until https multiplexing gets sorted out
+        if self.ui.configbool('experimental', 'lfs.worker-enable'):
+            oids = worker.worker(self.ui, 0.1, transfer, (),
+                                 sorted(objects, key=lambda o: o.get('oid')))
+        else:
+            oids = transfer(sorted(objects, key=lambda o: o.get('oid')))
+
         processed = 0
         for _one, oid in oids:
             processed += sizes[oid]

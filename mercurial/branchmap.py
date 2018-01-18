@@ -18,6 +18,7 @@ from .node import (
 from . import (
     encoding,
     error,
+    pycompat,
     scmutil,
     util,
 )
@@ -52,18 +53,19 @@ def read(repo):
                               filteredhash=filteredhash)
         if not partial.validfor(repo):
             # invalidate the cache
-            raise ValueError('tip differs')
+            raise ValueError(r'tip differs')
         cl = repo.changelog
         for l in lines:
             if not l:
                 continue
             node, state, label = l.split(" ", 2)
             if state not in 'oc':
-                raise ValueError('invalid branch state')
+                raise ValueError(r'invalid branch state')
             label = encoding.tolocal(label.strip())
             node = bin(node)
             if not cl.hasnode(node):
-                raise ValueError('node %s does not exist' % hex(node))
+                raise ValueError(
+                    r'node %s does not exist' % pycompat.sysstr(hex(node)))
             partial.setdefault(label, []).append(node)
             if state == 'c':
                 partial._closednodes.add(node)
@@ -73,7 +75,7 @@ def read(repo):
             if repo.filtername is not None:
                 msg += ' (%s)' % repo.filtername
             msg += ': %s\n'
-            repo.ui.debug(msg % inst)
+            repo.ui.debug(msg % pycompat.bytestr(inst))
         partial = None
     return partial
 

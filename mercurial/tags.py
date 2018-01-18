@@ -244,7 +244,7 @@ def readlocaltags(ui, repo, alltags, tagtypes):
 
     # remove tags pointing to invalid nodes
     cl = repo.changelog
-    for t in filetags.keys():
+    for t in list(filetags):
         try:
             cl.rev(filetags[t][0])
         except (LookupError, ValueError):

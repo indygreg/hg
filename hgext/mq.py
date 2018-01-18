@@ -148,8 +148,12 @@ normname = util.normpath
 class statusentry(object):
     def __init__(self, node, name):
         self.node, self.name = node, name
-    def __repr__(self):
+
+    def __bytes__(self):
         return hex(self.node) + ':' + self.name
+
+    __str__ = encoding.strmethod(__bytes__)
+    __repr__ = encoding.strmethod(__bytes__)
 
 # The order of the headers in 'hg export' HG patches:
 HGHEADERS = [

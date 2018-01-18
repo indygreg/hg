@@ -230,7 +230,7 @@ class _gitlfsremote(object):
     def _checkforservererror(self, pointers, responses, action):
         """Scans errors from objects
 
-        Returns LfsRemoteError if any objects has an error"""
+        Raises LfsRemoteError if any objects have an error"""
         for response in responses:
             # The server should return 404 when objects cannot be found. Some
             # server implementation (ex. lfs-test-server)  does not set "error"

@@ -188,7 +188,7 @@ class _gitlfsremote(object):
         self.baseurl = baseurl.rstrip('/')
         useragent = repo.ui.config('experimental', 'lfs.user-agent')
         if not useragent:
-            useragent = 'mercurial/%s git/2.15.1' % util.version()
+            useragent = 'git-lfs/2.3.4 (Mercurial %s)' % util.version()
         self.urlopener = urlmod.opener(ui, authinfo, useragent)
         self.retry = ui.configint('lfs', 'retry')
 

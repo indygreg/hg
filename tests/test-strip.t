@@ -893,17 +893,17 @@ Check that the phase cache is properly invalidated after a strip with bookmark.
   >     def test(transaction):
   >         # observe cache inconsistency
   >         try:
-  >             [repo.changelog.node(r) for r in repo.revs("not public()")]
+  >             [repo.changelog.node(r) for r in repo.revs(b"not public()")]
   >         except IndexError:
-  >             repo.ui.status("Index error!\n")
+  >             repo.ui.status(b"Index error!\n")
   >     transaction = orig(repo, desc, *args, **kwargs)
   >     # warm up the phase cache
-  >     list(repo.revs("not public()"))
+  >     list(repo.revs(b"not public()"))
   >     if desc != 'strip':
-  >          transaction.addpostclose("phase invalidation test", test)
+  >          transaction.addpostclose(b"phase invalidation test", test)
   >     return transaction
   > def extsetup(ui):
-  >     extensions.wrapfunction(localrepo.localrepository, "transaction",
+  >     extensions.wrapfunction(localrepo.localrepository, b"transaction",
   >                             transactioncallback)
   > EOF
   $ hg up -C 2
@@ -930,9 +930,9 @@ Error during post-close callback of the strip transaction
   >     class crashstriprepo(repo.__class__):
   >         def transaction(self, desc, *args, **kwargs):
   >             tr = super(crashstriprepo, self).transaction(desc, *args, **kwargs)
-  >             if desc == 'strip':
-  >                 def crash(tra): raise error.Abort('boom')
-  >                 tr.addpostclose('crash', crash)
+  >             if desc == b'strip':
+  >                 def crash(tra): raise error.Abort(b'boom')
+  >                 tr.addpostclose(b'crash', crash)
   >             return tr
   >     repo.__class__ = crashstriprepo
   > EOF
@@ -1175,16 +1175,16 @@ Use delayedstrip to strip inside a transaction
   > from mercurial import commands, registrar, repair
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('testdelayedstrip')
+  > @command(b'testdelayedstrip')
   > def testdelayedstrip(ui, repo):
   >     def getnodes(expr):
   >         return [repo.changelog.node(r) for r in repo.revs(expr)]
   >     with repo.wlock():
   >         with repo.lock():
-  >             with repo.transaction('delayedstrip'):
-  >                 repair.delayedstrip(ui, repo, getnodes('B+I+Z+D+E'), 'J')
-  >                 repair.delayedstrip(ui, repo, getnodes('G+H+Z'), 'I')
-  >                 commands.commit(ui, repo, message='J', date='0 0')
+  >             with repo.transaction(b'delayedstrip'):
+  >                 repair.delayedstrip(ui, repo, getnodes(b'B+I+Z+D+E'), b'J')
+  >                 repair.delayedstrip(ui, repo, getnodes(b'G+H+Z'), b'I')
+  >                 commands.commit(ui, repo, message=b'J', date=b'0 0')
   > EOF
   $ hg testdelayedstrip --config extensions.t=$TESTTMP/delayedstrip.py
   warning: orphaned descendants detected, not stripping 08ebfeb61bac, 112478962961, 7fb047a69f22
@@ -1225,7 +1225,7 @@ Test high-level scmutil.cleanupnodes API
   > from mercurial import registrar, scmutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('testnodescleanup')
+  > @command(b'testnodescleanup')
   > def testnodescleanup(ui, repo):
   >     def nodes(expr):
   >         return [repo.changelog.node(r) for r in repo.revs(expr)]
@@ -1233,12 +1233,13 @@ Test high-level scmutil.cleanupnodes API
   >         return nodes(expr)[0]
   >     with repo.wlock():
   >         with repo.lock():
-  >             with repo.transaction('delayedstrip'):
-  >                 mapping = {node('F'): [node('F2')],
-  >                            node('D'): [node('D2')],
-  >                            node('G'): [node('G2')]}
-  >                 scmutil.cleanupnodes(repo, mapping, 'replace')
-  >                 scmutil.cleanupnodes(repo, nodes('((B::)+I+Z)-D2'), 'replace')
+  >             with repo.transaction(b'delayedstrip'):
+  >                 mapping = {node(b'F'): [node(b'F2')],
+  >                            node(b'D'): [node(b'D2')],
+  >                            node(b'G'): [node(b'G2')]}
+  >                 scmutil.cleanupnodes(repo, mapping, b'replace')
+  >                 scmutil.cleanupnodes(repo, nodes(b'((B::)+I+Z)-D2'),
+  >                                      b'replace')
   > EOF
   $ hg testnodescleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
   warning: orphaned descendants detected, not stripping 112478962961, 1fc8102cda62, 26805aba1e60

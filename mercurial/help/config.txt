@@ -1363,13 +1363,18 @@ Supported arguments:
 ``args``
   The arguments to pass to the tool executable. You can refer to the
   files being merged as well as the output file through these
-  variables: ``$base``, ``$local``, ``$other``, ``$output``. The meaning
-  of ``$local`` and ``$other`` can vary depending on which action is being
-  performed. During and update or merge, ``$local`` represents the original
-  state of the file, while ``$other`` represents the commit you are updating
-  to or the commit you are merging with. During a rebase ``$local``
-  represents the destination of the rebase, and ``$other`` represents the
-  commit being rebased.
+  variables: ``$base``, ``$local``, ``$other``, ``$output``.
+
+  The meaning of ``$local`` and ``$other`` can vary depending on which action is
+  being performed. During an update or merge, ``$local`` represents the original
+  state of the file, while ``$other`` represents the commit you are updating to or
+  the commit you are merging with. During a rebase, ``$local`` represents the
+  destination of the rebase, and ``$other`` represents the commit being rebased.
+
+  Some operations define custom labels to assist with identifying the revisions,
+  accessible via ``$labellocal``, ``$labelother``, and ``$labelbase``. If custom
+  labels are not available, these will be ``local``, ``other``, and ``base``,
+  respectively.
   (default: ``$local $base $other``)
 
 ``premerge``
@@ -1404,6 +1409,21 @@ Supported arguments:
 
 ``gui``
   This tool requires a graphical interface to run. (default: False)
+
+``mergemarkers``
+  Controls whether the labels passed via ``$labellocal``, ``$labelother``, and
+  ``$labelbase`` are ``detailed`` (respecting ``mergemarkertemplate``) or
+  ``basic``. If ``premerge`` is ``keep`` or ``keep-merge3``, the conflict
+  markers generated during premerge will be ``detailed`` if either this option or
+  the corresponding option in the ``[ui]`` section is ``detailed``.
+  (default: ``basic``)
+
+``mergemarkertemplate``
+  This setting can be used to override ``mergemarkertemplate`` from the ``[ui]``
+  section on a per-tool basis; this applies to the ``$label``-prefixed variables
+  and to the conflict markers that are generated if ``premerge`` is ``keep` or
+  ``keep-merge3``. See the corresponding variable in ``[ui]`` for more
+  information.
 
 .. container:: windows
 
@@ -2119,6 +2139,8 @@ User interface controls.
     environment variables that govern your locale. If the encoding of the merge
     markers is different from the encoding of the merged files,
     serious problems may occur.
+
+    Can be overridden per-merge-tool, see the ``[merge-tools]`` section.
 
 ``origbackuppath``
     The path to a directory used to store generated .orig files. If the path is

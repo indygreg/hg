@@ -743,6 +743,16 @@ coreconfigitem('merge-tools', br'.*\.gui$',
     generic=True,
     priority=-1,
 )
+coreconfigitem('merge-tools', br'.*\.mergemarkers$',
+    default='basic',
+    generic=True,
+    priority=-1,
+)
+coreconfigitem('merge-tools', br'.*\.mergemarkertemplate$',
+    default=dynamicdefault,  # take from ui.mergemarkertemplate
+    generic=True,
+    priority=-1,
+)
 coreconfigitem('merge-tools', br'.*\.priority$',
     default=0,
     generic=True,

@@ -529,7 +529,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
             out = a
             a = repo.wvfs.join(back.path())
         replace = {'local': a, 'base': b, 'other': c, 'output': out}
-        args = util.interpolate(r'\$', replace, args,
+        args = util.interpolate(br'\$', replace, args,
                                 lambda s: util.shellquote(util.localpath(s)))
         cmd = toolpath + ' ' + args
         if _toolbool(ui, tool, "gui"):

@@ -570,7 +570,7 @@ class obsstore(object):
         return len(self._all)
 
     def __nonzero__(self):
-        if not self._cached('_all'):
+        if not self._cached(r'_all'):
             try:
                 return self.svfs.stat('obsstore').st_size > 1
             except OSError as inst:
@@ -727,11 +727,11 @@ class obsstore(object):
         markers = list(markers) # to allow repeated iteration
         self._data = self._data + rawdata
         self._all.extend(markers)
-        if self._cached('successors'):
+        if self._cached(r'successors'):
             _addsuccessors(self.successors, markers)
-        if self._cached('predecessors'):
+        if self._cached(r'predecessors'):
             _addpredecessors(self.predecessors, markers)
-        if self._cached('children'):
+        if self._cached(r'children'):
             _addchildren(self.children, markers)
         _checkinvalidmarkers(markers)
 

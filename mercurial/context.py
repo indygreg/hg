@@ -1051,7 +1051,7 @@ class basefilectx(object):
             # renamed filectx won't have a filelog yet, so set it
             # from the cache to save time
             for p in pl:
-                if not '_filelog' in p.__dict__:
+                if not r'_filelog' in p.__dict__:
                     p._filelog = getlog(p.path())
 
             return pl

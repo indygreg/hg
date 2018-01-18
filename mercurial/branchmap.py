@@ -454,6 +454,26 @@ class revbranchcache(object):
         self._setcachedata(rev, reponode, branchidx)
         return b, close
 
+    def setdata(self, branch, rev, node, close):
+        """add new data information to the cache"""
+        if branch in self._namesreverse:
+            branchidx = self._namesreverse[branch]
+        else:
+            branchidx = len(self._names)
+            self._names.append(branch)
+            self._namesreverse[branch] = branchidx
+        if close:
+            branchidx |= _rbccloseflag
+        self._setcachedata(rev, node, branchidx)
+        # If no cache data were readable (non exists, bad permission, etc)
+        # the cache was bypassing itself by setting:
+        #
+        #   self.branchinfo = self._branchinfo
+        #
+        # Since we now have data in the cache, we need to drop this bypassing.
+        if 'branchinfo' in vars(self):
+            del self.branchinfo
+
     def _setcachedata(self, rev, node, branchidx):
         """Writes the node's branch data to the in-memory cache data."""
         if rev == nullrev:

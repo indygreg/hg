@@ -612,7 +612,7 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
         lines = fp.readlines()
         if lines:
             ver = lines[0][:-1]
-            if ver == str(version):
+            if ver == (b'%d' % version):
                 for line in lines[1:]:
                     if line:
                         # Shave off the trailing newline

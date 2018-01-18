@@ -247,6 +247,10 @@ class _gitlfsremote(object):
                     raise LfsRemoteError(
                         _(('LFS server error. Remote object '
                           'for "%s" not found: %r')) % (filename, response))
+                else:
+                    raise LfsRemoteError(
+                        _('LFS server error. Unsolicited response for oid %s')
+                        % response['oid'])
             if 'error' in response:
                 raise LfsRemoteError(_('LFS server error: %r') % response)
 

@@ -284,6 +284,27 @@ Test status on a file in a subdir
   $ hg status
   ? dir1/dir2/file
 
+Mix files and subdirectories, both "glob:" and unprefixed
+
+  $ hg debugsparse --reset
+  $ touch dir1/notshown
+  $ hg commit -A dir1/notshown -m "notshown"
+  $ hg debugsparse --include 'dir1/dir2'
+  $ $PYTHON $TESTDIR/list-tree.py . | grep -v ./.hg
+  ./
+  ./dir1/
+  ./dir1/dir2/
+  ./dir1/dir2/file
+  ./hide.orig
+  $ hg debugsparse --delete 'dir1/dir2'
+  $ hg debugsparse --include 'glob:dir1/dir2'
+  $ $PYTHON $TESTDIR/list-tree.py . | grep -v ./.hg
+  ./
+  ./dir1/
+  ./dir1/dir2/
+  ./dir1/dir2/file
+  ./hide.orig
+
 Test that add -s adds dirs to sparse profile
 
   $ hg debugsparse --reset

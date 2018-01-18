@@ -215,7 +215,7 @@ def stripcmd(ui, repo, *revs, **opts):
 
             # only reset the dirstate for files that would actually change
             # between the working context and uctx
-            descendantrevs = repo.revs("%s::." % uctx.rev())
+            descendantrevs = repo.revs("%s::.", uctx.rev())
             changedfiles = []
             for rev in descendantrevs:
                 # blindly reset the files, regardless of what actually changed

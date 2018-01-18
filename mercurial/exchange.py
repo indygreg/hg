@@ -1939,6 +1939,28 @@ def _getbundletagsfnodes(bundler, repo, source, bundlecaps=None,
     outgoing = _computeoutgoing(repo, heads, common)
     bundle2.addparttagsfnodescache(repo, bundler, outgoing)
 
+@getbundle2partsgenerator('cache:rev-branch-cache')
+def _getbundlerevbranchcache(bundler, repo, source, bundlecaps=None,
+                             b2caps=None, heads=None, common=None,
+                             **kwargs):
+    """Transfer the rev-branch-cache mapping
+
+    The payload is a series of data related to each branch
+
+    1) branch name length
+    2) number of open heads
+    3) number of closed heads
+    4) open heads nodes
+    5) closed heads nodes
+    """
+    # Don't send unless:
+    # - changeset are being exchanged,
+    # - the client supports it.
+    if not (kwargs.get(r'cg', True)) or 'rev-branch-cache' not in b2caps:
+        return
+    outgoing = _computeoutgoing(repo, heads, common)
+    bundle2.addpartrevbranchcache(repo, bundler, outgoing)
+
 def check_heads(repo, their_heads, context):
     """check if the heads of a repo have been modified
 

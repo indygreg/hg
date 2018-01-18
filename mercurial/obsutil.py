@@ -421,10 +421,10 @@ def geteffectflag(relation):
 
         # Check if other meta has changed
         changeextra = changectx.extra().items()
-        ctxmeta = filter(metanotblacklisted, changeextra)
+        ctxmeta = list(filter(metanotblacklisted, changeextra))
 
         sourceextra = source.extra().items()
-        srcmeta = filter(metanotblacklisted, sourceextra)
+        srcmeta = list(filter(metanotblacklisted, sourceextra))
 
         if ctxmeta != srcmeta:
             effects |= METACHANGED

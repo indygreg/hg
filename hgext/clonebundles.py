@@ -6,7 +6,8 @@
 "clonebundles" is a server-side extension used to advertise the existence
 of pre-generated, externally hosted bundle files to clients that are
 cloning so that cloning can be faster, more reliable, and require less
-resources on the server.
+resources on the server. "pullbundles" is a related feature for sending
+pre-generated bundle files to clients as part of pull operations.
 
 Cloning can be a CPU and I/O intensive operation on servers. Traditionally,
 the server, in response to a client's request to clone, dynamically generates
@@ -16,8 +17,12 @@ generate the same outgoing bundle in response to each clone request. For
 servers with large repositories or with high clone volume, the load from
 clones can make scaling the server challenging and costly.
 
-This extension provides server operators the ability to offload potentially
-expensive clone load to an external service. Here's how it works.
+This extension provides server operators the ability to offload
+potentially expensive clone load to an external service. Pre-generated
+bundles also allow using more CPU intensive compression, reducing the
+effective bandwidth requirements.
+
+Here's how clone bundles work:
 
 1. A server operator establishes a mechanism for making bundle files available
    on a hosting service where Mercurial clients can fetch them.
@@ -33,7 +38,7 @@ expensive clone load to an external service. Here's how it works.
 7. The client reconnects to the original server and performs the equivalent
    of :hg:`pull` to retrieve all repository data not in the bundle. (The
    repository could have been updated between when the bundle was created
-   and when the client started the clone.)
+   and when the client started the clone.) This may use "pullbundles".
 
 Instead of the server generating full repository bundles for every clone
 request, it generates full bundles once and they are subsequently reused to
@@ -42,13 +47,27 @@ However, this is only data that has been added/changed since the bundle was
 created. For large, established repositories, this can reduce server load for
 clones to less than 1% of original.
 
+Here's how pullbundles work:
+
+1. A manifest file listing available bundles and describing the revisions
+   is added to the Mercurial repository on the server.
+2. A new-enough client informs the server that it supports partial pulls
+   and initiates a pull.
+3. If the server has pull bundles enabled and sees the client advertising
+   partial pulls, it checks for a matching pull bundle in the manifest.
+   A bundle matches if the format is supported by the client, the client
+   has the required revisions already and needs something from the bundle.
+4. If there is at least one matching bundle, the server sends it to the client.
+5. The client applies the bundle and notices that the server reply was
+   incomplete. It initiates another pull.
+
 To work, this extension requires the following of server operators:
 
 * Generating bundle files of repository content (typically periodically,
   such as once per day).
-* A file server that clients have network access to and that Python knows
-  how to talk to through its normal URL handling facility (typically an
-  HTTP server).
+* Clone bundles: A file server that clients have network access to and that
+  Python knows how to talk to through its normal URL handling facility
+  (typically an HTTP/HTTPS server).
 * A process for keeping the bundles manifest in sync with available bundle
   files.
 
@@ -61,7 +80,7 @@ Bundle files can be generated with the :hg:`bundle` command. Typically
 :hg:`bundle --all` is used to produce a bundle of the entire repository.
 
 :hg:`debugcreatestreamclonebundle` can be used to produce a special
-*streaming clone bundle*. These are bundle files that are extremely efficient
+*streaming clonebundle*. These are bundle files that are extremely efficient
 to produce and consume (read: fast). However, they are larger than
 traditional bundle formats and require that clients support the exact set
 of repository data store formats in use by the repository that created them.
@@ -73,7 +92,8 @@ streaming clone bundles incompatible with older Mercurial versions.**
 A server operator is responsible for creating a ``.hg/clonebundles.manifest``
 file containing the list of available bundle files suitable for seeding
 clones. If this file does not exist, the repository will not advertise the
-existence of clone bundles when clients connect.
+existence of clone bundles when clients connect. For pull bundles,
+``.hg/pullbundles.manifest`` is used.
 
 The manifest file contains a newline (\\n) delimited list of entries.
 
@@ -84,6 +104,9 @@ Each line in this file defines an available bundle. Lines have the format:
 That is, a URL followed by an optional, space-delimited list of key=value
 pairs describing additional properties of this bundle. Both keys and values
 are URI encoded.
+
+For pull bundles, the URL is a path under the ``.hg`` directory of the
+repository.
 
 Keys in UPPERCASE are reserved for use by Mercurial and are defined below.
 All non-uppercase keys can be used by site installations. An example use
@@ -132,6 +155,15 @@ REQUIRESNI
    with the clonebundles facility.
 
    Value should be "true".
+
+heads
+   Used for pull bundles. This contains the ``;`` separated changeset
+   hashes of the heads of the bundle content.
+
+bases
+   Used for pull bundles. This contains the ``;`` separated changeset
+   hashes of the roots of the bundle content. This can be skipped if
+   the bundle was created without ``--base``.
 
 Manifests can contain multiple entries. Assuming metadata is defined, clients
 will filter entries from the manifest that they don't support. The remaining

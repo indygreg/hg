@@ -168,7 +168,7 @@ def _clientcapabilities():
 
     Returns a list of capabilities that are supported by this client.
     """
-    protoparams = set()
+    protoparams = {'partial-pull'}
     comps = [e.wireprotosupport().name for e in
              util.compengines.supportedwireengines(util.CLIENTROLE)]
     protoparams.add('comp=%s' % ','.join(comps))

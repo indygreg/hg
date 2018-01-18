@@ -1525,6 +1525,7 @@ Test keyword search help
    bookmarks create a new bookmark or list existing bookmarks
    clone     make a copy of an existing repository
    paths     show aliases for remote repositories
+   pull      pull changes from the specified source
    update    update working directory (or switch revisions)
   
   Extensions:

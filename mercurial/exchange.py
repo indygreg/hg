@@ -1375,6 +1375,44 @@ class transactionmanager(util.transactional):
         if self._tr is not None:
             self._tr.release()
 
+def _fullpullbundle2(repo, pullop):
+    # The server may send a partial reply, i.e. when inlining
+    # pre-computed bundles. In that case, update the common
+    # set based on the results and pull another bundle.
+    #
+    # There are two indicators that the process is finished:
+    # - no changeset has been added, or
+    # - all remote heads are known locally.
+    # The head check must use the unfiltered view as obsoletion
+    # markers can hide heads.
+    unfi = repo.unfiltered()
+    unficl = unfi.changelog
+    def headsofdiff(h1, h2):
+        """Returns heads(h1 % h2)"""
+        res = unfi.set('heads(%ln %% %ln)', h1, h2)
+        return set(ctx.node() for ctx in res)
+    def headsofunion(h1, h2):
+        """Returns heads((h1 + h2) - null)"""
+        res = unfi.set('heads((%ln + %ln - null))', h1, h2)
+        return set(ctx.node() for ctx in res)
+    while True:
+        old_heads = unficl.heads()
+        clstart = len(unficl)
+        _pullbundle2(pullop)
+        if changegroup.NARROW_REQUIREMENT in repo.requirements:
+            # XXX narrow clones filter the heads on the server side during
+            # XXX getbundle and result in partial replies as well.
+            # XXX Disable pull bundles in this case as band aid to avoid
+            # XXX extra round trips.
+            break
+        if clstart == len(unficl):
+            break
+        if all(unficl.hasnode(n) for n in pullop.rheads):
+            break
+        new_heads = headsofdiff(unficl.heads(), old_heads)
+        pullop.common = headsofunion(new_heads, pullop.common)
+        pullop.rheads = set(pullop.rheads) - pullop.common
+
 def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
          streamclonerequested=None):
     """Fetch repository data from a remote.
@@ -1420,7 +1458,7 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
         streamclone.maybeperformlegacystreamclone(pullop)
         _pulldiscovery(pullop)
         if pullop.canusebundle2:
-            _pullbundle2(pullop)
+            _fullpullbundle2(repo, pullop)
         _pullchangeset(pullop)
         _pullphase(pullop)
         _pullbookmarks(pullop)

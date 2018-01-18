@@ -938,6 +938,70 @@ def debugwireargs(repo, proto, one, two, others):
     return wireprototypes.bytesresponse(repo.debugwireargs(
         one, two, **pycompat.strkwargs(opts)))
 
+def find_pullbundle(repo, proto, opts, clheads, heads, common):
+    """Return a file object for the first matching pullbundle.
+
+    Pullbundles are specified in .hg/pullbundles.manifest similar to
+    clonebundles.
+    For each entry, the bundle specification is checked for compatibility:
+    - Client features vs the BUNDLESPEC.
+    - Revisions shared with the clients vs base revisions of the bundle.
+      A bundle can be applied only if all its base revisions are known by
+      the client.
+    - At least one leaf of the bundle's DAG is missing on the client.
+    - Every leaf of the bundle's DAG is part of node set the client wants.
+      E.g. do not send a bundle of all changes if the client wants only
+      one specific branch of many.
+    """
+    def decodehexstring(s):
+        return set([h.decode('hex') for h in s.split(';')])
+
+    manifest = repo.vfs.tryread('pullbundles.manifest')
+    if not manifest:
+        return None
+    res = exchange.parseclonebundlesmanifest(repo, manifest)
+    res = exchange.filterclonebundleentries(repo, res)
+    if not res:
+        return None
+    cl = repo.changelog
+    heads_anc = cl.ancestors([cl.rev(rev) for rev in heads], inclusive=True)
+    common_anc = cl.ancestors([cl.rev(rev) for rev in common], inclusive=True)
+    compformats = clientcompressionsupport(proto)
+    for entry in res:
+        if 'COMPRESSION' in entry and entry['COMPRESSION'] not in compformats:
+            continue
+        # No test yet for VERSION, since V2 is supported by any client
+        # that advertises partial pulls
+        if 'heads' in entry:
+            try:
+                bundle_heads = decodehexstring(entry['heads'])
+            except TypeError:
+                # Bad heads entry
+                continue
+            if bundle_heads.issubset(common):
+                continue # Nothing new
+            if all(cl.rev(rev) in common_anc for rev in bundle_heads):
+                continue # Still nothing new
+            if any(cl.rev(rev) not in heads_anc and
+                   cl.rev(rev) not in common_anc for rev in bundle_heads):
+                continue
+        if 'bases' in entry:
+            try:
+                bundle_bases = decodehexstring(entry['bases'])
+            except TypeError:
+                # Bad bases entry
+                continue
+            if not all(cl.rev(rev) in common_anc for rev in bundle_bases):
+                continue
+        path = entry['URL']
+        repo.ui.debug('sending pullbundle "%s"\n' % path)
+        try:
+            return repo.vfs.open(path)
+        except IOError:
+            repo.ui.debug('pullbundle "%s" not accessible\n' % path)
+            continue
+    return None
+
 @wireprotocommand('getbundle', '*', permission='pull')
 def getbundle(repo, proto, others):
     opts = options('getbundle', gboptsmap.keys(), others)
@@ -970,13 +1034,21 @@ def getbundle(repo, proto, others):
     prefercompressed = True
 
     try:
+        clheads = set(repo.changelog.heads())
+        heads = set(opts.get('heads', set()))
+        common = set(opts.get('common', set()))
+        common.discard(nullid)
+        if (repo.ui.configbool('server', 'pullbundle') and
+            'partial-pull' in proto.getprotocaps()):
+            # Check if a pre-built bundle covers this request.
+            bundle = find_pullbundle(repo, proto, opts, clheads, heads, common)
+            if bundle:
+                return wireprototypes.streamres(gen=util.filechunkiter(bundle),
+                                                prefer_uncompressed=True)
+
         if repo.ui.configbool('server', 'disablefullbundle'):
             # Check to see if this is a full clone.
-            clheads = set(repo.changelog.heads())
             changegroup = opts.get('cg', True)
-            heads = set(opts.get('heads', set()))
-            common = set(opts.get('common', set()))
-            common.discard(nullid)
             if changegroup and not common and clheads == heads:
                 raise error.Abort(
                     _('server has pull-based clones disabled'),

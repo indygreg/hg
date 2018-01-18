@@ -1413,12 +1413,13 @@ def clone(ui, source, dest=None, **opts):
       i) tip
 
       When cloning from servers that support it, Mercurial may fetch
-      pre-generated data from a server-advertised URL. When this is done,
-      hooks operating on incoming changesets and changegroups may fire twice,
-      once for the bundle fetched from the URL and another for any additional
-      data not fetched from this URL. In addition, if an error occurs, the
-      repository may be rolled back to a partial clone. This behavior may
-      change in future releases. See :hg:`help -e clonebundles` for more.
+      pre-generated data from a server-advertised URL or inline from the
+      same stream. When this is done, hooks operating on incoming changesets
+      and changegroups may fire more than once, once for each pre-generated
+      bundle and as well as for any additional remaining data. In addition,
+      if an error occurs, the repository may be rolled back to a partial
+      clone. This behavior may change in future releases.
+      See :hg:`help -e clonebundles` for more.
 
       Examples:
 
@@ -3951,6 +3952,12 @@ def pull(ui, repo, source="default", **opts):
     or URL and adds them to a local repository (the current one unless
     -R is specified). By default, this does not update the copy of the
     project in the working directory.
+
+    When cloning from servers that support it, Mercurial may fetch
+    pre-generated data. When this is done, hooks operating on incoming
+    changesets and changegroups may fire more than once, once for each
+    pre-generated bundle and as well as for any additional remaining
+    data. See :hg:`help -e clonebundles` for more.
 
     Use :hg:`incoming` if you want to see what would have been added
     by a pull at the time you issued this command. If you then decide

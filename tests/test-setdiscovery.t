@@ -488,10 +488,10 @@ Test actual protocol when pulling one new head in addition to common heads
 
   $ killdaemons.py
   $ cut -d' ' -f6- access.log | grep -v cmd=known # cmd=known uses random sampling
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D513314ca8b3ae4dac8eec56966265b00fcf866db x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:$USUAL_BUNDLE_CAPS$&cg=1&common=513314ca8b3ae4dac8eec56966265b00fcf866db&heads=e64a39e7da8b0d54bc63e81169aff001c13b3477 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D513314ca8b3ae4dac8eec56966265b00fcf866db x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:$USUAL_BUNDLE_CAPS$&cg=1&common=513314ca8b3ae4dac8eec56966265b00fcf866db&heads=e64a39e7da8b0d54bc63e81169aff001c13b3477 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   $ cat errors.log
 
   $ cd ..

@@ -260,6 +260,8 @@ test http authentication
   http auth: user user, password ****
   sending capabilities command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=capabilities
+  devel-peer-request:   Vary X-HgProto-1
+  devel-peer-request:   X-hgproto-1 partial-pull
   http auth: user user, password ****
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   query 1; heads
@@ -269,7 +271,7 @@ test http authentication
   sending batch command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=batch
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   68 bytes of commands arguments in headers
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   searching for changes
@@ -278,7 +280,7 @@ test http authentication
   sending listkeys command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   16 bytes of commands arguments in headers
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "phases": 58 bytes
@@ -287,25 +289,25 @@ test http authentication
   sending listkeys command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   19 bytes of commands arguments in headers
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "bookmarks": 0 bytes
   sending branchmap command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=branchmap
   devel-peer-request:   Vary X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   sending branchmap command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=branchmap
   devel-peer-request:   Vary X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   preparing listkeys for "bookmarks"
   sending listkeys command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   19 bytes of commands arguments in headers
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "bookmarks": 0 bytes
@@ -324,7 +326,7 @@ test http authentication
   devel-peer-request:   Content-length 1013
   devel-peer-request:   Content-type application/mercurial-0.1
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   16 bytes of commands arguments in headers
   devel-peer-request:   1013 bytes of data
   devel-peer-request:   finished in *.???? seconds (200) (glob)
@@ -342,73 +344,73 @@ test http authentication
   sending listkeys command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
-  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   devel-peer-request:   16 bytes of commands arguments in headers
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   received listkey for "phases": 15 bytes
   $ hg rollback -q
 
   $ sed 's/.*] "/"/' < ../access.log
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 - (no-reposimplestore !)
-  "GET /?cmd=capabilities HTTP/1.1" 200 - (no-reposimplestore !)
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
-  "GET /?cmd=stream_out HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
-  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
-  "GET /?cmd=capabilities HTTP/1.1" 401 - (no-reposimplestore !)
-  "GET /?cmd=capabilities HTTP/1.1" 200 - (no-reposimplestore !)
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 403 -
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull (no-reposimplestore !)
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull (no-reposimplestore !)
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
+  "GET /?cmd=stream_out HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
+  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (no-reposimplestore !)
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull (no-reposimplestore !)
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull (no-reposimplestore !)
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 403 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365* (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 401 - x-hgproto-1:partial-pull
+  "GET /?cmd=capabilities HTTP/1.1" 200 - x-hgproto-1:partial-pull
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
 
   $ cd ..
 

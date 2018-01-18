@@ -920,6 +920,9 @@ coreconfigitem('server', 'disablefullbundle',
 coreconfigitem('server', 'streamunbundle',
     default=False,
 )
+coreconfigitem('server', 'pullbundle',
+    default=False,
+)
 coreconfigitem('server', 'maxhttpheaderlen',
     default=1024,
 )

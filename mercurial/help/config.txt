@@ -1796,6 +1796,14 @@ Controls generic server settings.
     otherwise it will be written to a temporary file first. This option
     effectively prevents concurrent pushes.
 
+``pullbundle``
+    When set, the server will check pullbundle.manifest for bundles
+    covering the requested heads and common nodes. The first matching
+    entry will be streamed to the client.
+
+    For HTTP transport, the stream will still use zlib compression
+    for older clients.
+
 ``concurrent-push-mode``
     Level of allowed race condition between two pushing clients.
 

@@ -287,7 +287,7 @@ class httppeer(wireproto.wirepeer):
         # Tell the server we accept application/mercurial-0.2 and multiple
         # compression formats if the server is capable of emitting those
         # payloads.
-        protoparams = set()
+        protoparams = {'partial-pull'}
 
         mediatypes = set()
         if self._caps is not None:

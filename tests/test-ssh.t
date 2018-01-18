@@ -496,7 +496,7 @@ debug output
   devel-peer-request: between
   devel-peer-request:   pairs: 81 bytes
   sending between command
-  remote: 384 (sshv1 !)
+  remote: 403 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
   remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
   remote: 1 (sshv1 !)
@@ -512,7 +512,7 @@ debug output
   no changes found
   devel-peer-request: getbundle
   devel-peer-request:   bookmarks: 1 bytes
-  devel-peer-request:   bundlecaps: 247 bytes
+  devel-peer-request:   bundlecaps: 266 bytes
   devel-peer-request:   cg: 1 bytes
   devel-peer-request:   common: 122 bytes
   devel-peer-request:   heads: 122 bytes

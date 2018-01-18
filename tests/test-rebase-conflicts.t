@@ -325,13 +325,13 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   bundle2-input-part: total payload size 1686
   bundle2-input-part: "cache:rev-branch-cache" supported
   bundle2-input-part: total payload size 74
+  truncating cache/rbc-revs-v1 to 56
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 2 parts total
   updating the branch cache
   invalid branchheads cache (served): tip differs
   rebase completed
-  truncating cache/rbc-revs-v1 to 0
 
 Test minimization of merge conflicts
   $ hg up -q null

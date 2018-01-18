@@ -478,9 +478,9 @@ debug output
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
+  remote: 403 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
-  remote: 384 (sshv1 !)
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN (sshv2 !)
   remote: 1 (sshv1 !)
   preparing listkeys for "bookmarks"
   sending listkeys command

@@ -118,9 +118,9 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 417\r\n
+  write(21) -> Content-Length: 436\r\n
   write(2) -> \r\n
-  write(417) -> lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436) -> lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline(4? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1? from -1) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
@@ -159,9 +159,9 @@ Failure to read getbundle HTTP request
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 417\r\n
+  write(21) -> Content-Length: 436\r\n
   write(2) -> \r\n
-  write(417) -> lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436) -> lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline(13? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(8? from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -216,9 +216,9 @@ Now do a variation using POST to send arguments
   write(23) -> Server: badhttpserver\r\n
   write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
-  write(21) -> Content-Length: 430\r\n
+  write(21) -> Content-Length: 449\r\n
   write(2) -> \r\n
-  write(430) -> lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httppostargs httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(449) -> lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httppostargs httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline\(14[67] from 65537\) -> \(2[67]\) POST /\?cmd=batch HTTP/1.1\\r\\n (re)
   readline\(1(19|20) from -1\) -> \(27\) Accept-Encoding: identity\\r\\n (re)
   readline(9? from -1) -> (41) content-type: application/mercurial-0.1\r\n (glob)
@@ -275,7 +275,7 @@ Server sends an incomplete capabilities response body
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
-  abort: HTTP request error (incomplete response; expected 397 bytes got 20)
+  abort: HTTP request error (incomplete response; expected 416 bytes got 20)
   (this may be an intermittent network failure; if the error persists, consider contacting the network or server operator)
   [255]
 
@@ -292,16 +292,16 @@ Server sends an incomplete capabilities response body
   write(23 from 23) -> (121) Server: badhttpserver\r\n
   write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (22) Content-Length: 417\r\n
+  write(21 from 21) -> (22) Content-Length: 436\r\n
   write(2 from 2) -> (20) \r\n
-  write(20 from 417) -> (0) lookup branchmap pus
+  write(20 from 436) -> (0) lookup branchmap pus
   write limit reached; closing socket
 
   $ rm -f error.log
 
 Server sends incomplete headers for batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=695 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=714 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is horrible
@@ -323,13 +323,13 @@ TODO this output is horrible
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (659) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (636) Server: badhttpserver\r\n
-  write(37 from 37) -> (599) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (558) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (537) Content-Length: 417\r\n
-  write(2 from 2) -> (535) \r\n
-  write(417 from 417) -> (118) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(36 from 36) -> (678) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (655) Server: badhttpserver\r\n
+  write(37 from 37) -> (618) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (577) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (556) Content-Length: 436\r\n
+  write(2 from 2) -> (554) \r\n
+  write(436 from 436) -> (118) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -350,7 +350,7 @@ TODO this output is horrible
 
 Server sends an incomplete HTTP response body to batch request
 
-  $ hg serve --config badserver.closeaftersendbytes=760 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=779 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO client spews a stack due to uncaught ValueError in batch.results()
@@ -371,13 +371,13 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (724) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (701) Server: badhttpserver\r\n
-  write(37 from 37) -> (664) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (623) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (602) Content-Length: 417\r\n
-  write(2 from 2) -> (600) \r\n
-  write(417 from 417) -> (183) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(36 from 36) -> (743) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (720) Server: badhttpserver\r\n
+  write(37 from 37) -> (683) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (642) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (621) Content-Length: 436\r\n
+  write(2 from 2) -> (619) \r\n
+  write(436 from 436) -> (183) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -400,7 +400,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
 
 Server sends incomplete headers for getbundle response
 
-  $ hg serve --config badserver.closeaftersendbytes=907 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=926 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 TODO this output is terrible
@@ -423,13 +423,13 @@ TODO this output is terrible
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (871) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (848) Server: badhttpserver\r\n
-  write(37 from 37) -> (811) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (770) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (749) Content-Length: 417\r\n
-  write(2 from 2) -> (747) \r\n
-  write(417 from 417) -> (330) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(36 from 36) -> (890) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (867) Server: badhttpserver\r\n
+  write(37 from 37) -> (830) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (789) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (768) Content-Length: 436\r\n
+  write(2 from 2) -> (766) \r\n
+  write(436 from 436) -> (330) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -449,7 +449,7 @@ TODO this output is terrible
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
+  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
   readline(-1) -> (48) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -466,7 +466,7 @@ TODO this output is terrible
 
 Server sends empty HTTP body for getbundle
 
-  $ hg serve --config badserver.closeaftersendbytes=945 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=964 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -484,13 +484,13 @@ Server sends empty HTTP body for getbundle
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (909) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (886) Server: badhttpserver\r\n
-  write(37 from 37) -> (849) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (808) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (787) Content-Length: 417\r\n
-  write(2 from 2) -> (785) \r\n
-  write(417 from 417) -> (368) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(36 from 36) -> (928) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (905) Server: badhttpserver\r\n
+  write(37 from 37) -> (868) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (827) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (806) Content-Length: 436\r\n
+  write(2 from 2) -> (804) \r\n
+  write(436 from 436) -> (368) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -510,7 +510,7 @@ Server sends empty HTTP body for getbundle
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
+  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
   readline(-1) -> (48) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -529,7 +529,7 @@ Server sends empty HTTP body for getbundle
 
 Server sends partial compression string
 
-  $ hg serve --config badserver.closeaftersendbytes=969 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=988 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -547,13 +547,13 @@ Server sends partial compression string
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
   readline(-1) -> (2) \r\n
-  write(36 from 36) -> (933) HTTP/1.1 200 Script output follows\r\n
-  write(23 from 23) -> (910) Server: badhttpserver\r\n
-  write(37 from 37) -> (873) Date: $HTTP_DATE$\r\n
-  write(41 from 41) -> (832) Content-Type: application/mercurial-0.1\r\n
-  write(21 from 21) -> (811) Content-Length: 417\r\n
-  write(2 from 2) -> (809) \r\n
-  write(417 from 417) -> (392) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(36 from 36) -> (952) HTTP/1.1 200 Script output follows\r\n
+  write(23 from 23) -> (929) Server: badhttpserver\r\n
+  write(37 from 37) -> (892) Date: $HTTP_DATE$\r\n
+  write(41 from 41) -> (851) Content-Type: application/mercurial-0.1\r\n
+  write(21 from 21) -> (830) Content-Length: 436\r\n
+  write(2 from 2) -> (828) \r\n
+  write(436 from 436) -> (392) lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -573,7 +573,7 @@ Server sends partial compression string
   readline(65537) -> (30) GET /?cmd=getbundle HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
-  readline(-1) -> (440) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
+  readline(-1) -> (461) x-hgarg-1: bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=96ee1d7354c4ad7372047672c36a1f561e3a6a4c&listkeys=phases%2Cbookmarks\r\n
   readline(-1) -> (48) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
@@ -595,7 +595,7 @@ Server sends partial compression string
 
 Server sends partial bundle2 header magic
 
-  $ hg serve --config badserver.closeaftersendbytes=966 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=985 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -619,7 +619,7 @@ Server sends partial bundle2 header magic
 
 Server sends incomplete bundle2 stream params length
 
-  $ hg serve --config badserver.closeaftersendbytes=975 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=994 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -644,7 +644,7 @@ Server sends incomplete bundle2 stream params length
 
 Servers stops after bundle2 stream params header
 
-  $ hg serve --config badserver.closeaftersendbytes=978 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=997 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -669,7 +669,7 @@ Servers stops after bundle2 stream params header
 
 Server stops sending after bundle2 part header length
 
-  $ hg serve --config badserver.closeaftersendbytes=987 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1006 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -695,7 +695,7 @@ Server stops sending after bundle2 part header length
 
 Server stops sending after bundle2 part header
 
-  $ hg serve --config badserver.closeaftersendbytes=1034 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1053 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -725,7 +725,7 @@ Server stops sending after bundle2 part header
 
 Server stops after bundle2 part payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1055 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1074 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -756,7 +756,7 @@ Server stops after bundle2 part payload chunk size
 
 Server stops sending in middle of bundle2 payload chunk
 
-  $ hg serve --config badserver.closeaftersendbytes=1516 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1535 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -788,7 +788,7 @@ Server stops sending in middle of bundle2 payload chunk
 
 Server stops sending after 0 length payload chunk size
 
-  $ hg serve --config badserver.closeaftersendbytes=1547 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1566 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -825,7 +825,8 @@ Server stops sending after 0 length payload chunk size
 Server stops sending after 0 part bundle part header (indicating end of bundle2 payload)
 This is before the 0 size chunked transfer part that signals end of HTTP response.
 
-  $ hg serve --config badserver.closeaftersendbytes=1722 -p $HGPORT -d --pid-file=hg.pid -E error.log
+#  $ hg serve --config badserver.closeaftersendbytes=1741 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1848 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -841,24 +842,24 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
   $ killdaemons.py $DAEMON_PIDS
 
   $ tail -22 error.log
-  write(28 from 28) -> (779) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (777) \r\n
-  write(6 from 6) -> (771) 1\\r\\n\x04\\r\\n (esc)
-  write(9 from 9) -> (762) 4\r\nnone\r\n
-  write(9 from 9) -> (753) 4\r\nHG20\r\n
-  write(9 from 9) -> (744) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (735) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  write(47 from 47) -> (688) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  write(9 from 9) -> (679) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
-  write(473 from 473) -> (206) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (197) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (188) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
-  write(38 from 38) -> (150) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
-  write(9 from 9) -> (141) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
-  write(64 from 64) -> (77) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
-  write(9 from 9) -> (68) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (59) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
-  write(41 from 41) -> (18) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
+  write(9 from 9) -> (851) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (842) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  write(47 from 47) -> (795) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  write(9 from 9) -> (786) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  write(473 from 473) -> (313) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (304) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (295) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  write(38 from 38) -> (257) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  write(9 from 9) -> (248) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  write(64 from 64) -> (184) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  write(9 from 9) -> (175) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (166) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  write(41 from 41) -> (125) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
+  write(9 from 9) -> (116) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (107) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
+  write(35 from 35) -> (72) 1d\\r\\n\x16CACHE:REV-BRANCH-CACHE\x00\x00\x00\x03\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (63) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
+  write(45 from 45) -> (18) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
   write(9 from 9) -> (9) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (0) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write limit reached; closing socket
@@ -869,7 +870,7 @@ This is before the 0 size chunked transfer part that signals end of HTTP respons
 
 Server sends a size 0 chunked-transfer size without terminating \r\n
 
-  $ hg serve --config badserver.closeaftersendbytes=1725 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeaftersendbytes=1851 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -885,24 +886,24 @@ Server sends a size 0 chunked-transfer size without terminating \r\n
   $ killdaemons.py $DAEMON_PIDS
 
   $ tail -23 error.log
-  write(28 from 28) -> (782) Transfer-Encoding: chunked\r\n
-  write(2 from 2) -> (780) \r\n
-  write(6 from 6) -> (774) 1\\r\\n\x04\\r\\n (esc)
-  write(9 from 9) -> (765) 4\r\nnone\r\n
-  write(9 from 9) -> (756) 4\r\nHG20\r\n
-  write(9 from 9) -> (747) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (738) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
-  write(47 from 47) -> (691) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
-  write(9 from 9) -> (682) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
-  write(473 from 473) -> (209) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (200) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (191) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
-  write(38 from 38) -> (153) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
-  write(9 from 9) -> (144) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
-  write(64 from 64) -> (80) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
-  write(9 from 9) -> (71) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
-  write(9 from 9) -> (62) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
-  write(41 from 41) -> (21) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
+  write(9 from 9) -> (854) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (845) 4\\r\\n\x00\x00\x00)\\r\\n (esc)
+  write(47 from 47) -> (798) 29\\r\\n\x0bCHANGEGROUP\x00\x00\x00\x00\x01\x01\x07\x02	\x01version02nbchanges1\\r\\n (esc)
+  write(9 from 9) -> (789) 4\\r\\n\x00\x00\x01\xd2\\r\\n (esc)
+  write(473 from 473) -> (316) 1d2\\r\\n\x00\x00\x00\xb2\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00>6a3df4de388f3c4f8e28f4f9a814299a3cbb5f50\\ntest\\n0 0\\nfoo\\n\\ninitial\x00\x00\x00\x00\x00\x00\x00\xa1j=\xf4\xde8\x8f<O\x8e(\xf4\xf9\xa8\x14)\x9a<\xbb_P\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00-foo\x00b80de5d138758541c5f05265ad144ab9fa86d1db\\n\x00\x00\x00\x00\x00\x00\x00\x07foo\x00\x00\x00h\xb8\\r\xe5\xd18u\x85A\xc5\xf0Re\xad\x14J\xb9\xfa\x86\xd1\xdb\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\x00\x00\x00\x00\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (307) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (298) 4\\r\\n\x00\x00\x00 \\r\\n (esc)
+  write(38 from 38) -> (260) 20\\r\\n\x08LISTKEYS\x00\x00\x00\x01\x01\x00	\x06namespacephases\\r\\n (esc)
+  write(9 from 9) -> (251) 4\\r\\n\x00\x00\x00:\\r\\n (esc)
+  write(64 from 64) -> (187) 3a\r\n96ee1d7354c4ad7372047672c36a1f561e3a6a4c	1\npublishing	True\r\n
+  write(9 from 9) -> (178) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (169) 4\\r\\n\x00\x00\x00#\\r\\n (esc)
+  write(41 from 41) -> (128) 23\\r\\n\x08LISTKEYS\x00\x00\x00\x02\x01\x00		namespacebookmarks\\r\\n (esc)
+  write(9 from 9) -> (119) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (110) 4\\r\\n\x00\x00\x00\x1d\\r\\n (esc)
+  write(35 from 35) -> (75) 1d\\r\\n\x16CACHE:REV-BRANCH-CACHE\x00\x00\x00\x03\x00\x00\\r\\n (esc)
+  write(9 from 9) -> (66) 4\\r\\n\x00\x00\x00'\\r\\n (esc)
+  write(45 from 45) -> (21) 27\\r\\n\x00\x00\x00\x07\x00\x00\x00\x01\x00\x00\x00\x00default\x96\xee\x1dsT\xc4\xadsr\x04vr\xc3j\x1fV\x1e:jL\\r\\n (esc)
   write(9 from 9) -> (12) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(9 from 9) -> (3) 4\\r\\n\x00\x00\x00\x00\\r\\n (esc)
   write(3 from 5) -> (0) 0\r\n

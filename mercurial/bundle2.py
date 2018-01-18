@@ -1492,6 +1492,7 @@ capabilities = {'HG20': (),
                 'digests': tuple(sorted(util.DIGESTS.keys())),
                 'remote-changegroup': ('http', 'https'),
                 'hgtagsfnodes': (),
+                'rev-branch-cache': (),
                 'phases': ('heads',),
                 'stream': ('v2',),
                }

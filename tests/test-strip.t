@@ -899,7 +899,7 @@ Check that the phase cache is properly invalidated after a strip with bookmark.
   >     transaction = orig(repo, desc, *args, **kwargs)
   >     # warm up the phase cache
   >     list(repo.revs(b"not public()"))
-  >     if desc != 'strip':
+  >     if desc != b'strip':
   >          transaction.addpostclose(b"phase invalidation test", test)
   >     return transaction
   > def extsetup(ui):

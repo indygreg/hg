@@ -360,7 +360,7 @@ class dirstate(object):
         rereads the dirstate. Use localrepo.invalidatedirstate() if you want to
         check whether the dirstate has changed before rereading it.'''
 
-        for a in ("_map", "_branch", "_ignore"):
+        for a in (r"_map", r"_branch", r"_ignore"):
             if a in self.__dict__:
                 delattr(self, a)
         self._lastnormaltime = 0
@@ -1264,9 +1264,9 @@ class dirstatemap(object):
 
     def addfile(self, f, oldstate, state, mode, size, mtime):
         """Add a tracked file to the dirstate."""
-        if oldstate in "?r" and "_dirs" in self.__dict__:
+        if oldstate in "?r" and r"_dirs" in self.__dict__:
             self._dirs.addpath(f)
-        if oldstate == "?" and "_alldirs" in self.__dict__:
+        if oldstate == "?" and r"_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
         self._map[f] = dirstatetuple(state, mode, size, mtime)
         if state != 'n' or mtime == -1:
@@ -1282,11 +1282,11 @@ class dirstatemap(object):
         the file's previous state.  In the future, we should refactor this
         to be more explicit about what that state is.
         """
-        if oldstate not in "?r" and "_dirs" in self.__dict__:
+        if oldstate not in "?r" and r"_dirs" in self.__dict__:
             self._dirs.delpath(f)
-        if oldstate == "?" and "_alldirs" in self.__dict__:
+        if oldstate == "?" and r"_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
-        if "filefoldmap" in self.__dict__:
+        if r"filefoldmap" in self.__dict__:
             normed = util.normcase(f)
             self.filefoldmap.pop(normed, None)
         self._map[f] = dirstatetuple('r', 0, size, 0)
@@ -1299,11 +1299,11 @@ class dirstatemap(object):
         """
         exists = self._map.pop(f, None) is not None
         if exists:
-            if oldstate != "r" and "_dirs" in self.__dict__:
+            if oldstate != "r" and r"_dirs" in self.__dict__:
                 self._dirs.delpath(f)
-            if "_alldirs" in self.__dict__:
+            if r"_alldirs" in self.__dict__:
                 self._alldirs.delpath(f)
-        if "filefoldmap" in self.__dict__:
+        if r"filefoldmap" in self.__dict__:
             normed = util.normcase(f)
             self.filefoldmap.pop(normed, None)
         self.nonnormalset.discard(f)

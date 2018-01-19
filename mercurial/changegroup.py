@@ -32,14 +32,7 @@ _CHANGEGROUPV1_DELTA_HEADER = "20s20s20s20s"
 _CHANGEGROUPV2_DELTA_HEADER = "20s20s20s20s20s"
 _CHANGEGROUPV3_DELTA_HEADER = ">20s20s20s20s20sH"
 
-def readexactly(stream, n):
-    '''read n bytes from stream.read and abort if less was available'''
-    s = stream.read(n)
-    if len(s) < n:
-        raise error.Abort(_("stream ended unexpectedly"
-                           " (got %d bytes, expected %d)")
-                          % (len(s), n))
-    return s
+readexactly = util.readexactly
 
 def getchunk(stream):
     """return the next chunk from stream as a string"""

@@ -670,6 +670,7 @@ class Test(unittest.TestCase):
 
     def __init__(self, path, outputdir, tmpdir, keeptmpdir=False,
                  debug=False,
+                 first=False,
                  timeout=None,
                  startport=None, extraconfigopts=None,
                  py3kwarnings=False, shell=None, hgcommand=None,
@@ -722,6 +723,7 @@ class Test(unittest.TestCase):
         self._threadtmp = tmpdir
         self._keeptmpdir = keeptmpdir
         self._debug = debug
+        self._first = first
         self._timeout = timeout
         self._slowtimeout = slowtimeout
         self._startport = startport
@@ -906,9 +908,13 @@ class Test(unittest.TestCase):
                         f.write(line)
 
             # The result object handles diff calculation for us.
-            if self._result.addOutputMismatch(self, ret, out, self._refout):
-                # change was accepted, skip failing
-                return
+            with firstlock:
+                if self._result.addOutputMismatch(self, ret, out, self._refout):
+                    # change was accepted, skip failing
+                    return
+                if self._first:
+                    global firsterror
+                    firsterror = True
 
             if ret:
                 msg = 'output changed and ' + describe(ret)
@@ -1037,7 +1043,7 @@ class Test(unittest.TestCase):
             offset = '' if i == 0 else '%s' % i
             env["HGPORT%s" % offset] = '%s' % (self._startport + i)
         env = os.environ.copy()
-        env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase')
+        env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = self._testtmp
         env['HOME'] = self._testtmp
@@ -1637,6 +1643,8 @@ class TTest(Test):
         return TTest.ESCAPESUB(TTest._escapef, s)
 
 iolock = threading.RLock()
+firstlock = threading.RLock()
+firsterror = False
 
 class TestResult(unittest._TextTestResult):
     """Holds results when executing via unittest."""
@@ -1722,7 +1730,7 @@ class TestResult(unittest._TextTestResult):
 
     def addOutputMismatch(self, test, ret, got, expected):
         """Record a mismatch in test output for a particular test."""
-        if self.shouldStop:
+        if self.shouldStop or firsterror:
             # don't print, some other test case already failed and
             # printed, we're just stale and probably failed due to our
             # temp dir getting cleaned up.
@@ -2715,6 +2723,7 @@ class TestRunner(object):
         t = testcls(refpath, self._outputdir, tmpdir,
                     keeptmpdir=self.options.keep_tmpdir,
                     debug=self.options.debug,
+                    first=self.options.first,
                     timeout=self.options.timeout,
                     startport=self._getport(count),
                     extraconfigopts=self.options.extra_config_opt,

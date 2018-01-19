@@ -2712,7 +2712,8 @@ def identify(ui, repo, source=None, rev=None,
     a list of tags, and a list of bookmarks.
 
     When REV is not given, print a summary of the current state of the
-    repository.
+    repository including the working directory. Specify -r. to get information
+    of the working directory parent without scanning uncommitted changes.
 
     Specifying a path to a repository root or Mercurial bundle will
     cause lookup to operate on that repository/bundle.

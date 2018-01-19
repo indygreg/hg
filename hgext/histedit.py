@@ -221,7 +221,7 @@ configitem('experimental', 'histedit.autoverb',
     default=False,
 )
 configitem('histedit', 'defaultrev',
-    default=configitem.dynamicdefault,
+    default=None,
 )
 configitem('histedit', 'dropmissing',
     default=False,

@@ -340,18 +340,20 @@ def destmerge(repo, action='merge', sourceset=None, onheadcheck=True,
                                 onheadcheck=onheadcheck, destspace=destspace)
     return repo[node].rev()
 
-histeditdefaultrevset = 'reverse(only(.) and not public() and not ::merge())'
-
 def desthistedit(ui, repo):
     """Default base revision to edit for `hg histedit`."""
-    default = ui.config('histedit', 'defaultrev', histeditdefaultrevset)
-    if default:
+    default = ui.config('histedit', 'defaultrev')
+
+    if default is None:
+        revs = stack.getstack(repo)
+    elif default:
         revs = scmutil.revrange(repo, [default])
-        if revs:
-            # The revset supplied by the user may not be in ascending order nor
-            # take the first revision. So do this manually.
-            revs.sort()
-            return revs.first()
+
+    if revs:
+        # The revset supplied by the user may not be in ascending order nor
+        # take the first revision. So do this manually.
+        revs.sort()
+        return revs.first()
 
     return None
 

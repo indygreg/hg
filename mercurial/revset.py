@@ -28,6 +28,7 @@ from . import (
     revsetlang,
     scmutil,
     smartset,
+    stack,
     util,
 )
 from .utils import dateutil
@@ -1531,6 +1532,21 @@ def secret(repo, subset, x):
     getargs(x, 0, 0, _("secret takes no arguments"))
     target = phases.secret
     return _phase(repo, subset, target)
+
+@predicate('stack([revs])', safe=True)
+def _stack(repo, subset, x):
+    # experimental revset for the stack of changesets or working directory
+    # parent
+    if x is None:
+        stacks = stack.getstack(repo, x)
+    else:
+        stacks = smartset.baseset([])
+        for revision in getset(repo, fullreposet(repo), x):
+            currentstack = stack.getstack(repo, revision)
+            stacks = stacks + currentstack
+
+    # Force to use the order of the stacks instead of the subset one
+    return stacks & subset
 
 def parentspec(repo, subset, x, n, order):
     """``set^0``

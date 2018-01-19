@@ -359,7 +359,7 @@ def desthistedit(ui, repo):
 
 def stackbase(ui, repo):
     revs = stack.getstack(repo)
-    return revs.last() if revs else None
+    return revs.first() if revs else None
 
 def _statusotherbook(ui, repo):
     bmheads = bookmarks.headsforactive(repo)

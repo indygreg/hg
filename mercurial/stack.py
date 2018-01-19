@@ -13,8 +13,8 @@ from . import (
 )
 
 def getstack(repo, rev=None):
-    """return a smartrev of the stack containing either rev if it is not None
-    or the current working directory parent.
+    """return a sorted smartrev of the stack containing either rev if it is
+    not None or the current working directory parent.
 
     The stack will always contain all drafts changesets which are ancestors to
     the revision and are not merges.
@@ -24,4 +24,6 @@ def getstack(repo, rev=None):
 
     revspec = 'reverse(only(%s) and not public() and not ::merge())'
     revset = revsetlang.formatspec(revspec, rev)
-    return scmutil.revrange(repo, [revset])
+    revisions = scmutil.revrange(repo, [revset])
+    revisions.sort()
+    return revisions

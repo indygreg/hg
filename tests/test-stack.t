@@ -205,13 +205,13 @@ Test output
   ~
 Check the stack order
   $ hg log -r "first(stack())"
-  10 foo draft c_h
+  9 foo draft c_g
   $ hg log -r "first(stack(10))"
-  10 foo draft c_h
+  9 foo draft c_g
   $ hg log -r "first(stack(8))"
-  8 foo draft c_f
+  7 foo draft c_e
   $ hg log -r "first(stack(head()))"
-  8 foo draft c_f
+  7 foo draft c_e
 
 Case with multiple heads with unstability involved
 --------------------------------------------------

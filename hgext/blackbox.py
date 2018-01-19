@@ -133,7 +133,7 @@ def wrapui(ui):
         def debug(self, *msg, **opts):
             super(blackboxui, self).debug(*msg, **opts)
             if self.debugflag:
-                self.log('debug', '%s', ''.join(*msg))
+                self.log('debug', '%s', ''.join(msg))
 
         def log(self, event, *msg, **opts):
             global lastui

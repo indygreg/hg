@@ -762,7 +762,9 @@ class localrepository(object):
     __bool__ = __nonzero__
 
     def __len__(self):
-        return len(self.changelog)
+        # no need to pay the cost of repoview.changelog
+        unfi = self.unfiltered()
+        return len(unfi.changelog)
 
     def __iter__(self):
         return iter(self.changelog)

@@ -684,7 +684,10 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         if withsparseread:
             readsize = 0
             largestblock = 0
+            srchunks = 0
+
             for revschunk in revlog._slicechunk(r, chain):
+                srchunks += 1
                 blkend = start(revschunk[-1]) + length(revschunk[-1])
                 blksize = blkend - start(revschunk[0])
 
@@ -693,12 +696,6 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                     largestblock = blksize
 
             readdensity = float(chainsize) / float(readsize)
-
-            if util.safehasattr(revlog, '_slicechunk'):
-                revchunks = tuple(revlog._slicechunk(r, chain))
-            else:
-                revchunks = (chain,)
-            srchunks = len(revchunks)
 
             fm.write('readsize largestblock readdensity srchunks',
                      ' %10d %10d %9.5f %8d',

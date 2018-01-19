@@ -1247,7 +1247,7 @@ def registersummarycallback(repo, otr, txnname=''):
             if filtername:
                 repo = repo.filtered(filtername)
             func(repo, tr)
-        newcat = '%2i-txnreport' % len(categories)
+        newcat = '%02i-txnreport' % len(categories)
         otr.addpostclose(newcat, wrapped)
         categories.append(newcat)
         return wrapped

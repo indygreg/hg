@@ -267,15 +267,49 @@ Changing branch on multiple heads at once
   $ hg branch
   stable
 
-Changing to same branch name does not work
+Changing to same branch is no-op
 
   $ hg branch -r 19::21 stable
-  abort: a branch of the same name already exists
-  [255]
+  changed branch on 0 changesets
+
+Changing branch name to existing branch name if the branch of parent of root of
+revs is same as the new branch name
+
+  $ hg branch -r 20::21 bugfix
+  changed branch on 2 changesets
+  $ hg glog
+  o  25:714defe1cf34 Added d
+  |  bugfix ()
+  o  24:98394def28fc Added c
+  |  bugfix ()
+  | @  23:6a5ddbcfb870 added bar
+  | |  stable (b1)
+  | o  22:baedc6e98a67 Added e
+  |/   stable ()
+  o  19:fd45b986b109 Added b
+  |  stable ()
+  o  18:204d2769eca2 Added a
+     stable ()
+
+  $ hg branch -r 24:25 stable
+  changed branch on 2 changesets
+  $ hg glog
+  o  27:4ec342341562 Added d
+  |  stable ()
+  o  26:83f48859c2de Added c
+  |  stable ()
+  | @  23:6a5ddbcfb870 added bar
+  | |  stable (b1)
+  | o  22:baedc6e98a67 Added e
+  |/   stable ()
+  o  19:fd45b986b109 Added b
+  |  stable ()
+  o  18:204d2769eca2 Added a
+     stable ()
 
 Testing on merge
 
-  $ hg merge -r 20
+  $ hg merge -r 26
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
@@ -289,8 +323,8 @@ Testing on merge
 
 Changing branch on public changeset
 
-  $ hg phase -r 21 -p
-  $ hg branch -r 21 def
+  $ hg phase -r 27 -p
+  $ hg branch -r 27 def
   abort: cannot change branch of public changesets
   (see 'hg help phases' for details)
   [255]

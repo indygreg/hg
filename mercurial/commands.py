@@ -1055,11 +1055,6 @@ def branch(ui, repo, label=None, **opts):
 
             scmutil.checknewlabel(repo, label, 'branch')
             if revs:
-                # XXX: we should allow setting name to existing branch if the
-                # branch of root of the revs is same as the new branch name
-                if label in repo.branchmap():
-                    raise error.Abort(_('a branch of the same'
-                                        ' name already exists'))
                 return cmdutil.changebranch(ui, repo, revs, label)
 
             if not opts.get('force') and label in repo.branchmap():

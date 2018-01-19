@@ -1322,7 +1322,11 @@ class localrepository(object):
                           **pycompat.strkwargs(hookargs))
             reporef()._afterlock(hookfunc)
         tr.addfinalize('txnclose-hook', txnclosehook)
-        tr.addpostclose('warms-cache', self._buildcacheupdater(tr))
+        # Include a leading "-" to make it happen before the transaction summary
+        # reports registered via scmutil.registersummarycallback() whose names
+        # are 00-txnreport etc. That way, the caches will be warm when the
+        # callbacks run.
+        tr.addpostclose('-warm-cache', self._buildcacheupdater(tr))
         def txnaborthook(tr2):
             """To be run if transaction is aborted
             """

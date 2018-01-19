@@ -171,6 +171,6 @@ client only pulls down 1 changeset
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
-  new changesets bec0734cd68e
   updating the branch cache
+  new changesets bec0734cd68e
   (run 'hg heads' to see heads, 'hg merge' to merge)

@@ -194,11 +194,13 @@ log rotation
   > \1#' $TESTDIR/test-dispatch.py > ../test-dispatch.py
   $ $PYTHON $TESTDIR/blackbox-readonly-dispatch.py
   running: --debug add foo
-  warning: cannot write to blackbox.log: Is a directory
+  warning: cannot write to blackbox.log: Is a directory (no-windows !)
+  warning: cannot write to blackbox.log: $TESTTMP/blackboxtest3/.hg/blackbox.log: Access is denied (windows !)
   adding foo
   result: 0
   running: --debug commit -m commit1 -d 2000-01-01 foo
-  warning: cannot write to blackbox.log: Is a directory
+  warning: cannot write to blackbox.log: Is a directory (no-windows !)
+  warning: cannot write to blackbox.log: $TESTTMP/blackboxtest3/.hg/blackbox.log: Access is denied (windows !)
   committing files:
   foo
   committing manifest

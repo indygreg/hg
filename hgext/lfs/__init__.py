@@ -160,9 +160,6 @@ def reposetup(ui, repo):
     repo.svfs.lfslocalblobstore = blobstore.local(repo)
     repo.svfs.lfsremoteblobstore = blobstore.remote(repo)
 
-    # Push hook
-    repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
-
     class lfsrepo(repo.__class__):
         @localrepo.unfilteredmethod
         def commitctx(self, ctx, error=False):
@@ -185,10 +182,13 @@ def reposetup(ui, repo):
                 if any(ctx[f].islfs() for f in ctx.files() if f in ctx):
                     repo.requirements.add('lfs')
                     repo._writerequirements()
+                    repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
                     break
 
         ui.setconfig('hooks', 'commit.lfs', checkrequireslfs, 'lfs')
         ui.setconfig('hooks', 'pretxnchangegroup.lfs', checkrequireslfs, 'lfs')
+    else:
+        repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
 
 def _trackedmatcher(repo, ctx):
     """Return a function (path, size) -> bool indicating whether or not to

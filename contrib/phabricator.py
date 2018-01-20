@@ -33,6 +33,11 @@ Config::
     # if you need to specify advanced options that is not easily supported by
     # the internal library.
     curlcmd = curl --connect-timeout 2 --retry 3 --silent
+
+    [phabricator.auth]
+    example.url = https://phab.example.com/
+    # API token. Get it from https://$HOST/conduit/login/
+    example.token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 """
 
 from __future__ import absolute_import
@@ -100,14 +105,33 @@ def readurltoken(repo):
     Currently read from [phabricator] config section. In the future, it might
     make sense to read from .arcconfig and .arcrc as well.
     """
-    values = []
-    section = 'phabricator'
-    for name in ['url', 'token']:
-        value = repo.ui.config(section, name)
-        if not value:
-            raise error.Abort(_('config %s.%s is required') % (section, name))
-        values.append(value)
-    return values
+    url = repo.ui.config('phabricator', 'url')
+    if not url:
+        raise error.Abort(_('config %s.%s is required')
+                          % ('phabricator', 'url'))
+
+    groups = {}
+    for key, val in repo.ui.configitems('phabricator.auth'):
+        if '.' not in key:
+            repo.ui.warn(_("ignoring invalid [phabricator.auth] key '%s'\n")
+                         % key)
+            continue
+        group, setting = key.rsplit('.', 1)
+        groups.setdefault(group, {})[setting] = val
+
+    token = None
+    for group, auth in groups.iteritems():
+        if url != auth.get('url'):
+            continue
+        token = auth.get('token')
+        if token:
+            break
+
+    if not token:
+        raise error.Abort(_('Can\'t find conduit token associated to %s')
+                          % (url,))
+
+    return url, token
 
 def callconduit(repo, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""

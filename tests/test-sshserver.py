@@ -7,6 +7,7 @@ import silenttestrunner
 
 from mercurial import (
     sshserver,
+    util,
     wireproto,
 )
 
@@ -41,4 +42,6 @@ class mockui(object):
         self.ferr = io.BytesIO()
 
 if __name__ == '__main__':
+    # Don't call into msvcrt to set BytesIO to binary mode
+    util.setbinary = lambda fp: True
     silenttestrunner.main(__name__)

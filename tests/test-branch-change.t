@@ -82,7 +82,7 @@ Without obsmarkers
 
   $ hg branch -r 3:4 foo --config experimental.evolution=!
   changed branch on 2 changesets
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/62615734edd5-e86bd13a-branch-change.hg (glob)
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/62615734edd5-e86bd13a-branch-change.hg
   $ hg glog
   @  4:3938acfb5c0f Added e
   |  foo ()
@@ -178,6 +178,7 @@ Make sure bookmark movement is correct
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 7c1991464886, local: 7c1991464886+, remote: de1404b45a69
+  starting 4 threads for background file closing (?)
   changed branch on 2 changesets
   updating the branch cache
   invalid branchheads cache (served): tip differs

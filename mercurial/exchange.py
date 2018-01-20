@@ -1767,7 +1767,7 @@ def _getbundlestream(bundler, repo, source, bundlecaps=None,
     if not kwargs.get('stream', False):
         return
     filecount, bytecount, it = streamclone.generatev2(repo)
-    requirements = ' '.join(repo.requirements)
+    requirements = ' '.join(sorted(repo.requirements))
     part = bundler.newpart('stream', data=it)
     part.addparam('bytecount', '%d' % bytecount, mandatory=True)
     part.addparam('filecount', '%d' % filecount, mandatory=True)

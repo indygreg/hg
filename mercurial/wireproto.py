@@ -862,6 +862,8 @@ def getbundle(repo, proto, others):
             raise error.Abort(bundle2requiredmain,
                               hint=bundle2requiredhint)
 
+    preferuncompressed = False
+
     try:
         if repo.ui.configbool('server', 'disablefullbundle'):
             # Check to see if this is a full clone.
@@ -891,8 +893,10 @@ def getbundle(repo, proto, others):
             advargs.append(('hint', exc.hint))
         bundler.addpart(bundle2.bundlepart('error:abort',
                                            manargs, advargs))
-        return streamres(gen=bundler.getchunks())
-    return streamres(gen=chunks)
+        chunks = bundler.getchunks()
+        preferuncompressed = True
+
+    return streamres(gen=chunks, prefer_uncompressed=preferuncompressed)
 
 @wireprotocommand('heads')
 def heads(repo, proto):

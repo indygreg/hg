@@ -313,7 +313,7 @@ class _gitlfsremote(object):
                     self.ui.debug('lfs %s response: %s' % (action, response))
         except util.urlerr.httperror as ex:
             if self.ui.debugflag:
-                self.ui.debug('%s: %s' % (oid, ex.read()))
+                self.ui.debug('%s: %s\n' % (oid, ex.read()))
             raise LfsRemoteError(_('HTTP error: %s (oid=%s, action=%s)')
                                  % (ex, oid, action))
 

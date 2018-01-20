@@ -197,7 +197,7 @@ class localpeer(repository.peer):
                   **kwargs):
         chunks = exchange.getbundlechunks(self._repo, source, heads=heads,
                                           common=common, bundlecaps=bundlecaps,
-                                          **kwargs)
+                                          **kwargs)[1]
         cb = util.chunkbuffer(chunks)
 
         if exchange.bundle2requested(bundlecaps):

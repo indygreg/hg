@@ -1727,9 +1727,11 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
     Could be a bundle HG10 or a bundle HG20 depending on bundlecaps
     passed.
 
-    Returns an iterator over raw chunks (of varying sizes).
+    Returns a 2-tuple of a dict with metadata about the generated bundle
+    and an iterator over raw chunks (of varying sizes).
     """
     kwargs = pycompat.byteskwargs(kwargs)
+    info = {}
     usebundle2 = bundle2requested(bundlecaps)
     # bundle10 case
     if not usebundle2:
@@ -1740,10 +1742,12 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
             raise ValueError(_('unsupported getbundle arguments: %s')
                              % ', '.join(sorted(kwargs.keys())))
         outgoing = _computeoutgoing(repo, heads, common)
-        return changegroup.makestream(repo, outgoing, '01', source,
-                                      bundlecaps=bundlecaps)
+        info['bundleversion'] = 1
+        return info, changegroup.makestream(repo, outgoing, '01', source,
+                                            bundlecaps=bundlecaps)
 
     # bundle20 case
+    info['bundleversion'] = 2
     b2caps = {}
     for bcaps in bundlecaps:
         if bcaps.startswith('bundle2='):
@@ -1759,7 +1763,7 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
         func(bundler, repo, source, bundlecaps=bundlecaps, b2caps=b2caps,
              **pycompat.strkwargs(kwargs))
 
-    return bundler.getchunks()
+    return info, bundler.getchunks()
 
 @getbundle2partsgenerator('stream')
 def _getbundlestream(bundler, repo, source, bundlecaps=None,

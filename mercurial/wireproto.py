@@ -877,8 +877,8 @@ def getbundle(repo, proto, others):
                     _('server has pull-based clones disabled'),
                     hint=_('remove --pull if specified or upgrade Mercurial'))
 
-        chunks = exchange.getbundlechunks(repo, 'serve',
-                                          **pycompat.strkwargs(opts))
+        info, chunks = exchange.getbundlechunks(repo, 'serve',
+                                                **pycompat.strkwargs(opts))
     except error.Abort as exc:
         # cleanly forward Abort error to the client
         if not exchange.bundle2requested(opts.get('bundlecaps')):

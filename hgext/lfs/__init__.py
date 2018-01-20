@@ -7,29 +7,76 @@
 
 """lfs - large file support (EXPERIMENTAL)
 
-The extension reads its configuration from a versioned ``.hglfs``
-configuration file found in the root of the working directory. The
-``.hglfs`` file uses the same syntax as all other Mercurial
-configuration files. It uses a single section, ``[track]``.
+This extension allows large files to be tracked outside of the normal
+repository storage and stored on a centralized server, similar to the
+``largefiles`` extension.  The ``git-lfs`` protocol is used when
+communicating with the server, so existing git infrastructure can be
+harnessed.  Even though the files are stored outside of the repository,
+they are still integrity checked in the same manner as normal files.
 
-The ``[track]`` section specifies which files are stored as LFS (or
-not). Each line is keyed by a file pattern, with a predicate value.
-The first file pattern match is used, so put more specific patterns
-first.  The available predicates are ``all()``, ``none()``, and
-``size()``. See "hg help filesets.size" for the latter.
+The files stored outside of the repository are downloaded on demand,
+which reduces the time to clone, and possibly the local disk usage.
+This changes fundamental workflows in a DVCS, so careful thought
+should be given before deploying it.  :hg:`convert` can be used to
+convert LFS repositories to normal repositories that no longer
+require this extension, and do so without changing the commit hashes.
+This allows the extension to be disabled if the centralized workflow
+becomes burdensome.  However, the pre and post convert clones will
+not be able to communicate with each other unless the extension is
+enabled on both.
 
-Example versioned ``.hglfs`` file::
+To start a new repository, or add new LFS files, just create and add
+an ``.hglfs`` file as described below.  Because the file is tracked in
+the repository, all clones will use the same selection policy.  During
+subsequent commits, Mercurial will consult this file to determine if
+an added or modified file should be stored externally.  The type of
+storage depends on the characteristics of the file at each commit.  A
+file that is near a size threshold may switch back and forth between
+LFS and normal storage, as needed.
 
-  [track]
-  # No Makefile or python file, anywhere, will be LFS
-  **Makefile = none()
-  **.py = none()
+Alternately, both normal repositories and largefile controlled
+repositories can be converted to LFS by using :hg:`convert` and the
+``lfs.track`` config option described below.  The ``.hglfs`` file
+should then be created and added, to control subsequent LFS selection.
+The hashes are also unchanged in this case.  The LFS and non-LFS
+repositories can be distinguished because the LFS repository will
+abort any command if this extension is disabled.
 
-  **.zip = all()
-  **.exe = size(">1MB")
+Committed LFS files are held locally, until the repository is pushed.
+Prior to pushing the normal repository data, the LFS files that are
+tracked by the outgoing commits are automatically uploaded to the
+configured central server.  No LFS files are transferred on
+:hg:`pull` or :hg:`clone`.  Instead, the files are downloaded on
+demand as they need to be read, if a cached copy cannot be found
+locally.  Both committing and downloading an LFS file will link the
+file to a usercache, to speed up future access.  See the `usercache`
+config setting described below.
 
-  # Catchall for everything not matched above
-  ** = size(">10MB")
+.hglfs::
+
+    The extension reads its configuration from a versioned ``.hglfs``
+    configuration file found in the root of the working directory. The
+    ``.hglfs`` file uses the same syntax as all other Mercurial
+    configuration files. It uses a single section, ``[track]``.
+
+    The ``[track]`` section specifies which files are stored as LFS (or
+    not). Each line is keyed by a file pattern, with a predicate value.
+    The first file pattern match is used, so put more specific patterns
+    first.  The available predicates are ``all()``, ``none()``, and
+    ``size()``. See "hg help filesets.size" for the latter.
+
+    Example versioned ``.hglfs`` file::
+
+      [track]
+      # No Makefile or python file, anywhere, will be LFS
+      **Makefile = none()
+      **.py = none()
+
+      **.zip = all()
+      **.exe = size(">1MB")
+
+      # Catchall for everything not matched above
+      ** = size(">10MB")
 
 Configs::
 
@@ -41,7 +88,7 @@ Configs::
     #   local filesystem, usually for testing
     # if unset, lfs will prompt setting this when it must use this value.
     # (default: unset)
-    url = https://example.com/lfs
+    url = https://example.com/repo.git/info/lfs
 
     # Which files to track in LFS.  Path tests are "**.extname" for file
     # extensions, and "path:under/some/directory" for path prefix.  Both

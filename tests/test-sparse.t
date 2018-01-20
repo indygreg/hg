@@ -290,7 +290,7 @@ Mix files and subdirectories, both "glob:" and unprefixed
   $ touch dir1/notshown
   $ hg commit -A dir1/notshown -m "notshown"
   $ hg debugsparse --include 'dir1/dir2'
-  $ $PYTHON $TESTDIR/list-tree.py . | grep -v ./.hg
+  $ $PYTHON $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
   ./
   ./dir1/
   ./dir1/dir2/
@@ -298,7 +298,7 @@ Mix files and subdirectories, both "glob:" and unprefixed
   ./hide.orig
   $ hg debugsparse --delete 'dir1/dir2'
   $ hg debugsparse --include 'glob:dir1/dir2'
-  $ $PYTHON $TESTDIR/list-tree.py . | grep -v ./.hg
+  $ $PYTHON $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
   ./
   ./dir1/
   ./dir1/dir2/

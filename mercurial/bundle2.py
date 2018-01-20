@@ -1490,11 +1490,18 @@ capabilities = {'HG20': (),
                 'stream': ('v2',),
                }
 
-def getrepocaps(repo, allowpushback=False):
+def getrepocaps(repo, allowpushback=False, role=None):
     """return the bundle2 capabilities for a given repo
 
     Exists to allow extensions (like evolution) to mutate the capabilities.
+
+    The returned value is used for servers advertising their capabilities as
+    well as clients advertising their capabilities to servers as part of
+    bundle2 requests. The ``role`` argument specifies which is which.
     """
+    if role not in ('client', 'server'):
+        raise error.ProgrammingError('role argument must be client or server')
+
     caps = capabilities.copy()
     caps['changegroup'] = tuple(sorted(
         changegroup.supportedincomingversions(repo)))

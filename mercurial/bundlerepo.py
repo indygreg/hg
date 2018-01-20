@@ -543,7 +543,7 @@ def getremotechanges(ui, repo, other, onlyheads=None, bundlename=None,
             kwargs = {}
             kwargs[r'common'] = common
             kwargs[r'heads'] = rheads
-            kwargs[r'bundlecaps'] = exchange.caps20to10(repo)
+            kwargs[r'bundlecaps'] = exchange.caps20to10(repo, role='client')
             kwargs[r'cg'] = True
             b2 = other.getbundle('incoming', **kwargs)
             fname = bundle = changegroup.writechunks(ui, b2._forwardchunks(),

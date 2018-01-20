@@ -780,7 +780,7 @@ def _capabilities(repo, proto):
         else:
             caps.append('streamreqs=%s' % ','.join(sorted(requiredformats)))
     if repo.ui.configbool('experimental', 'bundle2-advertise'):
-        capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo))
+        capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo, role='server'))
         caps.append('bundle2=' + urlreq.quote(capsblob))
     caps.append('unbundle=%s' % ','.join(bundle2.bundlepriority))
 

@@ -577,7 +577,8 @@ class localrepository(object):
     def _restrictcapabilities(self, caps):
         if self.ui.configbool('experimental', 'bundle2-advertise'):
             caps = set(caps)
-            capsblob = bundle2.encodecaps(bundle2.getrepocaps(self))
+            capsblob = bundle2.encodecaps(bundle2.getrepocaps(self,
+                                                              role='client'))
             caps.add('bundle2=' + urlreq.quote(capsblob))
         return caps
 

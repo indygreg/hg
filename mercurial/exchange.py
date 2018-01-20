@@ -1015,7 +1015,8 @@ def _pushbundle2(pushop):
 
     # create reply capability
     capsblob = bundle2.encodecaps(bundle2.getrepocaps(pushop.repo,
-                                                      allowpushback=pushback))
+                                                      allowpushback=pushback,
+                                                      role='client'))
     bundler.newpart('replycaps', data=capsblob)
     replyhandlers = []
     for partgenname in b2partsgenorder:
@@ -1448,7 +1449,7 @@ def _pullbundle2(pullop):
     """pull data using bundle2
 
     For now, the only supported data are changegroup."""
-    kwargs = {'bundlecaps': caps20to10(pullop.repo)}
+    kwargs = {'bundlecaps': caps20to10(pullop.repo, role='client')}
 
     # make ui easier to access
     ui = pullop.repo.ui
@@ -1680,10 +1681,10 @@ def _pullobsolete(pullop):
             pullop.repo.invalidatevolatilesets()
     return tr
 
-def caps20to10(repo):
+def caps20to10(repo, role):
     """return a set with appropriate options to use bundle20 during getbundle"""
     caps = {'HG20'}
-    capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo))
+    capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo, role=role))
     caps.add('bundle2=' + urlreq.quote(capsblob))
     return caps
 

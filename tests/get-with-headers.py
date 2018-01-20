@@ -5,6 +5,7 @@ a subset of the headers plus the body of the result."""
 
 from __future__ import absolute_import, print_function
 
+import argparse
 import json
 import os
 import sys
@@ -22,25 +23,21 @@ try:
 except ImportError:
     pass
 
-twice = False
-if '--twice' in sys.argv:
-    sys.argv.remove('--twice')
-    twice = True
-headeronly = False
-if '--headeronly' in sys.argv:
-    sys.argv.remove('--headeronly')
-    headeronly = True
-formatjson = False
-if '--json' in sys.argv:
-    sys.argv.remove('--json')
-    formatjson = True
+parser = argparse.ArgumentParser()
+parser.add_argument('--twice', action='store_true')
+parser.add_argument('--headeronly', action='store_true')
+parser.add_argument('--json', action='store_true')
+parser.add_argument('--hgproto')
+parser.add_argument('host')
+parser.add_argument('path')
+parser.add_argument('show', nargs='*')
 
-hgproto = None
-if '--hgproto' in sys.argv:
-    idx = sys.argv.index('--hgproto')
-    hgproto = sys.argv[idx + 1]
-    sys.argv.pop(idx)
-    sys.argv.pop(idx)
+args = parser.parse_args()
+
+twice = args.twice
+headeronly = args.headeronly
+formatjson = args.json
+hgproto = args.hgproto
 
 tag = None
 def request(host, path, show):
@@ -83,9 +80,9 @@ def request(host, path, show):
 
     return response.status
 
-status = request(sys.argv[1], sys.argv[2], sys.argv[3:])
+status = request(args.host, args.path, args.show)
 if twice:
-    status = request(sys.argv[1], sys.argv[2], sys.argv[3:])
+    status = request(args.host, args.path, args.show)
 
 if 200 <= status <= 305:
     sys.exit(0)

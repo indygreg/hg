@@ -509,10 +509,10 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
                        'for %s\n') % (tool, fcd.path()))
         return False, 1, None
     unused, unused, unused, back = files
-    a = _workingpath(repo, fcd)
-    b, c = _maketempfiles(repo, fco, fca)
+    localpath = _workingpath(repo, fcd)
+    basepath, otherpath = _maketempfiles(repo, fco, fca)
     try:
-        out = ""
+        outpath = ""
         mylabel, otherlabel = labels[:2]
         if len(labels) >= 3:
             baselabel = labels[2]
@@ -534,11 +534,11 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         args = _toolstr(ui, tool, "args")
         if "$output" in args:
             # read input from backup, write to original
-            out = a
-            a = repo.wvfs.join(back.path())
-        replace = {'local': a, 'base': b, 'other': c, 'output': out,
-                   'labellocal': mylabel, 'labelother': otherlabel,
-                   'labelbase': baselabel}
+            outpath = localpath
+            localpath = repo.wvfs.join(back.path())
+        replace = {'local': localpath, 'base': basepath, 'other': otherpath,
+                   'output': outpath, 'labellocal': mylabel,
+                   'labelother': otherlabel, 'labelbase': baselabel}
         args = util.interpolate(br'\$', replace, args,
                                 lambda s: util.shellquote(util.localpath(s)))
         cmd = toolpath + ' ' + args
@@ -550,8 +550,8 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         repo.ui.debug('merge tool returned: %d\n' % r)
         return True, r, False
     finally:
-        util.unlink(b)
-        util.unlink(c)
+        util.unlink(basepath)
+        util.unlink(otherpath)
 
 def _formatconflictmarker(ctx, template, label, pad):
     """Applies the given template to the ctx, prefixed by the label.

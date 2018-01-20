@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import contextlib
 import os
 import re
+import shutil
 import tempfile
 
 from .i18n import _
@@ -668,12 +669,23 @@ def _maketempfiles(repo, fco, fca):
     """Writes out `fco` and `fca` as temporary files, so an external merge
     tool may use them.
     """
+    tmproot = None
+    tmprootprefix = repo.ui.config('experimental', 'mergetempdirprefix')
+    if tmprootprefix:
+        tmproot = tempfile.mkdtemp(prefix=tmprootprefix)
+
     def temp(prefix, ctx):
         fullbase, ext = os.path.splitext(ctx.path())
-        pre = "%s~%s." % (os.path.basename(fullbase), prefix)
-        (fd, name) = tempfile.mkstemp(prefix=pre, suffix=ext)
+        pre = "%s~%s" % (os.path.basename(fullbase), prefix)
+        if tmproot:
+            name = os.path.join(tmproot, pre)
+            if ext:
+                name += ext
+            f = open(name, r"wb")
+        else:
+            (fd, name) = tempfile.mkstemp(prefix=pre + '.', suffix=ext)
+            f = os.fdopen(fd, r"wb")
         data = repo.wwritedata(ctx.path(), ctx.data())
-        f = os.fdopen(fd, r"wb")
         f.write(data)
         f.close()
         return name
@@ -683,8 +695,11 @@ def _maketempfiles(repo, fco, fca):
     try:
         yield b, c
     finally:
-        util.unlink(b)
-        util.unlink(c)
+        if tmproot:
+            shutil.rmtree(tmproot)
+        else:
+            util.unlink(b)
+            util.unlink(c)
 
 def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     """perform a 3-way merge in the working directory

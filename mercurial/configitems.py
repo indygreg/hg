@@ -502,6 +502,9 @@ coreconfigitem('experimental', 'worddiff',
 coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,
 )
+coreconfigitem('experimental', 'mergetempdirprefix',
+    default=None,
+)
 coreconfigitem('experimental', 'mmapindexthreshold',
     default=None,
 )

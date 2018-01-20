@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import contextlib
 import os
 import re
 import tempfile
@@ -510,8 +511,8 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         return False, 1, None
     unused, unused, unused, back = files
     localpath = _workingpath(repo, fcd)
-    basepath, otherpath = _maketempfiles(repo, fco, fca)
-    try:
+    with _maketempfiles(repo, fco, fca) as temppaths:
+        basepath, otherpath = temppaths
         outpath = ""
         mylabel, otherlabel = labels[:2]
         if len(labels) >= 3:
@@ -549,9 +550,6 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         r = ui.system(cmd, cwd=repo.root, environ=env, blockedtag='mergetool')
         repo.ui.debug('merge tool returned: %d\n' % r)
         return True, r, False
-    finally:
-        util.unlink(basepath)
-        util.unlink(otherpath)
 
 def _formatconflictmarker(ctx, template, label, pad):
     """Applies the given template to the ctx, prefixed by the label.
@@ -665,6 +663,7 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
         # the backup context regardless of where it lives.
         return context.arbitraryfilectx(back, repo=repo)
 
+@contextlib.contextmanager
 def _maketempfiles(repo, fco, fca):
     """Writes out `fco` and `fca` as temporary files, so an external merge
     tool may use them.
@@ -681,8 +680,11 @@ def _maketempfiles(repo, fco, fca):
 
     b = temp("base", fca)
     c = temp("other", fco)
-
-    return b, c
+    try:
+        yield b, c
+    finally:
+        util.unlink(b)
+        util.unlink(c)
 
 def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     """perform a 3-way merge in the working directory

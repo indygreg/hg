@@ -3424,7 +3424,6 @@ def log(ui, repo, *pats, **opts):
     if opts.get('graph'):
         if linerange:
             raise error.Abort(_('graph not supported with line range patterns'))
-        return logcmdutil.graphlog(ui, repo, revs, differ, opts)
 
     if linerange:
         revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
@@ -3439,6 +3438,10 @@ def log(ui, repo, *pats, **opts):
     ui.pager('log')
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts, differ,
                                               buffered=True)
+    if opts.get('graph'):
+        logcmdutil.graphlog(ui, repo, revs, displayer, getrenamed)
+        return
+
     for rev in revs:
         ctx = repo[rev]
         copies = None

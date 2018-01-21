@@ -899,19 +899,8 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
             lines = []
     displayer.close()
 
-def graphlog(ui, repo, revs, differ, opts):
-    # Parameters are identical to log command ones
+def graphlog(ui, repo, revs, displayer, getrenamed):
     revdag = graphmod.dagwalker(repo, revs)
-
-    getrenamed = None
-    if opts.get('copies'):
-        endrev = None
-        if opts.get('rev'):
-            endrev = scmutil.revrange(repo, opts.get('rev')).max() + 1
-        getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
-
-    ui.pager('log')
-    displayer = changesetdisplayer(ui, repo, opts, differ, buffered=True)
     displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed)
 
 def checkunsupportedgraphflags(pats, opts):

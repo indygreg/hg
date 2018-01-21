@@ -19,6 +19,7 @@ from mercurial import (
     cmdutil,
     error,
     hg,
+    logcmdutil,
     match as matchmod,
     pathutil,
     pycompat,
@@ -394,14 +395,16 @@ def overridelog(orig, ui, repo, *pats, **opts):
         return lambda rev: match
 
     oldmatchandpats = installmatchandpatsfn(overridematchandpats)
-    oldmakelogfilematcher = cmdutil._makenofollowlogfilematcher
-    setattr(cmdutil, '_makenofollowlogfilematcher', overridemakelogfilematcher)
+    oldmakelogfilematcher = logcmdutil._makenofollowlogfilematcher
+    setattr(logcmdutil, '_makenofollowlogfilematcher',
+            overridemakelogfilematcher)
 
     try:
         return orig(ui, repo, *pats, **opts)
     finally:
         restorematchandpatsfn()
-        setattr(cmdutil, '_makenofollowlogfilematcher', oldmakelogfilematcher)
+        setattr(logcmdutil, '_makenofollowlogfilematcher',
+                oldmakelogfilematcher)
 
 def overrideverify(orig, ui, repo, *pats, **opts):
     large = opts.pop(r'large', False)

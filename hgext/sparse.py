@@ -75,12 +75,12 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial import (
-    cmdutil,
     commands,
     dirstate,
     error,
     extensions,
     hg,
+    logcmdutil,
     match as matchmod,
     pycompat,
     registrar,
@@ -135,7 +135,7 @@ def _setuplog(ui):
                 return any(f for f in ctx.files() if sparsematch(f))
             revs = revs.filter(ctxmatch)
         return revs
-    extensions.wrapfunction(cmdutil, '_logrevs', _logrevs)
+    extensions.wrapfunction(logcmdutil, '_logrevs', _logrevs)
 
 def _clonesparsecmd(orig, ui, repo, *args, **opts):
     include_pat = opts.get('include')

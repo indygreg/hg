@@ -87,16 +87,17 @@ o  (0) root
   >   cmdutil,
   >   commands,
   >   extensions,
+  >   logcmdutil,
   >   revsetlang,
   >   smartset,
   > )
   > 
   > def logrevset(repo, pats, opts):
-  >     revs = cmdutil._logrevs(repo, opts)
+  >     revs = logcmdutil._logrevs(repo, opts)
   >     if not revs:
   >         return None
-  >     match, pats, slowpath = cmdutil._makelogmatcher(repo, revs, pats, opts)
-  >     return cmdutil._makelogrevset(repo, match, pats, slowpath, opts)
+  >     match, pats, slowpath = logcmdutil._makelogmatcher(repo, revs, pats, opts)
+  >     return logcmdutil._makelogrevset(repo, match, pats, slowpath, opts)
   > 
   > def uisetup(ui):
   >     def printrevset(orig, repo, pats, opts):

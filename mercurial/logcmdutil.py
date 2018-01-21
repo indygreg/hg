@@ -792,11 +792,9 @@ def getlinerangerevs(repo, userrevs, opts):
 
     "filematcher(ctx) -> match" is a factory function returning a match object
     for a given revision for file patterns specified in --line-range option.
-    If neither --stat nor --patch options are passed, "filematcher" is None.
 
     "hunksfilter(ctx) -> filterfn(fctx, hunks)" is a factory function
     returning a hunks filtering function.
-    If neither --stat nor --patch options are passed, "filterhunks" is None.
     """
     wctx = repo[None]
 
@@ -815,37 +813,33 @@ def getlinerangerevs(repo, userrevs, opts):
                 rev, {}).setdefault(
                     fctx.path(), []).append(linerange)
 
-    filematcher = None
-    hunksfilter = None
-    if opts.get('patch') or opts.get('stat'):
+    def nofilterhunksfn(fctx, hunks):
+        return hunks
 
-        def nofilterhunksfn(fctx, hunks):
-            return hunks
+    def hunksfilter(ctx):
+        fctxlineranges = linerangesbyrev.get(ctx.rev())
+        if fctxlineranges is None:
+            return nofilterhunksfn
 
-        def hunksfilter(ctx):
-            fctxlineranges = linerangesbyrev.get(ctx.rev())
-            if fctxlineranges is None:
-                return nofilterhunksfn
+        def filterfn(fctx, hunks):
+            lineranges = fctxlineranges.get(fctx.path())
+            if lineranges is not None:
+                for hr, lines in hunks:
+                    if hr is None: # binary
+                        yield hr, lines
+                        continue
+                    if any(mdiff.hunkinrange(hr[2:], lr)
+                           for lr in lineranges):
+                        yield hr, lines
+            else:
+                for hunk in hunks:
+                    yield hunk
 
-            def filterfn(fctx, hunks):
-                lineranges = fctxlineranges.get(fctx.path())
-                if lineranges is not None:
-                    for hr, lines in hunks:
-                        if hr is None: # binary
-                            yield hr, lines
-                            continue
-                        if any(mdiff.hunkinrange(hr[2:], lr)
-                               for lr in lineranges):
-                            yield hr, lines
-                else:
-                    for hunk in hunks:
-                        yield hunk
+        return filterfn
 
-            return filterfn
-
-        def filematcher(ctx):
-            files = list(linerangesbyrev.get(ctx.rev(), []))
-            return scmutil.matchfiles(repo, files)
+    def filematcher(ctx):
+        files = list(linerangesbyrev.get(ctx.rev(), []))
+        return scmutil.matchfiles(repo, files)
 
     revs = sorted(linerangesbyrev, reverse=True)
 

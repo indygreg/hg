@@ -3431,7 +3431,7 @@ def log(ui, repo, *pats, **opts):
         revs, lrfilematcher, hunksfilter = logcmdutil.getlinerangerevs(
             repo, revs, opts)
 
-        if filematcher is not None and lrfilematcher is not None:
+        if filematcher is not None:
             basefilematcher = filematcher
 
             def filematcher(rev):

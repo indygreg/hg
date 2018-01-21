@@ -282,24 +282,25 @@ class changesetprinter(object):
     def _showpatch(self, ctx):
         matchfn = self._makefilematcher(ctx)
         hunksfilterfn = self._makehunksfilter(ctx)
-        if matchfn:
-            stat = self.diffopts.get('stat')
-            diff = self.diffopts.get('patch')
-            diffopts = patch.diffallopts(self.ui, self.diffopts)
-            node = ctx.node()
-            prev = ctx.p1().node()
-            if stat:
-                diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                               match=matchfn, stat=True,
-                               hunksfilterfn=hunksfilterfn)
-            if diff:
-                if stat:
-                    self.ui.write("\n")
-                diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                               match=matchfn, stat=False,
-                               hunksfilterfn=hunksfilterfn)
-            if stat or diff:
-                self.ui.write("\n")
+        if not matchfn:
+            return
+        stat = self.diffopts.get('stat')
+        diff = self.diffopts.get('patch')
+        diffopts = patch.diffallopts(self.ui, self.diffopts)
+        node = ctx.node()
+        prev = ctx.p1().node()
+        if stat:
+            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
+                           match=matchfn, stat=True,
+                           hunksfilterfn=hunksfilterfn)
+        if stat and diff:
+            self.ui.write("\n")
+        if diff:
+            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
+                           match=matchfn, stat=False,
+                           hunksfilterfn=hunksfilterfn)
+        if stat or diff:
+            self.ui.write("\n")
 
 class jsonchangeset(changesetprinter):
     '''format changeset information.'''
@@ -383,22 +384,21 @@ class jsonchangeset(changesetprinter):
                                                         for k, v in copies))
 
         matchfn = self._makefilematcher(ctx)
-        if matchfn:
-            stat = self.diffopts.get('stat')
-            diff = self.diffopts.get('patch')
-            diffopts = patch.difffeatureopts(self.ui, self.diffopts, git=True)
-            node, prev = ctx.node(), ctx.p1().node()
-            if stat:
-                self.ui.pushbuffer()
-                diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                               match=matchfn, stat=True)
-                self.ui.write((',\n  "diffstat": "%s"')
-                              % j(self.ui.popbuffer()))
-            if diff:
-                self.ui.pushbuffer()
-                diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                               match=matchfn, stat=False)
-                self.ui.write((',\n  "diff": "%s"') % j(self.ui.popbuffer()))
+        stat = self.diffopts.get('stat')
+        diff = self.diffopts.get('patch')
+        diffopts = patch.difffeatureopts(self.ui, self.diffopts, git=True)
+        node, prev = ctx.node(), ctx.p1().node()
+        if matchfn and stat:
+            self.ui.pushbuffer()
+            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
+                           match=matchfn, stat=True)
+            self.ui.write((',\n  "diffstat": "%s"')
+                          % j(self.ui.popbuffer()))
+        if matchfn and diff:
+            self.ui.pushbuffer()
+            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
+                           match=matchfn, stat=False)
+            self.ui.write((',\n  "diff": "%s"') % j(self.ui.popbuffer()))
 
         self.ui.write("\n }")
 

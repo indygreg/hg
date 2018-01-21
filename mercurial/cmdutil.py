@@ -2501,7 +2501,7 @@ def commitforceeditor(repo, ctx, subs, finishdesc=None, extramsg=None,
 def buildcommittemplate(repo, ctx, subs, extramsg, ref):
     ui = repo.ui
     spec = formatter.templatespec(ref, None, None)
-    t = logcmdutil.changesettemplater(ui, repo, spec, None, {}, False)
+    t = logcmdutil.changesettemplater(ui, repo, spec)
     t.t.cache.update((k, templater.unquotestring(v))
                      for k, v in repo.ui.configitems('committemplate'))
 

@@ -503,8 +503,7 @@ def journal(ui, repo, *args, **opts):
         fm.write('command', '  %s\n', entry.command)
 
         if opts.get("commits"):
-            displayer = logcmdutil.changesetdisplayer(ui, repo, opts,
-                                                      buffered=False)
+            displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
             for hash in entry.newhashes:
                 try:
                     ctx = repo[hash]

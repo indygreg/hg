@@ -258,8 +258,7 @@ class notifier(object):
         if not mapfile and not template:
             template = deftemplates.get(hooktype) or single_template
         spec = logcmdutil.templatespec(template, mapfile)
-        self.t = logcmdutil.changesettemplater(self.ui, self.repo, spec,
-                                               False, None, False)
+        self.t = logcmdutil.changesettemplater(self.ui, self.repo, spec)
 
     def strip(self, path):
         '''strip leading slashes from local path, turn into web-safe path.'''

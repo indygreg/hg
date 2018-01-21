@@ -389,22 +389,20 @@ def overridelog(orig, ui, repo, *pats, **opts):
     # (2) to determine what files to print out diffs for.
     # The magic matchandpats override should be used for case (1) but not for
     # case (2).
-    def overridemakelogfilematcher(repo, pats, opts, badfn=None):
+    def overridemakefilematcher(repo, pats, opts, badfn=None):
         wctx = repo[None]
         match, pats = oldmatchandpats(wctx, pats, opts, badfn=badfn)
         return lambda rev: match
 
     oldmatchandpats = installmatchandpatsfn(overridematchandpats)
-    oldmakelogfilematcher = logcmdutil._makenofollowlogfilematcher
-    setattr(logcmdutil, '_makenofollowlogfilematcher',
-            overridemakelogfilematcher)
+    oldmakefilematcher = logcmdutil._makenofollowfilematcher
+    setattr(logcmdutil, '_makenofollowfilematcher', overridemakefilematcher)
 
     try:
         return orig(ui, repo, *pats, **opts)
     finally:
         restorematchandpatsfn()
-        setattr(logcmdutil, '_makenofollowlogfilematcher',
-                oldmakelogfilematcher)
+        setattr(logcmdutil, '_makenofollowfilematcher', oldmakefilematcher)
 
 def overrideverify(orig, ui, repo, *pats, **opts):
     large = opts.pop(r'large', False)

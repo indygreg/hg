@@ -126,7 +126,7 @@ def _setuplog(ui):
     entry[1].append(('', 'sparse', None,
         "limit to changesets affecting the sparse checkout"))
 
-    def _logrevs(orig, repo, opts):
+    def _initialrevs(orig, repo, opts):
         revs = orig(repo, opts)
         if opts.get('sparse'):
             sparsematch = sparse.matcher(repo)
@@ -135,7 +135,7 @@ def _setuplog(ui):
                 return any(f for f in ctx.files() if sparsematch(f))
             revs = revs.filter(ctxmatch)
         return revs
-    extensions.wrapfunction(logcmdutil, '_logrevs', _logrevs)
+    extensions.wrapfunction(logcmdutil, '_initialrevs', _initialrevs)
 
 def _clonesparsecmd(orig, ui, repo, *args, **opts):
     include_pat = opts.get('include')

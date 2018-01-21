@@ -36,7 +36,7 @@ from . import (
     util,
 )
 
-def loglimit(opts):
+def getlimit(opts):
     """get the log limit according to option -l/--limit"""
     limit = opts.get('limit')
     if limit:
@@ -391,7 +391,7 @@ class changesettemplater(changesetprinter):
 
     Note: there are a variety of convenience functions to build a
     changesettemplater for common cases. See functions such as:
-    makelogtemplater, changesetdisplayer, buildcommittemplate, or other
+    maketemplater, changesetdisplayer, buildcommittemplate, or other
     functions that use changesest_templater.
     '''
 
@@ -478,13 +478,13 @@ class changesettemplater(changesetprinter):
                 self.footer = templater.stringify(
                     self.t(self._parts['footer'], **props))
 
-def logtemplatespec(tmpl, mapfile):
+def templatespec(tmpl, mapfile):
     if mapfile:
         return formatter.templatespec('changeset', tmpl, mapfile)
     else:
         return formatter.templatespec('', tmpl, None)
 
-def _lookuplogtemplate(ui, tmpl, style):
+def _lookuptemplate(ui, tmpl, style):
     """Find the template matching the given template spec or style
 
     See formatter.lookuptemplate() for details.
@@ -494,7 +494,7 @@ def _lookuplogtemplate(ui, tmpl, style):
     if not tmpl and not style: # template are stronger than style
         tmpl = ui.config('ui', 'logtemplate')
         if tmpl:
-            return logtemplatespec(templater.unquotestring(tmpl), None)
+            return templatespec(templater.unquotestring(tmpl), None)
         else:
             style = util.expandpath(ui.config('ui', 'style'))
 
@@ -505,17 +505,17 @@ def _lookuplogtemplate(ui, tmpl, style):
                        or templater.templatepath(mapfile))
             if mapname:
                 mapfile = mapname
-        return logtemplatespec(None, mapfile)
+        return templatespec(None, mapfile)
 
     if not tmpl:
-        return logtemplatespec(None, None)
+        return templatespec(None, None)
 
     return formatter.lookuptemplate(ui, 'changeset', tmpl)
 
-def makelogtemplater(ui, repo, tmpl, buffered=False):
+def maketemplater(ui, repo, tmpl, buffered=False):
     """Create a changesettemplater from a literal template 'tmpl'
     byte-string."""
-    spec = logtemplatespec(tmpl, None)
+    spec = templatespec(tmpl, None)
     return changesettemplater(ui, repo, spec, buffered=buffered)
 
 def changesetdisplayer(ui, repo, opts, buffered=False):
@@ -537,14 +537,14 @@ def changesetdisplayer(ui, repo, opts, buffered=False):
     if opts.get('template') == 'json':
         return jsonchangeset(ui, repo, match, opts, buffered)
 
-    spec = _lookuplogtemplate(ui, opts.get('template'), opts.get('style'))
+    spec = _lookuptemplate(ui, opts.get('template'), opts.get('style'))
 
     if not spec.ref and not spec.tmpl and not spec.mapfile:
         return changesetprinter(ui, repo, match, opts, buffered)
 
     return changesettemplater(ui, repo, spec, match, opts, buffered)
 
-def _makelogmatcher(repo, revs, pats, opts):
+def _makematcher(repo, revs, pats, opts):
     """Build matcher and expanded patterns from log options
 
     If --follow, revs are the revisions to follow from.
@@ -625,7 +625,7 @@ def _fileancestors(repo, revs, match, followfirst):
             yield rev
     return smartset.generatorset(revgen(), iterasc=False), filematcher
 
-def _makenofollowlogfilematcher(repo, pats, opts):
+def _makenofollowfilematcher(repo, pats, opts):
     '''hook for extensions to override the filematcher for non-follow cases'''
     return None
 
@@ -641,7 +641,7 @@ _opt2logrevset = {
     'user':             ('user(%s)', '%lr'),
 }
 
-def _makelogrevset(repo, match, pats, slowpath, opts):
+def _makerevset(repo, match, pats, slowpath, opts):
     """Return a revset string built from log options and file patterns"""
     opts = dict(opts)
     # follow or not follow?
@@ -694,7 +694,7 @@ def _makelogrevset(repo, match, pats, slowpath, opts):
         expr = None
     return expr
 
-def _logrevs(repo, opts):
+def _initialrevs(repo, opts):
     """Return the initial set of revisions to be filtered or followed"""
     follow = opts.get('follow') or opts.get('follow_first')
     if opts.get('rev'):
@@ -708,7 +708,7 @@ def _logrevs(repo, opts):
         revs.reverse()
     return revs
 
-def getlogrevs(repo, pats, opts):
+def getrevs(repo, pats, opts):
     """Return (revs, filematcher) where revs is a smartset
 
     filematcher is a callable taking a revision number and returning a match
@@ -716,11 +716,11 @@ def getlogrevs(repo, pats, opts):
     """
     follow = opts.get('follow') or opts.get('follow_first')
     followfirst = opts.get('follow_first')
-    limit = loglimit(opts)
-    revs = _logrevs(repo, opts)
+    limit = getlimit(opts)
+    revs = _initialrevs(repo, opts)
     if not revs:
         return smartset.baseset(), None
-    match, pats, slowpath = _makelogmatcher(repo, revs, pats, opts)
+    match, pats, slowpath = _makematcher(repo, revs, pats, opts)
     filematcher = None
     if follow:
         if slowpath or match.always():
@@ -729,15 +729,15 @@ def getlogrevs(repo, pats, opts):
             revs, filematcher = _fileancestors(repo, revs, match, followfirst)
         revs.reverse()
     if filematcher is None:
-        filematcher = _makenofollowlogfilematcher(repo, pats, opts)
+        filematcher = _makenofollowfilematcher(repo, pats, opts)
     if filematcher is None:
         def filematcher(rev):
             return match
 
-    expr = _makelogrevset(repo, match, pats, slowpath, opts)
+    expr = _makerevset(repo, match, pats, slowpath, opts)
     if opts.get('graph') and opts.get('rev'):
         # User-specified revs might be unsorted, but don't sort before
-        # _makelogrevset because it might depend on the order of revs
+        # _makerevset because it might depend on the order of revs
         if not (revs.isdescending() or revs.istopo()):
             revs.sort(reverse=True)
     if expr:
@@ -747,7 +747,7 @@ def getlogrevs(repo, pats, opts):
         revs = revs.slice(0, limit)
     return revs, filematcher
 
-def _parselinerangelogopt(repo, opts):
+def _parselinerangeopt(repo, opts):
     """Parse --line-range log option and return a list of tuples (filename,
     (fromline, toline)).
     """
@@ -767,7 +767,7 @@ def _parselinerangelogopt(repo, opts):
             (fname, util.processlinerange(fromline, toline)))
     return linerangebyfname
 
-def getloglinerangerevs(repo, userrevs, opts):
+def getlinerangerevs(repo, userrevs, opts):
     """Return (revs, filematcher, hunksfilter).
 
     "revs" are revisions obtained by processing "line-range" log options and
@@ -785,7 +785,7 @@ def getloglinerangerevs(repo, userrevs, opts):
 
     # Two-levels map of "rev -> file ctx -> [line range]".
     linerangesbyrev = {}
-    for fname, (fromline, toline) in _parselinerangelogopt(repo, opts):
+    for fname, (fromline, toline) in _parselinerangeopt(repo, opts):
         if fname not in wctx:
             raise error.Abort(_('cannot follow file not in parent '
                                 'revision: "%s"') % fname)
@@ -926,7 +926,7 @@ def checkunsupportedgraphflags(pats, opts):
                              % op.replace("_", "-"))
 
 def graphrevs(repo, nodes, opts):
-    limit = loglimit(opts)
+    limit = getlimit(opts)
     nodes.reverse()
     if limit is not None:
         nodes = nodes[:limit]

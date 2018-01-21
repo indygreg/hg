@@ -46,17 +46,17 @@ from . import (
 )
 stringio = util.stringio
 
-loglimit = logcmdutil.loglimit
+loglimit = logcmdutil.getlimit
 diffordiffstat = logcmdutil.diffordiffstat
 _changesetlabels = logcmdutil.changesetlabels
 changeset_printer = logcmdutil.changesetprinter
 jsonchangeset = logcmdutil.jsonchangeset
 changeset_templater = logcmdutil.changesettemplater
-logtemplatespec = logcmdutil.logtemplatespec
-makelogtemplater = logcmdutil.makelogtemplater
+logtemplatespec = logcmdutil.templatespec
+makelogtemplater = logcmdutil.maketemplater
 show_changeset = logcmdutil.changesetdisplayer
-getlogrevs = logcmdutil.getlogrevs
-getloglinerangerevs = logcmdutil.getloglinerangerevs
+getlogrevs = logcmdutil.getrevs
+getloglinerangerevs = logcmdutil.getlinerangerevs
 displaygraph = logcmdutil.displaygraph
 graphlog = logcmdutil.graphlog
 checkunsupportedgraphflags = logcmdutil.checkunsupportedgraphflags

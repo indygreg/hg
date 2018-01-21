@@ -93,11 +93,11 @@ o  (0) root
   > )
   > 
   > def logrevset(repo, pats, opts):
-  >     revs = logcmdutil._logrevs(repo, opts)
+  >     revs = logcmdutil._initialrevs(repo, opts)
   >     if not revs:
   >         return None
-  >     match, pats, slowpath = logcmdutil._makelogmatcher(repo, revs, pats, opts)
-  >     return logcmdutil._makelogrevset(repo, match, pats, slowpath, opts)
+  >     match, pats, slowpath = logcmdutil._makematcher(repo, revs, pats, opts)
+  >     return logcmdutil._makerevset(repo, match, pats, slowpath, opts)
   > 
   > def uisetup(ui):
   >     def printrevset(orig, repo, pats, opts):

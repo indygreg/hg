@@ -3450,7 +3450,10 @@ def log(ui, repo, *pats, **opts):
         getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
-    displayer = logcmdutil.changesetdisplayer(ui, repo, opts, buffered=True)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts,
+                                              makefilematcher=filematcher,
+                                              makehunksfilter=hunksfilter,
+                                              buffered=True)
     for rev in revs:
         ctx = repo[rev]
         copies = None
@@ -3460,16 +3463,7 @@ def log(ui, repo, *pats, **opts):
                 rename = getrenamed(fn, rev)
                 if rename:
                     copies.append((fn, rename[0]))
-        if filematcher:
-            revmatchfn = filematcher(ctx)
-        else:
-            revmatchfn = None
-        if hunksfilter:
-            revhunksfilter = hunksfilter(ctx)
-        else:
-            revhunksfilter = None
-        displayer.show(ctx, copies=copies, matchfn=revmatchfn,
-                       hunksfilterfn=revhunksfilter)
+        displayer.show(ctx, copies=copies)
         displayer.flush(ctx)
 
     displayer.close()

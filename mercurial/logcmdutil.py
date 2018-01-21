@@ -135,11 +135,13 @@ def changesetlabels(ctx):
 class changesetprinter(object):
     '''show changeset information when templating not requested.'''
 
-    def __init__(self, ui, repo, matchfn=None, diffopts=None, buffered=False):
+    def __init__(self, ui, repo, makefilematcher=None, makehunksfilter=None,
+                 diffopts=None, buffered=False):
         self.ui = ui
         self.repo = repo
         self.buffered = buffered
-        self.matchfn = matchfn
+        self._makefilematcher = makefilematcher or (lambda ctx: None)
+        self._makehunksfilter = makehunksfilter or (lambda ctx: None)
         self.diffopts = diffopts or {}
         self.header = {}
         self.hunk = {}
@@ -163,17 +165,16 @@ class changesetprinter(object):
         if self.footer:
             self.ui.write(self.footer)
 
-    def show(self, ctx, copies=None, matchfn=None, hunksfilterfn=None,
-             **props):
+    def show(self, ctx, copies=None, **props):
         props = pycompat.byteskwargs(props)
         if self.buffered:
             self.ui.pushbuffer(labeled=True)
-            self._show(ctx, copies, matchfn, hunksfilterfn, props)
+            self._show(ctx, copies, props)
             self.hunk[ctx.rev()] = self.ui.popbuffer()
         else:
-            self._show(ctx, copies, matchfn, hunksfilterfn, props)
+            self._show(ctx, copies, props)
 
-    def _show(self, ctx, copies, matchfn, hunksfilterfn, props):
+    def _show(self, ctx, copies, props):
         '''show a single changeset or file revision'''
         changenode = ctx.node()
         rev = ctx.rev()
@@ -264,7 +265,7 @@ class changesetprinter(object):
                               label='log.summary')
         self.ui.write("\n")
 
-        self._showpatch(ctx, matchfn, hunksfilterfn=hunksfilterfn)
+        self._showpatch(ctx)
 
     def _showobsfate(self, ctx):
         obsfate = templatekw.showobsfate(repo=self.repo, ctx=ctx, ui=self.ui)
@@ -278,9 +279,9 @@ class changesetprinter(object):
         '''empty method used by extension as a hook point
         '''
 
-    def _showpatch(self, ctx, matchfn, hunksfilterfn=None):
-        if not matchfn:
-            matchfn = self.matchfn
+    def _showpatch(self, ctx):
+        matchfn = self._makefilematcher(ctx)
+        hunksfilterfn = self._makehunksfilter(ctx)
         if matchfn:
             stat = self.diffopts.get('stat')
             diff = self.diffopts.get('patch')
@@ -303,8 +304,10 @@ class changesetprinter(object):
 class jsonchangeset(changesetprinter):
     '''format changeset information.'''
 
-    def __init__(self, ui, repo, matchfn=None, diffopts=None, buffered=False):
-        changesetprinter.__init__(self, ui, repo, matchfn, diffopts, buffered)
+    def __init__(self, ui, repo, makefilematcher=None, makehunksfilter=None,
+                 diffopts=None, buffered=False):
+        changesetprinter.__init__(self, ui, repo, makefilematcher,
+                                  makehunksfilter, diffopts, buffered)
         self.cache = {}
         self._first = True
 
@@ -314,7 +317,7 @@ class jsonchangeset(changesetprinter):
         else:
             self.ui.write("[]\n")
 
-    def _show(self, ctx, copies, matchfn, hunksfilterfn, props):
+    def _show(self, ctx, copies, props):
         '''show a single changeset or file revision'''
         rev = ctx.rev()
         if rev is None:
@@ -379,7 +382,7 @@ class jsonchangeset(changesetprinter):
                               ", ".join('"%s": "%s"' % (j(k), j(v))
                                                         for k, v in copies))
 
-        matchfn = self.matchfn
+        matchfn = self._makefilematcher(ctx)
         if matchfn:
             stat = self.diffopts.get('stat')
             diff = self.diffopts.get('patch')
@@ -410,9 +413,10 @@ class changesettemplater(changesetprinter):
 
     # Arguments before "buffered" used to be positional. Consider not
     # adding/removing arguments before "buffered" to not break callers.
-    def __init__(self, ui, repo, tmplspec, matchfn=None, diffopts=None,
-                 buffered=False):
-        changesetprinter.__init__(self, ui, repo, matchfn, diffopts, buffered)
+    def __init__(self, ui, repo, tmplspec, makefilematcher=None,
+                 makehunksfilter=None, diffopts=None, buffered=False):
+        changesetprinter.__init__(self, ui, repo, makefilematcher,
+                                  makehunksfilter, diffopts, buffered)
         tres = formatter.templateresources(ui, repo)
         self.t = formatter.loadtemplater(ui, tmplspec,
                                          defaults=templatekw.keywords,
@@ -455,7 +459,7 @@ class changesettemplater(changesetprinter):
             self.footer += templater.stringify(self.t(self._parts['docfooter']))
         return super(changesettemplater, self).close()
 
-    def _show(self, ctx, copies, matchfn, hunksfilterfn, props):
+    def _show(self, ctx, copies, props):
         '''show a single changeset or file revision'''
         props = props.copy()
         props['ctx'] = ctx
@@ -482,7 +486,7 @@ class changesettemplater(changesetprinter):
         # write changeset metadata, then patch if requested
         key = self._parts[self._tref]
         self.ui.write(templater.stringify(self.t(key, **props)))
-        self._showpatch(ctx, matchfn, hunksfilterfn=hunksfilterfn)
+        self._showpatch(ctx)
 
         if self._parts['footer']:
             if not self.footer:
@@ -529,7 +533,8 @@ def maketemplater(ui, repo, tmpl, buffered=False):
     spec = templatespec(tmpl, None)
     return changesettemplater(ui, repo, spec, buffered=buffered)
 
-def changesetdisplayer(ui, repo, opts, buffered=False):
+def changesetdisplayer(ui, repo, opts, makefilematcher=None,
+                       makehunksfilter=None, buffered=False):
     """show one changeset using template or regular display.
 
     Display format will be the first non-empty hit of:
@@ -541,19 +546,20 @@ def changesetdisplayer(ui, repo, opts, buffered=False):
     regular display via changesetprinter() is done.
     """
     # options
-    match = None
-    if opts.get('patch') or opts.get('stat'):
-        match = scmutil.matchall(repo)
+    if not makefilematcher and (opts.get('patch') or opts.get('stat')):
+        def makefilematcher(ctx):
+            return scmutil.matchall(repo)
 
+    postargs = (makefilematcher, makehunksfilter, opts, buffered)
     if opts.get('template') == 'json':
-        return jsonchangeset(ui, repo, match, opts, buffered)
+        return jsonchangeset(ui, repo, *postargs)
 
     spec = _lookuptemplate(ui, opts.get('template'), opts.get('style'))
 
     if not spec.ref and not spec.tmpl and not spec.mapfile:
-        return changesetprinter(ui, repo, match, opts, buffered)
+        return changesetprinter(ui, repo, *postargs)
 
-    return changesettemplater(ui, repo, spec, match, opts, buffered)
+    return changesettemplater(ui, repo, spec, *postargs)
 
 def _makematcher(repo, revs, pats, opts):
     """Build matcher and expanded patterns from log options
@@ -861,8 +867,7 @@ def _graphnodeformatter(ui, displayer):
         return templ.render(props)
     return formatnode
 
-def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None,
-                 filematcher=None, props=None):
+def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
     props = props or {}
     formatnode = _graphnodeformatter(ui, displayer)
     state = graphmod.asciistate()
@@ -897,13 +902,10 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None,
                 rename = getrenamed(fn, ctx.rev())
                 if rename:
                     copies.append((fn, rename[0]))
-        revmatchfn = None
-        if filematcher is not None:
-            revmatchfn = filematcher(ctx)
         edges = edgefn(type, char, state, rev, parents)
         firstedge = next(edges)
         width = firstedge[2]
-        displayer.show(ctx, copies=copies, matchfn=revmatchfn,
+        displayer.show(ctx, copies=copies,
                        _graphwidth=width, **pycompat.strkwargs(props))
         lines = displayer.hunk.pop(rev).split('\n')
         if not lines[-1]:
@@ -926,9 +928,9 @@ def graphlog(ui, repo, revs, filematcher, opts):
         getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
-    displayer = changesetdisplayer(ui, repo, opts, buffered=True)
-    displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed,
-                 filematcher)
+    displayer = changesetdisplayer(ui, repo, opts, makefilematcher=filematcher,
+                                   buffered=True)
+    displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed)
 
 def checkunsupportedgraphflags(pats, opts):
     for op in ["newest_first"]:

@@ -886,7 +886,8 @@ def _incoming(displaychlist, subreporecurse, ui, repo, source,
             ui.status(_("no changes found\n"))
             return subreporecurse()
         ui.pager('incoming')
-        displayer = logcmdutil.changesetdisplayer(ui, other, opts, buffered)
+        displayer = logcmdutil.changesetdisplayer(ui, other, opts,
+                                                  buffered=buffered)
         displaychlist(other, chlist, displayer)
         displayer.close()
     finally:

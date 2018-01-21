@@ -5593,7 +5593,7 @@ def version_(ui, **opts):
              util.version())
     license = _(
         "(see https://mercurial-scm.org for more information)\n"
-        "\nCopyright (C) 2005-2017 Matt Mackall and others\n"
+        "\nCopyright (C) 2005-2018 Matt Mackall and others\n"
         "This is free software; see the source for copying conditions. "
         "There is NO\nwarranty; "
         "not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n"

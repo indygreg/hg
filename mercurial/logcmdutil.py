@@ -122,12 +122,12 @@ def changesetlabels(ctx):
 class changesetprinter(object):
     '''show changeset information when templating not requested.'''
 
-    def __init__(self, ui, repo, matchfn, diffopts, buffered):
+    def __init__(self, ui, repo, matchfn=None, diffopts=None, buffered=False):
         self.ui = ui
         self.repo = repo
         self.buffered = buffered
         self.matchfn = matchfn
-        self.diffopts = diffopts
+        self.diffopts = diffopts or {}
         self.header = {}
         self.hunk = {}
         self.lastheader = None
@@ -290,7 +290,7 @@ class changesetprinter(object):
 class jsonchangeset(changesetprinter):
     '''format changeset information.'''
 
-    def __init__(self, ui, repo, matchfn, diffopts, buffered):
+    def __init__(self, ui, repo, matchfn=None, diffopts=None, buffered=False):
         changesetprinter.__init__(self, ui, repo, matchfn, diffopts, buffered)
         self.cache = {}
         self._first = True
@@ -399,8 +399,6 @@ class changesettemplater(changesetprinter):
     # adding/removing arguments before "buffered" to not break callers.
     def __init__(self, ui, repo, tmplspec, matchfn=None, diffopts=None,
                  buffered=False):
-        diffopts = diffopts or {}
-
         changesetprinter.__init__(self, ui, repo, matchfn, diffopts, buffered)
         tres = formatter.templateresources(ui, repo)
         self.t = formatter.loadtemplater(ui, tmplspec,

@@ -251,7 +251,7 @@ class changesetprinter(object):
                               label='log.summary')
         self.ui.write("\n")
 
-        self.showpatch(ctx, matchfn, hunksfilterfn=hunksfilterfn)
+        self._showpatch(ctx, matchfn, hunksfilterfn=hunksfilterfn)
 
     def _showobsfate(self, ctx):
         obsfate = templatekw.showobsfate(repo=self.repo, ctx=ctx, ui=self.ui)
@@ -265,7 +265,7 @@ class changesetprinter(object):
         '''empty method used by extension as a hook point
         '''
 
-    def showpatch(self, ctx, matchfn, hunksfilterfn=None):
+    def _showpatch(self, ctx, matchfn, hunksfilterfn=None):
         if not matchfn:
             matchfn = self.matchfn
         if matchfn:
@@ -469,7 +469,7 @@ class changesettemplater(changesetprinter):
         # write changeset metadata, then patch if requested
         key = self._parts[self._tref]
         self.ui.write(templater.stringify(self.t(key, **props)))
-        self.showpatch(ctx, matchfn, hunksfilterfn=hunksfilterfn)
+        self._showpatch(ctx, matchfn, hunksfilterfn=hunksfilterfn)
 
         if self._parts['footer']:
             if not self.footer:

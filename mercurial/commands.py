@@ -3414,6 +3414,7 @@ def log(ui, repo, *pats, **opts):
         raise error.Abort(_('--line-range requires --follow'))
 
     if linerange and pats:
+        # TODO: take pats as patterns with no line-range filter
         raise error.Abort(
             _('FILE arguments are not compatible with --line-range option')
         )
@@ -3421,6 +3422,8 @@ def log(ui, repo, *pats, **opts):
     repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
     revs, differ = logcmdutil.getrevs(repo, pats, opts)
     if linerange:
+        # TODO: should follow file history from logcmdutil._initialrevs(),
+        # then filter the result by logcmdutil._makerevset() and --limit
         revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
 
     getrenamed = None

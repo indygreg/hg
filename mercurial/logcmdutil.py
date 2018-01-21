@@ -899,9 +899,23 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
             lines = []
     displayer.close()
 
-def graphlog(ui, repo, revs, displayer, getrenamed):
+def displaygraphrevs(ui, repo, revs, displayer, getrenamed):
     revdag = graphmod.dagwalker(repo, revs)
     displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed)
+
+def displayrevs(ui, repo, revs, displayer, getrenamed):
+    for rev in revs:
+        ctx = repo[rev]
+        copies = None
+        if getrenamed is not None and rev:
+            copies = []
+            for fn in ctx.files():
+                rename = getrenamed(fn, rev)
+                if rename:
+                    copies.append((fn, rename[0]))
+        displayer.show(ctx, copies=copies)
+        displayer.flush(ctx)
+    displayer.close()
 
 def checkunsupportedgraphflags(pats, opts):
     for op in ["newest_first"]:

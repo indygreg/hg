@@ -3434,22 +3434,10 @@ def log(ui, repo, *pats, **opts):
     displayer = logcmdutil.changesetdisplayer(ui, repo, opts, differ,
                                               buffered=True)
     if opts.get('graph'):
-        logcmdutil.graphlog(ui, repo, revs, displayer, getrenamed)
-        return
-
-    for rev in revs:
-        ctx = repo[rev]
-        copies = None
-        if getrenamed is not None and rev:
-            copies = []
-            for fn in ctx.files():
-                rename = getrenamed(fn, rev)
-                if rename:
-                    copies.append((fn, rename[0]))
-        displayer.show(ctx, copies=copies)
-        displayer.flush(ctx)
-
-    displayer.close()
+        displayfn = logcmdutil.displaygraphrevs
+    else:
+        displayfn = logcmdutil.displayrevs
+    displayfn(ui, repo, revs, displayer, getrenamed)
 
 @command('manifest',
     [('r', 'rev', '', _('revision to display'), _('REV')),

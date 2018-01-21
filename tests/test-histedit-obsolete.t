@@ -71,6 +71,7 @@ With some node gone missing during the edit.
   $ hg commit --amend -X . -m XXXXXX
   $ hg commit --amend -X . -m b2
   $ hg --hidden --config extensions.strip= strip 'desc(XXXXXX)' --no-backup
+  warning: ignoring unknown working parent aba7da937030!
   $ hg histedit --continue
   $ hg log -G
   @  8:273c1f3b8626 c

@@ -772,6 +772,7 @@ Even when the chain include missing node
   1 new orphan changesets
   $ hg --hidden strip -r 'desc(B1)'
   saved backup bundle to $TESTTMP/obsskip/.hg/strip-backup/86f6414ccda7-b1c452ee-backup.hg
+  1 new orphan changesets
   $ hg log -G
   @  5:1a79b7535141 D
   |

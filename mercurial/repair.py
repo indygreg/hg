@@ -203,6 +203,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
             deleteobsmarkers(repo.obsstore, stripobsidx)
             del repo.obsstore
+            repo.invalidatevolatilesets()
             repo._phasecache.filterunknown(repo)
 
         if tmpbundlefile:

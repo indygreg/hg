@@ -627,8 +627,8 @@ def _fileancestors(repo, revs, match, followfirst):
     # revision, stored in "fcache". "fcache" is populated as a side effect
     # of the graph traversal.
     fcache = {}
-    def filematcher(rev):
-        return scmutil.matchfiles(repo, fcache.get(rev, []))
+    def filematcher(ctx):
+        return scmutil.matchfiles(repo, fcache.get(ctx.rev(), []))
 
     def revgen():
         for rev, cs in dagop.filectxancestors(fctxs, followfirst=followfirst):
@@ -722,7 +722,7 @@ def _initialrevs(repo, opts):
 def getrevs(repo, pats, opts):
     """Return (revs, filematcher) where revs is a smartset
 
-    filematcher is a callable taking a revision number and returning a match
+    filematcher is a callable taking a changectx and returning a match
     objects filtering the files to be detailed when displaying the revision.
     """
     follow = opts.get('follow') or opts.get('follow_first')
@@ -742,7 +742,7 @@ def getrevs(repo, pats, opts):
     if filematcher is None:
         filematcher = _makenofollowfilematcher(repo, pats, opts)
     if filematcher is None:
-        def filematcher(rev):
+        def filematcher(ctx):
             return match
 
     expr = _makerevset(repo, match, pats, slowpath, opts)
@@ -784,11 +784,11 @@ def getlinerangerevs(repo, userrevs, opts):
     "revs" are revisions obtained by processing "line-range" log options and
     walking block ancestors of each specified file/line-range.
 
-    "filematcher(rev) -> match" is a factory function returning a match object
+    "filematcher(ctx) -> match" is a factory function returning a match object
     for a given revision for file patterns specified in --line-range option.
     If neither --stat nor --patch options are passed, "filematcher" is None.
 
-    "hunksfilter(rev) -> filterfn(fctx, hunks)" is a factory function
+    "hunksfilter(ctx) -> filterfn(fctx, hunks)" is a factory function
     returning a hunks filtering function.
     If neither --stat nor --patch options are passed, "filterhunks" is None.
     """
@@ -816,8 +816,8 @@ def getlinerangerevs(repo, userrevs, opts):
         def nofilterhunksfn(fctx, hunks):
             return hunks
 
-        def hunksfilter(rev):
-            fctxlineranges = linerangesbyrev.get(rev)
+        def hunksfilter(ctx):
+            fctxlineranges = linerangesbyrev.get(ctx.rev())
             if fctxlineranges is None:
                 return nofilterhunksfn
 
@@ -837,8 +837,8 @@ def getlinerangerevs(repo, userrevs, opts):
 
             return filterfn
 
-        def filematcher(rev):
-            files = list(linerangesbyrev.get(rev, []))
+        def filematcher(ctx):
+            files = list(linerangesbyrev.get(ctx.rev(), []))
             return scmutil.matchfiles(repo, files)
 
     revs = sorted(linerangesbyrev, reverse=True)
@@ -899,7 +899,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None,
                     copies.append((fn, rename[0]))
         revmatchfn = None
         if filematcher is not None:
-            revmatchfn = filematcher(ctx.rev())
+            revmatchfn = filematcher(ctx)
         edges = edgefn(type, char, state, rev, parents)
         firstedge = next(edges)
         width = firstedge[2]

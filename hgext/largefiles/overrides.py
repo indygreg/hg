@@ -392,7 +392,7 @@ def overridelog(orig, ui, repo, *pats, **opts):
     def overridemakefilematcher(repo, pats, opts, badfn=None):
         wctx = repo[None]
         match, pats = oldmatchandpats(wctx, pats, opts, badfn=badfn)
-        return lambda rev: match
+        return lambda ctx: match
 
     oldmatchandpats = installmatchandpatsfn(overridematchandpats)
     oldmakefilematcher = logcmdutil._makenofollowfilematcher

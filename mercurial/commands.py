@@ -3461,11 +3461,11 @@ def log(ui, repo, *pats, **opts):
                 if rename:
                     copies.append((fn, rename[0]))
         if filematcher:
-            revmatchfn = filematcher(ctx.rev())
+            revmatchfn = filematcher(ctx)
         else:
             revmatchfn = None
         if hunksfilter:
-            revhunksfilter = hunksfilter(rev)
+            revhunksfilter = hunksfilter(ctx)
         else:
             revhunksfilter = None
         displayer.show(ctx, copies=copies, matchfn=revmatchfn,

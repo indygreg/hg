@@ -29,6 +29,7 @@ from mercurial import (
     hg,
     localrepo,
     lock,
+    logcmdutil,
     node,
     pycompat,
     registrar,
@@ -478,7 +479,7 @@ def journal(ui, repo, *args, **opts):
             displayname = "'%s'" % name
         ui.status(_("previous locations of %s:\n") % displayname)
 
-    limit = cmdutil.loglimit(opts)
+    limit = logcmdutil.getlimit(opts)
     entry = None
     ui.pager('journal')
     for count, entry in enumerate(repo.journal.filtered(name=name)):
@@ -502,7 +503,8 @@ def journal(ui, repo, *args, **opts):
         fm.write('command', '  %s\n', entry.command)
 
         if opts.get("commits"):
-            displayer = cmdutil.show_changeset(ui, repo, opts, buffered=False)
+            displayer = logcmdutil.changesetdisplayer(ui, repo, opts,
+                                                      buffered=False)
             for hash in entry.newhashes:
                 try:
                     ctx = repo[hash]

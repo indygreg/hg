@@ -115,7 +115,7 @@ o  (0) root
   >             ui.write(smartset.prettyformat(revs) + '\n')
   >             revs = smartset.baseset()  # display no revisions
   >         return revs, filematcher
-  >     extensions.wrapfunction(cmdutil, 'getlogrevs', printrevset)
+  >     extensions.wrapfunction(logcmdutil, 'getrevs', printrevset)
   >     aliases, entry = cmdutil.findcmd('log', commands.table)
   >     entry[1].append(('', 'print-revset', False,
   >                      'print generated revset and exit (DEPRECATED)'))
@@ -2421,7 +2421,7 @@ working-directory revision
   |
   ~
 
-node template with changeset_printer:
+node template with changesetprinter:
 
   $ hg log -Gqr 5:7 --config ui.graphnodetemplate='"{rev}"'
   7  7:02dbb8e276b8
@@ -2433,7 +2433,7 @@ node template with changeset_printer:
   |
   ~
 
-node template with changeset_templater (shared cache variable):
+node template with changesettemplater (shared cache variable):
 
   $ hg log -Gr 5:7 -T '{latesttag % "{rev} {tag}+{distance}"}\n' \
   > --config ui.graphnodetemplate='{ifeq(latesttagdistance, 0, "#", graphnode)}'

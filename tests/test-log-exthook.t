@@ -4,8 +4,8 @@ Test hg log changeset printer external hook
   $ cat > $TESTTMP/logexthook.py <<EOF
   > from __future__ import absolute_import
   > from mercurial import (
-  >   cmdutil,
   >   commands,
+  >   logcmdutil,
   >   repair,
   > )
   > def rot13description(self, ctx):
@@ -13,7 +13,7 @@ Test hg log changeset printer external hook
   >     description = ctx.description().strip().splitlines()[0].encode('rot13')
   >     self.ui.write("%s:     %s\n" % (summary, description))
   > def reposetup(ui, repo):
-  >     cmdutil.changeset_printer._exthook = rot13description
+  >     logcmdutil.changesetprinter._exthook = rot13description
   > EOF
 
 Prepare the repository

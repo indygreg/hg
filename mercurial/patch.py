@@ -2342,7 +2342,7 @@ def diff(repo, node1=None, node2=None, match=None, changes=None,
         if hunksfilterfn is not None:
             # If the file has been removed, fctx2 is None; but this should
             # not occur here since we catch removed files early in
-            # cmdutil.getloglinerangerevs() for 'hg log -L'.
+            # logcmdutil.getlinerangerevs() for 'hg log -L'.
             assert fctx2 is not None, \
                 'fctx2 unexpectly None in diff hunks filtering'
             hunks = hunksfilterfn(fctx2, hunks)

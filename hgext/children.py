@@ -19,6 +19,7 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 from mercurial import (
     cmdutil,
+    logcmdutil,
     pycompat,
     registrar,
 )
@@ -65,7 +66,7 @@ def children(ui, repo, file_=None, **opts):
         ctx = repo[rev]
         childctxs = ctx.children()
 
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     for cctx in childctxs:
         displayer.show(cctx)
     displayer.close()

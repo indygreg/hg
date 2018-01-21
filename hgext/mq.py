@@ -86,6 +86,7 @@ from mercurial import (
     hg,
     localrepo,
     lock as lockmod,
+    logcmdutil,
     patch as patchmod,
     phases,
     pycompat,
@@ -743,8 +744,8 @@ class queue(object):
             opts = {}
         stat = opts.get('stat')
         m = scmutil.match(repo[node1], files, opts)
-        cmdutil.diffordiffstat(self.ui, repo, diffopts, node1, node2,  m,
-                               changes, stat, fp)
+        logcmdutil.diffordiffstat(self.ui, repo, diffopts, node1, node2, m,
+                                  changes, stat, fp)
 
     def mergeone(self, repo, mergeq, head, patch, rev, diffopts):
         # first try just applying the patch

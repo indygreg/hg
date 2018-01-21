@@ -41,6 +41,7 @@ from . import (
     help,
     hg,
     lock as lockmod,
+    logcmdutil,
     merge as mergemod,
     obsolete,
     obsutil,
@@ -823,7 +824,7 @@ def bisect(ui, repo, rev=None, extra=None, command=None,
         cmdutil.bailifchanged(repo)
         return hg.clean(repo, node, show_stats=show_stats)
 
-    displayer = cmdutil.show_changeset(ui, repo, {})
+    displayer = logcmdutil.changesetdisplayer(ui, repo, {})
 
     if command:
         changesets = 1
@@ -1873,9 +1874,9 @@ def diff(ui, repo, *pats, **opts):
     diffopts = patch.diffallopts(ui, opts)
     m = scmutil.match(repo[node2], pats, opts)
     ui.pager('diff')
-    cmdutil.diffordiffstat(ui, repo, diffopts, node1, node2, m, stat=stat,
-                           listsubrepos=opts.get('subrepos'),
-                           root=opts.get('root'))
+    logcmdutil.diffordiffstat(ui, repo, diffopts, node1, node2, m, stat=stat,
+                              listsubrepos=opts.get('subrepos'),
+                              root=opts.get('root'))
 
 @command('^export',
     [('o', 'output', '',
@@ -2647,7 +2648,7 @@ def heads(ui, repo, *branchrevs, **opts):
 
     ui.pager('heads')
     heads = sorted(heads, key=lambda x: -x.rev())
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     for ctx in heads:
         displayer.show(ctx)
     displayer.close()
@@ -3155,11 +3156,11 @@ def incoming(ui, repo, source="default", **opts):
     """
     opts = pycompat.byteskwargs(opts)
     if opts.get('graph'):
-        cmdutil.checkunsupportedgraphflags([], opts)
+        logcmdutil.checkunsupportedgraphflags([], opts)
         def display(other, chlist, displayer):
-            revdag = cmdutil.graphrevs(other, chlist, opts)
-            cmdutil.displaygraph(ui, repo, revdag, displayer,
-                                 graphmod.asciiedges)
+            revdag = logcmdutil.graphrevs(other, chlist, opts)
+            logcmdutil.displaygraph(ui, repo, revdag, displayer,
+                                    graphmod.asciiedges)
 
         hg._incoming(display, lambda: 1, ui, repo, source, opts, buffered=True)
         return 0
@@ -3418,16 +3419,16 @@ def log(ui, repo, *pats, **opts):
         )
 
     repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
-    revs, filematcher = cmdutil.getlogrevs(repo, pats, opts)
+    revs, filematcher = logcmdutil.getrevs(repo, pats, opts)
     hunksfilter = None
 
     if opts.get('graph'):
         if linerange:
             raise error.Abort(_('graph not supported with line range patterns'))
-        return cmdutil.graphlog(ui, repo, revs, filematcher, opts)
+        return logcmdutil.graphlog(ui, repo, revs, filematcher, opts)
 
     if linerange:
-        revs, lrfilematcher, hunksfilter = cmdutil.getloglinerangerevs(
+        revs, lrfilematcher, hunksfilter = logcmdutil.getlinerangerevs(
             repo, revs, opts)
 
         if filematcher is not None and lrfilematcher is not None:
@@ -3449,7 +3450,7 @@ def log(ui, repo, *pats, **opts):
         getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
-    displayer = cmdutil.show_changeset(ui, repo, opts, buffered=True)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts, buffered=True)
     for rev in revs:
         ctx = repo[rev]
         copies = None
@@ -3603,7 +3604,7 @@ def merge(ui, repo, node=None, **opts):
         p2 = repo.lookup(node)
         nodes = repo.changelog.findmissing(common=[p1], heads=[p2])
 
-        displayer = cmdutil.show_changeset(ui, repo, opts)
+        displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
         for node in nodes:
             displayer.show(repo[node])
         displayer.close()
@@ -3667,16 +3668,17 @@ def outgoing(ui, repo, dest=None, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     if opts.get('graph'):
-        cmdutil.checkunsupportedgraphflags([], opts)
+        logcmdutil.checkunsupportedgraphflags([], opts)
         o, other = hg._outgoing(ui, repo, dest, opts)
         if not o:
             cmdutil.outgoinghooks(ui, repo, other, opts, o)
             return
 
-        revdag = cmdutil.graphrevs(repo, o, opts)
+        revdag = logcmdutil.graphrevs(repo, o, opts)
         ui.pager('outgoing')
-        displayer = cmdutil.show_changeset(ui, repo, opts, buffered=True)
-        cmdutil.displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges)
+        displayer = logcmdutil.changesetdisplayer(ui, repo, opts, buffered=True)
+        logcmdutil.displaygraph(ui, repo, revdag, displayer,
+                                graphmod.asciiedges)
         cmdutil.outgoinghooks(ui, repo, other, opts, o)
         return 0
 
@@ -3751,7 +3753,7 @@ def parents(ui, repo, file_=None, **opts):
     else:
         p = [cp.node() for cp in ctx.parents()]
 
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     for n in p:
         if n != nullid:
             displayer.show(repo[n])
@@ -4983,7 +4985,7 @@ def summary(ui, repo, **opts):
         # shows a working directory parent *changeset*:
         # i18n: column positioning for "hg summary"
         ui.write(_('parent: %d:%s ') % (p.rev(), p),
-                 label=cmdutil._changesetlabels(p))
+                 label=logcmdutil.changesetlabels(p))
         ui.write(' '.join(p.tags()), label='log.tag')
         if p.bookmarks():
             marks.extend(p.bookmarks())
@@ -5405,7 +5407,7 @@ def tip(ui, repo, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     displayer.show(repo['tip'])
     displayer.close()
 

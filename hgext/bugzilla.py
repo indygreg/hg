@@ -300,8 +300,8 @@ import time
 from mercurial.i18n import _
 from mercurial.node import short
 from mercurial import (
-    cmdutil,
     error,
+    logcmdutil,
     mail,
     registrar,
     url,
@@ -1090,9 +1090,9 @@ class bugzilla(object):
         if not mapfile and not tmpl:
             tmpl = _('changeset {node|short} in repo {root} refers '
                      'to bug {bug}.\ndetails:\n\t{desc|tabindent}')
-        spec = cmdutil.logtemplatespec(tmpl, mapfile)
-        t = cmdutil.changeset_templater(self.ui, self.repo, spec,
-                                        False, None, False)
+        spec = logcmdutil.templatespec(tmpl, mapfile)
+        t = logcmdutil.changesettemplater(self.ui, self.repo, spec,
+                                          False, None, False)
         self.ui.pushbuffer()
         t.show(ctx, changes=ctx.changeset(),
                bug=str(bugid),

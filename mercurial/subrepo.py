@@ -28,6 +28,7 @@ from . import (
     error,
     exchange,
     filemerge,
+    logcmdutil,
     match as matchmod,
     node,
     pathutil,
@@ -907,10 +908,10 @@ class hgsubrepo(abstractsubrepo):
             # in hex format
             if node2 is not None:
                 node2 = node.bin(node2)
-            cmdutil.diffordiffstat(ui, self._repo, diffopts,
-                                   node1, node2, match,
-                                   prefix=posixpath.join(prefix, self._path),
-                                   listsubrepos=True, **opts)
+            logcmdutil.diffordiffstat(ui, self._repo, diffopts,
+                                      node1, node2, match,
+                                      prefix=posixpath.join(prefix, self._path),
+                                      listsubrepos=True, **opts)
         except error.RepoLookupError as inst:
             self.ui.warn(_('warning: error "%s" in subrepository "%s"\n')
                           % (inst, subrelpath(self)))

@@ -48,6 +48,7 @@ from . import (
     hg,
     localrepo,
     lock as lockmod,
+    logcmdutil,
     merge as mergemod,
     obsolete,
     obsutil,
@@ -2396,7 +2397,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
         t = formatter.maketemplater(ui, tmpl, resources=tres)
         ui.write(t.render(props))
     else:
-        displayer = cmdutil.makelogtemplater(ui, repo, tmpl)
+        displayer = logcmdutil.maketemplater(ui, repo, tmpl)
         for r in revs:
             displayer.show(repo[r], **pycompat.strkwargs(props))
         displayer.close()

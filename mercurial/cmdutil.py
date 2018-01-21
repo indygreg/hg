@@ -46,22 +46,6 @@ from . import (
 )
 stringio = util.stringio
 
-loglimit = logcmdutil.getlimit
-diffordiffstat = logcmdutil.diffordiffstat
-_changesetlabels = logcmdutil.changesetlabels
-changeset_printer = logcmdutil.changesetprinter
-jsonchangeset = logcmdutil.jsonchangeset
-changeset_templater = logcmdutil.changesettemplater
-logtemplatespec = logcmdutil.templatespec
-makelogtemplater = logcmdutil.maketemplater
-show_changeset = logcmdutil.changesetdisplayer
-getlogrevs = logcmdutil.getrevs
-getloglinerangerevs = logcmdutil.getlinerangerevs
-displaygraph = logcmdutil.displaygraph
-graphlog = logcmdutil.graphlog
-checkunsupportedgraphflags = logcmdutil.checkunsupportedgraphflags
-graphrevs = logcmdutil.graphrevs
-
 # templates of common command options
 
 dryrunopts = [
@@ -2526,7 +2510,7 @@ def commitforceeditor(repo, ctx, subs, finishdesc=None, extramsg=None,
 def buildcommittemplate(repo, ctx, subs, extramsg, ref):
     ui = repo.ui
     spec = formatter.templatespec(ref, None, None)
-    t = changeset_templater(ui, repo, spec, None, {}, False)
+    t = logcmdutil.changesettemplater(ui, repo, spec, None, {}, False)
     t.t.cache.update((k, templater.unquotestring(v))
                      for k, v in repo.ui.configitems('committemplate'))
 

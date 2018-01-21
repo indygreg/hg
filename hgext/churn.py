@@ -18,6 +18,7 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     encoding,
+    logcmdutil,
     patch,
     pycompat,
     registrar,
@@ -54,7 +55,7 @@ def countrate(ui, repo, amap, *pats, **opts):
             return date.strftime(opts['dateformat'])
     else:
         tmpl = opts.get('oldtemplate') or opts.get('template')
-        tmpl = cmdutil.makelogtemplater(ui, repo, tmpl)
+        tmpl = logcmdutil.maketemplater(ui, repo, tmpl)
         def getkey(ctx):
             ui.pushbuffer()
             tmpl.show(ctx)

@@ -24,6 +24,7 @@ from mercurial import (
     error,
     exchange,
     hg,
+    logcmdutil,
     match,
     merge,
     node as nodemod,
@@ -501,7 +502,7 @@ def hasnode(repo, node):
 
 def browserevs(ui, repo, nodes, opts):
     '''interactively transplant changesets'''
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     transplants = []
     merges = []
     prompt = _('apply changeset? [ynmpcq?]:'

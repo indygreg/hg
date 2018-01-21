@@ -917,7 +917,7 @@ def showinstabilities(**args):
 def showverbosity(ui, **args):
     """String. The current output verbosity in 'debug', 'quiet', 'verbose',
     or ''."""
-    # see cmdutil.changeset_templater for priority of these flags
+    # see logcmdutil.changesettemplater for priority of these flags
     if ui.debugflag:
         return 'debug'
     elif ui.quiet:

@@ -142,8 +142,8 @@ import time
 
 from mercurial.i18n import _
 from mercurial import (
-    cmdutil,
     error,
+    logcmdutil,
     mail,
     patch,
     registrar,
@@ -257,9 +257,9 @@ class notifier(object):
             mapfile = self.ui.config('notify', 'style')
         if not mapfile and not template:
             template = deftemplates.get(hooktype) or single_template
-        spec = cmdutil.logtemplatespec(template, mapfile)
-        self.t = cmdutil.changeset_templater(self.ui, self.repo, spec,
-                                             False, None, False)
+        spec = logcmdutil.templatespec(template, mapfile)
+        self.t = logcmdutil.changesettemplater(self.ui, self.repo, spec,
+                                               False, None, False)
 
     def strip(self, path):
         '''strip leading slashes from local path, turn into web-safe path.'''

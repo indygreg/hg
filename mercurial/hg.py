@@ -31,6 +31,7 @@ from . import (
     httppeer,
     localrepo,
     lock,
+    logcmdutil,
     logexchange,
     merge as mergemod,
     node,
@@ -885,7 +886,7 @@ def _incoming(displaychlist, subreporecurse, ui, repo, source,
             ui.status(_("no changes found\n"))
             return subreporecurse()
         ui.pager('incoming')
-        displayer = cmdutil.show_changeset(ui, other, opts, buffered)
+        displayer = logcmdutil.changesetdisplayer(ui, other, opts, buffered)
         displaychlist(other, chlist, displayer)
         displayer.close()
     finally:
@@ -904,7 +905,7 @@ def incoming(ui, repo, source, opts):
         return ret
 
     def display(other, chlist, displayer):
-        limit = cmdutil.loglimit(opts)
+        limit = logcmdutil.getlimit(opts)
         if opts.get('newest_first'):
             chlist.reverse()
         count = 0
@@ -949,7 +950,7 @@ def outgoing(ui, repo, dest, opts):
                 ret = min(ret, sub.outgoing(ui, dest, opts))
         return ret
 
-    limit = cmdutil.loglimit(opts)
+    limit = logcmdutil.getlimit(opts)
     o, other = _outgoing(ui, repo, dest, opts)
     if not o:
         cmdutil.outgoinghooks(ui, repo, other, opts, o)
@@ -958,7 +959,7 @@ def outgoing(ui, repo, dest, opts):
     if opts.get('newest_first'):
         o.reverse()
     ui.pager('outgoing')
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     count = 0
     for n in o:
         if limit is not None and count >= limit:

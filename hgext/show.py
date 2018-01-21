@@ -39,6 +39,7 @@ from mercurial import (
     error,
     formatter,
     graphmod,
+    logcmdutil,
     phases,
     pycompat,
     registrar,
@@ -148,7 +149,7 @@ def show(ui, repo, view=None, template=None):
     elif fn._csettopic:
         ref = 'show%s' % fn._csettopic
         spec = formatter.lookuptemplate(ui, ref, template)
-        displayer = cmdutil.changeset_templater(ui, repo, spec, buffered=True)
+        displayer = logcmdutil.changesettemplater(ui, repo, spec, buffered=True)
         return fn(ui, repo, displayer)
     else:
         return fn(ui, repo)
@@ -409,8 +410,8 @@ def showwork(ui, repo, displayer):
     revdag = graphmod.dagwalker(repo, revs)
 
     ui.setconfig('experimental', 'graphshorten', True)
-    cmdutil.displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges,
-                         props={'nodelen': nodelen})
+    logcmdutil.displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges,
+                            props={'nodelen': nodelen})
 
 def extsetup(ui):
     # Alias `hg <prefix><view>` to `hg show <view>`.

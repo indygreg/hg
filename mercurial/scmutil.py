@@ -411,7 +411,7 @@ def intrev(ctx):
 
 def formatchangeid(ctx):
     """Format changectx as '{rev}:{node|formatnode}', which is the default
-    template provided by cmdutil.changeset_templater"""
+    template provided by logcmdutil.changesettemplater"""
     repo = ctx.repo()
     return formatrevnode(repo.ui, intrev(ctx), binnode(ctx))
 

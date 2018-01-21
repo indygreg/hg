@@ -101,6 +101,7 @@ from mercurial import (
     extensions,
     filelog,
     localrepo,
+    logcmdutil,
     match,
     patch,
     pathutil,
@@ -254,7 +255,7 @@ class kwtemplater(object):
         '''Replaces keywords in data with expanded template.'''
         def kwsub(mobj):
             kw = mobj.group(1)
-            ct = cmdutil.makelogtemplater(self.ui, self.repo,
+            ct = logcmdutil.maketemplater(self.ui, self.repo,
                                           self.templates[kw])
             self.ui.pushbuffer()
             ct.show(ctx, root=self.repo.root, file=path)

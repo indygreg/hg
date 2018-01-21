@@ -122,6 +122,23 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
             sub.diff(ui, diffopts, tempnode2, submatch, changes=changes,
                      stat=stat, fp=fp, prefix=prefix)
 
+class changesetdiffer(object):
+    """Generate diff of changeset with pre-configured filtering functions"""
+
+    def _makefilematcher(self, ctx):
+        return scmutil.matchall(ctx.repo())
+
+    def _makehunksfilter(self, ctx):
+        return None
+
+    def showdiff(self, ui, ctx, diffopts, stat=False):
+        repo = ctx.repo()
+        node = ctx.node()
+        prev = ctx.p1().node()
+        diffordiffstat(ui, repo, diffopts, prev, node,
+                       match=self._makefilematcher(ctx), stat=stat,
+                       hunksfilterfn=self._makehunksfilter(ctx))
+
 def changesetlabels(ctx):
     labels = ['log.changeset', 'changeset.%s' % ctx.phasestr()]
     if ctx.obsolete():
@@ -135,13 +152,11 @@ def changesetlabels(ctx):
 class changesetprinter(object):
     '''show changeset information when templating not requested.'''
 
-    def __init__(self, ui, repo, makefilematcher=None, makehunksfilter=None,
-                 diffopts=None, buffered=False):
+    def __init__(self, ui, repo, differ=None, diffopts=None, buffered=False):
         self.ui = ui
         self.repo = repo
         self.buffered = buffered
-        self._makefilematcher = makefilematcher or (lambda ctx: None)
-        self._makehunksfilter = makehunksfilter or (lambda ctx: None)
+        self._differ = differ or changesetdiffer()
         self.diffopts = diffopts or {}
         self.header = {}
         self.hunk = {}
@@ -280,35 +295,23 @@ class changesetprinter(object):
         '''
 
     def _showpatch(self, ctx):
-        matchfn = self._makefilematcher(ctx)
-        hunksfilterfn = self._makehunksfilter(ctx)
-        if not matchfn:
-            return
         stat = self.diffopts.get('stat')
         diff = self.diffopts.get('patch')
         diffopts = patch.diffallopts(self.ui, self.diffopts)
-        node = ctx.node()
-        prev = ctx.p1().node()
         if stat:
-            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                           match=matchfn, stat=True,
-                           hunksfilterfn=hunksfilterfn)
+            self._differ.showdiff(self.ui, ctx, diffopts, stat=True)
         if stat and diff:
             self.ui.write("\n")
         if diff:
-            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                           match=matchfn, stat=False,
-                           hunksfilterfn=hunksfilterfn)
+            self._differ.showdiff(self.ui, ctx, diffopts, stat=False)
         if stat or diff:
             self.ui.write("\n")
 
 class jsonchangeset(changesetprinter):
     '''format changeset information.'''
 
-    def __init__(self, ui, repo, makefilematcher=None, makehunksfilter=None,
-                 diffopts=None, buffered=False):
-        changesetprinter.__init__(self, ui, repo, makefilematcher,
-                                  makehunksfilter, diffopts, buffered)
+    def __init__(self, ui, repo, differ=None, diffopts=None, buffered=False):
+        changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
         self.cache = {}
         self._first = True
 
@@ -383,21 +386,17 @@ class jsonchangeset(changesetprinter):
                               ", ".join('"%s": "%s"' % (j(k), j(v))
                                                         for k, v in copies))
 
-        matchfn = self._makefilematcher(ctx)
         stat = self.diffopts.get('stat')
         diff = self.diffopts.get('patch')
         diffopts = patch.difffeatureopts(self.ui, self.diffopts, git=True)
-        node, prev = ctx.node(), ctx.p1().node()
-        if matchfn and stat:
+        if stat:
             self.ui.pushbuffer()
-            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                           match=matchfn, stat=True)
+            self._differ.showdiff(self.ui, ctx, diffopts, stat=True)
             self.ui.write((',\n  "diffstat": "%s"')
                           % j(self.ui.popbuffer()))
-        if matchfn and diff:
+        if diff:
             self.ui.pushbuffer()
-            diffordiffstat(self.ui, self.repo, diffopts, prev, node,
-                           match=matchfn, stat=False)
+            self._differ.showdiff(self.ui, ctx, diffopts, stat=False)
             self.ui.write((',\n  "diff": "%s"') % j(self.ui.popbuffer()))
 
         self.ui.write("\n }")
@@ -413,10 +412,9 @@ class changesettemplater(changesetprinter):
 
     # Arguments before "buffered" used to be positional. Consider not
     # adding/removing arguments before "buffered" to not break callers.
-    def __init__(self, ui, repo, tmplspec, makefilematcher=None,
-                 makehunksfilter=None, diffopts=None, buffered=False):
-        changesetprinter.__init__(self, ui, repo, makefilematcher,
-                                  makehunksfilter, diffopts, buffered)
+    def __init__(self, ui, repo, tmplspec, differ=None, diffopts=None,
+                 buffered=False):
+        changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
         tres = formatter.templateresources(ui, repo)
         self.t = formatter.loadtemplater(ui, tmplspec,
                                          defaults=templatekw.keywords,
@@ -533,8 +531,7 @@ def maketemplater(ui, repo, tmpl, buffered=False):
     spec = templatespec(tmpl, None)
     return changesettemplater(ui, repo, spec, buffered=buffered)
 
-def changesetdisplayer(ui, repo, opts, makefilematcher=None,
-                       makehunksfilter=None, buffered=False):
+def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     """show one changeset using template or regular display.
 
     Display format will be the first non-empty hit of:
@@ -545,12 +542,7 @@ def changesetdisplayer(ui, repo, opts, makefilematcher=None,
     If all of these values are either the unset or the empty string,
     regular display via changesetprinter() is done.
     """
-    # options
-    if not makefilematcher and (opts.get('patch') or opts.get('stat')):
-        def makefilematcher(ctx):
-            return scmutil.matchall(repo)
-
-    postargs = (makefilematcher, makehunksfilter, opts, buffered)
+    postargs = (differ, opts, buffered)
     if opts.get('template') == 'json':
         return jsonchangeset(ui, repo, *postargs)
 
@@ -726,10 +718,9 @@ def _initialrevs(repo, opts):
     return revs
 
 def getrevs(repo, pats, opts):
-    """Return (revs, filematcher) where revs is a smartset
+    """Return (revs, differ) where revs is a smartset
 
-    filematcher is a callable taking a changectx and returning a match
-    objects filtering the files to be detailed when displaying the revision.
+    differ is a changesetdiffer with pre-configured file matcher.
     """
     follow = opts.get('follow') or opts.get('follow_first')
     followfirst = opts.get('follow_first')
@@ -762,7 +753,10 @@ def getrevs(repo, pats, opts):
         revs = matcher(repo, revs)
     if limit is not None:
         revs = revs.slice(0, limit)
-    return revs, filematcher
+
+    differ = changesetdiffer()
+    differ._makefilematcher = filematcher
+    return revs, differ
 
 def _parselinerangeopt(repo, opts):
     """Parse --line-range log option and return a list of tuples (filename,
@@ -785,16 +779,13 @@ def _parselinerangeopt(repo, opts):
     return linerangebyfname
 
 def getlinerangerevs(repo, userrevs, opts):
-    """Return (revs, filematcher, hunksfilter).
+    """Return (revs, differ).
 
     "revs" are revisions obtained by processing "line-range" log options and
     walking block ancestors of each specified file/line-range.
 
-    "filematcher(ctx) -> match" is a factory function returning a match object
-    for a given revision for file patterns specified in --line-range option.
-
-    "hunksfilter(ctx) -> filterfn(fctx, hunks)" is a factory function
-    returning a hunks filtering function.
+    "differ" is a changesetdiffer with pre-configured file matcher and hunks
+    filter.
     """
     wctx = repo[None]
 
@@ -843,7 +834,10 @@ def getlinerangerevs(repo, userrevs, opts):
 
     revs = sorted(linerangesbyrev, reverse=True)
 
-    return revs, filematcher, hunksfilter
+    differ = changesetdiffer()
+    differ._makefilematcher = filematcher
+    differ._makehunksfilter = hunksfilter
+    return revs, differ
 
 def _graphnodeformatter(ui, displayer):
     spec = ui.config('ui', 'graphnodetemplate')
@@ -910,7 +904,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
             lines = []
     displayer.close()
 
-def graphlog(ui, repo, revs, filematcher, opts):
+def graphlog(ui, repo, revs, differ, opts):
     # Parameters are identical to log command ones
     revdag = graphmod.dagwalker(repo, revs)
 
@@ -922,8 +916,7 @@ def graphlog(ui, repo, revs, filematcher, opts):
         getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
-    displayer = changesetdisplayer(ui, repo, opts, makefilematcher=filematcher,
-                                   buffered=True)
+    displayer = changesetdisplayer(ui, repo, opts, differ, buffered=True)
     displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed)
 
 def checkunsupportedgraphflags(pats, opts):

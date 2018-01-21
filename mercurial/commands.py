@@ -3419,17 +3419,15 @@ def log(ui, repo, *pats, **opts):
         )
 
     repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
-    revs, filematcher = logcmdutil.getrevs(repo, pats, opts)
-    hunksfilter = None
+    revs, differ = logcmdutil.getrevs(repo, pats, opts)
 
     if opts.get('graph'):
         if linerange:
             raise error.Abort(_('graph not supported with line range patterns'))
-        return logcmdutil.graphlog(ui, repo, revs, filematcher, opts)
+        return logcmdutil.graphlog(ui, repo, revs, differ, opts)
 
     if linerange:
-        revs, filematcher, hunksfilter = logcmdutil.getlinerangerevs(
-            repo, revs, opts)
+        revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
 
     getrenamed = None
     if opts.get('copies'):
@@ -3439,9 +3437,7 @@ def log(ui, repo, *pats, **opts):
         getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
-    displayer = logcmdutil.changesetdisplayer(ui, repo, opts,
-                                              makefilematcher=filematcher,
-                                              makehunksfilter=hunksfilter,
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts, differ,
                                               buffered=True)
     for rev in revs:
         ctx = repo[rev]

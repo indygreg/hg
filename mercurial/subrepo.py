@@ -398,15 +398,35 @@ def _abssource(repo, push=False, abort=True):
             parent.path = posixpath.normpath(parent.path)
             return bytes(parent)
     else: # recursion reached top repo
+        path = None
         if util.safehasattr(repo, '_subtoppath'):
-            return repo._subtoppath
-        if push and repo.ui.config('paths', 'default-push'):
-            return repo.ui.config('paths', 'default-push')
-        if repo.ui.config('paths', 'default'):
-            return repo.ui.config('paths', 'default')
-        if repo.shared():
-            # chop off the .hg component to get the default path form
+            path = repo._subtoppath
+        elif push and repo.ui.config('paths', 'default-push'):
+            path = repo.ui.config('paths', 'default-push')
+        elif repo.ui.config('paths', 'default'):
+            path = repo.ui.config('paths', 'default')
+        elif repo.shared():
+            # chop off the .hg component to get the default path form.  This has
+            # already run through vfsmod.vfs(..., realpath=True), so it doesn't
+            # have problems with 'C:'
             return os.path.dirname(repo.sharedpath)
+        if path:
+            # issue5770: 'C:\' and 'C:' are not equivalent paths.  The former is
+            # as expected: an absolute path to the root of the C: drive.  The
+            # latter is a relative path, and works like so:
+            #
+            #   C:\>cd C:\some\path
+            #   C:\>D:
+            #   D:\>python -c "import os; print os.path.abspath('C:')"
+            #   C:\some\path
+            #
+            #   D:\>python -c "import os; print os.path.abspath('C:relative')"
+            #   C:\some\path\relative
+            if util.hasdriveletter(path):
+                if len(path) == 2 or path[2:3] not in br'\/':
+                    path = os.path.abspath(path)
+            return path
+
     if abort:
         raise error.Abort(_("default path for subrepository not found"))
 

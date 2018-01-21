@@ -173,8 +173,76 @@ Add some changes with two diff hunks
   +4
   
   $ hg log -f --graph -L foo,5:7 -p
-  abort: graph not supported with line range patterns
-  [255]
+  @  changeset:   5:cfdf972b3971
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     foo: 3 -> 3+ and 11+ -> 11-; bar: a -> a+
+  |
+  |  diff --git a/foo b/foo
+  |  --- a/foo
+  |  +++ b/foo
+  |  @@ -4,7 +4,7 @@
+  |   0
+  |    1
+  |   2+
+  |  -3
+  |  +3+
+  |   4
+  |   5
+  |   6
+  |
+  o  changeset:   4:eaec41c1a0c9
+  :  user:        test
+  :  date:        Thu Jan 01 00:00:00 1970 +0000
+  :  summary:     11 -> 11+; leading space before "1"
+  :
+  :  diff --git a/foo b/foo
+  :  --- a/foo
+  :  +++ b/foo
+  :  @@ -2,7 +2,7 @@
+  :   0
+  :   0
+  :   0
+  :  -1
+  :  + 1
+  :   2+
+  :   3
+  :   4
+  :
+  o  changeset:   2:63a884426fd0
+  :  user:        test
+  :  date:        Thu Jan 01 00:00:00 1970 +0000
+  :  summary:     2 -> 2+; added bar
+  :
+  :  diff --git a/foo b/foo
+  :  --- a/foo
+  :  +++ b/foo
+  :  @@ -3,6 +3,6 @@
+  :   0
+  :   0
+  :   1
+  :  -2
+  :  +2+
+  :   3
+  :   4
+  :
+  o  changeset:   0:5ae1f82b9a00
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     init
+  
+     diff --git a/foo b/foo
+     new file mode 100644
+     --- /dev/null
+     +++ b/foo
+     @@ -0,0 +1,5 @@
+     +0
+     +1
+     +2
+     +3
+     +4
+  
 
 With --template.
 

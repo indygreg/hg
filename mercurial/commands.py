@@ -3420,11 +3420,6 @@ def log(ui, repo, *pats, **opts):
 
     repo = scmutil.unhidehashlikerevs(repo, opts.get('rev'), 'nowarn')
     revs, differ = logcmdutil.getrevs(repo, pats, opts)
-
-    if opts.get('graph'):
-        if linerange:
-            raise error.Abort(_('graph not supported with line range patterns'))
-
     if linerange:
         revs, differ = logcmdutil.getlinerangerevs(repo, revs, opts)
 

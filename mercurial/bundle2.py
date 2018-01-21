@@ -183,7 +183,7 @@ _fpartid = '>I'
 _fpayloadsize = '>i'
 _fpartparamcount = '>BB'
 
-preferedchunksize = 4096
+preferedchunksize = 32768
 
 _parttypeforbidden = re.compile('[^a-zA-Z0-9_:-]')
 

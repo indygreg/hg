@@ -48,13 +48,13 @@ stringio = util.stringio
 
 loglimit = logcmdutil.loglimit
 diffordiffstat = logcmdutil.diffordiffstat
-_changesetlabels = logcmdutil._changesetlabels
-changeset_printer = logcmdutil.changeset_printer
+_changesetlabels = logcmdutil.changesetlabels
+changeset_printer = logcmdutil.changesetprinter
 jsonchangeset = logcmdutil.jsonchangeset
-changeset_templater = logcmdutil.changeset_templater
+changeset_templater = logcmdutil.changesettemplater
 logtemplatespec = logcmdutil.logtemplatespec
 makelogtemplater = logcmdutil.makelogtemplater
-show_changeset = logcmdutil.show_changeset
+show_changeset = logcmdutil.changesetdisplayer
 getlogrevs = logcmdutil.getlogrevs
 getloglinerangerevs = logcmdutil.getloglinerangerevs
 displaygraph = logcmdutil.displaygraph

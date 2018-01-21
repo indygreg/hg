@@ -109,7 +109,7 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
             sub.diff(ui, diffopts, tempnode2, submatch, changes=changes,
                      stat=stat, fp=fp, prefix=prefix)
 
-def _changesetlabels(ctx):
+def changesetlabels(ctx):
     labels = ['log.changeset', 'changeset.%s' % ctx.phasestr()]
     if ctx.obsolete():
         labels.append('changeset.obsolete')
@@ -119,7 +119,7 @@ def _changesetlabels(ctx):
             labels.append('instability.%s' % instability)
     return ' '.join(labels)
 
-class changeset_printer(object):
+class changesetprinter(object):
     '''show changeset information when templating not requested.'''
 
     def __init__(self, ui, repo, matchfn, diffopts, buffered):
@@ -172,7 +172,7 @@ class changeset_printer(object):
 
         columns = self._columns
         self.ui.write(columns['changeset'] % scmutil.formatchangeid(ctx),
-                      label=_changesetlabels(ctx))
+                      label=changesetlabels(ctx))
 
         # branches are shown first before any other names due to backwards
         # compatibility
@@ -287,11 +287,11 @@ class changeset_printer(object):
             if stat or diff:
                 self.ui.write("\n")
 
-class jsonchangeset(changeset_printer):
+class jsonchangeset(changesetprinter):
     '''format changeset information.'''
 
     def __init__(self, ui, repo, matchfn, diffopts, buffered):
-        changeset_printer.__init__(self, ui, repo, matchfn, diffopts, buffered)
+        changesetprinter.__init__(self, ui, repo, matchfn, diffopts, buffered)
         self.cache = {}
         self._first = True
 
@@ -386,12 +386,12 @@ class jsonchangeset(changeset_printer):
 
         self.ui.write("\n }")
 
-class changeset_templater(changeset_printer):
+class changesettemplater(changesetprinter):
     '''format changeset information.
 
     Note: there are a variety of convenience functions to build a
-    changeset_templater for common cases. See functions such as:
-    makelogtemplater, show_changeset, buildcommittemplate, or other
+    changesettemplater for common cases. See functions such as:
+    makelogtemplater, changesetdisplayer, buildcommittemplate, or other
     functions that use changesest_templater.
     '''
 
@@ -401,7 +401,7 @@ class changeset_templater(changeset_printer):
                  buffered=False):
         diffopts = diffopts or {}
 
-        changeset_printer.__init__(self, ui, repo, matchfn, diffopts, buffered)
+        changesetprinter.__init__(self, ui, repo, matchfn, diffopts, buffered)
         tres = formatter.templateresources(ui, repo)
         self.t = formatter.loadtemplater(ui, tmplspec,
                                          defaults=templatekw.keywords,
@@ -442,7 +442,7 @@ class changeset_templater(changeset_printer):
             if not self.footer:
                 self.footer = ""
             self.footer += templater.stringify(self.t(self._parts['docfooter']))
-        return super(changeset_templater, self).close()
+        return super(changesettemplater, self).close()
 
     def _show(self, ctx, copies, matchfn, hunksfilterfn, props):
         '''show a single changeset or file revision'''
@@ -513,12 +513,12 @@ def _lookuplogtemplate(ui, tmpl, style):
     return formatter.lookuptemplate(ui, 'changeset', tmpl)
 
 def makelogtemplater(ui, repo, tmpl, buffered=False):
-    """Create a changeset_templater from a literal template 'tmpl'
+    """Create a changesettemplater from a literal template 'tmpl'
     byte-string."""
     spec = logtemplatespec(tmpl, None)
-    return changeset_templater(ui, repo, spec, buffered=buffered)
+    return changesettemplater(ui, repo, spec, buffered=buffered)
 
-def show_changeset(ui, repo, opts, buffered=False):
+def changesetdisplayer(ui, repo, opts, buffered=False):
     """show one changeset using template or regular display.
 
     Display format will be the first non-empty hit of:
@@ -527,7 +527,7 @@ def show_changeset(ui, repo, opts, buffered=False):
     3. [ui] setting 'logtemplate'
     4. [ui] setting 'style'
     If all of these values are either the unset or the empty string,
-    regular display via changeset_printer() is done.
+    regular display via changesetprinter() is done.
     """
     # options
     match = None
@@ -540,9 +540,9 @@ def show_changeset(ui, repo, opts, buffered=False):
     spec = _lookuplogtemplate(ui, opts.get('template'), opts.get('style'))
 
     if not spec.ref and not spec.tmpl and not spec.mapfile:
-        return changeset_printer(ui, repo, match, opts, buffered)
+        return changesetprinter(ui, repo, match, opts, buffered)
 
-    return changeset_templater(ui, repo, spec, match, opts, buffered)
+    return changesettemplater(ui, repo, spec, match, opts, buffered)
 
 def _makelogmatcher(repo, revs, pats, opts):
     """Build matcher and expanded patterns from log options
@@ -841,7 +841,7 @@ def _graphnodeformatter(ui, displayer):
 
     spec = templater.unquotestring(spec)
     tres = formatter.templateresources(ui)
-    if isinstance(displayer, changeset_templater):
+    if isinstance(displayer, changesettemplater):
         tres['cache'] = displayer.cache  # reuse cache of slow templates
     templ = formatter.maketemplater(ui, spec, defaults=templatekw.keywords,
                                     resources=tres)
@@ -915,7 +915,7 @@ def graphlog(ui, repo, revs, filematcher, opts):
         getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')
-    displayer = show_changeset(ui, repo, opts, buffered=True)
+    displayer = changesetdisplayer(ui, repo, opts, buffered=True)
     displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges, getrenamed,
                  filematcher)
 

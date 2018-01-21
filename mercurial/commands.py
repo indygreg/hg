@@ -3428,19 +3428,8 @@ def log(ui, repo, *pats, **opts):
         return logcmdutil.graphlog(ui, repo, revs, filematcher, opts)
 
     if linerange:
-        revs, lrfilematcher, hunksfilter = logcmdutil.getlinerangerevs(
+        revs, filematcher, hunksfilter = logcmdutil.getlinerangerevs(
             repo, revs, opts)
-
-        if filematcher is not None:
-            basefilematcher = filematcher
-
-            def filematcher(rev):
-                files = (basefilematcher(rev).files()
-                         + lrfilematcher(rev).files())
-                return scmutil.matchfiles(repo, files)
-
-        elif filematcher is None:
-            filematcher = lrfilematcher
 
     getrenamed = None
     if opts.get('copies'):

@@ -66,9 +66,9 @@ Test fileset
 Test template output
 
   $ hg --cwd tmp cat ../b ../c -T '== {path} ({abspath}) ==\n{data}'
-  == ../b (b) == (glob)
+  == ../b (b) ==
   1
-  == ../c (c) == (glob)
+  == ../c (c) ==
   3
 
   $ hg cat b c -Tjson --output -
@@ -119,3 +119,13 @@ Environment variable visibility can be explicit
   $ PATTERN='t4' hg log -r '.' -T "{envvars % '{key} -> {value}\n'}" \
   >                 --config "experimental.exportableenviron=PATTERN"
   PATTERN -> t4
+
+Test behavior of output when directory structure does not already exist
+
+  $ mkdir foo
+  $ echo a > foo/a
+  $ hg add foo/a
+  $ hg commit -qm "add foo/a"
+  $ hg cat --output "output/%p" foo/a
+  $ cat output/foo/a
+  a

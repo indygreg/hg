@@ -92,6 +92,7 @@ import threading
 
 from .i18n import _
 from . import (
+    node,
     pycompat,
     urllibcompat,
     util,
@@ -322,7 +323,7 @@ class KeepAliveHandler(object):
                 data = urllibcompat.getdata(req)
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    **skipheaders)
+                    **pycompat.strkwargs(skipheaders))
                 if 'content-type' not in headers:
                     h.putheader('Content-type',
                                 'application/x-www-form-urlencoded')
@@ -331,7 +332,7 @@ class KeepAliveHandler(object):
             else:
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    **skipheaders)
+                    **pycompat.strkwargs(skipheaders))
         except socket.error as err:
             raise urlerr.urlerror(err)
         for k, v in headers.items():
@@ -366,8 +367,8 @@ class HTTPResponse(httplib.HTTPResponse):
     def __init__(self, sock, debuglevel=0, strict=0, method=None):
         extrakw = {}
         if not pycompat.ispy3:
-            extrakw['strict'] = True
-            extrakw['buffering'] = True
+            extrakw[r'strict'] = True
+            extrakw[r'buffering'] = True
         httplib.HTTPResponse.__init__(self, sock, debuglevel=debuglevel,
                                       method=method, **extrakw)
         self.fileno = sock.fileno
@@ -607,7 +608,7 @@ def continuity(url):
     foo = fo.read()
     fo.close()
     m = md5(foo)
-    print(format % ('normal urllib', m.hexdigest()))
+    print(format % ('normal urllib', node.hex(m.digest())))
 
     # now install the keepalive handler and try again
     opener = urlreq.buildopener(HTTPHandler())
@@ -617,7 +618,7 @@ def continuity(url):
     foo = fo.read()
     fo.close()
     m = md5(foo)
-    print(format % ('keepalive read', m.hexdigest()))
+    print(format % ('keepalive read', node.hex(m.digest())))
 
     fo = urlreq.urlopen(url)
     foo = ''
@@ -629,7 +630,7 @@ def continuity(url):
             break
     fo.close()
     m = md5(foo)
-    print(format % ('keepalive readline', m.hexdigest()))
+    print(format % ('keepalive readline', node.hex(m.digest())))
 
 def comp(N, url):
     print('  making %i connections to:\n  %s' % (N, url))

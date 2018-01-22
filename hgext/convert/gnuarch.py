@@ -7,7 +7,7 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
-import email
+import email.parser as emailparser
 import os
 import shutil
 import stat
@@ -36,8 +36,8 @@ class gnuarch_source(common.converter_source, common.commandline):
             self.ren_files = {}
             self.ren_dirs = {}
 
-    def __init__(self, ui, path, revs=None):
-        super(gnuarch_source, self).__init__(ui, path, revs=revs)
+    def __init__(self, ui, repotype, path, revs=None):
+        super(gnuarch_source, self).__init__(ui, repotype, path, revs=revs)
 
         if not os.path.exists(os.path.join(path, '{arch}')):
             raise common.NoRepo(_("%s does not look like a GNU Arch repository")
@@ -63,7 +63,7 @@ class gnuarch_source(common.converter_source, common.commandline):
         self.changes = {}
         self.parents = {}
         self.tags = {}
-        self.catlogparser = email.Parser.Parser()
+        self.catlogparser = emailparser.Parser()
         self.encoding = encoding.encoding
         self.archives = []
 

@@ -1100,12 +1100,11 @@ def extdatasource(repo, source):
     finally:
         if proc:
             proc.communicate()
-            if proc.returncode != 0:
-                # not an error so 'cmd | grep' can be empty
-                repo.ui.debug("extdata command '%s' %s\n"
-                              % (cmd, util.explainexit(proc.returncode)[0]))
         if src:
             src.close()
+    if proc and proc.returncode != 0:
+        raise error.Abort(_("extdata command '%s' failed: %s")
+                          % (cmd, util.explainexit(proc.returncode)[0]))
 
     return data
 
@@ -1223,6 +1222,9 @@ _reportnewcssource = [
     'unbundle',
 ]
 
+# A marker that tells the evolve extension to suppress its own reporting
+_reportstroubledchangesets = True
+
 def registersummarycallback(repo, otr, txnname=''):
     """register a callback to issue a summary after the transaction is closed
     """
@@ -1245,7 +1247,7 @@ def registersummarycallback(repo, otr, txnname=''):
             if filtername:
                 repo = repo.filtered(filtername)
             func(repo, tr)
-        newcat = '%2i-txnreport' % len(categories)
+        newcat = '%02i-txnreport' % len(categories)
         otr.addpostclose(newcat, wrapped)
         categories.append(newcat)
         return wrapped
@@ -1258,11 +1260,38 @@ def registersummarycallback(repo, otr, txnname=''):
                 repo.ui.status(_('obsoleted %i changesets\n')
                                % len(obsoleted))
 
+    if (obsolete.isenabled(repo, obsolete.createmarkersopt) and
+        repo.ui.configbool('experimental', 'evolution.report-instabilities')):
+        instabilitytypes = [
+            ('orphan', 'orphan'),
+            ('phase-divergent', 'phasedivergent'),
+            ('content-divergent', 'contentdivergent'),
+        ]
+
+        def getinstabilitycounts(repo):
+            filtered = repo.changelog.filteredrevs
+            counts = {}
+            for instability, revset in instabilitytypes:
+                counts[instability] = len(set(obsolete.getrevs(repo, revset)) -
+                                          filtered)
+            return counts
+
+        oldinstabilitycounts = getinstabilitycounts(repo)
+        @reportsummary
+        def reportnewinstabilities(repo, tr):
+            newinstabilitycounts = getinstabilitycounts(repo)
+            for instability, revset in instabilitytypes:
+                delta = (newinstabilitycounts[instability] -
+                         oldinstabilitycounts[instability])
+                if delta > 0:
+                    repo.ui.warn(_('%i new %s changesets\n') %
+                                 (delta, instability))
+
     if txmatch(_reportnewcssource):
         @reportsummary
         def reportnewcs(repo, tr):
             """Report the range of new revisions pulled/unbundled."""
-            newrevs = list(tr.changes.get('revs', set()))
+            newrevs = tr.changes.get('revs', xrange(0, 0))
             if not newrevs:
                 return
 
@@ -1279,3 +1308,108 @@ def registersummarycallback(repo, otr, txnname=''):
             else:
                 revrange = '%s:%s' % (minrev, maxrev)
             repo.ui.status(_('new changesets %s\n') % revrange)
+
+def nodesummaries(repo, nodes, maxnumnodes=4):
+    if len(nodes) <= maxnumnodes or repo.ui.verbose:
+        return ' '.join(short(h) for h in nodes)
+    first = ' '.join(short(h) for h in nodes[:maxnumnodes])
+    return _("%s and %d others") % (first, len(nodes) - maxnumnodes)
+
+def enforcesinglehead(repo, tr, desc):
+    """check that no named branch has multiple heads"""
+    if desc in ('strip', 'repair'):
+        # skip the logic during strip
+        return
+    visible = repo.filtered('visible')
+    # possible improvement: we could restrict the check to affected branch
+    for name, heads in visible.branchmap().iteritems():
+        if len(heads) > 1:
+            msg = _('rejecting multiple heads on branch "%s"')
+            msg %= name
+            hint = _('%d heads: %s')
+            hint %= (len(heads), nodesummaries(repo, heads))
+            raise error.Abort(msg, hint=hint)
+
+def wrapconvertsink(sink):
+    """Allow extensions to wrap the sink returned by convcmd.convertsink()
+    before it is used, whether or not the convert extension was formally loaded.
+    """
+    return sink
+
+def unhidehashlikerevs(repo, specs, hiddentype):
+    """parse the user specs and unhide changesets whose hash or revision number
+    is passed.
+
+    hiddentype can be: 1) 'warn': warn while unhiding changesets
+                       2) 'nowarn': don't warn while unhiding changesets
+
+    returns a repo object with the required changesets unhidden
+    """
+    if not repo.filtername or not repo.ui.configbool('experimental',
+                                                     'directaccess'):
+        return repo
+
+    if repo.filtername not in ('visible', 'visible-hidden'):
+        return repo
+
+    symbols = set()
+    for spec in specs:
+        try:
+            tree = revsetlang.parse(spec)
+        except error.ParseError: # will be reported by scmutil.revrange()
+            continue
+
+        symbols.update(revsetlang.gethashlikesymbols(tree))
+
+    if not symbols:
+        return repo
+
+    revs = _getrevsfromsymbols(repo, symbols)
+
+    if not revs:
+        return repo
+
+    if hiddentype == 'warn':
+        unfi = repo.unfiltered()
+        revstr = ", ".join([pycompat.bytestr(unfi[l]) for l in revs])
+        repo.ui.warn(_("warning: accessing hidden changesets for write "
+                       "operation: %s\n") % revstr)
+
+    # we have to use new filtername to separate branch/tags cache until we can
+    # disbale these cache when revisions are dynamically pinned.
+    return repo.filtered('visible-hidden', revs)
+
+def _getrevsfromsymbols(repo, symbols):
+    """parse the list of symbols and returns a set of revision numbers of hidden
+    changesets present in symbols"""
+    revs = set()
+    unfi = repo.unfiltered()
+    unficl = unfi.changelog
+    cl = repo.changelog
+    tiprev = len(unficl)
+    pmatch = unficl._partialmatch
+    allowrevnums = repo.ui.configbool('experimental', 'directaccess.revnums')
+    for s in symbols:
+        try:
+            n = int(s)
+            if n <= tiprev:
+                if not allowrevnums:
+                    continue
+                else:
+                    if n not in cl:
+                        revs.add(n)
+                    continue
+        except ValueError:
+            pass
+
+        try:
+            s = pmatch(s)
+        except error.LookupError:
+            s = None
+
+        if s is not None:
+            rev = unficl.rev(s)
+            if rev not in cl:
+                revs.add(rev)
+
+    return revs

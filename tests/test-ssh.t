@@ -389,7 +389,7 @@ parameters:
   73649e48688a
 
   $ hg id --ssh "sh ssh.sh" "ssh://user@dummy/a'repo"
-  remote: Illegal repository "$TESTTMP/a'repo" (glob)
+  remote: Illegal repository "$TESTTMP/a'repo"
   abort: no suitable response from remote hg!
   [255]
 
@@ -478,26 +478,41 @@ stderr from remote commands should be printed before stdout from local code (iss
 
 debug output
 
-  $ hg pull --debug ssh://user@dummy/remote
+  $ hg pull --debug ssh://user@dummy/remote --config devel.debug.peer-request=yes
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
+  devel-peer-request: hello
   sending hello command
+  devel-peer-request: between
+  devel-peer-request:   pairs: 81 bytes
   sending between command
-  remote: 372
-  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Aphases%3Dheads%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: 384
+  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
   remote: 1
   query 1; heads
+  devel-peer-request: batch
+  devel-peer-request:   cmds: 141 bytes
   sending batch command
   searching for changes
   all remote heads known locally
   no changes found
+  devel-peer-request: getbundle
+  devel-peer-request:   bookmarks: 1 bytes
+  devel-peer-request:   bundlecaps: 247 bytes
+  devel-peer-request:   cg: 1 bytes
+  devel-peer-request:   common: 122 bytes
+  devel-peer-request:   heads: 122 bytes
+  devel-peer-request:   listkeys: 9 bytes
+  devel-peer-request:   phases: 1 bytes
   sending getbundle command
   bundle2-input-bundle: with-transaction
+  bundle2-input-part: "bookmarks" supported
+  bundle2-input-part: total payload size 26
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: total payload size 45
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 72
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
 
   $ cd ..
@@ -578,3 +593,37 @@ abort during pull is properly reported as such
   remote: abort: this is an exercise
   abort: pull failed on remote
   [255]
+
+abort with no error hint when there is a ssh problem when pulling
+
+  $ hg pull ssh://brokenrepository -e "\"$PYTHON\" \"$TESTDIR/dummyssh\""
+  pulling from ssh://brokenrepository/
+  abort: no suitable response from remote hg!
+  [255]
+
+abort with configured error hint when there is a ssh problem when pulling
+
+  $ hg pull ssh://brokenrepository -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" \
+  > --config ui.ssherrorhint="Please see http://company/internalwiki/ssh.html"
+  pulling from ssh://brokenrepository/
+  abort: no suitable response from remote hg!
+  (Please see http://company/internalwiki/ssh.html)
+  [255]
+
+test that custom environment is passed down to ssh executable
+  $ cat >>dumpenv <<EOF
+  > #! /bin/sh
+  > echo \$VAR >&2
+  > EOF
+  $ chmod +x dumpenv
+  $ hg pull ssh://something --config ui.ssh="sh dumpenv"
+  pulling from ssh://something/
+  remote: 
+  abort: no suitable response from remote hg!
+  [255]
+  $ hg pull ssh://something --config ui.ssh="sh dumpenv" --config sshenv.VAR=17
+  pulling from ssh://something/
+  remote: 17
+  abort: no suitable response from remote hg!
+  [255]
+

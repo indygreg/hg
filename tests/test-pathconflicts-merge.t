@@ -1,3 +1,5 @@
+#require symlink
+
 Path conflict checking is currently disabled by default because of issue5716.
 Turn it on for this test.
 
@@ -48,10 +50,10 @@ Merge - local file conflicts with remote directory
   a/b: path conflict - a file or link has the same name as a directory
   the local file has been renamed to a/b~0ed027b96f31
   resolve manually then use 'hg resolve --mark a/b'
-  moving a/b to a/b~0ed027b96f31 (glob)
+  moving a/b to a/b~0ed027b96f31
   getting a/b/c/d
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg status
   M a/b/c/d
@@ -75,7 +77,7 @@ Merge - local symlink conflicts with remote directory
   the local file has been renamed to a/b~2ea68033e3be
   resolve manually then use 'hg resolve --mark a/b'
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg status
   M a/b/c/d
@@ -103,7 +105,7 @@ Merge - local directory conflicts with remote file or link
   the remote file has been renamed to a/b~0ed027b96f31
   resolve manually then use 'hg resolve --mark a/b'
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg status
   A a/b~0ed027b96f31
@@ -126,7 +128,7 @@ Merge - local directory conflicts with remote file or link
   the remote file has been renamed to a/b~2ea68033e3be
   resolve manually then use 'hg resolve --mark a/b'
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg mv a/b~2ea68033e3be a/b.old
   $ readlink.py a/b.old

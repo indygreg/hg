@@ -30,7 +30,7 @@ test with the rename on the remote side
   merging foo and baz to baz
   merging bar failed!
   1 files updated, 1 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg resolve -l
   U bar
@@ -44,7 +44,7 @@ test with the rename on the local side
   merging baz and foo to baz
   merging bar failed!
   1 files updated, 1 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
 show unresolved

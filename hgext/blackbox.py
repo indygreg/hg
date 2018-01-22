@@ -44,6 +44,7 @@ from mercurial.i18n import _
 from mercurial.node import hex
 
 from mercurial import (
+    encoding,
     registrar,
     ui as uimod,
     util,
@@ -129,6 +130,11 @@ def wrapui(ui):
         def track(self):
             return self.configlist('blackbox', 'track')
 
+        def debug(self, *msg, **opts):
+            super(blackboxui, self).debug(*msg, **opts)
+            if self.debugflag:
+                self.log('debug', '%s', ''.join(msg))
+
         def log(self, event, *msg, **opts):
             global lastui
             super(blackboxui, self).log(event, *msg, **opts)
@@ -182,7 +188,7 @@ def wrapui(ui):
                     fp.write(fmt % args)
             except (IOError, OSError) as err:
                 self.debug('warning: cannot write to blackbox.log: %s\n' %
-                           err.strerror)
+                           encoding.strtolocal(err.strerror))
                 # do not restore _bbinlog intentionally to avoid failed
                 # logging again
             else:
@@ -226,7 +232,7 @@ def blackbox(ui, repo, *revs, **opts):
     if not repo.vfs.exists('blackbox.log'):
         return
 
-    limit = opts.get('limit')
+    limit = opts.get(r'limit')
     fp = repo.vfs('blackbox.log', 'r')
     lines = fp.read().split('\n')
 

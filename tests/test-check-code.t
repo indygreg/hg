@@ -15,7 +15,6 @@ New errors are not allowed. Warnings are strongly discouraged.
   Skipping i18n/polib.py it has no-che?k-code (glob)
   Skipping mercurial/httpclient/__init__.py it has no-che?k-code (glob)
   Skipping mercurial/httpclient/_readers.py it has no-che?k-code (glob)
-  Skipping mercurial/selectors2.py it has no-che?k-code (glob)
   Skipping mercurial/statprof.py it has no-che?k-code (glob)
   Skipping tests/badserverext.py it has no-che?k-code (glob)
 
@@ -44,6 +43,7 @@ Prevent adding new files in the root directory accidentally.
   .hgignore
   .hgsigs
   .hgtags
+  .jshintrc
   CONTRIBUTING
   CONTRIBUTORS
   COPYING

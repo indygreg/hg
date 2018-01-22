@@ -20,6 +20,7 @@
 #include <windows.h>
 #else
 #include <dirent.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -1111,6 +1112,43 @@ static PyObject *getfstype(PyObject *self, PyObject *args)
 }
 #endif /* defined(HAVE_LINUX_STATFS) || defined(HAVE_BSD_STATFS) */
 
+#if defined(HAVE_BSD_STATFS)
+/* given a directory path, return filesystem mount point (best-effort) */
+static PyObject *getfsmountpoint(PyObject *self, PyObject *args)
+{
+	const char *path = NULL;
+	struct statfs buf;
+	int r;
+	if (!PyArg_ParseTuple(args, "s", &path))
+		return NULL;
+
+	memset(&buf, 0, sizeof(buf));
+	r = statfs(path, &buf);
+	if (r != 0)
+		return PyErr_SetFromErrno(PyExc_OSError);
+	return Py_BuildValue("s", buf.f_mntonname);
+}
+#endif /* defined(HAVE_BSD_STATFS) */
+
+static PyObject *unblocksignal(PyObject *self, PyObject *args)
+{
+	int sig = 0;
+	int r;
+	if (!PyArg_ParseTuple(args, "i", &sig))
+		return NULL;
+	sigset_t set;
+	r = sigemptyset(&set);
+	if (r != 0)
+		return PyErr_SetFromErrno(PyExc_OSError);
+	r = sigaddset(&set, sig);
+	if (r != 0)
+		return PyErr_SetFromErrno(PyExc_OSError);
+	r = sigprocmask(SIG_UNBLOCK, &set, NULL);
+	if (r != 0)
+		return PyErr_SetFromErrno(PyExc_OSError);
+	Py_RETURN_NONE;
+}
+
 #endif /* ndef _WIN32 */
 
 static PyObject *listdir(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1291,6 +1329,12 @@ static PyMethodDef methods[] = {
 	{"getfstype", (PyCFunction)getfstype, METH_VARARGS,
 	 "get filesystem type (best-effort)\n"},
 #endif
+#if defined(HAVE_BSD_STATFS)
+	{"getfsmountpoint", (PyCFunction)getfsmountpoint, METH_VARARGS,
+	 "get filesystem mount point (best-effort)\n"},
+#endif
+	{"unblocksignal", (PyCFunction)unblocksignal, METH_VARARGS,
+	 "change signal mask to unblock a given signal\n"},
 #endif /* ndef _WIN32 */
 #ifdef __APPLE__
 	{
@@ -1301,7 +1345,7 @@ static PyMethodDef methods[] = {
 	{NULL, NULL}
 };
 
-static const int version = 1;
+static const int version = 3;
 
 #ifdef IS_PY3K
 static struct PyModuleDef osutil_module = {

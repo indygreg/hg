@@ -41,6 +41,7 @@ Uncommit with no commits should fail
 
   $ hg uncommit
   abort: cannot uncommit null changeset
+  (no changeset checked out)
   [255]
 
 Create some commits
@@ -189,6 +190,7 @@ Uncommit in the middle of a stack, does not move bookmark
   $ hg bookmark
      foo                       9:48e5bd7cd583
   $ hg uncommit
+  3 new orphan changesets
   $ hg status
   M files
   A file-abc
@@ -219,6 +221,7 @@ Partial uncommit in the middle, does not move bookmark
   $ hg bookmark
      foo                       9:48e5bd7cd583
   $ hg uncommit file-ab
+  1 new orphan changesets
   $ hg status
   A file-ab
 
@@ -241,21 +244,21 @@ Partial uncommit in the middle, does not move bookmark
   |
   o  11:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
   |
-  | o  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
+  | *  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
   | |
-  | | o  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
+  | | *  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
   | | |
   | | | x  8:83815831694b1271e9f207cb1b79b2b19275edcb files abcde + foo
   | | |/
   | | | x  7:0977fa602c2fd7d8427ed4e7ee15ea13b84c9173 update files for abcde
   | | |/
-  | | o  6:3727deee06f72f5ffa8db792ee299cf39e3e190b new change abcde
+  | | *  6:3727deee06f72f5ffa8db792ee299cf39e3e190b new change abcde
   | | |
   | | | x  5:0c07a3ccda771b25f1cb1edbd02e683723344ef1 new change abcde
   | | |/
   | | | x  4:6c4fd43ed714e7fcd8adbaa7b16c953c2e985b60 added file-abcde
   | | |/
-  | | o  3:6db330d65db434145c0b59d291853e9a84719b24 added file-abcd
+  | | *  3:6db330d65db434145c0b59d291853e9a84719b24 added file-abcd
   | | |
   | | x  2:abf2df566fc193b3ac34d946e63c1583e4d4732b added file-abc
   | |/

@@ -28,7 +28,6 @@ LARGEFILES_REQUIRED_MSG = ('\nThis repository uses the largefiles extension.'
                            'file.\n')
 
 # these will all be replaced by largefiles.uisetup
-capabilitiesorig = None
 ssholdcallstream = None
 httpoldcallstream = None
 
@@ -76,7 +75,7 @@ def getlfile(repo, proto, sha):
         yield '%d\n' % length
         for chunk in util.filechunkiter(f):
             yield chunk
-    return wireproto.streamres(gen=generator())
+    return wireproto.streamres_legacy(gen=generator())
 
 def statlfile(repo, proto, sha):
     '''Server command for checking if a largefile is present - returns '2\n' if
@@ -161,9 +160,11 @@ def wirereposetup(ui, repo):
     repo.__class__ = lfileswirerepository
 
 # advertise the largefiles=serve capability
-def capabilities(repo, proto):
-    '''Wrap server command to announce largefile server capability'''
-    return capabilitiesorig(repo, proto) + ' largefiles=serve'
+def _capabilities(orig, repo, proto):
+    '''announce largefile server capability'''
+    caps = orig(repo, proto)
+    caps.append('largefiles=serve')
+    return caps
 
 def heads(repo, proto):
     '''Wrap server command - largefile capable clients will know to call
@@ -176,7 +177,7 @@ def sshrepocallstream(self, cmd, **args):
     if cmd == 'heads' and self.capable('largefiles'):
         cmd = 'lheads'
     if cmd == 'batch' and self.capable('largefiles'):
-        args['cmds'] = args['cmds'].replace('heads ', 'lheads ')
+        args[r'cmds'] = args[r'cmds'].replace('heads ', 'lheads ')
     return ssholdcallstream(self, cmd, **args)
 
 headsre = re.compile(r'(^|;)heads\b')
@@ -185,5 +186,5 @@ def httprepocallstream(self, cmd, **args):
     if cmd == 'heads' and self.capable('largefiles'):
         cmd = 'lheads'
     if cmd == 'batch' and self.capable('largefiles'):
-        args['cmds'] = headsre.sub('lheads', args['cmds'])
+        args[r'cmds'] = headsre.sub('lheads', args[r'cmds'])
     return httpoldcallstream(self, cmd, **args)

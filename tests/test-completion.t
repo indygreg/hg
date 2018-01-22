@@ -72,6 +72,7 @@ Show debug commands if there are no other candidates
   debugapplystreamclonebundle
   debugbuilddag
   debugbundle
+  debugcapabilities
   debugcheckstate
   debugcolor
   debugcommands
@@ -84,8 +85,10 @@ Show debug commands if there are no other candidates
   debugdeltachain
   debugdirstate
   debugdiscovery
+  debugdownload
   debugextensions
   debugfileset
+  debugformat
   debugfsinfo
   debuggetbundle
   debugignore
@@ -226,7 +229,7 @@ Show all commands + options
   forget: include, exclude
   init: ssh, remotecmd, insecure
   log: follow, follow-first, date, copies, keyword, rev, line-range, removed, only-merges, user, only-branch, branch, prune, patch, git, limit, no-merges, stat, graph, style, template, include, exclude
-  merge: force, rev, preview, tool
+  merge: force, rev, preview, abort, tool
   pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
   push: force, rev, bookmark, branch, new-branch, pushvars, ssh, remotecmd, insecure
   remove: after, force, subrepos, include, exclude
@@ -239,7 +242,7 @@ Show all commands + options
   backout: merge, commit, no-commit, parent, rev, edit, tool, include, exclude, message, logfile, date, user
   bisect: reset, good, bad, skip, extend, command, noupdate
   bookmarks: force, rev, delete, rename, inactive, template
-  branch: force, clean
+  branch: force, clean, rev
   branches: active, closed, template
   bundle: force, rev, branch, base, all, type, ssh, remotecmd, insecure
   cat: output, rev, decode, include, exclude, template
@@ -249,6 +252,7 @@ Show all commands + options
   debugapplystreamclonebundle: 
   debugbuilddag: mergeable-file, overwritten-file, new-file
   debugbundle: all, part-type, spec
+  debugcapabilities: 
   debugcheckstate: 
   debugcolor: style
   debugcommands: 
@@ -259,9 +263,11 @@ Show all commands + options
   debugdate: extended
   debugdeltachain: changelog, manifest, dir, template
   debugdirstate: nodates, datesort
-  debugdiscovery: old, nonheads, ssh, remotecmd, insecure
+  debugdiscovery: old, nonheads, rev, ssh, remotecmd, insecure
+  debugdownload: output
   debugextensions: template
   debugfileset: rev
+  debugformat: template
   debugfsinfo: 
   debuggetbundle: head, common, type
   debugignore: 
@@ -270,7 +276,7 @@ Show all commands + options
   debuginstall: template
   debugknown: 
   debuglabelcomplete: 
-  debuglocks: force-lock, force-wlock
+  debuglocks: force-lock, force-wlock, set-lock, set-wlock
   debugmergestate: 
   debugnamecomplete: 
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template

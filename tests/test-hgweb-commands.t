@@ -775,7 +775,7 @@ Logs and changes
     <td class="author">test</td>
     <td class="description">
      <a href="/rev/cad8025a2e87">branch commit with null character: </a>
-     <span class="branchhead">unstable</span> <span class="tag">tip</span> <span class="tag">something</span> 
+     <span class="phase">draft</span> <span class="branchhead">unstable</span> <span class="tag">tip</span> <span class="tag">something</span> 
     </td>
    </tr>
    <tr>
@@ -783,7 +783,7 @@ Logs and changes
     <td class="author">test</td>
     <td class="description">
      <a href="/rev/1d22e65f027e">branch</a>
-     <span class="branchhead">stable</span> 
+     <span class="phase">draft</span> <span class="branchhead">stable</span> 
     </td>
    </tr>
    <tr>
@@ -791,7 +791,7 @@ Logs and changes
     <td class="author">test</td>
     <td class="description">
      <a href="/rev/a4f92ed23982">Added tag 1.0 for changeset 2ef0ac749a14</a>
-     <span class="branchhead">default</span> 
+     <span class="phase">draft</span> <span class="branchhead">default</span> 
     </td>
    </tr>
    <tr>
@@ -799,7 +799,7 @@ Logs and changes
     <td class="author">test</td>
     <td class="description">
      <a href="/rev/2ef0ac749a14">base</a>
-     <span class="tag">1.0</span> <span class="tag">anotherthing</span> 
+     <span class="phase">draft</span> <span class="tag">1.0</span> <span class="tag">anotherthing</span> 
     </td>
    </tr>
   
@@ -816,7 +816,7 @@ Logs and changes
       ajaxScrollInit(
               '/shortlog/%next%',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },
@@ -880,7 +880,7 @@ Logs and changes
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
   <h3>
    changeset 0:<a href="/rev/2ef0ac749a14">2ef0ac749a14</a>
-   <span class="tag">1.0</span> <span class="tag">anotherthing</span> 
+   <span class="phase">draft</span> <span class="tag">1.0</span> <span class="tag">anotherthing</span> 
   </h3>
   
   
@@ -902,6 +902,7 @@ Logs and changes
    <th class="date">date</th>
    <td class="date age">Thu, 01 Jan 1970 00:00:00 +0000</td>
   </tr>
+  
   <tr>
    <th class="author">parents</th>
    <td class="author"></td>
@@ -1054,7 +1055,7 @@ Logs and changes
     <td class="author">test</td>
     <td class="description">
      <a href="/rev/2ef0ac749a14">base</a>
-     <span class="tag">1.0</span> <span class="tag">anotherthing</span> 
+     <span class="phase">draft</span> <span class="tag">1.0</span> <span class="tag">anotherthing</span> 
     </td>
    </tr>
   
@@ -1312,7 +1313,7 @@ File-related
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
   <h3>
    view foo @ 1:<a href="/rev/a4f92ed23982">a4f92ed23982</a>
-   
+   <span class="phase">draft</span> <span class="branchhead">default</span> 
   </h3>
   
   
@@ -1446,7 +1447,7 @@ File-related
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
   <h3>
    view foo @ 2:<a href="/rev/1d22e65f027e">1d22e65f027e</a>
-   <span class="branchname">stable</span> 
+   <span class="phase">draft</span> <span class="branchhead">stable</span> 
   </h3>
   
   
@@ -1572,7 +1573,7 @@ Overviews
   <table cellspacing="0">
   <tr><td>description</td><td>unknown</td></tr>
   <tr><td>owner</td><td>&#70;&#111;&#111;&#32;&#66;&#97;&#114;&#32;&#60;&#102;&#111;&#111;&#46;&#98;&#97;&#114;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#99;&#111;&#109;&#62;</td></tr>
-  <tr><td>last change</td><td>Thu, 01 Jan 1970 00:00:00 +0000</td></tr>
+  <tr><td>last change</td><td class="date age">Thu, 01 Jan 1970 00:00:00 +0000</td></tr>
   </table>
   
   <div><a  class="title" href="/shortlog?style=gitweb">changes</a></div>
@@ -1584,7 +1585,7 @@ Overviews
   <td>
   <a class="list" href="/rev/cad8025a2e87?style=gitweb">
   <b>branch commit with null character: </b>
-  <span class="logtags"><span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="something">something</span> </span>
+  <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="something">something</span> </span>
   </a>
   </td>
   <td class="link" nowrap>
@@ -1598,7 +1599,7 @@ Overviews
   <td>
   <a class="list" href="/rev/1d22e65f027e?style=gitweb">
   <b>branch</b>
-  <span class="logtags"><span class="branchtag" title="stable">stable</span> </span>
+  <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="stable">stable</span> </span>
   </a>
   </td>
   <td class="link" nowrap>
@@ -1612,7 +1613,7 @@ Overviews
   <td>
   <a class="list" href="/rev/a4f92ed23982?style=gitweb">
   <b>Added tag 1.0 for changeset 2ef0ac749a14</b>
-  <span class="logtags"><span class="branchtag" title="default">default</span> </span>
+  <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> </span>
   </a>
   </td>
   <td class="link" nowrap>
@@ -1626,7 +1627,7 @@ Overviews
   <td>
   <a class="list" href="/rev/2ef0ac749a14?style=gitweb">
   <b>base</b>
-  <span class="logtags"><span class="tagtag" title="1.0">1.0</span> <span class="bookmarktag" title="anotherthing">anotherthing</span> </span>
+  <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="tagtag" title="1.0">1.0</span> <span class="bookmarktag" title="anotherthing">anotherthing</span> </span>
   </a>
   </td>
   <td class="link" nowrap>
@@ -1739,7 +1740,6 @@ Overviews
      href="/atom-log" title="Atom feed for test"/>
   <link rel="alternate" type="application/rss+xml"
      href="/rss-log" title="RSS feed for test"/>
-  <!--[if IE]><script type="text/javascript" src="/static/excanvas.js"></script><![endif]-->
   </head>
   <body>
   
@@ -1780,66 +1780,51 @@ Overviews
   <noscript>The revision graph only works with JavaScript-enabled browsers.</noscript>
   
   <div id="wrapper">
-  <ul id="nodebgs"></ul>
-  <canvas id="graph" width="39" height="168"></canvas>
-  <ul id="graphnodes"></ul>
+  <canvas id="graph"></canvas>
+  <ul id="graphnodes"><li class="parity0" data-node="cad8025a2e87">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/cad8025a2e87?style=gitweb"><b>branch commit with null character: </b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="something">something</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
+  </li>
+  <li class="parity1" data-node="1d22e65f027e">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/1d22e65f027e?style=gitweb"><b>branch</b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="stable">stable</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
+  </li>
+  <li class="parity0" data-node="a4f92ed23982">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/a4f92ed23982?style=gitweb"><b>Added tag 1.0 for changeset 2ef0ac749a14</b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
+  </li>
+  <li class="parity1" data-node="2ef0ac749a14">
+   <div class="fg">
+    <span class="desc">
+     <a class="list" href="/rev/2ef0ac749a14?style=gitweb"><b>base</b></a>
+    </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="tagtag" title="1.0">1.0</span> <span class="bookmarktag" title="anotherthing">anotherthing</span> </span>
+    <div class="info">1970-01-01, by test</div>
+   </div>
+  </li>
+  </ul>
   </div>
   
   <script>
-  <!-- hide script content
-  
-  var data = [["cad8025a2e87", [0, 1], [[0, 0, 1, 3, "FF0000"]], "branch commit with null character: \u0000", "test", "1970-01-01", ["unstable", true], ["tip"], ["something"]], ["1d22e65f027e", [0, 1], [[0, 0, 1, 3, ""]], "branch", "test", "1970-01-01", ["stable", true], [], []], ["a4f92ed23982", [0, 1], [[0, 0, 1, 3, ""]], "Added tag 1.0 for changeset 2ef0ac749a14", "test", "1970-01-01", ["default", true], [], []], ["2ef0ac749a14", [0, 1], [], "base", "test", "1970-01-01", ["default", false], ["1.0"], ["anotherthing"]]];
+  var data = [{"edges": [[0, 0, 1, 3, "FF0000"]], "graphnode": "@o", "node": "cad8025a2e87", "vertex": [0, 1]}, {"edges": [[0, 0, 1, 3, ""]], "graphnode": "o", "node": "1d22e65f027e", "vertex": [0, 1]}, {"edges": [[0, 0, 1, 3, ""]], "graphnode": "o", "node": "a4f92ed23982", "vertex": [0, 1]}, {"edges": [], "graphnode": "o", "node": "2ef0ac749a14", "vertex": [0, 1]}];
   var graph = new Graph();
   graph.scale(39);
-  
-  graph.vertex = function(x, y, color, parity, cur) {
-  	
-  	this.ctx.beginPath();
-  	color = this.setColor(color, 0.25, 0.75);
-  	this.ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-  	this.ctx.fill();
-  	
-  	var bg = '<li class="bg parity' + parity + '"></li>';
-  	var left = (this.bg_height - this.box_size) + (this.columns + 1) * this.box_size;
-  	var nstyle = 'padding-left: ' + left + 'px;';
-  	
-  	var tagspan = '';
-  	if (cur[7].length || cur[8].length || (cur[6][0] != 'default' || cur[6][1])) {
-  		tagspan = '<span class="logtags">';
-  		if (cur[6][1]) {
-  			tagspan += '<span class="branchtag" title="' + cur[6][0] + '">';
-  			tagspan += cur[6][0] + '</span> ';
-  		} else if (!cur[6][1] && cur[6][0] != 'default') {
-  			tagspan += '<span class="inbranchtag" title="' + cur[6][0] + '">';
-  			tagspan += cur[6][0] + '</span> ';
-  		}
-  		if (cur[7].length) {
-  			for (var t in cur[7]) {
-  				var tag = cur[7][t];
-  				tagspan += '<span class="tagtag">' + tag + '</span> ';
-  			}
-  		}
-  		if (cur[8].length) {
-  			for (var t in cur[8]) {
-  				var bookmark = cur[8][t];
-  				tagspan += '<span class="bookmarktag">' + bookmark + '</span> ';
-  			}
-  		}
-  		tagspan += '</span>';
-  	}
-  	
-  	var item = '<li style="' + nstyle + '"><span class="desc">';
-  	item += '<a class="list" href="/rev/' + cur[0] + '?style=gitweb" title="' + cur[0] + '"><b>' + cur[3] + '</b></a>';
-  	item += '</span> ' + tagspan + '';
-  	item += '<span class="info">' + cur[5] + ', by ' + cur[4] + '</span></li>';
-  
-  	return [bg, item];
-  	
-  }
-  
   graph.render(data);
-  
-  // stop hiding script -->
   </script>
   
   <div class="extra_nav">
@@ -1850,9 +1835,12 @@ Overviews
   
   <script type="text/javascript">
       ajaxScrollInit(
-              '/graph/3?revcount=%next%&style=gitweb',
-              60+60,
-              function (htmlText, previousVal) { return previousVal + 60; },
+              '/graph/%next%?graphtop=cad8025a2e87f88c06259790adfa15acb4080123&style=gitweb',
+              '', <!-- NEXTHASH
+              function (htmlText) {
+                  var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
+                  return m ? m[1] : null;
+              },
               '#wrapper',
               '<div class="%class%" style="text-align: center;">%text%</div>',
               'graph'
@@ -1926,7 +1914,7 @@ capabilities
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities'; echo
   200 Script output follows
   
-  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Aphases%3Dheads%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=*zlib (glob)
+  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=*zlib (glob)
 
 heads
 
@@ -2071,30 +2059,25 @@ Static files
   	margin: 0;
   }
   
-  ul#nodebgs {
+  ul#graphnodes {
   	list-style: none inside none;
   	padding: 0;
   	margin: 0;
-  	top: -0.7em;
   }
   
-  ul#graphnodes li, ul#nodebgs li {
-  	height: 39px;
+  ul#graphnodes li {
+  	height: 37px;
+  	overflow: visible;
+  	padding-top: 2px;
   }
   
-  ul#graphnodes {
+  ul#graphnodes li .fg {
   	position: absolute;
   	z-index: 10;
-  	top: -0.85em;
-  	list-style: none inside none;
-  	padding: 0;
   }
   
   ul#graphnodes li .info {
-  	display: block;
   	font-size: 70%;
-  	position: relative;
-  	top: -1px;
   }
 
 Stop and restart the server at the directory different from the repository
@@ -2126,27 +2109,6 @@ repository root. (issue4568)
   
   
 
-Stop and restart with HGENCODING=cp932 and preferuncompressed
-
-  $ killdaemons.py
-  $ HGENCODING=cp932 hg serve --config server.preferuncompressed=True -n test \
-  >     -p $HGPORT -d --pid-file=hg.pid -E errors.log
-  $ cat hg.pid >> $DAEMON_PIDS
-
-commit message with Japanese Kanji 'Noh', which ends with '\x5c'
-
-  $ echo foo >> foo
-  $ HGENCODING=cp932 hg ci -m `$PYTHON -c 'print("\x94\x5c")'`
-
-Graph json escape of multibyte character
-
-  $ get-with-headers.py $LOCALIP:$HGPORT 'graph/' > out
-  >>> from __future__ import print_function
-  >>> for line in open("out"):
-  ...     if line.startswith("var data ="):
-  ...         print(line, end='')
-  var data = [["061dd13ba3c3", [0, 1], [[0, 0, 1, -1, ""]], "\u80fd", "test", "1970-01-01", ["unstable", true], ["tip"], ["something"]], ["cad8025a2e87", [0, 1], [[0, 0, 1, 3, "FF0000"]], "branch commit with null character: \u0000", "test", "1970-01-01", ["unstable", false], [], []], ["1d22e65f027e", [0, 1], [[0, 0, 1, 3, ""]], "branch", "test", "1970-01-01", ["stable", true], [], []], ["a4f92ed23982", [0, 1], [[0, 0, 1, 3, ""]], "Added tag 1.0 for changeset 2ef0ac749a14", "test", "1970-01-01", ["default", true], [], []], ["2ef0ac749a14", [0, 1], [], "base", "test", "1970-01-01", ["default", false], ["1.0"], ["anotherthing"]]];
-
 capabilities
 
 (plain version to check the format)
@@ -2174,7 +2136,7 @@ capabilities
   batch
   stream-preferred
   streamreqs=generaldelta,revlogv1
-  bundle2=HG20%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Aphases%3Dheads%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps
+  $USUAL_BUNDLE2_CAPS_SERVER$
   unbundle=HG10GZ,HG10BZ,HG10UN
   httpheader=1024
   httpmediatype=0.1rx,0.1tx,0.2tx

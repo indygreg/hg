@@ -45,8 +45,8 @@ NoRepo = common.NoRepo
 sha1re = re.compile(r'\b[0-9a-f]{12,40}\b')
 
 class mercurial_sink(common.converter_sink):
-    def __init__(self, ui, path):
-        common.converter_sink.__init__(self, ui, path)
+    def __init__(self, ui, repotype, path):
+        common.converter_sink.__init__(self, ui, repotype, path)
         self.branchnames = ui.configbool('convert', 'hg.usebranchnames')
         self.clonebranches = ui.configbool('convert', 'hg.clonebranches')
         self.tagsbranch = ui.config('convert', 'hg.tagsbranch')
@@ -253,7 +253,7 @@ class mercurial_sink(common.converter_sink):
                 data = self._rewritetags(source, revmap, data)
             if f == '.hgsubstate':
                 data = self._rewritesubstate(source, data)
-            return context.memfilectx(self.repo, f, data, 'l' in mode,
+            return context.memfilectx(self.repo, memctx, f, data, 'l' in mode,
                                       'x' in mode, copies.get(f))
 
         pl = []
@@ -401,7 +401,7 @@ class mercurial_sink(common.converter_sink):
 
         data = "".join(newlines)
         def getfilectx(repo, memctx, f):
-            return context.memfilectx(repo, f, data, False, False, None)
+            return context.memfilectx(repo, memctx, f, data, False, False, None)
 
         self.ui.status(_("updating tags\n"))
         date = "%s 0" % int(time.mktime(time.gmtime()))
@@ -444,8 +444,8 @@ class mercurial_sink(common.converter_sink):
         return rev in self.repo
 
 class mercurial_source(common.converter_source):
-    def __init__(self, ui, path, revs=None):
-        common.converter_source.__init__(self, ui, path, revs)
+    def __init__(self, ui, repotype, path, revs=None):
+        common.converter_source.__init__(self, ui, repotype, path, revs)
         self.ignoreerrors = ui.configbool('convert', 'hg.ignoreerrors')
         self.ignored = set()
         self.saverev = ui.configbool('convert', 'hg.saverev')

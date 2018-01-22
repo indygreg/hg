@@ -25,6 +25,7 @@ import os
 import random
 import struct
 import sys
+import threading
 import time
 from mercurial import (
     changegroup,
@@ -488,6 +489,122 @@ def perfbookmarks(ui, repo, **opts):
     timer(d)
     fm.end()
 
+@command('perfbundleread', formatteropts, 'BUNDLE')
+def perfbundleread(ui, repo, bundlepath, **opts):
+    """Benchmark reading of bundle files.
+
+    This command is meant to isolate the I/O part of bundle reading as
+    much as possible.
+    """
+    from mercurial import (
+        bundle2,
+        exchange,
+        streamclone,
+    )
+
+    def makebench(fn):
+        def run():
+            with open(bundlepath, 'rb') as fh:
+                bundle = exchange.readbundle(ui, fh, bundlepath)
+                fn(bundle)
+
+        return run
+
+    def makereadnbytes(size):
+        def run():
+            with open(bundlepath, 'rb') as fh:
+                bundle = exchange.readbundle(ui, fh, bundlepath)
+                while bundle.read(size):
+                    pass
+
+        return run
+
+    def makestdioread(size):
+        def run():
+            with open(bundlepath, 'rb') as fh:
+                while fh.read(size):
+                    pass
+
+        return run
+
+    # bundle1
+
+    def deltaiter(bundle):
+        for delta in bundle.deltaiter():
+            pass
+
+    def iterchunks(bundle):
+        for chunk in bundle.getchunks():
+            pass
+
+    # bundle2
+
+    def forwardchunks(bundle):
+        for chunk in bundle._forwardchunks():
+            pass
+
+    def iterparts(bundle):
+        for part in bundle.iterparts():
+            pass
+
+    def iterpartsseekable(bundle):
+        for part in bundle.iterparts(seekable=True):
+            pass
+
+    def seek(bundle):
+        for part in bundle.iterparts(seekable=True):
+            part.seek(0, os.SEEK_END)
+
+    def makepartreadnbytes(size):
+        def run():
+            with open(bundlepath, 'rb') as fh:
+                bundle = exchange.readbundle(ui, fh, bundlepath)
+                for part in bundle.iterparts():
+                    while part.read(size):
+                        pass
+
+        return run
+
+    benches = [
+        (makestdioread(8192), 'read(8k)'),
+        (makestdioread(16384), 'read(16k)'),
+        (makestdioread(32768), 'read(32k)'),
+        (makestdioread(131072), 'read(128k)'),
+    ]
+
+    with open(bundlepath, 'rb') as fh:
+        bundle = exchange.readbundle(ui, fh, bundlepath)
+
+        if isinstance(bundle, changegroup.cg1unpacker):
+            benches.extend([
+                (makebench(deltaiter), 'cg1 deltaiter()'),
+                (makebench(iterchunks), 'cg1 getchunks()'),
+                (makereadnbytes(8192), 'cg1 read(8k)'),
+                (makereadnbytes(16384), 'cg1 read(16k)'),
+                (makereadnbytes(32768), 'cg1 read(32k)'),
+                (makereadnbytes(131072), 'cg1 read(128k)'),
+            ])
+        elif isinstance(bundle, bundle2.unbundle20):
+            benches.extend([
+                (makebench(forwardchunks), 'bundle2 forwardchunks()'),
+                (makebench(iterparts), 'bundle2 iterparts()'),
+                (makebench(iterpartsseekable), 'bundle2 iterparts() seekable'),
+                (makebench(seek), 'bundle2 part seek()'),
+                (makepartreadnbytes(8192), 'bundle2 part read(8k)'),
+                (makepartreadnbytes(16384), 'bundle2 part read(16k)'),
+                (makepartreadnbytes(32768), 'bundle2 part read(32k)'),
+                (makepartreadnbytes(131072), 'bundle2 part read(128k)'),
+            ])
+        elif isinstance(bundle, streamclone.streamcloneapplier):
+            raise error.Abort('stream clone bundles not supported')
+        else:
+            raise error.Abort('unhandled bundle type: %s' % type(bundle))
+
+    for fn, title in benches:
+        timer, fm = gettimer(ui, opts)
+        timer(fn, title=title)
+        fm.end()
+
 @command('perfchangegroupchangelog', formatteropts +
          [('', 'version', '02', 'changegroup version'),
           ('r', 'rev', '', 'revisions to add to changegroup')])
@@ -525,8 +642,8 @@ def perfdirs(ui, repo, **opts):
     dirstate = repo.dirstate
     'a' in dirstate
     def d():
-        dirstate.dirs()
-        del dirstate._map.dirs
+        dirstate.hasdir('a')
+        del dirstate._map._dirs
     timer(d)
     fm.end()
 
@@ -545,8 +662,8 @@ def perfdirstatedirs(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     "a" in repo.dirstate
     def d():
-        "a" in repo.dirstate._map.dirs
-        del repo.dirstate._map.dirs
+        repo.dirstate.hasdir("a")
+        del repo.dirstate._map._dirs
     timer(d)
     fm.end()
 
@@ -569,7 +686,7 @@ def perfdirfoldmap(ui, repo, **opts):
     def d():
         dirstate._map.dirfoldmap.get('a')
         del dirstate._map.dirfoldmap
-        del dirstate._map.dirs
+        del dirstate._map._dirs
     timer(d)
     fm.end()
 
@@ -817,11 +934,25 @@ def perffncacheencode(ui, repo, **opts):
     timer(d)
     fm.end()
 
+def _bdiffworker(q, ready, done):
+    while not done.is_set():
+        pair = q.get()
+        while pair is not None:
+            mdiff.textdiff(*pair)
+            q.task_done()
+            pair = q.get()
+        q.task_done() # for the None one
+        with ready:
+            ready.wait()
+
 @command('perfbdiff', revlogopts + formatteropts + [
     ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
-    ('', 'alldata', False, 'test bdiffs for all associated revisions')],
+    ('', 'alldata', False, 'test bdiffs for all associated revisions'),
+    ('', 'threads', 0, 'number of thread to use (disable with 0)'),
+    ],
+
     '-c|-m|FILE REV')
-def perfbdiff(ui, repo, file_, rev=None, count=None, **opts):
+def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     """benchmark a bdiff between revisions
 
     By default, benchmark a bdiff between its delta parent and itself.
@@ -867,13 +998,38 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, **opts):
             dp = r.deltaparent(rev)
             textpairs.append((r.revision(dp), r.revision(rev)))
 
-    def d():
-        for pair in textpairs:
-            mdiff.textdiff(*pair)
-
+    withthreads = threads > 0
+    if not withthreads:
+        def d():
+            for pair in textpairs:
+                mdiff.textdiff(*pair)
+    else:
+        q = util.queue()
+        for i in xrange(threads):
+            q.put(None)
+        ready = threading.Condition()
+        done = threading.Event()
+        for i in xrange(threads):
+            threading.Thread(target=_bdiffworker, args=(q, ready, done)).start()
+        q.join()
+        def d():
+            for pair in textpairs:
+                q.put(pair)
+            for i in xrange(threads):
+                q.put(None)
+            with ready:
+                ready.notify_all()
+            q.join()
     timer, fm = gettimer(ui, opts)
     timer(d)
     fm.end()
+
+    if withthreads:
+        done.set()
+        for i in xrange(threads):
+            q.put(None)
+        with ready:
+            ready.notify_all()
 
 @command('perfdiffwd', formatteropts)
 def perfdiffwd(ui, repo, **opts):

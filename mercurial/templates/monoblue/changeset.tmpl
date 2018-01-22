@@ -32,17 +32,23 @@
 
     <h2 class="no-link no-border">changeset</h2>
 
-    <h3 class="changeset"><a href="{url|urlescape}raw-rev/{node|short}">{desc|strip|escape|firstline|nonempty} <span class="logtags">{inbranch%inbranchtag}{branches%branchtag}{tags%tagtag}{bookmarks%bookmarktag}</span></a></h3>
+    <h3 class="changeset">
+        <a href="{url|urlescape}raw-rev/{node|short}">
+            {desc|strip|escape|firstline|nonempty}
+            {alltags}
+        </a>
+    </h3>
     <p class="changeset-age"><span class="age">{date|rfc822date}</span></p>
 
     <dl class="overview">
         <dt>author</dt>
         <dd>{author|obfuscate}</dd>
         <dt>date</dt>
-        <dd>{date|rfc822date}</dd>
+        <dd class="date age">{date|rfc822date}</dd>
         {branch%changesetbranch}
         <dt>changeset {rev}</dt>
         <dd><a href="{url|urlescape}rev/{node|short}{sessionvars%urlparameter}">{node|short}</a></dd>
+        {if(obsolete, '<dt>obsolete</dt><dd>{succsandmarkers%obsfateentry}</dd>')}
         {ifeq(count(parent), '2', parent%changesetparentdiff, parent%changesetparent)}
         {child%changesetchild}
     </dl>

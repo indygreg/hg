@@ -87,12 +87,14 @@ _defaultstyles = {
     'branches.inactive': 'none',
     'diff.changed': 'white',
     'diff.deleted': 'red',
+    'diff.deleted.highlight': 'red bold underline',
     'diff.diffline': 'bold',
     'diff.extended': 'cyan bold',
     'diff.file_a': 'red bold',
     'diff.file_b': 'green bold',
     'diff.hunk': 'magenta',
     'diff.inserted': 'green',
+    'diff.inserted.highlight': 'green bold underline',
     'diff.tab': '',
     'diff.trailingwhitespace': 'bold red_background',
     'changeset.public': '',
@@ -100,6 +102,15 @@ _defaultstyles = {
     'changeset.secret': '',
     'diffstat.deleted': 'red',
     'diffstat.inserted': 'green',
+    'formatvariant.name.mismatchconfig': 'red',
+    'formatvariant.name.mismatchdefault': 'yellow',
+    'formatvariant.name.uptodate': 'green',
+    'formatvariant.repo.mismatchconfig': 'red',
+    'formatvariant.repo.mismatchdefault': 'yellow',
+    'formatvariant.repo.uptodate': 'green',
+    'formatvariant.config.special': 'yellow',
+    'formatvariant.config.default': 'green',
+    'formatvariant.default': '',
     'histedit.remaining': 'red bold',
     'ui.prompt': 'yellow',
     'log.changeset': 'yellow',
@@ -181,7 +192,7 @@ def setup(ui):
         configstyles(ui)
 
 def _modesetup(ui):
-    if ui.plain():
+    if ui.plain('color'):
         return None
     config = ui.config('ui', 'color')
     if config == 'debug':
@@ -473,7 +484,7 @@ if pycompat.iswindows:
             _win32print(ui, text, writefunc, **opts)
 
     def _win32print(ui, text, writefunc, **opts):
-        label = opts.get('label', '')
+        label = opts.get(r'label', '')
         attr = origattr
 
         def mapcolor(val, attr):

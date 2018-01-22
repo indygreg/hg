@@ -4,7 +4,6 @@
    href="{url|urlescape}atom-tags" title="Atom feed for {repo|escape}: tags">
 <link rel="alternate" type="application/rss+xml"
    href="{url|urlescape}rss-tags" title="RSS feed for {repo|escape}: tags">
-<!--[if IE]><script type="text/javascript" src="{staticurl|urlescape}excanvas.js"></script><![endif]-->
 </head>
 <body>
 
@@ -31,39 +30,15 @@ navigate: <small class="navigate">{changenav%navgraph}</small>
 <noscript>The revision graph only works with JavaScript-enabled browsers.</noscript>
 
 <div id="wrapper">
-<ul id="nodebgs"></ul>
-<canvas id="graph" width="{canvaswidth}" height="{canvasheight}"></canvas>
-<ul id="graphnodes"></ul>
+<canvas id="graph"></canvas>
+<ul id="graphnodes">{nodes%graphentry}</ul>
 </div>
 
 <script type="text/javascript"{if(nonce, ' nonce="{nonce}"')}>
-<!-- hide script content
-
 var data = {jsdata|json};
 var graph = new Graph();
 graph.scale({bg_height});
-
-graph.vertex = function(x, y, color, parity, cur) \{
-	
-	this.ctx.beginPath();
-	color = this.setColor(color, 0.25, 0.75);
-	this.ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-	this.ctx.fill();
-	
-	var bg = '<li class="bg parity' + parity + '"></li>';
-	var left = (this.bg_height - this.box_size) + (this.columns + 1) * this.box_size;
-	var nstyle = 'padding-left: ' + left + 'px;';
-	var item = '<li style="' + nstyle + '"><span class="desc">';
-	item += '<a href="{url|urlescape}rev/' + cur[0] + '{sessionvars%urlparameter}" title="' + cur[0] + '">' + cur[3] + '</a>';
-	item += '</span><span class="info">' + cur[5] + ', by ' + cur[4] + '</span></li>';
-
-	return [bg, item];
-	
-}
-
 graph.render(data);
-
-// stop hiding script -->
 </script>
 
 <form action="{url|urlescape}log">

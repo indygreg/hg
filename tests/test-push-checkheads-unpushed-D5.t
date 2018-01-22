@@ -56,7 +56,7 @@ Test setup
   created new head
   $ cd ../client
   $ hg pull
-  pulling from $TESTTMP/D5/server (glob)
+  pulling from $TESTTMP/D5/server
   searching for changes
   adding changesets
   adding manifests
@@ -73,6 +73,7 @@ Test setup
   created new head
   $ hg debugobsolete `getid "desc(A0)" ` `getid "desc(A1)"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)" ` `getid "desc(B1)"`
   obsoleted 1 changesets
   $ hg log -G --hidden
@@ -93,13 +94,13 @@ Actual testing
 --------------
 
   $ hg push --rev 'desc(B1)'
-  pushing to $TESTTMP/D5/server (glob)
+  pushing to $TESTTMP/D5/server
   searching for changes
   abort: push creates new remote head 25c56d33e4c4!
   (merge or see 'hg help push' for details about pushing new heads)
   [255]
   $ hg push --rev 'desc(A1)'
-  pushing to $TESTTMP/D5/server (glob)
+  pushing to $TESTTMP/D5/server
   searching for changes
   adding changesets
   adding manifests
@@ -107,5 +108,6 @@ Actual testing
   added 1 changesets with 1 changes to 1 files
   1 new obsolescence markers
   obsoleted 1 changesets
+  1 new orphan changesets
 
   $ cd ../..

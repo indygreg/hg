@@ -96,7 +96,7 @@ Some tests for hgweb in an empty repository
       ajaxScrollInit(
               '/shortlog/%next%',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },
@@ -207,7 +207,7 @@ Some tests for hgweb in an empty repository
       ajaxScrollInit(
               '/shortlog/%next%',
               '', <!-- NEXTHASH
-              function (htmlText, previousVal) {
+              function (htmlText) {
                   var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
                   return m ? m[1] : null;
               },
@@ -242,7 +242,6 @@ Some tests for hgweb in an empty repository
      href="/atom-log" title="Atom feed for test: log" />
   <link rel="alternate" type="application/rss+xml"
      href="/rss-log" title="RSS feed for test: log" />
-  <!--[if IE]><script type="text/javascript" src="/static/excanvas.js"></script><![endif]-->
   </head>
   <body>
   
@@ -294,65 +293,15 @@ Some tests for hgweb in an empty repository
   <noscript><p>The revision graph only works with JavaScript-enabled browsers.</p></noscript>
   
   <div id="wrapper">
-  <ul id="nodebgs" class="stripes2"></ul>
-  <canvas id="graph" width="39" height="12"></canvas>
-  <ul id="graphnodes"></ul>
+  <canvas id="graph"></canvas>
+  <ul id="graphnodes" class="stripes2"></ul>
   </div>
   
   <script type="text/javascript">
-  <!-- hide script content
-  
   var data = [];
   var graph = new Graph();
   graph.scale(39);
-  
-  graph.vertex = function(x, y, color, parity, cur) {
-  	
-  	this.ctx.beginPath();
-  	color = this.setColor(color, 0.25, 0.75);
-  	this.ctx.arc(x, y, radius, 0, Math.PI * 2, true);
-  	this.ctx.fill();
-  	
-  	var bg = '<li class="bg"></li>';
-  	var left = (this.bg_height - this.box_size) + (this.columns + 1) * this.box_size;
-  	var nstyle = 'padding-left: ' + left + 'px;';
-  
-  	var tagspan = '';
-  	if (cur[7].length || cur[8].length || (cur[6][0] != 'default' || cur[6][1])) {
-  		tagspan = '<span class="logtags">';
-  		if (cur[6][1]) {
-  			tagspan += '<span class="branchhead" title="' + cur[6][0] + '">';
-  			tagspan += cur[6][0] + '</span> ';
-  		} else if (!cur[6][1] && cur[6][0] != 'default') {
-  			tagspan += '<span class="branchname" title="' + cur[6][0] + '">';
-  			tagspan += cur[6][0] + '</span> ';
-  		}
-  		if (cur[7].length) {
-  			for (var t in cur[7]) {
-  				var tag = cur[7][t];
-  				tagspan += '<span class="tag">' + tag + '</span> ';
-  			}
-  		}
-  		if (cur[8].length) {
-  			for (var b in cur[8]) {
-  				var bookmark = cur[8][b];
-  				tagspan += '<span class="tag">' + bookmark + '</span> ';
-  			}
-  		}
-  		tagspan += '</span>';
-  	}
-  
-  	var item = '<li style="' + nstyle + '"><span class="desc">';
-  	item += '<a href="/rev/' + cur[0] + '" title="' + cur[0] + '">' + cur[3] + '</a>';
-  	item += '</span>' + tagspan + '<span class="info">' + cur[5] + ', by ' + cur[4] + '</span></li>';
-  	
-  	return [bg, item];
-  	
-  }
-  
   graph.render(data);
-  
-  // stop hiding script -->
   </script>
   
   <div class="navigate">
@@ -363,9 +312,12 @@ Some tests for hgweb in an empty repository
   
   <script type="text/javascript">
       ajaxScrollInit(
-              '/graph/-1?revcount=%next%&style=paper',
-              60+60,
-              function (htmlText, previousVal) { return previousVal + 60; },
+              '/graph/%next%?graphtop=0000000000000000000000000000000000000000',
+              '', <!-- NEXTHASH
+              function (htmlText) {
+                  var m = htmlText.match(/'(\w+)', <!-- NEXTHASH/);
+                  return m ? m[1] : null;
+              },
               '#wrapper',
               '<div class="%class%" style="text-align: center;">%text%</div>',
               'graph'

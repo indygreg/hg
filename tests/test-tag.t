@@ -515,7 +515,7 @@ commit hook on tag used to be run without write lock - issue3344
   $ hg -R repo-tag --config hooks.commit="sh ../issue3344.sh" tag tag
   hook: tag changes detected
   hook: +A be090ea6625635128e90f7d89df8beeb2bcc1653 tag
-  pushing to $TESTTMP/repo-tag-target (glob)
+  pushing to $TESTTMP/repo-tag-target
   searching for changes
   adding changesets
   adding manifests
@@ -619,7 +619,7 @@ check that we can merge tags that differ in rank
 
   $ cd ../repo-automatic-tag-merge-clone
   $ hg pull
-  pulling from $TESTTMP/repo-automatic-tag-merge (glob)
+  pulling from $TESTTMP/repo-automatic-tag-merge
   searching for changes
   adding changesets
   adding manifests
@@ -708,7 +708,7 @@ detect merge tag conflicts
   the following 1 tags are in conflict: t7
   automatic tag merging of .hgtags failed! (use 'hg resolve --tool :merge' or another merge tool of your choice)
   2 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg resolve -l
   U .hgtags

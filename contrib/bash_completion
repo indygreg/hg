@@ -296,7 +296,7 @@ _hg_command_specific()
         merge)
             _hg_labels
         ;;
-        commit|ci|record)
+        commit|ci|record|amend)
             _hg_status "mar"
         ;;
         remove|rm)
@@ -309,7 +309,7 @@ _hg_command_specific()
             _hg_status "mar"
         ;;
         revert)
-            _hg_debugpathcomplete
+            _hg_status "mard"
         ;;
         clone)
             local count=$(_hg_count_non_option)

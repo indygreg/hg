@@ -58,7 +58,7 @@ def allsupportedversions(orig, ui):
 def noopaddrevision(orig, self, text, transaction, link, p1, p2,
                     cachedelta=None, node=None,
                     flags=revlog.REVIDX_DEFAULT_FLAGS):
-    if '[NOOP]' in text:
+    if b'[NOOP]' in text:
         flags |= REVIDX_NOOP
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
                 node=node, flags=flags)
@@ -66,7 +66,7 @@ def noopaddrevision(orig, self, text, transaction, link, p1, p2,
 def b64addrevision(orig, self, text, transaction, link, p1, p2,
                    cachedelta=None, node=None,
                    flags=revlog.REVIDX_DEFAULT_FLAGS):
-    if '[BASE64]' in text:
+    if b'[BASE64]' in text:
         flags |= REVIDX_BASE64
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
                 node=node, flags=flags)
@@ -74,7 +74,7 @@ def b64addrevision(orig, self, text, transaction, link, p1, p2,
 def gzipaddrevision(orig, self, text, transaction, link, p1, p2,
                     cachedelta=None, node=None,
                     flags=revlog.REVIDX_DEFAULT_FLAGS):
-    if '[GZIP]' in text:
+    if b'[GZIP]' in text:
         flags |= REVIDX_GZIP
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
                 node=node, flags=flags)
@@ -84,7 +84,7 @@ def failaddrevision(orig, self, text, transaction, link, p1, p2,
                     flags=revlog.REVIDX_DEFAULT_FLAGS):
     # This addrevision wrapper is meant to add a flag we will not have
     # transforms registered for, ensuring we handle this error case.
-    if '[FAIL]' in text:
+    if b'[FAIL]' in text:
         flags |= REVIDX_FAIL
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
                 node=node, flags=flags)

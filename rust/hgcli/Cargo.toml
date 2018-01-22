@@ -1,0 +1,35 @@
+[package]
+name = "hgcli"
+version = "0.1.0"
+authors = ["Gregory Szorc <gregory.szorc@gmail.com>"]
+license = "GPL-2.0"
+
+build = "build.rs"
+
+[[bin]]
+name = "hg"
+path = "src/main.rs"
+
+[features]
+# localdev: detect Python in PATH and use files from source checkout.
+default = ["localdev"]
+localdev = []
+
+[dependencies]
+libc = "0.2.34"
+
+# We currently use a custom build of cpython and python27-sys with the
+# following changes:
+# * GILGuard call of prepare_freethreaded_python() is removed.
+# TODO switch to official release when our changes are incorporated.
+[dependencies.cpython]
+version = "0.1"
+default-features = false
+features = ["python27-sys"]
+git = "https://github.com/indygreg/rust-cpython.git"
+rev = "c90d65cf84abfffce7ef54476bbfed56017a2f52"
+
+[dependencies.python27-sys]
+version = "0.1.2"
+git = "https://github.com/indygreg/rust-cpython.git"
+rev = "c90d65cf84abfffce7ef54476bbfed56017a2f52"

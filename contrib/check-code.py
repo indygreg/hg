@@ -135,7 +135,6 @@ testpats = [
     (r'if\s*!', "don't use '!' to negate exit status"),
     (r'/dev/u?random', "don't use entropy, use /dev/zero"),
     (r'do\s*true;\s*done', "don't use true as loop body, use sleep 0"),
-    (r'^( *)\t', "don't use tabs to indent"),
     (r'sed (-e )?\'(\d+|/[^/]*/)i(?!\\\n)',
      "put a backslash-escaped newline after sed 'i' command"),
     (r'^diff *-\w*[uU].*$\n(^  \$ |^$)', "prefix diff -u/-U with cmp"),
@@ -148,7 +147,9 @@ testpats = [
     (r'\bsed\b.*[^\\]\\n', "don't use 'sed ... \\n', use a \\ and a newline"),
     (r'env.*-u', "don't use 'env -u VAR', use 'unset VAR'"),
     (r'cp.* -r ', "don't use 'cp -r', use 'cp -R'"),
-    (r'grep.* -[ABC] ', "don't use grep's context flags"),
+    (r'grep.* -[ABC]', "don't use grep's context flags"),
+    (r'find.*-printf',
+     "don't use 'find -printf', it doesn't exist on BSD find(1)"),
   ],
   # warnings
   [
@@ -165,7 +166,6 @@ testfilters = [
     (r"<<(\S+)((.|\n)*?\n\1)", rephere),
 ]
 
-winglobmsg = "use (glob) to match Windows paths too"
 uprefix = r"^  \$ "
 utestpats = [
   [
@@ -181,25 +181,11 @@ utestpats = [
     (uprefix + r'.*:\.\S*/', "x:.y in a path does not work on msys, rewrite "
      "as x://.y, or see `hg log -k msys` for alternatives", r'-\S+:\.|' #-Rxxx
      '# no-msys'), # in test-pull.t which is skipped on windows
-    (r'^  saved backup bundle to \$TESTTMP.*\.hg$', winglobmsg),
-    (r'^  changeset .* references (corrupted|missing) \$TESTTMP/.*[^)]$',
-     winglobmsg),
-    (r'^  pulling from \$TESTTMP/.*[^)]$', winglobmsg,
-     '\$TESTTMP/unix-repo$'), # in test-issue1802.t which skipped on windows
-    (r'^  reverting (?!subrepo ).*/.*[^)]$', winglobmsg),
-    (r'^  cloning subrepo \S+/.*[^)]$', winglobmsg),
-    (r'^  pushing to \$TESTTMP/.*[^)]$', winglobmsg),
-    (r'^  pushing subrepo \S+/\S+ to.*[^)]$', winglobmsg),
-    (r'^  moving \S+/.*[^)]$', winglobmsg),
-    (r'^  no changes made to subrepo since.*/.*[^)]$', winglobmsg),
-    (r'^  .*: largefile \S+ not available from file:.*/.*[^)]$', winglobmsg),
-    (r'^  .*file://\$TESTTMP',
-     'write "file:/*/$TESTTMP" + (glob) to match on windows too'),
     (r'^  [^$>].*27\.0\.0\.1',
      'use $LOCALIP not an explicit loopback address'),
-    (r'^  [^$>].*\$LOCALIP.*[^)]$',
+    (r'^  (?![>$] ).*\$LOCALIP.*[^)]$',
      'mark $LOCALIP output lines with (glob) to help tests in BSD jails'),
-    (r'^  (cat|find): .*: No such file or directory',
+    (r'^  (cat|find): .*: \$ENOENT\$',
      'use test -f to test for file existence'),
     (r'^  diff -[^ -]*p',
      "don't use (external) diff with -p for portability"),
@@ -223,6 +209,7 @@ utestpats = [
   ]
 ]
 
+# transform plain test rules to unified test's
 for i in [0, 1]:
     for tp in testpats[i]:
         p = tp[0]
@@ -232,6 +219,11 @@ for i in [0, 1]:
         else:
             p = r"^  [$>] .*(%s)" % p
         utestpats[i].append((p, m) + tp[2:])
+
+# don't transform the following rules:
+# "  > \t" and "  \t" should be allowed in unified tests
+testpats[0].append((r'^( *)\t', "don't use tabs to indent"))
+utestpats[0].append((r'^( ?)\t', "don't use tabs to indent"))
 
 utestfilters = [
     (r"<<(\S+)((.|\n)*?\n  > \1)", rephere),

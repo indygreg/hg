@@ -362,6 +362,9 @@ coreconfigitem('devel', 'user.obsmarker',
 coreconfigitem('devel', 'warn-config-unknown',
     default=None,
 )
+coreconfigitem('devel', 'debug.peer-request',
+    default=False,
+)
 coreconfigitem('diff', 'nodates',
     default=False,
 )
@@ -428,6 +431,9 @@ coreconfigitem('experimental', 'bundle2-output-capture',
 coreconfigitem('experimental', 'bundle2.pushback',
     default=False,
 )
+coreconfigitem('experimental', 'bundle2.stream',
+    default=False,
+)
 coreconfigitem('experimental', 'bundle2lazylocking',
     default=False,
 )
@@ -452,6 +458,12 @@ coreconfigitem('experimental', 'copytrace.sourcecommitlimit',
 coreconfigitem('experimental', 'crecordtest',
     default=None,
 )
+coreconfigitem('experimental', 'directaccess',
+    default=False,
+)
+coreconfigitem('experimental', 'directaccess.revnums',
+    default=False,
+)
 coreconfigitem('experimental', 'editortmpinhg',
     default=False,
 )
@@ -469,7 +481,7 @@ coreconfigitem('experimental', 'evolution.createmarkers',
     default=None,
 )
 coreconfigitem('experimental', 'evolution.effect-flags',
-    default=False,
+    default=True,
     alias=[('experimental', 'effect-flags')]
 )
 coreconfigitem('experimental', 'evolution.exchange',
@@ -478,8 +490,14 @@ coreconfigitem('experimental', 'evolution.exchange',
 coreconfigitem('experimental', 'evolution.bundle-obsmarker',
     default=False,
 )
+coreconfigitem('experimental', 'evolution.report-instabilities',
+    default=True,
+)
 coreconfigitem('experimental', 'evolution.track-operation',
     default=True,
+)
+coreconfigitem('experimental', 'worddiff',
+    default=False,
 )
 coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,
@@ -529,14 +547,14 @@ coreconfigitem('experimental', 'mergedriver',
 coreconfigitem('experimental', 'obsmarkers-exchange-debug',
     default=False,
 )
-coreconfigitem('experimental', 'rebase.multidest',
+coreconfigitem('experimental', 'remotenames',
     default=False,
-)
-coreconfigitem('experimental', 'revertalternateinteractivemode',
-    default=True,
 )
 coreconfigitem('experimental', 'revlogv2',
     default=None,
+)
+coreconfigitem('experimental', 'single-head-per-branch',
+    default=False,
 )
 coreconfigitem('experimental', 'spacemovesdown',
     default=False,
@@ -551,6 +569,9 @@ coreconfigitem('experimental', 'sparse-read.min-gap-size',
     default='256K',
 )
 coreconfigitem('experimental', 'treemanifest',
+    default=False,
+)
+coreconfigitem('experimental', 'update.atomic-file',
     default=False,
 )
 coreconfigitem('extensions', '.*',
@@ -838,6 +859,9 @@ coreconfigitem('progress', 'width',
 coreconfigitem('push', 'pushvars.server',
     default=False,
 )
+coreconfigitem('server', 'bookmarks-pushkey-compat',
+    default=True,
+)
 coreconfigitem('server', 'bundle1',
     default=True,
 )
@@ -1060,6 +1084,9 @@ coreconfigitem('ui', 'slash',
 coreconfigitem('ui', 'ssh',
     default='ssh',
 )
+coreconfigitem('ui', 'ssherrorhint',
+    default=None,
+)
 coreconfigitem('ui', 'statuscopies',
     default=False,
 )
@@ -1077,6 +1104,9 @@ coreconfigitem('ui', 'textwidth',
 )
 coreconfigitem('ui', 'timeout',
     default='600',
+)
+coreconfigitem('ui', 'timeout.warn',
+    default=0,
 )
 coreconfigitem('ui', 'traceback',
     default=False,
@@ -1102,10 +1132,12 @@ coreconfigitem('web', 'allowbz2',
 coreconfigitem('web', 'allowgz',
     default=False,
 )
-coreconfigitem('web', 'allowpull',
+coreconfigitem('web', 'allow-pull',
+    alias=[('web', 'allowpull')],
     default=True,
 )
-coreconfigitem('web', 'allow_push',
+coreconfigitem('web', 'allow-push',
+    alias=[('web', 'allow_push')],
     default=list,
 )
 coreconfigitem('web', 'allowzip',
@@ -1239,6 +1271,9 @@ coreconfigitem('worker', 'backgroundcloseminfilecount',
 coreconfigitem('worker', 'backgroundclosethreadcount',
     default=4,
 )
+coreconfigitem('worker', 'enabled',
+    default=True,
+)
 coreconfigitem('worker', 'numcpus',
     default=None,
 )
@@ -1253,5 +1288,8 @@ coreconfigitem('experimental', 'rebaseskipobsolete',
     default=True,
 )
 coreconfigitem('rebase', 'singletransaction',
+    default=False,
+)
+coreconfigitem('rebase', 'experimental.inmemory',
     default=False,
 )

@@ -102,6 +102,10 @@ log on directory
   summary:     c
   
 
+-X, with explicit path
+
+  $ hg log a -X a
+
 -f, non-existent directory
 
   $ hg log -f dir
@@ -461,6 +465,104 @@ log -vf dir/b
   2
   0
 
+follow files from the specified revisions (issue4959)
+
+  $ hg log -G -T '{rev} {files},{file_copies % " {source}->{name}"}\n'
+  @  4 dir/b e, dir/b->e
+  |
+  o  3 a b d g, a->b f->g
+  |
+  o  2 b dir/b f g, b->dir/b
+  |
+  o  1 b g, a->b f->g
+  |
+  o  0 a f,
+  
+
+  $ hg log -T '{rev}\n' -fr 4 e
+  4
+  2
+  1
+  0
+  $ hg log -T '{rev}\n' -fr 2 g
+  2
+  1
+  0
+  $ hg log -T '{rev}\n' -fr '2+3' g
+  3
+  2
+  1
+  0
+
+follow files from the specified revisions with glob patterns (issue5053)
+(BROKEN: should follow copies from e@4)
+
+  $ hg log -T '{rev}\n' -fr4 e -X '[abcdfg]'
+  4
+  2 (false !)
+  1 (false !)
+  0 (false !)
+
+follow files from the specified revisions with missing patterns
+(BROKEN: should follow copies from e@4)
+
+  $ hg log -T '{rev}\n' -fr4 e x
+  4
+  2 (false !)
+  1 (false !)
+  0 (false !)
+
+follow files from the specified revisions across copies with -p/--patch
+
+  $ hg log -T '== rev: {rev},{file_copies % " {source}->{name}"} ==\n' -fpr 4 e g
+  == rev: 4, dir/b->e ==
+  diff -r 2ca5ba701980 -r 7e4639b4691b e
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/e	Thu Jan 01 00:00:05 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  
+  == rev: 3, a->b f->g ==
+  diff -r f8954cd4dc1f -r 2ca5ba701980 g
+  --- a/g	Thu Jan 01 00:00:03 1970 +0000
+  +++ b/g	Thu Jan 01 00:00:04 1970 +0000
+  @@ -1,2 +1,2 @@
+   f
+  -g
+  +f
+  
+  == rev: 2, b->dir/b ==
+  diff -r d89b0a12d229 -r f8954cd4dc1f dir/b
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/dir/b	Thu Jan 01 00:00:03 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  diff -r d89b0a12d229 -r f8954cd4dc1f f
+  --- a/f	Thu Jan 01 00:00:02 1970 +0000
+  +++ b/f	Thu Jan 01 00:00:03 1970 +0000
+  @@ -1,1 +1,2 @@
+   f
+  +f
+  
+  == rev: 1, a->b f->g ==
+  diff -r 9161b9aeaf16 -r d89b0a12d229 b
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:02 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  
+  == rev: 0, ==
+  diff -r 000000000000 -r 9161b9aeaf16 a
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:01 1970 +0000
+  @@ -0,0 +1,1 @@
+  +a
+  diff -r 000000000000 -r 9161b9aeaf16 f
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/f	Thu Jan 01 00:00:01 1970 +0000
+  @@ -0,0 +1,1 @@
+  +f
+  
 
 log copies with --copies
 
@@ -711,6 +813,15 @@ log -f -r '1 + 4'
   date:        Thu Jan 01 00:00:01 1970 +0000
   summary:     base
   
+
+log -fr with aliases: 'A' should be expanded, but 'reverse()' should have no
+effect
+
+  $ hg log --config 'revsetalias.reverse(x)=x' --config 'revsetalias.A=1+4' -qfrA
+  4:ddb82e70d1a1
+  1:3d5bf5654eda
+  0:67e992f2c4f3
+
 log -r "follow('set:grep(b2)')"
 
   $ hg log -r "follow('set:grep(b2)')"
@@ -732,6 +843,35 @@ log -r "follow('set:grep(b2)', 4)"
   date:        Thu Jan 01 00:00:01 1970 +0000
   summary:     b2
   
+
+follow files starting from multiple revisions:
+
+  $ hg log -T '{rev}: {files}\n' -r "follow('glob:b?', startrev=2+3+4)"
+  3: b1
+  4: b2
+
+follow files starting from empty revision:
+
+  $ hg log -T '{rev}: {files}\n' -r "follow('glob:*', startrev=.-.)"
+
+follow starting from revisions:
+
+  $ hg log -Gq -r "follow(startrev=2+4)"
+  o  4:ddb82e70d1a1
+  |
+  | o  2:60c670bf5b30
+  | |
+  | o  1:3d5bf5654eda
+  |/
+  @  0:67e992f2c4f3
+  
+
+follow the current revision:
+
+  $ hg log -Gq -r "follow()"
+  @  0:67e992f2c4f3
+  
+
   $ hg up -qC 4
 
 log -f -r null
@@ -1009,6 +1149,77 @@ log --follow --patch FILE in repository where linkrev isn't trustworthy
 
   $ cd ..
 
+Multiple copy sources of a file:
+
+  $ hg init follow-multi
+  $ cd follow-multi
+  $ echo 0 >> a
+  $ hg ci -qAm 'a'
+  $ hg cp a b
+  $ hg ci -m 'a->b'
+  $ echo 2 >> a
+  $ hg ci -m 'a'
+  $ echo 3 >> b
+  $ hg ci -m 'b'
+  $ echo 4 >> a
+  $ echo 4 >> b
+  $ hg ci -m 'a,b'
+  $ echo 5 >> a
+  $ hg ci -m 'a0'
+  $ echo 6 >> b
+  $ hg ci -m 'b0'
+  $ hg up -q 4
+  $ echo 7 >> b
+  $ hg ci -m 'b1'
+  created new head
+  $ echo 8 >> a
+  $ hg ci -m 'a1'
+  $ hg rm a
+  $ hg mv b a
+  $ hg ci -m 'b1->a1'
+  $ hg merge -qt :local
+  $ hg ci -m '(a0,b1->a1)->a'
+
+  $ hg log -GT '{rev}: {desc}\n'
+  @    10: (a0,b1->a1)->a
+  |\
+  | o  9: b1->a1
+  | |
+  | o  8: a1
+  | |
+  | o  7: b1
+  | |
+  o |  6: b0
+  | |
+  o |  5: a0
+  |/
+  o  4: a,b
+  |
+  o  3: b
+  |
+  o  2: a
+  |
+  o  1: a->b
+  |
+  o  0: a
+  
+
+ since file 'a' has multiple copy sources at the revision 4, ancestors can't
+ be indexed solely by fctx.linkrev().
+
+  $ hg log -T '{rev}: {desc}\n' -f a
+  10: (a0,b1->a1)->a
+  9: b1->a1
+  7: b1
+  5: a0
+  4: a,b
+  3: b
+  2: a
+  1: a->b
+  0: a
+
+  $ cd ..
+
 Test that log should respect the order of -rREV even if multiple OR conditions
 are specified (issue5100):
 
@@ -1151,6 +1362,16 @@ User
   summary:     a
   
   $ hg log -u "user3"
+
+"-u USER" shouldn't be overridden by "user(USER)" alias
+
+  $ hg log --config 'revsetalias.user(x)=branch(x)' -u default
+  $ hg log --config 'revsetalias.user(x)=branch(x)' -u user1
+  changeset:   0:29a4c94f1924
+  user:        User One <user1@example.org>
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     a
+  
 
   $ cd ..
 
@@ -1474,7 +1695,7 @@ log -p -R repo
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ echo 'merge 1' > foo
   $ hg resolve -m foo
@@ -1485,7 +1706,7 @@ log -p -R repo
   merging foo
   warning: conflicts while merging foo! (edit, then use 'hg resolve --mark')
   1 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ echo 'merge 2' > foo
   $ hg resolve -m foo
@@ -1602,11 +1823,6 @@ Also check when maxrev < lastrevfilelog
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     add foo, related
   
-  changeset:   2:c4c64aedf0f7
-  user:        test
-  date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     add unrelated old foo
-  
   $ cd ..
 
 Issue2383: hg log showing _less_ differences than hg diff
@@ -1717,13 +1933,15 @@ enable obsolete to test hidden feature
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
   $ hg log -r a
-  abort: hidden revision 'a'!
+  abort: hidden revision 'a' is pruned!
   (use --hidden to access hidden revisions)
   [255]
 
 test that parent prevent a changeset to be hidden
 
   $ hg up 1 -q --hidden
+  updating to a hidden changeset a765632148dc
+  (hidden revision 'a765632148dc' is pruned)
   $ hg log --template='{rev}:{node}\n'
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
@@ -1740,6 +1958,8 @@ test that second parent prevent a changeset to be hidden too
 bookmarks prevent a changeset being hidden
 
   $ hg bookmark --hidden -r 1 X
+  bookmarking hidden changeset a765632148dc
+  (hidden revision 'a765632148dc' is pruned)
   $ hg log --template '{rev}:{node}\n'
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
@@ -1748,6 +1968,8 @@ bookmarks prevent a changeset being hidden
 divergent bookmarks are not hidden
 
   $ hg bookmark --hidden -r 1 X@foo
+  bookmarking hidden changeset a765632148dc
+  (hidden revision 'a765632148dc' is pruned)
   $ hg log --template '{rev}:{node}\n'
   1:a765632148dc55d38c35c4f247c618701886cb2f
   0:9f758d63dcde62d547ebfb08e1e7ee96535f2b05
@@ -1774,7 +1996,7 @@ test hidden revision 0 (issue5385)
   2:94375ec45bddd2a824535fc04855bd058c926ec0
   3:d7d28b288a6b83d5d2cf49f10c5974deed3a1d2e
   $ hg log -T'{rev}:{node}\n' -r:0
-  abort: hidden revision '0'!
+  abort: hidden revision '0' is pruned!
   (use --hidden to access hidden revisions)
   [255]
   $ hg log -T'{rev}:{node}\n' -f

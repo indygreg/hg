@@ -161,6 +161,41 @@ class httppeer(wireproto.wirepeer):
                 h.close()
                 getattr(h, "close_all", lambda: None)()
 
+    def _openurl(self, req):
+        if (self._ui.debugflag
+            and self._ui.configbool('devel', 'debug.peer-request')):
+            dbg = self._ui.debug
+            line = 'devel-peer-request: %s\n'
+            dbg(line % '%s %s' % (req.get_method(), req.get_full_url()))
+            hgargssize = None
+
+            for header, value in sorted(req.header_items()):
+                if header.startswith('X-hgarg-'):
+                    if hgargssize is None:
+                        hgargssize = 0
+                    hgargssize += len(value)
+                else:
+                    dbg(line % '  %s %s' % (header, value))
+
+            if hgargssize is not None:
+                dbg(line % '  %d bytes of commands arguments in headers'
+                    % hgargssize)
+
+            if req.has_data():
+                data = req.get_data()
+                length = getattr(data, 'length', None)
+                if length is None:
+                    length = len(data)
+                dbg(line % '  %d bytes of data' % length)
+
+            start = util.timer()
+
+        ret = self._urlopener.open(req)
+        if self._ui.configbool('devel', 'debug.peer-request'):
+            dbg(line % '  finished in %.4f seconds (%s)'
+                % (util.timer() - start, ret.code))
+        return ret
+
     # Begin of _basepeer interface.
 
     @util.propertycache
@@ -204,6 +239,7 @@ class httppeer(wireproto.wirepeer):
         self._caps = set(self._call('capabilities').split())
 
     def _callstream(self, cmd, _compressible=False, **args):
+        args = pycompat.byteskwargs(args)
         if cmd == 'pushkey':
             args['data'] = ''
         data = args.pop('data', None)
@@ -222,7 +258,7 @@ class httppeer(wireproto.wirepeer):
             if not data:
                 data = strargs
             else:
-                if isinstance(data, basestring):
+                if isinstance(data, bytes):
                     i = io.BytesIO(data)
                     i.length = len(data)
                     data = i
@@ -297,7 +333,7 @@ class httppeer(wireproto.wirepeer):
             self.ui.debug("sending %s bytes\n" % size)
             req.add_unredirected_header('Content-Length', '%d' % size)
         try:
-            resp = self._urlopener.open(req)
+            resp = self._openurl(req)
         except urlerr.httperror as inst:
             if inst.code == 401:
                 raise error.Abort(_('authorization failed'))

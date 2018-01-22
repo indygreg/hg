@@ -10,7 +10,9 @@ from __future__ import absolute_import, print_function
 
 import collections
 import copy
+import difflib
 import email
+import email.parser as emailparser
 import errno
 import hashlib
 import os
@@ -45,6 +47,7 @@ stringio = util.stringio
 
 gitre = re.compile(br'diff --git a/(.*) b/(.*)')
 tabsplitter = re.compile(br'(\t+|[^\t]+)')
+_nonwordre = re.compile(br'([^a-zA-Z0-9_\x80-\xff])')
 
 PatchError = error.PatchError
 
@@ -106,7 +109,7 @@ def split(stream):
             cur.append(line)
         c = chunk(cur)
 
-        m = email.Parser.Parser().parse(c)
+        m = emailparser.Parser().parse(c)
         if not m.is_multipart():
             yield msgfp(m)
         else:
@@ -148,6 +151,8 @@ def split(stream):
             if not l:
                 raise StopIteration
             return l
+
+        __next__ = next
 
     inheader = False
     cur = []
@@ -203,7 +208,7 @@ def extract(ui, fileobj):
 
     # attempt to detect the start of a patch
     # (this heuristic is borrowed from quilt)
-    diffre = re.compile(br'^(?:Index:[ \t]|diff[ \t]|RCS file: |'
+    diffre = re.compile(br'^(?:Index:[ \t]|diff[ \t]-|RCS file: |'
                         br'retrieving revision [0-9]+(\.[0-9]+)*$|'
                         br'---[ \t].*?^\+\+\+[ \t]|'
                         br'\*\*\*[ \t].*?^---[ \t])',
@@ -213,7 +218,7 @@ def extract(ui, fileobj):
     fd, tmpname = tempfile.mkstemp(prefix='hg-patch-')
     tmpfp = os.fdopen(fd, pycompat.sysstr('w'))
     try:
-        msg = email.Parser.Parser().parse(fileobj)
+        msg = emailparser.Parser().parse(fileobj)
 
         subject = msg['Subject'] and mail.headdecode(msg['Subject'])
         data['user'] = msg['From'] and mail.headdecode(msg['From'])
@@ -997,16 +1002,26 @@ class recordhunk(object):
 def getmessages():
     return {
         'multiple': {
+            'apply': _("apply change %d/%d to '%s'?"),
             'discard': _("discard change %d/%d to '%s'?"),
             'record': _("record change %d/%d to '%s'?"),
-            'revert': _("revert change %d/%d to '%s'?"),
         },
         'single': {
+            'apply': _("apply this change to '%s'?"),
             'discard': _("discard this change to '%s'?"),
             'record': _("record this change to '%s'?"),
-            'revert': _("revert this change to '%s'?"),
         },
         'help': {
+            'apply': _('[Ynesfdaq?]'
+                         '$$ &Yes, apply this change'
+                         '$$ &No, skip this change'
+                         '$$ &Edit this change manually'
+                         '$$ &Skip remaining changes to this file'
+                         '$$ Apply remaining changes to this &file'
+                         '$$ &Done, skip remaining changes and files'
+                         '$$ Apply &all changes to all remaining files'
+                         '$$ &Quit, applying no changes'
+                         '$$ &? (display help)'),
             'discard': _('[Ynesfdaq?]'
                          '$$ &Yes, discard this change'
                          '$$ &No, skip this change'
@@ -1027,16 +1042,6 @@ def getmessages():
                         '$$ Record &all changes to all remaining files'
                         '$$ &Quit, recording no changes'
                         '$$ &? (display help)'),
-            'revert': _('[Ynesfdaq?]'
-                        '$$ &Yes, revert this change'
-                        '$$ &No, skip this change'
-                        '$$ &Edit this change manually'
-                        '$$ &Skip remaining changes to this file'
-                        '$$ Revert remaining changes to this &file'
-                        '$$ &Done, skip remaining changes and files'
-                        '$$ Revert &all changes to all remaining files'
-                        '$$ &Quit, reverting no changes'
-                        '$$ &? (display help)')
         }
     }
 
@@ -1990,14 +1995,16 @@ def applydiff(ui, fp, backend, store, strip=1, prefix='', eolmode='strict'):
     return _applydiff(ui, fp, patchfile, backend, store, strip=strip,
                       prefix=prefix, eolmode=eolmode)
 
-def _applydiff(ui, fp, patcher, backend, store, strip=1, prefix='',
-               eolmode='strict'):
-
+def _canonprefix(repo, prefix):
     if prefix:
-        prefix = pathutil.canonpath(backend.repo.root, backend.repo.getcwd(),
-                                    prefix)
+        prefix = pathutil.canonpath(repo.root, repo.getcwd(), prefix)
         if prefix != '':
             prefix += '/'
+    return prefix
+
+def _applydiff(ui, fp, patcher, backend, store, strip=1, prefix='',
+               eolmode='strict'):
+    prefix = _canonprefix(backend.repo, prefix)
     def pstrip(p):
         return pathtransform(p, strip - 1, prefix)[1]
 
@@ -2183,20 +2190,22 @@ def patch(ui, repo, patchname, strip=1, prefix='', files=None, eolmode='strict',
     return internalpatch(ui, repo, patchname, strip, prefix, files, eolmode,
                          similarity)
 
-def changedfiles(ui, repo, patchpath, strip=1):
+def changedfiles(ui, repo, patchpath, strip=1, prefix=''):
     backend = fsbackend(ui, repo.root)
+    prefix = _canonprefix(repo, prefix)
     with open(patchpath, 'rb') as fp:
         changed = set()
         for state, values in iterhunks(fp):
             if state == 'file':
                 afile, bfile, first_hunk, gp = values
                 if gp:
-                    gp.path = pathtransform(gp.path, strip - 1, '')[1]
+                    gp.path = pathtransform(gp.path, strip - 1, prefix)[1]
                     if gp.oldpath:
-                        gp.oldpath = pathtransform(gp.oldpath, strip - 1, '')[1]
+                        gp.oldpath = pathtransform(gp.oldpath, strip - 1,
+                                                   prefix)[1]
                 else:
                     gp = makepatchmeta(backend, afile, bfile, first_hunk, strip,
-                                       '')
+                                       prefix)
                 changed.add(gp.path)
                 if gp.op == 'RENAME':
                     changed.add(gp.oldpath)
@@ -2246,6 +2255,7 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
         'showfunc': get('show_function', 'showfunc'),
         'context': get('unified', getter=ui.config),
     }
+    buildopts['worddiff'] = ui.configbool('experimental', 'worddiff')
 
     if git:
         buildopts['git'] = get('git')
@@ -2434,7 +2444,7 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
     modified = sorted(modifiedset)
     added = sorted(addedset)
     removed = sorted(removedset)
-    for dst, src in copy.items():
+    for dst, src in list(copy.items()):
         if src not in ctx1:
             # Files merged in during a merge and then copied/renamed are
             # reported as copies. We want to show them in the diff as additions.
@@ -2457,6 +2467,9 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
 
 def difflabel(func, *args, **kw):
     '''yields 2-tuples of (output, label) based on the output of func()'''
+    inlinecolor = False
+    if kw.get(r'opts'):
+        inlinecolor = kw[r'opts'].worddiff
     headprefixes = [('diff', 'diff.diffline'),
                     ('copy', 'diff.extended'),
                     ('rename', 'diff.extended'),
@@ -2473,6 +2486,9 @@ def difflabel(func, *args, **kw):
     head = False
     for chunk in func(*args, **kw):
         lines = chunk.split('\n')
+        matches = {}
+        if inlinecolor:
+            matches = _findmatches(lines)
         for i, line in enumerate(lines):
             if i != 0:
                 yield ('\n', '')
@@ -2496,11 +2512,17 @@ def difflabel(func, *args, **kw):
             for prefix, label in prefixes:
                 if stripline.startswith(prefix):
                     if diffline:
-                        for token in tabsplitter.findall(stripline):
-                            if '\t' == token[0]:
-                                yield (token, 'diff.tab')
-                            else:
-                                yield (token, label)
+                        if i in matches:
+                            for t, l in _inlinediff(lines[i].rstrip(),
+                                                    lines[matches[i]].rstrip(),
+                                                    label):
+                                yield (t, l)
+                        else:
+                            for token in tabsplitter.findall(stripline):
+                                if '\t' == token[0]:
+                                    yield (token, 'diff.tab')
+                                else:
+                                    yield (token, label)
                     else:
                         yield (stripline, label)
                     break
@@ -2508,6 +2530,75 @@ def difflabel(func, *args, **kw):
                 yield (line, '')
             if line != stripline:
                 yield (line[len(stripline):], 'diff.trailingwhitespace')
+
+def _findmatches(slist):
+    '''Look for insertion matches to deletion and returns a dict of
+    correspondences.
+    '''
+    lastmatch = 0
+    matches = {}
+    for i, line in enumerate(slist):
+        if line == '':
+            continue
+        if line[0] == '-':
+            lastmatch = max(lastmatch, i)
+            newgroup = False
+            for j, newline in enumerate(slist[lastmatch + 1:]):
+                if newline == '':
+                    continue
+                if newline[0] == '-' and newgroup: # too far, no match
+                    break
+                if newline[0] == '+': # potential match
+                    newgroup = True
+                    sim = difflib.SequenceMatcher(None, line, newline).ratio()
+                    if sim > 0.7:
+                        lastmatch = lastmatch + 1 + j
+                        matches[i] = lastmatch
+                        matches[lastmatch] = i
+                        break
+    return matches
+
+def _inlinediff(s1, s2, operation):
+    '''Perform string diff to highlight specific changes.'''
+    operation_skip = '+?' if operation == 'diff.deleted' else '-?'
+    if operation == 'diff.deleted':
+        s2, s1 = s1, s2
+
+    buff = []
+    # we never want to higlight the leading +-
+    if operation == 'diff.deleted' and s2.startswith('-'):
+        label = operation
+        token = '-'
+        s2 = s2[1:]
+        s1 = s1[1:]
+    elif operation == 'diff.inserted' and s1.startswith('+'):
+        label = operation
+        token = '+'
+        s2 = s2[1:]
+        s1 = s1[1:]
+    else:
+        raise error.ProgrammingError("Case not expected, operation = %s" %
+                                     operation)
+
+    s = difflib.ndiff(_nonwordre.split(s2), _nonwordre.split(s1))
+    for part in s:
+        if part[0] in operation_skip or len(part) == 2:
+            continue
+        l = operation + '.highlight'
+        if part[0] in ' ':
+            l = operation
+        if part[2:] == '\t':
+            l = 'diff.tab'
+        if l == label: # contiguous token with same label
+            token += part[2:]
+            continue
+        else:
+            buff.append((token, label))
+            label = l
+            token = part[2:]
+    buff.append((token, label))
+
+    return buff
 
 def diffui(*args, **kw):
     '''like diff(), but yields 2-tuples of (output, label) for ui.write()'''
@@ -2564,7 +2655,7 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
         l = len(text)
         s = hashlib.sha1('blob %d\0' % l)
         s.update(text)
-        return s.hexdigest()
+        return hex(s.digest())
 
     if opts.noprefix:
         aprefix = bprefix = ''

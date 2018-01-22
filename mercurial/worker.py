@@ -11,6 +11,8 @@ import errno
 import os
 import signal
 import sys
+import threading
+import time
 
 from .i18n import _
 from . import (
@@ -53,7 +55,7 @@ def _numworkers(ui):
             raise error.Abort(_('number of cpus must be an integer'))
     return min(max(countcpus(), 4), 32)
 
-if pycompat.isposix:
+if pycompat.isposix or pycompat.iswindows:
     _startupcost = 0.01
 else:
     _startupcost = 1e30
@@ -81,7 +83,8 @@ def worker(ui, costperarg, func, staticargs, args):
     args - arguments to split into chunks, to pass to individual
     workers
     '''
-    if worthwhile(ui, costperarg, len(args)):
+    enabled = ui.configbool('worker', 'enabled')
+    if enabled and worthwhile(ui, costperarg, len(args)):
         return _platformworker(ui, func, staticargs, args)
     return func(*staticargs + (args,))
 
@@ -203,7 +206,91 @@ def _posixexitstatus(code):
     elif os.WIFSIGNALED(code):
         return -os.WTERMSIG(code)
 
-if not pycompat.iswindows:
+def _windowsworker(ui, func, staticargs, args):
+    class Worker(threading.Thread):
+        def __init__(self, taskqueue, resultqueue, func, staticargs,
+                     group=None, target=None, name=None, verbose=None):
+            threading.Thread.__init__(self, group=group, target=target,
+                                      name=name, verbose=verbose)
+            self._taskqueue = taskqueue
+            self._resultqueue = resultqueue
+            self._func = func
+            self._staticargs = staticargs
+            self._interrupted = False
+            self.daemon = True
+            self.exception = None
+
+        def interrupt(self):
+            self._interrupted = True
+
+        def run(self):
+            try:
+                while not self._taskqueue.empty():
+                    try:
+                        args = self._taskqueue.get_nowait()
+                        for res in self._func(*self._staticargs + (args,)):
+                            self._resultqueue.put(res)
+                            # threading doesn't provide a native way to
+                            # interrupt execution. handle it manually at every
+                            # iteration.
+                            if self._interrupted:
+                                return
+                    except util.empty:
+                        break
+            except Exception as e:
+                # store the exception such that the main thread can resurface
+                # it as if the func was running without workers.
+                self.exception = e
+                raise
+
+    threads = []
+    def trykillworkers():
+        # Allow up to 1 second to clean worker threads nicely
+        cleanupend = time.time() + 1
+        for t in threads:
+            t.interrupt()
+        for t in threads:
+            remainingtime = cleanupend - time.time()
+            t.join(remainingtime)
+            if t.is_alive():
+                # pass over the workers joining failure. it is more
+                # important to surface the inital exception than the
+                # fact that one of workers may be processing a large
+                # task and does not get to handle the interruption.
+                ui.warn(_("failed to kill worker threads while "
+                          "handling an exception\n"))
+                return
+
+    workers = _numworkers(ui)
+    resultqueue = util.queue()
+    taskqueue = util.queue()
+    # partition work to more pieces than workers to minimize the chance
+    # of uneven distribution of large tasks between the workers
+    for pargs in partition(args, workers * 20):
+        taskqueue.put(pargs)
+    for _i in range(workers):
+        t = Worker(taskqueue, resultqueue, func, staticargs)
+        threads.append(t)
+        t.start()
+    try:
+        while len(threads) > 0:
+            while not resultqueue.empty():
+                yield resultqueue.get()
+            threads[0].join(0.05)
+            finishedthreads = [_t for _t in threads if not _t.is_alive()]
+            for t in finishedthreads:
+                if t.exception is not None:
+                    raise t.exception
+                threads.remove(t)
+    except (Exception, KeyboardInterrupt): # re-raises
+        trykillworkers()
+        raise
+    while not resultqueue.empty():
+        yield resultqueue.get()
+
+if pycompat.iswindows:
+    _platformworker = _windowsworker
+else:
     _platformworker = _posixworker
     _exitstatus = _posixexitstatus
 

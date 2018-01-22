@@ -55,13 +55,13 @@ def _expandedabspath(path):
 
 def _getstorehashcachename(remotepath):
     '''get a unique filename for the store hash cache of a remote repository'''
-    return hashlib.sha1(_expandedabspath(remotepath)).hexdigest()[0:12]
+    return node.hex(hashlib.sha1(_expandedabspath(remotepath)).digest())[0:12]
 
 class SubrepoAbort(error.Abort):
     """Exception class used to avoid handling a subrepo error more than once"""
     def __init__(self, *args, **kw):
-        self.subrepo = kw.pop('subrepo', None)
-        self.cause = kw.pop('cause', None)
+        self.subrepo = kw.pop(r'subrepo', None)
+        self.cause = kw.pop(r'cause', None)
         error.Abort.__init__(self, *args, **kw)
 
 def annotatesubrepoerror(func):
@@ -389,24 +389,44 @@ def _abssource(repo, push=False, abort=True):
     if util.safehasattr(repo, '_subparent'):
         source = util.url(repo._subsource)
         if source.isabs():
-            return str(source)
+            return bytes(source)
         source.path = posixpath.normpath(source.path)
         parent = _abssource(repo._subparent, push, abort=False)
         if parent:
             parent = util.url(util.pconvert(parent))
             parent.path = posixpath.join(parent.path or '', source.path)
             parent.path = posixpath.normpath(parent.path)
-            return str(parent)
+            return bytes(parent)
     else: # recursion reached top repo
+        path = None
         if util.safehasattr(repo, '_subtoppath'):
-            return repo._subtoppath
-        if push and repo.ui.config('paths', 'default-push'):
-            return repo.ui.config('paths', 'default-push')
-        if repo.ui.config('paths', 'default'):
-            return repo.ui.config('paths', 'default')
-        if repo.shared():
-            # chop off the .hg component to get the default path form
+            path = repo._subtoppath
+        elif push and repo.ui.config('paths', 'default-push'):
+            path = repo.ui.config('paths', 'default-push')
+        elif repo.ui.config('paths', 'default'):
+            path = repo.ui.config('paths', 'default')
+        elif repo.shared():
+            # chop off the .hg component to get the default path form.  This has
+            # already run through vfsmod.vfs(..., realpath=True), so it doesn't
+            # have problems with 'C:'
             return os.path.dirname(repo.sharedpath)
+        if path:
+            # issue5770: 'C:\' and 'C:' are not equivalent paths.  The former is
+            # as expected: an absolute path to the root of the C: drive.  The
+            # latter is a relative path, and works like so:
+            #
+            #   C:\>cd C:\some\path
+            #   C:\>D:
+            #   D:\>python -c "import os; print os.path.abspath('C:')"
+            #   C:\some\path
+            #
+            #   D:\>python -c "import os; print os.path.abspath('C:relative')"
+            #   C:\some\path\relative
+            if util.hasdriveletter(path):
+                if len(path) == 2 or path[2:3] not in br'\/':
+                    path = os.path.abspath(path)
+            return path
+
     if abort:
         raise error.Abort(_("default path for subrepository not found"))
 
@@ -789,7 +809,7 @@ class hgsubrepo(abstractsubrepo):
         yield '# %s\n' % _expandedabspath(remotepath)
         vfs = self._repo.vfs
         for relname in filelist:
-            filehash = hashlib.sha1(vfs.tryread(relname)).hexdigest()
+            filehash = node.hex(hashlib.sha1(vfs.tryread(relname)).digest())
             yield '%s = %s\n' % (relname, filehash)
 
     @propertycache
@@ -811,7 +831,7 @@ class hgsubrepo(abstractsubrepo):
         with self._repo.lock():
             storehash = list(self._calcstorehash(remotepath))
             vfs = self._cachestorehashvfs
-            vfs.writelines(cachefile, storehash, mode='w', notindexed=True)
+            vfs.writelines(cachefile, storehash, mode='wb', notindexed=True)
 
     def _getctx(self):
         '''fetch the context for this subrepo revision, possibly a workingctx
@@ -841,11 +861,7 @@ class hgsubrepo(abstractsubrepo):
             if defpath != defpushpath:
                 addpathconfig('default-push', defpushpath)
 
-            fp = self._repo.vfs("hgrc", "w", text=True)
-            try:
-                fp.write(''.join(lines))
-            finally:
-                fp.close()
+            self._repo.vfs.write('hgrc', util.tonativeeol(''.join(lines)))
 
     @annotatesubrepoerror
     def add(self, ui, match, prefix, explicitonly, **opts):
@@ -1154,24 +1170,24 @@ class hgsubrepo(abstractsubrepo):
         # 2. update the subrepo to the revision specified in
         #    the corresponding substate dictionary
         self.ui.status(_('reverting subrepo %s\n') % substate[0])
-        if not opts.get('no_backup'):
+        if not opts.get(r'no_backup'):
             # Revert all files on the subrepo, creating backups
             # Note that this will not recursively revert subrepos
             # We could do it if there was a set:subrepos() predicate
             opts = opts.copy()
-            opts['date'] = None
-            opts['rev'] = substate[1]
+            opts[r'date'] = None
+            opts[r'rev'] = substate[1]
 
             self.filerevert(*pats, **opts)
 
         # Update the repo to the revision specified in the given substate
-        if not opts.get('dry_run'):
+        if not opts.get(r'dry_run'):
             self.get(substate, overwrite=True)
 
     def filerevert(self, *pats, **opts):
-        ctx = self._repo[opts['rev']]
+        ctx = self._repo[opts[r'rev']]
         parents = self._repo.dirstate.parents()
-        if opts.get('all'):
+        if opts.get(r'all'):
             pats = ['set:modified()']
         else:
             pats = []
@@ -1244,7 +1260,7 @@ class svnsubrepo(abstractsubrepo):
         if not self.ui.interactive():
             # Making stdin be a pipe should prevent svn from behaving
             # interactively even if we can't pass --non-interactive.
-            extrakw['stdin'] = subprocess.PIPE
+            extrakw[r'stdin'] = subprocess.PIPE
             # Starting in svn 1.5 --non-interactive is a global flag
             # instead of being per-command, but we need to support 1.4 so
             # we have to be intelligent about what commands take
@@ -1283,6 +1299,9 @@ class svnsubrepo(abstractsubrepo):
         if not m:
             raise error.Abort(_('cannot retrieve svn tool version'))
         return (int(m.group(1)), int(m.group(2)))
+
+    def _svnmissing(self):
+        return not self.wvfs.exists('.svn')
 
     def _wcrevs(self):
         # Get the working directory revision as well as the last
@@ -1331,7 +1350,10 @@ class svnsubrepo(abstractsubrepo):
                     return True, True, bool(missing)
         return bool(changes), False, bool(missing)
 
+    @annotatesubrepoerror
     def dirty(self, ignoreupdate=False, missing=False):
+        if self._svnmissing():
+            return self._state[1] != ''
         wcchanged = self._wcchanged()
         changed = wcchanged[0] or (missing and wcchanged[2])
         if not changed:

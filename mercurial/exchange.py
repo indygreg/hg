@@ -13,6 +13,7 @@ import hashlib
 
 from .i18n import _
 from .node import (
+    bin,
     hex,
     nullid,
 )
@@ -23,6 +24,7 @@ from . import (
     discovery,
     error,
     lock as lockmod,
+    logexchange,
     obsolete,
     phases,
     pushkey,
@@ -512,7 +514,11 @@ def _pushdiscovery(pushop):
 def _pushdiscoverychangeset(pushop):
     """discover the changeset that need to be pushed"""
     fci = discovery.findcommonincoming
-    commoninc = fci(pushop.repo, pushop.remote, force=pushop.force)
+    if pushop.revs:
+        commoninc = fci(pushop.repo, pushop.remote, force=pushop.force,
+                        ancestorsof=pushop.revs)
+    else:
+        commoninc = fci(pushop.repo, pushop.remote, force=pushop.force)
     common, inc, remoteheads = commoninc
     fco = discovery.findcommonoutgoing
     outgoing = fco(pushop.repo, pushop.remote, onlyheads=pushop.revs,
@@ -742,6 +748,22 @@ def _pushing(pushop):
                 or pushop.outobsmarkers
                 or pushop.outbookmarks)
 
+@b2partsgenerator('check-bookmarks')
+def _pushb2checkbookmarks(pushop, bundler):
+    """insert bookmark move checking"""
+    if not _pushing(pushop) or pushop.force:
+        return
+    b2caps = bundle2.bundle2caps(pushop.remote)
+    hasbookmarkcheck = 'bookmarks' in b2caps
+    if not (pushop.outbookmarks and hasbookmarkcheck):
+        return
+    data = []
+    for book, old, new in pushop.outbookmarks:
+        old = bin(old)
+        data.append((book, old))
+    checkdata = bookmod.binaryencode(data)
+    bundler.newpart('check:bookmarks', data=checkdata)
+
 @b2partsgenerator('check-phases')
 def _pushb2checkphases(pushop, bundler):
     """insert phase move checking"""
@@ -879,8 +901,46 @@ def _pushb2bookmarks(pushop, bundler):
     if 'bookmarks' in pushop.stepsdone:
         return
     b2caps = bundle2.bundle2caps(pushop.remote)
-    if 'pushkey' not in b2caps:
+
+    legacy = pushop.repo.ui.configlist('devel', 'legacy.exchange')
+    legacybooks = 'bookmarks' in legacy
+
+    if not legacybooks and 'bookmarks' in b2caps:
+        return _pushb2bookmarkspart(pushop, bundler)
+    elif 'pushkey' in b2caps:
+        return _pushb2bookmarkspushkey(pushop, bundler)
+
+def _bmaction(old, new):
+    """small utility for bookmark pushing"""
+    if not old:
+        return 'export'
+    elif not new:
+        return 'delete'
+    return 'update'
+
+def _pushb2bookmarkspart(pushop, bundler):
+    pushop.stepsdone.add('bookmarks')
+    if not pushop.outbookmarks:
         return
+
+    allactions = []
+    data = []
+    for book, old, new in pushop.outbookmarks:
+        new = bin(new)
+        data.append((book, new))
+        allactions.append((book, _bmaction(old, new)))
+    checkdata = bookmod.binaryencode(data)
+    bundler.newpart('bookmarks', data=checkdata)
+
+    def handlereply(op):
+        ui = pushop.ui
+        # if success
+        for book, action in allactions:
+            ui.status(bookmsgmap[action][0] % book)
+
+    return handlereply
+
+def _pushb2bookmarkspushkey(pushop, bundler):
     pushop.stepsdone.add('bookmarks')
     part2book = []
     enc = pushkey.encode
@@ -955,7 +1015,8 @@ def _pushbundle2(pushop):
 
     # create reply capability
     capsblob = bundle2.encodecaps(bundle2.getrepocaps(pushop.repo,
-                                                      allowpushback=pushback))
+                                                      allowpushback=pushback,
+                                                      role='client'))
     bundler.newpart('replycaps', data=capsblob)
     replyhandlers = []
     for partgenname in b2partsgenorder:
@@ -1273,7 +1334,8 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
     if opargs is None:
         opargs = {}
     pullop = pulloperation(repo, remote, heads, force, bookmarks=bookmarks,
-                           streamclonerequested=streamclonerequested, **opargs)
+                           streamclonerequested=streamclonerequested,
+                           **pycompat.strkwargs(opargs))
 
     peerlocal = pullop.remote.local()
     if peerlocal:
@@ -1284,11 +1346,8 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
                     " %s") % (', '.join(sorted(missing)))
             raise error.Abort(msg)
 
-    wlock = lock = None
-    try:
-        wlock = pullop.repo.wlock()
-        lock = pullop.repo.lock()
-        pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
+    pullop.trmanager = transactionmanager(repo, 'pull', remote.url())
+    with repo.wlock(), repo.lock(), pullop.trmanager:
         # This should ideally be in _pullbundle2(). However, it needs to run
         # before discovery to avoid extra work.
         _maybeapplyclonebundle(pullop)
@@ -1300,9 +1359,10 @@ def pull(repo, remote, heads=None, force=False, bookmarks=(), opargs=None,
         _pullphase(pullop)
         _pullbookmarks(pullop)
         _pullobsolete(pullop)
-        pullop.trmanager.close()
-    finally:
-        lockmod.release(pullop.trmanager, lock, wlock)
+
+    # storing remotenames
+    if repo.ui.configbool('experimental', 'remotenames'):
+        logexchange.pullremotenames(repo, remote)
 
     return pullop
 
@@ -1348,7 +1408,8 @@ def _pullbookmarkbundle1(pullop):
         # all known bundle2 servers now support listkeys, but lets be nice with
         # new implementation.
         return
-    pullop.remotebookmarks = pullop.remote.listkeys('bookmarks')
+    books = pullop.remote.listkeys('bookmarks')
+    pullop.remotebookmarks = bookmod.unhexlifybookmarks(books)
 
 
 @pulldiscovery('changegroup')
@@ -1388,32 +1449,59 @@ def _pullbundle2(pullop):
     """pull data using bundle2
 
     For now, the only supported data are changegroup."""
-    kwargs = {'bundlecaps': caps20to10(pullop.repo)}
+    kwargs = {'bundlecaps': caps20to10(pullop.repo, role='client')}
+
+    # make ui easier to access
+    ui = pullop.repo.ui
 
     # At the moment we don't do stream clones over bundle2. If that is
     # implemented then here's where the check for that will go.
-    streaming = False
+    streaming = streamclone.canperformstreamclone(pullop, bundle2=True)[0]
 
-    # pulling changegroup
-    pullop.stepsdone.add('changegroup')
-
+    # declare pull perimeters
     kwargs['common'] = pullop.common
     kwargs['heads'] = pullop.heads or pullop.rheads
-    kwargs['cg'] = pullop.fetch
 
-    ui = pullop.repo.ui
-    legacyphase = 'phases' in ui.configlist('devel', 'legacy.exchange')
-    hasbinaryphase = 'heads' in pullop.remotebundle2caps.get('phases', ())
-    if (not legacyphase and hasbinaryphase):
-        kwargs['phases'] = True
+    if streaming:
+        kwargs['cg'] = False
+        kwargs['stream'] = True
+        pullop.stepsdone.add('changegroup')
         pullop.stepsdone.add('phases')
 
+    else:
+        # pulling changegroup
+        pullop.stepsdone.add('changegroup')
+
+        kwargs['cg'] = pullop.fetch
+
+        legacyphase = 'phases' in ui.configlist('devel', 'legacy.exchange')
+        hasbinaryphase = 'heads' in pullop.remotebundle2caps.get('phases', ())
+        if (not legacyphase and hasbinaryphase):
+            kwargs['phases'] = True
+            pullop.stepsdone.add('phases')
+
+        if 'listkeys' in pullop.remotebundle2caps:
+            if 'phases' not in pullop.stepsdone:
+                kwargs['listkeys'] = ['phases']
+
+    bookmarksrequested = False
+    legacybookmark = 'bookmarks' in ui.configlist('devel', 'legacy.exchange')
+    hasbinarybook = 'bookmarks' in pullop.remotebundle2caps
+
+    if pullop.remotebookmarks is not None:
+        pullop.stepsdone.add('request-bookmarks')
+
+    if ('request-bookmarks' not in pullop.stepsdone
+        and pullop.remotebookmarks is None
+        and not legacybookmark and hasbinarybook):
+        kwargs['bookmarks'] = True
+        bookmarksrequested = True
+
     if 'listkeys' in pullop.remotebundle2caps:
-        if 'phases' not in pullop.stepsdone:
-            kwargs['listkeys'] = ['phases']
-        if pullop.remotebookmarks is None:
+        if 'request-bookmarks' not in pullop.stepsdone:
             # make sure to always includes bookmark data when migrating
             # `hg incoming --bundle` to using this function.
+            pullop.stepsdone.add('request-bookmarks')
             kwargs.setdefault('listkeys', []).append('bookmarks')
 
     # If this is a full pull / clone and the server supports the clone bundles
@@ -1441,7 +1529,9 @@ def _pullbundle2(pullop):
     _pullbundle2extraprepare(pullop, kwargs)
     bundle = pullop.remote.getbundle('pull', **pycompat.strkwargs(kwargs))
     try:
-        op = bundle2.processbundle(pullop.repo, bundle, pullop.gettransaction)
+        op = bundle2.bundleoperation(pullop.repo, pullop.gettransaction)
+        op.modes['bookmarks'] = 'records'
+        bundle2.processbundle(pullop.repo, bundle, op=op)
     except bundle2.AbortFromPart as exc:
         pullop.repo.ui.status(_('remote: abort: %s\n') % exc)
         raise error.Abort(_('pull failed on remote'), hint=exc.hint)
@@ -1457,9 +1547,15 @@ def _pullbundle2(pullop):
             _pullapplyphases(pullop, value)
 
     # processing bookmark update
-    for namespace, value in op.records['listkeys']:
-        if namespace == 'bookmarks':
-            pullop.remotebookmarks = value
+    if bookmarksrequested:
+        books = {}
+        for record in op.records['bookmarks']:
+            books[record['bookmark']] = record["node"]
+        pullop.remotebookmarks = books
+    else:
+        for namespace, value in op.records['listkeys']:
+            if namespace == 'bookmarks':
+                pullop.remotebookmarks = bookmod.unhexlifybookmarks(value)
 
     # bookmark data were either already there or pulled in the bundle
     if pullop.remotebookmarks is not None:
@@ -1552,7 +1648,6 @@ def _pullbookmarks(pullop):
     pullop.stepsdone.add('bookmarks')
     repo = pullop.repo
     remotebookmarks = pullop.remotebookmarks
-    remotebookmarks = bookmod.unhexlifybookmarks(remotebookmarks)
     bookmod.updatefromremote(repo.ui, repo, remotebookmarks,
                              pullop.remote.url(),
                              pullop.gettransaction,
@@ -1586,10 +1681,10 @@ def _pullobsolete(pullop):
             pullop.repo.invalidatevolatilesets()
     return tr
 
-def caps20to10(repo):
+def caps20to10(repo, role):
     """return a set with appropriate options to use bundle20 during getbundle"""
     caps = {'HG20'}
-    capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo))
+    capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo, role=role))
     caps.add('bundle2=' + urlreq.quote(capsblob))
     return caps
 
@@ -1632,9 +1727,11 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
     Could be a bundle HG10 or a bundle HG20 depending on bundlecaps
     passed.
 
-    Returns an iterator over raw chunks (of varying sizes).
+    Returns a 2-tuple of a dict with metadata about the generated bundle
+    and an iterator over raw chunks (of varying sizes).
     """
     kwargs = pycompat.byteskwargs(kwargs)
+    info = {}
     usebundle2 = bundle2requested(bundlecaps)
     # bundle10 case
     if not usebundle2:
@@ -1645,10 +1742,12 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
             raise ValueError(_('unsupported getbundle arguments: %s')
                              % ', '.join(sorted(kwargs.keys())))
         outgoing = _computeoutgoing(repo, heads, common)
-        return changegroup.makestream(repo, outgoing, '01', source,
-                                      bundlecaps=bundlecaps)
+        info['bundleversion'] = 1
+        return info, changegroup.makestream(repo, outgoing, '01', source,
+                                            bundlecaps=bundlecaps)
 
     # bundle20 case
+    info['bundleversion'] = 2
     b2caps = {}
     for bcaps in bundlecaps:
         if bcaps.startswith('bundle2='):
@@ -1664,14 +1763,41 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
         func(bundler, repo, source, bundlecaps=bundlecaps, b2caps=b2caps,
              **pycompat.strkwargs(kwargs))
 
-    return bundler.getchunks()
+    info['prefercompressed'] = bundler.prefercompressed
+
+    return info, bundler.getchunks()
+
+@getbundle2partsgenerator('stream2')
+def _getbundlestream2(bundler, repo, source, bundlecaps=None,
+                      b2caps=None, heads=None, common=None, **kwargs):
+    if not kwargs.get('stream', False):
+        return
+
+    if not streamclone.allowservergeneration(repo):
+        raise error.Abort(_('stream data requested but server does not allow '
+                            'this feature'),
+                          hint=_('well-behaved clients should not be '
+                                 'requesting stream data from servers not '
+                                 'advertising it; the client may be buggy'))
+
+    # Stream clones don't compress well. And compression undermines a
+    # goal of stream clones, which is to be fast. Communicate the desire
+    # to avoid compression to consumers of the bundle.
+    bundler.prefercompressed = False
+
+    filecount, bytecount, it = streamclone.generatev2(repo)
+    requirements = ' '.join(sorted(repo.requirements))
+    part = bundler.newpart('stream2', data=it)
+    part.addparam('bytecount', '%d' % bytecount, mandatory=True)
+    part.addparam('filecount', '%d' % filecount, mandatory=True)
+    part.addparam('requirements', requirements, mandatory=True)
 
 @getbundle2partsgenerator('changegroup')
 def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
                               b2caps=None, heads=None, common=None, **kwargs):
     """add a changegroup part to the requested bundle"""
     cgstream = None
-    if kwargs.get('cg', True):
+    if kwargs.get(r'cg', True):
         # build changegroup bundle here.
         version = '01'
         cgversions = b2caps.get('changegroup')
@@ -1695,11 +1821,24 @@ def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
         if 'treemanifest' in repo.requirements:
             part.addparam('treemanifest', '1')
 
+@getbundle2partsgenerator('bookmarks')
+def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,
+                              b2caps=None, **kwargs):
+    """add a bookmark part to the requested bundle"""
+    if not kwargs.get(r'bookmarks', False):
+        return
+    if 'bookmarks' not in b2caps:
+        raise ValueError(_('no common bookmarks exchange method'))
+    books  = bookmod.listbinbookmarks(repo)
+    data = bookmod.binaryencode(books)
+    if data:
+        bundler.newpart('bookmarks', data=data)
+
 @getbundle2partsgenerator('listkeys')
 def _getbundlelistkeysparts(bundler, repo, source, bundlecaps=None,
                             b2caps=None, **kwargs):
     """add parts containing listkeys namespaces to the requested bundle"""
-    listkeys = kwargs.get('listkeys', ())
+    listkeys = kwargs.get(r'listkeys', ())
     for namespace in listkeys:
         part = bundler.newpart('listkeys')
         part.addparam('namespace', namespace)
@@ -1710,7 +1849,7 @@ def _getbundlelistkeysparts(bundler, repo, source, bundlecaps=None,
 def _getbundleobsmarkerpart(bundler, repo, source, bundlecaps=None,
                             b2caps=None, heads=None, **kwargs):
     """add an obsolescence markers part to the requested bundle"""
-    if kwargs.get('obsmarkers', False):
+    if kwargs.get(r'obsmarkers', False):
         if heads is None:
             heads = repo.heads()
         subset = [c.node() for c in repo.set('::%ln', heads)]
@@ -1722,7 +1861,7 @@ def _getbundleobsmarkerpart(bundler, repo, source, bundlecaps=None,
 def _getbundlephasespart(bundler, repo, source, bundlecaps=None,
                             b2caps=None, heads=None, **kwargs):
     """add phase heads part to the requested bundle"""
-    if kwargs.get('phases', False):
+    if kwargs.get(r'phases', False):
         if not 'heads' in b2caps.get('phases'):
             raise ValueError(_('no common phases exchange method'))
         if heads is None:
@@ -1779,22 +1918,11 @@ def _getbundletagsfnodes(bundler, repo, source, bundlecaps=None,
     # Don't send unless:
     # - changeset are being exchanged,
     # - the client supports it.
-    if not (kwargs.get('cg', True) and 'hgtagsfnodes' in b2caps):
+    if not (kwargs.get(r'cg', True) and 'hgtagsfnodes' in b2caps):
         return
 
     outgoing = _computeoutgoing(repo, heads, common)
     bundle2.addparttagsfnodescache(repo, bundler, outgoing)
-
-def _getbookmarks(repo, **kwargs):
-    """Returns bookmark to node mapping.
-
-    This function is primarily used to generate `bookmarks` bundle2 part.
-    It is a separate function in order to make it easy to wrap it
-    in extensions. Passing `kwargs` to the function makes it easy to
-    add new parameters in extensions.
-    """
-
-    return dict(bookmod.listbinbookmarks(repo))
 
 def check_heads(repo, their_heads, context):
     """check if the heads of a repo have been modified

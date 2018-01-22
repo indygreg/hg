@@ -61,7 +61,7 @@ Non-interactive merge:
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ status
@@ -128,7 +128,7 @@ Interactive merge:
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
   0 files updated, 2 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ status
@@ -205,7 +205,7 @@ Interactive merge with bad input:
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
   0 files updated, 1 files merged, 1 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ status
@@ -269,7 +269,7 @@ Interactive merge with not enough input:
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 1 files removed, 2 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
   $ status
@@ -422,7 +422,7 @@ Fail
 
   $ hg merge --tool :fail
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ status 2>&1 | tee $TESTTMP/fail.status
   --- status ---
@@ -479,7 +479,7 @@ Force prompts with no input (should be similar to :fail)
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? 
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? 
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ status 2>&1 | tee $TESTTMP/prompt.status
   --- status ---
@@ -538,7 +538,7 @@ Force prompts
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? u
   keep (l)ocal [working copy], take (o)ther [merge rev], or leave (u)nresolved for file3? u
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ status
   --- status ---
@@ -596,7 +596,7 @@ Choose to merge all files
   merging file3
   warning: conflicts while merging file3! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 3 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ status
   --- status ---

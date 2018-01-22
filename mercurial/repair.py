@@ -203,8 +203,9 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
 
             deleteobsmarkers(repo.obsstore, stripobsidx)
             del repo.obsstore
+            repo.invalidatevolatilesets()
+            repo._phasecache.filterunknown(repo)
 
-        repo._phasecache.filterunknown(repo)
         if tmpbundlefile:
             ui.note(_("adding branch\n"))
             f = vfs.open(tmpbundlefile, "rb")
@@ -222,8 +223,6 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
             if not repo.ui.verbose:
                 repo.ui.popbuffer()
             f.close()
-        repo._phasecache.invalidate()
-
 
         with repo.transaction('repair') as tr:
             bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]

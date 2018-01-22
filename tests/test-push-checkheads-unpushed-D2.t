@@ -51,7 +51,7 @@ Test setup
   $ mkcommit B0
   $ cd ../client
   $ hg pull
-  pulling from $TESTTMP/D2/server (glob)
+  pulling from $TESTTMP/D2/server
   searching for changes
   adding changesets
   adding manifests
@@ -65,6 +65,7 @@ Test setup
   created new head
   $ hg debugobsolete `getid "desc(A0)" ` `getid "desc(A1)"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete --record-parents `getid "desc(B0)"`
   obsoleted 1 changesets
   $ hg up 0
@@ -87,7 +88,7 @@ Actual testing
 --------------
 
   $ hg push --rev 'desc(C0)'
-  pushing to $TESTTMP/D2/server (glob)
+  pushing to $TESTTMP/D2/server
   searching for changes
   abort: push creates new remote head 0f88766e02d6!
   (merge or see 'hg help push' for details about pushing new heads)

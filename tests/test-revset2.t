@@ -152,7 +152,7 @@ test that `or` operation skips duplicated revisions from right-hand side
   * set:
   <addset
     <baseset- [1, 3, 5]>,
-    <generatorset+>>
+    <generatorsetdesc+>>
   5
   3
   1
@@ -174,7 +174,7 @@ test that `or` operation skips duplicated revisions from right-hand side
             (symbol '5'))))))
   * set:
   <addset+
-    <generatorset+>,
+    <generatorsetdesc+>,
     <baseset- [1, 3, 5]>>
   0
   1
@@ -927,7 +927,7 @@ test alias recursion
       (symbol 'merge')
       None))
   * set:
-  <generatorset+>
+  <generatorsetasc+>
   6
   7
 
@@ -1636,6 +1636,8 @@ Test obsstore related revsets
   >  \|/   |     # amend: F -> G
   >   A    A  Z  # amend: A -> Z
   > EOS
+  3 new orphan changesets
+  3 new content-divergent changesets
 
   $ hg log -r 'successors(Z)' -T '{desc}\n'
   Z

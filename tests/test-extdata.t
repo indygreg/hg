@@ -46,8 +46,8 @@ test weight of extdata() revset
 test non-zero exit of shell command
 
   $ hg log -qr "extdata(emptygrep)"
-  $ hg log -qr "extdata(emptygrep)" --debug
-  extdata command 'cat extdata.txt | grep empty' exited with status * (glob)
+  abort: extdata command 'cat extdata.txt | grep empty' failed: exited with status 1
+  [255]
 
 test bad extdata() revset source
 
@@ -88,8 +88,7 @@ we don't fix up relative file URLs, but we do run shell commands in repo root
   $ mkdir sub
   $ cd sub
   $ hg log -qr "extdata(filedata)"
-  abort: error: The system cannot find the file specified (windows !)
-  abort: error: No such file or directory (no-windows !)
+  abort: error: $ENOENT$
   [255]
   $ hg log -qr "extdata(shelldata)"
   2:f6ed99a58333

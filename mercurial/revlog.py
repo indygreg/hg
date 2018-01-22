@@ -33,6 +33,9 @@ from .node import (
     wdirrev,
 )
 from .i18n import _
+from .thirdparty import (
+    attr,
+)
 from . import (
     ancestor,
     error,
@@ -250,6 +253,184 @@ def _slicechunk(revlog, revs):
     chunk = _trimchunk(revlog, revs, previdx)
     if chunk:
         yield chunk
+
+@attr.s(slots=True, frozen=True)
+class _deltainfo(object):
+    distance = attr.ib()
+    deltalen = attr.ib()
+    data = attr.ib()
+    base = attr.ib()
+    chainbase = attr.ib()
+    chainlen = attr.ib()
+    compresseddeltalen = attr.ib()
+
+class _deltacomputer(object):
+    def __init__(self, revlog):
+        self.revlog = revlog
+
+    def _getcandidaterevs(self, p1, p2, cachedelta):
+        """
+        Provides revisions that present an interest to be diffed against,
+        grouped by level of easiness.
+        """
+        revlog = self.revlog
+        curr = len(revlog)
+        prev = curr - 1
+        p1r, p2r = revlog.rev(p1), revlog.rev(p2)
+
+        # should we try to build a delta?
+        if prev != nullrev and revlog.storedeltachains:
+            tested = set()
+            # This condition is true most of the time when processing
+            # changegroup data into a generaldelta repo. The only time it
+            # isn't true is if this is the first revision in a delta chain
+            # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
+            if cachedelta and revlog._generaldelta and revlog._lazydeltabase:
+                # Assume what we received from the server is a good choice
+                # build delta will reuse the cache
+                yield (cachedelta[0],)
+                tested.add(cachedelta[0])
+
+            if revlog._generaldelta:
+                # exclude already lazy tested base if any
+                parents = [p for p in (p1r, p2r)
+                           if p != nullrev and p not in tested]
+                if parents and not revlog._aggressivemergedeltas:
+                    # Pick whichever parent is closer to us (to minimize the
+                    # chance of having to build a fulltext).
+                    parents = [max(parents)]
+                tested.update(parents)
+                yield parents
+
+            if prev not in tested:
+                # other approach failed try against prev to hopefully save us a
+                # fulltext.
+                yield (prev,)
+
+    def buildtext(self, revinfo, fh):
+        """Builds a fulltext version of a revision
+
+        revinfo: _revisioninfo instance that contains all needed info
+        fh:      file handle to either the .i or the .d revlog file,
+                 depending on whether it is inlined or not
+        """
+        btext = revinfo.btext
+        if btext[0] is not None:
+            return btext[0]
+
+        revlog = self.revlog
+        cachedelta = revinfo.cachedelta
+        flags = revinfo.flags
+        node = revinfo.node
+
+        baserev = cachedelta[0]
+        delta = cachedelta[1]
+        # special case deltas which replace entire base; no need to decode
+        # base revision. this neatly avoids censored bases, which throw when
+        # they're decoded.
+        hlen = struct.calcsize(">lll")
+        if delta[:hlen] == mdiff.replacediffheader(revlog.rawsize(baserev),
+                                                   len(delta) - hlen):
+            btext[0] = delta[hlen:]
+        else:
+            basetext = revlog.revision(baserev, _df=fh, raw=True)
+            btext[0] = mdiff.patch(basetext, delta)
+
+        try:
+            res = revlog._processflags(btext[0], flags, 'read', raw=True)
+            btext[0], validatehash = res
+            if validatehash:
+                revlog.checkhash(btext[0], node, p1=revinfo.p1, p2=revinfo.p2)
+            if flags & REVIDX_ISCENSORED:
+                raise RevlogError(_('node %s is not censored') % node)
+        except CensoredNodeError:
+            # must pass the censored index flag to add censored revisions
+            if not flags & REVIDX_ISCENSORED:
+                raise
+        return btext[0]
+
+    def _builddeltadiff(self, base, revinfo, fh):
+        revlog = self.revlog
+        t = self.buildtext(revinfo, fh)
+        if revlog.iscensored(base):
+            # deltas based on a censored revision must replace the
+            # full content in one patch, so delta works everywhere
+            header = mdiff.replacediffheader(revlog.rawsize(base), len(t))
+            delta = header + t
+        else:
+            ptext = revlog.revision(base, _df=fh, raw=True)
+            delta = mdiff.textdiff(ptext, t)
+
+        return delta
+
+    def _builddeltainfo(self, revinfo, base, fh):
+        # can we use the cached delta?
+        if revinfo.cachedelta and revinfo.cachedelta[0] == base:
+            delta = revinfo.cachedelta[1]
+        else:
+            delta = self._builddeltadiff(base, revinfo, fh)
+        revlog = self.revlog
+        header, data = revlog.compress(delta)
+        deltalen = len(header) + len(data)
+        chainbase = revlog.chainbase(base)
+        offset = revlog.end(len(revlog) - 1)
+        dist = deltalen + offset - revlog.start(chainbase)
+        if revlog._generaldelta:
+            deltabase = base
+        else:
+            deltabase = chainbase
+        chainlen, compresseddeltalen = revlog._chaininfo(base)
+        chainlen += 1
+        compresseddeltalen += deltalen
+        return _deltainfo(dist, deltalen, (header, data), deltabase,
+                         chainbase, chainlen, compresseddeltalen)
+
+    def finddeltainfo(self, revinfo, fh):
+        """Find an acceptable delta against a candidate revision
+
+        revinfo: information about the revision (instance of _revisioninfo)
+        fh:      file handle to either the .i or the .d revlog file,
+                 depending on whether it is inlined or not
+
+        Returns the first acceptable candidate revision, as ordered by
+        _getcandidaterevs
+        """
+        cachedelta = revinfo.cachedelta
+        p1 = revinfo.p1
+        p2 = revinfo.p2
+        revlog = self.revlog
+
+        deltainfo = None
+        for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
+            nominateddeltas = []
+            for candidaterev in candidaterevs:
+                candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
+                if revlog._isgooddeltainfo(candidatedelta, revinfo.textlen):
+                    nominateddeltas.append(candidatedelta)
+            if nominateddeltas:
+                deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
+                break
+
+        return deltainfo
+
+@attr.s(slots=True, frozen=True)
+class _revisioninfo(object):
+    """Information about a revision that allows building its fulltext
+    node:       expected hash of the revision
+    p1, p2:     parent revs of the revision
+    btext:      built text cache consisting of a one-element list
+    cachedelta: (baserev, uncompressed_delta) or None
+    flags:      flags associated to the revision storage
+
+    One of btext[0] or cachedelta must be set.
+    """
+    node = attr.ib()
+    p1 = attr.ib()
+    p2 = attr.ib()
+    btext = attr.ib()
+    textlen = attr.ib()
+    cachedelta = attr.ib()
+    flags = attr.ib()
 
 # index v0:
 #  4 bytes: offset
@@ -622,11 +803,13 @@ class revlog(object):
 
     def parentrevs(self, rev):
         try:
-            return self.index[rev][5:7]
+            entry = self.index[rev]
         except IndexError:
             if rev == wdirrev:
                 raise error.WdirUnsupported
             raise
+
+        return entry[5], entry[6]
 
     def node(self, rev):
         try:
@@ -1687,7 +1870,7 @@ class revlog(object):
         self._chunkclear()
 
     def addrevision(self, text, transaction, link, p1, p2, cachedelta=None,
-                    node=None, flags=REVIDX_DEFAULT_FLAGS):
+                    node=None, flags=REVIDX_DEFAULT_FLAGS, deltacomputer=None):
         """add a revision to the log
 
         text - the revision data to add
@@ -1699,6 +1882,8 @@ class revlog(object):
             computed by default as hash(text, p1, p2), however subclasses might
             use different hashing method (and override checkhash() in such case)
         flags - the known flags to set on the revision
+        deltacomputer - an optional _deltacomputer instance shared between
+            multiple calls
         """
         if link == nullrev:
             raise RevlogError(_("attempted to add linkrev -1 to %s")
@@ -1727,10 +1912,11 @@ class revlog(object):
             self.checkhash(rawtext, node, p1=p1, p2=p2)
 
         return self.addrawrevision(rawtext, transaction, link, p1, p2, node,
-                                   flags, cachedelta=cachedelta)
+                                   flags, cachedelta=cachedelta,
+                                   deltacomputer=deltacomputer)
 
     def addrawrevision(self, rawtext, transaction, link, p1, p2, node, flags,
-                       cachedelta=None):
+                       cachedelta=None, deltacomputer=None):
         """add a raw revision with known flags, node and parents
         useful when reusing a revision not stored in this revlog (ex: received
         over wire, or read from an external bundle).
@@ -1741,7 +1927,8 @@ class revlog(object):
         ifh = self.opener(self.indexfile, "a+", checkambig=self._checkambig)
         try:
             return self._addrevision(node, rawtext, transaction, link, p1, p2,
-                                     flags, cachedelta, ifh, dfh)
+                                     flags, cachedelta, ifh, dfh,
+                                     deltacomputer=deltacomputer)
         finally:
             if dfh:
                 dfh.close()
@@ -1817,38 +2004,41 @@ class revlog(object):
 
         return compressor.decompress(data)
 
-    def _isgooddelta(self, d, textlen):
+    def _isgooddeltainfo(self, d, textlen):
         """Returns True if the given delta is good. Good means that it is within
         the disk span, disk size, and chain length bounds that we know to be
         performant."""
         if d is None:
             return False
 
-        # - 'dist' is the distance from the base revision -- bounding it limits
-        #   the amount of I/O we need to do.
-        # - 'compresseddeltalen' is the sum of the total size of deltas we need
-        #   to apply -- bounding it limits the amount of CPU we consume.
-        dist, l, data, base, chainbase, chainlen, compresseddeltalen = d
+        # - 'd.distance' is the distance from the base revision -- bounding it
+        #   limits the amount of I/O we need to do.
+        # - 'd.compresseddeltalen' is the sum of the total size of deltas we
+        #   need to apply -- bounding it limits the amount of CPU we consume.
 
         defaultmax = textlen * 4
         maxdist = self._maxdeltachainspan
         if not maxdist:
-            maxdist = dist # ensure the conditional pass
+            maxdist = d.distance # ensure the conditional pass
         maxdist = max(maxdist, defaultmax)
-        if (dist > maxdist or l > textlen or
-            compresseddeltalen > textlen * 2 or
-            (self._maxchainlen and chainlen > self._maxchainlen)):
+        if (d.distance > maxdist or d.deltalen > textlen or
+            d.compresseddeltalen > textlen * 2 or
+            (self._maxchainlen and d.chainlen > self._maxchainlen)):
             return False
 
         return True
 
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,
-                     cachedelta, ifh, dfh, alwayscache=False):
+                     cachedelta, ifh, dfh, alwayscache=False,
+                     deltacomputer=None):
         """internal function to add revisions to the log
 
         see addrevision for argument descriptions.
 
         note: "addrevision" takes non-raw text, "_addrevision" takes raw text.
+
+        if "deltacomputer" is not provided or None, a defaultdeltacomputer will
+        be used.
 
         invariants:
         - rawtext is optional (can be None); if not set, cachedelta must be set.
@@ -1861,76 +2051,16 @@ class revlog(object):
             raise RevlogError(_("%s: attempt to add wdir revision") %
                               (self.indexfile))
 
+        if self._inline:
+            fh = ifh
+        else:
+            fh = dfh
+
         btext = [rawtext]
-        def buildtext():
-            if btext[0] is not None:
-                return btext[0]
-            baserev = cachedelta[0]
-            delta = cachedelta[1]
-            # special case deltas which replace entire base; no need to decode
-            # base revision. this neatly avoids censored bases, which throw when
-            # they're decoded.
-            hlen = struct.calcsize(">lll")
-            if delta[:hlen] == mdiff.replacediffheader(self.rawsize(baserev),
-                                                       len(delta) - hlen):
-                btext[0] = delta[hlen:]
-            else:
-                if self._inline:
-                    fh = ifh
-                else:
-                    fh = dfh
-                basetext = self.revision(baserev, _df=fh, raw=True)
-                btext[0] = mdiff.patch(basetext, delta)
-
-            try:
-                res = self._processflags(btext[0], flags, 'read', raw=True)
-                btext[0], validatehash = res
-                if validatehash:
-                    self.checkhash(btext[0], node, p1=p1, p2=p2)
-                if flags & REVIDX_ISCENSORED:
-                    raise RevlogError(_('node %s is not censored') % node)
-            except CensoredNodeError:
-                # must pass the censored index flag to add censored revisions
-                if not flags & REVIDX_ISCENSORED:
-                    raise
-            return btext[0]
-
-        def builddelta(rev):
-            # can we use the cached delta?
-            if cachedelta and cachedelta[0] == rev:
-                delta = cachedelta[1]
-            else:
-                t = buildtext()
-                if self.iscensored(rev):
-                    # deltas based on a censored revision must replace the
-                    # full content in one patch, so delta works everywhere
-                    header = mdiff.replacediffheader(self.rawsize(rev), len(t))
-                    delta = header + t
-                else:
-                    if self._inline:
-                        fh = ifh
-                    else:
-                        fh = dfh
-                    ptext = self.revision(rev, _df=fh, raw=True)
-                    delta = mdiff.textdiff(ptext, t)
-            header, data = self.compress(delta)
-            deltalen = len(header) + len(data)
-            chainbase = self.chainbase(rev)
-            dist = deltalen + offset - self.start(chainbase)
-            if self._generaldelta:
-                base = rev
-            else:
-                base = chainbase
-            chainlen, compresseddeltalen = self._chaininfo(rev)
-            chainlen += 1
-            compresseddeltalen += deltalen
-            return (dist, deltalen, (header, data), base,
-                    chainbase, chainlen, compresseddeltalen)
 
         curr = len(self)
         prev = curr - 1
         offset = self.end(prev)
-        delta = None
         p1r, p2r = self.rev(p1), self.rev(p2)
 
         # full versions are inserted when the needed deltas
@@ -1941,46 +2071,19 @@ class revlog(object):
         else:
             textlen = len(rawtext)
 
-        # should we try to build a delta?
-        if prev != nullrev and self.storedeltachains:
-            tested = set()
-            # This condition is true most of the time when processing
-            # changegroup data into a generaldelta repo. The only time it
-            # isn't true is if this is the first revision in a delta chain
-            # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
-            if cachedelta and self._generaldelta and self._lazydeltabase:
-                # Assume what we received from the server is a good choice
-                # build delta will reuse the cache
-                candidatedelta = builddelta(cachedelta[0])
-                tested.add(cachedelta[0])
-                if self._isgooddelta(candidatedelta, textlen):
-                    delta = candidatedelta
-            if delta is None and self._generaldelta:
-                # exclude already lazy tested base if any
-                parents = [p for p in (p1r, p2r)
-                           if p != nullrev and p not in tested]
-                if parents and not self._aggressivemergedeltas:
-                    # Pick whichever parent is closer to us (to minimize the
-                    # chance of having to build a fulltext).
-                    parents = [max(parents)]
-                tested.update(parents)
-                pdeltas = []
-                for p in parents:
-                    pd = builddelta(p)
-                    if self._isgooddelta(pd, textlen):
-                        pdeltas.append(pd)
-                if pdeltas:
-                    delta = min(pdeltas, key=lambda x: x[1])
-            if delta is None and prev not in tested:
-                # other approach failed try against prev to hopefully save us a
-                # fulltext.
-                candidatedelta = builddelta(prev)
-                if self._isgooddelta(candidatedelta, textlen):
-                    delta = candidatedelta
-        if delta is not None:
-            dist, l, data, base, chainbase, chainlen, compresseddeltalen = delta
+        if deltacomputer is None:
+            deltacomputer = _deltacomputer(self)
+
+        revinfo = _revisioninfo(node, p1, p2, btext, textlen, cachedelta, flags)
+        deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
+
+        if deltainfo is not None:
+            base = deltainfo.base
+            chainbase = deltainfo.chainbase
+            data = deltainfo.data
+            l = deltainfo.deltalen
         else:
-            rawtext = buildtext()
+            rawtext = deltacomputer.buildtext(revinfo, fh)
             data = self.compress(rawtext)
             l = len(data[1]) + len(data[0])
             base = chainbase = curr
@@ -1994,7 +2097,7 @@ class revlog(object):
         self._writeentry(transaction, ifh, dfh, entry, data, link, offset)
 
         if alwayscache and rawtext is None:
-            rawtext = buildtext()
+            rawtext = deltacomputer._buildtext(revinfo, fh)
 
         if type(rawtext) == str: # only accept immutable objects
             self._cache = (node, curr, rawtext)
@@ -2064,6 +2167,7 @@ class revlog(object):
                 dfh.flush()
             ifh.flush()
         try:
+            deltacomputer = _deltacomputer(self)
             # loop through our set of deltas
             for data in deltas:
                 node, p1, p2, linknode, deltabase, delta, flags = data
@@ -2110,7 +2214,8 @@ class revlog(object):
                 self._addrevision(node, None, transaction, link,
                                   p1, p2, flags, (baserev, delta),
                                   ifh, dfh,
-                                  alwayscache=bool(addrevisioncb))
+                                  alwayscache=bool(addrevisioncb),
+                                  deltacomputer=deltacomputer)
 
                 if addrevisioncb:
                     addrevisioncb(self, node)
@@ -2264,7 +2369,9 @@ class revlog(object):
     DELTAREUSESAMEREVS = 'samerevs'
     DELTAREUSENEVER = 'never'
 
-    DELTAREUSEALL = {'always', 'samerevs', 'never'}
+    DELTAREUSEFULLADD = 'fulladd'
+
+    DELTAREUSEALL = {'always', 'samerevs', 'never', 'fulladd'}
 
     def clone(self, tr, destrevlog, addrevisioncb=None,
               deltareuse=DELTAREUSESAMEREVS, aggressivemergedeltas=None):
@@ -2331,6 +2438,7 @@ class revlog(object):
             populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
                                                 self.DELTAREUSESAMEREVS)
 
+            deltacomputer = _deltacomputer(destrevlog)
             index = self.index
             for rev in self:
                 entry = index[rev]
@@ -2355,18 +2463,26 @@ class revlog(object):
                 if not cachedelta:
                     rawtext = self.revision(rev, raw=True)
 
-                ifh = destrevlog.opener(destrevlog.indexfile, 'a+',
-                                        checkambig=False)
-                dfh = None
-                if not destrevlog._inline:
-                    dfh = destrevlog.opener(destrevlog.datafile, 'a+')
-                try:
-                    destrevlog._addrevision(node, rawtext, tr, linkrev, p1, p2,
-                                            flags, cachedelta, ifh, dfh)
-                finally:
-                    if dfh:
-                        dfh.close()
-                    ifh.close()
+
+                if deltareuse == self.DELTAREUSEFULLADD:
+                    destrevlog.addrevision(rawtext, tr, linkrev, p1, p2,
+                                           cachedelta=cachedelta,
+                                           node=node, flags=flags,
+                                           deltacomputer=deltacomputer)
+                else:
+                    ifh = destrevlog.opener(destrevlog.indexfile, 'a+',
+                                            checkambig=False)
+                    dfh = None
+                    if not destrevlog._inline:
+                        dfh = destrevlog.opener(destrevlog.datafile, 'a+')
+                    try:
+                        destrevlog._addrevision(node, rawtext, tr, linkrev, p1,
+                                                p2, flags, cachedelta, ifh, dfh,
+                                                deltacomputer=deltacomputer)
+                    finally:
+                        if dfh:
+                            dfh.close()
+                        ifh.close()
 
                 if addrevisioncb:
                     addrevisioncb(self, rev, node)

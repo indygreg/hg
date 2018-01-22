@@ -32,6 +32,8 @@ except ImportError:
 osutil = policy.importmod(r'osutil')
 
 executablepath = win32.executablepath
+getfsmountpoint = win32.getvolumename
+getfstype = win32.getfstype
 getuser = win32.getuser
 hidewindow = win32.hidewindow
 makedir = win32.makedir

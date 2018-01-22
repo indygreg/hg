@@ -94,14 +94,14 @@ Nested example:
 
 >>> def subrepos(ui, fm):
 ...     fm.startitem()
-...     fm.write(b'repo', b'[%s]\\n', b'baz')
+...     fm.write(b'reponame', b'[%s]\\n', b'baz')
 ...     files(ui, fm.nested(b'files'))
 ...     fm.end()
 >>> show(subrepos)
 [baz]
 foo
 bar
->>> show(subrepos, template=b'{repo}: {join(files % "{path}", ", ")}\\n')
+>>> show(subrepos, template=b'{reponame}: {join(files % "{path}", ", ")}\\n')
 baz: foo, bar
 """
 
@@ -363,11 +363,12 @@ class templateformatter(baseformatter):
         self._out = out
         spec = lookuptemplate(ui, topic, opts.get('template', ''))
         self._tref = spec.ref
-        self._t = loadtemplater(ui, spec, cache=templatekw.defaulttempl)
+        self._t = loadtemplater(ui, spec, defaults=templatekw.keywords,
+                                resources=templateresources(ui),
+                                cache=templatekw.defaulttempl)
         self._parts = templatepartsmap(spec, self._t,
                                        ['docheader', 'docfooter', 'separator'])
         self._counter = itertools.count()
-        self._cache = {}  # for templatekw/funcs to store reusable data
         self._renderitem('docheader', {})
 
     def _showitem(self):
@@ -386,17 +387,14 @@ class templateformatter(baseformatter):
         # function will have to declare dependent resources. e.g.
         # @templatekeyword(..., requires=('ctx',))
         props = {}
-        if 'ctx' in item:
-            props.update(templatekw.keywords)
         # explicitly-defined fields precede templatekw
         props.update(item)
         if 'ctx' in item:
             # but template resources must be always available
-            props['templ'] = self._t
             props['repo'] = props['ctx'].repo()
             props['revcache'] = {}
         props = pycompat.strkwargs(props)
-        g = self._t(ref, ui=self._ui, cache=self._cache, **props)
+        g = self._t(ref, **props)
         self._out.write(templater.stringify(g))
 
     def end(self):
@@ -468,23 +466,38 @@ def templatepartsmap(spec, t, partnames):
                 partsmap[part] = ref
     return partsmap
 
-def loadtemplater(ui, spec, cache=None):
+def loadtemplater(ui, spec, defaults=None, resources=None, cache=None):
     """Create a templater from either a literal template or loading from
     a map file"""
     assert not (spec.tmpl and spec.mapfile)
     if spec.mapfile:
-        return templater.templater.frommapfile(spec.mapfile, cache=cache)
-    return maketemplater(ui, spec.tmpl, cache=cache)
+        frommapfile = templater.templater.frommapfile
+        return frommapfile(spec.mapfile, defaults=defaults, resources=resources,
+                           cache=cache)
+    return maketemplater(ui, spec.tmpl, defaults=defaults, resources=resources,
+                         cache=cache)
 
-def maketemplater(ui, tmpl, cache=None):
+def maketemplater(ui, tmpl, defaults=None, resources=None, cache=None):
     """Create a templater from a string template 'tmpl'"""
     aliases = ui.configitems('templatealias')
-    t = templater.templater(cache=cache, aliases=aliases)
+    t = templater.templater(defaults=defaults, resources=resources,
+                            cache=cache, aliases=aliases)
     t.cache.update((k, templater.unquotestring(v))
                    for k, v in ui.configitems('templates'))
     if tmpl:
         t.cache[''] = tmpl
     return t
+
+def templateresources(ui, repo=None):
+    """Create a dict of template resources designed for the default templatekw
+    and function"""
+    return {
+        'cache': {},  # for templatekw/funcs to store reusable data
+        'ctx': None,
+        'repo': repo,
+        'revcache': None,  # per-ctx cache; set later
+        'ui': ui,
+    }
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")

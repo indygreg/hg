@@ -203,6 +203,7 @@ from mercurial import (
     mergeutil,
     node,
     obsolete,
+    pycompat,
     registrar,
     repair,
     scmutil,
@@ -542,9 +543,9 @@ def commitfuncfor(repo, src):
     def commitfunc(**kwargs):
         overrides = {('phases', 'new-commit'): phasemin}
         with repo.ui.configoverride(overrides, 'histedit'):
-            extra = kwargs.get('extra', {}).copy()
+            extra = kwargs.get(r'extra', {}).copy()
             extra['histedit_source'] = src.hex()
-            kwargs['extra'] = extra
+            kwargs[r'extra'] = extra
             return repo.commit(**kwargs)
     return commitfunc
 
@@ -602,7 +603,7 @@ def collapse(repo, first, last, commitopts, skipprompt=False):
         if path in headmf:
             fctx = last[path]
             flags = fctx.flags()
-            mctx = context.memfilectx(repo,
+            mctx = context.memfilectx(repo, ctx,
                                       fctx.path(), fctx.data(),
                                       islink='l' in flags,
                                       isexec='x' in flags,
@@ -917,7 +918,8 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
      ('o', 'outgoing', False, _('changesets not found in destination')),
      ('f', 'force', False,
       _('force outgoing even for unrelated repositories')),
-     ('r', 'rev', [], _('first revision to be edited'), _('REV'))],
+     ('r', 'rev', [], _('first revision to be edited'), _('REV'))] +
+    cmdutil.formatteropts,
      _("[OPTIONS] ([ANCESTOR] | --outgoing [URL])"))
 def histedit(ui, repo, *freeargs, **opts):
     """interactively edit changeset history
@@ -1094,6 +1096,9 @@ def _validateargs(ui, repo, state, freeargs, opts, goal, rules, revs):
                     _('histedit requires exactly one ancestor revision'))
 
 def _histedit(ui, repo, state, *freeargs, **opts):
+    opts = pycompat.byteskwargs(opts)
+    fm = ui.formatter('histedit', opts)
+    fm.startitem()
     goal = _getgoal(opts)
     revs = opts.get('rev', [])
     rules = opts.get('commands', '')
@@ -1116,7 +1121,8 @@ def _histedit(ui, repo, state, *freeargs, **opts):
         _newhistedit(ui, repo, state, revs, freeargs, opts)
 
     _continuehistedit(ui, repo, state)
-    _finishhistedit(ui, repo, state)
+    _finishhistedit(ui, repo, state, fm)
+    fm.end()
 
 def _continuehistedit(ui, repo, state):
     """This function runs after either:
@@ -1163,7 +1169,7 @@ def _continuehistedit(ui, repo, state):
     state.write()
     ui.progress(_("editing"), None)
 
-def _finishhistedit(ui, repo, state):
+def _finishhistedit(ui, repo, state, fm):
     """This action runs when histedit is finishing its session"""
     repo.ui.pushbuffer()
     hg.update(repo, state.parentctxnode, quietempty=True)
@@ -1197,6 +1203,13 @@ def _finishhistedit(ui, repo, state):
     mapping = {k: v for k, v in mapping.items()
                if k in nodemap and all(n in nodemap for n in v)}
     scmutil.cleanupnodes(repo, mapping, 'histedit')
+    hf = fm.hexfunc
+    fl = fm.formatlist
+    fd = fm.formatdict
+    nodechanges = fd({hf(oldn): fl([hf(n) for n in newn], name='node')
+                      for oldn, newn in mapping.iteritems()},
+                     key="oldnode", value="newnodes")
+    fm.data(nodechanges=nodechanges)
 
     state.clear()
     if os.path.exists(repo.sjoin('undo')):
@@ -1296,6 +1309,9 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     state.actions = actions
     state.topmost = topmost
     state.replacements = []
+
+    ui.log("histedit", "%d actions to histedit", len(actions),
+           histedit_num_actions=len(actions))
 
     # Create a backup so we can always abort completely.
     backupfile = None

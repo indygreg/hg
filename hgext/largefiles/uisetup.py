@@ -30,6 +30,8 @@ from mercurial import (
     scmutil,
     sshpeer,
     subrepo,
+    upgrade,
+    url,
     wireproto,
 )
 
@@ -59,6 +61,12 @@ def uisetup(ui):
     extensions.wrapfunction(cmdutil, 'forget', overrides.cmdutilforget)
 
     extensions.wrapfunction(copies, 'pathcopies', overrides.copiespathcopies)
+
+    extensions.wrapfunction(upgrade, 'preservedrequirements',
+                            overrides.upgraderequirements)
+
+    extensions.wrapfunction(upgrade, 'supporteddestrequirements',
+                            overrides.upgraderequirements)
 
     # Subrepos call status function
     entry = extensions.wrapcommand(commands.table, 'status',
@@ -153,13 +161,15 @@ def uisetup(ui):
     extensions.wrapfunction(scmutil, 'marktouched',
                             overrides.scmutilmarktouched)
 
+    extensions.wrapfunction(url, 'open',
+                            overrides.openlargefile)
+
     # create the new wireproto commands ...
     wireproto.commands['putlfile'] = (proto.putlfile, 'sha')
     wireproto.commands['getlfile'] = (proto.getlfile, 'sha')
     wireproto.commands['statlfile'] = (proto.statlfile, 'sha')
 
     # ... and wrap some existing ones
-    wireproto.commands['capabilities'] = (proto.capabilities, '')
     wireproto.commands['heads'] = (proto.heads, '')
     wireproto.commands['lheads'] = (wireproto.heads, '')
 
@@ -171,10 +181,7 @@ def uisetup(ui):
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 
-    # the hello wireproto command uses wireproto.capabilities, so it won't see
-    # our largefiles capability unless we replace the actual function as well.
-    proto.capabilitiesorig = wireproto.capabilities
-    wireproto.capabilities = proto.capabilities
+    extensions.wrapfunction(wireproto, '_capabilities', proto._capabilities)
 
     # can't do this in reposetup because it needs to have happened before
     # wirerepo.__init__ is called

@@ -233,6 +233,18 @@ span.logtags span {
   background-color: #ffaaff;
   border-color: #ffccff #ff00ee #ff00ee #ffccff;
 }
+span.logtags span.phasetag {
+  background-color: #dfafff;
+  border-color: #e2b8ff #ce48ff #ce48ff #e2b8ff;
+}
+span.logtags span.obsoletetag {
+  background-color: #dddddd;
+  border-color: #e4e4e4 #a3a3a3 #a3a3a3 #e4e4e4;
+}
+span.logtags span.instabilitytag {
+  background-color: #ffb1c0;
+  border-color: #ffbbc8 #ff4476 #ff4476 #ffbbc8;
+}
 span.logtags span.tagtag {
   background-color: #ffffaa;
   border-color: #ffffcc #ffee00 #ffee00 #ffffcc;
@@ -309,6 +321,7 @@ pre.sourcelines.stripes > :nth-child(4n+4):hover,
 pre.sourcelines.stripes > :nth-child(4n+1):hover + :nth-child(4n+2),
 pre.sourcelines.stripes > :nth-child(4n+3):hover + :nth-child(4n+4) { background-color: #D5E1E6; }
 
+tr:target td,
 pre.sourcelines > span:target,
 pre.sourcelines.stripes > span:target {
     background-color: #bfdfff;
@@ -456,7 +469,7 @@ p.description {
 /** canvas **/
 div#wrapper {
 	position: relative;
-    font-size: 1.2em;
+	font-size: 1.1em;
 }
 
 canvas {
@@ -465,32 +478,33 @@ canvas {
 	top: -0.7em;
 }
 
-ul#nodebgs li.parity0 {
+ul#graphnodes li.parity0 {
     background: #F1F6F7;
 }
 
-ul#nodebgs li.parity1 {
+ul#graphnodes li.parity1 {
     background: #FFFFFF;
 }
 
 ul#graphnodes {
+	list-style: none inside none;
+	margin: 0;
+	padding: 0;
+}
+
+ul#graphnodes li {
+	height: 37px;
+	overflow: visible;
+	padding-top: 2px;
+}
+
+ul#graphnodes li .fg {
 	position: absolute;
 	z-index: 10;
-	top: 7px;
-	list-style: none inside none;
-}
-
-ul#nodebgs {
-	list-style: none inside none;
-}
-
-ul#graphnodes li, ul#nodebgs li {
-	height: 39px;
 }
 
 ul#graphnodes li .info {
-	display: block;
-	position: relative;
+	margin-top: 2px;
 }
 /** end of canvas **/
 

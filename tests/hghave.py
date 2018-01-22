@@ -284,6 +284,17 @@ def getgitversion():
         return (0, 0)
     return (int(m.group(1)), int(m.group(2)))
 
+# https://github.com/git-lfs/lfs-test-server
+@check("lfs-test-server", "git-lfs test server")
+def has_lfsserver():
+    exe = 'lfs-test-server'
+    if has_windows():
+        exe = 'lfs-test-server.exe'
+    return any(
+        os.access(os.path.join(path, exe), os.X_OK)
+        for path in os.environ["PATH"].split(os.pathsep)
+    )
+
 @checkvers("git", "git client (with ext::sh support) version >= %s", (1.9,))
 def has_git_range(v):
     major, minor = v.split('.')[0:2]
@@ -443,6 +454,10 @@ def has_pylint():
 def has_clang_format():
     return matchoutput("clang-format --help",
                        br"^OVERVIEW: A tool to format C/C\+\+[^ ]+ code.")
+
+@check("jshint", "JSHint static code analysis tool")
+def has_jshint():
+    return matchoutput("jshint --version 2>&1", br"jshint v")
 
 @check("pygments", "Pygments source highlighting library")
 def has_pygments():
@@ -685,3 +700,11 @@ def has_fuzzywuzzy():
         return True
     except ImportError:
         return False
+
+@check("clang-libfuzzer", "clang new enough to include libfuzzer")
+def has_clang_libfuzzer():
+    mat = matchoutput('clang --version', 'clang version (\d)')
+    if mat:
+        # libfuzzer is new in clang 6
+        return int(mat.group(1)) > 5
+    return False

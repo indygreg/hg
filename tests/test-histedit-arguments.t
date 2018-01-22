@@ -148,7 +148,7 @@ temporarily.
   $ mv .hg/histedit-state.back .hg/histedit-state
 
   $ hg histedit --continue
-  saved backup bundle to $TESTTMP/foo/.hg/strip-backup/08d98a8350f3-02594089-histedit.hg (glob)
+  saved backup bundle to $TESTTMP/foo/.hg/strip-backup/08d98a8350f3-02594089-histedit.hg
   $ hg log -G -T '{rev} {shortest(node)} {desc}\n' -r 2::
   @  4 f5ed five
   |
@@ -265,7 +265,7 @@ short hash. This tests issue3893.
   HG: user: test
   HG: branch 'default'
   HG: changed alpha
-  saved backup bundle to $TESTTMP/foo/.hg/strip-backup/c8e68270e35a-63d8b8d8-histedit.hg (glob)
+  saved backup bundle to $TESTTMP/foo/.hg/strip-backup/c8e68270e35a-63d8b8d8-histedit.hg
 
   $ hg update -q 2
   $ echo x > x
@@ -354,7 +354,8 @@ Corrupt histedit state file
   $ mv ../corrupt-histedit .hg/histedit-state
   $ hg histedit --abort
   warning: encountered an exception during histedit --abort; the repository may not have been completely cleaned up
-  abort: .*(No such file or directory:|The system cannot find the file specified).* (re)
+  abort: $TESTTMP/foo/.hg/strip-backup/*-histedit.hg: $ENOENT$ (glob) (windows !)
+  abort: $ENOENT$: $TESTTMP/foo/.hg/strip-backup/*-histedit.hg (glob) (no-windows !)
   [255]
 Histedit state has been exited
   $ hg summary -q

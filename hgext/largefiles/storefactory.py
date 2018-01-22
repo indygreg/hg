@@ -22,8 +22,9 @@ from . import (
 # During clone this function is passed the src's ui object
 # but it needs the dest's ui object so it can read out of
 # the config file. Use repo.ui instead.
-def openstore(repo, remote=None, put=False):
-    ui = repo.ui
+def openstore(repo=None, remote=None, put=False, ui=None):
+    if ui is None:
+        ui = repo.ui
 
     if not remote:
         lfpullsource = getattr(repo, 'lfpullsource', None)
@@ -37,12 +38,16 @@ def openstore(repo, remote=None, put=False):
         # ui.expandpath() leaves 'default-push' and 'default' alone if
         # they cannot be expanded: fallback to the empty string,
         # meaning the current directory.
-        if path == 'default-push' or path == 'default':
+        if repo is None:
+            path = ui.expandpath('default')
+            path, _branches = hg.parseurl(path)
+            remote = hg.peer(repo or ui, {}, path)
+        elif path == 'default-push' or path == 'default':
             path = ''
             remote = repo
         else:
             path, _branches = hg.parseurl(path)
-            remote = hg.peer(repo, {}, path)
+            remote = hg.peer(repo or ui, {}, path)
 
     # The path could be a scheme so use Mercurial's normal functionality
     # to resolve the scheme to a repository and use its path
@@ -76,3 +81,6 @@ _storeprovider = {
     }
 
 _scheme_re = re.compile(r'^([a-zA-Z0-9+-.]+)://')
+
+def getlfile(ui, hash):
+    return util.chunkbuffer(openstore(ui=ui)._get(hash))

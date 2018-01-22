@@ -267,7 +267,7 @@ try bad style
   <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
   <h3>
    directory / @ 0:<a href="/rev/2ef0ac749a14">2ef0ac749a14</a>
-   <span class="tag">tip</span> <span class="tag">@</span> <span class="tag">a b c</span> <span class="tag">d/e/f</span> 
+   <span class="phase">draft</span> <span class="branchhead">default</span> <span class="tag">tip</span> <span class="tag">@</span> <span class="tag">a b c</span> <span class="tag">d/e/f</span> 
   </h3>
   
   
@@ -340,7 +340,7 @@ static file
 
   $ get-with-headers.py --twice localhost:$HGPORT 'static/style-gitweb.css' - date etag server
   200 Script output follows
-  content-length: 9066
+  content-length: 9118
   content-type: text/css
   
   body { font-family: sans-serif; font-size: 12px; border:solid #d9d8d1; border-width:1px; margin:10px; background: white; color: black; }
@@ -406,8 +406,6 @@ static file
   }
   td.indexlinks a:hover { background-color: #6666aa; }
   div.pre { font-family:monospace; font-size:12px; white-space:pre; }
-  div.diff_info { font-family:monospace; color:#000099; background-color:#edece6; font-style:italic; }
-  div.index_include { border:solid #d9d8d1; border-width:0px 0px 1px; padding:12px 8px; }
   
   .search {
       margin-right: 8px;
@@ -466,6 +464,18 @@ static file
   	border: 1px solid;
   	background-color: #ffaaff;
   	border-color: #ffccff #ff00ee #ff00ee #ffccff;
+  }
+  span.logtags span.phasetag {
+  	background-color: #dfafff;
+  	border-color: #e2b8ff #ce48ff #ce48ff #e2b8ff;
+  }
+  span.logtags span.obsoletetag {
+  	background-color: #dddddd;
+  	border-color: #e4e4e4 #a3a3a3 #a3a3a3 #e4e4e4;
+  }
+  span.logtags span.instabilitytag {
+  	background-color: #ffb1c0;
+  	border-color: #ffbbc8 #ff4476 #ff4476 #ffbbc8;
   }
   span.logtags span.tagtag {
   	background-color: #ffffaa;
@@ -536,10 +546,9 @@ static file
   }
   
   div#followlines {
-    background-color: #B7B7B7;
-    border: 1px solid #CCC;
-    border-radius: 5px;
-    padding: 4px;
+    background-color: #FFF;
+    border: 1px solid #d9d8d1;
+    padding: 5px;
     position: fixed;
   }
   
@@ -638,30 +647,26 @@ static file
   	margin: 0;
   }
   
-  ul#nodebgs {
+  ul#graphnodes {
   	list-style: none inside none;
   	padding: 0;
   	margin: 0;
-  	top: -0.7em;
   }
   
-  ul#graphnodes li, ul#nodebgs li {
-  	height: 39px;
+  ul#graphnodes li {
+  	position: relative;
+  	height: 37px;
+  	overflow: visible;
+  	padding-top: 2px;
   }
   
-  ul#graphnodes {
+  ul#graphnodes li .fg {
   	position: absolute;
   	z-index: 10;
-  	top: -0.8em;
-  	list-style: none inside none;
-  	padding: 0;
   }
   
   ul#graphnodes li .info {
-  	display: block;
   	font-size: 100%;
-  	position: relative;
-  	top: -3px;
   	font-style: italic;
   }
   

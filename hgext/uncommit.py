@@ -28,8 +28,10 @@ from mercurial import (
     copies,
     error,
     node,
-    obsolete,
+    obsutil,
+    pycompat,
     registrar,
+    rewriteutil,
     scmutil,
 )
 
@@ -75,7 +77,7 @@ def _commitfiltered(repo, ctx, match, allowempty):
         if path not in contentctx:
             return None
         fctx = contentctx[path]
-        mctx = context.memfilectx(repo, fctx.path(), fctx.data(),
+        mctx = context.memfilectx(repo, memctx, fctx.path(), fctx.data(),
                                   fctx.islink(),
                                   fctx.isexec(),
                                   copied=copied.get(path))
@@ -96,15 +98,13 @@ def _commitfiltered(repo, ctx, match, allowempty):
         newid = repo.commitctx(new)
     return newid
 
-def _uncommitdirstate(repo, oldctx, match):
-    """Fix the dirstate after switching the working directory from
-    oldctx to a copy of oldctx not containing changed files matched by
-    match.
+def _fixdirstate(repo, oldctx, newctx, status):
+    """ fix the dirstate after switching the working directory from oldctx to
+    newctx which can be result of either unamend or uncommit.
     """
-    ctx = repo['.']
     ds = repo.dirstate
     copies = dict(ds.copies())
-    s = repo.status(oldctx.p1(), oldctx, match=match)
+    s = status
     for f in s.modified:
         if ds[f] == 'r':
             # modified + removed -> removed
@@ -136,7 +136,7 @@ def _uncommitdirstate(repo, oldctx, match):
                   for dst, src in oldcopies.iteritems())
     # Adjust the dirstate copies
     for dst, src in copies.iteritems():
-        if (src not in ctx or dst in ctx or ds[dst] != 'a'):
+        if (src not in newctx or dst in newctx or ds[dst] != 'a'):
             src = None
         ds.copy(src, dst)
 
@@ -152,25 +152,17 @@ def uncommit(ui, repo, *pats, **opts):
     deleted in the changeset will be left unchanged, and so will remain
     modified in the working directory.
     """
+    opts = pycompat.byteskwargs(opts)
 
     with repo.wlock(), repo.lock():
-        wctx = repo[None]
 
         if not pats and not repo.ui.configbool('experimental',
                                                 'uncommitondirtywdir'):
             cmdutil.bailifchanged(repo)
-        if wctx.parents()[0].node() == node.nullid:
-            raise error.Abort(_("cannot uncommit null changeset"))
-        if len(wctx.parents()) > 1:
-            raise error.Abort(_("cannot uncommit while merging"))
         old = repo['.']
-        if not old.mutable():
-            raise error.Abort(_('cannot uncommit public changesets'))
+        rewriteutil.precheck(repo, [old.rev()], 'uncommit')
         if len(old.parents()) > 1:
             raise error.Abort(_("cannot uncommit merge changeset"))
-        allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)
-        if not allowunstable and old.children():
-            raise error.Abort(_('cannot uncommit changeset with children'))
 
         with repo.transaction('uncommit'):
             match = scmutil.match(old, pats, opts)
@@ -191,4 +183,75 @@ def uncommit(ui, repo, *pats, **opts):
 
             with repo.dirstate.parentchange():
                 repo.dirstate.setparents(newid, node.nullid)
-                _uncommitdirstate(repo, old, match)
+                s = repo.status(old.p1(), old, match=match)
+                _fixdirstate(repo, old, repo[newid], s)
+
+def predecessormarkers(ctx):
+    """yields the obsolete markers marking the given changeset as a successor"""
+    for data in ctx.repo().obsstore.predecessors.get(ctx.node(), ()):
+        yield obsutil.marker(ctx.repo(), data)
+
+@command('^unamend', [])
+def unamend(ui, repo, **opts):
+    """
+    undo the most recent amend operation on a current changeset
+
+    This command will roll back to the previous version of a changeset,
+    leaving working directory in state in which it was before running
+    `hg amend` (e.g. files modified as part of an amend will be
+    marked as modified `hg status`)
+    """
+
+    unfi = repo.unfiltered()
+    with repo.wlock(), repo.lock(), repo.transaction('unamend'):
+
+        # identify the commit from which to unamend
+        curctx = repo['.']
+
+        rewriteutil.precheck(repo, [curctx.rev()], 'unamend')
+
+        # identify the commit to which to unamend
+        markers = list(predecessormarkers(curctx))
+        if len(markers) != 1:
+            e = _("changeset must have one predecessor, found %i predecessors")
+            raise error.Abort(e % len(markers))
+
+        prednode = markers[0].prednode()
+        predctx = unfi[prednode]
+
+        # add an extra so that we get a new hash
+        # note: allowing unamend to undo an unamend is an intentional feature
+        extras = predctx.extra()
+        extras['unamend_source'] = curctx.hex()
+
+        def filectxfn(repo, ctx_, path):
+            try:
+                return predctx.filectx(path)
+            except KeyError:
+                return None
+
+        # Make a new commit same as predctx
+        newctx = context.memctx(repo,
+                                parents=(predctx.p1(), predctx.p2()),
+                                text=predctx.description(),
+                                files=predctx.files(),
+                                filectxfn=filectxfn,
+                                user=predctx.user(),
+                                date=predctx.date(),
+                                extra=extras)
+        # phase handling
+        commitphase = curctx.phase()
+        overrides = {('phases', 'new-commit'): commitphase}
+        with repo.ui.configoverride(overrides, 'uncommit'):
+            newprednode = repo.commitctx(newctx)
+
+        newpredctx = repo[newprednode]
+        dirstate = repo.dirstate
+
+        with dirstate.parentchange():
+            dirstate.setparents(newprednode, node.nullid)
+            s = repo.status(predctx, curctx)
+            _fixdirstate(repo, curctx, newpredctx, s)
+
+        mapping = {curctx.node(): (newprednode,)}
+        scmutil.cleanupnodes(repo, mapping, 'unamend')

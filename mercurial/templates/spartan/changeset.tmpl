@@ -33,6 +33,18 @@
  <th class="date">date:</th>
  <td class="date age">{date|rfc822date}</td>
 </tr>
+{ifeq(phase, 'public', '', '<tr>
+ <th class="phase">phase:</th>
+ <td class="phase">{phase|escape}</td>
+</tr>')}
+{if(obsolete, '<tr>
+ <th class="obsolete">obsolete:</th>
+ <td class="obsolete">{succsandmarkers%obsfateentry}</td>
+</tr>')}
+{ifeq(count(instabilities), '0', '', '<tr>
+ <th class="instabilities">instabilities:</th>
+ <td class="instabilities">{instabilities%"{instability} "|escape}</td>
+</tr>')}
 <tr>
  <th class="files">files:</th>
  <td class="files">{files}</td>

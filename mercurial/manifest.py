@@ -810,7 +810,7 @@ class treemanifest(object):
             if p in self._files:
                 yield self._subpath(p)
             else:
-                for f in self._dirs[p].iterkeys():
+                for f in self._dirs[p]:
                     yield f
 
     def keys(self):

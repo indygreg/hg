@@ -520,6 +520,8 @@ Test that 4 is detected as the no-argument destination from 3 and also moves
 the bookmark with it
   $ hg up --quiet 0          # we should be able to update to 3 directly
   $ hg up --quiet --hidden 3 # but not implemented yet.
+  updating to a hidden changeset 6efa171f091b
+  (hidden revision '6efa171f091b' was rewritten as: d047485b3896)
   $ hg book -f bm
   $ hg up
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -530,6 +532,8 @@ the bookmark with it
 Test that 5 is detected as a valid destination from 1
   $ hg up --quiet 0          # we should be able to update to 3 directly
   $ hg up --quiet --hidden 3 # but not implemented yet.
+  updating to a hidden changeset 6efa171f091b
+  (hidden revision '6efa171f091b' was rewritten as: d047485b3896)
   $ hg up 5
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

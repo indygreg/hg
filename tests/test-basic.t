@@ -4,7 +4,8 @@ Create a repository:
   devel.all-warnings=true
   devel.default-date=0 0
   extensions.fsmonitor= (fsmonitor !)
-  largefiles.usercache=$TESTTMP/.cache/largefiles (glob)
+  largefiles.usercache=$TESTTMP/.cache/largefiles
+  lfs.usercache=$TESTTMP/.cache/lfs
   ui.slash=True
   ui.interactive=False
   ui.mergemarkers=detailed
@@ -33,15 +34,7 @@ Writes to stdio succeed and fail appropriately
   [255]
 #endif
 
-#if devfull no-chg
-  $ hg status >/dev/full 2>&1
-  [1]
-
-  $ hg status ENOENT 2>/dev/full
-  [1]
-#endif
-
-#if devfull chg
+#if devfull
   $ hg status >/dev/full 2>&1
   [255]
 

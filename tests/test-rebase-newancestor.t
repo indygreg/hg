@@ -5,7 +5,7 @@
   > rebase=
   > drawdag=$TESTDIR/drawdag.py
   > [alias]
-  > tglog = log -G --template "{rev}: '{desc}' {branches}\n"
+  > tglog = log -G --template "{rev}: {node|short} '{desc}' {branches}\n"
   > EOF
 
   $ hg init repo
@@ -31,29 +31,29 @@
   created new head
 
   $ hg tglog
-  @  3: 'AD'
+  @  3: 3878212183bd 'AD'
   |
-  | o  2: 'C'
+  | o  2: 30ae917c0e4f 'C'
   | |
-  | o  1: 'B'
+  | o  1: 0f4f7cb4f549 'B'
   |/
-  o  0: 'A'
+  o  0: 1e635d440a73 'A'
   
   $ hg rebase -s 1 -d 3
   rebasing 1:0f4f7cb4f549 "B"
   merging a
   rebasing 2:30ae917c0e4f "C"
   merging a
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/0f4f7cb4f549-82b3b163-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/0f4f7cb4f549-82b3b163-rebase.hg
 
   $ hg tglog
-  o  3: 'C'
+  o  3: 25773bc4b4b0 'C'
   |
-  o  2: 'B'
+  o  2: c09015405f75 'B'
   |
-  @  1: 'AD'
+  @  1: 3878212183bd 'AD'
   |
-  o  0: 'A'
+  o  0: 1e635d440a73 'A'
   
 
   $ cd ..
@@ -108,21 +108,21 @@ wrong.
   $ hg ci -Aqm 'default: f-other stuff'
 
   $ hg tglog
-  @  7: 'default: f-other stuff'
+  @  7: e08089805d82 'default: f-other stuff'
   |
-  | o  6: 'dev: merge default' dev
+  | o  6: 9455ee510502 'dev: merge default' dev
   |/|
-  o |  5: 'default: remove f-default'
+  o |  5: 462860db70a1 'default: remove f-default'
   | |
-  | o  4: 'dev: merge default' dev
+  | o  4: 4b019212aaf6 'dev: merge default' dev
   |/|
-  o |  3: 'default: f-default stuff'
+  o |  3: f157ecfd2b6b 'default: f-default stuff'
   | |
-  | o  2: 'dev: f-dev stuff' dev
+  | o  2: ec2c14fb2984 'dev: f-dev stuff' dev
   | |
-  | o  1: 'dev: create branch' dev
+  | o  1: 1d1a643d390e 'dev: create branch' dev
   |/
-  o  0: 'default: create f-default'
+  o  0: e90e8eb90b6f 'default: create f-default'
   
   $ hg clone -qU . ../ancestor-merge-2
 
@@ -138,21 +138,21 @@ Full rebase all the way back from branching point:
   other [source] changed f-default which local [dest] deleted
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? c
   rebasing 6:9455ee510502 "dev: merge default"
-  saved backup bundle to $TESTTMP/ancestor-merge/.hg/strip-backup/1d1a643d390e-43e9e04b-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/ancestor-merge/.hg/strip-backup/1d1a643d390e-43e9e04b-rebase.hg
   $ hg tglog
-  o  6: 'dev: merge default'
+  o  6: fbc098e72227 'dev: merge default'
   |
-  o  5: 'dev: merge default'
+  o  5: eda7b7f46f5d 'dev: merge default'
   |
-  o  4: 'dev: f-dev stuff'
+  o  4: 3e075b1c0a40 'dev: f-dev stuff'
   |
-  @  3: 'default: f-other stuff'
+  @  3: e08089805d82 'default: f-other stuff'
   |
-  o  2: 'default: remove f-default'
+  o  2: 462860db70a1 'default: remove f-default'
   |
-  o  1: 'default: f-default stuff'
+  o  1: f157ecfd2b6b 'default: f-default stuff'
   |
-  o  0: 'default: create f-default'
+  o  0: e90e8eb90b6f 'default: create f-default'
   
 Grafty cherry picking rebasing:
 
@@ -167,23 +167,23 @@ Grafty cherry picking rebasing:
   other [source] changed f-default which local [dest] deleted
   use (c)hanged version, leave (d)eleted, or leave (u)nresolved? c
   rebasing 6:9455ee510502 "dev: merge default"
-  saved backup bundle to $TESTTMP/ancestor-merge-2/.hg/strip-backup/ec2c14fb2984-62d0b222-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/ancestor-merge-2/.hg/strip-backup/ec2c14fb2984-62d0b222-rebase.hg
   $ hg tglog
-  o  7: 'dev: merge default'
+  o  7: fbc098e72227 'dev: merge default'
   |
-  o  6: 'dev: merge default'
+  o  6: eda7b7f46f5d 'dev: merge default'
   |
-  o  5: 'dev: f-dev stuff'
+  o  5: 3e075b1c0a40 'dev: f-dev stuff'
   |
-  o  4: 'default: f-other stuff'
+  o  4: e08089805d82 'default: f-other stuff'
   |
-  o  3: 'default: remove f-default'
+  o  3: 462860db70a1 'default: remove f-default'
   |
-  o  2: 'default: f-default stuff'
+  o  2: f157ecfd2b6b 'default: f-default stuff'
   |
-  | o  1: 'dev: create branch' dev
+  | o  1: 1d1a643d390e 'dev: create branch' dev
   |/
-  o  0: 'default: create f-default'
+  o  0: e90e8eb90b6f 'default: create f-default'
   
   $ cd ..
 
@@ -225,21 +225,21 @@ Test order of parents of rebased merged with un-rebased changes as p1.
   summary:     merge p1 1=ancestor p2 3=outside
   
   $ hg tglog
-  @    5: 'merge p1 1=ancestor p2 3=outside'
+  @    5: a57575f79074 'merge p1 1=ancestor p2 3=outside'
   |\
-  +---o  4: 'merge p1 3=outside p2 1=ancestor'
+  +---o  4: 6990226659be 'merge p1 3=outside p2 1=ancestor'
   | |/
-  | o  3: 'outside'
+  | o  3: f59da8fc0fcf 'outside'
   | |
-  +---o  2: 'target'
+  +---o  2: a60552eb93fb 'target'
   | |
-  o |  1: 'change'
+  o |  1: dd40c13f7a6f 'change'
   |/
-  o  0: 'common'
+  o  0: 02f0f58d5300 'common'
   
   $ hg rebase -r 4 -d 2
   rebasing 4:6990226659be "merge p1 3=outside p2 1=ancestor"
-  saved backup bundle to $TESTTMP/parentorder/.hg/strip-backup/6990226659be-4d67a0d3-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/parentorder/.hg/strip-backup/6990226659be-4d67a0d3-rebase.hg
   $ hg tip
   changeset:   5:cca50676b1c5
   tag:         tip
@@ -251,7 +251,7 @@ Test order of parents of rebased merged with un-rebased changes as p1.
   
   $ hg rebase -r 4 -d 2
   rebasing 4:a57575f79074 "merge p1 1=ancestor p2 3=outside"
-  saved backup bundle to $TESTTMP/parentorder/.hg/strip-backup/a57575f79074-385426e5-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/parentorder/.hg/strip-backup/a57575f79074-385426e5-rebase.hg
   $ hg tip
   changeset:   5:f9daf77ffe76
   tag:         tip
@@ -262,17 +262,17 @@ Test order of parents of rebased merged with un-rebased changes as p1.
   summary:     merge p1 1=ancestor p2 3=outside
   
   $ hg tglog
-  @    5: 'merge p1 1=ancestor p2 3=outside'
+  @    5: f9daf77ffe76 'merge p1 1=ancestor p2 3=outside'
   |\
-  +---o  4: 'merge p1 3=outside p2 1=ancestor'
+  +---o  4: cca50676b1c5 'merge p1 3=outside p2 1=ancestor'
   | |/
-  | o  3: 'outside'
+  | o  3: f59da8fc0fcf 'outside'
   | |
-  o |  2: 'target'
+  o |  2: a60552eb93fb 'target'
   | |
-  o |  1: 'change'
+  o |  1: dd40c13f7a6f 'change'
   |/
-  o  0: 'common'
+  o  0: 02f0f58d5300 'common'
   
 rebase of merge of ancestors
 
@@ -307,7 +307,7 @@ rebase of merge of ancestors
        199 (changelog)
        216 (manifests)
        182  other
-  saved backup bundle to $TESTTMP/parentorder/.hg/strip-backup/4c5f12f25ebe-f46990e5-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/parentorder/.hg/strip-backup/4c5f12f25ebe-f46990e5-rebase.hg
   1 changesets found
   uncompressed size of bundle content:
        254 (changelog)
@@ -320,19 +320,19 @@ rebase of merge of ancestors
   added 1 changesets with 1 changes to 1 files
   rebase completed
   $ hg tglog
-  @  6: 'merge rebase ancestors'
+  @  6: 113755df812b 'merge rebase ancestors'
   |
-  o    5: 'merge p1 1=ancestor p2 3=outside'
+  o    5: f9daf77ffe76 'merge p1 1=ancestor p2 3=outside'
   |\
-  +---o  4: 'merge p1 3=outside p2 1=ancestor'
+  +---o  4: cca50676b1c5 'merge p1 3=outside p2 1=ancestor'
   | |/
-  | o  3: 'outside'
+  | o  3: f59da8fc0fcf 'outside'
   | |
-  o |  2: 'target'
+  o |  2: a60552eb93fb 'target'
   | |
-  o |  1: 'change'
+  o |  1: dd40c13f7a6f 'change'
   |/
-  o  0: 'common'
+  o  0: 02f0f58d5300 'common'
   
 Due to the limitation of 3-way merge algorithm (1 merge base), rebasing a merge
 may include unwanted content:
@@ -374,7 +374,7 @@ The warning does not get printed if there is no unwanted change detected:
   rebasing 3:c1e6b162678d "B" (B)
   rebasing 4:d6003a550c2c "C" (C)
   rebasing 5:c8f78076273e "D" (D tip)
-  saved backup bundle to $TESTTMP/dual-merge-base2/.hg/strip-backup/d6003a550c2c-6f1424b6-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/dual-merge-base2/.hg/strip-backup/d6003a550c2c-6f1424b6-rebase.hg
   $ hg manifest -r 'desc(D)'
   B
   C
@@ -395,7 +395,7 @@ The merge base could be different from old p1 (changed parent becomes new p1):
   $ hg rebase -r D+F -d Z
   rebasing 3:004dc1679908 "D" (D)
   rebasing 5:4be4cbf6f206 "F" (F tip)
-  saved backup bundle to $TESTTMP/chosen-merge-base1/.hg/strip-backup/004dc1679908-06a66a3c-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/chosen-merge-base1/.hg/strip-backup/004dc1679908-06a66a3c-rebase.hg
   $ hg manifest -r 'desc(F)'
   C
   D
@@ -416,7 +416,7 @@ The merge base could be different from old p1 (changed parent becomes new p1):
   $ hg rebase -r E+F -d Z
   rebasing 4:974e4943c210 "E" (E)
   rebasing 5:4be4cbf6f206 "F" (F tip)
-  saved backup bundle to $TESTTMP/chosen-merge-base2/.hg/strip-backup/974e4943c210-b2874da5-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/chosen-merge-base2/.hg/strip-backup/974e4943c210-b2874da5-rebase.hg
   $ hg manifest -r 'desc(F)'
   B
   D

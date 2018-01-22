@@ -13,7 +13,7 @@ import os
 import re
 
 from ..i18n import _
-from ..node import hex, short
+from ..node import hex, nullid, short
 
 from .common import (
     ErrorResponse,
@@ -36,9 +36,7 @@ from .. import (
     revsetlang,
     scmutil,
     smartset,
-    templatefilters,
     templater,
-    url,
     util,
 )
 
@@ -415,7 +413,7 @@ def changelog(web, req, tmpl, shortlog=False):
     else:
         nextentry = []
 
-    return tmpl(shortlog and 'shortlog' or 'changelog', changenav=changenav,
+    return tmpl('shortlog' if shortlog else 'changelog', changenav=changenav,
                 node=ctx.hex(), rev=pos, symrev=symrev, changesets=count,
                 entries=entries,
                 latestentry=latestentry, nextentry=nextentry,
@@ -1178,10 +1176,15 @@ def graph(web, req, tmpl):
     Information rendered by this handler can be used to create visual
     representations of repository topology.
 
-    The ``revision`` URL parameter controls the starting changeset.
+    The ``revision`` URL parameter controls the starting changeset. If it's
+    absent, the default is ``tip``.
 
     The ``revcount`` query string argument can define the number of changesets
     to show information for.
+
+    The ``graphtop`` query string argument can specify the starting changeset
+    for producing ``jsdata`` variable that is used for rendering graph in
+    JavaScript. By default it has the same value as ``revision``.
 
     This handler will render the ``graph`` template.
     """
@@ -1209,6 +1212,10 @@ def graph(web, req, tmpl):
     morevars = copy.copy(tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
+    graphtop = req.form.get('graphtop', [ctx.hex()])[0]
+    graphvars = copy.copy(tmpl.defaults['sessionvars'])
+    graphvars['graphtop'] = graphtop
+
     count = len(web.repo)
     pos = rev
 
@@ -1217,94 +1224,97 @@ def graph(web, req, tmpl):
     changenav = webutil.revnav(web.repo).gen(pos, revcount, count)
 
     tree = []
+    nextentry = []
+    lastrev = 0
     if pos != -1:
         allrevs = web.repo.changelog.revs(pos, 0)
         revs = []
         for i in allrevs:
             revs.append(i)
-            if len(revs) >= revcount:
+            if len(revs) >= revcount + 1:
                 break
+
+        if len(revs) > revcount:
+            nextentry = [webutil.commonentry(web.repo, web.repo[revs[-1]])]
+            revs = revs[:-1]
+
+        lastrev = revs[-1]
 
         # We have to feed a baseset to dagwalker as it is expecting smartset
         # object. This does not have a big impact on hgweb performance itself
         # since hgweb graphing code is not itself lazy yet.
         dag = graphmod.dagwalker(web.repo, smartset.baseset(revs))
         # As we said one line above... not lazy.
-        tree = list(graphmod.colored(dag, web.repo))
+        tree = list(item for item in graphmod.colored(dag, web.repo)
+                    if item[1] == graphmod.CHANGESET)
 
-    def getcolumns(tree):
-        cols = 0
-        for (id, type, ctx, vtx, edges) in tree:
-            if type != graphmod.CHANGESET:
-                continue
-            cols = max(cols, max([edge[0] for edge in edges] or [0]),
-                             max([edge[1] for edge in edges] or [0]))
-        return cols
+    def nodecurrent(ctx):
+        wpnodes = web.repo.dirstate.parents()
+        if wpnodes[1] == nullid:
+            wpnodes = wpnodes[:1]
+        if ctx.node() in wpnodes:
+            return '@'
+        return ''
 
-    def graphdata(usetuples, encodestr):
-        data = []
+    def nodesymbol(ctx):
+        if ctx.obsolete():
+            return 'x'
+        elif ctx.isunstable():
+            return '*'
+        elif ctx.closesbranch():
+            return '_'
+        else:
+            return 'o'
 
-        row = 0
-        for (id, type, ctx, vtx, edges) in tree:
-            if type != graphmod.CHANGESET:
-                continue
-            node = pycompat.bytestr(ctx)
-            age = encodestr(templatefilters.age(ctx.date()))
-            desc = templatefilters.firstline(encodestr(ctx.description()))
-            desc = url.escape(templatefilters.nonempty(desc))
-            user = url.escape(templatefilters.person(encodestr(ctx.user())))
-            branch = url.escape(encodestr(ctx.branch()))
-            try:
-                branchnode = web.repo.branchtip(branch)
-            except error.RepoLookupError:
-                branchnode = None
-            branch = branch, branchnode == ctx.node()
+    def fulltree():
+        pos = web.repo[graphtop].rev()
+        tree = []
+        if pos != -1:
+            revs = web.repo.changelog.revs(pos, lastrev)
+            dag = graphmod.dagwalker(web.repo, smartset.baseset(revs))
+            tree = list(item for item in graphmod.colored(dag, web.repo)
+                        if item[1] == graphmod.CHANGESET)
+        return tree
 
-            if usetuples:
-                data.append((node, vtx, edges, desc, user, age, branch,
-                             [url.escape(encodestr(x)) for x in ctx.tags()],
-                             [url.escape(encodestr(x))
-                              for x in ctx.bookmarks()]))
-            else:
-                edgedata = [{'col': edge[0], 'nextcol': edge[1],
-                             'color': (edge[2] - 1) % 6 + 1,
-                             'width': edge[3], 'bcolor': edge[4]}
-                            for edge in edges]
+    def jsdata():
+        return [{'node': pycompat.bytestr(ctx),
+                 'graphnode': nodecurrent(ctx) + nodesymbol(ctx),
+                 'vertex': vtx,
+                 'edges': edges}
+                for (id, type, ctx, vtx, edges) in fulltree()]
 
-                data.append(
-                    {'node': node,
-                     'col': vtx[0],
-                     'color': (vtx[1] - 1) % 6 + 1,
-                     'edges': edgedata,
-                     'row': row,
-                     'nextrow': row + 1,
-                     'desc': desc,
-                     'user': user,
-                     'age': age,
-                     'bookmarks': webutil.nodebookmarksdict(
-                         web.repo, ctx.node()),
-                     'branches': webutil.nodebranchdict(web.repo, ctx),
-                     'inbranch': webutil.nodeinbranch(web.repo, ctx),
-                     'tags': webutil.nodetagsdict(web.repo, ctx.node())})
+    def nodes():
+        parity = paritygen(web.stripecount)
+        for row, (id, type, ctx, vtx, edges) in enumerate(tree):
+            entry = webutil.commonentry(web.repo, ctx)
+            edgedata = [{'col': edge[0],
+                         'nextcol': edge[1],
+                         'color': (edge[2] - 1) % 6 + 1,
+                         'width': edge[3],
+                         'bcolor': edge[4]}
+                        for edge in edges]
 
-            row += 1
+            entry.update({'col': vtx[0],
+                          'color': (vtx[1] - 1) % 6 + 1,
+                          'parity': next(parity),
+                          'edges': edgedata,
+                          'row': row,
+                          'nextrow': row + 1})
 
-        return data
+            yield entry
 
-    cols = getcolumns(tree)
     rows = len(tree)
-    canvasheight = (rows + 1) * bg_height - 27
 
     return tmpl('graph', rev=rev, symrev=symrev, revcount=revcount,
                 uprev=uprev,
                 lessvars=lessvars, morevars=morevars, downrev=downrev,
-                cols=cols, rows=rows,
-                canvaswidth=(cols + 1) * bg_height,
-                truecanvasheight=rows * bg_height,
-                canvasheight=canvasheight, bg_height=bg_height,
-                # {jsdata} will be passed to |json, so it must be in utf-8
-                jsdata=lambda **x: graphdata(True, encoding.fromlocal),
-                nodes=lambda **x: graphdata(False, pycompat.bytestr),
+                graphvars=graphvars,
+                rows=rows,
+                bg_height=bg_height,
+                changesets=count,
+                nextentry=nextentry,
+                jsdata=lambda **x: jsdata(),
+                nodes=lambda **x: nodes(),
                 node=ctx.hex(), changenav=changenav)
 
 def _getdoc(e):

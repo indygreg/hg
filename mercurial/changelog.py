@@ -295,11 +295,14 @@ class changelog(revlog.revlog):
         self._divert = False
         self.filteredrevs = frozenset()
 
-    def tip(self):
-        """filtered version of revlog.tip"""
+    def tiprev(self):
         for i in xrange(len(self) -1, -2, -1):
             if i not in self.filteredrevs:
-                return self.node(i)
+                return i
+
+    def tip(self):
+        """filtered version of revlog.tip"""
+        return self.node(self.tiprev())
 
     def __contains__(self, rev):
         """filtered version of revlog.__contains__"""
@@ -541,5 +544,10 @@ class changelog(revlog.revlog):
                                                    *args, **kwargs)
         revs = transaction.changes.get('revs')
         if revs is not None:
-            revs.add(rev)
+            if revs:
+                assert revs[-1] + 1 == rev
+                revs = xrange(revs[0], rev + 1)
+            else:
+                revs = xrange(rev, rev + 1)
+            transaction.changes['revs'] = revs
         return node

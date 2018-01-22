@@ -136,7 +136,7 @@ client side: pull from the server
   $ hg up 'desc("ROOT")'
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg pull
-  pulling from $TESTTMP/distributed-chain-building/server (glob)
+  pulling from $TESTTMP/distributed-chain-building/server
   searching for changes
   adding changesets
   adding manifests
@@ -174,7 +174,7 @@ obsolete on the server side but the marker is sent out.)
   $ hg rollback
   repository tip rolled back to revision 3 (undo pull)
   $ hg push -f
-  pushing to $TESTTMP/distributed-chain-building/server (glob)
+  pushing to $TESTTMP/distributed-chain-building/server
   searching for changes
   adding changesets
   adding manifests
@@ -276,6 +276,7 @@ Bob pulls from Alice and rewrites them
   $ hg up 'desc("c_A")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m 'c_A1'
+  1 new orphan changesets
   $ hg rebase -r 'desc("c_B0")' -d . # no easy way to rewrite the message with the rebase
   rebasing 2:ef908e42ce65 "c_B0"
   $ hg up
@@ -302,9 +303,9 @@ Bob pulls from Alice and rewrites them
   o  0:e82fb8d02bbf ROOT
   
   $ hg debugobsolete
-  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'bob'}
-  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
+  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
+  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
   $ cd ..
 
 Celeste pulls from Bob and rewrites them again
@@ -323,6 +324,7 @@ Celeste pulls from Bob and rewrites them again
   $ hg up 'desc("c_A")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m 'c_A2'
+  1 new orphan changesets
   $ hg rebase -r 'desc("c_B1")' -d . # no easy way to rewrite the message with the rebase
   rebasing 2:956063ac4557 "c_B1"
   $ hg up
@@ -349,12 +351,12 @@ Celeste pulls from Bob and rewrites them again
   o  0:e82fb8d02bbf ROOT
   
   $ hg debugobsolete
-  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'bob'}
-  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'celeste'}
-  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
+  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
+  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'celeste'}
+  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
 
 Celeste now pushes to the server
 
@@ -362,7 +364,7 @@ Celeste now pushes to the server
 However using a central server seems more common)
 
   $ hg push
-  pushing to $TESTTMP/distributed-chain-building/distributed-chain-building/server (glob)
+  pushing to $TESTTMP/distributed-chain-building/distributed-chain-building/server
   searching for changes
   adding changesets
   adding manifests
@@ -380,7 +382,7 @@ from the server (note: could be from Celeste directly)
   $ hg up 'desc(ROOT)'
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
   $ hg pull
-  pulling from $TESTTMP/distributed-chain-building/distributed-chain-building/server (glob)
+  pulling from $TESTTMP/distributed-chain-building/distributed-chain-building/server
   searching for changes
   adding changesets
   adding manifests
@@ -391,12 +393,12 @@ from the server (note: could be from Celeste directly)
   new changesets 9866d64649a5:77ae25d99ff0
   (run 'hg heads' to see heads)
   $ hg debugobsolete
-  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'celeste'}
-  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'bob'}
+  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'celeste'}
+  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
 
 Then, she pulls from Bob, pulling predecessors of the changeset she has
 already pulled. The changesets are not obsoleted in the Bob repo yet. Their
@@ -418,12 +420,12 @@ successors do not exist in Bob repository yet.
   @  0:e82fb8d02bbf ROOT
   
   $ hg debugobsolete
-  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'celeste'}
-  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'bob'}
+  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'celeste'}
+  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
 
 Same tests, but change coming from a bundle
 (testing with a bundle is interesting because absolutely no discovery or
@@ -439,12 +441,12 @@ decision is made in that case, so receiving the changesets are not an option).
   @  0:e82fb8d02bbf ROOT
   
   $ hg debugobsolete
-  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'celeste'}
-  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'bob'}
+  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'celeste'}
+  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
   $ hg -R ../repo-Bob bundle ../step-1.hg
   searching for changes
   2 changesets found
@@ -477,11 +479,11 @@ decision is made in that case, so receiving the changesets are not an option).
   @  0:e82fb8d02bbf ROOT
   
   $ hg debugobsolete
-  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'celeste'}
-  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'celeste'}
-  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'bob'}
-  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'rebase', 'user': 'bob'}
+  3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 77ae25d99ff07889e181126b1171b94bec8e5227 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5b5708a437f27665db42c5a261a539a1bcb2a8c2 9866d64649a5d9c5991fe119c7b2c33898114e10 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'celeste'}
+  5ffb9e311b35f6ab6f76f667ca5d6e595645481b 956063ac4557828781733b2d5677a351ce856f59 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  956063ac4557828781733b2d5677a351ce856f59 3cf8de21cc2282186857d2266eb6b1f9cb85ecf3 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'celeste'}
+  d33b0a3a64647d79583526be8107802b1f9fedfa 5b5708a437f27665db42c5a261a539a1bcb2a8c2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'bob'}
+  ef908e42ce65ef57f970d799acaddde26f58a4cc 5ffb9e311b35f6ab6f76f667ca5d6e595645481b 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '4', 'operation': 'rebase', 'user': 'bob'}
 
   $ cd ..

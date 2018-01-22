@@ -15,6 +15,7 @@ import stat
 from .i18n import _
 from . import (
     error,
+    node,
     policy,
     pycompat,
     util,
@@ -221,7 +222,7 @@ _dirprefixlen = 8
 _maxshortdirslen = 8 * (_dirprefixlen + 1) - 4
 
 def _hashencode(path, dotencode):
-    digest = hashlib.sha1(path).hexdigest()
+    digest = node.hex(hashlib.sha1(path).digest())
     le = lowerencode(path[5:]).split('/') # skips prefix 'data/' or 'meta/'
     parts = _auxencode(le, dotencode)
     basename = parts[-1]

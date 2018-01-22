@@ -32,6 +32,7 @@ from .. import (
     pathutil,
     pycompat,
     templatefilters,
+    templatekw,
     ui as uimod,
     util,
 )
@@ -351,6 +352,12 @@ def linerange(req):
 def formatlinerange(fromline, toline):
     return '%d:%d' % (fromline + 1, toline)
 
+def succsandmarkers(repo, ctx):
+    for item in templatekw.showsuccsandmarkers(repo, ctx):
+        item['successors'] = _siblings(repo[successor]
+                                       for successor in item['successors'])
+        yield item
+
 def commonentry(repo, ctx):
     node = ctx.node()
     return {
@@ -361,6 +368,9 @@ def commonentry(repo, ctx):
         'date': ctx.date(),
         'extra': ctx.extra(),
         'phase': ctx.phasestr(),
+        'obsolete': ctx.obsolete(),
+        'succsandmarkers': lambda **x: succsandmarkers(repo, ctx),
+        'instabilities': [{"instability": i} for i in ctx.instabilities()],
         'branch': nodebranchnodefault(ctx),
         'inbranch': nodeinbranch(repo, ctx),
         'branches': nodebranchdict(repo, ctx),
@@ -409,7 +419,7 @@ def changesetentry(web, req, tmpl, ctx):
     files = []
     parity = paritygen(web.stripecount)
     for blockno, f in enumerate(ctx.files()):
-        template = f in ctx and 'filenodelink' or 'filenolink'
+        template = 'filenodelink' if f in ctx else 'filenolink'
         files.append(tmpl(template,
                           node=ctx.hex(), file=f, blockno=blockno + 1,
                           parity=next(parity)))
@@ -571,7 +581,7 @@ def diffstat(tmpl, ctx, statgen, parity):
 
     fileno = 0
     for filename, adds, removes, isbinary in stats:
-        template = filename in files and 'diffstatlink' or 'diffstatnolink'
+        template = 'diffstatlink' if filename in files else 'diffstatnolink'
         total = adds + removes
         fileno += 1
         yield tmpl(template, node=ctx.hex(), file=filename, fileno=fileno,

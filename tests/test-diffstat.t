@@ -35,7 +35,7 @@ Narrow diffstat:
 
   $ hg ci -m appenda
 
-  >>> open("c", "wb").write("\0")
+  >>> open("c", "wb").write(b"\0")
   $ touch d
   $ hg add c d
 
@@ -54,7 +54,7 @@ Binary git diffstat:
 
   $ hg ci -m createb
 
-  >>> open("file with spaces", "wb").write("\0")
+  >>> open("file with spaces", "wb").write(b"\0")
   $ hg add "file with spaces"
 
 Filename with spaces diffstat:
@@ -151,7 +151,7 @@ diffstat within directories:
    1 files changed, 1 insertions(+), 0 deletions(-)
 
   $ hg diff --stat --root ../dir1 ../dir2
-  warning: ../dir2 not inside relative root . (glob)
+  warning: ../dir2 not inside relative root .
 
   $ hg diff --stat --root . -I old
 

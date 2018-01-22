@@ -9,11 +9,13 @@
 from __future__ import absolute_import
 
 import copy
+import weakref
 
 from .node import nullrev
 from . import (
     obsolete,
     phases,
+    pycompat,
     tags as tagsmod,
 )
 
@@ -63,7 +65,7 @@ def _revealancestors(pfunc, hidden, revs):
                 hidden.remove(p)
                 stack.append(p)
 
-def computehidden(repo):
+def computehidden(repo, visibilityexceptions=None):
     """compute the set of hidden revision to filter
 
     During most operation hidden should be filtered."""
@@ -72,6 +74,8 @@ def computehidden(repo):
     hidden = hideablerevs(repo)
     if hidden:
         hidden = set(hidden - pinnedrevs(repo))
+        if visibilityexceptions:
+            hidden -= visibilityexceptions
         pfunc = repo.changelog.parentrevs
         mutablephases = (phases.draft, phases.secret)
         mutable = repo._phasecache.getrevset(repo, mutablephases)
@@ -80,7 +84,7 @@ def computehidden(repo):
         _revealancestors(pfunc, hidden, visible)
     return frozenset(hidden)
 
-def computeunserved(repo):
+def computeunserved(repo, visibilityexceptions=None):
     """compute the set of revision that should be filtered when used a server
 
     Secret and hidden changeset should not pretend to be here."""
@@ -98,7 +102,7 @@ def computeunserved(repo):
     else:
         return hiddens
 
-def computemutable(repo):
+def computemutable(repo, visibilityexceptions=None):
     assert not repo.changelog.filteredrevs
     # fast check to avoid revset call on huge repo
     if any(repo._phasecache.phaseroots[1:]):
@@ -107,7 +111,7 @@ def computemutable(repo):
         return frozenset(r for r in maymutable if getphase(repo, r))
     return frozenset()
 
-def computeimpactable(repo):
+def computeimpactable(repo, visibilityexceptions=None):
     """Everything impactable by mutable revision
 
     The immutable filter still have some chance to get invalidated. This will
@@ -139,14 +143,21 @@ def computeimpactable(repo):
 # Otherwise your filter will have to recompute all its branches cache
 # from scratch (very slow).
 filtertable = {'visible': computehidden,
+               'visible-hidden': computehidden,
                'served': computeunserved,
                'immutable':  computemutable,
                'base':  computeimpactable}
 
-def filterrevs(repo, filtername):
-    """returns set of filtered revision for this filter name"""
+def filterrevs(repo, filtername, visibilityexceptions=None):
+    """returns set of filtered revision for this filter name
+
+    visibilityexceptions is a set of revs which must are exceptions for
+    hidden-state and must be visible. They are dynamic and hence we should not
+    cache it's result"""
     if filtername not in repo.filteredrevcache:
         func = filtertable[filtername]
+        if visibilityexceptions:
+            return func(repo.unfiltered, visibilityexceptions)
         repo.filteredrevcache[filtername] = func(repo.unfiltered())
     return repo.filteredrevcache[filtername]
 
@@ -185,11 +196,14 @@ class repoview(object):
     subclasses of `localrepo`. Eg: `bundlerepo` or `statichttprepo`.
     """
 
-    def __init__(self, repo, filtername):
+    def __init__(self, repo, filtername, visibilityexceptions=None):
         object.__setattr__(self, r'_unfilteredrepo', repo)
         object.__setattr__(self, r'filtername', filtername)
         object.__setattr__(self, r'_clcachekey', None)
         object.__setattr__(self, r'_clcache', None)
+        # revs which are exceptions and must not be hidden
+        object.__setattr__(self, r'_visibilityexceptions',
+                           visibilityexceptions)
 
     # not a propertycache on purpose we shall implement a proper cache later
     @property
@@ -205,7 +219,7 @@ class repoview(object):
         unfilen = len(unfiindex) - 1
         unfinode = unfiindex[unfilen - 1][7]
 
-        revs = filterrevs(unfi, self.filtername)
+        revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)
         cl = self._clcache
         newkey = (unfilen, unfinode, hash(revs), unfichangelog._delayed)
         # if cl.index is not unfiindex, unfi.changelog would be
@@ -225,11 +239,16 @@ class repoview(object):
         """Return an unfiltered version of a repo"""
         return self._unfilteredrepo
 
-    def filtered(self, name):
+    def filtered(self, name, visibilityexceptions=None):
         """Return a filtered version of a repository"""
-        if name == self.filtername:
+        if name == self.filtername and not visibilityexceptions:
             return self
-        return self.unfiltered().filtered(name)
+        return self.unfiltered().filtered(name, visibilityexceptions)
+
+    def __repr__(self):
+        return r'<%s:%s %r>' % (self.__class__.__name__,
+                                pycompat.sysstr(self.filtername),
+                                self.unfiltered())
 
     # everything access are forwarded to the proxied repo
     def __getattr__(self, attr):
@@ -240,3 +259,16 @@ class repoview(object):
 
     def __delattr__(self, attr):
         return delattr(self._unfilteredrepo, attr)
+
+# Python <3.4 easily leaks types via __mro__. See
+# https://bugs.python.org/issue17950. We cache dynamically created types
+# so they won't be leaked on every invocation of repo.filtered().
+_filteredrepotypes = weakref.WeakKeyDictionary()
+
+def newtype(base):
+    """Create a new type with the repoview mixin and the given base class"""
+    if base not in _filteredrepotypes:
+        class filteredrepo(repoview, base):
+            pass
+        _filteredrepotypes[base] = filteredrepo
+    return _filteredrepotypes[base]

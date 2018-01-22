@@ -204,6 +204,16 @@ never cause crash:
   $ hg log -r 'wdir()' -T '{manifest}\n'
   
 
+Internal resources shouldn't be exposed (issue5699):
+
+  $ hg log -r. -T '{cache}{ctx}{repo}{revcache}{templ}{ui}'
+
+Never crash on internal resource not available:
+
+  $ hg --cwd .. debugtemplate '{"c0bebeef"|shortest}\n'
+  abort: template resource not available: ctx
+  [255]
+
 Quoting for ui.logtemplate
 
   $ hg tip --config "ui.logtemplate={rev}\n"
@@ -2751,6 +2761,25 @@ Error on syntax:
   $ hg log -T '{date'
   hg: parse error at 1: unterminated template expansion
   [255]
+  $ hg log -T '{date(}'
+  hg: parse error at 7: not a prefix: end
+  [255]
+  $ hg log -T '{date)}'
+  hg: parse error at 5: invalid token
+  [255]
+  $ hg log -T '{date date}'
+  hg: parse error at 6: invalid token
+  [255]
+
+  $ hg log -T '{}'
+  hg: parse error at 2: not a prefix: end
+  [255]
+  $ hg debugtemplate -v '{()}'
+  (template
+    (group
+      None))
+  hg: parse error: missing argument
+  [255]
 
 Behind the scenes, this will throw TypeError
 
@@ -2880,6 +2909,17 @@ Test diff function:
   +++ b/fourth	Wed Jan 01 10:01:00 2020 +0000
   @@ -0,0 +1,1 @@
   +second
+
+ui verbosity:
+
+  $ hg log -l1 -T '{verbosity}\n'
+  
+  $ hg log -l1 -T '{verbosity}\n' --debug
+  debug
+  $ hg log -l1 -T '{verbosity}\n' --quiet
+  quiet
+  $ hg log -l1 -T '{verbosity}\n' --verbose
+  verbose
 
   $ cd ..
 
@@ -4063,6 +4103,48 @@ default. join() should agree with the default formatting:
   $ hg log -R ../a -T '{join(parents, ",\n")}\n' -r6 --debug
   5:13207e5a10d9fd28ec424934298e176197f2c67f,
   4:bbe44766e73d5f11ed2177f1838de10c53ef3e74
+
+Invalid arguments passed to revset()
+
+  $ hg log -T '{revset("%whatever", 0)}\n'
+  hg: parse error: unexpected revspec format character w
+  [255]
+  $ hg log -T '{revset("%lwhatever", files)}\n'
+  hg: parse error: unexpected revspec format character w
+  [255]
+  $ hg log -T '{revset("%s %s", 0)}\n'
+  hg: parse error: missing argument for revspec
+  [255]
+  $ hg log -T '{revset("", 0)}\n'
+  hg: parse error: too many revspec arguments specified
+  [255]
+  $ hg log -T '{revset("%s", 0, 1)}\n'
+  hg: parse error: too many revspec arguments specified
+  [255]
+  $ hg log -T '{revset("%", 0)}\n'
+  hg: parse error: incomplete revspec format character
+  [255]
+  $ hg log -T '{revset("%l", 0)}\n'
+  hg: parse error: incomplete revspec format character
+  [255]
+  $ hg log -T '{revset("%d", 'foo')}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%ld", files)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%ls", 0)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%b", 'foo')}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%lb", files)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
+  $ hg log -T '{revset("%r", 0)}\n'
+  hg: parse error: invalid argument for revspec
+  [255]
 
 Test files function
 

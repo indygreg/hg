@@ -354,7 +354,6 @@ remote transplant with pull
   added 1 changesets with 1 changes to 1 files
   applying a53251cdf717
   a53251cdf717 transplanted to 8d9279348abb
-  new changesets 37a1297eb21b:8d9279348abb
   $ hg log --template '{rev} {parents} {desc}\n'
   2  b3
   1  b1
@@ -560,7 +559,6 @@ test "--merge" causing pull from source repository on local host
   added 2 changesets with 2 changes to 2 files
   applying a53251cdf717
   4:a53251cdf717 merged at 4831f4dc831a
-  new changesets 722f4667af76:4831f4dc831a
 
 test interactive transplant
 

@@ -88,7 +88,7 @@ Implicit -R:
   abort: no repository found in '$TESTTMP' (.hg not found)!
   [255]
   $ hg -R b ann a/a
-  abort: a/a not under root '$TESTTMP/b' (glob)
+  abort: a/a not under root '$TESTTMP/b'
   (consider using '--cwd b')
   [255]
   $ hg log
@@ -355,6 +355,7 @@ Testing -h/--help:
    environment   Environment Variables
    extensions    Using Additional Features
    filesets      Specifying File Sets
+   flags         Command-line flags
    glossary      Glossary
    hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
@@ -439,6 +440,7 @@ Testing -h/--help:
    environment   Environment Variables
    extensions    Using Additional Features
    filesets      Specifying File Sets
+   flags         Command-line flags
    glossary      Glossary
    hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb

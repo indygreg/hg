@@ -3,7 +3,7 @@
   > rebase=
   > 
   > [alias]
-  > tglog = log -G --template "{rev}: '{desc}'\n"
+  > tglog = log -G --template "{rev}: {node|short} '{desc}'\n"
   > 
   > [extensions]
   > drawdag=$TESTDIR/drawdag.py
@@ -25,7 +25,7 @@ Rebasing D onto B detaching from C (one commit):
 
   $ hg rebase -s D -d B
   rebasing 3:e7b3f00ed42e "D" (D tip)
-  saved backup bundle to $TESTTMP/a1/.hg/strip-backup/e7b3f00ed42e-6f368371-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a1/.hg/strip-backup/e7b3f00ed42e-6f368371-rebase.hg
 
   $ hg log -G --template "{rev}:{phase} '{desc}' {branches}\n"
   o  3:secret 'D'
@@ -62,18 +62,18 @@ Rebasing D onto B detaching from C (two commits):
   $ hg rebase -s D -d B
   rebasing 3:e7b3f00ed42e "D" (D)
   rebasing 4:69a34c08022a "E" (E tip)
-  saved backup bundle to $TESTTMP/a2/.hg/strip-backup/e7b3f00ed42e-a2ec7cea-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a2/.hg/strip-backup/e7b3f00ed42e-a2ec7cea-rebase.hg
 
   $ hg tglog
-  o  4: 'E'
+  o  4: ee79e0744528 'E'
   |
-  o  3: 'D'
+  o  3: 10530e1d72d9 'D'
   |
-  | o  2: 'C'
+  | o  2: dc0947a82db8 'C'
   | |
-  o |  1: 'B'
+  o |  1: 112478962961 'B'
   |/
-  o  0: 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
@@ -99,16 +99,16 @@ Rebasing C onto B using detach (same as not using it):
   $ hg rebase -s C -d B
   rebasing 2:dc0947a82db8 "C" (C)
   rebasing 3:e7b3f00ed42e "D" (D tip)
-  saved backup bundle to $TESTTMP/a3/.hg/strip-backup/dc0947a82db8-b8481714-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a3/.hg/strip-backup/dc0947a82db8-b8481714-rebase.hg
 
   $ hg tglog
-  o  3: 'D'
+  o  3: 7375f3dbfb0f 'D'
   |
-  o  2: 'C'
+  o  2: bbfdd6cb49aa 'C'
   |
-  o  1: 'B'
+  o  1: 112478962961 'B'
   |
-  o  0: 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
@@ -138,7 +138,7 @@ Rebasing D onto B detaching from C and collapsing:
   $ hg rebase --collapse -s D -d B
   rebasing 3:e7b3f00ed42e "D" (D)
   rebasing 4:69a34c08022a "E" (E tip)
-  saved backup bundle to $TESTTMP/a4/.hg/strip-backup/e7b3f00ed42e-a2ec7cea-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a4/.hg/strip-backup/e7b3f00ed42e-a2ec7cea-rebase.hg
 
   $ hg  log -G --template "{rev}:{phase} '{desc}' {branches}\n"
   o  3:secret 'Collapsed revision
@@ -176,33 +176,33 @@ Rebasing across null as ancestor
   rebasing 2:dc0947a82db8 "C" (C)
   rebasing 3:e7b3f00ed42e "D" (D)
   rebasing 4:69a34c08022a "E" (E tip)
-  saved backup bundle to $TESTTMP/a5/.hg/strip-backup/dc0947a82db8-3eefec98-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a5/.hg/strip-backup/dc0947a82db8-3eefec98-rebase.hg
 
   $ hg tglog
-  o  4: 'E'
+  o  4: e3d0c70d606d 'E'
   |
-  o  3: 'D'
+  o  3: e9153d36a1af 'D'
   |
-  o  2: 'C'
+  o  2: a7ac28b870a8 'C'
   |
-  o  1: 'B'
+  o  1: fc2b737bb2e5 'B'
   
-  o  0: 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg rebase -d 1 -s 3
   rebasing 3:e9153d36a1af "D"
   rebasing 4:e3d0c70d606d "E" (tip)
-  saved backup bundle to $TESTTMP/a5/.hg/strip-backup/e9153d36a1af-db7388ed-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a5/.hg/strip-backup/e9153d36a1af-db7388ed-rebase.hg
   $ hg tglog
-  o  4: 'E'
+  o  4: 2c24e540eccd 'E'
   |
-  o  3: 'D'
+  o  3: 73f786ed52ff 'D'
   |
-  | o  2: 'C'
+  | o  2: a7ac28b870a8 'C'
   |/
-  o  1: 'B'
+  o  1: fc2b737bb2e5 'B'
   
-  o  0: 'A'
+  o  0: 426bada5c675 'A'
   
   $ cd ..
 
@@ -231,42 +231,42 @@ Verify that target is not selected as external rev (issue3085)
   $ echo "J" >> F
   $ hg ci -m "J"
   $ hg tglog
-  @  7: 'J'
+  @  7: c6aaf0d259c0 'J'
   |
-  o    6: 'Merge'
+  o    6: 0cfbc7e8faaf 'Merge'
   |\
-  | o  5: 'I'
+  | o  5: b92d164ad3cb 'I'
   | |
-  o |  4: 'H'
+  o |  4: 4ea5b230dea3 'H'
   | |
-  | o  3: 'G'
+  | o  3: c6001eacfde5 'G'
   |/|
-  o |  2: 'F'
+  o |  2: 8908a377a434 'F'
   | |
-  | o  1: 'E'
+  | o  1: 7fb047a69f22 'E'
   |/
-  o  0: 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg rebase -s I -d H --collapse --config ui.merge=internal:other
   rebasing 5:b92d164ad3cb "I" (I)
   rebasing 6:0cfbc7e8faaf "Merge"
   rebasing 7:c6aaf0d259c0 "J" (tip)
-  saved backup bundle to $TESTTMP/a6/.hg/strip-backup/b92d164ad3cb-88fd7ab7-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a6/.hg/strip-backup/b92d164ad3cb-88fd7ab7-rebase.hg
 
   $ hg tglog
-  @  5: 'Collapsed revision
+  @  5: 65079693dac4 'Collapsed revision
   |  * I
   |  * Merge
   |  * J'
-  o  4: 'H'
+  o  4: 4ea5b230dea3 'H'
   |
-  | o  3: 'G'
+  | o  3: c6001eacfde5 'G'
   |/|
-  o |  2: 'F'
+  o |  2: 8908a377a434 'F'
   | |
-  | o  1: 'E'
+  | o  1: 7fb047a69f22 'E'
   |/
-  o  0: 'A'
+  o  0: 426bada5c675 'A'
   
 
   $ hg log --rev tip
@@ -305,7 +305,7 @@ Ensure --continue restores a correct state (issue3046) and phase:
   $ hg rebase -c
   rebasing 3:17b4880d2402 "B2" (tip)
   note: rebase of 3:17b4880d2402 created no changes to commit
-  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/17b4880d2402-1ae1f6cc-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/a7/.hg/strip-backup/17b4880d2402-1ae1f6cc-rebase.hg
   $ hg  log -G --template "{rev}:{phase} '{desc}' {branches}\n"
   o  2:draft 'C'
   |

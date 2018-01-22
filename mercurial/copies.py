@@ -107,7 +107,7 @@ def _findlimit(repo, a, b):
     return min(limit, a, b)
 
 def _chain(src, dst, a, b):
-    '''chain two sets of copies a->b'''
+    """chain two sets of copies a->b"""
     t = a.copy()
     for k, v in b.iteritems():
         if v in t:
@@ -130,8 +130,8 @@ def _chain(src, dst, a, b):
     return t
 
 def _tracefile(fctx, am, limit=-1):
-    '''return file context that is the ancestor of fctx present in ancestor
-    manifest am, stopping after the first ancestor lower than limit'''
+    """return file context that is the ancestor of fctx present in ancestor
+    manifest am, stopping after the first ancestor lower than limit"""
 
     for f in fctx.ancestors():
         if am.get(f.path(), None) == f.filenode():
@@ -139,11 +139,11 @@ def _tracefile(fctx, am, limit=-1):
         if limit >= 0 and f.linkrev() < limit and f.rev() < limit:
             return None
 
-def _dirstatecopies(d):
+def _dirstatecopies(d, match=None):
     ds = d._repo.dirstate
     c = ds.copies().copy()
     for k in list(c):
-        if ds[k] not in 'anm':
+        if ds[k] not in 'anm' or (match and not match(k)):
             del c[k]
     return c
 
@@ -156,18 +156,8 @@ def _computeforwardmissing(a, b, match=None):
     mb = b.manifest()
     return mb.filesnotin(ma, match=match)
 
-def _forwardcopies(a, b, match=None):
-    '''find {dst@b: src@a} copy mapping where a is an ancestor of b'''
-
-    # check for working copy
-    w = None
-    if b.rev() is None:
-        w = b
-        b = w.p1()
-        if a == b:
-            # short-circuit to avoid issues with merge states
-            return _dirstatecopies(w)
-
+def _committedforwardcopies(a, b, match):
+    """Like _forwardcopies(), but b.rev() cannot be None (working copy)"""
     # files might have to be traced back to the fctx parent of the last
     # one-side-only changeset, but not further back than that
     limit = _findlimit(a._repo, a.rev(), b.rev())
@@ -199,12 +189,21 @@ def _forwardcopies(a, b, match=None):
         ofctx = _tracefile(fctx, am, limit)
         if ofctx:
             cm[f] = ofctx.path()
-
-    # combine copies from dirstate if necessary
-    if w is not None:
-        cm = _chain(a, w, cm, _dirstatecopies(w))
-
     return cm
+
+def _forwardcopies(a, b, match=None):
+    """find {dst@b: src@a} copy mapping where a is an ancestor of b"""
+
+    # check for working copy
+    if b.rev() is None:
+        if a == b.p1():
+            # short-circuit to avoid issues with merge states
+            return _dirstatecopies(b, match)
+
+        cm = _committedforwardcopies(a, b.p1(), match)
+        # combine copies from dirstate if necessary
+        return _chain(a, b, cm, _dirstatecopies(b, match))
+    return _committedforwardcopies(a, b, match)
 
 def _backwardrenames(a, b):
     if a._repo.ui.config('experimental', 'copytrace') == 'off':
@@ -223,7 +222,7 @@ def _backwardrenames(a, b):
     return r
 
 def pathcopies(x, y, match=None):
-    '''find {dst@y: src@x} copy mapping for directed compare'''
+    """find {dst@y: src@x} copy mapping for directed compare"""
     if x == y or not x or not y:
         return {}
     a = y.ancestor(x)
@@ -861,13 +860,13 @@ def _checkcopies(srcctx, dstctx, f, base, tca, remotebase, limit, data):
                     return
 
 def duplicatecopies(repo, wctx, rev, fromrev, skiprev=None):
-    '''reproduce copies from fromrev to rev in the dirstate
+    """reproduce copies from fromrev to rev in the dirstate
 
     If skiprev is specified, it's a revision that should be used to
     filter copy records. Any copies that occur between fromrev and
     skiprev will not be duplicated, even if they appear in the set of
     copies between fromrev and rev.
-    '''
+    """
     exclude = {}
     if (skiprev is not None and
         repo.ui.config('experimental', 'copytrace') != 'off'):

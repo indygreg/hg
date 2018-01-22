@@ -27,8 +27,10 @@ elements = {
     "~": (18, None, None, ("ancestor", 18), None),
     "^": (18, None, None, ("parent", 18), "parentpost"),
     "-": (5, None, ("negate", 19), ("minus", 5), None),
-    "::": (17, None, ("dagrangepre", 17), ("dagrange", 17), "dagrangepost"),
-    "..": (17, None, ("dagrangepre", 17), ("dagrange", 17), "dagrangepost"),
+    "::": (17, "dagrangeall", ("dagrangepre", 17), ("dagrange", 17),
+           "dagrangepost"),
+    "..": (17, "dagrangeall", ("dagrangepre", 17), ("dagrange", 17),
+           "dagrangepost"),
     ":": (15, "rangeall", ("rangepre", 15), ("range", 15), "rangepost"),
     "not": (10, None, ("not", 10), None, None),
     "!": (10, None, ("not", 10), None, None),
@@ -288,6 +290,8 @@ def _fixops(x):
         post = ('parentpost', x[1])
         if x[2][0] == 'dagrangepre':
             return _fixops(('dagrange', post, x[2][1]))
+        elif x[2][0] == 'dagrangeall':
+            return _fixops(('dagrangepost', post))
         elif x[2][0] == 'rangepre':
             return _fixops(('range', post, x[2][1]))
         elif x[2][0] == 'rangeall':
@@ -313,6 +317,8 @@ def _analyze(x):
         return _analyze(_build('only(_, _)', *x[1:]))
     elif op == 'onlypost':
         return _analyze(_build('only(_)', x[1]))
+    elif op == 'dagrangeall':
+        raise error.ParseError(_("can't use '::' in this context"))
     elif op == 'dagrangepre':
         return _analyze(_build('ancestors(_)', x[1]))
     elif op == 'dagrangepost':
@@ -549,6 +555,52 @@ def _quote(s):
     """
     return "'%s'" % util.escapestr(pycompat.bytestr(s))
 
+def _formatargtype(c, arg):
+    if c == 'd':
+        return '%d' % int(arg)
+    elif c == 's':
+        return _quote(arg)
+    elif c == 'r':
+        parse(arg) # make sure syntax errors are confined
+        return '(%s)' % arg
+    elif c == 'n':
+        return _quote(node.hex(arg))
+    elif c == 'b':
+        try:
+            return _quote(arg.branch())
+        except AttributeError:
+            raise TypeError
+    raise error.ParseError(_('unexpected revspec format character %s') % c)
+
+def _formatlistexp(s, t):
+    l = len(s)
+    if l == 0:
+        return "_list('')"
+    elif l == 1:
+        return _formatargtype(t, s[0])
+    elif t == 'd':
+        return "_intlist('%s')" % "\0".join('%d' % int(a) for a in s)
+    elif t == 's':
+        return "_list(%s)" % _quote("\0".join(s))
+    elif t == 'n':
+        return "_hexlist('%s')" % "\0".join(node.hex(a) for a in s)
+    elif t == 'b':
+        try:
+            return "_list('%s')" % "\0".join(a.branch() for a in s)
+        except AttributeError:
+            raise TypeError
+
+    m = l // 2
+    return '(%s or %s)' % (_formatlistexp(s[:m], t), _formatlistexp(s[m:], t))
+
+def _formatparamexp(args, t):
+    return ', '.join(_formatargtype(t, a) for a in args)
+
+_formatlistfuncs = {
+    'l': _formatlistexp,
+    'p': _formatparamexp,
+}
+
 def formatspec(expr, *args):
     '''
     This is a convenience function for using revsets internally, and
@@ -564,7 +616,8 @@ def formatspec(expr, *args):
     %n = hex(arg), single-quoted
     %% = a literal '%'
 
-    Prefixing the type with 'l' specifies a parenthesized list of that type.
+    Prefixing the type with 'l' specifies a parenthesized list of that type,
+    and 'p' specifies a list of function parameters of that type.
 
     >>> formatspec(b'%r:: and %lr', b'10 or 11', (b"this()", b"that()"))
     '(10 or 11):: and ((this()) or (that()))'
@@ -579,68 +632,61 @@ def formatspec(expr, *args):
     >>> formatspec(b'branch(%b)', b)
     "branch('default')"
     >>> formatspec(b'root(%ls)', [b'a', b'b', b'c', b'd'])
-    "root(_list('a\\x00b\\x00c\\x00d'))"
+    "root(_list('a\\\\x00b\\\\x00c\\\\x00d'))"
+    >>> formatspec(b'sort(%r, %ps)', b':', [b'desc', b'user'])
+    "sort((:), 'desc', 'user')"
+    >>> formatspec('%ls', ['a', "'"])
+    "_list('a\\\\x00\\\\'')"
     '''
-
-    def argtype(c, arg):
-        if c == 'd':
-            return '%d' % int(arg)
-        elif c == 's':
-            return _quote(arg)
-        elif c == 'r':
-            parse(arg) # make sure syntax errors are confined
-            return '(%s)' % arg
-        elif c == 'n':
-            return _quote(node.hex(arg))
-        elif c == 'b':
-            return _quote(arg.branch())
-
-    def listexp(s, t):
-        l = len(s)
-        if l == 0:
-            return "_list('')"
-        elif l == 1:
-            return argtype(t, s[0])
-        elif t == 'd':
-            return "_intlist('%s')" % "\0".join('%d' % int(a) for a in s)
-        elif t == 's':
-            return "_list('%s')" % "\0".join(s)
-        elif t == 'n':
-            return "_hexlist('%s')" % "\0".join(node.hex(a) for a in s)
-        elif t == 'b':
-            return "_list('%s')" % "\0".join(a.branch() for a in s)
-
-        m = l // 2
-        return '(%s or %s)' % (listexp(s[:m], t), listexp(s[m:], t))
-
     expr = pycompat.bytestr(expr)
-    ret = ''
+    argiter = iter(args)
+    ret = []
     pos = 0
-    arg = 0
     while pos < len(expr):
-        c = expr[pos]
-        if c == '%':
-            pos += 1
+        q = expr.find('%', pos)
+        if q < 0:
+            ret.append(expr[pos:])
+            break
+        ret.append(expr[pos:q])
+        pos = q + 1
+        try:
             d = expr[pos]
-            if d == '%':
-                ret += d
-            elif d in 'dsnbr':
-                ret += argtype(d, args[arg])
-                arg += 1
-            elif d == 'l':
-                # a list of some type
-                pos += 1
+        except IndexError:
+            raise error.ParseError(_('incomplete revspec format character'))
+        if d == '%':
+            ret.append(d)
+            pos += 1
+            continue
+
+        try:
+            arg = next(argiter)
+        except StopIteration:
+            raise error.ParseError(_('missing argument for revspec'))
+        f = _formatlistfuncs.get(d)
+        if f:
+            # a list of some type
+            pos += 1
+            try:
                 d = expr[pos]
-                ret += listexp(list(args[arg]), d)
-                arg += 1
-            else:
-                raise error.Abort(_('unexpected revspec format character %s')
-                                  % d)
+            except IndexError:
+                raise error.ParseError(_('incomplete revspec format character'))
+            try:
+                ret.append(f(list(arg), d))
+            except (TypeError, ValueError):
+                raise error.ParseError(_('invalid argument for revspec'))
         else:
-            ret += c
+            try:
+                ret.append(_formatargtype(d, arg))
+            except (TypeError, ValueError):
+                raise error.ParseError(_('invalid argument for revspec'))
         pos += 1
 
-    return ret
+    try:
+        next(argiter)
+        raise error.ParseError(_('too many revspec arguments specified'))
+    except StopIteration:
+        pass
+    return ''.join(ret)
 
 def prettyformat(tree):
     return parser.prettyformat(tree, ('string', 'symbol'))
@@ -661,3 +707,34 @@ def funcsused(tree):
         if tree[0] == 'func':
             funcs.add(tree[1][1])
         return funcs
+
+_hashre = util.re.compile('[0-9a-fA-F]{1,40}$')
+
+def _ishashlikesymbol(symbol):
+    """returns true if the symbol looks like a hash"""
+    return _hashre.match(symbol)
+
+def gethashlikesymbols(tree):
+    """returns the list of symbols of the tree that look like hashes
+
+    >>> gethashlikesymbols(('dagrange', ('symbol', '3'), ('symbol', 'abe3ff')))
+    ['3', 'abe3ff']
+    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '.')))
+    []
+    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '34')))
+    ['34']
+    >>> gethashlikesymbols(('symbol', 'abe3ffZ'))
+    []
+    """
+    if not tree:
+        return []
+
+    if tree[0] == "symbol":
+        if _ishashlikesymbol(tree[1]):
+            return [tree[1]]
+    elif len(tree) >= 3:
+        results = []
+        for subtree in tree[1:]:
+            results += gethashlikesymbols(subtree)
+        return results
+    return []

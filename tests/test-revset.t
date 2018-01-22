@@ -792,7 +792,7 @@ may be hidden (issue5385)
   * set:
   <baseset []>
 
-infix/suffix resolution of ^ operator (issue2884):
+infix/suffix resolution of ^ operator (issue2884, issue5764):
 
  x^:y means (x^):y
 
@@ -818,12 +818,41 @@ infix/suffix resolution of ^ operator (issue2884):
   1
   2
 
+  $ try '1^..2'
+  (dagrange
+    (parentpost
+      (symbol '1'))
+    (symbol '2'))
+  * set:
+  <baseset+ [0, 1, 2]>
+  0
+  1
+  2
+
   $ try '9^:'
   (rangepost
     (parentpost
       (symbol '9')))
   * set:
   <spanset+ 8:10>
+  8
+  9
+
+  $ try '9^::'
+  (dagrangepost
+    (parentpost
+      (symbol '9')))
+  * set:
+  <generatorsetasc+>
+  8
+  9
+
+  $ try '9^..'
+  (dagrangepost
+    (parentpost
+      (symbol '9')))
+  * set:
+  <generatorsetasc+>
   8
   9
 
@@ -942,6 +971,14 @@ infix/suffix resolution of ^ operator (issue2884):
     (rangepre
       (symbol '2')))
   hg: parse error: ^ expects a number 0, 1, or 2
+  [255]
+
+'::' itself isn't a valid expression
+
+  $ try '::'
+  (dagrangeall
+    None)
+  hg: parse error: can't use '::' in this context
   [255]
 
 ancestor can accept 0 or more arguments
@@ -1484,7 +1521,7 @@ Test scmutil.revsingle() should return the last revision
   $ hg debugrevspec -s 'last(0::)'
   * set:
   <baseset slice=0:1
-    <generatorset->>
+    <generatorsetasc->>
   9
   $ hg identify -r '0::' --num
   9

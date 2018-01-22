@@ -8,17 +8,18 @@
 from __future__ import absolute_import
 
 import errno
+import struct
 
 from .i18n import _
 from .node import (
     bin,
     hex,
     short,
+    wdirid,
 )
 from . import (
     encoding,
     error,
-    lock as lockmod,
     obsutil,
     pycompat,
     scmutil,
@@ -120,6 +121,12 @@ class bmstore(dict):
     def _del(self, key):
         self._clean = False
         return dict.__delitem__(self, key)
+
+    def update(self, *others):
+        msg = ("bookmarks.update(...)' is deprecated, "
+               "use 'bookmarks.applychanges'")
+        self._repo.ui.deprecwarn(msg, '4.5')
+        return dict.update(self, *others)
 
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
@@ -390,14 +397,8 @@ def update(repo, parents, node):
         bmchanges.append((bm, None))
 
     if bmchanges:
-        lock = tr = None
-        try:
-            lock = repo.lock()
-            tr = repo.transaction('bookmark')
+        with repo.lock(), repo.transaction('bookmark') as tr:
             marks.applychanges(repo, tr, bmchanges)
-            tr.close()
-        finally:
-            lockmod.release(tr, lock)
     return bool(bmchanges)
 
 def listbinbookmarks(repo):
@@ -418,11 +419,7 @@ def listbookmarks(repo):
     return d
 
 def pushbookmark(repo, key, old, new):
-    w = l = tr = None
-    try:
-        w = repo.wlock()
-        l = repo.lock()
-        tr = repo.transaction('bookmarks')
+    with repo.wlock(), repo.lock(), repo.transaction('bookmarks') as tr:
         marks = repo._bookmarks
         existing = hex(marks.get(key, ''))
         if existing != old and existing != new:
@@ -434,10 +431,7 @@ def pushbookmark(repo, key, old, new):
                 return False
             changes = [(key, repo[new].node())]
         marks.applychanges(repo, tr, changes)
-        tr.close()
         return True
-    finally:
-        lockmod.release(tr, l, w)
 
 def comparebookmarks(repo, srcmarks, dstmarks, targets=None):
     '''Compare bookmarks between srcmarks and dstmarks
@@ -549,6 +543,60 @@ def unhexlifybookmarks(marks):
     for name, node in marks.items():
         binremotemarks[name] = bin(node)
     return binremotemarks
+
+_binaryentry = struct.Struct('>20sH')
+
+def binaryencode(bookmarks):
+    """encode a '(bookmark, node)' iterable into a binary stream
+
+    the binary format is:
+
+        <node><bookmark-length><bookmark-name>
+
+    :node: is a 20 bytes binary node,
+    :bookmark-length: an unsigned short,
+    :bookmark-name: the name of the bookmark (of length <bookmark-length>)
+
+    wdirid (all bits set) will be used as a special value for "missing"
+    """
+    binarydata = []
+    for book, node in bookmarks:
+        if not node: # None or ''
+            node = wdirid
+        binarydata.append(_binaryentry.pack(node, len(book)))
+        binarydata.append(book)
+    return ''.join(binarydata)
+
+def binarydecode(stream):
+    """decode a binary stream into an '(bookmark, node)' iterable
+
+    the binary format is:
+
+        <node><bookmark-length><bookmark-name>
+
+    :node: is a 20 bytes binary node,
+    :bookmark-length: an unsigned short,
+    :bookmark-name: the name of the bookmark (of length <bookmark-length>))
+
+    wdirid (all bits set) will be used as a special value for "missing"
+    """
+    entrysize = _binaryentry.size
+    books = []
+    while True:
+        entry = stream.read(entrysize)
+        if len(entry) < entrysize:
+            if entry:
+                raise error.Abort(_('bad bookmark stream'))
+            break
+        node, length = _binaryentry.unpack(entry)
+        bookmark = stream.read(length)
+        if len(bookmark) < length:
+            if entry:
+                raise error.Abort(_('bad bookmark stream'))
+        if node == wdirid:
+            node = None
+        books.append((bookmark, node))
+    return books
 
 def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
     ui.debug("checking for updated bookmarks\n")
@@ -788,6 +836,12 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     cur = repo.changectx('.').node()
     newact = None
     changes = []
+    hiddenrev = None
+
+    # unhide revs if any
+    if rev:
+        repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
+
     for mark in names:
         mark = checkformat(repo, mark)
         if newact is None:
@@ -797,10 +851,21 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
             return
         tgt = cur
         if rev:
-            tgt = scmutil.revsingle(repo, rev).node()
+            ctx = scmutil.revsingle(repo, rev)
+            if ctx.hidden():
+                hiddenrev = ctx.hex()[:12]
+            tgt = ctx.node()
         for bm in marks.checkconflict(mark, force, tgt):
             changes.append((bm, None))
         changes.append((mark, tgt))
+
+    if hiddenrev:
+        repo.ui.warn(_("bookmarking hidden changeset %s\n") % hiddenrev)
+
+        if ctx.obsolete():
+            msg = obsutil._getfilteredreason(repo, "%s" % hiddenrev, ctx)
+            repo.ui.warn("(%s)\n" % msg)
+
     marks.applychanges(repo, tr, changes)
     if not inactive and cur == marks[newact] and not rev:
         activate(repo, newact)

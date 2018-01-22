@@ -776,7 +776,7 @@ def makestore(ui, repo):
     # rely on obsstore class default when possible.
     kwargs = {}
     if defaultformat is not None:
-        kwargs['defaultformat'] = defaultformat
+        kwargs[r'defaultformat'] = defaultformat
     readonly = not isenabled(repo, createmarkersopt)
     store = obsstore(repo.svfs, readonly=readonly, **kwargs)
     if store and readonly:
@@ -838,18 +838,10 @@ def pushmarker(repo, key, old, new):
         repo.ui.warn(_('unexpected old value for %r') % key)
         return False
     data = util.b85decode(new)
-    lock = repo.lock()
-    try:
-        tr = repo.transaction('pushkey: obsolete markers')
-        try:
-            repo.obsstore.mergemarkers(tr, data)
-            repo.invalidatevolatilesets()
-            tr.close()
-            return True
-        finally:
-            tr.release()
-    finally:
-        lock.release()
+    with repo.lock(), repo.transaction('pushkey: obsolete markers') as tr:
+        repo.obsstore.mergemarkers(tr, data)
+        repo.invalidatevolatilesets()
+        return True
 
 # keep compatibility for the 4.3 cycle
 def allprecursors(obsstore, nodes, ignoreflags=0):
@@ -994,10 +986,10 @@ def _computephasedivergentset(repo):
     public = phases.public
     cl = repo.changelog
     torev = cl.nodemap.get
-    for ctx in repo.set('(not public()) and (not obsolete())'):
-        rev = ctx.rev()
+    tonode = cl.node
+    for rev in repo.revs('(not public()) and (not obsolete())'):
         # We only evaluate mutable, non-obsolete revision
-        node = ctx.node()
+        node = tonode(rev)
         # (future) A cache of predecessors may worth if split is very common
         for pnode in obsutil.allpredecessors(repo.obsstore, [node],
                                    ignoreflags=bumpedfix):
@@ -1023,8 +1015,10 @@ def _computecontentdivergentset(repo):
     divergent = set()
     obsstore = repo.obsstore
     newermap = {}
-    for ctx in repo.set('(not public()) - obsolete()'):
-        mark = obsstore.predecessors.get(ctx.node(), ())
+    tonode = repo.changelog.node
+    for rev in repo.revs('(not public()) - obsolete()'):
+        node = tonode(rev)
+        mark = obsstore.predecessors.get(node, ())
         toprocess = set(mark)
         seen = set()
         while toprocess:
@@ -1036,7 +1030,7 @@ def _computecontentdivergentset(repo):
                 obsutil.successorssets(repo, prec, cache=newermap)
             newer = [n for n in newermap[prec] if n]
             if len(newer) > 1:
-                divergent.add(ctx.rev())
+                divergent.add(rev)
                 break
             toprocess.update(obsstore.predecessors.get(prec, ()))
     return divergent
@@ -1079,8 +1073,7 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     saveeffectflag = repo.ui.configbool('experimental',
                                         'evolution.effect-flags')
 
-    tr = repo.transaction('add-obsolescence-marker')
-    try:
+    with repo.transaction('add-obsolescence-marker') as tr:
         markerargs = []
         for rel in relations:
             prec = rel[0]
@@ -1121,6 +1114,3 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
                                  date=date, metadata=localmetadata,
                                  ui=repo.ui)
             repo.filteredrevcache.clear()
-        tr.close()
-    finally:
-        tr.release()

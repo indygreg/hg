@@ -13,24 +13,24 @@ Create an extension to test bundle2 with multiple changegroups
   >     # in 'heads' as intermediate heads for the first changegroup.
   >     intermediates = [repo[r].p1().node() for r in heads]
   >     outgoing = discovery.outgoing(repo, common, intermediates)
-  >     cg = changegroup.makechangegroup(repo, outgoing, '01',
+  >     cg = changegroup.makechangegroup(repo, outgoing, b'01',
   >                                      source, bundlecaps=bundlecaps)
-  >     bundler.newpart('output', data='changegroup1')
-  >     bundler.newpart('changegroup', data=cg.getchunks())
+  >     bundler.newpart(b'output', data=b'changegroup1')
+  >     bundler.newpart(b'changegroup', data=cg.getchunks())
   >     outgoing = discovery.outgoing(repo, common + intermediates, heads)
-  >     cg = changegroup.makechangegroup(repo, outgoing, '01',
+  >     cg = changegroup.makechangegroup(repo, outgoing, b'01',
   >                                      source, bundlecaps=bundlecaps)
-  >     bundler.newpart('output', data='changegroup2')
-  >     bundler.newpart('changegroup', data=cg.getchunks())
+  >     bundler.newpart(b'output', data=b'changegroup2')
+  >     bundler.newpart(b'changegroup', data=cg.getchunks())
   > 
   > def _pull(repo, *args, **kwargs):
   >   pullop = _orig_pull(repo, *args, **kwargs)
-  >   repo.ui.write('pullop.cgresult is %d\n' % pullop.cgresult)
+  >   repo.ui.write(b'pullop.cgresult is %d\n' % pullop.cgresult)
   >   return pullop
   > 
   > _orig_pull = exchange.pull
   > exchange.pull = _pull
-  > exchange.getbundle2partsmapping['changegroup'] = _getbundlechangegrouppart
+  > exchange.getbundle2partsmapping[b'changegroup'] = _getbundlechangegrouppart
   > EOF
 
   $ cat >> $HGRCPATH << EOF
@@ -74,7 +74,7 @@ Add two linear commits
 Pull the new commits in the clone
 
   $ hg pull
-  pulling from $TESTTMP/repo (glob)
+  pulling from $TESTTMP/repo
   searching for changes
   remote: changegroup1
   adding changesets
@@ -145,7 +145,7 @@ pullop.cgresult
 
   $ cd ../clone
   $ hg pull
-  pulling from $TESTTMP/repo (glob)
+  pulling from $TESTTMP/repo
   searching for changes
   remote: changegroup1
   adding changesets
@@ -219,7 +219,7 @@ pullop.cgresult
 
   $ cd ../clone
   $ hg pull
-  pulling from $TESTTMP/repo (glob)
+  pulling from $TESTTMP/repo
   searching for changes
   remote: changegroup1
   adding changesets

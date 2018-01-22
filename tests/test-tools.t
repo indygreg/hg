@@ -13,6 +13,7 @@ Tests of the file helper tool
                           check if file is newer (or same)
     -r, --recurse         recurse into directories
     -S, --sha1            show sha1 hash of the content
+    --sha256              show sha256 hash of the content
     -M, --md5             show md5 hash of the content
     -D, --dump            dump file content
     -H, --hexdump         hexdump file content
@@ -37,6 +38,12 @@ Tests of the file helper tool
   $ echo foo > foo
   $ f foo
   foo:
+
+  $ f --sha1 foo
+  foo: sha1=f1d2d2f924e986ac86fdf7b36c94bcdf32beec15
+
+  $ f --sha256 foo
+  foo: sha256=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c
 
 #if symlink
   $ f foo --mode
@@ -91,10 +98,10 @@ Yadda is a symlink
   $ f -qr dir -HB 17
   dir: directory with 3 files (symlink !)
   dir: directory with 2 files (no-symlink !)
-  dir/bar: (glob)
+  dir/bar:
   0000: 31 0a 32 0a 33 0a 34 0a 35 0a 36 0a 37 0a 38 0a |1.2.3.4.5.6.7.8.|
   0010: 39                                              |9|
-  dir/foo: (glob)
+  dir/foo:
   0000: 66 6f 6f 0a                                     |foo.|
   dir/l: (symlink !)
   0000: 79 61 64 64 61                                  |yadda| (symlink !)

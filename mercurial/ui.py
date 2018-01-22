@@ -49,6 +49,10 @@ tweakrc = """
 [ui]
 # The rollback command is dangerous. As a rule, don't use it.
 rollback = False
+# Make `hg status` report copy information
+statuscopies = yes
+# Prefer curses UIs when available. Revert to plain-text with `text`.
+interface = curses
 
 [commands]
 # Make `hg status` emit cwd-relative paths by default.
@@ -58,6 +62,7 @@ update.check = noconflict
 
 [diff]
 git = 1
+showfunc = 1
 """
 
 samplehgrcs = {
@@ -695,6 +700,9 @@ class ui(object):
         >>> u.setconfig(s, b'list1', b'this,is "a small" ,test')
         >>> u.configlist(s, b'list1')
         ['this', 'is', 'a small', 'test']
+        >>> u.setconfig(s, b'list2', b'this, is "a small" , test ')
+        >>> u.configlist(s, b'list2')
+        ['this', 'is', 'a small', 'test']
         """
         # default is not always a list
         v = self.configwith(config.parselist, section, name, default,
@@ -886,9 +894,9 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        if self._buffers and not opts.get('prompt', False):
+        if self._buffers and not opts.get(r'prompt', False):
             if self._bufferapplylabels:
-                label = opts.get('label', '')
+                label = opts.get(r'label', '')
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
                 self._buffers[-1].extend(args)
@@ -899,7 +907,7 @@ class ui(object):
         else:
             msgs = args
             if self._colormode is not None:
-                label = opts.get('label', '')
+                label = opts.get(r'label', '')
                 msgs = [self.label(a, label) for a in args]
             self._write(*msgs, **opts)
 
@@ -927,7 +935,7 @@ class ui(object):
         else:
             msgs = args
             if self._colormode is not None:
-                label = opts.get('label', '')
+                label = opts.get(r'label', '')
                 msgs = [self.label(a, label) for a in args]
             self._write_err(*msgs, **opts)
 
@@ -1602,7 +1610,7 @@ class ui(object):
         stack.
         """
         if not self.configbool('devel', 'all-warnings'):
-            if config is not None and not self.configbool('devel', config):
+            if config is None or not self.configbool('devel', config):
                 return
         msg = 'devel-warn: ' + msg
         stacklevel += 1 # get in develwarn

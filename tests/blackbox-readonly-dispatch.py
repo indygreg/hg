@@ -18,8 +18,8 @@ def testdispatch(cmd):
 f = open('foo', 'wb')
 f.write('foo\n')
 f.close()
-testdispatch("add foo")
-testdispatch("commit -m commit1 -d 2000-01-01 foo")
+testdispatch("--debug add foo")
+testdispatch("--debug commit -m commit1 -d 2000-01-01 foo")
 
 # append to file 'foo' and commit
 f = open('foo', 'ab')
@@ -29,8 +29,8 @@ f.close()
 os.rmdir(".hg/blackbox.log")
 # replace it with the real blackbox.log file
 os.rename(".hg/blackbox.log-", ".hg/blackbox.log")
-testdispatch("commit -m commit2 -d 2000-01-02 foo")
+testdispatch("--debug commit -m commit2 -d 2000-01-02 foo")
 
 # check 88803a69b24 (fancyopts modified command table)
-testdispatch("log -r 0")
-testdispatch("log -r tip")
+testdispatch("--debug log -r 0")
+testdispatch("--debug log -r tip")

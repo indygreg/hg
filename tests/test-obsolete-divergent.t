@@ -61,10 +61,11 @@ A_1 have two direct and divergent successors A_1 and A_1
   $ hg debugobsolete `getid A_0` `getid A_1`
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ hg log -G --hidden
-  o  3:392fd25390da A_2
+  *  3:392fd25390da A_2
   |
-  | o  2:82623d38b9ba A_1
+  | *  2:82623d38b9ba A_1
   |/
   | x  1:007dc284c1f8 A_0 [rewritten as 2:82623d38b9ba; rewritten as 3:392fd25390da]
   |/
@@ -120,6 +121,7 @@ indirect divergence with known changeset
   $ hg debugobsolete `getid A_0` `getid A_1`
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_2` `getid A_3`
@@ -129,7 +131,7 @@ indirect divergence with known changeset
   |
   | x  3:392fd25390da A_2 [rewritten as 4:01f36c5a8fda]
   |/
-  | o  2:82623d38b9ba A_1
+  | *  2:82623d38b9ba A_1
   |/
   | x  1:007dc284c1f8 A_0 [rewritten as 2:82623d38b9ba; rewritten as 3:392fd25390da]
   |/
@@ -180,10 +182,11 @@ indirect divergence with known changeset
   obsoleted 1 changesets
   $ hg debugobsolete aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa `getid A_1`
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ hg log -G --hidden
-  o  3:392fd25390da A_2
+  *  3:392fd25390da A_2
   |
-  | o  2:82623d38b9ba A_1
+  | *  2:82623d38b9ba A_1
   |/
   | x  1:007dc284c1f8 A_0 [rewritten as 2:82623d38b9ba; rewritten as 3:392fd25390da]
   |/
@@ -250,6 +253,7 @@ divergence that converge again is not divergence anymore
   $ hg debugobsolete `getid A_0` `getid A_1`
   obsoleted 1 changesets
   $ hg debugobsolete `getid A_0` `getid A_2`
+  2 new content-divergent changesets
   $ mkcommit A_3
   created new head
   $ hg debugobsolete `getid A_1` `getid A_3`
@@ -430,12 +434,13 @@ Check more complex obsolescence graft (with divergence)
   created new head
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugobsolete `getid A_5` `getid A_9`
+  4 new content-divergent changesets
   $ hg log -G --hidden
-  o  10:bed64f5d2f5a A_9
+  *  10:bed64f5d2f5a A_9
   |
-  | o  9:14608b260df8 A_8
+  | *  9:14608b260df8 A_8
   |/
-  | o  8:7ae126973a96 A_7
+  | *  8:7ae126973a96 A_7
   |/
   | x  7:3750ebee865d B_0 [rewritten as 3:392fd25390da]
   | |
@@ -443,7 +448,7 @@ Check more complex obsolescence graft (with divergence)
   |/
   | x  5:6a411f0d7a0a A_4 [rewritten as 6:e442cfc57690]
   |/
-  | o  4:01f36c5a8fda A_3
+  | *  4:01f36c5a8fda A_3
   |/
   | x  3:392fd25390da A_2 [rewritten as 5:6a411f0d7a0a]
   |/
@@ -670,16 +675,17 @@ Use scmutil.cleanupnodes API to create divergence
 
   $ rm .hg/localtags
   $ hg cleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
+  2 new content-divergent changesets
   $ hg log -G -T '{rev}:{node|short} {desc} {instabilities}' -r 'sort(all(), topo)'
   @  5:1a2a9b5b0030 B2 content-divergent
   |
-  | o  4:70d5a63ca112 B4 content-divergent
+  | *  4:70d5a63ca112 B4 content-divergent
   | |
   | o  1:48b9aae0607f Z
   |
   o  0:426bada5c675 A
   
   $ hg debugobsolete
-  a178212c3433c4e77b573f6011e29affb8aefa33 1a2a9b5b0030632400aa78e00388c20f99d3ec44 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
-  a178212c3433c4e77b573f6011e29affb8aefa33 ad6478fb94ecec98b86daae98722865d494ac561 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'test', 'user': 'test'}
-  ad6478fb94ecec98b86daae98722865d494ac561 70d5a63ca112acb3764bc1d7320ca90ea688d671 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'test', 'user': 'test'}
+  a178212c3433c4e77b573f6011e29affb8aefa33 1a2a9b5b0030632400aa78e00388c20f99d3ec44 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
+  a178212c3433c4e77b573f6011e29affb8aefa33 ad6478fb94ecec98b86daae98722865d494ac561 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'test', 'user': 'test'}
+  ad6478fb94ecec98b86daae98722865d494ac561 70d5a63ca112acb3764bc1d7320ca90ea688d671 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '9', 'operation': 'test', 'user': 'test'}

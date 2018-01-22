@@ -28,7 +28,10 @@ The following config options can influence operation.
 from __future__ import absolute_import
 
 from mercurial.i18n import _
-from mercurial.node import nullrev
+from mercurial.node import (
+    hex,
+    nullrev,
+)
 from mercurial import (
     cmdutil,
     commands,
@@ -252,7 +255,9 @@ def showstack(ui, repo, displayer):
     # our simplicity and the customizations required.
     # TODO use proper graph symbols from graphmod
 
-    shortesttmpl = formatter.maketemplater(ui, '{shortest(node, %d)}' % nodelen)
+    tres = formatter.templateresources(ui, repo)
+    shortesttmpl = formatter.maketemplater(ui, '{shortest(node, %d)}' % nodelen,
+                                           resources=tres)
     def shortest(ctx):
         return shortesttmpl.render({'ctx': ctx, 'node': ctx.hex()})
 
@@ -438,14 +443,11 @@ def longestshortest(repo, revs, minlen=4):
     If we fail to do this, a value of e.g. ``10023`` could mean either
     revision 10023 or node ``10023abc...``.
     """
-    tmpl = formatter.maketemplater(repo.ui, '{shortest(node, %d)}' % minlen)
-    lens = [minlen]
-    for rev in revs:
-        ctx = repo[rev]
-        shortest = tmpl.render({'ctx': ctx, 'node': ctx.hex()})
-        lens.append(len(shortest))
-
-    return max(lens)
+    if not revs:
+        return minlen
+    # don't use filtered repo because it's slow. see templater.shortest().
+    cl = repo.unfiltered().changelog
+    return max(len(cl.shortest(hex(cl.node(r)), minlen)) for r in revs)
 
 # Adjust the docstring of the show command so it shows all registered views.
 # This is a bit hacky because it runs at the end of module load. When moved

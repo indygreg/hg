@@ -32,8 +32,8 @@ Missing manifest should not result in server lookup
 
   $ cat server/access.log
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  * - - [*] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  * - - [*] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bundlecaps=HG20%2Cbundle2%3DHG20%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=1&common=0000000000000000000000000000000000000000&heads=aaff8d2ffbbf07a46dd1f05d8ae7877e3f56e2a2&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=aaff8d2ffbbf07a46dd1f05d8ae7877e3f56e2a2&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
 
 Empty manifest file results in retrieval
 (the extension only checks if the manifest file exists)
@@ -515,5 +515,32 @@ A manifest with a gzip bundle and a stream clone with unsupported requirements
   streaming all changes
   4 files to transfer, 613 bytes of data
   transferred 613 bytes in * seconds (*) (glob)
+  searching for changes
+  no changes found
+
+Test clone bundle retrieved through bundle2
+
+  $ cat << EOF >> $HGRCPATH
+  > [extensions]
+  > largefiles=
+  > EOF
+  $ killdaemons.py
+  $ hg -R server serve -d -p $HGPORT --pid-file hg.pid --accesslog access.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ hg -R server debuglfput gz-a.hg
+  f6eca29e25359f6a92f1ea64527cdcf1b5abe62a
+
+  $ cat > server/.hg/clonebundles.manifest << EOF
+  > largefile://f6eca29e25359f6a92f1ea64527cdcf1b5abe62a BUNDLESPEC=gzip-v2
+  > EOF
+
+  $ hg clone -U http://localhost:$HGPORT largefile-provided --traceback
+  applying clone bundle from largefile://f6eca29e25359f6a92f1ea64527cdcf1b5abe62a
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files
+  finished applying clone bundle
   searching for changes
   no changes found

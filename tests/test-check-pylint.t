@@ -11,7 +11,8 @@ Current checks:
 
   $ touch $TESTTMP/fakerc
   $ pylint --rcfile=$TESTTMP/fakerc --disable=all \
-  >   --enable=W0102 --reports=no \
+  >   --enable=W0102,C0321 \
+  >   --reports=no \
   >   --ignore=thirdparty \
   >   mercurial hgdemandimport hgext hgext3rd
    (?)

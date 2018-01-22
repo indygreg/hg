@@ -106,7 +106,7 @@ pull
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_PHASES_MOVED=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=phase
   $ hg -R other pull -r 24b6387c8c8c
-  pulling from $TESTTMP/main (glob)
+  pulling from $TESTTMP/main
   searching for changes
   adding changesets
   adding manifests
@@ -137,7 +137,7 @@ pull empty (with phase movement)
   postclose-tip:02de42196ebe draft 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_PHASES_MOVED=1 HG_TXNID=TXN:$ID$ HG_TXNNAME=phase
   $ hg -R other pull -r 24b6387c8c8c
-  pulling from $TESTTMP/main (glob)
+  pulling from $TESTTMP/main
   no changes found
   pre-close-tip:24b6387c8c8c public 
   postclose-tip:24b6387c8c8c public 
@@ -157,7 +157,7 @@ pull empty (with phase movement)
 pull empty
 
   $ hg -R other pull -r 24b6387c8c8c
-  pulling from $TESTTMP/main (glob)
+  pulling from $TESTTMP/main
   no changes found
   pre-close-tip:24b6387c8c8c public 
   postclose-tip:24b6387c8c8c public 
@@ -253,7 +253,7 @@ push
   remote: added 1 changesets with 0 changes to 0 files (-1 heads)
   remote: 1 new obsolescence markers
   remote: pre-close-tip:eea13746799a public book_eea1
-  remote: pushkey: lock state after "bookmarks"
+  remote: pushkey: lock state after "bookmark"
   remote: lock:  free
   remote: wlock: free
   remote: postclose-tip:eea13746799a public book_eea1
@@ -339,7 +339,7 @@ push over ssh
   remote: added 1 changesets with 1 changes to 1 files
   remote: 1 new obsolescence markers
   remote: pre-close-tip:5fddd98957c8 draft book_5fdd
-  remote: pushkey: lock state after "bookmarks"
+  remote: pushkey: lock state after "bookmark"
   remote: lock:  free
   remote: wlock: free
   remote: postclose-tip:5fddd98957c8 draft book_5fdd
@@ -390,7 +390,7 @@ push over http
   remote: added 1 changesets with 1 changes to 1 files
   remote: 1 new obsolescence markers
   remote: pre-close-tip:32af7686d403 public book_32af
-  remote: pushkey: lock state after "bookmarks"
+  remote: pushkey: lock state after "bookmark"
   remote: lock:  free
   remote: wlock: free
   remote: postclose-tip:32af7686d403 public book_32af

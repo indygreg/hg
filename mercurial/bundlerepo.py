@@ -42,7 +42,7 @@ from . import (
 )
 
 class bundlerevlog(revlog.revlog):
-    def __init__(self, opener, indexfile, bundle, linkmapper):
+    def __init__(self, opener, indexfile, cgunpacker, linkmapper):
         # How it works:
         # To retrieve a revision, we need to know the offset of the revision in
         # the bundle (an unbundle object). We store this offset in the index
@@ -52,15 +52,15 @@ class bundlerevlog(revlog.revlog):
         # check revision against repotiprev.
         opener = vfsmod.readonlyvfs(opener)
         revlog.revlog.__init__(self, opener, indexfile)
-        self.bundle = bundle
+        self.bundle = cgunpacker
         n = len(self)
         self.repotiprev = n - 1
         self.bundlerevs = set() # used by 'bundle()' revset expression
-        for deltadata in bundle.deltaiter():
+        for deltadata in cgunpacker.deltaiter():
             node, p1, p2, cs, deltabase, delta, flags = deltadata
 
             size = len(delta)
-            start = bundle.tell() - size
+            start = cgunpacker.tell() - size
 
             link = linkmapper(cs)
             if node in self.nodemap:
@@ -86,7 +86,7 @@ class bundlerevlog(revlog.revlog):
             self.bundlerevs.add(n)
             n += 1
 
-    def _chunk(self, rev):
+    def _chunk(self, rev, df=None):
         # Warning: in case of bundle, the diff is against what we stored as
         # delta base, not against rev - 1
         # XXX: could use some caching
@@ -108,7 +108,7 @@ class bundlerevlog(revlog.revlog):
         return mdiff.textdiff(self.revision(rev1, raw=True),
                               self.revision(rev2, raw=True))
 
-    def revision(self, nodeorrev, raw=False):
+    def revision(self, nodeorrev, _df=None, raw=False):
         """return an uncompressed revision of a given node or revision
         number.
         """
@@ -152,20 +152,23 @@ class bundlerevlog(revlog.revlog):
         # needs to override 'baserevision' and make more specific call here.
         return revlog.revlog.revision(self, nodeorrev, raw=True)
 
-    def addrevision(self, text, transaction, link, p1=None, p2=None, d=None):
+    def addrevision(self, *args, **kwargs):
         raise NotImplementedError
-    def addgroup(self, deltas, transaction, addrevisioncb=None):
+
+    def addgroup(self, *args, **kwargs):
         raise NotImplementedError
-    def strip(self, rev, minlink):
+
+    def strip(self, *args, **kwargs):
         raise NotImplementedError
+
     def checksize(self):
         raise NotImplementedError
 
 class bundlechangelog(bundlerevlog, changelog.changelog):
-    def __init__(self, opener, bundle):
+    def __init__(self, opener, cgunpacker):
         changelog.changelog.__init__(self, opener)
         linkmapper = lambda x: x
-        bundlerevlog.__init__(self, opener, self.indexfile, bundle,
+        bundlerevlog.__init__(self, opener, self.indexfile, cgunpacker,
                               linkmapper)
 
     def baserevision(self, nodeorrev):
@@ -183,9 +186,10 @@ class bundlechangelog(bundlerevlog, changelog.changelog):
             self.filteredrevs = oldfilter
 
 class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
-    def __init__(self, opener, bundle, linkmapper, dirlogstarts=None, dir=''):
+    def __init__(self, opener, cgunpacker, linkmapper, dirlogstarts=None,
+                 dir=''):
         manifest.manifestrevlog.__init__(self, opener, dir=dir)
-        bundlerevlog.__init__(self, opener, self.indexfile, bundle,
+        bundlerevlog.__init__(self, opener, self.indexfile, cgunpacker,
                               linkmapper)
         if dirlogstarts is None:
             dirlogstarts = {}
@@ -214,9 +218,9 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
         return super(bundlemanifest, self).dirlog(d)
 
 class bundlefilelog(bundlerevlog, filelog.filelog):
-    def __init__(self, opener, path, bundle, linkmapper):
+    def __init__(self, opener, path, cgunpacker, linkmapper):
         filelog.filelog.__init__(self, opener, path)
-        bundlerevlog.__init__(self, opener, self.indexfile, bundle,
+        bundlerevlog.__init__(self, opener, self.indexfile, cgunpacker,
                               linkmapper)
 
     def baserevision(self, nodeorrev):
@@ -243,82 +247,106 @@ class bundlephasecache(phases.phasecache):
         self.invalidate()
         self.dirty = True
 
-def _getfilestarts(bundle):
-    bundlefilespos = {}
-    for chunkdata in iter(bundle.filelogheader, {}):
+def _getfilestarts(cgunpacker):
+    filespos = {}
+    for chunkdata in iter(cgunpacker.filelogheader, {}):
         fname = chunkdata['filename']
-        bundlefilespos[fname] = bundle.tell()
-        for chunk in iter(lambda: bundle.deltachunk(None), {}):
+        filespos[fname] = cgunpacker.tell()
+        for chunk in iter(lambda: cgunpacker.deltachunk(None), {}):
             pass
-    return bundlefilespos
+    return filespos
 
 class bundlerepository(localrepo.localrepository):
-    def __init__(self, ui, path, bundlename):
+    """A repository instance that is a union of a local repo and a bundle.
+
+    Instances represent a read-only repository composed of a local repository
+    with the contents of a bundle file applied. The repository instance is
+    conceptually similar to the state of a repository after an
+    ``hg unbundle`` operation. However, the contents of the bundle are never
+    applied to the actual base repository.
+    """
+    def __init__(self, ui, repopath, bundlepath):
         self._tempparent = None
         try:
-            localrepo.localrepository.__init__(self, ui, path)
+            localrepo.localrepository.__init__(self, ui, repopath)
         except error.RepoError:
             self._tempparent = tempfile.mkdtemp()
             localrepo.instance(ui, self._tempparent, 1)
             localrepo.localrepository.__init__(self, ui, self._tempparent)
         self.ui.setconfig('phases', 'publish', False, 'bundlerepo')
 
-        if path:
-            self._url = 'bundle:' + util.expandpath(path) + '+' + bundlename
+        if repopath:
+            self._url = 'bundle:' + util.expandpath(repopath) + '+' + bundlepath
         else:
-            self._url = 'bundle:' + bundlename
+            self._url = 'bundle:' + bundlepath
 
         self.tempfile = None
-        f = util.posixfile(bundlename, "rb")
-        self.bundlefile = self.bundle = exchange.readbundle(ui, f, bundlename)
+        f = util.posixfile(bundlepath, "rb")
+        bundle = exchange.readbundle(ui, f, bundlepath)
 
-        if isinstance(self.bundle, bundle2.unbundle20):
-            hadchangegroup = False
-            for part in self.bundle.iterparts():
+        if isinstance(bundle, bundle2.unbundle20):
+            self._bundlefile = bundle
+            self._cgunpacker = None
+
+            cgpart = None
+            for part in bundle.iterparts(seekable=True):
                 if part.type == 'changegroup':
-                    if hadchangegroup:
+                    if cgpart:
                         raise NotImplementedError("can't process "
                                                   "multiple changegroups")
-                    hadchangegroup = True
+                    cgpart = part
 
-                self._handlebundle2part(part)
+                self._handlebundle2part(bundle, part)
 
-            if not hadchangegroup:
+            if not cgpart:
                 raise error.Abort(_("No changegroups found"))
 
-        elif self.bundle.compressed():
-            f = self._writetempbundle(self.bundle.read, '.hg10un',
-                                      header='HG10UN')
-            self.bundlefile = self.bundle = exchange.readbundle(ui, f,
-                                                                bundlename,
-                                                                self.vfs)
+            # This is required to placate a later consumer, which expects
+            # the payload offset to be at the beginning of the changegroup.
+            # We need to do this after the iterparts() generator advances
+            # because iterparts() will seek to end of payload after the
+            # generator returns control to iterparts().
+            cgpart.seek(0, os.SEEK_SET)
 
-        # dict with the mapping 'filename' -> position in the bundle
-        self.bundlefilespos = {}
+        elif isinstance(bundle, changegroup.cg1unpacker):
+            if bundle.compressed():
+                f = self._writetempbundle(bundle.read, '.hg10un',
+                                          header='HG10UN')
+                bundle = exchange.readbundle(ui, f, bundlepath, self.vfs)
+
+            self._bundlefile = bundle
+            self._cgunpacker = bundle
+        else:
+            raise error.Abort(_('bundle type %s cannot be read') %
+                              type(bundle))
+
+        # dict with the mapping 'filename' -> position in the changegroup.
+        self._cgfilespos = {}
 
         self.firstnewrev = self.changelog.repotiprev + 1
         phases.retractboundary(self, None, phases.draft,
                                [ctx.node() for ctx in self[self.firstnewrev:]])
 
-    def _handlebundle2part(self, part):
-        if part.type == 'changegroup':
-            cgstream = part
-            version = part.params.get('version', '01')
-            legalcgvers = changegroup.supportedincomingversions(self)
-            if version not in legalcgvers:
-                msg = _('Unsupported changegroup version: %s')
-                raise error.Abort(msg % version)
-            if self.bundle.compressed():
-                cgstream = self._writetempbundle(part.read,
-                                                 ".cg%sun" % version)
+    def _handlebundle2part(self, bundle, part):
+        if part.type != 'changegroup':
+            return
 
-            self.bundle = changegroup.getunbundler(version, cgstream, 'UN')
+        cgstream = part
+        version = part.params.get('version', '01')
+        legalcgvers = changegroup.supportedincomingversions(self)
+        if version not in legalcgvers:
+            msg = _('Unsupported changegroup version: %s')
+            raise error.Abort(msg % version)
+        if bundle.compressed():
+            cgstream = self._writetempbundle(part.read, '.cg%sun' % version)
+
+        self._cgunpacker = changegroup.getunbundler(version, cgstream, 'UN')
 
     def _writetempbundle(self, readfn, suffix, header=''):
         """Write a temporary file to disk
         """
         fdtemp, temp = self.vfs.mkstemp(prefix="hg-bundle-",
-                                        suffix=".hg10un")
+                                        suffix=suffix)
         self.tempfile = temp
 
         with os.fdopen(fdtemp, pycompat.sysstr('wb')) as fptemp:
@@ -338,19 +366,28 @@ class bundlerepository(localrepo.localrepository):
     @localrepo.unfilteredpropertycache
     def changelog(self):
         # consume the header if it exists
-        self.bundle.changelogheader()
-        c = bundlechangelog(self.svfs, self.bundle)
-        self.manstart = self.bundle.tell()
+        self._cgunpacker.changelogheader()
+        c = bundlechangelog(self.svfs, self._cgunpacker)
+        self.manstart = self._cgunpacker.tell()
         return c
 
     def _constructmanifest(self):
-        self.bundle.seek(self.manstart)
+        self._cgunpacker.seek(self.manstart)
         # consume the header if it exists
-        self.bundle.manifestheader()
+        self._cgunpacker.manifestheader()
         linkmapper = self.unfiltered().changelog.rev
-        m = bundlemanifest(self.svfs, self.bundle, linkmapper)
-        self.filestart = self.bundle.tell()
+        m = bundlemanifest(self.svfs, self._cgunpacker, linkmapper)
+        self.filestart = self._cgunpacker.tell()
         return m
+
+    def _consumemanifest(self):
+        """Consumes the manifest portion of the bundle, setting filestart so the
+        file portion can be read."""
+        self._cgunpacker.seek(self.manstart)
+        self._cgunpacker.manifestheader()
+        for delta in self._cgunpacker.deltaiter():
+            pass
+        self.filestart = self._cgunpacker.tell()
 
     @localrepo.unfilteredpropertycache
     def manstart(self):
@@ -360,26 +397,34 @@ class bundlerepository(localrepo.localrepository):
     @localrepo.unfilteredpropertycache
     def filestart(self):
         self.manifestlog
+
+        # If filestart was not set by self.manifestlog, that means the
+        # manifestlog implementation did not consume the manifests from the
+        # changegroup (ex: it might be consuming trees from a separate bundle2
+        # part instead). So we need to manually consume it.
+        if 'filestart' not in self.__dict__:
+            self._consumemanifest()
+
         return self.filestart
 
     def url(self):
         return self._url
 
     def file(self, f):
-        if not self.bundlefilespos:
-            self.bundle.seek(self.filestart)
-            self.bundlefilespos = _getfilestarts(self.bundle)
+        if not self._cgfilespos:
+            self._cgunpacker.seek(self.filestart)
+            self._cgfilespos = _getfilestarts(self._cgunpacker)
 
-        if f in self.bundlefilespos:
-            self.bundle.seek(self.bundlefilespos[f])
+        if f in self._cgfilespos:
+            self._cgunpacker.seek(self._cgfilespos[f])
             linkmapper = self.unfiltered().changelog.rev
-            return bundlefilelog(self.svfs, f, self.bundle, linkmapper)
+            return bundlefilelog(self.svfs, f, self._cgunpacker, linkmapper)
         else:
             return filelog.filelog(self.svfs, f)
 
     def close(self):
         """Close assigned bundle file immediately."""
-        self.bundlefile.close()
+        self._bundlefile.close()
         if self.tempfile is not None:
             self.vfs.unlink(self.tempfile)
         if self._tempparent:
@@ -496,10 +541,10 @@ def getremotechanges(ui, repo, other, onlyheads=None, bundlename=None,
                       and other.capable('bundle2'))
         if canbundle2:
             kwargs = {}
-            kwargs['common'] = common
-            kwargs['heads'] = rheads
-            kwargs['bundlecaps'] = exchange.caps20to10(repo)
-            kwargs['cg'] = True
+            kwargs[r'common'] = common
+            kwargs[r'heads'] = rheads
+            kwargs[r'bundlecaps'] = exchange.caps20to10(repo, role='client')
+            kwargs[r'cg'] = True
             b2 = other.getbundle('incoming', **kwargs)
             fname = bundle = changegroup.writechunks(ui, b2._forwardchunks(),
                                                      bundlename)

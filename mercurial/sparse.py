@@ -12,7 +12,10 @@ import hashlib
 import os
 
 from .i18n import _
-from .node import nullid
+from .node import (
+    hex,
+    nullid,
+)
 from . import (
     error,
     match as matchmod,
@@ -173,12 +176,12 @@ def configsignature(repo, includetemp=True):
         tempsignature = '0'
 
     if signature is None or (includetemp and tempsignature is None):
-        signature = hashlib.sha1(repo.vfs.tryread('sparse')).hexdigest()
+        signature = hex(hashlib.sha1(repo.vfs.tryread('sparse')).digest())
         cache['signature'] = signature
 
         if includetemp:
             raw = repo.vfs.tryread('tempsparse')
-            tempsignature = hashlib.sha1(raw).hexdigest()
+            tempsignature = hex(hashlib.sha1(raw).digest())
             cache['tempsignature'] = tempsignature
 
     return '%s %s' % (signature, tempsignature)
@@ -291,24 +294,9 @@ def matcher(repo, revs=None, includetemp=True):
             includes, excludes, profiles = patternsforrev(repo, rev)
 
             if includes or excludes:
-                # Explicitly include subdirectories of includes so
-                # status will walk them down to the actual include.
-                subdirs = set()
-                for include in includes:
-                    # TODO consider using posix path functions here so Windows
-                    # \ directory separators don't come into play.
-                    dirname = os.path.dirname(include)
-                    # basename is used to avoid issues with absolute
-                    # paths (which on Windows can include the drive).
-                    while os.path.basename(dirname):
-                        subdirs.add(dirname)
-                        dirname = os.path.dirname(dirname)
-
                 matcher = matchmod.match(repo.root, '', [],
                                          include=includes, exclude=excludes,
                                          default='relpath')
-                if subdirs:
-                    matcher = forceincludematcher(matcher, subdirs)
                 matchers.append(matcher)
         except IOError:
             pass

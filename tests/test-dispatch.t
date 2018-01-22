@@ -37,10 +37,17 @@ Missing parameter for early option:
   hg log [OPTION]... [FILE]
   (use 'hg log -h' to show more help)
 
-  $ hg log -R -- 2>&1 | grep 'hg log'
-  hg log: option -R requires argument
-  hg log [OPTION]... [FILE]
-  (use 'hg log -h' to show more help)
+"--" may be an option value:
+
+  $ hg -R -- log
+  abort: repository -- not found!
+  [255]
+  $ hg log -R --
+  abort: repository -- not found!
+  [255]
+  $ hg log -T --
+  -- (no-eol)
+  $ hg log -T -- -k nomatch
 
 Parsing of early options should stop at "--":
 
@@ -87,7 +94,7 @@ However, we can't prevent it from loading extensions and configs:
   [255]
 
   $ hg log -b --cwd=inexistent default
-  abort: No such file or directory: 'inexistent'
+  abort: $ENOENT$: 'inexistent'
   [255]
 
   $ hg log -b '--config=ui.traceback=yes' 2>&1 | grep '^Traceback'
@@ -149,6 +156,10 @@ Early options must come first if HGPLAIN=+strictflags is specified:
   [255]
   $ HGPLAIN=+strictflags hg --cwd .. -q -Ra log -b default
   0:cb9a9f314b8b
+  $ HGPLAIN=+strictflags hg --cwd .. -q --repository a log -b default
+  0:cb9a9f314b8b
+  $ HGPLAIN=+strictflags hg --cwd .. -q --repo a log -b default
+  0:cb9a9f314b8b
 
 For compatibility reasons, HGPLAIN=+strictflags is not enabled by plain HGPLAIN:
 
@@ -200,7 +211,7 @@ Current directory removed:
 The output could be one of the following and something else:
  chg: abort: failed to getcwd (errno = *) (glob)
  abort: error getting current working directory: * (glob)
- sh: 0: getcwd() failed: No such file or directory
+ sh: 0: getcwd() failed: $ENOENT$
 Since the exact behavior depends on the shell, only check it returns non-zero.
   $ HGDEMANDIMPORT=disable hg version -q 2>/dev/null || false
   [1]

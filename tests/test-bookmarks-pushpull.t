@@ -1,3 +1,12 @@
+#testcases b2-pushkey b2-binary
+
+#if b2-pushkey
+  $ cat << EOF >> $HGRCPATH
+  > [devel]
+  > legacy.exchange=bookmarks
+  > EOF
+#endif
+
 #require serve
 
   $ cat << EOF >> $HGRCPATH
@@ -103,13 +112,221 @@ export bookmark by name
 delete a remote bookmark
 
   $ hg book -d W
-  $ hg push -B W ../a --config "$TESTHOOK"
+
+#if b2-pushkey
+
+  $ hg push -B W ../a --config "$TESTHOOK" --debug --config devel.bundle2.debug=yes
   pushing to ../a
+  query 1; heads
   searching for changes
+  all remote heads known locally
+  listing keys for "phases"
+  checking for updated bookmarks
+  listing keys for "bookmarks"
   no changes found
+  bundle2-output-bundle: "HG20", 4 parts total
+  bundle2-output: start emission of HG20 stream
+  bundle2-output: bundle parameter: 
+  bundle2-output: start of parts
+  bundle2-output: bundle part: "replycaps"
+  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output: part 0: "REPLYCAPS"
+  bundle2-output: header chunk size: 16
+  bundle2-output: payload chunk size: 205
+  bundle2-output: closing payload chunk
+  bundle2-output: bundle part: "check:bookmarks"
+  bundle2-output-part: "check:bookmarks" 23 bytes payload
+  bundle2-output: part 1: "CHECK:BOOKMARKS"
+  bundle2-output: header chunk size: 22
+  bundle2-output: payload chunk size: 23
+  bundle2-output: closing payload chunk
+  bundle2-output: bundle part: "check:phases"
+  bundle2-output-part: "check:phases" 48 bytes payload
+  bundle2-output: part 2: "CHECK:PHASES"
+  bundle2-output: header chunk size: 19
+  bundle2-output: payload chunk size: 48
+  bundle2-output: closing payload chunk
+  bundle2-output: bundle part: "pushkey"
+  bundle2-output-part: "pushkey" (params: 4 mandatory) empty payload
+  bundle2-output: part 3: "PUSHKEY"
+  bundle2-output: header chunk size: 90
+  bundle2-output: closing payload chunk
+  bundle2-output: end of bundle
+  bundle2-input: start processing of HG20 stream
+  bundle2-input: reading bundle2 stream parameters
+  bundle2-input-bundle: with-transaction
+  bundle2-input: start extraction of bundle2 parts
+  bundle2-input: part header size: 16
+  bundle2-input: part type: "REPLYCAPS"
+  bundle2-input: part id: "0"
+  bundle2-input: part parameters: 0
+  bundle2-input: found a handler for part replycaps
+  bundle2-input-part: "replycaps" supported
+  bundle2-input: payload chunk size: 205
+  bundle2-input: payload chunk size: 0
+  bundle2-input-part: total payload size 205
+  bundle2-input: part header size: 22
+  bundle2-input: part type: "CHECK:BOOKMARKS"
+  bundle2-input: part id: "1"
+  bundle2-input: part parameters: 0
+  bundle2-input: found a handler for part check:bookmarks
+  bundle2-input-part: "check:bookmarks" supported
+  bundle2-input: payload chunk size: 23
+  bundle2-input: payload chunk size: 0
+  bundle2-input-part: total payload size 23
+  bundle2-input: part header size: 19
+  bundle2-input: part type: "CHECK:PHASES"
+  bundle2-input: part id: "2"
+  bundle2-input: part parameters: 0
+  bundle2-input: found a handler for part check:phases
+  bundle2-input-part: "check:phases" supported
+  bundle2-input: payload chunk size: 48
+  bundle2-input: payload chunk size: 0
+  bundle2-input-part: total payload size 48
+  bundle2-input: part header size: 90
+  bundle2-input: part type: "PUSHKEY"
+  bundle2-input: part id: "3"
+  bundle2-input: part parameters: 4
+  bundle2-input: found a handler for part pushkey
+  bundle2-input-part: "pushkey" (params: 4 mandatory) supported
+  pushing key for "bookmarks:W"
+  bundle2-input: payload chunk size: 0
+  bundle2-input: part header size: 0
+  bundle2-input: end of bundle2 stream
+  bundle2-input-bundle: 3 parts total
+  running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
   test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
+  bundle2-output-bundle: "HG20", 1 parts total
+  bundle2-output: start emission of HG20 stream
+  bundle2-output: bundle parameter: 
+  bundle2-output: start of parts
+  bundle2-output: bundle part: "reply:pushkey"
+  bundle2-output-part: "reply:pushkey" (params: 0 advisory) empty payload
+  bundle2-output: part 0: "REPLY:PUSHKEY"
+  bundle2-output: header chunk size: 43
+  bundle2-output: closing payload chunk
+  bundle2-output: end of bundle
+  bundle2-input: start processing of HG20 stream
+  bundle2-input: reading bundle2 stream parameters
+  bundle2-input-bundle: no-transaction
+  bundle2-input: start extraction of bundle2 parts
+  bundle2-input: part header size: 43
+  bundle2-input: part type: "REPLY:PUSHKEY"
+  bundle2-input: part id: "0"
+  bundle2-input: part parameters: 2
+  bundle2-input: found a handler for part reply:pushkey
+  bundle2-input-part: "reply:pushkey" (params: 0 advisory) supported
+  bundle2-input: payload chunk size: 0
+  bundle2-input: part header size: 0
+  bundle2-input: end of bundle2 stream
+  bundle2-input-bundle: 0 parts total
   deleting remote bookmark W
+  listing keys for "phases"
   [1]
+
+#endif
+#if b2-binary
+
+  $ hg push -B W ../a --config "$TESTHOOK" --debug --config devel.bundle2.debug=yes
+  pushing to ../a
+  query 1; heads
+  searching for changes
+  all remote heads known locally
+  listing keys for "phases"
+  checking for updated bookmarks
+  listing keys for "bookmarks"
+  no changes found
+  bundle2-output-bundle: "HG20", 4 parts total
+  bundle2-output: start emission of HG20 stream
+  bundle2-output: bundle parameter: 
+  bundle2-output: start of parts
+  bundle2-output: bundle part: "replycaps"
+  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output: part 0: "REPLYCAPS"
+  bundle2-output: header chunk size: 16
+  bundle2-output: payload chunk size: 205
+  bundle2-output: closing payload chunk
+  bundle2-output: bundle part: "check:bookmarks"
+  bundle2-output-part: "check:bookmarks" 23 bytes payload
+  bundle2-output: part 1: "CHECK:BOOKMARKS"
+  bundle2-output: header chunk size: 22
+  bundle2-output: payload chunk size: 23
+  bundle2-output: closing payload chunk
+  bundle2-output: bundle part: "check:phases"
+  bundle2-output-part: "check:phases" 48 bytes payload
+  bundle2-output: part 2: "CHECK:PHASES"
+  bundle2-output: header chunk size: 19
+  bundle2-output: payload chunk size: 48
+  bundle2-output: closing payload chunk
+  bundle2-output: bundle part: "bookmarks"
+  bundle2-output-part: "bookmarks" 23 bytes payload
+  bundle2-output: part 3: "BOOKMARKS"
+  bundle2-output: header chunk size: 16
+  bundle2-output: payload chunk size: 23
+  bundle2-output: closing payload chunk
+  bundle2-output: end of bundle
+  bundle2-input: start processing of HG20 stream
+  bundle2-input: reading bundle2 stream parameters
+  bundle2-input-bundle: with-transaction
+  bundle2-input: start extraction of bundle2 parts
+  bundle2-input: part header size: 16
+  bundle2-input: part type: "REPLYCAPS"
+  bundle2-input: part id: "0"
+  bundle2-input: part parameters: 0
+  bundle2-input: found a handler for part replycaps
+  bundle2-input-part: "replycaps" supported
+  bundle2-input: payload chunk size: 205
+  bundle2-input: payload chunk size: 0
+  bundle2-input-part: total payload size 205
+  bundle2-input: part header size: 22
+  bundle2-input: part type: "CHECK:BOOKMARKS"
+  bundle2-input: part id: "1"
+  bundle2-input: part parameters: 0
+  bundle2-input: found a handler for part check:bookmarks
+  bundle2-input-part: "check:bookmarks" supported
+  bundle2-input: payload chunk size: 23
+  bundle2-input: payload chunk size: 0
+  bundle2-input-part: total payload size 23
+  bundle2-input: part header size: 19
+  bundle2-input: part type: "CHECK:PHASES"
+  bundle2-input: part id: "2"
+  bundle2-input: part parameters: 0
+  bundle2-input: found a handler for part check:phases
+  bundle2-input-part: "check:phases" supported
+  bundle2-input: payload chunk size: 48
+  bundle2-input: payload chunk size: 0
+  bundle2-input-part: total payload size 48
+  bundle2-input: part header size: 16
+  bundle2-input: part type: "BOOKMARKS"
+  bundle2-input: part id: "3"
+  bundle2-input: part parameters: 0
+  bundle2-input: found a handler for part bookmarks
+  bundle2-input-part: "bookmarks" supported
+  bundle2-input: payload chunk size: 23
+  bundle2-input: payload chunk size: 0
+  bundle2-input-part: total payload size 23
+  bundle2-input: part header size: 0
+  bundle2-input: end of bundle2 stream
+  bundle2-input-bundle: 3 parts total
+  running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
+  test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
+  bundle2-output-bundle: "HG20", 0 parts total
+  bundle2-output: start emission of HG20 stream
+  bundle2-output: bundle parameter: 
+  bundle2-output: start of parts
+  bundle2-output: end of bundle
+  bundle2-input: start processing of HG20 stream
+  bundle2-input: reading bundle2 stream parameters
+  bundle2-input-bundle: no-transaction
+  bundle2-input: start extraction of bundle2 parts
+  bundle2-input: part header size: 0
+  bundle2-input: end of bundle2 stream
+  bundle2-input-bundle: 0 parts total
+  deleting remote bookmark W
+  listing keys for "phases"
+  [1]
+
+#endif
 
 export the active bookmark
 
@@ -192,7 +409,7 @@ divergent bookmarks
    * foobar                    1:9b140be10808
 
   $ hg pull --config paths.foo=../a foo --config "$TESTHOOK"
-  pulling from $TESTTMP/a (glob)
+  pulling from $TESTTMP/a
   searching for changes
   adding changesets
   adding manifests
@@ -268,7 +485,7 @@ explicit pull should overwrite the local version (issue4439)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (activating bookmark X)
   $ hg pull --config paths.foo=../a foo -B . --config "$TESTHOOK"
-  pulling from $TESTTMP/a (glob)
+  pulling from $TESTTMP/a
   no changes found
   divergent bookmark @ stored as @foo
   importing bookmark X
@@ -623,12 +840,12 @@ Test to show result of bookmarks comparison
 be exchanged)
 
   $ hg -R repo1 incoming -B
-  comparing with $TESTTMP/bmcomparison/source (glob)
+  comparing with $TESTTMP/bmcomparison/source
   searching for changed bookmarks
   no changed bookmarks found
   [1]
   $ hg -R repo1 outgoing -B
-  comparing with $TESTTMP/bmcomparison/source (glob)
+  comparing with $TESTTMP/bmcomparison/source
   searching for changed bookmarks
   no changed bookmarks found
   [1]
@@ -772,7 +989,7 @@ pushing an existing but divergent bookmark with -B still requires -f
   $ echo 2 > f2
   $ hg ci -qAmr
   $ hg push -B X
-  pushing to $TESTTMP/addmarks (glob)
+  pushing to $TESTTMP/addmarks
   searching for changes
   remote has heads on branch 'default' that are not known locally: a2a606d9ff1b
   abort: push creates new remote head 54694f811df9 with bookmark 'X'!
@@ -852,18 +1069,35 @@ Check hook preventing push (issue4455)
 Local push
 ----------
 
+#if b2-pushkey
+
   $ hg push -B @ local
-  pushing to $TESTTMP/issue4455-dest (glob)
+  pushing to $TESTTMP/issue4455-dest
   searching for changes
   no changes found
   pushkey-abort: prepushkey hook exited with status 1
   abort: exporting bookmark @ failed!
   [255]
+
+#endif
+#if b2-binary
+
+  $ hg push -B @ local
+  pushing to $TESTTMP/issue4455-dest
+  searching for changes
+  no changes found
+  abort: prepushkey hook exited with status 1
+  [255]
+
+#endif
+
   $ hg -R ../issue4455-dest/ bookmarks
   no bookmarks set
 
 Using ssh
 ---------
+
+#if b2-pushkey
 
   $ hg push -B @ ssh # bundle2+
   pushing to ssh://user@dummy/issue4455-dest
@@ -872,6 +1106,7 @@ Using ssh
   remote: pushkey-abort: prepushkey hook exited with status 1
   abort: exporting bookmark @ failed!
   [255]
+
   $ hg -R ../issue4455-dest/ bookmarks
   no bookmarks set
 
@@ -882,12 +1117,27 @@ Using ssh
   remote: pushkey-abort: prepushkey hook exited with status 1
   exporting bookmark @ failed!
   [1]
+
+#endif
+#if b2-binary
+
+  $ hg push -B @ ssh # bundle2+
+  pushing to ssh://user@dummy/issue4455-dest
+  searching for changes
+  no changes found
+  remote: prepushkey hook exited with status 1
+  abort: push failed on remote
+  [255]
+
+#endif
+
   $ hg -R ../issue4455-dest/ bookmarks
   no bookmarks set
 
 Using http
 ----------
 
+#if b2-pushkey
   $ hg push -B @ http # bundle2+
   pushing to http://localhost:$HGPORT/
   searching for changes
@@ -895,6 +1145,7 @@ Using http
   remote: pushkey-abort: prepushkey hook exited with status 1
   abort: exporting bookmark @ failed!
   [255]
+
   $ hg -R ../issue4455-dest/ bookmarks
   no bookmarks set
 
@@ -905,5 +1156,20 @@ Using http
   remote: pushkey-abort: prepushkey hook exited with status 1
   exporting bookmark @ failed!
   [1]
+
+#endif
+
+#if b2-binary
+
+  $ hg push -B @ ssh # bundle2+
+  pushing to ssh://user@dummy/issue4455-dest
+  searching for changes
+  no changes found
+  remote: prepushkey hook exited with status 1
+  abort: push failed on remote
+  [255]
+
+#endif
+
   $ hg -R ../issue4455-dest/ bookmarks
   no bookmarks set

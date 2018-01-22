@@ -55,7 +55,7 @@ class request(object):
         self.fout = fout
         self.ferr = ferr
 
-        # remember options pre-parsed by _earlyreqopt*()
+        # remember options pre-parsed by _earlyparseopts()
         self.earlyoptions = {}
 
         # reposetups which run before extensions, useful for chg to pre-fill
@@ -96,10 +96,16 @@ def run():
             err = e
             status = -1
     if util.safehasattr(req.ui, 'ferr'):
-        if err is not None and err.errno != errno.EPIPE:
-            req.ui.ferr.write('abort: %s\n' %
-                              encoding.strtolocal(err.strerror))
-        req.ui.ferr.flush()
+        try:
+            if err is not None and err.errno != errno.EPIPE:
+                req.ui.ferr.write('abort: %s\n' %
+                                  encoding.strtolocal(err.strerror))
+            req.ui.ferr.flush()
+        # There's not much we can do about an I/O error here. So (possibly)
+        # change the status code and move on.
+        except IOError:
+            status = -1
+
     sys.exit(status & 255)
 
 def _initstdio():
@@ -150,9 +156,8 @@ def dispatch(req):
     try:
         if not req.ui:
             req.ui = uimod.ui.load()
-        if req.ui.plain('strictflags'):
-            req.earlyoptions.update(_earlyparseopts(req.args))
-        if _earlyreqoptbool(req, 'traceback', ['--traceback']):
+        req.earlyoptions.update(_earlyparseopts(req.ui, req.args))
+        if req.earlyoptions['traceback']:
             req.ui.setconfig('ui', 'traceback', 'on', '--traceback')
 
         # set ui streams from the request
@@ -201,7 +206,8 @@ def dispatch(req):
         req.ui.flush()
         if req.ui.logblockedtimes:
             req.ui._blockedtimes['command_duration'] = duration * 1000
-            req.ui.log('uiblocked', 'ui blocked ms', **req.ui._blockedtimes)
+            req.ui.log('uiblocked', 'ui blocked ms',
+                       **pycompat.strkwargs(req.ui._blockedtimes))
         req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
                    msg, ret or 0, duration)
         try:
@@ -266,8 +272,7 @@ def _runcatch(req):
 
             # read --config before doing anything else
             # (e.g. to change trust settings for reading .hg/hgrc)
-            cfgs = _parseconfig(req.ui,
-                                _earlyreqopt(req, 'config', ['--config']))
+            cfgs = _parseconfig(req.ui, req.earlyoptions['config'])
 
             if req.repo:
                 # copy configs that were passed on the cmdline (--config) to
@@ -281,7 +286,7 @@ def _runcatch(req):
             if not debugger or ui.plain():
                 # if we are in HGPLAIN mode, then disable custom debugging
                 debugger = 'pdb'
-            elif _earlyreqoptbool(req, 'debugger', ['--debugger']):
+            elif req.earlyoptions['debugger']:
                 # This import can be slow for fancy debuggers, so only
                 # do it when absolutely necessary, i.e. when actual
                 # debugging has been requested
@@ -295,7 +300,7 @@ def _runcatch(req):
             debugmortem[debugger] = debugmod.post_mortem
 
             # enter the debugger before command execution
-            if _earlyreqoptbool(req, 'debugger', ['--debugger']):
+            if req.earlyoptions['debugger']:
                 ui.warn(_("entering debugger - "
                         "type c to continue starting hg or h for help\n"))
 
@@ -311,7 +316,7 @@ def _runcatch(req):
                 ui.flush()
         except: # re-raises
             # enter the debugger when we hit an exception
-            if _earlyreqoptbool(req, 'debugger', ['--debugger']):
+            if req.earlyoptions['debugger']:
                 traceback.print_exc()
                 debugmortem[debugger](sys.exc_info()[2])
             raise
@@ -410,7 +415,7 @@ def aliasinterpolate(name, args, cmd):
     # tokenize each argument into exactly one word.
     replacemap['"$@"'] = ' '.join(util.shellquote(arg) for arg in args)
     # escape '\$' for regex
-    regex = '|'.join(replacemap.keys()).replace('$', r'\$')
+    regex = '|'.join(replacemap.keys()).replace('$', br'\$')
     r = re.compile(regex)
     return r.sub(lambda x: replacemap[x.group()], cmd)
 
@@ -452,10 +457,10 @@ class cmdalias(object):
                         return m.group()
                     else:
                         ui.debug("No argument found for substitution "
-                                 "of %i variable in alias '%s' definition."
+                                 "of %i variable in alias '%s' definition.\n"
                                  % (int(m.groups()[0]), self.name))
                         return ''
-                cmd = re.sub(r'\$(\d+|\$)', _checkvar, self.definition[1:])
+                cmd = re.sub(br'\$(\d+|\$)', _checkvar, self.definition[1:])
                 cmd = aliasinterpolate(self.name, args, cmd)
                 return ui.system(cmd, environ=env,
                                  blockedtag='alias_%s' % self.name)
@@ -468,15 +473,14 @@ class cmdalias(object):
             self.badalias = (_("error in definition for alias '%s': %s")
                              % (self.name, inst))
             return
+        earlyopts, args = _earlysplitopts(args)
+        if earlyopts:
+            self.badalias = (_("error in definition for alias '%s': %s may "
+                               "only be given on the command line")
+                             % (self.name, '/'.join(zip(*earlyopts)[0])))
+            return
         self.cmdname = cmd = args.pop(0)
         self.givenargs = args
-
-        for invalidarg in commands.earlyoptflags:
-            if _earlygetopt([invalidarg], args):
-                self.badalias = (_("error in definition for alias '%s': %s may "
-                                   "only be given on the command line")
-                                 % (self.name, invalidarg))
-                return
 
         try:
             tableentry = cmdutil.findcmd(cmd, cmdtable, False)[1]
@@ -646,139 +650,20 @@ def _parseconfig(ui, config):
 
     return configs
 
-def _earlyparseopts(args):
+def _earlyparseopts(ui, args):
     options = {}
     fancyopts.fancyopts(args, commands.globalopts, options,
-                        gnu=False, early=True)
+                        gnu=not ui.plain('strictflags'), early=True,
+                        optaliases={'repository': ['repo']})
     return options
 
-def _earlygetopt(aliases, args, strip=True):
-    """Return list of values for an option (or aliases).
-
-    The values are listed in the order they appear in args.
-    The options and values are removed from args if strip=True.
-
-    >>> args = [b'x', b'--cwd', b'foo', b'y']
-    >>> _earlygetopt([b'--cwd'], args), args
-    (['foo'], ['x', 'y'])
-
-    >>> args = [b'x', b'--cwd=bar', b'y']
-    >>> _earlygetopt([b'--cwd'], args), args
-    (['bar'], ['x', 'y'])
-
-    >>> args = [b'x', b'--cwd=bar', b'y']
-    >>> _earlygetopt([b'--cwd'], args, strip=False), args
-    (['bar'], ['x', '--cwd=bar', 'y'])
-
-    >>> args = [b'x', b'-R', b'foo', b'y']
-    >>> _earlygetopt([b'-R'], args), args
-    (['foo'], ['x', 'y'])
-
-    >>> args = [b'x', b'-R', b'foo', b'y']
-    >>> _earlygetopt([b'-R'], args, strip=False), args
-    (['foo'], ['x', '-R', 'foo', 'y'])
-
-    >>> args = [b'x', b'-Rbar', b'y']
-    >>> _earlygetopt([b'-R'], args), args
-    (['bar'], ['x', 'y'])
-
-    >>> args = [b'x', b'-Rbar', b'y']
-    >>> _earlygetopt([b'-R'], args, strip=False), args
-    (['bar'], ['x', '-Rbar', 'y'])
-
-    >>> args = [b'x', b'-R=bar', b'y']
-    >>> _earlygetopt([b'-R'], args), args
-    (['=bar'], ['x', 'y'])
-
-    >>> args = [b'x', b'-R', b'--', b'y']
-    >>> _earlygetopt([b'-R'], args), args
-    ([], ['x', '-R', '--', 'y'])
-    """
-    try:
-        argcount = args.index("--")
-    except ValueError:
-        argcount = len(args)
-    shortopts = [opt for opt in aliases if len(opt) == 2]
-    values = []
-    pos = 0
-    while pos < argcount:
-        fullarg = arg = args[pos]
-        equals = -1
-        if arg.startswith('--'):
-            equals = arg.find('=')
-        if equals > -1:
-            arg = arg[:equals]
-        if arg in aliases:
-            if equals > -1:
-                values.append(fullarg[equals + 1:])
-                if strip:
-                    del args[pos]
-                    argcount -= 1
-                else:
-                    pos += 1
-            else:
-                if pos + 1 >= argcount:
-                    # ignore and let getopt report an error if there is no value
-                    break
-                values.append(args[pos + 1])
-                if strip:
-                    del args[pos:pos + 2]
-                    argcount -= 2
-                else:
-                    pos += 2
-        elif arg[:2] in shortopts:
-            # short option can have no following space, e.g. hg log -Rfoo
-            values.append(args[pos][2:])
-            if strip:
-                del args[pos]
-                argcount -= 1
-            else:
-                pos += 1
-        else:
-            pos += 1
-    return values
-
-def _earlyreqopt(req, name, aliases):
-    """Peek a list option without using a full options table"""
-    if req.ui.plain('strictflags'):
-        return req.earlyoptions[name]
-    values = _earlygetopt(aliases, req.args, strip=False)
-    req.earlyoptions[name] = values
-    return values
-
-def _earlyreqoptstr(req, name, aliases):
-    """Peek a string option without using a full options table"""
-    if req.ui.plain('strictflags'):
-        return req.earlyoptions[name]
-    value = (_earlygetopt(aliases, req.args, strip=False) or [''])[-1]
-    req.earlyoptions[name] = value
-    return value
-
-def _earlyreqoptbool(req, name, aliases):
-    """Peek a boolean option without using a full options table
-
-    >>> req = request([b'x', b'--debugger'], uimod.ui())
-    >>> _earlyreqoptbool(req, b'debugger', [b'--debugger'])
-    True
-
-    >>> req = request([b'x', b'--', b'--debugger'], uimod.ui())
-    >>> _earlyreqoptbool(req, b'debugger', [b'--debugger'])
-    """
-    if req.ui.plain('strictflags'):
-        return req.earlyoptions[name]
-    try:
-        argcount = req.args.index("--")
-    except ValueError:
-        argcount = len(req.args)
-    value = None
-    pos = 0
-    while pos < argcount:
-        arg = req.args[pos]
-        if arg in aliases:
-            value = True
-        pos += 1
-    req.earlyoptions[name] = value
-    return value
+def _earlysplitopts(args):
+    """Split args into a list of possible early options and remainder args"""
+    shortoptions = 'R:'
+    # TODO: perhaps 'debugger' should be included
+    longoptions = ['cwd=', 'repository=', 'repo=', 'config=']
+    return fancyopts.earlygetopt(args, shortoptions, longoptions,
+                                 gnu=True, keepsep=True)
 
 def runcommand(lui, repo, cmd, fullargs, ui, options, d, cmdpats, cmdoptions):
     # run pre-hook, and abort if it fails
@@ -847,8 +732,7 @@ def _checkshellalias(lui, ui, args):
 
     if cmd and util.safehasattr(fn, 'shell'):
         # shell alias shouldn't receive early options which are consumed by hg
-        args = args[:]
-        _earlygetopt(commands.earlyoptflags, args, strip=True)
+        _earlyopts, args = _earlysplitopts(args)
         d = lambda: fn(ui, *args[1:])
         return lambda: runcommand(lui, None, cmd, args[:1], ui, options, d,
                                   [], {})
@@ -858,11 +742,11 @@ def _dispatch(req):
     ui = req.ui
 
     # check for cwd
-    cwd = _earlyreqoptstr(req, 'cwd', ['--cwd'])
+    cwd = req.earlyoptions['cwd']
     if cwd:
         os.chdir(cwd)
 
-    rpath = _earlyreqoptstr(req, 'repository', ["-R", "--repository", "--repo"])
+    rpath = req.earlyoptions['repository']
     path, lui = _getlocal(ui, rpath)
 
     uis = {ui, lui}
@@ -870,7 +754,7 @@ def _dispatch(req):
     if req.repo:
         uis.add(req.repo.ui)
 
-    if _earlyreqoptbool(req, 'profile', ['--profile']):
+    if req.earlyoptions['profile']:
         for ui_ in uis:
             ui_.setconfig('profiling', 'enabled', 'true', '--profile')
 
@@ -1006,10 +890,11 @@ def _dispatch(req):
                     if not func.optionalrepo:
                         if func.inferrepo and args and not path:
                             # try to infer -R from command args
-                            repos = map(cmdutil.findrepo, args)
+                            repos = pycompat.maplist(cmdutil.findrepo, args)
                             guess = repos[0]
                             if guess and repos.count(guess) == len(repos):
                                 req.args = ['--repository', guess] + fullargs
+                                req.earlyoptions['repository'] = guess
                                 return _dispatch(req)
                         if not path:
                             raise error.RepoError(_("no repository found in"

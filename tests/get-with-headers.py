@@ -5,6 +5,7 @@ a subset of the headers plus the body of the result."""
 
 from __future__ import absolute_import, print_function
 
+import argparse
 import json
 import os
 import sys
@@ -22,25 +23,27 @@ try:
 except ImportError:
     pass
 
-twice = False
-if '--twice' in sys.argv:
-    sys.argv.remove('--twice')
-    twice = True
-headeronly = False
-if '--headeronly' in sys.argv:
-    sys.argv.remove('--headeronly')
-    headeronly = True
-formatjson = False
-if '--json' in sys.argv:
-    sys.argv.remove('--json')
-    formatjson = True
+parser = argparse.ArgumentParser()
+parser.add_argument('--twice', action='store_true')
+parser.add_argument('--headeronly', action='store_true')
+parser.add_argument('--json', action='store_true')
+parser.add_argument('--hgproto')
+parser.add_argument('--requestheader', nargs='*', default=[],
+                    help='Send an additional HTTP request header. Argument '
+                         'value is <header>=<value>')
+parser.add_argument('--bodyfile',
+                    help='Write HTTP response body to a file')
+parser.add_argument('host')
+parser.add_argument('path')
+parser.add_argument('show', nargs='*')
 
-hgproto = None
-if '--hgproto' in sys.argv:
-    idx = sys.argv.index('--hgproto')
-    hgproto = sys.argv[idx + 1]
-    sys.argv.pop(idx)
-    sys.argv.pop(idx)
+args = parser.parse_args()
+
+twice = args.twice
+headeronly = args.headeronly
+formatjson = args.json
+hgproto = args.hgproto
+requestheaders = args.requestheader
 
 tag = None
 def request(host, path, show):
@@ -51,6 +54,10 @@ def request(host, path, show):
         headers['If-None-Match'] = tag
     if hgproto:
         headers['X-HgProto-1'] = hgproto
+
+    for header in requestheaders:
+        key, value = header.split('=', 1)
+        headers[key] = value
 
     conn = httplib.HTTPConnection(host)
     conn.request("GET", '/' + path, None, headers)
@@ -66,6 +73,11 @@ def request(host, path, show):
         print()
         data = response.read()
 
+        if args.bodyfile:
+            bodyfh = open(args.bodyfile, 'wb')
+        else:
+            bodyfh = sys.stdout
+
         # Pretty print JSON. This also has the beneficial side-effect
         # of verifying emitted JSON is well-formed.
         if formatjson:
@@ -74,18 +86,22 @@ def request(host, path, show):
             data = json.loads(data)
             lines = json.dumps(data, sort_keys=True, indent=2).splitlines()
             for line in lines:
-                print(line.rstrip())
+                bodyfh.write(line.rstrip())
+                bodyfh.write(b'\n')
         else:
-            sys.stdout.write(data)
+            bodyfh.write(data)
+
+        if args.bodyfile:
+            bodyfh.close()
 
     if twice and response.getheader('ETag', None):
         tag = response.getheader('ETag')
 
     return response.status
 
-status = request(sys.argv[1], sys.argv[2], sys.argv[3:])
+status = request(args.host, args.path, args.show)
 if twice:
-    status = request(sys.argv[1], sys.argv[2], sys.argv[3:])
+    status = request(args.host, args.path, args.show)
 
 if 200 <= status <= 305:
     sys.exit(0)

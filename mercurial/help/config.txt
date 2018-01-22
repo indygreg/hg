@@ -1723,6 +1723,14 @@ Alias definitions for revsets. See :hg:`help revsets` for details.
 
 Controls generic server settings.
 
+``bookmarks-pushkey-compat``
+    Trigger pushkey hook when being pushed bookmark updates. This config exist
+    for compatibility purpose (default to True)
+
+    If you use ``pushkey`` and ``pre-pushkey`` hooks to control bookmark
+    movement we recommend you migrate them to ``txnclose-bookmark`` and
+    ``pretxnclose-bookmark``.
+
 ``compressionengines``
     List of compression engines and their relative priority to advertise
     to clients.
@@ -2176,6 +2184,8 @@ User interface controls.
     (default: True)
 
 ``slash``
+    (Deprecated. Use ``slashpath`` template filter instead.)
+
     Display paths using a slash (``/``) as the path separator. This
     only makes a difference on systems where the default path
     separator is not the slash character (e.g. Windows uses the
@@ -2187,6 +2197,10 @@ User interface controls.
 
 ``ssh``
     Command to use for SSH connections. (default: ``ssh``)
+
+``ssherrorhint``
+    A hint shown to the user in the case of SSH error (e.g.
+    ``Please see http://company/internalwiki/ssh.html``)
 
 ``strict``
     Require exact command names, instead of allowing unambiguous
@@ -2210,6 +2224,10 @@ User interface controls.
 ``timeout``
     The timeout used when a lock is held (in seconds), a negative value
     means no timeout. (default: 600)
+
+``timeout.warn``
+    Time (in seconds) before a warning is printed about held lock. A negative
+    value means no warning. (default: 0)
 
 ``traceback``
     Mercurial always prints a traceback when an unknown exception
@@ -2260,7 +2278,7 @@ For a quick setup in a trusted environment, e.g., a private LAN, where
 you want it to accept pushes from anybody, you can use the following
 command line::
 
-    $ hg --config web.allow_push=* --config web.push_ssl=False serve
+    $ hg --config web.allow-push=* --config web.push_ssl=False serve
 
 Note that this will allow anybody to push anything to the server and
 that this should not be used for public servers.
@@ -2287,16 +2305,16 @@ The full set of options is:
     revisions.
     (default: False)
 
-``allowpull``
+``allow-pull``
     Whether to allow pulling from the repository. (default: True)
 
-``allow_push``
+``allow-push``
     Whether to allow pushing to the repository. If empty or not set,
     pushing is not allowed. If the special value ``*``, any remote
     user can push, including unauthenticated users. Otherwise, the
     remote user must have been authenticated, and the authenticated
     user name must be present in this list. The contents of the
-    allow_push list are examined after the deny_push list.
+    allow-push list are examined after the deny_push list.
 
 ``allow_read``
     If the user has not already been denied repository access due to
@@ -2390,7 +2408,7 @@ The full set of options is:
     push is not denied. If the special value ``*``, all remote users are
     denied push. Otherwise, unauthenticated users are all denied, and
     any authenticated user name present in this list is also denied. The
-    contents of the deny_push list are examined before the allow_push list.
+    contents of the deny_push list are examined before the allow-push list.
 
 ``deny_read``
     Whether to deny reading/viewing of the repository. If this list is
@@ -2546,6 +2564,10 @@ Examples::
 Parallel master/worker configuration. We currently perform working
 directory updates in parallel on Unix-like systems, which greatly
 helps performance.
+
+``enabled``
+    Whether to enable workers code to be used.
+    (default: true)
 
 ``numcpus``
     Number of CPUs to use for parallel operations. A zero or

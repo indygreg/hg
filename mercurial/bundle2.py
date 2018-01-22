@@ -148,6 +148,7 @@ preserve.
 from __future__ import absolute_import, division
 
 import errno
+import os
 import re
 import string
 import struct
@@ -155,6 +156,7 @@ import sys
 
 from .i18n import _
 from . import (
+    bookmarks,
     changegroup,
     error,
     node as nodemod,
@@ -162,6 +164,7 @@ from . import (
     phases,
     pushkey,
     pycompat,
+    streamclone,
     tags,
     url,
     util,
@@ -180,7 +183,7 @@ _fpartid = '>I'
 _fpayloadsize = '>i'
 _fpartparamcount = '>BB'
 
-preferedchunksize = 4096
+preferedchunksize = 32768
 
 _parttypeforbidden = re.compile('[^a-zA-Z0-9_:-]')
 
@@ -299,6 +302,8 @@ class bundleoperation(object):
         self.captureoutput = captureoutput
         self.hookargs = {}
         self._gettransaction = transactiongetter
+        # carries value that can modify part behavior
+        self.modes = {}
 
     def gettransaction(self):
         transaction = self._gettransaction()
@@ -362,7 +367,7 @@ class partiterator(object):
                 self.count = count
                 self.current = p
                 yield p
-                p.seek(0, 2)
+                p.consume()
                 self.current = None
         self.iterator = func()
         return self.iterator
@@ -384,11 +389,11 @@ class partiterator(object):
             try:
                 if self.current:
                     # consume the part content to not corrupt the stream.
-                    self.current.seek(0, 2)
+                    self.current.consume()
 
                 for part in self.iterator:
                     # consume the bundle content
-                    part.seek(0, 2)
+                    part.consume()
             except Exception:
                 seekerror = True
 
@@ -594,6 +599,10 @@ class bundle20(object):
         self.capabilities = dict(capabilities)
         self._compengine = util.compengines.forbundletype('UN')
         self._compopts = None
+        # If compression is being handled by a consumer of the raw
+        # data (e.g. the wire protocol), unsetting this flag tells
+        # consumers that the bundle is best left uncompressed.
+        self.prefercompressed = True
 
     def setcompression(self, alg, compopts=None):
         """setup core part compression to <alg>"""
@@ -844,8 +853,9 @@ class unbundle20(unpackermixin):
             yield self._readexact(size)
 
 
-    def iterparts(self):
+    def iterparts(self, seekable=False):
         """yield all parts contained in the stream"""
+        cls = seekableunbundlepart if seekable else unbundlepart
         # make sure param have been loaded
         self.params
         # From there, payload need to be decompressed
@@ -853,13 +863,12 @@ class unbundle20(unpackermixin):
         indebug(self.ui, 'start extraction of bundle2 parts')
         headerblock = self._readpartheader()
         while headerblock is not None:
-            part = unbundlepart(self.ui, headerblock, self._fp)
+            part = cls(self.ui, headerblock, self._fp)
             yield part
-            # Seek to the end of the part to force it's consumption so the next
-            # part can be read. But then seek back to the beginning so the
-            # code consuming this generator has a part that starts at 0.
-            part.seek(0, 2)
-            part.seek(0)
+            # Ensure part is fully consumed so we can start reading the next
+            # part.
+            part.consume()
+
             headerblock = self._readpartheader()
         indebug(self.ui, 'end of bundle2 stream')
 
@@ -1164,7 +1173,7 @@ class interrupthandler(unpackermixin):
             raise
         finally:
             if not hardabort:
-                part.seek(0, 2)
+                part.consume()
         self.ui.debug('bundle2-input-stream-interrupt:'
                       ' closing out of band context\n')
 
@@ -1186,6 +1195,55 @@ class interruptoperation(object):
     def gettransaction(self):
         raise TransactionUnavailable('no repo access from stream interruption')
 
+def decodepayloadchunks(ui, fh):
+    """Reads bundle2 part payload data into chunks.
+
+    Part payload data consists of framed chunks. This function takes
+    a file handle and emits those chunks.
+    """
+    dolog = ui.configbool('devel', 'bundle2.debug')
+    debug = ui.debug
+
+    headerstruct = struct.Struct(_fpayloadsize)
+    headersize = headerstruct.size
+    unpack = headerstruct.unpack
+
+    readexactly = changegroup.readexactly
+    read = fh.read
+
+    chunksize = unpack(readexactly(fh, headersize))[0]
+    indebug(ui, 'payload chunk size: %i' % chunksize)
+
+    # changegroup.readexactly() is inlined below for performance.
+    while chunksize:
+        if chunksize >= 0:
+            s = read(chunksize)
+            if len(s) < chunksize:
+                raise error.Abort(_('stream ended unexpectedly '
+                                    ' (got %d bytes, expected %d)') %
+                                  (len(s), chunksize))
+
+            yield s
+        elif chunksize == flaginterrupt:
+            # Interrupt "signal" detected. The regular stream is interrupted
+            # and a bundle2 part follows. Consume it.
+            interrupthandler(ui, fh)()
+        else:
+            raise error.BundleValueError(
+                'negative payload chunk size: %s' % chunksize)
+
+        s = read(headersize)
+        if len(s) < headersize:
+            raise error.Abort(_('stream ended unexpectedly '
+                                ' (got %d bytes, expected %d)') %
+                              (len(s), chunksize))
+
+        chunksize = unpack(s)[0]
+
+        # indebug() inlined for performance.
+        if dolog:
+            debug('bundle2-input: payload chunk size: %i\n' % chunksize)
+
 class unbundlepart(unpackermixin):
     """a bundle part read from a bundle"""
 
@@ -1206,10 +1264,8 @@ class unbundlepart(unpackermixin):
         self.advisoryparams = None
         self.params = None
         self.mandatorykeys = ()
-        self._payloadstream = None
         self._readheader()
         self._mandatory = None
-        self._chunkindex = [] #(payload, file) position tuples for chunk starts
         self._pos = 0
 
     def _fromheader(self, size):
@@ -1235,46 +1291,6 @@ class unbundlepart(unpackermixin):
         self.params = util.sortdict(self.mandatoryparams)
         self.params.update(self.advisoryparams)
         self.mandatorykeys = frozenset(p[0] for p in mandatoryparams)
-
-    def _payloadchunks(self, chunknum=0):
-        '''seek to specified chunk and start yielding data'''
-        if len(self._chunkindex) == 0:
-            assert chunknum == 0, 'Must start with chunk 0'
-            self._chunkindex.append((0, self._tellfp()))
-        else:
-            assert chunknum < len(self._chunkindex), \
-                   'Unknown chunk %d' % chunknum
-            self._seekfp(self._chunkindex[chunknum][1])
-
-        pos = self._chunkindex[chunknum][0]
-        payloadsize = self._unpack(_fpayloadsize)[0]
-        indebug(self.ui, 'payload chunk size: %i' % payloadsize)
-        while payloadsize:
-            if payloadsize == flaginterrupt:
-                # interruption detection, the handler will now read a
-                # single part and process it.
-                interrupthandler(self.ui, self._fp)()
-            elif payloadsize < 0:
-                msg = 'negative payload chunk size: %i' %  payloadsize
-                raise error.BundleValueError(msg)
-            else:
-                result = self._readexact(payloadsize)
-                chunknum += 1
-                pos += payloadsize
-                if chunknum == len(self._chunkindex):
-                    self._chunkindex.append((pos, self._tellfp()))
-                yield result
-            payloadsize = self._unpack(_fpayloadsize)[0]
-            indebug(self.ui, 'payload chunk size: %i' % payloadsize)
-
-    def _findchunk(self, pos):
-        '''for a given payload position, return a chunk number and offset'''
-        for chunk, (ppos, fpos) in enumerate(self._chunkindex):
-            if ppos == pos:
-                return chunk, 0
-            elif ppos > pos:
-                return chunk - 1, pos - self._chunkindex[chunk - 1][0]
-        raise ValueError('Unknown chunk')
 
     def _readheader(self):
         """read the header and setup the object"""
@@ -1311,6 +1327,24 @@ class unbundlepart(unpackermixin):
         # we read the data, tell it
         self._initialized = True
 
+    def _payloadchunks(self):
+        """Generator of decoded chunks in the payload."""
+        return decodepayloadchunks(self.ui, self._fp)
+
+    def consume(self):
+        """Read the part payload until completion.
+
+        By consuming the part data, the underlying stream read offset will
+        be advanced to the next part (or end of stream).
+        """
+        if self.consumed:
+            return
+
+        chunk = self.read(32768)
+        while chunk:
+            self._pos += len(chunk)
+            chunk = self.read(32768)
+
     def read(self, size=None):
         """read payload data"""
         if not self._initialized:
@@ -1327,23 +1361,82 @@ class unbundlepart(unpackermixin):
             self.consumed = True
         return data
 
+class seekableunbundlepart(unbundlepart):
+    """A bundle2 part in a bundle that is seekable.
+
+    Regular ``unbundlepart`` instances can only be read once. This class
+    extends ``unbundlepart`` to enable bi-directional seeking within the
+    part.
+
+    Bundle2 part data consists of framed chunks. Offsets when seeking
+    refer to the decoded data, not the offsets in the underlying bundle2
+    stream.
+
+    To facilitate quickly seeking within the decoded data, instances of this
+    class maintain a mapping between offsets in the underlying stream and
+    the decoded payload. This mapping will consume memory in proportion
+    to the number of chunks within the payload (which almost certainly
+    increases in proportion with the size of the part).
+    """
+    def __init__(self, ui, header, fp):
+        # (payload, file) offsets for chunk starts.
+        self._chunkindex = []
+
+        super(seekableunbundlepart, self).__init__(ui, header, fp)
+
+    def _payloadchunks(self, chunknum=0):
+        '''seek to specified chunk and start yielding data'''
+        if len(self._chunkindex) == 0:
+            assert chunknum == 0, 'Must start with chunk 0'
+            self._chunkindex.append((0, self._tellfp()))
+        else:
+            assert chunknum < len(self._chunkindex), \
+                   'Unknown chunk %d' % chunknum
+            self._seekfp(self._chunkindex[chunknum][1])
+
+        pos = self._chunkindex[chunknum][0]
+
+        for chunk in decodepayloadchunks(self.ui, self._fp):
+            chunknum += 1
+            pos += len(chunk)
+            if chunknum == len(self._chunkindex):
+                self._chunkindex.append((pos, self._tellfp()))
+
+            yield chunk
+
+    def _findchunk(self, pos):
+        '''for a given payload position, return a chunk number and offset'''
+        for chunk, (ppos, fpos) in enumerate(self._chunkindex):
+            if ppos == pos:
+                return chunk, 0
+            elif ppos > pos:
+                return chunk - 1, pos - self._chunkindex[chunk - 1][0]
+        raise ValueError('Unknown chunk')
+
     def tell(self):
         return self._pos
 
-    def seek(self, offset, whence=0):
-        if whence == 0:
+    def seek(self, offset, whence=os.SEEK_SET):
+        if whence == os.SEEK_SET:
             newpos = offset
-        elif whence == 1:
+        elif whence == os.SEEK_CUR:
             newpos = self._pos + offset
-        elif whence == 2:
+        elif whence == os.SEEK_END:
             if not self.consumed:
-                self.read()
+                # Can't use self.consume() here because it advances self._pos.
+                chunk = self.read(32768)
+                while chunk:
+                    chunk = self.read(32768)
             newpos = self._chunkindex[-1][0] - offset
         else:
             raise ValueError('Unknown whence value: %r' % (whence,))
 
         if newpos > self._chunkindex[-1][0] and not self.consumed:
-            self.read()
+            # Can't use self.consume() here because it advances self._pos.
+            chunk = self.read(32768)
+            while chunk:
+                chunk = self.read(32668)
+
         if not 0 <= newpos <= self._chunkindex[-1][0]:
             raise ValueError('Offset out of range')
 
@@ -1389,6 +1482,7 @@ class unbundlepart(unpackermixin):
 # These are only the static capabilities.
 # Check the 'getrepocaps' function for the rest.
 capabilities = {'HG20': (),
+                'bookmarks': (),
                 'error': ('abort', 'unsupportedcontent', 'pushraced',
                           'pushkey'),
                 'listkeys': (),
@@ -1397,13 +1491,21 @@ capabilities = {'HG20': (),
                 'remote-changegroup': ('http', 'https'),
                 'hgtagsfnodes': (),
                 'phases': ('heads',),
+                'stream': ('v2',),
                }
 
-def getrepocaps(repo, allowpushback=False):
+def getrepocaps(repo, allowpushback=False, role=None):
     """return the bundle2 capabilities for a given repo
 
     Exists to allow extensions (like evolution) to mutate the capabilities.
+
+    The returned value is used for servers advertising their capabilities as
+    well as clients advertising their capabilities to servers as part of
+    bundle2 requests. The ``role`` argument specifies which is which.
     """
+    if role not in ('client', 'server'):
+        raise error.ProgrammingError('role argument must be client or server')
+
     caps = capabilities.copy()
     caps['changegroup'] = tuple(sorted(
         changegroup.supportedincomingversions(repo)))
@@ -1417,6 +1519,18 @@ def getrepocaps(repo, allowpushback=False):
         caps['checkheads'] = ('related',)
     if 'phases' in repo.ui.configlist('devel', 'legacy.exchange'):
         caps.pop('phases')
+
+    # Don't advertise stream clone support in server mode if not configured.
+    if role == 'server':
+        streamsupported = repo.ui.configbool('server', 'uncompressed',
+                                             untrusted=True)
+        featuresupported = repo.ui.configbool('experimental', 'bundle2.stream')
+
+        if not streamsupported or not featuresupported:
+            caps.pop('stream')
+    # Else always advertise support on client, because payload support
+    # should always be advertised.
+
     return caps
 
 def bundle2caps(remote):
@@ -1702,6 +1816,34 @@ def handlereplychangegroup(op, inpart):
     replyto = int(inpart.params['in-reply-to'])
     op.records.add('changegroup', {'return': ret}, replyto)
 
+@parthandler('check:bookmarks')
+def handlecheckbookmarks(op, inpart):
+    """check location of bookmarks
+
+    This part is to be used to detect push race regarding bookmark, it
+    contains binary encoded (bookmark, node) tuple. If the local state does
+    not marks the one in the part, a PushRaced exception is raised
+    """
+    bookdata = bookmarks.binarydecode(inpart)
+
+    msgstandard = ('repository changed while pushing - please try again '
+                   '(bookmark "%s" move from %s to %s)')
+    msgmissing = ('repository changed while pushing - please try again '
+                  '(bookmark "%s" is missing, expected %s)')
+    msgexist = ('repository changed while pushing - please try again '
+                '(bookmark "%s" set on %s, expected missing)')
+    for book, node in bookdata:
+        currentnode = op.repo._bookmarks.get(book)
+        if currentnode != node:
+            if node is None:
+                finalmsg = msgexist % (book, nodemod.short(currentnode))
+            elif currentnode is None:
+                finalmsg = msgmissing % (book, nodemod.short(node))
+            else:
+                finalmsg = msgstandard % (book, nodemod.short(node),
+                                          nodemod.short(currentnode))
+            raise error.PushRaced(finalmsg)
+
 @parthandler('check:heads')
 def handlecheckheads(op, inpart):
     """check that head of the repo did not change
@@ -1861,6 +2003,60 @@ def handlepushkey(op, inpart):
                 kwargs[key] = inpart.params[key]
         raise error.PushkeyFailed(partid=str(inpart.id), **kwargs)
 
+@parthandler('bookmarks')
+def handlebookmark(op, inpart):
+    """transmit bookmark information
+
+    The part contains binary encoded bookmark information.
+
+    The exact behavior of this part can be controlled by the 'bookmarks' mode
+    on the bundle operation.
+
+    When mode is 'apply' (the default) the bookmark information is applied as
+    is to the unbundling repository. Make sure a 'check:bookmarks' part is
+    issued earlier to check for push races in such update. This behavior is
+    suitable for pushing.
+
+    When mode is 'records', the information is recorded into the 'bookmarks'
+    records of the bundle operation. This behavior is suitable for pulling.
+    """
+    changes = bookmarks.binarydecode(inpart)
+
+    pushkeycompat = op.repo.ui.configbool('server', 'bookmarks-pushkey-compat')
+    bookmarksmode = op.modes.get('bookmarks', 'apply')
+
+    if bookmarksmode == 'apply':
+        tr = op.gettransaction()
+        bookstore = op.repo._bookmarks
+        if pushkeycompat:
+            allhooks = []
+            for book, node in changes:
+                hookargs = tr.hookargs.copy()
+                hookargs['pushkeycompat'] = '1'
+                hookargs['namespace'] = 'bookmark'
+                hookargs['key'] = book
+                hookargs['old'] = nodemod.hex(bookstore.get(book, ''))
+                hookargs['new'] = nodemod.hex(node if node is not None else '')
+                allhooks.append(hookargs)
+
+            for hookargs in allhooks:
+                op.repo.hook('prepushkey', throw=True, **hookargs)
+
+        bookstore.applychanges(op.repo, op.gettransaction(), changes)
+
+        if pushkeycompat:
+            def runhook():
+                for hookargs in allhooks:
+                    op.repo.hook('pushkey', **hookargs)
+            op.repo._afterlock(runhook)
+
+    elif bookmarksmode == 'records':
+        for book, node in changes:
+            record = {'bookmark': book, 'node': node}
+            op.records.add('bookmarks', record)
+    else:
+        raise error.ProgrammingError('unkown bookmark mode: %s' % bookmarksmode)
+
 @parthandler('phase-heads')
 def handlephases(op, inpart):
     """apply phases from bundle part to repo"""
@@ -1885,7 +2081,7 @@ def handleobsmarker(op, inpart):
     # The mergemarkers call will crash if marker creation is not enabled.
     # we want to avoid this if the part is advisory.
     if not inpart.mandatory and op.repo.obsstore.readonly:
-        op.repo.ui.debug('ignoring obsolescence markers, feature not enabled')
+        op.repo.ui.debug('ignoring obsolescence markers, feature not enabled\n')
         return
     new = op.repo.obsstore.mergemarkers(tr, markerdata)
     op.repo.invalidatevolatilesets()
@@ -1943,3 +2139,27 @@ def bundle2getvars(op, part):
             key = "USERVAR_" + key
             hookargs[key] = value
         op.addhookargs(hookargs)
+
+@parthandler('stream2', ('requirements', 'filecount', 'bytecount'))
+def handlestreamv2bundle(op, part):
+
+    requirements = part.params['requirements'].split()
+    filecount = int(part.params['filecount'])
+    bytecount = int(part.params['bytecount'])
+
+    repo = op.repo
+    if len(repo):
+        msg = _('cannot apply stream clone to non empty repository')
+        raise error.Abort(msg)
+
+    repo.ui.debug('applying stream bundle\n')
+    streamclone.applybundlev2(repo, part, filecount, bytecount,
+                              requirements)
+
+    # new requirements = old non-format requirements +
+    #                    new format-related remote requirements
+    # requirements from the streamed-in repository
+    repo.requirements = set(requirements) | (
+            repo.requirements - repo.supportedformats)
+    repo._applyopenerreqs()
+    repo._writerequirements()

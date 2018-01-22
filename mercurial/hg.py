@@ -14,11 +14,14 @@ import os
 import shutil
 
 from .i18n import _
-from .node import nullid
+from .node import (
+    nullid,
+)
 
 from . import (
     bookmarks,
     bundlerepo,
+    cacheutil,
     cmdutil,
     destutil,
     discovery,
@@ -28,10 +31,10 @@ from . import (
     httppeer,
     localrepo,
     lock,
+    logexchange,
     merge as mergemod,
     node,
     phases,
-    repoview,
     scmutil,
     sshpeer,
     statichttprepo,
@@ -306,16 +309,13 @@ def postshare(sourcerepo, destrepo, bookmarks=True, defaultpath=None):
     """
     default = defaultpath or sourcerepo.ui.config('paths', 'default')
     if default:
-        fp = destrepo.vfs("hgrc", "w", text=True)
-        fp.write("[paths]\n")
-        fp.write("default = %s\n" % default)
-        fp.close()
+        template = ('[paths]\n'
+                    'default = %s\n')
+        destrepo.vfs.write('hgrc', util.tonativeeol(template % default))
 
     with destrepo.wlock():
         if bookmarks:
-            fp = destrepo.vfs('shared', 'w')
-            fp.write(sharedbookmarks + '\n')
-            fp.close()
+            destrepo.vfs.write('shared', sharedbookmarks + '\n')
 
 def _postshareupdate(repo, update, checkout=None):
     """Maybe perform a working directory update after a shared repo is created.
@@ -459,18 +459,6 @@ def _copycache(srcrepo, dstcachedir, fname):
             os.mkdir(dstcachedir)
         util.copyfile(srcbranchcache, dstbranchcache)
 
-def _cachetocopy(srcrepo):
-    """return the list of cache file valuable to copy during a clone"""
-    # In local clones we're copying all nodes, not just served
-    # ones. Therefore copy all branch caches over.
-    cachefiles = ['branch2']
-    cachefiles += ['branch2-%s' % f for f in repoview.filtertable]
-    cachefiles += ['rbc-names-v1', 'rbc-revs-v1']
-    cachefiles += ['tags2']
-    cachefiles += ['tags2-%s' % f for f in repoview.filtertable]
-    cachefiles += ['hgtagsfnodes1']
-    return cachefiles
-
 def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
           update=True, stream=False, branch=None, shareopts=None):
     """Make a copy of an existing repository.
@@ -568,7 +556,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
                             'unable to resolve identity of remote)\n'))
         elif sharenamemode == 'remote':
             sharepath = os.path.join(
-                sharepool, hashlib.sha1(source).hexdigest())
+                sharepool, node.hex(hashlib.sha1(source).digest()))
         else:
             raise error.Abort(_('unknown share naming mode: %s') %
                               sharenamemode)
@@ -629,7 +617,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
                 util.copyfile(srcbookmarks, dstbookmarks)
 
             dstcachedir = os.path.join(destpath, 'cache')
-            for cache in _cachetocopy(srcrepo):
+            for cache in cacheutil.cachetocopy(srcrepo):
                 _copycache(srcrepo, dstcachedir, cache)
 
             # we need to re-init the repo after manually copying the data
@@ -658,6 +646,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
                 checkout = revs[0]
             local = destpeer.local()
             if local:
+                u = util.url(abspath)
+                defaulturl = bytes(u)
+                local.ui.setconfig('paths', 'default', defaulturl, 'clone')
                 if not stream:
                     if pull:
                         stream = False
@@ -680,14 +671,14 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
         destrepo = destpeer.local()
         if destrepo:
             template = uimod.samplehgrcs['cloned']
-            fp = destrepo.vfs("hgrc", "wb")
             u = util.url(abspath)
             u.passwd = None
             defaulturl = bytes(u)
-            fp.write(util.tonativeeol(template % defaulturl))
-            fp.close()
-
+            destrepo.vfs.write('hgrc', util.tonativeeol(template % defaulturl))
             destrepo.ui.setconfig('paths', 'default', defaulturl, 'clone')
+
+            if ui.configbool('experimental', 'remotenames'):
+                logexchange.pullremotenames(destrepo, srcpeer)
 
             if update:
                 if update is not True:
@@ -843,16 +834,32 @@ def updatetotally(ui, repo, checkout, brev, clean=False, updatecheck=None):
 
     return ret
 
-def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None):
+def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
+          abort=False):
     """Branch merge with node, resolving changes. Return true if any
     unresolved conflicts."""
-    stats = mergemod.update(repo, node, True, force, mergeforce=mergeforce,
-                            labels=labels)
+    if not abort:
+        stats = mergemod.update(repo, node, True, force, mergeforce=mergeforce,
+                                labels=labels)
+    else:
+        ms = mergemod.mergestate.read(repo)
+        if ms.active():
+            # there were conflicts
+            node = ms.localctx.hex()
+        else:
+            # there were no conficts, mergestate was not stored
+            node = repo['.'].hex()
+
+        repo.ui.status(_("aborting the merge, updating back to"
+                         " %s\n") % node[:12])
+        stats = mergemod.update(repo, node, branchmerge=False, force=True,
+                                labels=labels)
+
     _showstats(repo, stats)
     if stats[3]:
         repo.ui.status(_("use 'hg resolve' to retry unresolved file merges "
-                         "or 'hg update -C .' to abandon\n"))
-    elif remind:
+                         "or 'hg merge --abort' to abandon\n"))
+    elif remind and not abort:
         repo.ui.status(_("(branch merge, don't forget to commit)\n"))
     return stats[3] > 0
 
@@ -912,8 +919,13 @@ def incoming(ui, repo, source, opts):
     return _incoming(display, subreporecurse, ui, repo, source, opts)
 
 def _outgoing(ui, repo, dest, opts):
-    dest = ui.expandpath(dest or 'default-push', dest or 'default')
-    dest, branches = parseurl(dest, opts.get('branch'))
+    path = ui.paths.getpath(dest, default=('default-push', 'default'))
+    if not path:
+        raise error.Abort(_('default repository not configured!'),
+                hint=_("see 'hg help config.paths'"))
+    dest = path.pushloc or path.loc
+    branches = path.branch, opts.get('branch') or []
+
     ui.status(_('comparing with %s\n') % util.hidepassword(dest))
     revs, checkout = addbranchrevs(repo, repo, branches, opts.get('rev'))
     if revs:

@@ -110,6 +110,7 @@ Short help:
    environment   Environment Variables
    extensions    Using Additional Features
    filesets      Specifying File Sets
+   flags         Command-line flags
    glossary      Glossary
    hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
@@ -188,6 +189,7 @@ Short help:
    environment   Environment Variables
    extensions    Using Additional Features
    filesets      Specifying File Sets
+   flags         Command-line flags
    glossary      Glossary
    hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
@@ -259,6 +261,7 @@ Test extension help:
        eol           automatically manage newlines in repository files
        extdiff       command to allow external programs to compare revisions
        factotum      http authentication with factotum
+       githelp       try mapping git commands to Mercurial commands
        gpg           commands to sign and verify changesets
        hgk           browse the repository in a graphical way
        highlight     syntax highlighting for hgweb (requires Pygments)
@@ -865,6 +868,7 @@ Test that default list of commands omits extension commands
    environment   Environment Variables
    extensions    Using Additional Features
    filesets      Specifying File Sets
+   flags         Command-line flags
    glossary      Glossary
    hgignore      Syntax for Mercurial Ignore Files
    hgweb         Configuring hgweb
@@ -895,6 +899,8 @@ Test list of internal help commands
                  builds a repo with a given DAG from scratch in the current
                  empty repo
    debugbundle   lists the contents of a bundle
+   debugcapabilities
+                 lists the capabilities of a remote peer
    debugcheckstate
                  validate the correctness of the current dirstate
    debugcolor    show available color, effects or style
@@ -914,9 +920,12 @@ Test list of internal help commands
                  show the contents of the current dirstate
    debugdiscovery
                  runs the changeset discovery protocol in isolation
+   debugdownload
+                 download a resource using Mercurial logic and config
    debugextensions
                  show information about active extensions
    debugfileset  parse and apply a fileset specification
+   debugformat   display format information about the current repository
    debugfsinfo   show information detected about current filesystem
    debuggetbundle
                  retrieves a bundle from a repo
@@ -2009,6 +2018,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   Specifying File Sets
+  </td></tr>
+  <tr><td>
+  <a href="/help/flags">
+  flags
+  </a>
+  </td><td>
+  Command-line flags
   </td></tr>
   <tr><td>
   <a href="/help/glossary">

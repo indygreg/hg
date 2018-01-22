@@ -205,13 +205,16 @@ def encodebatchcmds(req):
 # :scsv:  list of comma-separated values return as set
 # :plain: string with no transformation needed.
 gboptsmap = {'heads':  'nodes',
+             'bookmarks': 'boolean',
              'common': 'nodes',
              'obsmarkers': 'boolean',
              'phases': 'boolean',
              'bundlecaps': 'scsv',
              'listkeys': 'csv',
              'cg': 'boolean',
-             'cbattempted': 'boolean'}
+             'cbattempted': 'boolean',
+             'stream': 'boolean',
+}
 
 # client side
 
@@ -451,9 +454,9 @@ class wirepeer(repository.legacypeer):
         # don't pass optional arguments left at their default value
         opts = {}
         if three is not None:
-            opts['three'] = three
+            opts[r'three'] = three
         if four is not None:
-            opts['four'] = four
+            opts[r'four'] = four
         return self._call('debugwireargs', one=one, two=two, **opts)
 
     def _call(self, cmd, **args):
@@ -519,18 +522,28 @@ class streamres(object):
 
     The call was successful and the result is a stream.
 
-    Accepts either a generator or an object with a ``read(size)`` method.
+    Accepts a generator containing chunks of data to be sent to the client.
 
-    ``v1compressible`` indicates whether this data can be compressed to
-    "version 1" clients (technically: HTTP peers using
-    application/mercurial-0.1 media type). This flag should NOT be used on
-    new commands because new clients should support a more modern compression
-    mechanism.
+    ``prefer_uncompressed`` indicates that the data is expected to be
+    uncompressable and that the stream should therefore use the ``none``
+    engine.
     """
-    def __init__(self, gen=None, reader=None, v1compressible=False):
+    def __init__(self, gen=None, prefer_uncompressed=False):
         self.gen = gen
-        self.reader = reader
-        self.v1compressible = v1compressible
+        self.prefer_uncompressed = prefer_uncompressed
+
+class streamres_legacy(object):
+    """wireproto reply: uncompressed binary stream
+
+    The call was successful and the result is a stream.
+
+    Accepts a generator containing chunks of data to be sent to the client.
+
+    Like ``streamres``, but sends an uncompressed data for "version 1" clients
+    using the application/mercurial-0.1 media type.
+    """
+    def __init__(self, gen=None):
+        self.gen = gen
 
 class pushres(object):
     """wireproto reply: success with simple integer return
@@ -767,7 +780,7 @@ def _capabilities(repo, proto):
         else:
             caps.append('streamreqs=%s' % ','.join(sorted(requiredformats)))
     if repo.ui.configbool('experimental', 'bundle2-advertise'):
-        capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo))
+        capsblob = bundle2.encodecaps(bundle2.getrepocaps(repo, role='server'))
         caps.append('bundle2=' + urlreq.quote(capsblob))
     caps.append('unbundle=%s' % ','.join(bundle2.bundlepriority))
 
@@ -801,7 +814,8 @@ def changegroup(repo, proto, roots):
     outgoing = discovery.outgoing(repo, missingroots=nodes,
                                   missingheads=repo.heads())
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
-    return streamres(reader=cg, v1compressible=True)
+    gen = iter(lambda: cg.read(32768), '')
+    return streamres(gen=gen)
 
 @wireprotocommand('changegroupsubset', 'bases heads')
 def changegroupsubset(repo, proto, bases, heads):
@@ -810,13 +824,14 @@ def changegroupsubset(repo, proto, bases, heads):
     outgoing = discovery.outgoing(repo, missingroots=bases,
                                   missingheads=heads)
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
-    return streamres(reader=cg, v1compressible=True)
+    gen = iter(lambda: cg.read(32768), '')
+    return streamres(gen=gen)
 
 @wireprotocommand('debugwireargs', 'one two *')
 def debugwireargs(repo, proto, one, two, others):
     # only accept optional args from the known set
     opts = options('debugwireargs', ['three', 'four'], others)
-    return repo.debugwireargs(one, two, **opts)
+    return repo.debugwireargs(one, two, **pycompat.strkwargs(opts))
 
 @wireprotocommand('getbundle', '*')
 def getbundle(repo, proto, others):
@@ -847,20 +862,24 @@ def getbundle(repo, proto, others):
             raise error.Abort(bundle2requiredmain,
                               hint=bundle2requiredhint)
 
+    prefercompressed = True
+
     try:
         if repo.ui.configbool('server', 'disablefullbundle'):
             # Check to see if this is a full clone.
             clheads = set(repo.changelog.heads())
+            changegroup = opts.get('cg', True)
             heads = set(opts.get('heads', set()))
             common = set(opts.get('common', set()))
             common.discard(nullid)
-            if not common and clheads == heads:
+            if changegroup and not common and clheads == heads:
                 raise error.Abort(
                     _('server has pull-based clones disabled'),
                     hint=_('remove --pull if specified or upgrade Mercurial'))
 
-        chunks = exchange.getbundlechunks(repo, 'serve',
-                                          **pycompat.strkwargs(opts))
+        info, chunks = exchange.getbundlechunks(repo, 'serve',
+                                                **pycompat.strkwargs(opts))
+        prefercompressed = info.get('prefercompressed', True)
     except error.Abort as exc:
         # cleanly forward Abort error to the client
         if not exchange.bundle2requested(opts.get('bundlecaps')):
@@ -875,8 +894,10 @@ def getbundle(repo, proto, others):
             advargs.append(('hint', exc.hint))
         bundler.addpart(bundle2.bundlepart('error:abort',
                                            manargs, advargs))
-        return streamres(gen=bundler.getchunks(), v1compressible=True)
-    return streamres(gen=chunks, v1compressible=True)
+        chunks = bundler.getchunks()
+        prefercompressed = False
+
+    return streamres(gen=chunks, prefer_uncompressed=not prefercompressed)
 
 @wireprotocommand('heads')
 def heads(repo, proto):
@@ -953,21 +974,7 @@ def stream(repo, proto):
     capability with a value representing the version and flags of the repo
     it is serving. Client checks to see if it understands the format.
     '''
-    if not streamclone.allowservergeneration(repo):
-        return '1\n'
-
-    def getstream(it):
-        yield '0\n'
-        for chunk in it:
-            yield chunk
-
-    try:
-        # LockError may be raised before the first result is yielded. Don't
-        # emit output until we're sure we got the lock successfully.
-        it = streamclone.generatev1wireproto(repo)
-        return streamres(gen=getstream(it))
-    except error.LockError:
-        return '2\n'
+    return streamres_legacy(streamclone.generatev1wireproto(repo))
 
 @wireprotocommand('unbundle', 'heads')
 def unbundle(repo, proto, heads):
@@ -1002,7 +1009,7 @@ def unbundle(repo, proto, heads):
             if util.safehasattr(r, 'addpart'):
                 # The return looks streamable, we are in the bundle2 case and
                 # should return a stream.
-                return streamres(gen=r.getchunks())
+                return streamres_legacy(gen=r.getchunks())
             return pushres(r)
 
         finally:
@@ -1066,4 +1073,4 @@ def unbundle(repo, proto, heads):
                                                manargs, advargs))
         except error.PushRaced as exc:
             bundler.newpart('error:pushraced', [('message', str(exc))])
-        return streamres(gen=bundler.getchunks())
+        return streamres_legacy(gen=bundler.getchunks())

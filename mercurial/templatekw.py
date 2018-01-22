@@ -17,6 +17,7 @@ from . import (
     encoding,
     error,
     hbisect,
+    i18n,
     obsutil,
     patch,
     pycompat,
@@ -301,6 +302,30 @@ def getrenamedfn(repo, endrev=None):
 
     return getrenamed
 
+def getlogcolumns():
+    """Return a dict of log column labels"""
+    _ = pycompat.identity  # temporarily disable gettext
+    # i18n: column positioning for "hg log"
+    columns = _('bookmark:    %s\n'
+                'branch:      %s\n'
+                'changeset:   %s\n'
+                'copies:      %s\n'
+                'date:        %s\n'
+                'extra:       %s=%s\n'
+                'files+:      %s\n'
+                'files-:      %s\n'
+                'files:       %s\n'
+                'instability: %s\n'
+                'manifest:    %s\n'
+                'obsolete:    %s\n'
+                'parent:      %s\n'
+                'phase:       %s\n'
+                'summary:     %s\n'
+                'tag:         %s\n'
+                'user:        %s\n')
+    return dict(zip([s.split(':', 1)[0] for s in columns.splitlines()],
+                    i18n._(columns).splitlines(True)))
+
 # default templates internally used for rendering of lists
 defaulttempl = {
     'parent': '{rev}:{node|formatnode} ',
@@ -513,6 +538,8 @@ def showgraphnode(repo, ctx, **args):
         return '@'
     elif ctx.obsolete():
         return 'x'
+    elif ctx.isunstable():
+        return '*'
     elif ctx.closesbranch():
         return '_'
     else:
@@ -608,6 +635,7 @@ def showobsfate(**args):
     # the verbosity templatekw available.
     succsandmarkers = showsuccsandmarkers(**args)
 
+    args = pycompat.byteskwargs(args)
     ui = args['ui']
 
     values = []
@@ -816,7 +844,7 @@ def showphase(repo, ctx, templ, **args):
 
 @templatekeyword('phaseidx')
 def showphaseidx(repo, ctx, templ, **args):
-    """Integer. The changeset phase index."""
+    """Integer. The changeset phase index. (ADVANCED)"""
     return ctx.phase()
 
 @templatekeyword('rev')
@@ -860,12 +888,6 @@ def showtags(**args):
     """List of strings. Any tags associated with the changeset."""
     return shownames('tags', **args)
 
-def loadkeyword(ui, extname, registrarobj):
-    """Load template keyword from specified registrarobj
-    """
-    for name, func in registrarobj._table.iteritems():
-        keywords[name] = func
-
 @templatekeyword('termwidth')
 def showtermwidth(repo, ctx, templ, **args):
     """Integer. The width of the current terminal."""
@@ -890,6 +912,25 @@ def showinstabilities(**args):
     args = pycompat.byteskwargs(args)
     return showlist('instability', args['ctx'].instabilities(), args,
                     plural='instabilities')
+
+@templatekeyword('verbosity')
+def showverbosity(ui, **args):
+    """String. The current output verbosity in 'debug', 'quiet', 'verbose',
+    or ''."""
+    # see cmdutil.changeset_templater for priority of these flags
+    if ui.debugflag:
+        return 'debug'
+    elif ui.quiet:
+        return 'quiet'
+    elif ui.verbose:
+        return 'verbose'
+    return ''
+
+def loadkeyword(ui, extname, registrarobj):
+    """Load template keyword from specified registrarobj
+    """
+    for name, func in registrarobj._table.iteritems():
+        keywords[name] = func
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = keywords.values()

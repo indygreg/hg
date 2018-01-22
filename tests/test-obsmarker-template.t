@@ -13,7 +13,7 @@ Global setup
   > evolution=true
   > [templates]
   > obsfatesuccessors = "{if(successors, " as ")}{join(successors, ", ")}"
-  > obsfateverb = "{obsfateverb(successors)}"
+  > obsfateverb = "{obsfateverb(successors, markers)}"
   > obsfateoperations = "{if(obsfateoperations(markers), " using {join(obsfateoperations(markers), ", ")}")}"
   > obsfateusers = "{if(obsfateusers(markers), " by {join(obsfateusers(markers), ", ")}")}"
   > obsfatedate = "{if(obsfatedate(markers), "{ifeq(min(obsfatedate(markers)), max(obsfatedate(markers)), " (at {min(obsfatedate(markers))|isodate})", " (between {min(obsfatedate(markers))|isodate} and {max(obsfatedate(markers))|isodate})")}")}"
@@ -75,6 +75,8 @@ Test setup
 Check templates
 ---------------
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: d004c8f274b9)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -146,6 +148,8 @@ Predecessors template should show current revision as it is the working copy
      summary:     ROOT
   
   $ hg up 'desc(A1)' --hidden
+  updating to a hidden changeset a468dc9b3633
+  (hidden revision 'a468dc9b3633' was rewritten as: d004c8f274b9)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -248,9 +252,9 @@ visible.
   @  d004c8f274b9
   |
   | x  a468dc9b3633
-  |/     Obsfate: [{"markers": [["a468dc9b36338b14fdb7825f55ce3df4e71517ad", ["d004c8f274b9ec480a47a93c10dac5eee63adb78"], 0, [["operation", "amend"], ["user", "test2"]], [987654321.0, 0], null]], "successors": ["d004c8f274b9ec480a47a93c10dac5eee63adb78"]}]
+  |/     Obsfate: [{"markers": [["a468dc9b36338b14fdb7825f55ce3df4e71517ad", ["d004c8f274b9ec480a47a93c10dac5eee63adb78"], 0, [["ef1", "1"], ["operation", "amend"], ["user", "test2"]], [987654321.0, 0], null]], "successors": ["d004c8f274b9ec480a47a93c10dac5eee63adb78"]}]
   | x  471f378eab4c
-  |/     Obsfate: [{"markers": [["471f378eab4c5e25f6c77f785b27c936efb22874", ["a468dc9b36338b14fdb7825f55ce3df4e71517ad"], 0, [["operation", "amend"], ["user", "test"]], [1234567890.0, 0], null]], "successors": ["a468dc9b36338b14fdb7825f55ce3df4e71517ad"]}]
+  |/     Obsfate: [{"markers": [["471f378eab4c5e25f6c77f785b27c936efb22874", ["a468dc9b36338b14fdb7825f55ce3df4e71517ad"], 0, [["ef1", "9"], ["operation", "amend"], ["user", "test"]], [1234567890.0, 0], null]], "successors": ["a468dc9b36338b14fdb7825f55ce3df4e71517ad"]}]
   o  ea207398892e
   
 
@@ -413,6 +417,8 @@ Check templates
 ---------------
 
   $ hg up 'obsolete()' --hidden
+  updating to a hidden changeset 471597cad322
+  (hidden revision '471597cad322' was split as: 337fec4d2edc, f257fde29c7a)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -588,6 +594,7 @@ Simulate a fold
   created new head
   $ hg debugobsolete `getid "desc(A0)"` `getid "desc(C0)"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)"` `getid "desc(C0)"`
   obsoleted 1 changesets
 
@@ -620,6 +627,8 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -644,6 +653,8 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
   $ hg up 'desc(B0)' --hidden
+  updating to a hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show both predecessors as they should be both
@@ -809,8 +820,11 @@ Test setup
      summary:     ROOT
   
   $ hg update --hidden 'desc(A0)'
+  updating to a hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: fdf9bde5129a)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m "A2"
+  2 new content-divergent changesets
   $ hg log --hidden -G
   @  changeset:   3:65b757b745b9
   |  tag:         tip
@@ -820,7 +834,7 @@ Test setup
   |  instability: content-divergent
   |  summary:     A2
   |
-  | o  changeset:   2:fdf9bde5129a
+  | *  changeset:   2:fdf9bde5129a
   |/   parent:      0:ea207398892e
   |    user:        test
   |    date:        Thu Jan 01 00:00:00 1970 +0000
@@ -856,7 +870,7 @@ Test setup
   |    obsolete:    rewritten using amend as 4:019fadeab383
   |    summary:     A2
   |
-  | o  changeset:   2:fdf9bde5129a
+  | *  changeset:   2:fdf9bde5129a
   |/   parent:      0:ea207398892e
   |    user:        test
   |    date:        Thu Jan 01 00:00:00 1970 +0000
@@ -880,16 +894,18 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' has diverged)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
   $ hg tlog
-  o  019fadeab383
+  *  019fadeab383
   |    Predecessors: 1:471f378eab4c
   |    semi-colon: 1:471f378eab4c
   |    json: ["471f378eab4c5e25f6c77f785b27c936efb22874"]
   |    map: 1:471f378eab4c5e25f6c77f785b27c936efb22874
-  | o  fdf9bde5129a
+  | *  fdf9bde5129a
   |/     Predecessors: 1:471f378eab4c
   |      semi-colon: 1:471f378eab4c
   |      json: ["471f378eab4c5e25f6c77f785b27c936efb22874"]
@@ -902,9 +918,9 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
   $ hg fatelog
-  o  019fadeab383
+  *  019fadeab383
   |
-  | o  fdf9bde5129a
+  | *  fdf9bde5129a
   |/
   | @  471f378eab4c
   |/     Obsfate: rewritten using amend as 2:fdf9bde5129a by test (at 1970-01-01 00:00 +0000); rewritten using amend as 4:019fadeab383 by test (at 1970-01-01 00:00 +0000);
@@ -916,7 +932,7 @@ Predecessors template should show current revision as it is the working copy
 Predecessors template should not show predecessors as they are not displayed in
 the log
   $ hg tlog
-  o  019fadeab383
+  *  019fadeab383
   |
   | @  fdf9bde5129a
   |/
@@ -924,7 +940,7 @@ the log
   
 
   $ hg fatelog
-  o  019fadeab383
+  *  019fadeab383
   |
   | @  fdf9bde5129a
   |/
@@ -933,7 +949,7 @@ the log
 Predecessors template should the predecessors as we force their display with
 --hidden
   $ hg tlog --hidden
-  o  019fadeab383
+  *  019fadeab383
   |    Predecessors: 3:65b757b745b9
   |    semi-colon: 3:65b757b745b9
   |    json: ["65b757b745b935093c87a2bccd877521cccffcbd"]
@@ -960,7 +976,7 @@ Predecessors template should the predecessors as we force their display with
   
 
   $ hg fatelog --hidden
-  o  019fadeab383
+  *  019fadeab383
   |
   | x  65b757b745b9
   |/     Obsfate: rewritten using amend as 4:019fadeab383 by test (at 1970-01-01 00:00 +0000);
@@ -972,14 +988,14 @@ Predecessors template should the predecessors as we force their display with
   
 
   $ hg fatelogjson --hidden
-  o  019fadeab383
+  *  019fadeab383
   |
   | x  65b757b745b9
-  |/     Obsfate: [{"markers": [["65b757b745b935093c87a2bccd877521cccffcbd", ["019fadeab383f6699fa83ad7bdb4d82ed2c0e5ab"], 0, [["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["019fadeab383f6699fa83ad7bdb4d82ed2c0e5ab"]}]
+  |/     Obsfate: [{"markers": [["65b757b745b935093c87a2bccd877521cccffcbd", ["019fadeab383f6699fa83ad7bdb4d82ed2c0e5ab"], 0, [["ef1", "1"], ["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["019fadeab383f6699fa83ad7bdb4d82ed2c0e5ab"]}]
   | @  fdf9bde5129a
   |/
   | x  471f378eab4c
-  |/     Obsfate: [{"markers": [["471f378eab4c5e25f6c77f785b27c936efb22874", ["fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e"], 0, [["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e"]}, {"markers": [["471f378eab4c5e25f6c77f785b27c936efb22874", ["65b757b745b935093c87a2bccd877521cccffcbd"], 0, [["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["65b757b745b935093c87a2bccd877521cccffcbd"]}]
+  |/     Obsfate: [{"markers": [["471f378eab4c5e25f6c77f785b27c936efb22874", ["fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e"], 0, [["ef1", "1"], ["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e"]}, {"markers": [["471f378eab4c5e25f6c77f785b27c936efb22874", ["65b757b745b935093c87a2bccd877521cccffcbd"], 0, [["ef1", "1"], ["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["65b757b745b935093c87a2bccd877521cccffcbd"]}]
   o  ea207398892e
   
 
@@ -987,7 +1003,7 @@ Check other fatelog implementations
 -----------------------------------
 
   $ hg fatelogkw --hidden -q
-  o  019fadeab383
+  *  019fadeab383
   |
   | x  65b757b745b9
   |/     Obsfate: rewritten using amend as 4:019fadeab383
@@ -999,7 +1015,7 @@ Check other fatelog implementations
   o  ea207398892e
   
   $ hg fatelogkw --hidden
-  o  019fadeab383
+  *  019fadeab383
   |
   | x  65b757b745b9
   |/     Obsfate: rewritten using amend as 4:019fadeab383
@@ -1011,7 +1027,7 @@ Check other fatelog implementations
   o  ea207398892e
   
   $ hg fatelogkw --hidden -v
-  o  019fadeab383
+  *  019fadeab383
   |
   | x  65b757b745b9
   |/     Obsfate: rewritten using amend as 4:019fadeab383 by test (at 1970-01-01 00:00 +0000)
@@ -1023,7 +1039,7 @@ Check other fatelog implementations
   o  ea207398892e
   
   $ hg log -G -T "default" --hidden
-  o  changeset:   4:019fadeab383
+  *  changeset:   4:019fadeab383
   |  tag:         tip
   |  parent:      0:ea207398892e
   |  user:        test
@@ -1105,6 +1121,7 @@ Test setup
   created new head
   $ hg debugobsolete `getid "desc(A0)"` `getid "desc(C0)"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid "desc(B1)"` `getid "desc(C0)"`
   obsoleted 1 changesets
 
@@ -1144,6 +1161,8 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
+  updating to a hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
 Predecessors template should show current revision as it is the working copy
@@ -1168,6 +1187,8 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
   $ hg up 'desc(B0)' --hidden
+  updating to a hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should both predecessors as they are visible
@@ -1198,6 +1219,8 @@ Predecessors template should both predecessors as they are visible
   o  ea207398892e
   
   $ hg up 'desc(B1)' --hidden
+  updating to a hidden changeset b7ea6d14e664
+  (hidden revision 'b7ea6d14e664' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Predecessors template should both predecessors as they are visible
@@ -1287,7 +1310,7 @@ with --hidden
   | x  b7ea6d14e664
   | |    Obsfate: [{"markers": [["b7ea6d14e664bdc8922221f7992631b50da3fb07", ["eb5a0daa21923bbf8caeb2c42085b9e463861fd0"], 0, [["user", "test"]], [0.0, 0], null]], "successors": ["eb5a0daa21923bbf8caeb2c42085b9e463861fd0"]}]
   | | x  0dec01379d3b
-  | |/     Obsfate: [{"markers": [["0dec01379d3be6318c470ead31b1fe7ae7cb53d5", ["b7ea6d14e664bdc8922221f7992631b50da3fb07"], 0, [["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["b7ea6d14e664bdc8922221f7992631b50da3fb07"]}]
+  | |/     Obsfate: [{"markers": [["0dec01379d3be6318c470ead31b1fe7ae7cb53d5", ["b7ea6d14e664bdc8922221f7992631b50da3fb07"], 0, [["ef1", "1"], ["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["b7ea6d14e664bdc8922221f7992631b50da3fb07"]}]
   | x  471f378eab4c
   |/     Obsfate: [{"markers": [["471f378eab4c5e25f6c77f785b27c936efb22874", ["eb5a0daa21923bbf8caeb2c42085b9e463861fd0"], 0, [["user", "test"]], [0.0, 0], null]], "successors": ["eb5a0daa21923bbf8caeb2c42085b9e463861fd0"]}]
   o  ea207398892e
@@ -1419,7 +1442,7 @@ Test setup
   
   $ cd $TESTTMP/templates-local-remote-markers-2
   $ hg pull
-  pulling from $TESTTMP/templates-local-remote-markers-1 (glob)
+  pulling from $TESTTMP/templates-local-remote-markers-1
   searching for changes
   adding changesets
   adding manifests
@@ -1450,8 +1473,8 @@ Test setup
   
 
   $ hg debugobsolete
-  471f378eab4c5e25f6c77f785b27c936efb22874 fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
-  fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e 7a230b46bf61e50b30308c6cfd7bd1269ef54702 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  471f378eab4c5e25f6c77f785b27c936efb22874 fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
+  fdf9bde5129a28d4548fadd3f62b265cdd3b7a2e 7a230b46bf61e50b30308c6cfd7bd1269ef54702 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
 
 Check templates
 ---------------
@@ -1579,6 +1602,7 @@ Create the cycle
 
   $ hg debugobsolete `getid "desc(A0)"` `getid "desc(B0)"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)"` `getid "desc(C0)"`
   obsoleted 1 changesets
   $ hg debugobsolete `getid "desc(B0)"` `getid "desc(A0)"`
@@ -1599,6 +1623,8 @@ Check templates
   
 
   $ hg up -r "desc(B0)" --hidden
+  updating to a hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' is pruned)
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg tlog
   o  f897c6137566
@@ -1863,10 +1889,12 @@ Diverge one of the splitted commit
   $ hg up 6
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg commit --amend -m "Add only B"
+  1 new orphan changesets
 
   $ hg up 6 --hidden
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m "Add B only"
+  4 new content-divergent changesets
 
   $ hg log -G
   @  changeset:   9:0b997eb7ceee
@@ -1877,14 +1905,14 @@ Diverge one of the splitted commit
   |  instability: content-divergent
   |  summary:     Add B only
   |
-  | o  changeset:   8:b18bc8331526
+  | *  changeset:   8:b18bc8331526
   |/   parent:      5:dd800401bd8c
   |    user:        test
   |    date:        Thu Jan 01 00:00:00 1970 +0000
   |    instability: content-divergent
   |    summary:     Add only B
   |
-  | o  changeset:   7:ba2ed02b0c9a
+  | *  changeset:   7:ba2ed02b0c9a
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  instability: orphan, content-divergent
@@ -1897,7 +1925,7 @@ Diverge one of the splitted commit
   |    obsolete:    rewritten using amend as 9:0b997eb7ceee
   |    summary:     Add A,B,C
   |
-  o  changeset:   5:dd800401bd8c
+  *  changeset:   5:dd800401bd8c
   |  parent:      3:f897c6137566
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
@@ -1925,19 +1953,19 @@ Check templates
   |    semi-colon: 6:4a004186e638
   |    json: ["4a004186e63889f20cb16434fcbd72220bd1eace"]
   |    map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
-  | o  b18bc8331526
+  | *  b18bc8331526
   |/     Predecessors: 6:4a004186e638
   |      semi-colon: 6:4a004186e638
   |      json: ["4a004186e63889f20cb16434fcbd72220bd1eace"]
   |      map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
-  | o  ba2ed02b0c9a
+  | *  ba2ed02b0c9a
   | |
   | x  4a004186e638
   |/     Successors: 8:b18bc8331526; 9:0b997eb7ceee
   |      multi-line: 8:b18bc8331526
   |      multi-line: 9:0b997eb7ceee
   |      json: [["b18bc8331526a22cbb1801022bd1555bf291c48b"], ["0b997eb7ceeee06200a02f8aab185979092d514e"]]
-  o  dd800401bd8c
+  *  dd800401bd8c
   |
   o  f897c6137566
   |
@@ -1946,13 +1974,13 @@ Check templates
   $ hg fatelog
   @  0b997eb7ceee
   |
-  | o  b18bc8331526
+  | *  b18bc8331526
   |/
-  | o  ba2ed02b0c9a
+  | *  ba2ed02b0c9a
   | |
   | x  4a004186e638
   |/     Obsfate: rewritten using amend as 8:b18bc8331526 by test (at 1970-01-01 00:00 +0000); rewritten using amend as 9:0b997eb7ceee by test (at 1970-01-01 00:00 +0000);
-  o  dd800401bd8c
+  *  dd800401bd8c
   |
   o  f897c6137566
   |
@@ -1964,12 +1992,12 @@ Check templates
   |    semi-colon: 6:4a004186e638
   |    json: ["4a004186e63889f20cb16434fcbd72220bd1eace"]
   |    map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
-  | o  b18bc8331526
+  | *  b18bc8331526
   |/     Predecessors: 6:4a004186e638
   |      semi-colon: 6:4a004186e638
   |      json: ["4a004186e63889f20cb16434fcbd72220bd1eace"]
   |      map: 6:4a004186e63889f20cb16434fcbd72220bd1eace
-  | o  ba2ed02b0c9a
+  | *  ba2ed02b0c9a
   | |    Predecessors: 4:9bd10a0775e4
   | |    semi-colon: 4:9bd10a0775e4
   | |    json: ["9bd10a0775e478708cada5f176ec6de654359ce7"]
@@ -1983,7 +2011,7 @@ Check templates
   |      multi-line: 8:b18bc8331526
   |      multi-line: 9:0b997eb7ceee
   |      json: [["b18bc8331526a22cbb1801022bd1555bf291c48b"], ["0b997eb7ceeee06200a02f8aab185979092d514e"]]
-  o  dd800401bd8c
+  *  dd800401bd8c
   |    Predecessors: 4:9bd10a0775e4
   |    semi-colon: 4:9bd10a0775e4
   |    json: ["9bd10a0775e478708cada5f176ec6de654359ce7"]
@@ -2019,13 +2047,13 @@ Check templates
   $ hg fatelog --hidden
   @  0b997eb7ceee
   |
-  | o  b18bc8331526
+  | *  b18bc8331526
   |/
-  | o  ba2ed02b0c9a
+  | *  ba2ed02b0c9a
   | |
   | x  4a004186e638
   |/     Obsfate: rewritten using amend as 8:b18bc8331526 by test (at 1970-01-01 00:00 +0000); rewritten using amend as 9:0b997eb7ceee by test (at 1970-01-01 00:00 +0000);
-  o  dd800401bd8c
+  *  dd800401bd8c
   |
   | x  9bd10a0775e4
   |/     Obsfate: split as 5:dd800401bd8c, 6:4a004186e638, 7:ba2ed02b0c9a by test (at 1970-01-01 00:00 +0000);
@@ -2040,13 +2068,13 @@ Check templates
   $ hg fatelogjson --hidden
   @  0b997eb7ceee
   |
-  | o  b18bc8331526
+  | *  b18bc8331526
   |/
-  | o  ba2ed02b0c9a
+  | *  ba2ed02b0c9a
   | |
   | x  4a004186e638
-  |/     Obsfate: [{"markers": [["4a004186e63889f20cb16434fcbd72220bd1eace", ["b18bc8331526a22cbb1801022bd1555bf291c48b"], 0, [["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["b18bc8331526a22cbb1801022bd1555bf291c48b"]}, {"markers": [["4a004186e63889f20cb16434fcbd72220bd1eace", ["0b997eb7ceeee06200a02f8aab185979092d514e"], 0, [["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["0b997eb7ceeee06200a02f8aab185979092d514e"]}]
-  o  dd800401bd8c
+  |/     Obsfate: [{"markers": [["4a004186e63889f20cb16434fcbd72220bd1eace", ["b18bc8331526a22cbb1801022bd1555bf291c48b"], 0, [["ef1", "1"], ["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["b18bc8331526a22cbb1801022bd1555bf291c48b"]}, {"markers": [["4a004186e63889f20cb16434fcbd72220bd1eace", ["0b997eb7ceeee06200a02f8aab185979092d514e"], 0, [["ef1", "1"], ["operation", "amend"], ["user", "test"]], [0.0, 0], null]], "successors": ["0b997eb7ceeee06200a02f8aab185979092d514e"]}]
+  *  dd800401bd8c
   |
   | x  9bd10a0775e4
   |/     Obsfate: [{"markers": [["9bd10a0775e478708cada5f176ec6de654359ce7", ["dd800401bd8c79d815329277739e433e883f784e", "4a004186e63889f20cb16434fcbd72220bd1eace", "ba2ed02b0c9a56b9fdbc4e79c7e57866984d8a1f"], 0, [["user", "test"]], [0.0, 0], null]], "successors": ["dd800401bd8c79d815329277739e433e883f784e", "4a004186e63889f20cb16434fcbd72220bd1eace", "ba2ed02b0c9a56b9fdbc4e79c7e57866984d8a1f"]}]
@@ -2059,26 +2087,28 @@ Check templates
   o  ea207398892e
   
   $ hg up --hidden 4
+  updating to a hidden changeset 9bd10a0775e4
+  (hidden revision '9bd10a0775e4' has diverged)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg rebase -r 7 -d 8 --config extensions.rebase=
   rebasing 7:ba2ed02b0c9a "Add A,B,C"
   $ hg tlog
-  o  eceed8f98ffc
+  *  eceed8f98ffc
   |    Predecessors: 4:9bd10a0775e4
   |    semi-colon: 4:9bd10a0775e4
   |    json: ["9bd10a0775e478708cada5f176ec6de654359ce7"]
   |    map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
-  | o  0b997eb7ceee
+  | *  0b997eb7ceee
   | |    Predecessors: 4:9bd10a0775e4
   | |    semi-colon: 4:9bd10a0775e4
   | |    json: ["9bd10a0775e478708cada5f176ec6de654359ce7"]
   | |    map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
-  o |  b18bc8331526
+  * |  b18bc8331526
   |/     Predecessors: 4:9bd10a0775e4
   |      semi-colon: 4:9bd10a0775e4
   |      json: ["9bd10a0775e478708cada5f176ec6de654359ce7"]
   |      map: 4:9bd10a0775e478708cada5f176ec6de654359ce7
-  o  dd800401bd8c
+  *  dd800401bd8c
   |    Predecessors: 4:9bd10a0775e4
   |    semi-colon: 4:9bd10a0775e4
   |    json: ["9bd10a0775e478708cada5f176ec6de654359ce7"]
@@ -2094,13 +2124,13 @@ Check templates
   
 
   $ hg fatelog
-  o  eceed8f98ffc
+  *  eceed8f98ffc
   |
-  | o  0b997eb7ceee
+  | *  0b997eb7ceee
   | |
-  o |  b18bc8331526
+  * |  b18bc8331526
   |/
-  o  dd800401bd8c
+  *  dd800401bd8c
   |
   | @  9bd10a0775e4
   |/     Obsfate: split using amend, rebase as 5:dd800401bd8c, 9:0b997eb7ceee, 10:eceed8f98ffc by test (at 1970-01-01 00:00 +0000); split using amend, rebase as 5:dd800401bd8c, 8:b18bc8331526, 10:eceed8f98ffc by test (at 1970-01-01 00:00 +0000);
@@ -2112,18 +2142,18 @@ Check other fatelog implementations
 -----------------------------------
 
   $ hg fatelogkw --hidden -q
-  o  eceed8f98ffc
+  *  eceed8f98ffc
   |
-  | o  0b997eb7ceee
+  | *  0b997eb7ceee
   | |
-  o |  b18bc8331526
+  * |  b18bc8331526
   |/
   | x  ba2ed02b0c9a
   | |    Obsfate: rewritten using rebase as 10:eceed8f98ffc
   | x  4a004186e638
   |/     Obsfate: rewritten using amend as 8:b18bc8331526
   |      Obsfate: rewritten using amend as 9:0b997eb7ceee
-  o  dd800401bd8c
+  *  dd800401bd8c
   |
   | @  9bd10a0775e4
   |/     Obsfate: split as 5:dd800401bd8c, 6:4a004186e638, 7:ba2ed02b0c9a
@@ -2137,18 +2167,18 @@ Check other fatelog implementations
   o  ea207398892e
   
   $ hg fatelogkw --hidden
-  o  eceed8f98ffc
+  *  eceed8f98ffc
   |
-  | o  0b997eb7ceee
+  | *  0b997eb7ceee
   | |
-  o |  b18bc8331526
+  * |  b18bc8331526
   |/
   | x  ba2ed02b0c9a
   | |    Obsfate: rewritten using rebase as 10:eceed8f98ffc
   | x  4a004186e638
   |/     Obsfate: rewritten using amend as 8:b18bc8331526
   |      Obsfate: rewritten using amend as 9:0b997eb7ceee
-  o  dd800401bd8c
+  *  dd800401bd8c
   |
   | @  9bd10a0775e4
   |/     Obsfate: split as 5:dd800401bd8c, 6:4a004186e638, 7:ba2ed02b0c9a
@@ -2162,18 +2192,18 @@ Check other fatelog implementations
   o  ea207398892e
   
   $ hg fatelogkw --hidden -v
-  o  eceed8f98ffc
+  *  eceed8f98ffc
   |
-  | o  0b997eb7ceee
+  | *  0b997eb7ceee
   | |
-  o |  b18bc8331526
+  * |  b18bc8331526
   |/
   | x  ba2ed02b0c9a
   | |    Obsfate: rewritten using rebase as 10:eceed8f98ffc by test (at 1970-01-01 00:00 +0000)
   | x  4a004186e638
   |/     Obsfate: rewritten using amend as 8:b18bc8331526 by test (at 1970-01-01 00:00 +0000)
   |      Obsfate: rewritten using amend as 9:0b997eb7ceee by test (at 1970-01-01 00:00 +0000)
-  o  dd800401bd8c
+  *  dd800401bd8c
   |
   | @  9bd10a0775e4
   |/     Obsfate: split as 5:dd800401bd8c, 6:4a004186e638, 7:ba2ed02b0c9a by test (at 1970-01-01 00:00 +0000)
@@ -2187,7 +2217,7 @@ Check other fatelog implementations
   o  ea207398892e
   
   $ hg log -G -T "default" --hidden
-  o  changeset:   10:eceed8f98ffc
+  *  changeset:   10:eceed8f98ffc
   |  tag:         tip
   |  parent:      8:b18bc8331526
   |  user:        test
@@ -2195,14 +2225,14 @@ Check other fatelog implementations
   |  instability: content-divergent
   |  summary:     Add A,B,C
   |
-  | o  changeset:   9:0b997eb7ceee
+  | *  changeset:   9:0b997eb7ceee
   | |  parent:      5:dd800401bd8c
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  instability: content-divergent
   | |  summary:     Add B only
   | |
-  o |  changeset:   8:b18bc8331526
+  * |  changeset:   8:b18bc8331526
   |/   parent:      5:dd800401bd8c
   |    user:        test
   |    date:        Thu Jan 01 00:00:00 1970 +0000
@@ -2222,7 +2252,7 @@ Check other fatelog implementations
   |    obsolete:    rewritten using amend as 9:0b997eb7ceee
   |    summary:     Add A,B,C
   |
-  o  changeset:   5:dd800401bd8c
+  *  changeset:   5:dd800401bd8c
   |  parent:      3:f897c6137566
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
@@ -2303,6 +2333,8 @@ Test setup
   obsoleted 1 changesets
 
   $ hg up -r "desc(A0)" --hidden
+  updating to a hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg commit --amend -m "A2"
   $ hg debugobsolete --record-parent `getid "."`
@@ -2312,6 +2344,8 @@ Check output
 ------------
 
   $ hg up "desc(A0)" --hidden
+  updating to a hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg tlog
   @  471f378eab4c
@@ -2465,6 +2499,8 @@ Check templates
 ---------------
 
   $ hg up 'desc("A0")' --hidden
+  updating to a hidden changeset 471597cad322
+  (hidden revision '471597cad322' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 # todo: the obsfate output is not ideal
@@ -2476,6 +2512,8 @@ Check templates
   o  ea207398892e
   
   $ hg up -r 'desc("A2")' --hidden
+  updating to a hidden changeset 0d0ef4bdf70e
+  (hidden revision '0d0ef4bdf70e' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg fatelog --hidden

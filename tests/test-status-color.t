@@ -29,6 +29,22 @@ hg status in repo root:
   [status.unknown|? ][status.unknown|b/2/in_b_2]
   [status.unknown|? ][status.unknown|b/in_b]
   [status.unknown|? ][status.unknown|in_root]
+HGPLAIN disables color
+  $ HGPLAIN=1 hg status --color=debug
+  ? a/1/in_a_1 (glob)
+  ? a/in_a (glob)
+  ? b/1/in_b_1 (glob)
+  ? b/2/in_b_2 (glob)
+  ? b/in_b (glob)
+  ? in_root
+HGPLAINEXCEPT=color does not disable color
+  $ HGPLAINEXCEPT=color hg status --color=debug
+  [status.unknown|? ][status.unknown|a/1/in_a_1] (glob)
+  [status.unknown|? ][status.unknown|a/in_a] (glob)
+  [status.unknown|? ][status.unknown|b/1/in_b_1] (glob)
+  [status.unknown|? ][status.unknown|b/2/in_b_2] (glob)
+  [status.unknown|? ][status.unknown|b/in_b] (glob)
+  [status.unknown|? ][status.unknown|in_root]
 
 hg status with template
   $ hg status -T "{label('red', path)}\n" --color=debug
@@ -363,7 +379,7 @@ test 'resolve -l'
   warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 2 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg resolve -m b
 

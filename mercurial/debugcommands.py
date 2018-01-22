@@ -69,6 +69,7 @@ from . import (
     templater,
     treediscovery,
     upgrade,
+    url as urlmod,
     util,
     vfs as vfsmod,
 )
@@ -179,11 +180,11 @@ def debugbuilddag(ui, repo, text=None,
         ui.progress(_('building'), id, unit=_('revisions'), total=total)
         for type, data in dagparser.parsedag(text):
             if type == 'n':
-                ui.note(('node %s\n' % str(data)))
+                ui.note(('node %s\n' % pycompat.bytestr(data)))
                 id, ps = data
 
                 files = []
-                fctxs = {}
+                filecontent = {}
 
                 p2 = None
                 if mergeable_file:
@@ -204,27 +205,30 @@ def debugbuilddag(ui, repo, text=None,
                     ml[id * linesperrev] += " r%i" % id
                     mergedtext = "\n".join(ml)
                     files.append(fn)
-                    fctxs[fn] = context.memfilectx(repo, fn, mergedtext)
+                    filecontent[fn] = mergedtext
 
                 if overwritten_file:
                     fn = "of"
                     files.append(fn)
-                    fctxs[fn] = context.memfilectx(repo, fn, "r%i\n" % id)
+                    filecontent[fn] = "r%i\n" % id
 
                 if new_file:
                     fn = "nf%i" % id
                     files.append(fn)
-                    fctxs[fn] = context.memfilectx(repo, fn, "r%i\n" % id)
+                    filecontent[fn] = "r%i\n" % id
                     if len(ps) > 1:
                         if not p2:
                             p2 = repo[ps[1]]
                         for fn in p2:
                             if fn.startswith("nf"):
                                 files.append(fn)
-                                fctxs[fn] = p2[fn]
+                                filecontent[fn] = p2[fn].data()
 
                 def fctxfn(repo, cx, path):
-                    return fctxs.get(path)
+                    if path in filecontent:
+                        return context.memfilectx(repo, cx, path,
+                                                  filecontent[path])
+                    return None
 
                 if len(ps) == 0 or ps[0] < 0:
                     pars = [None, None]
@@ -296,7 +300,7 @@ def _debugobsmarkers(ui, part, indent=0, **opts):
         msg %= indent_string, exc.version, len(data)
         ui.write(msg)
     else:
-        msg = "%sversion: %s (%d bytes)\n"
+        msg = "%sversion: %d (%d bytes)\n"
         msg %= indent_string, version, len(data)
         ui.write(msg)
         fm = ui.formatter('debugobsolete', opts)
@@ -359,6 +363,25 @@ def debugbundle(ui, bundlepath, all=None, spec=None, **opts):
         if isinstance(gen, bundle2.unbundle20):
             return _debugbundle2(ui, gen, all=all, **opts)
         _debugchangegroup(ui, gen, all=all, **opts)
+
+@command('debugcapabilities',
+        [], _('PATH'),
+        norepo=True)
+def debugcapabilities(ui, path, **opts):
+    """lists the capabilities of a remote peer"""
+    opts = pycompat.byteskwargs(opts)
+    peer = hg.peer(ui, opts, path)
+    caps = peer.capabilities()
+    ui.write(('Main capabilities:\n'))
+    for c in sorted(caps):
+        ui.write(('  %s\n') % c)
+    b2caps = bundle2.bundle2caps(peer)
+    if b2caps:
+        ui.write(('Bundle2 capabilities:\n'))
+        for key, values in sorted(b2caps.iteritems()):
+            ui.write(('  %s\n') % key)
+            for v in values:
+                ui.write(('    %s\n') % v)
 
 @command('debugcheckstate', [], '')
 def debugcheckstate(ui, repo):
@@ -569,11 +592,23 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                     the delta chain for this revision
     :``extraratio``: extradist divided by chainsize; another representation of
                     how much unrelated data is needed to load this delta chain
+
+    If the repository is configured to use the sparse read, additional keywords
+    are available:
+
+    :``readsize``:     total size of data read from the disk for a revision
+                       (sum of the sizes of all the blocks)
+    :``largestblock``: size of the largest block of data read from the disk
+    :``readdensity``:  density of useful bytes in the data read from the disk
+    :``srchunks``:  in how many data hunks the whole revision would be read
+
+    The sparse read can be enabled with experimental.sparse-read = True
     """
     opts = pycompat.byteskwargs(opts)
     r = cmdutil.openrevlog(repo, 'debugdeltachain', file_, opts)
     index = r.index
     generaldelta = r.version & revlog.FLAG_GENERALDELTA
+    withsparseread = getattr(r, '_withsparseread', False)
 
     def revinfo(rev):
         e = index[rev]
@@ -609,15 +644,20 @@ def debugdeltachain(ui, repo, file_=None, **opts):
 
     fm.plain('    rev  chain# chainlen     prev   delta       '
              'size    rawsize  chainsize     ratio   lindist extradist '
-             'extraratio\n')
+             'extraratio')
+    if withsparseread:
+        fm.plain('   readsize largestblk rddensity srchunks')
+    fm.plain('\n')
 
     chainbases = {}
     for rev in r:
         comp, uncomp, deltatype, chain, chainsize = revinfo(rev)
         chainbase = chain[0]
         chainid = chainbases.setdefault(chainbase, len(chainbases) + 1)
-        basestart = r.start(chainbase)
-        revstart = r.start(rev)
+        start = r.start
+        length = r.length
+        basestart = start(chainbase)
+        revstart = start(rev)
         lineardist = revstart + comp - basestart
         extradist = lineardist - chainsize
         try:
@@ -632,7 +672,7 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         fm.write('rev chainid chainlen prevrev deltatype compsize '
                  'uncompsize chainsize chainratio lindist extradist '
                  'extraratio',
-                 '%7d %7d %8d %8d %7s %10d %10d %10d %9.5f %9d %9d %10.5f\n',
+                 '%7d %7d %8d %8d %7s %10d %10d %10d %9.5f %9d %9d %10.5f',
                  rev, chainid, len(chain), prevrev, deltatype, comp,
                  uncomp, chainsize, chainratio, lineardist, extradist,
                  extraratio,
@@ -641,6 +681,29 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                  uncompsize=uncomp, chainsize=chainsize,
                  chainratio=chainratio, lindist=lineardist,
                  extradist=extradist, extraratio=extraratio)
+        if withsparseread:
+            readsize = 0
+            largestblock = 0
+            srchunks = 0
+
+            for revschunk in revlog._slicechunk(r, chain):
+                srchunks += 1
+                blkend = start(revschunk[-1]) + length(revschunk[-1])
+                blksize = blkend - start(revschunk[0])
+
+                readsize += blksize
+                if largestblock < blksize:
+                    largestblock = blksize
+
+            readdensity = float(chainsize) / float(readsize)
+
+            fm.write('readsize largestblock readdensity srchunks',
+                     ' %10d %10d %9.5f %8d',
+                     readsize, largestblock, readdensity, srchunks,
+                     readsize=readsize, largestblock=largestblock,
+                     readdensity=readdensity, srchunks=srchunks)
+
+        fm.plain('\n')
 
     fm.end()
 
@@ -665,8 +728,9 @@ def debugstate(ui, repo, **opts):
         elif nodates:
             timestr = 'set                 '
         else:
-            timestr = time.strftime("%Y-%m-%d %H:%M:%S ",
+            timestr = time.strftime(r"%Y-%m-%d %H:%M:%S ",
                                     time.localtime(ent[3]))
+            timestr = encoding.strtolocal(timestr)
         if ent[1] & 0o20000:
             mode = 'lnk'
         else:
@@ -679,24 +743,21 @@ def debugstate(ui, repo, **opts):
     [('', 'old', None, _('use old-style discovery')),
     ('', 'nonheads', None,
      _('use old-style discovery with non-heads included')),
+    ('', 'rev', [], 'restrict discovery to this set of revs'),
     ] + cmdutil.remoteopts,
-    _('[-l REV] [-r REV] [-b BRANCH]... [OTHER]'))
+    _('[--rev REV] [OTHER]'))
 def debugdiscovery(ui, repo, remoteurl="default", **opts):
     """runs the changeset discovery protocol in isolation"""
     opts = pycompat.byteskwargs(opts)
-    remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl),
-                                      opts.get('branch'))
+    remoteurl, branches = hg.parseurl(ui.expandpath(remoteurl))
     remote = hg.peer(repo, opts, remoteurl)
     ui.status(_('comparing with %s\n') % util.hidepassword(remoteurl))
 
     # make sure tests are repeatable
     random.seed(12323)
 
-    def doit(localheads, remoteheads, remote=remote):
+    def doit(pushedrevs, remoteheads, remote=remote):
         if opts.get('old'):
-            if localheads:
-                raise error.Abort('cannot use localheads with old style '
-                                 'discovery')
             if not util.safehasattr(remote, 'branches'):
                 # enable in-client legacy support
                 remote = localrepo.locallegacypeer(remote.local())
@@ -710,7 +771,12 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
                 all = dag.ancestorset(dag.internalizeall(common))
                 common = dag.externalizeall(dag.headsetofconnecteds(all))
         else:
-            common, any, hds = setdiscovery.findcommonheads(ui, repo, remote)
+            nodes = None
+            if pushedrevs:
+                revs = scmutil.revrange(repo, pushedrevs)
+                nodes = [repo[r].node() for r in revs]
+            common, any, hds = setdiscovery.findcommonheads(ui, repo, remote,
+                                                            ancestorsof=nodes)
         common = set(common)
         rheads = set(hds)
         lheads = set(repo.heads())
@@ -721,26 +787,33 @@ def debugdiscovery(ui, repo, remoteurl="default", **opts):
         elif rheads <= common:
             ui.write(("remote is subset\n"))
 
-    serverlogs = opts.get('serverlog')
-    if serverlogs:
-        for filename in serverlogs:
-            with open(filename, 'r') as logfile:
-                line = logfile.readline()
-                while line:
-                    parts = line.strip().split(';')
-                    op = parts[1]
-                    if op == 'cg':
-                        pass
-                    elif op == 'cgss':
-                        doit(parts[2].split(' '), parts[3].split(' '))
-                    elif op == 'unb':
-                        doit(parts[3].split(' '), parts[2].split(' '))
-                    line = logfile.readline()
-    else:
-        remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches,
-                                                 opts.get('remote_head'))
-        localrevs = opts.get('local_head')
-        doit(localrevs, remoterevs)
+    remoterevs, _checkout = hg.addbranchrevs(repo, remote, branches, revs=None)
+    localrevs = opts['rev']
+    doit(localrevs, remoterevs)
+
+_chunksize = 4 << 10
+
+@command('debugdownload',
+    [
+        ('o', 'output', '', _('path')),
+    ],
+    optionalrepo=True)
+def debugdownload(ui, repo, url, output=None, **opts):
+    """download a resource using Mercurial logic and config
+    """
+    fh = urlmod.open(ui, url, output)
+
+    dest = ui
+    if output:
+        dest = open(output, "wb", _chunksize)
+    try:
+        data = fh.read(_chunksize)
+        while data:
+            dest.write(data)
+            data = fh.read(_chunksize)
+    finally:
+        if output:
+            dest.close()
 
 @command('debugextensions', cmdutil.formatteropts, [], norepo=True)
 def debugextensions(ui, **opts):
@@ -801,9 +874,74 @@ def debugfileset(ui, repo, expr, **opts):
     for f in ctx.getfileset(expr):
         ui.write("%s\n" % f)
 
+@command('debugformat',
+         [] + cmdutil.formatteropts,
+        _(''))
+def debugformat(ui, repo, **opts):
+    """display format information about the current repository
+
+    Use --verbose to get extra information about current config value and
+    Mercurial default."""
+    opts = pycompat.byteskwargs(opts)
+    maxvariantlength = max(len(fv.name) for fv in upgrade.allformatvariant)
+    maxvariantlength = max(len('format-variant'), maxvariantlength)
+
+    def makeformatname(name):
+        return '%s:' + (' ' * (maxvariantlength - len(name)))
+
+    fm = ui.formatter('debugformat', opts)
+    if fm.isplain():
+        def formatvalue(value):
+            if util.safehasattr(value, 'startswith'):
+                return value
+            if value:
+                return 'yes'
+            else:
+                return 'no'
+    else:
+        formatvalue = pycompat.identity
+
+    fm.plain('format-variant')
+    fm.plain(' ' * (maxvariantlength - len('format-variant')))
+    fm.plain(' repo')
+    if ui.verbose:
+        fm.plain(' config default')
+    fm.plain('\n')
+    for fv in upgrade.allformatvariant:
+        fm.startitem()
+        repovalue = fv.fromrepo(repo)
+        configvalue = fv.fromconfig(repo)
+
+        if repovalue != configvalue:
+            namelabel = 'formatvariant.name.mismatchconfig'
+            repolabel = 'formatvariant.repo.mismatchconfig'
+        elif repovalue != fv.default:
+            namelabel = 'formatvariant.name.mismatchdefault'
+            repolabel = 'formatvariant.repo.mismatchdefault'
+        else:
+            namelabel = 'formatvariant.name.uptodate'
+            repolabel = 'formatvariant.repo.uptodate'
+
+        fm.write('name', makeformatname(fv.name), fv.name,
+                 label=namelabel)
+        fm.write('repo', ' %3s', formatvalue(repovalue),
+                 label=repolabel)
+        if fv.default != configvalue:
+            configlabel = 'formatvariant.config.special'
+        else:
+            configlabel = 'formatvariant.config.default'
+        fm.condwrite(ui.verbose, 'config', ' %6s', formatvalue(configvalue),
+                     label=configlabel)
+        fm.condwrite(ui.verbose, 'default', ' %7s', formatvalue(fv.default),
+                     label='formatvariant.default')
+        fm.plain('\n')
+    fm.end()
+
 @command('debugfsinfo', [], _('[PATH]'), norepo=True)
 def debugfsinfo(ui, path="."):
     """show information detected about current filesystem"""
+    ui.write(('path: %s\n') % path)
+    ui.write(('mounted on: %s\n') % (util.getfsmountpoint(path) or '(unknown)'))
     ui.write(('exec: %s\n') % (util.checkexec(path) and 'yes' or 'no'))
     ui.write(('fstype: %s\n') % (util.getfstype(path) or '(unknown)'))
     ui.write(('symlink: %s\n') % (util.checklink(path) and 'yes' or 'no'))
@@ -1066,6 +1204,11 @@ def debuginstall(ui, **opts):
              fm.formatlist([e.name() for e in wirecompengines
                             if e.wireprotosupport()],
                            name='compengine', fmt='%s', sep=', '))
+    re2 = 'missing'
+    if util._re2:
+        re2 = 'available'
+    fm.plain(_('checking "re2" regexp engine (%s)\n') % re2)
+    fm.data(re2=bool(util._re2))
 
     # templates
     p = templater.templatepaths()
@@ -1155,7 +1298,10 @@ def debuglabelcomplete(ui, repo, *args):
 @command('debuglocks',
          [('L', 'force-lock', None, _('free the store lock (DANGEROUS)')),
           ('W', 'force-wlock', None,
-           _('free the working state lock (DANGEROUS)'))],
+           _('free the working state lock (DANGEROUS)')),
+          ('s', 'set-lock', None, _('set the store lock until stopped')),
+          ('S', 'set-wlock', None,
+           _('set the working state lock until stopped'))],
          _('[OPTION]...'))
 def debuglocks(ui, repo, **opts):
     """show or modify state of locks
@@ -1174,6 +1320,10 @@ def debuglocks(ui, repo, **opts):
     instance, on a shared filesystem). Removing locks may also be
     blocked by filesystem permissions.
 
+    Setting a lock will prevent other commands from changing the data.
+    The command will wait until an interruption (SIGINT, SIGTERM, ...) occurs.
+    The set locks are removed when the command exits.
+
     Returns 0 if no locks are held.
 
     """
@@ -1182,8 +1332,26 @@ def debuglocks(ui, repo, **opts):
         repo.svfs.unlink('lock')
     if opts.get(r'force_wlock'):
         repo.vfs.unlink('wlock')
-    if opts.get(r'force_lock') or opts.get(r'force_lock'):
+    if opts.get(r'force_lock') or opts.get(r'force_wlock'):
         return 0
+
+    locks = []
+    try:
+        if opts.get(r'set_wlock'):
+            try:
+                locks.append(repo.wlock(False))
+            except error.LockHeld:
+                raise error.Abort(_('wlock is already held'))
+        if opts.get(r'set_lock'):
+            try:
+                locks.append(repo.lock(False))
+            except error.LockHeld:
+                raise error.Abort(_('lock is already held'))
+        if len(locks):
+            ui.promptchoice(_("ready to release the lock (y)? $$ &Yes"))
+            return 0
+    finally:
+        release(*locks)
 
     now = time.time()
     held = 0
@@ -2170,15 +2338,11 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
     cache = {}
     ctx2str = str
     node2str = short
-    if ui.debug():
-        def ctx2str(ctx):
-            return ctx.hex()
-        node2str = hex
     for rev in scmutil.revrange(repo, revs):
         ctx = repo[rev]
         ui.write('%s\n'% ctx2str(ctx))
         for succsset in obsutil.successorssets(repo, ctx.node(),
-                                                closest=opts['closest'],
+                                                closest=opts[r'closest'],
                                                 cache=cache):
             if succsset:
                 ui.write('    ')
@@ -2228,8 +2392,8 @@ def debugtemplate(ui, repo, tmpl, **opts):
             ui.note(("* expanded:\n"), templater.prettyformat(newtree), '\n')
 
     if revs is None:
-        t = formatter.maketemplater(ui, tmpl)
-        props['ui'] = ui
+        tres = formatter.templateresources(ui, repo)
+        t = formatter.maketemplater(ui, tmpl, resources=tres)
         ui.write(t.render(props))
     else:
         displayer = cmdutil.makelogtemplater(ui, repo, tmpl)
@@ -2304,6 +2468,7 @@ def debugwireargs(ui, repopath, *vals, **opts):
     for k, v in opts.iteritems():
         if v:
             args[k] = v
+    args = pycompat.strkwargs(args)
     # run twice to check that we don't mess up the stream for the next command
     res1 = repo.debugwireargs(*vals, **args)
     res2 = repo.debugwireargs(*vals, **args)

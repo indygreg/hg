@@ -36,6 +36,7 @@ from . import (
     match as matchmod,
     mdiff,
     obsolete as obsmod,
+    obsutil,
     patch,
     pathutil,
     phases,
@@ -354,7 +355,7 @@ class basectx(object):
             ctx2 = self.p1()
         if ctx2 is not None:
             ctx2 = self._repo[ctx2]
-        diffopts = patch.diffopts(self._repo.ui, opts)
+        diffopts = patch.diffopts(self._repo.ui, pycompat.byteskwargs(opts))
         return patch.diff(self._repo, ctx2, self, match=match, opts=diffopts)
 
     def dirs(self):
@@ -433,8 +434,20 @@ def _filterederror(repo, changeid):
     This is extracted in a function to help extensions (eg: evolve) to
     experiment with various message variants."""
     if repo.filtername.startswith('visible'):
-        msg = _("hidden revision '%s'") % changeid
+
+        # Check if the changeset is obsolete
+        unfilteredrepo = repo.unfiltered()
+        ctx = unfilteredrepo[changeid]
+
+        # If the changeset is obsolete, enrich the message with the reason
+        # that made this changeset not visible
+        if ctx.obsolete():
+            msg = obsutil._getfilteredreason(repo, changeid, ctx)
+        else:
+            msg = _("hidden revision '%s'") % changeid
+
         hint = _('use --hidden to access hidden revisions')
+
         return error.FilteredRepoLookupError(msg, hint=hint)
     msg = _("filtered revision '%s' (not in '%s' subset)")
     msg %= (changeid, repo.filtername)
@@ -615,10 +628,13 @@ class changectx(basectx):
     def closesbranch(self):
         return 'close' in self._changeset.extra
     def extra(self):
+        """Return a dict of extra information."""
         return self._changeset.extra
     def tags(self):
+        """Return a list of byte tag names"""
         return self._repo.nodetags(self._node)
     def bookmarks(self):
+        """Return a list of byte bookmark names."""
         return self._repo.nodebookmarks(self._node)
     def phase(self):
         return self._repo._phasecache.phase(self._repo, self._rev)
@@ -629,7 +645,11 @@ class changectx(basectx):
         return False
 
     def children(self):
-        """return contexts for each child changeset"""
+        """return list of changectx contexts for each child changeset.
+
+        This returns only the immediate child changesets. Use descendants() to
+        recursively walk children.
+        """
         c = self._repo.changelog.children(self._node)
         return [changectx(self._repo, x) for x in c]
 
@@ -638,6 +658,10 @@ class changectx(basectx):
             yield changectx(self._repo, a)
 
     def descendants(self):
+        """Recursively yield all children of the changeset.
+
+        For just the immediate children, use children()
+        """
         for d in self._repo.changelog.descendants([self._rev]):
             yield changectx(self._repo, d)
 
@@ -819,6 +843,10 @@ class basefilectx(object):
         return self._changectx.phase()
     def phasestr(self):
         return self._changectx.phasestr()
+    def obsolete(self):
+        return self._changectx.obsolete()
+    def instabilities(self):
+        return self._changectx.instabilities()
     def manifest(self):
         return self._changectx.manifest()
     def changectx(self):
@@ -931,6 +959,14 @@ class basefilectx(object):
             return self.linkrev()
         return self._adjustlinkrev(self.rev(), inclusive=True)
 
+    def introfilectx(self):
+        """Return filectx having identical contents, but pointing to the
+        changeset revision where this filectx was introduced"""
+        introrev = self.introrev()
+        if self.rev() == introrev:
+            return self
+        return self.filectx(self.filenode(), changeid=introrev)
+
     def _parentfilectx(self, path, fileid, filelog):
         """create parent filectx keeping ancestry info for _adjustlinkrev()"""
         fctx = filectx(self._repo, path, fileid=fileid, filelog=filelog)
@@ -1021,19 +1057,16 @@ class basefilectx(object):
             return pl
 
         # use linkrev to find the first changeset where self appeared
-        base = self
-        introrev = self.introrev()
-        if self.rev() != introrev:
-            base = self.filectx(self.filenode(), changeid=introrev)
+        base = self.introfilectx()
         if getattr(base, '_ancestrycontext', None) is None:
             cl = self._repo.changelog
-            if introrev is None:
+            if base.rev() is None:
                 # wctx is not inclusive, but works because _ancestrycontext
                 # is used to test filelog revisions
                 ac = cl.ancestors([p.rev() for p in base.parents()],
                                   inclusive=True)
             else:
-                ac = cl.ancestors([introrev], inclusive=True)
+                ac = cl.ancestors([base.rev()], inclusive=True)
             base._ancestrycontext = ac
 
         # This algorithm would prefer to be recursive, but Python is a
@@ -1088,7 +1121,7 @@ class basefilectx(object):
                 hist[f] = curr
                 del pcache[f]
 
-        return zip(hist[base][0], hist[base][1].splitlines(True))
+        return pycompat.ziplist(hist[base][0], hist[base][1].splitlines(True))
 
     def ancestors(self, followfirst=False):
         visit = {}
@@ -1633,9 +1666,6 @@ class workingctx(committablectx):
                               listsubrepos=listsubrepos, badfn=badfn,
                               icasefs=icasefs)
 
-    def flushall(self):
-        pass # For overlayworkingfilectx compatibility.
-
     def _filtersuspectsymlink(self, files):
         if not files or self._repo.dirstate._checklink:
             return files
@@ -1932,10 +1962,11 @@ class workingfilectx(committablefilectx):
         """wraps unlink for a repo's working directory"""
         self._repo.wvfs.unlinkpath(self._path, ignoremissing=ignoremissing)
 
-    def write(self, data, flags, backgroundclose=False):
+    def write(self, data, flags, backgroundclose=False, **kwargs):
         """wraps repo.wwrite"""
         self._repo.wwrite(self._path, data, flags,
-                          backgroundclose=backgroundclose)
+                          backgroundclose=backgroundclose,
+                          **kwargs)
 
     def markcopied(self, src):
         """marks this file a copy of `src`"""
@@ -1959,25 +1990,33 @@ class workingfilectx(committablefilectx):
     def setflags(self, l, x):
         self._repo.wvfs.setflags(self._path, l, x)
 
-class overlayworkingctx(workingctx):
-    """Wraps another mutable context with a write-back cache that can be flushed
-    at a later time.
+class overlayworkingctx(committablectx):
+    """Wraps another mutable context with a write-back cache that can be
+    converted into a commit context.
 
     self._cache[path] maps to a dict with keys: {
         'exists': bool?
         'date': date?
         'data': str?
         'flags': str?
+        'copied': str? (path or None)
     }
     If `exists` is True, `flags` must be non-None and 'date' is non-None. If it
     is `False`, the file was deleted.
     """
 
-    def __init__(self, repo, wrappedctx):
+    def __init__(self, repo):
         super(overlayworkingctx, self).__init__(repo)
         self._repo = repo
+        self.clean()
+
+    def setbase(self, wrappedctx):
         self._wrappedctx = wrappedctx
-        self._clean()
+        self._parents = [wrappedctx]
+        # Drop old manifest cache as it is now out of date.
+        # This is necessary when, e.g., rebasing several nodes with one
+        # ``overlayworkingctx`` (e.g. with --collapse).
+        util.clearcachedproperty(self, '_manifest')
 
     def data(self, path):
         if self.isdirty(path):
@@ -1989,9 +2028,46 @@ class overlayworkingctx(workingctx):
                     return self._wrappedctx[path].data()
             else:
                 raise error.ProgrammingError("No such file or directory: %s" %
-                                             self._path)
+                                             path)
         else:
             return self._wrappedctx[path].data()
+
+    @propertycache
+    def _manifest(self):
+        parents = self.parents()
+        man = parents[0].manifest().copy()
+
+        flag = self._flagfunc
+        for path in self.added():
+            man[path] = addednodeid
+            man.setflag(path, flag(path))
+        for path in self.modified():
+            man[path] = modifiednodeid
+            man.setflag(path, flag(path))
+        for path in self.removed():
+            del man[path]
+        return man
+
+    @propertycache
+    def _flagfunc(self):
+        def f(path):
+            return self._cache[path]['flags']
+        return f
+
+    def files(self):
+        return sorted(self.added() + self.modified() + self.removed())
+
+    def modified(self):
+        return [f for f in self._cache.keys() if self._cache[f]['exists'] and
+                self._existsinparent(f)]
+
+    def added(self):
+        return [f for f in self._cache.keys() if self._cache[f]['exists'] and
+                not self._existsinparent(f)]
+
+    def removed(self):
+        return [f for f in self._cache.keys() if
+                not self._cache[f]['exists'] and self._existsinparent(f)]
 
     def isinmemory(self):
         return True
@@ -2001,6 +2077,18 @@ class overlayworkingctx(workingctx):
             return self._cache[path]['date']
         else:
             return self._wrappedctx[path].date()
+
+    def markcopied(self, path, origin):
+        if self.isdirty(path):
+            self._cache[path]['copied'] = origin
+        else:
+            raise error.ProgrammingError('markcopied() called on clean context')
+
+    def copydata(self, path):
+        if self.isdirty(path):
+            return self._cache[path]['copied']
+        else:
+            raise error.ProgrammingError('copydata() called on clean context')
 
     def flags(self, path):
         if self.isdirty(path):
@@ -2012,9 +2100,60 @@ class overlayworkingctx(workingctx):
         else:
             return self._wrappedctx[path].flags()
 
-    def write(self, path, data, flags=''):
+    def _existsinparent(self, path):
+        try:
+            # ``commitctx` raises a ``ManifestLookupError`` if a path does not
+            # exist, unlike ``workingctx``, which returns a ``workingfilectx``
+            # with an ``exists()`` function.
+            self._wrappedctx[path]
+            return True
+        except error.ManifestLookupError:
+            return False
+
+    def _auditconflicts(self, path):
+        """Replicates conflict checks done by wvfs.write().
+
+        Since we never write to the filesystem and never call `applyupdates` in
+        IMM, we'll never check that a path is actually writable -- e.g., because
+        it adds `a/foo`, but `a` is actually a file in the other commit.
+        """
+        def fail(path, component):
+            # p1() is the base and we're receiving "writes" for p2()'s
+            # files.
+            if 'l' in self.p1()[component].flags():
+                raise error.Abort("error: %s conflicts with symlink %s "
+                                  "in %s." % (path, component,
+                                              self.p1().rev()))
+            else:
+                raise error.Abort("error: '%s' conflicts with file '%s' in "
+                                  "%s." % (path, component,
+                                           self.p1().rev()))
+
+        # Test that each new directory to be created to write this path from p2
+        # is not a file in p1.
+        components = path.split('/')
+        for i in xrange(len(components)):
+            component = "/".join(components[0:i])
+            if component in self.p1():
+                fail(path, component)
+
+        # Test the other direction -- that this path from p2 isn't a directory
+        # in p1 (test that p1 doesn't any paths matching `path/*`).
+        match = matchmod.match('/', '', [path + '/'], default=b'relpath')
+        matches = self.p1().manifest().matches(match)
+        if len(matches) > 0:
+            if len(matches) == 1 and matches.keys()[0] == path:
+                return
+            raise error.Abort("error: file '%s' cannot be written because "
+                              " '%s/' is a folder in %s (containing %d "
+                              "entries: %s)"
+                              % (path, path, self.p1(), len(matches),
+                                 ', '.join(matches.keys())))
+
+    def write(self, path, data, flags='', **kwargs):
         if data is None:
             raise error.ProgrammingError("data must be non-None")
+        self._auditconflicts(path)
         self._markdirty(path, exists=True, data=data, date=util.makedate(),
                         flags=flags)
 
@@ -2037,13 +2176,15 @@ class overlayworkingctx(workingctx):
                 return self.exists(self._cache[path]['data'].strip())
             else:
                 return self._cache[path]['exists']
-        return self._wrappedctx[path].exists()
+
+        return self._existsinparent(path)
 
     def lexists(self, path):
         """lexists returns True if the path exists"""
         if self.isdirty(path):
             return self._cache[path]['exists']
-        return self._wrappedctx[path].lexists()
+
+        return self._existsinparent(path)
 
     def size(self, path):
         if self.isdirty(path):
@@ -2054,48 +2195,90 @@ class overlayworkingctx(workingctx):
                                              self._path)
         return self._wrappedctx[path].size()
 
-    def flushall(self):
-        for path in self._writeorder:
-            entry = self._cache[path]
-            if entry['exists']:
-                self._wrappedctx[path].clearunknown()
-                if entry['data'] is not None:
-                    if entry['flags'] is None:
-                        raise error.ProgrammingError('data set but not flags')
-                    self._wrappedctx[path].write(
-                        entry['data'],
-                        entry['flags'])
-                else:
-                    self._wrappedctx[path].setflags(
-                        'l' in entry['flags'],
-                        'x' in entry['flags'])
+    def tomemctx(self, text, branch=None, extra=None, date=None, parents=None,
+                 user=None, editor=None):
+        """Converts this ``overlayworkingctx`` into a ``memctx`` ready to be
+        committed.
+
+        ``text`` is the commit message.
+        ``parents`` (optional) are rev numbers.
+        """
+        # Default parents to the wrapped contexts' if not passed.
+        if parents is None:
+            parents = self._wrappedctx.parents()
+            if len(parents) == 1:
+                parents = (parents[0], None)
+
+        # ``parents`` is passed as rev numbers; convert to ``commitctxs``.
+        if parents[1] is None:
+            parents = (self._repo[parents[0]], None)
+        else:
+            parents = (self._repo[parents[0]], self._repo[parents[1]])
+
+        files = self._cache.keys()
+        def getfile(repo, memctx, path):
+            if self._cache[path]['exists']:
+                return memfilectx(repo, memctx, path,
+                                  self._cache[path]['data'],
+                                  'l' in self._cache[path]['flags'],
+                                  'x' in self._cache[path]['flags'],
+                                  self._cache[path]['copied'])
             else:
-                self._wrappedctx[path].remove(path)
-        self._clean()
+                # Returning None, but including the path in `files`, is
+                # necessary for memctx to register a deletion.
+                return None
+        return memctx(self._repo, parents, text, files, getfile, date=date,
+                      extra=extra, user=user, branch=branch, editor=editor)
 
     def isdirty(self, path):
         return path in self._cache
 
-    def _clean(self):
+    def isempty(self):
+        # We need to discard any keys that are actually clean before the empty
+        # commit check.
+        self._compact()
+        return len(self._cache) == 0
+
+    def clean(self):
         self._cache = {}
-        self._writeorder = []
+
+    def _compact(self):
+        """Removes keys from the cache that are actually clean, by comparing
+        them with the underlying context.
+
+        This can occur during the merge process, e.g. by passing --tool :local
+        to resolve a conflict.
+        """
+        keys = []
+        for path in self._cache.keys():
+            cache = self._cache[path]
+            try:
+                underlying = self._wrappedctx[path]
+                if (underlying.data() == cache['data'] and
+                            underlying.flags() == cache['flags']):
+                    keys.append(path)
+            except error.ManifestLookupError:
+                # Path not in the underlying manifest (created).
+                continue
+
+        for path in keys:
+            del self._cache[path]
+        return keys
 
     def _markdirty(self, path, exists, data=None, date=None, flags=''):
-        if path not in self._cache:
-            self._writeorder.append(path)
-
         self._cache[path] = {
             'exists': exists,
             'data': data,
             'date': date,
             'flags': flags,
+            'copied': None,
         }
 
     def filectx(self, path, filelog=None):
         return overlayworkingfilectx(self._repo, path, parent=self,
                                      filelog=filelog)
 
-class overlayworkingfilectx(workingfilectx):
+class overlayworkingfilectx(committablefilectx):
     """Wrap a ``workingfilectx`` but intercepts all writes into an in-memory
     cache, which can be flushed through later by calling ``flush()``."""
 
@@ -2109,7 +2292,7 @@ class overlayworkingfilectx(workingfilectx):
     def cmp(self, fctx):
         return self.data() != fctx.data()
 
-    def ctx(self):
+    def changectx(self):
         return self._parent
 
     def data(self):
@@ -2125,15 +2308,16 @@ class overlayworkingfilectx(workingfilectx):
         return self._parent.exists(self._path)
 
     def renamed(self):
-        # Copies are currently tracked in the dirstate as before. Straight copy
-        # from workingfilectx.
-        rp = self._repo.dirstate.copied(self._path)
-        if not rp:
+        path = self._parent.copydata(self._path)
+        if not path:
             return None
-        return rp, self._changectx._parents[0]._manifest.get(rp, nullid)
+        return path, self._changectx._parents[0]._manifest.get(path, nullid)
 
     def size(self):
         return self._parent.size(self._path)
+
+    def markcopied(self, origin):
+        self._parent.markcopied(self._path, origin)
 
     def audit(self):
         pass
@@ -2144,11 +2328,14 @@ class overlayworkingfilectx(workingfilectx):
     def setflags(self, islink, isexec):
         return self._parent.setflags(self._path, islink, isexec)
 
-    def write(self, data, flags, backgroundclose=False):
-        return self._parent.write(self._path, data, flags)
+    def write(self, data, flags, backgroundclose=False, **kwargs):
+        return self._parent.write(self._path, data, flags, **kwargs)
 
     def remove(self, ignoremissing=False):
         return self._parent.remove(self._path)
+
+    def clearunknown(self):
+        pass
 
 class workingcommitctx(workingctx):
     """A workingcommitctx object makes access to data related to
@@ -2215,9 +2402,9 @@ def memfilefromctx(ctx):
         copied = fctx.renamed()
         if copied:
             copied = copied[0]
-        return memfilectx(repo, path, fctx.data(),
+        return memfilectx(repo, memctx, path, fctx.data(),
                           islink=fctx.islink(), isexec=fctx.isexec(),
-                          copied=copied, memctx=memctx)
+                          copied=copied)
 
     return getfilectx
 
@@ -2231,9 +2418,8 @@ def memfilefrompatch(patchstore):
         if data is None:
             return None
         islink, isexec = mode
-        return memfilectx(repo, path, data, islink=islink,
-                          isexec=isexec, copied=copied,
-                          memctx=memctx)
+        return memfilectx(repo, memctx, path, data, islink=islink,
+                          isexec=isexec, copied=copied)
 
     return getfilectx
 
@@ -2365,8 +2551,8 @@ class memfilectx(committablefilectx):
 
     See memctx and committablefilectx for more details.
     """
-    def __init__(self, repo, path, data, islink=False,
-                 isexec=False, copied=None, memctx=None):
+    def __init__(self, repo, changectx, path, data, islink=False,
+                 isexec=False, copied=None):
         """
         path is the normalized file path relative to repository root.
         data is the file content as a string.
@@ -2374,7 +2560,7 @@ class memfilectx(committablefilectx):
         isexec is True if the file is executable.
         copied is the source file path if current file was copied in the
         revision being committed, or None."""
-        super(memfilectx, self).__init__(repo, path, None, memctx)
+        super(memfilectx, self).__init__(repo, path, None, changectx)
         self._data = data
         self._flags = (islink and 'l' or '') + (isexec and 'x' or '')
         self._copied = None
@@ -2389,7 +2575,7 @@ class memfilectx(committablefilectx):
         # need to figure out what to do here
         del self._changectx[self._path]
 
-    def write(self, data, flags):
+    def write(self, data, flags, **kwargs):
         """wraps repo.wwrite"""
         self._data = data
 
@@ -2598,7 +2784,7 @@ class arbitraryfilectx(object):
     def remove(self):
         util.unlink(self._path)
 
-    def write(self, data, flags):
+    def write(self, data, flags, **kwargs):
         assert not flags
         with open(self._path, "w") as f:
             f.write(data)

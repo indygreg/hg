@@ -47,7 +47,7 @@ Test setup
   $ mkcommit B0
   $ cd ../client
   $ hg pull
-  pulling from $TESTTMP/B3/server (glob)
+  pulling from $TESTTMP/B3/server
   searching for changes
   adding changesets
   adding manifests
@@ -61,6 +61,7 @@ Test setup
   created new head
   $ hg debugobsolete --record-parents `getid "desc(A0)"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)" ` `getid "desc(B1)"`
   obsoleted 1 changesets
   $ hg log -G --hidden
@@ -77,7 +78,7 @@ Actual testing
 --------------
 
   $ hg push
-  pushing to $TESTTMP/B3/server (glob)
+  pushing to $TESTTMP/B3/server
   searching for changes
   adding changesets
   adding manifests

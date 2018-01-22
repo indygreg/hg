@@ -17,15 +17,10 @@
 
 Test server address cannot be reused
 
-#if windows
   $ hg serve -p $HGPORT1 2>&1
-  abort: cannot start server at 'localhost:$HGPORT1': * (glob)
+  abort: cannot start server at 'localhost:$HGPORT1': $EADDRINUSE$
   [255]
-#else
-  $ hg serve -p $HGPORT1 2>&1
-  abort: cannot start server at 'localhost:$HGPORT1': Address already in use
-  [255]
-#endif
+
   $ cd ..
   $ cat hg1.pid hg2.pid >> $DAEMON_PIDS
 
@@ -253,66 +248,166 @@ test http authentication
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   $ hg rollback -q
+  $ hg -R dest push http://user:pass@localhost:$HGPORT2/ --debug --config devel.debug.peer-request=yes
+  pushing to http://user:***@localhost:$HGPORT2/
+  using http://localhost:$HGPORT2/
+  http auth: user user, password ****
+  sending capabilities command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=capabilities
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  query 1; heads
+  sending batch command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=batch
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   68 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  searching for changes
+  all remote heads known locally
+  preparing listkeys for "phases"
+  sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   16 bytes of commands arguments in headers
+  http auth: user user, password ****
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  received listkey for "phases": 58 bytes
+  checking for updated bookmarks
+  preparing listkeys for "bookmarks"
+  sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   19 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  received listkey for "bookmarks": 0 bytes
+  sending branchmap command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=branchmap
+  devel-peer-request:   Vary X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  sending branchmap command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=branchmap
+  devel-peer-request:   Vary X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  preparing listkeys for "bookmarks"
+  sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   19 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  received listkey for "bookmarks": 0 bytes
+  1 changesets found
+  list of changesets:
+  7f4e523d01f2cc3765ac8934da3d14db775ff872
+  bundle2-output-bundle: "HG20", 5 parts total
+  bundle2-output-part: "replycaps" 188 bytes payload
+  bundle2-output-part: "check:phases" 24 bytes payload
+  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
+  bundle2-output-part: "phase-heads" 24 bytes payload
+  sending unbundle command
+  sending 996 bytes
+  devel-peer-request: POST http://localhost:$HGPORT2/?cmd=unbundle
+  devel-peer-request:   Content-length 996
+  devel-peer-request:   Content-type application/mercurial-0.1
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   16 bytes of commands arguments in headers
+  devel-peer-request:   996 bytes of data
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  bundle2-input-bundle: no-transaction
+  bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
+  bundle2-input-part: "output" (advisory) (params: 0 advisory) supported
+  bundle2-input-part: total payload size 100
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+  bundle2-input-part: "output" (advisory) supported
+  bundle2-input-bundle: 2 parts total
+  preparing listkeys for "phases"
+  sending listkeys command
+  devel-peer-request: GET http://localhost:$HGPORT2/?cmd=listkeys
+  devel-peer-request:   Vary X-HgArg-1,X-HgProto-1
+  devel-peer-request:   X-hgproto-1 0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  devel-peer-request:   16 bytes of commands arguments in headers
+  devel-peer-request:   finished in *.???? seconds (200) (glob)
+  received listkey for "phases": 15 bytes
+  $ hg rollback -q
 
   $ sed 's/.*] "/"/' < ../access.log
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=stream_out HTTP/1.1" 401 - x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=stream_out HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bundlecaps=HG20%2Cbundle2%3DHG20%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=0&common=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=stream_out HTTP/1.1" 401 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=stream_out HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=getbundle HTTP/1.1" 401 - x-hgarg-1:bundlecaps=HG20%2Cbundle2%3DHG20%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=1&common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bundlecaps=HG20%2Cbundle2%3DHG20%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=1&common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=getbundle HTTP/1.1" 401 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 403 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 403 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365* (glob)
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=*zlib,none,bzip2 (glob)
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=capabilities HTTP/1.1" 200 -
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D7f4e523d01f2cc3765ac8934da3d14db775ff872 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 401 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
 
   $ cd ..
 

@@ -9,9 +9,11 @@ from __future__ import absolute_import
 
 import re
 
+from .i18n import _
 from . import (
+    node as nodemod,
     phases,
-    util
+    util,
 )
 
 class marker(object):
@@ -441,12 +443,12 @@ def getobsoleted(repo, tr):
     public = phases.public
     addedmarkers = tr.changes.get('obsmarkers')
     addedrevs = tr.changes.get('revs')
-    seenrevs = set(addedrevs)
+    seenrevs = set()
     obsoleted = set()
     for mark in addedmarkers:
         node = mark[0]
         rev = torev(node)
-        if rev is None or rev in seenrevs:
+        if rev is None or rev in seenrevs or rev in addedrevs:
             continue
         seenrevs.add(rev)
         if phase(repo, rev) == public:
@@ -751,8 +753,35 @@ def successorsandmarkers(repo, ctx):
 
     return values
 
-def successorsetverb(successorset):
-    """ Return the verb summarizing the successorset
+def _getobsfate(successorssets):
+    """ Compute a changeset obsolescence fate based on its successorssets.
+    Successors can be the tipmost ones or the immediate ones. This function
+    return values are not meant to be shown directly to users, it is meant to
+    be used by internal functions only.
+    Returns one fate from the following values:
+    - pruned
+    - diverged
+    - superseded
+    - superseded_split
+    """
+
+    if len(successorssets) == 0:
+        # The commit has been pruned
+        return 'pruned'
+    elif len(successorssets) > 1:
+        return 'diverged'
+    else:
+        # No divergence, only one set of successors
+        successors = successorssets[0]
+
+        if len(successors) == 1:
+            return 'superseded'
+        else:
+            return 'superseded_split'
+
+def obsfateverb(successorset, markers):
+    """ Return the verb summarizing the successorset and potentially using
+    information from the markers
     """
     if not successorset:
         verb = 'pruned'
@@ -795,7 +824,7 @@ def obsfateprinter(successors, markers, ui):
     line = []
 
     # Verb
-    line.append(successorsetverb(successors))
+    line.append(obsfateverb(successors, markers))
 
     # Operations
     operations = markersoperations(markers)
@@ -835,3 +864,43 @@ def obsfateprinter(successors, markers, ui):
             line.append(" (between %s and %s)" % (fmtmin_date, fmtmax_date))
 
     return "".join(line)
+
+
+filteredmsgtable = {
+    "pruned": _("hidden revision '%s' is pruned"),
+    "diverged": _("hidden revision '%s' has diverged"),
+    "superseded": _("hidden revision '%s' was rewritten as: %s"),
+    "superseded_split": _("hidden revision '%s' was split as: %s"),
+    "superseded_split_several": _("hidden revision '%s' was split as: %s and "
+                                  "%d more"),
+}
+
+def _getfilteredreason(repo, changeid, ctx):
+    """return a human-friendly string on why a obsolete changeset is hidden
+    """
+    successors = successorssets(repo, ctx.node())
+    fate = _getobsfate(successors)
+
+    # Be more precise in case the revision is superseded
+    if fate == 'pruned':
+        return filteredmsgtable['pruned'] % changeid
+    elif fate == 'diverged':
+        return filteredmsgtable['diverged'] % changeid
+    elif fate == 'superseded':
+        single_successor = nodemod.short(successors[0][0])
+        return filteredmsgtable['superseded'] % (changeid, single_successor)
+    elif fate == 'superseded_split':
+
+        succs = []
+        for node_id in successors[0]:
+            succs.append(nodemod.short(node_id))
+
+        if len(succs) <= 2:
+            fmtsuccs = ', '.join(succs)
+            return filteredmsgtable['superseded_split'] % (changeid, fmtsuccs)
+        else:
+            firstsuccessors = ', '.join(succs[:2])
+            remainingnumber = len(succs) - 2
+
+            args = (changeid, firstsuccessors, remainingnumber)
+            return filteredmsgtable['superseded_split_several'] % args

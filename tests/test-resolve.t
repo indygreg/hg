@@ -34,7 +34,7 @@ failing merge
   $ hg up -qC 2
   $ hg merge --tool=internal:fail 1
   0 files updated, 0 files merged, 0 files removed, 2 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
 resolve -l should contain unresolved entries
@@ -223,7 +223,7 @@ get back to conflicting state
   $ hg up -qC 2
   $ hg merge --tool=internal:fail 1
   0 files updated, 0 files merged, 0 files removed, 2 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
 
 resolve without arguments should suggest --all
@@ -249,7 +249,7 @@ resolve --all should re-merge all unresolved files
 .orig files should exists where specified
   $ hg resolve --all --verbose --config 'ui.origbackuppath=.hg/origbackups'
   merging file1
-  creating directory: $TESTTMP/repo/.hg/origbackups (glob)
+  creating directory: $TESTTMP/repo/.hg/origbackups
   merging file2
   warning: conflicts while merging file1! (edit, then use 'hg resolve --mark')
   warning: conflicts while merging file2! (edit, then use 'hg resolve --mark')
@@ -270,7 +270,7 @@ resolve <file> should re-merge file
 test .orig behavior with resolve
 
   $ hg resolve -q file1 --tool "sh -c 'f --dump \"$TESTTMP/repo/file1.orig\"'"
-  $TESTTMP/repo/file1.orig: (glob)
+  $TESTTMP/repo/file1.orig:
   >>>
   foo
   baz

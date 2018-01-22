@@ -42,6 +42,7 @@
         <Directory Id="templates.jsondir" Name="json">
           <Component Id="templates.json" Guid="$(var.templates.json.guid)" Win64='$(var.IsX64)'>
             <File Id="json.changelist.tmpl" Name="changelist.tmpl" KeyPath="yes" />
+            <File Id="json.graph.tmpl"      Name="graph.tmpl" />
             <File Id="json.map"             Name="map" />
           </Component>
         </Directory>
@@ -85,6 +86,7 @@
             <File Id="gitweb.filerevision.tmpl"   Name="filerevision.tmpl" />
             <File Id="gitweb.footer.tmpl"         Name="footer.tmpl" />
             <File Id="gitweb.graph.tmpl"          Name="graph.tmpl" />
+            <File Id="gitweb.graphentry.tmpl"     Name="graphentry.tmpl" />
             <File Id="gitweb.header.tmpl"         Name="header.tmpl" />
             <File Id="gitweb.index.tmpl"          Name="index.tmpl" />
             <File Id="gitweb.manifest.tmpl"       Name="manifest.tmpl" />
@@ -114,6 +116,7 @@
             <File Id="monoblue.filerevision.tmpl"   Name="filerevision.tmpl" />
             <File Id="monoblue.footer.tmpl"         Name="footer.tmpl" />
             <File Id="monoblue.graph.tmpl"          Name="graph.tmpl" />
+            <File Id="monoblue.graphentry.tmpl"     Name="graphentry.tmpl" />
             <File Id="monoblue.header.tmpl"         Name="header.tmpl" />
             <File Id="monoblue.index.tmpl"          Name="index.tmpl" />
             <File Id="monoblue.manifest.tmpl"       Name="manifest.tmpl" />
@@ -143,6 +146,7 @@
             <File Id="paper.filerevision.tmpl"  Name="filerevision.tmpl" />
             <File Id="paper.footer.tmpl"        Name="footer.tmpl" />
             <File Id="paper.graph.tmpl"         Name="graph.tmpl" />
+            <File Id="paper.graphentry.tmpl"    Name="graphentry.tmpl" />
             <File Id="paper.header.tmpl"        Name="header.tmpl" />
             <File Id="paper.index.tmpl"         Name="index.tmpl" />
             <File Id="paper.manifest.tmpl"      Name="manifest.tmpl" />
@@ -208,6 +212,7 @@
             <File Id="spartan.filerevision.tmpl"   Name="filerevision.tmpl" />
             <File Id="spartan.footer.tmpl"         Name="footer.tmpl" />
             <File Id="spartan.graph.tmpl"          Name="graph.tmpl" />
+            <File Id="spartan.graphentry.tmpl"     Name="graphentry.tmpl" />
             <File Id="spartan.header.tmpl"         Name="header.tmpl" />
             <File Id="spartan.index.tmpl"          Name="index.tmpl" />
             <File Id="spartan.manifest.tmpl"       Name="manifest.tmpl" />
@@ -225,7 +230,6 @@
             <File Id="static.background.png"     Name="background.png" KeyPath="yes" />
             <File Id="static.coal.file.png"      Name="coal-file.png" />
             <File Id="static.coal.folder.png"    Name="coal-folder.png" />
-            <File Id="static.excanvas.js"        Name="excanvas.js" />
             <File Id="static.followlines.js"     Name="followlines.js" />
             <File Id="static.mercurial.js"       Name="mercurial.js" />
             <File Id="static.hgicon.png"         Name="hgicon.png" />

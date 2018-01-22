@@ -305,9 +305,6 @@ class basematcher(object):
         Returns the string 'all' if the given directory and all subdirectories
         should be visited. Otherwise returns True or False indicating whether
         the given directory should be visited.
-
-        This function's behavior is undefined if it has returned False for
-        one of the dir's parent directories.
         '''
         return True
 
@@ -460,17 +457,10 @@ class exactmatcher(basematcher):
 
 class differencematcher(basematcher):
     '''Composes two matchers by matching if the first matches and the second
-    does not. Well, almost... If the user provides a pattern like "-X foo foo",
-    Mercurial actually does match "foo" against that. That's because exact
-    matches are treated specially. So, since this differencematcher is used for
-    excludes, it needs to special-case exact matching.
+    does not.
 
     The second matcher's non-matching-attributes (root, cwd, bad, explicitdir,
     traversedir) are ignored.
-
-    TODO: If we want to keep the behavior described above for exact matches, we
-    should consider instead treating the above case something like this:
-    union(exact(foo), difference(pattern(foo), include(foo)))
     '''
     def __init__(self, m1, m2):
         super(differencematcher, self).__init__(m1._root, m1._cwd)
@@ -481,7 +471,7 @@ class differencematcher(basematcher):
         self.traversedir = m1.traversedir
 
     def matchfn(self, f):
-        return self._m1(f) and (not self._m2(f) or self._m1.exact(f))
+        return self._m1(f) and not self._m2(f)
 
     @propertycache
     def _files(self):
@@ -496,9 +486,6 @@ class differencematcher(basematcher):
 
     def visitdir(self, dir):
         if self._m2.visitdir(dir) == 'all':
-            # There's a bug here: If m1 matches file 'dir/file' and m2 excludes
-            # 'dir' (recursively), we should still visit 'dir' due to the
-            # exception we have for exact matches.
             return False
         return bool(self._m1.visitdir(dir))
 

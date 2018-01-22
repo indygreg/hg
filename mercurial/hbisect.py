@@ -21,7 +21,7 @@ from . import (
     error,
 )
 
-def bisect(changelog, state):
+def bisect(repo, state):
     """find the next node (if any) for testing during a bisect search.
     returns a (nodes, number, good) tuple.
 
@@ -32,33 +32,15 @@ def bisect(changelog, state):
     if searching for a first bad one.
     """
 
+    changelog = repo.changelog
     clparents = changelog.parentrevs
     skip = set([changelog.rev(n) for n in state['skip']])
 
     def buildancestors(bad, good):
-        # only the earliest bad revision matters
         badrev = min([changelog.rev(n) for n in bad])
-        goodrevs = [changelog.rev(n) for n in good]
-        goodrev = min(goodrevs)
-        # build visit array
-        ancestors = [None] * (len(changelog) + 1) # an extra for [-1]
-
-        # set nodes descended from goodrevs
-        for rev in goodrevs:
+        ancestors = collections.defaultdict(lambda: None)
+        for rev in repo.revs("descendants(%ln) - ancestors(%ln)", good, good):
             ancestors[rev] = []
-        for rev in changelog.revs(goodrev + 1):
-            for prev in clparents(rev):
-                if ancestors[prev] == []:
-                    ancestors[rev] = []
-
-        # clear good revs from array
-        for rev in goodrevs:
-            ancestors[rev] = None
-        for rev in changelog.revs(len(changelog), goodrev):
-            if ancestors[rev] is None:
-                for prev in clparents(rev):
-                    ancestors[prev] = None
-
         if ancestors[badrev] is None:
             return badrev, None
         return badrev, ancestors

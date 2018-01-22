@@ -61,7 +61,7 @@ commit added file that has been deleted
   $ mkdir dir
   $ echo boo > dir/file
   $ hg add
-  adding dir/file (glob)
+  adding dir/file
   $ hg -v commit -m commit-9 dir
   committing files:
   dir/file
@@ -180,8 +180,8 @@ partial subdir commit test
   $ mkdir bar
   $ echo bar > bar/bar
   $ hg add
-  adding bar/bar (glob)
-  adding foo/foo (glob)
+  adding bar/bar
+  adding foo/foo
   $ HGEDITOR=cat hg ci -e -m commit-subdir-1 foo
   commit-subdir-1
   
@@ -648,7 +648,8 @@ verify pathauditor blocks evil filepaths
   > u = uimod.ui.load()
   > r = hg.repository(u, '.')
   > def filectxfn(repo, memctx, path):
-  >     return context.memfilectx(repo, path, '[hooks]\nupdate = echo owned')
+  >     return context.memfilectx(repo, memctx, path,
+  >         '[hooks]\nupdate = echo owned')
   > c = context.memctx(r, [r['tip'].node(), node.nullid],
   >                    'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
@@ -673,14 +674,15 @@ verify pathauditor blocks evil filepaths
   > u = uimod.ui.load()
   > r = hg.repository(u, '.')
   > def filectxfn(repo, memctx, path):
-  >     return context.memfilectx(repo, path, '[hooks]\nupdate = echo owned')
+  >     return context.memfilectx(repo, memctx, path,
+  >         '[hooks]\nupdate = echo owned')
   > c = context.memctx(r, [r['tip'].node(), node.nullid],
   >                    'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
   $ $PYTHON evil-commit.py
   $ hg co --clean tip
-  abort: path contains illegal component: HG~1/hgrc (glob)
+  abort: path contains illegal component: HG~1/hgrc
   [255]
 
   $ hg rollback -f
@@ -692,14 +694,15 @@ verify pathauditor blocks evil filepaths
   > u = uimod.ui.load()
   > r = hg.repository(u, '.')
   > def filectxfn(repo, memctx, path):
-  >     return context.memfilectx(repo, path, '[hooks]\nupdate = echo owned')
+  >     return context.memfilectx(repo, memctx, path,
+  >         '[hooks]\nupdate = echo owned')
   > c = context.memctx(r, [r['tip'].node(), node.nullid],
   >                    'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
   $ $PYTHON evil-commit.py
   $ hg co --clean tip
-  abort: path contains illegal component: HG8B6C~2/hgrc (glob)
+  abort: path contains illegal component: HG8B6C~2/hgrc
   [255]
 
 # test that an unmodified commit template message aborts

@@ -32,8 +32,7 @@ error paths
 #if execbit
   $ touch hg
   $ run-tests.py --with-hg=./hg
-  Usage: run-tests.py [options] [tests]
-  
+  usage: run-tests.py [options] [tests]
   run-tests.py: error: --with-hg must specify an executable hg script
   [2]
   $ rm hg
@@ -98,19 +97,22 @@ failing test
 
 test churn with globs
   $ cat > test-failure.t <<EOF
-  >   $ echo "bar-baz"; echo "bar-bad"
+  >   $ echo "bar-baz"; echo "bar-bad"; echo foo
   >   bar*bad (glob)
   >   bar*baz (glob)
+  >   | fo (re)
   > EOF
   $ rt test-failure.t
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
-  @@ -1,3 +1,3 @@
-     $ echo "bar-baz"; echo "bar-bad"
+  @@ -1,4 +1,4 @@
+     $ echo "bar-baz"; echo "bar-bad"; echo foo
   +  bar*baz (glob)
      bar*bad (glob)
   -  bar*baz (glob)
+  -  | fo (re)
+  +  foo
   
   ERROR: test-failure.t output changed
   !
@@ -126,11 +128,13 @@ test diff colorisation
   
   \x1b[38;5;124m--- $TESTTMP/test-failure.t\x1b[39m (esc)
   \x1b[38;5;34m+++ $TESTTMP/test-failure.t.err\x1b[39m (esc)
-  \x1b[38;5;90;01m@@ -1,3 +1,3 @@\x1b[39;00m (esc)
-     $ echo "bar-baz"; echo "bar-bad"
+  \x1b[38;5;90;01m@@ -1,4 +1,4 @@\x1b[39;00m (esc)
+     $ echo "bar-baz"; echo "bar-bad"; echo foo
   \x1b[38;5;34m+  bar*baz (glob)\x1b[39m (esc)
      bar*bad (glob)
   \x1b[38;5;124m-  bar*baz (glob)\x1b[39m (esc)
+  \x1b[38;5;124m-  | fo (re)\x1b[39m (esc)
+  \x1b[38;5;34m+  foo\x1b[39m (esc)
   
   \x1b[38;5;88mERROR: \x1b[39m\x1b[38;5;9mtest-failure.t\x1b[39m\x1b[38;5;88m output changed\x1b[39m (esc)
   !
@@ -145,11 +149,13 @@ test diff colorisation
   
   --- $TESTTMP/test-failure.t
   +++ $TESTTMP/test-failure.t.err
-  @@ -1,3 +1,3 @@
-     $ echo "bar-baz"; echo "bar-bad"
+  @@ -1,4 +1,4 @@
+     $ echo "bar-baz"; echo "bar-bad"; echo foo
   +  bar*baz (glob)
      bar*bad (glob)
   -  bar*baz (glob)
+  -  | fo (re)
+  +  foo
   
   ERROR: test-failure.t output changed
   !
@@ -674,7 +680,7 @@ Refuse the fix
 Interactive with custom view
 
   $ echo 'n' | rt -i --view echo
-  $TESTTMP/test-failure.t $TESTTMP/test-failure.t.err (glob)
+  $TESTTMP/test-failure.t $TESTTMP/test-failure.t.err
   Accept this change? [n]* (glob)
   ERROR: test-failure.t output changed
   !.
@@ -686,7 +692,7 @@ Interactive with custom view
 View the fix
 
   $ echo 'y' | rt --view echo
-  $TESTTMP/test-failure.t $TESTTMP/test-failure.t.err (glob)
+  $TESTTMP/test-failure.t $TESTTMP/test-failure.t.err
   
   ERROR: test-failure.t output changed
   !.
@@ -697,12 +703,14 @@ View the fix
 
 Accept the fix
 
-  $ echo "  $ echo 'saved backup bundle to \$TESTTMP/foo.hg'" >> test-failure.t
-  $ echo "  saved backup bundle to \$TESTTMP/foo.hg" >> test-failure.t
-  $ echo "  $ echo 'saved backup bundle to \$TESTTMP/foo.hg'" >> test-failure.t
-  $ echo "  saved backup bundle to \$TESTTMP/foo.hg (glob)" >> test-failure.t
-  $ echo "  $ echo 'saved backup bundle to \$TESTTMP/foo.hg'" >> test-failure.t
-  $ echo "  saved backup bundle to \$TESTTMP/*.hg (glob)" >> test-failure.t
+  $ cat >> test-failure.t <<EOF
+  >   $ echo 'saved backup bundle to \$TESTTMP/foo.hg'
+  >   saved backup bundle to \$TESTTMP/foo.hg
+  >   $ echo 'saved backup bundle to \$TESTTMP/foo.hg'
+  >   saved backup bundle to $TESTTMP\\foo.hg
+  >   $ echo 'saved backup bundle to \$TESTTMP/foo.hg'
+  >   saved backup bundle to \$TESTTMP/*.hg (glob)
+  > EOF
   $ echo 'y' | rt -i 2>&1
   
   --- $TESTTMP/test-failure.t
@@ -714,15 +722,14 @@ Accept the fix
    This is a noop statement so that
    this test is still more bytes than success.
    pad pad pad pad............................................................
-  @@ -9,7 +9,7 @@
-   pad pad pad pad............................................................
-   pad pad pad pad............................................................
+  @@ -11,6 +11,6 @@
      $ echo 'saved backup bundle to $TESTTMP/foo.hg'
-  -  saved backup bundle to $TESTTMP/foo.hg
-  +  saved backup bundle to $TESTTMP/foo.hg* (glob)
+     saved backup bundle to $TESTTMP/foo.hg
      $ echo 'saved backup bundle to $TESTTMP/foo.hg'
-     saved backup bundle to $TESTTMP/foo.hg* (glob)
+  -  saved backup bundle to $TESTTMP\foo.hg
+  +  saved backup bundle to $TESTTMP/foo.hg
      $ echo 'saved backup bundle to $TESTTMP/foo.hg'
+     saved backup bundle to $TESTTMP/*.hg (glob)
   Accept this change? [n] ..
   # Ran 2 tests, 0 skipped, 0 failed.
 
@@ -738,9 +745,9 @@ Accept the fix
   pad pad pad pad............................................................
   pad pad pad pad............................................................
     $ echo 'saved backup bundle to $TESTTMP/foo.hg'
-    saved backup bundle to $TESTTMP/foo.hg (glob)<
+    saved backup bundle to $TESTTMP/foo.hg
     $ echo 'saved backup bundle to $TESTTMP/foo.hg'
-    saved backup bundle to $TESTTMP/foo.hg (glob)<
+    saved backup bundle to $TESTTMP/foo.hg
     $ echo 'saved backup bundle to $TESTTMP/foo.hg'
     saved backup bundle to $TESTTMP/*.hg (glob)<
 
@@ -853,8 +860,8 @@ No Diff
 test --tmpdir support
   $ rt --tmpdir=$TESTTMP/keep test-success.t
   
-  Keeping testtmp dir: $TESTTMP/keep/child1/test-success.t (glob)
-  Keeping threadtmp dir: $TESTTMP/keep/child1  (glob)
+  Keeping testtmp dir: $TESTTMP/keep/child1/test-success.t
+  Keeping threadtmp dir: $TESTTMP/keep/child1 
   .
   # Ran 1 tests, 0 skipped, 0 failed.
 
@@ -1208,7 +1215,12 @@ running is placed.
   > #else
   >   $ test "\$TESTDIR" = "$TESTTMP"/anothertests
   > #endif
-  >   $ test "\$RUNTESTDIR" = "$TESTDIR"
+  > If this prints a path, that means RUNTESTDIR didn't equal
+  > TESTDIR as it should have.
+  >   $ test "\$RUNTESTDIR" = "$TESTDIR" || echo "\$RUNTESTDIR"
+  > This should print the start of check-code. If this passes but the
+  > previous check failed, that means we found a copy of check-code at whatever
+  > RUNTESTSDIR ended up containing, even though it doesn't match TESTDIR.
   >   $ head -n 3 "\$RUNTESTDIR"/../contrib/check-code.py | sed 's@.!.*python@#!USRBINENVPY@'
   >   #!USRBINENVPY
   >   #
@@ -1260,6 +1272,58 @@ support for running a test outside the current directory
   $ rt nonlocal/test-is-not-here.t
   .
   # Ran 1 tests, 0 skipped, 0 failed.
+
+support for automatically discovering test if arg is a folder
+  $ mkdir tmp && cd tmp
+
+  $ cat > test-uno.t << EOF
+  >   $ echo line
+  >   line
+  > EOF
+
+  $ cp test-uno.t test-dos.t
+  $ cd ..
+  $ cp -R tmp tmpp
+  $ cp tmp/test-uno.t test-solo.t
+
+  $ rt tmp/ test-solo.t tmpp
+  .....
+  # Ran 5 tests, 0 skipped, 0 failed.
+  $ rm -rf tmp tmpp
+
+support for running run-tests.py from another directory
+  $ mkdir tmp && cd tmp
+
+  $ cat > useful-file.sh << EOF
+  > important command
+  > EOF
+
+  $ cat > test-folder.t << EOF
+  >   $ cat \$TESTDIR/useful-file.sh
+  >   important command
+  > EOF
+
+  $ cat > test-folder-fail.t << EOF
+  >   $ cat \$TESTDIR/useful-file.sh
+  >   important commando
+  > EOF
+
+  $ cd ..
+  $ rt tmp/test-*.t
+  
+  --- $TESTTMP/anothertests/tmp/test-folder-fail.t
+  +++ $TESTTMP/anothertests/tmp/test-folder-fail.t.err
+  @@ -1,2 +1,2 @@
+     $ cat $TESTDIR/useful-file.sh
+  -  important commando
+  +  important command
+  
+  ERROR: test-folder-fail.t output changed
+  !.
+  Failed test-folder-fail.t: output changed
+  # Ran 2 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
 
 support for bisecting failed tests automatically
   $ hg init bisect
@@ -1324,8 +1388,7 @@ support bisecting a separate repo
   [1]
 
   $ rt --bisect-repo=../test-bisect test-bisect-dependent.t
-  Usage: run-tests.py [options] [tests]
-  
+  usage: run-tests.py [options] [tests]
   run-tests.py: error: --bisect-repo cannot be used without --known-good-rev
   [2]
 
@@ -1469,3 +1532,74 @@ Test cases in .t files
   # Ran 2 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
+
+Test TESTCASE variable
+
+  $ cat > test-cases-ab.t <<'EOF'
+  >   $ dostuff() {
+  >   >   echo "In case $TESTCASE"
+  >   > }
+  > #testcases A B
+  > #if A
+  >   $ dostuff
+  >   In case A
+  > #endif
+  > #if B
+  >   $ dostuff
+  >   In case B
+  > #endif
+  > EOF
+  $ rt test-cases-ab.t
+  ..
+  # Ran 2 tests, 0 skipped, 0 failed.
+
+Test automatic pattern replacement
+
+  $ cat << EOF >> common-pattern.py
+  > substitutions = [
+  >     (br'foo-(.*)\\b',
+  >      br'\$XXX=\\1\$'),
+  >     (br'bar\\n',
+  >      br'\$YYY$\\n'),
+  > ]
+  > EOF
+
+  $ cat << EOF >> test-substitution.t
+  >   $ echo foo-12
+  >   \$XXX=12$
+  >   $ echo foo-42
+  >   \$XXX=42$
+  >   $ echo bar prior
+  >   bar prior
+  >   $ echo lastbar
+  >   last\$YYY$
+  >   $ echo foo-bar foo-baz
+  > EOF
+
+  $ rt test-substitution.t
+  
+  --- $TESTTMP/anothertests/cases/test-substitution.t
+  +++ $TESTTMP/anothertests/cases/test-substitution.t.err
+  @@ -7,3 +7,4 @@
+     $ echo lastbar
+     last$YYY$
+     $ echo foo-bar foo-baz
+  +  $XXX=bar foo-baz$
+  
+  ERROR: test-substitution.t output changed
+  !
+  Failed test-substitution.t: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+
+--extra-config-opt works
+
+  $ cat << EOF >> test-config-opt.t
+  >   $ hg init test-config-opt
+  >   $ hg -R test-config-opt purge
+  > EOF
+
+  $ rt --extra-config-opt extensions.purge= test-config-opt.t
+  .
+  # Ran 1 tests, 0 skipped, 0 failed.

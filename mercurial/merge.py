@@ -646,6 +646,14 @@ def _getcheckunknownconfig(repo, section, name):
     return config
 
 def _checkunknownfile(repo, wctx, mctx, f, f2=None):
+    if wctx.isinmemory():
+        # Nothing to do in IMM because nothing in the "working copy" can be an
+        # unknown file.
+        #
+        # Note that we should bail out here, not in ``_checkunknownfiles()``,
+        # because that function does other useful work.
+        return False
+
     if f2 is None:
         f2 = f
     return (repo.wvfs.audit.check(f)
@@ -674,7 +682,11 @@ class _unknowndirschecker(object):
         # updated with any new dirs that are checked and found to be absent.
         self._missingdircache = set()
 
-    def __call__(self, repo, f):
+    def __call__(self, repo, wctx, f):
+        if wctx.isinmemory():
+            # Nothing to do in IMM for the same reason as ``_checkunknownfile``.
+            return False
+
         # Check for path prefixes that exist as unknown files.
         for p in reversed(list(util.finddirs(f))):
             if p in self._missingdircache:
@@ -726,7 +738,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                 if _checkunknownfile(repo, wctx, mctx, f):
                     fileconflicts.add(f)
                 elif pathconfig and f not in wctx:
-                    path = checkunknowndirs(repo, f)
+                    path = checkunknowndirs(repo, wctx, f)
                     if path is not None:
                         pathconflicts.add(path)
             elif m == 'dg':
@@ -1333,10 +1345,6 @@ def batchremove(repo, wctx, actions):
         repo.ui.warn(_("current directory was removed\n"
                        "(consider changing to repo root: %s)\n") % repo.root)
 
-    # It's necessary to flush here in case we're inside a worker fork and will
-    # quit after this function.
-    wctx.flushall()
-
 def batchget(repo, mctx, wctx, actions):
     """apply gets to the working directory
 
@@ -1368,7 +1376,9 @@ def batchget(repo, mctx, wctx, actions):
                 if repo.wvfs.lexists(absf):
                     util.rename(absf, orig)
             wctx[f].clearunknown()
-            wctx[f].write(fctx(f).data(), flags, backgroundclose=True)
+            atomictemp = ui.configbool("experimental", "update.atomic-file")
+            wctx[f].write(fctx(f).data(), flags, backgroundclose=True,
+                          atomictemp=atomictemp)
             if i == 100:
                 yield i, f
                 i = 0
@@ -1376,9 +1386,6 @@ def batchget(repo, mctx, wctx, actions):
     if i > 0:
         yield i, f
 
-    # It's necessary to flush here in case we're inside a worker fork and will
-    # quit after this function.
-    wctx.flushall()
 
 def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     """apply the merge action list to the working directory
@@ -1479,10 +1486,6 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
 
-    # We should flush before forking into worker processes, since those workers
-    # flush when they complete, and we don't want to duplicate work.
-    wctx.flushall()
-
     # get in parallel
     prog = worker.worker(repo.ui, cost, batchget, (repo, mctx, wctx),
                          actions['g'])
@@ -1555,6 +1558,9 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     usemergedriver = not overwrite and mergeactions and ms.mergedriver
 
     if usemergedriver:
+        if wctx.isinmemory():
+            raise error.InMemoryMergeConflictsError("in-memory merge does not "
+                                                    "support mergedriver")
         ms.commit()
         proceed = driverpreprocess(repo, ms, wctx, labels=labels)
         # the driver might leave some files unresolved
@@ -1850,8 +1856,9 @@ def update(repo, node, branchmerge, force, ancestor=None,
             if not force and (wc.files() or wc.deleted()):
                 raise error.Abort(_("uncommitted changes"),
                                  hint=_("use 'hg status' to list changes"))
-            for s in sorted(wc.substate):
-                wc.sub(s).bailifchanged()
+            if not wc.isinmemory():
+                for s in sorted(wc.substate):
+                    wc.sub(s).bailifchanged()
 
         elif not overwrite:
             if p1 == p2: # no-op update
@@ -1966,7 +1973,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
         ### apply phase
         if not branchmerge: # just jump to the new rev
             fp1, fp2, xp1, xp2 = fp2, nullid, xp2, ''
-        if not partial:
+        if not partial and not wc.isinmemory():
             repo.hook('preupdate', throw=True, parent1=xp1, parent2=xp2)
             # note that we're in the middle of an update
             repo.vfs.write('updatestate', p2.hex())
@@ -2004,9 +2011,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
                   'see "hg help -e fsmonitor")\n'))
 
         stats = applyupdates(repo, actions, wc, p2, overwrite, labels=labels)
-        wc.flushall()
 
-        if not partial:
+        if not partial and not wc.isinmemory():
             with repo.dirstate.parentchange():
                 repo.setparents(fp1, fp2)
                 recordupdates(repo, actions, branchmerge)

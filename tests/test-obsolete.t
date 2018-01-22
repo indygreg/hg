@@ -62,6 +62,8 @@ Killing a single changeset without replacement
   $ hg tip
   -1:000000000000 (public) [tip ] 
   $ hg up --hidden tip --quiet
+  updating to a hidden changeset 97b7c2d76b18
+  (hidden revision '97b7c2d76b18' is pruned)
 
 Killing a single changeset with itself should fail
 (simple local safeguard)
@@ -196,7 +198,7 @@ check that various commands work well with filtering
   abort: unknown revision '6'!
   [255]
   $ hg log -r 4
-  abort: hidden revision '4'!
+  abort: hidden revision '4' was rewritten as: 5601fb93a350!
   (use --hidden to access hidden revisions)
   [255]
   $ hg debugrevspec 'rev(6)'
@@ -207,6 +209,7 @@ check that various commands work well with filtering
 Check that public changeset are not accounted as obsolete:
 
   $ hg --hidden phase --public 2
+  1 new phase-divergent changesets
   $ hg log -G
   @  5:5601fb93a350 (draft phase-divergent) [tip ] add new_3_c
   |
@@ -336,6 +339,17 @@ Should pick the first visible revision as "repo" node
   changessincelatesttag: 2
 
 
+  $ cd ..
+
+Can disable transaction summary report
+
+  $ hg init transaction-summary
+  $ cd transaction-summary
+  $ mkcommit a
+  $ mkcommit b
+  $ hg up -q null
+  $ hg --config experimental.evolution.report-instabilities=false debugobsolete `getid a`
+  obsoleted 1 changesets
   $ cd ..
 
 Exchange Test
@@ -518,6 +532,7 @@ detect outgoing obsolete and unstable
   $ mkcommit original_e
   $ hg debugobsolete --record-parents `getid original_d` -d '0 0'
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete | grep `getid original_d`
   94b33453f93bdb8d457ef9b770851a618bf413e1 0 {6f96419950729f3671185b847352890f074f7557} (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   $ hg log -r 'obsolete()'
@@ -582,6 +597,7 @@ Don't try to push extinct changeset
   adding file changes
   added 6 changesets with 6 changes to 6 files (+1 heads)
   7 new obsolescence markers
+  1 new orphan changesets
 
 no warning displayed
 
@@ -917,7 +933,9 @@ Several troubles on the same changeset (create an unstable and bumped changeset)
 
   $ hg debugobsolete `getid obsolete_e`
   obsoleted 1 changesets
+  2 new orphan changesets
   $ hg debugobsolete `getid original_c` `getid babar`
+  1 new phase-divergent changesets
   $ hg log --config ui.logtemplate= -r 'phasedivergent() and orphan()'
   changeset:   7:50c51b361e60
   user:        test
@@ -1015,6 +1033,56 @@ test summary output
   orphan: 2 changesets
   phase-divergent: 1 changesets
 
+#if serve
+
+  $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+check obsolete changeset
+
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=paper' | grep '<span class="obsolete">'
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=coal' | grep '<span class="obsolete">'
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=gitweb' | grep '<span class="logtags">'
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="obsoletetag" title="obsolete">obsolete</span> </span>
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=monoblue' | grep '<span class="logtags">'
+          <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="obsoletetag" title="obsolete">obsolete</span> </span>
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=spartan' | grep 'class="obsolete"'
+    <th class="obsolete">obsolete:</th>
+    <td class="obsolete">pruned</td>
+
+check an obsolete changeset that has been rewritten
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=paper' | grep rewritten
+   <td>rewritten as <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a> </td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=coal' | grep rewritten
+   <td>rewritten as <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a> </td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=gitweb' | grep rewritten
+  <tr><td>obsolete</td><td>rewritten as <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a> </td></tr>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=monoblue' | grep rewritten
+          <dt>obsolete</dt><dd>rewritten as <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a> </dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=spartan' | grep rewritten
+   <td class="obsolete">rewritten as <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a> </td>
+
+check changeset with instabilities
+
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=paper' | grep '<span class="instability">'
+     <span class="phase">draft</span> <span class="instability">orphan</span> <span class="instability">phase-divergent</span> 
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=coal' | grep '<span class="instability">'
+     <span class="phase">draft</span> <span class="instability">orphan</span> <span class="instability">phase-divergent</span> 
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=gitweb' | grep '<span class="logtags">'
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=monoblue' | grep '<span class="logtags">'
+          <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=spartan' | grep 'class="instabilities"'
+    <th class="instabilities">instabilities:</th>
+    <td class="instabilities">orphan phase-divergent </td>
+
+  $ killdaemons.py
+
+  $ rm hg.pid access.log errors.log
+#endif
+
 Test incoming/outcoming with changesets obsoleted remotely, known locally
 ===============================================================================
 
@@ -1045,15 +1113,15 @@ This test issue 3805
   o  0:d20a80d4def3 (draft) [ ] base
   
   $ hg incoming
-  comparing with $TESTTMP/tmpe/repo-issue3805 (glob)
+  comparing with $TESTTMP/tmpe/repo-issue3805
   searching for changes
   2:323a9c3ddd91 (draft) [tip ] A
   $ hg incoming --bundle ../issue3805.hg
-  comparing with $TESTTMP/tmpe/repo-issue3805 (glob)
+  comparing with $TESTTMP/tmpe/repo-issue3805
   searching for changes
   2:323a9c3ddd91 (draft) [tip ] A
   $ hg outgoing
-  comparing with $TESTTMP/tmpe/repo-issue3805 (glob)
+  comparing with $TESTTMP/tmpe/repo-issue3805
   searching for changes
   1:29f0c6921ddd (draft) [tip ] A
 
@@ -1242,6 +1310,7 @@ Test heads computation on pending index changes with obsolescence markers
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ echo aa > a
   $ hg amendtransient
+  1 new orphan changesets
   [1, 2]
 
 Test cache consistency for the visible filter
@@ -1282,11 +1351,13 @@ bookmarks change
   $ echo "hello" > b
   $ hg commit --amend -m "message"
   $ hg book bookb -r 13bedc178fce --hidden
+  bookmarking hidden changeset 13bedc178fce
+  (hidden revision '13bedc178fce' was rewritten as: a9b1f8652753)
   $ hg log -r 13bedc178fce
   4:13bedc178fce (draft *obsolete*) [ bookb] add b [rewritten using amend as 5:a9b1f8652753]
   $ hg book -d bookb
   $ hg log -r 13bedc178fce
-  abort: hidden revision '13bedc178fce'!
+  abort: hidden revision '13bedc178fce' was rewritten as: a9b1f8652753!
   (use --hidden to access hidden revisions)
   [255]
 
@@ -1331,9 +1402,9 @@ Test ability to pull changeset with locally applying obsolescence markers
   
 
   $ hg strip --hidden -r 2 --config extensions.strip= --config devel.strip-obsmarkers=no
-  saved backup bundle to $TESTTMP/tmpe/issue4845/.hg/strip-backup/e008cf283490-ede36964-backup.hg (glob)
+  saved backup bundle to $TESTTMP/tmpe/issue4845/.hg/strip-backup/e008cf283490-ede36964-backup.hg
   $ hg debugobsolete
-  e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   $ hg log -G
   @  2:b0551702f918 (draft) [tip ] 2
   |
@@ -1360,7 +1431,7 @@ Test ability to pull changeset with locally applying obsolescence markers
   searching for changes
   no changes found
   $ hg debugobsolete
-  e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   $ hg log -G
   @  2:b0551702f918 (draft) [tip ] 2
   |
@@ -1380,7 +1451,7 @@ Testing that strip remove markers:
 
   $ hg strip -r 1 --config extensions.strip=
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/tmpe/issue4845/.hg/strip-backup/e016b03fd86f-65ede734-backup.hg (glob)
+  saved backup bundle to $TESTTMP/tmpe/issue4845/.hg/strip-backup/e016b03fd86f-65ede734-backup.hg
   $ hg debugobsolete
   $ hg log -G
   @  0:a78f55e5508c (draft) [tip ] 0
@@ -1394,8 +1465,8 @@ Testing that strip remove markers:
       e016b03fd86fcccc54817d120b90b751aaf367d6
       b0551702f918510f01ae838ab03a463054c67b46
   obsmarkers -- {}
-      version: 1 (86 bytes)
-      e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+      version: 1 (92 bytes)
+      e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   phase-heads -- {}
       b0551702f918510f01ae838ab03a463054c67b46 draft
 
@@ -1408,7 +1479,7 @@ Testing that strip remove markers:
   new changesets e016b03fd86f:b0551702f918
   (run 'hg update' to get a working copy)
   $ hg debugobsolete | sort
-  e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   $ hg log -G
   o  2:b0551702f918 (draft) [tip ] 2
   |
@@ -1444,15 +1515,15 @@ only a subset of those are displayed (because of --rev option)
   adding d
   $ hg ci --amend -m dd --config experimental.evolution.track-operation=1
   $ hg debugobsolete --index --rev "3+7"
-  1 6fdef60fcbabbd3d50e9b9cbc2a240724b91a5e1 d27fb9b066076fd921277a4b9e8b9cb48c95bc6a 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
-  3 4715cf767440ed891755448016c2b8cf70760c30 7ae79c5d60f049c7b0dd02f5f25b9d60aaf7b36d 0 \(.*\) {'operation': 'amend', 'user': 'test'} (re)
+  1 6fdef60fcbabbd3d50e9b9cbc2a240724b91a5e1 d27fb9b066076fd921277a4b9e8b9cb48c95bc6a 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
+  3 4715cf767440ed891755448016c2b8cf70760c30 7ae79c5d60f049c7b0dd02f5f25b9d60aaf7b36d 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
   $ hg debugobsolete --index --rev "3+7" -Tjson
   [
    {
     "date": [0.0, 0],
     "flag": 0,
     "index": 1,
-    "metadata": {"operation": "amend", "user": "test"},
+    "metadata": {"ef1": "1", "operation": "amend", "user": "test"},
     "prednode": "6fdef60fcbabbd3d50e9b9cbc2a240724b91a5e1",
     "succnodes": ["d27fb9b066076fd921277a4b9e8b9cb48c95bc6a"]
    },
@@ -1460,7 +1531,7 @@ only a subset of those are displayed (because of --rev option)
     "date": [0.0, 0],
     "flag": 0,
     "index": 3,
-    "metadata": {"operation": "amend", "user": "test"},
+    "metadata": {"ef1": "1", "operation": "amend", "user": "test"},
     "prednode": "4715cf767440ed891755448016c2b8cf70760c30",
     "succnodes": ["7ae79c5d60f049c7b0dd02f5f25b9d60aaf7b36d"]
    }
@@ -1468,15 +1539,15 @@ only a subset of those are displayed (because of --rev option)
 
 Test the --delete option of debugobsolete command
   $ hg debugobsolete --index
-  0 cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b f9bd49731b0b175e42992a3c8fa6c678b2bc11f1 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
-  1 6fdef60fcbabbd3d50e9b9cbc2a240724b91a5e1 d27fb9b066076fd921277a4b9e8b9cb48c95bc6a 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
-  2 1ab51af8f9b41ef8c7f6f3312d4706d870b1fb74 29346082e4a9e27042b62d2da0e2de211c027621 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
-  3 4715cf767440ed891755448016c2b8cf70760c30 7ae79c5d60f049c7b0dd02f5f25b9d60aaf7b36d 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  0 cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b f9bd49731b0b175e42992a3c8fa6c678b2bc11f1 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
+  1 6fdef60fcbabbd3d50e9b9cbc2a240724b91a5e1 d27fb9b066076fd921277a4b9e8b9cb48c95bc6a 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
+  2 1ab51af8f9b41ef8c7f6f3312d4706d870b1fb74 29346082e4a9e27042b62d2da0e2de211c027621 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
+  3 4715cf767440ed891755448016c2b8cf70760c30 7ae79c5d60f049c7b0dd02f5f25b9d60aaf7b36d 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
   $ hg debugobsolete --delete 1 --delete 3
   deleted 2 obsolescence markers
   $ hg debugobsolete
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b f9bd49731b0b175e42992a3c8fa6c678b2bc11f1 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
-  1ab51af8f9b41ef8c7f6f3312d4706d870b1fb74 29346082e4a9e27042b62d2da0e2de211c027621 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b f9bd49731b0b175e42992a3c8fa6c678b2bc11f1 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
+  1ab51af8f9b41ef8c7f6f3312d4706d870b1fb74 29346082e4a9e27042b62d2da0e2de211c027621 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
 
 Test adding changeset after obsmarkers affecting it
 (eg: during pull, or unbundle)
@@ -1487,7 +1558,7 @@ Test adding changeset after obsmarkers affecting it
   $ getid .
   $ hg --config extensions.strip= strip -r .
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/tmpe/issue4845/doindexrev/.hg/strip-backup/9bc153528424-ee80edd4-backup.hg (glob)
+  saved backup bundle to $TESTTMP/tmpe/issue4845/doindexrev/.hg/strip-backup/9bc153528424-ee80edd4-backup.hg
   $ hg debugobsolete 9bc153528424ea266d13e57f9ff0d799dfe61e4b
   $ hg unbundle ../bundle-2.hg
   adding changesets

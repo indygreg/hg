@@ -224,7 +224,7 @@ Verify merge fails if merging excluded files
   merging hide
   warning: conflicts while merging hide! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg debugsparse
   [exclude]
@@ -257,7 +257,7 @@ Verify strip -k resets dirstate correctly
    4 files changed, 4 insertions(+), 2 deletions(-)
   
   $ hg strip -r . -k
-  saved backup bundle to $TESTTMP/myrepo/.hg/strip-backup/39278f7c08a9-ce59e002-backup.hg (glob)
+  saved backup bundle to $TESTTMP/myrepo/.hg/strip-backup/39278f7c08a9-ce59e002-backup.hg
   $ hg status
   M show
   ? show2
@@ -267,7 +267,7 @@ Verify rebase succeeds if all changed files are in sparse checkout
   $ hg commit -Aqm "add show2"
   $ hg rebase -d 1 --config extensions.rebase=
   rebasing 2:bdde55290160 "add show2" (tip)
-  saved backup bundle to $TESTTMP/myrepo/.hg/strip-backup/bdde55290160-216ed9c6-rebase.hg (glob)
+  saved backup bundle to $TESTTMP/myrepo/.hg/strip-backup/bdde55290160-216ed9c6-rebase.hg
 
 Verify log --sparse only shows commits that affect the sparse checkout
 
@@ -283,6 +283,27 @@ Test status on a file in a subdir
   $ hg debugsparse -I dir1/dir2
   $ hg status
   ? dir1/dir2/file
+
+Mix files and subdirectories, both "glob:" and unprefixed
+
+  $ hg debugsparse --reset
+  $ touch dir1/notshown
+  $ hg commit -A dir1/notshown -m "notshown"
+  $ hg debugsparse --include 'dir1/dir2'
+  $ $PYTHON $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
+  ./
+  ./dir1/
+  ./dir1/dir2/
+  ./dir1/dir2/file
+  ./hide.orig
+  $ hg debugsparse --delete 'dir1/dir2'
+  $ hg debugsparse --include 'glob:dir1/dir2'
+  $ $PYTHON $TESTDIR/list-tree.py . | egrep -v '\.[\/]\.hg'
+  ./
+  ./dir1/
+  ./dir1/dir2/
+  ./dir1/dir2/file
+  ./hide.orig
 
 Test that add -s adds dirs to sparse profile
 

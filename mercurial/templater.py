@@ -184,6 +184,8 @@ def _parsetemplate(tmpl, start, stop, quote=''):
             return parsed, n + 1
 
         parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, '}'))
+        if not tmpl.endswith('}', n + 1, pos):
+            raise error.ParseError(_("invalid token"), pos)
         parsed.append(parseres)
 
     if quote:
@@ -257,6 +259,8 @@ def prettyformat(tree):
 
 def compileexp(exp, context, curmethods):
     """Compile parsed template tree to (func, data) pair"""
+    if not exp:
+        raise error.ParseError(_("missing argument"))
     t = exp[0]
     if t in curmethods:
         return curmethods[t](exp, context)
@@ -382,9 +386,7 @@ def _runrecursivesymbol(context, mapping, key):
     raise error.Abort(_("recursive reference '%s' in template") % key)
 
 def runsymbol(context, mapping, key, default=''):
-    v = mapping.get(key)
-    if v is None:
-        v = context._defaults.get(key)
+    v = context.symbol(mapping, key)
     if v is None:
         # put poison to cut recursion. we can't move this to parsing phase
         # because "x = {x}" is allowed if "x" is a keyword. (issue4758)
@@ -395,7 +397,11 @@ def runsymbol(context, mapping, key, default=''):
         except TemplateNotFound:
             v = default
     if callable(v):
-        return v(**pycompat.strkwargs(mapping))
+        # TODO: templatekw functions will be updated to take (context, mapping)
+        # pair instead of **props
+        props = context._resources.copy()
+        props.update(mapping)
+        return v(**pycompat.strkwargs(props))
     return v
 
 def buildtemplate(exp, context):
@@ -626,7 +632,7 @@ def diff(context, mapping, args):
                 return [s]
         return []
 
-    ctx = mapping['ctx']
+    ctx = context.resource(mapping, 'ctx')
     chunks = ctx.diff(match=ctx.match([], getpatterns(0), getpatterns(1)))
 
     return ''.join(chunks)
@@ -639,8 +645,8 @@ def extdata(context, mapping, args):
         raise error.ParseError(_('extdata expects one argument'))
 
     source = evalstring(context, mapping, args['source'])
-    cache = mapping['cache'].setdefault('extdata', {})
-    ctx = mapping['ctx']
+    cache = context.resource(mapping, 'cache').setdefault('extdata', {})
+    ctx = context.resource(mapping, 'ctx')
     if source in cache:
         data = cache[source]
     else:
@@ -656,10 +662,13 @@ def files(context, mapping, args):
         raise error.ParseError(_("files expects one argument"))
 
     raw = evalstring(context, mapping, args[0])
-    ctx = mapping['ctx']
+    ctx = context.resource(mapping, 'ctx')
     m = ctx.match([raw])
     files = list(ctx.matches(m))
-    return templatekw.showlist("file", files, mapping)
+    # TODO: pass (context, mapping) pair to keyword function
+    props = context._resources.copy()
+    props.update(mapping)
+    return templatekw.showlist("file", files, props)
 
 @templatefunc('fill(text[, width[, initialident[, hangindent]]])')
 def fill(context, mapping, args):
@@ -692,7 +701,7 @@ def formatnode(context, mapping, args):
         # i18n: "formatnode" is a keyword
         raise error.ParseError(_("formatnode expects one argument"))
 
-    ui = mapping['ui']
+    ui = context.resource(mapping, 'ui')
     node = evalstring(context, mapping, args[0])
     if ui.debugflag:
         return node
@@ -858,7 +867,7 @@ def label(context, mapping, args):
         # i18n: "label" is a keyword
         raise error.ParseError(_("label expects two arguments"))
 
-    ui = mapping['ui']
+    ui = context.resource(mapping, 'ui')
     thing = evalstring(context, mapping, args[1])
     # preserve unknown symbol as literal so effects like 'red', 'bold',
     # etc. don't need to be quoted
@@ -880,7 +889,10 @@ def latesttag(context, mapping, args):
     if len(args) == 1:
         pattern = evalstring(context, mapping, args[0])
 
-    return templatekw.showlatesttags(pattern, **mapping)
+    # TODO: pass (context, mapping) pair to keyword function
+    props = context._resources.copy()
+    props.update(mapping)
+    return templatekw.showlatesttags(pattern, **pycompat.strkwargs(props))
 
 @templatefunc('localdate(date[, tz])')
 def localdate(context, mapping, args):
@@ -1005,17 +1017,18 @@ def obsfateusers(context, mapping, args):
                 "obsmakers")
         raise error.ParseError(msg)
 
-@templatefunc('obsfateverb(successors)')
+@templatefunc('obsfateverb(successors, markers)')
 def obsfateverb(context, mapping, args):
     """Compute obsfate related information based on successors (EXPERIMENTAL)"""
-    if len(args) != 1:
+    if len(args) != 2:
         # i18n: "obsfateverb" is a keyword
-        raise error.ParseError(_("obsfateverb expects one arguments"))
+        raise error.ParseError(_("obsfateverb expects two arguments"))
 
     successors = evalfuncarg(context, mapping, args[0])
+    markers = evalfuncarg(context, mapping, args[1])
 
     try:
-        return obsutil.successorsetverb(successors)
+        return obsutil.obsfateverb(successors, markers)
     except TypeError:
         # i18n: "obsfateverb" is a keyword
         errmsg = _("obsfateverb first argument should be countable")
@@ -1029,7 +1042,7 @@ def relpath(context, mapping, args):
         # i18n: "relpath" is a keyword
         raise error.ParseError(_("relpath expects one argument"))
 
-    repo = mapping['ctx'].repo()
+    repo = context.resource(mapping, 'ctx').repo()
     path = evalstring(context, mapping, args[0])
     return repo.pathto(path)
 
@@ -1042,7 +1055,7 @@ def revset(context, mapping, args):
         raise error.ParseError(_("revset expects one or more arguments"))
 
     raw = evalstring(context, mapping, args[0])
-    ctx = mapping['ctx']
+    ctx = context.resource(mapping, 'ctx')
     repo = ctx.repo()
 
     def query(expr):
@@ -1054,7 +1067,8 @@ def revset(context, mapping, args):
         revs = query(revsetlang.formatspec(raw, *formatargs))
         revs = list(revs)
     else:
-        revsetcache = mapping['cache'].setdefault("revsetcache", {})
+        cache = context.resource(mapping, 'cache')
+        revsetcache = cache.setdefault("revsetcache", {})
         if raw in revsetcache:
             revs = revsetcache[raw]
         else:
@@ -1062,7 +1076,11 @@ def revset(context, mapping, args):
             revs = list(revs)
             revsetcache[raw] = revs
 
-    return templatekw.showrevslist("revision", revs, **mapping)
+    # TODO: pass (context, mapping) pair to keyword function
+    props = context._resources.copy()
+    props.update(mapping)
+    return templatekw.showrevslist("revision", revs,
+                                   **pycompat.strkwargs(props))
 
 @templatefunc('rstdoc(text, style)')
 def rstdoc(context, mapping, args):
@@ -1114,7 +1132,7 @@ def shortest(context, mapping, args):
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    cl = mapping['ctx']._repo.unfiltered().changelog
+    cl = context.resource(mapping, 'ctx')._repo.unfiltered().changelog
     return cl.shortest(node, minlength)
 
 @templatefunc('strip(text[, chars])')
@@ -1289,16 +1307,41 @@ class engine(object):
     filter uses function to transform value. syntax is
     {key|filter1|filter2|...}.'''
 
-    def __init__(self, loader, filters=None, defaults=None, aliases=()):
+    def __init__(self, loader, filters=None, defaults=None, resources=None,
+                 aliases=()):
         self._loader = loader
         if filters is None:
             filters = {}
         self._filters = filters
         if defaults is None:
             defaults = {}
+        if resources is None:
+            resources = {}
         self._defaults = defaults
+        self._resources = resources
         self._aliasmap = _aliasrules.buildmap(aliases)
         self._cache = {}  # key: (func, data)
+
+    def symbol(self, mapping, key):
+        """Resolve symbol to value or function; None if nothing found"""
+        v = None
+        if key not in self._resources:
+            v = mapping.get(key)
+        if v is None:
+            v = self._defaults.get(key)
+        return v
+
+    def resource(self, mapping, key):
+        """Return internal data (e.g. cache) used for keyword/function
+        evaluation"""
+        v = None
+        if key in self._resources:
+            v = mapping.get(key)
+        if v is None:
+            v = self._resources.get(key)
+        if v is None:
+            raise error.Abort(_('template resource not available: %s') % key)
+        return v
 
     def _load(self, t):
         '''load, parse, and cache a template'''
@@ -1393,17 +1436,27 @@ class TemplateNotFound(error.Abort):
 
 class templater(object):
 
-    def __init__(self, filters=None, defaults=None, cache=None, aliases=(),
-                 minchunk=1024, maxchunk=65536):
-        '''set up template engine.
-        filters is dict of functions. each transforms a value into another.
-        defaults is dict of default map definitions.
-        aliases is list of alias (name, replacement) pairs.
-        '''
+    def __init__(self, filters=None, defaults=None, resources=None,
+                 cache=None, aliases=(), minchunk=1024, maxchunk=65536):
+        """Create template engine optionally with preloaded template fragments
+
+        - ``filters``: a dict of functions to transform a value into another.
+        - ``defaults``: a dict of symbol values/functions; may be overridden
+          by a ``mapping`` dict.
+        - ``resources``: a dict of internal data (e.g. cache), inaccessible
+          from user template; may be overridden by a ``mapping`` dict.
+        - ``cache``: a dict of preloaded template fragments.
+        - ``aliases``: a list of alias (name, replacement) pairs.
+
+        self.cache may be updated later to register additional template
+        fragments.
+        """
         if filters is None:
             filters = {}
         if defaults is None:
             defaults = {}
+        if resources is None:
+            resources = {}
         if cache is None:
             cache = {}
         self.cache = cache.copy()
@@ -1411,15 +1464,17 @@ class templater(object):
         self.filters = templatefilters.filters.copy()
         self.filters.update(filters)
         self.defaults = defaults
+        self._resources = {'templ': self}
+        self._resources.update(resources)
         self._aliases = aliases
         self.minchunk, self.maxchunk = minchunk, maxchunk
         self.ecache = {}
 
     @classmethod
-    def frommapfile(cls, mapfile, filters=None, defaults=None, cache=None,
-                    minchunk=1024, maxchunk=65536):
+    def frommapfile(cls, mapfile, filters=None, defaults=None, resources=None,
+                    cache=None, minchunk=1024, maxchunk=65536):
         """Create templater from the specified map file"""
-        t = cls(filters, defaults, cache, [], minchunk, maxchunk)
+        t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
         cache, tmap, aliases = _readmapfile(mapfile)
         t.cache.update(cache)
         t.map = tmap
@@ -1456,7 +1511,7 @@ class templater(object):
             except KeyError:
                 raise error.Abort(_('invalid template engine: %s') % ttype)
             self.ecache[ttype] = ecls(self.load, self.filters, self.defaults,
-                                      self._aliases)
+                                      self._resources, self._aliases)
         proc = self.ecache[ttype]
 
         stream = proc.process(t, mapping)

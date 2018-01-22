@@ -24,8 +24,11 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    policy,
     pycompat,
 )
+
+osutil = policy.importmod(r'osutil')
 
 posixfile = open
 normpath = os.path.normpath
@@ -301,6 +304,20 @@ def checkosfilename(path):
     '''Check that the base-relative path is a valid filename on this platform.
     Returns None if the path is ok, or a UI string describing the problem.'''
     return None # on posix platforms, every path is ok
+
+def getfsmountpoint(dirpath):
+    '''Get the filesystem mount point from a directory (best-effort)
+
+    Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
+    '''
+    return getattr(osutil, 'getfsmountpoint', lambda x: None)(dirpath)
+
+def getfstype(dirpath):
+    '''Get the filesystem type name from a directory (best-effort)
+
+    Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
+    '''
+    return getattr(osutil, 'getfstype', lambda x: None)(dirpath)
 
 def setbinary(fd):
     pass

@@ -241,6 +241,12 @@ def _iprompt(repo, mynode, orig, fcd, fco, fca, toolconf, labels=None):
     ui = repo.ui
     fd = fcd.path()
 
+    # Avoid prompting during an in-memory merge since it doesn't support merge
+    # conflicts.
+    if fcd.changectx().isinmemory():
+        raise error.InMemoryMergeConflictsError('in-memory merge does not '
+                                                'support file conflicts')
+
     prompts = partextras(labels)
     prompts['fd'] = fd
     try:
@@ -465,11 +471,10 @@ def _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     a = _workingpath(repo, fcd)
     fd = fcd.path()
 
-    # Run ``flushall()`` to make any missing folders the following wwrite
-    # calls might be depending on.
     from . import context
     if isinstance(fcd, context.overlayworkingfilectx):
-        fcd.ctx().flushall()
+        raise error.InMemoryMergeConflictsError('in-memory merge does not '
+                                                'support the :dump tool.')
 
     util.writefile(a + ".local", fcd.decodeddata())
     repo.wwrite(fd + ".other", fco.data(), fco.flags())
@@ -484,6 +489,18 @@ def _forcedump(repo, mynode, orig, fcd, fco, fca, toolconf, files,
     """
     return _idump(repo, mynode, orig, fcd, fco, fca, toolconf, files,
                 labels=labels)
+
+def _xmergeimm(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
+    # In-memory merge simply raises an exception on all external merge tools,
+    # for now.
+    #
+    # It would be possible to run most tools with temporary files, but this
+    # raises the question of what to do if the user only partially resolves the
+    # file -- we can't leave a merge state. (Copy to somewhere in the .hg/
+    # directory and tell the user how to get it is my best idea, but it's
+    # clunky.)
+    raise error.InMemoryMergeConflictsError('in-memory merge does not support '
+                                            'external merge tools')
 
 def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
     tool, toolpath, binary, symlink = toolconf
@@ -526,7 +543,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         util.unlink(b)
         util.unlink(c)
 
-def _formatconflictmarker(repo, ctx, template, label, pad):
+def _formatconflictmarker(ctx, template, label, pad):
     """Applies the given template to the ctx, prefixed by the label.
 
     Pad is the minimum width of the label prefix, so that multiple markers
@@ -535,10 +552,7 @@ def _formatconflictmarker(repo, ctx, template, label, pad):
     if ctx.node() is None:
         ctx = ctx.p1()
 
-    props = templatekw.keywords.copy()
-    props['templ'] = template
-    props['ctx'] = ctx
-    props['repo'] = repo
+    props = {'ctx': ctx}
     templateresult = template.render(props)
 
     label = ('%s:' % label).ljust(pad + 1)
@@ -564,14 +578,16 @@ def _formatlabels(repo, fcd, fco, fca, labels):
     ui = repo.ui
     template = ui.config('ui', 'mergemarkertemplate')
     template = templater.unquotestring(template)
-    tmpl = formatter.maketemplater(ui, template)
+    tres = formatter.templateresources(ui, repo)
+    tmpl = formatter.maketemplater(ui, template, defaults=templatekw.keywords,
+                                   resources=tres)
 
     pad = max(len(l) for l in labels)
 
-    newlabels = [_formatconflictmarker(repo, cd, tmpl, labels[0], pad),
-                 _formatconflictmarker(repo, co, tmpl, labels[1], pad)]
+    newlabels = [_formatconflictmarker(cd, tmpl, labels[0], pad),
+                 _formatconflictmarker(co, tmpl, labels[1], pad)]
     if len(labels) > 2:
-        newlabels.append(_formatconflictmarker(repo, ca, tmpl, labels[2], pad))
+        newlabels.append(_formatconflictmarker(ca, tmpl, labels[2], pad))
     return newlabels
 
 def partextras(labels):
@@ -602,6 +618,9 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
     (if any), the backup is used to undo certain premerges, confirm whether a
     merge changed anything, and determine what line endings the new file should
     have.
+
+    Backups only need to be written once (right before the premerge) since their
+    content doesn't change afterwards.
     """
     if fcd.isabsent():
         return None
@@ -612,21 +631,26 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
     back = scmutil.origpath(ui, repo, a)
     inworkingdir = (back.startswith(repo.wvfs.base) and not
         back.startswith(repo.vfs.base))
-
     if isinstance(fcd, context.overlayworkingfilectx) and inworkingdir:
         # If the backup file is to be in the working directory, and we're
         # merging in-memory, we must redirect the backup to the memory context
         # so we don't disturb the working directory.
         relpath = back[len(repo.wvfs.base) + 1:]
-        wctx[relpath].write(fcd.data(), fcd.flags())
+        if premerge:
+            wctx[relpath].write(fcd.data(), fcd.flags())
         return wctx[relpath]
     else:
-        # Otherwise, write to wherever the user specified the backups should go.
-        #
+        if premerge:
+            # Otherwise, write to wherever path the user specified the backups
+            # should go. We still need to switch based on whether the source is
+            # in-memory so we can use the fast path of ``util.copy`` if both are
+            # on disk.
+            if isinstance(fcd, context.overlayworkingfilectx):
+                util.writefile(back, fcd.data())
+            else:
+                util.copyfile(a, back)
         # A arbitraryfilectx is returned, so we can run the same functions on
         # the backup context regardless of where it lives.
-        if premerge:
-            util.copyfile(a, back)
         return context.arbitraryfilectx(back, repo=repo)
 
 def _maketempfiles(repo, fco, fca):
@@ -683,15 +707,13 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         onfailure = func.onfailure
         precheck = func.precheck
     else:
-        func = _xmerge
+        if wctx.isinmemory():
+            func = _xmergeimm
+        else:
+            func = _xmerge
         mergetype = fullmerge
         onfailure = _("merging %s failed!\n")
         precheck = None
-
-        # If using deferred writes, must flush any deferred contents if running
-        # an external merge tool since it has arbitrary access to the working
-        # copy.
-        wctx.flushall()
 
     toolconf = tool, toolpath, binary, symlink
 
@@ -710,6 +732,10 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     if precheck and not precheck(repo, mynode, orig, fcd, fco, fca,
                                  toolconf):
         if onfailure:
+            if wctx.isinmemory():
+                raise error.InMemoryMergeConflictsError('in-memory merge does '
+                                                        'not support merge '
+                                                        'conflicts')
             ui.warn(onfailure % fd)
         return True, 1, False
 
@@ -736,6 +762,10 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
 
         if r:
             if onfailure:
+                if wctx.isinmemory():
+                    raise error.InMemoryMergeConflictsError('in-memory merge '
+                                                            'does not support '
+                                                            'merge conflicts')
                 ui.warn(onfailure % fd)
             _onfilemergefailure(ui)
 

@@ -41,7 +41,7 @@ int bdiff_splitlines(const char *a, ssize_t len, struct bdiff_line **lr)
 	if (p == plast)
 		i++;
 
-	*lr = l = (struct bdiff_line *)malloc(sizeof(struct bdiff_line) * i);
+	*lr = l = (struct bdiff_line *)calloc(i, sizeof(struct bdiff_line));
 	if (!l)
 		return -1;
 
@@ -95,7 +95,7 @@ static int equatelines(struct bdiff_line *a, int an, struct bdiff_line *b,
 
 	/* try to allocate a large hash table to avoid collisions */
 	for (scale = 4; scale; scale /= 2) {
-		h = (struct pos *)malloc(scale * buckets * sizeof(struct pos));
+		h = (struct pos *)calloc(buckets, scale * sizeof(struct pos));
 		if (h)
 			break;
 	}

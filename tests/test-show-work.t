@@ -242,6 +242,7 @@ Obsolescence information appears in labels.
   > EOF
   $ hg debugobsolete `hg log -r 'desc("commit 2")' -T "{node}"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg show work --color=debug
   @  [log.changeset changeset.draft changeset.unstable instability.orphan|32f3] [log.description|commit 3]
   x  [log.changeset changeset.draft changeset.obsolete|6a75] [log.description|commit 2]

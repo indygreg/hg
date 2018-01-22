@@ -24,6 +24,7 @@ from mercurial import (
     lock,
     match as matchmod,
     node,
+    pycompat,
     registrar,
     scmutil,
     util,
@@ -74,6 +75,7 @@ def lfconvert(ui, src, dest, *pats, **opts):
     Use --to-normal to convert largefiles back to normal files; after
     this, the DEST repository can be used without largefiles at all.'''
 
+    opts = pycompat.byteskwargs(opts)
     if opts['to_normal']:
         tolfile = False
     else:
@@ -177,7 +179,7 @@ def lfconvert(ui, src, dest, *pats, **opts):
             convcmd.converter = converter
 
             try:
-                convcmd.convert(ui, src, dest)
+                convcmd.convert(ui, src, dest, source_type='hg', dest_type='hg')
             finally:
                 convcmd.converter = orig
         success = True
@@ -259,7 +261,8 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
                 # doesn't change after rename or copy
                 renamed = lfutil.standin(renamed[0])
 
-            return context.memfilectx(repo, f, lfiletohash[srcfname] + '\n',
+            return context.memfilectx(repo, memctx, f,
+                                      lfiletohash[srcfname] + '\n',
                                       'l' in fctx.flags(), 'x' in fctx.flags(),
                                       renamed)
         else:
@@ -311,7 +314,7 @@ def _getnormalcontext(repo, ctx, f, revmap):
     data = fctx.data()
     if f == '.hgtags':
         data = _converttags (repo.ui, revmap, data)
-    return context.memfilectx(repo, f, data, 'l' in fctx.flags(),
+    return context.memfilectx(repo, ctx, f, data, 'l' in fctx.flags(),
                               'x' in fctx.flags(), renamed)
 
 # Remap tag data using a revision map
@@ -579,7 +582,7 @@ def lfpull(ui, repo, source="default", **opts):
     """
     repo.lfpullsource = source
 
-    revs = opts.get('rev', [])
+    revs = opts.get(r'rev', [])
     if not revs:
         raise error.Abort(_('no revisions specified'))
     revs = scmutil.revrange(repo, revs)
@@ -590,3 +593,12 @@ def lfpull(ui, repo, source="default", **opts):
         (cached, missing) = cachelfiles(ui, repo, rev)
         numcached += len(cached)
     ui.status(_("%d largefiles cached\n") % numcached)
+
+@command('debuglfput',
+    [] + cmdutil.remoteopts,
+    _('FILE'))
+def debuglfput(ui, repo, filepath, **kwargs):
+    hash = lfutil.hashfile(filepath)
+    storefactory.openstore(repo).put(filepath, hash)
+    ui.write('%s\n' % hash)
+    return 0

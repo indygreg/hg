@@ -1,0 +1,7 @@
+# Rust builds with a modern MSVC and uses a newer CRT.
+# Python 2.7 has a shared library dependency on an older CRT (msvcr90.dll).
+# We statically link the modern CRT to avoid multiple msvcr*.dll libraries
+# being loaded and Python possibly picking up symbols from the newer runtime
+# (which would be loaded first).
+[target.'cfg(target_os = "windows")']
+rustflags = ["-Ctarget-feature=+crt-static"]

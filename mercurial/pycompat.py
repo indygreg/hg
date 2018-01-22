@@ -63,6 +63,7 @@ if ispy3:
         sysexecutable = os.fsencode(sysexecutable)
     stringio = io.BytesIO
     maplist = lambda *args: list(map(*args))
+    ziplist = lambda *args: list(zip(*args))
     rawinput = input
 
     # TODO: .buffer might not exist if std streams were replaced; we'll need
@@ -214,7 +215,7 @@ if ispy3:
     def open(name, mode='r', buffering=-1):
         return builtins.open(name, sysstr(mode), buffering)
 
-    def getoptb(args, shortlist, namelist):
+    def _getoptbwrapper(orig, args, shortlist, namelist):
         """
         Takes bytes arguments, converts them to unicode, pass them to
         getopt.getopt(), convert the returned values back to bytes and then
@@ -224,7 +225,7 @@ if ispy3:
         args = [a.decode('latin-1') for a in args]
         shortlist = shortlist.decode('latin-1')
         namelist = [a.decode('latin-1') for a in namelist]
-        opts, args = getopt.getopt(args, shortlist, namelist)
+        opts, args = orig(args, shortlist, namelist)
         opts = [(a[0].encode('latin-1'), a[1].encode('latin-1'))
                 for a in opts]
         args = [a.encode('latin-1') for a in args]
@@ -291,8 +292,8 @@ else:
     def getdoc(obj):
         return getattr(obj, '__doc__', None)
 
-    def getoptb(args, shortlist, namelist):
-        return getopt.getopt(args, shortlist, namelist)
+    def _getoptbwrapper(orig, args, shortlist, namelist):
+        return orig(args, shortlist, namelist)
 
     strkwargs = identity
     byteskwargs = identity
@@ -313,6 +314,7 @@ else:
     shlexsplit = shlex.split
     stringio = cStringIO.StringIO
     maplist = map
+    ziplist = zip
     rawinput = raw_input
 
 isjython = sysplatform.startswith('java')
@@ -320,3 +322,9 @@ isjython = sysplatform.startswith('java')
 isdarwin = sysplatform == 'darwin'
 isposix = osname == 'posix'
 iswindows = osname == 'nt'
+
+def getoptb(args, shortlist, namelist):
+    return _getoptbwrapper(getopt.getopt, args, shortlist, namelist)
+
+def gnugetoptb(args, shortlist, namelist):
+    return _getoptbwrapper(getopt.gnu_getopt, args, shortlist, namelist)

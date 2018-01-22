@@ -197,7 +197,7 @@ class localpeer(repository.peer):
                   **kwargs):
         chunks = exchange.getbundlechunks(self._repo, source, heads=heads,
                                           common=common, bundlecaps=bundlecaps,
-                                          **kwargs)
+                                          **kwargs)[1]
         cb = util.chunkbuffer(chunks)
 
         if exchange.bundle2requested(bundlecaps):
@@ -364,11 +364,14 @@ class localrepository(object):
         self.root = self.wvfs.base
         self.path = self.wvfs.join(".hg")
         self.origroot = path
-        # These auditor are not used by the vfs,
-        # only used when writing this comment: basectx.match
-        self.auditor = pathutil.pathauditor(self.root, self._checknested)
-        self.nofsauditor = pathutil.pathauditor(self.root, self._checknested,
-                                                realfs=False, cached=True)
+        # This is only used by context.workingctx.match in order to
+        # detect files in subrepos.
+        self.auditor = pathutil.pathauditor(
+            self.root, callback=self._checknested)
+        # This is only used by context.basectx.match in order to detect
+        # files in subrepos.
+        self.nofsauditor = pathutil.pathauditor(
+            self.root, callback=self._checknested, realfs=False, cached=True)
         self.baseui = baseui
         self.ui = baseui.copy()
         self.ui.copy = baseui.copy # prevent copying repo configuration
@@ -499,9 +502,6 @@ class localrepository(object):
         # post-dirstate-status hooks
         self._postdsstatus = []
 
-        # Cache of types representing filtered repos.
-        self._filteredrepotypes = weakref.WeakKeyDictionary()
-
         # generic mapping between names and nodes
         self.names = namespaces.namespaces()
 
@@ -577,7 +577,8 @@ class localrepository(object):
     def _restrictcapabilities(self, caps):
         if self.ui.configbool('experimental', 'bundle2-advertise'):
             caps = set(caps)
-            capsblob = bundle2.encodecaps(bundle2.getrepocaps(self))
+            capsblob = bundle2.encodecaps(bundle2.getrepocaps(self,
+                                                              role='client'))
             caps.add('bundle2=' + urlreq.quote(capsblob))
         return caps
 
@@ -675,23 +676,10 @@ class localrepository(object):
         Intended to be overwritten by filtered repo."""
         return self
 
-    def filtered(self, name):
+    def filtered(self, name, visibilityexceptions=None):
         """Return a filtered version of a repository"""
-        # Python <3.4 easily leaks types via __mro__. See
-        # https://bugs.python.org/issue17950. We cache dynamically
-        # created types so this method doesn't leak on every
-        # invocation.
-
-        key = self.unfiltered().__class__
-        if key not in self._filteredrepotypes:
-            # Build a new type with the repoview mixin and the base
-            # class of this repo. Give it a name containing the
-            # filter name to aid debugging.
-            bases = (repoview.repoview, key)
-            cls = type(r'%sfilteredrepo' % name, bases, {})
-            self._filteredrepotypes[key] = cls
-
-        return self._filteredrepotypes[key](self, name)
+        cls = repoview.newtype(self.unfiltered().__class__)
+        return cls(self, name, visibilityexceptions)
 
     @repofilecache('bookmarks', 'bookmarks.current')
     def _bookmarks(self):
@@ -701,8 +689,8 @@ class localrepository(object):
     def _activebookmark(self):
         return self._bookmarks.active
 
-    # _phaserevs and _phasesets depend on changelog. what we need is to
-    # call _phasecache.invalidate() if '00changelog.i' was changed, but it
+    # _phasesets depend on changelog. what we need is to call
+    # _phasecache.invalidate() if '00changelog.i' was changed, but it
     # can't be easily expressed in filecache mechanism.
     @storecache('phaseroots', '00changelog.i')
     def _phasecache(self):
@@ -775,7 +763,9 @@ class localrepository(object):
     __bool__ = __nonzero__
 
     def __len__(self):
-        return len(self.changelog)
+        # no need to pay the cost of repoview.changelog
+        unfi = self.unfiltered()
+        return len(unfi.changelog)
 
     def __iter__(self):
         return iter(self.changelog)
@@ -1112,7 +1102,7 @@ class localrepository(object):
             data = self.wvfs.read(filename)
         return self._filter(self._encodefilterpats, filename, data)
 
-    def wwrite(self, filename, data, flags, backgroundclose=False):
+    def wwrite(self, filename, data, flags, backgroundclose=False, **kwargs):
         """write ``data`` into ``filename`` in the working directory
 
         This returns length of written (maybe decoded) data.
@@ -1121,9 +1111,12 @@ class localrepository(object):
         if 'l' in flags:
             self.wvfs.symlink(data, filename)
         else:
-            self.wvfs.write(filename, data, backgroundclose=backgroundclose)
+            self.wvfs.write(filename, data, backgroundclose=backgroundclose,
+                            **kwargs)
             if 'x' in flags:
                 self.wvfs.setflags(filename, False, True)
+            else:
+                self.wvfs.setflags(filename, False, False)
         return len(data)
 
     def wwritedata(self, filename, data):
@@ -1147,7 +1140,6 @@ class localrepository(object):
                 raise error.ProgrammingError('transaction requires locking')
         tr = self.currenttransaction()
         if tr is not None:
-            scmutil.registersummarycallback(self, tr, desc)
             return tr.nest()
 
         # abort here if the journal already exists
@@ -1244,6 +1236,8 @@ class localrepository(object):
             # gating.
             tracktags(tr2)
             repo = reporef()
+            if repo.ui.configbool('experimental', 'single-head-per-branch'):
+                scmutil.enforcesinglehead(repo, tr2, desc)
             if hook.hashook(repo.ui, 'pretxnclose-bookmark'):
                 for name, (old, new) in sorted(tr.changes['bookmarks'].items()):
                     args = tr.hookargs.copy()
@@ -1286,7 +1280,7 @@ class localrepository(object):
                                      validator=validate,
                                      releasefn=releasefn,
                                      checkambigfiles=_cachedfiles)
-        tr.changes['revs'] = set()
+        tr.changes['revs'] = xrange(0, 0)
         tr.changes['obsmarkers'] = set()
         tr.changes['phases'] = {}
         tr.changes['bookmarks'] = {}
@@ -1329,7 +1323,11 @@ class localrepository(object):
                           **pycompat.strkwargs(hookargs))
             reporef()._afterlock(hookfunc)
         tr.addfinalize('txnclose-hook', txnclosehook)
-        tr.addpostclose('warms-cache', self._buildcacheupdater(tr))
+        # Include a leading "-" to make it happen before the transaction summary
+        # reports registered via scmutil.registersummarycallback() whose names
+        # are 00-txnreport etc. That way, the caches will be warm when the
+        # callbacks run.
+        tr.addpostclose('-warm-cache', self._buildcacheupdater(tr))
         def txnaborthook(tr2):
             """To be run if transaction is aborted
             """
@@ -1587,29 +1585,18 @@ class localrepository(object):
         # determine whether it can be inherited
         if parentenvvar is not None:
             parentlock = encoding.environ.get(parentenvvar)
-        try:
-            l = lockmod.lock(vfs, lockname, 0, releasefn=releasefn,
-                             acquirefn=acquirefn, desc=desc,
-                             inheritchecker=inheritchecker,
-                             parentlock=parentlock)
-        except error.LockHeld as inst:
-            if not wait:
-                raise
-            # show more details for new-style locks
-            if ':' in inst.locker:
-                host, pid = inst.locker.split(":", 1)
-                self.ui.warn(
-                    _("waiting for lock on %s held by process %r "
-                      "on host %r\n") % (desc, pid, host))
-            else:
-                self.ui.warn(_("waiting for lock on %s held by %r\n") %
-                             (desc, inst.locker))
-            # default to 600 seconds timeout
-            l = lockmod.lock(vfs, lockname,
-                             int(self.ui.config("ui", "timeout")),
-                             releasefn=releasefn, acquirefn=acquirefn,
-                             desc=desc)
-            self.ui.warn(_("got lock after %s seconds\n") % l.delay)
+
+        timeout = 0
+        warntimeout = 0
+        if wait:
+            timeout = self.ui.configint("ui", "timeout")
+            warntimeout = self.ui.configint("ui", "timeout.warn")
+
+        l = lockmod.trylock(self.ui, vfs, lockname, timeout, warntimeout,
+                            releasefn=releasefn,
+                            acquirefn=acquirefn, desc=desc,
+                            inheritchecker=inheritchecker,
+                            parentlock=parentlock)
         return l
 
     def _afterlock(self, callback):

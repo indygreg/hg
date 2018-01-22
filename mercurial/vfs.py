@@ -83,8 +83,8 @@ class abstractvfs(object):
         with self(path, mode=mode) as fp:
             return fp.readlines()
 
-    def write(self, path, data, backgroundclose=False):
-        with self(path, 'wb', backgroundclose=backgroundclose) as fp:
+    def write(self, path, data, backgroundclose=False, **kwargs):
+        with self(path, 'wb', backgroundclose=backgroundclose, **kwargs) as fp:
             return fp.write(data)
 
     def writelines(self, path, data, mode='wb', notindexed=False):
@@ -170,9 +170,9 @@ class abstractvfs(object):
     def mkdir(self, path=None):
         return os.mkdir(self.join(path))
 
-    def mkstemp(self, suffix='', prefix='tmp', dir=None, text=False):
+    def mkstemp(self, suffix='', prefix='tmp', dir=None):
         fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix,
-                                    dir=self.join(dir), text=text)
+                                    dir=self.join(dir))
         dname, fname = util.split(name)
         if dir:
             return fd, os.path.join(dir, fname)
@@ -277,8 +277,12 @@ class abstractvfs(object):
         to ``__call__``/``open`` to result in the file possibly being closed
         asynchronously, on a background thread.
         """
-        # This is an arbitrary restriction and could be changed if we ever
-        # have a use case.
+        # Sharing backgroundfilecloser between threads is complex and using
+        # multiple instances puts us at risk of running out of file descriptors
+        # only allow to use backgroundfilecloser when in main thread.
+        if not isinstance(threading.currentThread(), threading._MainThread):
+            yield
+            return
         vfs = getattr(self, 'vfs', self)
         if getattr(vfs, '_backgroundfilecloser', None):
             raise error.Abort(
@@ -329,9 +333,8 @@ class vfs(abstractvfs):
             return
         os.chmod(name, self.createmode & 0o666)
 
-    def __call__(self, path, mode="r", text=False, atomictemp=False,
-                 notindexed=False, backgroundclose=False, checkambig=False,
-                 auditpath=True):
+    def __call__(self, path, mode="r", atomictemp=False, notindexed=False,
+                 backgroundclose=False, checkambig=False, auditpath=True):
         '''Open ``path`` file, which is relative to vfs root.
 
         Newly created directories are marked as "not to be indexed by
@@ -369,7 +372,7 @@ class vfs(abstractvfs):
             self.audit(path, mode=mode)
         f = self.join(path)
 
-        if not text and "b" not in mode:
+        if "b" not in mode:
             mode += "b" # for that other OS
 
         nlink = -1
@@ -413,7 +416,8 @@ class vfs(abstractvfs):
                                     ' valid for checkambig=True') % mode)
             fp = checkambigatclosing(fp)
 
-        if backgroundclose:
+        if (backgroundclose and
+                isinstance(threading.currentThread(), threading._MainThread)):
             if not self._backgroundfilecloser:
                 raise error.Abort(_('backgroundclose can only be used when a '
                                   'backgroundclosing context manager is active')

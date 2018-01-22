@@ -119,7 +119,7 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     >>> get([b'--cwd=foo', b'x', b'y', b'-R', b'bar', b'--debugger'], gnu=False)
     ([('--cwd', 'foo')], ['x', 'y', '-R', 'bar', '--debugger'])
     >>> get([b'--unknown', b'--cwd=foo', b'--', '--debugger'], gnu=False)
-    ([], ['--unknown', '--cwd=foo', '--debugger'])
+    ([], ['--unknown', '--cwd=foo', '--', '--debugger'])
 
     stripping early options (without loosing '--'):
 
@@ -140,6 +140,13 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     ([('-q', '')], [])
     >>> get([b'-q', b'--'])
     ([('-q', '')], [])
+
+    '--' may be a value:
+
+    >>> get([b'-R', b'--', b'x'])
+    ([('-R', '--')], ['x'])
+    >>> get([b'--cwd', b'--', b'x'])
+    ([('--cwd', '--')], ['x'])
 
     value passed to bool options:
 
@@ -163,20 +170,16 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     >>> get([b'-', b'y'])
     ([], ['-', 'y'])
     """
-    # ignoring everything just after '--' isn't correct as '--' may be an
-    # option value (e.g. ['-R', '--']), but we do that consistently.
-    try:
-        argcount = args.index('--')
-    except ValueError:
-        argcount = len(args)
-
     parsedopts = []
     parsedargs = []
     pos = 0
-    while pos < argcount:
+    while pos < len(args):
         arg = args[pos]
+        if arg == '--':
+            pos += not keepsep
+            break
         flag, hasval, val, takeval = _earlyoptarg(arg, shortlist, namelist)
-        if not hasval and takeval and pos + 1 >= argcount:
+        if not hasval and takeval and pos + 1 >= len(args):
             # missing last argument
             break
         if not flag or hasval and not takeval:
@@ -195,38 +198,10 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
             parsedopts.append((flag, args[pos + 1]))
             pos += 2
 
-    parsedargs.extend(args[pos:argcount])
-    parsedargs.extend(args[argcount + (not keepsep):])
+    parsedargs.extend(args[pos:])
     return parsedopts, parsedargs
 
-def gnugetopt(args, options, longoptions):
-    """Parse options mostly like getopt.gnu_getopt.
-
-    This is different from getopt.gnu_getopt in that an argument of - will
-    become an argument of - instead of vanishing completely.
-    """
-    extraargs = []
-    if '--' in args:
-        stopindex = args.index('--')
-        extraargs = args[stopindex + 1:]
-        args = args[:stopindex]
-    opts, parseargs = pycompat.getoptb(args, options, longoptions)
-    args = []
-    while parseargs:
-        arg = parseargs.pop(0)
-        if arg and arg[0:1] == '-' and len(arg) > 1:
-            parseargs.insert(0, arg)
-            topts, newparseargs = pycompat.getoptb(parseargs,\
-                                            options, longoptions)
-            opts = opts + topts
-            parseargs = newparseargs
-        else:
-            args.append(arg)
-    args.extend(extraargs)
-    return opts, args
-
-
-def fancyopts(args, options, state, gnu=False, early=False):
+def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
     """
     read args, parse options, and store options in state
 
@@ -246,8 +221,15 @@ def fancyopts(args, options, state, gnu=False, early=False):
       integer - parameter strings is stored as int
       function - call function with parameter
 
+    optaliases is a mapping from a canonical option name to a list of
+    additional long options. This exists for preserving backward compatibility
+    of early options. If we want to use it extensively, please consider moving
+    the functionality to the options table (e.g separate long options by '|'.)
+
     non-option args are returned
     """
+    if optaliases is None:
+        optaliases = {}
     namelist = []
     shortlist = ''
     argmap = {}
@@ -261,10 +243,13 @@ def fancyopts(args, options, state, gnu=False, early=False):
         else:
             short, name, default, comment = option
         # convert opts to getopt format
-        oname = name
+        onames = [name]
+        onames.extend(optaliases.get(name, []))
         name = name.replace('-', '_')
 
-        argmap['-' + short] = argmap['--' + oname] = name
+        argmap['-' + short] = name
+        for n in onames:
+            argmap['--' + n] = name
         defmap[name] = default
 
         # copy defaults to state
@@ -279,30 +264,30 @@ def fancyopts(args, options, state, gnu=False, early=False):
         if not (default is None or default is True or default is False):
             if short:
                 short += ':'
-            if oname:
-                oname += '='
-        elif oname not in nevernegate:
-            if oname.startswith('no-'):
-                insert = oname[3:]
-            else:
-                insert = 'no-' + oname
-            # backout (as a practical example) has both --commit and
-            # --no-commit options, so we don't want to allow the
-            # negations of those flags.
-            if insert not in alllong:
-                assert ('--' + oname) not in negations
-                negations['--' + insert] = '--' + oname
-                namelist.append(insert)
+            onames = [n + '=' for n in onames]
+        elif name not in nevernegate:
+            for n in onames:
+                if n.startswith('no-'):
+                    insert = n[3:]
+                else:
+                    insert = 'no-' + n
+                # backout (as a practical example) has both --commit and
+                # --no-commit options, so we don't want to allow the
+                # negations of those flags.
+                if insert not in alllong:
+                    assert ('--' + n) not in negations
+                    negations['--' + insert] = '--' + n
+                    namelist.append(insert)
         if short:
             shortlist += short
         if name:
-            namelist.append(oname)
+            namelist.extend(onames)
 
     # parse arguments
     if early:
         parse = functools.partial(earlygetopt, gnu=gnu)
     elif gnu:
-        parse = gnugetopt
+        parse = pycompat.gnugetoptb
     else:
         parse = pycompat.getoptb
     opts, args = parse(args, shortlist, namelist)

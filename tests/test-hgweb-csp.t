@@ -65,7 +65,6 @@ nonce should not be added to html if CSP doesn't use it
 
   $ get-with-headers.py localhost:$HGPORT repo1/graph/tip | egrep 'content-security-policy|<script'
   <script type="text/javascript" src="/repo1/static/mercurial.js"></script>
-  <!--[if IE]><script type="text/javascript" src="/repo1/static/excanvas.js"></script><![endif]-->
   <script type="text/javascript">
   <script type="text/javascript">
 
@@ -102,7 +101,6 @@ nonce should be added to html when used
   $ get-with-headers.py localhost:$HGPORT repo1/graph/tip content-security-policy | egrep 'content-security-policy|<script'
   content-security-policy: image-src 'self'; script-src https://example.com/ 'nonce-*' (glob)
   <script type="text/javascript" src="/repo1/static/mercurial.js"></script>
-  <!--[if IE]><script type="text/javascript" src="/repo1/static/excanvas.js"></script><![endif]-->
   <script type="text/javascript" nonce="*"> (glob)
   <script type="text/javascript" nonce="*"> (glob)
 
@@ -124,6 +122,5 @@ nonce included in <script> and headers
   $ get-with-headers.py localhost:$HGPORT graph/tip content-security-policy  | egrep 'content-security-policy|<script'
   content-security-policy: image-src 'self'; script-src https://example.com/ 'nonce-*' (glob)
   <script type="text/javascript" src="/static/mercurial.js"></script>
-  <!--[if IE]><script type="text/javascript" src="/static/excanvas.js"></script><![endif]-->
   <script type="text/javascript" nonce="*"> (glob)
   <script type="text/javascript" nonce="*"> (glob)

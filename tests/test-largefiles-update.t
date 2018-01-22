@@ -138,7 +138,7 @@ Test that "hg merge" updates largefiles from "other" correctly
   getting changed largefiles
   1 largefiles updated, 0 removed
   0 files updated, 1 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg status -A large1
   M large1
@@ -216,8 +216,7 @@ Test that "hg rollback" restores status of largefiles correctly
   $ hg add --large largeY
 
   $ hg status -A large1
-  large1: The system cannot find the file specified (windows !)
-  large1: No such file or directory (no-windows !)
+  large1: $ENOENT$
 
   $ hg status -A large2
   ? large2
@@ -309,8 +308,7 @@ automated commit like rebase/transplant
   rebasing 4:07d6153b5c04 "#4" (tip)
 
   $ hg status -A large1
-  large1: The system cannot find the file specified (windows !)
-  large1: No such file or directory (no-windows !)
+  large1: $ENOENT$
 
   $ hg status -A largeX
   C largeX
@@ -320,8 +318,7 @@ automated commit like rebase/transplant
   $ hg transplant -q 1 4
 
   $ hg status -A large1
-  large1: The system cannot find the file specified (windows !)
-  large1: No such file or directory (no-windows !)
+  large1: $ENOENT$
 
   $ hg status -A largeX
   C largeX
@@ -331,8 +328,7 @@ automated commit like rebase/transplant
   $ hg transplant -q --merge 1 --merge 4
 
   $ hg status -A large1
-  large1: The system cannot find the file specified (windows !)
-  large1: No such file or directory (no-windows !)
+  large1: $ENOENT$
 
   $ hg status -A largeX
   C largeX
@@ -444,7 +440,7 @@ Test that the internal linear merging works correctly
 
   $ hg update -q -C 2
   $ hg strip 3 4
-  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/9530e27857f7-2e7b195d-backup.hg (glob)
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/9530e27857f7-2e7b195d-backup.hg
   $ mv .hg/strip-backup/9530e27857f7-2e7b195d-backup.hg $TESTTMP
 
 (internal linear merging at "hg pull --update")
@@ -452,7 +448,7 @@ Test that the internal linear merging works correctly
   $ echo 'large1 for linear merge (conflict)' > large1
   $ echo 'large2 for linear merge (conflict with normal file)' > large2
   $ hg pull --update --config debug.dirstate.delaywrite=2 $TESTTMP/9530e27857f7-2e7b195d-backup.hg
-  pulling from $TESTTMP/9530e27857f7-2e7b195d-backup.hg (glob)
+  pulling from $TESTTMP/9530e27857f7-2e7b195d-backup.hg
   searching for changes
   adding changesets
   adding manifests

@@ -1707,6 +1707,7 @@ racing commit push a new head obsoleting the one touched by the raced push
   added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   obsoleted 1 changesets
+  1 new orphan changesets
   new changesets 720c5163ecf6
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-other pull
@@ -1718,6 +1719,7 @@ racing commit push a new head obsoleting the one touched by the raced push
   added 1 changesets with 1 changes to 1 files (+1 heads)
   1 new obsolescence markers
   obsoleted 1 changesets
+  1 new orphan changesets
   new changesets 720c5163ecf6
   (run 'hg heads .' to see heads, 'hg merge' to merge)
   $ hg -R ./client-racy pull
@@ -1727,6 +1729,7 @@ racing commit push a new head obsoleting the one touched by the raced push
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 0 files
+  1 new orphan changesets
   new changesets a98a47d8b85b
   (run 'hg update' to get a working copy)
 
@@ -1735,7 +1738,7 @@ racing commit push a new head obsoleting the one touched by the raced push
   $ hg -R server graph
   o  720c5163ecf6 C-V (default)
   |
-  | o  a98a47d8b85b C-U (default)
+  | *  a98a47d8b85b C-U (default)
   | |
   | x  b0ee3d6f51bc C-Q (default)
   |/
@@ -1792,6 +1795,7 @@ Creating changesets and markers
   $ hg -R client-other/ branch --force default
   marked working directory as branch default
   $ hg -R client-other/ commit -m "C-W"
+  1 new orphan changesets
   created new head
   $ ID_V=`hg -R client-other log -T '{node}\n' -r 'desc("C-V")'`
   $ ID_W=`hg -R client-other log -T '{node}\n' -r 'desc("C-W")'`
@@ -1818,6 +1822,7 @@ Pushing
   remote: added 1 changesets with 0 changes to 1 files (+1 heads)
   remote: 1 new obsolescence markers
   remote: obsoleted 1 changesets
+  remote: 1 new orphan changesets
 
   $ release $TESTTMP/watchfile
 
@@ -1835,9 +1840,9 @@ Check the result of the push
   b0ee3d6f51bc4c0ca6d4f2907708027a6c376233 720c5163ecf64dcc6216bee2d62bf3edb1882499 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   720c5163ecf64dcc6216bee2d62bf3edb1882499 39bc0598afe90ab18da460bafecc0fa953b77596 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
   $ hg -R server graph --hidden
-  o  39bc0598afe9 C-W (default)
+  *  39bc0598afe9 C-W (default)
   |
-  | o  a98a47d8b85b C-U (default)
+  | *  a98a47d8b85b C-U (default)
   |/
   x  b0ee3d6f51bc C-Q (default)
   |

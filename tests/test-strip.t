@@ -203,7 +203,7 @@
 
   $ hg --traceback strip 4
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/test/.hg/strip-backup/264128213d29-0b39d6bf-backup.hg (glob)
+  saved backup bundle to $TESTTMP/test/.hg/strip-backup/264128213d29-0b39d6bf-backup.hg
   $ hg parents
   changeset:   1:ef3a871183d7
   user:        test
@@ -659,7 +659,7 @@ test hg strip -B bookmark
      singlenode1               13:43227190fef8
      singlenode2               13:43227190fef8
   $ hg strip -B multipledelete1 -B multipledelete2
-  saved backup bundle to $TESTTMP/bookmarks/.hg/strip-backup/e46a4836065c-89ec65c2-backup.hg (glob)
+  saved backup bundle to $TESTTMP/bookmarks/.hg/strip-backup/e46a4836065c-89ec65c2-backup.hg
   bookmark 'multipledelete1' deleted
   bookmark 'multipledelete2' deleted
   $ hg id -ir e46a4836065c
@@ -669,7 +669,7 @@ test hg strip -B bookmark
   abort: unknown revision 'b4594d867745'!
   [255]
   $ hg strip -B singlenode1 -B singlenode2
-  saved backup bundle to $TESTTMP/bookmarks/.hg/strip-backup/43227190fef8-8da858f2-backup.hg (glob)
+  saved backup bundle to $TESTTMP/bookmarks/.hg/strip-backup/43227190fef8-8da858f2-backup.hg
   bookmark 'singlenode1' deleted
   bookmark 'singlenode2' deleted
   $ hg id -ir 43227190fef8
@@ -737,12 +737,12 @@ Verify bundles don't get overwritten:
   $ hg commit -Aqm b
   $ hg strip -r 0
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-e68910bd-backup.hg (glob)
+  saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-e68910bd-backup.hg
   $ ls .hg/strip-backup
   3903775176ed-e68910bd-backup.hg
   $ hg pull -q -r 3903775176ed .hg/strip-backup/3903775176ed-e68910bd-backup.hg
   $ hg strip -r 0
-  saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-54390173-backup.hg (glob)
+  saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-54390173-backup.hg
   $ ls .hg/strip-backup
   3903775176ed-54390173-backup.hg
   3903775176ed-e68910bd-backup.hg
@@ -846,7 +846,7 @@ check strip behavior
   bundle2-output-bundle: "HG20", (1 params) 2 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
-  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/6625a5168474-345bb43d-backup.hg (glob)
+  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/6625a5168474-345bb43d-backup.hg
   updating the branch cache
   invalid branchheads cache (served): tip differs
   truncating cache/rbc-revs-v1 to 24
@@ -917,7 +917,7 @@ Check that the phase cache is properly invalidated after a strip with bookmark.
   $ hg book -r tip blah
   $ hg strip ".^" --config extensions.crash=$TESTTMP/stripstalephasecache.py
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/8f0b4384875c-4fa10deb-backup.hg (glob)
+  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/8f0b4384875c-4fa10deb-backup.hg
   $ hg up -C 1
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
 
@@ -937,8 +937,8 @@ Error during post-close callback of the strip transaction
   >     repo.__class__ = crashstriprepo
   > EOF
   $ hg strip tip --config extensions.crash=$TESTTMP/crashstrip.py
-  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/5c51d8d6557d-70daef06-backup.hg (glob)
-  strip failed, backup bundle stored in '$TESTTMP/issue4736/.hg/strip-backup/5c51d8d6557d-70daef06-backup.hg' (glob)
+  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/5c51d8d6557d-70daef06-backup.hg
+  strip failed, backup bundle stored in '$TESTTMP/issue4736/.hg/strip-backup/5c51d8d6557d-70daef06-backup.hg'
   abort: boom
   [255]
 
@@ -1005,7 +1005,7 @@ test stripping a working directory parent doesn't switch named branches
 
   $ hg strip --force -r 35358f982181
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/35358f982181-50d992d4-backup.hg (glob)
+  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/35358f982181-50d992d4-backup.hg
   $ hg log -G
   @  changeset:   3:f62c6c09b707
   |  branch:      new-branch
@@ -1082,7 +1082,7 @@ test stripping a working directory parent doesn't switch named branches
 
   $ hg strip -r 35358f982181
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg (glob)
+  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
   $ hg log -G
   @  changeset:   3:f62c6c09b707
   |  branch:      new-branch
@@ -1109,7 +1109,7 @@ test stripping a working directory parent doesn't switch named branches
   
 
   $ hg pull -u $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
-  pulling from $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg (glob)
+  pulling from $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
   searching for changes
   adding changesets
   adding manifests
@@ -1119,7 +1119,7 @@ test stripping a working directory parent doesn't switch named branches
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg strip -k -r 35358f982181
-  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg (glob)
+  saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
   $ hg log -G
   @  changeset:   3:f62c6c09b707
   |  branch:      new-branch
@@ -1188,7 +1188,7 @@ Use delayedstrip to strip inside a transaction
   > EOF
   $ hg testdelayedstrip --config extensions.t=$TESTTMP/delayedstrip.py
   warning: orphaned descendants detected, not stripping 08ebfeb61bac, 112478962961, 7fb047a69f22
-  saved backup bundle to $TESTTMP/delayedstrip/.hg/strip-backup/f585351a92f8-17475721-I.hg (glob)
+  saved backup bundle to $TESTTMP/delayedstrip/.hg/strip-backup/f585351a92f8-17475721-I.hg
 
   $ hg log -G -T '{rev}:{node|short} {desc}' -r 'sort(all(), topo)'
   @  6:2f2d51af6205 J
@@ -1242,7 +1242,7 @@ Test high-level scmutil.cleanupnodes API
   > EOF
   $ hg testnodescleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
   warning: orphaned descendants detected, not stripping 112478962961, 1fc8102cda62, 26805aba1e60
-  saved backup bundle to $TESTTMP/scmutilcleanup/.hg/strip-backup/f585351a92f8-73fb7c03-replace.hg (glob)
+  saved backup bundle to $TESTTMP/scmutilcleanup/.hg/strip-backup/f585351a92f8-73fb7c03-replace.hg
 
   $ hg log -G -T '{rev}:{node|short} {desc} {bookmarks}' -r 'sort(all(), topo)'
   o  8:1473d4b996d1 G2 b-F@divergent3 b-G
@@ -1285,18 +1285,19 @@ we have reusable code here
   > EOF
 
   $ hg testnodescleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
+  4 new orphan changesets
 
   $ rm .hg/localtags
   $ hg log -G -T '{rev}:{node|short} {desc} {bookmarks}' -r 'sort(all(), topo)'
-  o  12:1473d4b996d1 G2 b-F@divergent3 b-G
+  *  12:1473d4b996d1 G2 b-F@divergent3 b-G
   |
-  | o  11:d11b3456a873 F2 b-F
+  | *  11:d11b3456a873 F2 b-F
   | |
-  | o  8:5cb05ba470a7 H
+  | *  8:5cb05ba470a7 H
   |/|
   | o  4:7fb047a69f22 E b-F@divergent1
   | |
-  | | o  10:7c78f703e465 D2 b-D
+  | | *  10:7c78f703e465 D2 b-D
   | | |
   | | x  6:26805aba1e60 C
   | | |
@@ -1307,13 +1308,13 @@ we have reusable code here
   o  0:426bada5c675 A b-B b-C b-I
   
   $ hg debugobsolete
-  1fc8102cda6204549f031015641606ccf5513ec3 1473d4b996d1d1b121de6b39fab6a04fbf9d873e 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
-  64a8289d249234b9886244d379f15e6b650b28e3 d11b3456a873daec7c7bc53e5622e8df6d741bd2 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
-  f585351a92f85104bff7c284233c338b10eb1df7 7c78f703e465d73102cc8780667ce269c5208a40 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
-  48b9aae0607f43ff110d84e6883c151942add5ab 0 {0000000000000000000000000000000000000000} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
-  112478962961147124edd43549aedd1a335e44bf 0 {426bada5c67598ca65036d57d9e4b64b0c1ce7a0} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
-  08ebfeb61bac6e3f12079de774d285a0d6689eba 0 {426bada5c67598ca65036d57d9e4b64b0c1ce7a0} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
-  26805aba1e600a82e93661149f2313866a221a7b 0 {112478962961147124edd43549aedd1a335e44bf} (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'replace', 'user': 'test'}
+  1fc8102cda6204549f031015641606ccf5513ec3 1473d4b996d1d1b121de6b39fab6a04fbf9d873e 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'replace', 'user': 'test'}
+  64a8289d249234b9886244d379f15e6b650b28e3 d11b3456a873daec7c7bc53e5622e8df6d741bd2 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'replace', 'user': 'test'}
+  f585351a92f85104bff7c284233c338b10eb1df7 7c78f703e465d73102cc8780667ce269c5208a40 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '9', 'operation': 'replace', 'user': 'test'}
+  48b9aae0607f43ff110d84e6883c151942add5ab 0 {0000000000000000000000000000000000000000} (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '0', 'operation': 'replace', 'user': 'test'}
+  112478962961147124edd43549aedd1a335e44bf 0 {426bada5c67598ca65036d57d9e4b64b0c1ce7a0} (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '0', 'operation': 'replace', 'user': 'test'}
+  08ebfeb61bac6e3f12079de774d285a0d6689eba 0 {426bada5c67598ca65036d57d9e4b64b0c1ce7a0} (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '0', 'operation': 'replace', 'user': 'test'}
+  26805aba1e600a82e93661149f2313866a221a7b 0 {112478962961147124edd43549aedd1a335e44bf} (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '0', 'operation': 'replace', 'user': 'test'}
   $ cd ..
 
 Test that obsmarkers are restored even when not using generaldelta
@@ -1328,11 +1329,11 @@ Test that obsmarkers are restored even when not using generaldelta
   $ hg ci -Aqm a
   $ hg ci --amend -m a2
   $ hg debugobsolete
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b 489bac576828490c0bb8d45eac9e5e172e4ec0a8 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b 489bac576828490c0bb8d45eac9e5e172e4ec0a8 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
   $ hg strip .
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/issue5678/.hg/strip-backup/489bac576828-bef27e14-backup.hg (glob)
+  saved backup bundle to $TESTTMP/issue5678/.hg/strip-backup/489bac576828-bef27e14-backup.hg
   $ hg unbundle -q .hg/strip-backup/*
   $ hg debugobsolete
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b 489bac576828490c0bb8d45eac9e5e172e4ec0a8 0 (Thu Jan 01 00:00:00 1970 +0000) {'operation': 'amend', 'user': 'test'}
+  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b 489bac576828490c0bb8d45eac9e5e172e4ec0a8 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
   $ cd ..

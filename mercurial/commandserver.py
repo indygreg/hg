@@ -17,11 +17,11 @@ import struct
 import traceback
 
 from .i18n import _
+from .thirdparty import selectors2
 from . import (
     encoding,
     error,
     pycompat,
-    selectors2,
     util,
 )
 
@@ -247,13 +247,13 @@ class server(object):
         req = dispatch.request(args[:], copiedui, self.repo, self.cin,
                                self.cout, self.cerr)
 
-        ret = (dispatch.dispatch(req) or 0) & 255 # might return None
-
-        # restore old cwd
-        if '--cwd' in args:
-            os.chdir(self.cwd)
-
-        self.cresult.write(struct.pack('>i', int(ret)))
+        try:
+            ret = (dispatch.dispatch(req) or 0) & 255 # might return None
+            self.cresult.write(struct.pack('>i', int(ret)))
+        finally:
+            # restore old cwd
+            if '--cwd' in args:
+                os.chdir(self.cwd)
 
     def getencoding(self):
         """ writes the current encoding to the result channel """
@@ -449,6 +449,8 @@ class unixforkingservice(object):
     def init(self):
         self._sock = socket.socket(socket.AF_UNIX)
         self._servicehandler.bindsocket(self._sock, self.address)
+        if util.safehasattr(util, 'unblocksignal'):
+            util.unblocksignal(signal.SIGCHLD)
         o = signal.signal(signal.SIGCHLD, self._sigchldhandler)
         self._oldsigchldhandler = o
         self._socketunlinked = False

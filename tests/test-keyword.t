@@ -262,6 +262,7 @@ Pull from bundle and trigger notify
   adding file changes
   added 2 changesets with 3 changes to 3 files
   new changesets a2392c293916:ef63ca68695b
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -272,7 +273,7 @@ Pull from bundle and trigger notify
   Message-Id: <hg.a2392c293916*> (glob)
   To: Test
   
-  changeset a2392c293916 in $TESTTMP/Test (glob)
+  changeset a2392c293916 in $TESTTMP/Test
   details: $TESTTMP/Test?cmd=changeset;node=a2392c293916
   description:
   	addsym
@@ -295,7 +296,7 @@ Pull from bundle and trigger notify
   Message-Id: <hg.ef63ca68695b*> (glob)
   To: Test
   
-  changeset ef63ca68695b in $TESTTMP/Test (glob)
+  changeset ef63ca68695b in $TESTTMP/Test
   details: $TESTTMP/Test?cmd=changeset;node=ef63ca68695b
   description:
   	absym
@@ -314,7 +315,6 @@ Pull from bundle and trigger notify
   +++ b/b	Thu Jan 01 00:00:00 1970 +0000
   @@ -0,0 +1,1 @@
   +ignore $Id$
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ cp $HGRCPATH.nohooks $HGRCPATH
 
@@ -929,7 +929,7 @@ Clone to test incoming
   > default = ../Test
   > EOF
   $ hg incoming
-  comparing with $TESTTMP/Test (glob)
+  comparing with $TESTTMP/Test
   searching for changes
   changeset:   2:bb948857c743
   tag:         tip
@@ -1138,7 +1138,7 @@ conflict: keyword should stay outside conflict zone
   merging m
   warning: conflicts while merging m! (edit, then use 'hg resolve --mark')
   0 files updated, 0 files merged, 0 files removed, 1 files unresolved
-  use 'hg resolve' to retry unresolved file merges or 'hg update -C .' to abandon
+  use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ cat m
   $Id$

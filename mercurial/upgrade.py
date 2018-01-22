@@ -14,6 +14,8 @@ from .i18n import _
 from . import (
     changelog,
     error,
+    filelog,
+    hg,
     localrepo,
     manifest,
     revlog,
@@ -93,6 +95,9 @@ def allowednewrequirements(repo):
         'fncache',
         'generaldelta',
     }
+
+def preservedrequirements(repo):
+    return set()
 
 deficiency = 'deficiency'
 optimisation = 'optimization'
@@ -256,7 +261,7 @@ class generaldelta(requirementformatvariant):
 
 @registerformatvariant
 class removecldeltachain(formatvariant):
-    name = 'removecldeltachain'
+    name = 'plain-cl-delta'
 
     default = True
 
@@ -280,6 +285,28 @@ class removecldeltachain(formatvariant):
     @staticmethod
     def fromconfig(repo):
         return True
+
+@registerformatvariant
+class compressionengine(formatvariant):
+    name = 'compression'
+    default = 'zlib'
+
+    description = _('Compresion algorithm used to compress data. '
+                    'Some engine are faster than other')
+
+    upgrademessage = _('revlog content will be recompressed with the new '
+                       'algorithm.')
+
+    @classmethod
+    def fromrepo(cls, repo):
+        for req in repo.requirements:
+            if req.startswith('exp-compression-'):
+                return req.split('-', 2)[2]
+        return 'zlib'
+
+    @classmethod
+    def fromconfig(cls, repo):
+        return repo.ui.config('experimental', 'format.compression')
 
 def finddeficiencies(repo):
     """returns a list of deficiencies that the repo suffer from"""
@@ -342,6 +369,19 @@ def findoptimizations(repo):
                          'recomputed; this will likely drastically slow down '
                          'execution time')))
 
+    optimizations.append(improvement(
+        name='redeltafulladd',
+        type=optimisation,
+        description=_('every revision will be re-added as if it was new '
+                      'content. It will go through the full storage '
+                      'mechanism giving extensions a chance to process it '
+                      '(eg. lfs). This is similar to "redeltaall" but even '
+                      'slower since more logic is involved.'),
+        upgrademessage=_('each revision will be added as new content to the '
+                         'internal storage; this will likely drastically slow '
+                         'down execution time, but some extensions might need '
+                         'it')))
+
     return optimizations
 
 def determineactions(repo, deficiencies, sourcereqs, destreqs):
@@ -387,9 +427,8 @@ def _revlogfrompath(repo, path):
         mandir = path[:-len('00manifest.i')]
         return manifest.manifestrevlog(repo.svfs, dir=mandir)
     else:
-        # Filelogs don't do anything special with settings. So we can use a
-        # vanilla revlog.
-        return revlog.revlog(repo.svfs, path)
+        #reverse of "/".join(("data", path + ".i"))
+        return filelog.filelog(repo.svfs, path[5:-2])
 
 def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
     """Copy revlogs between 2 repos."""
@@ -592,6 +631,8 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
     elif 'redeltamultibase' in actions:
         deltareuse = revlog.revlog.DELTAREUSESAMEREVS
+    elif 'redeltafulladd' in actions:
+        deltareuse = revlog.revlog.DELTAREUSEFULLADD
     else:
         deltareuse = revlog.revlog.DELTAREUSEALWAYS
 
@@ -679,6 +720,7 @@ def upgraderepo(ui, repo, run=False, optimize=None):
     # FUTURE there is potentially a need to control the wanted requirements via
     # command arguments or via an extension hook point.
     newreqs = localrepo.newreporequirements(repo)
+    newreqs.update(preservedrequirements(repo))
 
     noremovereqs = (repo.requirements - newreqs -
                    supportremovedrequirements(repo))
@@ -804,9 +846,10 @@ def upgraderepo(ui, repo, run=False, optimize=None):
         try:
             ui.write(_('creating temporary repository to stage migrated '
                        'data: %s\n') % tmppath)
-            dstrepo = localrepo.localrepository(repo.baseui,
-                                                path=tmppath,
-                                                create=True)
+
+            # clone ui without using ui.copy because repo.ui is protected
+            repoui = repo.ui.__class__(repo.ui)
+            dstrepo = hg.repository(repoui, path=tmppath, create=True)
 
             with dstrepo.wlock(), dstrepo.lock():
                 backuppath = _upgraderepo(ui, repo, dstrepo, newreqs,

@@ -32,8 +32,8 @@ Initial svn import
   $ cd ..
 
   $ svn import -m "init projB" projB "$SVNREPOURL/proj%20B" | filter_svn_output | sort
-  Adding         projB/mytrunk (glob)
-  Adding         projB/tags (glob)
+  Adding         projB/mytrunk
+  Adding         projB/tags
   Committed revision 1.
 
 Update svn repository
@@ -253,3 +253,72 @@ depot that can be seen from the test environment and slurping from that.)
   abort: svn-empty: missing or unsupported repository
   [255]
   $ mv format svn-empty/format
+
+enable svn subrepos
+
+  $ cat >> $HGRCPATH <<EOF
+  > [subrepos]
+  > svn:allowed = true
+  > EOF
+
+try converting when we have an svn subrepo and a merge in hg superrepo (issue5657)
+
+  $ cd "$TESTTMP"
+  $ hg init withmerge
+  $ cd withmerge
+  $ echo "subrepo = [svn]$SVNREPOURL" >.hgsub
+  $ hg add .hgsub
+  $ svn checkout "$SVNREPOURL" subrepo | sort
+  A    subrepo/proj B
+  A    subrepo/proj B/mytrunk
+  A    subrepo/proj B/mytrunk/letter .txt
+  A    subrepo/proj B/mytrunk/letter2.txt
+  A    subrepo/proj B/tags
+  A    subrepo/proj B/tags/v0.1
+  A    subrepo/proj B/tags/v0.1/letter .txt
+  A    subrepo/proj B/tags/v0.2
+  A    subrepo/proj B/tags/v0.2/letter .txt
+  A    subrepo/proj B/tags/v0.2/letter2.txt
+  Checked out revision 9.
+  $ hg ci -m "Adding svn subrepo"
+  $ touch file1.txt
+  $ hg add file1.txt
+  $ hg ci -m "Adding file1"
+  $ hg up 0
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ touch file2.txt
+  $ hg add file2.txt
+  $ hg ci -m "Adding file2"
+  created new head
+  $ hg merge 1
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ hg ci -m "merged"
+  $ cd ..
+  $ hg --config extensions.convert= convert withmerge withmerge-converted
+  initializing destination withmerge-converted repository
+  scanning source...
+  sorting...
+  converting...
+  3 Adding svn subrepo
+  2 Adding file1
+  1 Adding file2
+  0 merged
+  $ cd withmerge-converted
+  $ hg up | sort
+  4 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  A    subrepo/proj B
+  A    subrepo/proj B/mytrunk
+  A    subrepo/proj B/mytrunk/letter .txt
+  A    subrepo/proj B/mytrunk/letter2.txt
+  A    subrepo/proj B/tags
+  A    subrepo/proj B/tags/v0.1
+  A    subrepo/proj B/tags/v0.1/letter .txt
+  A    subrepo/proj B/tags/v0.2
+  A    subrepo/proj B/tags/v0.2/letter .txt
+  A    subrepo/proj B/tags/v0.2/letter2.txt
+  Checked out revision 9.
+  $ ls
+  file1.txt
+  file2.txt
+  subrepo

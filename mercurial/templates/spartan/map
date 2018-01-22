@@ -7,6 +7,7 @@ changelog = changelog.tmpl
 shortlog = shortlog.tmpl
 shortlogentry = shortlogentry.tmpl
 graph = graph.tmpl
+graphentry = graphentry.tmpl
 naventry = '<a href="{url|urlescape}log/{node|short}{sessionvars%urlparameter}">{label|escape}</a> '
 navshortentry = '<a href="{url|urlescape}shortlog/{node|short}{sessionvars%urlparameter}">{label|escape}</a> '
 navgraphentry = '<a href="{url|urlescape}graph/{node|short}{sessionvars%urlparameter}">{label|escape}</a> '
@@ -165,6 +166,11 @@ branchentry = '
 diffblock = '<pre class="parity{parity}">{lines}</pre>'
 changelogtag = '<tr><th class="tag">tag:</th><td class="tag">{tag|escape}</td></tr>'
 changesettag = '<tr><th class="tag">tag:</th><td class="tag">{tag|escape}</td></tr>'
+successorlink = '<a href="{url|urlescape}rev/{node|short}{sessionvars%urlparameter}">{node|short}</a> '
+obsfatesuccessors = '{if(successors, ' as ')}{successors%successorlink}'
+obsfateverb = '{obsfateverb(successors, markers)}'
+obsfateoperations = '{if(obsfateoperations(markers), ' using {join(obsfateoperations(markers), ', ')}')}'
+obsfateentry = '{obsfateverb}{obsfateoperations}{obsfatesuccessors}'
 filediffparent = '
   <tr>
     <th class="parent">parent {rev}:</th>

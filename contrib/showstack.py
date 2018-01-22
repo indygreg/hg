@@ -1,6 +1,8 @@
 # showstack.py - extension to dump a Python stack trace on signal
 #
 # binds to both SIGQUIT (Ctrl-\) and SIGINFO (Ctrl-T on BSDs)
+"""dump stack trace when receiving SIGQUIT (Ctrl-\) and SIGINFO (Ctrl-T on BSDs)
+"""
 
 from __future__ import absolute_import
 import signal

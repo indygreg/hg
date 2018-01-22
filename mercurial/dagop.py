@@ -75,6 +75,46 @@ def _walkrevtree(pfunc, revs, startdepth, stopdepth, reverse):
                 if prev != node.nullrev:
                     heapq.heappush(pendingheap, (heapsign * prev, pdepth))
 
+def filectxancestors(fctxs, followfirst=False):
+    """Like filectx.ancestors(), but can walk from multiple files/revisions,
+    and includes the given fctxs themselves
+
+    Yields (rev, {fctx, ...}) pairs in descending order.
+    """
+    visit = {}
+    visitheap = []
+    def addvisit(fctx):
+        rev = fctx.rev()
+        if rev not in visit:
+            visit[rev] = set()
+            heapq.heappush(visitheap, -rev)  # max heap
+        visit[rev].add(fctx)
+
+    if followfirst:
+        cut = 1
+    else:
+        cut = None
+
+    for c in fctxs:
+        addvisit(c)
+    while visit:
+        currev = -heapq.heappop(visitheap)
+        curfctxs = visit.pop(currev)
+        yield currev, curfctxs
+        for c in curfctxs:
+            for parent in c.parents()[:cut]:
+                addvisit(parent)
+    assert not visitheap
+
+def filerevancestors(fctxs, followfirst=False):
+    """Like filectx.ancestors(), but can walk from multiple files/revisions,
+    and includes the given fctxs themselves
+
+    Returns a smartset.
+    """
+    gen = (rev for rev, _cs in filectxancestors(fctxs, followfirst))
+    return generatorset(gen, iterasc=False)
+
 def _genrevancestors(repo, revs, followfirst, startdepth, stopdepth, cutfunc):
     if followfirst:
         cut = 1
@@ -251,9 +291,7 @@ def blockancestors(fctx, fromline, toline, followfirst=False):
     `fromline`-`toline` range.
     """
     diffopts = patch.diffopts(fctx._repo.ui)
-    introrev = fctx.introrev()
-    if fctx.rev() != introrev:
-        fctx = fctx.filectx(fctx.filenode(), changeid=introrev)
+    fctx = fctx.introfilectx()
     visit = {(fctx.linkrev(), fctx.filenode()): (fctx, (fromline, toline))}
     while visit:
         c, linerange2 = visit.pop(max(visit))

@@ -80,6 +80,7 @@ class dirstate(object):
         self._plchangecallbacks = {}
         self._origpl = None
         self._updatedfiles = set()
+        self._mapcls = dirstatemap
 
     @contextlib.contextmanager
     def parentchange(self):
@@ -127,9 +128,8 @@ class dirstate(object):
 
     @propertycache
     def _map(self):
-        '''Return the dirstate contents as a map from filename to
-        (state, mode, size, time).'''
-        self._map = dirstatemap(self._ui, self._opener, self._root)
+        """Return the dirstate contents (see documentation for dirstatemap)."""
+        self._map = self._mapcls(self._ui, self._opener, self._root)
         return self._map
 
     @property
@@ -158,8 +158,8 @@ class dirstate(object):
     def _pl(self):
         return self._map.parents()
 
-    def dirs(self):
-        return self._map.dirs
+    def hasdir(self, d):
+        return self._map.hastrackeddir(d)
 
     @rootcache('.hgignore')
     def _ignore(self):
@@ -387,40 +387,23 @@ class dirstate(object):
     def copies(self):
         return self._map.copymap
 
-    def _droppath(self, f):
-        if self[f] not in "?r" and "dirs" in self._map.__dict__:
-            self._map.dirs.delpath(f)
-
-        if "filefoldmap" in self._map.__dict__:
-            normed = util.normcase(f)
-            if normed in self._map.filefoldmap:
-                del self._map.filefoldmap[normed]
-
-        self._updatedfiles.add(f)
-
     def _addpath(self, f, state, mode, size, mtime):
         oldstate = self[f]
         if state == 'a' or oldstate == 'r':
             scmutil.checkfilename(f)
-            if f in self._map.dirs:
+            if self._map.hastrackeddir(f):
                 raise error.Abort(_('directory %r already in dirstate') % f)
             # shadows
             for d in util.finddirs(f):
-                if d in self._map.dirs:
+                if self._map.hastrackeddir(d):
                     break
                 entry = self._map.get(d)
                 if entry is not None and entry[0] != 'r':
                     raise error.Abort(
                         _('file %r in dirstate clashes with %r') % (d, f))
-        if oldstate in "?r" and "dirs" in self._map.__dict__:
-            self._map.dirs.addpath(f)
         self._dirty = True
         self._updatedfiles.add(f)
-        self._map[f] = dirstatetuple(state, mode, size, mtime)
-        if state != 'n' or mtime == -1:
-            self._map.nonnormalset.add(f)
-        if size == -2:
-            self._map.otherparentset.add(f)
+        self._map.addfile(f, oldstate, state, mode, size, mtime)
 
     def normal(self, f):
         '''Mark a file normal and clean.'''
@@ -458,8 +441,6 @@ class dirstate(object):
                     return
         self._addpath(f, 'n', 0, -1, -1)
         self._map.copymap.pop(f, None)
-        if f in self._map.nonnormalset:
-            self._map.nonnormalset.remove(f)
 
     def otherparent(self, f):
         '''Mark as coming from the other parent, always dirty.'''
@@ -482,7 +463,7 @@ class dirstate(object):
     def remove(self, f):
         '''Mark a file removed.'''
         self._dirty = True
-        self._droppath(f)
+        oldstate = self[f]
         size = 0
         if self._pl[1] != nullid:
             entry = self._map.get(f)
@@ -493,8 +474,8 @@ class dirstate(object):
                 elif entry[0] == 'n' and entry[2] == -2: # other parent
                     size = -2
                     self._map.otherparentset.add(f)
-        self._map[f] = dirstatetuple('r', 0, size, 0)
-        self._map.nonnormalset.add(f)
+        self._updatedfiles.add(f)
+        self._map.removefile(f, oldstate, size)
         if size == 0:
             self._map.copymap.pop(f, None)
 
@@ -506,12 +487,10 @@ class dirstate(object):
 
     def drop(self, f):
         '''Drop a file from the dirstate'''
-        if f in self._map:
+        oldstate = self[f]
+        if self._map.dropfile(f, oldstate):
             self._dirty = True
-            self._droppath(f)
-            del self._map[f]
-            if f in self._map.nonnormalset:
-                self._map.nonnormalset.remove(f)
+            self._updatedfiles.add(f)
             self._map.copymap.pop(f, None)
 
     def _discoverpath(self, path, normed, ignoremissing, exists, storemap):
@@ -635,12 +614,7 @@ class dirstate(object):
 
             # emulate dropping timestamp in 'parsers.pack_dirstate'
             now = _getfsnow(self._opener)
-            dmap = self._map
-            for f in self._updatedfiles:
-                e = dmap.get(f)
-                if e is not None and e[0] == 'n' and e[3] == now:
-                    dmap[f] = dirstatetuple(e[0], e[1], e[2], -1)
-                    self._map.nonnormalset.add(f)
+            self._map.clearambiguoustimes(self._updatedfiles, now)
 
             # emulate that all 'dirstate.normal' results are written out
             self._lastnormaltime = 0
@@ -797,7 +771,6 @@ class dirstate(object):
         results = dict.fromkeys(subrepos)
         results['.hg'] = None
 
-        alldirs = None
         for ff in files:
             # constructing the foldmap is expensive, so don't do it for the
             # common case where files is ['.']
@@ -828,9 +801,7 @@ class dirstate(object):
                 if nf in dmap: # does it exactly match a missing file?
                     results[nf] = None
                 else: # does it match a missing directory?
-                    if alldirs is None:
-                        alldirs = util.dirs(dmap._map)
-                    if nf in alldirs:
+                    if self._map.hasdir(nf):
                         if matchedir:
                             matchedir(nf)
                         notfoundadd(nf)
@@ -1198,6 +1169,39 @@ class dirstate(object):
         self._opener.unlink(backupname)
 
 class dirstatemap(object):
+    """Map encapsulating the dirstate's contents.
+
+    The dirstate contains the following state:
+
+    - `identity` is the identity of the dirstate file, which can be used to
+      detect when changes have occurred to the dirstate file.
+
+    - `parents` is a pair containing the parents of the working copy. The
+      parents are updated by calling `setparents`.
+
+    - the state map maps filenames to tuples of (state, mode, size, mtime),
+      where state is a single character representing 'normal', 'added',
+      'removed', or 'merged'. It is read by treating the dirstate as a
+      dict.  File state is updated by calling the `addfile`, `removefile` and
+      `dropfile` methods.
+
+    - `copymap` maps destination filenames to their source filename.
+
+    The dirstate also provides the following views onto the state:
+
+    - `nonnormalset` is a set of the filenames that have state other
+      than 'normal', or are normal but have an mtime of -1 ('normallookup').
+
+    - `otherparentset` is a set of the filenames that are marked as coming
+      from the second parent when the dirstate is currently being merged.
+
+    - `filefoldmap` is a dict mapping normalized filenames to the denormalized
+      form that they appear as in the dirstate.
+
+    - `dirfoldmap` is a dict mapping normalized directory names to the
+      denormalized form that they appear as in the dirstate.
+    """
+
     def __init__(self, ui, opener, root):
         self._ui = ui
         self._opener = opener
@@ -1226,6 +1230,12 @@ class dirstatemap(object):
         self._map.clear()
         self.copymap.clear()
         self.setparents(nullid, nullid)
+        util.clearcachedproperty(self, "_dirs")
+        util.clearcachedproperty(self, "_alldirs")
+        util.clearcachedproperty(self, "filefoldmap")
+        util.clearcachedproperty(self, "dirfoldmap")
+        util.clearcachedproperty(self, "nonnormalset")
+        util.clearcachedproperty(self, "otherparentset")
 
     def iteritems(self):
         return self._map.iteritems()
@@ -1242,14 +1252,8 @@ class dirstatemap(object):
     def __contains__(self, key):
         return key in self._map
 
-    def __setitem__(self, key, value):
-        self._map[key] = value
-
     def __getitem__(self, key):
         return self._map[key]
-
-    def __delitem__(self, key):
-        del self._map[key]
 
     def keys(self):
         return self._map.keys()
@@ -1257,6 +1261,60 @@ class dirstatemap(object):
     def preload(self):
         """Loads the underlying data, if it's not already loaded"""
         self._map
+
+    def addfile(self, f, oldstate, state, mode, size, mtime):
+        """Add a tracked file to the dirstate."""
+        if oldstate in "?r" and "_dirs" in self.__dict__:
+            self._dirs.addpath(f)
+        if oldstate == "?" and "_alldirs" in self.__dict__:
+            self._alldirs.addpath(f)
+        self._map[f] = dirstatetuple(state, mode, size, mtime)
+        if state != 'n' or mtime == -1:
+            self.nonnormalset.add(f)
+        if size == -2:
+            self.otherparentset.add(f)
+
+    def removefile(self, f, oldstate, size):
+        """
+        Mark a file as removed in the dirstate.
+
+        The `size` parameter is used to store sentinel values that indicate
+        the file's previous state.  In the future, we should refactor this
+        to be more explicit about what that state is.
+        """
+        if oldstate not in "?r" and "_dirs" in self.__dict__:
+            self._dirs.delpath(f)
+        if oldstate == "?" and "_alldirs" in self.__dict__:
+            self._alldirs.addpath(f)
+        if "filefoldmap" in self.__dict__:
+            normed = util.normcase(f)
+            self.filefoldmap.pop(normed, None)
+        self._map[f] = dirstatetuple('r', 0, size, 0)
+        self.nonnormalset.add(f)
+
+    def dropfile(self, f, oldstate):
+        """
+        Remove a file from the dirstate.  Returns True if the file was
+        previously recorded.
+        """
+        exists = self._map.pop(f, None) is not None
+        if exists:
+            if oldstate != "r" and "_dirs" in self.__dict__:
+                self._dirs.delpath(f)
+            if "_alldirs" in self.__dict__:
+                self._alldirs.delpath(f)
+        if "filefoldmap" in self.__dict__:
+            normed = util.normcase(f)
+            self.filefoldmap.pop(normed, None)
+        self.nonnormalset.discard(f)
+        return exists
+
+    def clearambiguoustimes(self, files, now):
+        for f in files:
+            e = self.get(f)
+            if e is not None and e[0] == 'n' and e[3] == now:
+                self._map[f] = dirstatetuple(e[0], e[1], e[2], -1)
+                self.nonnormalset.add(f)
 
     def nonnormalentries(self):
         '''Compute the nonnormal dirstate entries from the dmap'''
@@ -1293,12 +1351,27 @@ class dirstatemap(object):
         f['.'] = '.' # prevents useless util.fspath() invocation
         return f
 
-    @propertycache
-    def dirs(self):
-        """Returns a set-like object containing all the directories in the
-        current dirstate.
+    def hastrackeddir(self, d):
         """
+        Returns True if the dirstate contains a tracked (not removed) file
+        in this directory.
+        """
+        return d in self._dirs
+
+    def hasdir(self, d):
+        """
+        Returns True if the dirstate contains a file (tracked or removed)
+        in this directory.
+        """
+        return d in self._alldirs
+
+    @propertycache
+    def _dirs(self):
         return util.dirs(self._map, 'r')
+
+    @propertycache
+    def _alldirs(self):
+        return util.dirs(self._map)
 
     def _opendirstatefile(self):
         fp, mode = txnutil.trypending(self._root, self._opener, self._filename)
@@ -1387,8 +1460,6 @@ class dirstatemap(object):
         # Avoid excess attribute lookups by fast pathing certain checks
         self.__contains__ = self._map.__contains__
         self.__getitem__ = self._map.__getitem__
-        self.__setitem__ = self._map.__setitem__
-        self.__delitem__ = self._map.__delitem__
         self.get = self._map.get
 
     def write(self, st, now):
@@ -1419,6 +1490,6 @@ class dirstatemap(object):
     def dirfoldmap(self):
         f = {}
         normcase = util.normcase
-        for name in self.dirs:
+        for name in self._dirs:
             f[normcase(name)] = name
         return f

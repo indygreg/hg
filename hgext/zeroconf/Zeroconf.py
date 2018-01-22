@@ -1613,7 +1613,8 @@ class Zeroconf(object):
                                                _DNS_TTL, service.address))
 
                     service = self.services.get(question.name.lower(), None)
-                    if not service: continue
+                    if not service:
+                        continue
 
                     if (question.type == _TYPE_SRV or
                         question.type == _TYPE_ANY):

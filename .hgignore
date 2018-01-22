@@ -24,6 +24,7 @@ tests/.testtimes*
 tests/.hypothesis
 tests/hypothesis-generated
 tests/annotated
+tests/exceptions
 tests/*.err
 tests/htmlcov
 build
@@ -54,6 +55,8 @@ cscope.*
 i18n/hg.pot
 locale/*/LC_MESSAGES/hg.mo
 hgext/__index__.py
+
+rust/target/
 
 # Generated wheels
 wheelhouse/

@@ -117,7 +117,6 @@ import weakref
 from mercurial.i18n import _
 from mercurial.node import (
     hex,
-    nullid,
 )
 
 from mercurial import (
@@ -163,9 +162,6 @@ configitem('fsmonitor', 'blacklistusers',
     default=list,
 )
 configitem('experimental', 'fsmonitor.transaction_notify',
-    default=False,
-)
-configitem('experimental', 'fsmonitor.wc_change_notify',
     default=False,
 )
 
@@ -224,16 +220,21 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     Whenever full is False, ignored is False, and the Watchman client is
     available, use Watchman combined with saved state to possibly return only a
     subset of files.'''
-    def bail():
+    def bail(reason):
+        self._ui.debug('fsmonitor: fallback to core status, %s\n' % reason)
         return orig(match, subrepos, unknown, ignored, full=True)
 
-    if full or ignored or not self._watchmanclient.available():
-        return bail()
+    if full:
+        return bail('full rewalk requested')
+    if ignored:
+        return bail('listing ignored files')
+    if not self._watchmanclient.available():
+        return bail('client unavailable')
     state = self._fsmonitorstate
     clock, ignorehash, notefiles = state.get()
     if not clock:
         if state.walk_on_invalidate:
-            return bail()
+            return bail('no clock')
         # Initial NULL clock value, see
         # https://facebook.github.io/watchman/docs/clockspec.html
         clock = 'c:0:0'
@@ -263,7 +264,7 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         if _hashignore(ignore) != ignorehash and clock != 'c:0:0':
             # ignore list changed -- can't rely on Watchman state any more
             if state.walk_on_invalidate:
-                return bail()
+                return bail('ignore rules changed')
             notefiles = []
             clock = 'c:0:0'
     else:
@@ -273,7 +274,11 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
 
     matchfn = match.matchfn
     matchalways = match.always()
-    dmap = self._map._map
+    dmap = self._map
+    if util.safehasattr(dmap, '_map'):
+        # for better performance, directly access the inner dirstate map if the
+        # standard dirstate implementation is in use.
+        dmap = dmap._map
     nonnormalset = self._map.nonnormalset
 
     copymap = self._map.copymap
@@ -334,7 +339,7 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
     except Exception as ex:
         _handleunavailable(self._ui, state, ex)
         self._watchmanclient.clearconnection()
-        return bail()
+        return bail('exception during run')
     else:
         # We need to propagate the last observed clock up so that we
         # can use it for our next query
@@ -342,7 +347,7 @@ def overridewalk(orig, self, match, subrepos, unknown, ignored, full=True):
         if result['is_fresh_instance']:
             if state.walk_on_invalidate:
                 state.invalidate()
-                return bail()
+                return bail('fresh instance')
             fresh_instance = True
             # Ignore any prior noteable files from the state info
             notefiles = []
@@ -600,14 +605,6 @@ def makedirstate(repo, dirstate):
             self._fsmonitorstate.invalidate()
             return super(fsmonitordirstate, self).invalidate(*args, **kwargs)
 
-        if dirstate._ui.configbool(
-            "experimental", "fsmonitor.wc_change_notify"):
-            def setparents(self, p1, p2=nullid):
-                with state_update(self._repo, name="hg.wc_change",
-                                  oldnode=self._pl[0], newnode=p1,
-                                  partial=False):
-                    return super(fsmonitordirstate, self).setparents(p1, p2)
-
     dirstate.__class__ = fsmonitordirstate
     dirstate._fsmonitorinit(repo)
 
@@ -662,14 +659,18 @@ class state_update(object):
         self.enter()
 
     def enter(self):
-        # We explicitly need to take a lock here, before we proceed to update
-        # watchman about the update operation, so that we don't race with
-        # some other actor.  merge.update is going to take the wlock almost
-        # immediately anyway, so this is effectively extending the lock
-        # around a couple of short sanity checks.
+        # Make sure we have a wlock prior to sending notifications to watchman.
+        # We don't want to race with other actors. In the update case,
+        # merge.update is going to take the wlock almost immediately. We are
+        # effectively extending the lock around several short sanity checks.
         if self.oldnode is None:
             self.oldnode = self.repo['.'].node()
-        self._lock = self.repo.wlock()
+
+        if self.repo.currentwlock() is None:
+            if util.safehasattr(self.repo, 'wlocknostateupdate'):
+                self._lock = self.repo.wlocknostateupdate()
+            else:
+                self._lock = self.repo.wlock()
         self.need_leave = self._state(
             'state-enter',
             hex(self.oldnode))
@@ -790,32 +791,34 @@ def reposetup(ui, repo):
                 orig = super(fsmonitorrepo, self).status
                 return overridestatus(orig, self, *args, **kwargs)
 
-            if ui.configbool("experimental", "fsmonitor.transaction_notify"):
-                def transaction(self, *args, **kwargs):
-                    tr = super(fsmonitorrepo, self).transaction(
-                               *args, **kwargs)
-                    if tr.count != 1:
-                        return tr
-                    stateupdate = state_update(self, name="hg.transaction")
-                    stateupdate.enter()
+            def wlocknostateupdate(self, *args, **kwargs):
+                return super(fsmonitorrepo, self).wlock(*args, **kwargs)
 
-                    class fsmonitortrans(tr.__class__):
-                        def _abort(self):
-                            try:
-                                result = super(fsmonitortrans, self)._abort()
-                            finally:
-                                stateupdate.exit(abort=True)
-                            return result
+            def wlock(self, *args, **kwargs):
+                l = super(fsmonitorrepo, self).wlock(*args, **kwargs)
+                if not ui.configbool(
+                    "experimental", "fsmonitor.transaction_notify"):
+                    return l
+                if l.held != 1:
+                    return l
+                origrelease = l.releasefn
 
-                        def close(self):
-                            try:
-                                result = super(fsmonitortrans, self).close()
-                            finally:
-                                if self.count == 0:
-                                    stateupdate.exit()
-                            return result
+                def staterelease():
+                    if origrelease:
+                        origrelease()
+                    if l.stateupdate:
+                        l.stateupdate.exit()
+                        l.stateupdate = None
 
-                    tr.__class__ = fsmonitortrans
-                    return tr
+                try:
+                    l.stateupdate = None
+                    l.stateupdate = state_update(self, name="hg.transaction")
+                    l.stateupdate.enter()
+                    l.releasefn = staterelease
+                except Exception as e:
+                    # Swallow any errors; fire and forget
+                    self.ui.log(
+                        'watchman', 'Exception in state update %s\n', e)
+                return l
 
         repo.__class__ = fsmonitorrepo

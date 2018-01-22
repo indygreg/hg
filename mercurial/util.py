@@ -49,6 +49,7 @@ from . import (
     encoding,
     error,
     i18n,
+    node as nodemod,
     policy,
     pycompat,
     urllibcompat,
@@ -109,6 +110,8 @@ executablepath = platform.executablepath
 expandglobs = platform.expandglobs
 explainexit = platform.explainexit
 findexe = platform.findexe
+getfsmountpoint = platform.getfsmountpoint
+getfstype = platform.getfstype
 gethgcmd = platform.gethgcmd
 getuser = platform.getuser
 getpid = os.getpid
@@ -161,6 +164,10 @@ except AttributeError:
     pass
 try:
     setprocname = osutil.setprocname
+except AttributeError:
+    pass
+try:
+    unblocksignal = osutil.unblocksignal
 except AttributeError:
     pass
 
@@ -259,7 +266,7 @@ class digester(object):
     def __getitem__(self, key):
         if key not in DIGESTS:
             raise Abort(_('unknown digest type: %s') % k)
-        return self._hashes[key].hexdigest()
+        return nodemod.hex(self._hashes[key].digest())
 
     def __iter__(self):
         return iter(self._hashes)
@@ -931,6 +938,11 @@ class propertycache(object):
         # __dict__ assignment required to bypass __setattr__ (eg: repoview)
         obj.__dict__[self.name] = value
 
+def clearcachedproperty(obj, prop):
+    '''clear a cached property value, if one has been set'''
+    if prop in obj.__dict__:
+        del obj.__dict__[prop]
+
 def pipefilter(s, cmd):
     '''filter string S through command CMD, returning its output'''
     p = subprocess.Popen(cmd, shell=True, close_fds=closefds,
@@ -1196,6 +1208,7 @@ _hardlinkfswhitelist = {
     'ext4',
     'hfs',
     'jfs',
+    'NTFS',
     'reiserfs',
     'tmpfs',
     'ufs',
@@ -1509,13 +1522,6 @@ def fspath(name, root):
         dir = os.path.join(dir, part)
 
     return ''.join(result)
-
-def getfstype(dirpath):
-    '''Get the filesystem type name from a directory (best-effort)
-
-    Returns None if we are unsure. Raises OSError on ENOENT, EPERM, etc.
-    '''
-    return getattr(osutil, 'getfstype', lambda x: None)(dirpath)
 
 def checknlink(testfile):
     '''check whether hardlink count reporting works properly'''
@@ -2662,7 +2668,7 @@ def interpolate(prefix, mapping, s, fn=None, escape_prefix=False):
         else:
             prefix_char = prefix
         mapping[prefix_char] = prefix_char
-    r = remod.compile(r'%s(%s)' % (prefix, patterns))
+    r = remod.compile(br'%s(%s)' % (prefix, patterns))
     return r.sub(lambda x: fn(mapping[x.group()[1:]]), s)
 
 def getport(port):
@@ -3859,3 +3865,82 @@ def safename(f, tag, ctx, others=None):
         fn = '%s~%s~%s' % (f, tag, n)
         if fn not in ctx and fn not in others:
             return fn
+
+def readexactly(stream, n):
+    '''read n bytes from stream.read and abort if less was available'''
+    s = stream.read(n)
+    if len(s) < n:
+        raise error.Abort(_("stream ended unexpectedly"
+                           " (got %d bytes, expected %d)")
+                          % (len(s), n))
+    return s
+
+def uvarintencode(value):
+    """Encode an unsigned integer value to a varint.
+
+    A varint is a variable length integer of 1 or more bytes. Each byte
+    except the last has the most significant bit set. The lower 7 bits of
+    each byte store the 2's complement representation, least significant group
+    first.
+
+    >>> uvarintencode(0)
+    '\\x00'
+    >>> uvarintencode(1)
+    '\\x01'
+    >>> uvarintencode(127)
+    '\\x7f'
+    >>> uvarintencode(1337)
+    '\\xb9\\n'
+    >>> uvarintencode(65536)
+    '\\x80\\x80\\x04'
+    >>> uvarintencode(-1)
+    Traceback (most recent call last):
+        ...
+    ProgrammingError: negative value for uvarint: -1
+    """
+    if value < 0:
+        raise error.ProgrammingError('negative value for uvarint: %d'
+                                     % value)
+    bits = value & 0x7f
+    value >>= 7
+    bytes = []
+    while value:
+        bytes.append(pycompat.bytechr(0x80 | bits))
+        bits = value & 0x7f
+        value >>= 7
+    bytes.append(pycompat.bytechr(bits))
+
+    return ''.join(bytes)
+
+def uvarintdecodestream(fh):
+    """Decode an unsigned variable length integer from a stream.
+
+    The passed argument is anything that has a ``.read(N)`` method.
+
+    >>> try:
+    ...     from StringIO import StringIO as BytesIO
+    ... except ImportError:
+    ...     from io import BytesIO
+    >>> uvarintdecodestream(BytesIO(b'\\x00'))
+    0
+    >>> uvarintdecodestream(BytesIO(b'\\x01'))
+    1
+    >>> uvarintdecodestream(BytesIO(b'\\x7f'))
+    127
+    >>> uvarintdecodestream(BytesIO(b'\\xb9\\n'))
+    1337
+    >>> uvarintdecodestream(BytesIO(b'\\x80\\x80\\x04'))
+    65536
+    >>> uvarintdecodestream(BytesIO(b'\\x80'))
+    Traceback (most recent call last):
+        ...
+    Abort: stream ended unexpectedly (got 0 bytes, expected 1)
+    """
+    result = 0
+    shift = 0
+    while True:
+        byte = ord(readexactly(fh, 1))
+        result |= ((byte & 0x7f) << shift)
+        if not (byte & 0x80):
+            return result
+        shift += 7

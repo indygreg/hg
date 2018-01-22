@@ -9,6 +9,7 @@ import optparse
 import smtpd
 import ssl
 import sys
+import traceback
 
 from mercurial import (
     server,
@@ -26,6 +27,15 @@ class dummysmtpserver(smtpd.SMTPServer):
 
     def process_message(self, peer, mailfrom, rcpttos, data):
         log('%s from=%s to=%s\n' % (peer[0], mailfrom, ', '.join(rcpttos)))
+
+    def handle_error(self):
+        # On Windows, a bad SSL connection sometimes generates a WSAECONNRESET.
+        # The default handler will shutdown this server, and then both the
+        # current connection and subsequent ones fail on the client side with
+        # "No connection could be made because the target machine actively
+        # refused it".  If we eat the error, then the client properly aborts in
+        # the expected way, and the server is available for subsequent requests.
+        traceback.print_exc()
 
 class dummysmtpsecureserver(dummysmtpserver):
     def __init__(self, localaddr, certfile):

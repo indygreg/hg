@@ -7,23 +7,27 @@
 
 from __future__ import absolute_import
 
+import contextlib
+import os
 import struct
+import tempfile
+import warnings
 
 from .i18n import _
 from . import (
     branchmap,
+    cacheutil,
     error,
     phases,
     store,
     util,
 )
 
-def canperformstreamclone(pullop, bailifbundle2supported=False):
+def canperformstreamclone(pullop, bundle2=False):
     """Whether it is possible to perform a streaming clone as part of pull.
 
-    ``bailifbundle2supported`` will cause the function to return False if
-    bundle2 stream clones are supported. It should only be called by the
-    legacy stream clone code path.
+    ``bundle2`` will cause the function to consider stream clone through
+    bundle2 and only through bundle2.
 
     Returns a tuple of (supported, requirements). ``supported`` is True if
     streaming clone is supported and False otherwise. ``requirements`` is
@@ -35,18 +39,18 @@ def canperformstreamclone(pullop, bailifbundle2supported=False):
 
     bundle2supported = False
     if pullop.canusebundle2:
-        if 'v1' in pullop.remotebundle2caps.get('stream', []):
+        if 'v2' in pullop.remotebundle2caps.get('stream', []):
             bundle2supported = True
         # else
             # Server doesn't support bundle2 stream clone or doesn't support
             # the versions we support. Fall back and possibly allow legacy.
 
     # Ensures legacy code path uses available bundle2.
-    if bailifbundle2supported and bundle2supported:
+    if bundle2supported and not bundle2:
         return False, None
     # Ensures bundle2 doesn't try to do a stream clone if it isn't supported.
-    #elif not bailifbundle2supported and not bundle2supported:
-    #    return False, None
+    elif bundle2 and not bundle2supported:
+        return False, None
 
     # Streaming clone only works on empty repositories.
     if len(repo):
@@ -235,10 +239,26 @@ def generatev1(repo):
 def generatev1wireproto(repo):
     """Emit content for version 1 of streaming clone suitable for the wire.
 
-    This is the data output from ``generatev1()`` with a header line
-    indicating file count and byte size.
+    This is the data output from ``generatev1()`` with 2 header lines. The
+    first line indicates overall success. The 2nd contains the file count and
+    byte size of payload.
+
+    The success line contains "0" for success, "1" for stream generation not
+    allowed, and "2" for error locking the repository (possibly indicating
+    a permissions error for the server process).
     """
-    filecount, bytecount, it = generatev1(repo)
+    if not allowservergeneration(repo):
+        yield '1\n'
+        return
+
+    try:
+        filecount, bytecount, it = generatev1(repo)
+    except error.LockError:
+        yield '2\n'
+        return
+
+    # Indicates successful response.
+    yield '0\n'
     yield '%d %d\n' % (filecount, bytecount)
     for chunk in it:
         yield chunk
@@ -412,3 +432,203 @@ class streamcloneapplier(object):
 
     def apply(self, repo):
         return applybundlev1(repo, self._fh)
+
+# type of file to stream
+_fileappend = 0 # append only file
+_filefull = 1   # full snapshot file
+
+# Source of the file
+_srcstore = 's' # store (svfs)
+_srccache = 'c' # cache (cache)
+
+# This is it's own function so extensions can override it.
+def _walkstreamfullstorefiles(repo):
+    """list snapshot file from the store"""
+    fnames = []
+    if not repo.publishing():
+        fnames.append('phaseroots')
+    return fnames
+
+def _filterfull(entry, copy, vfsmap):
+    """actually copy the snapshot files"""
+    src, name, ftype, data = entry
+    if ftype != _filefull:
+        return entry
+    return (src, name, ftype, copy(vfsmap[src].join(name)))
+
+@contextlib.contextmanager
+def maketempcopies():
+    """return a function to temporary copy file"""
+    files = []
+    try:
+        def copy(src):
+            fd, dst = tempfile.mkstemp()
+            os.close(fd)
+            files.append(dst)
+            util.copyfiles(src, dst, hardlink=True)
+            return dst
+        yield copy
+    finally:
+        for tmp in files:
+            util.tryunlink(tmp)
+
+def _makemap(repo):
+    """make a (src -> vfs) map for the repo"""
+    vfsmap = {
+        _srcstore: repo.svfs,
+        _srccache: repo.cachevfs,
+    }
+    # we keep repo.vfs out of the on purpose, ther are too many danger there
+    # (eg: .hg/hgrc)
+    assert repo.vfs not in vfsmap.values()
+
+    return vfsmap
+
+def _emit(repo, entries, totalfilesize):
+    """actually emit the stream bundle"""
+    vfsmap = _makemap(repo)
+    progress = repo.ui.progress
+    progress(_('bundle'), 0, total=totalfilesize, unit=_('bytes'))
+    with maketempcopies() as copy:
+        try:
+            # copy is delayed until we are in the try
+            entries = [_filterfull(e, copy, vfsmap) for e in entries]
+            yield None # this release the lock on the repository
+            seen = 0
+
+            for src, name, ftype, data in entries:
+                vfs = vfsmap[src]
+                yield src
+                yield util.uvarintencode(len(name))
+                if ftype == _fileappend:
+                    fp = vfs(name)
+                    size = data
+                elif ftype == _filefull:
+                    fp = open(data, 'rb')
+                    size = util.fstat(fp).st_size
+                try:
+                    yield util.uvarintencode(size)
+                    yield name
+                    if size <= 65536:
+                        chunks = (fp.read(size),)
+                    else:
+                        chunks = util.filechunkiter(fp, limit=size)
+                    for chunk in chunks:
+                        seen += len(chunk)
+                        progress(_('bundle'), seen, total=totalfilesize,
+                                 unit=_('bytes'))
+                        yield chunk
+                finally:
+                    fp.close()
+        finally:
+            progress(_('bundle'), None)
+
+def generatev2(repo):
+    """Emit content for version 2 of a streaming clone.
+
+    the data stream consists the following entries:
+    1) A char representing the file destination (eg: store or cache)
+    2) A varint containing the length of the filename
+    3) A varint containing the length of file data
+    4) N bytes containing the filename (the internal, store-agnostic form)
+    5) N bytes containing the file data
+
+    Returns a 3-tuple of (file count, file size, data iterator).
+    """
+
+    with repo.lock():
+
+        entries = []
+        totalfilesize = 0
+
+        repo.ui.debug('scanning\n')
+        for name, ename, size in _walkstreamfiles(repo):
+            if size:
+                entries.append((_srcstore, name, _fileappend, size))
+                totalfilesize += size
+        for name in _walkstreamfullstorefiles(repo):
+            if repo.svfs.exists(name):
+                totalfilesize += repo.svfs.lstat(name).st_size
+                entries.append((_srcstore, name, _filefull, None))
+        for name in cacheutil.cachetocopy(repo):
+            if repo.cachevfs.exists(name):
+                totalfilesize += repo.cachevfs.lstat(name).st_size
+                entries.append((_srccache, name, _filefull, None))
+
+        chunks = _emit(repo, entries, totalfilesize)
+        first = next(chunks)
+        assert first is None
+
+    return len(entries), totalfilesize, chunks
+
+@contextlib.contextmanager
+def nested(*ctxs):
+    with warnings.catch_warnings():
+        # For some reason, Python decided 'nested' was deprecated without
+        # replacement. They officially advertised for filtering the deprecation
+        # warning for people who actually need the feature.
+        warnings.filterwarnings("ignore",category=DeprecationWarning)
+        with contextlib.nested(*ctxs):
+            yield
+
+def consumev2(repo, fp, filecount, filesize):
+    """Apply the contents from a version 2 streaming clone.
+
+    Data is read from an object that only needs to provide a ``read(size)``
+    method.
+    """
+    with repo.lock():
+        repo.ui.status(_('%d files to transfer, %s of data\n') %
+                       (filecount, util.bytecount(filesize)))
+
+        start = util.timer()
+        handledbytes = 0
+        progress = repo.ui.progress
+
+        progress(_('clone'), handledbytes, total=filesize, unit=_('bytes'))
+
+        vfsmap = _makemap(repo)
+
+        with repo.transaction('clone'):
+            ctxs = (vfs.backgroundclosing(repo.ui)
+                    for vfs in vfsmap.values())
+            with nested(*ctxs):
+                for i in range(filecount):
+                    src = fp.read(1)
+                    vfs = vfsmap[src]
+                    namelen = util.uvarintdecodestream(fp)
+                    datalen = util.uvarintdecodestream(fp)
+
+                    name = fp.read(namelen)
+
+                    if repo.ui.debugflag:
+                        repo.ui.debug('adding [%s] %s (%s)\n' %
+                                      (src, name, util.bytecount(datalen)))
+
+                    with vfs(name, 'w') as ofp:
+                        for chunk in util.filechunkiter(fp, limit=datalen):
+                            handledbytes += len(chunk)
+                            progress(_('clone'), handledbytes, total=filesize,
+                                     unit=_('bytes'))
+                            ofp.write(chunk)
+
+            # force @filecache properties to be reloaded from
+            # streamclone-ed file at next access
+            repo.invalidate(clearfilecache=True)
+
+        elapsed = util.timer() - start
+        if elapsed <= 0:
+            elapsed = 0.001
+        progress(_('clone'), None)
+        repo.ui.status(_('transferred %s in %.1f seconds (%s/sec)\n') %
+                       (util.bytecount(handledbytes), elapsed,
+                        util.bytecount(handledbytes / elapsed)))
+
+def applybundlev2(repo, fp, filecount, filesize, requirements):
+    missingreqs = [r for r in requirements if r not in repo.supported]
+    if missingreqs:
+        raise error.Abort(_('unable to apply stream clone: '
+                            'unsupported format: %s') %
+                          ', '.join(sorted(missingreqs)))
+
+    consumev2(repo, fp, filecount, filesize)

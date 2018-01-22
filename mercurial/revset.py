@@ -22,6 +22,7 @@ from . import (
     obsutil,
     pathutil,
     phases,
+    pycompat,
     registrar,
     repoview,
     revsetlang,
@@ -123,7 +124,7 @@ def rangeset(repo, subset, x, y, order):
 
 def rangeall(repo, subset, x, order):
     assert x is None
-    return _makerangeset(repo, subset, 0, len(repo) - 1, order)
+    return _makerangeset(repo, subset, 0, repo.changelog.tiprev(), order)
 
 def rangepre(repo, subset, y, order):
     # ':y' can't be rewritten to '0:y' since '0' may be hidden
@@ -136,7 +137,8 @@ def rangepost(repo, subset, x, order):
     m = getset(repo, fullreposet(repo), x)
     if not m:
         return baseset()
-    return _makerangeset(repo, subset, m.first(), len(repo) - 1, order)
+    return _makerangeset(repo, subset, m.first(), repo.changelog.tiprev(),
+                         order)
 
 def _makerangeset(repo, subset, m, n, order):
     if m == n:
@@ -144,7 +146,7 @@ def _makerangeset(repo, subset, m, n, order):
     elif n == node.wdirrev:
         r = spanset(repo, m, len(repo)) + baseset([n])
     elif m == node.wdirrev:
-        r = baseset([m]) + spanset(repo, len(repo) - 1, n - 1)
+        r = baseset([m]) + spanset(repo, repo.changelog.tiprev(), n - 1)
     elif m < n:
         r = spanset(repo, m, n + 1)
     else:
@@ -266,7 +268,8 @@ predicate = registrar.revsetpredicate()
 def _destupdate(repo, subset, x):
     # experimental revset for update destination
     args = getargsdict(x, 'limit', 'clean')
-    return subset & baseset([destutil.destupdate(repo, **args)[0]])
+    return subset & baseset([destutil.destupdate(repo,
+                            **pycompat.strkwargs(args))[0]])
 
 @predicate('_destmerge')
 def _destmerge(repo, subset, x):
@@ -909,48 +912,43 @@ def first(repo, subset, x, order):
     return limit(repo, subset, x, order)
 
 def _follow(repo, subset, x, name, followfirst=False):
-    l = getargs(x, 0, 2, _("%s takes no arguments or a pattern "
-                           "and an optional revset") % name)
-    c = repo['.']
-    if l:
-        x = getstring(l[0], _("%s expected a pattern") % name)
-        rev = None
-        if len(l) >= 2:
-            revs = getset(repo, fullreposet(repo), l[1])
-            if len(revs) != 1:
-                raise error.RepoLookupError(
-                        _("%s expected one starting revision") % name)
-            rev = revs.last()
-            c = repo[rev]
-        matcher = matchmod.match(repo.root, repo.getcwd(), [x],
-                                 ctx=repo[rev], default='path')
-
-        files = c.manifest().walk(matcher)
-
-        s = set()
-        for fname in files:
-            fctx = c[fname]
-            s = s.union(set(c.rev() for c in fctx.ancestors(followfirst)))
-            # include the revision responsible for the most recent version
-            s.add(fctx.introrev())
+    args = getargsdict(x, name, 'file startrev')
+    revs = None
+    if 'startrev' in args:
+        revs = getset(repo, fullreposet(repo), args['startrev'])
+    if 'file' in args:
+        x = getstring(args['file'], _("%s expected a pattern") % name)
+        if revs is None:
+            revs = [None]
+        fctxs = []
+        for r in revs:
+            ctx = mctx = repo[r]
+            if r is None:
+                ctx = repo['.']
+            m = matchmod.match(repo.root, repo.getcwd(), [x],
+                               ctx=mctx, default='path')
+            fctxs.extend(ctx[f].introfilectx() for f in ctx.manifest().walk(m))
+        s = dagop.filerevancestors(fctxs, followfirst)
     else:
-        s = dagop.revancestors(repo, baseset([c.rev()]), followfirst)
+        if revs is None:
+            revs = baseset([repo['.'].rev()])
+        s = dagop.revancestors(repo, revs, followfirst)
 
     return subset & s
 
-@predicate('follow([pattern[, startrev]])', safe=True)
+@predicate('follow([file[, startrev]])', safe=True)
 def follow(repo, subset, x):
     """
     An alias for ``::.`` (ancestors of the working directory's first parent).
-    If pattern is specified, the histories of files matching given
+    If file pattern is specified, the histories of files matching given
     pattern in the revision given by startrev are followed, including copies.
     """
     return _follow(repo, subset, x, 'follow')
 
 @predicate('_followfirst', safe=True)
 def _followfirst(repo, subset, x):
-    # ``followfirst([pattern[, startrev]])``
-    # Like ``follow([pattern[, startrev]])`` but follows only the first parent
+    # ``followfirst([file[, startrev]])``
+    # Like ``follow([file[, startrev]])`` but follows only the first parent
     # of every revisions or files revisions.
     return _follow(repo, subset, x, '_followfirst', followfirst=True)
 
@@ -1421,8 +1419,16 @@ def outgoing(repo, subset, x):
     l = getargs(x, 0, 1, _("outgoing takes one or no arguments"))
     # i18n: "outgoing" is a keyword
     dest = l and getstring(l[0], _("outgoing requires a repository path")) or ''
-    dest = repo.ui.expandpath(dest or 'default-push', dest or 'default')
-    dest, branches = hg.parseurl(dest)
+    if not dest:
+        # ui.paths.getpath() explicitly tests for None, not just a boolean
+        dest = None
+    path = repo.ui.paths.getpath(dest, default=('default-push', 'default'))
+    if not path:
+        raise error.Abort(_('default repository not configured!'),
+                hint=_("see 'hg help config.paths'"))
+    dest = path.pushloc or path.loc
+    branches = path.branch, []
+
     revs, checkout = hg.addbranchrevs(repo, repo, branches, [])
     if revs:
         revs = [repo.lookup(rev) for rev in revs]
@@ -1509,8 +1515,7 @@ def parents(repo, subset, x):
 
 def _phase(repo, subset, *targets):
     """helper to select all rev in <targets> phases"""
-    s = repo._phasecache.getrevset(repo, targets)
-    return subset & s
+    return repo._phasecache.getrevset(repo, targets, subset)
 
 @predicate('draft()', safe=True)
 def draft(repo, subset, x):
@@ -1617,11 +1622,7 @@ def public(repo, subset, x):
     """Changeset in public phase."""
     # i18n: "public" is a keyword
     getargs(x, 0, 0, _("public takes no arguments"))
-    phase = repo._phasecache.phase
-    target = phases.public
-    condition = lambda r: phase(repo, r) == target
-    return subset.filter(condition, condrepr=('<phase %r>', target),
-                         cache=False)
+    return _phase(repo, subset, phases.public)
 
 @predicate('remote([id [,path]])', safe=False)
 def remote(repo, subset, x):

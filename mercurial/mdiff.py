@@ -67,6 +67,7 @@ class diffopts(object):
         'ignoreblanklines': False,
         'upgrade': False,
         'showsimilarity': False,
+        'worddiff': False,
         }
 
     def __init__(self, **opts):
@@ -99,7 +100,7 @@ def wsclean(opts, text, blank=True):
     if blank and opts.ignoreblanklines:
         text = re.sub('\n+', '\n', text).strip('\n')
     if opts.ignorewseol:
-        text = re.sub(r'[ \t\r\f]+\n', r'\n', text)
+        text = re.sub(br'[ \t\r\f]+\n', r'\n', text)
     return text
 
 def splitblock(base1, lines1, base2, lines2, opts):
@@ -355,7 +356,7 @@ def _unidiff(t1, t2, opts=defaultopts):
             # the previous hunk context until we find a line starting with an
             # alphanumeric char.
             for i in xrange(astart - 1, lastpos - 1, -1):
-                if l1[i][0].isalnum():
+                if l1[i][0:1].isalnum():
                     func = ' ' + l1[i].rstrip()[:40]
                     lastfunc[1] = func
                     break

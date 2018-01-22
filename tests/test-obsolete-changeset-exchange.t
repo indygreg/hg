@@ -71,6 +71,7 @@ marker to obsolete him)
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 1 files (+1 heads)
+  1 new phase-divergent changesets
   new changesets f89bcc95eba5
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
@@ -142,7 +143,7 @@ client only pulls down 1 changeset
 
   $ cd pull-hidden-common-client
   $ hg pull --debug
-  pulling from $TESTTMP/pull-hidden-common (glob)
+  pulling from $TESTTMP/pull-hidden-common
   query 1; heads
   searching for changes
   taking quick initial sample
@@ -170,6 +171,6 @@ client only pulls down 1 changeset
   bundle2-input-part: total payload size 24
   bundle2-input-bundle: 2 parts total
   checking for updated bookmarks
-  new changesets bec0734cd68e
   updating the branch cache
+  new changesets bec0734cd68e
   (run 'hg heads' to see heads, 'hg merge' to merge)

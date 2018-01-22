@@ -53,7 +53,7 @@ Test setup
   created new head
   $ cd ../client
   $ hg pull
-  pulling from $TESTTMP/A7/server (glob)
+  pulling from $TESTTMP/A7/server
   searching for changes
   adding changesets
   adding manifests
@@ -70,6 +70,7 @@ Test setup
   created new head
   $ hg debugobsolete `getid "desc(A0)" ` `getid "desc(A1)"`
   obsoleted 1 changesets
+  1 new orphan changesets
   $ hg debugobsolete `getid "desc(B0)" ` `getid "desc(B1)"`
   obsoleted 1 changesets
   $ hg log -G --hidden
@@ -90,7 +91,7 @@ Actual testing
 --------------
 
   $ hg push
-  pushing to $TESTTMP/A7/server (glob)
+  pushing to $TESTTMP/A7/server
   searching for changes
   adding changesets
   adding manifests

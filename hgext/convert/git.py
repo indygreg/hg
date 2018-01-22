@@ -66,8 +66,8 @@ class convert_git(common.converter_source, common.commandline):
     def gitpipe(self, *args, **kwargs):
         return self._gitcmd(self._run3, *args, **kwargs)
 
-    def __init__(self, ui, path, revs=None):
-        super(convert_git, self).__init__(ui, path, revs=revs)
+    def __init__(self, ui, repotype, path, revs=None):
+        super(convert_git, self).__init__(ui, repotype, path, revs=revs)
         common.commandline.__init__(self, ui, 'git')
 
         # Pass an absolute path to git to prevent from ever being interpreted
@@ -342,13 +342,15 @@ class convert_git(common.converter_source, common.commandline):
                 p = v.split()
                 tm, tz = p[-2:]
                 author = " ".join(p[:-2])
-                if author[0] == "<": author = author[1:-1]
+                if author[0] == "<":
+                    author = author[1:-1]
                 author = self.recode(author)
             if n == "committer":
                 p = v.split()
                 tm, tz = p[-2:]
                 committer = " ".join(p[:-2])
-                if committer[0] == "<": committer = committer[1:-1]
+                if committer[0] == "<":
+                    committer = committer[1:-1]
                 committer = self.recode(committer)
             if n == "parent":
                 parents.append(v)

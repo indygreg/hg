@@ -55,6 +55,7 @@ from . import (
     encoding,
     error,
     extensions,
+    node,
     pycompat,
     util,
 )
@@ -63,7 +64,7 @@ _log = commandserver.log
 
 def _hashlist(items):
     """return sha1 hexdigest for a list"""
-    return hashlib.sha1(str(items)).hexdigest()
+    return node.hex(hashlib.sha1(str(items)).digest())
 
 # sensitive config sections affecting confighash
 _configsections = [
@@ -220,16 +221,7 @@ def _loadnewui(srcui, args):
         newui._csystem = srcui._csystem
 
     # command line args
-    options = {}
-    if srcui.plain('strictflags'):
-        options.update(dispatch._earlyparseopts(args))
-    else:
-        args = args[:]
-        options['config'] = dispatch._earlygetopt(['--config'], args)
-        cwds = dispatch._earlygetopt(['--cwd'], args)
-        options['cwd'] = cwds and cwds[-1] or ''
-        rpath = dispatch._earlygetopt(["-R", "--repository", "--repo"], args)
-        options['repository'] = rpath and rpath[-1] or ''
+    options = dispatch._earlyparseopts(newui, args)
     dispatch._parseconfig(newui, options['config'])
 
     # stolen from tortoisehg.util.copydynamicconfig()

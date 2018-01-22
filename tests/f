@@ -59,7 +59,7 @@ def visit(opts, filenames, outfile):
         if isfile:
             if opts.type:
                 facts.append('file')
-            if opts.hexdump or opts.dump or opts.md5:
+            if any((opts.hexdump, opts.dump, opts.md5, opts.sha1, opts.sha256)):
                 content = open(f, 'rb').read()
         elif islink:
             if opts.type:
@@ -95,6 +95,9 @@ def visit(opts, filenames, outfile):
         if opts.sha1 and content is not None:
             h = hashlib.sha1(content)
             facts.append('sha1=%s' % h.hexdigest()[:opts.bytes])
+        if opts.sha256 and content is not None:
+            h = hashlib.sha256(content)
+            facts.append('sha256=%s' % h.hexdigest()[:opts.bytes])
         if isstdin:
             outfile.write(b', '.join(facts) + b'\n')
         elif facts:
@@ -150,6 +153,8 @@ if __name__ == "__main__":
                       help="recurse into directories")
     parser.add_option("-S", "--sha1", action="store_true",
                       help="show sha1 hash of the content")
+    parser.add_option("", "--sha256", action="store_true",
+                      help="show sha256 hash of the content")
     parser.add_option("-M", "--md5", action="store_true",
                       help="show md5 hash of the content")
     parser.add_option("-D", "--dump", action="store_true",

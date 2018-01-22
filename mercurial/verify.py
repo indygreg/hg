@@ -17,6 +17,7 @@ from .node import (
 
 from . import (
     error,
+    pycompat,
     revlog,
     scmutil,
     util,
@@ -105,7 +106,8 @@ class verifier(object):
                                     if self.lrugetctx(l)[f].filenode() == node]
                     except Exception:
                         pass
-                self.warn(_(" (expected %s)") % " ".join(map(str, linkrevs)))
+                self.warn(_(" (expected %s)") % " ".join
+                          (map(pycompat.bytestr, linkrevs)))
             lr = None # can't be trusted
 
         try:

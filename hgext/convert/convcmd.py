@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
+import collections
 import os
 import shlex
 import shutil
@@ -15,6 +16,7 @@ from mercurial import (
     encoding,
     error,
     hg,
+    scmutil,
     util,
 )
 
@@ -114,7 +116,7 @@ def convertsource(ui, path, type, revs):
     for name, source, sortmode in source_converters:
         try:
             if not type or name == type:
-                return source(ui, path, revs), sortmode
+                return source(ui, name, path, revs), sortmode
         except (NoRepo, MissingTool) as inst:
             exceptions.append(inst)
     if not ui.quiet:
@@ -128,7 +130,7 @@ def convertsink(ui, path, type):
     for name, sink in sink_converters:
         try:
             if not type or name == type:
-                return sink(ui, path)
+                return sink(ui, name, path)
         except NoRepo as inst:
             ui.note(_("convert: %s\n") % inst)
         except MissingTool as inst:
@@ -289,13 +291,13 @@ class converter(object):
             revisions without parents. 'parents' must be a mapping of revision
             identifier to its parents ones.
             """
-            visit = sorted(parents)
+            visit = collections.deque(sorted(parents))
             seen = set()
             children = {}
             roots = []
 
             while visit:
-                n = visit.pop(0)
+                n = visit.popleft()
                 if n in seen:
                     continue
                 seen.add(n)
@@ -449,7 +451,7 @@ class converter(object):
         commit = self.commitcache[rev]
         full = self.opts.get('full')
         changes = self.source.getchanges(rev, full)
-        if isinstance(changes, basestring):
+        if isinstance(changes, bytes):
             if changes == SKIPREV:
                 dest = SKIPREV
             else:
@@ -575,6 +577,7 @@ def convert(ui, src, dest=None, revmapfile=None, **opts):
         ui.status(_("assuming destination %s\n") % dest)
 
     destc = convertsink(ui, dest, opts.get('dest_type'))
+    destc = scmutil.wrapconvertsink(destc)
 
     try:
         srcc, defaultsort = convertsource(ui, src, opts.get('source_type'),

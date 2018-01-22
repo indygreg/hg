@@ -244,7 +244,7 @@ pushkey hook
   no changes found
   pretxnopen hook: HG_HOOKNAME=pretxnopen HG_HOOKTYPE=pretxnopen HG_TXNID=TXN:$ID$ HG_TXNNAME=push
   pretxnclose hook: HG_BOOKMARK_MOVED=1 HG_BUNDLE2=1 HG_HOOKNAME=pretxnclose HG_HOOKTYPE=pretxnclose HG_PENDING=$TESTTMP/a HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_TXNNAME=push HG_URL=file:$TESTTMP/a
-  pushkey hook: HG_HOOKNAME=pushkey HG_HOOKTYPE=pushkey HG_KEY=foo HG_NAMESPACE=bookmarks HG_NEW=0000000000000000000000000000000000000000 HG_RET=1
+  pushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=pushkey HG_HOOKTYPE=pushkey HG_KEY=foo HG_NAMESPACE=bookmark HG_NEW=0000000000000000000000000000000000000000 HG_PUSHKEYCOMPAT=1 HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_URL=file:$TESTTMP/a
   txnclose hook: HG_BOOKMARK_MOVED=1 HG_BUNDLE2=1 HG_HOOKNAME=txnclose HG_HOOKTYPE=txnclose HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_TXNNAME=push HG_URL=file:$TESTTMP/a
   exporting bookmark foo
   [1]
@@ -281,9 +281,8 @@ test that prepushkey can prevent incoming keys
   listkeys hook: HG_HOOKNAME=listkeys HG_HOOKTYPE=listkeys HG_NAMESPACE=bookmarks HG_VALUES={'bar': '0000000000000000000000000000000000000000', 'foo': '0000000000000000000000000000000000000000'}
   no changes found
   pretxnopen hook: HG_HOOKNAME=pretxnopen HG_HOOKTYPE=pretxnopen HG_TXNID=TXN:$ID$ HG_TXNNAME=push
-  prepushkey.forbid hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=baz HG_NAMESPACE=bookmarks HG_NEW=0000000000000000000000000000000000000000 HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_URL=file:$TESTTMP/a
-  pushkey-abort: prepushkey hook exited with status 1
-  abort: exporting bookmark baz failed!
+  prepushkey.forbid hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=baz HG_NAMESPACE=bookmark HG_NEW=0000000000000000000000000000000000000000 HG_PUSHKEYCOMPAT=1 HG_SOURCE=push HG_TXNID=TXN:$ID$ HG_URL=file:$TESTTMP/a
+  abort: prepushkey hook exited with status 1
   [255]
   $ cd ../a
 
@@ -685,7 +684,7 @@ test python hook configured with python:[file]:[hook] syntax
 
   $ hg up null
   loading update.ne hook failed:
-  abort: No such file or directory: $TESTTMP/d/repo/nonexistent.py
+  abort: $ENOENT$: $TESTTMP/d/repo/nonexistent.py
   [255]
 
   $ hg id
@@ -794,7 +793,7 @@ new commits must be visible in pretxnchangegroup (issue3428)
   $ echo aa >> from/a
   $ hg --cwd from ci -mb
   $ hg --cwd from push
-  pushing to $TESTTMP/to (glob)
+  pushing to $TESTTMP/to
   searching for changes
   changeset:   0:cb9a9f314b8b
   tag:         tip

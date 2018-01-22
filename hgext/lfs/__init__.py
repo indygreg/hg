@@ -371,7 +371,7 @@ def lfsfiles(repo, ctx, **args):
     makemap = lambda v: {
         'file': v,
         'oid': pointers[v].oid(),
-        'pointer': templatekw.hybriddict(pointer(v)),
+        'lfspointer': templatekw.hybriddict(pointer(v)),
     }
 
     # TODO: make the separator ', '?

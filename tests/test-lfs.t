@@ -865,16 +865,16 @@ there's no 'lfs' destination repo requirement.  For normal -> lfs, there is.
   oid sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
   size 29
   x-is-binary 0
-  $ hg --cwd convert_lfs log -r 0 -T "{lfs_files % '{pointer % '{key}={value}\n'}'}"
+  $ hg --cwd convert_lfs log -r 0 -T "{lfs_files % '{lfspointer % '{key}={value}\n'}'}"
   version=https://git-lfs.github.com/spec/v1
   oid=sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
   size=29
   x-is-binary=0
   $ hg --cwd convert_lfs log -r 0 \
-  >    -T '{lfs_files % "{get(pointer, "oid")}\n"}{lfs_files % "{pointer.oid}\n"}'
+  >    -T '{lfs_files % "{get(lfspointer, "oid")}\n"}{lfs_files % "{lfspointer.oid}\n"}'
   sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
   sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024
-  $ hg --cwd convert_lfs log -r 0 -T '{lfs_files % "{pointer}\n"}'
+  $ hg --cwd convert_lfs log -r 0 -T '{lfs_files % "{lfspointer}\n"}'
   version=https://git-lfs.github.com/spec/v1 oid=sha256:5bb8341bee63b3649f222b2215bde37322bea075a30575aa685d8f8d21c77024 size=29 x-is-binary=0
   $ hg --cwd convert_lfs \
   >     log -r 'all()' -T '{rev}: {lfs_files % "{file}: {oid}\n"}'

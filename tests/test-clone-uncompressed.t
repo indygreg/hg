@@ -55,23 +55,23 @@ getbundle requests with stream=1 are uncompressed
   
 
   $ f --size --hex --bytes 256 body
-  body: size=112328
+  body: size=112318
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: 72 06 53 54 52 45 41 4d 00 00 00 00 04 00 09 05 |r.STREAM........|
-  0020: 09 04 0c 2d 07 02 62 79 74 65 63 6f 75 6e 74 39 |...-..bytecount9|
-  0030: 38 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 |8758filecount103|
-  0040: 30 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |0requirementsdot|
-  0050: 65 6e 63 6f 64 65 20 66 6e 63 61 63 68 65 20 67 |encode fncache g|
-  0060: 65 6e 65 72 61 6c 64 65 6c 74 61 20 72 65 76 6c |eneraldelta revl|
-  0070: 6f 67 76 31 20 73 74 6f 72 65 76 65 72 73 69 6f |ogv1 storeversio|
-  0080: 6e 76 32 00 00 10 00 73 08 42 64 61 74 61 2f 30 |nv2....s.Bdata/0|
-  0090: 2e 69 00 03 00 01 00 00 00 00 00 00 00 02 00 00 |.i..............|
-  00a0: 00 01 00 00 00 00 00 00 00 01 ff ff ff ff ff ff |................|
-  00b0: ff ff 80 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 |...)c.I.#....Vg.|
-  00c0: 67 2c 69 d1 ec 39 00 00 00 00 00 00 00 00 00 00 |g,i..9..........|
-  00d0: 00 00 75 30 73 08 42 64 61 74 61 2f 31 2e 69 00 |..u0s.Bdata/1.i.|
-  00e0: 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 |................|
-  00f0: 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff f9 |................|
+  0010: 68 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |h.STREAM2.......|
+  0020: 05 09 04 0c 2d 62 79 74 65 63 6f 75 6e 74 39 38 |....-bytecount98|
+  0030: 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |758filecount1030|
+  0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
+  0050: 6e 63 6f 64 65 20 66 6e 63 61 63 68 65 20 67 65 |ncode fncache ge|
+  0060: 6e 65 72 61 6c 64 65 6c 74 61 20 72 65 76 6c 6f |neraldelta revlo|
+  0070: 67 76 31 20 73 74 6f 72 65 00 00 10 00 73 08 42 |gv1 store....s.B|
+  0080: 64 61 74 61 2f 30 2e 69 00 03 00 01 00 00 00 00 |data/0.i........|
+  0090: 00 00 00 02 00 00 00 01 00 00 00 00 00 00 00 01 |................|
+  00a0: ff ff ff ff ff ff ff ff 80 29 63 a0 49 d3 23 87 |.........)c.I.#.|
+  00b0: bf ce fe 56 67 92 67 2c 69 d1 ec 39 00 00 00 00 |...Vg.g,i..9....|
+  00c0: 00 00 00 00 00 00 00 00 75 30 73 08 42 64 61 74 |........u0s.Bdat|
+  00d0: 61 2f 31 2e 69 00 03 00 01 00 00 00 00 00 00 00 |a/1.i...........|
+  00e0: 02 00 00 00 01 00 00 00 00 00 00 00 01 ff ff ff |................|
+  00f0: ff ff ff ff ff f9 76 da 1d 0d f2 25 6c de 08 db |......v....%l...|
 
 --uncompressed is an alias to --stream
 
@@ -124,7 +124,7 @@ Clone with background file closing enabled
   streaming all changes
   sending getbundle command
   bundle2-input-bundle: with-transaction
-  bundle2-input-part: "stream" (params: 4 mandatory) supported
+  bundle2-input-part: "stream2" (params: 3 mandatory) supported
   applying stream bundle
   1030 files to transfer, 96.4 KB of data
   starting 4 threads for background file closing

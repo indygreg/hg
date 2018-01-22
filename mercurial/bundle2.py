@@ -2130,12 +2130,9 @@ def bundle2getvars(op, part):
             hookargs[key] = value
         op.addhookargs(hookargs)
 
-@parthandler('stream', ('requirements', 'filecount', 'bytecount', 'version'))
-def handlestreambundle(op, part):
+@parthandler('stream2', ('requirements', 'filecount', 'bytecount'))
+def handlestreamv2bundle(op, part):
 
-    version = part.params['version']
-    if version != 'v2':
-        raise error.Abort(_('unknown stream bundle version %s') % version)
     requirements = part.params['requirements'].split()
     filecount = int(part.params['filecount'])
     bytecount = int(part.params['bytecount'])

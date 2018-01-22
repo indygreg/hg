@@ -87,14 +87,14 @@ Cannot stream clone when server.uncompressed is set
   
 
   $ f --size body --hexdump --bytes 100
-  body: size=112318
+  body: size=232
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: 68 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |h.STREAM2.......|
-  0020: 05 09 04 0c 2d 62 79 74 65 63 6f 75 6e 74 39 38 |....-bytecount98|
-  0030: 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |758filecount1030|
-  0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
-  0050: 6e 63 6f 64 65 20 66 6e 63 61 63 68 65 20 67 65 |ncode fncache ge|
-  0060: 6e 65 72 61                                     |nera|
+  0010: cf 0b 45 52 52 4f 52 3a 41 42 4f 52 54 00 00 00 |..ERROR:ABORT...|
+  0020: 00 01 01 07 3c 04 72 6d 65 73 73 61 67 65 73 74 |....<.rmessagest|
+  0030: 72 65 61 6d 20 64 61 74 61 20 72 65 71 75 65 73 |ream data reques|
+  0040: 74 65 64 20 62 75 74 20 73 65 72 76 65 72 20 64 |ted but server d|
+  0050: 6f 65 73 20 6e 6f 74 20 61 6c 6c 6f 77 20 74 68 |oes not allow th|
+  0060: 69 73 20 66                                     |is f|
 
 #endif
 #if stream-bundle2
@@ -152,14 +152,14 @@ Cannot stream clone when server.uncompressed is set
   
 
   $ f --size body --hexdump --bytes 100
-  body: size=112318
+  body: size=232
   0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
-  0010: 68 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |h.STREAM2.......|
-  0020: 05 09 04 0c 2d 62 79 74 65 63 6f 75 6e 74 39 38 |....-bytecount98|
-  0030: 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |758filecount1030|
-  0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
-  0050: 6e 63 6f 64 65 20 66 6e 63 61 63 68 65 20 67 65 |ncode fncache ge|
-  0060: 6e 65 72 61                                     |nera|
+  0010: cf 0b 45 52 52 4f 52 3a 41 42 4f 52 54 00 00 00 |..ERROR:ABORT...|
+  0020: 00 01 01 07 3c 04 72 6d 65 73 73 61 67 65 73 74 |....<.rmessagest|
+  0030: 72 65 61 6d 20 64 61 74 61 20 72 65 71 75 65 73 |ream data reques|
+  0040: 74 65 64 20 62 75 74 20 73 65 72 76 65 72 20 64 |ted but server d|
+  0050: 6f 65 73 20 6e 6f 74 20 61 6c 6c 6f 77 20 74 68 |oes not allow th|
+  0060: 69 73 20 66                                     |is f|
 
 #endif
 

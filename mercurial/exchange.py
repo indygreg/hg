@@ -1773,6 +1773,13 @@ def _getbundlestream2(bundler, repo, source, bundlecaps=None,
     if not kwargs.get('stream', False):
         return
 
+    if not streamclone.allowservergeneration(repo):
+        raise error.Abort(_('stream data requested but server does not allow '
+                            'this feature'),
+                          hint=_('well-behaved clients should not be '
+                                 'requesting stream data from servers not '
+                                 'advertising it; the client may be buggy'))
+
     # Stream clones don't compress well. And compression undermines a
     # goal of stream clones, which is to be fast. Communicate the desire
     # to avoid compression to consumers of the bundle.

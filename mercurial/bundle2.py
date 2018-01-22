@@ -1528,10 +1528,8 @@ def getrepocaps(repo, allowpushback=False, role=None):
 
         if not streamsupported or not featuresupported:
             caps.pop('stream')
-    # role == 'client'
-    else:
-        if not repo.ui.configbool('experimental', 'bundle2.stream'):
-            caps.pop('stream')
+    # Else always advertise support on client, because payload support
+    # should always be advertised.
 
     return caps
 

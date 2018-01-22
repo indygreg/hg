@@ -129,10 +129,10 @@ delete a remote bookmark
   bundle2-output: bundle parameter: 
   bundle2-output: start of parts
   bundle2-output: bundle part: "replycaps"
-  bundle2-output-part: "replycaps" 195 bytes payload
+  bundle2-output-part: "replycaps" 205 bytes payload
   bundle2-output: part 0: "REPLYCAPS"
   bundle2-output: header chunk size: 16
-  bundle2-output: payload chunk size: 195
+  bundle2-output: payload chunk size: 205
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "check:bookmarks"
   bundle2-output-part: "check:bookmarks" 23 bytes payload
@@ -162,9 +162,9 @@ delete a remote bookmark
   bundle2-input: part parameters: 0
   bundle2-input: found a handler for part replycaps
   bundle2-input-part: "replycaps" supported
-  bundle2-input: payload chunk size: 195
+  bundle2-input: payload chunk size: 205
   bundle2-input: payload chunk size: 0
-  bundle2-input-part: total payload size 195
+  bundle2-input-part: total payload size 205
   bundle2-input: part header size: 22
   bundle2-input: part type: "CHECK:BOOKMARKS"
   bundle2-input: part id: "1"
@@ -241,10 +241,10 @@ delete a remote bookmark
   bundle2-output: bundle parameter: 
   bundle2-output: start of parts
   bundle2-output: bundle part: "replycaps"
-  bundle2-output-part: "replycaps" 195 bytes payload
+  bundle2-output-part: "replycaps" 205 bytes payload
   bundle2-output: part 0: "REPLYCAPS"
   bundle2-output: header chunk size: 16
-  bundle2-output: payload chunk size: 195
+  bundle2-output: payload chunk size: 205
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "check:bookmarks"
   bundle2-output-part: "check:bookmarks" 23 bytes payload
@@ -275,9 +275,9 @@ delete a remote bookmark
   bundle2-input: part parameters: 0
   bundle2-input: found a handler for part replycaps
   bundle2-input-part: "replycaps" supported
-  bundle2-input: payload chunk size: 195
+  bundle2-input: payload chunk size: 205
   bundle2-input: payload chunk size: 0
-  bundle2-input-part: total payload size 195
+  bundle2-input-part: total payload size 205
   bundle2-input: part header size: 22
   bundle2-input: part type: "CHECK:BOOKMARKS"
   bundle2-input: part id: "1"

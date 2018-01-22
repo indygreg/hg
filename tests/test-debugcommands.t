@@ -379,3 +379,5 @@ Test debugcapabilities command:
     remote-changegroup
       http
       https
+    stream
+      v2

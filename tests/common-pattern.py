@@ -18,11 +18,40 @@ substitutions = [
      br'listkeys%250A'
      br'phases%253Dheads%250A'
      br'pushkey%250A'
-     br'remote-changegroup%253Dhttp%252Chttps',
+     br'remote-changegroup%253Dhttp%252Chttps%250A'
+     br'stream%253Dv2',
      # (the replacement patterns)
      br'$USUAL_BUNDLE_CAPS$'
     ),
+    (br'bundlecaps=HG20%2Cbundle2%3DHG20%250A'
+     br'bookmarks%250A'
+     br'changegroup%253D01%252C02%250A'
+     br'digests%253Dmd5%252Csha1%252Csha512%250A'
+     br'error%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250A'
+     br'hgtagsfnodes%250A'
+     br'listkeys%250A'
+     br'phases%253Dheads%250A'
+     br'pushkey%250A'
+     br'remote-changegroup%253Dhttp%252Chttps',
+     # (the replacement patterns)
+     br'$USUAL_BUNDLE_CAPS_SERVER$'
+     ),
     # bundle2 capabilities sent through ssh
+    (br'bundle2=HG20%0A'
+     br'bookmarks%0A'
+     br'changegroup%3D01%2C02%0A'
+     br'digests%3Dmd5%2Csha1%2Csha512%0A'
+     br'error%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0A'
+     br'hgtagsfnodes%0A'
+     br'listkeys%0A'
+     br'phases%3Dheads%0A'
+     br'pushkey%0A'
+     br'remote-changegroup%3Dhttp%2Chttps%0A'
+     br'stream%3Dv2',
+     # (replacement patterns)
+     br'$USUAL_BUNDLE2_CAPS$'
+    ),
+    # bundle2 capabilities advertised by the server
     (br'bundle2=HG20%0A'
      br'bookmarks%0A'
      br'changegroup%3D01%2C02%0A'
@@ -34,8 +63,8 @@ substitutions = [
      br'pushkey%0A'
      br'remote-changegroup%3Dhttp%2Chttps',
      # (replacement patterns)
-     br'$USUAL_BUNDLE2_CAPS$'
-    ),
+     br'$USUAL_BUNDLE2_CAPS_SERVER$'
+     ),
     # HTTP log dates
     (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "GET',
      br' - - [$LOGDATE$] "GET'

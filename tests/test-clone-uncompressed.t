@@ -37,7 +37,7 @@ Cannot stream clone when server.uncompressed is set
   Main capabilities:
     batch
     branchmap
-    $USUAL_BUNDLE2_CAPS$
+    $USUAL_BUNDLE2_CAPS_SERVER$
     changegroupsubset
     compression=zstd,zlib
     getbundle
@@ -102,7 +102,7 @@ Cannot stream clone when server.uncompressed is set
   Main capabilities:
     batch
     branchmap
-    $USUAL_BUNDLE2_CAPS$
+    $USUAL_BUNDLE2_CAPS_SERVER$
     changegroupsubset
     compression=zstd,zlib
     getbundle

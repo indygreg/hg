@@ -102,7 +102,7 @@ Cannot stream clone when server.uncompressed is set
   Main capabilities:
     batch
     branchmap
-    $USUAL_BUNDLE2_CAPS$%0Astream%3Dv2
+    $USUAL_BUNDLE2_CAPS$
     changegroupsubset
     compression=zstd,zlib
     getbundle
@@ -136,8 +136,6 @@ Cannot stream clone when server.uncompressed is set
     remote-changegroup
       http
       https
-    stream
-      v2
 
   $ hg clone --stream -U http://localhost:$HGPORT server-disabled
   warning: stream clone requested but server has them disabled

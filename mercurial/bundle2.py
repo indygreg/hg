@@ -1519,8 +1519,20 @@ def getrepocaps(repo, allowpushback=False, role=None):
         caps['checkheads'] = ('related',)
     if 'phases' in repo.ui.configlist('devel', 'legacy.exchange'):
         caps.pop('phases')
-    if not repo.ui.configbool('experimental', 'bundle2.stream'):
-        caps.pop('stream')
+
+    # Don't advertise stream clone support in server mode if not configured.
+    if role == 'server':
+        streamsupported = repo.ui.configbool('server', 'uncompressed',
+                                             untrusted=True)
+        featuresupported = repo.ui.configbool('experimental', 'bundle2.stream')
+
+        if not streamsupported or not featuresupported:
+            caps.pop('stream')
+    # role == 'client'
+    else:
+        if not repo.ui.configbool('experimental', 'bundle2.stream'):
+            caps.pop('stream')
+
     return caps
 
 def bundle2caps(remote):

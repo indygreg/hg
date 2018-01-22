@@ -1763,6 +1763,8 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
         func(bundler, repo, source, bundlecaps=bundlecaps, b2caps=b2caps,
              **pycompat.strkwargs(kwargs))
 
+    info['prefercompressed'] = bundler.prefercompressed
+
     return info, bundler.getchunks()
 
 @getbundle2partsgenerator('stream')
@@ -1770,6 +1772,12 @@ def _getbundlestream(bundler, repo, source, bundlecaps=None,
                      b2caps=None, heads=None, common=None, **kwargs):
     if not kwargs.get('stream', False):
         return
+
+    # Stream clones don't compress well. And compression undermines a
+    # goal of stream clones, which is to be fast. Communicate the desire
+    # to avoid compression to consumers of the bundle.
+    bundler.prefercompressed = False
+
     filecount, bytecount, it = streamclone.generatev2(repo)
     requirements = ' '.join(sorted(repo.requirements))
     part = bundler.newpart('stream', data=it)

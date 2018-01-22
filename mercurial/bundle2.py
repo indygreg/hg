@@ -599,6 +599,10 @@ class bundle20(object):
         self.capabilities = dict(capabilities)
         self._compengine = util.compengines.forbundletype('UN')
         self._compopts = None
+        # If compression is being handled by a consumer of the raw
+        # data (e.g. the wire protocol), unsetting this flag tells
+        # consumers that the bundle is best left uncompressed.
+        self.prefercompressed = True
 
     def setcompression(self, alg, compopts=None):
         """setup core part compression to <alg>"""

@@ -47,6 +47,32 @@ Basic clone
   rbc-revs-v1
 #endif
 
+getbundle requests with stream=1 are uncompressed
+
+  $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=getbundle' content-type --bodyfile body --hgproto '0.1 0.2 comp=zlib,none' --requestheader "x-hgarg-1=bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=0&common=0000000000000000000000000000000000000000&heads=c17445101a72edac06facd130d14808dfbd5c7c2&stream=1"
+  200 Script output follows
+  content-type: application/mercurial-0.2
+  
+
+  $ f --size --hex --bytes 256 body
+  body: size=112328
+  0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
+  0010: 72 06 53 54 52 45 41 4d 00 00 00 00 04 00 09 05 |r.STREAM........|
+  0020: 09 04 0c 2d 07 02 62 79 74 65 63 6f 75 6e 74 39 |...-..bytecount9|
+  0030: 38 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 |8758filecount103|
+  0040: 30 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 |0requirementsdot|
+  0050: 65 6e 63 6f 64 65 20 66 6e 63 61 63 68 65 20 67 |encode fncache g|
+  0060: 65 6e 65 72 61 6c 64 65 6c 74 61 20 72 65 76 6c |eneraldelta revl|
+  0070: 6f 67 76 31 20 73 74 6f 72 65 76 65 72 73 69 6f |ogv1 storeversio|
+  0080: 6e 76 32 00 00 10 00 73 08 42 64 61 74 61 2f 30 |nv2....s.Bdata/0|
+  0090: 2e 69 00 03 00 01 00 00 00 00 00 00 00 02 00 00 |.i..............|
+  00a0: 00 01 00 00 00 00 00 00 00 01 ff ff ff ff ff ff |................|
+  00b0: ff ff 80 29 63 a0 49 d3 23 87 bf ce fe 56 67 92 |...)c.I.#....Vg.|
+  00c0: 67 2c 69 d1 ec 39 00 00 00 00 00 00 00 00 00 00 |g,i..9..........|
+  00d0: 00 00 75 30 73 08 42 64 61 74 61 2f 31 2e 69 00 |..u0s.Bdata/1.i.|
+  00e0: 03 00 01 00 00 00 00 00 00 00 02 00 00 00 01 00 |................|
+  00f0: 00 00 00 00 00 00 01 ff ff ff ff ff ff ff ff f9 |................|
+
 --uncompressed is an alias to --stream
 
 #if stream-legacy

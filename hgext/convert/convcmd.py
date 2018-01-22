@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
+import collections
 import os
 import shlex
 import shutil
@@ -290,13 +291,13 @@ class converter(object):
             revisions without parents. 'parents' must be a mapping of revision
             identifier to its parents ones.
             """
-            visit = sorted(parents)
+            visit = collections.deque(sorted(parents))
             seen = set()
             children = {}
             roots = []
 
             while visit:
-                n = visit.pop(0)
+                n = visit.popleft()
                 if n in seen:
                     continue
                 seen.add(n)

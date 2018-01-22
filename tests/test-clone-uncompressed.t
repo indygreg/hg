@@ -21,8 +21,154 @@ the status call is to check for issue5130
   ...         fh.write(str(i))
   $ hg -q commit -A -m 'add a lot of files'
   $ hg st
+  $ hg --config server.uncompressed=false serve -p $HGPORT -d --pid-file=hg.pid
+  $ cat hg.pid > $DAEMON_PIDS
+  $ cd ..
+
+Cannot stream clone when server.uncompressed is set
+
+  $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=stream_out'
+  200 Script output follows
+  
+  1
+
+#if stream-legacy
+  $ hg debugcapabilities http://localhost:$HGPORT
+  Main capabilities:
+    batch
+    branchmap
+    $USUAL_BUNDLE2_CAPS$
+    changegroupsubset
+    compression=zstd,zlib
+    getbundle
+    httpheader=1024
+    httpmediatype=0.1rx,0.1tx,0.2tx
+    known
+    lookup
+    pushkey
+    unbundle=HG10GZ,HG10BZ,HG10UN
+    unbundlehash
+  Bundle2 capabilities:
+    HG20
+    bookmarks
+    changegroup
+      01
+      02
+    digests
+      md5
+      sha1
+      sha512
+    error
+      abort
+      unsupportedcontent
+      pushraced
+      pushkey
+    hgtagsfnodes
+    listkeys
+    phases
+      heads
+    pushkey
+    remote-changegroup
+      http
+      https
+
+  $ hg clone --stream -U http://localhost:$HGPORT server-disabled
+  warning: stream clone requested but server has them disabled
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 1025 changes to 1025 files
+  new changesets 96ee1d7354c4:c17445101a72
+
+  $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=getbundle' content-type --bodyfile body --hgproto 0.2 --requestheader "x-hgarg-1=bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=0&common=0000000000000000000000000000000000000000&heads=c17445101a72edac06facd130d14808dfbd5c7c2&stream=1"
+  200 Script output follows
+  content-type: application/mercurial-0.2
+  
+
+  $ f --size body --hexdump --bytes 100
+  body: size=112318
+  0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
+  0010: 68 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |h.STREAM2.......|
+  0020: 05 09 04 0c 2d 62 79 74 65 63 6f 75 6e 74 39 38 |....-bytecount98|
+  0030: 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |758filecount1030|
+  0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
+  0050: 6e 63 6f 64 65 20 66 6e 63 61 63 68 65 20 67 65 |ncode fncache ge|
+  0060: 6e 65 72 61                                     |nera|
+
+#endif
+#if stream-bundle2
+  $ hg debugcapabilities http://localhost:$HGPORT
+  Main capabilities:
+    batch
+    branchmap
+    $USUAL_BUNDLE2_CAPS$%0Astream%3Dv2
+    changegroupsubset
+    compression=zstd,zlib
+    getbundle
+    httpheader=1024
+    httpmediatype=0.1rx,0.1tx,0.2tx
+    known
+    lookup
+    pushkey
+    unbundle=HG10GZ,HG10BZ,HG10UN
+    unbundlehash
+  Bundle2 capabilities:
+    HG20
+    bookmarks
+    changegroup
+      01
+      02
+    digests
+      md5
+      sha1
+      sha512
+    error
+      abort
+      unsupportedcontent
+      pushraced
+      pushkey
+    hgtagsfnodes
+    listkeys
+    phases
+      heads
+    pushkey
+    remote-changegroup
+      http
+      https
+    stream
+      v2
+
+  $ hg clone --stream -U http://localhost:$HGPORT server-disabled
+  warning: stream clone requested but server has them disabled
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 1025 changes to 1025 files
+  new changesets 96ee1d7354c4:c17445101a72
+
+  $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=getbundle' content-type --bodyfile body --hgproto 0.2 --requestheader "x-hgarg-1=bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps&cg=0&common=0000000000000000000000000000000000000000&heads=c17445101a72edac06facd130d14808dfbd5c7c2&stream=1"
+  200 Script output follows
+  content-type: application/mercurial-0.2
+  
+
+  $ f --size body --hexdump --bytes 100
+  body: size=112318
+  0000: 04 6e 6f 6e 65 48 47 32 30 00 00 00 00 00 00 00 |.noneHG20.......|
+  0010: 68 07 53 54 52 45 41 4d 32 00 00 00 00 03 00 09 |h.STREAM2.......|
+  0020: 05 09 04 0c 2d 62 79 74 65 63 6f 75 6e 74 39 38 |....-bytecount98|
+  0030: 37 35 38 66 69 6c 65 63 6f 75 6e 74 31 30 33 30 |758filecount1030|
+  0040: 72 65 71 75 69 72 65 6d 65 6e 74 73 64 6f 74 65 |requirementsdote|
+  0050: 6e 63 6f 64 65 20 66 6e 63 61 63 68 65 20 67 65 |ncode fncache ge|
+  0060: 6e 65 72 61                                     |nera|
+
+#endif
+
+  $ killdaemons.py
+  $ cd server
   $ hg serve -p $HGPORT -d --pid-file=hg.pid
-  $ cat hg.pid >> $DAEMON_PIDS
+  $ cat hg.pid > $DAEMON_PIDS
   $ cd ..
 
 Basic clone
@@ -332,7 +478,7 @@ Clone as non publishing
   > EOF
   $ killdaemons.py
   $ hg -R server serve -p $HGPORT -d --pid-file=hg.pid
-  $ cat hg.pid >> $DAEMON_PIDS
+  $ cat hg.pid > $DAEMON_PIDS
 
 #if stream-legacy
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish

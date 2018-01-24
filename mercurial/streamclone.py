@@ -594,12 +594,12 @@ def consumev2(repo, fp, filecount, filesize):
                     for vfs in vfsmap.values())
             with nested(*ctxs):
                 for i in range(filecount):
-                    src = fp.read(1)
+                    src = util.readexactly(fp, 1)
                     vfs = vfsmap[src]
                     namelen = util.uvarintdecodestream(fp)
                     datalen = util.uvarintdecodestream(fp)
 
-                    name = fp.read(namelen)
+                    name = util.readexactly(fp, namelen)
 
                     if repo.ui.debugflag:
                         repo.ui.debug('adding [%s] %s (%s)\n' %

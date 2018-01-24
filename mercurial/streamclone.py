@@ -484,7 +484,7 @@ def _makemap(repo):
 
     return vfsmap
 
-def _emit(repo, entries, totalfilesize):
+def _emit2(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
     vfsmap = _makemap(repo)
     progress = repo.ui.progress
@@ -555,7 +555,7 @@ def generatev2(repo):
                 totalfilesize += repo.cachevfs.lstat(name).st_size
                 entries.append((_srccache, name, _filefull, None))
 
-        chunks = _emit(repo, entries, totalfilesize)
+        chunks = _emit2(repo, entries, totalfilesize)
         first = next(chunks)
         assert first is None
 

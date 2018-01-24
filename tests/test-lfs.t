@@ -18,9 +18,7 @@
 # Commit small file
   $ echo s > smallfile
   $ echo '**.py = LF' > .hgeol
-  $ hg --config lfs.track='size(">1000B") | "path:.hgeol"' commit -Aqm "add small file"
-  $ hg debugdata .hgeol 0
-  **.py = LF
+  $ hg --config lfs.track='size(">1000B")' commit -Aqm "add small file"
 
 # Commit large file
   $ echo $LONG > largefile
@@ -976,6 +974,7 @@ Bad .hglfs files will block the commit with a useful message
 
   $ cat > .hglfs << EOF
   > [track]
+  > path:.hglfs = none()
   > **.test = size(">5B")
   > **.exclude = none()
   > ** = size(">10B")

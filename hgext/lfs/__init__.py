@@ -370,7 +370,7 @@ def lfsfiles(repo, ctx, **args):
 
     makemap = lambda v: {
         'file': v,
-        'oid': pointers[v].oid(),
+        'lfsoid': pointers[v].oid(),
         'lfspointer': templatekw.hybriddict(pointer(v)),
     }
 

@@ -1031,6 +1031,71 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
         with ready:
             ready.notify_all()
 
+@command('perfunidiff', revlogopts + formatteropts + [
+    ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
+    ('', 'alldata', False, 'test unidiffs for all associated revisions'),
+    ], '-c|-m|FILE REV')
+def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
+    """benchmark a unified diff between revisions
+
+    This doesn't include any copy tracing - it's just a unified diff
+    of the texts.
+
+    By default, benchmark a diff between its delta parent and itself.
+
+    With ``--count``, benchmark diffs between delta parents and self for N
+    revisions starting at the specified revision.
+
+    With ``--alldata``, assume the requested revision is a changeset and
+    measure diffs for all changes related to that changeset (manifest
+    and filelogs).
+    """
+    if opts['alldata']:
+        opts['changelog'] = True
+
+    if opts.get('changelog') or opts.get('manifest'):
+        file_, rev = None, file_
+    elif rev is None:
+        raise error.CommandError('perfunidiff', 'invalid arguments')
+
+    textpairs = []
+
+    r = cmdutil.openrevlog(repo, 'perfunidiff', file_, opts)
+
+    startrev = r.rev(r.lookup(rev))
+    for rev in range(startrev, min(startrev + count, len(r) - 1)):
+        if opts['alldata']:
+            # Load revisions associated with changeset.
+            ctx = repo[rev]
+            mtext = repo.manifestlog._revlog.revision(ctx.manifestnode())
+            for pctx in ctx.parents():
+                pman = repo.manifestlog._revlog.revision(pctx.manifestnode())
+                textpairs.append((pman, mtext))
+
+            # Load filelog revisions by iterating manifest delta.
+            man = ctx.manifest()
+            pman = ctx.p1().manifest()
+            for filename, change in pman.diff(man).items():
+                fctx = repo.file(filename)
+                f1 = fctx.revision(change[0][0] or -1)
+                f2 = fctx.revision(change[1][0] or -1)
+                textpairs.append((f1, f2))
+        else:
+            dp = r.deltaparent(rev)
+            textpairs.append((r.revision(dp), r.revision(rev)))
+
+    def d():
+        for left, right in textpairs:
+            # The date strings don't matter, so we pass empty strings.
+            headerlines, hunks = mdiff.unidiff(
+                left, '', right, '', 'left', 'right')
+            # consume iterators in roughly the way patch.py does
+            b'\n'.join(headerlines)
+            b''.join(sum((list(hlines) for hrange, hlines in hunks), []))
+    timer, fm = gettimer(ui, opts)
+    timer(d)
+    fm.end()
+
 @command('perfdiffwd', formatteropts)
 def perfdiffwd(ui, repo, **opts):
     """Profile diff of working directory changes"""

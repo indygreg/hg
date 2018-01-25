@@ -114,6 +114,7 @@ perfstatus
    perftags      (no help text available)
    perftemplating
                  (no help text available)
+   perfunidiff   benchmark a unified diff between revisions
    perfvolatilesets
                  benchmark the computation of various volatile set
    perfwalk      (no help text available)
@@ -126,6 +127,8 @@ perfstatus
   $ hg perfannotate a
   $ hg perfbdiff -c 1
   $ hg perfbdiff --alldata 1
+  $ hg perfunidiff -c 1
+  $ hg perfunidiff --alldata 1
   $ hg perfbookmarks
   $ hg perfbranchmap
   $ hg perfcca

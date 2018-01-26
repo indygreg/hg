@@ -632,3 +632,11 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
                           ', '.join(sorted(missingreqs)))
 
     consumev2(repo, fp, filecount, filesize)
+
+    # new requirements = old non-format requirements +
+    #                    new format-related remote requirements
+    # requirements from the streamed-in repository
+    repo.requirements = set(requirements) | (
+            repo.requirements - repo.supportedformats)
+    repo._applyopenerreqs()
+    repo._writerequirements()

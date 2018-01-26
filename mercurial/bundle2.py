@@ -2155,11 +2155,3 @@ def handlestreamv2bundle(op, part):
     repo.ui.debug('applying stream bundle\n')
     streamclone.applybundlev2(repo, part, filecount, bytecount,
                               requirements)
-
-    # new requirements = old non-format requirements +
-    #                    new format-related remote requirements
-    # requirements from the streamed-in repository
-    repo.requirements = set(requirements) | (
-            repo.requirements - repo.supportedformats)
-    repo._applyopenerreqs()
-    repo._writerequirements()

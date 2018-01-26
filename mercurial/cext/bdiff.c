@@ -180,16 +180,66 @@ nomem:
 	return result ? result : PyErr_NoMemory();
 }
 
+static bool sliceintolist(PyObject *list, Py_ssize_t destidx,
+                          const char *source, Py_ssize_t len)
+{
+	PyObject *sliced = PyBytes_FromStringAndSize(source, len);
+	if (sliced == NULL)
+		return false;
+	PyList_SET_ITEM(list, destidx, sliced);
+	return true;
+}
+
+static PyObject *splitnewlines(PyObject *self, PyObject *args)
+{
+	const char *text;
+	Py_ssize_t nelts = 0, size, i, start = 0;
+	PyObject *result = NULL;
+
+	if (!PyArg_ParseTuple(args, "s#", &text, &size)) {
+		goto abort;
+	}
+	if (!size) {
+		return PyList_New(0);
+	}
+	/* This loops to size-1 because if the last byte is a newline,
+	 * we don't want to perform a split there. */
+	for (i = 0; i < size - 1; ++i) {
+		if (text[i] == '\n') {
+			++nelts;
+		}
+	}
+	if ((result = PyList_New(nelts + 1)) == NULL)
+		goto abort;
+	nelts = 0;
+	for (i = 0; i < size - 1; ++i) {
+		if (text[i] == '\n') {
+			if (!sliceintolist(result, nelts++, text + start,
+			                   i - start + 1))
+				goto abort;
+			start = i + 1;
+		}
+	}
+	if (!sliceintolist(result, nelts++, text + start, size - start))
+		goto abort;
+	return result;
+abort:
+	Py_XDECREF(result);
+	return NULL;
+}
+
 static char mdiff_doc[] = "Efficient binary diff.";
 
 static PyMethodDef methods[] = {
     {"bdiff", bdiff, METH_VARARGS, "calculate a binary diff\n"},
     {"blocks", blocks, METH_VARARGS, "find a list of matching lines\n"},
     {"fixws", fixws, METH_VARARGS, "normalize diff whitespaces\n"},
+    {"splitnewlines", splitnewlines, METH_VARARGS,
+     "like str.splitlines, but only split on newlines\n"},
     {NULL, NULL},
 };
 
-static const int version = 1;
+static const int version = 2;
 
 #ifdef IS_PY3K
 static struct PyModuleDef bdiff_module = {

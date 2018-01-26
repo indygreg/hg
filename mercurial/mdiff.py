@@ -29,16 +29,7 @@ fixws = bdiff.fixws
 patches = mpatch.patches
 patchedsize = mpatch.patchedsize
 textdiff = bdiff.bdiff
-
-def splitnewlines(text):
-    '''like str.splitlines, but only split on newlines.'''
-    lines = [l + '\n' for l in text.split('\n')]
-    if lines:
-        if lines[-1] == '\n':
-            lines.pop()
-        else:
-            lines[-1] = lines[-1][:-1]
-    return lines
+splitnewlines = bdiff.splitnewlines
 
 class diffopts(object):
     '''context is the number of context lines

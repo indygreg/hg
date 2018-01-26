@@ -71,7 +71,7 @@ def _importfrom(pkgname, modname):
 # keep in sync with "version" in C modules
 _cextversions = {
     (r'cext', r'base85'): 1,
-    (r'cext', r'bdiff'): 1,
+    (r'cext', r'bdiff'): 2,
     (r'cext', r'diffhelpers'): 1,
     (r'cext', r'mpatch'): 1,
     (r'cext', r'osutil'): 3,

@@ -479,6 +479,10 @@ Clone as non publishing
   $ cat hg.pid > $DAEMON_PIDS
 
 #if stream-legacy
+
+With v1 of the stream protocol, changeset are always cloned as public. It make
+stream v1 unsuitable for non-publishing repository.
+
   $ hg clone --stream http://localhost:$HGPORT phase-no-publish
   streaming all changes
   1027 files to transfer, 96.3 KB of data

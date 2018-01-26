@@ -304,12 +304,10 @@
   f  beans/turtle    beans/turtle
   $ hg debugwalk -Xbeans/black beans/black
   matcher: <differencematcher m1=<patternmatcher patterns='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans\\/black(?:/|$))'>>
-  f  beans/black  beans/black  exact
   $ hg debugwalk -Xbeans/black -Ibeans/black
   matcher: <differencematcher m1=<includematcher includes='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans\\/black(?:/|$))'>>
   $ hg debugwalk -Xbeans beans/black
   matcher: <differencematcher m1=<patternmatcher patterns='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
-  f  beans/black  beans/black  exact
   $ hg debugwalk -Xbeans -Ibeans/black
   matcher: <differencematcher m1=<includematcher includes='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
   $ hg debugwalk 'glob:mammals/../beans/b*'
@@ -345,17 +343,13 @@
   [255]
 
 Test explicit paths and excludes:
-(BROKEN: nothing should be included, but wctx.walk() does)
 
   $ hg debugwalk fennel -X fennel
   matcher: <differencematcher m1=<patternmatcher patterns='(?:fennel(?:/|$))'>, m2=<includematcher includes='(?:fennel(?:/|$))'>>
-  f  fennel  fennel  exact
   $ hg debugwalk fennel -X 'f*'
   matcher: <differencematcher m1=<patternmatcher patterns='(?:fennel(?:/|$))'>, m2=<includematcher includes='(?:f[^/]*(?:/|$))'>>
-  f  fennel  fennel  exact
   $ hg debugwalk beans/black -X 'path:beans'
   matcher: <differencematcher m1=<patternmatcher patterns='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
-  f  beans/black  beans/black  exact
   $ hg debugwalk -I 'path:beans/black' -X 'path:beans'
   matcher: <differencematcher m1=<includematcher includes='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
 

@@ -787,6 +787,17 @@ class dirstate(object):
                     else:
                         badfn(ff, encoding.strtolocal(inst.strerror))
 
+        # match.files() may contain explicitly-specified paths that shouldn't
+        # be taken; drop them from the list of files found. dirsfound/notfound
+        # aren't filtered here because they will be tested later.
+        if match.anypats():
+            for f in list(results):
+                if f == '.hg' or f in subrepos:
+                    # keep sentinel to disable further out-of-repo walks
+                    continue
+                if not match(f):
+                    del results[f]
+
         # Case insensitive filesystems cannot rely on lstat() failing to detect
         # a case-only rename.  Prune the stat object for any file that does not
         # match the case in the filesystem, if there are multiple files that

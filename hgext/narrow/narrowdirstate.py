@@ -23,8 +23,11 @@ def setup(repo):
     def walk(orig, self, match, subrepos, unknown, ignored, full=True,
              narrowonly=True):
         if narrowonly:
-            narrowmatch = repo.narrowmatch()
-            match = matchmod.intersectmatchers(match, narrowmatch)
+            # hack to not exclude explicitly-specified paths so that they can
+            # be warned later on e.g. dirstate.add()
+            em = matchmod.exact(match._root, match._cwd, match.files())
+            nm = matchmod.unionmatcher([repo.narrowmatch(), em])
+            match = matchmod.intersectmatchers(match, nm)
         return orig(self, match, subrepos, unknown, ignored, full)
 
     extensions.wrapfunction(dirstate.dirstate, 'walk', walk)

@@ -129,6 +129,10 @@ Adding an excluded file should fail
   (include file with `hg debugsparse --include <pattern>` or use `hg add -s <file>` to include file directory while adding)
   [255]
 
+But adding a truly excluded file shouldn't count
+
+  $ hg add hide3 -X hide3
+
 Verify deleting sparseness while a file has changes fails
 
   $ hg debugsparse --delete 'show*'

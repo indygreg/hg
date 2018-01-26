@@ -55,6 +55,11 @@ Can not modify dirstate outside
   $ hg add outside/f3
   abort: cannot track 'outside/f3' - it is outside the narrow clone
   [255]
+
+But adding a truly excluded file shouldn't count
+
+  $ hg add outside/f3 -X outside/f3
+
   $ rm -r outside
 
 Can modify dirstate inside

@@ -146,6 +146,13 @@ Issue683: peculiarity with hg revert of an removed then added file
   M a
   ? a.orig
 
+excluded file shouldn't be added even if it is explicitly specified
+
+  $ hg add a.orig -X '*.orig'
+  $ hg st
+  M a
+  ? a.orig
+
 Forgotten file can be added back (as either clean or modified)
 
   $ hg forget b

@@ -30,9 +30,7 @@ def _getlockprefix():
     confidence. Typically it's just hostname. On modern linux, we include an
     extra Linux-specific pid namespace identifier.
     """
-    result = socket.gethostname()
-    if pycompat.ispy3:
-        result = result.encode(pycompat.sysstr(encoding.encoding), 'replace')
+    result = encoding.strtolocal(socket.gethostname())
     if pycompat.sysplatform.startswith('linux'):
         try:
             result += '/%x' % os.stat('/proc/self/ns/pid').st_ino

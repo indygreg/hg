@@ -307,20 +307,27 @@ def extractpointers(repo, revs):
             pointers[p.oid()] = p
     return sorted(pointers.values())
 
+def pointerfromctx(ctx, f):
+    """return a pointer for the named file from the given changectx, or None if
+    the file isn't LFS."""
+    if f not in ctx:
+        return None
+    fctx = ctx[f]
+    if not _islfs(fctx.filelog(), fctx.filenode()):
+        return None
+    try:
+        return pointer.deserialize(fctx.rawdata())
+    except pointer.InvalidPointer as ex:
+        raise error.Abort(_('lfs: corrupted pointer (%s@%s): %s\n')
+                          % (f, short(ctx.node()), ex))
+
 def pointersfromctx(ctx):
     """return a dict {path: pointer} for given single changectx"""
     result = {}
     for f in ctx.files():
-        if f not in ctx:
-            continue
-        fctx = ctx[f]
-        if not _islfs(fctx.filelog(), fctx.filenode()):
-            continue
-        try:
-            result[f] = pointer.deserialize(fctx.rawdata())
-        except pointer.InvalidPointer as ex:
-            raise error.Abort(_('lfs: corrupted pointer (%s@%s): %s\n')
-                              % (f, short(ctx.node()), ex))
+        p = pointerfromctx(ctx, f)
+        if p:
+            result[f] = p
     return result
 
 def uploadblobs(repo, pointers):

@@ -939,9 +939,9 @@ def _exceptionwarning(ui):
     worst = None, ct, ''
     if ui.config('ui', 'supportcontact') is None:
         for name, mod in extensions.extensions():
-            testedwith = getattr(mod, 'testedwith', '')
-            if pycompat.ispy3 and isinstance(testedwith, str):
-                testedwith = testedwith.encode(u'utf-8')
+            # 'testedwith' should be bytes, but not all extensions are ported
+            # to py3 and we don't want UnicodeException because of that.
+            testedwith = util.forcebytestr(getattr(mod, 'testedwith', ''))
             report = getattr(mod, 'buglink', _('the extension author.'))
             if not testedwith.strip():
                 # We found an untested extension. It's likely the culprit.
@@ -976,11 +976,7 @@ def _exceptionwarning(ui):
             bugtracker = _("https://mercurial-scm.org/wiki/BugTracker")
         warning = (_("** unknown exception encountered, "
                      "please report by visiting\n** ") + bugtracker + '\n')
-    if pycompat.ispy3:
-        sysversion = sys.version.encode(u'utf-8')
-    else:
-        sysversion = sys.version
-    sysversion = sysversion.replace('\n', '')
+    sysversion = pycompat.sysbytes(sys.version).replace('\n', '')
     warning += ((_("** Python %s\n") % sysversion) +
                 (_("** Mercurial Distributed SCM (version %s)\n") %
                  util.version()) +

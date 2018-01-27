@@ -123,10 +123,7 @@ class webproto(abstractserverproto):
         return [data[k] for k in keys]
 
     def _args(self):
-        args = self._req.form.copy()
-        if pycompat.ispy3:
-            args = {k.encode('ascii'): [v.encode('ascii') for v in vs]
-                    for k, vs in args.items()}
+        args = util.rapply(pycompat.bytesurl, self._req.form.copy())
         postlen = int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))
         if postlen:
             args.update(cgi.parse_qs(

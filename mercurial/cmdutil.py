@@ -1594,7 +1594,7 @@ def showmarker(fm, marker, index=None):
     fm.write('date', '(%s) ', fm.formatdate(marker.date()))
     meta = marker.metadata().copy()
     meta.pop('date', None)
-    smeta = {_maybebytestr(k): _maybebytestr(v) for k, v in meta.iteritems()}
+    smeta = util.rapply(_maybebytestr, meta)
     fm.write('metadata', '{%s}', fm.formatdict(smeta, fmt='%r: %r', sep=', '))
     fm.plain('\n')
 

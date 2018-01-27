@@ -717,13 +717,13 @@ def _ishashlikesymbol(symbol):
 def gethashlikesymbols(tree):
     """returns the list of symbols of the tree that look like hashes
 
-    >>> gethashlikesymbols(('dagrange', ('symbol', '3'), ('symbol', 'abe3ff')))
+    >>> gethashlikesymbols(parse(b'3::abe3ff'))
     ['3', 'abe3ff']
-    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '.')))
+    >>> gethashlikesymbols(parse(b'precursors(.)'))
     []
-    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '34')))
+    >>> gethashlikesymbols(parse(b'precursors(34)'))
     ['34']
-    >>> gethashlikesymbols(('symbol', 'abe3ffZ'))
+    >>> gethashlikesymbols(parse(b'abe3ffZ'))
     []
     """
     if not tree:

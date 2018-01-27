@@ -154,9 +154,21 @@ enabled adds the lfs requirement
   $ hg add . -q
   $ hg commit -m 'commit with lfs content'
 
+  $ hg files -r . 'set:added()'
+  large
+  small
+  $ hg files -r . 'set:added() & lfs()'
+  large
+
   $ hg mv large l
   $ hg mv small s
   $ hg commit -m 'renames'
+
+  $ hg files -r . 'set:copied()'
+  l
+  s
+  $ hg files -r . 'set:copied() & lfs()'
+  l
 
   $ echo SHORT > l
   $ echo BECOME-LARGER-FROM-SHORTER > s
@@ -1006,13 +1018,25 @@ The .hglfs file works when tracked
   
 The LFS policy stops when the .hglfs is gone
 
-  $ hg rm .hglfs
+  $ mv .hglfs .hglfs_
   $ echo 'largefile3' > lfs.test
   $ echo '012345678901234567890abc' > nolfs.exclude
   $ echo '01234567890123456abc' > lfs.catchall
   $ hg ci -qm 'file test' -X .hglfs
   $ hg log -r . -T '{rev}: {lfs_files % "{file}: {lfsoid}\n"}\n'
   4: 
+
+  $ mv .hglfs_ .hglfs
+  $ echo '012345678901234567890abc' > lfs.test
+  $ hg ci -m 'back to lfs'
+  $ hg rm lfs.test
+  $ hg ci -qm 'remove lfs'
+
+TODO: This should notice the deleted lfs files in rev 6
+  $ hg log -r 'file("set:lfs()")' -T '{rev} {join(lfs_files, ", ")}\n'
+  2 lfs.catchall, lfs.test
+  3 lfs.catchall, lfs.test
+  5 lfs.test
 
   $ cd ..
 

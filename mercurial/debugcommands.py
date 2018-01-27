@@ -2207,7 +2207,7 @@ def debugrevspec(ui, repo, expr, **opts):
     if not opts['show_revs']:
         return
     for c in revs:
-        ui.write("%s\n" % c)
+        ui.write("%d\n" % c)
 
 @command('debugsetparents', [], _('REV1 [REV2]'))
 def debugsetparents(ui, repo, rev1, rev2=None):

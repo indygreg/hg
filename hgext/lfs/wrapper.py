@@ -349,26 +349,46 @@ def extractpointers(repo, revs):
             pointers[p.oid()] = p
     return sorted(pointers.values())
 
-def pointerfromctx(ctx, f):
+def pointerfromctx(ctx, f, removed=False):
     """return a pointer for the named file from the given changectx, or None if
-    the file isn't LFS."""
+    the file isn't LFS.
+
+    Optionally, the pointer for a file deleted from the context can be returned.
+    Since no such pointer is actually stored, and to distinguish from a non LFS
+    file, this pointer is represented by an empty dict.
+    """
+    _ctx = ctx
     if f not in ctx:
-        return None
-    fctx = ctx[f]
+        if not removed:
+            return None
+        if f in ctx.p1():
+            _ctx = ctx.p1()
+        elif f in ctx.p2():
+            _ctx = ctx.p2()
+        else:
+            return None
+    fctx = _ctx[f]
     if not _islfs(fctx.filelog(), fctx.filenode()):
         return None
     try:
-        return pointer.deserialize(fctx.rawdata())
+        p = pointer.deserialize(fctx.rawdata())
+        if ctx == _ctx:
+            return p
+        return {}
     except pointer.InvalidPointer as ex:
         raise error.Abort(_('lfs: corrupted pointer (%s@%s): %s\n')
-                          % (f, short(ctx.node()), ex))
+                          % (f, short(_ctx.node()), ex))
 
-def pointersfromctx(ctx):
-    """return a dict {path: pointer} for given single changectx"""
+def pointersfromctx(ctx, removed=False):
+    """return a dict {path: pointer} for given single changectx.
+
+    If ``removed`` == True and the LFS file was removed from ``ctx``, the value
+    stored for the path is an empty dict.
+    """
     result = {}
     for f in ctx.files():
-        p = pointerfromctx(ctx, f)
-        if p:
+        p = pointerfromctx(ctx, f, removed=removed)
+        if p is not None:
             result[f] = p
     return result
 

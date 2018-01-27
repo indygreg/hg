@@ -1563,11 +1563,6 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
         if fo is not None:
             fo.close()
 
-def _maybebytestr(v):
-    if isinstance(v, bytes):
-        return pycompat.bytestr(v)
-    return v
-
 def showmarker(fm, marker, index=None):
     """utility function to display obsolescence marker in a readable way
 
@@ -1586,7 +1581,7 @@ def showmarker(fm, marker, index=None):
     fm.write('date', '(%s) ', fm.formatdate(marker.date()))
     meta = marker.metadata().copy()
     meta.pop('date', None)
-    smeta = util.rapply(_maybebytestr, meta)
+    smeta = util.rapply(pycompat.maybebytestr, meta)
     fm.write('metadata', '{%s}', fm.formatdict(smeta, fmt='%r: %r', sep=', '))
     fm.plain('\n')
 

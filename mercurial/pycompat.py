@@ -161,6 +161,12 @@ if ispy3:
         """Iterate bytes as if it were a str object of Python 2"""
         return map(bytechr, s)
 
+    def maybebytestr(s):
+        """Promote bytes to bytestr"""
+        if isinstance(s, bytes):
+            return bytestr(s)
+        return s
+
     def sysbytes(s):
         """Convert an internal str (e.g. keyword, __doc__) back to bytes
 
@@ -267,6 +273,7 @@ else:
     bytechr = chr
     bytestr = str
     iterbytestr = iter
+    maybebytestr = identity
     sysbytes = identity
     sysstr = identity
     strurl = identity

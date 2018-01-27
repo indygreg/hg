@@ -105,6 +105,9 @@ def _getrevsource(repo, r):
                 pass
     return None
 
+def _sortedb(xs):
+    return sorted(util.rapply(pycompat.maybebytestr, xs))
+
 # operator methods
 
 def stringset(repo, subset, x, order):
@@ -507,7 +510,7 @@ def branch(repo, subset, x):
         b.add(getbranch(r))
     c = s.__contains__
     return subset.filter(lambda r: c(r) or getbranch(r) in b,
-                         condrepr=lambda: '<branch %r>' % sorted(b))
+                         condrepr=lambda: '<branch %r>' % _sortedb(b))
 
 @predicate('phasedivergent()', safe=True)
 def phasedivergent(repo, subset, x):
@@ -760,7 +763,7 @@ def destination(repo, subset, x):
             src = _getrevsource(repo, r)
 
     return subset.filter(dests.__contains__,
-                         condrepr=lambda: '<destination %r>' % sorted(dests))
+                         condrepr=lambda: '<destination %r>' % _sortedb(dests))
 
 @predicate('contentdivergent()', safe=True)
 def contentdivergent(repo, subset, x):

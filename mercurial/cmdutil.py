@@ -1563,17 +1563,9 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
         if fo is not None:
             fo.close()
 
-class _regrettablereprbytes(bytes):
-    """Bytes subclass that makes the repr the same on Python 3 as Python 2.
-
-    This is a huge hack.
-    """
-    def __repr__(self):
-        return repr(pycompat.sysstr(self))
-
 def _maybebytestr(v):
-    if pycompat.ispy3 and isinstance(v, bytes):
-        return _regrettablereprbytes(v)
+    if isinstance(v, bytes):
+        return pycompat.bytestr(v)
     return v
 
 def showmarker(fm, marker, index=None):

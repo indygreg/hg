@@ -88,7 +88,7 @@ if ispy3:
         """A bytes which mostly acts as a Python 2 str
 
         >>> bytestr(), bytestr(bytearray(b'foo')), bytestr(u'ascii'), bytestr(1)
-        (b'', b'foo', b'ascii', b'1')
+        ('', 'foo', 'ascii', '1')
         >>> s = bytestr(b'foo')
         >>> assert s is bytestr(s)
 
@@ -98,7 +98,7 @@ if ispy3:
         ...     def __bytes__(self):
         ...         return b'bytes'
         >>> bytestr(bytesable())
-        b'bytes'
+        'bytes'
 
         There's no implicit conversion from non-ascii str as its encoding is
         unknown:
@@ -153,6 +153,9 @@ if ispy3:
 
         def __iter__(self):
             return iterbytestr(bytes.__iter__(self))
+
+        def __repr__(self):
+            return bytes.__repr__(self)[1:]  # drop b''
 
     def iterbytestr(s):
         """Iterate bytes as if it were a str object of Python 2"""

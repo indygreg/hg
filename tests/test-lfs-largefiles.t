@@ -298,7 +298,7 @@ locally.
   $TESTTMP/nolargefiles/.hg/hgrc:*: extensions.lfs= (glob)
 
   $ hg log -r 'all()' -G -T '{rev} {join(lfs_files, ", ")} ({desc})\n'
-  o  8  (remove large_by_size.bin)
+  o  8 large_by_size.bin (remove large_by_size.bin)
   |
   o  7 large_by_size.bin (large by size)
   |

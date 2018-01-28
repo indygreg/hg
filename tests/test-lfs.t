@@ -186,7 +186,7 @@ enabled adds the lfs requirement
 
   $ hg log -r 'all()' -T '{rev} {join(lfs_files, ", ")}\n'
   0 large
-  1 l
+  1 l, large
   2 s
   3 s
   4 l
@@ -1031,6 +1031,16 @@ The LFS policy stops when the .hglfs is gone
   $ hg ci -m 'back to lfs'
   $ hg rm lfs.test
   $ hg ci -qm 'remove lfs'
+
+{lfs_files} will list deleted files too
+
+  $ hg log -T "{lfs_files % '{rev} {file}: {lfspointer.oid}\n'}"
+  6 lfs.test: 
+  5 lfs.test: sha256:43f8f41171b6f62a6b61ba4ce98a8a6c1649240a47ebafd43120aa215ac9e7f6
+  3 lfs.catchall: sha256:31f43b9c62b540126b0ad5884dc013d21a61c9329b77de1fceeae2fc58511573
+  3 lfs.test: sha256:8acd23467967bc7b8cc5a280056589b0ba0b17ff21dbd88a7b6474d6290378a6
+  2 lfs.catchall: sha256:d4ec46c2869ba22eceb42a729377432052d9dd75d82fc40390ebaadecee87ee9
+  2 lfs.test: sha256:5489e6ced8c36a7b267292bde9fd5242a5f80a7482e8f23fa0477393dfaa4d6c
 
 TODO: This should notice the deleted lfs files in rev 6
   $ hg log -r 'file("set:lfs()")' -T '{rev} {join(lfs_files, ", ")}\n'

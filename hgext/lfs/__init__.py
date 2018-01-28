@@ -360,10 +360,11 @@ def lfsfileset(mctx, x):
 
 @templatekeyword('lfs_files')
 def lfsfiles(repo, ctx, **args):
-    """List of strings. LFS files added or modified by the changeset."""
+    """List of strings. All files modified, added, or removed by this
+    changeset."""
     args = pycompat.byteskwargs(args)
 
-    pointers = wrapper.pointersfromctx(ctx) # {path: pointer}
+    pointers = wrapper.pointersfromctx(ctx, removed=True) # {path: pointer}
     files = sorted(pointers.keys())
 
     def pointer(v):
@@ -374,7 +375,7 @@ def lfsfiles(repo, ctx, **args):
 
     makemap = lambda v: {
         'file': v,
-        'lfsoid': pointers[v].oid(),
+        'lfsoid': pointers[v].oid() if pointers[v] else None,
         'lfspointer': templatekw.hybriddict(pointer(v)),
     }
 

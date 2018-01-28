@@ -162,6 +162,11 @@ enabled adds the lfs requirement
 
   $ hg mv large l
   $ hg mv small s
+  $ hg status 'set:removed()'
+  R large
+  R small
+  $ hg status 'set:removed() & lfs()'
+  R large
   $ hg commit -m 'renames'
 
   $ hg files -r . 'set:copied()'
@@ -169,6 +174,11 @@ enabled adds the lfs requirement
   s
   $ hg files -r . 'set:copied() & lfs()'
   l
+  $ hg status --change . 'set:removed()'
+  R large
+  R small
+  $ hg status --change . 'set:removed() & lfs()'
+  R large
 
   $ echo SHORT > l
   $ echo BECOME-LARGER-FROM-SHORTER > s
@@ -1042,11 +1052,11 @@ The LFS policy stops when the .hglfs is gone
   2 lfs.catchall: sha256:d4ec46c2869ba22eceb42a729377432052d9dd75d82fc40390ebaadecee87ee9
   2 lfs.test: sha256:5489e6ced8c36a7b267292bde9fd5242a5f80a7482e8f23fa0477393dfaa4d6c
 
-TODO: This should notice the deleted lfs files in rev 6
   $ hg log -r 'file("set:lfs()")' -T '{rev} {join(lfs_files, ", ")}\n'
   2 lfs.catchall, lfs.test
   3 lfs.catchall, lfs.test
   5 lfs.test
+  6 lfs.test
 
   $ cd ..
 

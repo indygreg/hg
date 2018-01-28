@@ -71,6 +71,20 @@ substitutions = [
      # (replacement patterns)
      br'$USUAL_BUNDLE2_CAPS_SERVER$'
      ),
+    (
+     br'bundle2=HG20%0A'
+     br'bookmarks%0A'
+     br'changegroup%3D01%2C02%0A'
+     br'digests%3Dmd5%2Csha1%2Csha512%0A'
+     br'error%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0A'
+     br'hgtagsfnodes%0A'
+     br'listkeys%0A'
+     br'pushkey%0A'
+     br'remote-changegroup%3Dhttp%2Chttps%0A'
+     br'rev-branch-cache',
+     # (replacement patterns)
+     br'$USUAL_BUNDLE2_CAPS_NO_PHASES$'
+    ),
     # HTTP access log dates
     (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "(GET|PUT|POST)',
      lambda m: br' - - [$LOGDATE$] "' + m.group(1)

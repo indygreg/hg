@@ -8,6 +8,9 @@ substitutions = [
     (br'(zstd,)?zlib,none,bzip2',
      br'$USUAL_COMPRESSIONS$'
     ),
+    (br'=(zstd,)?zlib',
+     br'=$BUNDLE2_COMPRESSIONS$'
+    ),
     # capabilities sent through http
     (br'bundlecaps=HG20%2Cbundle2%3DHG20%250A'
      br'bookmarks%250A'

@@ -39,7 +39,7 @@ Cannot stream clone when server.uncompressed is set
     branchmap
     $USUAL_BUNDLE2_CAPS_SERVER$
     changegroupsubset
-    compression=zstd,zlib
+    compression=$BUNDLE2_COMPRESSIONS$
     getbundle
     httpheader=1024
     httpmediatype=0.1rx,0.1tx,0.2tx
@@ -104,7 +104,7 @@ Cannot stream clone when server.uncompressed is set
     branchmap
     $USUAL_BUNDLE2_CAPS_SERVER$
     changegroupsubset
-    compression=zstd,zlib
+    compression=$BUNDLE2_COMPRESSIONS$
     getbundle
     httpheader=1024
     httpmediatype=0.1rx,0.1tx,0.2tx

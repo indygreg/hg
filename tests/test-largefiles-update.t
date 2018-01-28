@@ -726,6 +726,20 @@ bit correctly on the platform being unaware of it.
 
 #endif
 
+The fileset revset is evaluated for each revision, instead of once on wdir(),
+and then patterns matched on each revision.  Here, no exec bits are set in
+wdir(), but a matching revision is detected.
+
+(Teach large2 is not an executable. Maybe this is a bug of largefiles.)
+#if execbit
+  $ chmod -x .hglf/large2
+#endif
+
+  $ hg files 'set:exec()'
+  [1]
+  $ hg log -qr 'file("set:exec()")'
+  9:be1b433a65b1
+
 Test a fatal error interrupting an update. Verify that status report dirty
 files correctly after an interrupted update. Also verify that checking all
 hashes reveals it isn't clean.

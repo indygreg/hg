@@ -199,6 +199,14 @@ def readbundle(ui, fh, fname, vfs=None):
     else:
         raise error.Abort(_('%s: unknown bundle version %s') % (fname, version))
 
+def _formatrequirementsspec(requirements):
+    return urlreq.quote(','.join(sorted(requirements)))
+
+def _formatrequirementsparams(requirements):
+    requirements = _formatrequirementsspec(requirements)
+    params = "%s%s" % (urlreq.quote("requirements="), requirements)
+    return params
+
 def getbundlespec(ui, fh):
     """Infer the bundlespec from a bundle file handle.
 
@@ -247,8 +255,7 @@ def getbundlespec(ui, fh):
         return '%s-%s' % (comp, version)
     elif isinstance(b, streamclone.streamcloneapplier):
         requirements = streamclone.readbundle1header(fh)[2]
-        params = 'requirements=%s' % ','.join(sorted(requirements))
-        return 'none-packed1;%s' % urlreq.quote(params)
+        return 'none-packed1;%s' % _formatrequirementsparams(requirements)
     else:
         raise error.Abort(_('unknown bundle type: %s') % b)
 

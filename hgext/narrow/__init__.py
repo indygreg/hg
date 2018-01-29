@@ -24,7 +24,6 @@ from mercurial import (
     hg,
     localrepo,
     registrar,
-    util,
     verify as verifymod,
 )
 
@@ -85,15 +84,6 @@ def reposetup(ui, repo):
         narrowpatch.setup(repo)
         narrowwirepeer.reposetup(repo)
 
-def _narrowvalidpath(orig, repo, path):
-    matcher = getattr(repo, 'narrowmatch', None)
-    if matcher is None:
-        return orig(repo, path)
-    matcher = matcher()
-    if matcher.visitdir(path) or matcher(path):
-        return orig(repo, path)
-    return False
-
 def _verifierinit(orig, self, repo, matcher=None):
     # The verifier's matcher argument was desgined for narrowhg, so it should
     # be None from core. If another extension passes a matcher (unlikely),
@@ -103,9 +93,6 @@ def _verifierinit(orig, self, repo, matcher=None):
     orig(self, repo, matcher)
 
 def extsetup(ui):
-    if util.safehasattr(verifymod, '_validpath'):
-        extensions.wrapfunction(verifymod, '_validpath', _narrowvalidpath)
-    else:
-        extensions.wrapfunction(verifymod.verifier, '__init__', _verifierinit)
+    extensions.wrapfunction(verifymod.verifier, '__init__', _verifierinit)
     extensions.wrapfunction(hg, 'postshare', narrowrepo.wrappostshare)
     extensions.wrapfunction(hg, 'copystore', narrowrepo.unsharenarrowspec)

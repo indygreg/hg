@@ -237,20 +237,13 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
         outgoing = exchange._computeoutgoing(repo, heads, common)
         if not outgoing.missing:
             return
-        if util.safehasattr(changegroup, 'getsubsetraw'):
-            # getsubsetraw was replaced with makestream in hg in 92f1e2be8ab6
-            # (2017/09/10).
-            packer = changegroup.getbundler(version, repo)
-            packer._narrow_matcher = lambda : newmatch
-            cg = changegroup.getsubsetraw(repo, outgoing, packer, source)
-        else:
-            def wrappedgetbundler(orig, *args, **kwargs):
-                bundler = orig(*args, **kwargs)
-                bundler._narrow_matcher = lambda : newmatch
-                return bundler
-            with extensions.wrappedfunction(changegroup, 'getbundler',
-                                            wrappedgetbundler):
-                cg = changegroup.makestream(repo, outgoing, version, source)
+        def wrappedgetbundler(orig, *args, **kwargs):
+            bundler = orig(*args, **kwargs)
+            bundler._narrow_matcher = lambda : newmatch
+            return bundler
+        with extensions.wrappedfunction(changegroup, 'getbundler',
+                                        wrappedgetbundler):
+            cg = changegroup.makestream(repo, outgoing, version, source)
         part = bundler.newpart('changegroup', data=cg)
         part.addparam('version', version)
         if 'treemanifest' in repo.requirements:

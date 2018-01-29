@@ -27,9 +27,8 @@ def writetransform(self, text):
 def rawtransform(self, text):
     return False
 
-if util.safehasattr(revlog, 'addflagprocessor'):
-    revlog.addflagprocessor(ELLIPSIS_NODE_FLAG,
-                            (readtransform, writetransform, rawtransform))
+revlog.addflagprocessor(ELLIPSIS_NODE_FLAG,
+                        (readtransform, writetransform, rawtransform))
 
 def setup():
     # We just wanted to add the flag processor, which is done at module

@@ -15,9 +15,8 @@ from mercurial import (
 
 ELLIPSIS_NODE_FLAG = 1 << 14
 revlog.REVIDX_KNOWN_FLAGS |= ELLIPSIS_NODE_FLAG
-if (util.safehasattr(revlog, 'REVIDX_FLAGS_ORDER') and
-    ELLIPSIS_NODE_FLAG not in revlog.REVIDX_FLAGS_ORDER):
-        revlog.REVIDX_FLAGS_ORDER.append(ELLIPSIS_NODE_FLAG)
+if ELLIPSIS_NODE_FLAG not in revlog.REVIDX_FLAGS_ORDER:
+    revlog.REVIDX_FLAGS_ORDER.append(ELLIPSIS_NODE_FLAG)
 
 def readtransform(self, text):
     return text, False

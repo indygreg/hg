@@ -638,7 +638,13 @@ def supportedcompengines(ui, proto, role):
 commands = {}
 
 def wireprotocommand(name, args=''):
-    """decorator for wire protocol command"""
+    """Decorator to declare a wire protocol command.
+
+    ``name`` is the name of the wire protocol command being provided.
+
+    ``args`` is a space-delimited list of named arguments that the command
+    accepts. ``*`` is a special value that says to accept all arguments.
+    """
     def register(func):
         commands[name] = (func, args)
         return func

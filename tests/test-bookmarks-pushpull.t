@@ -1173,3 +1173,72 @@ Using http
 
   $ hg -R ../issue4455-dest/ bookmarks
   no bookmarks set
+
+  $ cd ..
+
+Test that pre-pushkey compat for bookmark works as expected (issue5777)
+
+  $ cat << EOF >> $HGRCPATH
+  > [ui]
+  > ssh="$PYTHON" "$TESTDIR/dummyssh"
+  > [server]
+  > bookmarks-pushkey-compat = yes
+  > EOF
+
+  $ hg init server
+  $ echo foo > server/a
+  $ hg -R server book foo
+  $ hg -R server commit -Am a
+  adding a
+  $ hg clone ssh://user@dummy/server client
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 79513d0d7716
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+Forbid bookmark move on the server
+
+  $ cat << EOF >> server/.hg/hgrc
+  > [hooks]
+  > prepushkey.no-bm-move= echo \$HG_NAMESPACE | grep -v bookmarks
+  > EOF
+
+pushing changeset is okay
+
+  $ echo bar >> client/a
+  $ hg -R client commit -m b
+  $ hg -R client push
+  pushing to ssh://user@dummy/server
+  searching for changes
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+
+attempt to move the bookmark is rejected
+
+  $ hg -R client book foo -r .
+  moving bookmark 'foo' forward from 79513d0d7716
+
+#if b2-pushkey
+  $ hg -R client push
+  pushing to ssh://user@dummy/server
+  searching for changes
+  no changes found
+  remote: pushkey-abort: prepushkey.no-bm-move hook exited with status 1
+  abort: updating bookmark foo failed!
+  [255]
+#endif
+#if b2-binary
+  $ hg -R client push
+  pushing to ssh://user@dummy/server
+  searching for changes
+  no changes found
+  remote: prepushkey.no-bm-move hook exited with status 1
+  abort: push failed on remote
+  [255]
+#endif

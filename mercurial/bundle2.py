@@ -2033,7 +2033,7 @@ def handlebookmark(op, inpart):
             for book, node in changes:
                 hookargs = tr.hookargs.copy()
                 hookargs['pushkeycompat'] = '1'
-                hookargs['namespace'] = 'bookmark'
+                hookargs['namespace'] = 'bookmarks'
                 hookargs['key'] = book
                 hookargs['old'] = nodemod.hex(bookstore.get(book, ''))
                 hookargs['new'] = nodemod.hex(node if node is not None else '')

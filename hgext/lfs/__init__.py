@@ -25,14 +25,15 @@ becomes burdensome.  However, the pre and post convert clones will
 not be able to communicate with each other unless the extension is
 enabled on both.
 
-To start a new repository, or add new LFS files, just create and add
-an ``.hglfs`` file as described below.  Because the file is tracked in
-the repository, all clones will use the same selection policy.  During
-subsequent commits, Mercurial will consult this file to determine if
-an added or modified file should be stored externally.  The type of
-storage depends on the characteristics of the file at each commit.  A
-file that is near a size threshold may switch back and forth between
-LFS and normal storage, as needed.
+To start a new repository, or to add LFS files to an existing one, just
+create an ``.hglfs`` file as described below in the root directory of
+the repository.  Typically, this file should be put under version
+control, so that the settings will propagate to other repositories with
+push and pull.  During any commit, Mercurial will consult this file to
+determine if an added or modified file should be stored externally.  The
+type of storage depends on the characteristics of the file at each
+commit.  A file that is near a size threshold may switch back and forth
+between LFS and normal storage, as needed.
 
 Alternately, both normal repositories and largefile controlled
 repositories can be converted to LFS by using :hg:`convert` and the
@@ -240,29 +241,19 @@ def reposetup(ui, repo):
 def _trackedmatcher(repo, ctx):
     """Return a function (path, size) -> bool indicating whether or not to
     track a given file with lfs."""
-    data = ''
+    if not repo.wvfs.exists('.hglfs'):
+        # No '.hglfs' in wdir.  Fallback to config for now.
+        trackspec = repo.ui.config('lfs', 'track')
 
-    if '.hglfs' in ctx.added() or '.hglfs' in ctx.modified():
-        data = ctx['.hglfs'].data()
-    elif '.hglfs' not in ctx.removed():
-        p1 = repo['.']
+        # deprecated config: lfs.threshold
+        threshold = repo.ui.configbytes('lfs', 'threshold')
+        if threshold:
+            fileset.parse(trackspec)  # make sure syntax errors are confined
+            trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
 
-        if '.hglfs' not in p1:
-            # No '.hglfs' in wdir or in parent.  Fallback to config
-            # for now.
-            trackspec = repo.ui.config('lfs', 'track')
+        return minifileset.compile(trackspec)
 
-            # deprecated config: lfs.threshold
-            threshold = repo.ui.configbytes('lfs', 'threshold')
-            if threshold:
-                fileset.parse(trackspec)  # make sure syntax errors are confined
-                trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
-
-            return minifileset.compile(trackspec)
-
-        data = p1['.hglfs'].data()
-
-    # In removed, or not in parent
+    data = repo.wvfs.tryread('.hglfs')
     if not data:
         return lambda p, s: False
 

@@ -366,11 +366,22 @@ class _gitlfsremote(object):
             oids = transfer(sorted(objects, key=lambda o: o.get('oid')))
 
         processed = 0
+        blobs = 0
         for _one, oid in oids:
             processed += sizes[oid]
+            blobs += 1
             self.ui.progress(topic, processed, total=total)
             self.ui.note(_('lfs: processed: %s\n') % oid)
         self.ui.progress(topic, pos=None, total=total)
+
+        if blobs > 0:
+            if action == 'upload':
+                self.ui.status(_('lfs: uploaded %d files (%s)\n')
+                               % (blobs, util.bytecount(processed)))
+            # TODO: coalesce the download requests, and comment this in
+            #elif action == 'download':
+            #    self.ui.status(_('lfs: downloaded %d files (%s)\n')
+            #                   % (blobs, util.bytecount(processed)))
 
     def __del__(self):
         # copied from mercurial/httppeer.py

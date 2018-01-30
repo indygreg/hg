@@ -48,6 +48,7 @@ store.
   searching for changes
   lfs: uploading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
+  lfs: uploaded 1 files (12 bytes)
   1 changesets found
   uncompressed size of bundle content:
        * (changelog) (glob)
@@ -86,6 +87,7 @@ When the server has some blobs already
   lfs: processed: 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19
   lfs: uploading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  lfs: uploaded 2 files (39 bytes)
   1 changesets found
   uncompressed size of bundle content:
   adding changesets

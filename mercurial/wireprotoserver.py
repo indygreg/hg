@@ -344,13 +344,7 @@ class sshserver(abstractserverproto):
             rsp = wireproto.dispatch(self.repo, self, cmd)
             self.handlers[rsp.__class__](self, rsp)
         elif cmd:
-            impl = getattr(self, 'do_' + cmd, None)
-            if impl:
-                r = impl()
-                if r is not None:
-                    self.sendresponse(r)
-            else:
-                self.sendresponse("")
+            self.sendresponse("")
         return cmd != ''
 
     def _client(self):

@@ -76,6 +76,10 @@ _bundlespeccontentopts = {
 }
 _bundlespeccontentopts['bundle2'] = _bundlespeccontentopts['v2']
 
+_bundlespecvariants = {"streamv2": {"changegroup": False, "streamv2": True,
+                                    "tagsfnodescache": False,
+                                    "revbranchcache": False}}
+
 # Compression engines allowed in version 1. THIS SHOULD NEVER CHANGE.
 _bundlespecv1compengines = {'gzip', 'bzip2', 'none'}
 
@@ -206,6 +210,11 @@ def parsebundlespec(repo, spec, strict=True, externalnames=False):
     # Compute contentopts based on the version
     contentopts = _bundlespeccontentopts.get(version, {}).copy()
 
+    # Process the variants
+    if "stream" in params and params["stream"] == "v2":
+        variant = _bundlespecvariants["streamv2"]
+        contentopts.update(variant)
+
     if not externalnames:
         engine = util.compengines.forbundlename(compression)
         compression = engine.bundletype()[1]
@@ -281,6 +290,13 @@ def getbundlespec(ui, fh):
                                         'a known bundlespec') % version,
                                       hint=_('try upgrading your Mercurial '
                                               'client'))
+            elif part.type == 'stream2' and version is None:
+                # A stream2 part requires to be part of a v2 bundle
+                version = "v2"
+                requirements = urlreq.unquote(part.params['requirements'])
+                splitted = requirements.split()
+                params = bundle2._formatrequirementsparams(splitted)
+                return 'none-v2;stream=v2;%s' % params
 
         if not version:
             raise error.Abort(_('could not identify changegroup version in '

@@ -41,15 +41,8 @@ The extension requires a repo (currently unused)
   > EOF
 
   $ hg bundle -a --type="none-v2;stream=v2" bundle.hg
-  5 changesets found
   $ hg debugbundle bundle.hg
   Stream params: {}
-  changegroup -- {nbchanges: 5, version: 02}
-      426bada5c67598ca65036d57d9e4b64b0c1ce7a0
-      112478962961147124edd43549aedd1a335e44bf
-      26805aba1e600a82e93661149f2313866a221a7b
-      f585351a92f85104bff7c284233c338b10eb1df7
-      9bc730a19041f9ec7cb33c626e811aa233efb18c
-  cache:rev-branch-cache -- {}
+  stream2 -- {bytecount: 1693, filecount: 11, requirements: dotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Cstore}
   $ hg debugbundle --spec bundle.hg
-  none-v2
+  none-v2;stream=v2;requirements%3Ddotencode%2Cfncache%2Cgeneraldelta%2Crevlogv1%2Cstore

@@ -2180,6 +2180,18 @@ def parseclonebundlesmanifest(repo, s):
 
     return m
 
+def isstreamclonespec(bundlespec):
+    # Stream clone v1
+    if (bundlespec.compression == 'UN' and bundlespec.version == 's1'):
+        return True
+
+    # Stream clone v2
+    if (bundlespec.compression == 'UN' and bundlespec.version == '02' and \
+        bundlespec.contentopts.get('streamv2')):
+        return True
+
+    return False
+
 def filterclonebundleentries(repo, entries, streamclonerequested=False):
     """Remove incompatible clone bundle manifest entries.
 
@@ -2199,9 +2211,7 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
 
                 # If a stream clone was requested, filter out non-streamclone
                 # entries.
-                comp = bundlespec.compression
-                version = bundlespec.version
-                if streamclonerequested and (comp != 'UN' or version != 's1'):
+                if streamclonerequested and not isstreamclonespec(bundlespec):
                     repo.ui.debug('filtering %s because not a stream clone\n' %
                                   entry['URL'])
                     continue

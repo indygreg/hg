@@ -41,46 +41,6 @@ bundle2requiredhint = _('see https://www.mercurial-scm.org/wiki/'
                         'IncompatibleClient')
 bundle2required = '%s\n(%s)\n' % (bundle2requiredmain, bundle2requiredhint)
 
-class abstractserverproto(object):
-    """abstract class that summarizes the protocol API
-
-    Used as reference and documentation.
-    """
-
-    def getargs(self, args):
-        """return the value for arguments in <args>
-
-        returns a list of values (same order as <args>)"""
-        raise NotImplementedError()
-
-    def getfile(self, fp):
-        """write the whole content of a file into a file like object
-
-        The file is in the form::
-
-            (<chunk-size>\n<chunk>)+0\n
-
-        chunk size is the ascii version of the int.
-        """
-        raise NotImplementedError()
-
-    def redirect(self):
-        """may setup interception for stdout and stderr
-
-        See also the `restore` method."""
-        raise NotImplementedError()
-
-    # If the `redirect` function does install interception, the `restore`
-    # function MUST be defined. If interception is not used, this function
-    # MUST NOT be defined.
-    #
-    # left commented here on purpose
-    #
-    #def restore(self):
-    #    """reinstall previous stdout and stderr and return intercepted stdout
-    #    """
-    #    raise NotImplementedError()
-
 class remoteiterbatcher(peer.iterbatcher):
     def __init__(self, remote):
         super(remoteiterbatcher, self).__init__()

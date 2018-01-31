@@ -31,6 +31,46 @@ HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
 
+class abstractserverproto(object):
+    """abstract class that summarizes the protocol API
+
+    Used as reference and documentation.
+    """
+
+    def getargs(self, args):
+        """return the value for arguments in <args>
+
+        returns a list of values (same order as <args>)"""
+        raise NotImplementedError()
+
+    def getfile(self, fp):
+        """write the whole content of a file into a file like object
+
+        The file is in the form::
+
+            (<chunk-size>\n<chunk>)+0\n
+
+        chunk size is the ascii version of the int.
+        """
+        raise NotImplementedError()
+
+    def redirect(self):
+        """may setup interception for stdout and stderr
+
+        See also the `restore` method."""
+        raise NotImplementedError()
+
+    # If the `redirect` function does install interception, the `restore`
+    # function MUST be defined. If interception is not used, this function
+    # MUST NOT be defined.
+    #
+    # left commented here on purpose
+    #
+    #def restore(self):
+    #    """reinstall previous stdout and stderr and return intercepted stdout
+    #    """
+    #    raise NotImplementedError()
+
 def decodevaluefromheaders(req, headerprefix):
     """Decode a long value from multiple HTTP request headers.
 
@@ -48,7 +88,7 @@ def decodevaluefromheaders(req, headerprefix):
 
     return ''.join(chunks)
 
-class webproto(wireproto.abstractserverproto):
+class webproto(abstractserverproto):
     def __init__(self, req, ui):
         self.req = req
         self.response = ''
@@ -202,7 +242,7 @@ def callhttp(repo, req, cmd):
         return []
     raise error.ProgrammingError('hgweb.protocol internal failure', rsp)
 
-class sshserver(wireproto.abstractserverproto):
+class sshserver(abstractserverproto):
     def __init__(self, ui, repo):
         self.ui = ui
         self.repo = repo

@@ -109,6 +109,7 @@ class webproto(abstractserverproto):
             else:
                 data[k] = knownargs[k][0]
         return [data[k] for k in keys]
+
     def _args(self):
         args = self.req.form.copy()
         if pycompat.ispy3:
@@ -123,6 +124,7 @@ class webproto(abstractserverproto):
         argvalue = decodevaluefromheaders(self.req, r'X-HgArg')
         args.update(cgi.parse_qs(argvalue, keep_blank_values=True))
         return args
+
     def getfile(self, fp):
         length = int(self.req.env[r'CONTENT_LENGTH'])
         # If httppostargs is used, we need to read Content-Length
@@ -130,9 +132,11 @@ class webproto(abstractserverproto):
         length -= int(self.req.env.get(r'HTTP_X_HGARGS_POST', 0))
         for s in util.filechunkiter(self.req, limit=length):
             fp.write(s)
+
     def redirect(self):
         self.oldio = self.ui.fout, self.ui.ferr
         self.ui.ferr = self.ui.fout = stringio()
+
     def restore(self):
         val = self.ui.fout.getvalue()
         self.ui.ferr, self.ui.fout = self.oldio

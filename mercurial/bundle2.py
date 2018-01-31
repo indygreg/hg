@@ -1596,6 +1596,9 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
                                             outgoing.missingheads):
             part.addparam('targetphase', '%d' % phases.secret, mandatory=False)
 
+    if opts.get('streamv2', False):
+        addpartbundlestream2(bundler, repo, stream=True)
+
     if opts.get('tagsfnodescache', True):
         addparttagsfnodescache(repo, bundler, outgoing)
 
@@ -1656,6 +1659,37 @@ def addpartrevbranchcache(repo, bundler, outgoing):
                 yield n
 
     bundler.newpart('cache:rev-branch-cache', data=generate())
+
+def _formatrequirementsspec(requirements):
+    return urlreq.quote(','.join(sorted(requirements)))
+
+def _formatrequirementsparams(requirements):
+    requirements = _formatrequirementsspec(requirements)
+    params = "%s%s" % (urlreq.quote("requirements="), requirements)
+    return params
+
+def addpartbundlestream2(bundler, repo, **kwargs):
+    if not kwargs.get('stream', False):
+        return
+
+    if not streamclone.allowservergeneration(repo):
+        raise error.Abort(_('stream data requested but server does not allow '
+                            'this feature'),
+                          hint=_('well-behaved clients should not be '
+                                 'requesting stream data from servers not '
+                                 'advertising it; the client may be buggy'))
+
+    # Stream clones don't compress well. And compression undermines a
+    # goal of stream clones, which is to be fast. Communicate the desire
+    # to avoid compression to consumers of the bundle.
+    bundler.prefercompressed = False
+
+    filecount, bytecount, it = streamclone.generatev2(repo)
+    requirements = _formatrequirementsspec(repo.requirements)
+    part = bundler.newpart('stream2', data=it)
+    part.addparam('bytecount', '%d' % bytecount, mandatory=True)
+    part.addparam('filecount', '%d' % filecount, mandatory=True)
+    part.addparam('requirements', requirements, mandatory=True)
 
 def buildobsmarkerspart(bundler, markers):
     """add an obsmarker part to the bundler with <markers>

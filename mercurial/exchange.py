@@ -241,14 +241,6 @@ def readbundle(ui, fh, fname, vfs=None):
     else:
         raise error.Abort(_('%s: unknown bundle version %s') % (fname, version))
 
-def _formatrequirementsspec(requirements):
-    return urlreq.quote(','.join(sorted(requirements)))
-
-def _formatrequirementsparams(requirements):
-    requirements = _formatrequirementsspec(requirements)
-    params = "%s%s" % (urlreq.quote("requirements="), requirements)
-    return params
-
 def getbundlespec(ui, fh):
     """Infer the bundlespec from a bundle file handle.
 
@@ -297,7 +289,8 @@ def getbundlespec(ui, fh):
         return '%s-%s' % (comp, version)
     elif isinstance(b, streamclone.streamcloneapplier):
         requirements = streamclone.readbundle1header(fh)[2]
-        return 'none-packed1;%s' % _formatrequirementsparams(requirements)
+        formatted = bundle2._formatrequirementsparams(requirements)
+        return 'none-packed1;%s' % formatted
     else:
         raise error.Abort(_('unknown bundle type: %s') % b)
 
@@ -1825,29 +1818,8 @@ def getbundlechunks(repo, source, heads=None, common=None, bundlecaps=None,
     return info, bundler.getchunks()
 
 @getbundle2partsgenerator('stream2')
-def _getbundlestream2(bundler, repo, source, bundlecaps=None,
-                      b2caps=None, heads=None, common=None, **kwargs):
-    if not kwargs.get('stream', False):
-        return
-
-    if not streamclone.allowservergeneration(repo):
-        raise error.Abort(_('stream data requested but server does not allow '
-                            'this feature'),
-                          hint=_('well-behaved clients should not be '
-                                 'requesting stream data from servers not '
-                                 'advertising it; the client may be buggy'))
-
-    # Stream clones don't compress well. And compression undermines a
-    # goal of stream clones, which is to be fast. Communicate the desire
-    # to avoid compression to consumers of the bundle.
-    bundler.prefercompressed = False
-
-    filecount, bytecount, it = streamclone.generatev2(repo)
-    requirements = _formatrequirementsspec(repo.requirements)
-    part = bundler.newpart('stream2', data=it)
-    part.addparam('bytecount', '%d' % bytecount, mandatory=True)
-    part.addparam('filecount', '%d' % filecount, mandatory=True)
-    part.addparam('requirements', requirements, mandatory=True)
+def _getbundlestream2(bundler, repo, *args, **kwargs):
+    return bundle2.addpartbundlestream2(bundler, repo, **kwargs)
 
 @getbundle2partsgenerator('changegroup')
 def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,

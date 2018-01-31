@@ -1,4 +1,3 @@
-#
 # Copyright 21 May 2005 - (c) 2005 Jake Edge <jake@edge2.net>
 # Copyright 2005-2007 Matt Mackall <mpm@selenic.com>
 #
@@ -10,16 +9,16 @@ from __future__ import absolute_import
 import cgi
 import struct
 
-from .common import (
+from .hgweb.common import (
     HTTP_OK,
 )
-
-from .. import (
+from . import (
     error,
     pycompat,
     util,
     wireproto,
 )
+
 stringio = util.stringio
 
 urlerr = util.urlerr

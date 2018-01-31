@@ -36,10 +36,10 @@ from .. import (
     templater,
     ui as uimod,
     util,
+    wireprotoserver,
 )
 
 from . import (
-    protocol,
     webcommands,
     webutil,
     wsgicgi,
@@ -362,13 +362,13 @@ class hgweb(object):
         # and the clients always use the old URL structure
 
         cmd = pycompat.sysbytes(req.form.get(r'cmd', [r''])[0])
-        if protocol.iscmd(cmd):
+        if wireprotoserver.iscmd(cmd):
             try:
                 if query:
                     raise ErrorResponse(HTTP_NOT_FOUND)
                 if cmd in perms:
                     self.check_perm(rctx, req, perms[cmd])
-                return protocol.call(rctx.repo, req, cmd)
+                return wireprotoserver.call(rctx.repo, req, cmd)
             except ErrorResponse as inst:
                 # A client that sends unbundle without 100-continue will
                 # break if we respond early.
@@ -379,7 +379,7 @@ class hgweb(object):
                     req.drain()
                 else:
                     req.headers.append((r'Connection', r'Close'))
-                req.respond(inst, protocol.HGTYPE,
+                req.respond(inst, wireprotoserver.HGTYPE,
                             body='0\n%s\n' % inst)
                 return ''
 

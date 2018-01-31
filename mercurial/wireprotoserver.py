@@ -282,9 +282,6 @@ class sshserver(abstractserverproto):
                 data[arg] = val
         return [data[k] for k in keys]
 
-    def getarg(self, name):
-        return self.getargs(name)[0]
-
     def getfile(self, fpout):
         self.sendresponse('')
         count = int(self.fin.readline())

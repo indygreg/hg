@@ -211,7 +211,7 @@ def reposetup(ui, repo):
     class lfsrepo(repo.__class__):
         @localrepo.unfilteredmethod
         def commitctx(self, ctx, error=False):
-            repo.svfs.options['lfstrack'] = _trackedmatcher(self, ctx)
+            repo.svfs.options['lfstrack'] = _trackedmatcher(self)
             return super(lfsrepo, self).commitctx(ctx, error)
 
     repo.__class__ = lfsrepo
@@ -238,7 +238,7 @@ def reposetup(ui, repo):
     else:
         repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
 
-def _trackedmatcher(repo, ctx):
+def _trackedmatcher(repo):
     """Return a function (path, size) -> bool indicating whether or not to
     track a given file with lfs."""
     if not repo.wvfs.exists('.hglfs'):

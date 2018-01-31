@@ -283,7 +283,7 @@ class sshserver(abstractserverproto):
         return [data[k] for k in keys]
 
     def getfile(self, fpout):
-        self.sendresponse('')
+        self._sendresponse('')
         count = int(self._fin.readline())
         while count:
             fpout.write(self._fin.read(count))
@@ -292,25 +292,25 @@ class sshserver(abstractserverproto):
     def redirect(self):
         pass
 
-    def sendresponse(self, v):
+    def _sendresponse(self, v):
         self._fout.write("%d\n" % len(v))
         self._fout.write(v)
         self._fout.flush()
 
-    def sendstream(self, source):
+    def _sendstream(self, source):
         write = self._fout.write
         for chunk in source.gen:
             write(chunk)
         self._fout.flush()
 
-    def sendpushresponse(self, rsp):
-        self.sendresponse('')
-        self.sendresponse(str(rsp.res))
+    def _sendpushresponse(self, rsp):
+        self._sendresponse('')
+        self._sendresponse(str(rsp.res))
 
-    def sendpusherror(self, rsp):
-        self.sendresponse(rsp.res)
+    def _sendpusherror(self, rsp):
+        self._sendresponse(rsp.res)
 
-    def sendooberror(self, rsp):
+    def _sendooberror(self, rsp):
         self._ui.ferr.write('%s\n-\n' % rsp.message)
         self._ui.ferr.flush()
         self._fout.write('\n')
@@ -321,22 +321,22 @@ class sshserver(abstractserverproto):
             pass
         sys.exit(0)
 
-    handlers = {
-        str: sendresponse,
-        wireproto.streamres: sendstream,
-        wireproto.streamres_legacy: sendstream,
-        wireproto.pushres: sendpushresponse,
-        wireproto.pusherr: sendpusherror,
-        wireproto.ooberror: sendooberror,
+    _handlers = {
+        str: _sendresponse,
+        wireproto.streamres: _sendstream,
+        wireproto.streamres_legacy: _sendstream,
+        wireproto.pushres: _sendpushresponse,
+        wireproto.pusherr: _sendpusherror,
+        wireproto.ooberror: _sendooberror,
     }
 
     def serve_one(self):
         cmd = self._fin.readline()[:-1]
         if cmd and cmd in wireproto.commands:
             rsp = wireproto.dispatch(self._repo, self, cmd)
-            self.handlers[rsp.__class__](self, rsp)
+            self._handlers[rsp.__class__](self, rsp)
         elif cmd:
-            self.sendresponse("")
+            self._sendresponse("")
         return cmd != ''
 
     def _client(self):

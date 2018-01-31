@@ -90,8 +90,8 @@ def decodevaluefromheaders(req, headerprefix):
 
 class webproto(abstractserverproto):
     def __init__(self, req, ui):
-        self.req = req
-        self.ui = ui
+        self._req = req
+        self._ui = ui
         self.name = 'http'
 
     def getargs(self, args):
@@ -110,42 +110,42 @@ class webproto(abstractserverproto):
         return [data[k] for k in keys]
 
     def _args(self):
-        args = self.req.form.copy()
+        args = self._req.form.copy()
         if pycompat.ispy3:
             args = {k.encode('ascii'): [v.encode('ascii') for v in vs]
                     for k, vs in args.items()}
-        postlen = int(self.req.env.get(r'HTTP_X_HGARGS_POST', 0))
+        postlen = int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))
         if postlen:
             args.update(cgi.parse_qs(
-                self.req.read(postlen), keep_blank_values=True))
+                self._req.read(postlen), keep_blank_values=True))
             return args
 
-        argvalue = decodevaluefromheaders(self.req, r'X-HgArg')
+        argvalue = decodevaluefromheaders(self._req, r'X-HgArg')
         args.update(cgi.parse_qs(argvalue, keep_blank_values=True))
         return args
 
     def getfile(self, fp):
-        length = int(self.req.env[r'CONTENT_LENGTH'])
+        length = int(self._req.env[r'CONTENT_LENGTH'])
         # If httppostargs is used, we need to read Content-Length
         # minus the amount that was consumed by args.
-        length -= int(self.req.env.get(r'HTTP_X_HGARGS_POST', 0))
-        for s in util.filechunkiter(self.req, limit=length):
+        length -= int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))
+        for s in util.filechunkiter(self._req, limit=length):
             fp.write(s)
 
     def redirect(self):
-        self.oldio = self.ui.fout, self.ui.ferr
-        self.ui.ferr = self.ui.fout = stringio()
+        self._oldio = self._ui.fout, self._ui.ferr
+        self._ui.ferr = self._ui.fout = stringio()
 
     def restore(self):
-        val = self.ui.fout.getvalue()
-        self.ui.ferr, self.ui.fout = self.oldio
+        val = self._ui.fout.getvalue()
+        self._ui.ferr, self._ui.fout = self._oldio
         return val
 
     def _client(self):
         return 'remote:%s:%s:%s' % (
-            self.req.env.get('wsgi.url_scheme') or 'http',
-            urlreq.quote(self.req.env.get('REMOTE_HOST', '')),
-            urlreq.quote(self.req.env.get('REMOTE_USER', '')))
+            self._req.env.get('wsgi.url_scheme') or 'http',
+            urlreq.quote(self._req.env.get('REMOTE_HOST', '')),
+            urlreq.quote(self._req.env.get('REMOTE_USER', '')))
 
     def responsetype(self, prefer_uncompressed):
         """Determine the appropriate response type and compression settings.
@@ -154,7 +154,7 @@ class webproto(abstractserverproto):
         """
         # Determine the response media type and compression engine based
         # on the request parameters.
-        protocaps = decodevaluefromheaders(self.req, r'X-HgProto').split(' ')
+        protocaps = decodevaluefromheaders(self._req, r'X-HgProto').split(' ')
 
         if '0.2' in protocaps:
             # All clients are expected to support uncompressed data.
@@ -169,11 +169,11 @@ class webproto(abstractserverproto):
                     break
 
             # Now find an agreed upon compression format.
-            for engine in wireproto.supportedcompengines(self.ui, self,
+            for engine in wireproto.supportedcompengines(self._ui, self,
                                                          util.SERVERROLE):
                 if engine.wireprotosupport().name in compformats:
                     opts = {}
-                    level = self.ui.configint('server',
+                    level = self._ui.configint('server',
                                               '%slevel' % engine.name())
                     if level is not None:
                         opts['level'] = level
@@ -186,7 +186,7 @@ class webproto(abstractserverproto):
         # Don't allow untrusted settings because disabling compression or
         # setting a very high compression level could lead to flooding
         # the server's network or CPU.
-        opts = {'level': self.ui.configint('server', 'zliblevel')}
+        opts = {'level': self._ui.configint('server', 'zliblevel')}
         return HGTYPE, util.compengines['zlib'], opts
 
 def iscmd(cmd):

@@ -914,11 +914,8 @@ def pushkey(repo, proto, namespace, key, old, new):
 
         proto.redirect()
 
-        try:
-            r = repo.pushkey(encoding.tolocal(namespace), encoding.tolocal(key),
-                             encoding.tolocal(old), new) or False
-        except error.Abort:
-            r = False
+        r = repo.pushkey(encoding.tolocal(namespace), encoding.tolocal(key),
+                         encoding.tolocal(old), new) or False
 
         output = proto.restore()
 

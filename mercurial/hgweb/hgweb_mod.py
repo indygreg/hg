@@ -357,6 +357,14 @@ class hgweb(object):
             query = req.env[r'QUERY_STRING'].partition(r'&')[0]
             query = query.partition(r';')[0]
 
+        # The ``cmd`` request parameter is used by both the wire protocol
+        # and hgweb. We route all known wire protocol commands to the
+        # wire protocol handler, even if the command isn't available for
+        # this transport. That's better for machine clients in the case
+        # of an errant request to an unavailable protocol command. And it
+        # prevents hgweb from accidentally using ``cmd`` values used by
+        # the wire protocol.
+
         # process this if it's a protocol request
         # protocol bits don't need to create any URLs
         # and the clients always use the old URL structure

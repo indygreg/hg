@@ -223,6 +223,13 @@ def callhttp(repo, req, cmd):
             yield chunk
 
     rsp = wireproto.dispatch(repo, proto, cmd)
+
+    if not wireproto.commands.commandavailable(cmd, proto):
+        req.respond(HTTP_OK, HGERRTYPE,
+                    body=_('requested wire protocol command is not available '
+                           'over HTTP'))
+        return []
+
     if isinstance(rsp, bytes):
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
@@ -351,7 +358,7 @@ class sshserver(abstractserverproto):
 
     def serve_one(self):
         cmd = self._fin.readline()[:-1]
-        if cmd and cmd in wireproto.commands:
+        if cmd and wireproto.commands.commandavailable(cmd, self):
             rsp = wireproto.dispatch(self._repo, self, cmd)
             self._handlers[rsp.__class__](self, rsp)
         elif cmd:

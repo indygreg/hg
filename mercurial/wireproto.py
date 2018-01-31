@@ -691,6 +691,12 @@ class commanddict(dict):
 
         return super(commanddict, self).__setitem__(k, v)
 
+    def commandavailable(self, command, proto):
+        """Determine if a command is available for the requested protocol."""
+        # For now, commands are available for all protocols. So do a simple
+        # membership test.
+        return command in self
+
 commands = commanddict()
 
 def wireprotocommand(name, args=''):

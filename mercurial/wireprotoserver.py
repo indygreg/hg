@@ -248,60 +248,60 @@ def callhttp(repo, req, cmd):
 
 class sshserver(abstractserverproto):
     def __init__(self, ui, repo):
-        self.ui = ui
-        self.repo = repo
-        self.fin = ui.fin
-        self.fout = ui.fout
+        self._ui = ui
+        self._repo = repo
+        self._fin = ui.fin
+        self._fout = ui.fout
         self.name = 'ssh'
 
         hook.redirect(True)
         ui.fout = repo.ui.fout = ui.ferr
 
         # Prevent insertion/deletion of CRs
-        util.setbinary(self.fin)
-        util.setbinary(self.fout)
+        util.setbinary(self._fin)
+        util.setbinary(self._fout)
 
     def getargs(self, args):
         data = {}
         keys = args.split()
         for n in xrange(len(keys)):
-            argline = self.fin.readline()[:-1]
+            argline = self._fin.readline()[:-1]
             arg, l = argline.split()
             if arg not in keys:
                 raise error.Abort(_("unexpected parameter %r") % arg)
             if arg == '*':
                 star = {}
                 for k in xrange(int(l)):
-                    argline = self.fin.readline()[:-1]
+                    argline = self._fin.readline()[:-1]
                     arg, l = argline.split()
-                    val = self.fin.read(int(l))
+                    val = self._fin.read(int(l))
                     star[arg] = val
                 data['*'] = star
             else:
-                val = self.fin.read(int(l))
+                val = self._fin.read(int(l))
                 data[arg] = val
         return [data[k] for k in keys]
 
     def getfile(self, fpout):
         self.sendresponse('')
-        count = int(self.fin.readline())
+        count = int(self._fin.readline())
         while count:
-            fpout.write(self.fin.read(count))
-            count = int(self.fin.readline())
+            fpout.write(self._fin.read(count))
+            count = int(self._fin.readline())
 
     def redirect(self):
         pass
 
     def sendresponse(self, v):
-        self.fout.write("%d\n" % len(v))
-        self.fout.write(v)
-        self.fout.flush()
+        self._fout.write("%d\n" % len(v))
+        self._fout.write(v)
+        self._fout.flush()
 
     def sendstream(self, source):
-        write = self.fout.write
+        write = self._fout.write
         for chunk in source.gen:
             write(chunk)
-        self.fout.flush()
+        self._fout.flush()
 
     def sendpushresponse(self, rsp):
         self.sendresponse('')
@@ -311,10 +311,10 @@ class sshserver(abstractserverproto):
         self.sendresponse(rsp.res)
 
     def sendooberror(self, rsp):
-        self.ui.ferr.write('%s\n-\n' % rsp.message)
-        self.ui.ferr.flush()
-        self.fout.write('\n')
-        self.fout.flush()
+        self._ui.ferr.write('%s\n-\n' % rsp.message)
+        self._ui.ferr.flush()
+        self._fout.write('\n')
+        self._fout.flush()
 
     def serve_forever(self):
         while self.serve_one():
@@ -331,9 +331,9 @@ class sshserver(abstractserverproto):
     }
 
     def serve_one(self):
-        cmd = self.fin.readline()[:-1]
+        cmd = self._fin.readline()[:-1]
         if cmd and cmd in wireproto.commands:
-            rsp = wireproto.dispatch(self.repo, self, cmd)
+            rsp = wireproto.dispatch(self._repo, self, cmd)
             self.handlers[rsp.__class__](self, rsp)
         elif cmd:
             self.sendresponse("")

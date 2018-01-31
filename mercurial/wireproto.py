@@ -634,8 +634,64 @@ def supportedcompengines(ui, proto, role):
 
     return compengines
 
-# list of commands
-commands = {}
+class commandentry(object):
+    """Represents a declared wire protocol command."""
+    def __init__(self, func, args=''):
+        self.func = func
+        self.args = args
+
+    def _merge(self, func, args):
+        """Merge this instance with an incoming 2-tuple.
+
+        This is called when a caller using the old 2-tuple API attempts
+        to replace an instance. The incoming values are merged with
+        data not captured by the 2-tuple and a new instance containing
+        the union of the two objects is returned.
+        """
+        return commandentry(func, args)
+
+    # Old code treats instances as 2-tuples. So expose that interface.
+    def __iter__(self):
+        yield self.func
+        yield self.args
+
+    def __getitem__(self, i):
+        if i == 0:
+            return self.func
+        elif i == 1:
+            return self.args
+        else:
+            raise IndexError('can only access elements 0 and 1')
+
+class commanddict(dict):
+    """Container for registered wire protocol commands.
+
+    It behaves like a dict. But __setitem__ is overwritten to allow silent
+    coercion of values from 2-tuples for API compatibility.
+    """
+    def __setitem__(self, k, v):
+        if isinstance(v, commandentry):
+            pass
+        # Cast 2-tuples to commandentry instances.
+        elif isinstance(v, tuple):
+            if len(v) != 2:
+                raise ValueError('command tuples must have exactly 2 elements')
+
+            # It is common for extensions to wrap wire protocol commands via
+            # e.g. ``wireproto.commands[x] = (newfn, args)``. Because callers
+            # doing this aren't aware of the new API that uses objects to store
+            # command entries, we automatically merge old state with new.
+            if k in self:
+                v = self[k]._merge(v[0], v[1])
+            else:
+                v = commandentry(v[0], v[1])
+        else:
+            raise ValueError('command entries must be commandentry instances '
+                             'or 2-tuples')
+
+        return super(commanddict, self).__setitem__(k, v)
+
+commands = commanddict()
 
 def wireprotocommand(name, args=''):
     """Decorator to declare a wire protocol command.
@@ -646,7 +702,7 @@ def wireprotocommand(name, args=''):
     accepts. ``*`` is a special value that says to accept all arguments.
     """
     def register(func):
-        commands[name] = (func, args)
+        commands[name] = commandentry(func, args)
         return func
     return register
 

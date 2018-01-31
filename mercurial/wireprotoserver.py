@@ -9,9 +9,6 @@ from __future__ import absolute_import
 import cgi
 import struct
 
-from .hgweb.common import (
-    HTTP_OK,
-)
 from . import (
     error,
     pycompat,
@@ -23,6 +20,8 @@ stringio = util.stringio
 
 urlerr = util.urlerr
 urlreq = util.urlreq
+
+HTTP_OK = 200
 
 HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'

@@ -53,12 +53,12 @@ from . import (
     rewriteutil,
     scmutil,
     server,
-    sshserver,
     streamclone,
     tags as tagsmod,
     templatekw,
     ui as uimod,
     util,
+    wireprotoserver,
 )
 
 release = lockmod.release
@@ -4756,7 +4756,7 @@ def serve(ui, repo, **opts):
         if repo is None:
             raise error.RepoError(_("there is no Mercurial repository here"
                                     " (.hg not found)"))
-        s = sshserver.sshserver(ui, repo)
+        s = wireprotoserver.sshserver(ui, repo)
         s.serve_forever()
 
     service = server.createservice(ui, repo, opts)

@@ -6,9 +6,9 @@ import unittest
 import silenttestrunner
 
 from mercurial import (
-    sshserver,
     util,
     wireproto,
+    wireprotoserver,
 )
 
 class SSHServerGetArgsTests(unittest.TestCase):
@@ -29,7 +29,7 @@ class SSHServerGetArgsTests(unittest.TestCase):
 def mockserver(inbytes):
     ui = mockui(inbytes)
     repo = mockrepo(ui)
-    return sshserver.sshserver(ui, repo)
+    return wireprotoserver.sshserver(ui, repo)
 
 class mockrepo(object):
     def __init__(self, ui):

@@ -40,6 +40,13 @@ class abstractserverproto(object):
 
     __metaclass__ = abc.ABCMeta
 
+    @abc.abstractproperty
+    def name(self):
+        """The name of the protocol implementation.
+
+        Used for uniquely identifying the transport type.
+        """
+
     @abc.abstractmethod
     def getargs(self, args):
         """return the value for arguments in <args>
@@ -95,7 +102,10 @@ class webproto(abstractserverproto):
     def __init__(self, req, ui):
         self._req = req
         self._ui = ui
-        self.name = 'http'
+
+    @property
+    def name(self):
+        return 'http'
 
     def getargs(self, args):
         knownargs = self._args()
@@ -255,7 +265,6 @@ class sshserver(abstractserverproto):
         self._repo = repo
         self._fin = ui.fin
         self._fout = ui.fout
-        self.name = 'ssh'
 
         hook.redirect(True)
         ui.fout = repo.ui.fout = ui.ferr
@@ -263,6 +272,10 @@ class sshserver(abstractserverproto):
         # Prevent insertion/deletion of CRs
         util.setbinary(self._fin)
         util.setbinary(self._fout)
+
+    @property
+    def name(self):
+        return 'ssh'
 
     def getargs(self, args):
         data = {}

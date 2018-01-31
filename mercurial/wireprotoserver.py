@@ -194,7 +194,7 @@ def iscmd(cmd):
     return cmd in wireproto.commands
 
 def callhttp(repo, req, cmd):
-    p = webproto(req, repo.ui)
+    proto = webproto(req, repo.ui)
 
     def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
@@ -207,7 +207,7 @@ def callhttp(repo, req, cmd):
         for chunk in gen:
             yield chunk
 
-    rsp = wireproto.dispatch(repo, p, cmd)
+    rsp = wireproto.dispatch(repo, proto, cmd)
     if isinstance(rsp, bytes):
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
@@ -220,7 +220,8 @@ def callhttp(repo, req, cmd):
 
         # This code for compression should not be streamres specific. It
         # is here because we only compress streamres at the moment.
-        mediatype, engine, engineopts = p.responsetype(rsp.prefer_uncompressed)
+        mediatype, engine, engineopts = proto.responsetype(
+            rsp.prefer_uncompressed)
         gen = engine.compressstream(gen, engineopts)
 
         if mediatype == HGTYPE2:
@@ -229,14 +230,14 @@ def callhttp(repo, req, cmd):
         req.respond(HTTP_OK, mediatype)
         return gen
     elif isinstance(rsp, wireproto.pushres):
-        val = p.restore()
+        val = proto.restore()
         rsp = '%d\n%s' % (rsp.res, val)
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireproto.pusherr):
         # drain the incoming bundle
         req.drain()
-        p.restore()
+        proto.restore()
         rsp = '0\n%s\n' % rsp.res
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []

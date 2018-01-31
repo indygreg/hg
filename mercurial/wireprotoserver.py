@@ -146,7 +146,7 @@ class webproto(wireproto.abstractserverproto):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def call(repo, req, cmd):
+def callhttp(repo, req, cmd):
     p = webproto(req, repo.ui)
 
     def genversion2(gen, engine, engineopts):

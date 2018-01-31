@@ -250,7 +250,6 @@ class sshserver(abstractserverproto):
     def __init__(self, ui, repo):
         self.ui = ui
         self.repo = repo
-        self.lock = None
         self.fin = ui.fin
         self.fout = ui.fout
         self.name = 'ssh'
@@ -321,12 +320,8 @@ class sshserver(abstractserverproto):
         self.fout.flush()
 
     def serve_forever(self):
-        try:
-            while self.serve_one():
-                pass
-        finally:
-            if self.lock is not None:
-                self.lock.release()
+        while self.serve_one():
+            pass
         sys.exit(0)
 
     handlers = {

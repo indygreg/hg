@@ -91,7 +91,6 @@ def decodevaluefromheaders(req, headerprefix):
 class webproto(abstractserverproto):
     def __init__(self, req, ui):
         self.req = req
-        self.response = ''
         self.ui = ui
         self.name = 'http'
 

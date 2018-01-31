@@ -1263,7 +1263,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
         compopts['level'] = complevel
 
 
-    contentopts = {'cg.version': cgversion}
+    contentopts = {'cg.version': cgversion, 'changegroup': True}
     if repo.ui.configbool('experimental', 'evolution.bundle-obsmarker'):
         contentopts['obsolescence'] = True
     if repo.ui.configbool('experimental', 'bundle-phases'):

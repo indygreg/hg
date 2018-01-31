@@ -1577,19 +1577,21 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
     # different right now. So we keep them separated for now for the sake of
     # simplicity.
 
-    # we always want a changegroup in such bundle
-    cgversion = opts.get('cg.version')
-    if cgversion is None:
-        cgversion = changegroup.safeversion(repo)
-    cg = changegroup.makechangegroup(repo, outgoing, cgversion, source)
-    part = bundler.newpart('changegroup', data=cg.getchunks())
-    part.addparam('version', cg.version)
-    if 'clcount' in cg.extras:
-        part.addparam('nbchanges', '%d' % cg.extras['clcount'],
-                      mandatory=False)
-    if opts.get('phases') and repo.revs('%ln and secret()',
-                                        outgoing.missingheads):
-        part.addparam('targetphase', '%d' % phases.secret, mandatory=False)
+    # we might not always want a changegroup in such bundle, for example in
+    # stream bundles
+    if opts.get('changegroup', True):
+        cgversion = opts.get('cg.version')
+        if cgversion is None:
+            cgversion = changegroup.safeversion(repo)
+        cg = changegroup.makechangegroup(repo, outgoing, cgversion, source)
+        part = bundler.newpart('changegroup', data=cg.getchunks())
+        part.addparam('version', cg.version)
+        if 'clcount' in cg.extras:
+            part.addparam('nbchanges', '%d' % cg.extras['clcount'],
+                          mandatory=False)
+        if opts.get('phases') and repo.revs('%ln and secret()',
+                                            outgoing.missingheads):
+            part.addparam('targetphase', '%d' % phases.secret, mandatory=False)
 
     addparttagsfnodescache(repo, bundler, outgoing)
     addpartrevbranchcache(repo, bundler, outgoing)

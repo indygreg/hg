@@ -6,6 +6,7 @@
 
 from __future__ import absolute_import
 
+import abc
 import cgi
 import struct
 import sys
@@ -37,12 +38,15 @@ class abstractserverproto(object):
     Used as reference and documentation.
     """
 
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
     def getargs(self, args):
         """return the value for arguments in <args>
 
         returns a list of values (same order as <args>)"""
-        raise NotImplementedError()
 
+    @abc.abstractmethod
     def getfile(self, fp):
         """write the whole content of a file into a file like object
 
@@ -52,13 +56,12 @@ class abstractserverproto(object):
 
         chunk size is the ascii version of the int.
         """
-        raise NotImplementedError()
 
+    @abc.abstractmethod
     def redirect(self):
         """may setup interception for stdout and stderr
 
         See also the `restore` method."""
-        raise NotImplementedError()
 
     # If the `redirect` function does install interception, the `restore`
     # function MUST be defined. If interception is not used, this function

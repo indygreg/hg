@@ -1202,9 +1202,13 @@ Test that pre-pushkey compat for bookmark works as expected (issue5777)
 
 Forbid bookmark move on the server
 
+  $ cat << EOF >> $TESTDIR/no-bm-move.sh
+  > #!/bin/sh
+  > echo \$HG_NAMESPACE | grep -v bookmarks
+  > EOF
   $ cat << EOF >> server/.hg/hgrc
   > [hooks]
-  > prepushkey.no-bm-move= echo \$HG_NAMESPACE | grep -v bookmarks
+  > prepushkey.no-bm-move= sh $TESTDIR/no-bm-move.sh
   > EOF
 
 pushing changeset is okay

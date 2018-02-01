@@ -357,26 +357,18 @@ class hgweb(object):
             query = req.env[r'QUERY_STRING'].partition(r'&')[0]
             query = query.partition(r';')[0]
 
-        # The ``cmd`` request parameter is used by both the wire protocol
-        # and hgweb. We route all known wire protocol commands to the
-        # wire protocol handler, even if the command isn't available for
-        # this transport. That's better for machine clients in the case
-        # of an errant request to an unavailable protocol command. And it
-        # prevents hgweb from accidentally using ``cmd`` values used by
-        # the wire protocol.
+        # Route it to a wire protocol handler if it looks like a wire protocol
+        # request.
+        protohandler = wireprotoserver.parsehttprequest(rctx.repo, req, query)
 
-        # process this if it's a protocol request
-        # protocol bits don't need to create any URLs
-        # and the clients always use the old URL structure
-
-        cmd = pycompat.sysbytes(req.form.get(r'cmd', [r''])[0])
-        if wireprotoserver.iscmd(cmd):
+        if protohandler:
+            cmd = protohandler['cmd']
             try:
                 if query:
                     raise ErrorResponse(HTTP_NOT_FOUND)
                 if cmd in perms:
                     self.check_perm(rctx, req, perms[cmd])
-                return wireprotoserver.callhttp(rctx.repo, req, cmd)
+                return protohandler['dispatch']()
             except ErrorResponse as inst:
                 # A client that sends unbundle without 100-continue will
                 # break if we respond early.
@@ -425,6 +417,8 @@ class hgweb(object):
                     if fn.endswith(ext):
                         req.form['node'] = [fn[:-len(ext)]]
                         req.form['type'] = [type_]
+        else:
+            cmd = pycompat.sysbytes(req.form.get(r'cmd', [r''])[0])
 
         # process the web interface request
 

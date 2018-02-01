@@ -208,9 +208,43 @@ class webproto(abstractserverproto):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def callhttp(repo, req, cmd):
+def parsehttprequest(repo, req, query):
+    """Parse the HTTP request for a wire protocol request.
+
+    If the current request appears to be a wire protocol request, this
+    function returns a dict with details about that request, including
+    an ``abstractprotocolserver`` instance suitable for handling the
+    request. Otherwise, ``None`` is returned.
+
+    ``req`` is a ``wsgirequest`` instance.
+    """
+    # HTTP version 1 wire protocol requests are denoted by a "cmd" query
+    # string parameter. If it isn't present, this isn't a wire protocol
+    # request.
+    if r'cmd' not in req.form:
+        return None
+
+    cmd = pycompat.sysbytes(req.form[r'cmd'][0])
+
+    # The "cmd" request parameter is used by both the wire protocol and hgweb.
+    # While not all wire protocol commands are available for all transports,
+    # if we see a "cmd" value that resembles a known wire protocol command, we
+    # route it to a protocol handler. This is better than routing possible
+    # wire protocol requests to hgweb because it prevents hgweb from using
+    # known wire protocol commands and it is less confusing for machine
+    # clients.
+    if cmd not in wireproto.commands:
+        return None
+
     proto = webproto(req, repo.ui)
 
+    return {
+        'cmd': cmd,
+        'proto': proto,
+        'dispatch': lambda: _callhttp(repo, req, proto, cmd),
+    }
+
+def _callhttp(repo, req, proto, cmd):
     def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
         # identifying the compression engine.

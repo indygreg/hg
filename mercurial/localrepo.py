@@ -1574,7 +1574,8 @@ class localrepository(object):
     def _refreshfilecachestats(self, tr):
         """Reload stats of cached files so that they are flagged as valid"""
         for k, ce in self._filecache.items():
-            if k == 'dirstate' or k not in self.__dict__:
+            k = pycompat.sysstr(k)
+            if k == r'dirstate' or k not in self.__dict__:
                 continue
             ce.refresh()
 

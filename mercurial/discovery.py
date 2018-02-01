@@ -53,13 +53,8 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
         return treediscovery.findcommonincoming(repo, remote, heads, force)
 
     if heads:
-        allknown = True
         knownnode = repo.changelog.hasnode # no nodemap until it is filtered
-        for h in heads:
-            if not knownnode(h):
-                allknown = False
-                break
-        if allknown:
+        if all(knownnode(h) for h in heads):
             return (heads, False, heads)
 
     res = setdiscovery.findcommonheads(repo.ui, repo, remote, heads,

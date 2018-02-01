@@ -38,10 +38,13 @@ SSHV1 = 'ssh-v1'
 # to reflect BC breakages.
 SSHV2 = 'exp-ssh-v2-0001'
 
-class abstractserverproto(object):
-    """abstract class that summarizes the protocol API
+class baseprotocolhandler(object):
+    """Abstract base class for wire protocol handlers.
 
-    Used as reference and documentation.
+    A wire protocol handler serves as an interface between protocol command
+    handlers and the wire protocol transport layer. Protocol handlers provide
+    methods to read command arguments, redirect stdio for the duration of
+    the request, handle response types, etc.
     """
 
     __metaclass__ = abc.ABCMeta
@@ -104,7 +107,7 @@ def decodevaluefromheaders(req, headerprefix):
 
     return ''.join(chunks)
 
-class webproto(abstractserverproto):
+class webproto(baseprotocolhandler):
     def __init__(self, req, ui):
         self._req = req
         self._ui = ui
@@ -333,7 +336,7 @@ def _handlehttperror(e, req, cmd):
 
     return ''
 
-class sshserver(abstractserverproto):
+class sshserver(baseprotocolhandler):
     def __init__(self, ui, repo):
         self._ui = ui
         self._repo = repo

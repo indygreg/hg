@@ -484,7 +484,7 @@ def _makemap(repo):
 
     return vfsmap
 
-def _emit(repo, entries, totalfilesize):
+def _emit2(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
     vfsmap = _makemap(repo)
     progress = repo.ui.progress
@@ -555,7 +555,7 @@ def generatev2(repo):
                 totalfilesize += repo.cachevfs.lstat(name).st_size
                 entries.append((_srccache, name, _filefull, None))
 
-        chunks = _emit(repo, entries, totalfilesize)
+        chunks = _emit2(repo, entries, totalfilesize)
         first = next(chunks)
         assert first is None
 
@@ -594,12 +594,12 @@ def consumev2(repo, fp, filecount, filesize):
                     for vfs in vfsmap.values())
             with nested(*ctxs):
                 for i in range(filecount):
-                    src = fp.read(1)
+                    src = util.readexactly(fp, 1)
                     vfs = vfsmap[src]
                     namelen = util.uvarintdecodestream(fp)
                     datalen = util.uvarintdecodestream(fp)
 
-                    name = fp.read(namelen)
+                    name = util.readexactly(fp, namelen)
 
                     if repo.ui.debugflag:
                         repo.ui.debug('adding [%s] %s (%s)\n' %
@@ -632,3 +632,11 @@ def applybundlev2(repo, fp, filecount, filesize, requirements):
                           ', '.join(sorted(missingreqs)))
 
     consumev2(repo, fp, filecount, filesize)
+
+    # new requirements = old non-format requirements +
+    #                    new format-related remote requirements
+    # requirements from the streamed-in repository
+    repo.requirements = set(requirements) | (
+            repo.requirements - repo.supportedformats)
+    repo._applyopenerreqs()
+    repo._writerequirements()

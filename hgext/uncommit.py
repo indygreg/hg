@@ -193,8 +193,7 @@ def predecessormarkers(ctx):
 
 @command('^unamend', [])
 def unamend(ui, repo, **opts):
-    """
-    undo the most recent amend operation on a current changeset
+    """undo the most recent amend operation on a current changeset
 
     This command will roll back to the previous version of a changeset,
     leaving working directory in state in which it was before running

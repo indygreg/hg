@@ -1675,7 +1675,7 @@ Test falling back to slow path for non-existing files
       (string 'p:c')))
   <filteredset
     <spanset- 0:5>,
-    <matchfiles patterns=['a', 'c'], include=[] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=['a', 'c'], include=[] exclude=[], default='relpath', rev=2147483647>>
 
 Test multiple --include/--exclude/paths
 
@@ -1694,7 +1694,7 @@ Test multiple --include/--exclude/paths
       (string 'x:e')))
   <filteredset
     <spanset- 0:5>,
-    <matchfiles patterns=['a', 'e'], include=['a', 'e'] exclude=['b', 'e'], default='relpath', rev=None>>
+    <matchfiles patterns=['a', 'e'], include=['a', 'e'] exclude=['b', 'e'], default='relpath', rev=2147483647>>
 
 Test glob expansion of pats
 
@@ -1732,7 +1732,7 @@ Test --follow on a directory
       (string 'p:dir')))
   <filteredset
     <generatorsetdesc->,
-    <matchfiles patterns=['dir'], include=[] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=['dir'], include=[] exclude=[], default='relpath', rev=2147483647>>
   $ hg up -q tip
 
 Test --follow on file not in parent revision
@@ -1754,7 +1754,7 @@ Test --follow and patterns
       (string 'p:glob:*')))
   <filteredset
     <generatorsetdesc->,
-    <matchfiles patterns=['glob:*'], include=[] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=['glob:*'], include=[] exclude=[], default='relpath', rev=2147483647>>
 
 Test --follow on a single rename
 
@@ -1875,7 +1875,7 @@ Test "set:..." and parent revision
       (string 'p:set:copied()')))
   <filteredset
     <spanset- 0:7>,
-    <matchfiles patterns=['set:copied()'], include=[] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=['set:copied()'], include=[] exclude=[], default='relpath', rev=2147483647>>
   $ testlog --include "set:copied()"
   []
   (func
@@ -1886,11 +1886,13 @@ Test "set:..." and parent revision
       (string 'i:set:copied()')))
   <filteredset
     <spanset- 0:7>,
-    <matchfiles patterns=[], include=['set:copied()'] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=[], include=['set:copied()'] exclude=[], default='relpath', rev=2147483647>>
   $ testlog -r "sort(file('set:copied()'), -rev)"
   ["sort(file('set:copied()'), -rev)"]
   []
-  <baseset []>
+  <filteredset
+    <fullreposet- 0:7>,
+    <matchfiles patterns=['set:copied()'], include=[] exclude=[], default='glob', rev=None>>
 
 Test --removed
 
@@ -1908,7 +1910,7 @@ Test --removed
       (string 'p:a')))
   <filteredset
     <spanset- 0:7>,
-    <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=2147483647>>
   $ testlog --removed --follow a
   []
   (func
@@ -1919,7 +1921,7 @@ Test --removed
       (string 'p:a')))
   <filteredset
     <generatorsetdesc->,
-    <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=['a'], include=[] exclude=[], default='relpath', rev=2147483647>>
 
 Test --patch and --stat with --follow and --follow-first
 
@@ -2290,7 +2292,7 @@ Test subdir
       (string 'p:.')))
   <filteredset
     <spanset- 0:9>,
-    <matchfiles patterns=['.'], include=[] exclude=[], default='relpath', rev=None>>
+    <matchfiles patterns=['.'], include=[] exclude=[], default='relpath', rev=2147483647>>
   $ testlog ../b
   []
   (func

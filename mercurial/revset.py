@@ -1065,7 +1065,9 @@ def _matchfiles(repo, subset, x):
             if rev is not None:
                 raise error.ParseError('_matchfiles expected at most one '
                                        'revision')
-            if value != '': # empty means working directory; leave rev as None
+            if value == '': # empty means working directory
+                rev = node.wdirrev
+            else:
                 rev = value
         elif prefix == 'd:':
             if default is not None:
@@ -1076,9 +1078,9 @@ def _matchfiles(repo, subset, x):
             raise error.ParseError('invalid _matchfiles prefix: %s' % prefix)
     if not default:
         default = 'glob'
+    hasset = any(matchmod.patkind(p) == 'set' for p in pats + inc + exc)
 
-    m = matchmod.match(repo.root, repo.getcwd(), pats, include=inc,
-                       exclude=exc, ctx=repo[rev], default=default)
+    mcache = [None]
 
     # This directly read the changelog data as creating changectx for all
     # revisions is quite expensive.
@@ -1089,6 +1091,14 @@ def _matchfiles(repo, subset, x):
             files = repo[x].files()
         else:
             files = getfiles(x)
+
+        if not mcache[0] or (hasset and rev is None):
+            r = x if rev is None else rev
+            mcache[0] = matchmod.match(repo.root, repo.getcwd(), pats,
+                                       include=inc, exclude=exc, ctx=repo[r],
+                                       default=default)
+        m = mcache[0]
+
         for f in files:
             if m(f):
                 return True

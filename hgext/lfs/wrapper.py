@@ -131,8 +131,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
 
     lfstrack = self.opener.options['lfstrack']
 
-    # Always exclude hg owned files
-    if not self.filename.startswith('.hg') and lfstrack(self.filename, textlen):
+    if lfstrack(self.filename, textlen):
         flags |= revlog.REVIDX_EXTSTORED
 
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,

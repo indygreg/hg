@@ -30,7 +30,7 @@ def _compile(tree):
             pl = len(p)
             f = lambda n, s: n.startswith(p) and (len(n) == pl or n[pl] == '/')
             return f
-        raise error.ParseError(_("unsupported file pattern"),
+        raise error.ParseError(_("unsupported file pattern: %s") % name,
                                hint=_('paths must be prefixed with "path:"'))
     elif op == 'or':
         func1 = _compile(tree[1])

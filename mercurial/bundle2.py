@@ -2033,7 +2033,7 @@ def handlebookmark(op, inpart):
             for book, node in changes:
                 hookargs = tr.hookargs.copy()
                 hookargs['pushkeycompat'] = '1'
-                hookargs['namespace'] = 'bookmark'
+                hookargs['namespace'] = 'bookmarks'
                 hookargs['key'] = book
                 hookargs['old'] = nodemod.hex(bookstore.get(book, ''))
                 hookargs['new'] = nodemod.hex(node if node is not None else '')
@@ -2143,7 +2143,7 @@ def bundle2getvars(op, part):
 @parthandler('stream2', ('requirements', 'filecount', 'bytecount'))
 def handlestreamv2bundle(op, part):
 
-    requirements = part.params['requirements'].split()
+    requirements = urlreq.unquote(part.params['requirements']).split(',')
     filecount = int(part.params['filecount'])
     bytecount = int(part.params['bytecount'])
 
@@ -2155,11 +2155,3 @@ def handlestreamv2bundle(op, part):
     repo.ui.debug('applying stream bundle\n')
     streamclone.applybundlev2(repo, part, filecount, bytecount,
                               requirements)
-
-    # new requirements = old non-format requirements +
-    #                    new format-related remote requirements
-    # requirements from the streamed-in repository
-    repo.requirements = set(requirements) | (
-            repo.requirements - repo.supportedformats)
-    repo._applyopenerreqs()
-    repo._writerequirements()

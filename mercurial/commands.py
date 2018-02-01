@@ -4560,7 +4560,7 @@ def revert(ui, repo, *pats, **opts):
 
        To check out earlier revisions, you should use :hg:`update REV`.
        To cancel an uncommitted merge (and lose your changes),
-       use :hg:`update --clean .`.
+       use :hg:`merge --abort`.
 
     With no revision specified, revert the specified files or directories
     to the contents they had in the parent of the working directory.
@@ -5501,7 +5501,7 @@ def update(ui, repo, node=None, rev=None, clean=False, date=None, check=False,
          the working directory is updated to the requested changeset.
 
     To cancel an uncommitted merge (and lose your changes), use
-    :hg:`update --clean .`.
+    :hg:`merge --abort`.
 
     Use null as the changeset to remove the working directory (like
     :hg:`clone -U`).

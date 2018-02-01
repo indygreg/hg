@@ -1914,7 +1914,7 @@ capabilities
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities'; echo
   200 Script output follows
   
-  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=*zlib (glob)
+  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$
 
 heads
 
@@ -2140,7 +2140,7 @@ capabilities
   unbundle=HG10GZ,HG10BZ,HG10UN
   httpheader=1024
   httpmediatype=0.1rx,0.1tx,0.2tx
-  compression=*zlib (glob)
+  compression=$BUNDLE2_COMPRESSIONS$
 
 heads
 

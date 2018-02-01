@@ -275,7 +275,7 @@ def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts, check_binary=True):
         headerlines = []
         hunks = (None, ['Binary file %s has changed\n' % fn1]),
     elif not a:
-        without_newline = b[-1] != '\n'
+        without_newline = b[-1:] != '\n'
         b = splitnewlines(b)
         if a is None:
             l1 = '--- /dev/null%s' % datetag(epoch)
@@ -291,7 +291,7 @@ def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts, check_binary=True):
             hunklines.append(_missing_newline_marker)
         hunks = (hunkrange, hunklines),
     elif not b:
-        without_newline = a[-1] != '\n'
+        without_newline = a[-1:] != '\n'
         a = splitnewlines(a)
         l1 = "--- %s%s%s" % (aprefix, fn1, datetag(ad, fn1))
         if b is None:
@@ -384,17 +384,17 @@ def _unidiff(t1, t2, opts=defaultopts):
         # a newline, print only one marker. That's the only case in
         # which the hunk can end in a shared line without a newline.
         skip = False
-        if t1[-1] != '\n' and astart + alen == len(l1) + 1:
+        if t1[-1:] != '\n' and astart + alen == len(l1) + 1:
             for i in xrange(len(hunklines) - 1, -1, -1):
-                if hunklines[i][0] in ('-', ' '):
-                    if hunklines[i][0] == ' ':
+                if hunklines[i][0:1] in ('-', ' '):
+                    if hunklines[i][0:1] == ' ':
                         skip = True
                     hunklines[i] += '\n'
                     hunklines.insert(i + 1, _missing_newline_marker)
                     break
-        if not skip and t2[-1] != '\n' and bstart + blen == len(l2) + 1:
+        if not skip and t2[-1:] != '\n' and bstart + blen == len(l2) + 1:
             for i in xrange(len(hunklines) - 1, -1, -1):
-                if hunklines[i][0] == '+':
+                if hunklines[i][0:1] == '+':
                     hunklines[i] += '\n'
                     hunklines.insert(i + 1, _missing_newline_marker)
                     break

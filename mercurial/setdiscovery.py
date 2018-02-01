@@ -130,7 +130,7 @@ def _limitsample(sample, desiredlen):
         sample = set(random.sample(sample, desiredlen))
     return sample
 
-def findcommonheads(ui, local, remote,
+def findcommonheads(ui, local, remote, heads=None,
                     initialsamplesize=100,
                     fullsamplesize=200,
                     abortwhenunrelated=True,
@@ -155,11 +155,15 @@ def findcommonheads(ui, local, remote,
     sample = _limitsample(ownheads, initialsamplesize)
     # indices between sample and externalized version must match
     sample = list(sample)
-    batch = remote.iterbatch()
-    batch.heads()
-    batch.known(dag.externalizeall(sample))
-    batch.submit()
-    srvheadhashes, yesno = batch.results()
+    if heads:
+        srvheadhashes = heads
+        yesno = remote.known(dag.externalizeall(sample))
+    else:
+        batch = remote.iterbatch()
+        batch.heads()
+        batch.known(dag.externalizeall(sample))
+        batch.submit()
+        srvheadhashes, yesno = batch.results()
 
     if cl.tip() == nullid:
         if srvheadhashes != [nullid]:

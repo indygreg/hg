@@ -62,7 +62,7 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
         if allknown:
             return (heads, False, heads)
 
-    res = setdiscovery.findcommonheads(repo.ui, repo, remote,
+    res = setdiscovery.findcommonheads(repo.ui, repo, remote, heads,
                                        abortwhenunrelated=not force,
                                        ancestorsof=ancestorsof)
     common, anyinc, srvheads = res

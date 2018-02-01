@@ -2017,7 +2017,7 @@ class TestSuite(unittest.TestSuite):
 def loadtimes(outputdir):
     times = []
     try:
-        with open(os.path.join(outputdir, b'.testtimes-')) as fp:
+        with open(os.path.join(outputdir, b'.testtimes')) as fp:
             for line in fp:
                 m = re.match('(.*?) ([0-9. ]+)', line)
                 times.append((m.group(1),

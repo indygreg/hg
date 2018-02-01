@@ -374,6 +374,7 @@ test --xunit support
   </testsuite>
 
   $ cat .testtimes
+  test-empty.t * (glob)
   test-failure-unicode.t * (glob)
   test-failure.t * (glob)
   test-success.t * (glob)

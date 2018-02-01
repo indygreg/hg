@@ -368,7 +368,6 @@ class hgweb(object):
                     raise ErrorResponse(HTTP_NOT_FOUND)
                 if cmd in perms:
                     self.check_perm(rctx, req, perms[cmd])
-                return protohandler['dispatch']()
             except ErrorResponse as inst:
                 # A client that sends unbundle without 100-continue will
                 # break if we respond early.
@@ -382,6 +381,8 @@ class hgweb(object):
                 req.respond(inst, wireprotoserver.HGTYPE,
                             body='0\n%s\n' % inst)
                 return ''
+
+            return protohandler['dispatch']()
 
         # translate user-visible url structure to internal structure
 

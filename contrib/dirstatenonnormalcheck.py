@@ -17,7 +17,7 @@ def nonnormalentries(dmap):
     """Compute nonnormal entries from dirstate's dmap"""
     res = set()
     for f, e in dmap.iteritems():
-        if e[0] != 'n' or e[3] == -1:
+        if e[0] != b'n' or e[3] == -1:
             res.add(f)
     return res
 
@@ -25,24 +25,25 @@ def checkconsistency(ui, orig, dmap, _nonnormalset, label):
     """Compute nonnormalset from dmap, check that it matches _nonnormalset"""
     nonnormalcomputedmap = nonnormalentries(dmap)
     if _nonnormalset != nonnormalcomputedmap:
-        ui.develwarn("%s call to %s\n" % (label, orig), config='dirstate')
-        ui.develwarn("inconsistency in nonnormalset\n", config='dirstate')
-        ui.develwarn("[nonnormalset] %s\n" % _nonnormalset, config='dirstate')
-        ui.develwarn("[map] %s\n" % nonnormalcomputedmap, config='dirstate')
+        ui.develwarn(b"%s call to %s\n" % (label, orig), config=b'dirstate')
+        ui.develwarn(b"inconsistency in nonnormalset\n", config=b'dirstate')
+        ui.develwarn(b"[nonnormalset] %s\n" % _nonnormalset, config=b'dirstate')
+        ui.develwarn(b"[map] %s\n" % nonnormalcomputedmap, config=b'dirstate')
 
 def _checkdirstate(orig, self, arg):
     """Check nonnormal set consistency before and after the call to orig"""
     checkconsistency(self._ui, orig, self._map, self._map.nonnormalset,
-                     "before")
+                     b"before")
     r = orig(self, arg)
-    checkconsistency(self._ui, orig, self._map, self._map.nonnormalset, "after")
+    checkconsistency(self._ui, orig, self._map, self._map.nonnormalset,
+                     b"after")
     return r
 
 def extsetup(ui):
     """Wrap functions modifying dirstate to check nonnormalset consistency"""
     dirstatecl = dirstate.dirstate
-    devel = ui.configbool('devel', 'all-warnings')
-    paranoid = ui.configbool('experimental', 'nonnormalparanoidcheck')
+    devel = ui.configbool(b'devel', b'all-warnings')
+    paranoid = ui.configbool(b'experimental', b'nonnormalparanoidcheck')
     if devel:
         extensions.wrapfunction(dirstatecl, '_writedirstate', _checkdirstate)
         if paranoid:

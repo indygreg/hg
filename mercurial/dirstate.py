@@ -1237,8 +1237,11 @@ class dirstatemap(object):
         util.clearcachedproperty(self, "nonnormalset")
         util.clearcachedproperty(self, "otherparentset")
 
-    def iteritems(self):
+    def items(self):
         return self._map.iteritems()
+
+    # forward for python2,3 compat
+    iteritems = items
 
     def __len__(self):
         return len(self._map)

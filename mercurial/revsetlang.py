@@ -635,7 +635,7 @@ def formatspec(expr, *args):
     "root(_list('a\\\\x00b\\\\x00c\\\\x00d'))"
     >>> formatspec(b'sort(%r, %ps)', b':', [b'desc', b'user'])
     "sort((:), 'desc', 'user')"
-    >>> formatspec('%ls', ['a', "'"])
+    >>> formatspec(b'%ls', [b'a', b"'"])
     "_list('a\\\\x00\\\\'')"
     '''
     expr = pycompat.bytestr(expr)

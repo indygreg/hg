@@ -120,6 +120,7 @@ if pygmentspresent:
         }
 
     class TestRunnerLexer(lexer.RegexLexer):
+        testpattern = r'[\w-]+\.(t|py)( \(case [\w-]+\))?'
         tokens = {
             'root': [
                 (r'^Skipped', token.Generic.Skipped, 'skipped'),
@@ -127,11 +128,11 @@ if pygmentspresent:
                 (r'^ERROR: ', token.Generic.Failed, 'failed'),
             ],
             'skipped': [
-                (r'[\w-]+\.(t|py)', token.Generic.SName),
+                (testpattern, token.Generic.SName),
                 (r':.*', token.Generic.Skipped),
             ],
             'failed': [
-                (r'[\w-]+\.(t|py)', token.Generic.FName),
+                (testpattern, token.Generic.FName),
                 (r'(:| ).*', token.Generic.Failed),
             ]
         }

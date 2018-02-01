@@ -2019,8 +2019,9 @@ def loadtimes(outputdir):
     try:
         with open(os.path.join(outputdir, b'.testtimes-')) as fp:
             for line in fp:
-                ts = line.split()
-                times.append((ts[0], [float(t) for t in ts[1:]]))
+                m = re.match('(.*?) ([0-9. ]+)', line)
+                times.append((m.group(1),
+                              [float(t) for t in m.group(2).split()]))
     except IOError as err:
         if err.errno != errno.ENOENT:
             raise

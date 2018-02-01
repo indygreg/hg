@@ -8,16 +8,11 @@
 
 from __future__ import absolute_import
 
-from mercurial import __version__
-if __version__.version < '3.7':
-    raise ImportError(
-        'narrowhg requires mercurial 3.7 or newer')
-
-try:
-    from .__versionnum__ import version
-    __version__ = version
-except ImportError:
-    pass
+# Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
+# extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
+# be specifying the version(s) of Mercurial they are tested with, or
+# leave the attribute unspecified.
+testedwith = 'ships-with-hg-core'
 
 from mercurial import (
     extensions,

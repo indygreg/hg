@@ -1,5 +1,13 @@
+#testcases flat tree
 
   $ . "$TESTDIR/narrow-library.sh"
+
+#if tree
+  $ cat << EOF >> $HGRCPATH
+  > [experimental]
+  > treemanifest = 1
+  > EOF
+#endif
 
 create full repo
 
@@ -76,7 +84,8 @@ TODO: Can merge non-conflicting changes outside narrow spec
 
   $ hg update -q 'desc("modify inside/f1")'
   $ hg merge 'desc("modify outside/f1")'
-  abort: merge affects file 'outside/f1' outside narrow, which is not yet supported
+  abort: merge affects file 'outside/f1' outside narrow, which is not yet supported (flat !)
+  abort: merge affects file 'outside/' outside narrow, which is not yet supported (tree !)
   (merging in the other direction may work)
   [255]
 
@@ -90,5 +99,6 @@ Refuses merge of conflicting outside changes
 
   $ hg update -q 'desc("modify outside/f1")'
   $ hg merge 'desc("conflicting outside/f1")'
-  abort: conflict in file 'outside/f1' is outside narrow clone
+  abort: conflict in file 'outside/f1' is outside narrow clone (flat !)
+  abort: conflict in file 'outside/' is outside narrow clone (tree !)
   [255]

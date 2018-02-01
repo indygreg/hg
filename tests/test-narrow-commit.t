@@ -1,4 +1,13 @@
+#testcases flat tree
+
   $ . "$TESTDIR/narrow-library.sh"
+
+#if tree
+  $ cat << EOF >> $HGRCPATH
+  > [experimental]
+  > treemanifest = 1
+  > EOF
+#endif
 
 create full repo
 
@@ -67,7 +76,8 @@ Can commit changes inside. Leaves outside unchanged.
   created new head
   $ hg files -r .
   inside/f1
-  outside/f1
+  outside/f1 (flat !)
+  outside/ (tree !)
 Some filesystems (notably FAT/exFAT only store timestamps with 2
 seconds of precision, so by sleeping for 3 seconds, we can ensure that
 the timestamps of files stored by dirstate will appear older than the

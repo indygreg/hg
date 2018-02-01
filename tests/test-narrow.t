@@ -1,4 +1,13 @@
+#testcases flat tree
+
   $ . "$TESTDIR/narrow-library.sh"
+
+#if tree
+  $ cat << EOF >> $HGRCPATH
+  > [experimental]
+  > treemanifest = 1
+  > EOF
+#endif
 
   $ hg init master
   $ cd master
@@ -119,6 +128,7 @@ Force deletion of local changes
   * (glob)
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d0/f.i
+  deleting meta/d0/00manifest.i (tree !)
   $ hg log -T "{node|short}: {desc} {outsidenarrow}\n"
   *: local change to d3  (glob)
   *: add d10/f outsidenarrow (glob)
@@ -145,6 +155,7 @@ Pruned commits affecting removed paths should not prevent narrowing
   looking for local changes to affected paths
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d0/f.i
+  deleting meta/d0/00manifest.i (tree !)
 Updates off of stripped commit if necessary
   $ hg co -r 'desc("local change to d3")' -q
   $ echo local change >> d6/f
@@ -159,6 +170,7 @@ Updates off of stripped commit if necessary
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d3/f.i
+  deleting meta/d3/00manifest.i (tree !)
   $ hg log -T '{desc}\n' -r .
   add d10/f
 Updates to nullid if necessary
@@ -178,6 +190,7 @@ Updates to nullid if necessary
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
   deleting data/d3/f.i
+  deleting meta/d3/00manifest.i (tree !)
   $ hg id
   000000000000
   $ cd ..
@@ -197,6 +210,7 @@ Can remove last include, making repo empty
   searching for changes
   looking for local changes to affected paths
   deleting data/d0/f.i
+  deleting meta/d0/00manifest.i (tree !)
   $ hg tracked
   $ hg files
   [1]
@@ -252,6 +266,7 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   searching for changes
   looking for local changes to affected paths
   deleting data/d6/f.i
+  deleting meta/d6/00manifest.i (tree !)
   $ hg tracked
   I path:d0
   I path:d3
@@ -289,6 +304,7 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   searching for changes
   looking for local changes to affected paths
   deleting data/d0/f.i
+  deleting meta/d0/00manifest.i (tree !)
   $ hg tracked
   I path:d3
   I path:d9

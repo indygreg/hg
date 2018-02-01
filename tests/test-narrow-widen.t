@@ -1,4 +1,12 @@
+#testcases flat tree
   $ . "$TESTDIR/narrow-library.sh"
+
+#if tree
+  $ cat << EOF >> $HGRCPATH
+  > [experimental]
+  > treemanifest = 1
+  > EOF
+#endif
 
   $ hg init master
   $ cd master
@@ -232,6 +240,7 @@ make narrow clone with every third node.
   $ hg verify
   checking changesets
   checking manifests
+  checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
   4 files, 8 changesets, 4 total revisions
@@ -276,6 +285,7 @@ Verify shouldn't claim the repo is corrupt after a widen.
   $ hg verify
   checking changesets
   checking manifests
+  checking directory manifests (tree !)
   crosschecking files in changesets and manifests
   checking files
   5 files, 9 changesets, 5 total revisions

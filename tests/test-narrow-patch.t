@@ -1,5 +1,13 @@
+#testcases flat tree
 
   $ . "$TESTDIR/narrow-library.sh"
+
+#if tree
+  $ cat << EOF >> $HGRCPATH
+  > [experimental]
+  > treemanifest = 1
+  > EOF
+#endif
 
 create full repo
 

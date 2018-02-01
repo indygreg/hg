@@ -345,6 +345,8 @@ def getparser():
         help="loop tests repeatedly")
     harness.add_argument('--random', action="store_true",
         help='run tests in random order')
+    harness.add_argument('--order-by-runtime', action="store_true",
+        help='run slowest tests first, according to .testtimes')
     harness.add_argument("-p", "--port", type=int,
         help="port on which servers should listen"
              " (default: $%s or %d)" % defaults['port'])
@@ -2307,47 +2309,57 @@ class TextTestRunner(unittest.TextTestRunner):
                              separators=(',', ': '))
         outf.writelines(("testreport =", jsonout))
 
-def sorttests(testdescs, shuffle=False):
+def sorttests(testdescs, previoustimes, shuffle=False):
     """Do an in-place sort of tests."""
     if shuffle:
         random.shuffle(testdescs)
         return
 
-    # keywords for slow tests
-    slow = {b'svn': 10,
-            b'cvs': 10,
-            b'hghave': 10,
-            b'largefiles-update': 10,
-            b'run-tests': 10,
-            b'corruption': 10,
-            b'race': 10,
-            b'i18n': 10,
-            b'check': 100,
-            b'gendoc': 100,
-            b'contrib-perf': 200,
-            }
-    perf = {}
+    if previoustimes:
+        def sortkey(f):
+            f = f['path']
+            if f in previoustimes:
+                # Use most recent time as estimate
+                return -previoustimes[f][-1]
+            else:
+                # Default to a rather arbitrary value of 1 second for new tests
+                return -1.0
+    else:
+        # keywords for slow tests
+        slow = {b'svn': 10,
+                b'cvs': 10,
+                b'hghave': 10,
+                b'largefiles-update': 10,
+                b'run-tests': 10,
+                b'corruption': 10,
+                b'race': 10,
+                b'i18n': 10,
+                b'check': 100,
+                b'gendoc': 100,
+                b'contrib-perf': 200,
+                }
+        perf = {}
 
-    def sortkey(f):
-        # run largest tests first, as they tend to take the longest
-        f = f['path']
-        try:
-            return perf[f]
-        except KeyError:
+        def sortkey(f):
+            # run largest tests first, as they tend to take the longest
+            f = f['path']
             try:
-                val = -os.stat(f).st_size
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
-                perf[f] = -1e9  # file does not exist, tell early
-                return -1e9
-            for kw, mul in slow.items():
-                if kw in f:
-                    val *= mul
-            if f.endswith(b'.py'):
-                val /= 10.0
-            perf[f] = val / 1000.0
-            return perf[f]
+                return perf[f]
+            except KeyError:
+                try:
+                    val = -os.stat(f).st_size
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
+                    perf[f] = -1e9  # file does not exist, tell early
+                    return -1e9
+                for kw, mul in slow.items():
+                    if kw in f:
+                        val *= mul
+                if f.endswith(b'.py'):
+                    val /= 10.0
+                perf[f] = val / 1000.0
+                return perf[f]
 
     testdescs.sort(key=sortkey)
 
@@ -2418,8 +2430,6 @@ class TestRunner(object):
             os.umask(oldmask)
 
     def _run(self, testdescs):
-        sorttests(testdescs, shuffle=self.options.random)
-
         self._testdir = osenvironb[b'TESTDIR'] = getattr(
             os, 'getcwdb', os.getcwd)()
         # assume all tests in same folder for now
@@ -2434,6 +2444,10 @@ class TestRunner(object):
             self._outputdir = self._testdir
             if testdescs and pathname:
                 self._outputdir = os.path.join(self._outputdir, pathname)
+        previoustimes = {}
+        if self.options.order_by_runtime:
+            previoustimes = dict(loadtimes(self._outputdir))
+        sorttests(testdescs, previoustimes, shuffle=self.options.random)
 
         if 'PYTHONHASHSEED' not in os.environ:
             # use a random python hash seed all the time

@@ -91,10 +91,11 @@ Cannot split while working directory is dirty
   $ hg forget dirty
   $ rm dirty
 
-Split a head
+Make a clean directory for future tests to build off of
 
-  $ cp -R . ../b
-  $ cp -R . ../c
+  $ cp -R . ../clean
+
+Split a head
 
   $ hg bookmark r3
 
@@ -263,6 +264,7 @@ Split a head
 
 Split a head while working parent is not that head
 
+  $ cp -R $TESTTMP/clean $TESTTMP/b
   $ cd $TESTTMP/b
 
   $ hg up 0 -q
@@ -302,6 +304,7 @@ Split a head while working parent is not that head
 
 Split a non-head
 
+  $ cp -R $TESTTMP/clean $TESTTMP/c
   $ cd $TESTTMP/c
   $ echo d > d
   $ hg ci -m d1 -A d

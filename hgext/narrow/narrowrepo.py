@@ -23,7 +23,9 @@ from . import (
     narrowspec,
 )
 
-REQUIREMENT = 'narrowhg'
+# When narrowing is finalized and no longer subject to format changes,
+# we should move this to just "narrow" or similar.
+REQUIREMENT = 'narrowhg-experimental'
 
 def wrappostshare(orig, sourcerepo, destrepo, **kwargs):
     orig(sourcerepo, destrepo, **kwargs)

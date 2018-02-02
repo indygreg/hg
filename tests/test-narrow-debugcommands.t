@@ -7,7 +7,7 @@
   > [excludes]
   > EOF
   $ echo treemanifest >> .hg/requires
-  $ echo narrowhg >> .hg/requires
+  $ echo narrowhg-experimental >> .hg/requires
   $ mkdir -p foo/bar
   $ echo b > foo/f
   $ echo c > foo/bar/f

@@ -29,7 +29,7 @@ narrow clone a file, f10
   $ cat .hg/requires | grep -v generaldelta
   dotencode
   fncache
-  narrowhg
+  narrowhg-experimental
   revlogv1
   store
 

@@ -170,48 +170,6 @@ class webproto(baseprotocolhandler):
             urlreq.quote(self._req.env.get('REMOTE_HOST', '')),
             urlreq.quote(self._req.env.get('REMOTE_USER', '')))
 
-    def responsetype(self, prefer_uncompressed):
-        """Determine the appropriate response type and compression settings.
-
-        Returns a tuple of (mediatype, compengine, engineopts).
-        """
-        # Determine the response media type and compression engine based
-        # on the request parameters.
-        protocaps = decodevaluefromheaders(self._req, r'X-HgProto').split(' ')
-
-        if '0.2' in protocaps:
-            # All clients are expected to support uncompressed data.
-            if prefer_uncompressed:
-                return HGTYPE2, util._noopengine(), {}
-
-            # Default as defined by wire protocol spec.
-            compformats = ['zlib', 'none']
-            for cap in protocaps:
-                if cap.startswith('comp='):
-                    compformats = cap[5:].split(',')
-                    break
-
-            # Now find an agreed upon compression format.
-            for engine in wireproto.supportedcompengines(self._ui,
-                                                         util.SERVERROLE):
-                if engine.wireprotosupport().name in compformats:
-                    opts = {}
-                    level = self._ui.configint('server',
-                                              '%slevel' % engine.name())
-                    if level is not None:
-                        opts['level'] = level
-
-                    return HGTYPE2, engine, opts
-
-            # No mutually supported compression format. Fall back to the
-            # legacy protocol.
-
-        # Don't allow untrusted settings because disabling compression or
-        # setting a very high compression level could lead to flooding
-        # the server's network or CPU.
-        opts = {'level': self._ui.configint('server', 'zliblevel')}
-        return HGTYPE, util.compengines['zlib'], opts
-
 def iscmd(cmd):
     return cmd in wireproto.commands
 
@@ -252,6 +210,46 @@ def parsehttprequest(repo, req, query):
         'handleerror': lambda ex: _handlehttperror(ex, req, cmd),
     }
 
+def _httpresponsetype(ui, req, prefer_uncompressed):
+    """Determine the appropriate response type and compression settings.
+
+    Returns a tuple of (mediatype, compengine, engineopts).
+    """
+    # Determine the response media type and compression engine based
+    # on the request parameters.
+    protocaps = decodevaluefromheaders(req, r'X-HgProto').split(' ')
+
+    if '0.2' in protocaps:
+        # All clients are expected to support uncompressed data.
+        if prefer_uncompressed:
+            return HGTYPE2, util._noopengine(), {}
+
+        # Default as defined by wire protocol spec.
+        compformats = ['zlib', 'none']
+        for cap in protocaps:
+            if cap.startswith('comp='):
+                compformats = cap[5:].split(',')
+                break
+
+        # Now find an agreed upon compression format.
+        for engine in wireproto.supportedcompengines(ui, util.SERVERROLE):
+            if engine.wireprotosupport().name in compformats:
+                opts = {}
+                level = ui.configint('server', '%slevel' % engine.name())
+                if level is not None:
+                    opts['level'] = level
+
+                return HGTYPE2, engine, opts
+
+        # No mutually supported compression format. Fall back to the
+        # legacy protocol.
+
+    # Don't allow untrusted settings because disabling compression or
+    # setting a very high compression level could lead to flooding
+    # the server's network or CPU.
+    opts = {'level': ui.configint('server', 'zliblevel')}
+    return HGTYPE, util.compengines['zlib'], opts
+
 def _callhttp(repo, req, proto, cmd):
     def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
@@ -284,8 +282,8 @@ def _callhttp(repo, req, proto, cmd):
 
         # This code for compression should not be streamres specific. It
         # is here because we only compress streamres at the moment.
-        mediatype, engine, engineopts = proto.responsetype(
-            rsp.prefer_uncompressed)
+        mediatype, engine, engineopts = _httpresponsetype(
+            repo.ui, req, rsp.prefer_uncompressed)
         gen = engine.compressstream(gen, engineopts)
 
         if mediatype == HGTYPE2:

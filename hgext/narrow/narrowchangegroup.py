@@ -15,12 +15,12 @@ from mercurial import (
     manifest,
     mdiff,
     node,
+    revlog,
     util,
 )
 
 from . import (
     narrowrepo,
-    narrowrevlog,
 )
 
 def setup():
@@ -83,11 +83,11 @@ def setup():
     extensions.wrapfunction(
         changegroup.cg1packer, 'generatefiles', generatefiles)
 
-    def ellipsisdata(packer, rev, revlog, p1, p2, data, linknode):
-        n = revlog.node(rev)
-        p1n, p2n = revlog.node(p1), revlog.node(p2)
-        flags = revlog.flags(rev)
-        flags |= narrowrevlog.ELLIPSIS_NODE_FLAG
+    def ellipsisdata(packer, rev, revlog_, p1, p2, data, linknode):
+        n = revlog_.node(rev)
+        p1n, p2n = revlog_.node(p1), revlog_.node(p2)
+        flags = revlog_.flags(rev)
+        flags |= revlog.REVIDX_ELLIPSIS
         meta = packer.builddeltaheader(
             n, p1n, p2n, node.nullid, linknode, flags)
         # TODO: try and actually send deltas for ellipsis data blocks

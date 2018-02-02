@@ -8,15 +8,14 @@
 from __future__ import absolute_import
 
 from mercurial import (
+    revlog,
     revset,
     templatekw,
     util,
 )
 
-from . import narrowrevlog
-
 def _isellipsis(repo, rev):
-    if repo.changelog.flags(rev) & narrowrevlog.ELLIPSIS_NODE_FLAG:
+    if repo.changelog.flags(rev) & revlog.REVIDX_ELLIPSIS:
         return True
     return False
 

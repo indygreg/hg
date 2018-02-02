@@ -13,11 +13,6 @@ from mercurial import (
    util,
 )
 
-ELLIPSIS_NODE_FLAG = 1 << 14
-revlog.REVIDX_KNOWN_FLAGS |= ELLIPSIS_NODE_FLAG
-if ELLIPSIS_NODE_FLAG not in revlog.REVIDX_FLAGS_ORDER:
-    revlog.REVIDX_FLAGS_ORDER.append(ELLIPSIS_NODE_FLAG)
-
 def readtransform(self, text):
     return text, False
 
@@ -27,7 +22,7 @@ def writetransform(self, text):
 def rawtransform(self, text):
     return False
 
-revlog.addflagprocessor(ELLIPSIS_NODE_FLAG,
+revlog.addflagprocessor(revlog.REVIDX_ELLIPSIS,
                         (readtransform, writetransform, rawtransform))
 
 def setup():

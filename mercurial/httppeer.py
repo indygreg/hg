@@ -252,6 +252,8 @@ class httppeer(wireproto.wirepeer):
         # with infinite recursion when trying to look up capabilities
         # for the first time.
         postargsok = self._caps is not None and 'httppostargs' in self._caps
+
+        # Send arguments via POST.
         if postargsok and args:
             strargs = urlreq.urlencode(sorted(args.items()))
             if not data:
@@ -265,11 +267,16 @@ class httppeer(wireproto.wirepeer):
                 argsio.length = len(strargs)
                 data = _multifile(argsio, data)
             headers[r'X-HgArgs-Post'] = len(strargs)
-        else:
-            if len(args) > 0:
-                httpheader = self.capable('httpheader')
-                if httpheader:
-                    headersize = int(httpheader.split(',', 1)[0])
+        elif args:
+            # Calling self.capable() can infinite loop if we are calling
+            # "capabilities". But that command should never accept wire
+            # protocol arguments. So this should never happen.
+            assert cmd != 'capabilities'
+            httpheader = self.capable('httpheader')
+            if httpheader:
+                headersize = int(httpheader.split(',', 1)[0])
+
+            # Send arguments via HTTP headers.
             if headersize > 0:
                 # The headers can typically carry more data than the URL.
                 encargs = urlreq.urlencode(sorted(args.items()))
@@ -277,8 +284,10 @@ class httppeer(wireproto.wirepeer):
                                                           headersize):
                     headers[header] = value
                     varyheaders.append(header)
+            # Send arguments via query string (Mercurial <1.9).
             else:
                 q += sorted(args.items())
+
         qs = '?%s' % urlreq.urlencode(q)
         cu = "%s%s" % (self._url, qs)
         size = 0

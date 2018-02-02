@@ -8,17 +8,21 @@
 from __future__ import absolute_import
 
 from mercurial import (
+    registrar,
     revlog,
-    revset,
-    templatekw,
     util,
 )
+
+keywords = {}
+templatekeyword = registrar.templatekeyword(keywords)
+revsetpredicate = registrar.revsetpredicate()
 
 def _isellipsis(repo, rev):
     if repo.changelog.flags(rev) & revlog.REVIDX_ELLIPSIS:
         return True
     return False
 
+@templatekeyword('ellipsis')
 def ellipsis(repo, ctx, templ, **args):
     """:ellipsis: String. 'ellipsis' if the change is an ellipsis node,
     else ''."""
@@ -26,6 +30,7 @@ def ellipsis(repo, ctx, templ, **args):
         return 'ellipsis'
     return ''
 
+@templatekeyword('outsidenarrow')
 def outsidenarrow(repo, ctx, templ, **args):
     """:outsidenarrow: String. 'outsidenarrow' if the change affects no
     tracked files, else ''."""
@@ -35,15 +40,9 @@ def outsidenarrow(repo, ctx, templ, **args):
             return 'outsidenarrow'
     return ''
 
+@revsetpredicate('ellipsis')
 def ellipsisrevset(repo, subset, x):
     """``ellipsis()``
     Changesets that are ellipsis nodes.
     """
     return subset.filter(lambda r: _isellipsis(repo, r))
-
-def setup():
-    templatekw.keywords['ellipsis'] = ellipsis
-    templatekw.keywords['outsidenarrow'] = outsidenarrow
-
-    revset.symbols['ellipsis'] = ellipsisrevset
-    revset.safesymbols.add('ellipsis')

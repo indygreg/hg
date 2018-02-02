@@ -62,7 +62,6 @@ def uisetup(ui):
     narrowrevlog.setup()
     narrowbundle2.setup()
     narrowmerge.setup()
-    narrowtemplates.setup()
     narrowcommands.setup()
     narrowchangegroup.setup()
     narrowwirepeer.uisetup()
@@ -91,3 +90,6 @@ def extsetup(ui):
     extensions.wrapfunction(verifymod.verifier, '__init__', _verifierinit)
     extensions.wrapfunction(hg, 'postshare', narrowrepo.wrappostshare)
     extensions.wrapfunction(hg, 'copystore', narrowrepo.unsharenarrowspec)
+
+templatekeyword = narrowtemplates.templatekeyword
+revsetpredicate = narrowtemplates.revsetpredicate

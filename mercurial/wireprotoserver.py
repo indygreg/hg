@@ -292,8 +292,9 @@ def _callhttp(repo, req, proto, cmd):
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireproto.pusherr):
-        # drain the incoming bundle
+        # This is the httplib workaround documented in _handlehttperror().
         req.drain()
+
         proto.restore()
         rsp = '0\n%s\n' % rsp.res
         req.respond(HTTP_OK, HGTYPE, body=rsp)
@@ -306,16 +307,28 @@ def _callhttp(repo, req, proto, cmd):
 
 def _handlehttperror(e, req, cmd):
     """Called when an ErrorResponse is raised during HTTP request processing."""
-    # A client that sends unbundle without 100-continue will
-    # break if we respond early.
-    if (cmd == 'unbundle' and
+
+    # Clients using Python's httplib are stateful: the HTTP client
+    # won't process an HTTP response until all request data is
+    # sent to the server. The intent of this code is to ensure
+    # we always read HTTP request data from the client, thus
+    # ensuring httplib transitions to a state that allows it to read
+    # the HTTP response. In other words, it helps prevent deadlocks
+    # on clients using httplib.
+
+    if (req.env[r'REQUEST_METHOD'] == r'POST' and
+        # But not if Expect: 100-continue is being used.
         (req.env.get('HTTP_EXPECT',
                      '').lower() != '100-continue') or
+        # Or the non-httplib HTTP library is being advertised by
+        # the client.
         req.env.get('X-HgHttp2', '')):
         req.drain()
     else:
         req.headers.append((r'Connection', r'Close'))
 
+    # TODO This response body assumes the failed command was
+    # "unbundle." That assumption is not always valid.
     req.respond(e, HGTYPE, body='0\n%s\n' % e)
 
     return ''

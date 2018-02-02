@@ -35,17 +35,17 @@ from . import (
 )
 
 NARROWCAP = 'narrow'
-NARROWACL_SECTION = 'narrowhgacl'
-CHANGESPECPART = NARROWCAP + ':changespec'
-SPECPART = NARROWCAP + ':spec'
-SPECPART_INCLUDE = 'include'
-SPECPART_EXCLUDE = 'exclude'
-KILLNODESIGNAL = 'KILL'
-DONESIGNAL = 'DONE'
-ELIDEDCSHEADER = '>20s20s20sl' # cset id, p1, p2, len(text)
-ELIDEDMFHEADER = '>20s20s20s20sl' # manifest id, p1, p2, link id, len(text)
-CSHEADERSIZE = struct.calcsize(ELIDEDCSHEADER)
-MFHEADERSIZE = struct.calcsize(ELIDEDMFHEADER)
+_NARROWACL_SECTION = 'narrowhgacl'
+_CHANGESPECPART = NARROWCAP + ':changespec'
+_SPECPART = NARROWCAP + ':spec'
+_SPECPART_INCLUDE = 'include'
+_SPECPART_EXCLUDE = 'exclude'
+_KILLNODESIGNAL = 'KILL'
+_DONESIGNAL = 'DONE'
+_ELIDEDCSHEADER = '>20s20s20sl' # cset id, p1, p2, len(text)
+_ELIDEDMFHEADER = '>20s20s20s20sl' # manifest id, p1, p2, link id, len(text)
+_CSHEADERSIZE = struct.calcsize(_ELIDEDCSHEADER)
+_MFHEADERSIZE = struct.calcsize(_ELIDEDMFHEADER)
 
 # When advertising capabilities, always include narrow clone support.
 def getrepocaps_narrow(orig, repo, **kwargs):
@@ -250,13 +250,13 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
             part.addparam('treemanifest', '1')
 
         if include or exclude:
-            narrowspecpart = bundler.newpart(SPECPART)
+            narrowspecpart = bundler.newpart(_SPECPART)
             if include:
                 narrowspecpart.addparam(
-                    SPECPART_INCLUDE, '\n'.join(include), mandatory=True)
+                    _SPECPART_INCLUDE, '\n'.join(include), mandatory=True)
             if exclude:
                 narrowspecpart.addparam(
-                    SPECPART_EXCLUDE, '\n'.join(exclude), mandatory=True)
+                    _SPECPART_EXCLUDE, '\n'.join(exclude), mandatory=True)
 
         return
 
@@ -298,10 +298,10 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
         deadrevs = known
         def genkills():
             for r in deadrevs:
-                yield KILLNODESIGNAL
+                yield _KILLNODESIGNAL
                 yield repo.changelog.node(r)
-            yield DONESIGNAL
-        bundler.newpart(CHANGESPECPART, data=genkills())
+            yield _DONESIGNAL
+        bundler.newpart(_CHANGESPECPART, data=genkills())
         newvisit, newfull, newellipsis = _computeellipsis(
             repo, set(), common, known, newmatch)
         if newvisit:
@@ -329,14 +329,14 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
 def applyacl_narrow(repo, kwargs):
     username = repo.ui.shortuser(repo.ui.username())
     user_includes = repo.ui.configlist(
-        NARROWACL_SECTION, username + '.includes',
-        repo.ui.configlist(NARROWACL_SECTION, 'default.includes'))
+        _NARROWACL_SECTION, username + '.includes',
+        repo.ui.configlist(_NARROWACL_SECTION, 'default.includes'))
     user_excludes = repo.ui.configlist(
-        NARROWACL_SECTION, username + '.excludes',
-        repo.ui.configlist(NARROWACL_SECTION, 'default.excludes'))
+        _NARROWACL_SECTION, username + '.excludes',
+        repo.ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
     if not user_includes:
         raise error.Abort(_("{} configuration for user {} is empty")
-                          .format(NARROWACL_SECTION, username))
+                          .format(_NARROWACL_SECTION, username))
 
     user_includes = [
         'path:.' if p == '*' else 'path:' + p for p in user_includes]
@@ -363,17 +363,17 @@ def applyacl_narrow(repo, kwargs):
         new_args['excludepats'] = req_excludes
     return new_args
 
-@bundle2.parthandler(SPECPART, (SPECPART_INCLUDE, SPECPART_EXCLUDE))
+@bundle2.parthandler(_SPECPART, (_SPECPART_INCLUDE, _SPECPART_EXCLUDE))
 def _handlechangespec_2(op, inpart):
-    includepats = set(inpart.params.get(SPECPART_INCLUDE, '').splitlines())
-    excludepats = set(inpart.params.get(SPECPART_EXCLUDE, '').splitlines())
+    includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
+    excludepats = set(inpart.params.get(_SPECPART_EXCLUDE, '').splitlines())
     narrowspec.save(op.repo, includepats, excludepats)
     if not narrowrepo.requirement in op.repo.requirements:
         op.repo.requirements.add(narrowrepo.requirement)
         op.repo._writerequirements()
     op.repo.invalidate(clearfilecache=True)
 
-@bundle2.parthandler(CHANGESPECPART)
+@bundle2.parthandler(_CHANGESPECPART)
 def _handlechangespec(op, inpart):
     repo = op.repo
     cl = repo.changelog
@@ -388,8 +388,8 @@ def _handlechangespec(op, inpart):
     # repo. All the changes that this block encounters are ellipsis
     # nodes or flags to kill an existing ellipsis.
     chunksignal = changegroup.readexactly(inpart, 4)
-    while chunksignal != DONESIGNAL:
-        if chunksignal == KILLNODESIGNAL:
+    while chunksignal != _DONESIGNAL:
+        if chunksignal == _KILLNODESIGNAL:
             # a node used to be an ellipsis but isn't anymore
             ck = changegroup.readexactly(inpart, 20)
             if cl.hasnode(ck):
@@ -477,7 +477,7 @@ def setup():
     origcgfn = exchange.getbundle2partsmapping['changegroup']
     def wrappedcgfn(*args, **kwargs):
         repo = args[1]
-        if repo.ui.has_section(NARROWACL_SECTION):
+        if repo.ui.has_section(_NARROWACL_SECTION):
             getbundlechangegrouppart_narrow(
                 *args, **applyacl_narrow(repo, kwargs))
         elif kwargs.get('narrow', False):

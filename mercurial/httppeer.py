@@ -16,7 +16,6 @@ import struct
 import tempfile
 
 from .i18n import _
-from .node import nullid
 from . import (
     bundle2,
     error,
@@ -491,13 +490,9 @@ def instance(ui, path, create):
             inst = httpspeer(ui, path)
         else:
             inst = httppeer(ui, path)
-        try:
-            # Try to do useful work when checking compatibility.
-            # Usually saves a roundtrip since we want the caps anyway.
-            inst._fetchcaps()
-        except error.RepoError:
-            # No luck, try older compatibility check.
-            inst.between([(nullid, nullid)])
+
+        inst._fetchcaps()
+
         return inst
     except error.RepoError as httpexception:
         try:

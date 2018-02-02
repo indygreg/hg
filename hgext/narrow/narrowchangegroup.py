@@ -27,7 +27,7 @@ def setup():
 
     def supportedoutgoingversions(orig, repo):
         versions = orig(repo)
-        if narrowrepo.requirement in repo.requirements:
+        if narrowrepo.REQUIREMENT in repo.requirements:
             versions.discard('01')
             versions.discard('02')
         return versions

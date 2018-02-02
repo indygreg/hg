@@ -103,7 +103,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
             repo.__class__.__bases__ = (repo.__class__.__bases__[0],
                                         repo.unfiltered().__class__)
         if opts_narrow:
-            repo.requirements.add(narrowrepo.requirement)
+            repo.requirements.add(narrowrepo.REQUIREMENT)
             repo._writerequirements()
 
         return orig(repo, *args, **kwargs)
@@ -116,7 +116,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
 def pullnarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps pull command to allow modifying narrow spec."""
     wrappedextraprepare = util.nullcontextmanager()
-    if narrowrepo.requirement in repo.requirements:
+    if narrowrepo.REQUIREMENT in repo.requirements:
 
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             orig(pullop, kwargs)
@@ -130,7 +130,7 @@ def pullnarrowcmd(orig, ui, repo, *args, **opts):
 
 def archivenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps archive command to narrow the default includes."""
-    if narrowrepo.requirement in repo.requirements:
+    if narrowrepo.REQUIREMENT in repo.requirements:
         repo_includes, repo_excludes = repo.narrowpats
         includes = set(opts.get('include', []))
         excludes = set(opts.get('exclude', []))
@@ -144,7 +144,7 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
 
 def pullbundle2extraprepare(orig, pullop, kwargs):
     repo = pullop.repo
-    if narrowrepo.requirement not in repo.requirements:
+    if narrowrepo.REQUIREMENT not in repo.requirements:
         return orig(pullop, kwargs)
 
     if narrowbundle2.NARROWCAP not in pullop.remotebundle2caps:
@@ -330,7 +330,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     If --clear is specified without any further options, the narrowspec will be
     empty and will not match any files.
     """
-    if narrowrepo.requirement not in repo.requirements:
+    if narrowrepo.REQUIREMENT not in repo.requirements:
         ui.warn(_('The narrow command is only supported on respositories cloned'
                   ' with --narrow.\n'))
         return 1

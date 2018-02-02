@@ -368,8 +368,8 @@ def _handlechangespec_2(op, inpart):
     includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
     excludepats = set(inpart.params.get(_SPECPART_EXCLUDE, '').splitlines())
     narrowspec.save(op.repo, includepats, excludepats)
-    if not narrowrepo.requirement in op.repo.requirements:
-        op.repo.requirements.add(narrowrepo.requirement)
+    if not narrowrepo.REQUIREMENT in op.repo.requirements:
+        op.repo.requirements.add(narrowrepo.REQUIREMENT)
         op.repo._writerequirements()
     op.repo.invalidate(clearfilecache=True)
 

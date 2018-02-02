@@ -23,17 +23,17 @@ from . import (
     narrowspec,
 )
 
-requirement = 'narrowhg'
+REQUIREMENT = 'narrowhg'
 
 def wrappostshare(orig, sourcerepo, destrepo, **kwargs):
     orig(sourcerepo, destrepo, **kwargs)
-    if requirement in sourcerepo.requirements:
+    if REQUIREMENT in sourcerepo.requirements:
         with destrepo.wlock():
             with destrepo.vfs('shared', 'a') as fp:
                 fp.write(narrowspec.FILENAME + '\n')
 
 def unsharenarrowspec(orig, ui, repo, repopath):
-    if (requirement in repo.requirements
+    if (REQUIREMENT in repo.requirements
         and repo.path == repopath and repo.shared()):
         srcrepo = share._getsrcrepo(repo)
         with srcrepo.vfs(narrowspec.FILENAME) as f:

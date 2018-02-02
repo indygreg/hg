@@ -55,7 +55,7 @@ configitem('experimental', 'narrowservebrokenellipses',
 # Export the commands table for Mercurial to see.
 cmdtable = narrowcommands.table
 
-localrepo.localrepository._basesupported.add(narrowrepo.requirement)
+localrepo.localrepository._basesupported.add(narrowrepo.REQUIREMENT)
 
 def uisetup(ui):
     """Wraps user-facing mercurial commands with narrow-aware versions."""
@@ -72,7 +72,7 @@ def reposetup(ui, repo):
     if not isinstance(repo, localrepo.localrepository):
         return
 
-    if narrowrepo.requirement in repo.requirements:
+    if narrowrepo.REQUIREMENT in repo.requirements:
         narrowrepo.wraprepo(repo, True)
         narrowcopies.setup(repo)
         narrowdirstate.setup(repo)

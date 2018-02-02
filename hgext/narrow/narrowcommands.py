@@ -147,7 +147,7 @@ def pullbundle2extraprepare(orig, pullop, kwargs):
     if narrowrepo.requirement not in repo.requirements:
         return orig(pullop, kwargs)
 
-    if narrowbundle2.narrowcap not in pullop.remotebundle2caps:
+    if narrowbundle2.NARROWCAP not in pullop.remotebundle2caps:
         raise error.Abort(_("server doesn't support narrow clones"))
     orig(pullop, kwargs)
     kwargs['narrow'] = True

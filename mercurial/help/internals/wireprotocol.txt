@@ -662,6 +662,8 @@ There is no trailing newline.
 
 This command does not accept any arguments. Return type is a ``string``.
 
+This command was introduced in Mercurial 0.9.1 (released July 2006).
+
 changegroup
 -----------
 
@@ -778,6 +780,8 @@ SSH clients typically issue this command as soon as a connection is
 established.
 
 This command does not accept any arguments. The return type is a ``string``.
+
+This command was introduced in Mercurial 0.9.1 (released July 2006).
 
 listkeys
 --------

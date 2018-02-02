@@ -1008,7 +1008,7 @@ def unbundle(repo, proto, heads):
             fp = os.fdopen(fd, pycompat.sysstr('wb+'))
             r = 0
             try:
-                proto.getfile(fp)
+                proto.forwardpayload(fp)
                 fp.seek(0)
                 gen = exchange.readbundle(repo.ui, fp, None)
                 if (isinstance(gen, changegroupmod.cg1unpacker)

@@ -40,7 +40,7 @@ def putlfile(repo, proto, sha):
         tmpfp = util.atomictempfile(path, createmode=repo.store.createmode)
 
         try:
-            proto.getfile(tmpfp)
+            proto.forwardpayload(tmpfp)
             tmpfp._fp.seek(0)
             if sha != lfutil.hexsha1(tmpfp._fp):
                 raise IOError(0, _('largefile contents do not match hash'))

@@ -64,14 +64,10 @@ class baseprotocolhandler(object):
         returns a list of values (same order as <args>)"""
 
     @abc.abstractmethod
-    def getfile(self, fp):
-        """write the whole content of a file into a file like object
+    def forwardpayload(self, fp):
+        """Read the raw payload and forward to a file.
 
-        The file is in the form::
-
-            (<chunk-size>\n<chunk>)+0\n
-
-        chunk size is the ascii version of the int.
+        The payload is read in full before the function returns.
         """
 
     @abc.abstractmethod
@@ -145,7 +141,7 @@ class webproto(baseprotocolhandler):
         args.update(cgi.parse_qs(argvalue, keep_blank_values=True))
         return args
 
-    def getfile(self, fp):
+    def forwardpayload(self, fp):
         length = int(self._req.env[r'CONTENT_LENGTH'])
         # If httppostargs is used, we need to read Content-Length
         # minus the amount that was consumed by args.
@@ -392,7 +388,12 @@ class sshv1protocolhandler(baseprotocolhandler):
                 data[arg] = val
         return [data[k] for k in keys]
 
-    def getfile(self, fpout):
+    def forwardpayload(self, fpout):
+        # The file is in the form:
+        #
+        # <chunk size>\n<chunk>
+        # ...
+        # 0\n
         _sshv1respondbytes(self._fout, b'')
         count = int(self._fin.readline())
         while count:

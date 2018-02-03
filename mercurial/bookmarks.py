@@ -103,30 +103,21 @@ class bmstore(dict):
         self._aclean = False
 
     def __setitem__(self, *args, **kwargs):
-        msg = ("'bookmarks[name] = node' is deprecated, "
-               "use 'bookmarks.applychanges'")
-        self._repo.ui.deprecwarn(msg, '4.3')
-        self._set(*args, **kwargs)
+        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
 
     def _set(self, key, value):
         self._clean = False
         return dict.__setitem__(self, key, value)
 
     def __delitem__(self, key):
-        msg = ("'del bookmarks[name]' is deprecated, "
-               "use 'bookmarks.applychanges'")
-        self._repo.ui.deprecwarn(msg, '4.3')
-        self._del(key)
+        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
 
     def _del(self, key):
         self._clean = False
         return dict.__delitem__(self, key)
 
     def update(self, *others):
-        msg = ("bookmarks.update(...)' is deprecated, "
-               "use 'bookmarks.applychanges'")
-        self._repo.ui.deprecwarn(msg, '4.5')
-        return dict.update(self, *others)
+        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
 
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
@@ -145,12 +136,6 @@ class bmstore(dict):
                     old = previous[0]
                 bmchanges[name] = (old, node)
         self._recordchange(tr)
-
-    def recordchange(self, tr):
-        msg = ("'bookmarks.recorchange' is deprecated, "
-               "use 'bookmarks.applychanges'")
-        self._repo.ui.deprecwarn(msg, '4.3')
-        return self._recordchange(tr)
 
     def _recordchange(self, tr):
         """record that bookmarks have been changed in a transaction

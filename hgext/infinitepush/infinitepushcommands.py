@@ -30,13 +30,12 @@ from mercurial import (
 )
 
 from . import (
-    backupcommands,
     common,
 )
 
 downloadbundle = common.downloadbundle
 
-cmdtable = backupcommands.cmdtable
+cmdtable = {}
 command = registrar.command(cmdtable)
 
 @command('debugfillinfinitepushmetadata',

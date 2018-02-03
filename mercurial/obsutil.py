@@ -33,12 +33,6 @@ class marker(object):
             return False
         return self._data == other._data
 
-    def precnode(self):
-        msg = ("'marker.precnode' is deprecated, "
-               "use 'marker.prednode'")
-        util.nouideprecwarn(msg, '4.4')
-        return self.prednode()
-
     def prednode(self):
         """Predecessor changeset node identifier"""
         return self._data[0]
@@ -105,15 +99,6 @@ def closestpredecessors(repo, nodeid):
                 yield precnodeid
             else:
                 stack.append(precnodeid)
-
-def allprecursors(*args, **kwargs):
-    """ (DEPRECATED)
-    """
-    msg = ("'obsutil.allprecursors' is deprecated, "
-           "use 'obsutil.allpredecessors'")
-    util.nouideprecwarn(msg, '4.4')
-
-    return allpredecessors(*args, **kwargs)
 
 def allpredecessors(obsstore, nodes, ignoreflags=0):
     """Yield node for every precursors of <nodes>.

@@ -99,27 +99,6 @@ class dirstate(object):
         # normally, so we don't have a try/finally here on purpose.
         self._parentwriters -= 1
 
-    def beginparentchange(self):
-        '''Marks the beginning of a set of changes that involve changing
-        the dirstate parents. If there is an exception during this time,
-        the dirstate will not be written when the wlock is released. This
-        prevents writing an incoherent dirstate where the parent doesn't
-        match the contents.
-        '''
-        self._ui.deprecwarn('beginparentchange is obsoleted by the '
-                            'parentchange context manager.', '4.3')
-        self._parentwriters += 1
-
-    def endparentchange(self):
-        '''Marks the end of a set of changes that involve changing the
-        dirstate parents. Once all parent changes have been marked done,
-        the wlock will be free to write the dirstate on release.
-        '''
-        self._ui.deprecwarn('endparentchange is obsoleted by the '
-                            'parentchange context manager.', '4.3')
-        if self._parentwriters > 0:
-            self._parentwriters -= 1
-
     def pendingparentchange(self):
         '''Returns true if the dirstate is in the middle of a set of changes
         that modify the dirstate parent.

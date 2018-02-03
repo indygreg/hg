@@ -509,14 +509,6 @@ def branch(repo, subset, x):
     return subset.filter(lambda r: c(r) or getbranch(r) in b,
                          condrepr=lambda: '<branch %r>' % sorted(b))
 
-@predicate('bumped()', safe=True)
-def bumped(repo, subset, x):
-    msg = ("'bumped()' is deprecated, "
-           "use 'phasedivergent()'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return phasedivergent(repo, subset, x)
-
 @predicate('phasedivergent()', safe=True)
 def phasedivergent(repo, subset, x):
     """Mutable changesets marked as successors of public changesets.
@@ -769,14 +761,6 @@ def destination(repo, subset, x):
 
     return subset.filter(dests.__contains__,
                          condrepr=lambda: '<destination %r>' % sorted(dests))
-
-@predicate('divergent()', safe=True)
-def divergent(repo, subset, x):
-    msg = ("'divergent()' is deprecated, "
-           "use 'contentdivergent()'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return contentdivergent(repo, subset, x)
 
 @predicate('contentdivergent()', safe=True)
 def contentdivergent(repo, subset, x):
@@ -2030,14 +2014,6 @@ def tag(repo, subset, x):
 @predicate('tagged', safe=True)
 def tagged(repo, subset, x):
     return tag(repo, subset, x)
-
-@predicate('unstable()', safe=True)
-def unstable(repo, subset, x):
-    msg = ("'unstable()' is deprecated, "
-           "use 'orphan()'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return orphan(repo, subset, x)
 
 @predicate('orphan()', safe=True)
 def orphan(repo, subset, x):

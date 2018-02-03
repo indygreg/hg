@@ -948,6 +948,7 @@ Test list of internal help commands
    debugoptEXP   (no help text available)
    debugpathcomplete
                  complete part or all of a tracked path
+   debugpeer     establish a connection to a peer repository
    debugpickmergetool
                  examine which merge tool is chosen for specified file
    debugpushkey  access the pushkey key/value protocol

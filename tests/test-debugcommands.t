@@ -381,3 +381,24 @@ Test debugcapabilities command:
       https
     stream
       v2
+
+Test debugpeer
+
+  $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" debugpeer ssh://user@dummy/debugrevlog
+  url: ssh://user@dummy/debugrevlog
+  local: no
+  pushable: yes
+
+  $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" --debug debugpeer ssh://user@dummy/debugrevlog
+  running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob)
+  devel-peer-request: hello
+  sending hello command
+  devel-peer-request: between
+  devel-peer-request:   pairs: 81 bytes
+  sending between command
+  remote: 384
+  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: 1
+  url: ssh://user@dummy/debugrevlog
+  local: no
+  pushable: yes

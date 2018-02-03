@@ -1693,6 +1693,25 @@ def debugpathcomplete(ui, repo, *specs, **opts):
     ui.write('\n'.join(repo.pathto(p, cwd) for p in sorted(files)))
     ui.write('\n')
 
+@command('debugpeer', [], _('PATH'), norepo=True)
+def debugpeer(ui, path):
+    """establish a connection to a peer repository"""
+    # Always enable peer request logging. Requires --debug to display
+    # though.
+    overrides = {
+        ('devel', 'debug.peer-request'): True,
+    }
+
+    with ui.configoverride(overrides):
+        peer = hg.peer(ui, {}, path)
+
+        local = peer.local() is not None
+        canpush = peer.canpush()
+
+        ui.write(_('url: %s\n') % peer.url())
+        ui.write(_('local: %s\n') % (_('yes') if local else _('no')))
+        ui.write(_('pushable: %s\n') % (_('yes') if canpush else _('no')))
+
 @command('debugpickmergetool',
         [('r', 'rev', '', _('check for files in this revision'), _('REV')),
          ('', 'changedelete', None, _('emulate merging change and delete')),

@@ -102,6 +102,7 @@ Show debug commands if there are no other candidates
   debugnamecomplete
   debugobsolete
   debugpathcomplete
+  debugpeer
   debugpickmergetool
   debugpushkey
   debugpvec
@@ -281,6 +282,7 @@ Show all commands + options
   debugnamecomplete: 
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
   debugpathcomplete: full, normal, added, removed
+  debugpeer: 
   debugpickmergetool: rev, changedelete, include, exclude, tool
   debugpushkey: 
   debugpvec: 

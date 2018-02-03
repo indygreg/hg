@@ -76,29 +76,27 @@ def _rootctx(repo):
         return repo[rev]
     return repo['null']
 
+# {tags} on ctx includes local tags and 'tip', with no current way to limit
+# that to global tags.  Therefore, use {latesttag} as a substitute when
+# the distance is 0, since that will be the list of global tags on ctx.
+_defaultmetatemplate = br'''
+repo: {root}
+node: {ifcontains(rev, revset("wdir()"), "{p1node}{dirty}", "{node}")}
+branch: {branch|utf8}
+{ifeq(latesttagdistance, 0, join(latesttag % "tag: {tag}", "\n"),
+      separate("\n",
+               join(latesttag % "latesttag: {tag}", "\n"),
+               "latesttagdistance: {latesttagdistance}",
+               "changessincelatesttag: {changessincelatesttag}"))}
+'''[1:]  # drop leading '\n'
+
 def buildmetadata(ctx):
     '''build content of .hg_archival.txt'''
     repo = ctx.repo()
 
-    default = (
-        r'repo: {root}\n'
-        r'node: {ifcontains(rev, revset("wdir()"),'
-                            r'"{p1node}{dirty}", "{node}")}\n'
-        r'branch: {branch|utf8}\n'
-
-        # {tags} on ctx includes local tags and 'tip', with no current way to
-        # limit that to global tags.  Therefore, use {latesttag} as a substitute
-        # when the distance is 0, since that will be the list of global tags on
-        # ctx.
-        r'{ifeq(latesttagdistance, 0, latesttag % "tag: {tag}\n",'
-                       r'"{latesttag % "latesttag: {tag}\n"}'
-                       r'latesttagdistance: {latesttagdistance}\n'
-                       r'changessincelatesttag: {changessincelatesttag}\n")}'
-    )
-
     opts = {
         'template': repo.ui.config('experimental', 'archivemetatemplate',
-                                   default)
+                                   _defaultmetatemplate)
     }
 
     out = util.stringio()

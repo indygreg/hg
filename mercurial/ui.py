@@ -870,6 +870,17 @@ class ui(object):
 
         return "".join(self._buffers.pop())
 
+    def canwritewithoutlabels(self):
+        '''check if write skips the label'''
+        if self._buffers and not self._bufferapplylabels:
+            return True
+        return self._colormode is None
+
+    def canbatchlabeledwrites(self):
+        '''check if write calls with labels are batchable'''
+        # Windows color printing is special, see ``write``.
+        return self._colormode != 'win32'
+
     def write(self, *args, **opts):
         '''write args to output
 

@@ -79,18 +79,31 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         width = 80
         if not ui.plain():
             width = ui.termwidth()
-        chunks = patch.diff(repo, node1, node2, match, changes, opts=diffopts,
-                            prefix=prefix, relroot=relroot,
-                            hunksfilterfn=hunksfilterfn)
-        for chunk, label in patch.diffstatui(util.iterlines(chunks),
-                                             width=width):
-            write(chunk, label=label)
+
+    chunks = patch.diff(repo, node1, node2, match, changes, opts=diffopts,
+                        prefix=prefix, relroot=relroot,
+                        hunksfilterfn=hunksfilterfn)
+
+    if fp is not None or ui.canwritewithoutlabels():
+        if stat:
+            chunks = patch.diffstat(util.iterlines(chunks), width=width)
+        for chunk in util.filechunkiter(util.chunkbuffer(chunks)):
+            write(chunk)
     else:
-        for chunk, label in patch.diffui(repo, node1, node2, match,
-                                         changes, opts=diffopts, prefix=prefix,
-                                         relroot=relroot,
-                                         hunksfilterfn=hunksfilterfn):
-            write(chunk, label=label)
+        if stat:
+            chunks = patch.diffstatui(util.iterlines(chunks), width=width)
+        else:
+            chunks = patch.difflabel(lambda chunks, **kwargs: chunks, chunks,
+                                     opts=diffopts)
+        if ui.canbatchlabeledwrites():
+            def gen():
+                for chunk, label in chunks:
+                    yield ui.label(chunk, label=label)
+            for chunk in util.filechunkiter(util.chunkbuffer(gen())):
+                write(chunk)
+        else:
+            for chunk, label in chunks:
+                write(chunk, label=label)
 
     if listsubrepos:
         ctx1 = repo[node1]

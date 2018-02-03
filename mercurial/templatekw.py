@@ -893,17 +893,6 @@ def showtermwidth(repo, ctx, templ, **args):
     """Integer. The width of the current terminal."""
     return repo.ui.termwidth()
 
-@templatekeyword('troubles')
-def showtroubles(repo, **args):
-    """List of strings. Evolution troubles affecting the changeset.
-    (DEPRECATED)
-    """
-    msg = ("'troubles' is deprecated, "
-           "use 'instabilities'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return showinstabilities(repo=repo, **args)
-
 @templatekeyword('instabilities')
 def showinstabilities(**args):
     """List of strings. Evolution instabilities affecting the changeset.

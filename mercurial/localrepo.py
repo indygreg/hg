@@ -2048,15 +2048,6 @@ class localrepository(object):
         # tag cache retrieval" case to work.
         self.invalidate()
 
-    def walk(self, match, node=None):
-        '''
-        walk recursively through the directory tree or a given
-        changeset, finding all files matched by the match
-        function
-        '''
-        self.ui.deprecwarn('use repo[node].walk instead of repo.walk', '4.3')
-        return self[node].walk(match)
-
     def status(self, node1='.', node2=None, match=None,
                ignored=False, clean=False, unknown=False,
                listsubrepos=False):

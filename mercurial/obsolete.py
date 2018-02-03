@@ -506,13 +506,6 @@ def _addsuccessors(successors, markers):
     for mark in markers:
         successors.setdefault(mark[0], set()).add(mark)
 
-def _addprecursors(*args, **kwargs):
-    msg = ("'obsolete._addprecursors' is deprecated, "
-           "use 'obsolete._addpredecessors'")
-    util.nouideprecwarn(msg, '4.4')
-
-    return _addpredecessors(*args, **kwargs)
-
 @util.nogc
 def _addpredecessors(predecessors, markers):
     for mark in markers:
@@ -700,14 +693,6 @@ class obsstore(object):
         _addsuccessors(successors, self._all)
         return successors
 
-    @property
-    def precursors(self):
-        msg = ("'obsstore.precursors' is deprecated, "
-               "use 'obsstore.predecessors'")
-        util.nouideprecwarn(msg, '4.4')
-
-        return self.predecessors
-
     @propertycache
     def predecessors(self):
         predecessors = {}
@@ -843,42 +828,6 @@ def pushmarker(repo, key, old, new):
         repo.invalidatevolatilesets()
         return True
 
-# keep compatibility for the 4.3 cycle
-def allprecursors(obsstore, nodes, ignoreflags=0):
-    movemsg = 'obsolete.allprecursors moved to obsutil.allprecursors'
-    util.nouideprecwarn(movemsg, '4.3')
-    return obsutil.allprecursors(obsstore, nodes, ignoreflags)
-
-def allsuccessors(obsstore, nodes, ignoreflags=0):
-    movemsg = 'obsolete.allsuccessors moved to obsutil.allsuccessors'
-    util.nouideprecwarn(movemsg, '4.3')
-    return obsutil.allsuccessors(obsstore, nodes, ignoreflags)
-
-def marker(repo, data):
-    movemsg = 'obsolete.marker moved to obsutil.marker'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.marker(repo, data)
-
-def getmarkers(repo, nodes=None, exclusive=False):
-    movemsg = 'obsolete.getmarkers moved to obsutil.getmarkers'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.getmarkers(repo, nodes=nodes, exclusive=exclusive)
-
-def exclusivemarkers(repo, nodes):
-    movemsg = 'obsolete.exclusivemarkers moved to obsutil.exclusivemarkers'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.exclusivemarkers(repo, nodes)
-
-def foreground(repo, nodes):
-    movemsg = 'obsolete.foreground moved to obsutil.foreground'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.foreground(repo, nodes)
-
-def successorssets(repo, initialnode, cache=None):
-    movemsg = 'obsolete.successorssets moved to obsutil.successorssets'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.successorssets(repo, initialnode, cache=cache)
-
 # mapping of 'set-name' -> <function to compute this set>
 cachefuncs = {}
 def cachefor(name):
@@ -933,14 +882,6 @@ def _computeobsoleteset(repo):
     obs = set(r for r in notpublic if isobs(getnode(r)))
     return obs
 
-@cachefor('unstable')
-def _computeunstableset(repo):
-    msg = ("'unstable' volatile set is deprecated, "
-           "use 'orphan'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return _computeorphanset(repo)
-
 @cachefor('orphan')
 def _computeorphanset(repo):
     """the set of non obsolete revisions with obsolete parents"""
@@ -969,14 +910,6 @@ def _computeextinctset(repo):
     """the set of obsolete parents without non obsolete descendants"""
     return getrevs(repo, 'obsolete') - getrevs(repo, 'suspended')
 
-@cachefor('bumped')
-def _computebumpedset(repo):
-    msg = ("'bumped' volatile set is deprecated, "
-           "use 'phasedivergent'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return _computephasedivergentset(repo)
-
 @cachefor('phasedivergent')
 def _computephasedivergentset(repo):
     """the set of revs trying to obsolete public revisions"""
@@ -999,14 +932,6 @@ def _computephasedivergentset(repo):
                 bumped.add(rev)
                 break # Next draft!
     return bumped
-
-@cachefor('divergent')
-def _computedivergentset(repo):
-    msg = ("'divergent' volatile set is deprecated, "
-           "use 'contentdivergent'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return _computecontentdivergentset(repo)
 
 @cachefor('contentdivergent')
 def _computecontentdivergentset(repo):

@@ -206,21 +206,9 @@ class basectx(object):
         """True if the changeset is extinct"""
         return self.rev() in obsmod.getrevs(self._repo, 'extinct')
 
-    def unstable(self):
-        msg = ("'context.unstable' is deprecated, "
-               "use 'context.orphan'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.orphan()
-
     def orphan(self):
         """True if the changeset is not obsolete but it's ancestor are"""
         return self.rev() in obsmod.getrevs(self._repo, 'orphan')
-
-    def bumped(self):
-        msg = ("'context.bumped' is deprecated, "
-               "use 'context.phasedivergent'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.phasedivergent()
 
     def phasedivergent(self):
         """True if the changeset try to be a successor of a public changeset
@@ -229,12 +217,6 @@ class basectx(object):
         """
         return self.rev() in obsmod.getrevs(self._repo, 'phasedivergent')
 
-    def divergent(self):
-        msg = ("'context.divergent' is deprecated, "
-               "use 'context.contentdivergent'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.contentdivergent()
-
     def contentdivergent(self):
         """Is a successors of a changeset with multiple possible successors set
 
@@ -242,32 +224,9 @@ class basectx(object):
         """
         return self.rev() in obsmod.getrevs(self._repo, 'contentdivergent')
 
-    def troubled(self):
-        msg = ("'context.troubled' is deprecated, "
-               "use 'context.isunstable'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.isunstable()
-
     def isunstable(self):
         """True if the changeset is either unstable, bumped or divergent"""
         return self.orphan() or self.phasedivergent() or self.contentdivergent()
-
-    def troubles(self):
-        """Keep the old version around in order to avoid breaking extensions
-        about different return values.
-        """
-        msg = ("'context.troubles' is deprecated, "
-               "use 'context.instabilities'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-
-        troubles = []
-        if self.orphan():
-            troubles.append('orphan')
-        if self.phasedivergent():
-            troubles.append('bumped')
-        if self.contentdivergent():
-            troubles.append('divergent')
-        return troubles
 
     def instabilities(self):
         """return the list of instabilities affecting this changeset.

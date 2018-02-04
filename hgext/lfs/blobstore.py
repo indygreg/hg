@@ -194,11 +194,11 @@ class _gitlfsremote(object):
 
     def writebatch(self, pointers, fromstore):
         """Batch upload from local to remote blobstore."""
-        self._batch(pointers, fromstore, 'upload')
+        self._batch(_deduplicate(pointers), fromstore, 'upload')
 
     def readbatch(self, pointers, tostore):
         """Batch download from remote to local blostore."""
-        self._batch(pointers, tostore, 'download')
+        self._batch(_deduplicate(pointers), tostore, 'download')
 
     def _batchrequest(self, pointers, action):
         """Get metadata about objects pointed by pointers for given action
@@ -399,13 +399,13 @@ class _dummyremote(object):
         self.vfs = lfsvfs(fullpath)
 
     def writebatch(self, pointers, fromstore):
-        for p in pointers:
+        for p in _deduplicate(pointers):
             content = fromstore.read(p.oid(), verify=True)
             with self.vfs(p.oid(), 'wb', atomictemp=True) as fp:
                 fp.write(content)
 
     def readbatch(self, pointers, tostore):
-        for p in pointers:
+        for p in _deduplicate(pointers):
             with self.vfs(p.oid(), 'rb') as fp:
                 tostore.download(p.oid(), fp)
 
@@ -443,6 +443,13 @@ _storemap = {
     'null': _nullremote,
     None: _promptremote,
 }
+
+def _deduplicate(pointers):
+    """Remove any duplicate oids that exist in the list"""
+    reduced = util.sortdict()
+    for p in pointers:
+        reduced[p.oid()] = p
+    return reduced.values()
 
 def _verify(oid, content):
     realoid = hashlib.sha256(content).hexdigest()

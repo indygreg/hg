@@ -173,8 +173,7 @@ class sshpeer(wireproto.wirepeer):
     # End of _basewirecommands interface.
 
     def _validaterepo(self, sshcmd, args, remotecmd, sshenv=None):
-        # cleanup up previous run
-        self._cleanup()
+        assert self._pipei is None
 
         cmd = '%s %s %s' % (sshcmd, args,
             util.shellquote("%s -R %s serve --stdio" %

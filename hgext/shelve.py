@@ -619,7 +619,7 @@ def unshelveabort(ui, repo, state, opts):
             repo.vfs.rename('unshelverebasestate', 'rebasestate')
             try:
                 rebase.rebase(ui, repo, **{
-                    'abort' : True
+                    r'abort' : True
                 })
             except Exception:
                 repo.vfs.rename('rebasestate', 'unshelverebasestate')
@@ -648,7 +648,7 @@ def mergefiles(ui, repo, wctx, shelvectx):
         ui.pushbuffer(True)
         cmdutil.revert(ui, repo, shelvectx, repo.dirstate.parents(),
                        *pathtofiles(repo, files),
-                       **{'no_backup': True})
+                       **{r'no_backup': True})
         ui.popbuffer()
 
 def restorebranch(ui, repo, branchtorestore):
@@ -681,7 +681,7 @@ def unshelvecontinue(ui, repo, state, opts):
         repo.vfs.rename('unshelverebasestate', 'rebasestate')
         try:
             rebase.rebase(ui, repo, **{
-                'continue' : True
+                r'continue' : True
             })
         except Exception:
             repo.vfs.rename('rebasestate', 'unshelverebasestate')
@@ -744,10 +744,10 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     ui.status(_('rebasing shelved changes\n'))
     try:
         rebase.rebase(ui, repo, **{
-            'rev': [shelvectx.rev()],
-            'dest': str(tmpwctx.rev()),
-            'keep': True,
-            'tool': opts.get('tool', ''),
+            r'rev': [shelvectx.rev()],
+            r'dest': str(tmpwctx.rev()),
+            r'keep': True,
+            r'tool': opts.get('tool', ''),
         })
     except error.InterventionRequired:
         tr.close()

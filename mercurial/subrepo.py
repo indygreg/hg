@@ -919,9 +919,13 @@ class hgsubrepo(abstractsubrepo):
     @annotatesubrepoerror
     def archive(self, archiver, prefix, match=None, decode=True):
         self._get(self._state + ('hg',))
-        total = abstractsubrepo.archive(self, archiver, prefix, match)
+        files = self.files()
+        if match:
+            files = [f for f in files if match(f)]
         rev = self._state[1]
         ctx = self._repo[rev]
+        cmdutil._prefetchfiles(self._repo, ctx, files)
+        total = abstractsubrepo.archive(self, archiver, prefix, match)
         for subpath in ctx.substate:
             s = subrepo(ctx, subpath, True)
             submatch = matchmod.subdirmatcher(subpath, match)

@@ -45,7 +45,7 @@ _keepalnum = ''.join(c for c in map(pycompat.bytechr, range(256))
                      if not c.isalnum())
 
 # The config knobs that will be altered (if unset) by ui.tweakdefaults.
-tweakrc = """
+tweakrc = b"""
 [ui]
 # The rollback command is dangerous. As a rule, don't use it.
 rollback = False

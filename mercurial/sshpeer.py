@@ -370,4 +370,5 @@ class sshpeer(wireproto.wirepeer):
             self._pipeo.flush()
         self._readerr()
 
-instance = sshpeer
+def instance(ui, path, create):
+    return sshpeer(ui, path, create=create)

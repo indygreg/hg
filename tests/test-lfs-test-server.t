@@ -177,6 +177,26 @@ Archive will prefetch blobs in a group
   ../archive/c
   ../archive/d
 
+Cat will prefetch blobs in a group
+
+  $ rm -rf .hg/store/lfs `hg config lfs.usercache`
+  $ hg cat -vr 1 a b c
+  lfs: need to transfer 3 objects (43 bytes)
+  lfs: downloading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
+  lfs: adding 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b to the usercache
+  lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
+  lfs: downloading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
+  lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
+  lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
+  lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
+  lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
+  THIS-IS-LFS
+  lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
+  THIS-IS-LFS
+  lfs: found d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 in the local lfs store
+  ANOTHER-LARGE-FILE
+
 Revert will prefetch blobs in a group
 
   $ rm -rf .hg/store/lfs

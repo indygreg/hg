@@ -3124,3 +3124,23 @@ def wrongtooltocontinue(repo, task):
     if after[1]:
         hint = after[0]
     raise error.Abort(_('no %s in progress') % task, hint=hint)
+
+class changeset_printer(logcmdutil.changesetprinter):
+
+    def __init__(self, ui, *args, **kwargs):
+        msg = ("'cmdutil.changeset_printer' is deprecated, "
+               "use 'logcmdutil.logcmdutil'")
+        ui.deprecwarn(msg, "4.6")
+        super(changeset_printer, self).__init__(ui, *args, **kwargs)
+
+def displaygraph(ui, *args, **kwargs):
+    msg = ("'cmdutil.displaygraph' is deprecated, "
+           "use 'logcmdutil.displaygraph'")
+    ui.deprecwarn(msg, "4.6")
+    return logcmdutil.displaygraph(ui, *args, **kwargs)
+
+def show_changeset(ui, *args, **kwargs):
+    msg = ("'cmdutil.show_changeset' is deprecated, "
+           "use 'logcmdutil.changesetdisplayer'")
+    ui.deprecwarn(msg, "4.6")
+    return logcmdutil.changesetdisplayer(ui, *args, **kwargs)

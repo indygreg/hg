@@ -137,6 +137,7 @@ from mercurial import (
     fileset,
     hg,
     localrepo,
+    merge,
     minifileset,
     node,
     pycompat,
@@ -330,6 +331,8 @@ def extsetup(ui):
 
     wrapfunction(hg, 'clone', wrapper.hgclone)
     wrapfunction(hg, 'postshare', wrapper.hgpostshare)
+
+    wrapfunction(merge, 'applyupdates', wrapper.mergemodapplyupdates)
 
     # Make bundle choose changegroup3 instead of changegroup2. This affects
     # "hg bundle" command. Note: it does not cover all bundle formats like

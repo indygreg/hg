@@ -249,6 +249,42 @@ def hgpostshare(orig, sourcerepo, destrepo, bookmarks=True, defaultpath=None):
     if 'lfs' in destrepo.requirements:
         destrepo.vfs.append('hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
 
+def _prefetchfiles(repo, ctx, files):
+    """Ensure that required LFS blobs are present, fetching them as a group if
+    needed.
+
+    This is centralized logic for various prefetch hooks."""
+    pointers = []
+    localstore = repo.svfs.lfslocalblobstore
+
+    for f in files:
+        p = pointerfromctx(ctx, f)
+        if p and not localstore.has(p.oid()):
+            p.filename = f
+            pointers.append(p)
+
+    if pointers:
+        repo.svfs.lfsremoteblobstore.readbatch(pointers, localstore)
+
+def mergemodapplyupdates(orig, repo, actions, wctx, mctx, overwrite,
+                         labels=None):
+    """Ensure that the required LFS blobs are present before applying updates,
+    fetching them as a group if needed.
+
+    This has the effect of ensuring all necessary LFS blobs are present before
+    making working directory changes during an update (including after clone and
+    share) or merge."""
+
+    # Skipping 'a', 'am', 'f', 'r', 'dm', 'e', 'k', 'p' and 'pr', because they
+    # don't touch mctx.  'cd' is skipped, because changed/deleted never resolves
+    # to something from the remote side.
+    oplist = [actions[a] for a in 'g dc dg m'.split()]
+
+    _prefetchfiles(repo, mctx,
+                   [f for sublist in oplist for f, args, msg in sublist])
+
+    return orig(repo, actions, wctx, mctx, overwrite, labels)
+
 def _canskipupload(repo):
     # if remotestore is a null store, upload is a no-op and can be skipped
     return isinstance(repo.svfs.lfsremoteblobstore, blobstore._nullremote)

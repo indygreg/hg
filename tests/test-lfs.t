@@ -760,7 +760,6 @@ Damaging a file required by the update destination fails the update.
   $ hg --config lfs.usercache=emptycache clone -v repo5 fromcorrupt2
   updating to branch default
   resolving manifests
-  getting l
   abort: corrupt remote lfs object: 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
   [255]
 

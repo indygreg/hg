@@ -54,24 +54,16 @@ class prehelloserver(wireprotoserver.sshserver):
 
 class extrahandshakecommandspeer(sshpeer.sshpeer):
     """An ssh peer that sends extra commands as part of initial handshake."""
-    # There isn't a good hook point. So we wrap _callstream() and inject
-    # logic when the peer says "hello".
-    def _callstream(self, cmd, **args):
-        if cmd != b'hello':
-            return super(extrahandshakecommandspeer, self)._callstream(cmd,
-                                                                       **args)
-
+    def _validaterepo(self):
         mode = self._ui.config(b'sshpeer', b'handshake-mode')
         if mode == b'pre-no-args':
             self._callstream(b'no-args')
-            return super(extrahandshakecommandspeer, self)._callstream(
-                cmd, **args)
+            return super(extrahandshakecommandspeer, self)._validaterepo()
         elif mode == b'pre-multiple-no-args':
             self._callstream(b'unknown1')
             self._callstream(b'unknown2')
             self._callstream(b'unknown3')
-            return super(extrahandshakecommandspeer, self)._callstream(
-                cmd, **args)
+            return super(extrahandshakecommandspeer, self)._validaterepo()
         else:
             raise error.ProgrammingError(b'unknown HANDSHAKECOMMANDMODE: %s' %
                                          mode)

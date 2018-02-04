@@ -1614,7 +1614,7 @@ class ui(object):
                      msg, *calframe[stacklevel][1:4])
             curframe = calframe = None  # avoid cycles
 
-    def deprecwarn(self, msg, version):
+    def deprecwarn(self, msg, version, stacklevel=2):
         """issue a deprecation warning
 
         - msg: message explaining what is deprecated and how to upgrade,
@@ -1625,7 +1625,7 @@ class ui(object):
             return
         msg += ("\n(compatibility will be dropped after Mercurial-%s,"
                 " update your code.)") % version
-        self.develwarn(msg, stacklevel=2, config='deprec-warn')
+        self.develwarn(msg, stacklevel=stacklevel, config='deprec-warn')
 
     def exportableenviron(self):
         """The environment variables that are safe to export, e.g. through

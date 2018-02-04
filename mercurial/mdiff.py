@@ -236,7 +236,7 @@ def allblocks(text1, text2, opts=None, lines1=None, lines2=None):
             yield s, type
         yield s1, '='
 
-def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts, check_binary=True):
+def unidiff(a, ad, b, bd, fn1, fn2, binary, opts=defaultopts):
     """Return a unified diff as a (headers, hunks) tuple.
 
     If the diff is not null, `headers` is a list with unified diff header
@@ -244,8 +244,7 @@ def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts, check_binary=True):
     (hunkrange, hunklines) coming from _unidiff().
     Otherwise, `headers` and `hunks` are empty.
 
-    Setting `check_binary` to false will skip the binary check, i.e. when
-    it has been done in advance. Files are expected to be text in this case.
+    Set binary=True if either a or b should be taken as a binary file.
     """
     def datetag(date, fn=None):
         if not opts.git and not opts.nodates:
@@ -269,7 +268,7 @@ def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts, check_binary=True):
     fn1 = util.pconvert(fn1)
     fn2 = util.pconvert(fn2)
 
-    if not opts.text and check_binary and (util.binary(a) or util.binary(b)):
+    if binary:
         if a and b and len(a) == len(b) and a == b:
             return sentinel
         headerlines = []

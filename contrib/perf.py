@@ -1088,7 +1088,7 @@ def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
         for left, right in textpairs:
             # The date strings don't matter, so we pass empty strings.
             headerlines, hunks = mdiff.unidiff(
-                left, '', right, '', 'left', 'right')
+                left, '', right, '', 'left', 'right', binary=False)
             # consume iterators in roughly the way patch.py does
             b'\n'.join(headerlines)
             b''.join(sum((list(hlines) for hrange, hlines in hunks), []))

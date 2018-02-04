@@ -114,6 +114,23 @@ class doublepipe(object):
     def flush(self):
         return self._main.flush()
 
+def _cleanuppipes(ui, pipei, pipeo, pipee):
+    """Clean up pipes used by an SSH connection."""
+    if pipeo:
+        pipeo.close()
+    if pipei:
+        pipei.close()
+
+    if pipee:
+        # Try to read from the err descriptor until EOF.
+        try:
+            for l in pipee:
+                ui.status(_('remote: '), l)
+        except (IOError, ValueError):
+            pass
+
+        pipee.close()
+
 class sshpeer(wireproto.wirepeer):
     def __init__(self, ui, path, create=False, sshstate=None):
         self._url = path
@@ -221,17 +238,7 @@ class sshpeer(wireproto.wirepeer):
         raise exception
 
     def _cleanup(self):
-        if self._pipeo is None:
-            return
-        self._pipeo.close()
-        self._pipei.close()
-        try:
-            # read the error descriptor until EOF
-            for l in self._pipee:
-                self.ui.status(_("remote: "), l)
-        except (IOError, ValueError):
-            pass
-        self._pipee.close()
+        _cleanuppipes(self.ui, self._pipei, self._pipeo, self._pipee)
 
     __del__ = _cleanup
 

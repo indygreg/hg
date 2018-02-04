@@ -121,13 +121,6 @@ class sshpeer(wireproto.wirepeer):
         self._pipeo = self._pipei = self._pipee = None
 
         u = util.url(path, parsequery=False, parsefragment=False)
-        if u.scheme != 'ssh' or not u.host or u.path is None:
-            self._abort(error.RepoError(_("couldn't parse location %s") % path))
-
-        util.checksafessh(path)
-
-        if u.passwd is not None:
-            self._abort(error.RepoError(_("password in URL not supported")))
 
         self._user = u.user
         self._host = u.host
@@ -371,4 +364,17 @@ class sshpeer(wireproto.wirepeer):
         self._readerr()
 
 def instance(ui, path, create):
+    """Create an SSH peer.
+
+    The returned object conforms to the ``wireproto.wirepeer`` interface.
+    """
+    u = util.url(path, parsequery=False, parsefragment=False)
+    if u.scheme != 'ssh' or not u.host or u.path is None:
+        raise error.RepoError(_("couldn't parse location %s") % path)
+
+    util.checksafessh(path)
+
+    if u.passwd is not None:
+        raise error.RepoError(_('password in URL not supported'))
+
     return sshpeer(ui, path, create=create)

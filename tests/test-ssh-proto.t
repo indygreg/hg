@@ -109,7 +109,9 @@ And test the banner with the raw protocol
   1
   
 
-Connecting to a <0.9.1 server that doesn't support the hello command
+Connecting to a <0.9.1 server that doesn't support the hello command.
+The client should refuse, as we dropped support for connecting to such
+servers.
 
   $ SSHSERVERMODE=no-hello hg --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
@@ -120,14 +122,8 @@ Connecting to a <0.9.1 server that doesn't support the hello command
   sending between command
   remote: 0
   remote: 1
-  url: ssh://user@dummy/server
-  local: no
-  pushable: yes
-
-The client should interpret this as no capabilities
-
-  $ SSHSERVERMODE=no-hello hg debugcapabilities ssh://user@dummy/server
-  Main capabilities:
+  abort: no suitable response from remote hg!
+  [255]
 
 Sending an unknown command to the server results in an empty response to that command
 

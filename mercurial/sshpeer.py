@@ -242,6 +242,16 @@ def _performhandshake(ui, stdin, stdout, stderr):
             caps.update(l[:-1].split(':')[1].split())
             break
 
+    # Error if we couldn't find a response to ``hello``. This could
+    # mean:
+    #
+    # 1. Remote isn't a Mercurial server
+    # 2. Remote is a <0.9.1 Mercurial server
+    # 3. Remote is a future Mercurial server that dropped ``hello``
+    #    support.
+    if not caps:
+        badresponse()
+
     return caps
 
 class sshpeer(wireproto.wirepeer):

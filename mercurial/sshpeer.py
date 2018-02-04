@@ -162,6 +162,37 @@ def _performhandshake(ui, stdin, stdout, stderr):
         hint = ui.config('ui', 'ssherrorhint')
         raise error.RepoError(msg, hint=hint)
 
+    # The handshake consists of sending 2 wire protocol commands:
+    # ``hello`` and ``between``.
+    #
+    # The ``hello`` command (which was introduced in Mercurial 0.9.1)
+    # instructs the server to advertise its capabilities.
+    #
+    # The ``between`` command (which has existed in all Mercurial servers
+    # for as long as SSH support has existed), asks for the set of revisions
+    # between a pair of revisions.
+    #
+    # The ``between`` command is issued with a request for the null
+    # range. If the remote is a Mercurial server, this request will
+    # generate a specific response: ``1\n\n``. This represents the
+    # wire protocol encoded value for ``\n``. We look for ``1\n\n``
+    # in the output stream and know this is the response to ``between``
+    # and we're at the end of our handshake reply.
+    #
+    # The response to the ``hello`` command will be a line with the
+    # length of the value returned by that command followed by that
+    # value. If the server doesn't support ``hello`` (which should be
+    # rare), that line will be ``0\n``. Otherwise, the value will contain
+    # RFC 822 like lines. Of these, the ``capabilities:`` line contains
+    # the capabilities of the server.
+    #
+    # In addition to the responses to our command requests, the server
+    # may emit "banner" output on stdout. SSH servers are allowed to
+    # print messages to stdout on login. Issuing commands on connection
+    # allows us to flush this banner output from the server by scanning
+    # for output to our well-known ``between`` command. Of course, if
+    # the banner contains ``1\n\n``, this will throw off our detection.
+
     requestlog = ui.configbool('devel', 'debug.peer-request')
 
     try:
@@ -205,6 +236,8 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     caps = set()
     for l in reversed(lines):
+        # Look for response to ``hello`` command. Scan from the back so
+        # we don't misinterpret banner output as the command reply.
         if l.startswith('capabilities:'):
             caps.update(l[:-1].split(':')[1].split())
             break

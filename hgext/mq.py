@@ -396,11 +396,13 @@ class patchheader(object):
                 self.comments.append('')
             self.comments.append(message)
 
-    def __str__(self):
+    def __bytes__(self):
         s = '\n'.join(self.comments).rstrip()
         if not s:
             return ''
         return s + '\n\n'
+
+    __str__ = encoding.strmethod(__bytes__)
 
     def _delmsg(self):
         '''Remove existing message, keeping the rest of the comments fields.

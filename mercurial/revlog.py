@@ -621,7 +621,7 @@ class revlog(object):
         indexdata = ''
         self._initempty = True
         try:
-            f = self.opener(self.indexfile)
+            f = self._indexfp()
             if (mmapindexthreshold is not None and
                     self.opener.fstat(f).st_size >= mmapindexthreshold):
                 indexdata = util.buffer(util.mmapread(f))
@@ -681,6 +681,15 @@ class revlog(object):
     @util.propertycache
     def _compressor(self):
         return util.compengines[self._compengine].revlogcompressor()
+
+    def _indexfp(self, mode='r'):
+        """file object for the revlog's index file"""
+        args = {r'mode': mode}
+        if mode != 'r':
+            args[r'checkambig'] = self._checkambig
+        if mode == 'w':
+            args[r'atomictemp'] = True
+        return self.opener(self.indexfile, **args)
 
     def _datafp(self, mode='r'):
         """file object for the revlog's data file"""
@@ -1498,7 +1507,7 @@ class revlog(object):
             closehandle = False
         else:
             if self._inline:
-                df = self.opener(self.indexfile)
+                df = self._indexfp()
             else:
                 df = self._datafp()
             closehandle = True
@@ -1858,8 +1867,7 @@ class revlog(object):
         finally:
             df.close()
 
-        fp = self.opener(self.indexfile, 'w', atomictemp=True,
-                         checkambig=self._checkambig)
+        fp = self._indexfp('w')
         self.version &= ~FLAG_INLINE_DATA
         self._inline = False
         for i in self:
@@ -1928,7 +1936,7 @@ class revlog(object):
         dfh = None
         if not self._inline:
             dfh = self._datafp("a+")
-        ifh = self.opener(self.indexfile, "a+", checkambig=self._checkambig)
+        ifh = self._indexfp("a+")
         try:
             return self._addrevision(node, rawtext, transaction, link, p1, p2,
                                      flags, cachedelta, ifh, dfh,
@@ -2157,7 +2165,7 @@ class revlog(object):
         end = 0
         if r:
             end = self.end(r - 1)
-        ifh = self.opener(self.indexfile, "a+", checkambig=self._checkambig)
+        ifh = self._indexfp("a+")
         isize = r * self._io.size
         if self._inline:
             transaction.add(self.indexfile, end + isize, r)
@@ -2229,8 +2237,7 @@ class revlog(object):
                     # reopen the index
                     ifh.close()
                     dfh = self._datafp("a+")
-                    ifh = self.opener(self.indexfile, "a+",
-                                      checkambig=self._checkambig)
+                    ifh = self._indexfp("a+")
         finally:
             if dfh:
                 dfh.close()

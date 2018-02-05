@@ -1196,7 +1196,7 @@ class simplekeyvaluefile(object):
             if k == self.firstlinekey:
                 e = "key name '%s' is reserved" % self.firstlinekey
                 raise error.ProgrammingError(e)
-            if not k[0].isalpha():
+            if not k[0:1].isalpha():
                 e = "keys must start with a letter in a key-value file"
                 raise error.ProgrammingError(e)
             if not k.isalnum():

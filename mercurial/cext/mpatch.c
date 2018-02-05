@@ -109,7 +109,13 @@ static PyObject *patches(PyObject *self, PyObject *args)
 		goto cleanup;
 	}
 	out = PyBytes_AsString(result);
-	r = mpatch_apply(out, in, inlen, patch);
+	/* clang-format off */
+	{
+		Py_BEGIN_ALLOW_THREADS
+		r = mpatch_apply(out, in, inlen, patch);
+		Py_END_ALLOW_THREADS
+	}
+	/* clang-format on */
 	if (r < 0) {
 		Py_DECREF(result);
 		result = NULL;

@@ -157,12 +157,21 @@ def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
     return proc, stdin, stdout, stderr
 
 class sshpeer(wireproto.wirepeer):
-    def __init__(self, ui, path, create=False, sshstate=None):
-        self._url = path
+    def __init__(self, ui, url, proc, stdin, stdout, stderr):
+        """Create a peer from an existing SSH connection.
+
+        ``proc`` is a handle on the underlying SSH process.
+        ``stdin``, ``stdout``, and ``stderr`` are handles on the stdio
+        pipes for that process.
+        """
+        self._url = url
         self._ui = ui
         # self._subprocess is unused. Keeping a handle on the process
         # holds a reference and prevents it from being garbage collected.
-        self._subprocess, self._pipei, self._pipeo, self._pipee = sshstate
+        self._subprocess = proc
+        self._pipeo = stdin
+        self._pipei = stdout
+        self._pipee = stderr
 
         self._validaterepo()
 
@@ -386,6 +395,4 @@ def instance(ui, path, create):
     proc, stdin, stdout, stderr = _makeconnection(ui, sshcmd, args, remotecmd,
                                                   remotepath, sshenv)
 
-    sshstate = (proc, stdout, stdin, stderr)
-
-    return sshpeer(ui, path, create=create, sshstate=sshstate)
+    return sshpeer(ui, path, proc, stdin, stdout, stderr)

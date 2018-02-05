@@ -214,7 +214,7 @@ class rebaseruntime(object):
             if v >= 0:
                 newrev = repo[v].hex()
             else:
-                newrev = v
+                newrev = "%d" % v
             destnode = repo[destmap[d]].hex()
             f.write("%s:%s:%s\n" % (oldrev, newrev, destnode))
         repo.ui.debug('rebase status stored\n')

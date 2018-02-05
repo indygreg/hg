@@ -234,18 +234,6 @@ docker-ubuntu-xenial: contrib/docker/ubuntu-xenial
 docker-ubuntu-xenial-ppa: contrib/docker/ubuntu-xenial
 	contrib/dockerdeb ubuntu xenial --source-only
 
-docker-ubuntu-yakkety: contrib/docker/ubuntu-yakkety
-	contrib/dockerdeb ubuntu yakkety
-
-docker-ubuntu-yakkety-ppa: contrib/docker/ubuntu-yakkety
-	contrib/dockerdeb ubuntu yakkety --source-only
-
-docker-ubuntu-zesty: contrib/docker/ubuntu-zesty
-	contrib/dockerdeb ubuntu zesty
-
-docker-ubuntu-zesty-ppa: contrib/docker/ubuntu-zesty
-	contrib/dockerdeb ubuntu zesty --source-only
-
 docker-ubuntu-artful: contrib/docker/ubuntu-artful
 	contrib/dockerdeb ubuntu artful
 
@@ -318,8 +306,6 @@ linux-wheels-i686:
 	osx deb ppa docker-debian-jessie docker-debian-stretch \
 	docker-ubuntu-trusty docker-ubuntu-trusty-ppa \
 	docker-ubuntu-xenial docker-ubuntu-xenial-ppa \
-	docker-ubuntu-yakkety docker-ubuntu-yakkety-ppa \
-	docker-ubuntu-zesty docker-ubuntu-zesty-ppa \
 	docker-ubuntu-artful docker-ubuntu-artful-ppa \
 	fedora20 docker-fedora20 fedora21 docker-fedora21 \
 	centos5 docker-centos5 centos6 docker-centos6 centos7 docker-centos7 \

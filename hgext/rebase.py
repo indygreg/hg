@@ -499,7 +499,8 @@ class rebaseruntime(object):
                 if not self.collapsef:
                     merging = p2 != nullrev
                     editform = cmdutil.mergeeditform(merging, 'rebase')
-                    editor = cmdutil.getcommiteditor(editform=editform, **opts)
+                    editor = cmdutil.getcommiteditor(editform=editform,
+                                                     **pycompat.strkwargs(opts))
                     if self.wctx.isinmemory():
                         newnode = concludememorynode(repo, rev, p1, p2,
                             wctx=self.wctx,

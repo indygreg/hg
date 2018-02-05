@@ -127,6 +127,13 @@ class appender(object):
         self.offset += len(s)
         self._end += len(s)
 
+    def __enter__(self):
+        self.fp.__enter__()
+        return self
+
+    def __exit__(self, *args):
+        return self.fp.__exit__(*args)
+
 def _divertopener(opener, target):
     """build an opener that writes in 'target.a' instead of 'target'"""
     def _divert(name, mode='r', checkambig=False):

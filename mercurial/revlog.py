@@ -1859,12 +1859,9 @@ class revlog(object):
             fp.flush()
             fp.close()
 
-        df = self._datafp('w')
-        try:
+        with self._datafp('w') as df:
             for r in self:
                 df.write(self._getsegmentforrevs(r, r)[1])
-        finally:
-            df.close()
 
         fp = self._indexfp('w')
         self.version &= ~FLAG_INLINE_DATA

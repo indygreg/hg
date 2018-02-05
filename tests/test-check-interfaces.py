@@ -69,7 +69,8 @@ def main():
     checkobject(badpeer())
     checkobject(httppeer.httppeer(ui, 'http://localhost'))
     checkobject(localrepo.localpeer(dummyrepo()))
-    checkobject(testingsshpeer(ui, 'ssh://localhost/foo', False, ()))
+    checkobject(testingsshpeer(ui, 'ssh://localhost/foo', False,
+                               (None, None, None, None)))
     checkobject(bundlerepo.bundlepeer(dummyrepo()))
     checkobject(statichttprepo.statichttppeer(dummyrepo()))
     checkobject(unionrepo.unionpeer(dummyrepo()))

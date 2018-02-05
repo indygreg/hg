@@ -131,16 +131,40 @@ def _cleanuppipes(ui, pipei, pipeo, pipee):
 
         pipee.close()
 
+def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
+    """Create an SSH connection to a server.
+
+    Returns a tuple of (process, stdin, stdout, stderr) for the
+    spawned process.
+    """
+    cmd = '%s %s %s' % (
+        sshcmd,
+        args,
+        util.shellquote('%s -R %s serve --stdio' % (
+            _serverquote(remotecmd), _serverquote(path))))
+
+    ui.debug('running %s\n' % cmd)
+    cmd = util.quotecommand(cmd)
+
+    # no buffer allow the use of 'select'
+    # feel free to remove buffering and select usage when we ultimately
+    # move to threading.
+    stdin, stdout, stderr, proc = util.popen4(cmd, bufsize=0, env=sshenv)
+
+    stdout = doublepipe(ui, util.bufferedinputpipe(stdout), stderr)
+    stdin = doublepipe(ui, stdin, stderr)
+
+    return proc, stdin, stdout, stderr
+
 class sshpeer(wireproto.wirepeer):
     def __init__(self, ui, path, create=False, sshstate=None):
         self._url = path
         self._ui = ui
-        self._pipeo = self._pipei = self._pipee = None
+        # self._subprocess is unused. Keeping a handle on the process
+        # holds a reference and prevents it from being garbage collected.
+        self._subprocess, self._pipei, self._pipeo, self._pipee = sshstate
 
-        u = util.url(path, parsequery=False, parsefragment=False)
-        self._path = u.path or '.'
-
-        self._validaterepo(*sshstate)
+        self._validaterepo()
 
     # Begin of _basepeer interface.
 
@@ -172,28 +196,7 @@ class sshpeer(wireproto.wirepeer):
 
     # End of _basewirecommands interface.
 
-    def _validaterepo(self, sshcmd, args, remotecmd, sshenv=None):
-        assert self._pipei is None
-
-        cmd = '%s %s %s' % (sshcmd, args,
-            util.shellquote("%s -R %s serve --stdio" %
-                (_serverquote(remotecmd), _serverquote(self._path))))
-        self.ui.debug('running %s\n' % cmd)
-        cmd = util.quotecommand(cmd)
-
-        # while self._subprocess isn't used, having it allows the subprocess to
-        # to clean up correctly later
-        #
-        # no buffer allow the use of 'select'
-        # feel free to remove buffering and select usage when we ultimately
-        # move to threading.
-        sub = util.popen4(cmd, bufsize=0, env=sshenv)
-        self._pipeo, self._pipei, self._pipee, self._subprocess = sub
-
-        self._pipei = util.bufferedinputpipe(self._pipei)
-        self._pipei = doublepipe(self.ui, self._pipei, self._pipee)
-        self._pipeo = doublepipe(self.ui, self._pipeo, self._pipee)
-
+    def _validaterepo(self):
         def badresponse():
             msg = _("no suitable response from remote hg")
             hint = self.ui.config("ui", "ssherrorhint")
@@ -380,6 +383,9 @@ def instance(ui, path, create):
         if res != 0:
             raise error.RepoError(_('could not create remote repo'))
 
-    sshstate = (sshcmd, args, remotecmd, sshenv)
+    proc, stdin, stdout, stderr = _makeconnection(ui, sshcmd, args, remotecmd,
+                                                  remotepath, sshenv)
+
+    sshstate = (proc, stdout, stdin, stderr)
 
     return sshpeer(ui, path, create=create, sshstate=sshstate)

@@ -1841,7 +1841,7 @@ def _getsortargs(x):
     keyflags = []
     for k in keys.split():
         fk = k
-        reverse = (k[0] == '-')
+        reverse = (k.startswith('-'))
         if reverse:
             k = k[1:]
         if k not in _sortkeyfuncs and k != 'topo':

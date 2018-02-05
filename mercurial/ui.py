@@ -886,13 +886,17 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        if self._buffers and not opts.get(r'prompt', False):
+        if self._buffers:
             if self._bufferapplylabels:
                 label = opts.get(r'label', '')
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
                 self._buffers[-1].extend(args)
-        elif self._colormode == 'win32':
+        else:
+            self._writenobuf(*args, **opts)
+
+    def _writenobuf(self, *args, **opts):
+        if self._colormode == 'win32':
             # windows color printing is its own can of crab, defer to
             # the color module and that is it.
             color.win32print(self, self._write, *args, **opts)
@@ -1276,7 +1280,7 @@ class ui(object):
         if not self.interactive():
             self.write(msg, ' ', default or '', "\n")
             return default
-        self.write(msg, label='ui.prompt', prompt=True)
+        self._writenobuf(msg, label='ui.prompt')
         self.flush()
         try:
             r = self._readline()

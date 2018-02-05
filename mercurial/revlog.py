@@ -2335,10 +2335,9 @@ class revlog(object):
             expected = max(0, self.end(len(self) - 1))
 
         try:
-            f = self._datafp()
-            f.seek(0, 2)
-            actual = f.tell()
-            f.close()
+            with self._datafp() as f:
+                f.seek(0, 2)
+                actual = f.tell()
             dd = actual - expected
         except IOError as inst:
             if inst.errno != errno.ENOENT:

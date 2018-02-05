@@ -51,10 +51,6 @@ class dummyrepo(object):
         pass
 
 # Facilitates testing sshpeer without requiring an SSH server.
-class testingsshpeer(sshpeer.sshpeer):
-    def _validaterepo(self, *args, **kwargs):
-        pass
-
 class badpeer(httppeer.httppeer):
     def __init__(self):
         super(badpeer, self).__init__(uimod.ui(), 'http://localhost')
@@ -69,8 +65,8 @@ def main():
     checkobject(badpeer())
     checkobject(httppeer.httppeer(ui, 'http://localhost'))
     checkobject(localrepo.localpeer(dummyrepo()))
-    checkobject(testingsshpeer(ui, 'ssh://localhost/foo', None, None, None,
-                               None))
+    checkobject(sshpeer.sshpeer(ui, 'ssh://localhost/foo', None, None, None,
+                               None, None))
     checkobject(bundlerepo.bundlepeer(dummyrepo()))
     checkobject(statichttprepo.statichttppeer(dummyrepo()))
     checkobject(unionrepo.unionpeer(dummyrepo()))

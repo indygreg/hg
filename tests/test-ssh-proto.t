@@ -146,7 +146,6 @@ Sending an unknown command to the server results in an empty response to that co
 
   $ hg --config sshpeer.mode=extra-handshake-commands --config sshpeer.handshake-mode=pre-no-args --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
-  devel-peer-request: no-args
   sending no-args command
   devel-peer-request: hello
   sending hello command
@@ -182,11 +181,8 @@ Send multiple unknown commands before hello
 
   $ hg --config sshpeer.mode=extra-handshake-commands --config sshpeer.handshake-mode=pre-multiple-no-args --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
-  devel-peer-request: unknown1
   sending unknown1 command
-  devel-peer-request: unknown2
   sending unknown2 command
-  devel-peer-request: unknown3
   sending unknown3 command
   devel-peer-request: hello
   sending hello command

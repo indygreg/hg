@@ -1246,7 +1246,7 @@ class ui(object):
 
         return i
 
-    def _readline(self, prompt=''):
+    def _readline(self):
         if self._isatty(self.fin):
             try:
                 # magically add command line editing support, where
@@ -1257,11 +1257,6 @@ class ui(object):
                 # windows sometimes raises something other than ImportError
             except Exception:
                 pass
-
-        # call write() so output goes through subclassed implementation
-        # e.g. color extension on Windows
-        self.write(prompt, prompt=True)
-        self.flush()
 
         # prompt ' ' must exist; otherwise readline may delete entire line
         # - http://bugs.python.org/issue12833
@@ -1281,8 +1276,10 @@ class ui(object):
         if not self.interactive():
             self.write(msg, ' ', default or '', "\n")
             return default
+        self.write(msg, label='ui.prompt', prompt=True)
+        self.flush()
         try:
-            r = self._readline(self.label(msg, 'ui.prompt'))
+            r = self._readline()
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):

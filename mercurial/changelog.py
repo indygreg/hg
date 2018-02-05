@@ -432,7 +432,7 @@ class changelog(revlog.revlog):
             self._delaybuf = None
         self._divert = False
         # split when we're done
-        self.checkinlinesize(tr)
+        self._enforceinlinesize(tr)
 
     def _writepending(self, tr):
         "create a file containing the unfinalized state for pretxnchangegroup"
@@ -458,9 +458,9 @@ class changelog(revlog.revlog):
 
         return False
 
-    def checkinlinesize(self, tr, fp=None):
+    def _enforceinlinesize(self, tr, fp=None):
         if not self._delayed:
-            revlog.revlog.checkinlinesize(self, tr, fp)
+            revlog.revlog._enforceinlinesize(self, tr, fp)
 
     def read(self, node):
         """Obtain data from a parsed changelog revision.

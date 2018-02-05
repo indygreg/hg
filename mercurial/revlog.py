@@ -1834,7 +1834,7 @@ class revlog(object):
             raise RevlogError(_("integrity check failed on %s:%s")
                 % (self.indexfile, pycompat.bytestr(revornode)))
 
-    def checkinlinesize(self, tr, fp=None):
+    def _enforceinlinesize(self, tr, fp=None):
         """Check if the revlog is too big for inline and convert if so.
 
         This should be called after revisions are added to the revlog. If the
@@ -2145,7 +2145,7 @@ class revlog(object):
             ifh.write(entry)
             ifh.write(data[0])
             ifh.write(data[1])
-            self.checkinlinesize(transaction, ifh)
+            self._enforceinlinesize(transaction, ifh)
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
         """

@@ -621,13 +621,12 @@ class revlog(object):
         indexdata = ''
         self._initempty = True
         try:
-            f = self._indexfp()
-            if (mmapindexthreshold is not None and
-                    self.opener.fstat(f).st_size >= mmapindexthreshold):
-                indexdata = util.buffer(util.mmapread(f))
-            else:
-                indexdata = f.read()
-            f.close()
+            with self._indexfp() as f:
+                if (mmapindexthreshold is not None and
+                        self.opener.fstat(f).st_size >= mmapindexthreshold):
+                    indexdata = util.buffer(util.mmapread(f))
+                else:
+                    indexdata = f.read()
             if len(indexdata) > 0:
                 v = versionformat_unpack(indexdata[:4])[0]
                 self._initempty = False

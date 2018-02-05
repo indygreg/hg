@@ -682,6 +682,10 @@ class revlog(object):
     def _compressor(self):
         return util.compengines[self._compengine].revlogcompressor()
 
+    def _datafp(self, mode='r'):
+        """file object for the revlog's data file"""
+        return self.opener(self.datafile, mode=mode)
+
     def tip(self):
         return self.node(len(self.index) - 2)
     def __contains__(self, rev):
@@ -1496,7 +1500,7 @@ class revlog(object):
             if self._inline:
                 df = self.opener(self.indexfile)
             else:
-                df = self.opener(self.datafile)
+                df = self._datafp()
             closehandle = True
 
         # Cache data both forward and backward around the requested
@@ -1847,7 +1851,7 @@ class revlog(object):
             fp.flush()
             fp.close()
 
-        df = self.opener(self.datafile, 'w')
+        df = self._datafp('w')
         try:
             for r in self:
                 df.write(self._getsegmentforrevs(r, r)[1])
@@ -1923,7 +1927,7 @@ class revlog(object):
         """
         dfh = None
         if not self._inline:
-            dfh = self.opener(self.datafile, "a+")
+            dfh = self._datafp("a+")
         ifh = self.opener(self.indexfile, "a+", checkambig=self._checkambig)
         try:
             return self._addrevision(node, rawtext, transaction, link, p1, p2,
@@ -2161,7 +2165,7 @@ class revlog(object):
         else:
             transaction.add(self.indexfile, isize, r)
             transaction.add(self.datafile, end)
-            dfh = self.opener(self.datafile, "a+")
+            dfh = self._datafp("a+")
         def flush():
             if dfh:
                 dfh.flush()
@@ -2224,7 +2228,7 @@ class revlog(object):
                     # addrevision switched from inline to conventional
                     # reopen the index
                     ifh.close()
-                    dfh = self.opener(self.datafile, "a+")
+                    dfh = self._datafp("a+")
                     ifh = self.opener(self.indexfile, "a+",
                                       checkambig=self._checkambig)
         finally:
@@ -2328,7 +2332,7 @@ class revlog(object):
             expected = max(0, self.end(len(self) - 1))
 
         try:
-            f = self.opener(self.datafile)
+            f = self._datafp()
             f.seek(0, 2)
             actual = f.tell()
             f.close()

@@ -1863,16 +1863,16 @@ class revlog(object):
             for r in self:
                 df.write(self._getsegmentforrevs(r, r)[1])
 
-        fp = self._indexfp('w')
-        self.version &= ~FLAG_INLINE_DATA
-        self._inline = False
-        for i in self:
-            e = self._io.packentry(self.index[i], self.node, self.version, i)
-            fp.write(e)
+        with self._indexfp('w') as fp:
+            self.version &= ~FLAG_INLINE_DATA
+            self._inline = False
+            io = self._io
+            for i in self:
+                e = io.packentry(self.index[i], self.node, self.version, i)
+                fp.write(e)
 
-        # if we don't call close, the temp file will never replace the
-        # real index
-        fp.close()
+            # the temp file replace the real index when we exit the context
+            # manager
 
         tr.replace(self.indexfile, trindex * self._io.size)
         self._chunkclear()

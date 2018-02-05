@@ -281,7 +281,7 @@ class patchheader(object):
         nodeid = None
         diffstart = 0
 
-        for line in file(pf):
+        for line in open(pf, 'rb'):
             line = line.rstrip()
             if (line.startswith('diff --git')
                 or (diffstart and line.startswith('+++ '))):

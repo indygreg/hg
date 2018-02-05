@@ -15,6 +15,7 @@ from __future__ import absolute_import
 
 import binascii
 import collections
+import contextlib
 import errno
 import hashlib
 import heapq
@@ -693,6 +694,19 @@ class revlog(object):
     def _datafp(self, mode='r'):
         """file object for the revlog's data file"""
         return self.opener(self.datafile, mode=mode)
+
+    @contextlib.contextmanager
+    def _datareadfp(self, existingfp=None):
+        """file object suitable to read data"""
+        if existingfp is not None:
+            yield existingfp
+        else:
+            if self._inline:
+                func = self._indexfp
+            else:
+                func = self._datafp
+            with func() as fp:
+                yield fp
 
     def tip(self):
         return self.node(len(self.index) - 2)
@@ -1502,15 +1516,6 @@ class revlog(object):
 
         Returns a str or buffer of raw byte data.
         """
-        if df is not None:
-            closehandle = False
-        else:
-            if self._inline:
-                df = self._indexfp()
-            else:
-                df = self._datafp()
-            closehandle = True
-
         # Cache data both forward and backward around the requested
         # data, in a fixed size window. This helps speed up operations
         # involving reading the revlog backwards.
@@ -1518,10 +1523,9 @@ class revlog(object):
         realoffset = offset & ~(cachesize - 1)
         reallength = (((offset + length + cachesize) & ~(cachesize - 1))
                       - realoffset)
-        df.seek(realoffset)
-        d = df.read(reallength)
-        if closehandle:
-            df.close()
+        with self._datareadfp(df) as df:
+            df.seek(realoffset)
+            d = df.read(reallength)
         self._cachesegment(realoffset, d)
         if offset != realoffset or reallength != length:
             return util.buffer(d, offset - realoffset, length)

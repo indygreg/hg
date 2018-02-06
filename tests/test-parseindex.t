@@ -43,8 +43,8 @@ We approximate that by reducing the read buffer to 1 byte.
   > 
   > def opener(*args):
   >     o = vfs.vfs(*args)
-  >     def wrapper(*a):
-  >         f = o(*a)
+  >     def wrapper(*a, **kwargs):
+  >         f = o(*a, **kwargs)
   >         return singlebyteread(f)
   >     return wrapper
   > 

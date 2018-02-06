@@ -185,9 +185,9 @@ def uisetup(ui):
 
     # can't do this in reposetup because it needs to have happened before
     # wirerepo.__init__ is called
-    proto.ssholdcallstream = sshpeer.sshpeer._callstream
+    proto.ssholdcallstream = sshpeer.sshv1peer._callstream
     proto.httpoldcallstream = httppeer.httppeer._callstream
-    sshpeer.sshpeer._callstream = proto.sshrepocallstream
+    sshpeer.sshv1peer._callstream = proto.sshrepocallstream
     httppeer.httppeer._callstream = proto.httprepocallstream
 
     # override some extensions' stuff as well

@@ -328,7 +328,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     return caps
 
-class sshpeer(wireproto.wirepeer):
+class sshv1peer(wireproto.wirepeer):
     def __init__(self, ui, url, proc, stdin, stdout, stderr, caps):
         """Create a peer from an existing SSH connection.
 
@@ -537,4 +537,4 @@ def instance(ui, path, create):
         _cleanuppipes(ui, stdout, stdin, stderr)
         raise
 
-    return sshpeer(ui, path, proc, stdin, stdout, stderr, caps)
+    return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps)

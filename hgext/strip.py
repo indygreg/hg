@@ -181,13 +181,10 @@ def stripcmd(ui, repo, *revs, **opts):
         strippedrevs = revs.union(descendants)
         roots = revs.difference(descendants)
 
-        update = False
         # if one of the wdir parent is stripped we'll need
         # to update away to an earlier revision
-        for p in repo.dirstate.parents():
-            if p != nullid and cl.rev(p) in strippedrevs:
-                update = True
-                break
+        update = any(p != nullid and cl.rev(p) in strippedrevs
+                     for p in repo.dirstate.parents())
 
         rootnodes = set(cl.node(r) for r in roots)
 

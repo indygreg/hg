@@ -388,3 +388,107 @@ And one with arguments
   0
   0
   0
+
+Send an upgrade request to a server that doesn't support that command
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade 2e82ab3f-9ce3-4b4e-8f8c-6fd1c0e9e23a proto=irrelevant1%2Cirrelevant2
+  > hello
+  > between
+  > pairs 81
+  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  > EOF
+  0
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  1
+  
+
+  $ hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
+  devel-peer-request: hello
+  sending hello command
+  devel-peer-request: between
+  devel-peer-request:   pairs: 81 bytes
+  sending between command
+  remote: 0
+  remote: 384
+  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: 1
+  url: ssh://user@dummy/server
+  local: no
+  pushable: yes
+
+Send an upgrade request to a server that supports upgrade
+
+  $ SSHSERVERMODE=upgradev2 hg -R server serve --stdio << EOF
+  > upgrade this-is-some-token proto=exp-ssh-v2-0001
+  > hello
+  > between
+  > pairs 81
+  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  > EOF
+  upgraded this-is-some-token exp-ssh-v2-0001
+  383
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+
+  $ SSHSERVERMODE=upgradev2 hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
+  devel-peer-request: hello
+  sending hello command
+  devel-peer-request: between
+  devel-peer-request:   pairs: 81 bytes
+  sending between command
+  protocol upgraded to exp-ssh-v2-0001
+  url: ssh://user@dummy/server
+  local: no
+  pushable: yes
+
+Verify the peer has capabilities
+
+  $ SSHSERVERMODE=upgradev2 hg --config experimental.sshpeer.advertise-v2=true --debug debugcapabilities ssh://user@dummy/server
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
+  devel-peer-request: hello
+  sending hello command
+  devel-peer-request: between
+  devel-peer-request:   pairs: 81 bytes
+  sending between command
+  protocol upgraded to exp-ssh-v2-0001
+  Main capabilities:
+    batch
+    branchmap
+    $USUAL_BUNDLE2_CAPS_SERVER$
+    changegroupsubset
+    getbundle
+    known
+    lookup
+    pushkey
+    streamreqs=generaldelta,revlogv1
+    unbundle=HG10GZ,HG10BZ,HG10UN
+    unbundlehash
+  Bundle2 capabilities:
+    HG20
+    bookmarks
+    changegroup
+      01
+      02
+    digests
+      md5
+      sha1
+      sha512
+    error
+      abort
+      unsupportedcontent
+      pushraced
+      pushkey
+    hgtagsfnodes
+    listkeys
+    phases
+      heads
+    pushkey
+    remote-changegroup
+      http
+      https

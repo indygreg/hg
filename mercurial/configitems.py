@@ -574,6 +574,9 @@ coreconfigitem('experimental', 'treemanifest',
 coreconfigitem('experimental', 'update.atomic-file',
     default=False,
 )
+coreconfigitem('experimental', 'sshpeer.advertise-v2',
+    default=False,
+)
 coreconfigitem('extensions', '.*',
     default=None,
     generic=True,

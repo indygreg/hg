@@ -53,6 +53,35 @@ class prehelloserver(wireprotoserver.sshserver):
 
         super(prehelloserver, self).serve_forever()
 
+class upgradev2server(wireprotoserver.sshserver):
+    """Tests behavior for clients that issue upgrade to version 2."""
+    def serve_forever(self):
+        name = wireprotoserver.SSHV2
+        l = self._fin.readline()
+        assert l.startswith(b'upgrade ')
+        token, caps = l[:-1].split(b' ')[1:]
+        assert caps == b'proto=%s' % name
+
+        # Filter hello and between requests.
+        l = self._fin.readline()
+        assert l == b'hello\n'
+        l = self._fin.readline()
+        assert l == b'between\n'
+        l = self._fin.readline()
+        assert l == 'pairs 81\n'
+        self._fin.read(81)
+
+        # Send the upgrade response.
+        self._fout.write(b'upgraded %s %s\n' % (token, name))
+        servercaps = wireproto.capabilities(self._repo, self)
+        rsp = b'capabilities: %s' % servercaps
+        self._fout.write(b'%d\n' % len(rsp))
+        self._fout.write(rsp)
+        self._fout.write(b'\n')
+        self._fout.flush()
+
+        super(upgradev2server, self).serve_forever()
+
 def performhandshake(orig, ui, stdin, stdout, stderr):
     """Wrapped version of sshpeer._performhandshake to send extra commands."""
     mode = ui.config(b'sshpeer', b'handshake-mode')
@@ -85,6 +114,8 @@ def extsetup(ui):
         wireprotoserver.sshserver = bannerserver
     elif servermode == b'no-hello':
         wireprotoserver.sshserver = prehelloserver
+    elif servermode == b'upgradev2':
+        wireprotoserver.sshserver = upgradev2server
     elif servermode:
         raise error.ProgrammingError(b'unknown server mode: %s' % servermode)
 

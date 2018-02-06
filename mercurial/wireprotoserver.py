@@ -32,6 +32,12 @@ HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
 
+# Names of the SSH protocol implementations.
+SSHV1 = 'ssh-v1'
+# This is advertised over the wire. Incremental the counter at the end
+# to reflect BC breakages.
+SSHV2 = 'exp-ssh-v2-0001'
+
 class abstractserverproto(object):
     """abstract class that summarizes the protocol API
 

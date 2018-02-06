@@ -94,7 +94,7 @@ from mercurial import (
     revsetlang,
     scmutil,
     smartset,
-    subrepo,
+    subrepoutil,
     util,
     vfs as vfsmod,
 )
@@ -970,8 +970,8 @@ class queue(object):
                 wctx = repo[None]
                 pctx = repo['.']
                 overwrite = False
-                mergedsubstate = subrepo.submerge(repo, pctx, wctx, wctx,
-                    overwrite)
+                mergedsubstate = subrepoutil.submerge(repo, pctx, wctx, wctx,
+                                                      overwrite)
                 files += mergedsubstate.keys()
 
             match = scmutil.matchfiles(repo, files or [])

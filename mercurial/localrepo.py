@@ -57,7 +57,7 @@ from . import (
     scmutil,
     sparse,
     store,
-    subrepo,
+    subrepoutil,
     tags as tagsmod,
     transaction,
     txnutil,
@@ -1833,7 +1833,7 @@ class localrepository(object):
                 status.modified.extend(status.clean) # mq may commit clean files
 
             # check subrepos
-            subs, commitsubs, newstate = subrepo.precommit(
+            subs, commitsubs, newstate = subrepoutil.precommit(
                 self.ui, wctx, status, match, force=force)
 
             # make sure all explicit patterns are matched
@@ -1870,10 +1870,10 @@ class localrepository(object):
                 for s in sorted(commitsubs):
                     sub = wctx.sub(s)
                     self.ui.status(_('committing subrepository %s\n') %
-                        subrepo.subrelpath(sub))
+                                   subrepoutil.subrelpath(sub))
                     sr = sub.commit(cctx._text, user, date)
                     newstate[s] = (newstate[s][0], sr)
-                subrepo.writestate(self, newstate)
+                subrepoutil.writestate(self, newstate)
 
             p1, p2 = self.dirstate.parents()
             hookp1, hookp2 = hex(p1), (p2 != nullid and hex(p2) or '')
@@ -1983,7 +1983,7 @@ class localrepository(object):
             self.hook('pretxncommit', throw=True, node=hex(n), parent1=xp1,
                       parent2=xp2)
             # set the new commit is proper phase
-            targetphase = subrepo.newcommitphase(self.ui, ctx)
+            targetphase = subrepoutil.newcommitphase(self.ui, ctx)
             if targetphase:
                 # retract boundary do not alter parent changeset.
                 # if a parent have higher the resulting phase will

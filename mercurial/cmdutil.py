@@ -40,6 +40,7 @@ from . import (
     rewriteutil,
     scmutil,
     smartset,
+    subrepoutil,
     templater,
     util,
     vfs as vfsmod,
@@ -2307,13 +2308,12 @@ def amend(ui, repo, old, extra, pats, opts):
         # subrepo.precommit(). To minimize the risk of this hack, we do
         # nothing if .hgsub does not exist.
         if '.hgsub' in wctx or '.hgsub' in old:
-            from . import subrepo  # avoid cycle: cmdutil -> subrepo -> cmdutil
-            subs, commitsubs, newsubstate = subrepo.precommit(
+            subs, commitsubs, newsubstate = subrepoutil.precommit(
                 ui, wctx, wctx._status, matcher)
             # amend should abort if commitsubrepos is enabled
             assert not commitsubs
             if subs:
-                subrepo.writestate(repo, newsubstate)
+                subrepoutil.writestate(repo, newsubstate)
 
         filestoamend = set(f for f in wctx.files() if matcher(f))
 

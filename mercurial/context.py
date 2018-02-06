@@ -46,6 +46,7 @@ from . import (
     scmutil,
     sparse,
     subrepo,
+    subrepoutil,
     util,
 )
 
@@ -173,7 +174,7 @@ class basectx(object):
 
     @propertycache
     def substate(self):
-        return subrepo.state(self, self._repo.ui)
+        return subrepoutil.state(self, self._repo.ui)
 
     def subrev(self, subpath):
         return self.substate[subpath][1]

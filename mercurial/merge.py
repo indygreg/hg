@@ -31,7 +31,7 @@ from . import (
     obsutil,
     pycompat,
     scmutil,
-    subrepo,
+    subrepoutil,
     util,
     worker,
 )
@@ -1445,7 +1445,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     z = 0
 
     if [a for a in actions['r'] if a[0] == '.hgsubstate']:
-        subrepo.submerge(repo, wctx, mctx, wctx, overwrite, labels)
+        subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
 
     # record path conflicts
     for f, args, msg in actions['p']:
@@ -1495,7 +1495,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     updated = len(actions['g'])
 
     if [a for a in actions['g'] if a[0] == '.hgsubstate']:
-        subrepo.submerge(repo, wctx, mctx, wctx, overwrite, labels)
+        subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
 
     # forget (manifest only, just log it) (must come first)
     for f, args, msg in actions['f']:
@@ -1583,8 +1583,8 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
             z += 1
             progress(_updating, z, item=f, total=numupdates, unit=_files)
             if f == '.hgsubstate': # subrepo states need updating
-                subrepo.submerge(repo, wctx, mctx, wctx.ancestor(mctx),
-                                 overwrite, labels)
+                subrepoutil.submerge(repo, wctx, mctx, wctx.ancestor(mctx),
+                                     overwrite, labels)
                 continue
             wctx[f].audit()
             complete, r = ms.preresolve(f, wctx)
@@ -1913,7 +1913,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
 
         # Prompt and create actions. Most of this is in the resolve phase
         # already, but we can't handle .hgsubstate in filemerge or
-        # subrepo.submerge yet so we have to keep prompting for it.
+        # subrepoutil.submerge yet so we have to keep prompting for it.
         if '.hgsubstate' in actionbyfile:
             f = '.hgsubstate'
             m, args, msg = actionbyfile[f]

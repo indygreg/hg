@@ -563,12 +563,7 @@ class mercurial_source(common.converter_source):
                 if copysource in self.ignored:
                     continue
                 # Ignore copy sources not in parent revisions
-                found = False
-                for p in parents:
-                    if copysource in p:
-                        found = True
-                        break
-                if not found:
+                if not any(copysource in p for p in parents):
                     continue
                 copies[name] = copysource
             except TypeError:

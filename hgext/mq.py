@@ -1555,12 +1555,8 @@ class queue(object):
                         update = True
             else:
                 parents = [p.node() for p in repo[None].parents()]
-                needupdate = False
-                for entry in self.applied[start:]:
-                    if entry.node in parents:
-                        needupdate = True
-                        break
-                update = needupdate
+                update = any(entry.node in parents
+                             for entry in self.applied[start:])
 
             tobackup = set()
             if update:

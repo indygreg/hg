@@ -110,7 +110,8 @@ patches(PyObject *self, PyObject *args)
 		goto cleanup;
 	}
 	out = PyBytes_AsString(result);
-	if ((r = mpatch_apply(out, in, inlen, patch)) < 0) {
+	r = mpatch_apply(out, in, inlen, patch);
+	if (r < 0) {
 		Py_DECREF(result);
 		result = NULL;
 	}

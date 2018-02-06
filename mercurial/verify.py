@@ -456,12 +456,7 @@ class verifier(object):
                     if rp:
                         if lr is not None and ui.verbose:
                             ctx = lrugetctx(lr)
-                            found = False
-                            for pctx in ctx.parents():
-                                if rp[0] in pctx:
-                                    found = True
-                                    break
-                            if not found:
+                            if not any(rp[0] in pctx for pctx in ctx.parents()):
                                 self.warn(_("warning: copy source of '%s' not"
                                             " in parents of %s") % (f, ctx))
                         fl2 = repo.file(rp[0])

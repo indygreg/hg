@@ -357,12 +357,8 @@ def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
     samestat = getattr(os.path, 'samestat', None)
     if followsym and samestat is not None:
         def adddir(dirlst, dirname):
-            match = False
             dirstat = os.stat(dirname)
-            for lstdirstat in dirlst:
-                if samestat(dirstat, lstdirstat):
-                    match = True
-                    break
+            match = any(samestat(dirstat, lstdirstat) for lstdirstat in dirlst)
             if not match:
                 dirlst.append(dirstat)
             return not match

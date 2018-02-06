@@ -48,7 +48,7 @@
  * have such machine, set to NULL.
  */
 #ifndef HG_GATEWAY
-#define HG_GATEWAY     "gateway"
+#define HG_GATEWAY "gateway"
 #endif
 
 /*
@@ -56,7 +56,7 @@
  * NULL.
  */
 #ifndef HG_HOST
-#define HG_HOST         "mercurial"
+#define HG_HOST "mercurial"
 #endif
 
 /*
@@ -64,7 +64,7 @@
  * host username are same, set to NULL.
  */
 #ifndef HG_USER
-#define HG_USER         "hg"
+#define HG_USER "hg"
 #endif
 
 /*
@@ -72,14 +72,14 @@
  * validate location of repo when someone is try to access, set to NULL.
  */
 #ifndef HG_ROOT
-#define HG_ROOT         "/home/hg/repos"
+#define HG_ROOT "/home/hg/repos"
 #endif
 
 /*
  * HG: path to the mercurial executable to run.
  */
 #ifndef HG
-#define HG              "/home/hg/bin/hg"
+#define HG "/home/hg/bin/hg"
 #endif
 
 /*
@@ -88,7 +88,7 @@
  * impossible, set to NULL.
  */
 #ifndef HG_SHELL
-#define HG_SHELL        NULL
+#define HG_SHELL NULL
 /* #define HG_SHELL        "/bin/bash" */
 #endif
 
@@ -97,7 +97,7 @@
  * should not get helpful message, set to NULL.
  */
 #ifndef HG_HELP
-#define HG_HELP         "please contact support@example.com for help."
+#define HG_HELP "please contact support@example.com for help."
 #endif
 
 /*
@@ -106,7 +106,7 @@
  * arguments it is called with. see forward_through_gateway.
  */
 #ifndef SSH
-#define SSH             "/usr/bin/ssh"
+#define SSH "/usr/bin/ssh"
 #endif
 
 /*
@@ -249,7 +249,6 @@ enum cmdline {
 	hg_serve,
 };
 
-
 /*
  * attempt to verify that a directory is really a hg repo, by testing
  * for the existence of a subdirectory.
@@ -310,8 +309,7 @@ static void serve_data(int argc, char **argv)
 
 	if (sscanf(argv[2], "hg init %as", &repo) == 1) {
 		cmd = hg_init;
-	}
-	else if (sscanf(argv[2], "hg -R %as serve --stdio", &repo) == 1) {
+	} else if (sscanf(argv[2], "hg -R %as serve --stdio", &repo) == 1) {
 		cmd = hg_serve;
 	} else {
 		goto badargs;

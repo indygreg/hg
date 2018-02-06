@@ -553,10 +553,8 @@ class queue(object):
             for patchfn in patches:
                 patchf = self.opener(patchfn, 'r')
                 # if the patch was a git patch, refresh it as a git patch
-                for line in patchf:
-                    if line.startswith('diff --git'):
-                        diffopts.git = True
-                        break
+                diffopts.git = any(line.startswith('diff --git')
+                                   for line in patchf)
                 patchf.close()
         return diffopts
 

@@ -90,6 +90,11 @@ class appender(object):
         return self.offset
     def flush(self):
         pass
+
+    @property
+    def closed(self):
+        return self.fp.closed
+
     def close(self):
         self.fp.close()
 

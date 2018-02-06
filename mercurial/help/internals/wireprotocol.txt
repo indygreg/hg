@@ -10,11 +10,43 @@ return multiple response types.
 The protocol is synchronous and does not support multiplexing (concurrent
 commands).
 
-Transport Protocols
-===================
+Handshake
+=========
 
-HTTP Transport
---------------
+It is required or common for clients to perform a *handshake* when connecting
+to a server. The handshake serves the following purposes:
+
+* Negotiating protocol/transport level options
+* Allows the client to learn about server capabilities to influence
+  future requests
+* Ensures the underlying transport channel is in a *clean* state
+
+An important goal of the handshake is to allow clients to use more modern
+wire protocol features. By default, clients must assume they are talking
+to an old version of Mercurial server (possibly even the very first
+implementation). So, clients should not attempt to call or utilize modern
+wire protocol features until they have confirmation that the server
+supports them. The handshake implementation is designed to allow both
+ends to utilize the latest set of features and capabilities with as
+few round trips as possible.
+
+The handshake mechanism varies by transport and protocol and is documented
+in the sections below.
+
+HTTP Protocol
+=============
+
+Handshake
+---------
+
+The client sends a ``capabilities`` command request (``?cmd=capabilities``)
+as soon as HTTP requests may be issued.
+
+The server responds with a capabilities string, which the client parses to
+learn about the server's abilities.
+
+HTTP Version 1 Transport
+------------------------
 
 Commands are issued as HTTP/1.0 or HTTP/1.1 requests. Commands are
 sent to the base URL of the repository with the command name sent in
@@ -112,11 +144,86 @@ A command returning a ``stream`` response issues a
 ``application/mercurial-0.*`` media type and the HTTP response is typically
 using *chunked transfer* (``Transfer-Encoding: chunked``).
 
-SSH Transport
-=============
+SSH Protocol
+============
 
-The SSH transport is a custom text-based protocol suitable for use over any
-bi-directional stream transport. It is most commonly used with SSH.
+Handshake
+---------
+
+For all clients, the handshake consists of the client sending 1 or more
+commands to the server using version 1 of the transport. Servers respond
+to commands they know how to respond to and send an empty response (``0\n``)
+for unknown commands (per standard behavior of version 1 of the transport).
+Clients then typically look for a response to the newest sent command to
+determine which transport version to use and what the available features for
+the connection and server are.
+
+Preceding any response from client-issued commands, the server may print
+non-protocol output. It is common for SSH servers to print banners, message
+of the day announcements, etc when clients connect. It is assumed that any
+such *banner* output will precede any Mercurial server output. So clients
+must be prepared to handle server output on initial connect that isn't
+in response to any client-issued command and doesn't conform to Mercurial's
+wire protocol. This *banner* output should only be on stdout. However,
+some servers may send output on stderr.
+
+Pre 0.9.1 clients issue a ``between`` command with the ``pairs`` argument
+having the value
+``0000000000000000000000000000000000000000-0000000000000000000000000000000000000000``.
+
+The ``between`` command has been supported since the original Mercurial
+SSH server. Requesting the empty range will return a ``\n`` string response,
+which will be encoded as ``1\n\n`` (value length of ``1`` followed by a newline
+followed by the value, which happens to be a newline).
+
+For pre 0.9.1 clients and all servers, the exchange looks like::
+
+   c: between\n
+   c: pairs 81\n
+   c: 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: 1\n
+   s: \n
+
+0.9.1+ clients send a ``hello`` command (with no arguments) before the
+``between`` command. The response to this command allows clients to
+discover server capabilities and settings.
+
+An example exchange between 0.9.1+ clients and a ``hello`` aware server looks
+like::
+
+   c: hello\n
+   c: between\n
+   c: pairs 81\n
+   c: 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: 324\n
+   s: capabilities: lookup changegroupsubset branchmap pushkey known getbundle ...\n
+   s: 1\n
+   s: \n
+
+And a similar scenario but with servers sending a banner on connect::
+
+   c: hello\n
+   c: between\n
+   c: pairs 81\n
+   c: 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: welcome to the server\n
+   s: if you find any issues, email someone@somewhere.com\n
+   s: 324\n
+   s: capabilities: lookup changegroupsubset branchmap pushkey known getbundle ...\n
+   s: 1\n
+   s: \n
+
+Note that output from the ``hello`` command is terminated by a ``\n``. This is
+part of the response payload and not part of the wire protocol adding a newline
+after responses. In other words, the length of the response contains the
+trailing ``\n``.
+
+SSH Version 1 Transport
+-----------------------
+
+The SSH transport (version 1) is a custom text-based protocol suitable for
+use over any bi-directional stream transport. It is most commonly used with
+SSH.
 
 A SSH transport server can be started with ``hg serve --stdio``. The stdin,
 stderr, and stdout file descriptors of the started process are used to exchange
@@ -463,53 +570,6 @@ comma-delimited list. e.g. ``HG10GZ,HG10BZ,HG10UN``. The order of values
 reflects the priority/preference of that type, where the first value is the
 most preferred type.
 
-Handshake Protocol
-==================
-
-While not explicitly required, it is common for clients to perform a
-*handshake* when connecting to a server. The handshake accomplishes 2 things:
-
-* Obtaining capabilities and other server features
-* Flushing extra server output (e.g. SSH servers may print extra text
-  when connecting that may confuse the wire protocol)
-
-This isn't a traditional *handshake* as far as network protocols go because
-there is no persistent state as a result of the handshake: the handshake is
-simply the issuing of commands and commands are stateless.
-
-The canonical clients perform a capabilities lookup at connection establishment
-time. This is because clients must assume a server only supports the features
-of the original Mercurial server implementation until proven otherwise (from
-advertised capabilities). Nearly every server running today supports features
-that weren't present in the original Mercurial server implementation. Rather
-than wait for a client to perform functionality that needs to consult
-capabilities, it issues the lookup at connection start to avoid any delay later.
-
-For HTTP servers, the client sends a ``capabilities`` command request as
-soon as the connection is established. The server responds with a capabilities
-string, which the client parses.
-
-For SSH servers, the client sends the ``hello`` command (no arguments)
-and a ``between`` command with the ``pairs`` argument having the value
-``0000000000000000000000000000000000000000-0000000000000000000000000000000000000000``.
-
-The ``between`` command has been supported since the original Mercurial
-server. Requesting the empty range will return a ``\n`` string response,
-which will be encoded as ``1\n\n`` (value length of ``1`` followed by a newline
-followed by the value, which happens to  be a newline).
-
-The ``hello`` command was later introduced. Servers supporting it will issue
-a response to that command before sending the ``1\n\n`` response to the
-``between`` command. Servers not supporting ``hello`` will send an empty
-response (``0\n``).
-
-In addition to the expected output from the ``hello`` and ``between`` commands,
-servers may also send other output, such as *message of the day (MOTD)*
-announcements. Clients assume servers will send this output before the
-Mercurial server replies to the client-issued commands. So any server output
-not conforming to the expected command responses is assumed to be not related
-to Mercurial and can be ignored.
-
 Content Negotiation
 ===================
 
@@ -519,8 +579,8 @@ have been built into commands themselves because most commands only send a
 well-defined response type and only certain commands needed to support
 functionality like compression.
 
-Currently, only the HTTP transport supports content negotiation at the protocol
-layer.
+Currently, only the HTTP version 1 transport supports content negotiation
+at the protocol layer.
 
 HTTP requests advertise supported response formats via the ``X-HgProto-<N>``
 request header, where ``<N>`` is an integer starting at 1 allowing the logical
@@ -739,7 +799,7 @@ phases
    Boolean indicating whether phases data is requested.
 
 The return type on success is a ``stream`` where the value is bundle.
-On the HTTP transport, the response is zlib compressed.
+On the HTTP version 1 transport, the response is zlib compressed.
 
 If an error occurs, a generic error response can be sent.
 
@@ -842,13 +902,14 @@ All arguments are string types.
 
 The return type is a ``string``. The value depends on the transport protocol.
 
-The SSH transport sends a string encoded integer followed by a newline
-(``\n``) which indicates operation result. The server may send additional
-output on the ``stderr`` stream that should be displayed to the user.
+The SSH version 1 transport sends a string encoded integer followed by a
+newline (``\n``) which indicates operation result. The server may send
+additional output on the ``stderr`` stream that should be displayed to the
+user.
 
-The HTTP transport sends a string encoded integer followed by a newline
-followed by additional server output that should be displayed to the user.
-This may include output from hooks, etc.
+The HTTP version 1 transport sends a string encoded integer followed by a
+newline followed by additional server output that should be displayed to
+the user. This may include output from hooks, etc.
 
 The integer result varies by namespace. ``0`` means an error has occurred
 and there should be additional output to display to the user.
@@ -912,18 +973,18 @@ is 1 fewer head.
 
 The encoding of the ``push response`` type varies by transport.
 
-For the SSH transport, this type is composed of 2 ``string`` responses: an
-empty response (``0\n``) followed by the integer result value. e.g.
-``1\n2``. So the full response might be ``0\n1\n2``.
+For the SSH version 1 transport, this type is composed of 2 ``string``
+responses: an empty response (``0\n``) followed by the integer result value.
+e.g. ``1\n2``. So the full response might be ``0\n1\n2``.
 
-For the HTTP transport, the response is a ``string`` type composed of an
-integer result value followed by a newline (``\n``) followed by string
+For the HTTP version 1 transport, the response is a ``string`` type composed
+of an integer result value followed by a newline (``\n``) followed by string
 content holding server output that should be displayed on the client (output
 hooks, etc).
 
 In some cases, the server may respond with a ``bundle2`` bundle. In this
-case, the response type is ``stream``. For the HTTP transport, the response
-is zlib compressed.
+case, the response type is ``stream``. For the HTTP version 1 transport, the
+response is zlib compressed.
 
 The server may also respond with a generic error type, which contains a string
 indicating the failure.

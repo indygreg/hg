@@ -32,4 +32,4 @@ void *reallocx(void *ptr, size_t size);
 
 int runshellcmd(const char *cmd, const char *envp[], const char *cwd);
 
-#endif  /* UTIL_H_ */
+#endif /* UTIL_H_ */

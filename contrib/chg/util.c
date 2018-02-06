@@ -62,7 +62,8 @@ void abortmsgerrno(const char *fmt, ...)
 static int debugmsgenabled = 0;
 static double debugstart = 0;
 
-static double now() {
+static double now()
+{
 	struct timeval t;
 	gettimeofday(&t, NULL);
 	return t.tv_usec / 1e6 + t.tv_sec;

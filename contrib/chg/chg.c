@@ -38,11 +38,13 @@ struct cmdserveropts {
 	const char **args;
 };
 
-static void initcmdserveropts(struct cmdserveropts *opts) {
+static void initcmdserveropts(struct cmdserveropts *opts)
+{
 	memset(opts, 0, sizeof(struct cmdserveropts));
 }
 
-static void freecmdserveropts(struct cmdserveropts *opts) {
+static void freecmdserveropts(struct cmdserveropts *opts)
+{
 	free(opts->args);
 	opts->args = NULL;
 	opts->argsize = 0;
@@ -59,12 +61,8 @@ static size_t testsensitiveflag(const char *arg)
 		const char *name;
 		size_t narg;
 	} flags[] = {
-		{"--config", 1},
-		{"--cwd", 1},
-		{"--repo", 1},
-		{"--repository", 1},
-		{"--traceback", 0},
-		{"-R", 1},
+	    {"--config", 1},     {"--cwd", 1},       {"--repo", 1},
+	    {"--repository", 1}, {"--traceback", 0}, {"-R", 1},
 	};
 	size_t i;
 	for (i = 0; i < sizeof(flags) / sizeof(flags[0]); ++i) {
@@ -89,21 +87,21 @@ static size_t testsensitiveflag(const char *arg)
 /*
  * Parse argv[] and put sensitive flags to opts->args
  */
-static void setcmdserverargs(struct cmdserveropts *opts,
-			     int argc, const char *argv[])
+static void setcmdserverargs(struct cmdserveropts *opts, int argc,
+                             const char *argv[])
 {
 	size_t i, step;
 	opts->argsize = 0;
 	for (i = 0, step = 1; i < (size_t)argc; i += step, step = 1) {
 		if (!argv[i])
-			continue;  /* pass clang-analyse */
+			continue; /* pass clang-analyse */
 		if (strcmp(argv[i], "--") == 0)
 			break;
 		size_t n = testsensitiveflag(argv[i]);
 		if (n == 0 || i + n > (size_t)argc)
 			continue;
-		opts->args = reallocx(opts->args,
-				      (n + opts->argsize) * sizeof(char *));
+		opts->args =
+		    reallocx(opts->args, (n + opts->argsize) * sizeof(char *));
 		memcpy(opts->args + opts->argsize, argv + i,
 		       sizeof(char *) * n);
 		opts->argsize += n;
@@ -180,8 +178,8 @@ static void setcmdserveropts(struct cmdserveropts *opts)
 	r = snprintf(opts->sockname, sizeof(opts->sockname), sockfmt, basename);
 	if (r < 0 || (size_t)r >= sizeof(opts->sockname))
 		abortmsg("too long TMPDIR or CHGSOCKNAME (r = %d)", r);
-	r = snprintf(opts->initsockname, sizeof(opts->initsockname),
-			"%s.%u", opts->sockname, (unsigned)getpid());
+	r = snprintf(opts->initsockname, sizeof(opts->initsockname), "%s.%u",
+	             opts->sockname, (unsigned)getpid());
 	if (r < 0 || (size_t)r >= sizeof(opts->initsockname))
 		abortmsg("too long TMPDIR or CHGSOCKNAME (r = %d)", r);
 }
@@ -208,11 +206,14 @@ static void execcmdserver(const struct cmdserveropts *opts)
 	const char *hgcmd = gethgcmd();
 
 	const char *baseargv[] = {
-		hgcmd,
-		"serve",
-		"--cmdserver", "chgunix",
-		"--address", opts->initsockname,
-		"--daemon-postexec", "chdir:/",
+	    hgcmd,
+	    "serve",
+	    "--cmdserver",
+	    "chgunix",
+	    "--address",
+	    opts->initsockname,
+	    "--daemon-postexec",
+	    "chdir:/",
 	};
 	size_t baseargvsize = sizeof(baseargv) / sizeof(baseargv[0]);
 	size_t argsize = baseargvsize + opts->argsize + 1;
@@ -237,7 +238,7 @@ static hgclient_t *retryconnectcmdserver(struct cmdserveropts *opts, pid_t pid)
 
 	debugmsg("try connect to %s repeatedly", opts->initsockname);
 
-	unsigned int timeoutsec = 60;  /* default: 60 seconds */
+	unsigned int timeoutsec = 60; /* default: 60 seconds */
 	const char *timeoutenv = getenv("CHGTIMEOUT");
 	if (timeoutenv)
 		sscanf(timeoutenv, "%u", &timeoutsec);
@@ -246,7 +247,7 @@ static hgclient_t *retryconnectcmdserver(struct cmdserveropts *opts, pid_t pid)
 		hgclient_t *hgc = hgc_open(opts->initsockname);
 		if (hgc) {
 			debugmsg("rename %s to %s", opts->initsockname,
-					opts->sockname);
+			         opts->sockname);
 			int r = rename(opts->initsockname, opts->sockname);
 			if (r != 0)
 				abortmsgerrno("cannot rename");
@@ -270,7 +271,7 @@ cleanup:
 	if (WIFEXITED(pst)) {
 		if (WEXITSTATUS(pst) == 0)
 			abortmsg("could not connect to cmdserver "
-				 "(exited with status 0)");
+			         "(exited with status 0)");
 		debugmsg("cmdserver exited with status %d", WEXITSTATUS(pst));
 		exit(WEXITSTATUS(pst));
 	} else if (WIFSIGNALED(pst)) {
@@ -284,8 +285,8 @@ cleanup:
 /* Connect to a cmdserver. Will start a new server on demand. */
 static hgclient_t *connectcmdserver(struct cmdserveropts *opts)
 {
-	const char *sockname = opts->redirectsockname[0] ?
-		opts->redirectsockname : opts->sockname;
+	const char *sockname =
+	    opts->redirectsockname[0] ? opts->redirectsockname : opts->sockname;
 	debugmsg("try connect to %s", sockname);
 	hgclient_t *hgc = hgc_open(sockname);
 	if (hgc)
@@ -339,8 +340,8 @@ static int runinstructions(struct cmdserveropts *opts, const char **insts)
 			unlink(*pinst + 7);
 		} else if (strncmp(*pinst, "redirect ", 9) == 0) {
 			int r = snprintf(opts->redirectsockname,
-					 sizeof(opts->redirectsockname),
-					 "%s", *pinst + 9);
+			                 sizeof(opts->redirectsockname), "%s",
+			                 *pinst + 9);
 			if (r < 0 || r >= (int)sizeof(opts->redirectsockname))
 				abortmsg("redirect path is too long (%d)", r);
 			needreconnect = 1;
@@ -365,10 +366,9 @@ static int runinstructions(struct cmdserveropts *opts, const char **insts)
  */
 static int isunsupported(int argc, const char *argv[])
 {
-	enum {
-		SERVE = 1,
-		DAEMON = 2,
-		SERVEDAEMON = SERVE | DAEMON,
+	enum { SERVE = 1,
+	       DAEMON = 2,
+	       SERVEDAEMON = SERVE | DAEMON,
 	};
 	unsigned int state = 0;
 	int i;
@@ -378,7 +378,7 @@ static int isunsupported(int argc, const char *argv[])
 		if (i == 0 && strcmp("serve", argv[i]) == 0)
 			state |= SERVE;
 		else if (strcmp("-d", argv[i]) == 0 ||
-			 strcmp("--daemon", argv[i]) == 0)
+		         strcmp("--daemon", argv[i]) == 0)
 			state |= DAEMON;
 	}
 	return (state & SERVEDAEMON) == SERVEDAEMON;
@@ -401,9 +401,9 @@ int main(int argc, const char *argv[], const char *envp[])
 
 	if (getenv("CHGINTERNALMARK"))
 		abortmsg("chg started by chg detected.\n"
-			 "Please make sure ${HG:-hg} is not a symlink or "
-			 "wrapper to chg. Alternatively, set $CHGHG to the "
-			 "path of real hg.");
+		         "Please make sure ${HG:-hg} is not a symlink or "
+		         "wrapper to chg. Alternatively, set $CHGHG to the "
+		         "path of real hg.");
 
 	if (isunsupported(argc - 1, argv + 1))
 		execoriginalhg(argv);
@@ -435,11 +435,11 @@ int main(int argc, const char *argv[], const char *envp[])
 		hgc_close(hgc);
 		if (++retry > 10)
 			abortmsg("too many redirections.\n"
-				 "Please make sure %s is not a wrapper which "
-				 "changes sensitive environment variables "
-				 "before executing hg. If you have to use a "
-				 "wrapper, wrap chg instead of hg.",
-				 gethgcmd());
+			         "Please make sure %s is not a wrapper which "
+			         "changes sensitive environment variables "
+			         "before executing hg. If you have to use a "
+			         "wrapper, wrap chg instead of hg.",
+			         gethgcmd());
 	}
 
 	setupsignalhandler(hgc_peerpid(hgc), hgc_peerpgid(hgc));

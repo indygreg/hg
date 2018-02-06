@@ -1,12 +1,5 @@
 # Files that just need to be migrated to the formatter.
 # Do not add new files here!
-contrib/chg/chg.c
-contrib/chg/hgclient.c
-contrib/chg/hgclient.h
-contrib/chg/procutil.c
-contrib/chg/procutil.h
-contrib/chg/util.c
-contrib/chg/util.h
 contrib/hgsh/hgsh.c
 mercurial/cext/base85.c
 mercurial/cext/bdiff.c

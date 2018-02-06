@@ -326,7 +326,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
     if not caps:
         badresponse()
 
-    return caps
+    return protoname, caps
 
 class sshv1peer(wireproto.wirepeer):
     def __init__(self, ui, url, proc, stdin, stdout, stderr, caps):
@@ -497,6 +497,12 @@ class sshv1peer(wireproto.wirepeer):
             self._pipeo.flush()
         self._readerr()
 
+class sshv2peer(sshv1peer):
+    """A peer that speakers version 2 of the transport protocol."""
+    # Currently version 2 is identical to version 1 post handshake.
+    # And handshake is performed before the peer is instantiated. So
+    # we need no custom code.
+
 def instance(ui, path, create):
     """Create an SSH peer.
 
@@ -532,9 +538,16 @@ def instance(ui, path, create):
                                                   remotepath, sshenv)
 
     try:
-        caps = _performhandshake(ui, stdin, stdout, stderr)
+        protoname, caps = _performhandshake(ui, stdin, stdout, stderr)
     except Exception:
         _cleanuppipes(ui, stdout, stdin, stderr)
         raise
 
-    return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps)
+    if protoname == wireprotoserver.SSHV1:
+        return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps)
+    elif protoname == wireprotoserver.SSHV2:
+        return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps)
+    else:
+        _cleanuppipes(ui, stdout, stdin, stderr)
+        raise error.RepoError(_('unknown version of SSH protocol: %s') %
+                              protoname)

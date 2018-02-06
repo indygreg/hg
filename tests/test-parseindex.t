@@ -41,6 +41,13 @@ We approximate that by reducing the read buffer to 1 byte.
   >     def __getattr__(self, key):
   >         return getattr(self.real, key)
   > 
+  >     def __enter__(self):
+  >         self.real.__enter__()
+  >         return self
+  > 
+  >     def __exit__(self, *args, **kwargs):
+  >         return self.real.__exit__(*args, **kwargs)
+  > 
   > def opener(*args):
   >     o = vfs.vfs(*args)
   >     def wrapper(*a, **kwargs):

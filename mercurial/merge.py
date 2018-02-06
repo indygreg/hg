@@ -25,7 +25,6 @@ from .node import (
 from . import (
     copies,
     error,
-    extensions,
     filemerge,
     match as matchmod,
     obsutil,
@@ -1992,6 +1991,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
         fsmonitorthreshold = repo.ui.configint('fsmonitor',
                                                'warn_update_file_count')
         try:
+            # avoid cycle: extensions -> cmdutil -> merge
+            from . import extensions
             extensions.find('fsmonitor')
             fsmonitorenabled = repo.ui.config('fsmonitor', 'mode') != 'off'
             # We intentionally don't look at whether fsmonitor has disabled

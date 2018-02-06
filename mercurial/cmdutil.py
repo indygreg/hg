@@ -31,6 +31,7 @@ from . import (
     formatter,
     logcmdutil,
     match as matchmod,
+    merge as mergemod,
     obsolete,
     patch,
     pathutil,
@@ -220,7 +221,6 @@ def recordfilter(ui, originalhunks, operation=None):
 
 def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
             filterfn, *pats, **opts):
-    from . import merge as mergemod
     opts = pycompat.byteskwargs(opts)
     if not ui.interactive():
         if cmdsuggest:
@@ -557,8 +557,6 @@ def _commentlines(raw):
     return '\n'.join(commentedlines) + '\n'
 
 def _conflictsmsg(repo):
-    # avoid merge cycle
-    from . import merge as mergemod
     mergestate = mergemod.mergestate.read(repo)
     if not mergestate.active():
         return

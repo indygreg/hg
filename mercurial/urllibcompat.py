@@ -47,6 +47,7 @@ if pycompat.ispy3:
         "urlparse",
         "urlunparse",
     ))
+    urlreq._registeralias(urllib.parse, "parse_qs", "parseqs")
     urlreq._registeralias(urllib.parse, "unquote_to_bytes", "unquote")
     import urllib.request
     urlreq._registeraliases(urllib.request, (
@@ -157,6 +158,7 @@ else:
         "urlparse",
         "urlunparse",
     ))
+    urlreq._registeralias(urlparse, "parse_qs", "parseqs")
     urlerr._registeraliases(urllib2, (
         "HTTPError",
         "URLError",

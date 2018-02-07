@@ -7,7 +7,6 @@
 from __future__ import absolute_import
 
 import abc
-import cgi
 import contextlib
 import struct
 import sys
@@ -134,12 +133,12 @@ class webproto(baseprotocolhandler):
         args = util.rapply(pycompat.bytesurl, self._req.form.copy())
         postlen = int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))
         if postlen:
-            args.update(cgi.parse_qs(
+            args.update(urlreq.parseqs(
                 self._req.read(postlen), keep_blank_values=True))
             return args
 
         argvalue = decodevaluefromheaders(self._req, r'X-HgArg')
-        args.update(cgi.parse_qs(argvalue, keep_blank_values=True))
+        args.update(urlreq.parseqs(argvalue, keep_blank_values=True))
         return args
 
     def forwardpayload(self, fp):

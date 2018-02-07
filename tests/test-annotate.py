@@ -27,7 +27,7 @@ class AnnotateTests(unittest.TestCase):
 
         def decorate(text, rev):
             return ([annotateline(fctx=rev, lineno=i)
-                     for i in xrange(1, text.count(b'\n') + 1)],
+                     for i in range(1, text.count(b'\n') + 1)],
                     text)
 
         # Basic usage

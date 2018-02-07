@@ -138,7 +138,7 @@ Verify line trimming of custom conflict marker using multi-byte characters
 
   $ hg up -q --clean .
   $ $PYTHON <<EOF
-  > fp = open('logfile', 'w')
+  > fp = open('logfile', 'wb')
   > fp.write(b'12345678901234567890123456789012345678901234567890' +
   >          b'1234567890') # there are 5 more columns for 80 columns
   > 

@@ -7,9 +7,9 @@ Setup:
   > command = registrar.command(cmdtable)
   > @command(b'eval', [], 'hg eval CMD')
   > def eval_(ui, repo, *cmds, **opts):
-  >     cmd = " ".join(cmds)
+  >     cmd = b" ".join(cmds)
   >     res = str(eval(cmd, globals(), locals()))
-  >     ui.warn("%s" % res)
+  >     ui.warn(b"%s" % res)
   > EOF
 
   $ echo "[extensions]" >> $HGRCPATH

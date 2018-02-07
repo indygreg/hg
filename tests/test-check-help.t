@@ -10,7 +10,7 @@
   >     import os, msvcrt
   >     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
   > topics = set()
-  > topicre = re.compile(r':hg:`help ([a-z0-9\-.]+)`')
+  > topicre = re.compile(br':hg:`help ([a-z0-9\-.]+)`')
   > for fname in sys.argv:
   >     with open(fname) as f:
   >         topics.update(m.group(1) for m in topicre.finditer(f.read()))

@@ -1272,7 +1272,7 @@ class queue(object):
                     if msg == defaultmsg.strip():
                         msg = ''
                     ph.setmessage(msg)
-                    p.write(str(ph))
+                    p.write(bytes(ph))
                     if commitfiles:
                         parent = self.qparents(repo, n)
                         if inclsubs:
@@ -1853,7 +1853,7 @@ class queue(object):
                         self.putsubstate2changes(substatestate, c)
                     chunks = patchmod.diff(repo, patchparent,
                                            changes=c, opts=diffopts)
-                    comments = str(ph)
+                    comments = bytes(ph)
                     if comments:
                         patchf.write(comments)
                     for chunk in chunks:

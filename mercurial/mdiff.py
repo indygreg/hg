@@ -465,9 +465,9 @@ def b85diff(to, tn):
     def fmtline(line):
         l = len(line)
         if l <= 26:
-            l = chr(ord('A') + l - 1)
+            l = pycompat.bytechr(ord('A') + l - 1)
         else:
-            l = chr(l - 26 + ord('a') - 1)
+            l = pycompat.bytechr(l - 26 + ord('a') - 1)
         return '%c%s\n' % (l, util.b85encode(line, True))
 
     def chunk(text, csize=52):

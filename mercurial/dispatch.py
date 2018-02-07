@@ -477,7 +477,8 @@ class cmdalias(object):
         if earlyopts:
             self.badalias = (_("error in definition for alias '%s': %s may "
                                "only be given on the command line")
-                             % (self.name, '/'.join(zip(*earlyopts)[0])))
+                             % (self.name, '/'.join(pycompat.ziplist(*earlyopts)
+                                                    [0])))
             return
         self.cmdname = cmd = args.pop(0)
         self.givenargs = args

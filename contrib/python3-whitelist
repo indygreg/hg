@@ -3,6 +3,7 @@ test-addremove-similar.t
 test-addremove.t
 test-amend-subrepo.t
 test-ancestor.py
+test-annotate.py
 test-automv.t
 test-backwards-remove.t
 test-bheads.t
@@ -29,8 +30,10 @@ test-completion.t
 test-confused-revert.t
 test-contrib-check-code.t
 test-contrib-check-commit.t
+test-copy-move-merge.t
 test-debugindexdot.t
 test-debugrename.t
+test-diff-binary-file.t
 test-diff-change.t
 test-diff-copy-depth.t
 test-diff-hashes.t
@@ -74,6 +77,7 @@ test-exchange-obsmarkers-case-D2.t
 test-exchange-obsmarkers-case-D3.t
 test-exchange-obsmarkers-case-D4.t
 test-execute-bit.t
+test-extra-filelog-entry.t
 test-filebranch.t
 test-flags.t
 test-generaldelta.t
@@ -119,9 +123,11 @@ test-merge6.t
 test-merge7.t
 test-merge8.t
 test-mq-qimport-fail-cleanup.t
+test-mq-qsave.t
 test-obshistory.t
 test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t
+test-obsolete-distributed.t
 test-parents.t
 test-permissions.t
 test-pull-branch.t
@@ -154,6 +160,9 @@ test-push-checkheads-unpushed-D5.t
 test-push-checkheads-unpushed-D6.t
 test-push-checkheads-unpushed-D7.t
 test-push-warn.t
+test-rebase-inmemory.t
+test-rebase-issue-noparam-single-rev.t
+test-rebase-transaction.t
 test-record.t
 test-rename-after-merge.t
 test-rename-dir-merge.t
@@ -164,6 +173,7 @@ test-revert-unknown.t
 test-revlog-group-emptyiter.t
 test-revlog-mmapindex.t
 test-revlog-packentry.t
+test-revset-dirstate-parents.t
 test-revset-outgoing.t
 test-run-tests.py
 test-show-stack.t
@@ -176,6 +186,7 @@ test-sparse-verbose-json.t
 test-status-terse.t
 test-strip-cross.t
 test-strip.t
+test-unamend.t
 test-uncommit.t
 test-unified-test.t
 test-unrelated-pull.t

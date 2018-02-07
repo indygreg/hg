@@ -54,12 +54,6 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                    changes=None, stat=False, fp=None, prefix='',
                    root='', listsubrepos=False, hunksfilterfn=None):
     '''show diff or diffstat.'''
-    if fp is None:
-        write = ui.write
-    else:
-        def write(s, **kw):
-            fp.write(s)
-
     if root:
         relroot = pathutil.canonpath(repo.root, repo.getcwd(), root)
     else:
@@ -85,10 +79,11 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                         hunksfilterfn=hunksfilterfn)
 
     if fp is not None or ui.canwritewithoutlabels():
+        out = fp or ui
         if stat:
             chunks = patch.diffstat(util.iterlines(chunks), width=width)
         for chunk in util.filechunkiter(util.chunkbuffer(chunks)):
-            write(chunk)
+            out.write(chunk)
     else:
         if stat:
             chunks = patch.diffstatui(util.iterlines(chunks), width=width)
@@ -100,10 +95,10 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
                 for chunk, label in chunks:
                     yield ui.label(chunk, label=label)
             for chunk in util.filechunkiter(util.chunkbuffer(gen())):
-                write(chunk)
+                ui.write(chunk)
         else:
             for chunk, label in chunks:
-                write(chunk, label=label)
+                ui.write(chunk, label=label)
 
     if listsubrepos:
         ctx1 = repo[node1]

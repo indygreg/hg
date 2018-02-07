@@ -249,6 +249,8 @@ Test files properties
 Test merge states
 
   $ hg ci -m manychanges
+  $ hg file -r . 'set:copied() & modified()'
+  [1]
   $ hg up -C 0
   * files updated, 0 files merged, * files removed, 0 files unresolved (glob)
   $ echo c >> b2

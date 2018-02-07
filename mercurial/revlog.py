@@ -77,6 +77,8 @@ REVIDX_FLAGS_ORDER = [
     REVIDX_EXTSTORED,
 ]
 REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
+# bitmark for flags that could cause rawdata content change
+REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
 
 # max size of revlog with inline data
 _maxinline = 131072
@@ -96,7 +98,8 @@ def addflagprocessor(flag, processor):
     """Register a flag processor on a revision data flag.
 
     Invariant:
-    - Flags need to be defined in REVIDX_KNOWN_FLAGS and REVIDX_FLAGS_ORDER.
+    - Flags need to be defined in REVIDX_KNOWN_FLAGS and REVIDX_FLAGS_ORDER,
+      and REVIDX_RAWTEXT_CHANGING_FLAGS if they can alter rawtext.
     - Only one flag processor can be registered on a specific flag.
     - flagprocessors must be 3-tuples of functions (read, write, raw) with the
       following signatures:
@@ -712,6 +715,18 @@ class revlog(object):
             return True
         except KeyError:
             return False
+
+    def candelta(self, baserev, rev):
+        """whether two revisions (baserev, rev) can be delta-ed or not"""
+        # Disable delta if either rev requires a content-changing flag
+        # processor (ex. LFS). This is because such flag processor can alter
+        # the rawtext content that the delta will be based on, and two clients
+        # could have a same revlog node with different flags (i.e. different
+        # rawtext contents) and the delta could be incompatible.
+        if ((self.flags(baserev) & REVIDX_RAWTEXT_CHANGING_FLAGS)
+            or (self.flags(rev) & REVIDX_RAWTEXT_CHANGING_FLAGS)):
+            return False
+        return True
 
     def clearcaches(self):
         self._cache = None

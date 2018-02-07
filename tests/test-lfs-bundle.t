@@ -95,6 +95,6 @@ Apply bundles
   2 integrity errors encountered!
   (first damaged changeset appears to be 2)
   ---- Applying src-lfs.bundle to dst-normal ----
-  CRASHED
+  OK
   ---- Applying src-lfs.bundle to dst-lfs ----
   OK

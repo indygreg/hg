@@ -349,7 +349,7 @@ enabled adds the lfs requirement
   uncompressed size of bundle content:
        * (changelog) (glob)
        * (manifests) (glob)
-       *  a (glob)
+      * a (glob)
   $ hg --config extensions.strip= strip -r 2 --no-backup --force -q
   $ hg -R bundle.hg log -p -T '{rev} {desc}\n' a
   5 branching

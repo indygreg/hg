@@ -510,16 +510,18 @@ class pushres(object):
 
     The call was successful and returned an integer contained in `self.res`.
     """
-    def __init__(self, res):
+    def __init__(self, res, output):
         self.res = res
+        self.output = output
 
 class pusherr(object):
     """wireproto reply: failure
 
     The call failed. The `self.res` attribute contains the error message.
     """
-    def __init__(self, res):
+    def __init__(self, res, output):
         self.res = res
+        self.output = output
 
 class ooberror(object):
     """wireproto reply: failure of a batch of operation
@@ -997,97 +999,98 @@ def stream(repo, proto):
 def unbundle(repo, proto, heads):
     their_heads = decodelist(heads)
 
-    try:
-        proto.redirect()
-
-        exchange.check_heads(repo, their_heads, 'preparing changes')
-
-        # write bundle data to temporary file because it can be big
-        fd, tempname = tempfile.mkstemp(prefix='hg-unbundle-')
-        fp = os.fdopen(fd, pycompat.sysstr('wb+'))
-        r = 0
+    with proto.mayberedirectstdio() as output:
         try:
-            proto.getfile(fp)
-            fp.seek(0)
-            gen = exchange.readbundle(repo.ui, fp, None)
-            if (isinstance(gen, changegroupmod.cg1unpacker)
-                and not bundle1allowed(repo, 'push')):
-                if proto.name == 'http':
-                    # need to special case http because stderr do not get to
-                    # the http client on failed push so we need to abuse some
-                    # other error type to make sure the message get to the
-                    # user.
-                    return ooberror(bundle2required)
-                raise error.Abort(bundle2requiredmain,
-                                  hint=bundle2requiredhint)
+            exchange.check_heads(repo, their_heads, 'preparing changes')
 
-            r = exchange.unbundle(repo, gen, their_heads, 'serve',
-                                  proto._client())
-            if util.safehasattr(r, 'addpart'):
-                # The return looks streamable, we are in the bundle2 case and
-                # should return a stream.
-                return streamres_legacy(gen=r.getchunks())
-            return pushres(r)
-
-        finally:
-            fp.close()
-            os.unlink(tempname)
-
-    except (error.BundleValueError, error.Abort, error.PushRaced) as exc:
-        # handle non-bundle2 case first
-        if not getattr(exc, 'duringunbundle2', False):
+            # write bundle data to temporary file because it can be big
+            fd, tempname = tempfile.mkstemp(prefix='hg-unbundle-')
+            fp = os.fdopen(fd, pycompat.sysstr('wb+'))
+            r = 0
             try:
-                raise
-            except error.Abort:
-                # The old code we moved used util.stderr directly.
-                # We did not change it to minimise code change.
-                # This need to be moved to something proper.
-                # Feel free to do it.
-                util.stderr.write("abort: %s\n" % exc)
-                if exc.hint is not None:
-                    util.stderr.write("(%s)\n" % exc.hint)
-                return pushres(0)
-            except error.PushRaced:
-                return pusherr(str(exc))
+                proto.getfile(fp)
+                fp.seek(0)
+                gen = exchange.readbundle(repo.ui, fp, None)
+                if (isinstance(gen, changegroupmod.cg1unpacker)
+                    and not bundle1allowed(repo, 'push')):
+                    if proto.name == 'http':
+                        # need to special case http because stderr do not get to
+                        # the http client on failed push so we need to abuse
+                        # some other error type to make sure the message get to
+                        # the user.
+                        return ooberror(bundle2required)
+                    raise error.Abort(bundle2requiredmain,
+                                      hint=bundle2requiredhint)
 
-        bundler = bundle2.bundle20(repo.ui)
-        for out in getattr(exc, '_bundle2salvagedoutput', ()):
-            bundler.addpart(out)
-        try:
-            try:
-                raise
-            except error.PushkeyFailed as exc:
-                # check client caps
-                remotecaps = getattr(exc, '_replycaps', None)
-                if (remotecaps is not None
-                        and 'pushkey' not in remotecaps.get('error', ())):
-                    # no support remote side, fallback to Abort handler.
+                r = exchange.unbundle(repo, gen, their_heads, 'serve',
+                                      proto._client())
+                if util.safehasattr(r, 'addpart'):
+                    # The return looks streamable, we are in the bundle2 case
+                    # and should return a stream.
+                    return streamres_legacy(gen=r.getchunks())
+                return pushres(r, output.getvalue() if output else '')
+
+            finally:
+                fp.close()
+                os.unlink(tempname)
+
+        except (error.BundleValueError, error.Abort, error.PushRaced) as exc:
+            # handle non-bundle2 case first
+            if not getattr(exc, 'duringunbundle2', False):
+                try:
                     raise
-                part = bundler.newpart('error:pushkey')
-                part.addparam('in-reply-to', exc.partid)
-                if exc.namespace is not None:
-                    part.addparam('namespace', exc.namespace, mandatory=False)
-                if exc.key is not None:
-                    part.addparam('key', exc.key, mandatory=False)
-                if exc.new is not None:
-                    part.addparam('new', exc.new, mandatory=False)
-                if exc.old is not None:
-                    part.addparam('old', exc.old, mandatory=False)
-                if exc.ret is not None:
-                    part.addparam('ret', exc.ret, mandatory=False)
-        except error.BundleValueError as exc:
-            errpart = bundler.newpart('error:unsupportedcontent')
-            if exc.parttype is not None:
-                errpart.addparam('parttype', exc.parttype)
-            if exc.params:
-                errpart.addparam('params', '\0'.join(exc.params))
-        except error.Abort as exc:
-            manargs = [('message', str(exc))]
-            advargs = []
-            if exc.hint is not None:
-                advargs.append(('hint', exc.hint))
-            bundler.addpart(bundle2.bundlepart('error:abort',
-                                               manargs, advargs))
-        except error.PushRaced as exc:
-            bundler.newpart('error:pushraced', [('message', str(exc))])
-        return streamres_legacy(gen=bundler.getchunks())
+                except error.Abort:
+                    # The old code we moved used util.stderr directly.
+                    # We did not change it to minimise code change.
+                    # This need to be moved to something proper.
+                    # Feel free to do it.
+                    util.stderr.write("abort: %s\n" % exc)
+                    if exc.hint is not None:
+                        util.stderr.write("(%s)\n" % exc.hint)
+                    return pushres(0, output.getvalue() if output else '')
+                except error.PushRaced:
+                    return pusherr(str(exc),
+                                   output.getvalue() if output else '')
+
+            bundler = bundle2.bundle20(repo.ui)
+            for out in getattr(exc, '_bundle2salvagedoutput', ()):
+                bundler.addpart(out)
+            try:
+                try:
+                    raise
+                except error.PushkeyFailed as exc:
+                    # check client caps
+                    remotecaps = getattr(exc, '_replycaps', None)
+                    if (remotecaps is not None
+                            and 'pushkey' not in remotecaps.get('error', ())):
+                        # no support remote side, fallback to Abort handler.
+                        raise
+                    part = bundler.newpart('error:pushkey')
+                    part.addparam('in-reply-to', exc.partid)
+                    if exc.namespace is not None:
+                        part.addparam('namespace', exc.namespace,
+                                      mandatory=False)
+                    if exc.key is not None:
+                        part.addparam('key', exc.key, mandatory=False)
+                    if exc.new is not None:
+                        part.addparam('new', exc.new, mandatory=False)
+                    if exc.old is not None:
+                        part.addparam('old', exc.old, mandatory=False)
+                    if exc.ret is not None:
+                        part.addparam('ret', exc.ret, mandatory=False)
+            except error.BundleValueError as exc:
+                errpart = bundler.newpart('error:unsupportedcontent')
+                if exc.parttype is not None:
+                    errpart.addparam('parttype', exc.parttype)
+                if exc.params:
+                    errpart.addparam('params', '\0'.join(exc.params))
+            except error.Abort as exc:
+                manargs = [('message', str(exc))]
+                advargs = []
+                if exc.hint is not None:
+                    advargs.append(('hint', exc.hint))
+                bundler.addpart(bundle2.bundlepart('error:abort',
+                                                   manargs, advargs))
+            except error.PushRaced as exc:
+                bundler.newpart('error:pushraced', [('message', str(exc))])
+            return streamres_legacy(gen=bundler.getchunks())

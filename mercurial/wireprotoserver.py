@@ -320,15 +320,13 @@ def _callhttp(repo, req, proto, cmd):
         req.respond(HTTP_OK, mediatype)
         return gen
     elif isinstance(rsp, wireproto.pushres):
-        val = proto.restore()
-        rsp = '%d\n%s' % (rsp.res, val)
+        rsp = '%d\n%s' % (rsp.res, rsp.output)
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireproto.pusherr):
         # This is the httplib workaround documented in _handlehttperror().
         req.drain()
 
-        proto.restore()
         rsp = '0\n%s\n' % rsp.res
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []

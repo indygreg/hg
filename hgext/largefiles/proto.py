@@ -34,27 +34,26 @@ httpoldcallstream = None
 def putlfile(repo, proto, sha):
     '''Server command for putting a largefile into a repository's local store
     and into the user cache.'''
-    proto.redirect()
+    with proto.mayberedirectstdio() as output:
+        path = lfutil.storepath(repo, sha)
+        util.makedirs(os.path.dirname(path))
+        tmpfp = util.atomictempfile(path, createmode=repo.store.createmode)
 
-    path = lfutil.storepath(repo, sha)
-    util.makedirs(os.path.dirname(path))
-    tmpfp = util.atomictempfile(path, createmode=repo.store.createmode)
+        try:
+            proto.getfile(tmpfp)
+            tmpfp._fp.seek(0)
+            if sha != lfutil.hexsha1(tmpfp._fp):
+                raise IOError(0, _('largefile contents do not match hash'))
+            tmpfp.close()
+            lfutil.linktousercache(repo, sha)
+        except IOError as e:
+            repo.ui.warn(_('largefiles: failed to put %s into store: %s\n') %
+                         (sha, e.strerror))
+            return wireproto.pushres(1, output.getvalue() if output else '')
+        finally:
+            tmpfp.discard()
 
-    try:
-        proto.getfile(tmpfp)
-        tmpfp._fp.seek(0)
-        if sha != lfutil.hexsha1(tmpfp._fp):
-            raise IOError(0, _('largefile contents do not match hash'))
-        tmpfp.close()
-        lfutil.linktousercache(repo, sha)
-    except IOError as e:
-        repo.ui.warn(_('largefiles: failed to put %s into store: %s\n') %
-                     (sha, e.strerror))
-        return wireproto.pushres(1)
-    finally:
-        tmpfp.discard()
-
-    return wireproto.pushres(0)
+    return wireproto.pushres(0, output.getvalue() if output else '')
 
 def getlfile(repo, proto, sha):
     '''Server command for retrieving a largefile from the repository-local

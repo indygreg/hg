@@ -1326,8 +1326,10 @@ def cat(ui, repo, file1, *pats, **opts):
                                'directory (only a repository)')),
     ('u', 'updaterev', '', _('revision, tag, or branch to check out'),
         _('REV')),
-    ('r', 'rev', [], _('include the specified changeset'), _('REV')),
-    ('b', 'branch', [], _('clone only the specified branch'), _('BRANCH')),
+    ('r', 'rev', [], _('do not clone everything, but include this changeset'
+                       ' and its ancestors'), _('REV')),
+    ('b', 'branch', [], _('do not clone everything, but include this branch\'s'
+                          ' changesets and their ancestors'), _('BRANCH')),
     ('', 'pull', None, _('use pull protocol to copy metadata')),
     ('', 'uncompressed', None,
        _('an alias to --stream (DEPRECATED)')),

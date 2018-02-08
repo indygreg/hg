@@ -17,7 +17,8 @@
 Test a normal behaving server, for sanity
 
   $ hg --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   devel-peer-request: hello
   sending hello command
   devel-peer-request: between
@@ -63,7 +64,8 @@ SSH banner is not printed by default, ignored by clients
 --debug will print the banner
 
   $ SSHSERVERMODE=banner hg --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   devel-peer-request: hello
   sending hello command
   devel-peer-request: between
@@ -114,7 +116,8 @@ The client should refuse, as we dropped support for connecting to such
 servers.
 
   $ SSHSERVERMODE=no-hello hg --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   devel-peer-request: hello
   sending hello command
   devel-peer-request: between
@@ -141,7 +144,8 @@ Sending an unknown command to the server results in an empty response to that co
   
 
   $ hg --config sshpeer.mode=extra-handshake-commands --config sshpeer.handshake-mode=pre-no-args --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending no-args command
   devel-peer-request: hello
   sending hello command
@@ -176,7 +180,8 @@ Send multiple unknown commands before hello
   
 
   $ hg --config sshpeer.mode=extra-handshake-commands --config sshpeer.handshake-mode=pre-multiple-no-args --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending unknown1 command
   sending unknown2 command
   sending unknown3 command
@@ -405,7 +410,8 @@ Send an upgrade request to a server that doesn't support that command
   
 
   $ hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
   devel-peer-request: hello
   sending hello command
@@ -434,7 +440,8 @@ Send an upgrade request to a server that supports upgrade
   capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
 
   $ SSHSERVERMODE=upgradev2 hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
   devel-peer-request: hello
   sending hello command
@@ -449,7 +456,8 @@ Send an upgrade request to a server that supports upgrade
 Verify the peer has capabilities
 
   $ SSHSERVERMODE=upgradev2 hg --config experimental.sshpeer.advertise-v2=true --debug debugcapabilities ssh://user@dummy/server
-  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob)
+  running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
+  running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
   devel-peer-request: hello
   sending hello command

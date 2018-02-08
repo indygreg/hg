@@ -390,7 +390,8 @@ Test debugpeer
   pushable: yes
 
   $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" --debug debugpeer ssh://user@dummy/debugrevlog
-  running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob)
+  running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob) (no-windows !)
+  running "*" "*\tests/dummyssh" "user@dummy" "hg -R debugrevlog serve --stdio" (glob) (windows !)
   devel-peer-request: hello
   sending hello command
   devel-peer-request: between

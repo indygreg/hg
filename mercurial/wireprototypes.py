@@ -5,6 +5,11 @@
 
 from __future__ import absolute_import
 
+class bytesresponse(object):
+    """A wire protocol response consisting of raw bytes."""
+    def __init__(self, data):
+        self.data = data
+
 class ooberror(object):
     """wireproto reply: failure of a batch of operation
 

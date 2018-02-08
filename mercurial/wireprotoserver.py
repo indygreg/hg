@@ -274,6 +274,9 @@ def _callhttp(repo, req, proto, cmd):
     if isinstance(rsp, bytes):
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
+    elif isinstance(rsp, wireprototypes.bytesresponse):
+        req.respond(HTTP_OK, HGTYPE, body=rsp.data)
+        return []
     elif isinstance(rsp, wireprototypes.streamreslegacy):
         gen = rsp.gen
         req.respond(HTTP_OK, HGTYPE)
@@ -435,6 +438,8 @@ class sshserver(object):
 
             if isinstance(rsp, bytes):
                 _sshv1respondbytes(self._fout, rsp)
+            elif isinstance(rsp, wireprototypes.bytesresponse):
+                _sshv1respondbytes(self._fout, rsp.data)
             elif isinstance(rsp, wireprototypes.streamres):
                 _sshv1respondstream(self._fout, rsp)
             elif isinstance(rsp, wireprototypes.streamreslegacy):

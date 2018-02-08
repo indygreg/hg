@@ -1,8 +1,10 @@
 from __future__ import absolute_import, print_function
 
 from mercurial import (
+    error,
     util,
     wireproto,
+    wireprototypes,
 )
 stringio = util.stringio
 
@@ -42,7 +44,13 @@ class clientpeer(wireproto.wirepeer):
         return ['batch']
 
     def _call(self, cmd, **args):
-        return wireproto.dispatch(self.serverrepo, proto(args), cmd)
+        res = wireproto.dispatch(self.serverrepo, proto(args), cmd)
+        if isinstance(res, wireprototypes.bytesresponse):
+            return res.data
+        elif isinstance(res, bytes):
+            return res
+        else:
+            raise error.Abort('dummy client does not support response type')
 
     def _callstream(self, cmd, **args):
         return stringio(self._call(cmd, **args))

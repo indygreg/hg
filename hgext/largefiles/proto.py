@@ -14,6 +14,7 @@ from mercurial import (
     httppeer,
     util,
     wireproto,
+    wireprototypes,
 )
 
 from . import (
@@ -85,8 +86,8 @@ def statlfile(repo, proto, sha):
     server side.'''
     filename = lfutil.findfile(repo, sha)
     if not filename:
-        return '2\n'
-    return '0\n'
+        return wireprototypes.bytesresponse('2\n')
+    return wireprototypes.bytesresponse('0\n')
 
 def wirereposetup(ui, repo):
     class lfileswirerepository(repo.__class__):

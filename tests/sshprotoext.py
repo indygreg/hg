@@ -45,11 +45,11 @@ class prehelloserver(wireprotoserver.sshserver):
         l = self._fin.readline()
         assert l == b'hello\n'
         # Respond to unknown commands with an empty reply.
-        self._sendresponse(b'')
+        wireprotoserver._sshv1respondbytes(self._fout, b'')
         l = self._fin.readline()
         assert l == b'between\n'
         rsp = wireproto.dispatch(self._repo, self, b'between')
-        self._handlers[rsp.__class__](self, rsp)
+        wireprotoserver._sshv1respondbytes(self._fout, rsp)
 
         super(prehelloserver, self).serve_forever()
 

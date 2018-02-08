@@ -24,7 +24,7 @@ class SSHServerGetArgsTests(unittest.TestCase):
     def assertparse(self, cmd, input, expected):
         server = mockserver(input)
         _func, spec = wireproto.commands[cmd]
-        self.assertEqual(server.getargs(spec), expected)
+        self.assertEqual(server._proto.getargs(spec), expected)
 
 def mockserver(inbytes):
     ui = mockui(inbytes)

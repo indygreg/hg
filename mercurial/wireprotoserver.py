@@ -354,19 +354,12 @@ def _sshv1respondooberror(fout, ferr, rsp):
     fout.write(b'\n')
     fout.flush()
 
-class sshserver(baseprotocolhandler):
-    def __init__(self, ui, repo):
+class sshv1protocolhandler(baseprotocolhandler):
+    """Handler for requests services via version 1 of SSH protocol."""
+    def __init__(self, ui, fin, fout):
         self._ui = ui
-        self._repo = repo
-        self._fin = ui.fin
-        self._fout = ui.fout
-
-        hook.redirect(True)
-        ui.fout = repo.ui.fout = ui.ferr
-
-        # Prevent insertion/deletion of CRs
-        util.setbinary(self._fin)
-        util.setbinary(self._fout)
+        self._fin = fin
+        self._fout = fout
 
     @property
     def name(self):
@@ -403,6 +396,26 @@ class sshserver(baseprotocolhandler):
     def redirect(self):
         pass
 
+    def _client(self):
+        client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
+        return 'remote:ssh:' + client
+
+class sshserver(object):
+    def __init__(self, ui, repo):
+        self._ui = ui
+        self._repo = repo
+        self._fin = ui.fin
+        self._fout = ui.fout
+
+        hook.redirect(True)
+        ui.fout = repo.ui.fout = ui.ferr
+
+        # Prevent insertion/deletion of CRs
+        util.setbinary(self._fin)
+        util.setbinary(self._fout)
+
+        self._proto = sshv1protocolhandler(self._ui, self._fin, self._fout)
+
     def serve_forever(self):
         while self.serve_one():
             pass
@@ -410,8 +423,8 @@ class sshserver(baseprotocolhandler):
 
     def serve_one(self):
         cmd = self._fin.readline()[:-1]
-        if cmd and wireproto.commands.commandavailable(cmd, self):
-            rsp = wireproto.dispatch(self._repo, self, cmd)
+        if cmd and wireproto.commands.commandavailable(cmd, self._proto):
+            rsp = wireproto.dispatch(self._repo, self._proto, cmd)
 
             if isinstance(rsp, bytes):
                 _sshv1respondbytes(self._fout, rsp)
@@ -432,7 +445,3 @@ class sshserver(baseprotocolhandler):
         elif cmd:
             _sshv1respondbytes(self._fout, b'')
         return cmd != ''
-
-    def _client(self):
-        client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
-        return 'remote:ssh:' + client

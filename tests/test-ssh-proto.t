@@ -394,6 +394,33 @@ And one with arguments
   0
   0
 
+Send a valid command before the handshake
+
+  $ hg -R server serve --stdio << EOF
+  > heads
+  > hello
+  > between
+  > pairs 81
+  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  > EOF
+  41
+  68986213bd4485ea51533535e3fc9e78007a711f
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  1
+  
+
+And a variation that doesn't send the between command
+
+  $ hg -R server serve --stdio << EOF
+  > heads
+  > hello
+  > EOF
+  41
+  68986213bd4485ea51533535e3fc9e78007a711f
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+
 Send an upgrade request to a server that doesn't support that command
 
   $ hg -R server serve --stdio << EOF

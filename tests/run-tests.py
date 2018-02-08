@@ -285,12 +285,12 @@ def parsettestcases(path):
 
     If path does not exist, return an empty set.
     """
-    cases = set()
+    cases = []
     try:
         with open(path, 'rb') as f:
             for l in f:
                 if l.startswith(b'#testcases '):
-                    cases.update(l[11:].split())
+                    cases.append(sorted(l[11:].split()))
     except IOError as ex:
         if ex.errno != errno.ENOENT:
             raise
@@ -1242,14 +1242,15 @@ class TTest(Test):
 
     def __init__(self, path, *args, **kwds):
         # accept an extra "case" parameter
-        case = kwds.pop('case', None)
+        case = kwds.pop('case', [])
         self._case = case
-        self._allcases = parsettestcases(path)
+        self._allcases = {x for y in parsettestcases(path) for x in y}
         super(TTest, self).__init__(path, *args, **kwds)
         if case:
-            self.name = '%s#%s' % (self.name, _strpath(case))
-            self.errpath = b'%s#%s.err' % (self.errpath[:-4], case)
-            self._tmpname += b'-%s' % case
+            casepath = _strpath('#'.join(case))
+            self.name = '%s#%s' % (self.name, casepath)
+            self.errpath = b'%s#%s.err' % (self.errpath[:-4], casepath)
+            self._tmpname += b'-%s' % casepath
         self._have = {}
 
     @property
@@ -1323,10 +1324,10 @@ class TTest(Test):
         reqs = []
         for arg in args:
             if arg.startswith(b'no-') and arg[3:] in self._allcases:
-                if arg[3:] == self._case:
+                if arg[3:] in self._case:
                     return False
             elif arg in self._allcases:
-                if arg != self._case:
+                if arg not in self._case:
                     return False
             else:
                 reqs.append(arg)
@@ -1370,10 +1371,11 @@ class TTest(Test):
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
         if self._case:
+            casestr = '#'.join(self._case)
             if isinstance(self._case, str):
-                quoted = shellquote(self._case)
+                quoted = shellquote(casestr)
             else:
-                quoted = shellquote(self._case.decode('utf8')).encode('utf8')
+                quoted = shellquote(casestr.decode('utf8')).encode('utf8')
             script.append(b'TESTCASE=%s\n' % quoted)
             script.append(b'export TESTCASE\n')
 
@@ -2666,31 +2668,42 @@ class TestRunner(object):
                 expanded_args.append(arg)
         args = expanded_args
 
-        testcasepattern = re.compile(br'([\w-]+\.t|py)(#([a-zA-Z0-9_\-\.]+))')
+        testcasepattern = re.compile(br'([\w-]+\.t|py)(#([a-zA-Z0-9_\-\.#]+))')
         tests = []
         for t in args:
-            case = None
+            case = []
 
             if not (os.path.basename(t).startswith(b'test-')
                     and (t.endswith(b'.py') or t.endswith(b'.t'))):
 
                 m = testcasepattern.match(t)
                 if m is not None:
-                    t, _, case = m.groups()
+                    t, _, casestr = m.groups()
+                    if casestr:
+                        case = casestr.split('#')
                 else:
                     continue
 
             if t.endswith(b'.t'):
                 # .t file may contain multiple test cases
-                cases = sorted(parsettestcases(t))
-                if cases:
-                    if case is not None and case in cases:
-                        tests += [{'path': t, 'case': case}]
-                    elif case is not None and case not in cases:
+                casedimensions = parsettestcases(t)
+                if casedimensions:
+                    cases = []
+                    def addcases(case, casedimensions):
+                        if not casedimensions:
+                            cases.append(case)
+                        else:
+                            for c in casedimensions[0]:
+                                addcases(case + [c], casedimensions[1:])
+                    addcases([], casedimensions)
+                    if case and case in cases:
+                        cases = [case]
+                    elif case:
                         # Ignore invalid cases
-                        pass
+                        cases = []
                     else:
-                        tests += [{'path': t, 'case': c} for c in sorted(cases)]
+                        pass
+                    tests += [{'path': t, 'case': c} for c in sorted(cases)]
                 else:
                     tests.append({'path': t})
             else:
@@ -2701,7 +2714,7 @@ class TestRunner(object):
         def _reloadtest(test, i):
             # convert a test back to its description dict
             desc = {'path': test.path}
-            case = getattr(test, '_case', None)
+            case = getattr(test, '_case', [])
             if case:
                 desc['case'] = case
             return self._gettest(desc, i)
@@ -2713,7 +2726,8 @@ class TestRunner(object):
                     desc = testdescs[0]
                     # desc['path'] is a relative path
                     if 'case' in desc:
-                        errpath = b'%s#%s.err' % (desc['path'], desc['case'])
+                        casestr = '#'.join(desc['case'])
+                        errpath = b'%s#%s.err' % (desc['path'], casestr)
                     else:
                         errpath = b'%s.err' % desc['path']
                     errpath = os.path.join(self._outputdir, errpath)

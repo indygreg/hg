@@ -48,7 +48,9 @@ class prehelloserver(wireprotoserver.sshserver):
         wireprotoserver._sshv1respondbytes(self._fout, b'')
         l = self._fin.readline()
         assert l == b'between\n'
-        rsp = wireproto.dispatch(self._repo, self._proto, b'between')
+        proto = wireprotoserver.sshv1protocolhandler(self._ui, self._fin,
+                                                     self._fout)
+        rsp = wireproto.dispatch(self._repo, proto, b'between')
         wireprotoserver._sshv1respondbytes(self._fout, rsp.data)
 
         super(prehelloserver, self).serve_forever()
@@ -72,8 +74,10 @@ class upgradev2server(wireprotoserver.sshserver):
         self._fin.read(81)
 
         # Send the upgrade response.
+        proto = wireprotoserver.sshv1protocolhandler(self._ui, self._fin,
+                                                     self._fout)
         self._fout.write(b'upgraded %s %s\n' % (token, name))
-        servercaps = wireproto.capabilities(self._repo, self._proto)
+        servercaps = wireproto.capabilities(self._repo, proto)
         rsp = b'capabilities: %s' % servercaps.data
         self._fout.write(b'%d\n' % len(rsp))
         self._fout.write(rsp)

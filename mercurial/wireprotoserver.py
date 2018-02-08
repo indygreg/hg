@@ -409,6 +409,56 @@ class sshv1protocolhandler(baseprotocolhandler):
         client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
         return 'remote:ssh:' + client
 
+def _runsshserver(ui, repo, fin, fout):
+    state = 'protov1-serving'
+    proto = sshv1protocolhandler(ui, fin, fout)
+
+    while True:
+        if state == 'protov1-serving':
+            # Commands are issued on new lines.
+            request = fin.readline()[:-1]
+
+            # Empty lines signal to terminate the connection.
+            if not request:
+                state = 'shutdown'
+                continue
+
+            available = wireproto.commands.commandavailable(request, proto)
+
+            # This command isn't available. Send an empty response and go
+            # back to waiting for a new command.
+            if not available:
+                _sshv1respondbytes(fout, b'')
+                continue
+
+            rsp = wireproto.dispatch(repo, proto, request)
+
+            if isinstance(rsp, bytes):
+                _sshv1respondbytes(fout, rsp)
+            elif isinstance(rsp, wireprototypes.bytesresponse):
+                _sshv1respondbytes(fout, rsp.data)
+            elif isinstance(rsp, wireprototypes.streamres):
+                _sshv1respondstream(fout, rsp)
+            elif isinstance(rsp, wireprototypes.streamreslegacy):
+                _sshv1respondstream(fout, rsp)
+            elif isinstance(rsp, wireprototypes.pushres):
+                _sshv1respondbytes(fout, b'')
+                _sshv1respondbytes(fout, b'%d' % rsp.res)
+            elif isinstance(rsp, wireprototypes.pusherr):
+                _sshv1respondbytes(fout, rsp.res)
+            elif isinstance(rsp, wireprototypes.ooberror):
+                _sshv1respondooberror(fout, ui.ferr, rsp.message)
+            else:
+                raise error.ProgrammingError('unhandled response type from '
+                                             'wire protocol command: %s' % rsp)
+
+        elif state == 'shutdown':
+            break
+
+        else:
+            raise error.ProgrammingError('unhandled ssh server state: %s' %
+                                         state)
+
 class sshserver(object):
     def __init__(self, ui, repo):
         self._ui = ui
@@ -423,36 +473,6 @@ class sshserver(object):
         util.setbinary(self._fin)
         util.setbinary(self._fout)
 
-        self._proto = sshv1protocolhandler(self._ui, self._fin, self._fout)
-
     def serve_forever(self):
-        while self.serve_one():
-            pass
+        _runsshserver(self._ui, self._repo, self._fin, self._fout)
         sys.exit(0)
-
-    def serve_one(self):
-        cmd = self._fin.readline()[:-1]
-        if cmd and wireproto.commands.commandavailable(cmd, self._proto):
-            rsp = wireproto.dispatch(self._repo, self._proto, cmd)
-
-            if isinstance(rsp, bytes):
-                _sshv1respondbytes(self._fout, rsp)
-            elif isinstance(rsp, wireprototypes.bytesresponse):
-                _sshv1respondbytes(self._fout, rsp.data)
-            elif isinstance(rsp, wireprototypes.streamres):
-                _sshv1respondstream(self._fout, rsp)
-            elif isinstance(rsp, wireprototypes.streamreslegacy):
-                _sshv1respondstream(self._fout, rsp)
-            elif isinstance(rsp, wireprototypes.pushres):
-                _sshv1respondbytes(self._fout, b'')
-                _sshv1respondbytes(self._fout, b'%d' % rsp.res)
-            elif isinstance(rsp, wireprototypes.pusherr):
-                _sshv1respondbytes(self._fout, rsp.res)
-            elif isinstance(rsp, wireprototypes.ooberror):
-                _sshv1respondooberror(self._fout, self._ui.ferr, rsp.message)
-            else:
-                raise error.ProgrammingError('unhandled response type from '
-                                             'wire protocol command: %s' % rsp)
-        elif cmd:
-            _sshv1respondbytes(self._fout, b'')
-        return cmd != ''

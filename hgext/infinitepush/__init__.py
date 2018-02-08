@@ -91,13 +91,11 @@ import collections
 import contextlib
 import errno
 import functools
-import json
 import logging
 import os
 import random
 import re
 import socket
-import struct
 import subprocess
 import sys
 import tempfile
@@ -682,19 +680,6 @@ def _lookupwrap(orig):
                     return "%s %s\n" % (0, r)
     return _lookup
 
-def _decodebookmarks(stream):
-    sizeofjsonsize = struct.calcsize('>i')
-    size = struct.unpack('>i', stream.read(sizeofjsonsize))[0]
-    unicodedict = json.loads(stream.read(size))
-    # python json module always returns unicode strings. We need to convert
-    # it back to bytes string
-    result = {}
-    for bookmark, node in unicodedict.iteritems():
-        bookmark = bookmark.encode('ascii')
-        node = node.encode('ascii')
-        result[bookmark] = node
-    return result
-
 def _update(orig, ui, repo, node=None, rev=None, **opts):
     if rev and node:
         raise error.Abort(_("please specify just one revision"))
@@ -985,7 +970,6 @@ def partgen(pushop, bundler):
     return handlereply
 
 bundle2.capabilities[bundleparts.scratchbranchparttype] = ()
-bundle2.capabilities[bundleparts.scratchbookmarksparttype] = ()
 
 def _getrevs(bundle, oldnode, force, bookmark):
     'extracts and validates the revs to be imported'
@@ -1059,7 +1043,6 @@ def processparts(orig, repo, op, unbundler):
 
     bundler = bundle2.bundle20(repo.ui)
     cgparams = None
-    scratchbookpart = None
     with bundle2.partiterator(repo, op, unbundler) as parts:
         for part in parts:
             bundlepart = None
@@ -1084,14 +1067,6 @@ def processparts(orig, repo, op, unbundler):
                     op.records.add(scratchbranchparttype + '_skippushkey', True)
                     op.records.add(scratchbranchparttype + '_skipphaseheads',
                                    True)
-            elif part.type == bundleparts.scratchbookmarksparttype:
-                # Save this for later processing. Details below.
-                #
-                # Upstream https://phab.mercurial-scm.org/D1389 and its
-                # follow-ups stop part.seek support to reduce memory usage
-                # (https://bz.mercurial-scm.org/5691). So we need to copy
-                # the part so it can be consumed later.
-                scratchbookpart = bundleparts.copiedpart(part)
             else:
                 if handleallparts or part.type in partforwardingwhitelist:
                     # Ideally we would not process any parts, and instead just
@@ -1136,12 +1111,6 @@ def processparts(orig, repo, op, unbundler):
             except Exception:
                 # we would rather see the original exception
                 pass
-
-    # The scratch bookmark part is sent as part of a push backup. It needs to be
-    # processed after the main bundle has been stored, so that any commits it
-    # references are available in the store.
-    if scratchbookpart:
-        bundle2._processpart(op, scratchbookpart)
 
 def storebundle(op, params, bundlefile):
     log = _getorcreateinfinitepushlogger(op)
@@ -1268,26 +1237,6 @@ def bundle2scratchbranch(op, part):
                 raise
 
     return 1
-
-@bundle2.parthandler(bundleparts.scratchbookmarksparttype)
-def bundle2scratchbookmarks(op, part):
-    '''Handler deletes bookmarks first then adds new bookmarks.
-    '''
-    index = op.repo.bundlestore.index
-    decodedbookmarks = _decodebookmarks(part)
-    toinsert = {}
-    todelete = []
-    for bookmark, node in decodedbookmarks.iteritems():
-        if node:
-            toinsert[bookmark] = node
-        else:
-            todelete.append(bookmark)
-    log = _getorcreateinfinitepushlogger(op)
-    with logservicecall(log, bundleparts.scratchbookmarksparttype), index:
-        if todelete:
-            index.deletebookmarks(todelete)
-        if toinsert:
-            index.addmanybookmarks(toinsert)
 
 def _maybeaddpushbackpart(op, bookmark, newnode, oldnode, params):
     if params.get('pushbackbookmarks'):

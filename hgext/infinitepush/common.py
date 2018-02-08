@@ -5,9 +5,7 @@
 
 from __future__ import absolute_import
 
-import json
 import os
-import struct
 import tempfile
 
 from mercurial.node import hex
@@ -20,14 +18,6 @@ from mercurial import (
 def isremotebooksenabled(ui):
     return ('remotenames' in extensions._extensions and
             ui.configbool('remotenames', 'bookmarks'))
-
-def encodebookmarks(bookmarks):
-    encoded = {}
-    for bookmark, node in bookmarks.iteritems():
-        encoded[bookmark] = node
-    dumped = json.dumps(encoded)
-    result = struct.pack('>i', len(dumped)) + dumped
-    return result
 
 def downloadbundle(repo, unknownbinhead):
     index = repo.bundlestore.index

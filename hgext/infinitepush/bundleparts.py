@@ -18,11 +18,9 @@ from mercurial import (
 
 from . import common
 
-encodebookmarks = common.encodebookmarks
 isremotebooksenabled = common.isremotebooksenabled
 
 scratchbranchparttype = 'b2x:infinitepush'
-scratchbookmarksparttype = 'b2x:infinitepushscratchbookmarks'
 
 def getscratchbranchparts(repo, peer, outgoing, confignonforwardmove,
                          ui, bookmark, create):
@@ -84,15 +82,6 @@ def getscratchbranchparts(repo, peer, outgoing, confignonforwardmove,
         pass
 
     return parts
-
-def getscratchbookmarkspart(peer, bookmarks):
-    if scratchbookmarksparttype not in bundle2.bundle2caps(peer):
-        raise error.Abort(
-            _('no server support for %r') % scratchbookmarksparttype)
-
-    return bundle2.bundlepart(
-        scratchbookmarksparttype.upper(),
-        data=encodebookmarks(bookmarks))
 
 def _validaterevset(repo, revset, bookmark):
     """Abort if the revs to be pushed aren't valid for a scratch branch."""

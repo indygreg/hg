@@ -88,6 +88,10 @@ class baseprotocolhandler(object):
         won't be captured.
         """
 
+    @abc.abstractmethod
+    def client(self):
+        """Returns a string representation of this client (as bytes)."""
+
 def decodevaluefromheaders(req, headerprefix):
     """Decode a long value from multiple HTTP request headers.
 
@@ -164,7 +168,7 @@ class webproto(baseprotocolhandler):
             self._ui.fout = oldout
             self._ui.ferr = olderr
 
-    def _client(self):
+    def client(self):
         return 'remote:%s:%s:%s' % (
             self._req.env.get('wsgi.url_scheme') or 'http',
             urlreq.quote(self._req.env.get('REMOTE_HOST', '')),
@@ -399,7 +403,7 @@ class sshv1protocolhandler(baseprotocolhandler):
     def mayberedirectstdio(self):
         yield None
 
-    def _client(self):
+    def client(self):
         client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
         return 'remote:ssh:' + client
 

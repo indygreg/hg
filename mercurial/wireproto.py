@@ -1023,7 +1023,7 @@ def unbundle(repo, proto, heads):
                                       hint=bundle2requiredhint)
 
                 r = exchange.unbundle(repo, gen, their_heads, 'serve',
-                                      proto._client())
+                                      proto.client())
                 if util.safehasattr(r, 'addpart'):
                     # The return looks streamable, we are in the bundle2 case
                     # and should return a stream.

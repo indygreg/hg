@@ -8,6 +8,7 @@ from __future__ import absolute_import
 
 import abc
 import cgi
+import contextlib
 import struct
 import sys
 
@@ -71,6 +72,20 @@ class baseprotocolhandler(object):
             (<chunk-size>\n<chunk>)+0\n
 
         chunk size is the ascii version of the int.
+        """
+
+    @abc.abstractmethod
+    def mayberedirectstdio(self):
+        """Context manager to possibly redirect stdio.
+
+        The context manager yields a file-object like object that receives
+        stdout and stderr output when the context manager is active. Or it
+        yields ``None`` if no I/O redirection occurs.
+
+        The intent of this context manager is to capture stdio output
+        so it may be sent in the response. Some transports support streaming
+        stdio to the client in real time. For these transports, stdio output
+        won't be captured.
         """
 
     @abc.abstractmethod
@@ -150,6 +165,21 @@ class webproto(baseprotocolhandler):
         length -= int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))
         for s in util.filechunkiter(self._req, limit=length):
             fp.write(s)
+
+    @contextlib.contextmanager
+    def mayberedirectstdio(self):
+        oldout = self._ui.fout
+        olderr = self._ui.ferr
+
+        out = util.stringio()
+
+        try:
+            self._ui.fout = out
+            self._ui.ferr = out
+            yield out
+        finally:
+            self._ui.fout = oldout
+            self._ui.ferr = olderr
 
     def redirect(self):
         self._oldio = self._ui.fout, self._ui.ferr
@@ -392,6 +422,10 @@ class sshv1protocolhandler(baseprotocolhandler):
         while count:
             fpout.write(self._fin.read(count))
             count = int(self._fin.readline())
+
+    @contextlib.contextmanager
+    def mayberedirectstdio(self):
+        yield None
 
     def redirect(self):
         pass

@@ -484,6 +484,7 @@ Send an upgrade request to a server that supports upgrade
   devel-peer-request:   pairs: 81 bytes
   sending between command
   protocol upgraded to exp-ssh-v2-0001
+  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
   url: ssh://user@dummy/server
   local: no
   pushable: yes
@@ -500,6 +501,7 @@ Verify the peer has capabilities
   devel-peer-request:   pairs: 81 bytes
   sending between command
   protocol upgraded to exp-ssh-v2-0001
+  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
   Main capabilities:
     batch
     branchmap

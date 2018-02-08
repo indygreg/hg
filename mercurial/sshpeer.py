@@ -313,6 +313,8 @@ def _performhandshake(ui, stdin, stdout, stderr):
         if not capsline.startswith('capabilities: '):
             badresponse()
 
+        ui.debug('remote: %s\n' % capsline)
+
         caps.update(capsline.split(':')[1].split())
         # Trailing newline.
         stdout.read(1)

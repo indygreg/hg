@@ -286,14 +286,6 @@ def reposetup(ui, repo):
     if _isserver(ui) and repo.local():
         repo.bundlestore = bundlestore(repo)
 
-def uisetup(ui):
-    # remotenames circumvents the default push implementation entirely, so make
-    # sure we load after it so that we wrap it.
-    order = extensions._order
-    order.remove('infinitepush')
-    order.append('infinitepush')
-    extensions._order = order
-
 def extsetup(ui):
     commonsetup(ui)
     if _isserver(ui):

@@ -587,7 +587,7 @@ def bundle1allowed(repo, action):
 
     return ui.configbool('server', 'bundle1')
 
-def supportedcompengines(ui, proto, role):
+def supportedcompengines(ui, role):
     """Obtain the list of supported compression engines for a request."""
     assert role in (util.CLIENTROLE, util.SERVERROLE)
 
@@ -824,7 +824,7 @@ def _capabilities(repo, proto):
         # FUTURE advertise minrx and mintx after consulting config option
         caps.append('httpmediatype=0.1rx,0.1tx,0.2tx')
 
-        compengines = supportedcompengines(repo.ui, proto, util.SERVERROLE)
+        compengines = supportedcompengines(repo.ui, util.SERVERROLE)
         if compengines:
             comptypes = ','.join(urlreq.quote(e.wireprotosupport().name)
                                  for e in compengines)

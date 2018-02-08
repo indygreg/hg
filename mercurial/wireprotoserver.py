@@ -192,7 +192,7 @@ class webproto(baseprotocolhandler):
                     break
 
             # Now find an agreed upon compression format.
-            for engine in wireproto.supportedcompengines(self._ui, self,
+            for engine in wireproto.supportedcompengines(self._ui,
                                                          util.SERVERROLE):
                 if engine.wireprotosupport().name in compformats:
                     opts = {}

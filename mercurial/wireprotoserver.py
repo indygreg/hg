@@ -367,7 +367,7 @@ class sshv1protocolhandler(baseprotocolhandler):
 
     @property
     def name(self):
-        return 'ssh'
+        return SSHV1
 
     def getargs(self, args):
         data = {}

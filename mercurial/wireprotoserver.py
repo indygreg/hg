@@ -20,6 +20,7 @@ from . import (
     pycompat,
     util,
     wireproto,
+    wireprototypes,
 )
 
 stringio = util.stringio
@@ -273,11 +274,11 @@ def _callhttp(repo, req, proto, cmd):
     if isinstance(rsp, bytes):
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
-    elif isinstance(rsp, wireproto.streamres_legacy):
+    elif isinstance(rsp, wireprototypes.streamreslegacy):
         gen = rsp.gen
         req.respond(HTTP_OK, HGTYPE)
         return gen
-    elif isinstance(rsp, wireproto.streamres):
+    elif isinstance(rsp, wireprototypes.streamres):
         gen = rsp.gen
 
         # This code for compression should not be streamres specific. It
@@ -291,18 +292,18 @@ def _callhttp(repo, req, proto, cmd):
 
         req.respond(HTTP_OK, mediatype)
         return gen
-    elif isinstance(rsp, wireproto.pushres):
+    elif isinstance(rsp, wireprototypes.pushres):
         rsp = '%d\n%s' % (rsp.res, rsp.output)
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
-    elif isinstance(rsp, wireproto.pusherr):
+    elif isinstance(rsp, wireprototypes.pusherr):
         # This is the httplib workaround documented in _handlehttperror().
         req.drain()
 
         rsp = '0\n%s\n' % rsp.res
         req.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
-    elif isinstance(rsp, wireproto.ooberror):
+    elif isinstance(rsp, wireprototypes.ooberror):
         rsp = rsp.message
         req.respond(HTTP_OK, HGERRTYPE, body=rsp)
         return []
@@ -434,16 +435,16 @@ class sshserver(object):
 
             if isinstance(rsp, bytes):
                 _sshv1respondbytes(self._fout, rsp)
-            elif isinstance(rsp, wireproto.streamres):
+            elif isinstance(rsp, wireprototypes.streamres):
                 _sshv1respondstream(self._fout, rsp)
-            elif isinstance(rsp, wireproto.streamres_legacy):
+            elif isinstance(rsp, wireprototypes.streamreslegacy):
                 _sshv1respondstream(self._fout, rsp)
-            elif isinstance(rsp, wireproto.pushres):
+            elif isinstance(rsp, wireprototypes.pushres):
                 _sshv1respondbytes(self._fout, b'')
                 _sshv1respondbytes(self._fout, bytes(rsp.res))
-            elif isinstance(rsp, wireproto.pusherr):
+            elif isinstance(rsp, wireprototypes.pusherr):
                 _sshv1respondbytes(self._fout, rsp.res)
-            elif isinstance(rsp, wireproto.ooberror):
+            elif isinstance(rsp, wireprototypes.ooberror):
                 _sshv1respondooberror(self._fout, self._ui.ferr, rsp.message)
             else:
                 raise error.ProgrammingError('unhandled response type from '

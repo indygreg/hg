@@ -190,7 +190,6 @@ configitem('experimental', 'non-forward-move',
     default=False,
 )
 
-pushrebaseparttype = 'b2x:rebase'
 experimental = 'experimental'
 configbookmark = 'server-bundlestore-bookmark'
 configcreate = 'server-bundlestore-create'
@@ -365,12 +364,8 @@ def clientextsetup(ui):
 
     wireproto.wirepeer.listkeyspatterns = listkeyspatterns
 
-    # Move infinitepush part before pushrebase part
-    # to avoid generation of both parts.
     partorder = exchange.b2partsgenorder
     index = partorder.index('changeset')
-    if pushrebaseparttype in partorder:
-        index = min(index, partorder.index(pushrebaseparttype))
     partorder.insert(
         index, partorder.pop(partorder.index(scratchbranchparttype)))
 

@@ -88,23 +88,6 @@ class baseprotocolhandler(object):
         won't be captured.
         """
 
-    @abc.abstractmethod
-    def redirect(self):
-        """may setup interception for stdout and stderr
-
-        See also the `restore` method."""
-
-    # If the `redirect` function does install interception, the `restore`
-    # function MUST be defined. If interception is not used, this function
-    # MUST NOT be defined.
-    #
-    # left commented here on purpose
-    #
-    #def restore(self):
-    #    """reinstall previous stdout and stderr and return intercepted stdout
-    #    """
-    #    raise NotImplementedError()
-
 def decodevaluefromheaders(req, headerprefix):
     """Decode a long value from multiple HTTP request headers.
 
@@ -180,15 +163,6 @@ class webproto(baseprotocolhandler):
         finally:
             self._ui.fout = oldout
             self._ui.ferr = olderr
-
-    def redirect(self):
-        self._oldio = self._ui.fout, self._ui.ferr
-        self._ui.ferr = self._ui.fout = stringio()
-
-    def restore(self):
-        val = self._ui.fout.getvalue()
-        self._ui.ferr, self._ui.fout = self._oldio
-        return val
 
     def _client(self):
         return 'remote:%s:%s:%s' % (
@@ -424,9 +398,6 @@ class sshv1protocolhandler(baseprotocolhandler):
     @contextlib.contextmanager
     def mayberedirectstdio(self):
         yield None
-
-    def redirect(self):
-        pass
 
     def _client(self):
         client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]

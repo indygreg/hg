@@ -771,16 +771,6 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
     with ui.configoverride(overrides, 'infinitepush'):
         scratchpush = opts.get('bundle_store')
         if _scratchbranchmatcher(bookmark):
-            # Hack to fix interaction with remotenames. Remotenames push
-            # '--to' bookmark to the server but we don't want to push scratch
-            # bookmark to the server. Let's delete '--to' and '--create' and
-            # also set allow_anon to True (because if --to is not set
-            # remotenames will think that we are pushing anonymoush head)
-            if 'to' in opts:
-                del opts['to']
-            if 'create' in opts:
-                del opts['create']
-            opts['allow_anon'] = True
             scratchpush = True
             # bundle2 can be sent back after push (for example, bundle2
             # containing `pushkey` part to update bookmarks)

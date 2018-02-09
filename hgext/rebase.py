@@ -1798,13 +1798,14 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         destnode = cl.node(destmap[srcrev])
         # XXX: more advanced APIs are required to handle split correctly
         successors = list(obsutil.allsuccessors(repo.obsstore, [srcnode]))
-        if len(successors) == 1:
-            # obsutil.allsuccessors includes node itself. When the list only
-            # contains one element, it means there are no successors.
+        # obsutil.allsuccessors includes node itself
+        successors.remove(srcnode)
+        if not successors:
+            # no successor
             obsoletenotrebased[srcrev] = None
         else:
             for succnode in successors:
-                if succnode == srcnode or succnode not in nodemap:
+                if succnode not in nodemap:
                     continue
                 if cl.isancestor(succnode, destnode):
                     obsoletenotrebased[srcrev] = nodemap[succnode]
@@ -1813,8 +1814,7 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
                 # If 'srcrev' has a successor in rebase set but none in
                 # destination (which would be catched above), we shall skip it
                 # and its descendants to avoid divergence.
-                if any(nodemap[s] in destmap
-                       for s in successors if s != srcnode):
+                if any(nodemap[s] in destmap for s in successors):
                     obsoletewithoutsuccessorindestination.add(srcrev)
 
     return obsoletenotrebased, obsoletewithoutsuccessorindestination

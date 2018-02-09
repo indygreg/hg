@@ -1244,10 +1244,6 @@ issue5782
   o  0:b173517d0057 a
   
   $ hg rebase -d 0 -r 2
-  abort: this rebase will cause divergences from: a82ac2b38757
-  (to force the rebase please set experimental.evolution.allowdivergence=True)
-  [255]
-  $ hg rebase -d 0 -r 2 --config experimental.evolution.allowdivergence=True
   rebasing 2:a82ac2b38757 "c" (c)
   $ hg log -G -r 'a': --hidden
   o  5:69ad416a4a26 c

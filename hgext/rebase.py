@@ -312,10 +312,13 @@ class rebaseruntime(object):
         if not self.ui.configbool('experimental', 'rebaseskipobsolete'):
             return
         obsoleteset = set(obsoleterevs)
-        self.obsoletenotrebased, self.obsoletewithoutsuccessorindestination = \
-            _computeobsoletenotrebased(self.repo, obsoleteset, destmap)
+        (self.obsoletenotrebased,
+         self.obsoletewithoutsuccessorindestination,
+         obsoleteextinctsuccessors) = _computeobsoletenotrebased(
+             self.repo, obsoleteset, destmap)
         skippedset = set(self.obsoletenotrebased)
         skippedset.update(self.obsoletewithoutsuccessorindestination)
+        skippedset.update(obsoleteextinctsuccessors)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
 
     def _prepareabortorcontinue(self, isabort):
@@ -1221,7 +1224,7 @@ def _checkobsrebase(repo, ui, rebaseobsrevs, rebaseobsskipped):
 
     `rebaseobsrevs`: set of obsolete revision in source
     `rebaseobsskipped`: set of revisions from source skipped because they have
-    successors in destination
+    successors in destination or no non-obsolete successor.
     """
     # Obsolete node with successors not in dest leads to divergence
     divergenceok = ui.configbool('experimental',
@@ -1786,13 +1789,18 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
 
     `obsoletewithoutsuccessorindestination` is a set with obsolete revisions
     without a successor in destination.
+
+    `obsoleteextinctsuccessors` is a set of obsolete revisions with only
+    obsolete successors.
     """
     obsoletenotrebased = {}
     obsoletewithoutsuccessorindestination = set([])
+    obsoleteextinctsuccessors = set([])
 
     assert repo.filtername is None
     cl = repo.changelog
     nodemap = cl.nodemap
+    extinctnodes = set(cl.node(r) for r in repo.revs('extinct()'))
     for srcrev in rebaseobsrevs:
         srcnode = cl.node(srcrev)
         destnode = cl.node(destmap[srcrev])
@@ -1800,6 +1808,9 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         successors = list(obsutil.allsuccessors(repo.obsstore, [srcnode]))
         # obsutil.allsuccessors includes node itself
         successors.remove(srcnode)
+        if set(successors).issubset(extinctnodes):
+            # all successors are extinct
+            obsoleteextinctsuccessors.add(srcrev)
         if not successors:
             # no successor
             obsoletenotrebased[srcrev] = None
@@ -1817,7 +1828,11 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
                 if any(nodemap[s] in destmap for s in successors):
                     obsoletewithoutsuccessorindestination.add(srcrev)
 
-    return obsoletenotrebased, obsoletewithoutsuccessorindestination
+    return (
+        obsoletenotrebased,
+        obsoletewithoutsuccessorindestination,
+        obsoleteextinctsuccessors,
+    )
 
 def summaryhook(ui, repo):
     if not repo.vfs.exists('rebasestate'):

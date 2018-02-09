@@ -440,16 +440,6 @@ def _rebundle(bundlerepo, bundleroots, unknownhead):
     cgpart.addparam('version', version)
     parts.append(cgpart)
 
-    try:
-        treemod = extensions.find('treemanifest')
-    except KeyError:
-        pass
-    else:
-        if treemod._cansendtrees(bundlerepo, outgoing.missing):
-            treepart = treemod.createtreepackpart(bundlerepo, outgoing,
-                                                  treemod.TREEGROUP_PARTTYPE2)
-            parts.append(treepart)
-
     return parts
 
 def _getbundleroots(oldrepo, bundlerepo, bundlerevs):
@@ -858,7 +848,6 @@ def partgen(pushop, bundler):
         return
 
     pushop.stepsdone.add('changesets')
-    pushop.stepsdone.add('treepack')
     if not pushop.outgoing.missing:
         pushop.ui.status(_('no changes found\n'))
         pushop.cgresult = 0
@@ -953,13 +942,6 @@ def processparts(orig, repo, op, unbundler):
 
     handleallparts = repo.ui.configbool('infinitepush', 'storeallparts')
 
-    partforwardingwhitelist = []
-    try:
-        treemfmod = extensions.find('treemanifest')
-        partforwardingwhitelist.append(treemfmod.TREEGROUP_PARTTYPE2)
-    except KeyError:
-        pass
-
     bundler = bundle2.bundle20(repo.ui)
     cgparams = None
     with bundle2.partiterator(repo, op, unbundler) as parts:
@@ -987,7 +969,7 @@ def processparts(orig, repo, op, unbundler):
                     op.records.add(scratchbranchparttype + '_skipphaseheads',
                                    True)
             else:
-                if handleallparts or part.type in partforwardingwhitelist:
+                if handleallparts:
                     # Ideally we would not process any parts, and instead just
                     # forward them to the bundle for storage, but since this
                     # differs from previous behavior, we need to put it behind a

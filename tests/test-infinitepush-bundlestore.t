@@ -369,8 +369,3 @@ Use --force because this push creates new head
   |/
   o  initialcommit public
   
-Push to svn server should fail
-  $ hg push svn+ssh://svn.vip.facebook.com/svnroot/tfb/trunk/www -r . --to scratch/serversidebook
-  abort: infinite push does not work with svn repo
-  (did you forget to `hg push default`?)
-  [255]

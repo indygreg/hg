@@ -799,9 +799,6 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
             raise error.Abort(_('default repository not configured!'),
                              hint=_("see 'hg help config.paths'"))
         destpath = path.pushloc or path.loc
-        if destpath.startswith('svn+') and scratchpush:
-            raise error.Abort('infinite push does not work with svn repo',
-                              hint='did you forget to `hg push default`?')
         # Remote scratch bookmarks will be deleted because remotenames doesn't
         # know about them. Let's save it before push and restore after
         remotescratchbookmarks = _readscratchremotebookmarks(ui, repo, destpath)

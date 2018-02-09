@@ -175,9 +175,6 @@ configitem('infinitepush', 'metadatafilelimit',
 configitem('experimental', 'server-bundlestore-bookmark',
     default='',
 )
-configitem('experimental', 'server-bundlestore-create',
-    default='',
-)
 configitem('experimental', 'infinitepush-scratchpush',
     default=False,
 )
@@ -187,7 +184,6 @@ configitem('experimental', 'non-forward-move',
 
 experimental = 'experimental'
 configbookmark = 'server-bundlestore-bookmark'
-configcreate = 'server-bundlestore-create'
 configscratchpush = 'infinitepush-scratchpush'
 confignonforwardmove = 'non-forward-move'
 
@@ -327,10 +323,6 @@ def clientextsetup(ui):
         entry[1].append(('', 'non-forward-move', None,
                          _('allows moving a remote bookmark to an '
                            'arbitrary place')))
-
-    if not any(a for a in entry[1] if a[1] == 'create'):
-        entry[1].append(
-            ('', 'create', None, _('create a new remote bookmark')))
 
     entry[1].append(
         ('', 'bundle-store', None,
@@ -752,11 +744,9 @@ def _findcommonincoming(orig, *args, **kwargs):
 
 def _push(orig, ui, repo, dest=None, *args, **opts):
     bookmark = opts.get('to') or ''
-    create = opts.get('create') or False
 
     oldphasemove = None
-    overrides = {(experimental, configbookmark): bookmark,
-                 (experimental, configcreate): create}
+    overrides = {(experimental, configbookmark): bookmark}
 
     with ui.configoverride(overrides, 'infinitepush'):
         scratchpush = opts.get('bundle_store')
@@ -839,7 +829,6 @@ def _phasemove(orig, pushop, nodes, phase=phases.public):
 @exchange.b2partsgenerator(scratchbranchparttype)
 def partgen(pushop, bundler):
     bookmark = pushop.ui.config(experimental, configbookmark)
-    create = pushop.ui.configbool(experimental, configcreate)
     scratchpush = pushop.ui.configbool(experimental, configscratchpush)
     if 'changesets' in pushop.stepsdone or not scratchpush:
         return
@@ -865,8 +854,7 @@ def partgen(pushop, bundler):
                                                      pushop.outgoing,
                                                      nonforwardmove,
                                                      pushop.ui,
-                                                     bookmark,
-                                                     create)
+                                                     bookmark)
 
     for scratchpart in scratchparts:
         bundler.addpart(scratchpart)
@@ -1028,15 +1016,10 @@ def storebundle(op, params, bundlefile):
 
         bookmark = params.get('bookmark')
         bookprevnode = params.get('bookprevnode', '')
-        create = params.get('create')
         force = params.get('force')
 
         if bookmark:
             oldnode = index.getnode(bookmark)
-
-            if not oldnode and not create:
-                raise error.Abort("unknown bookmark %s" % bookmark,
-                                  hint="use --create if you want to create one")
         else:
             oldnode = None
         bundleheads = bundle.revs('heads(bundle())')
@@ -1110,7 +1093,7 @@ def storebundle(op, params, bundlefile):
             bundle.close()
 
 @bundle2.parthandler(scratchbranchparttype,
-                     ('bookmark', 'bookprevnode' 'create', 'force',
+                     ('bookmark', 'bookprevnode', 'force',
                       'pushbackbookmarks', 'cgversion'))
 def bundle2scratchbranch(op, part):
     '''unbundle a bundle2 part containing a changegroup to store'''

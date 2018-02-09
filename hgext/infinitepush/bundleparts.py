@@ -23,7 +23,7 @@ isremotebooksenabled = common.isremotebooksenabled
 scratchbranchparttype = 'b2x:infinitepush'
 
 def getscratchbranchparts(repo, peer, outgoing, confignonforwardmove,
-                         ui, bookmark, create):
+                          ui, bookmark):
     if not outgoing.missing:
         raise error.Abort(_('no commits to push'))
 
@@ -49,8 +49,6 @@ def getscratchbranchparts(repo, peer, outgoing, confignonforwardmove,
         params['bookprevnode'] = ''
         if bookmark in repo:
             params['bookprevnode'] = repo[bookmark].hex()
-        if create:
-            params['create'] = '1'
     if confignonforwardmove:
         params['force'] = '1'
 

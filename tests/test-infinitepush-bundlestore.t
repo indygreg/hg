@@ -18,7 +18,7 @@ the history but is stored on disk
   $ hg clone ssh://user@dummy/repo client -q
   $ cd client
   $ mkcommit initialcommit
-  $ hg push -r . --create
+  $ hg push -r .
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: adding changesets
@@ -26,7 +26,7 @@ the history but is stored on disk
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   $ mkcommit scratchcommit
-  $ hg push -r . --to scratch/mybranch --create
+  $ hg push -r . --to scratch/mybranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 1 commit:
@@ -140,7 +140,7 @@ Push to scratch branch
   scratch/mybranch 1de1d7d92f8965260391d0513fe8a8d5973d3042
 
 Push scratch bookmark with no new revs
-  $ hg push -r . --to scratch/anotherbranch --create
+  $ hg push -r . --to scratch/anotherbranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 2 commits:

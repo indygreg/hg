@@ -49,7 +49,7 @@ Create two new scratch bookmarks
   $ hg ci -Am "scratchfirstpart"
   adding scratchfirstpart
   created new head
-  $ hg push -r . --to scratch/firstpart
+  $ hg push -r . -B scratch/firstpart
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 1 commit:
@@ -60,7 +60,7 @@ Create two new scratch bookmarks
   $ hg ci -Am "scratchsecondpart"
   adding scratchsecondpart
   created new head
-  $ hg push -r . --to scratch/secondpart
+  $ hg push -r . -B scratch/secondpart
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 1 commit:
@@ -96,7 +96,7 @@ Make two commits to the scratch branch
   $ hg log -r '.' -T '{node}\n' > ../testpullbycommithash1
   $ echo testpullbycommithash2 > testpullbycommithash2
   $ hg ci -Aqm "testpullbycommithash2"
-  $ hg push -r . --to scratch/mybranch -q
+  $ hg push -r . -B scratch/mybranch -q
 
 Create third client and pull by commit hash.
 Make sure testpullbycommithash2 has not fetched
@@ -144,7 +144,7 @@ Make sure phase on the client is public.
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo scratchontopofpublic > scratchontopofpublic
   $ hg ci -Aqm "scratchontopofpublic"
-  $ hg push -r . --to scratch/scratchontopofpublic
+  $ hg push -r . -B scratch/scratchontopofpublic
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 1 commit:
@@ -300,7 +300,7 @@ Test infinitepush.fillmetadatabranchpattern
   $ hg ci -Aqm "tofillmetadata"
   $ hg log -r . -T '{node}\n'
   d2b0410d4da084bc534b1d90df0de9eb21583496
-  $ hg push -r . --to scratch/fillmetadata/fill
+  $ hg push -r . -B scratch/fillmetadata/fill
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 6 commits:

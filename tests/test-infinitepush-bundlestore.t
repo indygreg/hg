@@ -26,7 +26,7 @@ the history but is stored on disk
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   $ mkcommit scratchcommit
-  $ hg push -r . --to scratch/mybranch
+  $ hg push -r . -B scratch/mybranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 1 commit:
@@ -119,7 +119,7 @@ Push to scratch branch
   $ cd ../client2
   $ hg up -q scratch/mybranch
   $ mkcommit 'new scratch commit'
-  $ hg push -r . --to scratch/mybranch
+  $ hg push -r . -B scratch/mybranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 2 commits:
@@ -140,7 +140,7 @@ Push to scratch branch
   scratch/mybranch 1de1d7d92f8965260391d0513fe8a8d5973d3042
 
 Push scratch bookmark with no new revs
-  $ hg push -r . --to scratch/anotherbranch
+  $ hg push -r . -B scratch/anotherbranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 2 commits:
@@ -216,7 +216,7 @@ Push scratch revision without bookmark with --bundle-store
 
 Test with pushrebase
   $ mkcommit scratchcommitwithpushrebase
-  $ hg push -r . --to scratch/mybranch
+  $ hg push -r . -B scratch/mybranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 4 commits:
@@ -237,7 +237,7 @@ Test with pushrebase
 
 Change the order of pushrebase and infinitepush
   $ mkcommit scratchcommitwithpushrebase2
-  $ hg push -r . --to scratch/mybranch
+  $ hg push -r . -B scratch/mybranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 5 commits:
@@ -300,7 +300,7 @@ Non-fastforward scratch bookmark push
   $ scratchbookmarks
   scratch/anotherbranch 1de1d7d92f8965260391d0513fe8a8d5973d3042
   scratch/mybranch 6c10d49fe92751666c40263f96721b918170d3da
-  $ hg push -r . --to scratch/mybranch
+  $ hg push -r . -B scratch/mybranch
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: non-forward push
@@ -308,7 +308,7 @@ Non-fastforward scratch bookmark push
   abort: push failed on remote
   [255]
 
-  $ hg push -r . --to scratch/mybranch --non-forward-move
+  $ hg push -r . -B scratch/mybranch --non-forward-move
   pushing to ssh://user@dummy/repo
   searching for changes
   remote: pushing 5 commits:

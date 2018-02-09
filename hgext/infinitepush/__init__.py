@@ -315,9 +315,6 @@ def serverextsetup(ui):
 
 def clientextsetup(ui):
     entry = extensions.wrapcommand(commands.table, 'push', _push)
-    # Don't add the 'to' arg if it already exists
-    if not any(a for a in entry[1] if a[1] == 'to'):
-        entry[1].append(('', 'to', '', _('push revs to this bookmark')))
 
     if not any(a for a in entry[1] if a[1] == 'non-forward-move'):
         entry[1].append(('', 'non-forward-move', None,
@@ -743,7 +740,13 @@ def _findcommonincoming(orig, *args, **kwargs):
     return common, True, remoteheads
 
 def _push(orig, ui, repo, dest=None, *args, **opts):
-    bookmark = opts.get('to') or ''
+
+    bookmark = opts.get('bookmark')
+    # we only support pushing one infinitepush bookmark at once
+    if len(bookmark) == 1:
+        bookmark = bookmark[0]
+    else:
+        bookmark = ''
 
     oldphasemove = None
     overrides = {(experimental, configbookmark): bookmark}
@@ -759,6 +762,9 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
         ui.setconfig(experimental, confignonforwardmove,
                      opts.get('non_forward_move'), '--non-forward-move')
         if scratchpush:
+            # this is an infinitepush, we don't want the bookmark to be applied
+            # rather that should be stored in the bundlestore
+            opts['bookmark'] = []
             ui.setconfig(experimental, configscratchpush, True)
             oldphasemove = extensions.wrapfunction(exchange,
                                                    '_localphasemove',

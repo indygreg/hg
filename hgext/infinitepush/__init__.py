@@ -336,21 +336,6 @@ def clientextsetup(ui):
         ('', 'bundle-store', None,
          _('force push to go to bundle store (EXPERIMENTAL)')))
 
-    bookcmd = extensions.wrapcommand(commands.table, 'bookmarks', exbookmarks)
-    bookcmd[1].append(
-        ('', 'list-remote', None,
-         'list remote bookmarks. '
-         'Positional arguments are interpreted as wildcard patterns. '
-         'Only allowed wildcard is \'*\' in the end of the pattern. '
-         'If no positional arguments are specified then it will list '
-         'the most "important" remote bookmarks. '
-         'Otherwise it will list remote bookmarks '
-         'that match at least one pattern '
-         ''))
-    bookcmd[1].append(
-        ('', 'remote-path', '',
-         'name of the remote path to list the bookmarks'))
-
     extensions.wrapcommand(commands.table, 'pull', _pull)
     extensions.wrapcommand(commands.table, 'update', _update)
 
@@ -362,59 +347,6 @@ def clientextsetup(ui):
     index = partorder.index('changeset')
     partorder.insert(
         index, partorder.pop(partorder.index(scratchbranchparttype)))
-
-def _showbookmarks(ui, bookmarks, **opts):
-    # Copy-paste from commands.py
-    fm = ui.formatter('bookmarks', opts)
-    for bmark, n in sorted(bookmarks.iteritems()):
-        fm.startitem()
-        if not ui.quiet:
-            fm.plain('   ')
-        fm.write('bookmark', '%s', bmark)
-        pad = ' ' * (25 - encoding.colwidth(bmark))
-        fm.condwrite(not ui.quiet, 'node', pad + ' %s', n)
-        fm.plain('\n')
-    fm.end()
-
-def exbookmarks(orig, ui, repo, *names, **opts):
-    pattern = opts.get('list_remote')
-    delete = opts.get('delete')
-    remotepath = opts.get('remote_path')
-    path = ui.paths.getpath(remotepath or None, default=('default'))
-    if pattern:
-        destpath = path.pushloc or path.loc
-        other = hg.peer(repo, opts, destpath)
-        if not names:
-            raise error.Abort(
-                '--list-remote requires a bookmark pattern',
-                hint='use "hg book" to get a list of your local bookmarks')
-        else:
-            fetchedbookmarks = other.listkeyspatterns('bookmarks',
-                                                      patterns=names)
-        _showbookmarks(ui, fetchedbookmarks, **opts)
-        return
-    elif delete and 'remotenames' in extensions._extensions:
-        existing_local_bms = set(repo._bookmarks.keys())
-        scratch_bms = []
-        other_bms = []
-        for name in names:
-            if _scratchbranchmatcher(name) and name not in existing_local_bms:
-                scratch_bms.append(name)
-            else:
-                other_bms.append(name)
-
-        if len(scratch_bms) > 0:
-            if remotepath == '':
-                remotepath = 'default'
-            _deleteinfinitepushbookmarks(ui,
-                                         repo,
-                                         remotepath,
-                                         scratch_bms)
-
-        if len(other_bms) > 0 or len(scratch_bms) == 0:
-            return orig(ui, repo, *other_bms, **opts)
-    else:
-        return orig(ui, repo, *names, **opts)
 
 def _checkheads(orig, pushop):
     if pushop.ui.configbool(experimental, configscratchpush, False):

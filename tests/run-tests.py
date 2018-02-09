@@ -990,7 +990,12 @@ class Test(unittest.TestCase):
                 # the intermediate 'compile' step help with debugging
                 code = compile(source.read(), replacementfile, 'exec')
                 exec(code, data)
-                r.extend(data.get('substitutions', ()))
+                for value in data.get('substitutions', ()):
+                    if len(value) != 2:
+                        msg = 'malformatted substitution in %s: %r'
+                        msg %= (replacementfile, value)
+                        raise ValueError(msg)
+                    r.append(value)
         return r
 
     def _escapepath(self, p):

@@ -1805,10 +1805,10 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
         srcnode = cl.node(srcrev)
         destnode = cl.node(destmap[srcrev])
         # XXX: more advanced APIs are required to handle split correctly
-        successors = list(obsutil.allsuccessors(repo.obsstore, [srcnode]))
+        successors = set(obsutil.allsuccessors(repo.obsstore, [srcnode]))
         # obsutil.allsuccessors includes node itself
         successors.remove(srcnode)
-        if set(successors).issubset(extinctnodes):
+        if successors.issubset(extinctnodes):
             # all successors are extinct
             obsoleteextinctsuccessors.add(srcrev)
         if not successors:

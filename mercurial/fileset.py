@@ -464,9 +464,10 @@ def copied(mctx, x):
     getargs(x, 0, 0, _("copied takes no arguments"))
     s = []
     for f in mctx.subset:
-        p = mctx.ctx[f].parents()
-        if p and p[0].path() != f:
-            s.append(f)
+        if f in mctx.ctx:
+            p = mctx.ctx[f].parents()
+            if p and p[0].path() != f:
+                s.append(f)
     return s
 
 @predicate('revs(revs, pattern)')

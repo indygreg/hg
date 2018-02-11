@@ -14,7 +14,7 @@
 
 ignore blanklines in .hgsubstate
 
-  >>> file('.hgsubstate', 'wb').write('\n\n   \t \n   \n')
+  >>> open('.hgsubstate', 'wb').write(b'\n\n   \t \n   \n')
   $ hg st --subrepos
   M .hgsubstate
   $ hg revert -qC .hgsubstate
@@ -22,7 +22,7 @@ ignore blanklines in .hgsubstate
 abort more gracefully on .hgsubstate parsing error
 
   $ cp .hgsubstate .hgsubstate.old
-  >>> file('.hgsubstate', 'wb').write('\ninvalid')
+  >>> open('.hgsubstate', 'wb').write(b'\ninvalid')
   $ hg st --subrepos --cwd $TESTTMP -R $TESTTMP/repo
   abort: invalid subrepository revision specifier in 'repo/.hgsubstate' line 2
   [255]

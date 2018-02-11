@@ -1385,6 +1385,16 @@ def batchget(repo, mctx, wctx, actions):
     if i > 0:
         yield i, f
 
+def _prefetchfiles(repo, ctx, actions):
+    """Invoke ``scmutil.fileprefetchhooks()`` for the files relevant to the dict
+    of merge actions.  ``ctx`` is the context being merged in."""
+
+    # Skipping 'a', 'am', 'f', 'r', 'dm', 'e', 'k', 'p' and 'pr', because they
+    # don't touch the context to be merged in.  'cd' is skipped, because
+    # changed/deleted never resolves to something from the remote side.
+    oplist = [actions[a] for a in 'g dc dg m'.split()]
+    prefetch = scmutil.fileprefetchhooks
+    prefetch(repo, ctx, [f for sublist in oplist for f, args, msg in sublist])
 
 def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     """apply the merge action list to the working directory
@@ -1395,6 +1405,8 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     Return a tuple of counts (updated, merged, removed, unresolved) that
     describes how many files were affected by the update.
     """
+
+    _prefetchfiles(repo, mctx, actions)
 
     updated, merged, removed = 0, 0, 0
     ms = mergestate.clean(repo, wctx.p1().node(), mctx.node(), labels)

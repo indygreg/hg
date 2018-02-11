@@ -137,7 +137,6 @@ from mercurial import (
     fileset,
     hg,
     localrepo,
-    merge,
     minifileset,
     node,
     pycompat,
@@ -332,8 +331,6 @@ def extsetup(ui):
 
     wrapfunction(hg, 'clone', wrapper.hgclone)
     wrapfunction(hg, 'postshare', wrapper.hgpostshare)
-
-    wrapfunction(merge, 'applyupdates', wrapper.mergemodapplyupdates)
 
     scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
 

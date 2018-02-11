@@ -252,8 +252,8 @@ Prepare custom diff/edit tool:
   > #!$PYTHON
   > import time
   > time.sleep(1) # avoid unchanged-timestamp problems
-  > file('a/a', 'ab').write('edited\n')
-  > file('a/b', 'ab').write('edited\n')
+  > open('a/a', 'ab').write(b'edited\n')
+  > open('a/b', 'ab').write(b'edited\n')
   > EOT
 
 #if execbit

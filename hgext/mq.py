@@ -650,7 +650,7 @@ class queue(object):
         self.seriesdirty = True
 
     def pushable(self, idx):
-        if isinstance(idx, str):
+        if isinstance(idx, bytes):
             idx = self.series.index(idx)
         patchguards = self.seriesguards[idx]
         if not patchguards:

@@ -215,7 +215,7 @@ def extract(ui, fileobj):
 
     data = {}
     fd, tmpname = tempfile.mkstemp(prefix='hg-patch-')
-    tmpfp = os.fdopen(fd, pycompat.sysstr('w'))
+    tmpfp = os.fdopen(fd, pycompat.sysstr('wb'))
     try:
         msg = pycompat.emailparser().parse(fileobj)
 

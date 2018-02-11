@@ -1052,6 +1052,7 @@ class Test(unittest.TestCase):
         env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = self._testtmp
+        env['TESTNAME'] = self.name
         env['HOME'] = self._testtmp
         # This number should match portneeded in _getport
         for port in xrange(3):
@@ -2135,13 +2136,21 @@ class TextTestRunner(unittest.TextTestRunner):
             if self._runner.options.exceptions:
                 exceptions = aggregateexceptions(
                     os.path.join(self._runner._outputdir, b'exceptions'))
-                total = sum(exceptions.values())
 
                 self.stream.writeln('Exceptions Report:')
                 self.stream.writeln('%d total from %d frames' %
-                                    (total, len(exceptions)))
-                for (frame, line, exc), count in exceptions.most_common():
-                    self.stream.writeln('%d\t%s: %s' % (count, frame, exc))
+                                    (exceptions['total'],
+                                     len(exceptions['exceptioncounts'])))
+                combined = exceptions['combined']
+                for key in sorted(combined, key=combined.get, reverse=True):
+                    frame, line, exc = key
+                    totalcount, testcount, leastcount, leasttest = combined[key]
+
+                    self.stream.writeln('%d (%d tests)\t%s: %s (%s - %d total)'
+                                        % (totalcount,
+                                           testcount,
+                                           frame, exc,
+                                           leasttest, leastcount))
 
             self.stream.flush()
 
@@ -3012,22 +3021,57 @@ class TestRunner(object):
                       p.decode("utf-8"))
 
 def aggregateexceptions(path):
-    exceptions = collections.Counter()
+    exceptioncounts = collections.Counter()
+    testsbyfailure = collections.defaultdict(set)
+    failuresbytest = collections.defaultdict(set)
 
     for f in os.listdir(path):
         with open(os.path.join(path, f), 'rb') as fh:
             data = fh.read().split(b'\0')
-            if len(data) != 4:
+            if len(data) != 5:
                 continue
 
-            exc, mainframe, hgframe, hgline = data
+            exc, mainframe, hgframe, hgline, testname = data
             exc = exc.decode('utf-8')
             mainframe = mainframe.decode('utf-8')
             hgframe = hgframe.decode('utf-8')
             hgline = hgline.decode('utf-8')
-            exceptions[(hgframe, hgline, exc)] += 1
+            testname = testname.decode('utf-8')
 
-    return exceptions
+            key = (hgframe, hgline, exc)
+            exceptioncounts[key] += 1
+            testsbyfailure[key].add(testname)
+            failuresbytest[testname].add(key)
+
+    # Find test having fewest failures for each failure.
+    leastfailing = {}
+    for key, tests in testsbyfailure.items():
+        fewesttest = None
+        fewestcount = 99999999
+        for test in sorted(tests):
+            if len(failuresbytest[test]) < fewestcount:
+                fewesttest = test
+                fewestcount = len(failuresbytest[test])
+
+        leastfailing[key] = (fewestcount, fewesttest)
+
+    # Create a combined counter so we can sort by total occurrences and
+    # impacted tests.
+    combined = {}
+    for key in exceptioncounts:
+        combined[key] = (exceptioncounts[key],
+                         len(testsbyfailure[key]),
+                         leastfailing[key][0],
+                         leastfailing[key][1])
+
+    return {
+        'exceptioncounts': exceptioncounts,
+        'total': sum(exceptioncounts.values()),
+        'combined': combined,
+        'leastfailing': leastfailing,
+        'byfailure': testsbyfailure,
+        'bytest': failuresbytest,
+    }
 
 if __name__ == '__main__':
     runner = TestRunner()

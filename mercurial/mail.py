@@ -20,6 +20,7 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    pycompat,
     sslutil,
     util,
 )
@@ -218,7 +219,7 @@ def mimetextqp(body, subtype, charset):
     '''
     cs = email.charset.Charset(charset)
     msg = email.message.Message()
-    msg.set_type('text/' + subtype)
+    msg.set_type(pycompat.sysstr('text/' + subtype))
 
     for line in body.splitlines():
         if len(line) > 950:

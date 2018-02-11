@@ -218,7 +218,7 @@ class zipit(object):
                 dest.tell()
             except (AttributeError, IOError):
                 dest = tellable(dest)
-        self.z = zipfile.ZipFile(dest, 'w',
+        self.z = zipfile.ZipFile(dest, r'w',
                                  compress and zipfile.ZIP_DEFLATED or
                                  zipfile.ZIP_STORED)
 

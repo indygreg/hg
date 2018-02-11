@@ -214,7 +214,7 @@ def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
     else:
         dest = ui.expandpath(dest)
 
-    if isinstance(source, str):
+    if isinstance(source, bytes):
         origsource = ui.expandpath(source)
         source, branches = parseurl(origsource)
         srcrepo = repository(ui, source)

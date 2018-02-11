@@ -267,6 +267,10 @@ if ispy3:
         ret = shlex.split(s.decode('latin-1'))
         return [a.encode('latin-1') for a in ret]
 
+    def emailparser(*args, **kwargs):
+        import email.parser
+        return email.parser.BytesParser(*args, **kwargs)
+
 else:
     import cStringIO
 
@@ -326,6 +330,10 @@ else:
     maplist = map
     ziplist = zip
     rawinput = raw_input
+
+    def emailparser(*args, **kwargs):
+        import email.parser
+        return email.parser.Parser(*args, **kwargs)
 
 isjython = sysplatform.startswith('java')
 

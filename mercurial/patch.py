@@ -12,7 +12,6 @@ import collections
 import copy
 import difflib
 import email
-import email.parser as emailparser
 import errno
 import hashlib
 import os
@@ -109,7 +108,7 @@ def split(stream):
             cur.append(line)
         c = chunk(cur)
 
-        m = emailparser.Parser().parse(c)
+        m = pycompat.emailparser().parse(c)
         if not m.is_multipart():
             yield msgfp(m)
         else:
@@ -218,7 +217,7 @@ def extract(ui, fileobj):
     fd, tmpname = tempfile.mkstemp(prefix='hg-patch-')
     tmpfp = os.fdopen(fd, pycompat.sysstr('w'))
     try:
-        msg = emailparser.Parser().parse(fileobj)
+        msg = pycompat.emailparser().parse(fileobj)
 
         subject = msg['Subject'] and mail.headdecode(msg['Subject'])
         data['user'] = msg['From'] and mail.headdecode(msg['From'])

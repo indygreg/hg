@@ -220,7 +220,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     # Generate a random token to help identify responses to version 2
     # upgrade request.
-    token = bytes(uuid.uuid4())
+    token = pycompat.sysbytes(str(uuid.uuid4()))
     upgradecaps = [
         ('proto', wireprotoserver.SSHV2),
     ]

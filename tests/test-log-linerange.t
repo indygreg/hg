@@ -172,6 +172,9 @@ Add some changes with two diff hunks
   +3
   +4
   
+  $ hg log -f --graph -L foo,5:7 -p
+  abort: graph not supported with line range patterns
+  [255]
 
 With --template.
 
@@ -848,10 +851,4 @@ We get an error for removed files.
   $ hg ci -m 'remove baz' --quiet
   $ hg log -f -L dir/baz,5:7 -p
   abort: cannot follow file not in parent revision: "dir/baz"
-  [255]
-
-Graph log does work yet.
-
-  $ hg log -f -L dir/baz,5:7 --graph
-  abort: graph not supported with line range patterns
   [255]

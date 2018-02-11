@@ -2717,7 +2717,7 @@ def getport(port):
         pass
 
     try:
-        return socket.getservbyname(port)
+        return socket.getservbyname(pycompat.sysstr(port))
     except socket.error:
         raise Abort(_("no port number associated with service '%s'") % port)
 

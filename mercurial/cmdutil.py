@@ -2187,14 +2187,14 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         mfnode = ctx.manifestnode()
         try:
             if mfnode and mfl[mfnode].find(file)[0]:
-                _prefetchfiles(repo, ctx, [file])
+                scmutil.fileprefetchhooks(repo, ctx, [file])
                 write(file)
                 return 0
         except KeyError:
             pass
 
     files = [f for f in ctx.walk(matcher)]
-    _prefetchfiles(repo, ctx, files)
+    scmutil.fileprefetchhooks(repo, ctx, files)
 
     for abs in files:
         write(abs)

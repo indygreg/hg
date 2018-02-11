@@ -266,12 +266,6 @@ def _prefetchfiles(repo, ctx, files):
     if pointers:
         repo.svfs.lfsremoteblobstore.readbatch(pointers, localstore)
 
-def cmdutilprefetchfiles(orig, repo, ctx, files):
-    """Prefetch the indicated files before they are accessed by a command."""
-    orig(repo, ctx, files)
-
-    _prefetchfiles(repo, ctx, files)
-
 def mergemodapplyupdates(orig, repo, actions, wctx, mctx, overwrite,
                          labels=None):
     """Ensure that the required LFS blobs are present before applying updates,

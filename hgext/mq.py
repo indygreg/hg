@@ -1185,7 +1185,7 @@ class queue(object):
                 except error.Abort:
                     pass
             i += 1
-            name = '%s__%s' % (namebase, i)
+            name = '%s__%d' % (namebase, i)
         return name
 
     def checkkeepchanges(self, keepchanges, force):

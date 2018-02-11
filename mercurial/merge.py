@@ -973,14 +973,14 @@ def checkpathconflicts(repo, wctx, mctx, actions):
     # Rename all local conflicting files that have not been deleted.
     for p in localconflicts:
         if p not in deletedfiles:
-            ctxname = str(wctx).rstrip('+')
+            ctxname = bytes(wctx).rstrip('+')
             pnew = util.safename(p, ctxname, wctx, set(actions.keys()))
             actions[pnew] = ('pr', (p,), "local path conflict")
             actions[p] = ('p', (pnew, 'l'), "path conflict")
 
     if remoteconflicts:
         # Check if all files in the conflicting directories have been removed.
-        ctxname = str(mctx).rstrip('+')
+        ctxname = bytes(mctx).rstrip('+')
         for f, p in _filesindirs(repo, mf, remoteconflicts):
             if f not in deletedfiles:
                 m, args, msg = actions[p]

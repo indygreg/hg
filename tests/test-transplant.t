@@ -760,7 +760,7 @@ test with a win32ext like setup (differing EOLs)
   $ cd twin2
   $ echo '[patch]' >> .hg/hgrc
   $ echo 'eol = crlf' >> .hg/hgrc
-  $ $PYTHON -c "file('b', 'wb').write('b\r\nb\r\n')"
+  $ $PYTHON -c "open('b', 'wb').write(b'b\r\nb\r\n')"
   $ hg ci -Am addb
   adding b
   $ hg transplant -s ../twin1 tip
@@ -838,9 +838,9 @@ test transplanting a patch turning into a no-op
   $ cd binarysource
   $ echo a > a
   $ hg ci -Am adda a
-  >>> file('b', 'wb').write('\0b1')
+  >>> open('b', 'wb').write(b'\0b1')
   $ hg ci -Am addb b
-  >>> file('b', 'wb').write('\0b2')
+  >>> open('b', 'wb').write(b'\0b2')
   $ hg ci -m changeb b
   $ cd ..
 

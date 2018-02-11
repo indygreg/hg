@@ -2865,8 +2865,9 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
         if not opts.get('dry_run'):
             needdata = ('revert', 'add', 'undelete')
             if _revertprefetch is not _revertprefetchstub:
-                ui.deprecwarn("'cmdutil._revertprefetch' is deprecated, use "
-                              "'cmdutil._prefetchfiles'", '4.6', stacklevel=1)
+                ui.deprecwarn("'cmdutil._revertprefetch' is deprecated, "
+                              "add a callback to 'scmutil.fileprefetchhooks'",
+                              '4.6', stacklevel=1)
                 _revertprefetch(repo, ctx,
                                 *[actions[name][0] for name in needdata])
             oplist = [actions[name][0] for name in needdata]
@@ -2893,6 +2894,7 @@ _revertprefetch = _revertprefetchstub
 def _prefetchfiles(repo, ctx, files):
     """Let extensions changing the storage layer prefetch content for any non
     merge based command."""
+    scmutil.fileprefetchhooks(repo, ctx, files)
 
 def _performrevert(repo, parents, ctx, actions, interactive=False,
                    tobackup=None):

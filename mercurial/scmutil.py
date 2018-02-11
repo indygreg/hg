@@ -1222,6 +1222,11 @@ _reportnewcssource = [
     'unbundle',
 ]
 
+# a list of (repo, ctx, files) functions called by various commands to allow
+# extensions to ensure the corresponding files are available locally, before the
+# command uses them.
+fileprefetchhooks = util.hooks()
+
 # A marker that tells the evolve extension to suppress its own reporting
 _reportstroubledchangesets = True
 

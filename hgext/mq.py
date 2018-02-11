@@ -445,9 +445,9 @@ class queue(object):
     def __init__(self, ui, baseui, path, patchdir=None):
         self.basepath = path
         try:
-            fh = open(os.path.join(path, 'patches.queue'))
-            cur = fh.read().rstrip()
-            fh.close()
+            with open(os.path.join(path, 'patches.queue'), r'rb') as fh:
+                cur = fh.read().rstrip()
+
             if not cur:
                 curpath = os.path.join(path, 'patches')
             else:

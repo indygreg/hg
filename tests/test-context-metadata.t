@@ -13,18 +13,19 @@ Tests about metadataonlyctx
 
   $ cat > metaedit.py <<EOF
   > from __future__ import absolute_import
-  > from mercurial import context, registrar
+  > from mercurial import context, pycompat, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('metaedit')
+  > @command(b'metaedit')
   > def metaedit(ui, repo, arg):
   >     # Modify commit message to "FOO"
-  >     with repo.wlock(), repo.lock(), repo.transaction('metaedit'):
-  >         old = repo['.']
-  >         kwargs = dict(s.split('=', 1) for s in arg.split(';'))
+  >     with repo.wlock(), repo.lock(), repo.transaction(b'metaedit'):
+  >         old = repo[b'.']
+  >         kwargs = dict(s.split(b'=', 1) for s in arg.split(b';'))
   >         if 'parents' in kwargs:
-  >             kwargs['parents'] = kwargs['parents'].split(',')
-  >         new = context.metadataonlyctx(repo, old, **kwargs)
+  >             kwargs[b'parents'] = kwargs[b'parents'].split(b',')
+  >         new = context.metadataonlyctx(repo, old,
+  >                                       **pycompat.strkwargs(kwargs))
   >         new.commit()
   > EOF
   $ hg --config extensions.metaedit=$TESTTMP/metaedit.py metaedit 'text=Changed'

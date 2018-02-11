@@ -2871,8 +2871,8 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                 _revertprefetch(repo, ctx,
                                 *[actions[name][0] for name in needdata])
             oplist = [actions[name][0] for name in needdata]
-            _prefetchfiles(repo, ctx,
-                           [f for sublist in oplist for f in sublist])
+            prefetch = scmutil.fileprefetchhooks
+            prefetch(repo, ctx, [f for sublist in oplist for f in sublist])
             _performrevert(repo, parents, ctx, actions, interactive, tobackup)
 
         if targetsubs:
@@ -2890,11 +2890,6 @@ def _revertprefetchstub(repo, ctx, *files):
     issue a deprecation warning."""
 
 _revertprefetch = _revertprefetchstub
-
-def _prefetchfiles(repo, ctx, files):
-    """Let extensions changing the storage layer prefetch content for any non
-    merge based command."""
-    scmutil.fileprefetchhooks(repo, ctx, files)
 
 def _performrevert(repo, parents, ctx, actions, interactive=False,
                    tobackup=None):

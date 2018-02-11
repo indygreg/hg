@@ -126,7 +126,7 @@ def show(ui, repo, view=None, template=None):
         ui.write('\n')
 
         for name, func in sorted(views.items()):
-            ui.write(('%s\n') % func.__doc__)
+            ui.write(('%s\n') % pycompat.sysbytes(func.__doc__))
 
         ui.write('\n')
         raise error.Abort(_('no view requested'),

@@ -6,16 +6,16 @@ Test alignment of multibyte characters
   $ cd t
   $ $PYTHON << EOF
   > # (byte, width) = (6, 4)
-  > s = "\xe7\x9f\xad\xe5\x90\x8d"
+  > s = b"\xe7\x9f\xad\xe5\x90\x8d"
   > # (byte, width) = (7, 7): odd width is good for alignment test
-  > m = "MIDDLE_"
+  > m = b"MIDDLE_"
   > # (byte, width) = (18, 12)
-  > l = "\xe9\x95\xb7\xe3\x81\x84\xe9\x95\xb7\xe3\x81\x84\xe5\x90\x8d\xe5\x89\x8d"
-  > f = file('s', 'w'); f.write(s); f.close()
-  > f = file('m', 'w'); f.write(m); f.close()
-  > f = file('l', 'w'); f.write(l); f.close()
+  > l = b"\xe9\x95\xb7\xe3\x81\x84\xe9\x95\xb7\xe3\x81\x84\xe5\x90\x8d\xe5\x89\x8d"
+  > f = open('s', 'wb'); f.write(s); f.close()
+  > f = open('m', 'wb'); f.write(m); f.close()
+  > f = open('l', 'wb'); f.write(l); f.close()
   > # instant extension to show list of options
-  > f = file('showoptlist.py', 'w'); f.write("""# encoding: utf-8
+  > f = open('showoptlist.py', 'wb'); f.write(b"""# encoding: utf-8
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)

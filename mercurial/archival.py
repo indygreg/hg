@@ -18,10 +18,10 @@ import zlib
 from .i18n import _
 
 from . import (
-    cmdutil,
     error,
     formatter,
     match as matchmod,
+    scmutil,
     util,
     vfs as vfsmod,
 )
@@ -338,7 +338,7 @@ def archive(repo, dest, node, kind, decode=True, matchfn=None,
     total = len(files)
     if total:
         files.sort()
-        cmdutil._prefetchfiles(repo, ctx, files)
+        scmutil.fileprefetchhooks(repo, ctx, files)
         repo.ui.progress(_('archiving'), 0, unit=_('files'), total=total)
         for i, f in enumerate(files):
             ff = ctx.flags(f)

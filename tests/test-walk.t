@@ -494,12 +494,12 @@ Test patterns:
 
 Test listfile and listfile0
 
-  $ $PYTHON -c "file('listfile0', 'wb').write('fenugreek\0new\0')"
+  $ $PYTHON -c "open('listfile0', 'wb').write(b'fenugreek\0new\0')"
   $ hg debugwalk -I 'listfile0:listfile0'
   matcher: <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$))'>
   f  fenugreek  fenugreek
   f  new        new
-  $ $PYTHON -c "file('listfile', 'wb').write('fenugreek\nnew\r\nmammals/skunk\n')"
+  $ $PYTHON -c "open('listfile', 'wb').write(b'fenugreek\nnew\r\nmammals/skunk\n')"
   $ hg debugwalk -I 'listfile:listfile'
   matcher: <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$)|mammals\\/skunk(?:/|$))'>
   f  fenugreek      fenugreek

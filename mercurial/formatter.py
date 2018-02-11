@@ -291,7 +291,7 @@ class debugformatter(baseformatter):
         self._out = out
         self._out.write("%s = [\n" % self._topic)
     def _showitem(self):
-        self._out.write("    " + repr(self._item) + ",\n")
+        self._out.write('    %s,\n' % pycompat.sysbytes(repr(self._item)))
     def end(self):
         baseformatter.end(self)
         self._out.write("]\n")

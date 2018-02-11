@@ -231,8 +231,8 @@ Issue601: hg tag doesn't do the right thing if .hgtags or localtags
 doesn't end with EOL
 
   $ $PYTHON << EOF
-  > f = file('.hg/localtags'); last = f.readlines()[-1][:-1]; f.close()
-  > f = file('.hg/localtags', 'w'); f.write(last); f.close()
+  > f = open('.hg/localtags'); last = f.readlines()[-1][:-1]; f.close()
+  > f = open('.hg/localtags', 'w'); f.write(last); f.close()
   > EOF
   $ cat .hg/localtags; echo
   acb14030fe0a21b60322c440ad2d20cf7685a376 localblah
@@ -243,8 +243,8 @@ doesn't end with EOL
   
 
   $ $PYTHON << EOF
-  > f = file('.hgtags'); last = f.readlines()[-1][:-1]; f.close()
-  > f = file('.hgtags', 'w'); f.write(last); f.close()
+  > f = open('.hgtags'); last = f.readlines()[-1][:-1]; f.close()
+  > f = open('.hgtags', 'w'); f.write(last); f.close()
   > EOF
   $ hg ci -m'broken manual edit of .hgtags'
   $ cat .hgtags; echo

@@ -153,8 +153,7 @@ def getkeys(ui, repo, mygpg, sigdata, context):
     # warn for expired key and/or sigs
     for key in keys:
         if key[0] == "ERRSIG":
-            ui.write(_("%s Unknown key ID \"%s\"\n")
-                     % (prefix, shortkey(ui, key[1][:15])))
+            ui.write(_("%s Unknown key ID \"%s\"\n") % (prefix, key[1]))
             continue
         if key[0] == "BADSIG":
             ui.write(_("%s Bad signature from \"%s\"\n") % (prefix, key[2]))
@@ -319,13 +318,6 @@ def _dosign(ui, repo, *revs, **opts):
                     editor=editor)
     except ValueError as inst:
         raise error.Abort(str(inst))
-
-def shortkey(ui, key):
-    if len(key) != 16:
-        ui.debug("key ID \"%s\" format error\n" % key)
-        return key
-
-    return key[-8:]
 
 def node2txt(repo, node, ver):
     """map a manifest into some text"""

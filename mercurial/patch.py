@@ -242,7 +242,7 @@ def extract(ui, fileobj):
         ok_types = ('text/plain', 'text/x-diff', 'text/x-patch')
         message = ''
         for part in msg.walk():
-            content_type = part.get_content_type()
+            content_type = pycompat.bytestr(part.get_content_type())
             ui.debug('Content-Type: %s\n' % content_type)
             if content_type not in ok_types:
                 continue

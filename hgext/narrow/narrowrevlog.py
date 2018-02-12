@@ -8,6 +8,7 @@
 from __future__ import absolute_import
 
 from mercurial import (
+   error,
    manifest,
    revlog,
    util,
@@ -67,8 +68,8 @@ class excludeddirmanifestctx(manifest.treemanifestctx):
         return excludeddir(self._dir, self._node)
 
     def write(self, *args):
-        raise AssertionError('Attempt to write manifest from excluded dir %s' %
-                             self._dir)
+        raise error.ProgrammingError(
+            'attempt to write manifest from excluded dir %s' % self._dir)
 
 class excludedmanifestrevlog(manifest.manifestrevlog):
     """Stand-in for excluded treemanifest revlogs.
@@ -84,20 +85,20 @@ class excludedmanifestrevlog(manifest.manifestrevlog):
         self._dir = dir
 
     def __len__(self):
-        raise AssertionError('Attempt to get length of excluded dir %s' %
-                             self._dir)
+        raise error.ProgrammingError(
+            'attempt to get length of excluded dir %s' % self._dir)
 
     def rev(self, node):
-        raise AssertionError('Attempt to get rev from excluded dir %s' %
-                             self._dir)
+        raise error.ProgrammingError(
+            'attempt to get rev from excluded dir %s' % self._dir)
 
     def linkrev(self, node):
-        raise AssertionError('Attempt to get linkrev from excluded dir %s' %
-                             self._dir)
+        raise error.ProgrammingError(
+            'attempt to get linkrev from excluded dir %s' % self._dir)
 
     def node(self, rev):
-        raise AssertionError('Attempt to get node from excluded dir %s' %
-                             self._dir)
+        raise error.ProgrammingError(
+            'attempt to get node from excluded dir %s' % self._dir)
 
     def add(self, *args, **kwargs):
         # We should never write entries in dirlogs outside the narrow clone.

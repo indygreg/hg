@@ -192,11 +192,15 @@ def _showlist(name, values, mapping, plural=None, separator=' '):
     def one(v, tag=name):
         try:
             vmapping.update(v)
-        except (AttributeError, ValueError):
+        # Python 2 raises ValueError if the type of v is wrong. Python
+        # 3 raises TypeError.
+        except (AttributeError, TypeError, ValueError):
             try:
+                # Python 2 raises ValueError trying to destructure an e.g.
+                # bytes. Python 3 raises TypeError.
                 for a, b in v:
                     vmapping[a] = b
-            except ValueError:
+            except (TypeError, ValueError):
                 vmapping[name] = v
         return templ(tag, **pycompat.strkwargs(vmapping))
     lastname = 'last_' + name

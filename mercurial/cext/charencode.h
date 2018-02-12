@@ -25,6 +25,7 @@ PyObject *asciiupper(PyObject *self, PyObject *args);
 PyObject *make_file_foldmap(PyObject *self, PyObject *args);
 PyObject *jsonescapeu8fast(PyObject *self, PyObject *args);
 
+/* clang-format off */
 static const int8_t hextable[256] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -43,6 +44,7 @@ static const int8_t hextable[256] = {
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
+/* clang-format on */
 
 static inline int hexdigit(const char *p, Py_ssize_t off)
 {

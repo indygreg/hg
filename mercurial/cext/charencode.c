@@ -65,7 +65,6 @@ static const char uppertable[128] = {
 	'\x58', '\x59', '\x5a', 					/* x-z */
 				'\x7b', '\x7c', '\x7d', '\x7e', '\x7f'
 };
-/* clang-format on */
 
 /* 1: no escape, 2: \<c>, 6: \u<x> */
 static const uint8_t jsonlentable[256] = {
@@ -102,6 +101,7 @@ static const char hexchartable[16] = {
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
 };
+/* clang-format on */
 
 /*
  * Turn a hex-encoded string into binary.

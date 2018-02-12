@@ -289,7 +289,7 @@ class rebaseruntime(object):
                     skipped.add(old)
                 seen.add(new)
         repo.ui.debug('computed skipped revs: %s\n' %
-                        (' '.join(str(r) for r in sorted(skipped)) or None))
+                        (' '.join('%d' % r for r in sorted(skipped)) or ''))
         repo.ui.debug('rebase status resumed\n')
 
         self.originalwd = originalwd

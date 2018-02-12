@@ -11,8 +11,6 @@ Setup
   $ cat >> $HGRCPATH << EOF
   > [hooks]
   > pretxnchangegroup = sh $TESTTMP/pretxnchangegroup.sh
-  > [experimental]
-  > bundle2-exp = true
   > EOF
 
   $ hg init repo

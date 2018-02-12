@@ -22,6 +22,7 @@ import re
 
 from mercurial.i18n import _
 from mercurial import (
+    encoding,
     error,
     fancyopts,
     registrar,
@@ -109,7 +110,7 @@ class Command(object):
         self.args = []
         self.opts = {}
 
-    def __str__(self):
+    def __bytes__(self):
         cmd = "hg " + self.name
         if self.opts:
             for k, values in sorted(self.opts.iteritems()):
@@ -122,6 +123,8 @@ class Command(object):
             cmd += " "
             cmd += " ".join(self.args)
         return cmd
+
+    __str__ = encoding.strmethod(__bytes__)
 
     def append(self, value):
         self.args.append(value)
@@ -167,14 +170,14 @@ def add(ui, repo, *args, **kwargs):
             ui.status(_("note: use hg addremove to remove files that have "
                         "been deleted.\n\n"))
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def am(ui, repo, *args, **kwargs):
     cmdoptions=[
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
     cmd = Command('import')
-    ui.status(str(cmd), "\n")
+    ui.status(bytes(cmd), "\n")
 
 def apply(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -187,7 +190,7 @@ def apply(ui, repo, *args, **kwargs):
         cmd['-p'] = opts.get('p')
     cmd.extend(args)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def bisect(ui, repo, *args, **kwargs):
     ui.status(_("See 'hg help bisect' for how to use bisect.\n\n"))
@@ -198,7 +201,7 @@ def blame(ui, repo, *args, **kwargs):
     args, opts = parseoptions(ui, cmdoptions, args)
     cmd = Command('annotate -udl')
     cmd.extend([convert(v) for v in args])
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def branch(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -239,7 +242,7 @@ def branch(ui, repo, *args, **kwargs):
             cmd.append(args[0])
         elif len(args) == 1:
             cmd.append(args[0])
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def ispath(repo, string):
     """
@@ -330,7 +333,7 @@ def checkout(ui, repo, *args, **kwargs):
     else:
         raise error.Abort("a commit must be specified")
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def cherrypick(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -352,7 +355,7 @@ def cherrypick(ui, repo, *args, **kwargs):
     else:
         cmd.extend(args)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def clean(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -367,7 +370,7 @@ def clean(ui, repo, *args, **kwargs):
         cmd['--all'] = None
     cmd.extend(args)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def clone(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -397,7 +400,7 @@ def clone(ui, repo, *args, **kwargs):
         cocmd.append(opts.get('branch'))
         cmd = cmd & cocmd
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def commit(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -445,7 +448,7 @@ def commit(ui, repo, *args, **kwargs):
 
     cmd.extend(args)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def deprecated(ui, repo, *args, **kwargs):
     ui.warn(_('This command has been deprecated in the git project, ' +
@@ -476,7 +479,7 @@ def diff(ui, repo, *args, **kwargs):
         except Exception:
             cmd.append(a)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def difftool(ui, repo, *args, **kwargs):
     ui.status(_('Mercurial does not enable external difftool by default. You '
@@ -509,7 +512,7 @@ def fetch(ui, repo, *args, **kwargs):
                 else:
                     cmd['-r'] = v
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def grep(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -522,7 +525,7 @@ def grep(ui, repo, *args, **kwargs):
     # pattern first, followed by paths.
     cmd.extend(args)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def init(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -534,7 +537,7 @@ def init(ui, repo, *args, **kwargs):
     if len(args) > 0:
         cmd.append(args[0])
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def log(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -588,7 +591,7 @@ def log(ui, repo, *args, **kwargs):
             del args[0]
         cmd.extend(args)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def lsfiles(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -624,7 +627,7 @@ def lsfiles(ui, repo, *args, **kwargs):
     for include in args:
         cmd['-I'] = util.shellquote(include)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def merge(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -636,7 +639,7 @@ def merge(ui, repo, *args, **kwargs):
     if len(args) > 0:
         cmd.append(args[len(args) - 1])
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def mergebase(ui, repo, *args, **kwargs):
     cmdoptions = []
@@ -650,7 +653,7 @@ def mergebase(ui, repo, *args, **kwargs):
 
     ui.status(_('NOTE: ancestors() is part of the revset language.\n'),
               _("Learn more about revsets with 'hg help revsets'\n\n"))
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def mergetool(ui, repo, *args, **kwargs):
     cmdoptions = []
@@ -661,7 +664,7 @@ def mergetool(ui, repo, *args, **kwargs):
     if len(args) == 0:
         cmd['--all'] = None
     cmd.extend(args)
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def mv(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -675,7 +678,7 @@ def mv(ui, repo, *args, **kwargs):
     if opts.get('force'):
         cmd['-f'] = None
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def pull(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -701,7 +704,7 @@ def pull(ui, repo, *args, **kwargs):
                 else:
                     cmd['-r'] = v
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def push(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -728,7 +731,7 @@ def push(ui, repo, *args, **kwargs):
     if opts.get('force'):
         cmd['-f'] = None
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def rebase(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -748,12 +751,12 @@ def rebase(ui, repo, *args, **kwargs):
         if len(args) > 0:
             ui.status(_("also note: 'hg histedit' will automatically detect"
                       " your stack, so no second argument is necessary.\n\n"))
-        ui.status((str(cmd)), "\n")
+        ui.status((bytes(cmd)), "\n")
         return
 
     if opts.get('skip'):
         cmd = Command('revert --all -r .')
-        ui.status((str(cmd)), "\n")
+        ui.status((bytes(cmd)), "\n")
 
     cmd = Command('rebase')
 
@@ -777,7 +780,7 @@ def rebase(ui, repo, *args, **kwargs):
             cmd['-d'] = convert(args[0])
             cmd['-b'] = convert(args[1])
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def reflog(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -791,7 +794,7 @@ def reflog(ui, repo, *args, **kwargs):
     if len(args) > 0:
         cmd.append(args[0])
 
-    ui.status(str(cmd), "\n\n")
+    ui.status(bytes(cmd), "\n\n")
     ui.status(_("note: in hg commits can be deleted from repo but we always"
               " have backups.\n"))
 
@@ -819,7 +822,7 @@ def reset(ui, repo, *args, **kwargs):
 
     cmd.append(commit)
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def revert(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -834,7 +837,7 @@ def revert(ui, repo, *args, **kwargs):
     if args:
         cmd.append(args[0])
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def revparse(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -847,7 +850,7 @@ def revparse(ui, repo, *args, **kwargs):
         cmd = Command('root')
         if opts.get('show_cdup'):
             ui.status(_("note: hg root prints the root of the repository\n\n"))
-        ui.status((str(cmd)), "\n")
+        ui.status((bytes(cmd)), "\n")
     else:
         ui.status(_("note: see hg help revset for how to refer to commits\n"))
 
@@ -866,7 +869,7 @@ def rm(ui, repo, *args, **kwargs):
     if opts.get('dry_run'):
         cmd['-n'] = None
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def show(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -898,7 +901,7 @@ def show(ui, repo, *args, **kwargs):
     else:
         cmd = Command('export')
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def stash(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -934,7 +937,7 @@ def stash(ui, repo, *args, **kwargs):
             elif len(args) > 1:
                 cmd['--name'] = args[1]
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def status(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -948,7 +951,7 @@ def status(ui, repo, *args, **kwargs):
     if opts.get('ignored'):
         cmd['-i'] = None
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def svn(ui, repo, *args, **kwargs):
     svncmd = args[0]
@@ -965,7 +968,7 @@ def svndcommit(ui, repo, *args, **kwargs):
 
     cmd = Command('push')
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def svnfetch(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -975,7 +978,7 @@ def svnfetch(ui, repo, *args, **kwargs):
     cmd = Command('pull')
     cmd.append('default-push')
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def svnfindrev(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -985,7 +988,7 @@ def svnfindrev(ui, repo, *args, **kwargs):
     cmd = Command('log')
     cmd['-r'] = args[0]
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def svnrebase(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -1000,7 +1003,7 @@ def svnrebase(ui, repo, *args, **kwargs):
 
     cmd = pullcmd & rebasecmd
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 def tag(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -1024,7 +1027,7 @@ def tag(ui, repo, *args, **kwargs):
         if opts.get('force'):
             cmd['-f'] = None
 
-    ui.status((str(cmd)), "\n")
+    ui.status((bytes(cmd)), "\n")
 
 gitcommands = {
     'add': add,

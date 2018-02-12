@@ -288,13 +288,13 @@ def _addressencode(ui, name, addr, charsets=None):
             addr = addr.encode('ascii')
         except UnicodeDecodeError:
             raise error.Abort(_('invalid local address: %s') % addr)
-    return email.Utils.formataddr((name, addr))
+    return email.utils.formataddr((name, addr))
 
 def addressencode(ui, address, charsets=None, display=False):
     '''Turns address into RFC-2047 compliant header.'''
     if display or not address:
         return address or ''
-    name, addr = email.Utils.parseaddr(address)
+    name, addr = email.utils.parseaddr(address)
     return _addressencode(ui, name, addr, charsets)
 
 def addrlistencode(ui, addrs, charsets=None, display=False):
@@ -305,7 +305,7 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
         return [a.strip() for a in addrs if a.strip()]
 
     result = []
-    for name, addr in email.Utils.getaddresses(addrs):
+    for name, addr in email.utils.getaddresses(addrs):
         if name or addr:
             result.append(_addressencode(ui, name, addr, charsets))
     return result

@@ -24,7 +24,7 @@ def uisetup():
         class expandingpeer(peer.__class__):
             def expandnarrow(self, narrow_include, narrow_exclude, nodes):
                 ui.status(_("expanding narrowspec\n"))
-                if not self.capable('expandnarrow'):
+                if not self.capable('exp-expandnarrow'):
                     raise error.Abort(
                         'peer does not support expanding narrowspecs')
 

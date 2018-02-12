@@ -417,9 +417,9 @@ preoutgoing hook can prevent outgoing changes for local clones
   > def printargs(ui, args):
   >     a = list(args.items())
   >     a.sort()
-  >     ui.write('hook args:\n')
+  >     ui.write(b'hook args:\n')
   >     for k, v in a:
-  >        ui.write('  %s %s\n' % (k, v))
+  >        ui.write(b'  %s %s\n' % (k, v))
   > 
   > def passhook(ui, repo, **args):
   >     printargs(ui, args)
@@ -432,19 +432,19 @@ preoutgoing hook can prevent outgoing changes for local clones
   >     pass
   > 
   > def raisehook(**args):
-  >     raise LocalException('exception from hook')
+  >     raise LocalException(b'exception from hook')
   > 
   > def aborthook(**args):
-  >     raise error.Abort('raise abort from hook')
+  >     raise error.Abort(b'raise abort from hook')
   > 
   > def brokenhook(**args):
   >     return 1 + {}
   > 
   > def verbosehook(ui, **args):
-  >     ui.note('verbose output from hook\n')
+  >     ui.note(b'verbose output from hook\n')
   > 
   > def printtags(ui, repo, **args):
-  >     ui.write('%s\n' % sorted(repo.tags()))
+  >     ui.write(b'%s\n' % sorted(repo.tags()))
   > 
   > class container:
   >     unreachable = 1
@@ -667,7 +667,7 @@ test python hook configured with python:[file]:[hook] syntax
   $ cd hooks
   $ cat > testhooks.py <<EOF
   > def testhook(ui, **args):
-  >     ui.write('hook works\n')
+  >     ui.write(b'hook works\n')
   > EOF
   $ echo '[hooks]' > ../repo/.hg/hgrc
   $ echo "pre-commit.test = python:`pwd`/testhooks.py:testhook" >> ../repo/.hg/hgrc
@@ -886,7 +886,7 @@ Hook from untrusted hgrc are reported as failure
   > def uisetup(ui):
   >     class untrustedui(ui.__class__):
   >         def _trusted(self, fp, f):
-  >             if util.normpath(fp.name).endswith('untrusted/.hg/hgrc'):
+  >             if util.normpath(fp.name).endswith(b'untrusted/.hg/hgrc'):
   >                 return False
   >             return super(untrustedui, self)._trusted(fp, f)
   >     ui.__class__ = untrustedui

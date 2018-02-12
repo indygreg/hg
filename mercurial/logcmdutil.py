@@ -81,7 +81,7 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
     if fp is not None or ui.canwritewithoutlabels():
         out = fp or ui
         if stat:
-            chunks = patch.diffstat(util.iterlines(chunks), width=width)
+            chunks = [patch.diffstat(util.iterlines(chunks), width=width)]
         for chunk in util.filechunkiter(util.chunkbuffer(chunks)):
             out.write(chunk)
     else:

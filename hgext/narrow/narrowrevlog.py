@@ -139,6 +139,12 @@ def makenarrowmanifestlog(mfl, repo):
 def makenarrowfilelog(fl, narrowmatch):
     class narrowfilelog(fl.__class__):
         def renamed(self, node):
+            # Renames that come from outside the narrowspec are
+            # problematic at least for git-diffs, because we lack the
+            # base text for the rename. This logic was introduced in
+            # 3cd72b1 of narrowhg (authored by martinvonz, reviewed by
+            # adgar), but that revision doesn't have any additional
+            # commentary on what problems we can encounter.
             m = super(narrowfilelog, self).renamed(node)
             if m and not narrowmatch(m[0]):
                 return None

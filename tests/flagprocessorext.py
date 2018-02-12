@@ -45,14 +45,14 @@ def gzipdecompress(self, text):
 
 def supportedoutgoingversions(orig, repo):
     versions = orig(repo)
-    versions.discard('01')
-    versions.discard('02')
-    versions.add('03')
+    versions.discard(b'01')
+    versions.discard(b'02')
+    versions.add(b'03')
     return versions
 
 def allsupportedversions(orig, ui):
     versions = orig(ui)
-    versions.add('03')
+    versions.add(b'03')
     return versions
 
 def noopaddrevision(orig, self, text, transaction, link, p1, p2,
@@ -106,7 +106,7 @@ def extsetup(ui):
 
     # Teach exchange to use changegroup 3
     for k in exchange._bundlespeccgversions.keys():
-        exchange._bundlespeccgversions[k] = '03'
+        exchange._bundlespeccgversions[k] = b'03'
 
     # Add wrappers for addrevision, responsible to set flags depending on the
     # revision data contents.

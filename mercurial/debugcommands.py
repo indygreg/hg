@@ -2356,7 +2356,7 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
     """
     # passed to successorssets caching computation from one call to another
     cache = {}
-    ctx2str = str
+    ctx2str = bytes
     node2str = short
     for rev in scmutil.revrange(repo, revs):
         ctx = repo[rev]

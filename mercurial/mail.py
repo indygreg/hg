@@ -206,7 +206,7 @@ def mimetextpatch(s, subtype='plain', display=False):
         return mimetextqp(s, subtype, 'us-ascii')
     for charset in cs:
         try:
-            s.decode(charset)
+            s.decode(pycompat.sysstr(charset))
             return mimetextqp(s, subtype, codec2iana(charset))
         except UnicodeDecodeError:
             pass

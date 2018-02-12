@@ -116,12 +116,12 @@ def makenarrowmanifestrevlog(mfrevlog, repo):
         # This function is called via debug{revlog,index,data}, but also during
         # at least some push operations. This will be used to wrap/exclude the
         # child directories when using treemanifests.
-        def dirlog(self, dir):
-            if dir and not dir.endswith('/'):
-                dir = dir + '/'
-            if not repo.narrowmatch().visitdir(dir[:-1] or '.'):
-                return excludedmanifestrevlog(dir)
-            result = super(narrowmanifestrevlog, self).dirlog(dir)
+        def dirlog(self, d):
+            if d and not d.endswith('/'):
+                d = d + '/'
+            if not repo.narrowmatch().visitdir(d[:-1] or '.'):
+                return excludedmanifestrevlog(d)
+            result = super(narrowmanifestrevlog, self).dirlog(d)
             makenarrowmanifestrevlog(result, repo)
             return result
 

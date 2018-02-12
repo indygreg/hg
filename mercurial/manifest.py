@@ -1245,15 +1245,15 @@ class manifestrevlog(revlog.revlog):
         self._fulltextcache.clear()
         self._dirlogcache = {'': self}
 
-    def dirlog(self, dir):
-        if dir:
+    def dirlog(self, d):
+        if d:
             assert self._treeondisk
-        if dir not in self._dirlogcache:
-            mfrevlog = manifestrevlog(self.opener, dir,
+        if d not in self._dirlogcache:
+            mfrevlog = manifestrevlog(self.opener, d,
                                       self._dirlogcache,
                                       treemanifest=self._treeondisk)
-            self._dirlogcache[dir] = mfrevlog
-        return self._dirlogcache[dir]
+            self._dirlogcache[d] = mfrevlog
+        return self._dirlogcache[d]
 
     def add(self, m, transaction, link, p1, p2, added, removed, readtree=None):
         if (p1 in self.fulltextcache and util.safehasattr(m, 'fastdelta')

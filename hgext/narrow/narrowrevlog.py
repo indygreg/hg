@@ -31,6 +31,16 @@ def setup():
     pass
 
 class excludeddir(manifest.treemanifest):
+    """Stand-in for a directory that is excluded from the repository.
+
+    With narrowing active on a repository that uses treemanifests,
+    some of the directory revlogs will be excluded from the resulting
+    clone. This is a huge storage win for clients, but means we need
+    some sort of pseudo-manifest to surface to internals so we can
+    detect a merge conflict outside the narrowspec. That's what this
+    class is: it stands in for a directory whose node is known, but
+    whose contents are unknown.
+    """
     def __init__(self, dir, node):
         super(excludeddir, self).__init__(dir)
         self._node = node
@@ -48,6 +58,7 @@ class excludeddir(manifest.treemanifest):
         return self
 
 class excludeddirmanifestctx(manifest.treemanifestctx):
+    """context wrapper for excludeddir - see that docstring for rationale"""
     def __init__(self, dir, node):
         self._dir = dir
         self._node = node
@@ -60,6 +71,15 @@ class excludeddirmanifestctx(manifest.treemanifestctx):
                              self._dir)
 
 class excludedmanifestrevlog(manifest.manifestrevlog):
+    """Stand-in for excluded treemanifest revlogs.
+
+    When narrowing is active on a treemanifest repository, we'll have
+    references to directories we can't see due to the revlog being
+    skipped. This class exists to conform to the manifestrevlog
+    interface for those directories and proactively prevent writes to
+    outside the narrowspec.
+    """
+
     def __init__(self, dir):
         self._dir = dir
 

@@ -180,7 +180,7 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes,
     >>> restrictpatterns({'f1/$non_exitent_var'}, {}, ['f1','f2'], [])
     (set(['f1/$non_exitent_var']), {})
     """
-    res_excludes = req_excludes.copy()
+    res_excludes = set(req_excludes)
     res_excludes.update(repo_excludes)
     if not req_includes:
         res_includes = set(repo_includes)

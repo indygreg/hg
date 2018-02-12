@@ -43,6 +43,7 @@ test-diff-reverse.t
 test-diff-subdir.t
 test-diffdir.t
 test-directaccess.t
+test-dirstate-backup.t
 test-dirstate-nonnormalset.t
 test-doctest.py
 test-double-merge.t
@@ -89,6 +90,7 @@ test-inherit-mode.t
 test-issue1089.t
 test-issue1175.t
 test-issue1306.t
+test-issue1438.t
 test-issue1502.t
 test-issue1802.t
 test-issue1877.t
@@ -176,7 +178,9 @@ test-revlog-packentry.t
 test-revset-dirstate-parents.t
 test-revset-outgoing.t
 test-run-tests.py
+test-serve.t
 test-show-stack.t
+test-show.t
 test-simple-update.t
 test-single-head.t
 test-sparse-clear.t

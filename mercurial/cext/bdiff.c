@@ -19,7 +19,6 @@
 #include "bitmanipulation.h"
 #include "util.h"
 
-
 static PyObject *blocks(PyObject *self, PyObject *args)
 {
 	PyObject *sa, *sb, *rl = NULL, *m;
@@ -82,9 +81,7 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 	_save = PyEval_SaveThread();
 
 	lmax = la > lb ? lb : la;
-	for (ia = sa, ib = sb;
-	     li < lmax && *ia == *ib;
-	     ++li, ++ia, ++ib)
+	for (ia = sa, ib = sb; li < lmax && *ia == *ib; ++li, ++ia, ++ib)
 		if (*ia == '\n')
 			lcommon = li + 1;
 	/* we can almost add: if (li == lmax) lcommon = li; */
@@ -122,7 +119,8 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 		if (h->a1 != la || h->b1 != lb) {
 			len = bl[h->b1].l - bl[lb].l;
 			putbe32((uint32_t)(al[la].l + lcommon - al->l), rb);
-			putbe32((uint32_t)(al[h->a1].l + lcommon - al->l), rb + 4);
+			putbe32((uint32_t)(al[h->a1].l + lcommon - al->l),
+			        rb + 4);
 			putbe32((uint32_t)len, rb + 8);
 			memcpy(rb + 12, bl[lb].l, len);
 			rb += 12 + len;
@@ -167,8 +165,8 @@ static PyObject *fixws(PyObject *self, PyObject *args)
 		if (c == ' ' || c == '\t' || c == '\r') {
 			if (!allws && (wlen == 0 || w[wlen - 1] != ' '))
 				w[wlen++] = ' ';
-		} else if (c == '\n' && !allws
-			  && wlen > 0 && w[wlen - 1] == ' ') {
+		} else if (c == '\n' && !allws && wlen > 0 &&
+		           w[wlen - 1] == ' ') {
 			w[wlen - 1] = '\n';
 		} else {
 			w[wlen++] = c;
@@ -182,25 +180,20 @@ nomem:
 	return result ? result : PyErr_NoMemory();
 }
 
-
 static char mdiff_doc[] = "Efficient binary diff.";
 
 static PyMethodDef methods[] = {
-	{"bdiff", bdiff, METH_VARARGS, "calculate a binary diff\n"},
-	{"blocks", blocks, METH_VARARGS, "find a list of matching lines\n"},
-	{"fixws", fixws, METH_VARARGS, "normalize diff whitespaces\n"},
-	{NULL, NULL}
+    {"bdiff", bdiff, METH_VARARGS, "calculate a binary diff\n"},
+    {"blocks", blocks, METH_VARARGS, "find a list of matching lines\n"},
+    {"fixws", fixws, METH_VARARGS, "normalize diff whitespaces\n"},
+    {NULL, NULL},
 };
 
 static const int version = 1;
 
 #ifdef IS_PY3K
 static struct PyModuleDef bdiff_module = {
-	PyModuleDef_HEAD_INIT,
-	"bdiff",
-	mdiff_doc,
-	-1,
-	methods
+    PyModuleDef_HEAD_INIT, "bdiff", mdiff_doc, -1, methods,
 };
 
 PyMODINIT_FUNC PyInit_bdiff(void)

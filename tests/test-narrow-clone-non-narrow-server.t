@@ -18,7 +18,7 @@ Test attempting a narrow clone against a server that doesn't support narrowhg.
   $ cat hg.pid >> "$DAEMON_PIDS"
 
 Verify that narrow is advertised in the bundle2 capabilities:
-  $ echo capabilities | hg -R . serve --stdio | \
+  $ echo hello | hg -R . serve --stdio | \
   >   python -c "import sys, urllib; print urllib.unquote_plus(list(sys.stdin)[1])" | grep narrow
   narrow=v0
 

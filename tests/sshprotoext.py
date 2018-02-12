@@ -68,7 +68,7 @@ class upgradev2server(wireprotoserver.sshserver):
         l = self._fin.readline()
         assert l == b'between\n'
         l = self._fin.readline()
-        assert l == 'pairs 81\n'
+        assert l == b'pairs 81\n'
         self._fin.read(81)
 
         # Send the upgrade response.

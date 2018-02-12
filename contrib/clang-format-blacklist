@@ -1,6 +1,5 @@
 # Files that just need to be migrated to the formatter.
 # Do not add new files here!
-mercurial/cext/base85.c
 mercurial/cext/dirs.c
 mercurial/cext/manifest.c
 mercurial/cext/mpatch.c

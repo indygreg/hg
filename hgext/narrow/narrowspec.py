@@ -83,7 +83,11 @@ def _numlines(s):
     return len((s + 'x').splitlines())
 
 def _validatepattern(pat):
-    """Validates the pattern and aborts if it is invalid."""
+    """Validates the pattern and aborts if it is invalid.
+
+    Patterns are stored in the narrowspec as newline-separated
+    POSIX-style bytestring paths. There's no escaping.
+    """
 
     # We use newlines as separators in the narrowspec file, so don't allow them
     # in patterns.

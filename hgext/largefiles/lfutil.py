@@ -15,6 +15,7 @@ import os
 import stat
 
 from mercurial.i18n import _
+from mercurial.node import hex
 
 from mercurial import (
     dirstate,
@@ -371,7 +372,7 @@ def copyandhash(instream, outfile):
     for data in instream:
         hasher.update(data)
         outfile.write(data)
-    return hasher.hexdigest()
+    return hex(hasher.digest())
 
 def hashfile(file):
     if not os.path.exists(file):
@@ -404,7 +405,7 @@ def hexsha1(fileobj):
     h = hashlib.sha1()
     for chunk in util.filechunkiter(fileobj):
         h.update(chunk)
-    return h.hexdigest()
+    return hex(h.digest())
 
 def httpsendfile(ui, filename):
     return httpconnection.httpsendfile(ui, filename, 'rb')

@@ -2,7 +2,6 @@
 # Do not add new files here!
 mercurial/cext/dirs.c
 mercurial/cext/manifest.c
-mercurial/cext/mpatch.c
 mercurial/cext/osutil.c
 mercurial/cext/revlog.c
 # Vendored code that we should never format:

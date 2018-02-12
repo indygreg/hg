@@ -992,6 +992,7 @@ def handlecommandexception(ui):
     this function returns False, ignored otherwise.
     """
     warning = _exceptionwarning(ui)
-    ui.log("commandexception", "%s\n%s\n", warning, traceback.format_exc())
+    ui.log("commandexception", "%s\n%s\n", warning,
+           pycompat.sysbytes(traceback.format_exc()))
     ui.warn(warning)
     return False  # re-raise the exception

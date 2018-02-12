@@ -1551,7 +1551,7 @@ def _docommit(ui, repo, *pats, **opts):
 
     extra = {}
     if opts.get('close_branch'):
-        extra['close'] = 1
+        extra['close'] = '1'
 
         if not bheads:
             raise error.Abort(_('can only close branch heads'))

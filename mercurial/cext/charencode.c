@@ -151,9 +151,8 @@ PyObject *isasciistr(PyObject *self, PyObject *args)
 	Py_RETURN_TRUE;
 }
 
-static inline PyObject *_asciitransform(PyObject *str_obj,
-					const char table[128],
-					PyObject *fallback_fn)
+static inline PyObject *
+_asciitransform(PyObject *str_obj, const char table[128], PyObject *fallback_fn)
 {
 	char *str, *newstr;
 	Py_ssize_t i, len;
@@ -173,12 +172,12 @@ static inline PyObject *_asciitransform(PyObject *str_obj,
 		char c = str[i];
 		if (c & 0x80) {
 			if (fallback_fn != NULL) {
-				ret = PyObject_CallFunctionObjArgs(fallback_fn,
-					str_obj, NULL);
+				ret = PyObject_CallFunctionObjArgs(
+				    fallback_fn, str_obj, NULL);
 			} else {
 				PyObject *err = PyUnicodeDecodeError_Create(
-					"ascii", str, len, i, (i + 1),
-					"unexpected code byte");
+				    "ascii", str, len, i, (i + 1),
+				    "unexpected code byte");
 				PyErr_SetObject(PyExc_UnicodeDecodeError, err);
 				Py_XDECREF(err);
 			}
@@ -220,10 +219,9 @@ PyObject *make_file_foldmap(PyObject *self, PyObject *args)
 	Py_ssize_t pos = 0;
 	const char *table;
 
-	if (!PyArg_ParseTuple(args, "O!O!O!:make_file_foldmap",
-			      &PyDict_Type, &dmap,
-			      &PyInt_Type, &spec_obj,
-			      &PyFunction_Type, &normcase_fallback))
+	if (!PyArg_ParseTuple(args, "O!O!O!:make_file_foldmap", &PyDict_Type,
+	                      &dmap, &PyInt_Type, &spec_obj, &PyFunction_Type,
+	                      &normcase_fallback))
 		goto quit;
 
 	spec = (int)PyInt_AS_LONG(spec_obj);
@@ -251,7 +249,7 @@ PyObject *make_file_foldmap(PyObject *self, PyObject *args)
 	while (PyDict_Next(dmap, &pos, &k, &v)) {
 		if (!dirstate_tuple_check(v)) {
 			PyErr_SetString(PyExc_TypeError,
-					"expected a dirstate tuple");
+			                "expected a dirstate tuple");
 			goto quit;
 		}
 
@@ -260,10 +258,10 @@ PyObject *make_file_foldmap(PyObject *self, PyObject *args)
 			PyObject *normed;
 			if (table != NULL) {
 				normed = _asciitransform(k, table,
-					normcase_fallback);
+				                         normcase_fallback);
 			} else {
 				normed = PyObject_CallFunctionObjArgs(
-					normcase_fallback, k, NULL);
+				    normcase_fallback, k, NULL);
 			}
 
 			if (normed == NULL)
@@ -292,13 +290,13 @@ static Py_ssize_t jsonescapelen(const char *buf, Py_ssize_t len, bool paranoid)
 			char c = buf[i];
 			if (c & 0x80) {
 				PyErr_SetString(PyExc_ValueError,
-						"cannot process non-ascii str");
+				                "cannot process non-ascii str");
 				return -1;
 			}
 			esclen += jsonparanoidlentable[(unsigned char)c];
 			if (esclen < 0) {
 				PyErr_SetString(PyExc_MemoryError,
-						"overflow in jsonescapelen");
+				                "overflow in jsonescapelen");
 				return -1;
 			}
 		}
@@ -308,7 +306,7 @@ static Py_ssize_t jsonescapelen(const char *buf, Py_ssize_t len, bool paranoid)
 			esclen += jsonlentable[(unsigned char)c];
 			if (esclen < 0) {
 				PyErr_SetString(PyExc_MemoryError,
-						"overflow in jsonescapelen");
+				                "overflow in jsonescapelen");
 				return -1;
 			}
 		}
@@ -336,17 +334,17 @@ static char jsonescapechar2(char c)
 	case '\\':
 		return '\\';
 	}
-	return '\0';  /* should not happen */
+	return '\0'; /* should not happen */
 }
 
 /* convert 'origbuf' to JSON-escaped form 'escbuf'; 'origbuf' should only
    include characters mappable by json(paranoid)lentable */
 static void encodejsonescape(char *escbuf, Py_ssize_t esclen,
-			     const char *origbuf, Py_ssize_t origlen,
-			     bool paranoid)
+                             const char *origbuf, Py_ssize_t origlen,
+                             bool paranoid)
 {
 	const uint8_t *lentable =
-		(paranoid) ? jsonparanoidlentable : jsonlentable;
+	    (paranoid) ? jsonparanoidlentable : jsonlentable;
 	Py_ssize_t i, j;
 
 	for (i = 0, j = 0; i < origlen; i++) {
@@ -377,15 +375,15 @@ PyObject *jsonescapeu8fast(PyObject *self, PyObject *args)
 	const char *origbuf;
 	Py_ssize_t origlen, esclen;
 	int paranoid;
-	if (!PyArg_ParseTuple(args, "O!i:jsonescapeu8fast",
-			      &PyBytes_Type, &origstr, &paranoid))
+	if (!PyArg_ParseTuple(args, "O!i:jsonescapeu8fast", &PyBytes_Type,
+	                      &origstr, &paranoid))
 		return NULL;
 
 	origbuf = PyBytes_AS_STRING(origstr);
 	origlen = PyBytes_GET_SIZE(origstr);
 	esclen = jsonescapelen(origbuf, origlen, paranoid);
 	if (esclen < 0)
-		return NULL;  /* unsupported char found or overflow */
+		return NULL; /* unsupported char found or overflow */
 	if (origlen == esclen) {
 		Py_INCREF(origstr);
 		return origstr;
@@ -395,7 +393,7 @@ PyObject *jsonescapeu8fast(PyObject *self, PyObject *args)
 	if (!escstr)
 		return NULL;
 	encodejsonescape(PyBytes_AS_STRING(escstr), esclen, origbuf, origlen,
-			 paranoid);
+	                 paranoid);
 
 	return escstr;
 }

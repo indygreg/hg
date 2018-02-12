@@ -1729,7 +1729,7 @@ def handlechangegroup(op, inpart):
     extrakwargs = {}
     targetphase = inpart.params.get('targetphase')
     if targetphase is not None:
-        extrakwargs['targetphase'] = int(targetphase)
+        extrakwargs[r'targetphase'] = int(targetphase)
     ret = _processchangegroup(op, cg, tr, 'bundle2', 'bundle2',
                               expectedtotal=nbchangesets, **extrakwargs)
     if op.reply is not None:

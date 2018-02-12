@@ -75,6 +75,10 @@ def wraprepo(repo, opts_narrow):
 
         @localrepo.repofilecache(narrowspec.FILENAME)
         def narrowpats(self):
+            """matcher patterns for this repository's narrowspec
+
+            A tuple of (includes, excludes).
+            """
             return narrowspec.load(self)
 
         @localrepo.repofilecache(narrowspec.FILENAME)

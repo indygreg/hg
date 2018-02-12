@@ -49,12 +49,12 @@ def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
                 modname = modfile
         with demandimport.deactivated():
             try:
-                obj = __import__(modname)
+                obj = __import__(pycompat.sysstr(modname))
             except (ImportError, SyntaxError):
                 e1 = sys.exc_info()
                 try:
                     # extensions are loaded with hgext_ prefix
-                    obj = __import__("hgext_%s" % modname)
+                    obj = __import__(r"hgext_%s" % pycompat.sysstr(modname))
                 except (ImportError, SyntaxError):
                     e2 = sys.exc_info()
                     if ui.tracebackflag:

@@ -43,6 +43,8 @@ def reposetup(repo):
     def wirereposetup(ui, peer):
         def wrapped(orig, cmd, *args, **kwargs):
             if cmd == 'unbundle':
+                # TODO: don't blindly add include/exclude wireproto
+                # arguments to unbundle.
                 include, exclude = repo.narrowpats
                 kwargs["includepats"] = ','.join(include)
                 kwargs["excludepats"] = ','.join(exclude)

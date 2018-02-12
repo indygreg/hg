@@ -267,6 +267,8 @@ def checknewlabel(repo, lbl, kind):
         raise error.Abort(_("cannot use an integer as a name"))
     except ValueError:
         pass
+    if lbl.strip() != lbl:
+        raise error.Abort(_("leading or trailing whitespace in name %r") % lbl)
 
 def checkfilename(f):
     '''Check that the filename f is an acceptable filename for a tracked file'''

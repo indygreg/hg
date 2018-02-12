@@ -5,7 +5,7 @@ from mercurial import (
 
 # XXX: we should probably offer a devel option to do this in blackbox directly
 def getuser():
-    return 'bob'
+    return b'bob'
 def getpid():
     return 5000
 

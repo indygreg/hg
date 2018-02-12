@@ -346,10 +346,8 @@ def applyacl_narrow(repo, kwargs):
     req_includes = set(kwargs.get('includepats', []))
     req_excludes = set(kwargs.get('excludepats', []))
 
-    invalid_includes = []
-    req_includes, req_excludes = narrowspec.restrictpatterns(
-        req_includes, req_excludes,
-        user_includes, user_excludes, invalid_includes)
+    req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
+        req_includes, req_excludes, user_includes, user_excludes)
 
     if invalid_includes:
         raise error.Abort(

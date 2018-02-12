@@ -153,8 +153,7 @@ def save(repo, includepats, excludepats):
         repo = share._getsrcrepo(repo)
     repo.vfs.write(FILENAME, spec)
 
-def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes,
-                     invalid_includes=None):
+def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):
     r""" Restricts the patterns according to repo settings,
     results in a logical AND operation
 
@@ -162,26 +161,26 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes,
     :param req_excludes: requested excludes
     :param repo_includes: repo includes
     :param repo_excludes: repo excludes
-    :param invalid_includes: an array to collect invalid includes
-    :return: include and exclude patterns
+    :return: include patterns, exclude patterns, and invalid include patterns.
 
     >>> restrictpatterns({'f1','f2'}, {}, ['f1'], [])
-    (set(['f1']), {})
+    (set(['f1']), {}, [])
     >>> restrictpatterns({'f1'}, {}, ['f1','f2'], [])
-    (set(['f1']), {})
+    (set(['f1']), {}, [])
     >>> restrictpatterns({'f1/fc1', 'f3/fc3'}, {}, ['f1','f2'], [])
-    (set(['f1/fc1']), {})
+    (set(['f1/fc1']), {}, [])
     >>> restrictpatterns({'f1_fc1'}, {}, ['f1','f2'], [])
-    ([], set(['path:.']))
+    ([], set(['path:.']), [])
     >>> restrictpatterns({'f1/../f2/fc2'}, {}, ['f1','f2'], [])
-    (set(['f2/fc2']), {})
+    (set(['f2/fc2']), {}, [])
     >>> restrictpatterns({'f1/../f3/fc3'}, {}, ['f1','f2'], [])
-    ([], set(['path:.']))
+    ([], set(['path:.']), [])
     >>> restrictpatterns({'f1/$non_exitent_var'}, {}, ['f1','f2'], [])
-    (set(['f1/$non_exitent_var']), {})
+    (set(['f1/$non_exitent_var']), {}, [])
     """
     res_excludes = set(req_excludes)
     res_excludes.update(repo_excludes)
+    invalid_includes = []
     if not req_includes:
         res_includes = set(repo_includes)
     elif 'path:.' not in repo_includes:
@@ -197,7 +196,7 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes,
                     valid = True
                     res_includes.append(req_include)
                     break
-            if not valid and invalid_includes is not None:
+            if not valid:
                 invalid_includes.append(req_include)
         if len(res_includes) == 0:
             res_excludes = {'path:.'}
@@ -205,4 +204,4 @@ def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes,
             res_includes = set(res_includes)
     else:
         res_includes = set(req_includes)
-    return res_includes, res_excludes
+    return res_includes, res_excludes, invalid_includes

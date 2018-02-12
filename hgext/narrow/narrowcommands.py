@@ -134,7 +134,7 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
         repo_includes, repo_excludes = repo.narrowpats
         includes = set(opts.get('include', []))
         excludes = set(opts.get('exclude', []))
-        includes, excludes = narrowspec.restrictpatterns(
+        includes, excludes, unused_invalid = narrowspec.restrictpatterns(
             includes, excludes, repo_includes, repo_excludes)
         if includes:
             opts['include'] = includes

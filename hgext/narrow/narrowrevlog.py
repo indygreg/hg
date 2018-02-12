@@ -156,6 +156,10 @@ def makenarrowfilelog(fl, narrowmatch):
             # rename-checking logic when on remotefilelog. This
             # might be incorrect on other non-revlog-based storage
             # engines, but for now this seems to be fine.
+            #
+            # TODO: when remotefilelog is in core, improve this to
+            # explicitly look for remotefilelog instead of cheating
+            # with a hasattr check.
             if util.safehasattr(self, 'node'):
                 node = self.node(rev)
                 # Because renamed() is overridden above to

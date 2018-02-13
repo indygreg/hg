@@ -3171,7 +3171,7 @@ def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
 
     Not be used in production code but very convenient while developing.
     '''
-    entries = [(fileline % (fn, ln), func)
+    entries = [(fileline % (pycompat.sysbytes(fn), ln), pycompat.sysbytes(func))
         for fn, ln, func, _text in traceback.extract_stack()[:-skip - 1]
         ][-depth:]
     if entries:

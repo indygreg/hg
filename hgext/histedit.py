@@ -491,7 +491,7 @@ class histeditaction(object):
         repo.dirstate.setbranch(rulectx.branch())
         if stats and stats[3] > 0:
             buf = repo.ui.popbuffer()
-            repo.ui.write(*buf)
+            repo.ui.write(buf)
             raise error.InterventionRequired(
                 _('Fix up the change (%s %s)') %
                 (self.verb, node.short(self.node)),

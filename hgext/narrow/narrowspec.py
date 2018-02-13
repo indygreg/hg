@@ -12,12 +12,9 @@ import errno
 from mercurial.i18n import _
 from mercurial import (
     error,
+    hg,
     match as matchmod,
     util,
-)
-
-from .. import (
-    share,
 )
 
 FILENAME = 'narrowspec'
@@ -133,7 +130,7 @@ def needsexpansion(includes):
 
 def load(repo):
     if repo.shared():
-        repo = share._getsrcrepo(repo)
+        repo = hg.sharedreposource(repo)
     try:
         spec = repo.vfs.read(FILENAME)
     except IOError as e:
@@ -150,7 +147,7 @@ def load(repo):
 def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)
     if repo.shared():
-        repo = share._getsrcrepo(repo)
+        repo = hg.sharedreposource(repo)
     repo.vfs.write(FILENAME, spec)
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):

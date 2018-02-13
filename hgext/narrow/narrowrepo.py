@@ -9,13 +9,10 @@ from __future__ import absolute_import
 
 from mercurial import (
     bundlerepo,
+    hg,
     localrepo,
     match as matchmod,
     scmutil,
-)
-
-from .. import (
-    share,
 )
 
 from . import (
@@ -37,7 +34,7 @@ def wrappostshare(orig, sourcerepo, destrepo, **kwargs):
 def unsharenarrowspec(orig, ui, repo, repopath):
     if (REQUIREMENT in repo.requirements
         and repo.path == repopath and repo.shared()):
-        srcrepo = share._getsrcrepo(repo)
+        srcrepo = hg.sharedreposource(repo)
         with srcrepo.vfs(narrowspec.FILENAME) as f:
             spec = f.read()
         with repo.vfs(narrowspec.FILENAME, 'w') as f:

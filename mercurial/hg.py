@@ -202,6 +202,24 @@ def defaultdest(source):
         return ''
     return os.path.basename(os.path.normpath(path))
 
+def sharedreposource(repo):
+    """Returns repository object for source repository of a shared repo.
+
+    If repo is not a shared repository, returns None.
+    """
+    if repo.sharedpath == repo.path:
+        return None
+
+    if util.safehasattr(repo, 'srcrepo') and repo.srcrepo:
+        return repo.srcrepo
+
+    # the sharedpath always ends in the .hg; we want the path to the repo
+    source = repo.vfs.split(repo.sharedpath)[0]
+    srcurl, branches = parseurl(source)
+    srcrepo = repository(repo.ui, srcurl)
+    repo.srcrepo = srcrepo
+    return srcrepo
+
 def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
           relative=False):
     '''create a shared repository'''

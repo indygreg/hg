@@ -52,9 +52,6 @@ from mercurial import (
     util,
 )
 
-repository = hg.repository
-parseurl = hg.parseurl
-
 cmdtable = {}
 command = registrar.command(cmdtable)
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -135,27 +132,9 @@ def _hassharedbookmarks(repo):
         return False
     return hg.sharedbookmarks in shared
 
-def _getsrcrepo(repo):
-    """
-    Returns the source repository object for a given shared repository.
-    If repo is not a shared repository, return None.
-    """
-    if repo.sharedpath == repo.path:
-        return None
-
-    if util.safehasattr(repo, 'srcrepo') and repo.srcrepo:
-        return repo.srcrepo
-
-    # the sharedpath always ends in the .hg; we want the path to the repo
-    source = repo.vfs.split(repo.sharedpath)[0]
-    srcurl, branches = parseurl(source)
-    srcrepo = repository(repo.ui, srcurl)
-    repo.srcrepo = srcrepo
-    return srcrepo
-
 def getbkfile(orig, repo):
     if _hassharedbookmarks(repo):
-        srcrepo = _getsrcrepo(repo)
+        srcrepo = hg.sharedreposource(repo)
         if srcrepo is not None:
             # just orig(srcrepo) doesn't work as expected, because
             # HG_PENDING refers repo.root.
@@ -186,7 +165,7 @@ def recordchange(orig, self, tr):
     orig(self, tr)
 
     if _hassharedbookmarks(self._repo):
-        srcrepo = _getsrcrepo(self._repo)
+        srcrepo = hg.sharedreposource(self._repo)
         if srcrepo is not None:
             category = 'share-bookmarks'
             tr.addpostclose(category, lambda tr: self._writerepo(srcrepo))
@@ -196,6 +175,6 @@ def writerepo(orig, self, repo):
     orig(self, repo)
 
     if _hassharedbookmarks(self._repo):
-        srcrepo = _getsrcrepo(self._repo)
+        srcrepo = hg.sharedreposource(self._repo)
         if srcrepo is not None:
             orig(self, srcrepo)

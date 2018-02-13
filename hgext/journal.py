@@ -36,8 +36,6 @@ from mercurial import (
     util,
 )
 
-from . import share
-
 cmdtable = {}
 command = registrar.command(cmdtable)
 
@@ -169,7 +167,7 @@ def unsharejournal(orig, ui, repo, repopath):
     """Copy shared journal entries into this repo when unsharing"""
     if (repo.path == repopath and repo.shared() and
             util.safehasattr(repo, 'journal')):
-        sharedrepo = share._getsrcrepo(repo)
+        sharedrepo = hg.sharedreposource(repo)
         sharedfeatures = _readsharedfeatures(repo)
         if sharedrepo and sharedfeatures > {'journal'}:
             # there is a shared repository and there are shared journal entries
@@ -258,7 +256,7 @@ class journalstorage(object):
         self.sharedfeatures = self.sharedvfs = None
         if repo.shared():
             features = _readsharedfeatures(repo)
-            sharedrepo = share._getsrcrepo(repo)
+            sharedrepo = hg.sharedreposource(repo)
             if sharedrepo is not None and 'journal' in features:
                 self.sharedvfs = sharedrepo.vfs
                 self.sharedfeatures = features

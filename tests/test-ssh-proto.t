@@ -453,9 +453,17 @@ Send an upgrade request to a server that doesn't support that command
   local: no
   pushable: yes
 
+Enable version 2 support on server. We need to do this in hgrc because we can't
+use --config with `hg serve --stdio`.
+
+  $ cat >> server/.hg/hgrc << EOF
+  > [experimental]
+  > sshserver.support-v2 = true
+  > EOF
+
 Send an upgrade request to a server that supports upgrade
 
-  $ SSHSERVERMODE=upgradev2 hg -R server serve --stdio << EOF
+  $ hg -R server serve --stdio << EOF
   > upgrade this-is-some-token proto=exp-ssh-v2-0001
   > hello
   > between
@@ -466,7 +474,7 @@ Send an upgrade request to a server that supports upgrade
   383
   capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
 
-  $ SSHSERVERMODE=upgradev2 hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
+  $ hg --config experimental.sshpeer.advertise-v2=true --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
@@ -482,7 +490,7 @@ Send an upgrade request to a server that supports upgrade
 
 Verify the peer has capabilities
 
-  $ SSHSERVERMODE=upgradev2 hg --config experimental.sshpeer.advertise-v2=true --debug debugcapabilities ssh://user@dummy/server
+  $ hg --config experimental.sshpeer.advertise-v2=true --debug debugcapabilities ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
@@ -527,3 +535,96 @@ Verify the peer has capabilities
     remote-changegroup
       http
       https
+
+Command after upgrade to version 2 is processed
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade this-is-some-token proto=exp-ssh-v2-0001
+  > hello
+  > between
+  > pairs 81
+  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000hello
+  > EOF
+  upgraded this-is-some-token exp-ssh-v2-0001
+  383
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+
+Multiple upgrades is not allowed
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade this-is-some-token proto=exp-ssh-v2-0001
+  > hello
+  > between
+  > pairs 81
+  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000upgrade another-token proto=irrelevant
+  > hello
+  > EOF
+  upgraded this-is-some-token exp-ssh-v2-0001
+  383
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  cannot upgrade protocols multiple times
+  -
+  
+
+Malformed upgrade request line (not exactly 3 space delimited tokens)
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade
+  > EOF
+  0
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade token
+  > EOF
+  0
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade token foo=bar extra-token
+  > EOF
+  0
+
+Upgrade request to unsupported protocol is ignored
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade this-is-some-token proto=unknown1,unknown2
+  > hello
+  > between
+  > pairs 81
+  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  > EOF
+  0
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  1
+  
+
+Upgrade request must be followed by hello + between
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade token proto=exp-ssh-v2-0001
+  > invalid
+  > EOF
+  malformed handshake protocol: missing hello
+  -
+  
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade token proto=exp-ssh-v2-0001
+  > hello
+  > invalid
+  > EOF
+  malformed handshake protocol: missing between
+  -
+  
+
+  $ hg -R server serve --stdio << EOF
+  > upgrade token proto=exp-ssh-v2-0001
+  > hello
+  > between
+  > invalid
+  > EOF
+  malformed handshake protocol: missing pairs 81
+  -
+  

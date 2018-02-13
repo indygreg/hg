@@ -409,9 +409,65 @@ class sshv1protocolhandler(baseprotocolhandler):
         client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
         return 'remote:ssh:' + client
 
+class sshv2protocolhandler(sshv1protocolhandler):
+    """Protocol handler for version 2 of the SSH protocol."""
+
 def _runsshserver(ui, repo, fin, fout):
+    # This function operates like a state machine of sorts. The following
+    # states are defined:
+    #
+    # protov1-serving
+    #    Server is in protocol version 1 serving mode. Commands arrive on
+    #    new lines. These commands are processed in this state, one command
+    #    after the other.
+    #
+    # protov2-serving
+    #    Server is in protocol version 2 serving mode.
+    #
+    # upgrade-initial
+    #    The server is going to process an upgrade request.
+    #
+    # upgrade-v2-filter-legacy-handshake
+    #    The protocol is being upgraded to version 2. The server is expecting
+    #    the legacy handshake from version 1.
+    #
+    # upgrade-v2-finish
+    #    The upgrade to version 2 of the protocol is imminent.
+    #
+    # shutdown
+    #    The server is shutting down, possibly in reaction to a client event.
+    #
+    # And here are their transitions:
+    #
+    # protov1-serving -> shutdown
+    #    When server receives an empty request or encounters another
+    #    error.
+    #
+    # protov1-serving -> upgrade-initial
+    #    An upgrade request line was seen.
+    #
+    # upgrade-initial -> upgrade-v2-filter-legacy-handshake
+    #    Upgrade to version 2 in progress. Server is expecting to
+    #    process a legacy handshake.
+    #
+    # upgrade-v2-filter-legacy-handshake -> shutdown
+    #    Client did not fulfill upgrade handshake requirements.
+    #
+    # upgrade-v2-filter-legacy-handshake -> upgrade-v2-finish
+    #    Client fulfilled version 2 upgrade requirements. Finishing that
+    #    upgrade.
+    #
+    # upgrade-v2-finish -> protov2-serving
+    #    Protocol upgrade to version 2 complete. Server can now speak protocol
+    #    version 2.
+    #
+    # protov2-serving -> protov1-serving
+    #    Ths happens by default since protocol version 2 is the same as
+    #    version 1 except for the handshake.
+
     state = 'protov1-serving'
     proto = sshv1protocolhandler(ui, fin, fout)
+    protoswitched = False
 
     while True:
         if state == 'protov1-serving':
@@ -421,6 +477,19 @@ def _runsshserver(ui, repo, fin, fout):
             # Empty lines signal to terminate the connection.
             if not request:
                 state = 'shutdown'
+                continue
+
+            # It looks like a protocol upgrade request. Transition state to
+            # handle it.
+            if request.startswith(b'upgrade '):
+                if protoswitched:
+                    _sshv1respondooberror(fout, ui.ferr,
+                                          b'cannot upgrade protocols multiple '
+                                          b'times')
+                    state = 'shutdown'
+                    continue
+
+                state = 'upgrade-initial'
                 continue
 
             available = wireproto.commands.commandavailable(request, proto)
@@ -451,6 +520,103 @@ def _runsshserver(ui, repo, fin, fout):
             else:
                 raise error.ProgrammingError('unhandled response type from '
                                              'wire protocol command: %s' % rsp)
+
+        # For now, protocol version 2 serving just goes back to version 1.
+        elif state == 'protov2-serving':
+            state = 'protov1-serving'
+            continue
+
+        elif state == 'upgrade-initial':
+            # We should never transition into this state if we've switched
+            # protocols.
+            assert not protoswitched
+            assert proto.name == SSHV1
+
+            # Expected: upgrade <token> <capabilities>
+            # If we get something else, the request is malformed. It could be
+            # from a future client that has altered the upgrade line content.
+            # We treat this as an unknown command.
+            try:
+                token, caps = request.split(b' ')[1:]
+            except ValueError:
+                _sshv1respondbytes(fout, b'')
+                state = 'protov1-serving'
+                continue
+
+            # Send empty response if we don't support upgrading protocols.
+            if not ui.configbool('experimental', 'sshserver.support-v2'):
+                _sshv1respondbytes(fout, b'')
+                state = 'protov1-serving'
+                continue
+
+            try:
+                caps = urlreq.parseqs(caps)
+            except ValueError:
+                _sshv1respondbytes(fout, b'')
+                state = 'protov1-serving'
+                continue
+
+            # We don't see an upgrade request to protocol version 2. Ignore
+            # the upgrade request.
+            wantedprotos = caps.get(b'proto', [b''])[0]
+            if SSHV2 not in wantedprotos:
+                _sshv1respondbytes(fout, b'')
+                state = 'protov1-serving'
+                continue
+
+            # It looks like we can honor this upgrade request to protocol 2.
+            # Filter the rest of the handshake protocol request lines.
+            state = 'upgrade-v2-filter-legacy-handshake'
+            continue
+
+        elif state == 'upgrade-v2-filter-legacy-handshake':
+            # Client should have sent legacy handshake after an ``upgrade``
+            # request. Expected lines:
+            #
+            #    hello
+            #    between
+            #    pairs 81
+            #    0000...-0000...
+
+            ok = True
+            for line in (b'hello', b'between', b'pairs 81'):
+                request = fin.readline()[:-1]
+
+                if request != line:
+                    _sshv1respondooberror(fout, ui.ferr,
+                                          b'malformed handshake protocol: '
+                                          b'missing %s' % line)
+                    ok = False
+                    state = 'shutdown'
+                    break
+
+            if not ok:
+                continue
+
+            request = fin.read(81)
+            if request != b'%s-%s' % (b'0' * 40, b'0' * 40):
+                _sshv1respondooberror(fout, ui.ferr,
+                                      b'malformed handshake protocol: '
+                                      b'missing between argument value')
+                state = 'shutdown'
+                continue
+
+            state = 'upgrade-v2-finish'
+            continue
+
+        elif state == 'upgrade-v2-finish':
+            # Send the upgrade response.
+            fout.write(b'upgraded %s %s\n' % (token, SSHV2))
+            servercaps = wireproto.capabilities(repo, proto)
+            rsp = b'capabilities: %s' % servercaps.data
+            fout.write(b'%d\n%s\n' % (len(rsp), rsp))
+            fout.flush()
+
+            proto = sshv2protocolhandler(ui, fin, fout)
+            protoswitched = True
+
+            state = 'protov2-serving'
+            continue
 
         elif state == 'shutdown':
             break

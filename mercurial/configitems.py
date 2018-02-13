@@ -556,6 +556,9 @@ coreconfigitem('experimental', 'revlogv2',
 coreconfigitem('experimental', 'single-head-per-branch',
     default=False,
 )
+coreconfigitem('experimental', 'sshserver.support-v2',
+    default=False,
+)
 coreconfigitem('experimental', 'spacemovesdown',
     default=False,
 )

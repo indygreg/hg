@@ -1406,7 +1406,7 @@ def debugmergestate(ui, repo, *args):
             return h
 
     def printrecords(version):
-        ui.write(('* version %s records\n') % version)
+        ui.write(('* version %d records\n') % version)
         if version == 1:
             records = v1records
         else:

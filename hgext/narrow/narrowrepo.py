@@ -103,13 +103,13 @@ def wraprepo(repo, opts_narrow):
         def status(self, *args, **kwargs):
             s = super(narrowrepository, self).status(*args, **kwargs)
             narrowmatch = self.narrowmatch()
-            modified = filter(narrowmatch, s.modified)
-            added = filter(narrowmatch, s.added)
-            removed = filter(narrowmatch, s.removed)
-            deleted = filter(narrowmatch, s.deleted)
-            unknown = filter(narrowmatch, s.unknown)
-            ignored = filter(narrowmatch, s.ignored)
-            clean = filter(narrowmatch, s.clean)
+            modified = list(filter(narrowmatch, s.modified))
+            added = list(filter(narrowmatch, s.added))
+            removed = list(filter(narrowmatch, s.removed))
+            deleted = list(filter(narrowmatch, s.deleted))
+            unknown = list(filter(narrowmatch, s.unknown))
+            ignored = list(filter(narrowmatch, s.ignored))
+            clean = list(filter(narrowmatch, s.clean))
             return scmutil.status(modified, added, removed, deleted, unknown,
                                   ignored, clean)
 

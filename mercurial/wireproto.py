@@ -901,13 +901,16 @@ def heads(repo, proto):
 
 @wireprotocommand('hello')
 def hello(repo, proto):
-    '''the hello command returns a set of lines describing various
-    interesting things about the server, in an RFC822-like format.
-    Currently the only one defined is "capabilities", which
-    consists of a line in the form:
+    """Called as part of SSH handshake to obtain server info.
 
-    capabilities: space separated list of tokens
-    '''
+    Returns a list of lines describing interesting things about the
+    server, in an RFC822-like format.
+
+    Currently, the only one defined is ``capabilities``, which consists of a
+    line of space separated tokens describing server abilities:
+
+        capabilities: <token0> <token1> <token2>
+    """
     caps = capabilities(repo, proto).data
     return bytesresponse('capabilities: %s\n' % caps)
 

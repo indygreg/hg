@@ -154,9 +154,9 @@ check saving last-message.txt
   > from mercurial import util
   > def abortfolding(ui, repo, hooktype, **kwargs):
   >     ctx = repo[kwargs.get('node')]
-  >     if set(ctx.files()) == {'c', 'd', 'f'}:
+  >     if set(ctx.files()) == {b'c', b'd', b'f'}:
   >         return True # abort folding commit only
-  >     ui.warn('allow non-folding commit\\n')
+  >     ui.warn(b'allow non-folding commit\\n')
   > EOF
   $ cat > .hg/hgrc <<EOF
   > [hooks]

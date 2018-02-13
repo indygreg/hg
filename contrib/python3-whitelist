@@ -10,6 +10,7 @@ test-bheads.t
 test-bisect2.t
 test-bookmarks-current.t
 test-bookmarks-merge.t
+test-bookmarks-rebase.t
 test-bookmarks-strip.t
 test-branch-option.t
 test-branch-tag-confict.t
@@ -34,6 +35,7 @@ test-contrib-check-code.t
 test-contrib-check-commit.t
 test-convert-clonebranches.t
 test-copy-move-merge.t
+test-copytrace-heuristics.t
 test-debugindexdot.t
 test-debugrename.t
 test-diff-binary-file.t
@@ -172,10 +174,14 @@ test-push-checkheads-unpushed-D5.t
 test-push-checkheads-unpushed-D6.t
 test-push-checkheads-unpushed-D7.t
 test-push-warn.t
+test-rebase-bookmarks.t
+test-rebase-check-restore.t
 test-rebase-inmemory.t
 test-rebase-issue-noparam-single-rev.t
+test-rebase-legacy.t
 test-rebase-transaction.t
 test-record.t
+test-remove.t
 test-rename-after-merge.t
 test-rename-dir-merge.t
 test-rename-merge1.t

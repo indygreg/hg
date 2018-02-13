@@ -1,3 +1,12 @@
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
 
 This test tries to exercise the ssh functionality with a dummy script
 
@@ -481,14 +490,16 @@ debug output
   $ hg pull --debug ssh://user@dummy/remote --config devel.debug.peer-request=yes
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   devel-peer-request: hello
   sending hello command
   devel-peer-request: between
   devel-peer-request:   pairs: 81 bytes
   sending between command
-  remote: 384
+  remote: 384 (sshv1 !)
+  protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
   remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
-  remote: 1
+  remote: 1 (sshv1 !)
   query 1; heads
   devel-peer-request: batch
   devel-peer-request:   cmds: 141 bytes

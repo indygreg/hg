@@ -1,5 +1,15 @@
 #require serve
 
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
   $ hg init test
   $ cd test
 

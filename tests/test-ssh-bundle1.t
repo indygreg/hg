@@ -1,6 +1,16 @@
 This test is a duplicate of 'test-http.t' feel free to factor out
 parts that are not bundle1/bundle2 specific.
 
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
   $ cat << EOF >> $HGRCPATH
   > [devel]
   > # This test is dedicated to interaction through old bundle
@@ -465,11 +475,13 @@ debug output
   $ hg pull --debug ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
-  remote: 384
+  protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
+  remote: 384 (sshv1 !)
   remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
-  remote: 1
+  remote: 1 (sshv1 !)
   preparing listkeys for "bookmarks"
   sending listkeys command
   received listkey for "bookmarks": 45 bytes

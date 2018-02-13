@@ -1,3 +1,13 @@
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
 This file contains testcases that tend to be related to the wire protocol part
 of largefiles.
 

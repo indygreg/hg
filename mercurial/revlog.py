@@ -407,6 +407,9 @@ class _deltacomputer(object):
         for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
             nominateddeltas = []
             for candidaterev in candidaterevs:
+                # no delta for rawtext-changing revs (see "candelta" for why)
+                if revlog.flags(candidaterev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
+                    continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if revlog._isgooddeltainfo(candidatedelta, revinfo.textlen):
                     nominateddeltas.append(candidatedelta)
@@ -2090,7 +2093,14 @@ class revlog(object):
             deltacomputer = _deltacomputer(self)
 
         revinfo = _revisioninfo(node, p1, p2, btext, textlen, cachedelta, flags)
-        deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
+
+        # no delta for flag processor revision (see "candelta" for why)
+        # not calling candelta since only one revision needs test, also to
+        # avoid overhead fetching flags again.
+        if flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
+            deltainfo = None
+        else:
+            deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 
         if deltainfo is not None:
             base = deltainfo.base

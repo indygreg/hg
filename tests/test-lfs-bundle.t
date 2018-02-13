@@ -90,10 +90,7 @@ Apply bundles
   ---- Applying src-normal.bundle to dst-normal ----
   OK
   ---- Applying src-normal.bundle to dst-lfs ----
-   X@2: unpacking bcc7d23fa6b7: integrity check failed on data/X.i:2
-   Y@2: unpacking 46017a6640e7: integrity check failed on data/Y.i:2
-  2 integrity errors encountered!
-  (first damaged changeset appears to be 2)
+  CRASHED
   ---- Applying src-lfs.bundle to dst-normal ----
   OK
   ---- Applying src-lfs.bundle to dst-lfs ----

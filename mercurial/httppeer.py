@@ -221,13 +221,9 @@ class httppeer(wireproto.wirepeer):
     # Begin of _basewirepeer interface.
 
     def capabilities(self):
-        if self._caps is None:
-            try:
-                self._fetchcaps()
-            except error.RepoError:
-                self._caps = set()
-            self.ui.debug('capabilities: %s\n' %
-                          (' '.join(self._caps or ['none'])))
+        # self._fetchcaps() should have been called as part of peer
+        # handshake. So self._caps should always be set.
+        assert self._caps is not None
         return self._caps
 
     # End of _basewirepeer interface.

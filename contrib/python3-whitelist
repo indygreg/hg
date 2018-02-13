@@ -32,6 +32,7 @@ test-completion.t
 test-confused-revert.t
 test-contrib-check-code.t
 test-contrib-check-commit.t
+test-convert-clonebranches.t
 test-copy-move-merge.t
 test-debugindexdot.t
 test-debugrename.t

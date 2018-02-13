@@ -344,7 +344,7 @@ class histeditstate(object):
         fp.write('v1\n')
         fp.write('%s\n' % node.hex(self.parentctxnode))
         fp.write('%s\n' % node.hex(self.topmost))
-        fp.write('%s\n' % self.keep)
+        fp.write('%s\n' % ('True' if self.keep else 'False'))
         fp.write('%d\n' % len(self.actions))
         for action in self.actions:
             fp.write('%s\n' % action.tostate())

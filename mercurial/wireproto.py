@@ -778,7 +778,7 @@ def _capabilities(repo, proto):
         caps.append('bundle2=' + urlreq.quote(capsblob))
     caps.append('unbundle=%s' % ','.join(bundle2.bundlepriority))
 
-    if proto.name == 'http':
+    if proto.name == 'http-v1':
         caps.append('httpheader=%d' %
                     repo.ui.configint('server', 'maxhttpheaderlen'))
         if repo.ui.configbool('experimental', 'httppostargs'):
@@ -852,7 +852,7 @@ def getbundle(repo, proto, others):
 
     if not bundle1allowed(repo, 'pull'):
         if not exchange.bundle2requested(opts.get('bundlecaps')):
-            if proto.name == 'http':
+            if proto.name == 'http-v1':
                 return ooberror(bundle2required)
             raise error.Abort(bundle2requiredmain,
                               hint=bundle2requiredhint)
@@ -878,7 +878,7 @@ def getbundle(repo, proto, others):
     except error.Abort as exc:
         # cleanly forward Abort error to the client
         if not exchange.bundle2requested(opts.get('bundlecaps')):
-            if proto.name == 'http':
+            if proto.name == 'http-v1':
                 return ooberror(str(exc) + '\n')
             raise # cannot do better for bundle1 + ssh
         # bundle2 request expect a bundle2 reply
@@ -983,7 +983,7 @@ def unbundle(repo, proto, heads):
                 gen = exchange.readbundle(repo.ui, fp, None)
                 if (isinstance(gen, changegroupmod.cg1unpacker)
                     and not bundle1allowed(repo, 'push')):
-                    if proto.name == 'http':
+                    if proto.name == 'http-v1':
                         # need to special case http because stderr do not get to
                         # the http client on failed push so we need to abuse
                         # some other error type to make sure the message get to

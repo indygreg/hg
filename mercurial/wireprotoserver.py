@@ -112,7 +112,7 @@ class httpv1protocolhandler(baseprotocolhandler):
 
     @property
     def name(self):
-        return 'http'
+        return 'http-v1'
 
     def getargs(self, args):
         knownargs = self._args()

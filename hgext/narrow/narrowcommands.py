@@ -19,6 +19,7 @@ from mercurial import (
     hg,
     merge,
     node,
+    pycompat,
     registrar,
     repair,
     repoview,
@@ -69,6 +70,7 @@ def expandpull(pullop, includepats, excludepats):
 
 def clonenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps clone command, so 'hg clone' first wraps localrepo.clone()."""
+    opts = pycompat.byteskwargs(opts)
     wrappedextraprepare = util.nullcontextmanager()
     opts_narrow = opts['narrow']
     if opts_narrow:
@@ -111,7 +113,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
     wrappedpull = extensions.wrappedfunction(exchange, 'pull', pullnarrow)
 
     with wrappedextraprepare, wrappedpull:
-        return orig(ui, repo, *args, **opts)
+        return orig(ui, repo, *args, **pycompat.strkwargs(opts))
 
 def pullnarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps pull command to allow modifying narrow spec."""

@@ -476,7 +476,7 @@ class mapfile(dict):
                 raise error.Abort(
                     _('could not open map file %r: %s') %
                     (self.path, encoding.strtolocal(err.strerror)))
-        self.fp.write('%s %s\n' % (key, value))
+        self.fp.write(util.tonativeeol('%s %s\n' % (key, value)))
         self.fp.flush()
         super(mapfile, self).__setitem__(key, value)
 

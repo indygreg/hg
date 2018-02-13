@@ -411,7 +411,8 @@ class converter(object):
             self.ui.status(_('writing author map file %s\n') % authorfile)
             ofile = open(authorfile, 'wb+')
             for author in self.authors:
-                ofile.write("%s=%s\n" % (author, self.authors[author]))
+                ofile.write(util.tonativeeol("%s=%s\n"
+                                             % (author, self.authors[author])))
             ofile.close()
 
     def readauthormap(self, authorfile):

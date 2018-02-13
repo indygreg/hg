@@ -640,7 +640,8 @@ class svn_source(converter_source):
         if self.convertfp is None:
             self.convertfp = open(os.path.join(self.wc, '.svn', 'hg-shamap'),
                                   'ab')
-        self.convertfp.write('%s %d\n' % (destrev, self.revnum(rev)))
+        self.convertfp.write(util.tonativeeol('%s %d\n'
+                                              % (destrev, self.revnum(rev))))
         self.convertfp.flush()
 
     def revid(self, revnum, module=None):
@@ -1309,7 +1310,7 @@ class svn_sink(converter_sink, commandline):
 
         fd, messagefile = tempfile.mkstemp(prefix='hg-convert-')
         fp = os.fdopen(fd, pycompat.sysstr('wb'))
-        fp.write(commit.desc)
+        fp.write(util.tonativeeol(commit.desc))
         fp.close()
         try:
             output = self.run0('commit',

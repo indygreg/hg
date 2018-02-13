@@ -77,12 +77,20 @@ Can commit changes inside. Leaves outside unchanged.
 
   $ hg update -q 'desc("initial")'
   $ echo modified2 > inside/f1
+  $ hg manifest --debug
+  4d6a634d5ba06331a60c29ee0db8412490a54fcd 644   inside/f1
+  7fb3bb6356d28d4dc352c5ba52d7350a81b6bd46 644   outside/f1 (flat !)
+  d0f2f706468ab0e8bec7af87446835fb1b13511b 755 d outside/ (tree !)
   $ hg commit -m 'modify inside/f1'
   created new head
   $ hg files -r .
   inside/f1
   outside/f1 (flat !)
   outside/ (tree !)
+  $ hg manifest --debug
+  3f4197b4a11b9016e77ebc47fe566944885fd11b 644   inside/f1
+  7fb3bb6356d28d4dc352c5ba52d7350a81b6bd46 644   outside/f1 (flat !)
+  d0f2f706468ab0e8bec7af87446835fb1b13511b 755 d outside/ (tree !)
 Some filesystems (notably FAT/exFAT only store timestamps with 2
 seconds of precision, so by sleeping for 3 seconds, we can ensure that
 the timestamps of files stored by dirstate will appear older than the

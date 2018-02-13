@@ -3491,8 +3491,8 @@ def manifest(ui, repo, node=None, rev=None, **opts):
     if not node:
         node = rev
 
-    char = {'l': '@', 'x': '*', '': ''}
-    mode = {'l': '644', 'x': '755', '': '644'}
+    char = {'l': '@', 'x': '*', '': '', 't': 'd'}
+    mode = {'l': '644', 'x': '755', '': '644', 't': '755'}
     if node:
         repo = scmutil.unhidehashlikerevs(repo, [node], 'nowarn')
     ctx = scmutil.revsingle(repo, node)

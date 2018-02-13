@@ -183,6 +183,7 @@ unexpectedly::
 
 from __future__ import absolute_import
 
+import binascii
 import errno
 import os
 
@@ -425,7 +426,7 @@ class histeditaction(object):
         rulehash = rule.strip().split(' ', 1)[0]
         try:
             rev = node.bin(rulehash)
-        except TypeError:
+        except (TypeError, binascii.Error):
             raise error.ParseError("invalid changeset %s" % rulehash)
         return cls(state, rev)
 

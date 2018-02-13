@@ -150,6 +150,7 @@ testpats = [
     (r'grep.* -[ABC]', "don't use grep's context flags"),
     (r'find.*-printf',
      "don't use 'find -printf', it doesn't exist on BSD find(1)"),
+    (r'\$RANDOM ', "don't use bash-only $RANDOM to generate random values"),
   ],
   # warnings
   [

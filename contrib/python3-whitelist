@@ -8,10 +8,12 @@ test-automv.t
 test-backwards-remove.t
 test-bheads.t
 test-bisect2.t
+test-bookmarks-current.t
 test-bookmarks-merge.t
 test-bookmarks-strip.t
 test-branch-option.t
 test-branch-tag-confict.t
+test-bundle-phases.t
 test-bundle-vs-outgoing.t
 test-casecollision.t
 test-cat.t
@@ -85,6 +87,7 @@ test-generaldelta.t
 test-glog-topological.t
 test-gpg.t
 test-hghave.t
+test-http-clone-r.t
 test-imports-checker.t
 test-inherit-mode.t
 test-issue1089.t
@@ -102,13 +105,16 @@ test-issue619.t
 test-issue672.t
 test-issue842.t
 test-journal-exists.t
+test-largefiles-small-disk.t
 test-locate.t
 test-logexchange.t
 test-lrucachedict.py
+test-mactext.t
 test-manifest-merging.t
 test-manifest.py
 test-manifest.t
 test-match.py
+test-merge-closedheads.t
 test-merge-commit.t
 test-merge-default.t
 test-merge-internal-tools-pattern.t
@@ -125,8 +131,11 @@ test-merge6.t
 test-merge7.t
 test-merge8.t
 test-mq-qimport-fail-cleanup.t
+test-mq-qqueue.t
 test-mq-qsave.t
+test-newbranch.t
 test-obshistory.t
+test-obsmarkers-effectflag.t
 test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t
 test-obsolete-distributed.t
@@ -187,6 +196,7 @@ test-sparse-clear.t
 test-sparse-merges.t
 test-sparse-requirement.t
 test-sparse-verbose-json.t
+test-ssh-clone-r.t
 test-status-terse.t
 test-strip-cross.t
 test-strip.t
@@ -195,6 +205,7 @@ test-uncommit.t
 test-unified-test.t
 test-unrelated-pull.t
 test-up-local-change.t
+test-update-branches.t
 test-update-dest.t
 test-update-issue1456.t
 test-update-names.t

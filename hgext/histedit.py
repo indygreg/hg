@@ -1415,9 +1415,8 @@ def ruleeditor(repo, ui, actions, editcomment=""):
     # Save edit rules in .hg/histedit-last-edit.txt in case
     # the user needs to ask for help after something
     # surprising happens.
-    f = open(repo.vfs.join('histedit-last-edit.txt'), 'w')
-    f.write(rules)
-    f.close()
+    with repo.vfs('histedit-last-edit.txt', 'wb') as f:
+        f.write(rules)
 
     return rules
 

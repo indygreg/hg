@@ -152,7 +152,7 @@ def _computeellipsis(repo, common, heads, known, match, depth=None):
             else:
                 # For a root node, we need to include the node if any
                 # files in the node match the narrowspec.
-                needed = any(match(f) for f in curmf)
+                needed = any(curmf.walk(match))
 
         if needed:
             for head in ellipsisheads[rev]:

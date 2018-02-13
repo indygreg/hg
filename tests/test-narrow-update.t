@@ -47,7 +47,7 @@ Can update to revision with changes inside
   $ hg update -q 'desc("modify inside")'
   $ find *
   inside
-  inside/f1 (glob)
+  inside/f1
   $ cat inside/f1
   modified
 
@@ -56,7 +56,7 @@ Can update to revision with changes outside
   $ hg update -q 'desc("modify outside")'
   $ find *
   inside
-  inside/f1 (glob)
+  inside/f1
   $ cat inside/f1
   modified
 

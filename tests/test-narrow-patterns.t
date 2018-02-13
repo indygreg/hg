@@ -23,8 +23,21 @@ initialize nested directories to validate complex include/exclude patterns
   >   hg add $d/bar
   >   hg commit -m "add $d/bar"
   > done
+#if execbit
   $ chmod +x dir1/dirA/foo
   $ hg commit -m "make dir1/dirA/foo executable"
+#else
+  $ hg import --bypass - <<EOF
+  > # HG changeset patch
+  > make dir1/dirA/foo executable
+  > 
+  > diff --git a/dir1/dirA/foo b/dir1/dirA/foo
+  > old mode 100644
+  > new mode 100755
+  > EOF
+  applying patch from stdin
+  $ hg update -qr tip
+#endif
   $ hg log -G -T '{rev} {node|short} {files}\n'
   @  13 c87ca422d521 dir1/dirA/foo
   |
@@ -149,10 +162,14 @@ widen the narrow checkout
   dir2
   dir2/bar
   dir2/foo
+
+#if execbit
   $ test -x dir1/dirA/foo && echo executable
   executable
   $ test -x dir1/dirA/bar || echo not executable
   not executable
+#endif
+
   $ hg log -G -T '{rev} {node|short}{if(ellipsis, "...")} {files}\n'
   @  8 c87ca422d521 dir1/dirA/foo
   |

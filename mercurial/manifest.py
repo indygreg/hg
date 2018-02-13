@@ -755,6 +755,12 @@ class treemanifest(object):
             size += m.__len__()
         return size
 
+    def __nonzero__(self):
+        # Faster than "__len() != 0" since it avoids loading sub-manifests
+        return not self._isempty()
+
+    __bool__ = __nonzero__
+
     def _isempty(self):
         self._load() # for consistency; already loaded by all callers
         return (not self._files and (not self._dirs or

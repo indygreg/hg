@@ -253,7 +253,7 @@ def nouideprecwarn(msg, version, stacklevel=1):
     if _dowarn:
         msg += ("\n(compatibility will be dropped after Mercurial-%s,"
                 " update your code.)") % version
-        warnings.warn(msg, DeprecationWarning, stacklevel + 1)
+        warnings.warn(pycompat.sysstr(msg), DeprecationWarning, stacklevel + 1)
 
 DIGESTS = {
     'md5': hashlib.md5,

@@ -17,7 +17,7 @@
   > 
   > @command(b'buggytransaction', [], '')
   > def buggylocking(ui, repo):
-  >     tr = repo.transaction('buggy')
+  >     tr = repo.transaction(b'buggy')
   >     # make sure we rollback the transaction as we don't want to rely on the__del__
   >     tr.release()
   > 
@@ -26,8 +26,8 @@
   >     """check that reentrance is fine"""
   >     wl = repo.wlock()
   >     lo = repo.lock()
-  >     tr = repo.transaction('proper')
-  >     tr2 = repo.transaction('proper')
+  >     tr = repo.transaction(b'proper')
+  >     tr2 = repo.transaction(b'proper')
   >     lo2 = repo.lock()
   >     wl2 = repo.wlock()
   >     wl2.release()
@@ -46,34 +46,34 @@
   > 
   > @command(b'no-wlock-write', [], '')
   > def nowlockwrite(ui, repo):
-  >     with repo.vfs(b'branch', 'a'):
+  >     with repo.vfs(b'branch', b'a'):
   >         pass
   > 
   > @command(b'no-lock-write', [], '')
   > def nolockwrite(ui, repo):
-  >     with repo.svfs(b'fncache', 'a'):
+  >     with repo.svfs(b'fncache', b'a'):
   >         pass
   > 
   > @command(b'stripintr', [], '')
   > def stripintr(ui, repo):
   >     lo = repo.lock()
-  >     tr = repo.transaction('foobar')
+  >     tr = repo.transaction(b'foobar')
   >     try:
-  >         repair.strip(repo.ui, repo, [repo['.'].node()])
+  >         repair.strip(repo.ui, repo, [repo[b'.'].node()])
   >     finally:
   >         lo.release()
   > @command(b'oldanddeprecated', [], '')
   > def oldanddeprecated(ui, repo):
   >     """test deprecation warning API"""
   >     def foobar(ui):
-  >         ui.deprecwarn('foorbar is deprecated, go shopping', '42.1337')
+  >         ui.deprecwarn(b'foorbar is deprecated, go shopping', b'42.1337')
   >     foobar(ui)
   > @command(b'nouiwarning', [], '')
   > def nouiwarning(ui, repo):
-  >     util.nouideprecwarn('this is a test', '13.37')
+  >     util.nouideprecwarn(b'this is a test', b'13.37')
   > @command(b'programmingerror', [], '')
   > def programmingerror(ui, repo):
-  >     raise error.ProgrammingError('something went wrong', hint='try again')
+  >     raise error.ProgrammingError(b'something went wrong', hint=b'try again')
   > EOF
 
   $ cat << EOF >> $HGRCPATH
@@ -331,7 +331,7 @@ Old style deprecation warning
   $ hg nouiwarning
   $TESTTMP/buggylocking.py:*: DeprecationWarning: this is a test (glob)
   (compatibility will be dropped after Mercurial-13.37, update your code.)
-    util.nouideprecwarn('this is a test', '13.37')
+    util.nouideprecwarn(b'this is a test', b'13.37')
 
 (disabled outside of test run)
 
@@ -350,25 +350,25 @@ Test warning on config option access and registration
   > configtable = {}
   > configitem = registrar.configitem(configtable)
   > 
-  > configitem('test', 'some', default='foo')
-  > configitem('test', 'dynamic', default=configitems.dynamicdefault)
-  > configitem('test', 'callable', default=list)
+  > configitem(b'test', b'some', default=b'foo')
+  > configitem(b'test', b'dynamic', default=configitems.dynamicdefault)
+  > configitem(b'test', b'callable', default=list)
   > # overwrite a core config
-  > configitem('ui', 'quiet', default=False)
-  > configitem('ui', 'interactive', default=None)
+  > configitem(b'ui', b'quiet', default=False)
+  > configitem(b'ui', b'interactive', default=None)
   > 
   > @command(b'buggyconfig')
   > def cmdbuggyconfig(ui, repo):
-  >     repo.ui.config('ui', 'quiet', True)
-  >     repo.ui.config('ui', 'interactive', False)
-  >     repo.ui.config('test', 'some', 'bar')
-  >     repo.ui.config('test', 'some', 'foo')
-  >     repo.ui.config('test', 'dynamic', 'some-required-default')
-  >     repo.ui.config('test', 'dynamic')
-  >     repo.ui.config('test', 'callable', [])
-  >     repo.ui.config('test', 'callable', 'foo')
-  >     repo.ui.config('test', 'unregistered')
-  >     repo.ui.config('unregistered', 'unregistered')
+  >     repo.ui.config(b'ui', b'quiet', True)
+  >     repo.ui.config(b'ui', b'interactive', False)
+  >     repo.ui.config(b'test', b'some', b'bar')
+  >     repo.ui.config(b'test', b'some', b'foo')
+  >     repo.ui.config(b'test', b'dynamic', b'some-required-default')
+  >     repo.ui.config(b'test', b'dynamic')
+  >     repo.ui.config(b'test', b'callable', [])
+  >     repo.ui.config(b'test', b'callable', b'foo')
+  >     repo.ui.config(b'test', b'unregistered')
+  >     repo.ui.config(b'unregistered', b'unregistered')
   > EOF
 
   $ hg --config "extensions.buggyconfig=${TESTTMP}/buggyconfig.py" buggyconfig

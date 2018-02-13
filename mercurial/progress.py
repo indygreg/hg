@@ -119,8 +119,8 @@ class progbar(object):
                 add = topic
             elif indicator == 'number':
                 if total:
-                    add = ('% ' + str(len(str(total))) +
-                           's/%s') % (pos, total)
+                    padamount = '%d' % len(str(total))
+                    add = ('% '+ padamount + 's/%s') % (pos, total)
                 else:
                     add = str(pos)
             elif indicator.startswith('item') and item:

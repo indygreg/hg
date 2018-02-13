@@ -336,7 +336,9 @@ class _deltacomputer(object):
                                                    len(delta) - hlen):
             btext[0] = delta[hlen:]
         else:
-            basetext = revlog.revision(baserev, _df=fh, raw=True)
+            # deltabase is rawtext before changed by flag processors, which is
+            # equivalent to non-raw text
+            basetext = revlog.revision(baserev, _df=fh, raw=False)
             btext[0] = mdiff.patch(basetext, delta)
 
         try:
@@ -2084,7 +2086,10 @@ class revlog(object):
         # full versions are inserted when the needed deltas
         # become comparable to the uncompressed text
         if rawtext is None:
-            textlen = mdiff.patchedsize(self.rawsize(cachedelta[0]),
+            # need rawtext size, before changed by flag processors, which is
+            # the non-raw size. use revlog explicitly to avoid filelog's extra
+            # logic that might remove metadata size.
+            textlen = mdiff.patchedsize(revlog.size(self, cachedelta[0]),
                                         cachedelta[1])
         else:
             textlen = len(rawtext)

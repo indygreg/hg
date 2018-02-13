@@ -90,7 +90,7 @@ Apply bundles
   ---- Applying src-normal.bundle to dst-normal ----
   OK
   ---- Applying src-normal.bundle to dst-lfs ----
-  CRASHED
+  OK
   ---- Applying src-lfs.bundle to dst-normal ----
   OK
   ---- Applying src-lfs.bundle to dst-lfs ----

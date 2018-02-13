@@ -480,22 +480,15 @@ class httppeer(wireproto.wirepeer):
     def _abort(self, exception):
         raise exception
 
-class httpspeer(httppeer):
-    def __init__(self, ui, path):
-        if not url.has_https:
-            raise error.Abort(_('Python support for SSL and HTTPS '
-                               'is not installed'))
-        httppeer.__init__(self, ui, path)
-
 def instance(ui, path, create):
     if create:
         raise error.Abort(_('cannot create new http repository'))
     try:
-        if path.startswith('https:'):
-            inst = httpspeer(ui, path)
-        else:
-            inst = httppeer(ui, path)
+        if path.startswith('https:') and not url.has_https:
+            raise error.Abort(_('Python support for SSL and HTTPS '
+                                'is not installed'))
 
+        inst = httppeer(ui, path)
         inst._fetchcaps()
 
         return inst

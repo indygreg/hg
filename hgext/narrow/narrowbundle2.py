@@ -327,13 +327,14 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
             part.addparam('treemanifest', '1')
 
 def applyacl_narrow(repo, kwargs):
-    username = repo.ui.shortuser(repo.ui.username())
-    user_includes = repo.ui.configlist(
+    ui = repo.ui
+    username = ui.shortuser(ui.environ.get('REMOTE_USER') or ui.username())
+    user_includes = ui.configlist(
         _NARROWACL_SECTION, username + '.includes',
-        repo.ui.configlist(_NARROWACL_SECTION, 'default.includes'))
-    user_excludes = repo.ui.configlist(
+        ui.configlist(_NARROWACL_SECTION, 'default.includes'))
+    user_excludes = ui.configlist(
         _NARROWACL_SECTION, username + '.excludes',
-        repo.ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
+        ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
     if not user_includes:
         raise error.Abort(_("{} configuration for user {} is empty")
                           .format(_NARROWACL_SECTION, username))

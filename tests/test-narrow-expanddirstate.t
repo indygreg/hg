@@ -75,19 +75,9 @@ have this method available in narrowhg proper at the moment.
   >   def wrapds(orig, self):
   >     ds = orig(self)
   >     class expandingdirstate(ds.__class__):
-  >       # Mercurial 4.4 uses this version.
   >       @hgutil.propertycache
   >       def _map(self):
   >         ret = super(expandingdirstate, self)._map
-  >         with repo.wlock(), repo.lock(), repo.transaction(
-  >             'expandnarrowspec'):
-  >           expandnarrowspec(ui, repo, os.environ.get('DIRSTATEINCLUDES'))
-  >         return ret
-  >       # Mercurial 4.3.3 and earlier uses this version. It seems that
-  >       # narrowhg does not currently support this version, but we include
-  >       # it just in case backwards compatibility is restored.
-  >       def _read(self):
-  >         ret = super(expandingdirstate, self)._read()
   >         with repo.wlock(), repo.lock(), repo.transaction(
   >             'expandnarrowspec'):
   >           expandnarrowspec(ui, repo, os.environ.get('DIRSTATEINCLUDES'))

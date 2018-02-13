@@ -16,6 +16,7 @@ from mercurial import (
     encoding,
     error,
     hg,
+    pycompat,
     scmutil,
     util,
 )
@@ -55,9 +56,10 @@ orig_encoding = 'ascii'
 
 def recode(s):
     if isinstance(s, unicode):
-        return s.encode(orig_encoding, 'replace')
+        return s.encode(pycompat.sysstr(orig_encoding), 'replace')
     else:
-        return s.decode('utf-8').encode(orig_encoding, 'replace')
+        return s.decode('utf-8').encode(
+            pycompat.sysstr(orig_encoding), 'replace')
 
 def mapbranch(branch, branchmap):
     '''

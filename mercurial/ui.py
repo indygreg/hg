@@ -1620,10 +1620,12 @@ class ui(object):
         else:
             curframe = inspect.currentframe()
             calframe = inspect.getouterframes(curframe, 2)
-            self.write_err('%s at: %s:%s (%s)\n'
-                           % ((msg,) + calframe[stacklevel][1:4]))
-            self.log('develwarn', '%s at: %s:%s (%s)\n',
-                     msg, *calframe[stacklevel][1:4])
+            fname, lineno, fmsg = calframe[stacklevel][1:4]
+            fname, fmsg = pycompat.sysbytes(fname), pycompat.sysbytes(fmsg)
+            self.write_err('%s at: %s:%d (%s)\n'
+                           % (msg, fname, lineno, fmsg))
+            self.log('develwarn', '%s at: %s:%d (%s)\n',
+                     msg, fname, lineno, fmsg)
             curframe = calframe = None  # avoid cycles
 
     def deprecwarn(self, msg, version, stacklevel=2):

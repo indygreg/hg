@@ -332,6 +332,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     If --clear is specified without any further options, the narrowspec will be
     empty and will not match any files.
     """
+    opts = pycompat.byteskwargs(opts)
     if narrowrepo.REQUIREMENT not in repo.requirements:
         ui.warn(_('The narrow command is only supported on respositories cloned'
                   ' with --narrow.\n'))

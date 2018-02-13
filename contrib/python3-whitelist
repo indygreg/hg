@@ -90,6 +90,13 @@ test-generaldelta.t
 test-glog-topological.t
 test-gpg.t
 test-hghave.t
+test-histedit-bookmark-motion.t
+test-histedit-commute.t
+test-histedit-drop.t
+test-histedit-edit.t
+test-histedit-no-change.t
+test-histedit-obsolete.t
+test-histedit-outgoing.t
 test-http-clone-r.t
 test-imports-checker.t
 test-inherit-mode.t
@@ -179,6 +186,7 @@ test-rebase-check-restore.t
 test-rebase-inmemory.t
 test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
+test-rebase-pull.t
 test-rebase-transaction.t
 test-record.t
 test-remove.t

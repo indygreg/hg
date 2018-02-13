@@ -13,10 +13,9 @@ from mercurial import (
     error,
     extensions,
     match as matchmod,
+    narrowspec,
     util as hgutil,
 )
-
-from . import narrowspec
 
 def setup(repo):
     """Add narrow spec dirstate ignore, block changes outside narrow spec."""

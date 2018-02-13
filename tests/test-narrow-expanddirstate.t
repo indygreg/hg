@@ -51,6 +51,7 @@ have this method available in narrowhg proper at the moment.
   > from mercurial import extensions
   > from mercurial import localrepo
   > from mercurial import match as matchmod
+  > from mercurial import narrowspec
   > from mercurial import patch
   > from mercurial import util as hgutil
   > 
@@ -59,14 +60,13 @@ have this method available in narrowhg proper at the moment.
   >     return
   >   import sys
   >   newincludes = set([newincludes])
-  >   narrowhg = extensions.find('narrow')
   >   includes, excludes = repo.narrowpats
-  >   currentmatcher = narrowhg.narrowspec.match(repo.root, includes, excludes)
+  >   currentmatcher = narrowspec.match(repo.root, includes, excludes)
   >   includes = includes | newincludes
   >   if not repo.currenttransaction():
   >     ui.develwarn('expandnarrowspec called outside of transaction!')
   >   repo.setnarrowpats(includes, excludes)
-  >   newmatcher = narrowhg.narrowspec.match(repo.root, includes, excludes)
+  >   newmatcher = narrowspec.match(repo.root, includes, excludes)
   >   added = matchmod.differencematcher(newmatcher, currentmatcher)
   >   for f in repo['.'].manifest().walk(added):
   >     repo.dirstate.normallookup(f)

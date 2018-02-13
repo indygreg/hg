@@ -12,10 +12,9 @@ from mercurial import (
     error,
     extensions,
     hg,
+    narrowspec,
     node,
 )
-
-from . import narrowspec
 
 def uisetup():
     def peersetup(ui, peer):

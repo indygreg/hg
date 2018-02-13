@@ -9,8 +9,8 @@ from __future__ import absolute_import
 
 import errno
 
-from mercurial.i18n import _
-from mercurial import (
+from .i18n import _
+from . import (
     error,
     hg,
     match as matchmod,
@@ -89,7 +89,7 @@ def _validatepattern(pat):
     # We use newlines as separators in the narrowspec file, so don't allow them
     # in patterns.
     if _numlines(pat) > 1:
-        raise error.Abort('newlines are not allowed in narrowspec paths')
+        raise error.Abort(_('newlines are not allowed in narrowspec paths'))
 
     components = pat.split('/')
     if '.' in components or '..' in components:

@@ -12,12 +12,12 @@ from mercurial import (
     hg,
     localrepo,
     match as matchmod,
+    narrowspec,
     scmutil,
 )
 
 from . import (
     narrowrevlog,
-    narrowspec,
 )
 
 # When narrowing is finalized and no longer subject to format changes,

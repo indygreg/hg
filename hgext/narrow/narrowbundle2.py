@@ -24,6 +24,7 @@ from mercurial import (
     error,
     exchange,
     extensions,
+    narrowspec,
     repair,
     util,
     wireproto,
@@ -31,7 +32,6 @@ from mercurial import (
 
 from . import (
     narrowrepo,
-    narrowspec,
 )
 
 NARROWCAP = 'narrow'

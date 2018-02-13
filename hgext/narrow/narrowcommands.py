@@ -18,6 +18,7 @@ from mercurial import (
     extensions,
     hg,
     merge,
+    narrowspec,
     node,
     pycompat,
     registrar,
@@ -29,7 +30,6 @@ from mercurial import (
 from . import (
     narrowbundle2,
     narrowrepo,
-    narrowspec,
 )
 
 table = {}

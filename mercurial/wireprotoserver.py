@@ -105,7 +105,7 @@ def decodevaluefromheaders(req, headerprefix):
 
     return ''.join(chunks)
 
-class webproto(baseprotocolhandler):
+class httpv1protocolhandler(baseprotocolhandler):
     def __init__(self, req, ui):
         self._req = req
         self._ui = ui
@@ -201,7 +201,7 @@ def parsehttprequest(repo, req, query):
     if cmd not in wireproto.commands:
         return None
 
-    proto = webproto(req, repo.ui)
+    proto = httpv1protocolhandler(req, repo.ui)
 
     return {
         'cmd': cmd,

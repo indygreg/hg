@@ -46,8 +46,8 @@ class convert_cvs(converter_source):
         self.tags = {}
         self.lastbranch = {}
         self.socket = None
-        self.cvsroot = open(os.path.join(cvs, "Root")).read()[:-1]
-        self.cvsrepo = open(os.path.join(cvs, "Repository")).read()[:-1]
+        self.cvsroot = open(os.path.join(cvs, "Root"), 'rb').read()[:-1]
+        self.cvsrepo = open(os.path.join(cvs, "Repository"), 'rb').read()[:-1]
         self.encoding = encoding.encoding
 
         self._connect()
@@ -141,7 +141,7 @@ class convert_cvs(converter_source):
                     passw = "A"
                     cvspass = os.path.expanduser("~/.cvspass")
                     try:
-                        pf = open(cvspass)
+                        pf = open(cvspass, 'rb')
                         for line in pf.read().splitlines():
                             part1, part2 = line.split(' ', 1)
                             # /1 :pserver:user@example.com:2401/cvsroot/foo

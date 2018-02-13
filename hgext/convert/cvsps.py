@@ -132,7 +132,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
         # Get the real directory in the repository
         try:
-            prefix = open(os.path.join('CVS','Repository')).read().strip()
+            prefix = open(os.path.join('CVS','Repository'), 'rb').read().strip()
             directory = prefix
             if prefix == ".":
                 prefix = ""
@@ -144,7 +144,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
         # Use the Root file in the sandbox, if it exists
         try:
-            root = open(os.path.join('CVS','Root')).read().strip()
+            root = open(os.path.join('CVS','Root'), 'rb').read().strip()
         except IOError:
             pass
 
@@ -177,7 +177,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     if cache == 'update':
         try:
             ui.note(_('reading cvs log cache %s\n') % cachefile)
-            oldlog = pickle.load(open(cachefile))
+            oldlog = pickle.load(open(cachefile, 'rb'))
             for e in oldlog:
                 if not (util.safehasattr(e, 'branchpoints') and
                         util.safehasattr(e, 'commitid') and
@@ -486,7 +486,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
             # write the new cachefile
             ui.note(_('writing cvs log cache %s\n') % cachefile)
-            pickle.dump(log, open(cachefile, 'w'))
+            pickle.dump(log, open(cachefile, 'wb'))
         else:
             log = oldlog
 

@@ -625,7 +625,7 @@ class mercurial_source(common.converter_source):
 
     def converted(self, rev, destrev):
         if self.convertfp is None:
-            self.convertfp = open(self.repo.vfs.join('shamap'), 'a')
+            self.convertfp = open(self.repo.vfs.join('shamap'), 'ab')
         self.convertfp.write('%s %s\n' % (destrev, rev))
         self.convertfp.flush()
 

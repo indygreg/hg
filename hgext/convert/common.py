@@ -447,7 +447,7 @@ class mapfile(dict):
         if not self.path:
             return
         try:
-            fp = open(self.path, 'r')
+            fp = open(self.path, 'rb')
         except IOError as err:
             if err.errno != errno.ENOENT:
                 raise
@@ -471,7 +471,7 @@ class mapfile(dict):
     def __setitem__(self, key, value):
         if self.fp is None:
             try:
-                self.fp = open(self.path, 'a')
+                self.fp = open(self.path, 'ab')
             except IOError as err:
                 raise error.Abort(
                     _('could not open map file %r: %s') %

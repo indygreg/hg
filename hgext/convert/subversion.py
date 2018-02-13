@@ -231,7 +231,7 @@ def filecheck(ui, path, proto):
 def httpcheck(ui, path, proto):
     try:
         opener = urlreq.buildopener()
-        rsp = opener.open('%s://%s/!svn/ver/0/.svn' % (proto, path))
+        rsp = opener.open('%s://%s/!svn/ver/0/.svn' % (proto, path), 'rb')
         data = rsp.read()
     except urlerr.httperror as inst:
         if inst.code != 404:
@@ -639,7 +639,7 @@ class svn_source(converter_source):
             return
         if self.convertfp is None:
             self.convertfp = open(os.path.join(self.wc, '.svn', 'hg-shamap'),
-                                  'a')
+                                  'ab')
         self.convertfp.write('%s %d\n' % (destrev, self.revnum(rev)))
         self.convertfp.flush()
 
@@ -1158,7 +1158,7 @@ class svn_sink(converter_sink, commandline):
 
         if created:
             hook = os.path.join(created, 'hooks', 'pre-revprop-change')
-            fp = open(hook, 'w')
+            fp = open(hook, 'wb')
             fp.write(pre_revprop_change)
             fp.close()
             util.setflags(hook, False, True)
@@ -1308,7 +1308,7 @@ class svn_sink(converter_sink, commandline):
             self.setexec = []
 
         fd, messagefile = tempfile.mkstemp(prefix='hg-convert-')
-        fp = os.fdopen(fd, pycompat.sysstr('w'))
+        fp = os.fdopen(fd, pycompat.sysstr('wb'))
         fp.write(commit.desc)
         fp.close()
         try:

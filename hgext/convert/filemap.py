@@ -71,7 +71,7 @@ class filemapper(object):
                              (lex.infile, lex.lineno, listname, name))
                 return 1
             return 0
-        lex = shlex.shlex(open(path), path, True)
+        lex = shlex.shlex(open(path, 'rb'), path, True)
         lex.wordchars += '!@#$%^&*()-=+[]{}|;:,./<>?'
         cmd = lex.get_token()
         while cmd:

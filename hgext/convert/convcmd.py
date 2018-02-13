@@ -202,7 +202,7 @@ class converter(object):
             return {}
         m = {}
         try:
-            fp = open(path, 'r')
+            fp = open(path, 'rb')
             for i, line in enumerate(util.iterfile(fp)):
                 line = line.splitlines()[0].rstrip()
                 if not line:
@@ -407,13 +407,13 @@ class converter(object):
         authorfile = self.authorfile
         if authorfile:
             self.ui.status(_('writing author map file %s\n') % authorfile)
-            ofile = open(authorfile, 'w+')
+            ofile = open(authorfile, 'wb+')
             for author in self.authors:
                 ofile.write("%s=%s\n" % (author, self.authors[author]))
             ofile.close()
 
     def readauthormap(self, authorfile):
-        afile = open(authorfile, 'r')
+        afile = open(authorfile, 'rb')
         for line in afile:
 
             line = line.strip()

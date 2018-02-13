@@ -141,14 +141,14 @@ def _computeellipsis(repo, common, heads, known, match, depth=None):
                 # changesets because it's not always correct. TODO: could
                 # we trust it for the non-merge case?
                 p1mf = mfl[cl.changelogrevision(ps[0]).manifest].read()
-                needed = any(match(f) for f in curmf.diff(p1mf).iterkeys())
+                needed = bool(curmf.diff(p1mf, match))
                 if not needed and len(ps) > 1:
                     # For merge changes, the list of changed files is not
                     # helpful, since we need to emit the merge if a file
                     # in the narrow spec has changed on either side of the
                     # merge. As a result, we do a manifest diff to check.
                     p2mf = mfl[cl.changelogrevision(ps[1]).manifest].read()
-                    needed = any(match(f) for f in curmf.diff(p2mf).iterkeys())
+                    needed = bool(curmf.diff(p2mf, match))
             else:
                 # For a root node, we need to include the node if any
                 # files in the node match the narrowspec.

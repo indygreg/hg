@@ -42,7 +42,7 @@ from . import common
 mapfile = common.mapfile
 NoRepo = common.NoRepo
 
-sha1re = re.compile(r'\b[0-9a-f]{12,40}\b')
+sha1re = re.compile(br'\b[0-9a-f]{12,40}\b')
 
 class mercurial_sink(common.converter_sink):
     def __init__(self, ui, repotype, path):

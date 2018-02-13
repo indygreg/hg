@@ -498,7 +498,7 @@ class ui(object):
               and default != itemdefault):
             msg = ("specifying a mismatched default value for a registered "
                    "config item: '%s.%s' '%s'")
-            msg %= (section, name, default)
+            msg %= (section, name, pycompat.bytestr(default))
             self.develwarn(msg, 2, 'warn-config-default')
 
         for s, n in alternates:

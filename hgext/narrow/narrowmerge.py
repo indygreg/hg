@@ -28,7 +28,9 @@ def setup():
         nooptypes = set(['k']) # TODO: handle with nonconflicttypes
         nonconflicttypes = set('a am c cm f g r e'.split())
         narrowmatch = repo.narrowmatch()
-        for f, action in actions.items():
+        # We mutate the items in the dict during iteration, so iterate
+        # over a copy.
+        for f, action in list(actions.items()):
             if narrowmatch(f):
                 pass
             elif not branchmerge:

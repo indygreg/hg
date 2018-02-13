@@ -3159,7 +3159,7 @@ class hooks(object):
             results.append(hook(*args))
         return results
 
-def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%s', depth=0):
+def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
     '''Yields lines for a nicely formatted stacktrace.
     Skips the 'skip' last entries, then return the last 'depth' entries.
     Each file+linenumber is formatted according to fileline.

@@ -120,7 +120,8 @@ class transplanter(object):
                                        opener=self.opener)
         def getcommiteditor():
             editform = cmdutil.mergeeditform(repo[None], 'transplant')
-            return cmdutil.getcommiteditor(editform=editform, **opts)
+            return cmdutil.getcommiteditor(editform=editform,
+                                           **pycompat.strkwargs(opts))
         self.getcommiteditor = getcommiteditor
 
     def applied(self, repo, node, parent):
@@ -647,6 +648,7 @@ def _dotransplant(ui, repo, *revs, **opts):
                 raise error.Abort(_('--all is incompatible with a '
                                    'revision list'))
 
+    opts = pycompat.byteskwargs(opts)
     checkopts(opts, revs)
 
     if not opts.get('log'):

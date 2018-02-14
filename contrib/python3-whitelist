@@ -90,11 +90,15 @@ test-generaldelta.t
 test-glog-topological.t
 test-gpg.t
 test-hghave.t
+test-histedit-arguments.t
+test-histedit-base.t
 test-histedit-bookmark-motion.t
 test-histedit-commute.t
 test-histedit-drop.t
 test-histedit-edit.t
+test-histedit-fold-non-commute.t
 test-histedit-no-change.t
+test-histedit-non-commute.t
 test-histedit-obsolete.t
 test-histedit-outgoing.t
 test-http-clone-r.t

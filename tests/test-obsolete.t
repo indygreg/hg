@@ -1050,19 +1050,19 @@ check obsolete changeset
           <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="obsoletetag" title="obsolete">obsolete</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=spartan' | grep 'class="obsolete"'
     <th class="obsolete">obsolete:</th>
-    <td class="obsolete">pruned</td>
+    <td class="obsolete">pruned by &#116;&#101;&#115;&#116;</td>
 
 check an obsolete changeset that has been rewritten
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=paper' | grep rewritten
-   <td>rewritten as <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a> </td>
+   <td>rewritten as <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a>  by &#116;&#101;&#115;&#116;&#32;&#60;&#116;&#101;&#115;&#116;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#110;&#101;&#116;&#62;</td>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=coal' | grep rewritten
-   <td>rewritten as <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a> </td>
+   <td>rewritten as <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a>  by &#116;&#101;&#115;&#116;&#32;&#60;&#116;&#101;&#115;&#116;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#110;&#101;&#116;&#62;</td>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=gitweb' | grep rewritten
-  <tr><td>obsolete</td><td>rewritten as <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a> </td></tr>
+  <tr><td>obsolete</td><td>rewritten as <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a>  by &#116;&#101;&#115;&#116;&#32;&#60;&#116;&#101;&#115;&#116;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#110;&#101;&#116;&#62;</td></tr>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=monoblue' | grep rewritten
-          <dt>obsolete</dt><dd>rewritten as <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a> </dd>
+          <dt>obsolete</dt><dd>rewritten as <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a>  by &#116;&#101;&#115;&#116;&#32;&#60;&#116;&#101;&#115;&#116;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#110;&#101;&#116;&#62;</dd>
   $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=spartan' | grep rewritten
-   <td class="obsolete">rewritten as <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a> </td>
+   <td class="obsolete">rewritten as <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a>  by &#116;&#101;&#115;&#116;&#32;&#60;&#116;&#101;&#115;&#116;&#64;&#101;&#120;&#97;&#109;&#112;&#108;&#101;&#46;&#110;&#101;&#116;&#62;</td>
 
 check changeset with instabilities
 

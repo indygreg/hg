@@ -808,8 +808,8 @@ class ui(object):
                              hint=_("use 'hg config --edit' "
                                     'to set your username'))
         if "\n" in user:
-            raise error.Abort(_("username %s contains a newline\n")
-                              % repr(user))
+            raise error.Abort(_("username %r contains a newline\n")
+                              % pycompat.bytestr(user))
         return user
 
     def shortuser(self, user):

@@ -20,6 +20,7 @@ from .thirdparty import (
 from . import (
     encoding,
     error,
+    pycompat,
     revlog,
     util,
 )
@@ -517,8 +518,8 @@ class changelog(revlog.revlog):
         if not user:
             raise error.RevlogError(_("empty username"))
         if "\n" in user:
-            raise error.RevlogError(_("username %s contains a newline")
-                                    % repr(user))
+            raise error.RevlogError(_("username %r contains a newline")
+                                    % pycompat.bytestr(user))
 
         desc = stripdesc(desc)
 

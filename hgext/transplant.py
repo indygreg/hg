@@ -161,7 +161,7 @@ class transplanter(object):
             tr = repo.transaction('transplant')
             for rev in revs:
                 node = revmap[rev]
-                revstr = '%s:%s' % (rev, nodemod.short(node))
+                revstr = '%d:%s' % (rev, nodemod.short(node))
 
                 if self.applied(repo, node, p1):
                     self.ui.warn(_('skipping already applied revision %s\n') %
@@ -195,7 +195,7 @@ class transplanter(object):
                 skipmerge = False
                 if parents[1] != revlog.nullid:
                     if not opts.get('parent'):
-                        self.ui.note(_('skipping merge changeset %s:%s\n')
+                        self.ui.note(_('skipping merge changeset %d:%s\n')
                                      % (rev, nodemod.short(node)))
                         skipmerge = True
                     else:

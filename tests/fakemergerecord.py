@@ -19,8 +19,8 @@ def fakemergerecord(ui, repo, *pats, **opts):
     with repo.wlock():
         ms = merge.mergestate.read(repo)
         records = ms._makerecords()
-        if opts.get('mandatory'):
+        if opts.get(b'mandatory'):
             records.append((b'X', b'mandatory record'))
-        if opts.get('advisory'):
+        if opts.get(b'advisory'):
             records.append((b'x', b'advisory record'))
         ms._writerecords(records)

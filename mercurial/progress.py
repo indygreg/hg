@@ -119,12 +119,7 @@ class progbar(object):
                 add = topic
             elif indicator == 'number':
                 if total:
-                    padamount = '%d' % len(str(total))
-                    # '% 1d' % 1 adds an extra space compared to '% 1s' % 1.
-                    # To avoid this change in output, we convert to a string
-                    # first, then do the padding.
-                    spos = '%d' % pos
-                    add = ('% '+ padamount + 's/%d') % (spos, total)
+                    add = b'%*d/%d' % (len(str(total)), pos, total)
                 else:
                     add = str(pos)
             elif indicator.startswith('item') and item:

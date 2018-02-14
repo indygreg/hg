@@ -1846,7 +1846,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
             else:
                 pas = [p1.ancestor(p2, warn=branchmerge)]
 
-        fp1, fp2, xp1, xp2 = p1.node(), p2.node(), str(p1), str(p2)
+        fp1, fp2, xp1, xp2 = p1.node(), p2.node(), bytes(p1), bytes(p2)
 
         ### check phase
         if not overwrite:

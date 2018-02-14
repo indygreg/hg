@@ -626,7 +626,7 @@ def getwebsubs(repo):
         # delimiters. the replace format and flags are optional, but
         # delimiters are required.
         match = re.match(
-            r'^s%s(.+)(?:(?<=\\\\)|(?<!\\))%s(.*)%s([ilmsux])*$'
+            br'^s%s(.+)(?:(?<=\\\\)|(?<!\\))%s(.*)%s([ilmsux])*$'
             % (delim, delim, delim), pattern)
         if not match:
             repo.ui.warn(_("websub: invalid pattern for %s: %s\n")
@@ -634,7 +634,7 @@ def getwebsubs(repo):
             continue
 
         # we need to unescape the delimiter for regexp and format
-        delim_re = re.compile(r'(?<!\\)\\%s' % delim)
+        delim_re = re.compile(br'(?<!\\)\\%s' % delim)
         regexp = delim_re.sub(unesc, match.group(1))
         format = delim_re.sub(unesc, match.group(2))
 

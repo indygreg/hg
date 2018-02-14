@@ -337,8 +337,8 @@ def annotate(ui, repo, *pats, **opts):
              ('number', ' ', lambda x: x.fctx.rev(), formatrev),
              ('changeset', ' ', lambda x: hexfn(x.fctx.node()), formathex),
              ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
-             ('file', ' ', lambda x: x.fctx.path(), str),
-             ('line_number', ':', lambda x: x.lineno, str),
+             ('file', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
+             ('line_number', ':', lambda x: x.lineno, pycompat.bytestr),
             ]
     fieldnamemap = {'number': 'rev', 'changeset': 'node'}
 

@@ -1459,7 +1459,7 @@ class binhunk(object):
                 dec.append(util.b85decode(line[1:])[:l])
             except ValueError as e:
                 raise PatchError(_('could not decode "%s" binary patch: %s')
-                                 % (self._fname, str(e)))
+                                 % (self._fname, util.forcebytestr(e)))
             line = getline(lr, self.hunk)
         text = zlib.decompress(''.join(dec))
         if len(text) != size:

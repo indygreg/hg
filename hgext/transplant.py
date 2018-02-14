@@ -311,7 +311,7 @@ class transplanter(object):
                 p1 = repo.dirstate.p1()
                 p2 = node
                 self.log(user, date, message, p1, p2, merge=merge)
-                self.ui.write(str(inst) + '\n')
+                self.ui.write(util.forcebytestr(inst) + '\n')
                 raise TransplantError(_('fix up the working directory and run '
                                         'hg transplant --continue'))
         else:

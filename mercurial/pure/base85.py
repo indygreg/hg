@@ -53,6 +53,7 @@ def b85decode(text):
     out = []
     for i in range(0, len(text), 5):
         chunk = text[i:i + 5]
+        chunk = pycompat.bytestr(chunk)
         acc = 0
         for j, c in enumerate(chunk):
             try:

@@ -59,6 +59,10 @@ test-empty-file.t
 test-empty-group.t
 test-empty.t
 test-encoding-func.py
+test-eol-add.t
+test-eol-clone.t
+test-eol-tag.t
+test-eol-update.t
 test-excessive-merge.t
 test-exchange-obsmarkers-case-A1.t
 test-exchange-obsmarkers-case-A2.t
@@ -229,4 +233,5 @@ test-update-dest.t
 test-update-issue1456.t
 test-update-names.t
 test-update-reverse.t
+test-win32text.t
 test-xdg.t

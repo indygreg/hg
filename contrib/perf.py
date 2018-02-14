@@ -64,6 +64,12 @@ try:
     from mercurial import scmutil # since 1.9 (or 8b252e826c68)
 except ImportError:
     pass
+try:
+    from mercurial import pycompat
+    getargspec = pycompat.getargspec  # added to module after 4.5
+except (ImportError, AttributeError):
+    import inspect
+    getargspec = inspect.getargspec
 
 # for "historical portability":
 # define util.safehasattr forcibly, because util.safehasattr has been
@@ -114,9 +120,8 @@ def parsealiases(cmd):
 if safehasattr(registrar, 'command'):
     command = registrar.command(cmdtable)
 elif safehasattr(cmdutil, 'command'):
-    import inspect
     command = cmdutil.command(cmdtable)
-    if 'norepo' not in inspect.getargspec(command)[0]:
+    if 'norepo' not in getargspec(command).args:
         # for "historical portability":
         # wrap original cmdutil.command, because "norepo" option has
         # been available since 3.1 (or 75a96326cecb)

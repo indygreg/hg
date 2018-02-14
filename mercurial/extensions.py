@@ -195,11 +195,7 @@ def _runextsetup(name, ui):
             try:
                 extsetup(ui)
             except TypeError:
-                # Try to use getfullargspec (Python 3) first, and fall
-                # back to getargspec only if it doesn't exist so as to
-                # avoid warnings.
-                if getattr(inspect, 'getfullargspec',
-                           getattr(inspect, 'getargspec'))(extsetup).args:
+                if pycompat.getargspec(extsetup).args:
                     raise
                 extsetup() # old extsetup with no ui argument
         except Exception as inst:

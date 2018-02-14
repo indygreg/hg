@@ -11,6 +11,7 @@ This contains aliases to hide python version-specific details from the core.
 from __future__ import absolute_import
 
 import getopt
+import inspect
 import os
 import shlex
 import sys
@@ -65,6 +66,7 @@ if ispy3:
     maplist = lambda *args: list(map(*args))
     ziplist = lambda *args: list(zip(*args))
     rawinput = input
+    getargspec = inspect.getfullargspec
 
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
@@ -330,6 +332,7 @@ else:
     maplist = map
     ziplist = zip
     rawinput = raw_input
+    getargspec = inspect.getargspec
 
     def emailparser(*args, **kwargs):
         import email.parser

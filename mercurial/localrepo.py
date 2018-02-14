@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import errno
 import hashlib
-import inspect
 import os
 import random
 import time
@@ -1068,7 +1067,7 @@ class localrepository(object):
                 if not fn:
                     fn = lambda s, c, **kwargs: util.filter(s, c)
                 # Wrap old filters not supporting keyword arguments
-                if not inspect.getargspec(fn)[2]:
+                if not pycompat.getargspec(fn)[2]:
                     oldfn = fn
                     fn = lambda s, c, **kwargs: oldfn(s, c)
                 l.append((mf, fn, params))

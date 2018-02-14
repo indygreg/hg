@@ -60,6 +60,7 @@ class verifier(object):
     def err(self, linkrev, msg, filename=None):
         if linkrev is not None:
             self.badrevs.add(linkrev)
+            linkrev = "%d" % linkrev
         else:
             linkrev = '?'
         msg = "%s: %s" % (linkrev, msg)

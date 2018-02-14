@@ -541,7 +541,7 @@ class rebaseruntime(object):
                                   'to commit\n') % (rev, ctx))
                         self.skipped.add(rev)
                     self.state[rev] = p1
-                    ui.debug('next revision set to %s\n' % p1)
+                    ui.debug('next revision set to %d\n' % p1)
             else:
                 ui.status(_('already rebased %s as %s\n') %
                           (desc, repo[self.state[rev]]))

@@ -271,7 +271,7 @@ class shelvedstate(object):
             "activebook": activebook or cls._noactivebook
         }
         scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
-               .write(info, firstline=str(cls._version))
+               .write(info, firstline=("%d" % cls._version))
 
     @classmethod
     def clear(cls, repo):

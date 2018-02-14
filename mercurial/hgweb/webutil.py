@@ -619,7 +619,7 @@ def getwebsubs(repo):
     websubdefs += repo.ui.configitems('interhg')
     for key, pattern in websubdefs:
         # grab the delimiter from the character after the "s"
-        unesc = pattern[1]
+        unesc = pattern[1:2]
         delim = re.escape(unesc)
 
         # identify portions of the pattern, taking care to avoid escaped

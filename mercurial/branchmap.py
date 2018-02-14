@@ -377,7 +377,7 @@ class revbranchcache(object):
                 self._rbcrevs[:] = data
             except (IOError, OSError) as inst:
                 repo.ui.debug("couldn't read revision branch cache: %s\n" %
-                              pycompat.bytestr(inst))
+                              util.forcebytestr(inst))
         # remember number of good records on disk
         self._rbcrevslen = min(len(self._rbcrevs) // _rbcrecsize,
                                len(repo.changelog))

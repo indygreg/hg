@@ -2903,7 +2903,6 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
     parent, p2 = parents
     node = ctx.node()
     excluded_files = []
-    matcher_opts = {"exclude": excluded_files}
 
     def checkout(f):
         fc = ctx[f]
@@ -2924,7 +2923,7 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
             if choice == 0:
                 repo.dirstate.drop(f)
             else:
-                excluded_files.append(repo.wjoin(f))
+                excluded_files.append(f)
         else:
             repo.dirstate.drop(f)
     for f in actions['remove'][0]:
@@ -2935,7 +2934,7 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
             if choice == 0:
                 doremove(f)
             else:
-                excluded_files.append(repo.wjoin(f))
+                excluded_files.append(f)
         else:
             doremove(f)
     for f in actions['drop'][0]:
@@ -2955,8 +2954,8 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
     newlyaddedandmodifiedfiles = set()
     if interactive:
         # Prompt the user for changes to revert
-        torevert = [repo.wjoin(f) for f in actions['revert'][0]]
-        m = scmutil.match(ctx, torevert, matcher_opts)
+        torevert = [f for f in actions['revert'][0] if f not in excluded_files]
+        m = scmutil.matchfiles(repo, torevert)
         diffopts = patch.difffeatureopts(repo.ui, whitespace=True)
         diffopts.nodates = True
         diffopts.git = True

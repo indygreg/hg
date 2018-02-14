@@ -428,9 +428,5 @@ When specified pattern does not exist, we should exit early (issue5789).
   b: no such file in rev b40d1912accf
   $ hg rev -i b
   b: no such file in rev b40d1912accf
-  diff --git a/a b/a
-  1 hunks, 1 lines changed
-  examine changes to 'a'? [Ynesfdaq?] abort: response expected
-  [255]
 
   $ cd ..

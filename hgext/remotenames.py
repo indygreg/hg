@@ -22,7 +22,7 @@ remotenames.branches
 
 from __future__ import absolute_import
 
-import UserDict
+import collections
 
 from mercurial.i18n import _
 
@@ -57,7 +57,7 @@ configitem('remotenames', 'branches',
     default=True,
 )
 
-class lazyremotenamedict(UserDict.DictMixin):
+class lazyremotenamedict(collections.MutableMapping):
     """
     Read-only dict-like Class to lazily resolve remotename entries
 
@@ -109,6 +109,18 @@ class lazyremotenamedict(UserDict.DictMixin):
             return val
         else:
             raise KeyError()
+
+    def __iter__(self):
+        return iter(self.potentialentries)
+
+    def __len__(self):
+        return len(self.potentialentries)
+
+    def __setitem__(self):
+        raise NotImplementedError
+
+    def __delitem__(self):
+        raise NotImplementedError
 
     def _fetchandcache(self, key):
         if key in self.cache:

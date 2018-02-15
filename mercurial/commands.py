@@ -1157,13 +1157,15 @@ def branches(ui, repo, active=False, closed=False, **opts):
 def bundle(ui, repo, fname, dest=None, **opts):
     """create a bundle file
 
-    Generate a bundle file containing data to be added to a repository.
+    Generate a bundle file containing data to be transferred to another
+    repository.
 
     To create a bundle containing all changesets, use -a/--all
     (or --base null). Otherwise, hg assumes the destination will have
     all the nodes you specify with --base parameters. Otherwise, hg
     will assume the repository has all the nodes in destination, or
-    default-push/default if no destination is specified.
+    default-push/default if no destination is specified, where destination
+    is the repository you provide through DEST option.
 
     You can change bundle format with the -t/--type option. See
     :hg:`help bundlespec` for documentation on this format. By default,

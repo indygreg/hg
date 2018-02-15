@@ -127,24 +127,24 @@ Pulling form the new server
   @  changeset:   8:3e1487808078
   |  branch:      wat
   |  tag:         tip
-  |  remote branch:$TESTTMP/server2/wat
-  |  remote branch:default/wat
+  |  remote branch:  $TESTTMP/server2/wat
+  |  remote branch:  default/wat
   |  parent:      4:aa98ab95a928
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     added bar
   |
   | o  changeset:   7:ec2426147f0e
-  | |  remote branch:$TESTTMP/server2/default
-  | |  remote branch:default/default
+  | |  remote branch:  $TESTTMP/server2/default
+  | |  remote branch:  default/default
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  summary:     Added h
   | |
   | o  changeset:   6:87d6d6676308
   | |  bookmark:    bar
-  | |  remote bookmark:$TESTTMP/server2/bar
-  | |  remote bookmark:default/bar
+  | |  remote bookmark:  $TESTTMP/server2/bar
+  | |  remote bookmark:  default/bar
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  summary:     Added g
@@ -161,8 +161,8 @@ Pulling form the new server
   |
   o  changeset:   3:62615734edd5
   |  bookmark:    foo
-  |  remote bookmark:$TESTTMP/server2/foo
-  |  remote bookmark:default/foo
+  |  remote bookmark:  $TESTTMP/server2/foo
+  |  remote bookmark:  default/foo
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     Added d

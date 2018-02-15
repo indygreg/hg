@@ -204,8 +204,8 @@ def reposetup(ui, repo):
         remotebookmarkns = ns(
             'remotebookmarks',
             templatename='remotebookmarks',
-            logname='remote bookmark',
             colorname='remotebookmark',
+            logfmt='remote bookmark:  %s\n',
             listnames=lambda repo: repo._remotenames.bmarktonodes().keys(),
             namemap=lambda repo, name:
                 repo._remotenames.bmarktonodes().get(name, []),
@@ -217,8 +217,8 @@ def reposetup(ui, repo):
         remotebranchns = ns(
             'remotebranches',
             templatename='remotebranches',
-            logname='remote branch',
             colorname='remotebranch',
+            logfmt='remote branch:  %s\n',
             listnames = lambda repo: repo._remotenames.branchtonodes().keys(),
             namemap = lambda repo, name:
                 repo._remotenames.branchtonodes().get(name, []),

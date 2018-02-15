@@ -14,8 +14,8 @@ from mercurial.i18n import _
 from mercurial import (
     error,
     pycompat,
-    util,
 )
+from mercurial.utils import dateutil
 
 from . import common
 
@@ -310,9 +310,10 @@ class monotone_source(common.converter_source, common.commandline):
         certs = self.mtngetcerts(rev)
         if certs.get('suspend') == certs["branch"]:
             extra['close'] = 1
+        dateformat = "%Y-%m-%dT%H:%M:%S"
         return common.commit(
             author=certs["author"],
-            date=util.datestr(util.strdate(certs["date"], "%Y-%m-%dT%H:%M:%S")),
+            date=dateutil.datestr(dateutil.strdate(certs["date"], dateformat)),
             desc=certs["changelog"],
             rev=rev,
             parents=self.mtnrun("parents", rev).splitlines(),

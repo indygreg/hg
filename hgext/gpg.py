@@ -21,6 +21,7 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import dateutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -258,7 +259,7 @@ def _dosign(ui, repo, *revs, **opts):
 
     date = opts.get('date')
     if date:
-        opts['date'] = util.parsedate(date)
+        opts['date'] = dateutil.parsedate(date)
 
     if revs:
         nodes = [repo.lookup(n) for n in revs]

@@ -19,6 +19,7 @@ from . import (
     pycompat,
     util,
 )
+from .utils import dateutil
 
 _missing_newline_marker = "\\ No newline at end of file\n"
 
@@ -255,7 +256,7 @@ def unidiff(a, ad, b, bd, fn1, fn2, binary, opts=defaultopts):
         aprefix = 'a/'
         bprefix = 'b/'
 
-    epoch = util.datestr((0, 0))
+    epoch = dateutil.datestr((0, 0))
 
     fn1 = util.pconvert(fn1)
     fn2 = util.pconvert(fn2)

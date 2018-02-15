@@ -49,6 +49,7 @@ from . import (
     subrepoutil,
     util,
 )
+from .utils import dateutil
 
 propertycache = util.propertycache
 
@@ -1287,7 +1288,7 @@ class committablectx(basectx):
         self._node = None
         self._text = text
         if date:
-            self._date = util.parsedate(date)
+            self._date = dateutil.parsedate(date)
         if user:
             self._user = user
         if changes:
@@ -1364,7 +1365,7 @@ class committablectx(basectx):
         ui = self._repo.ui
         date = ui.configdate('devel', 'default-date')
         if date is None:
-            date = util.makedate()
+            date = dateutil.makedate()
         return date
 
     def subrev(self, subpath):
@@ -2111,11 +2112,11 @@ class overlayworkingctx(committablectx):
         if data is None:
             raise error.ProgrammingError("data must be non-None")
         self._auditconflicts(path)
-        self._markdirty(path, exists=True, data=data, date=util.makedate(),
+        self._markdirty(path, exists=True, data=data, date=dateutil.makedate(),
                         flags=flags)
 
     def setflags(self, path, l, x):
-        self._markdirty(path, exists=True, date=util.makedate(),
+        self._markdirty(path, exists=True, date=dateutil.makedate(),
                         flags=(l and 'l' or '') + (x and 'x' or ''))
 
     def remove(self, path):
@@ -2404,7 +2405,7 @@ class memctx(committablectx):
 
     user receives the committer name and defaults to current
     repository username, date is the commit date in any format
-    supported by util.parsedate() and defaults to current date, extra
+    supported by dateutil.parsedate() and defaults to current date, extra
     is a dictionary of metadata or is left empty.
     """
 
@@ -2619,7 +2620,7 @@ class metadataonlyctx(committablectx):
 
     user receives the committer name and defaults to current repository
     username, date is the commit date in any format supported by
-    util.parsedate() and defaults to current date, extra is a dictionary of
+    dateutil.parsedate() and defaults to current date, extra is a dictionary of
     metadata or is left empty.
     """
     def __new__(cls, repo, originalctx, *args, **kwargs):

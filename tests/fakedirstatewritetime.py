@@ -13,8 +13,8 @@ from mercurial import (
     extensions,
     policy,
     registrar,
-    util,
 )
+from mercurial.utils import dateutil
 
 configtable = {}
 configitem = registrar.configitem(configtable)
@@ -49,7 +49,7 @@ def fakewrite(ui, func):
 
     # parsing 'fakenow' in YYYYmmddHHMM format makes comparison between
     # 'fakenow' value and 'touch -t YYYYmmddHHMM' argument easy
-    fakenow = util.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
+    fakenow = dateutil.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
 
     orig_pack_dirstate = parsers.pack_dirstate
     orig_dirstate_getfsnow = dirstate._getfsnow

@@ -24,6 +24,7 @@ from . import (
     revlog,
     util,
 )
+from .utils import dateutil
 
 _defaultextra = {'branch': 'default'}
 
@@ -524,9 +525,9 @@ class changelog(revlog.revlog):
         desc = stripdesc(desc)
 
         if date:
-            parseddate = "%d %d" % util.parsedate(date)
+            parseddate = "%d %d" % dateutil.parsedate(date)
         else:
-            parseddate = "%d %d" % util.makedate()
+            parseddate = "%d %d" % dateutil.makedate()
         if extra:
             branch = extra.get("branch")
             if branch in ("default", ""):

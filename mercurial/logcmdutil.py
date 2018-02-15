@@ -35,6 +35,7 @@ from . import (
     templater,
     util,
 )
+from .utils import dateutil
 
 def getlimit(opts):
     """get the log limit according to option -l/--limit"""
@@ -229,7 +230,7 @@ class changesetprinter(object):
                           % scmutil.formatrevnode(self.ui, mrev, mnode),
                           label='ui.debug log.manifest')
         self.ui.write(columns['user'] % ctx.user(), label='log.user')
-        self.ui.write(columns['date'] % util.datestr(ctx.date()),
+        self.ui.write(columns['date'] % dateutil.datestr(ctx.date()),
                       label='log.date')
 
         if ctx.isunstable():

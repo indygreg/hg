@@ -19,6 +19,7 @@ from mercurial import (
     error,
     util,
 )
+from mercurial.utils import dateutil
 from . import common
 
 class gnuarch_source(common.converter_source, common.commandline):
@@ -280,8 +281,8 @@ class gnuarch_source(common.converter_source, common.commandline):
             catlog = self.catlogparser.parsestr(data)
 
             # Commit date
-            self.changes[rev].date = util.datestr(
-                util.strdate(catlog['Standard-date'],
+            self.changes[rev].date = dateutil.datestr(
+                dateutil.strdate(catlog['Standard-date'],
                              '%Y-%m-%d %H:%M:%S'))
 
             # Commit author

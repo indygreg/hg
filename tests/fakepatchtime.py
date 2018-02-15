@@ -7,8 +7,8 @@ from mercurial import (
     extensions,
     patch as patchmod,
     registrar,
-    util,
 )
+from mercurial.utils import dateutil
 
 configtable = {}
 configitem = registrar.configitem(configtable)
@@ -30,7 +30,7 @@ def internalpatch(orig, ui, repo, patchobj, strip,
     if fakenow:
         # parsing 'fakenow' in YYYYmmddHHMM format makes comparison between
         # 'fakenow' value and 'touch -t YYYYmmddHHMM' argument easy
-        fakenow = util.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
+        fakenow = dateutil.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
         for f in files:
             repo.wvfs.utime(f, (fakenow, fakenow))
 

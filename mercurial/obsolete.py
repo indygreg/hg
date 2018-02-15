@@ -81,6 +81,7 @@ from . import (
     policy,
     util,
 )
+from .utils import dateutil
 
 parsers = policy.importmod(r'parsers')
 
@@ -601,13 +602,13 @@ class obsstore(object):
         if date is None:
             if 'date' in metadata:
                 # as a courtesy for out-of-tree extensions
-                date = util.parsedate(metadata.pop('date'))
+                date = dateutil.parsedate(metadata.pop('date'))
             elif ui is not None:
                 date = ui.configdate('devel', 'default-date')
                 if date is None:
-                    date = util.makedate()
+                    date = dateutil.makedate()
             else:
-                date = util.makedate()
+                date = dateutil.makedate()
         if len(prec) != 20:
             raise ValueError(prec)
         for succ in succs:

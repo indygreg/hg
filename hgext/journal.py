@@ -35,6 +35,7 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import dateutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -326,7 +327,7 @@ class journalstorage(object):
             newhashes = [newhashes]
 
         entry = journalentry(
-            util.makedate(), self.user, self.command, namespace, name,
+            dateutil.makedate(), self.user, self.command, namespace, name,
             oldhashes, newhashes)
 
         vfs = self.vfs

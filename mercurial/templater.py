@@ -29,6 +29,7 @@ from . import (
     templatekw,
     util,
 )
+from .utils import dateutil
 
 class ResourceUnavailable(error.Abort):
     pass
@@ -649,9 +650,9 @@ def date(context, mapping, args):
         fmt = evalstring(context, mapping, args[1])
     try:
         if fmt is None:
-            return util.datestr(date)
+            return dateutil.datestr(date)
         else:
-            return util.datestr(date, fmt)
+            return dateutil.datestr(date, fmt)
     except (TypeError, ValueError):
         # i18n: "date" is a keyword
         raise error.ParseError(_("date expects a date information"))
@@ -954,7 +955,7 @@ def localdate(context, mapping, args):
 
     date = evalfuncarg(context, mapping, args[0])
     try:
-        date = util.parsedate(date)
+        date = dateutil.parsedate(date)
     except AttributeError:  # not str nor date tuple
         # i18n: "localdate" is a keyword
         raise error.ParseError(_("localdate expects a date information"))
@@ -962,7 +963,7 @@ def localdate(context, mapping, args):
         tzoffset = None
         tz = evalfuncarg(context, mapping, args[1])
         if isinstance(tz, bytes):
-            tzoffset, remainder = util.parsetimezone(tz)
+            tzoffset, remainder = dateutil.parsetimezone(tz)
             if remainder:
                 tzoffset = None
         if tzoffset is None:
@@ -972,7 +973,7 @@ def localdate(context, mapping, args):
                 # i18n: "localdate" is a keyword
                 raise error.ParseError(_("localdate expects a timezone"))
     else:
-        tzoffset = util.makedate()[1]
+        tzoffset = dateutil.makedate()[1]
     return (date[0], tzoffset)
 
 @templatefunc('max(iterable)')

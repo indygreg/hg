@@ -47,6 +47,7 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import dateutil
 stringio = util.stringio
 
 # templates of common command options
@@ -1530,7 +1531,7 @@ def _exportsingle(repo, ctx, match, switch_parent, rev, seqno, write, diffopts):
     write("# HG changeset patch\n")
     write("# User %s\n" % ctx.user())
     write("# Date %d %d\n" % ctx.date())
-    write("#      %s\n" % util.datestr(ctx.date()))
+    write("#      %s\n" % dateutil.datestr(ctx.date()))
     if branch and branch != 'default':
         write("# Branch %s\n" % branch)
     write("# Node ID %s\n" % hex(node))
@@ -1629,7 +1630,7 @@ def showmarker(fm, marker, index=None):
 def finddate(ui, repo, date):
     """Find the tipmost changeset that matches the given date spec"""
 
-    df = util.matchdate(date)
+    df = dateutil.matchdate(date)
     m = scmutil.matchall(repo)
     results = {}
 
@@ -1642,7 +1643,7 @@ def finddate(ui, repo, date):
         rev = ctx.rev()
         if rev in results:
             ui.status(_("found revision %s from %s\n") %
-                      (rev, util.datestr(results[rev])))
+                      (rev, dateutil.datestr(results[rev])))
             return '%d' % rev
 
     raise error.Abort(_("revision matching date not found"))
@@ -2261,7 +2262,7 @@ def commit(ui, repo, commitfunc, pats, opts):
     '''commit the specified files or all outstanding changes'''
     date = opts.get('date')
     if date:
-        opts['date'] = util.parsedate(date)
+        opts['date'] = dateutil.parsedate(date)
     message = logmessage(ui, opts)
     matcher = scmutil.match(repo[None], pats, opts)
 
@@ -2326,7 +2327,7 @@ def amend(ui, repo, old, extra, pats, opts):
         date = opts.get('date') or old.date()
 
         # Parse the date to allow comparison between date and old.date()
-        date = util.parsedate(date)
+        date = dateutil.parsedate(date)
 
         if len(old.parents()) > 1:
             # ctx.files() isn't reliable for merges, so fall back to the

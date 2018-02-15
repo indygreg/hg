@@ -16,6 +16,7 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
+from mercurial.utils import dateutil
 
 from . import common
 
@@ -891,7 +892,7 @@ class svn_source(converter_source):
             # Example SVN datetime. Includes microseconds.
             # ISO-8601 conformant
             # '2007-01-04T17:35:00.902377Z'
-            date = util.parsedate(date[:19] + " UTC", ["%Y-%m-%dT%H:%M:%S"])
+            date = dateutil.parsedate(date[:19] + " UTC", ["%Y-%m-%dT%H:%M:%S"])
             if self.ui.configbool('convert', 'localtimezone'):
                 date = makedatetimestamp(date[0])
 
@@ -913,7 +914,7 @@ class svn_source(converter_source):
                 branch = None
 
             cset = commit(author=author,
-                          date=util.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
+                          date=dateutil.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
                           desc=log,
                           parents=parents,
                           branch=branch,

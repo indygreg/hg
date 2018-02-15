@@ -22,6 +22,7 @@ from . import (
     url,
     util,
 )
+from .utils import dateutil
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -78,7 +79,7 @@ def age(date, abbrev=False):
     else:
         delta = max(1, int(now - then))
         if delta > agescales[0][1] * 2:
-            return util.shortdate(date)
+            return dateutil.shortdate(date)
 
     for t, s, a in agescales:
         n = delta // s
@@ -203,7 +204,7 @@ def isodate(text):
     """Date. Returns the date in ISO 8601 format: "2009-08-18 13:00
     +0200".
     """
-    return util.datestr(text, '%Y-%m-%d %H:%M %1%2')
+    return dateutil.datestr(text, '%Y-%m-%d %H:%M %1%2')
 
 @templatefilter('isodatesec')
 def isodatesec(text):
@@ -211,7 +212,7 @@ def isodatesec(text):
     seconds: "2009-08-18 13:00:13 +0200". See also the rfc3339date
     filter.
     """
-    return util.datestr(text, '%Y-%m-%d %H:%M:%S %1%2')
+    return dateutil.datestr(text, '%Y-%m-%d %H:%M:%S %1%2')
 
 def indent(text, prefix):
     '''indent each non-empty line of text after first with prefix.'''
@@ -325,14 +326,14 @@ def rfc3339date(text):
     """Date. Returns a date using the Internet date format
     specified in RFC 3339: "2009-08-18T13:00:13+02:00".
     """
-    return util.datestr(text, "%Y-%m-%dT%H:%M:%S%1:%2")
+    return dateutil.datestr(text, "%Y-%m-%dT%H:%M:%S%1:%2")
 
 @templatefilter('rfc822date')
 def rfc822date(text):
     """Date. Returns a date using the same format used in email
     headers: "Tue, 18 Aug 2009 13:00:13 +0200".
     """
-    return util.datestr(text, "%a, %d %b %Y %H:%M:%S %1%2")
+    return dateutil.datestr(text, "%a, %d %b %Y %H:%M:%S %1%2")
 
 @templatefilter('short')
 def short(text):
@@ -353,7 +354,7 @@ def shortbisect(text):
 @templatefilter('shortdate')
 def shortdate(text):
     """Date. Returns a date like "2006-09-18"."""
-    return util.shortdate(text)
+    return dateutil.shortdate(text)
 
 @templatefilter('slashpath')
 def slashpath(path):

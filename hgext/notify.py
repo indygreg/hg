@@ -149,6 +149,7 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import dateutil
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -360,7 +361,7 @@ class notifier(object):
             for k, v in headers:
                 msg[k] = v
 
-        msg['Date'] = util.datestr(format="%a, %d %b %Y %H:%M:%S %1%2")
+        msg['Date'] = dateutil.datestr(format="%a, %d %b %Y %H:%M:%S %1%2")
 
         # try to make subject line exist and be useful
         if not subject:

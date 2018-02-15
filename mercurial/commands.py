@@ -61,6 +61,7 @@ from . import (
     util,
     wireprotoserver,
 )
+from .utils import dateutil
 
 release = lockmod.release
 
@@ -302,9 +303,9 @@ def annotate(ui, repo, *pats, **opts):
 
     rootfm = ui.formatter('annotate', opts)
     if ui.quiet:
-        datefunc = util.shortdate
+        datefunc = dateutil.shortdate
     else:
-        datefunc = util.datestr
+        datefunc = dateutil.datestr
     if ctx.rev() is None:
         def hexfn(node):
             if node is None:
@@ -584,7 +585,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
 
     date = opts.get('date')
     if date:
-        opts['date'] = util.parsedate(date)
+        opts['date'] = dateutil.parsedate(date)
 
     cmdutil.checkunfinished(repo)
     cmdutil.bailifchanged(repo)
@@ -2161,7 +2162,7 @@ def _dograft(ui, repo, *revs, **opts):
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
     if not opts.get('date') and opts.get('currentdate'):
-        opts['date'] = "%d %d" % util.makedate()
+        opts['date'] = "%d %d" % dateutil.makedate()
 
     editor = cmdutil.getcommiteditor(editform='graft',
                                      **pycompat.strkwargs(opts))
@@ -3011,7 +3012,7 @@ def import_(ui, repo, patch1=None, *patches, **opts):
 
     date = opts.get('date')
     if date:
-        opts['date'] = util.parsedate(date)
+        opts['date'] = dateutil.parsedate(date)
 
     exact = opts.get('exact')
     update = not opts.get('bypass')
@@ -5307,7 +5308,7 @@ def tag(ui, repo, name1, *names, **opts):
 
         date = opts.get('date')
         if date:
-            date = util.parsedate(date)
+            date = dateutil.parsedate(date)
 
         if opts.get('remove'):
             editform = 'tag.remove'

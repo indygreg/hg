@@ -36,6 +36,7 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import dateutil
 
 hg = None
 reporelpath = subrepoutil.reporelpath
@@ -1467,7 +1468,7 @@ class gitsubrepo(abstractsubrepo):
         if date:
             # git's date parser silently ignores when seconds < 1e9
             # convert to ISO8601
-            env['GIT_AUTHOR_DATE'] = util.datestr(date,
+            env['GIT_AUTHOR_DATE'] = dateutil.datestr(date,
                                                   '%Y-%m-%dT%H:%M:%S %1%2')
         self._gitcommand(cmd, env=env)
         # make sure commit works otherwise HEAD might not exist under certain

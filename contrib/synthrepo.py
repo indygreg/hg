@@ -59,8 +59,8 @@ from mercurial import (
     patch,
     registrar,
     scmutil,
-    util,
 )
+from mercurial.utils import dateutil
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -382,7 +382,7 @@ def synthesize(ui, repo, descpath, **opts):
         message = 'synthesized wide repo with %d files' % (len(files),)
         mc = context.memctx(repo, [pctx.node(), nullid], message,
                             files, filectxfn, ui.username(),
-                            '%d %d' % util.makedate())
+                            '%d %d' % dateutil.makedate())
         initnode = mc.commit()
         if ui.debugflag:
             hexfn = hex

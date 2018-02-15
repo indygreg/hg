@@ -4,6 +4,7 @@ Tests for the journal extension; records bookmark locations.
   > # mock out util.getuser() and util.makedate() to supply testable values
   > import os
   > from mercurial import util
+  > from mercurial.utils import dateutil
   > def mockgetuser():
   >     return 'foobar'
   > 
@@ -19,7 +20,7 @@ Tests for the journal extension; records bookmark locations.
   >     return (time, 0)
   > 
   > util.getuser = mockgetuser
-  > util.makedate = mockmakedate
+  > dateutil.makedate = mockmakedate
   > EOF
 
   $ cat >> $HGRCPATH << EOF

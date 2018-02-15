@@ -23,8 +23,8 @@ from mercurial import (
     pycompat,
     registrar,
     scmutil,
-    util,
 )
+from mercurial.utils import dateutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -65,7 +65,7 @@ def countrate(ui, repo, amap, *pats, **opts):
     rate = {}
     df = False
     if opts.get('date'):
-        df = util.matchdate(opts['date'])
+        df = dateutil.matchdate(opts['date'])
 
     m = scmutil.match(repo[None], pats, opts)
     def prep(ctx, fns):

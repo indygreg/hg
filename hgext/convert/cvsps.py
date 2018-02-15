@@ -17,6 +17,7 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import dateutil
 
 pickle = util.pickle
 
@@ -192,7 +193,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
         if oldlog:
             date = oldlog[-1].date    # last commit date as a (time,tz) tuple
-            date = util.datestr(date, '%Y/%m/%d %H:%M:%S %1%2')
+            date = dateutil.datestr(date, '%Y/%m/%d %H:%M:%S %1%2')
 
     # build the CVS commandline
     cmd = ['cvs', '-q']
@@ -336,7 +337,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             if len(d.split()) != 3:
                 # cvs log dates always in GMT
                 d = d + ' UTC'
-            e.date = util.parsedate(d, ['%y/%m/%d %H:%M:%S',
+            e.date = dateutil.parsedate(d, ['%y/%m/%d %H:%M:%S',
                                         '%Y/%m/%d %H:%M:%S',
                                         '%Y-%m-%d %H:%M:%S'])
             e.author = scache(match.group(2))
@@ -901,7 +902,7 @@ def debugcvsps(ui, *args, **opts):
             #       bug-for-bug compatibility with cvsps.
             ui.write('---------------------\n')
             ui.write(('PatchSet %d \n' % cs.id))
-            ui.write(('Date: %s\n' % util.datestr(cs.date,
+            ui.write(('Date: %s\n' % dateutil.datestr(cs.date,
                                                  '%Y/%m/%d %H:%M:%S %1%2')))
             ui.write(('Author: %s\n' % cs.author))
             ui.write(('Branch: %s\n' % (cs.branch or 'HEAD')))

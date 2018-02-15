@@ -541,7 +541,7 @@ class mapfile(dict):
             self.fp = None
 
 def makedatetimestamp(t):
-    """Like util.makedate() but for time t instead of current time"""
+    """Like dateutil.makedate() but for time t instead of current time"""
     delta = (datetime.datetime.utcfromtimestamp(t) -
              datetime.datetime.fromtimestamp(t))
     tz = delta.days * 86400 + delta.seconds

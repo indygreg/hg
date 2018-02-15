@@ -30,6 +30,7 @@ from . import (
     smartset,
     util,
 )
+from .utils import dateutil
 
 # helpers for processing parsed tree
 getsymbol = revsetlang.getsymbol
@@ -658,7 +659,7 @@ def date(repo, subset, x):
     """
     # i18n: "date" is a keyword
     ds = getstring(x, _("date requires a string"))
-    dm = util.matchdate(ds)
+    dm = dateutil.matchdate(ds)
     return subset.filter(lambda x: dm(repo[x].date()[0]),
                          condrepr=('<date %r>', ds))
 

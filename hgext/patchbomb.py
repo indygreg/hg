@@ -99,6 +99,7 @@ from mercurial import (
     templater,
     util,
 )
+from mercurial.utils import dateutil
 stringio = util.stringio
 
 cmdtable = {}
@@ -665,9 +666,9 @@ def email(ui, repo, *revs, **opts):
 
     # start
     if date:
-        start_time = util.parsedate(date)
+        start_time = dateutil.parsedate(date)
     else:
-        start_time = util.makedate()
+        start_time = dateutil.makedate()
 
     def genmsgid(id):
         return '<%s.%d@%s>' % (id[:20], int(start_time[0]),

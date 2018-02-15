@@ -18,6 +18,7 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import dateutil
 
 from . import (
     common,
@@ -93,7 +94,7 @@ class convert_cvs(converter_source):
                 cs.comment = self.recode(cs.comment)
                 if self.ui.configbool('convert', 'localtimezone'):
                     cs.date = makedatetimestamp(cs.date[0])
-                date = util.datestr(cs.date, '%Y-%m-%d %H:%M:%S %1%2')
+                date = dateutil.datestr(cs.date, '%Y-%m-%d %H:%M:%S %1%2')
                 self.tags.update(dict.fromkeys(cs.tags, id))
 
                 files = {}

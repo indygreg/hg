@@ -40,6 +40,7 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import dateutil
 
 diffhelpers = policy.importmod(r'diffhelpers')
 stringio = util.stringio
@@ -2669,8 +2670,8 @@ def trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
     def isempty(fctx):
         return fctx is None or fctx.size() == 0
 
-    date1 = util.datestr(ctx1.date())
-    date2 = util.datestr(ctx2.date())
+    date1 = dateutil.datestr(ctx1.date())
+    date2 = dateutil.datestr(ctx2.date())
 
     gitmode = {'l': '120000', 'x': '100755', '': '100644'}
 

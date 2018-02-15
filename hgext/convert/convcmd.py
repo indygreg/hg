@@ -19,6 +19,7 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import dateutil
 
 from . import (
     bzr,
@@ -355,7 +356,7 @@ class converter(object):
             dates = {}
             def getdate(n):
                 if n not in dates:
-                    dates[n] = util.parsedate(self.commitcache[n].date)
+                    dates[n] = dateutil.parsedate(self.commitcache[n].date)
                 return dates[n]
 
             def picknext(nodes):

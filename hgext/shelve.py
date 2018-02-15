@@ -55,6 +55,7 @@ from mercurial import (
 from . import (
     rebase,
 )
+from mercurial.utils import dateutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -563,7 +564,8 @@ def listcmd(ui, repo, pats, opts):
             continue
         ui.write(' ' * (16 - len(sname)))
         used = 16
-        age = '(%s)' % templatefilters.age(util.makedate(mtime), abbrev=True)
+        date = dateutil.makedate(mtime)
+        age = '(%s)' % templatefilters.age(date, abbrev=True)
         ui.write(age, label='shelve.age')
         ui.write(' ' * (12 - len(age)))
         used += 12

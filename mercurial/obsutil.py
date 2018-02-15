@@ -15,6 +15,7 @@ from . import (
     phases,
     util,
 )
+from .utils import dateutil
 
 class marker(object):
     """Wrap obsolete marker raw data"""
@@ -841,11 +842,11 @@ def obsfateprinter(successors, markers, ui):
         max_date = max(dates)
 
         if min_date == max_date:
-            fmtmin_date = util.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
+            fmtmin_date = dateutil.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
             line.append(" (at %s)" % fmtmin_date)
         else:
-            fmtmin_date = util.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
-            fmtmax_date = util.datestr(max_date, '%Y-%m-%d %H:%M %1%2')
+            fmtmin_date = dateutil.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
+            fmtmax_date = dateutil.datestr(max_date, '%Y-%m-%d %H:%M %1%2')
             line.append(" (between %s and %s)" % (fmtmin_date, fmtmax_date))
 
     return "".join(line)

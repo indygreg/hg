@@ -16,6 +16,7 @@ from mercurial import (
     error,
     util,
 )
+from mercurial.utils import dateutil
 from . import common
 NoRepo = common.NoRepo
 
@@ -148,12 +149,14 @@ class darcs_source(common.converter_source, common.commandline):
 
     def getcommit(self, rev):
         elt = self.changes[rev]
-        date = util.strdate(elt.get('local_date'), '%a %b %d %H:%M:%S %Z %Y')
+        dateformat = '%a %b %d %H:%M:%S %Z %Y'
+        date = dateutil.strdate(elt.get('local_date'), dateformat)
         desc = elt.findtext('name') + '\n' + elt.findtext('comment', '')
         # etree can return unicode objects for name, comment, and author,
         # so recode() is used to ensure str objects are emitted.
+        newdateformat = '%Y-%m-%d %H:%M:%S %1%2'
         return common.commit(author=self.recode(elt.get('author')),
-                             date=util.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
+                             date=dateutil.datestr(date, newdateformat),
                              desc=self.recode(desc).strip(),
                              parents=self.parents[rev])
 

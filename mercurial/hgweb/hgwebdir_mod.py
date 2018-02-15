@@ -46,6 +46,7 @@ from . import (
     webutil,
     wsgicgi,
 )
+from ..utils import dateutil
 
 def cleannames(items):
     return [(util.pconvert(name).strip('/'), path) for name, path in items]
@@ -376,7 +377,7 @@ class hgwebdir(object):
                 if directory:
                     # get the directory's time information
                     try:
-                        d = (get_mtime(path), util.makedate()[1])
+                        d = (get_mtime(path), dateutil.makedate()[1])
                     except OSError:
                         continue
 
@@ -425,7 +426,7 @@ class hgwebdir(object):
                     u.warn(_('error accessing repository at %s\n') % path)
                     continue
                 try:
-                    d = (get_mtime(r.spath), util.makedate()[1])
+                    d = (get_mtime(r.spath), dateutil.makedate()[1])
                 except OSError:
                     continue
 

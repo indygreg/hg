@@ -77,6 +77,7 @@ from . import (
     vfs as vfsmod,
     wireprotoserver,
 )
+from .utils import dateutil
 
 release = lockmod.release
 
@@ -560,13 +561,13 @@ def debugdata(ui, repo, file_, rev=None, **opts):
 def debugdate(ui, date, range=None, **opts):
     """parse and display a date"""
     if opts[r"extended"]:
-        d = util.parsedate(date, util.extendeddateformats)
+        d = dateutil.parsedate(date, util.extendeddateformats)
     else:
-        d = util.parsedate(date)
+        d = dateutil.parsedate(date)
     ui.write(("internal: %d %d\n") % d)
-    ui.write(("standard: %s\n") % util.datestr(d))
+    ui.write(("standard: %s\n") % dateutil.datestr(d))
     if range:
-        m = util.matchdate(range)
+        m = dateutil.matchdate(range)
         ui.write(("match: %s\n") % m(d[0]))
 
 @command('debugdeltachain',
@@ -1578,7 +1579,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             try:
                 date = opts.get('date')
                 if date:
-                    date = util.parsedate(date)
+                    date = dateutil.parsedate(date)
                 else:
                     date = None
                 prec = parsenodeid(precursor)

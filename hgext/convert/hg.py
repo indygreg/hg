@@ -36,6 +36,7 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import dateutil
 stringio = util.stringio
 
 from . import common
@@ -583,7 +584,7 @@ class mercurial_source(common.converter_source):
         crev = rev
 
         return common.commit(author=ctx.user(),
-                             date=util.datestr(ctx.date(),
+                             date=dateutil.datestr(ctx.date(),
                                                '%Y-%m-%d %H:%M:%S %1%2'),
                              desc=ctx.description(),
                              rev=crev,

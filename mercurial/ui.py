@@ -37,6 +37,7 @@ from . import (
     scmutil,
     util,
 )
+from .utils import dateutil
 
 urlreq = util.urlreq
 
@@ -714,7 +715,7 @@ class ui(object):
         (0, 0)
         """
         if self.config(section, name, default, untrusted):
-            return self.configwith(util.parsedate, section, name, default,
+            return self.configwith(dateutil.parsedate, section, name, default,
                                    'date', untrusted)
         if default is _unset:
             return None

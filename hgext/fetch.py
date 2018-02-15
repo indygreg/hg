@@ -23,6 +23,7 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import dateutil
 
 release = lock.release
 cmdtable = {}
@@ -64,7 +65,7 @@ def fetch(ui, repo, source='default', **opts):
     opts = pycompat.byteskwargs(opts)
     date = opts.get('date')
     if date:
-        opts['date'] = util.parsedate(date)
+        opts['date'] = dateutil.parsedate(date)
 
     parent, _p2 = repo.dirstate.parents()
     branch = repo.dirstate.branch()

@@ -98,6 +98,7 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
+from mercurial.utils import dateutil
 
 release = lockmod.release
 seriesopts = [('s', 'summary', None, _('print first line of patch header'))]
@@ -1201,7 +1202,7 @@ class queue(object):
         user = opts.get('user')
         date = opts.get('date')
         if date:
-            date = util.parsedate(date)
+            date = dateutil.parsedate(date)
         diffopts = self.diffopts({'git': opts.get('git')}, plain=True)
         if opts.get('checkname', True):
             self.checkpatchname(patchfn)
@@ -1644,7 +1645,7 @@ class queue(object):
         newuser = opts.get('user')
         newdate = opts.get('date')
         if newdate:
-            newdate = '%d %d' % util.parsedate(newdate)
+            newdate = '%d %d' % dateutil.parsedate(newdate)
         wlock = repo.wlock()
 
         try:
@@ -2596,7 +2597,7 @@ def setupheaderopts(ui, opts):
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
     if not opts.get('date') and opts.get('currentdate'):
-        opts['date'] = "%d %d" % util.makedate()
+        opts['date'] = "%d %d" % dateutil.makedate()
 
 @command("^qnew",
          [('e', 'edit', None, _('invoke editor on commit messages')),

@@ -126,6 +126,7 @@ from . import (
     templater,
     util,
 )
+from .utils import dateutil
 
 pickle = util.pickle
 
@@ -243,7 +244,7 @@ class _plainconverter(object):
     @staticmethod
     def formatdate(date, fmt):
         '''stringify date tuple in the given format'''
-        return util.datestr(date, fmt)
+        return dateutil.datestr(date, fmt)
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''stringify key-value pairs separated by sep'''

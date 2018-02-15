@@ -14,6 +14,7 @@ from mercurial import (
     error,
     util,
 )
+from mercurial.utils import dateutil
 
 from . import common
 
@@ -346,7 +347,7 @@ class p4_source(common.converter_source):
             parents = []
 
         return common.commit(author=self.recode(obj["user"]),
-            date=util.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
+            date=dateutil.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
             parents=parents, desc=desc, branch=None, rev=obj['change'],
             extra={"p4": obj['change'], "convert_revision": obj['change']})
 

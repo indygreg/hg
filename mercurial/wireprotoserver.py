@@ -445,7 +445,7 @@ class sshserver(object):
                 _sshv1respondstream(self._fout, rsp)
             elif isinstance(rsp, wireprototypes.pushres):
                 _sshv1respondbytes(self._fout, b'')
-                _sshv1respondbytes(self._fout, bytes(rsp.res))
+                _sshv1respondbytes(self._fout, b'%d' % rsp.res)
             elif isinstance(rsp, wireprototypes.pusherr):
                 _sshv1respondbytes(self._fout, rsp.res)
             elif isinstance(rsp, wireprototypes.ooberror):

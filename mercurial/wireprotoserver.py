@@ -170,6 +170,10 @@ class httpv1protocolhandler(baseprotocolhandler):
             urlreq.quote(self._req.env.get('REMOTE_HOST', '')),
             urlreq.quote(self._req.env.get('REMOTE_USER', '')))
 
+# This method exists mostly so that extensions like remotefilelog can
+# disable a kludgey legacy method only over http. As of early 2018,
+# there are no other known users, so with any luck we can discard this
+# hook if remotefilelog becomes a first-party extension.
 def iscmd(cmd):
     return cmd in wireproto.commands
 
@@ -198,7 +202,7 @@ def parsehttprequest(repo, req, query):
     # wire protocol requests to hgweb because it prevents hgweb from using
     # known wire protocol commands and it is less confusing for machine
     # clients.
-    if cmd not in wireproto.commands:
+    if not iscmd(cmd):
         return None
 
     proto = httpv1protocolhandler(req, repo.ui)

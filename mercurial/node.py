@@ -11,7 +11,14 @@ import binascii
 
 # This ugly style has a noticeable effect in manifest parsing
 hex = binascii.hexlify
-bin = binascii.unhexlify
+# Adapt to Python 3 API changes. If this ends up showing up in
+# profiles, we can use this version only on Python 3, and forward
+# binascii.unhexlify like we used to on Python 2.
+def bin(s):
+    try:
+        return binascii.unhexlify(s)
+    except binascii.Error as e:
+        raise TypeError(e)
 
 nullrev = -1
 nullid = b"\0" * 20

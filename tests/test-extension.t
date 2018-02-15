@@ -460,7 +460,7 @@ Setup main procedure of extension.
   >     result.append(absdetail)
   >     result.append(legacydetail)
   >     result.append(proxied.detail)
-  >     ui.write('LIB: %s\n' % '\nLIB: '.join(result))
+  >     ui.write(b'LIB: %s\n' % '\nLIB: '.join(result))
   > EOF
 
 Examine module importing.
@@ -1283,7 +1283,7 @@ If the extension specifies a buglink, show that:
 
 If the extensions declare outdated versions, accuse the older extension first:
   $ echo "from mercurial import util" >> older.py
-  $ echo "util.version = lambda:'2.2'" >> older.py
+  $ echo "util.version = lambda:b'2.2'" >> older.py
   $ echo "testedwith = b'1.9.3'" >> older.py
   $ echo "testedwith = b'2.1.1'" >> throw.py
   $ rm -f throw.pyc throw.pyo
@@ -1388,7 +1388,7 @@ Test version number support in 'hg version':
   Enabled extensions:
   
     throw  external  1.2.3
-  $ echo 'getversion = lambda: "1.twentythree"' >> throw.py
+  $ echo 'getversion = lambda: b"1.twentythree"' >> throw.py
   $ rm -f throw.pyc throw.pyo
   $ rm -Rf __pycache__
   $ hg version -v --config extensions.throw=throw.py --config extensions.strip=
@@ -1678,7 +1678,7 @@ Test synopsis and docstring extending
   > def exbookmarks(orig, *args, **opts):
   >     return orig(*args, **opts)
   > def uisetup(ui):
-  >     synopsis = ' GREPME [--foo] [-x]'
+  >     synopsis = b' GREPME [--foo] [-x]'
   >     docstring = '''
   >     GREPME make sure that this is in the help!
   >     '''
@@ -1713,9 +1713,9 @@ Prohibit the use of unicode strings as the default value of options
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'dummy', [('', 'opt', u'value', u'help')], 'ext [OPTIONS]')
+  > @command(b'dummy', [(b'', b'opt', u'value', u'help')], 'ext [OPTIONS]')
   > def ext(*args, **opts):
-  >     print(opts['opt'])
+  >     print(opts[b'opt'])
   > EOF
   $ cat > $TESTTMP/opt-unicode-default/.hg/hgrc << EOF
   > [extensions]

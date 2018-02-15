@@ -18,6 +18,7 @@ test-bundle-phases.t
 test-bundle-vs-outgoing.t
 test-casecollision.t
 test-cat.t
+test-censor.t
 test-changelog-exec.t
 test-check-commit.t
 test-check-execute.t
@@ -91,6 +92,7 @@ test-extra-filelog-entry.t
 test-filebranch.t
 test-flags.t
 test-generaldelta.t
+test-git-export.t
 test-glog-topological.t
 test-gpg.t
 test-hghave.t
@@ -154,6 +156,7 @@ test-mq-qsave.t
 test-newbranch.t
 test-obshistory.t
 test-obsmarkers-effectflag.t
+test-obsolete-bundle-strip.t
 test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t
 test-obsolete-distributed.t
@@ -194,6 +197,7 @@ test-rebase-check-restore.t
 test-rebase-inmemory.t
 test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
+test-rebase-named-branches.t
 test-rebase-pull.t
 test-rebase-transaction.t
 test-record.t
@@ -202,6 +206,7 @@ test-rename-after-merge.t
 test-rename-dir-merge.t
 test-rename-merge1.t
 test-rename.t
+test-repair-strip.t
 test-revert-flags.t
 test-revert-unknown.t
 test-revlog-group-emptyiter.t
@@ -220,6 +225,8 @@ test-sparse-merges.t
 test-sparse-requirement.t
 test-sparse-verbose-json.t
 test-ssh-clone-r.t
+test-ssh-proto.t
+test-sshserver.py
 test-status-terse.t
 test-strip-cross.t
 test-strip.t
@@ -233,5 +240,6 @@ test-update-dest.t
 test-update-issue1456.t
 test-update-names.t
 test-update-reverse.t
+test-username-newline.t
 test-win32text.t
 test-xdg.t

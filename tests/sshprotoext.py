@@ -22,8 +22,8 @@ from mercurial import (
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('sshpeer', 'mode', default=None)
-configitem('sshpeer', 'handshake-mode', default=None)
+configitem(b'sshpeer', b'mode', default=None)
+configitem(b'sshpeer', b'handshake-mode', default=None)
 
 class bannerserver(wireprotoserver.sshserver):
     """Server that sends a banner to stdout."""

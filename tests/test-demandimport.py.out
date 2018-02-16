@@ -1,3 +1,4 @@
+node = <module 'mercurial.node' from '?'>
 os = <unloaded module 'os'>
 os.system = <built-in function system>
 os = <module 'os' from '?'>
@@ -27,4 +28,3 @@ contextlib = <unloaded module 'contextlib'>
 contextlib.unknownattr = ImportError: cannot import name unknownattr
 __import__('contextlib', ..., ['unknownattr']) = <module 'contextlib' from '?'>
 hasattr(contextlibimp, 'unknownattr') = False
-node = <module 'mercurial.node' from '?'>

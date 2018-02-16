@@ -31,6 +31,16 @@ def f(obj):
     l = rsub("'<[a-z]*>'", "'<whatever>'", l)
     return l
 
+demandimport.disable()
+os.environ['HGDEMANDIMPORT'] = 'disable'
+# this enable call should not actually enable demandimport!
+demandimport.enable()
+from mercurial import node
+print("node =", f(node))
+# now enable it for real
+del os.environ['HGDEMANDIMPORT']
+demandimport.enable()
+
 import os
 
 print("os =", f(os))
@@ -97,10 +107,3 @@ contextlibimp = __import__('contextlib', globals(), locals(), ['unknownattr'])
 print("__import__('contextlib', ..., ['unknownattr']) =", f(contextlibimp))
 print("hasattr(contextlibimp, 'unknownattr') =",
       util.safehasattr(contextlibimp, 'unknownattr'))
-
-demandimport.disable()
-os.environ['HGDEMANDIMPORT'] = 'disable'
-# this enable call should not actually enable demandimport!
-demandimport.enable()
-from mercurial import node
-print("node =", f(node))

@@ -41,6 +41,17 @@ print("node =", f(node))
 del os.environ['HGDEMANDIMPORT']
 demandimport.enable()
 
+# Test access to special attributes through demandmod proxy
+from mercurial import error as errorproxy
+print("errorproxy =", f(errorproxy))
+print("errorproxy.__doc__ = %r"
+      % (' '.join(errorproxy.__doc__.split()[:3]) + ' ...'))
+print("errorproxy.__name__ = %r" % errorproxy.__name__)
+# __name__ must be accessible via __dict__ so the relative imports can be
+# resolved
+print("errorproxy.__dict__['__name__'] = %r" % errorproxy.__dict__['__name__'])
+print("errorproxy =", f(errorproxy))
+
 import os
 
 print("os =", f(os))
@@ -78,17 +89,6 @@ print("remod =", f(remod))
 print("re =", f(re))
 print("re.stderr =", f(re.stderr))
 print("re =", f(re))
-
-# Test access to special attributes through demandmod proxy
-from mercurial import pvec as pvecproxy
-print("pvecproxy =", f(pvecproxy))
-print("pvecproxy.__doc__ = %r"
-      % (' '.join(pvecproxy.__doc__.split()[:3]) + ' ...'))
-print("pvecproxy.__name__ = %r" % pvecproxy.__name__)
-# __name__ must be accessible via __dict__ so the relative imports can be
-# resolved
-print("pvecproxy.__dict__['__name__'] = %r" % pvecproxy.__dict__['__name__'])
-print("pvecproxy =", f(pvecproxy))
 
 import contextlib
 print("contextlib =", f(contextlib))

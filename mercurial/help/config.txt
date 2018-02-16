@@ -1584,8 +1584,7 @@ profiler (named ``stat``).
 
 In this section description, 'profiling data' stands for the raw data
 collected during profiling, while 'profiling report' stands for a
-statistical text report generated from the profiling data. The
-profiling is done using lsprof.
+statistical text report generated from the profiling data.
 
 ``enabled``
     Enable the profiler.
@@ -1657,7 +1656,7 @@ profiling is done using lsprof.
     Show at most this number of lines of drill-down info after each main entry.
     This can help explain the difference between Total and Inline.
     Specific to the ``ls`` instrumenting profiler.
-    (default: 5)
+    (default: 0)
 
 ``showmin``
     Minimum fraction of samples an entry must have for it to be displayed.

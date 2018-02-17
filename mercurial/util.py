@@ -2427,7 +2427,7 @@ def forcebytestr(obj):
 
 def uirepr(s):
     # Avoid double backslash in Windows path repr()
-    return repr(s).replace('\\\\', '\\')
+    return pycompat.byterepr(pycompat.bytestr(s)).replace(b'\\\\', b'\\')
 
 # delay import of textwrap
 def MBTextWrapper(**kwargs):

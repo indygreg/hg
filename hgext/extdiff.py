@@ -366,7 +366,7 @@ class savedcmd(object):
         # We can't pass non-ASCII through docstrings (and path is
         # in an unknown encoding anyway)
         docpath = util.escapestr(path)
-        self.__doc__ = self.__doc__ % {'path': util.uirepr(docpath)}
+        self.__doc__ %= {r'path': pycompat.sysstr(util.uirepr(docpath))}
         self._cmdline = cmdline
 
     def __call__(self, ui, repo, *pats, **opts):

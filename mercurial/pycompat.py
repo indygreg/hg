@@ -85,6 +85,7 @@ if ispy3:
         sysargv = list(map(os.fsencode, sys.argv))
 
     bytechr = struct.Struct('>B').pack
+    byterepr = b'%r'.__mod__
 
     class bytestr(bytes):
         """A bytes which mostly acts as a Python 2 str
@@ -277,6 +278,7 @@ else:
     import cStringIO
 
     bytechr = chr
+    byterepr = repr
     bytestr = str
     iterbytestr = iter
     maybebytestr = identity

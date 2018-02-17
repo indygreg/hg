@@ -35,7 +35,7 @@ def _formatsetrepr(r):
     elif callable(r):
         return r()
     else:
-        return pycompat.sysbytes(repr(r))
+        return pycompat.byterepr(r)
 
 def _typename(o):
     return pycompat.sysbytes(type(o).__name__).lstrip('_')
@@ -400,7 +400,7 @@ class baseset(abstractsmartset):
             # We fallback to the sorted version for a stable output.
             if self._ascending is not None:
                 l = self._asclist
-            s = pycompat.sysbytes(repr(l))
+            s = pycompat.byterepr(l)
         return '<%s%s %s>' % (_typename(self), d, s)
 
 class filteredset(abstractsmartset):
@@ -513,7 +513,7 @@ class filteredset(abstractsmartset):
 
     @encoding.strmethod
     def __repr__(self):
-        xs = [pycompat.sysbytes(repr(self._subset))]
+        xs = [pycompat.byterepr(self._subset)]
         s = _formatsetrepr(self._condrepr)
         if s:
             xs.append(s)
@@ -1132,7 +1132,7 @@ class fullreposet(_spanset):
 
 def prettyformat(revs):
     lines = []
-    rs = pycompat.sysbytes(repr(revs))
+    rs = pycompat.byterepr(revs)
     p = 0
     while p < len(rs):
         q = rs.find('<', p + 1)

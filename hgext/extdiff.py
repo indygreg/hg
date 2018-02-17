@@ -88,12 +88,12 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('extdiff', r'opts\..*',
+configitem('extdiff', br'opts\..*',
     default='',
     generic=True,
 )
 
-configitem('diff-tools', r'.*\.diffargs$',
+configitem('diff-tools', br'.*\.diffargs$',
     default=None,
     generic=True,
 )
@@ -279,8 +279,8 @@ def dodiff(ui, repo, cmdline, pats, opts):
             return pre + util.shellquote(replace[key])
 
         # Match parent2 first, so 'parent1?' will match both parent1 and parent
-        regex = (r'''(['"]?)([^\s'"$]*)'''
-                 r'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1')
+        regex = (br'''(['"]?)([^\s'"$]*)'''
+                 br'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1')
         if not do3way and not re.search(regex, cmdline):
             cmdline += ' $parent1 $child'
         cmdline = re.sub(regex, quote, cmdline)

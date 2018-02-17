@@ -1707,8 +1707,8 @@ Prohibit the use of unicode strings as the default value of options
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py
   > EOF
   $ hg -R $TESTTMP/opt-unicode-default dummy
-  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: option 'dummy.opt' has a unicode default value
-  *** (change the dummy.opt default value to a non-unicode string)
+  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode u'value' found in cmdtable.dummy
+  *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)
   [255]

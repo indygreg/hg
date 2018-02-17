@@ -122,6 +122,18 @@ def _reportimporterror(ui, err, failed, next):
     if ui.debugflag:
         ui.traceback()
 
+def _rejectunicode(name, xs):
+    if isinstance(xs, (list, set, tuple)):
+        for x in xs:
+            _rejectunicode(name, x)
+    elif isinstance(xs, dict):
+        for k, v in xs.items():
+            _rejectunicode(name, k)
+            _rejectunicode(b'%s.%s' % (name, util.forcebytestr(k)), v)
+    elif isinstance(xs, type(u'')):
+        raise error.ProgrammingError(b"unicode %r found in %s" % (xs, name),
+                                     hint="use b'' to make it byte string")
+
 # attributes set by registrar.command
 _cmdfuncattrs = ('norepo', 'optionalrepo', 'inferrepo')
 
@@ -134,18 +146,21 @@ def _validatecmdtable(ui, cmdtable):
                           "registrar.command to register '%s'" % c, '4.6')
         missing = [a for a in _cmdfuncattrs if not util.safehasattr(f, a)]
         if not missing:
-            for option in e[1]:
-                default = option[2]
-                if isinstance(default, type(u'')):
-                    raise error.ProgrammingError(
-                        "option '%s.%s' has a unicode default value"
-                        % (c, option[1]),
-                        hint=("change the %s.%s default value to a "
-                              "non-unicode string" % (c, option[1])))
             continue
         raise error.ProgrammingError(
             'missing attributes: %s' % ', '.join(missing),
             hint="use @command decorator to register '%s'" % c)
+
+def _validatetables(ui, mod):
+    """Sanity check for loadable tables provided by extension module"""
+    for t in ['cmdtable', 'colortable', 'configtable']:
+        _rejectunicode(t, getattr(mod, t, {}))
+    for t in ['filesetpredicate', 'internalmerge', 'revsetpredicate',
+              'templatefilter', 'templatefunc', 'templatekeyword']:
+        o = getattr(mod, t, None)
+        if o:
+            _rejectunicode(t, o._table)
+    _validatecmdtable(ui, getattr(mod, 'cmdtable', {}))
 
 def load(ui, name, path):
     if name.startswith('hgext.') or name.startswith('hgext/'):
@@ -168,7 +183,7 @@ def load(ui, name, path):
         ui.warn(_('(third party extension %s requires version %s or newer '
                   'of Mercurial; disabling)\n') % (shortname, minver))
         return
-    _validatecmdtable(ui, getattr(mod, 'cmdtable', {}))
+    _validatetables(ui, mod)
 
     _extensions[shortname] = mod
     _order.append(shortname)

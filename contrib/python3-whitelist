@@ -163,6 +163,7 @@ test-obsolete-distributed.t
 test-parents.t
 test-permissions.t
 test-pull-branch.t
+test-pull-http.t
 test-pull-permission.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t

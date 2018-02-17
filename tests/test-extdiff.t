@@ -424,7 +424,8 @@ Test symlinks handling (issue1909)
 
 Test handling of non-ASCII paths in generated docstrings (issue5301)
 
-  >>> open("u", "w").write("\xa5\xa5")
+  >>> with open("u", "wb") as f:
+  ...     n = f.write(b"\xa5\xa5")
   $ U=`cat u`
 
   $ HGPLAIN=1 hg --config hgext.extdiff= --config extdiff.cmd.td=hi help -k xyzzy

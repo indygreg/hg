@@ -285,7 +285,7 @@ def dodiff(ui, repo, cmdline, pats, opts):
             cmdline += ' $parent1 $child'
         cmdline = re.sub(regex, quote, cmdline)
 
-        ui.debug('running %r in %s\n' % (cmdline, tmproot))
+        ui.debug('running %r in %s\n' % (pycompat.bytestr(cmdline), tmproot))
         ui.system(cmdline, cwd=tmproot, blockedtag='extdiff')
 
         for copy_fn, working_fn, st in fnsandstat:

@@ -115,7 +115,7 @@ class wsgirequest(object):
                     self.headers = [(k, v) for (k, v) in self.headers if
                                     k in ('Date', 'ETag', 'Expires',
                                           'Cache-Control', 'Vary')]
-                status = statusmessage(status.code, str(status))
+                status = statusmessage(status.code, pycompat.bytestr(status))
             elif status == 200:
                 status = '200 Script output follows'
             elif isinstance(status, int):

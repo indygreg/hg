@@ -215,7 +215,7 @@ def callcatch(ui, func):
             ui.warn(_("(is your Python install correct?)\n"))
     except IOError as inst:
         if util.safehasattr(inst, "code"):
-            ui.warn(_("abort: %s\n") % inst)
+            ui.warn(_("abort: %s\n") % util.forcebytestr(inst))
         elif util.safehasattr(inst, "reason"):
             try: # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]

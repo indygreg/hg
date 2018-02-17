@@ -273,7 +273,7 @@ except ImportError:
 
 def openlog(opt, default):
     if opt and opt != '-':
-        return open(opt, 'a')
+        return open(opt, 'ab')
     return default
 
 class MercurialHTTPServer(_mixin, httpservermod.httpserver, object):

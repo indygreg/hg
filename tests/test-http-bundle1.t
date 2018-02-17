@@ -68,7 +68,7 @@ try to clone via stream but missing requirements, so should use pull instead
   $ cat > $TESTTMP/removesupportedformat.py << EOF
   > from mercurial import localrepo
   > def extsetup(ui):
-  >     localrepo.localrepository.supportedformats.remove('generaldelta')
+  >     localrepo.localrepository.supportedformats.remove(b'generaldelta')
   > EOF
 
   $ hg clone --config extensions.rsf=$TESTTMP/removesupportedformat.py --stream http://localhost:$HGPORT/ copy3
@@ -181,7 +181,8 @@ test http authentication
   >     if not auth:
   >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, 'who',
   >                 [('WWW-Authenticate', 'Basic Realm="mercurial"')])
-  >     if base64.b64decode(auth.split()[1]).split(':', 1) != ['user', 'pass']:
+  >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user',
+  >                                                             b'pass']:
   >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, 'no')
   > def extsetup():
   >     common.permhooks.insert(0, perform_authentication)

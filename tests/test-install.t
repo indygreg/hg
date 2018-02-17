@@ -140,8 +140,10 @@ not found (this is intentionally using backslashes to mimic a windows usecase).
   checking "re2" regexp engine \((available|missing)\) (re)
   checking templates (*mercurial?templates)... (glob)
   checking default template (*mercurial?templates?map-cmdline.default) (glob)
-  checking commit editor... (c:foobarbaz.exe)
-   Can't find editor 'c:foobarbaz.exe' in PATH
+  checking commit editor... (c:\foo\bar\baz.exe) (windows !)
+   Can't find editor 'c:\foo\bar\baz.exe' in PATH (windows !)
+  checking commit editor... (c:foobarbaz.exe) (no-windows !)
+   Can't find editor 'c:foobarbaz.exe' in PATH (no-windows !)
    (specify a commit editor in your configuration file)
   checking username (test)
   1 problems detected, please check your install!

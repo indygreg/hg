@@ -197,6 +197,8 @@ def loaddoc(topic, subdir=None):
     return loader
 
 internalstable = sorted([
+    (['bundle2'], _('Bundle2'),
+     loaddoc('bundle2', subdir='internals')),
     (['bundles'], _('Bundles'),
      loaddoc('bundles', subdir='internals')),
     (['censor'], _('Censor'),

@@ -40,6 +40,7 @@
 
         <Directory Id="help.internaldir" Name="internals">
           <Component Id="help.internals" Guid="$(var.help.internals.guid)" Win64='$(var.IsX64)'>
+            <File Id="internals.bundle2.txt"      Name="bundle2.txt" />
             <File Id="internals.bundles.txt"      Name="bundles.txt" KeyPath="yes" />
             <File Id="internals.censor.txt"       Name="censor.txt" />
             <File Id="internals.changegroups.txt" Name="changegroups.txt" />

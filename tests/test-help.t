@@ -993,6 +993,7 @@ internals topic renders index of available sub-topics
   
       To access a subtopic, use "hg help internals.{subtopic-name}"
   
+       bundle2       Bundle2
        bundles       Bundles
        censor        Censor
        changegroups  Changegroups
@@ -3058,6 +3059,13 @@ Sub-topic indexes rendered properly
   <table class="bigtable">
   <tr><td colspan="2"><h2><a name="topics" href="#topics">Topics</a></h2></td></tr>
   
+  <tr><td>
+  <a href="/help/internals.bundle2">
+  bundle2
+  </a>
+  </td><td>
+  Bundle2
+  </td></tr>
   <tr><td>
   <a href="/help/internals.bundles">
   bundles

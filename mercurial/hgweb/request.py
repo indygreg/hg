@@ -121,7 +121,8 @@ class wsgirequest(object):
             elif isinstance(status, int):
                 status = statusmessage(status)
 
-            self.server_write = self._start_response(status, self.headers)
+            self.server_write = self._start_response(
+                pycompat.sysstr(status), self.headers)
             self._start_response = None
             self.headers = []
         if body is not None:

@@ -879,11 +879,11 @@ def getbundle(repo, proto, others):
         # cleanly forward Abort error to the client
         if not exchange.bundle2requested(opts.get('bundlecaps')):
             if proto.name == 'http-v1':
-                return ooberror(str(exc) + '\n')
+                return ooberror(pycompat.bytestr(exc) + '\n')
             raise # cannot do better for bundle1 + ssh
         # bundle2 request expect a bundle2 reply
         bundler = bundle2.bundle20(repo.ui)
-        manargs = [('message', str(exc))]
+        manargs = [('message', pycompat.bytestr(exc))]
         advargs = []
         if exc.hint is not None:
             advargs.append(('hint', exc.hint))

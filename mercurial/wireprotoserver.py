@@ -339,7 +339,7 @@ def _handlehttperror(e, req, cmd):
 
     # TODO This response body assumes the failed command was
     # "unbundle." That assumption is not always valid.
-    req.respond(e, HGTYPE, body='0\n%s\n' % e)
+    req.respond(e, HGTYPE, body='0\n%s\n' % pycompat.bytestr(e))
 
     return ''
 

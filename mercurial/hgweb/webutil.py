@@ -347,7 +347,7 @@ def linerange(req):
     try:
         return util.processlinerange(fromline, toline)
     except error.ParseError as exc:
-        raise ErrorResponse(HTTP_BAD_REQUEST, str(exc))
+        raise ErrorResponse(HTTP_BAD_REQUEST, pycompat.bytestr(exc))
 
 def formatlinerange(fromline, toline):
     return '%d:%d' % (fromline + 1, toline)

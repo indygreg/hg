@@ -218,7 +218,7 @@ test diverging directory moves
 test large file support (> 32kB)
 
   >>> fp = open('large-file', 'wb')
-  >>> for x in xrange(10000): fp.write(b'%d\n' % x)
+  >>> for x in range(10000): fp.write(b'%d\n' % x)
   >>> fp.close()
   $ md5sum.py large-file
   5d6de8a95c3b6bf9e0ffb808ba5299c1  large-file

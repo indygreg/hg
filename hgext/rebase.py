@@ -1650,7 +1650,9 @@ def buildstate(repo, destmap, collapse):
     roots = list(repo.set('roots(%ld)', sortedsrc[0]))
     if not roots:
         raise error.Abort(_('no matching revisions'))
-    roots.sort()
+    def revof(r):
+        return r.rev()
+    roots = sorted(roots, key=revof)
     state = dict.fromkeys(rebaseset, revtodo)
     emptyrebase = (len(sortedsrc) == 1)
     for root in roots:

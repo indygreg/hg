@@ -589,7 +589,7 @@ class rebaseruntime(object):
                         date=self.date)
             if newnode is not None:
                 newrev = repo[newnode].rev()
-                for oldrev in self.state.iterkeys():
+                for oldrev in self.state:
                     self.state[oldrev] = newrev
 
         if 'qtip' in repo.tags():

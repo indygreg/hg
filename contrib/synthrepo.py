@@ -381,7 +381,7 @@ def synthesize(ui, repo, descpath, **opts):
         ui.progress(_synthesizing, None)
         message = 'synthesized wide repo with %d files' % (len(files),)
         mc = context.memctx(repo, [pctx.node(), nullid], message,
-                            files.iterkeys(), filectxfn, ui.username(),
+                            files, filectxfn, ui.username(),
                             '%d %d' % util.makedate())
         initnode = mc.commit()
         if ui.debugflag:

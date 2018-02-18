@@ -7,9 +7,13 @@ import tempfile
 import unittest
 
 from mercurial import (
+    pycompat,
     util,
 )
 atomictempfile = util.atomictempfile
+
+if pycompat.ispy3:
+    xrange = range
 
 class testatomictempfile(unittest.TestCase):
     def setUp(self):

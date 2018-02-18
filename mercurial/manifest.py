@@ -960,7 +960,7 @@ class treemanifest(object):
                 else:
                     files.update(m1.iterkeys())
 
-            for fn in t1._files.iterkeys():
+            for fn in t1._files:
                 if fn not in t2._files:
                     files.add(t1._subpath(fn))
 

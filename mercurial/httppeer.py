@@ -334,7 +334,7 @@ class httppeer(wireproto.wirepeer):
         req = self._requestbuilder(pycompat.strurl(cu), data, headers)
 
         if data is not None:
-            self.ui.debug("sending %s bytes\n" % size)
+            self.ui.debug("sending %d bytes\n" % size)
             req.add_unredirected_header('Content-Length', '%d' % size)
         try:
             resp = self._openurl(req)

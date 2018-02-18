@@ -71,10 +71,10 @@ class passwordmgr(object):
             u.query = None
             if not self.ui.interactive():
                 raise error.Abort(_('http authorization required for %s') %
-                                 util.hidepassword(str(u)))
+                                  util.hidepassword(bytes(u)))
 
             self.ui.write(_("http authorization required for %s\n") %
-                          util.hidepassword(str(u)))
+                          util.hidepassword(bytes(u)))
             self.ui.write(_("realm: %s\n") % realm)
             if user:
                 self.ui.write(_("user: %s\n") % user)
@@ -124,7 +124,7 @@ class proxyhandler(urlreq.proxyhandler):
             else:
                 self.no_list = no_list
 
-            proxyurl = str(proxy)
+            proxyurl = bytes(proxy)
             proxies = {'http': proxyurl, 'https': proxyurl}
             ui.debug('proxying through %s\n' % util.hidepassword(proxyurl))
         else:

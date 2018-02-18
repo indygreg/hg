@@ -178,8 +178,14 @@ def _parsetemplate(tmpl, start, stop, quote=''):
             raise error.ProgrammingError('unexpected type: %s' % typ)
     raise error.ProgrammingError('unterminated scanning of template')
 
-def scantemplate(tmpl):
-    """Scan (type, start, end) positions of outermost elements in template
+def scantemplate(tmpl, raw=False):
+    r"""Scan (type, start, end) positions of outermost elements in template
+
+    If raw=True, a backslash is not taken as an escape character just like
+    r'' string in Python. Note that this is different from r'' literal in
+    template in that no template fragment can appear in r'', e.g. r'{foo}'
+    is a literal '{foo}', but ('{foo}', raw=True) is a template expression
+    'foo'.
 
     >>> list(scantemplate(b'foo{bar}"baz'))
     [('string', 0, 3), ('template', 3, 8), ('string', 8, 12)]
@@ -187,9 +193,11 @@ def scantemplate(tmpl):
     [('string', 0, 5), ('template', 5, 14), ('string', 14, 19)]
     >>> list(scantemplate(b'foo\\{escaped}'))
     [('string', 0, 5), ('string', 5, 13)]
+    >>> list(scantemplate(b'foo\\{escaped}', raw=True))
+    [('string', 0, 4), ('template', 4, 13)]
     """
     last = None
-    for typ, val, pos in _scantemplate(tmpl, 0, len(tmpl)):
+    for typ, val, pos in _scantemplate(tmpl, 0, len(tmpl), raw=raw):
         if last:
             yield last + (pos,)
         if typ == 'end':
@@ -198,27 +206,30 @@ def scantemplate(tmpl):
             last = (typ, pos)
     raise error.ProgrammingError('unterminated scanning of template')
 
-def _scantemplate(tmpl, start, stop, quote=''):
+def _scantemplate(tmpl, start, stop, quote='', raw=False):
     """Parse template string into chunks of strings and template expressions"""
     sepchars = '{' + quote
+    unescape = [parser.unescapestr, pycompat.identity][raw]
     pos = start
     p = parser.parser(elements)
     while pos < stop:
         n = min((tmpl.find(c, pos, stop) for c in sepchars),
                 key=lambda n: (n < 0, n))
         if n < 0:
-            yield ('string', parser.unescapestr(tmpl[pos:stop]), pos)
+            yield ('string', unescape(tmpl[pos:stop]), pos)
             pos = stop
             break
         c = tmpl[n:n + 1]
-        bs = (n - pos) - len(tmpl[pos:n].rstrip('\\'))
+        bs = 0  # count leading backslashes
+        if not raw:
+            bs = (n - pos) - len(tmpl[pos:n].rstrip('\\'))
         if bs % 2 == 1:
             # escaped (e.g. '\{', '\\\{', but not '\\{')
-            yield ('string', parser.unescapestr(tmpl[pos:n - 1]) + c, pos)
+            yield ('string', unescape(tmpl[pos:n - 1]) + c, pos)
             pos = n + 1
             continue
         if n > pos:
-            yield ('string', parser.unescapestr(tmpl[pos:n]), pos)
+            yield ('string', unescape(tmpl[pos:n]), pos)
         if c == quote:
             yield ('end', None, n + 1)
             return

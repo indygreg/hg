@@ -542,7 +542,7 @@ def manifest(web, req, tmpl):
             emptydirs = []
             h = dirs[d]
             while isinstance(h, dict) and len(h) == 1:
-                k, v = h.items()[0]
+                k, v = next(iter(h.items()))
                 if v:
                     emptydirs.append(k)
                 h = v

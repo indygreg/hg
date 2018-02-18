@@ -1,5 +1,15 @@
 #require killdaemons
 
+#testcases bundle1 bundle2
+
+#if bundle1
+  $ cat << EOF >> $HGRCPATH
+  > [devel]
+  > # This test is dedicated to interaction through old bundle
+  > legacy.exchange = bundle1
+  > EOF
+#endif
+
   $ hg init test
   $ cd test
   $ echo a > a
@@ -76,7 +86,8 @@ expect success
   remote: added 1 changesets with 1 changes to 1 files
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle1 !)
+  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle2 !)
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -94,7 +105,8 @@ expect success, server lacks the httpheader capability
   remote: added 1 changesets with 1 changes to 1 files
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle1 !)
+  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle2 !)
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -112,7 +124,8 @@ expect success, server lacks the unbundlehash capability
   remote: added 1 changesets with 1 changes to 1 files
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle1 !)
+  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle2 !)
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
@@ -160,6 +173,22 @@ expect push success, phase change failure
   > [devel]
   > legacy.exchange=phases
   > EOF
+
+#if bundle1
+
+  $ req
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+  % serve errors
+
+#endif
+
+#if bundle2
+
   $ req
   pushing to http://localhost:$HGPORT/
   searching for changes
@@ -175,13 +204,32 @@ expect push success, phase change failure
   % serve errors
   [255]
 
+#endif
+
 expect phase change success
 
   $ cat >> .hg/hgrc <<EOF
+  > [hooks]
   > prepushkey = sh -c "printenv.py prepushkey 0"
   > [devel]
   > legacy.exchange=
   > EOF
+
+#if bundle1
+
+  $ req
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  no changes found
+  % serve errors
+  [1]
+  $ hg rollback
+  repository tip rolled back to revision 0 (undo serve)
+
+#endif
+
+#if bundle2
+
   $ req
   pushing to http://localhost:$HGPORT/
   searching for changes
@@ -192,6 +240,8 @@ expect phase change success
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
+
+#endif
 
 expect authorization error: all users denied
 
@@ -215,6 +265,8 @@ expect authorization error: some users denied, users must be authenticated
   % serve errors
   [255]
 
+#if bundle2
+
   $ cat > .hg/hgrc <<EOF
   > [web]
   > push_ssl = false
@@ -230,5 +282,7 @@ expect authorization error: some users denied, users must be authenticated
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
   % serve errors
+
+#endif
 
   $ cd ..

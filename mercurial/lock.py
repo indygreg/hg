@@ -84,9 +84,9 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
     l.delay = delay
     if l.delay:
         if 0 <= warningidx <= l.delay:
-            ui.warn(_("got lock after %s seconds\n") % l.delay)
+            ui.warn(_("got lock after %d seconds\n") % l.delay)
         else:
-            ui.debug("got lock after %s seconds\n" % l.delay)
+            ui.debug("got lock after %d seconds\n" % l.delay)
     if l.acquirefn:
         l.acquirefn()
     return l

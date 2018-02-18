@@ -1185,8 +1185,9 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
 def _resolvetrivial(repo, wctx, mctx, ancestor, actions):
     """Resolves false conflicts where the nodeid changed but the content
        remained the same."""
-
-    for f, (m, args, msg) in actions.items():
+    # We force a copy of actions.items() because we're going to mutate
+    # actions as we resolve trivial conflicts.
+    for f, (m, args, msg) in list(actions.items()):
         if m == 'cd' and f in ancestor and not wctx[f].cmp(ancestor[f]):
             # local did change but ended up with same content
             actions[f] = 'r', None, "prompt same"

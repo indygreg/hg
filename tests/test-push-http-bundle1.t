@@ -66,11 +66,16 @@ expect authorization error: must have authorized user
 
 expect success
 
+  $ cat > $TESTTMP/hook.sh <<'EOF'
+  > echo "phase-move: $HG_NODE:  $HG_OLDPHASE -> $HG_PHASE"
+  > EOF
+
   $ cat >> .hg/hgrc <<EOF
   > allow_push = *
   > [hooks]
   > changegroup = sh -c "printenv.py changegroup 0"
   > pushkey = sh -c "printenv.py pushkey 0"
+  > txnclose-phase.test = sh $TESTTMP/hook.sh
   > EOF
   $ req
   pushing to http://localhost:$HGPORT/
@@ -79,6 +84,8 @@ expect success
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
+  remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
   remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
   % serve errors
   $ hg rollback
@@ -95,6 +102,8 @@ expect success, server lacks the httpheader capability
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
+  remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
   remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
   % serve errors
   $ hg rollback
@@ -111,6 +120,8 @@ expect success, server lacks the unbundlehash capability
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
+  remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
   remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
   % serve errors
   $ hg rollback
@@ -140,6 +151,8 @@ has no parameter
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
+  remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
   remote: changegroup hook: * (glob)
   % serve errors
   $ hg rollback

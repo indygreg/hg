@@ -142,7 +142,10 @@ class httpv1protocolhandler(baseprotocolhandler):
         return args
 
     def forwardpayload(self, fp):
-        length = int(self._req.env[r'CONTENT_LENGTH'])
+        if r'HTTP_CONTENT_LENGTH' in self._req.env:
+            length = int(self._req.env[r'HTTP_CONTENT_LENGTH'])
+        else:
+            length = int(self._req.env[r'CONTENT_LENGTH'])
         # If httppostargs is used, we need to read Content-Length
         # minus the amount that was consumed by args.
         length -= int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))

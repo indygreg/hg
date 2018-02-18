@@ -1238,10 +1238,11 @@ def scmutiladdremove(orig, repo, matcher, prefix, opts=None, dry_run=None,
         matchfn = m.matchfn
         m.matchfn = lambda f: f in s.deleted and matchfn(f)
 
-        removelargefiles(repo.ui, repo, True, m, **opts)
+        removelargefiles(repo.ui, repo, True, m, **pycompat.strkwargs(opts))
     # Call into the normal add code, and any files that *should* be added as
     # largefiles will be
-    added, bad = addlargefiles(repo.ui, repo, True, matcher, **opts)
+    added, bad = addlargefiles(repo.ui, repo, True, matcher,
+                               **pycompat.strkwargs(opts))
     # Now that we've handled largefiles, hand off to the original addremove
     # function to take care of the rest.  Make sure it doesn't do anything with
     # largefiles by passing a matcher that will ignore them.

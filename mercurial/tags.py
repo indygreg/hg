@@ -739,7 +739,7 @@ class hgtagsfnodescache(object):
         entry = bytearray(prefix + fnode)
         self._raw[offset:offset + _fnodesrecsize] = entry
         # self._dirtyoffset could be None.
-        self._dirtyoffset = min(self._dirtyoffset, offset) or 0
+        self._dirtyoffset = min(self._dirtyoffset or 0, offset or 0)
 
     def write(self):
         """Perform all necessary writes to cache file.

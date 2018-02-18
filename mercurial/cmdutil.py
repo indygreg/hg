@@ -954,10 +954,7 @@ class _unclosablefile(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         pass
 
-def makefileobj(ctx, pat, total=None,
-                seqno=None, revwidth=None, mode='wb', modemap=None,
-                pathname=None):
-
+def makefileobj(ctx, pat, mode='wb', modemap=None, **props):
     writable = mode not in ('r', 'rb')
 
     if isstdiofilename(pat):
@@ -967,7 +964,7 @@ def makefileobj(ctx, pat, total=None,
         else:
             fp = repo.ui.fin
         return _unclosablefile(fp)
-    fn = makefilename(ctx, pat, total, seqno, revwidth, pathname)
+    fn = makefilename(ctx, pat, **props)
     if modemap is not None:
         mode = modemap.get(fn, mode)
         if mode == 'wb':
@@ -1542,9 +1539,8 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
         ctx = repo[rev]
         fo = None
         if not fp and fntemplate:
-            fo = makefileobj(ctx, fntemplate,
-                             total=total, seqno=seqno, revwidth=revwidth,
-                             mode='wb', modemap=filemode)
+            fo = makefileobj(ctx, fntemplate, mode='wb', modemap=filemode,
+                             total=total, seqno=seqno, revwidth=revwidth)
             dest = fo.name
             def write(s, **kw):
                 fo.write(s)

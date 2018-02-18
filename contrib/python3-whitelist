@@ -120,6 +120,7 @@ test-issue1502.t
 test-issue1802.t
 test-issue1877.t
 test-issue1993.t
+test-issue4074.t
 test-issue522.t
 test-issue586.t
 test-issue612.t
@@ -205,7 +206,9 @@ test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
 test-rebase-named-branches.t
 test-rebase-newancestor.t
+test-rebase-partial.t
 test-rebase-pull.t
+test-rebase-rename.t
 test-rebase-transaction.t
 test-record.t
 test-remove.t

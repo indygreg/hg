@@ -365,7 +365,7 @@ def uploadlfiles(ui, rsrc, rdst, files):
     at = 0
     ui.debug("sending statlfile command for %d largefiles\n" % len(files))
     retval = store.exists(files)
-    files = filter(lambda h: not retval[h], files)
+    files = [h for h in files if not retval[h]]
     ui.debug("%d largefiles need to be uploaded\n" % len(files))
 
     for hash in files:

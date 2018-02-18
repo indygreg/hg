@@ -42,7 +42,7 @@ def composelargefilematcher(match, manifest):
     matcher'''
     m = copy.copy(match)
     lfile = lambda f: lfutil.standin(f) in manifest
-    m._files = filter(lfile, m._files)
+    m._files = [lf for lf in m._files if lfile(lf)]
     m._fileset = set(m._files)
     m.always = lambda: False
     origmatchfn = m.matchfn
@@ -57,7 +57,7 @@ def composenormalfilematcher(match, manifest, exclude=None):
     m = copy.copy(match)
     notlfile = lambda f: not (lfutil.isstandin(f) or lfutil.standin(f) in
             manifest or f in excluded)
-    m._files = filter(notlfile, m._files)
+    m._files = [lf for lf in m._files if notlfile(lf)]
     m._fileset = set(m._files)
     m.always = lambda: False
     origmatchfn = m.matchfn

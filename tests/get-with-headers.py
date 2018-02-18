@@ -76,7 +76,7 @@ def request(host, path, show):
         if args.bodyfile:
             bodyfh = open(args.bodyfile, 'wb')
         else:
-            bodyfh = sys.stdout
+            bodyfh = getattr(sys.stdout, 'buffer', sys.stdout)
 
         # Pretty print JSON. This also has the beneficial side-effect
         # of verifying emitted JSON is well-formed.

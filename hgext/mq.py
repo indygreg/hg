@@ -2267,7 +2267,7 @@ def delete(ui, repo, *patches, **opts):
     To stop managing a patch and move it into permanent history,
     use the :hg:`qfinish` command."""
     q = repo.mq
-    q.delete(repo, patches, opts)
+    q.delete(repo, patches, pycompat.byteskwargs(opts))
     q.savedirty()
     return 0
 

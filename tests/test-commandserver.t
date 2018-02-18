@@ -411,7 +411,7 @@ cache of non-public revisions should be invalidated on repository change
   ...     # load _phasecache._phaserevs and _phasesets
   ...     runcommand(server, ['log', '-qr', 'draft()'])
   ...     # create draft commits by another process
-  ...     for i in xrange(5, 7):
+  ...     for i in range(5, 7):
   ...         f = open('a', 'ab')
   ...         f.seek(0, os.SEEK_END)
   ...         f.write('a\n')

@@ -154,7 +154,7 @@ class config(object):
                         if inst.errno != errno.ENOENT:
                             raise error.ParseError(_("cannot include %s (%s)")
                                                    % (inc, inst.strerror),
-                                                   "%s:%s" % (src, line))
+                                                   "%s:%d" % (src, line))
                 continue
             if emptyre.match(l):
                 continue
@@ -185,7 +185,7 @@ class config(object):
                 self._unset.append((section, name))
                 continue
 
-            raise error.ParseError(l.rstrip(), ("%s:%s" % (src, line)))
+            raise error.ParseError(l.rstrip(), ("%s:%d" % (src, line)))
 
     def read(self, path, fp=None, sections=None, remap=None):
         if not fp:

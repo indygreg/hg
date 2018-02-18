@@ -324,11 +324,11 @@ class KeepAliveHandler(object):
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
                     **pycompat.strkwargs(skipheaders))
-                if 'content-type' not in headers:
-                    h.putheader('Content-type',
-                                'application/x-www-form-urlencoded')
-                if 'content-length' not in headers:
-                    h.putheader('Content-length', '%d' % len(data))
+                if r'content-type' not in headers:
+                    h.putheader(r'Content-type',
+                                r'application/x-www-form-urlencoded')
+                if r'content-length' not in headers:
+                    h.putheader(r'Content-length', r'%d' % len(data))
             else:
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),

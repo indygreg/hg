@@ -80,7 +80,7 @@ _storeprovider = {
     'ssh': [wirestore.wirestore],
     }
 
-_scheme_re = re.compile(r'^([a-zA-Z0-9+-.]+)://')
+_scheme_re = re.compile(br'^([a-zA-Z0-9+-.]+)://')
 
 def getlfile(ui, hash):
     return util.chunkbuffer(openstore(ui=ui)._get(hash))

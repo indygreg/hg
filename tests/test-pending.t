@@ -44,7 +44,7 @@ python hook
   > import os, time
   > from mercurial import ui, localrepo
   > def rejecthook(ui, repo, hooktype, node, **opts):
-  >     ui.write('hook %s\\n' % repo['tip'].hex())
+  >     ui.write(b'hook %s\\n' % repo[b'tip'].hex())
   >     # create the notify file so caller knows we're running
   >     fpath = os.path.join('$d', 'notify')
   >     f = open(fpath, 'w')

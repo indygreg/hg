@@ -3196,7 +3196,7 @@ def select(ui, repo, *args, **opts):
                 guards[g] += 1
         if ui.verbose:
             guards['NONE'] = noguards
-        guards = guards.items()
+        guards = list(guards.items())
         guards.sort(key=lambda x: x[0][1:])
         if guards:
             ui.note(_('guards in series file:\n'))

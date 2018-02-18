@@ -108,6 +108,7 @@ test-histedit-no-change.t
 test-histedit-non-commute.t
 test-histedit-obsolete.t
 test-histedit-outgoing.t
+test-http-branchmap.t
 test-http-clone-r.t
 test-imports-checker.t
 test-inherit-mode.t
@@ -137,6 +138,7 @@ test-manifest.t
 test-match.py
 test-merge-closedheads.t
 test-merge-commit.t
+test-merge-criss-cross.t
 test-merge-default.t
 test-merge-internal-tools-pattern.t
 test-merge-local.t
@@ -196,10 +198,13 @@ test-push-checkheads-unpushed-D7.t
 test-push-warn.t
 test-rebase-bookmarks.t
 test-rebase-check-restore.t
+test-rebase-dest.t
+test-rebase-emptycommit.t
 test-rebase-inmemory.t
 test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
 test-rebase-named-branches.t
+test-rebase-newancestor.t
 test-rebase-pull.t
 test-rebase-transaction.t
 test-record.t

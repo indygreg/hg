@@ -519,7 +519,7 @@ Test split patterns on overflow
 
   $ cd t
   $ echo fennel > overflow.list
-  $ $PYTHON -c "for i in xrange(20000 / 100): print 'x' * 100" >> overflow.list
+  $ $PYTHON -c "for i in range(20000 / 100): print 'x' * 100" >> overflow.list
   $ echo fenugreek >> overflow.list
   $ hg debugwalk 'listfile:overflow.list' 2>&1 | egrep -v '(^matcher: |^xxx)'
   f  fennel     fennel     exact

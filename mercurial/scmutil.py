@@ -887,7 +887,7 @@ def readrequires(opener, supported):
     missings = []
     for r in requirements:
         if r not in supported:
-            if not r or not r[0].isalnum():
+            if not r or not r[0:1].isalnum():
                 raise error.RequirementError(_(".hg/requires file is corrupt"))
             missings.append(r)
     missings.sort()

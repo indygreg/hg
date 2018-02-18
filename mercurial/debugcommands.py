@@ -163,7 +163,7 @@ def debugbuilddag(ui, repo, text=None,
     if mergeable_file:
         linesperrev = 2
         # make a file with k lines per rev
-        initialmergedlines = [str(i) for i in xrange(0, total * linesperrev)]
+        initialmergedlines = ['%d' % i for i in xrange(0, total * linesperrev)]
         initialmergedlines.append("")
 
     tags = []

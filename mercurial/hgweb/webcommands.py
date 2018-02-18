@@ -561,7 +561,7 @@ def manifest(web, req, tmpl):
                 fentries=filelist,
                 dentries=dirlist,
                 archives=web.archivelist(hex(node)),
-                **webutil.commonentry(web.repo, ctx))
+                **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 @webcommand('tags')
 def tags(web, req, tmpl):

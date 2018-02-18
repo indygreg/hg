@@ -63,8 +63,6 @@ archivespecs = util.sortdict((
 
 def getstyle(req, configfn, templatepath):
     fromreq = req.form.get('style', [None])[0]
-    if fromreq is not None:
-        fromreq = pycompat.sysbytes(fromreq)
     styles = (
         fromreq,
         configfn('web', 'style'),

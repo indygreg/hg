@@ -27,6 +27,7 @@ test-check-pyflakes.t
 test-check-pylint.t
 test-check-shbang.t
 test-children.t
+test-clone-pull-corruption.t
 test-clone-r.t
 test-clone-update-order.t
 test-commit-unresolved.t
@@ -37,6 +38,7 @@ test-contrib-check-commit.t
 test-convert-clonebranches.t
 test-copy-move-merge.t
 test-copytrace-heuristics.t
+test-debugbuilddag.t
 test-debugindexdot.t
 test-debugrename.t
 test-diff-binary-file.t
@@ -110,6 +112,7 @@ test-histedit-obsolete.t
 test-histedit-outgoing.t
 test-http-branchmap.t
 test-http-clone-r.t
+test-identify.t
 test-imports-checker.t
 test-inherit-mode.t
 test-issue1089.t
@@ -120,6 +123,7 @@ test-issue1502.t
 test-issue1802.t
 test-issue1877.t
 test-issue1993.t
+test-issue3084.t
 test-issue4074.t
 test-issue522.t
 test-issue586.t
@@ -169,6 +173,7 @@ test-permissions.t
 test-pull-branch.t
 test-pull-http.t
 test-pull-permission.t
+test-pull-pull-corruption.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t
 test-push-checkheads-partial-C3.t
@@ -217,6 +222,7 @@ test-rename-dir-merge.t
 test-rename-merge1.t
 test-rename.t
 test-repair-strip.t
+test-repo-compengines.t
 test-revert-flags.t
 test-revert-unknown.t
 test-revlog-group-emptyiter.t

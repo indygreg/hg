@@ -11,10 +11,14 @@ from mercurial import (
     extensions,
     hg,
     localrepo,
+    pycompat,
     ui as uimod,
     util,
     vfs as vfsmod,
 )
+
+if pycompat.ispy3:
+    xrange = range
 
 class fakerepo(object):
     def __init__(self):

@@ -950,7 +950,7 @@ class curseschunkselector(object):
         # preprocess the text, converting tabs to spaces
         text = text.expandtabs(4)
         # strip \n, and convert control characters to ^[char] representation
-        text = re.sub(r'[\x00-\x08\x0a-\x1f]',
+        text = re.sub(br'[\x00-\x08\x0a-\x1f]',
                 lambda m:'^' + chr(ord(m.group()) + 64), text.strip('\n'))
 
         if pair is not None:

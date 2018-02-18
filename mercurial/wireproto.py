@@ -927,7 +927,7 @@ def lookup(repo, proto, key):
         r = c.hex()
         success = 1
     except Exception as inst:
-        r = str(inst)
+        r = util.forcebytestr(inst)
         success = 0
     return bytesresponse('%d %s\n' % (success, r))
 
@@ -1055,12 +1055,13 @@ def unbundle(repo, proto, heads):
                 if exc.params:
                     errpart.addparam('params', '\0'.join(exc.params))
             except error.Abort as exc:
-                manargs = [('message', str(exc))]
+                manargs = [('message', util.forcebytestr(exc))]
                 advargs = []
                 if exc.hint is not None:
                     advargs.append(('hint', exc.hint))
                 bundler.addpart(bundle2.bundlepart('error:abort',
                                                    manargs, advargs))
             except error.PushRaced as exc:
-                bundler.newpart('error:pushraced', [('message', str(exc))])
+                bundler.newpart('error:pushraced',
+                                [('message', util.forcebytestr(exc))])
             return streamres_legacy(gen=bundler.getchunks())

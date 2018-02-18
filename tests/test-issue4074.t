@@ -4,7 +4,7 @@ A script to generate nasty diff worst-case scenarios:
 
   $ cat > s.py <<EOF
   > import random
-  > for x in xrange(100000):
+  > for x in range(100000):
   >     print
   >     if random.randint(0, 100) >= 50:
   >         x += 1

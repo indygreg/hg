@@ -2,8 +2,12 @@ from __future__ import absolute_import, print_function
 
 import os
 from mercurial import (
+    pycompat,
     ui as uimod,
 )
+
+if pycompat.ispy3:
+    xrange = range
 
 hgrc = os.environ['HGRCPATH']
 f = open(hgrc)

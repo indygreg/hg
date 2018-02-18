@@ -126,8 +126,7 @@ class proxyhandler(urlreq.proxyhandler):
 
             proxyurl = str(proxy)
             proxies = {'http': proxyurl, 'https': proxyurl}
-            ui.debug('proxying through http://%s:%s\n' %
-                      (proxy.host, proxy.port))
+            ui.debug('proxying through %s\n' % util.hidepassword(proxyurl))
         else:
             proxies = {}
 

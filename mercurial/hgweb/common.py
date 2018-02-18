@@ -45,7 +45,7 @@ def checkauthz(hgweb, req, op):
     authentication info). Return if op allowed, else raise an ErrorResponse
     exception.'''
 
-    user = req.env.get('REMOTE_USER')
+    user = req.env.get(r'REMOTE_USER')
 
     deny_read = hgweb.configlist('web', 'deny_read')
     if deny_read and (not user or ismember(hgweb.repo.ui, user, deny_read)):
@@ -61,7 +61,7 @@ def checkauthz(hgweb, req, op):
         return
 
     # enforce that you can only push using POST requests
-    if req.env['REQUEST_METHOD'] != 'POST':
+    if req.env[r'REQUEST_METHOD'] != r'POST':
         msg = 'push requires POST request'
         raise ErrorResponse(HTTP_METHOD_NOT_ALLOWED, msg)
 

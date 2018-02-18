@@ -85,20 +85,20 @@ Setup rebase with multiple destinations
   > from mercurial import registrar, revset, revsetlang, smartset
   > revsetpredicate = registrar.revsetpredicate()
   > cache = {}
-  > @revsetpredicate('map')
+  > @revsetpredicate(b'map')
   > def map(repo, subset, x):
   >     """(set, mapping)"""
-  >     setarg, maparg = revsetlang.getargs(x, 2, 2, '')
+  >     setarg, maparg = revsetlang.getargs(x, 2, 2, b'')
   >     rset = revset.getset(repo, smartset.fullreposet(repo), setarg)
-  >     mapstr = revsetlang.getstring(maparg, '')
-  >     map = dict(a.split(':') for a in mapstr.split(','))
+  >     mapstr = revsetlang.getstring(maparg, b'')
+  >     map = dict(a.split(b':') for a in mapstr.split(b','))
   >     rev = rset.first()
   >     desc = repo[rev].description()
   >     newdesc = map.get(desc)
-  >     if newdesc == 'null':
+  >     if newdesc == b'null':
   >         revs = [-1]
   >     else:
-  >         query = revsetlang.formatspec('desc(%s)', newdesc)
+  >         query = revsetlang.formatspec(b'desc(%s)', newdesc)
   >         revs = repo.revs(query)
   >     return smartset.baseset(revs)
   > EOF

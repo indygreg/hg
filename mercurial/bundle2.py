@@ -2040,14 +2040,15 @@ def handlebookmark(op, inpart):
                 allhooks.append(hookargs)
 
             for hookargs in allhooks:
-                op.repo.hook('prepushkey', throw=True, **hookargs)
+                op.repo.hook('prepushkey', throw=True,
+                             **pycompat.strkwargs(hookargs))
 
         bookstore.applychanges(op.repo, op.gettransaction(), changes)
 
         if pushkeycompat:
             def runhook():
                 for hookargs in allhooks:
-                    op.repo.hook('pushkey', **hookargs)
+                    op.repo.hook('pushkey', **pycompat.strkwargs(hookargs))
             op.repo._afterlock(runhook)
 
     elif bookmarksmode == 'records':

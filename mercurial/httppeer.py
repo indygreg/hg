@@ -335,7 +335,7 @@ class httppeer(wireproto.wirepeer):
 
         if data is not None:
             self.ui.debug("sending %d bytes\n" % size)
-            req.add_unredirected_header('Content-Length', '%d' % size)
+            req.add_unredirected_header(r'Content-Length', r'%d' % size)
         try:
             resp = self._openurl(req)
         except urlerr.httperror as inst:
@@ -434,7 +434,7 @@ class httppeer(wireproto.wirepeer):
 
         tempname = bundle2.writebundle(self.ui, cg, None, type)
         fp = httpconnection.httpsendfile(self.ui, tempname, "rb")
-        headers = {'Content-Type': 'application/mercurial-0.1'}
+        headers = {r'Content-Type': r'application/mercurial-0.1'}
 
         try:
             r = self._call(cmd, data=fp, headers=headers, **args)
@@ -465,7 +465,7 @@ class httppeer(wireproto.wirepeer):
             fh.close()
             # start http push
             fp_ = httpconnection.httpsendfile(self.ui, filename, "rb")
-            headers = {'Content-Type': 'application/mercurial-0.1'}
+            headers = {r'Content-Type': r'application/mercurial-0.1'}
             return self._callstream(cmd, data=fp_, headers=headers, **args)
         finally:
             if fp_ is not None:

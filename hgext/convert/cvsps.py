@@ -855,6 +855,7 @@ def debugcvsps(ui, *args, **opts):
     repository, and convert the log to changesets based on matching
     commit log entries and dates.
     '''
+    opts = pycompat.byteskwargs(opts)
     if opts["new_cache"]:
         cache = "write"
     elif opts["update_cache"]:

@@ -567,6 +567,7 @@ class converter(object):
         self.map.close()
 
 def convert(ui, src, dest=None, revmapfile=None, **opts):
+    opts = pycompat.byteskwargs(opts)
     global orig_encoding
     orig_encoding = encoding.encoding
     encoding.encoding = 'UTF-8'

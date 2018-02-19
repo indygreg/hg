@@ -13,6 +13,7 @@ import re
 from mercurial.i18n import _
 from mercurial import (
     error,
+    pycompat,
     util,
 )
 
@@ -89,6 +90,7 @@ class monotone_source(common.converter_source, common.commandline):
 
     def mtnrunstdio(self, *args, **kwargs):
         # Prepare the command in automate stdio format
+        kwargs = pycompat.byteskwargs(kwargs)
         command = []
         for k, v in kwargs.iteritems():
             command.append("%s:%s" % (len(k), k))

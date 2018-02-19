@@ -18,6 +18,7 @@ from mercurial import (
     encoding,
     error,
     phases,
+    pycompat,
     util,
 )
 
@@ -322,6 +323,7 @@ class commandline(object):
         pass
 
     def _cmdline(self, cmd, *args, **kwargs):
+        kwargs = pycompat.byteskwargs(kwargs)
         cmdline = [self.command, cmd] + list(args)
         for k, v in kwargs.iteritems():
             if len(k) == 1:

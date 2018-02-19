@@ -452,19 +452,19 @@ class sshv1peer(wireproto.wirepeer):
 
     def _call(self, cmd, **args):
         self._callstream(cmd, **args)
-        return self._recv()
+        return self._readframed()
 
     def _callpush(self, cmd, fp, **args):
         r = self._call(cmd, **args)
         if r:
             return '', r
         for d in iter(lambda: fp.read(4096), ''):
-            self._send(d)
-        self._send("", flush=True)
-        r = self._recv()
+            self._writeframed(d)
+        self._writeframed("", flush=True)
+        r = self._readframed()
         if r:
             return '', r
-        return self._recv(), ''
+        return self._readframed(), ''
 
     def _calltwowaystream(self, cmd, fp, **args):
         r = self._call(cmd, **args)
@@ -472,8 +472,8 @@ class sshv1peer(wireproto.wirepeer):
             # XXX needs to be made better
             raise error.Abort(_('unexpected remote reply: %s') % r)
         for d in iter(lambda: fp.read(4096), ''):
-            self._send(d)
-        self._send("", flush=True)
+            self._writeframed(d)
+        self._writeframed("", flush=True)
         return self._pipei
 
     def _getamount(self):
@@ -488,10 +488,10 @@ class sshv1peer(wireproto.wirepeer):
         except ValueError:
             self._abort(error.ResponseError(_("unexpected response:"), l))
 
-    def _recv(self):
+    def _readframed(self):
         return self._pipei.read(self._getamount())
 
-    def _send(self, data, flush=False):
+    def _writeframed(self, data, flush=False):
         self._pipeo.write("%d\n" % len(data))
         if data:
             self._pipeo.write(data)

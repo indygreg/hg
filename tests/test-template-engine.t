@@ -13,7 +13,7 @@
   >         tmpl = self.loader(t)
   >         props = self._defaults.copy()
   >         props.update(map)
-  >         for k, v in props.iteritems():
+  >         for k, v in props.items():
   >             if k in ('templ', 'ctx', 'repo', 'revcache', 'cache', 'troubles'):
   >                 continue
   >             if hasattr(v, '__call__'):

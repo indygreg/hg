@@ -223,7 +223,7 @@ class basemanifesttests(object):
         self.assertEqual(want, m[b'foo'])
         self.assertEqual([(b'bar/baz/qux.py', BIN_HASH_2),
                           (b'foo', BIN_HASH_1 + b'a')],
-                         list(m.iteritems()))
+                         list(m.items()))
         # Sometimes it even tries a 22-byte fake hash, but we can
         # return 21 and it'll work out
         m[b'foo'] = want + b'+'
@@ -238,7 +238,7 @@ class basemanifesttests(object):
         # suffix with iteration
         self.assertEqual([(b'bar/baz/qux.py', BIN_HASH_2),
                           (b'foo', want)],
-                         list(m.iteritems()))
+                         list(m.items()))
 
         # shows up in diff
         self.assertEqual({b'foo': ((want, f), (h, b''))}, m.diff(clean))

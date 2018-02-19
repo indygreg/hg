@@ -16,7 +16,7 @@ class splitnewlinesTests(unittest.TestCase):
                  '': [],
                  'abcabc': ['abcabc'],
                  }
-        for inp, want in cases.iteritems():
+        for inp, want in cases.items():
             self.assertEqual(mdiff.splitnewlines(inp), want)
 
 if __name__ == '__main__':

@@ -19,7 +19,7 @@ origui = myui.load()
 
 def writeauth(items):
     ui = origui.copy()
-    for name, value in items.iteritems():
+    for name, value in items.items():
         ui.setconfig('auth', name, value)
     return ui
 
@@ -36,7 +36,7 @@ def test(auth, urls=None):
         for name in ('.username', '.password'):
             if (p + name) not in auth:
                 auth[p + name] = p
-    auth = dict((k, v) for k, v in auth.iteritems() if v is not None)
+    auth = dict((k, v) for k, v in auth.items() if v is not None)
 
     ui = writeauth(auth)
 

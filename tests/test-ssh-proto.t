@@ -463,13 +463,14 @@ use --config with `hg serve --stdio`.
 
 Send an upgrade request to a server that supports upgrade
 
-  $ hg -R server serve --stdio << EOF
-  > upgrade this-is-some-token proto=exp-ssh-v2-0001
-  > hello
-  > between
-  > pairs 81
-  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
-  > EOF
+  >>> with open('payload', 'wb') as fh:
+  ...     fh.write(b'upgrade this-is-some-token proto=exp-ssh-v2-0001\n')
+  ...     fh.write(b'hello\n')
+  ...     fh.write(b'between\n')
+  ...     fh.write(b'pairs 81\n')
+  ...     fh.write(b'0000000000000000000000000000000000000000-0000000000000000000000000000000000000000')
+
+  $ hg -R server serve --stdio < payload
   upgraded this-is-some-token exp-ssh-v2-0001
   383
   capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
@@ -540,13 +541,14 @@ Verify the peer has capabilities
 
 Command after upgrade to version 2 is processed
 
-  $ hg -R server serve --stdio << EOF
-  > upgrade this-is-some-token proto=exp-ssh-v2-0001
-  > hello
-  > between
-  > pairs 81
-  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000hello
-  > EOF
+  >>> with open('payload', 'wb') as fh:
+  ...     fh.write(b'upgrade this-is-some-token proto=exp-ssh-v2-0001\n')
+  ...     fh.write(b'hello\n')
+  ...     fh.write(b'between\n')
+  ...     fh.write(b'pairs 81\n')
+  ...     fh.write(b'0000000000000000000000000000000000000000-0000000000000000000000000000000000000000')
+  ...     fh.write(b'hello\n')
+  $ hg -R server serve --stdio < payload
   upgraded this-is-some-token exp-ssh-v2-0001
   383
   capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
@@ -555,14 +557,15 @@ Command after upgrade to version 2 is processed
 
 Multiple upgrades is not allowed
 
-  $ hg -R server serve --stdio << EOF
-  > upgrade this-is-some-token proto=exp-ssh-v2-0001
-  > hello
-  > between
-  > pairs 81
-  > 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000upgrade another-token proto=irrelevant
-  > hello
-  > EOF
+  >>> with open('payload', 'wb') as fh:
+  ...     fh.write(b'upgrade this-is-some-token proto=exp-ssh-v2-0001\n')
+  ...     fh.write(b'hello\n')
+  ...     fh.write(b'between\n')
+  ...     fh.write(b'pairs 81\n')
+  ...     fh.write(b'0000000000000000000000000000000000000000-0000000000000000000000000000000000000000')
+  ...     fh.write(b'upgrade another-token proto=irrelevant\n')
+  ...     fh.write(b'hello\n')
+  $ hg -R server serve --stdio < payload
   upgraded this-is-some-token exp-ssh-v2-0001
   383
   capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN

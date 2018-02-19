@@ -418,17 +418,17 @@ class commandline(object):
     def _limit_arglist(self, arglist, cmd, *args, **kwargs):
         cmdlen = len(self._cmdline(cmd, *args, **kwargs))
         limit = self.argmax - cmdlen
-        bytes = 0
+        numbytes = 0
         fl = []
         for fn in arglist:
             b = len(fn) + 3
-            if bytes + b < limit or len(fl) == 0:
+            if numbytes + b < limit or len(fl) == 0:
                 fl.append(fn)
-                bytes += b
+                numbytes += b
             else:
                 yield fl
                 fl = [fn]
-                bytes = b
+                numbytes = b
         if fl:
             yield fl
 

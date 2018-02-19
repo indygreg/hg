@@ -10,11 +10,11 @@ from mercurial import (
 class splitnewlinesTests(unittest.TestCase):
 
     def test_splitnewlines(self):
-        cases = {'a\nb\nc\n': ['a\n', 'b\n', 'c\n'],
-                 'a\nb\nc': ['a\n', 'b\n', 'c'],
-                 'a\nb\nc\n\n': ['a\n', 'b\n', 'c\n', '\n'],
-                 '': [],
-                 'abcabc': ['abcabc'],
+        cases = {b'a\nb\nc\n': [b'a\n', b'b\n', b'c\n'],
+                 b'a\nb\nc': [b'a\n', b'b\n', b'c'],
+                 b'a\nb\nc\n\n': [b'a\n', b'b\n', b'c\n', b'\n'],
+                 b'': [],
+                 b'abcabc': [b'abcabc'],
                  }
         for inp, want in cases.items():
             self.assertEqual(mdiff.splitnewlines(inp), want)

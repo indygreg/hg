@@ -891,14 +891,14 @@ timestamp of them isn't changed on the filesystem (see also issue4583)
   > # emulate that patch.patch() is aborted at patching on "abort" file
   > from mercurial import error, extensions, patch as patchmod
   > def patch(orig, ui, repo, patchname,
-  >           strip=1, prefix='', files=None,
-  >           eolmode='strict', similarity=0):
+  >           strip=1, prefix=b'', files=None,
+  >           eolmode=b'strict', similarity=0):
   >     if files is None:
   >         files = set()
   >     r = orig(ui, repo, patchname,
   >         strip=strip, prefix=prefix, files=files,
   >         eolmode=eolmode, similarity=similarity)
-  >     if 'abort' in files:
+  >     if b'abort' in files:
   >         raise error.PatchError('intentional error while patching')
   >     return r
   > def extsetup(ui):

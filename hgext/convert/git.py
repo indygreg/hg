@@ -168,19 +168,19 @@ class convert_git(common.converter_source, common.commandline):
                     raise error.Abort(_('cannot retrieve git head "%s"') % rev)
         return heads
 
-    def catfile(self, rev, type):
+    def catfile(self, rev, ftype):
         if rev == nodemod.nullhex:
             raise IOError
         self.catfilepipe[0].write(rev+'\n')
         self.catfilepipe[0].flush()
         info = self.catfilepipe[1].readline().split()
-        if info[1] != type:
-            raise error.Abort(_('cannot read %r object at %s') % (type, rev))
+        if info[1] != ftype:
+            raise error.Abort(_('cannot read %r object at %s') % (ftype, rev))
         size = int(info[2])
         data = self.catfilepipe[1].read(size)
         if len(data) < size:
             raise error.Abort(_('cannot read %r object at %s: unexpected size')
-                             % (type, rev))
+                              % (ftype, rev))
         # read the trailing newline
         self.catfilepipe[1].read(1)
         return data

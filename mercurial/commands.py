@@ -4014,7 +4014,7 @@ def pull(ui, repo, source="default", **opts):
             brev = None
 
             if checkout:
-                checkout = str(repo.changelog.rev(checkout))
+                checkout = "%d" % repo.changelog.rev(checkout)
 
                 # order below depends on implementation of
                 # hg.addbranchrevs(). opts['bookmark'] is ignored,

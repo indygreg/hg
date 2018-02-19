@@ -51,7 +51,7 @@
 </tr>
 {if(obsolete, '<tr>
  <th>obsolete</th>
- <td>{succsandmarkers%obsfateentry}</td>
+ <td>{join(succsandmarkers%obsfateentry, '<br>\n')}</td>
 </tr>')}
 <tr>
  <th class="author">parents</th>

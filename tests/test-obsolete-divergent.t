@@ -630,15 +630,20 @@ fix the divergence
 check an obsolete changeset that was rewritten and also split
 
   $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=paper' | egrep 'rewritten|split'
-   <td>rewritten as <a href="/rev/bed64f5d2f5a?style=paper">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span>split as <a href="/rev/7ae126973a96?style=paper">7ae126973a96</a> <a href="/rev/14608b260df8?style=paper">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+   <td>rewritten as <a href="/rev/bed64f5d2f5a?style=paper">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span><br>
+  split as <a href="/rev/7ae126973a96?style=paper">7ae126973a96</a> <a href="/rev/14608b260df8?style=paper">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
   $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=coal' | egrep 'rewritten|split'
-   <td>rewritten as <a href="/rev/bed64f5d2f5a?style=coal">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span>split as <a href="/rev/7ae126973a96?style=coal">7ae126973a96</a> <a href="/rev/14608b260df8?style=coal">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+   <td>rewritten as <a href="/rev/bed64f5d2f5a?style=coal">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span><br>
+  split as <a href="/rev/7ae126973a96?style=coal">7ae126973a96</a> <a href="/rev/14608b260df8?style=coal">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
   $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=gitweb' | egrep 'rewritten|split'
-  <tr><td>obsolete</td><td>rewritten as <a class="list" href="/rev/bed64f5d2f5a?style=gitweb">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span>split as <a class="list" href="/rev/7ae126973a96?style=gitweb">7ae126973a96</a> <a class="list" href="/rev/14608b260df8?style=gitweb">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td></tr>
+  <td>rewritten as <a class="list" href="/rev/bed64f5d2f5a?style=gitweb">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  <td>split as <a class="list" href="/rev/7ae126973a96?style=gitweb">7ae126973a96</a> <a class="list" href="/rev/14608b260df8?style=gitweb">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
   $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=monoblue' | egrep 'rewritten|split'
-          <dt>obsolete</dt><dd>rewritten as <a href="/rev/bed64f5d2f5a?style=monoblue">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span>split as <a href="/rev/7ae126973a96?style=monoblue">7ae126973a96</a> <a href="/rev/14608b260df8?style=monoblue">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></dd>
+  <dd>rewritten as <a href="/rev/bed64f5d2f5a?style=monoblue">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></dd>
+  <dd>split as <a href="/rev/7ae126973a96?style=monoblue">7ae126973a96</a> <a href="/rev/14608b260df8?style=monoblue">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></dd>
   $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=spartan' | egrep 'rewritten|split'
-   <td class="obsolete">rewritten as <a href="/rev/bed64f5d2f5a?style=spartan">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span>split as <a href="/rev/7ae126973a96?style=spartan">7ae126973a96</a> <a href="/rev/14608b260df8?style=spartan">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  <td class="obsolete">rewritten as <a href="/rev/bed64f5d2f5a?style=spartan">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  <td class="obsolete">split as <a href="/rev/7ae126973a96?style=spartan">7ae126973a96</a> <a href="/rev/14608b260df8?style=spartan">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
 
   $ killdaemons.py
 

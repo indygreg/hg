@@ -1049,8 +1049,8 @@ check obsolete changeset
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=monoblue' | grep '<span class="logtags">'
           <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="obsoletetag" title="obsolete">obsolete</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=spartan' | grep 'class="obsolete"'
-    <th class="obsolete">obsolete:</th>
-    <td class="obsolete">pruned by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  <th class="obsolete">obsolete:</th>
+  <td class="obsolete">pruned by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
 
 check changeset with instabilities
 

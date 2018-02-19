@@ -362,8 +362,11 @@ class hgweb(object):
                     raise ErrorResponse(HTTP_NOT_FOUND)
 
                 req.checkperm = lambda op: self.check_perm(rctx, req, op)
-                if cmd in perms:
-                    req.checkperm(perms[cmd])
+                # Assume commands with no defined permissions are writes /
+                # for pushes. This is the safest from a security perspective
+                # because it doesn't allow commands with undefined semantics
+                # from bypassing permissions checks.
+                req.checkperm(perms.get(cmd, 'push'))
                 return protocol.call(rctx.repo, req, cmd)
             except ErrorResponse as inst:
                 # A client that sends unbundle without 100-continue will

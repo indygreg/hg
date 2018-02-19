@@ -90,12 +90,12 @@ web.deny_read=* prevents access to wire protocol for all users
   read not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -105,9 +105,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized
@@ -149,12 +151,12 @@ web.deny_read=* with REMOTE_USER set still locks out clients
   read not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -164,9 +166,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized
@@ -206,12 +210,12 @@ web.deny_read=<user> denies access to unauthenticated user
   read not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -221,9 +225,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized
@@ -258,12 +264,12 @@ web.deny_read=<user> denies access to users in deny list
   read not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -273,9 +279,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized
@@ -309,21 +317,23 @@ web.deny_read=<user> allows access to authenticated users not in list
   publishing	True (no-eol)
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  read-only command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   200 Script output follows
   
   read-only command w/ defined permissions
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  write command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   405 push requires POST request
@@ -362,21 +372,23 @@ web.allow_read=* allows reads for unauthenticated users
   publishing	True (no-eol)
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  read-only command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   200 Script output follows
   
   read-only command w/ defined permissions
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  write command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   405 push requires POST request
@@ -410,21 +422,23 @@ web.allow_read=* allows read for authenticated user
   publishing	True (no-eol)
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  read-only command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   200 Script output follows
   
   read-only command w/ defined permissions
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  write command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   405 push requires POST request
@@ -464,12 +478,12 @@ web.allow_read=<user> does not allow unauthenticated users to read
   read not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -479,9 +493,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized
@@ -516,12 +532,12 @@ web.allow_read=<user> does not allow user not in list to read
   read not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -531,9 +547,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized
@@ -567,21 +585,23 @@ web.allow_read=<user> allows read from user in list
   publishing	True (no-eol)
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  read-only command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   200 Script output follows
   
   read-only command w/ defined permissions
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  write command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   405 push requires POST request
@@ -622,12 +642,12 @@ web.deny_read takes precedence over web.allow_read
   read not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -637,9 +657,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized
@@ -686,12 +708,12 @@ web.allow-pull=false denies read access to repo
   pull not authorized
   [1]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  read-only command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 pull not authorized
@@ -701,9 +723,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  write command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   405 push requires POST request
@@ -747,12 +771,12 @@ Attempting a write command with HTTP GET fails
   abort: bookmark 'bm' does not exist
   [255]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  write command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   405 push requires POST request
@@ -788,12 +812,12 @@ Attempting a write command with an unknown HTTP verb fails
   abort: bookmark 'bm' does not exist
   [255]
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  405 push requires POST request
   
-  write command no defined permissions
+  0
+  push requires POST request
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   405 push requires POST request
@@ -829,12 +853,12 @@ Pushing on a plaintext channel is disabled by default
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  403 ssl required
   
-  write command no defined permissions
+  0
+  ssl required
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   403 ssl required
@@ -892,12 +916,12 @@ web.deny_push=* denies pushing to unauthenticated users
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 push not authorized
   
-  write command no defined permissions
+  0
+  push not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 push not authorized
@@ -949,12 +973,12 @@ web.deny_push=* denies pushing to authenticated users
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 push not authorized
   
-  write command no defined permissions
+  0
+  push not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 push not authorized
@@ -1012,12 +1036,12 @@ web.deny_push=<user> denies pushing to user in list
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 push not authorized
   
-  write command no defined permissions
+  0
+  push not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 push not authorized
@@ -1069,12 +1093,12 @@ web.deny_push=<user> denies pushing to user not in list because allow-push isn't
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 push not authorized
   
-  write command no defined permissions
+  0
+  push not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 push not authorized
@@ -1242,12 +1266,12 @@ web.allow-push=<user> denies push to user not in list
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 push not authorized
   
-  write command no defined permissions
+  0
+  push not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 push not authorized
@@ -1367,12 +1391,12 @@ web.deny_push takes precedence over web.allow_push
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 push not authorized
   
-  write command no defined permissions
+  0
+  push not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 push not authorized
@@ -1431,12 +1455,12 @@ web.allow-push has no effect if web.deny_read is set
   $ hg bookmarks
   no bookmarks set
 
-TODO custom commands don't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadnoperm'
-  200 Script output follows
+  401 read not authorized
   
-  read-only command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customreadwithperm'
   401 read not authorized
@@ -1446,9 +1470,11 @@ TODO custom commands don't check permissions
   [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritenoperm'
-  200 Script output follows
+  401 read not authorized
   
-  write command no defined permissions
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=customwritewithperm'
   401 read not authorized

@@ -85,7 +85,7 @@ class monotone_source(common.converter_source, common.commandline):
             return self.mtnrunsingle(*args, **kwargs)
 
     def mtnrunsingle(self, *args, **kwargs):
-        kwargs['d'] = self.path
+        kwargs[r'd'] = self.path
         return self.run0('automate', *args, **kwargs)
 
     def mtnrunstdio(self, *args, **kwargs):

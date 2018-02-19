@@ -162,7 +162,7 @@ has no parameter
   repository tip rolled back to revision 0 (undo serve)
   $ mv $HGRCPATH.orig $HGRCPATH
 
-expect push success, phase change failure
+Test pushing to a publishing repository with a failing prepushkey hook
 
   $ cat > .hg/hgrc <<EOF
   > [web]
@@ -175,6 +175,10 @@ expect push success, phase change failure
   > EOF
 
 #if bundle1
+Bundle1 works because a) phases are updated as part of changegroup application
+and b) client checks phases after the "unbundle" command. Since it sees no
+phase changes are necessary, it doesn't send the "pushkey" command and the
+prepushkey hook never has to fire.
 
   $ req
   pushing to http://localhost:$HGPORT/
@@ -188,7 +192,8 @@ expect push success, phase change failure
 #endif
 
 #if bundle2
-
+Bundle2 sends a "pushkey" bundle2 part. This runs as part of the transaction
+and fails the entire push.
   $ req
   pushing to http://localhost:$HGPORT/
   searching for changes
@@ -206,30 +211,16 @@ expect push success, phase change failure
 
 #endif
 
-expect phase change success
+Now remove the failing prepushkey hook.
 
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
   > prepushkey = sh -c "printenv.py prepushkey 0"
-  > [devel]
-  > legacy.exchange=
   > EOF
 
-#if bundle1
-
-  $ req
-  pushing to http://localhost:$HGPORT/
-  searching for changes
-  no changes found
-  % serve errors
-  [1]
-  $ hg rollback
-  repository tip rolled back to revision 0 (undo serve)
-
-#endif
+We don't need to test bundle1 because it succeeded above.
 
 #if bundle2
-
   $ req
   pushing to http://localhost:$HGPORT/
   searching for changes
@@ -237,11 +228,84 @@ expect phase change success
   remote: adding manifests
   remote: adding file changes
   remote: added 1 changesets with 1 changes to 1 files
+  remote: prepushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_OLD=1 HG_PENDING=$TESTTMP/test HG_PHASES_MOVED=1 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
   % serve errors
-  $ hg rollback
-  repository tip rolled back to revision 0 (undo serve)
-
 #endif
+
+  $ hg --config extensions.strip= strip -r 1:
+  saved backup bundle to $TESTTMP/test/.hg/strip-backup/ba677d0156c1-eea704d7-backup.hg
+
+Now do a variant of the above, except on a non-publishing repository
+
+  $ cat >> .hg/hgrc <<EOF
+  > [phases]
+  > publish = false
+  > [hooks]
+  > prepushkey = sh -c "printenv.py prepushkey 1"
+  > EOF
+
+#if bundle1
+  $ req
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+  remote: prepushkey hook: HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_OLD=1
+  remote: pushkey-abort: prepushkey hook exited with status 1
+  updating ba677d0156c1 to public failed!
+  % serve errors
+#endif
+
+#if bundle2
+  $ req
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+  remote: prepushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_OLD=1 HG_PENDING=$TESTTMP/test HG_PHASES_MOVED=1 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  remote: pushkey-abort: prepushkey hook exited with status 1
+  remote: transaction abort!
+  remote: rollback completed
+  abort: updating ba677d0156c1 to public failed
+  % serve errors
+  [255]
+#endif
+
+Make phases updates work
+
+  $ cat >> .hg/hgrc <<EOF
+  > [hooks]
+  > prepushkey = sh -c "printenv.py prepushkey 0"
+  > EOF
+
+#if bundle1
+  $ req
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  no changes found
+  remote: prepushkey hook: HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_OLD=1
+  % serve errors
+  [1]
+#endif
+
+#if bundle2
+  $ req
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+  remote: prepushkey hook: HG_BUNDLE2=1 HG_HOOKNAME=prepushkey HG_HOOKTYPE=prepushkey HG_KEY=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NAMESPACE=phases HG_NEW=0 HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_OLD=1 HG_PENDING=$TESTTMP/test HG_PHASES_MOVED=1 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  % serve errors
+#endif
+
+  $ hg --config extensions.strip= strip -r 1:
+  saved backup bundle to $TESTTMP/test/.hg/strip-backup/ba677d0156c1-eea704d7-backup.hg
 
 expect authorization error: all users denied
 

@@ -15,7 +15,7 @@ testui.write_err(b'error\n')
 print(repr(testui.popbuffer()))
 
 # test dispatch.dispatch with the same ui object
-hgrc = open(os.environ["HGRCPATH"], 'w')
+hgrc = open(os.environ["HGRCPATH"], 'wb')
 hgrc.write(b'[extensions]\n')
 hgrc.write(b'color=\n')
 hgrc.close()
@@ -24,7 +24,7 @@ ui_ = uimod.ui.load()
 ui_.setconfig(b'ui', b'formatted', b'True')
 
 # we're not interested in the output, so write that to devnull
-ui_.fout = open(os.devnull, 'w')
+ui_.fout = open(os.devnull, 'wb')
 
 # call some arbitrary command just so we go through
 # color's wrapped _runcommand twice.

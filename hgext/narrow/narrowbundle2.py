@@ -479,7 +479,7 @@ def setup():
         if repo.ui.has_section(_NARROWACL_SECTION):
             getbundlechangegrouppart_narrow(
                 *args, **applyacl_narrow(repo, kwargs))
-        elif kwargs.get('narrow', False):
+        elif kwargs.get(r'narrow', False):
             getbundlechangegrouppart_narrow(*args, **kwargs)
         else:
             origcgfn(*args, **kwargs)

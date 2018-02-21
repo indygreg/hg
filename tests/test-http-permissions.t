@@ -63,9 +63,11 @@ web.deny_read=* prevents access to wire protocol for all users
   $ cat hg.pid > $DAEMON_PIDS
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities'
-  200 Script output follows
+  401 read not authorized
   
-  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$ (no-eol)
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=stream_out'
   401 read not authorized
@@ -117,8 +119,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -130,9 +130,11 @@ web.deny_read=* with REMOTE_USER set still locks out clients
   $ cat hg.pid > $DAEMON_PIDS
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities'
-  200 Script output follows
+  401 read not authorized
   
-  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$ (no-eol)
+  0
+  read not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=stream_out'
   401 read not authorized
@@ -177,8 +179,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -237,8 +237,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -292,8 +290,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -501,8 +497,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -556,8 +550,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -665,8 +657,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -683,9 +673,11 @@ web.allow-pull=false denies read access to repo
   $ cat hg.pid > $DAEMON_PIDS
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities'
-  200 Script output follows
+  401 pull not authorized
   
-  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$ (no-eol)
+  0
+  pull not authorized
+  [1]
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=listkeys' --requestheader 'x-hgarg-1=namespace=phases'
   401 pull not authorized
@@ -730,8 +722,6 @@ TODO custom commands don't check permissions
 
   $ hg --cwd ../test2 pull http://localhost:$HGPORT/
   pulling from http://localhost:$HGPORT/
-  searching for changes
-  no changes found
   abort: authorization failed
   [255]
 
@@ -1487,13 +1477,11 @@ Reset server to remove REQUEST_METHOD hack to test hg client
 
   $ hg --cwd ../test2 push -B bm http://localhost:$HGPORT/
   pushing to http://localhost:$HGPORT/
-  searching for changes
   abort: authorization failed
   [255]
 
   $ hg --cwd ../test2 push http://localhost:$HGPORT/
   pushing to http://localhost:$HGPORT/
-  searching for changes
   abort: authorization failed
   [255]
 

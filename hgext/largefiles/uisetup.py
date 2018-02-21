@@ -177,6 +177,7 @@ def uisetup(ui):
     wireproto.permissions['putlfile'] = 'push'
     wireproto.permissions['getlfile'] = 'pull'
     wireproto.permissions['statlfile'] = 'pull'
+    wireproto.permissions['lheads'] = 'pull'
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 

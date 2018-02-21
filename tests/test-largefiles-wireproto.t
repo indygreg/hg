@@ -434,11 +434,11 @@ a large file from the server rather than to get it from the cache
   > EOF
   $ hg clone --config ui.interactive=true --config extensions.getpass=get_pass.py \
   >          http://user@localhost:$HGPORT credentialclone
-  requesting all changes
   http authorization required for http://localhost:$HGPORT/
   realm: mercurial
   user: user
-  password: adding changesets
+  password: requesting all changes
+  adding changesets
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files

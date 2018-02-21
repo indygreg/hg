@@ -721,6 +721,7 @@ def batch(repo, proto, cmds, others):
         res.append(escapearg(result))
     return ';'.join(res)
 
+permissions['between'] = 'pull'
 @wireprotocommand('between', 'pairs')
 def between(repo, proto, pairs):
     pairs = [decodelist(p, '-') for p in pairs.split(" ")]
@@ -729,6 +730,7 @@ def between(repo, proto, pairs):
         r.append(encodelist(b) + "\n")
     return "".join(r)
 
+permissions['branchmap'] = 'pull'
 @wireprotocommand('branchmap')
 def branchmap(repo, proto):
     branchmap = repo.branchmap()
@@ -739,6 +741,7 @@ def branchmap(repo, proto):
         heads.append('%s %s' % (branchname, branchnodes))
     return '\n'.join(heads)
 
+permissions['branches'] = 'pull'
 @wireprotocommand('branches', 'nodes')
 def branches(repo, proto, nodes):
     nodes = decodelist(nodes)
@@ -747,6 +750,7 @@ def branches(repo, proto, nodes):
         r.append(encodelist(b) + "\n")
     return "".join(r)
 
+permissions['clonebundles'] = 'pull'
 @wireprotocommand('clonebundles', '')
 def clonebundles(repo, proto):
     """Server command for returning info for available bundles to seed clones.
@@ -809,6 +813,7 @@ def _capabilities(repo, proto):
 
 # If you are writing an extension and consider wrapping this function. Wrap
 # `_capabilities` instead.
+permissions['capabilities'] = 'pull'
 @wireprotocommand('capabilities')
 def capabilities(repo, proto):
     return ' '.join(_capabilities(repo, proto))
@@ -834,6 +839,7 @@ def changegroupsubset(repo, proto, bases, heads):
     gen = iter(lambda: cg.read(32768), '')
     return streamres(gen=gen)
 
+permissions['debugwireargs'] = 'pull'
 @wireprotocommand('debugwireargs', 'one two *')
 def debugwireargs(repo, proto, one, two, others):
     # only accept optional args from the known set
@@ -907,11 +913,13 @@ def getbundle(repo, proto, others):
 
     return streamres(gen=chunks, prefer_uncompressed=not prefercompressed)
 
+permissions['heads'] = 'pull'
 @wireprotocommand('heads')
 def heads(repo, proto):
     h = repo.heads()
     return encodelist(h) + "\n"
 
+permissions['hello'] = 'pull'
 @wireprotocommand('hello')
 def hello(repo, proto):
     '''the hello command returns a set of lines describing various
@@ -929,6 +937,7 @@ def listkeys(repo, proto, namespace):
     d = repo.listkeys(encoding.tolocal(namespace)).items()
     return pushkeymod.encodekeys(d)
 
+permissions['lookup'] = 'pull'
 @wireprotocommand('lookup', 'key')
 def lookup(repo, proto, key):
     try:
@@ -941,6 +950,7 @@ def lookup(repo, proto, key):
         success = 0
     return "%d %s\n" % (success, r)
 
+permissions['known'] = 'pull'
 @wireprotocommand('known', 'nodes *')
 def known(repo, proto, nodes, others):
     return ''.join(b and "1" or "0" for b in repo.known(decodelist(nodes)))

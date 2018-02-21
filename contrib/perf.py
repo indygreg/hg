@@ -1616,7 +1616,10 @@ def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
     branchcachewrite.set(lambda bc, repo: None)
     try:
         for name in allfilters:
-            timer(getbranchmap(name), title=str(name))
+            printname = name
+            if name is None:
+                printname = 'unfiltered'
+            timer(getbranchmap(name), title=str(printname))
     finally:
         branchcacheread.restore()
         branchcachewrite.restore()

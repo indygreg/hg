@@ -685,8 +685,8 @@ def _heuristicscopytracing(repo, c1, c2, base):
     # the base and present in the source.
     # Presence in the base is important to exclude added files, presence in the
     # source is important to exclude removed files.
-    missingfiles = filter(lambda f: f not in m1 and f in base and f in c2,
-                          changedfiles)
+    filt = lambda f: f not in m1 and f in base and f in c2
+    missingfiles = [f for f in changedfiles if filt(f)]
 
     if missingfiles:
         basenametofilename = collections.defaultdict(list)

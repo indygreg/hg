@@ -1831,7 +1831,7 @@ def walkchangerevs(repo, match, opts, prepare):
                 else:
                     self.revs.discard(value)
                     ctx = change(value)
-                    matches = filter(match, ctx.files())
+                    matches = [f for f in ctx.files() if match(f)]
                     if matches:
                         fncache[value] = matches
                         self.set.add(value)

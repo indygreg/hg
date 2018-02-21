@@ -1241,6 +1241,8 @@ def debuginstall(ui, **opts):
     editor = ui.geteditor()
     editor = util.expandpath(editor)
     editorbin = pycompat.shlexsplit(editor, posix=not pycompat.iswindows)[0]
+    if pycompat.iswindows and editorbin[0] == '"' and editorbin[-1] == '"':
+        editorbin = editorbin[1:-1]
     fm.write('editor', _("checking commit editor... (%s)\n"), editorbin)
     cmdpath = util.findexe(editorbin)
     fm.condwrite(not cmdpath and editor == 'vi', 'vinotfound',

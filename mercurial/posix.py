@@ -461,6 +461,10 @@ def shellquote(s):
     else:
         return "'%s'" % s.replace("'", "'\\''")
 
+def shellsplit(s):
+    """Parse a command string in POSIX shell way (best-effort)"""
+    return pycompat.shlexsplit(s, posix=True)
+
 def quotecommand(cmd):
     return cmd
 

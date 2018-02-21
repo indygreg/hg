@@ -296,6 +296,15 @@ def shellquote(s):
         return s
     return '"%s"' % _quotere.sub(r'\1\1\\\2', s)
 
+def _unquote(s):
+    if s.startswith(b'"') and s.endswith(b'"'):
+        return s[1:-1]
+    return s
+
+def shellsplit(s):
+    """Parse a command string in cmd.exe way (best-effort)"""
+    return pycompat.maplist(_unquote, pycompat.shlexsplit(s, posix=False))
+
 def quotecommand(cmd):
     """Build a command string suitable for os.popen* calls."""
     if sys.version_info < (2, 7, 1):

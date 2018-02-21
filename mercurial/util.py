@@ -147,6 +147,7 @@ setbinary = platform.setbinary
 setflags = platform.setflags
 setsignalhandler = platform.setsignalhandler
 shellquote = platform.shellquote
+shellsplit = platform.shellsplit
 spawndetached = platform.spawndetached
 split = platform.split
 sshargs = platform.sshargs

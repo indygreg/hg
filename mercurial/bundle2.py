@@ -147,6 +147,7 @@ preserve.
 
 from __future__ import absolute_import, division
 
+import collections
 import errno
 import os
 import re
@@ -1623,6 +1624,28 @@ def addparttagsfnodescache(repo, bundler, outgoing):
 
     if chunks:
         bundler.newpart('hgtagsfnodes', data=''.join(chunks))
+
+def addpartrevbranchcache(repo, bundler, outgoing):
+    # we include the rev branch cache for the bundle changeset
+    # (as an optional parts)
+    cache = repo.revbranchcache()
+    cl = repo.unfiltered().changelog
+    branchesdata = collections.defaultdict(lambda: (set(), set()))
+    for node in outgoing.missing:
+        branch, close = cache.branchinfo(cl.rev(node))
+        branchesdata[branch][close].add(node)
+
+    def generate():
+        for branch, (nodes, closed) in sorted(branchesdata.items()):
+            utf8branch = encoding.fromlocal(branch)
+            yield rbcstruct.pack(len(utf8branch), len(nodes), len(closed))
+            yield utf8branch
+            for n in sorted(nodes):
+                yield n
+            for n in sorted(closed):
+                yield n
+
+    bundler.newpart('cache:rev-branch-cache', data=generate())
 
 def buildobsmarkerspart(bundler, markers):
     """add an obsmarker part to the bundler with <markers>

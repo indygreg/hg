@@ -261,13 +261,13 @@ if ispy3:
         return dic
 
     # TODO: handle shlex.shlex().
-    def shlexsplit(s):
+    def shlexsplit(s, comments=False, posix=True):
         """
         Takes bytes argument, convert it to str i.e. unicodes, pass that into
         shlex.split(), convert the returned value to bytes and return that for
         Python 3 compatibility as shelx.split() don't accept bytes on Python 3.
         """
-        ret = shlex.split(s.decode('latin-1'))
+        ret = shlex.split(s.decode('latin-1'), comments, posix)
         return [a.encode('latin-1') for a in ret]
 
     def emailparser(*args, **kwargs):

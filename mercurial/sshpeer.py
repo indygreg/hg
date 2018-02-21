@@ -65,8 +65,11 @@ class doublepipe(object):
 
         (This will only wait for data if the setup is supported by `util.poll`)
         """
-        if getattr(self._main, 'hasbuffer', False): # getattr for classic pipe
-            return (True, True) # main has data, assume side is worth poking at.
+        if (isinstance(self._main, util.bufferedinputpipe) and
+            self._main.hasbuffer):
+            # Main has data. Assume side is worth poking at.
+            return True, True
+
         fds = [self._main.fileno(), self._side.fileno()]
         try:
             act = util.poll(fds)

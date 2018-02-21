@@ -163,7 +163,7 @@ changes, clone bundles produced by new Mercurial versions may not be readable
 by old clients.
 
   $ f --size --hexdump full.hg
-  full.hg: size=396
+  full.hg: size=442
   0000: 48 47 32 30 00 00 00 0e 43 6f 6d 70 72 65 73 73 |HG20....Compress|
   0010: 69 6f 6e 3d 47 5a 78 9c 63 60 60 d0 e4 76 f6 70 |ion=GZx.c``..v.p|
   0020: f4 73 77 75 0f f2 0f 0d 60 00 02 46 46 76 26 4e |.swu....`..FFv&N|
@@ -188,7 +188,10 @@ by old clients.
   0150: 88 75 34 36 75 04 82 55 17 14 36 a4 38 10 04 d8 |.u46u..U..6.8...|
   0160: 21 01 9a b1 83 f7 e9 45 8b d2 56 c7 a3 1f 82 52 |!......E..V....R|
   0170: d7 8a 78 ed fc d5 76 f1 36 25 81 89 c7 ad ec 90 |..x...v.6%......|
-  0180: 54 47 75 2b 89 49 b1 00 d2 8a eb 92             |TGu+.I......|
+  0180: 54 47 75 2b 89 48 b1 b2 62 ce 8e ce 1e ae 56 41 |TGu+.H..b.....VA|
+  0190: ae 61 ba 4e 41 8e 7e ce 1e ba 60 01 a0 14 23 58 |.a.NA.~...`...#X|
+  01a0: 81 35 c8 7d 40 cc 04 e2 a4 a4 a6 25 96 e6 94 60 |.5.}@......%...`|
+  01b0: 33 17 5f 54 00 00 01 1b 0a ec                   |3._T......|
 
   $ echo "http://localhost:$HGPORT1/full.hg" > server/.hg/clonebundles.manifest
   $ hg clone -U http://localhost:$HGPORT full-bundle
@@ -529,14 +532,14 @@ Test clone bundle retrieved through bundle2
   $ cat hg.pid >> $DAEMON_PIDS
 
   $ hg -R server debuglfput gz-a.hg
-  f6eca29e25359f6a92f1ea64527cdcf1b5abe62a
+  14ee2f0b3f1d14aeeb2fe037e09fc295c3cf59f5
 
   $ cat > server/.hg/clonebundles.manifest << EOF
-  > largefile://f6eca29e25359f6a92f1ea64527cdcf1b5abe62a BUNDLESPEC=gzip-v2
+  > largefile://14ee2f0b3f1d14aeeb2fe037e09fc295c3cf59f5 BUNDLESPEC=gzip-v2
   > EOF
 
   $ hg clone -U http://localhost:$HGPORT largefile-provided --traceback
-  applying clone bundle from largefile://f6eca29e25359f6a92f1ea64527cdcf1b5abe62a
+  applying clone bundle from largefile://14ee2f0b3f1d14aeeb2fe037e09fc295c3cf59f5
   adding changesets
   adding manifests
   adding file changes

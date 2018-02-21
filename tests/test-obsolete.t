@@ -1427,6 +1427,7 @@ Test ability to pull changeset with locally applying obsolescence markers
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02}
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8
+  cache:rev-branch-cache -- {}
   phase-heads -- {}
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8 draft
 
@@ -1468,6 +1469,7 @@ Testing that strip remove markers:
   changegroup -- {nbchanges: 2, version: 02}
       e016b03fd86fcccc54817d120b90b751aaf367d6
       b0551702f918510f01ae838ab03a463054c67b46
+  cache:rev-branch-cache -- {}
   obsmarkers -- {}
       version: 1 (92 bytes)
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}

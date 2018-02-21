@@ -76,6 +76,7 @@ test bundle types
   Stream params: {}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   none-v2
   
   % test bundle type bzip2
@@ -85,6 +86,7 @@ test bundle types
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   bzip2-v2
   
   % test bundle type gzip
@@ -94,6 +96,7 @@ test bundle types
   Stream params: {Compression: GZ}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   gzip-v2
   
   % test bundle type none-v2
@@ -103,6 +106,7 @@ test bundle types
   Stream params: {}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   none-v2
   
   % test bundle type v2
@@ -112,6 +116,7 @@ test bundle types
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   bzip2-v2
   
   % test bundle type v1
@@ -150,12 +155,12 @@ Compression level can be adjusted for bundle2 bundles
   $ hg bundle -a -t gzip-v2 gzip-v2.hg
   1 changesets found
   $ f --size gzip-v2.hg
-  gzip-v2.hg: size=427
+  gzip-v2.hg: size=468
 
   $ hg --config experimental.bundlecomplevel=1 bundle -a -t gzip-v2 gzip-v2-level1.hg
   1 changesets found
   $ f --size gzip-v2-level1.hg
-  gzip-v2-level1.hg: size=435
+  gzip-v2-level1.hg: size=475
 
   $ cd ..
 
@@ -171,6 +176,7 @@ Compression level can be adjusted for bundle2 bundles
   Stream params: {Compression: ZS}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   zstd-v2
   
   % test bundle type zstd-v2
@@ -180,6 +186,7 @@ Compression level can be adjusted for bundle2 bundles
   Stream params: {Compression: ZS}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   zstd-v2
   
 

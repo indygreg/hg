@@ -1591,6 +1591,7 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
         part.addparam('targetphase', '%d' % phases.secret, mandatory=False)
 
     addparttagsfnodescache(repo, bundler, outgoing)
+    addpartrevbranchcache(repo, bundler, outgoing)
 
     if opts.get('obsolescence', False):
         obsmarkers = repo.obsstore.relevantmarkers(outgoing.missing)

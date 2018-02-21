@@ -1568,11 +1568,13 @@ def perfvolatilesets(ui, repo, *names, **opts):
           ('', 'clear-revbranch', False,
            'purge the revbranch cache between computation'),
          ] + formatteropts)
-def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
+def perfbranchmap(ui, repo, *filternames, **opts):
     """benchmark the update of a branchmap
 
     This benchmarks the full repo.branchmap() call with read and write disabled
     """
+    full = opts.get("full", False)
+    clear_revbranch = opts.get("clear_revbranch", False)
     timer, fm = gettimer(ui, opts)
     def getbranchmap(filtername):
         """generate a benchmark function for the filtername"""
@@ -1591,6 +1593,8 @@ def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
         return d
     # add filter in smaller subset to bigger subset
     possiblefilters = set(repoview.filtertable)
+    if filternames:
+        possiblefilters &= set(filternames)
     subsettable = getbranchmapsubsettable()
     allfilters = []
     while possiblefilters:
@@ -1607,8 +1611,9 @@ def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
     if not full:
         for name in allfilters:
             repo.filtered(name).branchmap()
-    # add unfiltered
-    allfilters.append(None)
+    if not filternames or 'unfiltered' in filternames:
+        # add unfiltered
+        allfilters.append(None)
 
     branchcacheread = safeattrsetter(branchmap, 'read')
     branchcachewrite = safeattrsetter(branchmap.branchcache, 'write')

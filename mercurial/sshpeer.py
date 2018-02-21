@@ -410,8 +410,7 @@ class sshv1peer(wireproto.wirepeer):
             work += chunk
         yield wireproto.unescapearg(work)
 
-    def _callstream(self, cmd, **args):
-        args = pycompat.byteskwargs(args)
+    def _sendrequest(self, cmd, args):
         if (self.ui.debugflag
             and self.ui.configbool('devel', 'debug.peer-request')):
             dbg = self.ui.debug
@@ -447,11 +446,17 @@ class sshv1peer(wireproto.wirepeer):
 
         return self._pipei
 
+    def _callstream(self, cmd, **args):
+        args = pycompat.byteskwargs(args)
+        return self._sendrequest(cmd, args)
+
     def _callcompressable(self, cmd, **args):
-        return self._callstream(cmd, **args)
+        args = pycompat.byteskwargs(args)
+        return self._sendrequest(cmd, args)
 
     def _call(self, cmd, **args):
-        self._callstream(cmd, **args)
+        args = pycompat.byteskwargs(args)
+        self._sendrequest(cmd, args)
         return self._readframed()
 
     def _callpush(self, cmd, fp, **args):

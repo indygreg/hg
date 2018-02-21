@@ -6,7 +6,6 @@
 
 from __future__ import absolute_import
 
-import abc
 import contextlib
 import struct
 import sys
@@ -39,55 +38,6 @@ SSHV1 = 'ssh-v1'
 # to reflect BC breakages.
 SSHV2 = 'exp-ssh-v2-0001'
 
-class baseprotocolhandler(object):
-    """Abstract base class for wire protocol handlers.
-
-    A wire protocol handler serves as an interface between protocol command
-    handlers and the wire protocol transport layer. Protocol handlers provide
-    methods to read command arguments, redirect stdio for the duration of
-    the request, handle response types, etc.
-    """
-
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractproperty
-    def name(self):
-        """The name of the protocol implementation.
-
-        Used for uniquely identifying the transport type.
-        """
-
-    @abc.abstractmethod
-    def getargs(self, args):
-        """return the value for arguments in <args>
-
-        returns a list of values (same order as <args>)"""
-
-    @abc.abstractmethod
-    def forwardpayload(self, fp):
-        """Read the raw payload and forward to a file.
-
-        The payload is read in full before the function returns.
-        """
-
-    @abc.abstractmethod
-    def mayberedirectstdio(self):
-        """Context manager to possibly redirect stdio.
-
-        The context manager yields a file-object like object that receives
-        stdout and stderr output when the context manager is active. Or it
-        yields ``None`` if no I/O redirection occurs.
-
-        The intent of this context manager is to capture stdio output
-        so it may be sent in the response. Some transports support streaming
-        stdio to the client in real time. For these transports, stdio output
-        won't be captured.
-        """
-
-    @abc.abstractmethod
-    def client(self):
-        """Returns a string representation of this client (as bytes)."""
-
 def decodevaluefromheaders(req, headerprefix):
     """Decode a long value from multiple HTTP request headers.
 
@@ -105,7 +55,7 @@ def decodevaluefromheaders(req, headerprefix):
 
     return ''.join(chunks)
 
-class httpv1protocolhandler(baseprotocolhandler):
+class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
     def __init__(self, req, ui):
         self._req = req
         self._ui = ui
@@ -364,7 +314,7 @@ def _sshv1respondooberror(fout, ferr, rsp):
     fout.write(b'\n')
     fout.flush()
 
-class sshv1protocolhandler(baseprotocolhandler):
+class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
     """Handler for requests services via version 1 of SSH protocol."""
     def __init__(self, ui, fin, fout):
         self._ui = ui

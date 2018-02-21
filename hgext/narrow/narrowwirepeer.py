@@ -45,8 +45,8 @@ def reposetup(repo):
                 # TODO: don't blindly add include/exclude wireproto
                 # arguments to unbundle.
                 include, exclude = repo.narrowpats
-                kwargs["includepats"] = ','.join(include)
-                kwargs["excludepats"] = ','.join(exclude)
+                kwargs[r"includepats"] = ','.join(include)
+                kwargs[r"excludepats"] = ','.join(exclude)
             return orig(cmd, *args, **kwargs)
         extensions.wrapfunction(peer, '_calltwowaystream', wrapped)
     hg.wirepeersetupfuncs.append(wirereposetup)

@@ -689,6 +689,8 @@ def wireprotocommand(name, args=''):
         return func
     return register
 
+# TODO define a more appropriate permissions type to use for this.
+permissions['batch'] = 'pull'
 @wireprotocommand('batch', 'cmds *')
 def batch(repo, proto, cmds, others):
     repo = repo.filtered("served")
@@ -701,6 +703,17 @@ def batch(repo, proto, cmds, others):
                 n, v = a.split('=')
                 vals[unescapearg(n)] = unescapearg(v)
         func, spec = commands[op]
+
+        # If the protocol supports permissions checking, perform that
+        # checking on each batched command.
+        # TODO formalize permission checking as part of protocol interface.
+        if util.safehasattr(proto, 'checkperm'):
+            # Assume commands with no defined permissions are writes / for
+            # pushes. This is the safest from a security perspective because
+            # it doesn't allow commands with undefined semantics from
+            # bypassing permissions checks.
+            proto.checkperm(permissions.get(op, 'push'))
+
         if spec:
             keys = spec.split()
             data = {}

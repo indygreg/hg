@@ -83,13 +83,12 @@ web.deny_read=* prevents access to wire protocol for all users
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 read not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  read not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -143,13 +142,12 @@ web.deny_read=* with REMOTE_USER set still locks out clients
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 read not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  read not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -201,13 +199,12 @@ web.deny_read=<user> denies access to unauthenticated user
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 read not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  read not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -254,13 +251,12 @@ web.deny_read=<user> denies access to users in deny list
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 read not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  read not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -461,13 +457,12 @@ web.allow_read=<user> does not allow unauthenticated users to read
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 read not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  read not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -514,13 +509,12 @@ web.allow_read=<user> does not allow user not in list to read
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 read not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  read not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -621,13 +615,12 @@ web.deny_read takes precedence over web.allow_read
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 read not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  read not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -686,13 +679,12 @@ web.allow-pull=false denies read access to repo
   pull not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=listkeys+namespace%3Dphases'
-  200 Script output follows
+  401 pull not authorized
   
-  cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b	1
-  publishing	True (no-eol)
+  0
+  pull not authorized
+  [1]
 
 TODO custom commands don't check permissions
 
@@ -742,16 +734,18 @@ Attempting a write command with HTTP GET fails
   push requires POST request
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  405 push requires POST request
   
-  1
+  0
+  push requires POST request
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
+  no bookmarks set
   $ hg bookmark -d bm
+  abort: bookmark 'bm' does not exist
+  [255]
 
 TODO custom commands don't check permissions
 
@@ -781,16 +775,18 @@ Attempting a write command with an unknown HTTP verb fails
   push requires POST request
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  405 push requires POST request
   
-  1
+  0
+  push requires POST request
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
+  no bookmarks set
   $ hg bookmark -d bm
+  abort: bookmark 'bm' does not exist
+  [255]
 
 TODO custom commands don't check permissions
 
@@ -823,16 +819,15 @@ Pushing on a plaintext channel is disabled by default
   ssl required
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  403 ssl required
   
-  1
+  0
+  ssl required
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 
@@ -887,16 +882,15 @@ web.deny_push=* denies pushing to unauthenticated users
   push not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  401 push not authorized
   
-  1
+  0
+  push not authorized
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 
@@ -945,16 +939,15 @@ web.deny_push=* denies pushing to authenticated users
   push not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  401 push not authorized
   
-  1
+  0
+  push not authorized
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 
@@ -1009,16 +1002,15 @@ web.deny_push=<user> denies pushing to user in list
   push not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  401 push not authorized
   
-  1
+  0
+  push not authorized
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 
@@ -1067,16 +1059,15 @@ web.deny_push=<user> denies pushing to user not in list because allow-push isn't
   push not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  401 push not authorized
   
-  1
+  0
+  push not authorized
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 
@@ -1241,16 +1232,15 @@ web.allow-push=<user> denies push to user not in list
   push not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  401 push not authorized
   
-  1
+  0
+  push not authorized
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 
@@ -1367,16 +1357,15 @@ web.deny_push takes precedence over web.allow_push
   push not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  401 push not authorized
   
-  1
+  0
+  push not authorized
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 
@@ -1432,16 +1421,15 @@ web.allow-push has no effect if web.deny_read is set
   read not authorized
   [1]
 
-TODO batch command doesn't check permissions
-
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=batch' --requestheader 'x-hgarg-1=cmds=pushkey+namespace%3Dbookmarks%2Ckey%3Dbm%2Cold%3D%2Cnew%3Dcb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b'
-  200 Script output follows
+  401 read not authorized
   
-  1
+  0
+  read not authorized
+  [1]
 
   $ hg bookmarks
-     bm                        0:cb9a9f314b8b
-  $ hg book -d bm
+  no bookmarks set
 
 TODO custom commands don't check permissions
 

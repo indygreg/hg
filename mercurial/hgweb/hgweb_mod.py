@@ -360,8 +360,10 @@ class hgweb(object):
             try:
                 if query:
                     raise ErrorResponse(HTTP_NOT_FOUND)
+
+                req.checkperm = lambda op: self.check_perm(rctx, req, op)
                 if cmd in perms:
-                    self.check_perm(rctx, req, perms[cmd])
+                    req.checkperm(perms[cmd])
                 return protocol.call(rctx.repo, req, cmd)
             except ErrorResponse as inst:
                 # A client that sends unbundle without 100-continue will

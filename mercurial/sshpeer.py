@@ -156,13 +156,13 @@ def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
     # move to threading.
     stdin, stdout, stderr, proc = util.popen4(cmd, bufsize=0, env=sshenv)
 
-    stdout = doublepipe(ui, util.bufferedinputpipe(stdout), stderr)
-    stdin = doublepipe(ui, stdin, stderr)
-
     return proc, stdin, stdout, stderr
 
 def _performhandshake(ui, stdin, stdout, stderr):
     def badresponse():
+        # Flush any output on stderr.
+        _forwardoutput(ui, stderr)
+
         msg = _('no suitable response from remote hg')
         hint = ui.config('ui', 'ssherrorhint')
         raise error.RepoError(msg, hint=hint)
@@ -331,6 +331,9 @@ def _performhandshake(ui, stdin, stdout, stderr):
     if not caps:
         badresponse()
 
+    # Flush any output on stderr before proceeding.
+    _forwardoutput(ui, stderr)
+
     return protoname, caps
 
 class sshv1peer(wireproto.wirepeer):
@@ -347,6 +350,12 @@ class sshv1peer(wireproto.wirepeer):
         # self._subprocess is unused. Keeping a handle on the process
         # holds a reference and prevents it from being garbage collected.
         self._subprocess = proc
+
+        # And we hook up our "doublepipe" wrapper to allow querying
+        # stderr any time we perform I/O.
+        stdout = doublepipe(ui, util.bufferedinputpipe(stdout), stderr)
+        stdin = doublepipe(ui, stdin, stderr)
+
         self._pipeo = stdin
         self._pipei = stdout
         self._pipee = stderr

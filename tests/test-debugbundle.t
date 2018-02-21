@@ -35,6 +35,12 @@ Terse output:
       0e067c57feba1a5694ca4844f05588bb1bf82342
       991a3460af53952d10ec8a295d3d2cc2e5fa9690
 
+Quiet output
+
+  $ hg debugbundle --quiet bundle2.hg
+  Stream params: {}
+  changegroup -- {nbchanges: 2, version: 02}
+
 Verbose output:
 
   $ hg debugbundle --all bundle.hg

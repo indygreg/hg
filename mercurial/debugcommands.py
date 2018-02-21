@@ -345,11 +345,14 @@ def _debugbundle2(ui, gen, all=None, **opts):
         if part.type == 'changegroup':
             version = part.params.get('version', '01')
             cg = changegroup.getunbundler(version, part, 'UN')
-            _debugchangegroup(ui, cg, all=all, indent=4, **opts)
+            if not ui.quiet:
+                _debugchangegroup(ui, cg, all=all, indent=4, **opts)
         if part.type == 'obsmarkers':
-            _debugobsmarkers(ui, part, indent=4, **opts)
+            if not ui.quiet:
+                _debugobsmarkers(ui, part, indent=4, **opts)
         if part.type == 'phase-heads':
-            _debugphaseheads(ui, part, indent=4)
+            if not ui.quiet:
+                _debugphaseheads(ui, part, indent=4)
 
 @command('debugbundle',
         [('a', 'all', None, _('show all details')),

@@ -1632,7 +1632,7 @@ def config(ui, repo, *values, **opts):
     of that config item.
 
     With multiple arguments, print names and values of all config
-    items with matching section names.
+    items with matching section names or section.names.
 
     With --edit, start an editor on the user-level config file. With
     --global, edit the system-wide config file. With --local, edit the
@@ -1698,8 +1698,7 @@ def config(ui, repo, *values, **opts):
     if values:
         selsections = [v for v in values if '.' not in v]
         selentries = [v for v in values if '.' in v]
-        if len(selentries) > 1 or selentries and selsections:
-            raise error.Abort(_('only one config item permitted'))
+    uniquesel = (len(selentries) == 1 and not selsections)
     selsections = set(selsections)
     selentries = set(selentries)
 
@@ -1711,23 +1710,16 @@ def config(ui, repo, *values, **opts):
             source = source or 'none'
             value = value.replace('\n', '\\n')
         entryname = section + '.' + name
-        if values:
-            if section in selsections:
-                fm.startitem()
-                fm.condwrite(ui.debugflag, 'source', '%s: ', source)
-                fm.write('name value', '%s=%s\n', entryname, value)
-                matched = True
-            elif entryname in selentries:
-                fm.startitem()
-                fm.condwrite(ui.debugflag, 'source', '%s: ', source)
-                fm.write('value', '%s\n', value)
-                fm.data(name=entryname)
-                matched = True
+        if values and not (section in selsections or entryname in selentries):
+            continue
+        fm.startitem()
+        fm.condwrite(ui.debugflag, 'source', '%s: ', source)
+        if uniquesel:
+            fm.data(name=entryname)
+            fm.write('value', '%s\n', value)
         else:
-            fm.startitem()
-            fm.condwrite(ui.debugflag, 'source', '%s: ', source)
             fm.write('name value', '%s=%s\n', entryname, value)
-            matched = True
+        matched = True
     fm.end()
     if matched:
         return 0

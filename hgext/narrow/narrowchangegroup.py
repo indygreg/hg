@@ -215,13 +215,8 @@ def setup():
         # weren't introduced by that manifest.
         fastpathlinkrev = fastpathlinkrev and not self.is_shallow
 
-        moreargs = []
-        if self.generatemanifests.func_code.co_argcount == 7:
-            # The source argument was added to generatemanifests in hg in
-            # 75cc1f1e11f2 (2017/09/11).
-            moreargs.append(source)
         for chunk in self.generatemanifests(commonrevs, clrevorder,
-                fastpathlinkrev, mfs, fnodes, *moreargs):
+                fastpathlinkrev, mfs, fnodes, source):
             yield chunk
         # BEGIN NARROW HACK
         mfdicts = None

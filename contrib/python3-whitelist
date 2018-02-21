@@ -35,7 +35,10 @@ test-completion.t
 test-confused-revert.t
 test-contrib-check-code.t
 test-contrib-check-commit.t
+test-convert-authormap.t
 test-convert-clonebranches.t
+test-convert-datesort.t
+test-convert-hg-startrev.t
 test-copy-move-merge.t
 test-copytrace-heuristics.t
 test-debugbuilddag.t
@@ -141,6 +144,7 @@ test-manifest-merging.t
 test-manifest.py
 test-manifest.t
 test-match.py
+test-mdiff.py
 test-merge-closedheads.t
 test-merge-commit.t
 test-merge-criss-cross.t
@@ -151,6 +155,7 @@ test-merge-remove.t
 test-merge-revert.t
 test-merge-revert2.t
 test-merge-subrepos.t
+test-merge1.t
 test-merge10.t
 test-merge2.t
 test-merge4.t
@@ -174,6 +179,8 @@ test-pull-branch.t
 test-pull-http.t
 test-pull-permission.t
 test-pull-pull-corruption.t
+test-pull-r.t
+test-pull-update.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t
 test-push-checkheads-partial-C3.t
@@ -256,6 +263,7 @@ test-update-dest.t
 test-update-issue1456.t
 test-update-names.t
 test-update-reverse.t
+test-url-rev.t
 test-username-newline.t
 test-win32text.t
 test-xdg.t

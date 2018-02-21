@@ -479,6 +479,19 @@ def setup():
             origcgfn(*args, **kwargs)
     exchange.getbundle2partsmapping['changegroup'] = wrappedcgfn
 
+    # disable rev branch cache exchange when serving a narrow bundle
+    # (currently incompatible with that part)
+    origrbcfn = exchange.getbundle2partsmapping['cache:rev-branch-cache']
+    def wrappedcgfn(*args, **kwargs):
+        repo = args[1]
+        if repo.ui.has_section(_NARROWACL_SECTION):
+            return
+        elif kwargs.get(r'narrow', False):
+            return
+        else:
+            origrbcfn(*args, **kwargs)
+    exchange.getbundle2partsmapping['cache:rev-branch-cache'] = wrappedcgfn
+
     # Extend changegroup receiver so client can fixup after widen requests.
     origcghandler = bundle2.parthandlermapping['changegroup']
     def wrappedcghandler(op, inpart):

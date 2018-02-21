@@ -9,27 +9,27 @@ def testdispatch(cmd):
 
     Prints command and result value, but does not handle quoting.
     """
-    print("running: %s" % (cmd,))
+    print(b"running: %s" % (cmd,))
     req = dispatch.request(cmd.split())
     result = dispatch.dispatch(req)
-    print("result: %r" % (result,))
+    print(b"result: %r" % (result,))
 
-testdispatch("init test1")
+testdispatch(b"init test1")
 os.chdir('test1')
 
 # create file 'foo', add and commit
 f = open('foo', 'wb')
-f.write('foo\n')
+f.write(b'foo\n')
 f.close()
-testdispatch("add foo")
-testdispatch("commit -m commit1 -d 2000-01-01 foo")
+testdispatch(b"add foo")
+testdispatch(b"commit -m commit1 -d 2000-01-01 foo")
 
 # append to file 'foo' and commit
 f = open('foo', 'ab')
-f.write('bar\n')
+f.write(b'bar\n')
 f.close()
-testdispatch("commit -m commit2 -d 2000-01-02 foo")
+testdispatch(b"commit -m commit2 -d 2000-01-02 foo")
 
 # check 88803a69b24 (fancyopts modified command table)
-testdispatch("log -r 0")
-testdispatch("log -r tip")
+testdispatch(b"log -r 0")
+testdispatch(b"log -r tip")

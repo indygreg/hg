@@ -48,6 +48,7 @@ have this method available in narrowhg proper at the moment.
   > import os
   > import sys
   > 
+  > from mercurial import encoding
   > from mercurial import extensions
   > from mercurial import localrepo
   > from mercurial import match as matchmod
@@ -64,11 +65,11 @@ have this method available in narrowhg proper at the moment.
   >   currentmatcher = narrowspec.match(repo.root, includes, excludes)
   >   includes = includes | newincludes
   >   if not repo.currenttransaction():
-  >     ui.develwarn('expandnarrowspec called outside of transaction!')
+  >     ui.develwarn(b'expandnarrowspec called outside of transaction!')
   >   repo.setnarrowpats(includes, excludes)
   >   newmatcher = narrowspec.match(repo.root, includes, excludes)
   >   added = matchmod.differencematcher(newmatcher, currentmatcher)
-  >   for f in repo['.'].manifest().walk(added):
+  >   for f in repo[b'.'].manifest().walk(added):
   >     repo.dirstate.normallookup(f)
   > 
   > def makeds(ui, repo):
@@ -79,22 +80,23 @@ have this method available in narrowhg proper at the moment.
   >       def _map(self):
   >         ret = super(expandingdirstate, self)._map
   >         with repo.wlock(), repo.lock(), repo.transaction(
-  >             'expandnarrowspec'):
-  >           expandnarrowspec(ui, repo, os.environ.get('DIRSTATEINCLUDES'))
+  >             b'expandnarrowspec'):
+  >           expandnarrowspec(ui, repo,
+  >                            encoding.environ.get(b'DIRSTATEINCLUDES'))
   >         return ret
   >     ds.__class__ = expandingdirstate
   >     return ds
   >   return wrapds
   > 
   > def reposetup(ui, repo):
-  >   extensions.wrapfilecache(localrepo.localrepository, 'dirstate',
+  >   extensions.wrapfilecache(localrepo.localrepository, b'dirstate',
   >                            makeds(ui, repo))
   >   def overridepatch(orig, *args, **kwargs):
   >     with repo.wlock():
-  >       expandnarrowspec(ui, repo, os.environ.get('PATCHINCLUDES'))
+  >       expandnarrowspec(ui, repo, encoding.environ.get(b'PATCHINCLUDES'))
   >       return orig(*args, **kwargs)
   > 
-  >   extensions.wrapfunction(patch, 'patch', overridepatch)
+  >   extensions.wrapfunction(patch, b'patch', overridepatch)
   > EOF
   $ cat >> ".hg/hgrc" <<EOF
   > [extensions]

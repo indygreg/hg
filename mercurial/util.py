@@ -1980,6 +1980,35 @@ def filechunkiter(f, size=131072, limit=None):
             limit -= len(s)
         yield s
 
+class cappedreader(object):
+    """A file object proxy that allows reading up to N bytes.
+
+    Given a source file object, instances of this type allow reading up to
+    N bytes from that source file object. Attempts to read past the allowed
+    limit are treated as EOF.
+
+    It is assumed that I/O is not performed on the original file object
+    in addition to I/O that is performed by this instance. If there is,
+    state tracking will get out of sync and unexpected results will ensue.
+    """
+    def __init__(self, fh, limit):
+        """Allow reading up to <limit> bytes from <fh>."""
+        self._fh = fh
+        self._left = limit
+
+    def read(self, n=-1):
+        if not self._left:
+            return b''
+
+        if n < 0:
+            n = self._left
+
+        data = self._fh.read(min(n, self._left))
+        self._left -= len(data)
+        assert self._left >= 0
+
+        return data
+
 def makedate(timestamp=None):
     '''Return a unix timestamp (or the current time) as a (unixtime,
     offset) tuple based off the local timezone.'''

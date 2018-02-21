@@ -677,6 +677,11 @@ def supportedcompengines(ui, proto, role):
 # list of commands
 commands = {}
 
+# Maps wire protocol name to operation type. This is used for permissions
+# checking. All defined @wireiprotocommand should have an entry in this
+# dict.
+permissions = {}
+
 def wireprotocommand(name, args=''):
     """decorator for wire protocol command"""
     def register(func):
@@ -808,6 +813,7 @@ def _capabilities(repo, proto):
 def capabilities(repo, proto):
     return ' '.join(_capabilities(repo, proto))
 
+permissions['changegroup'] = 'pull'
 @wireprotocommand('changegroup', 'roots')
 def changegroup(repo, proto, roots):
     nodes = decodelist(roots)
@@ -817,6 +823,7 @@ def changegroup(repo, proto, roots):
     gen = iter(lambda: cg.read(32768), '')
     return streamres(gen=gen)
 
+permissions['changegroupsubset'] = 'pull'
 @wireprotocommand('changegroupsubset', 'bases heads')
 def changegroupsubset(repo, proto, bases, heads):
     bases = decodelist(bases)
@@ -833,6 +840,7 @@ def debugwireargs(repo, proto, one, two, others):
     opts = options('debugwireargs', ['three', 'four'], others)
     return repo.debugwireargs(one, two, **pycompat.strkwargs(opts))
 
+permissions['getbundle'] = 'pull'
 @wireprotocommand('getbundle', '*')
 def getbundle(repo, proto, others):
     opts = options('getbundle', gboptsmap.keys(), others)
@@ -915,6 +923,7 @@ def hello(repo, proto):
     '''
     return "capabilities: %s\n" % (capabilities(repo, proto))
 
+permissions['listkeys'] = 'pull'
 @wireprotocommand('listkeys', 'namespace')
 def listkeys(repo, proto, namespace):
     d = repo.listkeys(encoding.tolocal(namespace)).items()
@@ -936,6 +945,7 @@ def lookup(repo, proto, key):
 def known(repo, proto, nodes, others):
     return ''.join(b and "1" or "0" for b in repo.known(decodelist(nodes)))
 
+permissions['pushkey'] = 'push'
 @wireprotocommand('pushkey', 'namespace key old new')
 def pushkey(repo, proto, namespace, key, old, new):
     # compatibility with pre-1.8 clients which were accidentally
@@ -968,6 +978,7 @@ def pushkey(repo, proto, namespace, key, old, new):
                      encoding.tolocal(old), new)
     return '%s\n' % int(r)
 
+permissions['stream_out'] = 'pull'
 @wireprotocommand('stream_out')
 def stream(repo, proto):
     '''If the server supports streaming clone, it advertises the "stream"
@@ -976,6 +987,7 @@ def stream(repo, proto):
     '''
     return streamres_legacy(streamclone.generatev1wireproto(repo))
 
+permissions['unbundle'] = 'push'
 @wireprotocommand('unbundle', 'heads')
 def unbundle(repo, proto, heads):
     their_heads = decodelist(heads)

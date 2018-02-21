@@ -12,7 +12,6 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 
 from mercurial.hgweb import (
-    hgweb_mod,
     webcommands,
 )
 
@@ -175,9 +174,9 @@ def uisetup(ui):
 
     # make putlfile behave the same as push and {get,stat}lfile behave
     # the same as pull w.r.t. permissions checks
-    hgweb_mod.perms['putlfile'] = 'push'
-    hgweb_mod.perms['getlfile'] = 'pull'
-    hgweb_mod.perms['statlfile'] = 'pull'
+    wireproto.permissions['putlfile'] = 'push'
+    wireproto.permissions['getlfile'] = 'pull'
+    wireproto.permissions['statlfile'] = 'pull'
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 

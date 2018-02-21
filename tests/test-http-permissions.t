@@ -21,11 +21,11 @@
   > @wireproto.wireprotocommand('customwritenoperm')
   > def customwritenoperm(repo, proto):
   >     return b'write command no defined permissions\n'
-  > hgweb_mod.perms['customreadwithperm'] = 'pull'
+  > wireproto.permissions['customreadwithperm'] = 'pull'
   > @wireproto.wireprotocommand('customreadwithperm')
   > def customreadwithperm(repo, proto):
   >     return b'read-only command w/ defined permissions\n'
-  > hgweb_mod.perms['customwritewithperm'] = 'push'
+  > wireproto.permissions['customwritewithperm'] = 'push'
   > @wireproto.wireprotocommand('customwritewithperm')
   > def customwritewithperm(repo, proto):
   >     return b'write command w/ defined permissions\n'

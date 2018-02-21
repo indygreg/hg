@@ -36,6 +36,7 @@ from .. import (
     templater,
     ui as uimod,
     util,
+    wireproto,
 )
 
 from . import (
@@ -45,15 +46,8 @@ from . import (
     wsgicgi,
 )
 
-perms = {
-    'changegroup': 'pull',
-    'changegroupsubset': 'pull',
-    'getbundle': 'pull',
-    'stream_out': 'pull',
-    'listkeys': 'pull',
-    'unbundle': 'push',
-    'pushkey': 'push',
-}
+# Aliased for API compatibility.
+perms = wireproto.permissions
 
 archivespecs = util.sortdict((
     ('zip', ('application/zip', 'zip', '.zip', None)),

@@ -134,14 +134,14 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps archive command to narrow the default includes."""
     if narrowrepo.REQUIREMENT in repo.requirements:
         repo_includes, repo_excludes = repo.narrowpats
-        includes = set(opts.get('include', []))
-        excludes = set(opts.get('exclude', []))
+        includes = set(opts.get(r'include', []))
+        excludes = set(opts.get(r'exclude', []))
         includes, excludes, unused_invalid = narrowspec.restrictpatterns(
             includes, excludes, repo_includes, repo_excludes)
         if includes:
-            opts['include'] = includes
+            opts[r'include'] = includes
         if excludes:
-            opts['exclude'] = excludes
+            opts[r'exclude'] = excludes
     return orig(ui, repo, *args, **opts)
 
 def pullbundle2extraprepare(orig, pullop, kwargs):

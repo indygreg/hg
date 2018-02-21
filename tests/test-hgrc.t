@@ -126,6 +126,11 @@ showconfig with multiple arguments
   $ hg showconfig alias defaults
   alias.log=log -g
   defaults.identify=-n
+  $ hg showconfig alias alias
+  alias.log=log -g
+  $ hg showconfig alias.log alias.log
+  abort: only one config item permitted
+  [255]
   $ hg showconfig alias defaults.identify
   abort: only one config item permitted
   [255]

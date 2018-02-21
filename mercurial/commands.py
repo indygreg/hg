@@ -1693,11 +1693,16 @@ def config(ui, repo, *values, **opts):
         else:
             raise error.ProgrammingError('unknown rctype: %s' % t)
     untrusted = bool(opts.get('untrusted'))
+
+    selsections = selentries = []
     if values:
-        sections = [v for v in values if '.' not in v]
-        items = [v for v in values if '.' in v]
-        if len(items) > 1 or items and sections:
+        selsections = [v for v in values if '.' not in v]
+        selentries = [v for v in values if '.' in v]
+        if len(selentries) > 1 or selentries and selsections:
             raise error.Abort(_('only one config item permitted'))
+    selsections = set(selsections)
+    selentries = set(selentries)
+
     matched = False
     for section, name, value in ui.walkconfig(untrusted=untrusted):
         source = ui.configsource(section, name, untrusted)
@@ -1707,18 +1712,17 @@ def config(ui, repo, *values, **opts):
             value = value.replace('\n', '\\n')
         entryname = section + '.' + name
         if values:
-            for v in values:
-                if v == section:
-                    fm.startitem()
-                    fm.condwrite(ui.debugflag, 'source', '%s: ', source)
-                    fm.write('name value', '%s=%s\n', entryname, value)
-                    matched = True
-                elif v == entryname:
-                    fm.startitem()
-                    fm.condwrite(ui.debugflag, 'source', '%s: ', source)
-                    fm.write('value', '%s\n', value)
-                    fm.data(name=entryname)
-                    matched = True
+            if section in selsections:
+                fm.startitem()
+                fm.condwrite(ui.debugflag, 'source', '%s: ', source)
+                fm.write('name value', '%s=%s\n', entryname, value)
+                matched = True
+            elif entryname in selentries:
+                fm.startitem()
+                fm.condwrite(ui.debugflag, 'source', '%s: ', source)
+                fm.write('value', '%s\n', value)
+                fm.data(name=entryname)
+                matched = True
         else:
             fm.startitem()
             fm.condwrite(ui.debugflag, 'source', '%s: ', source)

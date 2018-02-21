@@ -147,7 +147,7 @@ class lazyremotenamedict(collections.MutableMapping):
         for k, vtup in self.potentialentries.iteritems():
             yield (k, [bin(vtup[0])])
 
-class remotenames(dict):
+class remotenames(object):
     """
     This class encapsulates all the remotenames state. It also contains
     methods to access that state in convenient ways. Remotenames are lazy
@@ -156,14 +156,13 @@ class remotenames(dict):
     """
 
     def __init__(self, repo, *args):
-        dict.__init__(self, *args)
         self._repo = repo
         self.clearnames()
 
     def clearnames(self):
         """ Clear all remote names state """
-        self['bookmarks'] = lazyremotenamedict("bookmarks", self._repo)
-        self['branches'] = lazyremotenamedict("branches", self._repo)
+        self.bookmarks = lazyremotenamedict("bookmarks", self._repo)
+        self.branches = lazyremotenamedict("branches", self._repo)
         self._invalidatecache()
 
     def _invalidatecache(self):
@@ -171,7 +170,7 @@ class remotenames(dict):
         self._nodetobranch = None
 
     def bmarktonodes(self):
-        return self['bookmarks']
+        return self.bookmarks
 
     def nodetobmarks(self):
         if not self._nodetobmarks:
@@ -182,7 +181,7 @@ class remotenames(dict):
         return self._nodetobmarks
 
     def branchtonodes(self):
-        return self['branches']
+        return self.branches
 
     def nodetobranch(self):
         if not self._nodetobranch:

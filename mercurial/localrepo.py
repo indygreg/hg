@@ -1519,12 +1519,15 @@ class localrepository(object):
         return updater
 
     @unfilteredmethod
-    def updatecaches(self, tr=None):
+    def updatecaches(self, tr=None, full=False):
         """warm appropriate caches
 
         If this function is called after a transaction closed. The transaction
         will be available in the 'tr' argument. This can be used to selectively
         update caches relevant to the changes in that transaction.
+
+        If 'full' is set, make sure all caches the function knows about have
+        up-to-date data. Even the ones usually loaded more lazily.
         """
         if tr is not None and tr.hookargs.get('source') == 'strip':
             # During strip, many caches are invalid but
@@ -1535,6 +1538,12 @@ class localrepository(object):
             # updating the unfiltered branchmap should refresh all the others,
             self.ui.debug('updating the branch cache\n')
             branchmap.updatecache(self.filtered('served'))
+
+        if full:
+            rbc = self.revbranchcache()
+            for r in self.changelog:
+                rbc.branchinfo(r)
+            rbc.write()
 
     def invalidatecaches(self):
 

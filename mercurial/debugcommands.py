@@ -2482,7 +2482,7 @@ def debuguiprompt(ui, prompt=''):
 def debugupdatecaches(ui, repo, *pats, **opts):
     """warm all known caches in the repository"""
     with repo.wlock(), repo.lock():
-        repo.updatecaches()
+        repo.updatecaches(full=True)
 
 @command('debugupgraderepo', [
     ('o', 'optimize', [], _('extra optimization to perform'), _('NAME')),

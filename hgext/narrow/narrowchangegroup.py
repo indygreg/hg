@@ -52,7 +52,7 @@ def setup():
                           getattr(self, '_narrow_matcher', None))
         if matcher is not None:
             narrowmatch = matcher()
-            changedfiles = filter(narrowmatch, changedfiles)
+            changedfiles = [f for f in changedfiles if narrowmatch(f)]
         if getattr(self, 'is_shallow', False):
             # See comment in generate() for why this sadness is a thing.
             mfdicts = self._mfdicts

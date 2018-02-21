@@ -31,9 +31,9 @@ def setup(repo):
                 copy, getfilectx, *args, **kwargs):
         if util.safehasattr(repo, 'narrowmatch'):
             narrowmatch = repo.narrowmatch()
-            modified = filter(narrowmatch, modified)
-            added = filter(narrowmatch, added)
-            removed = filter(narrowmatch, removed)
+            modified = [f for f in modified if narrowmatch(f)]
+            added = [f for f in added if narrowmatch(f)]
+            removed = [f for f in removed if narrowmatch(f)]
             copy = {k: v for k, v in copy.iteritems() if narrowmatch(k)}
         return orig(repo, revs, ctx1, ctx2, modified, added, removed, copy,
                     getfilectx, *args, **kwargs)

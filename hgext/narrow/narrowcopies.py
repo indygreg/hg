@@ -19,7 +19,7 @@ def setup(repo):
         missing = orig(a, b, match)
         if util.safehasattr(repo, 'narrowmatch'):
             narrowmatch = repo.narrowmatch()
-            missing = filter(narrowmatch, missing)
+            missing = [f for f in missing if narrowmatch(f)]
         return missing
 
     def _checkcopies(orig, srcctx, dstctx, f, base, tca, remotebase, limit,

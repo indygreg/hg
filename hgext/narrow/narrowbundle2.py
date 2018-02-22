@@ -259,7 +259,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
 
         return
 
-    depth = kwargs.get('depth', None)
+    depth = kwargs.get(r'depth', None)
     if depth is not None:
         depth = int(depth)
         if depth < 1:
@@ -267,9 +267,9 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
 
     heads = set(heads or repo.heads())
     common = set(common or [nullid])
-    oldinclude = sorted(filter(bool, kwargs.get('oldincludepats', [])))
-    oldexclude = sorted(filter(bool, kwargs.get('oldexcludepats', [])))
-    known = {bin(n) for n in kwargs.get('known', [])}
+    oldinclude = sorted(filter(bool, kwargs.get(r'oldincludepats', [])))
+    oldexclude = sorted(filter(bool, kwargs.get(r'oldexcludepats', [])))
+    known = {bin(n) for n in kwargs.get(r'known', [])}
     if known and (oldinclude != include or oldexclude != exclude):
         # Steps:
         # 1. Send kill for "$known & ::common"
@@ -343,8 +343,8 @@ def applyacl_narrow(repo, kwargs):
     user_excludes = [
         'path:.' if p == '*' else 'path:' + p for p in user_excludes]
 
-    req_includes = set(kwargs.get('includepats', []))
-    req_excludes = set(kwargs.get('excludepats', []))
+    req_includes = set(kwargs.get(r'includepats', []))
+    req_excludes = set(kwargs.get(r'excludepats', []))
 
     req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
         req_includes, req_excludes, user_includes, user_excludes)

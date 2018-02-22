@@ -466,25 +466,40 @@ class sshv1peer(wireproto.wirepeer):
         return self._sendrequest(cmd, args, framed=True).read()
 
     def _callpush(self, cmd, fp, **args):
+        # The server responds with an empty frame if the client should
+        # continue submitting the payload.
         r = self._call(cmd, **args)
         if r:
             return '', r
+
+        # The payload consists of frames with content followed by an empty
+        # frame.
         for d in iter(lambda: fp.read(4096), ''):
             self._writeframed(d)
         self._writeframed("", flush=True)
+
+        # In case of success, there is an empty frame and a frame containing
+        # the integer result (as a string).
+        # In case of error, there is a non-empty frame containing the error.
         r = self._readframed()
         if r:
             return '', r
         return self._readframed(), ''
 
     def _calltwowaystream(self, cmd, fp, **args):
+        # The server responds with an empty frame if the client should
+        # continue submitting the payload.
         r = self._call(cmd, **args)
         if r:
             # XXX needs to be made better
             raise error.Abort(_('unexpected remote reply: %s') % r)
+
+        # The payload consists of frames with content followed by an empty
+        # frame.
         for d in iter(lambda: fp.read(4096), ''):
             self._writeframed(d)
         self._writeframed("", flush=True)
+
         return self._pipei
 
     def _getamount(self):

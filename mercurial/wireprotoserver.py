@@ -347,12 +347,16 @@ class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
         return [data[k] for k in keys]
 
     def forwardpayload(self, fpout):
+        # We initially send an empty response. This tells the client it is
+        # OK to start sending data. If a client sees any other response, it
+        # interprets it as an error.
+        _sshv1respondbytes(self._fout, b'')
+
         # The file is in the form:
         #
         # <chunk size>\n<chunk>
         # ...
         # 0\n
-        _sshv1respondbytes(self._fout, b'')
         count = int(self._fin.readline())
         while count:
             fpout.write(self._fin.read(count))

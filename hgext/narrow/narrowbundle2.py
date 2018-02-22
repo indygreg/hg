@@ -229,8 +229,8 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
         raise ValueError(_("server does not advertise changegroup version,"
                            " can't negotiate support for ellipsis nodes"))
 
-    include = sorted(filter(bool, kwargs.get('includepats', [])))
-    exclude = sorted(filter(bool, kwargs.get('excludepats', [])))
+    include = sorted(filter(bool, kwargs.get(r'includepats', [])))
+    exclude = sorted(filter(bool, kwargs.get(r'excludepats', [])))
     newmatch = narrowspec.match(repo.root, include=include, exclude=exclude)
     if not repo.ui.configbool("experimental", "narrowservebrokenellipses"):
         outgoing = exchange._computeoutgoing(repo, heads, common)

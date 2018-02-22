@@ -174,8 +174,10 @@ test-narrow-debugrebuilddirstate.t
 test-narrow-exchange-merges.t
 test-narrow-merge.t
 test-narrow-patch.t
+test-narrow-patterns.t
 test-narrow-pull.t
 test-narrow-rebase.t
+test-narrow-shallow-merges.t
 test-narrow-update.t
 test-newbranch.t
 test-obshistory.t

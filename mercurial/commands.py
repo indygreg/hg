@@ -3301,9 +3301,10 @@ def log(ui, repo, *pats, **opts):
 
     With --graph the revisions are shown as an ASCII art DAG with the most
     recent changeset at the top.
-    'o' is a changeset, '@' is a working directory parent, 'x' is obsolete,
-    and '+' represents a fork where the changeset from the lines below is a
-    parent of the 'o' merge on the same line.
+    'o' is a changeset, '@' is a working directory parent, '_' closes a branch,
+    'x' is obsolete, '*' is unstable, and '+' represents a fork where the
+    changeset from the lines below is a parent of the 'o' merge on the same
+    line.
     Paths in the DAG are represented with '|', '/' and so forth. ':' in place
     of a '|' indicates one or more revisions in a path are omitted.
 

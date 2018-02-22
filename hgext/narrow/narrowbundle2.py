@@ -123,7 +123,7 @@ def _computeellipsis(repo, common, heads, known, match, depth=None):
     missing = list(cl.findmissingrevs(common=commonrevs, heads=headsrevs))
     visit = reversed(missing)
     relevant_nodes = set()
-    visitnodes = map(cl.node, missing)
+    visitnodes = [cl.node(m) for m in missing]
     required = set(headsrevs) | known
     for rev in visit:
         clrev = cl.changelogrevision(rev)

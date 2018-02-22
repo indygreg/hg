@@ -166,6 +166,17 @@ test-merge8.t
 test-mq-qimport-fail-cleanup.t
 test-mq-qqueue.t
 test-mq-qsave.t
+test-narrow-clone-no-ellipsis.t
+test-narrow-clone-nonlinear.t
+test-narrow-clone.t
+test-narrow-copies.t
+test-narrow-debugrebuilddirstate.t
+test-narrow-exchange-merges.t
+test-narrow-merge.t
+test-narrow-patch.t
+test-narrow-pull.t
+test-narrow-rebase.t
+test-narrow-update.t
 test-newbranch.t
 test-obshistory.t
 test-obsmarkers-effectflag.t

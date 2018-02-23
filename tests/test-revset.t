@@ -16,7 +16,7 @@
   >        return baseset()
   >     return baseset([3,3,2,2])
   > 
-  > mercurial.revset.symbols['r3232'] = r3232
+  > mercurial.revset.symbols[b'r3232'] = r3232
   > EOF
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -47,8 +47,8 @@ these predicates use '\0' as a separator:
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'debugrevlistspec',
-  >     [('', 'optimize', None, 'print parsed tree after optimizing'),
-  >      ('', 'bin', None, 'unhexlify arguments')])
+  >     [(b'', b'optimize', None, b'print parsed tree after optimizing'),
+  >      (b'', b'bin', None, b'unhexlify arguments')])
   > def debugrevlistspec(ui, repo, fmt, *args, **opts):
   >     if opts['bin']:
   >         args = map(nodemod.bin, args)
@@ -58,14 +58,14 @@ these predicates use '\0' as a separator:
   >         ui.note(revsetlang.prettyformat(tree), "\n")
   >         if opts["optimize"]:
   >             opttree = revsetlang.optimize(revsetlang.analyze(tree))
-  >             ui.note("* optimized:\n", revsetlang.prettyformat(opttree),
-  >                     "\n")
+  >             ui.note(b"* optimized:\n", revsetlang.prettyformat(opttree),
+  >                     b"\n")
   >     func = revset.match(ui, expr, repo)
   >     revs = func(repo)
   >     if ui.verbose:
-  >         ui.note("* set:\n", smartset.prettyformat(revs), "\n")
+  >         ui.note(b"* set:\n", smartset.prettyformat(revs), b"\n")
   >     for c in revs:
-  >         ui.write("%s\n" % c)
+  >         ui.write(b"%s\n" % c)
   > EOF
   $ cat <<EOF >> $HGRCPATH
   > [extensions]

@@ -425,11 +425,18 @@ class histeditaction(object):
     def fromrule(cls, state, rule):
         """Parses the given rule, returning an instance of the histeditaction.
         """
-        rulehash = rule.strip().split(' ', 1)[0]
+        ruleid = rule.strip().split(' ', 1)[0]
+        # ruleid can be anything from rev numbers, hashes, "bookmarks" etc
+        # Check for validation of rule ids and get the rulehash
         try:
-            rev = node.bin(rulehash)
+            rev = node.bin(ruleid)
         except TypeError:
-            raise error.ParseError("invalid changeset %s" % rulehash)
+            try:
+                _ctx = scmutil.revsingle(state.repo, ruleid)
+                rulehash = _ctx.hex()
+                rev = node.bin(rulehash)
+            except error.RepoLookupError:
+                raise error.ParseError("invalid changeset %s" % ruleid)
         return cls(state, rev)
 
     def verify(self, prev, expected, seen):

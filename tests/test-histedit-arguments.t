@@ -236,10 +236,10 @@ Test bogus rev
 
   $ HGEDITOR=cat hg histedit "tip^^" --commands - << EOF
   > pick eb57da33312f 2 three
-  > pick 0
+  > pick 0u98
   > pick 08d98a8350f3 4 five
   > EOF
-  hg: parse error: invalid changeset 0
+  hg: parse error: invalid changeset 0u98
   [255]
 
 Test short version of command
@@ -552,3 +552,39 @@ Check that 'roll' is selected by default
   #
 
   $ cd ..
+
+Check that histedit's commands accept revsets
+  $ hg init bar
+  $ cd bar
+  $ echo w >> a
+  $ hg ci -qAm "adds a"
+  $ echo x >> b
+  $ hg ci -qAm "adds b"
+  $ echo y >> c
+  $ hg ci -qAm "adds c"
+  $ echo z >> d
+  $ hg ci -qAm "adds d"
+  $ hg log -G -T '{rev} {desc}\n'
+  @  3 adds d
+  |
+  o  2 adds c
+  |
+  o  1 adds b
+  |
+  o  0 adds a
+  
+  $ HGEDITOR=cat hg histedit "2" --commands - << EOF
+  > base -4 adds c
+  > pick 2 adds c
+  > pick tip adds d
+  > EOF
+  $ hg log -G -T '{rev} {desc}\n'
+  @  5 adds d
+  |
+  o  4 adds c
+  |
+  | o  1 adds b
+  |/
+  o  0 adds a
+  
+

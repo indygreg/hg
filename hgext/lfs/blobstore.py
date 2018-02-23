@@ -175,6 +175,17 @@ class local(object):
             _verify(oid, blob)
         return blob
 
+    def verify(self, oid):
+        """Indicate whether or not the hash of the underlying file matches its
+        name."""
+        sha256 = hashlib.sha256()
+
+        with self.open(oid) as fp:
+            for chunk in util.filechunkiter(fp, size=1048576):
+                sha256.update(chunk)
+
+        return oid == sha256.hexdigest()
+
     def has(self, oid):
         """Returns True if the local blobstore contains the requested blob,
         False otherwise."""

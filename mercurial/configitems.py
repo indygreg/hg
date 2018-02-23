@@ -538,9 +538,6 @@ coreconfigitem('experimental', 'hook-track-tags',
 coreconfigitem('experimental', 'httppostargs',
     default=False,
 )
-coreconfigitem('experimental', 'manifestv2',
-    default=False,
-)
 coreconfigitem('experimental', 'mergedriver',
     default=None,
 )

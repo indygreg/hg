@@ -303,11 +303,15 @@ REVLOGV2_REQUIREMENT = 'exp-revlogv2.0'
 
 class localrepository(object):
 
+    # obsolete experimental requirements:
+    #  - manifestv2: An experimental new manifest format that allowed
+    #    for stem compression of long paths. Experiment ended up not
+    #    being successful (repository sizes went up due to worse delta
+    #    chains), and the code was deleted in 4.6.
     supportedformats = {
         'revlogv1',
         'generaldelta',
         'treemanifest',
-        'manifestv2',
         REVLOGV2_REQUIREMENT,
     }
     _basesupported = supportedformats | {
@@ -322,7 +326,6 @@ class localrepository(object):
         'revlogv1',
         'generaldelta',
         'treemanifest',
-        'manifestv2',
     }
 
     # a list of (ui, featureset) functions.
@@ -2261,8 +2264,6 @@ def newreporequirements(repo):
         requirements.add('generaldelta')
     if ui.configbool('experimental', 'treemanifest'):
         requirements.add('treemanifest')
-    if ui.configbool('experimental', 'manifestv2'):
-        requirements.add('manifestv2')
 
     revlogv2 = ui.config('experimental', 'revlogv2')
     if revlogv2 == 'enable-unstable-format-and-corrupt-my-data':

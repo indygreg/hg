@@ -1,4 +1,3 @@
-
 Repositories contain a file (``.hg/requires``) containing a list of
 features/capabilities that are *required* for clients to interface
 with the repository. This file has been present in Mercurial since
@@ -105,8 +104,10 @@ manifestv2
 Denotes that version 2 of manifests are being used.
 
 Support for this requirement was added in Mercurial 3.4 (released
-May 2015). The requirement is currently experimental and is disabled
-by default.
+May 2015). The new format failed to meet expectations and support
+for the format and requirement were removed in Mercurial 4.6
+(released May 2018) since the feature never graduated frome experiment
+status.
 
 treemanifest
 ============

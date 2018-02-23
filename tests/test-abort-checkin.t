@@ -1,9 +1,9 @@
   $ cat > abortcommit.py <<EOF
   > from mercurial import error
   > def hook(**args):
-  >     raise error.Abort("no commits allowed")
+  >     raise error.Abort(b"no commits allowed")
   > def reposetup(ui, repo):
-  >     repo.ui.setconfig("hooks", "pretxncommit.nocommits", hook)
+  >     repo.ui.setconfig(b"hooks", b"pretxncommit.nocommits", hook)
   > EOF
   $ abspath=`pwd`/abortcommit.py
 

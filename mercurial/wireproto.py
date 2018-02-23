@@ -916,7 +916,7 @@ def hello(repo, proto):
 
 @wireprotocommand('listkeys', 'namespace')
 def listkeys(repo, proto, namespace):
-    d = repo.listkeys(encoding.tolocal(namespace)).items()
+    d = sorted(repo.listkeys(encoding.tolocal(namespace)).items())
     return bytesresponse(pushkeymod.encodekeys(d))
 
 @wireprotocommand('lookup', 'key')

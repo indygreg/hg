@@ -1265,7 +1265,7 @@ class queue(object):
                     if user:
                         ph.setuser(user)
                     if date:
-                        ph.setdate('%s %s' % date)
+                        ph.setdate('%d %d' % date)
                     ph.setparent(hex(nctx.p1().node()))
                     msg = nctx.description().strip()
                     if msg == defaultmsg.strip():

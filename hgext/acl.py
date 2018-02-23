@@ -335,8 +335,8 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
         return
 
     user = None
-    if source == 'serve' and 'url' in kwargs:
-        url = kwargs['url'].split(':')
+    if source == 'serve' and r'url' in kwargs:
+        url = kwargs[r'url'].split(':')
         if url[0] == 'remote' and url[1].startswith('http'):
             user = urlreq.unquote(url[3])
 

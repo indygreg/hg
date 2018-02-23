@@ -855,7 +855,7 @@ class queue(object):
                                   files=files, eolmode=None)
             return (True, list(files), fuzz)
         except Exception as inst:
-            self.ui.note(str(inst) + '\n')
+            self.ui.note(util.forcebytestr(inst) + '\n')
             if not self.ui.verbose:
                 self.ui.warn(_("patch failed, unable to continue (try -v)\n"))
             self.ui.traceback()

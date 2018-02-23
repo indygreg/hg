@@ -1116,7 +1116,7 @@ def archive(web, req, tmpl):
         msg = 'Archive type not allowed: %s' % type_
         raise ErrorResponse(HTTP_FORBIDDEN, msg)
 
-    reponame = re.sub(r"\W+", "-", os.path.basename(web.reponame))
+    reponame = re.sub(br"\W+", "-", os.path.basename(web.reponame))
     cnode = web.repo.lookup(key)
     arch_version = key
     if cnode == key or key == 'tip':

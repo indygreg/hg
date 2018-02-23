@@ -200,6 +200,7 @@ from mercurial import (
     error,
     extensions,
     match,
+    pycompat,
     registrar,
     util,
 )
@@ -340,7 +341,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
             user = urlreq.unquote(url[3])
 
     if user is None:
-        user = getpass.getuser()
+        user = pycompat.bytestr(getpass.getuser())
 
     ui.debug('acl: checking access for user "%s"\n' % user)
 

@@ -13,6 +13,7 @@ import zlib
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     policy,
     pycompat,
@@ -348,7 +349,11 @@ def _unidiff(t1, t2, opts=defaultopts):
             # alphanumeric char.
             for i in xrange(astart - 1, lastpos - 1, -1):
                 if l1[i][0:1].isalnum():
-                    func = ' ' + l1[i].rstrip()[:40]
+                    func = b' ' + l1[i].rstrip()
+                    # split long function name if ASCII. otherwise we have no
+                    # idea where the multi-byte boundary is, so just leave it.
+                    if encoding.isasciistr(func):
+                        func = func[:41]
                     lastfunc[1] = func
                     break
             # by recording this hunk's starting point as the next place to

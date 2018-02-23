@@ -2629,6 +2629,21 @@ def debugwireproto(ui, repo, **opts):
     Values are interpreted as Python b'' literals. This allows encoding
     special byte sequences via backslash escaping.
 
+    batchbegin
+    ----------
+
+    Instruct the peer to begin a batched send.
+
+    All ``command`` blocks are queued for execution until the next
+    ``batchsubmit`` block.
+
+    batchsubmit
+    -----------
+
+    Submit previously queued ``command`` blocks as a batch request.
+
+    This action MUST be paired with a ``batchbegin`` action.
+
     close
     -----
 
@@ -2716,6 +2731,8 @@ def debugwireproto(ui, repo, **opts):
     else:
         raise error.Abort(_('only --localssh is currently supported'))
 
+    batchedcommands = None
+
     # Now perform actions based on the parsed wire language instructions.
     for action, lines in blocks:
         if action in ('raw', 'raw+'):
@@ -2747,10 +2764,29 @@ def debugwireproto(ui, repo, **opts):
 
                 args[key] = util.unescapestr(value)
 
+            if batchedcommands is not None:
+                batchedcommands.append((command, args))
+                continue
+
             ui.status(_('sending %s command\n') % command)
             res = peer._call(command, **args)
             ui.status(_('response: %s\n') % util.escapedata(res))
 
+        elif action == 'batchbegin':
+            if batchedcommands is not None:
+                raise error.Abort(_('nested batchbegin not allowed'))
+
+            batchedcommands = []
+        elif action == 'batchsubmit':
+            # There is a batching API we could go through. But it would be
+            # difficult to normalize requests into function calls. It is easier
+            # to bypass this layer and normalize to commands + args.
+            ui.status(_('sending batch with %d sub-commands\n') %
+                      len(batchedcommands))
+            for i, chunk in enumerate(peer._submitbatch(batchedcommands)):
+                ui.status(_('response #%d: %s\n') % (i, util.escapedata(chunk)))
+
+            batchedcommands = None
         elif action == 'close':
             peer.close()
         elif action == 'readavailable':
@@ -2764,6 +2800,9 @@ def debugwireproto(ui, repo, **opts):
             stdout.readline()
         else:
             raise error.Abort(_('unknown action: %s') % action)
+
+    if batchedcommands is not None:
+        raise error.Abort(_('unclosed "batchbegin" request'))
 
     if peer:
         peer.close()

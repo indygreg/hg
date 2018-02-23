@@ -1830,3 +1830,105 @@ All public heads
   o>     15\n
   o> bufferedread(15) -> 15: publishing	True
   response: publishing	True
+
+  $ cd ..
+
+Test batching of requests
+
+  $ hg init batching
+  $ cd batching
+  $ echo 0 > foo
+  $ hg add foo
+  $ hg -q commit -m initial
+  $ hg phase --public
+  $ echo 1 > foo
+  $ hg commit -m 'commit 1'
+  $ hg -q up 0
+  $ echo 2 > foo
+  $ hg commit -m 'commit 2'
+  created new head
+  $ hg book -r 1 bookA
+  $ hg book -r 2 bookB
+
+  $ debugwireproto << EOF
+  > batchbegin
+  > command heads
+  > command listkeys
+  >     namespace bookmarks
+  > command listkeys
+  >     namespace phases
+  > batchsubmit
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending batch with 3 sub-commands
+  i> write(6) -> None:
+  i>     batch\n
+  i> write(4) -> None:
+  i>     * 0\n
+  i> write(8) -> None:
+  i>     cmds 61\n
+  i> write(61) -> None: heads ;listkeys namespace=bookmarks;listkeys namespace=phases
+  i> flush() -> None
+  o> bufferedreadline() -> 4:
+  o>     278\n
+  o> bufferedread(278) -> 278:
+  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  o>     ;bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  o>     bookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6;4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\n
+  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6	1\n
+  o>     publishing	True
+  response #0: bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  response #1: bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\nbookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6
+  response #2: 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\nbfebe6bd38eebc6f8202e419c1171268987ea6a6	1\npublishing	True
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending batch with 3 sub-commands
+  i> write(6) -> None:
+  i>     batch\n
+  i> write(4) -> None:
+  i>     * 0\n
+  i> write(8) -> None:
+  i>     cmds 61\n
+  i> write(61) -> None: heads ;listkeys namespace=bookmarks;listkeys namespace=phases
+  i> flush() -> None
+  o> bufferedreadline() -> 4:
+  o>     278\n
+  o> bufferedread(278) -> 278:
+  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  o>     ;bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  o>     bookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6;4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\n
+  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6	1\n
+  o>     publishing	True
+  response #0: bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  response #1: bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\nbookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6
+  response #2: 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\nbfebe6bd38eebc6f8202e419c1171268987ea6a6	1\npublishing	True

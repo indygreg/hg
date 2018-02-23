@@ -5,7 +5,7 @@ Setup:
   > from mercurial import commands, context, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'eval', [], 'hg eval CMD')
+  > @command(b'eval', [], b'hg eval CMD')
   > def eval_(ui, repo, *cmds, **opts):
   >     cmd = b" ".join(cmds)
   >     res = str(eval(cmd, globals(), locals()))

@@ -548,12 +548,12 @@ environment variable changes in alias commands
   > from mercurial import cmdutil, commands, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('expandalias')
+  > @command(b'expandalias')
   > def expandalias(ui, repo, name):
   >     alias = cmdutil.findcmd(name, commands.table)[1][0]
-  >     ui.write('%s args: %s\n' % (name, ' '.join(alias.args)))
+  >     ui.write(b'%s args: %s\n' % (name, b' '.join(alias.args)))
   >     os.environ['COUNT'] = '2'
-  >     ui.write('%s args: %s (with COUNT=2)\n' % (name, ' '.join(alias.args)))
+  >     ui.write(b'%s args: %s (with COUNT=2)\n' % (name, b' '.join(alias.args)))
   > EOF
 
   $ cat >> $HGRCPATH <<'EOF'

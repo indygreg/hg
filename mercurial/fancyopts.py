@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import abc
 import functools
-import types
 
 from .i18n import _
 from . import (
@@ -222,7 +221,7 @@ class customopt(object):
 
 class _simpleopt(customopt):
     def _isboolopt(self):
-        return isinstance(self.defaultvalue, (bool, types.NoneType))
+        return isinstance(self.defaultvalue, (bool, type(None)))
 
     def newstate(self, oldstate, newparam, abort):
         return newparam

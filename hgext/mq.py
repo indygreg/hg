@@ -1194,6 +1194,7 @@ class queue(object):
         """options:
            msg: a string or a no-argument function returning a string
         """
+        opts = pycompat.byteskwargs(opts)
         msg = opts.get('msg')
         edit = opts.get('edit')
         editform = opts.get('editform', 'mq.qnew')
@@ -1633,6 +1634,7 @@ class queue(object):
         self.printdiff(repo, diffopts, node1, node2, files=pats, opts=opts)
 
     def refresh(self, repo, pats=None, **opts):
+        opts = pycompat.byteskwargs(opts)
         if not self.applied:
             self.ui.write(_("no patches applied\n"))
             return 1

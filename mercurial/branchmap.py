@@ -255,7 +255,8 @@ class branchcache(dict):
                         repo.filtername, len(self), nodecount)
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
-            repo.ui.debug("couldn't write branch cache: %s\n" % inst)
+            repo.ui.debug("couldn't write branch cache: %s\n" %
+                          util.forcebytestr(inst))
 
     def update(self, repo, revgen):
         """Given a branchhead cache, self, that may have extra nodes or be

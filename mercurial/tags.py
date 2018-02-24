@@ -783,6 +783,6 @@ class hgtagsfnodescache(object):
         except (IOError, OSError) as inst:
             repo.ui.log('tagscache',
                         "couldn't write cache/%s: %s\n" % (
-                        _fnodescachefile, inst))
+                        _fnodescachefile, util.forcebytestr(inst)))
         finally:
             lock.release()

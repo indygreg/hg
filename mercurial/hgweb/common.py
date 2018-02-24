@@ -185,7 +185,7 @@ def paritygen(stripecount, offset=0):
     if stripecount and offset:
         # account for offset, e.g. due to building the list in reverse
         count = (stripecount + offset) % stripecount
-        parity = (stripecount + offset) / stripecount & 1
+        parity = (stripecount + offset) // stripecount & 1
     else:
         count = 0
         parity = 0

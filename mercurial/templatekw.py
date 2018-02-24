@@ -400,7 +400,7 @@ def showchildren(**args):
     """List of strings. The children of the changeset."""
     args = pycompat.byteskwargs(args)
     ctx = args['ctx']
-    childrevs = ['%d:%s' % (cctx, cctx) for cctx in ctx.children()]
+    childrevs = ['%d:%s' % (cctx.rev(), cctx) for cctx in ctx.children()]
     return showlist('children', childrevs, args, element='child')
 
 # Deprecated, but kept alive for help generation a purpose.

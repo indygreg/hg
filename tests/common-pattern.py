@@ -69,8 +69,8 @@ substitutions = [
      br'$USUAL_BUNDLE2_CAPS_SERVER$'
      ),
     # HTTP log dates
-    (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "GET',
-     br' - - [$LOGDATE$] "GET'
+    (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "(GET|PUT|POST)',
+     lambda m: br' - - [$LOGDATE$] "' + m.group(1)
     ),
     # Windows has an extra '/' in the following lines that get globbed away:
     #   pushing to file:/*/$TESTTMP/r2 (glob)

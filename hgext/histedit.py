@@ -577,7 +577,7 @@ def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     Commit message is edited in all cases.
 
     This function works in memory."""
-    ctxs = list(repo.set('%d::%d', firstctx, lastctx))
+    ctxs = list(repo.set('%d::%d', firstctx.rev(), lastctx.rev()))
     if not ctxs:
         return None
     for c in ctxs:
@@ -730,8 +730,9 @@ class fold(histeditaction):
             return ctx, [(self.node, (parentctxnode,))]
 
         parentctx = repo[parentctxnode]
-        newcommits = set(c.node() for c in repo.set('(%d::. - %d)', parentctx,
-                                                 parentctx))
+        newcommits = set(c.node() for c in repo.set('(%d::. - %d)',
+                                                    parentctx.rev(),
+                                                    parentctx.rev()))
         if not newcommits:
             repo.ui.warn(_('%s: cannot fold - working copy is not a '
                            'descendant of previous commit %s\n') %

@@ -9,6 +9,7 @@ from __future__ import absolute_import
 import contextlib
 import struct
 import sys
+import threading
 
 from .i18n import _
 from . import (
@@ -373,7 +374,7 @@ class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
 class sshv2protocolhandler(sshv1protocolhandler):
     """Protocol handler for version 2 of the SSH protocol."""
 
-def _runsshserver(ui, repo, fin, fout):
+def _runsshserver(ui, repo, fin, fout, ev):
     # This function operates like a state machine of sorts. The following
     # states are defined:
     #
@@ -430,7 +431,7 @@ def _runsshserver(ui, repo, fin, fout):
     proto = sshv1protocolhandler(ui, fin, fout)
     protoswitched = False
 
-    while True:
+    while not ev.is_set():
         if state == 'protov1-serving':
             # Commands are issued on new lines.
             request = fin.readline()[:-1]
@@ -601,5 +602,9 @@ class sshserver(object):
         util.setbinary(self._fout)
 
     def serve_forever(self):
-        _runsshserver(self._ui, self._repo, self._fin, self._fout)
+        self.serveuntil(threading.Event())
         sys.exit(0)
+
+    def serveuntil(self, ev):
+        """Serve until a threading.Event is set."""
+        _runsshserver(self._ui, self._repo, self._fin, self._fout, ev)

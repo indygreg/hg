@@ -488,6 +488,228 @@ def popen4(cmd, env=None, newlines=False, bufsize=-1):
                          env=env)
     return p.stdin, p.stdout, p.stderr, p
 
+class fileobjectproxy(object):
+    """A proxy around file objects that tells a watcher when events occur.
+
+    This type is intended to only be used for testing purposes. Think hard
+    before using it in important code.
+    """
+    __slots__ = (
+        r'_orig',
+        r'_observer',
+    )
+
+    def __init__(self, fh, observer):
+        object.__setattr__(self, '_orig', fh)
+        object.__setattr__(self, '_observer', observer)
+
+    def __getattribute__(self, name):
+        ours = {
+            # IOBase
+            r'close',
+            # closed if a property
+            r'fileno',
+            r'flush',
+            r'isatty',
+            r'readable',
+            r'readline',
+            r'readlines',
+            r'seek',
+            r'seekable',
+            r'tell',
+            r'truncate',
+            r'writable',
+            r'writelines',
+            # RawIOBase
+            r'read',
+            r'readall',
+            r'readinto',
+            r'write',
+            # BufferedIOBase
+            # raw is a property
+            r'detach',
+            # read defined above
+            r'read1',
+            # readinto defined above
+            # write defined above
+        }
+
+        # We only observe some methods.
+        if name in ours:
+            return object.__getattribute__(self, name)
+
+        return getattr(object.__getattribute__(self, r'_orig'), name)
+
+    def __delattr__(self, name):
+        return delattr(object.__getattribute__(self, r'_orig'), name)
+
+    def __setattr__(self, name, value):
+        return setattr(object.__getattribute__(self, r'_orig'), name, value)
+
+    def __iter__(self):
+        return object.__getattribute__(self, r'_orig').__iter__()
+
+    def _observedcall(self, name, *args, **kwargs):
+        # Call the original object.
+        orig = object.__getattribute__(self, r'_orig')
+        res = getattr(orig, name)(*args, **kwargs)
+
+        # Call a method on the observer of the same name with arguments
+        # so it can react, log, etc.
+        observer = object.__getattribute__(self, r'_observer')
+        fn = getattr(observer, name, None)
+        if fn:
+            fn(res, *args, **kwargs)
+
+        return res
+
+    def close(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'close', *args, **kwargs)
+
+    def fileno(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'fileno', *args, **kwargs)
+
+    def flush(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'flush', *args, **kwargs)
+
+    def isatty(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'isatty', *args, **kwargs)
+
+    def readable(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'readable', *args, **kwargs)
+
+    def readline(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'readline', *args, **kwargs)
+
+    def readlines(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'readlines', *args, **kwargs)
+
+    def seek(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'seek', *args, **kwargs)
+
+    def seekable(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'seekable', *args, **kwargs)
+
+    def tell(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'tell', *args, **kwargs)
+
+    def truncate(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'truncate', *args, **kwargs)
+
+    def writable(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'writable', *args, **kwargs)
+
+    def writelines(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'writelines', *args, **kwargs)
+
+    def read(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'read', *args, **kwargs)
+
+    def readall(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'readall', *args, **kwargs)
+
+    def readinto(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'readinto', *args, **kwargs)
+
+    def write(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'write', *args, **kwargs)
+
+    def detach(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'detach', *args, **kwargs)
+
+    def read1(self, *args, **kwargs):
+        return object.__getattribute__(self, r'_observedcall')(
+            r'read1', *args, **kwargs)
+
+DATA_ESCAPE_MAP = {pycompat.bytechr(i): br'\x%02x' % i for i in range(256)}
+DATA_ESCAPE_MAP.update({
+    b'\\': b'\\\\',
+    b'\r': br'\r',
+    b'\n': br'\n',
+})
+DATA_ESCAPE_RE = remod.compile(br'[\x00-\x08\x0a-\x1f\\\x7f-\xff]')
+
+def escapedata(s):
+    return DATA_ESCAPE_RE.sub(lambda m: DATA_ESCAPE_MAP[m.group(0)], s)
+
+class fileobjectobserver(object):
+    """Logs file object activity."""
+    def __init__(self, fh, name, reads=True, writes=True, logdata=False):
+        self.fh = fh
+        self.name = name
+        self.logdata = logdata
+        self.reads = reads
+        self.writes = writes
+
+    def _writedata(self, data):
+        if not self.logdata:
+            self.fh.write('\n')
+            return
+
+        # Simple case writes all data on a single line.
+        if b'\n' not in data:
+            self.fh.write(': %s\n' % escapedata(data))
+            return
+
+        # Data with newlines is written to multiple lines.
+        self.fh.write(':\n')
+        lines = data.splitlines(True)
+        for line in lines:
+            self.fh.write('%s>     %s\n' % (self.name, escapedata(line)))
+
+    def read(self, res, size=-1):
+        if not self.reads:
+            return
+
+        self.fh.write('%s> read(%d) -> %d' % (self.name, size, len(res)))
+        self._writedata(res)
+
+    def readline(self, res, limit=-1):
+        if not self.reads:
+            return
+
+        self.fh.write('%s> readline() -> %d' % (self.name, len(res)))
+        self._writedata(res)
+
+    def write(self, res, data):
+        if not self.writes:
+            return
+
+        self.fh.write('%s> write(%d) -> %r' % (self.name, len(data), res))
+        self._writedata(data)
+
+    def flush(self, res):
+        if not self.writes:
+            return
+
+        self.fh.write('%s> flush() -> %r\n' % (self.name, res))
+
+def makeloggingfileobject(logh, fh, name, reads=True, writes=True,
+                          logdata=False):
+    """Turn a file object into a logging file object."""
+
+    observer = fileobjectobserver(logh, name, reads=reads, writes=writes,
+                                  logdata=logdata)
+    return fileobjectproxy(fh, observer)
+
 def version():
     """Return version information if available."""
     try:

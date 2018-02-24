@@ -654,8 +654,9 @@ def email(ui, repo, *revs, **opts):
                 else:
                     msg = _('public url %s is missing %s')
                     msg %= (publicurl, missing[0])
+                missingrevs = [ctx.rev() for ctx in missing]
                 revhint = ' '.join('-r %s' % h
-                                  for h in repo.set('heads(%ld)', missing))
+                                   for h in repo.set('heads(%ld)', missingrevs))
                 hint = _("use 'hg push %s %s'") % (publicurl, revhint)
                 raise error.Abort(msg, hint=hint)
 

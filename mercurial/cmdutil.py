@@ -2575,7 +2575,7 @@ def commitstatus(repo, node, branch, bheads=None, opts=None):
     if not opts.get('close_branch'):
         for r in parents:
             if r.closesbranch() and r.branch() == branch:
-                repo.ui.status(_('reopening closed branch head %d\n') % r)
+                repo.ui.status(_('reopening closed branch head %d\n') % r.rev())
 
     if repo.ui.debugflag:
         repo.ui.write(_('committed changeset %d:%s\n') % (ctx.rev(), ctx.hex()))

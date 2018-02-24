@@ -116,7 +116,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   readline(4? from -1) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
   write(21) -> Content-Length: 417\r\n
   write(2) -> \r\n
@@ -157,7 +157,7 @@ Failure to read getbundle HTTP request
   readline(13? from -1) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
   write(21) -> Content-Length: 417\r\n
   write(2) -> \r\n
@@ -179,7 +179,7 @@ Failure to read getbundle HTTP request
   readline(2? from -1) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
   write(20) -> Content-Length: 42\r\n
   write(2) -> \r\n
@@ -214,7 +214,7 @@ Now do a variation using POST to send arguments
   readline(14? from -1) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
   write(23) -> Server: badhttpserver\r\n
-  write(37) -> Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37) -> Date: $HTTP_DATE$\r\n
   write(41) -> Content-Type: application/mercurial-0.1\r\n
   write(21) -> Content-Length: 430\r\n
   write(2) -> \r\n
@@ -290,7 +290,7 @@ Server sends an incomplete capabilities response body
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (144) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (121) Server: badhttpserver\r\n
-  write(37 from 37) -> (84) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (84) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (22) Content-Length: 417\r\n
   write(2 from 2) -> (20) \r\n
@@ -325,7 +325,7 @@ TODO this output is horrible
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (659) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (636) Server: badhttpserver\r\n
-  write(37 from 37) -> (599) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (599) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (558) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (537) Content-Length: 417\r\n
   write(2 from 2) -> (535) \r\n
@@ -341,7 +341,7 @@ TODO this output is horrible
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (82) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (59) Server: badhttpserver\r\n
-  write(37 from 37) -> (22) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (22) Date: $HTTP_DATE$\r\n
   write(22 from 41) -> (0) Content-Type: applicat
   write limit reached; closing socket
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
@@ -373,7 +373,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (724) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (701) Server: badhttpserver\r\n
-  write(37 from 37) -> (664) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (664) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (623) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (602) Content-Length: 417\r\n
   write(2 from 2) -> (600) \r\n
@@ -389,7 +389,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (147) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (124) Server: badhttpserver\r\n
-  write(37 from 37) -> (87) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (87) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (46) Content-Type: application/mercurial-0.1\r\n
   write(20 from 20) -> (26) Content-Length: 42\r\n
   write(2 from 2) -> (24) \r\n
@@ -425,7 +425,7 @@ TODO this output is terrible
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (871) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (848) Server: badhttpserver\r\n
-  write(37 from 37) -> (811) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (811) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (770) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (749) Content-Length: 417\r\n
   write(2 from 2) -> (747) \r\n
@@ -441,7 +441,7 @@ TODO this output is terrible
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (294) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (271) Server: badhttpserver\r\n
-  write(37 from 37) -> (234) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (234) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (193) Content-Type: application/mercurial-0.1\r\n
   write(20 from 20) -> (173) Content-Length: 42\r\n
   write(2 from 2) -> (171) \r\n
@@ -457,7 +457,7 @@ TODO this output is terrible
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (93) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (70) Server: badhttpserver\r\n
-  write(37 from 37) -> (33) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (33) Date: $HTTP_DATE$\r\n
   write(33 from 41) -> (0) Content-Type: application/mercuri
   write limit reached; closing socket
   write(36) -> HTTP/1.1 500 Internal Server Error\r\n
@@ -486,7 +486,7 @@ Server sends empty HTTP body for getbundle
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (909) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (886) Server: badhttpserver\r\n
-  write(37 from 37) -> (849) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (849) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (808) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (787) Content-Length: 417\r\n
   write(2 from 2) -> (785) \r\n
@@ -502,7 +502,7 @@ Server sends empty HTTP body for getbundle
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (332) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (309) Server: badhttpserver\r\n
-  write(37 from 37) -> (272) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (272) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (231) Content-Type: application/mercurial-0.1\r\n
   write(20 from 20) -> (211) Content-Length: 42\r\n
   write(2 from 2) -> (209) \r\n
@@ -518,7 +518,7 @@ Server sends empty HTTP body for getbundle
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (131) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (108) Server: badhttpserver\r\n
-  write(37 from 37) -> (71) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (71) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (30) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (2) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (0) \r\n
@@ -549,7 +549,7 @@ Server sends partial compression string
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (933) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (910) Server: badhttpserver\r\n
-  write(37 from 37) -> (873) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (873) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (832) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (811) Content-Length: 417\r\n
   write(2 from 2) -> (809) \r\n
@@ -565,7 +565,7 @@ Server sends partial compression string
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (356) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (333) Server: badhttpserver\r\n
-  write(37 from 37) -> (296) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (296) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (255) Content-Type: application/mercurial-0.1\r\n
   write(20 from 20) -> (235) Content-Length: 42\r\n
   write(2 from 2) -> (233) \r\n
@@ -581,7 +581,7 @@ Server sends partial compression string
   readline(-1) -> (2) \r\n
   write(36 from 36) -> (155) HTTP/1.1 200 Script output follows\r\n
   write(23 from 23) -> (132) Server: badhttpserver\r\n
-  write(37 from 37) -> (95) Date: Fri, 14 Apr 2017 00:00:00 GMT\r\n
+  write(37 from 37) -> (95) Date: $HTTP_DATE$\r\n
   write(41 from 41) -> (54) Content-Type: application/mercurial-0.2\r\n
   write(28 from 28) -> (26) Transfer-Encoding: chunked\r\n
   write(2 from 2) -> (24) \r\n

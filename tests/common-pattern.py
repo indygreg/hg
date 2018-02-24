@@ -72,6 +72,14 @@ substitutions = [
     (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "(GET|PUT|POST)',
      lambda m: br' - - [$LOGDATE$] "' + m.group(1)
     ),
+    # HTTP header dates- RFC 1123
+    (br'Date: [A-Za-z]{3}, \d\d [A-Za-z]{3} \d{4} \d\d:\d\d:\d\d GMT',
+     br'Date: $HTTP_DATE$'
+    ),
+    # LFS expiration value
+    (br'"expires_at": "\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"',
+     br'"expires_at": "$ISO_8601_DATE_TIME$"'
+    ),
     # Windows has an extra '/' in the following lines that get globbed away:
     #   pushing to file:/*/$TESTTMP/r2 (glob)
     #   comparing with file:/*/$TESTTMP/r2 (glob)

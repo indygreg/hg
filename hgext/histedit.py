@@ -567,7 +567,7 @@ def applychanges(ui, repo, ctx, opts):
             repo.ui.setconfig('ui', 'forcemerge', '', 'histedit')
     return stats
 
-def collapse(repo, first, last, commitopts, skipprompt=False):
+def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     """collapse the set of revisions from first to last as new one.
 
     Expected commit options are:
@@ -577,14 +577,14 @@ def collapse(repo, first, last, commitopts, skipprompt=False):
     Commit message is edited in all cases.
 
     This function works in memory."""
-    ctxs = list(repo.set('%d::%d', first, last))
+    ctxs = list(repo.set('%d::%d', firstctx, lastctx))
     if not ctxs:
         return None
     for c in ctxs:
         if not c.mutable():
             raise error.ParseError(
                 _("cannot fold into public change %s") % node.short(c.node()))
-    base = first.parents()[0]
+    base = firstctx.parents()[0]
 
     # commit a new version of the old changeset, including the update
     # collect all files which might be affected
@@ -593,15 +593,15 @@ def collapse(repo, first, last, commitopts, skipprompt=False):
         files.update(ctx.files())
 
     # Recompute copies (avoid recording a -> b -> a)
-    copied = copies.pathcopies(base, last)
+    copied = copies.pathcopies(base, lastctx)
 
     # prune files which were reverted by the updates
-    files = [f for f in files if not cmdutil.samefile(f, last, base)]
+    files = [f for f in files if not cmdutil.samefile(f, lastctx, base)]
     # commit version of these files as defined by head
-    headmf = last.manifest()
+    headmf = lastctx.manifest()
     def filectxfn(repo, ctx, path):
         if path in headmf:
-            fctx = last[path]
+            fctx = lastctx[path]
             flags = fctx.flags()
             mctx = context.memfilectx(repo, ctx,
                                       fctx.path(), fctx.data(),
@@ -614,12 +614,12 @@ def collapse(repo, first, last, commitopts, skipprompt=False):
     if commitopts.get('message'):
         message = commitopts['message']
     else:
-        message = first.description()
+        message = firstctx.description()
     user = commitopts.get('user')
     date = commitopts.get('date')
     extra = commitopts.get('extra')
 
-    parents = (first.p1().node(), first.p2().node())
+    parents = (firstctx.p1().node(), firstctx.p2().node())
     editor = None
     if not skipprompt:
         editor = cmdutil.getcommiteditor(edit=True, editform='histedit.fold')

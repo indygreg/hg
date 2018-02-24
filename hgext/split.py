@@ -173,6 +173,6 @@ def dosplit(ui, repo, tr, ctx, opts):
 
     return committed[-1]
 
-def dorebase(ui, repo, src, dest):
+def dorebase(ui, repo, src, destctx):
     rebase.rebase(ui, repo, rev=[revsetlang.formatspec('%ld', src)],
-                  dest=revsetlang.formatspec('%d', dest))
+                  dest=revsetlang.formatspec('%d', destctx.rev()))

@@ -67,6 +67,26 @@ Python {py} detected.
     printf(error, file=sys.stderr)
     sys.exit(1)
 
+# We don't yet officially support Python 3. But we want to allow developers to
+# hack on. Detect and disallow running on Python 3 by default. But provide a
+# backdoor to enable working on Python 3.
+if sys.version_info[0] != 2:
+    badpython = True
+
+    # Allow Python 3 from source checkouts.
+    if os.path.isdir('.hg'):
+        badpython = False
+
+    if badpython:
+        error = """
+Mercurial only supports Python 2.7.
+Python {py} detected.
+Please re-run with Python 2.7.
+""".format(py=sys.version_info)
+
+        printf(error, file=sys.stderr)
+        sys.exit(1)
+
 # Solaris Python packaging brain damage
 try:
     import hashlib

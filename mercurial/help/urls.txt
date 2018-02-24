@@ -24,7 +24,7 @@ web.cacerts.
 Some notes about using SSH with Mercurial:
 
 - SSH requires an accessible shell account on the destination machine
-  and a copy of hg in the remote path or specified with as remotecmd.
+  and a copy of hg in the remote path or specified with remotecmd.
 - path is relative to the remote user's home directory by default. Use
   an extra slash at the start of a path to specify an absolute path::
 

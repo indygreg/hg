@@ -44,16 +44,16 @@ from mercurial.hgweb import (
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('badserver', 'closeafteraccept',
+configitem(b'badserver', b'closeafteraccept',
     default=False,
 )
-configitem('badserver', 'closeafterrecvbytes',
+configitem(b'badserver', b'closeafterrecvbytes',
     default=0,
 )
-configitem('badserver', 'closeaftersendbytes',
+configitem(b'badserver', b'closeaftersendbytes',
     default=0,
 )
-configitem('badserver', 'closebeforeaccept',
+configitem(b'badserver', b'closebeforeaccept',
     default=False,
 )
 

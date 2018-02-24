@@ -860,7 +860,8 @@ def bisect(ui, repo, rev=None, extra=None, command=None,
                     transition = "bad"
                 state[transition].append(node)
                 ctx = repo[node]
-                ui.status(_('changeset %d:%s: %s\n') % (ctx, ctx, transition))
+                ui.status(_('changeset %d:%s: %s\n') % (ctx.rev(), ctx,
+                                                        transition))
                 hbisect.checkstate(state)
                 # bisect
                 nodes, changesets, bgood = hbisect.bisect(repo, state)

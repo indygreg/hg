@@ -560,7 +560,7 @@ def debugdate(ui, date, range=None, **opts):
         d = util.parsedate(date, util.extendeddateformats)
     else:
         d = util.parsedate(date)
-    ui.write(("internal: %s %s\n") % d)
+    ui.write(("internal: %d %d\n") % d)
     ui.write(("standard: %s\n") % util.datestr(d))
     if range:
         m = util.matchdate(range)

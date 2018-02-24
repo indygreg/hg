@@ -276,7 +276,7 @@ def _readtaghist(ui, repo, lines, fn, recode=None, calcnodelines=False):
     count = 0
 
     def dbg(msg):
-        ui.debug("%s, line %s: %s\n" % (fn, count, msg))
+        ui.debug("%s, line %d: %s\n" % (fn, count, msg))
 
     for nline, line in enumerate(lines):
         count += 1

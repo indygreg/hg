@@ -179,7 +179,7 @@ class convert_cvs(converter_source):
             # :ext:user@host/home/user/path/to/cvsroot
             if root.startswith(":ext:"):
                 root = root[5:]
-            m = re.match(r'(?:([^@:/]+)@)?([^:/]+):?(.*)', root)
+            m = re.match(br'(?:([^@:/]+)@)?([^:/]+):?(.*)', root)
             # Do not take Windows path "c:\foo\bar" for a connection strings
             if os.path.isdir(root) or not m:
                 conntype = "local"

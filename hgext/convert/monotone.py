@@ -46,11 +46,11 @@ class monotone_source(common.converter_source, common.commandline):
                 raise norepo
 
         # regular expressions for parsing monotone output
-        space    = r'\s*'
-        name     = r'\s+"((?:\\"|[^"])*)"\s*'
+        space    = br'\s*'
+        name     = br'\s+"((?:\\"|[^"])*)"\s*'
         value    = name
-        revision = r'\s+\[(\w+)\]\s*'
-        lines    = r'(?:.|\n)+'
+        revision = br'\s+\[(\w+)\]\s*'
+        lines    = br'(?:.|\n)+'
 
         self.dir_re      = re.compile(space + "dir" + name)
         self.file_re     = re.compile(space + "file" + name +

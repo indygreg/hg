@@ -1,3 +1,4 @@
+test-abort-checkin.t
 test-add.t
 test-addremove-similar.t
 test-addremove.t
@@ -16,6 +17,7 @@ test-branch-option.t
 test-branch-tag-confict.t
 test-bundle-phases.t
 test-bundle-vs-outgoing.t
+test-cappedreader.py
 test-casecollision.t
 test-cat.t
 test-censor.t
@@ -96,6 +98,7 @@ test-execute-bit.t
 test-extdiff.t
 test-extra-filelog-entry.t
 test-filebranch.t
+test-fileset-generated.t
 test-flags.t
 test-generaldelta.t
 test-git-export.t
@@ -163,8 +166,12 @@ test-merge5.t
 test-merge6.t
 test-merge7.t
 test-merge8.t
+test-mq-git.t
+test-mq-pull-from-bundle.t
+test-mq-qdiff.t
 test-mq-qimport-fail-cleanup.t
 test-mq-qqueue.t
+test-mq-qrefresh.t
 test-mq-qsave.t
 test-narrow-clone-no-ellipsis.t
 test-narrow-clone-nonlinear.t
@@ -263,6 +270,7 @@ test-sparse-verbose-json.t
 test-ssh-clone-r.t
 test-ssh-proto.t
 test-sshserver.py
+test-status-rev.t
 test-status-terse.t
 test-strip-cross.t
 test-strip.t

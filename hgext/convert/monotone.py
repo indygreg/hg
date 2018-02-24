@@ -37,7 +37,7 @@ class monotone_source(common.converter_source, common.commandline):
         if not os.path.exists(os.path.join(path, '_MTN')):
             # Could be a monotone repository (SQLite db file)
             try:
-                f = file(path, 'rb')
+                f = open(path, 'rb')
                 header = f.read(16)
                 f.close()
             except IOError:

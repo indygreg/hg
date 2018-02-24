@@ -143,7 +143,7 @@ def statprofile(ui, fp):
         elif profformat == 'hotpath':
             # inconsistent config: profiling.showmin
             limit = ui.configwith(fraction, 'profiling', 'showmin', 0.05)
-            kwargs['limit'] = limit
+            kwargs[r'limit'] = limit
 
         statprof.display(fp, data=data, format=displayformat, **kwargs)
 

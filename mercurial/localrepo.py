@@ -2170,10 +2170,11 @@ class localrepository(object):
             hookargs = {}
             if tr is not None:
                 hookargs.update(tr.hookargs)
-            hookargs['namespace'] = namespace
-            hookargs['key'] = key
-            hookargs['old'] = old
-            hookargs['new'] = new
+            hookargs = pycompat.strkwargs(hookargs)
+            hookargs[r'namespace'] = namespace
+            hookargs[r'key'] = key
+            hookargs[r'old'] = old
+            hookargs[r'new'] = new
             self.hook('prepushkey', throw=True, **hookargs)
         except error.HookAbort as exc:
             self.ui.write_err(_("pushkey-abort: %s\n") % exc)

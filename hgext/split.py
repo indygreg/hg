@@ -24,6 +24,7 @@ from mercurial import (
     hg,
     obsolete,
     phases,
+    pycompat,
     registrar,
     revsetlang,
     scmutil,
@@ -160,7 +161,7 @@ def dosplit(ui, repo, tr, ctx, opts):
             'interactive': True,
             'message': header + ctx.description(),
         })
-        commands.commit(ui, repo, **opts)
+        commands.commit(ui, repo, **pycompat.strkwargs(opts))
         newctx = repo['.']
         committed.append(newctx)
 

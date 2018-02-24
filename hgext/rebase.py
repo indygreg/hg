@@ -593,7 +593,8 @@ class rebaseruntime(object):
                     self.state[oldrev] = newrev
 
         if 'qtip' in repo.tags():
-            updatemq(repo, self.state, self.skipped, **opts)
+            updatemq(repo, self.state, self.skipped,
+                     **pycompat.strkwargs(opts))
 
         # restore original working directory
         # (we do this before stripping)

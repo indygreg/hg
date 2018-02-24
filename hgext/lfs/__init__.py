@@ -220,12 +220,12 @@ def reposetup(ui, repo):
     if 'lfs' not in repo.requirements:
         def checkrequireslfs(ui, repo, **kwargs):
             if 'lfs' not in repo.requirements:
-                last = kwargs.get('node_last')
+                last = kwargs.get(r'node_last')
                 _bin = node.bin
                 if last:
-                    s = repo.set('%n:%n', _bin(kwargs['node']), _bin(last))
+                    s = repo.set('%n:%n', _bin(kwargs[r'node']), _bin(last))
                 else:
-                    s = repo.set('%n', _bin(kwargs['node']))
+                    s = repo.set('%n', _bin(kwargs[r'node']))
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
                 if any(ctx[f].islfs() for f in ctx.files() if f in ctx):

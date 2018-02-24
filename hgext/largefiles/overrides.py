@@ -824,7 +824,7 @@ def overridepush(orig, ui, repo, *args, **kwargs):
     """Override push command and store --lfrev parameters in opargs"""
     lfrevs = kwargs.pop(r'lfrev', None)
     if lfrevs:
-        opargs = kwargs.setdefault('opargs', {})
+        opargs = kwargs.setdefault(r'opargs', {})
         opargs['lfrevs'] = scmutil.revrange(repo, lfrevs)
     return orig(ui, repo, *args, **kwargs)
 

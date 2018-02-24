@@ -924,7 +924,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
         roots = [] # selected children of branching points
         bpbase = {} # {branchingpoint: [origbase]}
         for b in base: # group bases by branching points
-            bp = repo.revs('ancestor(%d, %d)', b, dest).first()
+            bp = repo.revs('ancestor(%d, %d)', b, dest.rev()).first()
             bpbase[bp] = bpbase.get(bp, []) + [b]
         if None in bpbase:
             # emulate the old behavior, showing "nothing to rebase" (a better
@@ -946,7 +946,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
                 else:
                     ui.status(_('nothing to rebase - working directory '
                                 'parent is also destination\n'))
-            elif not repo.revs('%ld - ::%d', base, dest):
+            elif not repo.revs('%ld - ::%d', base, dest.rev()):
                 if basef:
                     ui.status(_('nothing to rebase - "base" %s is '
                                 'already an ancestor of destination '

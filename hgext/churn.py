@@ -171,7 +171,7 @@ def churn(ui, repo, *pats, **opts):
                     ui.warn(_("skipping malformed alias: %s\n") % l)
                 continue
 
-    rate = countrate(ui, repo, amap, *pats, **opts).items()
+    rate = list(countrate(ui, repo, amap, *pats, **opts).items())
     if not rate:
         return
 

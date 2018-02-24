@@ -1356,11 +1356,12 @@ def between(repo, old, new, keep):
     When keep is false, the specified set can't have children."""
     ctxs = list(repo.set('%n::%n', old, new))
     if ctxs and not keep:
+        revs = [ctx.rev() for ctx in ctxs]
         if (not obsolete.isenabled(repo, obsolete.allowunstableopt) and
-            repo.revs('(%ld::) - (%ld)', ctxs, ctxs)):
+            repo.revs('(%ld::) - (%ld)', revs, revs)):
             raise error.Abort(_('can only histedit a changeset together '
                                 'with all its descendants'))
-        if repo.revs('(%ld) and merge()', ctxs):
+        if repo.revs('(%ld) and merge()', revs):
             raise error.Abort(_('cannot edit history that contains merges'))
         root = ctxs[0] # list is already sorted by repo.set
         if not root.mutable():

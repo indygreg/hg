@@ -373,6 +373,13 @@ class bufferedinputpipe(object):
     This class lives in the 'util' module because it makes use of the 'os'
     module from the python stdlib.
     """
+    def __new__(cls, fh):
+        # If we receive a fileobjectproxy, we need to use a variation of this
+        # class that notifies observers about activity.
+        if isinstance(fh, fileobjectproxy):
+            cls = observedbufferedinputpipe
+
+        return super(bufferedinputpipe, cls).__new__(cls)
 
     def __init__(self, input):
         self._input = input
@@ -453,6 +460,8 @@ class bufferedinputpipe(object):
             self._lenbuf += len(data)
             self._buffer.append(data)
 
+        return data
+
 def mmapread(fp):
     try:
         fd = getattr(fp, 'fileno', lambda: fp)()
@@ -505,6 +514,8 @@ class fileobjectproxy(object):
 
     def __getattribute__(self, name):
         ours = {
+            r'_observer',
+
             # IOBase
             r'close',
             # closed if a property
@@ -639,6 +650,46 @@ class fileobjectproxy(object):
         return object.__getattribute__(self, r'_observedcall')(
             r'read1', *args, **kwargs)
 
+class observedbufferedinputpipe(bufferedinputpipe):
+    """A variation of bufferedinputpipe that is aware of fileobjectproxy.
+
+    ``bufferedinputpipe`` makes low-level calls to ``os.read()`` that
+    bypass ``fileobjectproxy``. Because of this, we need to make
+    ``bufferedinputpipe`` aware of these operations.
+
+    This variation of ``bufferedinputpipe`` can notify observers about
+    ``os.read()`` events. It also re-publishes other events, such as
+    ``read()`` and ``readline()``.
+    """
+    def _fillbuffer(self):
+        res = super(observedbufferedinputpipe, self)._fillbuffer()
+
+        fn = getattr(self._input._observer, r'osread', None)
+        if fn:
+            fn(res, _chunksize)
+
+        return res
+
+    # We use different observer methods because the operation isn't
+    # performed on the actual file object but on us.
+    def read(self, size):
+        res = super(observedbufferedinputpipe, self).read(size)
+
+        fn = getattr(self._input._observer, r'bufferedread', None)
+        if fn:
+            fn(res, size)
+
+        return res
+
+    def readline(self, *args, **kwargs):
+        res = super(observedbufferedinputpipe, self).readline(*args, **kwargs)
+
+        fn = getattr(self._input._observer, r'bufferedreadline', None)
+        if fn:
+            fn(res)
+
+        return res
+
 DATA_ESCAPE_MAP = {pycompat.bytechr(i): br'\x%02x' % i for i in range(256)}
 DATA_ESCAPE_MAP.update({
     b'\\': b'\\\\',
@@ -701,6 +752,16 @@ class fileobjectobserver(object):
             return
 
         self.fh.write('%s> flush() -> %r\n' % (self.name, res))
+
+    # For observedbufferedinputpipe.
+    def bufferedread(self, res, size):
+        self.fh.write('%s> bufferedread(%d) -> %d' % (
+            self.name, size, len(res)))
+        self._writedata(res)
+
+    def bufferedreadline(self, res):
+        self.fh.write('%s> bufferedreadline() -> %d' % (self.name, len(res)))
+        self._writedata(res)
 
 def makeloggingfileobject(logh, fh, name, reads=True, writes=True,
                           logdata=False):

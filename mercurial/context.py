@@ -78,9 +78,6 @@ class basectx(object):
 
     __str__ = encoding.strmethod(__bytes__)
 
-    def __int__(self):
-        return self.rev()
-
     def __repr__(self):
         return r"<%s %s>" % (type(self).__name__, str(self))
 

@@ -9,6 +9,15 @@
   >         self._defaults = defaults
   >         self._resources = resources
   > 
+  >     def symbol(self, mapping, key):
+  >         return mapping[key]
+  > 
+  >     def resource(self, mapping, key):
+  >         v = self._resources[key]
+  >         if v is None:
+  >             v = mapping[key]
+  >         return v
+  > 
   >     def process(self, t, map):
   >         tmpl = self.loader(t)
   >         props = self._defaults.copy()
@@ -16,10 +25,12 @@
   >         for k, v in props.items():
   >             if k in ('templ', 'ctx', 'repo', 'revcache', 'cache', 'troubles'):
   >                 continue
-  >             if hasattr(v, '__call__'):
+  >             if callable(v) and getattr(v, '_requires', None) is None:
   >                 props = self._resources.copy()
   >                 props.update(map)
   >                 v = v(**props)
+  >             elif callable(v):
+  >                 v = v(self, props)
   >             v = templater.stringify(v)
   >             tmpl = tmpl.replace('{{%s}}' % k, v)
   >         yield tmpl

@@ -383,9 +383,7 @@ class templateformatter(baseformatter):
             return
         ref = self._parts[part]
 
-        # TODO: add support for filectx. probably each template keyword or
-        # function will have to declare dependent resources. e.g.
-        # @templatekeyword(..., requires=('ctx',))
+        # TODO: add support for filectx
         props = {}
         # explicitly-defined fields precede templatekw
         props.update(item)

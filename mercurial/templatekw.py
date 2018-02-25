@@ -341,21 +341,14 @@ defaulttempl = {
 # filecopy is preserved for compatibility reasons
 defaulttempl['filecopy'] = defaulttempl['file_copy']
 
-# keywords are callables like:
-# fn(repo, ctx, templ, cache, revcache, **args)
-# with:
-# repo - current repository instance
-# ctx - the changectx being displayed
-# templ - the templater instance
-# cache - a cache dictionary for the whole templater run
-# revcache - a cache dictionary for the current revision
+# keywords are callables (see registrar.templatekeyword for details)
 keywords = {}
-
 templatekeyword = registrar.templatekeyword(keywords)
 
-@templatekeyword('author')
-def showauthor(repo, ctx, templ, **args):
+@templatekeyword('author', requires={'ctx'})
+def showauthor(context, mapping):
     """String. The unmodified author of the changeset."""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.user()
 
 @templatekeyword('bisect')

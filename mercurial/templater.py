@@ -436,12 +436,18 @@ def runsymbol(context, mapping, key, default=''):
             v = context.process(key, safemapping)
         except TemplateNotFound:
             v = default
-    if callable(v):
-        # TODO: templatekw functions will be updated to take (context, mapping)
-        # pair instead of **props
+    if callable(v) and getattr(v, '_requires', None) is None:
+        # old templatekw: expand all keywords and resources
         props = context._resources.copy()
         props.update(mapping)
         return v(**pycompat.strkwargs(props))
+    if callable(v):
+        # new templatekw
+        try:
+            return v(context, mapping)
+        except ResourceUnavailable:
+            # unsupported keyword is mapped to empty just like unknown keyword
+            return None
     return v
 
 def buildtemplate(exp, context):

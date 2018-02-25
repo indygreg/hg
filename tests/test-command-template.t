@@ -214,6 +214,8 @@ Never crash on internal resource not available:
   abort: template resource not available: ctx
   [255]
 
+  $ hg config -T '{author}'
+
 Quoting for ui.logtemplate
 
   $ hg tip --config "ui.logtemplate={rev}\n"

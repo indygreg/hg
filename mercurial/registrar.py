@@ -283,6 +283,14 @@ class templatekeyword(_templateregistrarbase):
 
         templatekeyword = registrar.templatekeyword()
 
+        # new API (since Mercurial 4.6)
+        @templatekeyword('mykeyword', requires={'repo', 'ctx'})
+        def mykeywordfunc(context, mapping):
+            '''Explanation of this template keyword ....
+            '''
+            pass
+
+        # old API
         @templatekeyword('mykeyword')
         def mykeywordfunc(repo, ctx, templ, cache, revcache, **args):
             '''Explanation of this template keyword ....
@@ -290,6 +298,11 @@ class templatekeyword(_templateregistrarbase):
             pass
 
     The first string argument is used also in online help.
+
+    Optional argument 'requires' should be a collection of resource names
+    which the template keyword depends on. This also serves as a flag to
+    switch to the new API. If 'requires' is unspecified, all template
+    keywords and resources are expanded to the function arguments.
 
     'templatekeyword' instance in example above can be used to
     decorate multiple functions.
@@ -300,6 +313,9 @@ class templatekeyword(_templateregistrarbase):
 
     Otherwise, explicit 'templatekw.loadkeyword()' is needed.
     """
+
+    def _extrasetup(self, name, func, requires=None):
+        func._requires = requires
 
 class templatefilter(_templateregistrarbase):
     """Decorator to register template filer

@@ -1354,20 +1354,19 @@ def between(repo, old, new, keep):
     """select and validate the set of revision to edit
 
     When keep is false, the specified set can't have children."""
-    ctxs = list(repo.set('%n::%n', old, new))
-    if ctxs and not keep:
-        revs = [ctx.rev() for ctx in ctxs]
+    revs = repo.revs('%n::%n', old, new)
+    if revs and not keep:
         if (not obsolete.isenabled(repo, obsolete.allowunstableopt) and
             repo.revs('(%ld::) - (%ld)', revs, revs)):
             raise error.Abort(_('can only histedit a changeset together '
                                 'with all its descendants'))
         if repo.revs('(%ld) and merge()', revs):
             raise error.Abort(_('cannot edit history that contains merges'))
-        root = ctxs[0] # list is already sorted by repo.set
+        root = repo[revs.first()]  # list is already sorted by repo.revs()
         if not root.mutable():
             raise error.Abort(_('cannot edit public changeset: %s') % root,
                              hint=_("see 'hg help phases' for details"))
-    return [c.node() for c in ctxs]
+    return pycompat.maplist(repo.changelog.node, revs)
 
 def ruleeditor(repo, ui, actions, editcomment=""):
     """open an editor to edit rules

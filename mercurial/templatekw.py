@@ -385,17 +385,18 @@ def showbranch(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.branch()
 
-@templatekeyword('branches')
-def showbranches(**args):
+@templatekeyword('branches', requires={'ctx', 'templ'})
+def showbranches(context, mapping):
     """List of strings. The name of the branch on which the
     changeset was committed. Will be empty if the branch name was
     default. (DEPRECATED)
     """
-    args = pycompat.byteskwargs(args)
-    branch = args['ctx'].branch()
+    ctx = context.resource(mapping, 'ctx')
+    branch = ctx.branch()
     if branch != 'default':
-        return showlist('branch', [branch], args, plural='branches')
-    return showlist('branch', [], args, plural='branches')
+        return compatlist(context, mapping, 'branch', [branch],
+                          plural='branches')
+    return compatlist(context, mapping, 'branch', [], plural='branches')
 
 @templatekeyword('bookmarks')
 def showbookmarks(**args):
@@ -482,18 +483,19 @@ def showextras(**args):
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, util.escapestr(extras[k])))
 
-def _showfilesbystat(args, name, index):
-    repo, ctx, revcache = args['repo'], args['ctx'], args['revcache']
+def _showfilesbystat(context, mapping, name, index):
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    revcache = context.resource(mapping, 'revcache')
     if 'files' not in revcache:
         revcache['files'] = repo.status(ctx.p1(), ctx)[:3]
     files = revcache['files'][index]
-    return showlist(name, files, args, element='file')
+    return compatlist(context, mapping, name, files, element='file')
 
-@templatekeyword('file_adds')
-def showfileadds(**args):
+@templatekeyword('file_adds', requires={'repo', 'ctx', 'revcache', 'templ'})
+def showfileadds(context, mapping):
     """List of strings. Files added by this changeset."""
-    args = pycompat.byteskwargs(args)
-    return _showfilesbystat(args, 'file_add', 1)
+    return _showfilesbystat(context, mapping, 'file_add', 1)
 
 @templatekeyword('file_copies',
                  requires={'repo', 'ctx', 'cache', 'revcache', 'templ'})
@@ -534,25 +536,23 @@ def showfilecopiesswitch(context, mapping):
                       key='name', value='source', fmt='%s (%s)',
                       plural='file_copies')
 
-@templatekeyword('file_dels')
-def showfiledels(**args):
+@templatekeyword('file_dels', requires={'repo', 'ctx', 'revcache', 'templ'})
+def showfiledels(context, mapping):
     """List of strings. Files removed by this changeset."""
-    args = pycompat.byteskwargs(args)
-    return _showfilesbystat(args, 'file_del', 2)
+    return _showfilesbystat(context, mapping, 'file_del', 2)
 
-@templatekeyword('file_mods')
-def showfilemods(**args):
+@templatekeyword('file_mods', requires={'repo', 'ctx', 'revcache', 'templ'})
+def showfilemods(context, mapping):
     """List of strings. Files modified by this changeset."""
-    args = pycompat.byteskwargs(args)
-    return _showfilesbystat(args, 'file_mod', 0)
+    return _showfilesbystat(context, mapping, 'file_mod', 0)
 
-@templatekeyword('files')
-def showfiles(**args):
+@templatekeyword('files', requires={'ctx', 'templ'})
+def showfiles(context, mapping):
     """List of strings. All files modified, added, or removed by this
     changeset.
     """
-    args = pycompat.byteskwargs(args)
-    return showlist('file', args['ctx'].files(), args)
+    ctx = context.resource(mapping, 'ctx')
+    return compatlist(context, mapping, 'file', ctx.files())
 
 @templatekeyword('graphnode', requires={'repo', 'ctx'})
 def showgraphnode(context, mapping):
@@ -913,14 +913,13 @@ def showrevslist(name, revs, **args):
                    lambda x: {name: x, 'ctx': repo[x], 'revcache': {}},
                    pycompat.identity, keytype=int)
 
-@templatekeyword('subrepos')
-def showsubrepos(**args):
+@templatekeyword('subrepos', requires={'ctx', 'templ'})
+def showsubrepos(context, mapping):
     """List of strings. Updated subrepositories in the changeset."""
-    args = pycompat.byteskwargs(args)
-    ctx = args['ctx']
+    ctx = context.resource(mapping, 'ctx')
     substate = ctx.substate
     if not substate:
-        return showlist('subrepo', [], args)
+        return compatlist(context, mapping, 'subrepo', [])
     psubstate = ctx.parents()[0].substate or {}
     subrepos = []
     for sub in substate:
@@ -929,7 +928,7 @@ def showsubrepos(**args):
     for sub in psubstate:
         if sub not in substate:
             subrepos.append(sub) # removed in ctx
-    return showlist('subrepo', sorted(subrepos), args)
+    return compatlist(context, mapping, 'subrepo', sorted(subrepos))
 
 # don't remove "showtags" definition, even though namespaces will put
 # a helper function for "tags" keyword into "keywords" map automatically,
@@ -945,14 +944,14 @@ def showtermwidth(context, mapping):
     ui = context.resource(mapping, 'ui')
     return ui.termwidth()
 
-@templatekeyword('instabilities')
-def showinstabilities(**args):
+@templatekeyword('instabilities', requires={'ctx', 'templ'})
+def showinstabilities(context, mapping):
     """List of strings. Evolution instabilities affecting the changeset.
     (EXPERIMENTAL)
     """
-    args = pycompat.byteskwargs(args)
-    return showlist('instability', args['ctx'].instabilities(), args,
-                    plural='instabilities')
+    ctx = context.resource(mapping, 'ctx')
+    return compatlist(context, mapping, 'instability', ctx.instabilities(),
+                      plural='instabilities')
 
 @templatekeyword('verbosity', requires={'ui'})
 def showverbosity(context, mapping):

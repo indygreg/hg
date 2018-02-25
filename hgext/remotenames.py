@@ -32,7 +32,6 @@ from mercurial.node import (
 from mercurial import (
     logexchange,
     namespaces,
-    pycompat,
     registrar,
     revsetlang,
     smartset,
@@ -225,11 +224,11 @@ def reposetup(ui, repo):
                 repo._remotenames.nodetobranch().get(node, []))
         repo.names.addnamespace(remotebranchns)
 
-@templatekeyword('remotenames')
-def remotenameskw(**args):
+@templatekeyword('remotenames', requires={'repo', 'ctx', 'templ'})
+def remotenameskw(context, mapping):
     """List of strings. Remote names associated with the changeset."""
-    args = pycompat.byteskwargs(args)
-    repo, ctx = args['repo'], args['ctx']
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
 
     remotenames = []
     if 'remotebookmarks' in repo.names:
@@ -238,34 +237,34 @@ def remotenameskw(**args):
     if 'remotebranches' in repo.names:
         remotenames += repo.names['remotebranches'].names(repo, ctx.node())
 
-    return templatekw.showlist('remotename', remotenames, args,
-                               plural='remotenames')
+    return templatekw.compatlist(context, mapping, 'remotename', remotenames,
+                                 plural='remotenames')
 
-@templatekeyword('remotebookmarks')
-def remotebookmarkskw(**args):
+@templatekeyword('remotebookmarks', requires={'repo', 'ctx', 'templ'})
+def remotebookmarkskw(context, mapping):
     """List of strings. Remote bookmarks associated with the changeset."""
-    args = pycompat.byteskwargs(args)
-    repo, ctx = args['repo'], args['ctx']
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
 
     remotebmarks = []
     if 'remotebookmarks' in repo.names:
         remotebmarks = repo.names['remotebookmarks'].names(repo, ctx.node())
 
-    return templatekw.showlist('remotebookmark', remotebmarks, args,
-                               plural='remotebookmarks')
+    return templatekw.compatlist(context, mapping, 'remotebookmark',
+                                 remotebmarks, plural='remotebookmarks')
 
-@templatekeyword('remotebranches')
-def remotebrancheskw(**args):
+@templatekeyword('remotebranches', requires={'repo', 'ctx', 'templ'})
+def remotebrancheskw(context, mapping):
     """List of strings. Remote branches associated with the changeset."""
-    args = pycompat.byteskwargs(args)
-    repo, ctx = args['repo'], args['ctx']
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
 
     remotebranches = []
     if 'remotebranches' in repo.names:
         remotebranches = repo.names['remotebranches'].names(repo, ctx.node())
 
-    return templatekw.showlist('remotebranch', remotebranches, args,
-                               plural='remotebranches')
+    return templatekw.compatlist(context, mapping, 'remotebranch',
+                                 remotebranches, plural='remotebranches')
 
 def _revsetutil(repo, subset, x, rtypes):
     """utility function to return a set of revs based on the rtypes"""

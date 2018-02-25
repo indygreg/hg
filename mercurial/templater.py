@@ -722,10 +722,7 @@ def files(context, mapping, args):
     ctx = context.resource(mapping, 'ctx')
     m = ctx.match([raw])
     files = list(ctx.matches(m))
-    # TODO: pass (context, mapping) pair to keyword function
-    props = context._resources.copy()
-    props.update(mapping)
-    return templatekw.showlist("file", files, props)
+    return templatekw.compatlist(context, mapping, "file", files)
 
 @templatefunc('fill(text[, width[, initialident[, hangindent]]])')
 def fill(context, mapping, args):

@@ -216,11 +216,6 @@ def _showlist(name, values, mapping, plural=None, separator=' '):
     if endname in templ:
         yield templ(endname, **strmapping)
 
-def getfiles(repo, ctx, revcache):
-    if 'files' not in revcache:
-        revcache['files'] = repo.status(ctx.p1(), ctx)[:3]
-    return revcache['files']
-
 def getlatesttags(repo, ctx, cache, pattern=None):
     '''return date, distance and name for the latest tag of rev'''
 
@@ -466,7 +461,9 @@ def showextras(**args):
 
 def _showfilesbystat(args, name, index):
     repo, ctx, revcache = args['repo'], args['ctx'], args['revcache']
-    files = getfiles(repo, ctx, revcache)[index]
+    if 'files' not in revcache:
+        revcache['files'] = repo.status(ctx.p1(), ctx)[:3]
+    files = revcache['files'][index]
     return showlist(name, files, args, element='file')
 
 @templatekeyword('file_adds')

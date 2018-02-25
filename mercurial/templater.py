@@ -1129,12 +1129,7 @@ def revset(context, mapping, args):
             revs = query(raw)
             revs = list(revs)
             revsetcache[raw] = revs
-
-    # TODO: pass (context, mapping) pair to keyword function
-    props = context._resources.copy()
-    props.update(mapping)
-    return templatekw.showrevslist("revision", revs,
-                                   **pycompat.strkwargs(props))
+    return templatekw.showrevslist(context, mapping, "revision", revs)
 
 @templatefunc('rstdoc(text, style)')
 def rstdoc(context, mapping, args):

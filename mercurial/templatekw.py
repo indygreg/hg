@@ -903,12 +903,12 @@ def showrev(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return scmutil.intrev(ctx)
 
-def showrevslist(name, revs, **args):
+def showrevslist(context, mapping, name, revs):
     """helper to generate a list of revisions in which a mapped template will
     be evaluated"""
-    args = pycompat.byteskwargs(args)
-    repo = args['ctx'].repo()
-    f = _showlist(name, ['%d' % r for r in revs], args['templ'], args)
+    repo = context.resource(mapping, 'repo')
+    templ = context.resource(mapping, 'templ')
+    f = _showlist(name, ['%d' % r for r in revs], templ, mapping)
     return _hybrid(f, revs,
                    lambda x: {name: x, 'ctx': repo[x], 'revcache': {}},
                    pycompat.identity, keytype=int)

@@ -139,16 +139,16 @@ def wraphybridvalue(container, key, value):
 def showdict(name, data, mapping, plural=None, key='key', value='value',
              fmt='%s=%s', separator=' '):
     c = [{key: k, value: v} for k, v in data.iteritems()]
-    f = _showlist(name, c, mapping, plural, separator)
+    f = _showlist(name, c, mapping['templ'], mapping, plural, separator)
     return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
 
 def showlist(name, values, mapping, plural=None, element=None, separator=' '):
     if not element:
         element = name
-    f = _showlist(name, values, mapping, plural, separator)
+    f = _showlist(name, values, mapping['templ'], mapping, plural, separator)
     return hybridlist(values, name=element, gen=f)
 
-def _showlist(name, values, mapping, plural=None, separator=' '):
+def _showlist(name, values, templ, mapping, plural=None, separator=' '):
     '''expand set of values.
     name is name of key in template map.
     values is list of strings or dicts.
@@ -169,7 +169,6 @@ def _showlist(name, values, mapping, plural=None, separator=' '):
 
     expand 'end_foos'.
     '''
-    templ = mapping['templ']
     strmapping = pycompat.strkwargs(mapping)
     if not plural:
         plural = name + 's'
@@ -383,7 +382,7 @@ def showbookmarks(**args):
     bookmarks = args['ctx'].bookmarks()
     active = repo._activebookmark
     makemap = lambda v: {'bookmark': v, 'active': active, 'current': active}
-    f = _showlist('bookmark', bookmarks, args)
+    f = _showlist('bookmark', bookmarks, args['templ'], args)
     return _hybrid(f, bookmarks, makemap, pycompat.identity)
 
 @templatekeyword('children')
@@ -455,7 +454,7 @@ def showextras(**args):
     extras = util.sortdict((k, extras[k]) for k in sorted(extras))
     makemap = lambda k: {'key': k, 'value': extras[k]}
     c = [makemap(k) for k in extras]
-    f = _showlist('extra', c, args, plural='extras')
+    f = _showlist('extra', c, args['templ'], args, plural='extras')
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, util.escapestr(extras[k])))
 
@@ -589,7 +588,7 @@ def showlatesttags(pattern, **args):
     }
 
     tags = latesttags[2]
-    f = _showlist('latesttag', tags, args, separator=':')
+    f = _showlist('latesttag', tags, args['templ'], args, separator=':')
     return _hybrid(f, tags, makemap, pycompat.identity)
 
 @templatekeyword('latesttagdistance')
@@ -674,10 +673,10 @@ def shownamespaces(**args):
 
     for k, ns in repo.names.iteritems():
         names = ns.names(repo, ctx.node())
-        f = _showlist('name', names, args)
+        f = _showlist('name', names, args['templ'], args)
         namespaces[k] = _hybrid(f, names, makensmapfn(ns), pycompat.identity)
 
-    f = _showlist('namespace', list(namespaces), args)
+    f = _showlist('namespace', list(namespaces), args['templ'], args)
 
     def makemap(ns):
         return {
@@ -807,7 +806,8 @@ def showsuccsandmarkers(repo, ctx, **args):
 
         data.append({'successors': successors, 'markers': finalmarkers})
 
-    f = _showlist('succsandmarkers', data, pycompat.byteskwargs(args))
+    args = pycompat.byteskwargs(args)
+    f = _showlist('succsandmarkers', data, args['templ'], args)
     return _hybrid(f, data, lambda x: x, pycompat.identity)
 
 @templatekeyword('p1rev', requires={'ctx'})
@@ -854,7 +854,7 @@ def showparents(**args):
                 ('node', p.hex()),
                 ('phase', p.phasestr())]
                for p in pctxs]
-    f = _showlist('parent', parents, args)
+    f = _showlist('parent', parents, args['templ'], args)
     return _hybrid(f, prevs, lambda x: {'ctx': repo[x], 'revcache': {}},
                    lambda x: scmutil.formatchangeid(repo[x]), keytype=int)
 
@@ -881,7 +881,7 @@ def showrevslist(name, revs, **args):
     be evaluated"""
     args = pycompat.byteskwargs(args)
     repo = args['ctx'].repo()
-    f = _showlist(name, ['%d' % r for r in revs], args)
+    f = _showlist(name, ['%d' % r for r in revs], args['templ'], args)
     return _hybrid(f, revs,
                    lambda x: {name: x, 'ctx': repo[x], 'revcache': {}},
                    pycompat.identity, keytype=int)

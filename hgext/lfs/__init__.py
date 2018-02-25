@@ -378,7 +378,7 @@ def lfsfiles(repo, ctx, **args):
     }
 
     # TODO: make the separator ', '?
-    f = templatekw._showlist('lfs_file', files, args)
+    f = templatekw._showlist('lfs_file', files, args['templ'], args)
     return templatekw._hybrid(f, files, makemap, pycompat.identity)
 
 @command('debuglfsupload',

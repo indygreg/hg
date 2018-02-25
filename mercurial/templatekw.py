@@ -148,6 +148,17 @@ def compatdict(context, mapping, name, data, key='key', value='value',
     f = _showlist(name, c, t, mapping, plural, separator)
     return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
 
+def compatlist(context, mapping, name, data, element=None, fmt='%s',
+               plural=None, separator=' '):
+    """Wrap data like hybridlist(), but also supports old-style list template
+
+    This exists for backward compatibility with the old-style template. Use
+    hybridlist() for new template keywords.
+    """
+    t = context.resource(mapping, 'templ')
+    f = _showlist(name, data, t, mapping, plural, separator)
+    return hybridlist(data, name=element or name, fmt=fmt, gen=f)
+
 def showdict(name, data, mapping, plural=None, key='key', value='value',
              fmt='%s=%s', separator=' '):
     c = [{key: k, value: v} for k, v in data.iteritems()]
@@ -397,13 +408,12 @@ def showbookmarks(**args):
     f = _showlist('bookmark', bookmarks, args['templ'], args)
     return _hybrid(f, bookmarks, makemap, pycompat.identity)
 
-@templatekeyword('children')
-def showchildren(**args):
+@templatekeyword('children', requires={'ctx', 'templ'})
+def showchildren(context, mapping):
     """List of strings. The children of the changeset."""
-    args = pycompat.byteskwargs(args)
-    ctx = args['ctx']
+    ctx = context.resource(mapping, 'ctx')
     childrevs = ['%d:%s' % (cctx.rev(), cctx) for cctx in ctx.children()]
-    return showlist('children', childrevs, args, element='child')
+    return compatlist(context, mapping, 'children', childrevs, element='child')
 
 # Deprecated, but kept alive for help generation a purpose.
 @templatekeyword('currentbookmark', requires={'repo', 'ctx'})

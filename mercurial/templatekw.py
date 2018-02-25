@@ -136,6 +136,18 @@ def wraphybridvalue(container, key, value):
         return value
     return _mappable(None, key, value, makemap)
 
+def compatdict(context, mapping, name, data, key='key', value='value',
+               fmt='%s=%s', plural=None, separator=' '):
+    """Wrap data like hybriddict(), but also supports old-style list template
+
+    This exists for backward compatibility with the old-style template. Use
+    hybriddict() for new template keywords.
+    """
+    c = [{key: k, value: v} for k, v in data.iteritems()]
+    t = context.resource(mapping, 'templ')
+    f = _showlist(name, c, t, mapping, plural, separator)
+    return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
+
 def showdict(name, data, mapping, plural=None, key='key', value='value',
              fmt='%s=%s', separator=' '):
     c = [{key: k, value: v} for k, v in data.iteritems()]
@@ -437,13 +449,13 @@ def showdiffstat(context, mapping):
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%d: +%d/-%d' % (len(stats), adds, removes)
 
-@templatekeyword('envvars')
-def showenvvars(ui, **args):
+@templatekeyword('envvars', requires={'ui', 'templ'})
+def showenvvars(context, mapping):
     """A dictionary of environment variables. (EXPERIMENTAL)"""
-    args = pycompat.byteskwargs(args)
+    ui = context.resource(mapping, 'ui')
     env = ui.exportableenviron()
     env = util.sortdict((k, env[k]) for k in sorted(env))
-    return showdict('envvar', env, args, plural='envvars')
+    return compatdict(context, mapping, 'envvar', env, plural='envvars')
 
 @templatekeyword('extras')
 def showextras(**args):

@@ -401,17 +401,18 @@ def showbranches(context, mapping):
                           plural='branches')
     return compatlist(context, mapping, 'branch', [], plural='branches')
 
-@templatekeyword('bookmarks')
-def showbookmarks(**args):
+@templatekeyword('bookmarks', requires={'repo', 'ctx', 'templ'})
+def showbookmarks(context, mapping):
     """List of strings. Any bookmarks associated with the
     changeset. Also sets 'active', the name of the active bookmark.
     """
-    args = pycompat.byteskwargs(args)
-    repo = args['ctx']._repo
-    bookmarks = args['ctx'].bookmarks()
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    templ = context.resource(mapping, 'templ')
+    bookmarks = ctx.bookmarks()
     active = repo._activebookmark
     makemap = lambda v: {'bookmark': v, 'active': active, 'current': active}
-    f = _showlist('bookmark', bookmarks, args['templ'], args)
+    f = _showlist('bookmark', bookmarks, templ, mapping)
     return _hybrid(f, bookmarks, makemap, pycompat.identity)
 
 @templatekeyword('children', requires={'ctx', 'templ'})
@@ -473,16 +474,17 @@ def showenvvars(context, mapping):
     env = util.sortdict((k, env[k]) for k in sorted(env))
     return compatdict(context, mapping, 'envvar', env, plural='envvars')
 
-@templatekeyword('extras')
-def showextras(**args):
+@templatekeyword('extras', requires={'ctx', 'templ'})
+def showextras(context, mapping):
     """List of dicts with key, value entries of the 'extras'
     field of this changeset."""
-    args = pycompat.byteskwargs(args)
-    extras = args['ctx'].extra()
+    ctx = context.resource(mapping, 'ctx')
+    templ = context.resource(mapping, 'templ')
+    extras = ctx.extra()
     extras = util.sortdict((k, extras[k]) for k in sorted(extras))
     makemap = lambda k: {'key': k, 'value': extras[k]}
     c = [makemap(k) for k in extras]
-    f = _showlist('extra', c, args['templ'], args, plural='extras')
+    f = _showlist('extra', c, templ, mapping, plural='extras')
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, util.escapestr(extras[k])))
 
@@ -875,21 +877,21 @@ def showp2node(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().hex()
 
-@templatekeyword('parents')
-def showparents(**args):
+@templatekeyword('parents', requires={'repo', 'ctx', 'templ'})
+def showparents(context, mapping):
     """List of strings. The parents of the changeset in "rev:node"
     format. If the changeset has only one "natural" parent (the predecessor
     revision) nothing is shown."""
-    args = pycompat.byteskwargs(args)
-    repo = args['repo']
-    ctx = args['ctx']
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    templ = context.resource(mapping, 'templ')
     pctxs = scmutil.meaningfulparents(repo, ctx)
     prevs = [p.rev() for p in pctxs]
     parents = [[('rev', p.rev()),
                 ('node', p.hex()),
                 ('phase', p.phasestr())]
                for p in pctxs]
-    f = _showlist('parent', parents, args['templ'], args)
+    f = _showlist('parent', parents, templ, mapping)
     return _hybrid(f, prevs, lambda x: {'ctx': repo[x], 'revcache': {}},
                    lambda x: scmutil.formatchangeid(repo[x]), keytype=int)
 

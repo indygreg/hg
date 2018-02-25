@@ -356,11 +356,12 @@ def lfsfileset(mctx, x):
     return [f for f in mctx.subset
             if wrapper.pointerfromctx(mctx.ctx, f, removed=True) is not None]
 
-@templatekeyword('lfs_files')
-def lfsfiles(repo, ctx, **args):
+@templatekeyword('lfs_files', requires={'ctx', 'templ'})
+def lfsfiles(context, mapping):
     """List of strings. All files modified, added, or removed by this
     changeset."""
-    args = pycompat.byteskwargs(args)
+    ctx = context.resource(mapping, 'ctx')
+    templ = context.resource(mapping, 'templ')
 
     pointers = wrapper.pointersfromctx(ctx, removed=True) # {path: pointer}
     files = sorted(pointers.keys())
@@ -378,7 +379,7 @@ def lfsfiles(repo, ctx, **args):
     }
 
     # TODO: make the separator ', '?
-    f = templatekw._showlist('lfs_file', files, args['templ'], args)
+    f = templatekw._showlist('lfs_file', files, templ, mapping)
     return templatekw._hybrid(f, files, makemap, pycompat.identity)
 
 @command('debuglfsupload',

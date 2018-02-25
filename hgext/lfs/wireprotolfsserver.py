@@ -20,6 +20,8 @@ from mercurial import (
     pycompat,
 )
 
+from . import blobstore
+
 HTTP_OK = hgwebcommon.HTTP_OK
 HTTP_CREATED = hgwebcommon.HTTP_CREATED
 HTTP_BAD_REQUEST = hgwebcommon.HTTP_BAD_REQUEST
@@ -276,13 +278,15 @@ def _processbasictransfer(repo, req, res, checkperm):
         #       Content-Length, but what happens if a client sends less than it
         #       says it will?
 
-        # TODO: download() will abort if the checksum fails.  It should raise
-        #       something checksum specific that can be caught here, and turned
-        #       into an http code.
-        localstore.download(oid, req.bodyfh)
-
         statusmessage = hgwebcommon.statusmessage
-        res.status = statusmessage(HTTP_OK if existed else HTTP_CREATED)
+        try:
+            localstore.download(oid, req.bodyfh)
+            res.status = statusmessage(HTTP_OK if existed else HTTP_CREATED)
+        except blobstore.LfsCorruptionError:
+            _logexception(req)
+
+            # XXX: Is this the right code?
+            res.status = statusmessage(422, b'corrupt blob')
 
         # There's no payload here, but this is the header that lfs-test-server
         # sends back.  This eliminates some gratuitous test output conditionals.
@@ -296,9 +300,18 @@ def _processbasictransfer(repo, req, res, checkperm):
         res.status = hgwebcommon.statusmessage(HTTP_OK)
         res.headers[b'Content-Type'] = b'application/octet-stream'
 
-        # TODO: figure out how to send back the file in chunks, instead of
-        #       reading the whole thing.
-        res.setbodybytes(localstore.read(oid))
+        try:
+            # TODO: figure out how to send back the file in chunks, instead of
+            #       reading the whole thing.  (Also figure out how to send back
+            #       an error status if an IOError occurs after a partial write
+            #       in that case.  Here, everything is read before starting.)
+            res.setbodybytes(localstore.read(oid))
+        except blobstore.LfsCorruptionError:
+            _logexception(req)
+
+            # XXX: Is this the right code?
+            res.status = hgwebcommon.statusmessage(422, b'corrupt blob')
+            res.setbodybytes(b'')
 
         return True
     else:

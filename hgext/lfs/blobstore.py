@@ -152,7 +152,8 @@ class local(object):
 
             realoid = sha256.hexdigest()
             if realoid != oid:
-                raise error.Abort(_('corrupt remote lfs object: %s') % oid)
+                raise LfsCorruptionError(_('corrupt remote lfs object: %s')
+                                         % oid)
 
         self._linktousercache(oid)
 
@@ -526,8 +527,8 @@ def _deduplicate(pointers):
 def _verify(oid, content):
     realoid = hashlib.sha256(content).hexdigest()
     if realoid != oid:
-        raise error.Abort(_('detected corrupt lfs object: %s') % oid,
-                          hint=_('run hg verify'))
+        raise LfsCorruptionError(_('detected corrupt lfs object: %s') % oid,
+                                 hint=_('run hg verify'))
 
 def remote(repo, remote=None):
     """remotestore factory. return a store in _storemap depending on config
@@ -573,3 +574,8 @@ def remote(repo, remote=None):
 
 class LfsRemoteError(error.RevlogError):
     pass
+
+class LfsCorruptionError(error.Abort):
+    """Raised when a corrupt blob is detected, aborting an operation
+
+    It exists to allow specialized handling on the server side."""

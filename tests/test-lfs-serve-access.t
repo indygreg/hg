@@ -236,7 +236,7 @@ Test a bad checksum sent by the client in the transfer API
   $ hg -R client push http://localhost:$HGPORT1
   pushing to http://localhost:$HGPORT1/
   searching for changes
-  abort: HTTP error: HTTP Error 500: Internal Server Error (oid=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c, action=upload)!
+  abort: HTTP error: HTTP Error 422: corrupt blob (oid=b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c, action=upload)!
   [255]
 
   $ echo 'test lfs file' > server/lfs3.bin
@@ -255,7 +255,7 @@ Test a checksum failure during the processing of the GET request
 
   $ hg --config lfs.url=http://localhost:$HGPORT1/.git/info/lfs \
   >    -R client update -r tip
-  abort: HTTP error: HTTP Error 500: Internal Server Error (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)!
+  abort: HTTP error: HTTP Error 422: corrupt blob (oid=276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d, action=download)!
   [255]
 
   $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
@@ -279,14 +279,14 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "PUT /.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c HTTP/1.1" 500 - (glob)
+  $LOCALIP - - [$LOGDATE$] "PUT /.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c HTTP/1.1" 422 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D392c05922088bacf8e68a6939b480017afbf245d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%252C03%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=525251863cad618e55d483555f3d00a2ca99597e&heads=506bf3d83f78c54b89e81c6411adee19fdf02156+525251863cad618e55d483555f3d00a2ca99597e&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
   $LOCALIP - - [$LOGDATE$] "GET /.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d HTTP/1.1" 500 - (glob)
   $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d HTTP/1.1" 500 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d HTTP/1.1" 422 - (glob)
 
   $ grep -v '  File "' $TESTTMP/errors.log
   $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.git/info/lfs/objects/batch': (glob)
@@ -301,20 +301,13 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, '%s: I/O error' % oid) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  IOError: [Errno 5] b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c: I/O error (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
-  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c': (glob)
-  Traceback (most recent call last):
-      self.do_write()
-      self.do_hgweb()
-      for chunk in self.server.application(env, self._start_response):
-      for r in self._runwsgi(req, res, repo):
-      rctx, req, res, self.check_perm)
-      return func(*(args + a), **kw)
-      lambda perm:
-      localstore.download(oid, req.bodyfh)
-      super(badstore, self).download(oid, src)
-      raise error.Abort(_('corrupt remote lfs object: %s') % oid)
-  Abort: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c
-  
+  $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c': (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      localstore.download(oid, req.bodyfh) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      super(badstore, self).download(oid, src) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      % oid) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: corrupt remote lfs object: b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d': (glob)
   Traceback (most recent call last):
       self.do_write()
@@ -329,18 +322,11 @@ Test a checksum failure during the processing of the GET request
       raise IOError(errno.EIO, '%s: I/O error' % oid)
   IOError: [Errno 5] 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d: I/O error
   
-  $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d': (glob)
-  Traceback (most recent call last):
-      self.do_write()
-      self.do_hgweb()
-      for chunk in self.server.application(env, self._start_response):
-      for r in self._runwsgi(req, res, repo):
-      rctx, req, res, self.check_perm)
-      return func(*(args + a), **kw)
-      lambda perm:
-      res.setbodybytes(localstore.read(oid))
-      blob = self._read(self.vfs, oid, verify)
-      blobstore._verify(oid, 'dummy content')
-      hint=_('run hg verify'))
-  Abort: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d
-  
+  $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d': (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      res.setbodybytes(localstore.read(oid)) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      blob = self._read(self.vfs, oid, verify) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      blobstore._verify(oid, 'dummy content') (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      hint=_('run hg verify')) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:   (glob)

@@ -24,16 +24,15 @@ def _isellipsis(repo, rev):
 
 @templatekeyword('ellipsis')
 def ellipsis(repo, ctx, templ, **args):
-    """:ellipsis: String. 'ellipsis' if the change is an ellipsis node,
-    else ''."""
+    """String. 'ellipsis' if the change is an ellipsis node, else ''."""
     if _isellipsis(repo, ctx.rev()):
         return 'ellipsis'
     return ''
 
 @templatekeyword('outsidenarrow')
 def outsidenarrow(repo, ctx, templ, **args):
-    """:outsidenarrow: String. 'outsidenarrow' if the change affects no
-    tracked files, else ''."""
+    """String. 'outsidenarrow' if the change affects no tracked files,
+    else ''."""
     if util.safehasattr(repo, 'narrowmatch'):
         m = repo.narrowmatch()
         if not any(m(f) for f in ctx.files()):
@@ -42,7 +41,5 @@ def outsidenarrow(repo, ctx, templ, **args):
 
 @revsetpredicate('ellipsis')
 def ellipsisrevset(repo, subset, x):
-    """``ellipsis()``
-    Changesets that are ellipsis nodes.
-    """
+    """Changesets that are ellipsis nodes."""
     return subset.filter(lambda r: _isellipsis(repo, r))

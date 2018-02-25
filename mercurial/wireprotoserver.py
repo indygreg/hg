@@ -588,11 +588,18 @@ def _runsshserver(ui, repo, fin, fout, ev):
                                          state)
 
 class sshserver(object):
-    def __init__(self, ui, repo):
+    def __init__(self, ui, repo, logfh=None):
         self._ui = ui
         self._repo = repo
         self._fin = ui.fin
         self._fout = ui.fout
+
+        # Log write I/O to stdout and stderr if configured.
+        if logfh:
+            self._fout = util.makeloggingfileobject(
+                logfh, self._fout, 'o', logdata=True)
+            ui.ferr = util.makeloggingfileobject(
+                logfh, ui.ferr, 'e', logdata=True)
 
         hook.redirect(True)
         ui.fout = repo.ui.fout = ui.ferr

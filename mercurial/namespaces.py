@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 from .i18n import _
 from . import (
+    registrar,
     templatekw,
     util,
 )
@@ -87,10 +88,10 @@ class namespaces(object):
 
         # we only generate a template keyword if one does not already exist
         if namespace.name not in templatekw.keywords:
+            templatekeyword = registrar.templatekeyword(templatekw.keywords)
+            @templatekeyword(namespace.name)
             def generatekw(**args):
                 return templatekw.shownames(namespace.name, **args)
-
-            templatekw.keywords[namespace.name] = generatekw
 
     def singlenode(self, repo, name):
         """

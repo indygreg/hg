@@ -648,18 +648,20 @@ def _showchangessincetag(context, mapping):
 # teach templater latesttags.changes is switched to (context, mapping) API
 _showchangessincetag._requires = {'repo', 'ctx'}
 
-@templatekeyword('manifest')
-def showmanifest(**args):
-    repo, ctx, templ = args[r'repo'], args[r'ctx'], args[r'templ']
+@templatekeyword('manifest', requires={'repo', 'ctx', 'templ'})
+def showmanifest(context, mapping):
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    templ = context.resource(mapping, 'templ')
     mnode = ctx.manifestnode()
     if mnode is None:
         # just avoid crash, we might want to use the 'ff...' hash in future
         return
     mrev = repo.manifestlog._revlog.rev(mnode)
     mhex = hex(mnode)
-    args = args.copy()
-    args.update({r'rev': mrev, r'node': mhex})
-    f = templ('manifest', **args)
+    mapping = mapping.copy()
+    mapping.update({'rev': mrev, 'node': mhex})
+    f = templ('manifest', **pycompat.strkwargs(mapping))
     # TODO: perhaps 'ctx' should be dropped from mapping because manifest
     # rev and node are completely different from changeset's.
     return _mappable(f, None, f, lambda x: {'rev': mrev, 'node': mhex})

@@ -443,10 +443,10 @@ def showdiffstat(repo, ctx, templ, **args):
     return '%s: +%s/-%s' % (len(stats), adds, removes)
 
 @templatekeyword('envvars')
-def showenvvars(repo, **args):
+def showenvvars(ui, **args):
     """A dictionary of environment variables. (EXPERIMENTAL)"""
     args = pycompat.byteskwargs(args)
-    env = repo.ui.exportableenviron()
+    env = ui.exportableenviron()
     env = util.sortdict((k, env[k]) for k in sorted(env))
     return showdict('envvar', env, args, plural='envvars')
 
@@ -897,9 +897,9 @@ def showtags(**args):
     return shownames('tags', **args)
 
 @templatekeyword('termwidth')
-def showtermwidth(repo, ctx, templ, **args):
+def showtermwidth(ui, **args):
     """Integer. The width of the current terminal."""
-    return repo.ui.termwidth()
+    return ui.termwidth()
 
 @templatekeyword('instabilities')
 def showinstabilities(**args):

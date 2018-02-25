@@ -161,11 +161,19 @@ def compatlist(context, mapping, name, data, element=None, fmt='%s',
 
 def showdict(name, data, mapping, plural=None, key='key', value='value',
              fmt='%s=%s', separator=' '):
+    ui = mapping.get('ui')
+    if ui:
+        ui.deprecwarn("templatekw.showdict() is deprecated, use compatdict()",
+                      '4.6')
     c = [{key: k, value: v} for k, v in data.iteritems()]
     f = _showlist(name, c, mapping['templ'], mapping, plural, separator)
     return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
 
 def showlist(name, values, mapping, plural=None, element=None, separator=' '):
+    ui = mapping.get('ui')
+    if ui:
+        ui.deprecwarn("templatekw.showlist() is deprecated, use compatlist()",
+                      '4.6')
     if not element:
         element = name
     f = _showlist(name, values, mapping['templ'], mapping, plural, separator)

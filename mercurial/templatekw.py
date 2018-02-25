@@ -676,22 +676,22 @@ def showobsfate(**args):
 
     return showlist("fate", values, args)
 
-def shownames(namespace, **args):
+def shownames(context, mapping, namespace):
     """helper method to generate a template keyword for a namespace"""
-    args = pycompat.byteskwargs(args)
-    ctx = args['ctx']
-    repo = ctx.repo()
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     ns = repo.names[namespace]
     names = ns.names(repo, ctx.node())
-    return showlist(ns.templatename, names, args, plural=namespace)
+    return compatlist(context, mapping, ns.templatename, names,
+                      plural=namespace)
 
-@templatekeyword('namespaces')
-def shownamespaces(**args):
+@templatekeyword('namespaces', requires={'repo', 'ctx', 'templ'})
+def shownamespaces(context, mapping):
     """Dict of lists. Names attached to this changeset per
     namespace."""
-    args = pycompat.byteskwargs(args)
-    ctx = args['ctx']
-    repo = ctx.repo()
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    templ = context.resource(mapping, 'templ')
 
     namespaces = util.sortdict()
     def makensmapfn(ns):
@@ -700,10 +700,10 @@ def shownamespaces(**args):
 
     for k, ns in repo.names.iteritems():
         names = ns.names(repo, ctx.node())
-        f = _showlist('name', names, args['templ'], args)
+        f = _showlist('name', names, templ, mapping)
         namespaces[k] = _hybrid(f, names, makensmapfn(ns), pycompat.identity)
 
-    f = _showlist('namespace', list(namespaces), args['templ'], args)
+    f = _showlist('namespace', list(namespaces), templ, mapping)
 
     def makemap(ns):
         return {
@@ -933,10 +933,10 @@ def showsubrepos(context, mapping):
 # don't remove "showtags" definition, even though namespaces will put
 # a helper function for "tags" keyword into "keywords" map automatically,
 # because online help text is built without namespaces initialization
-@templatekeyword('tags')
-def showtags(**args):
+@templatekeyword('tags', requires={'repo', 'ctx', 'templ'})
+def showtags(context, mapping):
     """List of strings. Any tags associated with the changeset."""
-    return shownames('tags', **args)
+    return shownames(context, mapping, 'tags')
 
 @templatekeyword('termwidth', requires={'ui'})
 def showtermwidth(context, mapping):

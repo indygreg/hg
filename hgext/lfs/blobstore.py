@@ -332,6 +332,7 @@ class _gitlfsremote(object):
                                   hint=_('run hg verify'))
             request.data = filewithprogress(localstore.open(oid), None)
             request.get_method = lambda: 'PUT'
+            request.add_header('Content-Type', 'application/octet-stream')
 
         for k, v in headers:
             request.add_header(k, v)

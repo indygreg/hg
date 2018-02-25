@@ -528,6 +528,9 @@ def showfiles(**args):
 def showgraphnode(repo, ctx, **args):
     """String. The character representing the changeset node in an ASCII
     revision graph."""
+    return getgraphnode(repo, ctx)
+
+def getgraphnode(repo, ctx):
     wpnodes = repo.dirstate.parents()
     if wpnodes[1] == nullid:
         wpnodes = wpnodes[:1]

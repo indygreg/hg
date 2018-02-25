@@ -30,6 +30,9 @@ from . import (
     util,
 )
 
+class ResourceUnavailable(error.Abort):
+    pass
+
 class TemplateNotFound(error.Abort):
     pass
 
@@ -1377,7 +1380,8 @@ class engine(object):
         if v is None:
             v = self._resources.get(key)
         if v is None:
-            raise error.Abort(_('template resource not available: %s') % key)
+            raise ResourceUnavailable(_('template resource not available: %s')
+                                      % key)
         return v
 
     def _load(self, t):

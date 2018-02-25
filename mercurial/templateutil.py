@@ -810,8 +810,9 @@ def runstring(context, mapping, data):
     return data
 
 def _recursivesymbolblocker(key):
-    def showrecursion(**args):
+    def showrecursion(context, mapping):
         raise error.Abort(_("recursive reference '%s' in template") % key)
+    showrecursion._requires = ()  # mark as new-style templatekw
     return showrecursion
 
 def runsymbol(context, mapping, key, default=''):
@@ -827,12 +828,16 @@ def runsymbol(context, mapping, key, default=''):
             v = default
     if callable(v) and getattr(v, '_requires', None) is None:
         # old templatekw: expand all keywords and resources
-        # (TODO: deprecate this after porting web template keywords to new API)
+        # (TODO: drop support for old-style functions. 'f._requires = ()'
+        #  can be removed.)
         props = {k: context._resources.lookup(context, mapping, k)
                  for k in context._resources.knownkeys()}
         # pass context to _showcompatlist() through templatekw._showlist()
         props['templ'] = context
         props.update(mapping)
+        ui = props.get('ui')
+        if ui:
+            ui.deprecwarn("old-style template keyword '%s'" % key, '4.8')
         return v(**pycompat.strkwargs(props))
     if callable(v):
         # new templatekw

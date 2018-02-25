@@ -295,7 +295,7 @@ class templatekeyword(_templateregistrarbase):
             '''
             pass
 
-        # old API
+        # old API (DEPRECATED)
         @templatekeyword('mykeyword')
         def mykeywordfunc(repo, ctx, templ, cache, revcache, **args):
             '''Explanation of this template keyword ....

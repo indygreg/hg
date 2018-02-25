@@ -30,6 +30,9 @@ from . import (
     util,
 )
 
+class TemplateNotFound(error.Abort):
+    pass
+
 # template parsing
 
 elements = {
@@ -1464,9 +1467,6 @@ def _readmapfile(mapfile):
             tmap[key] = val[0], os.path.join(base, val[1])
     aliases.extend(conf['templatealias'].items())
     return cache, tmap, aliases
-
-class TemplateNotFound(error.Abort):
-    pass
 
 class templater(object):
 

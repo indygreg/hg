@@ -531,6 +531,35 @@ class sshv2peer(sshv1peer):
     # And handshake is performed before the peer is instantiated. So
     # we need no custom code.
 
+def makepeer(ui, path, proc, stdin, stdout, stderr):
+    """Make a peer instance from existing pipes.
+
+    ``path`` and ``proc`` are stored on the eventual peer instance and may
+    not be used for anything meaningful.
+
+    ``stdin``, ``stdout``, and ``stderr`` are the pipes connected to the
+    SSH server's stdio handles.
+
+    This function is factored out to allow creating peers that don't
+    actually spawn a new process. It is useful for starting SSH protocol
+    servers and clients via non-standard means, which can be useful for
+    testing.
+    """
+    try:
+        protoname, caps = _performhandshake(ui, stdin, stdout, stderr)
+    except Exception:
+        _cleanuppipes(ui, stdout, stdin, stderr)
+        raise
+
+    if protoname == wireprotoserver.SSHV1:
+        return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps)
+    elif protoname == wireprotoserver.SSHV2:
+        return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps)
+    else:
+        _cleanuppipes(ui, stdout, stdin, stderr)
+        raise error.RepoError(_('unknown version of SSH protocol: %s') %
+                              protoname)
+
 def instance(ui, path, create):
     """Create an SSH peer.
 
@@ -565,17 +594,4 @@ def instance(ui, path, create):
     proc, stdin, stdout, stderr = _makeconnection(ui, sshcmd, args, remotecmd,
                                                   remotepath, sshenv)
 
-    try:
-        protoname, caps = _performhandshake(ui, stdin, stdout, stderr)
-    except Exception:
-        _cleanuppipes(ui, stdout, stdin, stderr)
-        raise
-
-    if protoname == wireprotoserver.SSHV1:
-        return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps)
-    elif protoname == wireprotoserver.SSHV2:
-        return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps)
-    else:
-        _cleanuppipes(ui, stdout, stdin, stderr)
-        raise error.RepoError(_('unknown version of SSH protocol: %s') %
-                              protoname)
+    return makepeer(ui, path, proc, stdin, stdout, stderr)

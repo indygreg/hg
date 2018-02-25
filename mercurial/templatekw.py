@@ -464,13 +464,16 @@ def showextras(**args):
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, util.escapestr(extras[k])))
 
+def _showfilesbystat(args, name, index):
+    repo, ctx, revcache = args['repo'], args['ctx'], args['revcache']
+    files = getfiles(repo, ctx, revcache)[index]
+    return showlist(name, files, args, element='file')
+
 @templatekeyword('file_adds')
 def showfileadds(**args):
     """List of strings. Files added by this changeset."""
     args = pycompat.byteskwargs(args)
-    repo, ctx, revcache = args['repo'], args['ctx'], args['revcache']
-    return showlist('file_add', getfiles(repo, ctx, revcache)[1], args,
-                    element='file')
+    return _showfilesbystat(args, 'file_add', 1)
 
 @templatekeyword('file_copies')
 def showfilecopies(**args):
@@ -512,17 +515,13 @@ def showfilecopiesswitch(**args):
 def showfiledels(**args):
     """List of strings. Files removed by this changeset."""
     args = pycompat.byteskwargs(args)
-    repo, ctx, revcache = args['repo'], args['ctx'], args['revcache']
-    return showlist('file_del', getfiles(repo, ctx, revcache)[2], args,
-                    element='file')
+    return _showfilesbystat(args, 'file_del', 2)
 
 @templatekeyword('file_mods')
 def showfilemods(**args):
     """List of strings. Files modified by this changeset."""
     args = pycompat.byteskwargs(args)
-    repo, ctx, revcache = args['repo'], args['ctx'], args['revcache']
-    return showlist('file_mod', getfiles(repo, ctx, revcache)[0], args,
-                    element='file')
+    return _showfilesbystat(args, 'file_mod', 0)
 
 @templatekeyword('files')
 def showfiles(**args):

@@ -1236,6 +1236,7 @@ class TTest(Test):
             self.name = '%s (case %s)' % (self.name, _strpath(case))
             self.errpath = b'%s.%s.err' % (self.errpath[:-4], case)
             self._tmpname += b'-%s' % case
+        self._have = {}
 
     @property
     def refpath(self):
@@ -1275,11 +1276,15 @@ class TTest(Test):
         return self._processoutput(exitcode, output, salt, after, expected)
 
     def _hghave(self, reqs):
+        allreqs = b' '.join(reqs)
+        if allreqs in self._have:
+            return self._have.get(allreqs)
+
         # TODO do something smarter when all other uses of hghave are gone.
         runtestdir = os.path.abspath(os.path.dirname(_bytespath(__file__)))
         tdir = runtestdir.replace(b'\\', b'/')
         proc = Popen4(b'%s -c "%s/hghave %s"' %
-                      (self._shell, tdir, b' '.join(reqs)),
+                      (self._shell, tdir, allreqs),
                       self._testtmp, 0, self._getenv())
         stdout, stderr = proc.communicate()
         ret = proc.wait()
@@ -1290,10 +1295,13 @@ class TTest(Test):
             sys.exit(1)
 
         if ret != 0:
+            self._have[allreqs] = (False, stdout)
             return False, stdout
 
         if b'slow' in reqs:
             self._timeout = self._slowtimeout
+
+        self._have[allreqs] = (True, None)
         return True, None
 
     def _iftest(self, args):

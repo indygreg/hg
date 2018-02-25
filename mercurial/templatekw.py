@@ -240,8 +240,11 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
     if endname in templ:
         yield templ(endname, **strmapping)
 
-def getlatesttags(repo, ctx, cache, pattern=None):
+def getlatesttags(context, mapping, pattern=None):
     '''return date, distance and name for the latest tag of rev'''
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    cache = context.resource(mapping, 'cache')
 
     cachename = 'latesttags'
     if pattern is not None:
@@ -589,20 +592,17 @@ def showindex(context, mapping):
     # just hosts documentation; should be overridden by template mapping
     raise error.Abort(_("can't use index in this context"))
 
-@templatekeyword('latesttag')
-def showlatesttag(**args):
+@templatekeyword('latesttag', requires={'repo', 'ctx', 'cache', 'templ'})
+def showlatesttag(context, mapping):
     """List of strings. The global tags on the most recent globally
     tagged ancestor of this changeset.  If no such tags exist, the list
     consists of the single string "null".
     """
-    return showlatesttags(None, **args)
+    return showlatesttags(context, mapping, None)
 
-def showlatesttags(pattern, **args):
+def showlatesttags(context, mapping, pattern):
     """helper method for the latesttag keyword and function"""
-    args = pycompat.byteskwargs(args)
-    repo, ctx = args['repo'], args['ctx']
-    cache = args['cache']
-    latesttags = getlatesttags(repo, ctx, cache, pattern)
+    latesttags = getlatesttags(context, mapping, pattern)
 
     # latesttag[0] is an implementation detail for sorting csets on different
     # branches in a stable manner- it is the date the tagged cset was created,
@@ -615,25 +615,28 @@ def showlatesttags(pattern, **args):
     }
 
     tags = latesttags[2]
-    f = _showlist('latesttag', tags, args['templ'], args, separator=':')
+    templ = context.resource(mapping, 'templ')
+    f = _showlist('latesttag', tags, templ, mapping, separator=':')
     return _hybrid(f, tags, makemap, pycompat.identity)
 
-@templatekeyword('latesttagdistance')
-def showlatesttagdistance(repo, ctx, templ, cache, **args):
+@templatekeyword('latesttagdistance', requires={'repo', 'ctx', 'cache'})
+def showlatesttagdistance(context, mapping):
     """Integer. Longest path to the latest tag."""
-    return getlatesttags(repo, ctx, cache)[1]
+    return getlatesttags(context, mapping)[1]
 
-@templatekeyword('changessincelatesttag')
-def showchangessincelatesttag(repo, ctx, templ, cache, **args):
+@templatekeyword('changessincelatesttag', requires={'repo', 'ctx', 'cache'})
+def showchangessincelatesttag(context, mapping):
     """Integer. All ancestors not in the latest tag."""
-    latesttag = getlatesttags(repo, ctx, cache)[2][0]
+    mapping = mapping.copy()
+    mapping['tag'] = getlatesttags(context, mapping)[2][0]
+    return _showchangessincetag(context, mapping)
 
-    return _showchangessincetag(repo, ctx, tag=latesttag, **args)
-
-def _showchangessincetag(repo, ctx, **args):
+def _showchangessincetag(context, mapping):
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     offset = 0
     revs = [ctx.rev()]
-    tag = args[r'tag']
+    tag = context.symbol(mapping, 'tag')
 
     # The only() revset doesn't currently support wdir()
     if ctx.rev() is None:
@@ -641,6 +644,9 @@ def _showchangessincetag(repo, ctx, **args):
         revs = [p.rev() for p in ctx.parents()]
 
     return len(repo.revs('only(%ld, %s)', revs, tag)) + offset
+
+# teach templater latesttags.changes is switched to (context, mapping) API
+_showchangessincetag._requires = {'repo', 'ctx'}
 
 @templatekeyword('manifest')
 def showmanifest(**args):

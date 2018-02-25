@@ -942,11 +942,7 @@ def latesttag(context, mapping, args):
     pattern = None
     if len(args) == 1:
         pattern = evalstring(context, mapping, args[0])
-
-    # TODO: pass (context, mapping) pair to keyword function
-    props = context._resources.copy()
-    props.update(mapping)
-    return templatekw.showlatesttags(pattern, **pycompat.strkwargs(props))
+    return templatekw.showlatesttags(context, mapping, pattern)
 
 @templatefunc('localdate(date[, tz])')
 def localdate(context, mapping, args):

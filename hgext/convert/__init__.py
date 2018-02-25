@@ -477,7 +477,8 @@ def debugcvsps(ui, *args, **opts):
     dates.'''
     return cvsps.debugcvsps(ui, *args, **opts)
 
-def kwconverted(ctx, name):
+def kwconverted(context, mapping, name):
+    ctx = context.resource(mapping, 'ctx')
     rev = ctx.extra().get('convert_revision', '')
     if rev.startswith('svn:'):
         if name == 'svnrev':
@@ -490,20 +491,20 @@ def kwconverted(ctx, name):
 
 templatekeyword = registrar.templatekeyword()
 
-@templatekeyword('svnrev')
-def kwsvnrev(repo, ctx, **args):
+@templatekeyword('svnrev', requires={'ctx'})
+def kwsvnrev(context, mapping):
     """String. Converted subversion revision number."""
-    return kwconverted(ctx, 'svnrev')
+    return kwconverted(context, mapping, 'svnrev')
 
-@templatekeyword('svnpath')
-def kwsvnpath(repo, ctx, **args):
+@templatekeyword('svnpath', requires={'ctx'})
+def kwsvnpath(context, mapping):
     """String. Converted subversion revision project path."""
-    return kwconverted(ctx, 'svnpath')
+    return kwconverted(context, mapping, 'svnpath')
 
-@templatekeyword('svnuuid')
-def kwsvnuuid(repo, ctx, **args):
+@templatekeyword('svnuuid', requires={'ctx'})
+def kwsvnuuid(context, mapping):
     """String. Converted subversion revision repository identifier."""
-    return kwconverted(ctx, 'svnuuid')
+    return kwconverted(context, mapping, 'svnuuid')
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = [kwsvnrev, kwsvnpath, kwsvnuuid]

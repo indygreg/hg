@@ -21,17 +21,21 @@ def _isellipsis(repo, rev):
         return True
     return False
 
-@templatekeyword('ellipsis')
-def ellipsis(repo, ctx, templ, **args):
+@templatekeyword('ellipsis', requires={'repo', 'ctx'})
+def ellipsis(context, mapping):
     """String. 'ellipsis' if the change is an ellipsis node, else ''."""
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     if _isellipsis(repo, ctx.rev()):
         return 'ellipsis'
     return ''
 
-@templatekeyword('outsidenarrow')
-def outsidenarrow(repo, ctx, templ, **args):
+@templatekeyword('outsidenarrow', requires={'repo', 'ctx'})
+def outsidenarrow(context, mapping):
     """String. 'outsidenarrow' if the change affects no tracked files,
     else ''."""
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     m = repo.narrowmatch()
     if not m.always():
         if not any(m(f) for f in ctx.files()):

@@ -351,17 +351,20 @@ def showauthor(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.user()
 
-@templatekeyword('bisect')
-def showbisect(repo, ctx, templ, **args):
+@templatekeyword('bisect', requires={'repo', 'ctx'})
+def showbisect(context, mapping):
     """String. The changeset bisection status."""
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     return hbisect.label(repo, ctx.node())
 
-@templatekeyword('branch')
-def showbranch(**args):
+@templatekeyword('branch', requires={'ctx'})
+def showbranch(context, mapping):
     """String. The name of the branch on which the changeset was
     committed.
     """
-    return args[r'ctx'].branch()
+    ctx = context.resource(mapping, 'ctx')
+    return ctx.branch()
 
 @templatekeyword('branches')
 def showbranches(**args):
@@ -397,28 +400,32 @@ def showchildren(**args):
     return showlist('children', childrevs, args, element='child')
 
 # Deprecated, but kept alive for help generation a purpose.
-@templatekeyword('currentbookmark')
-def showcurrentbookmark(**args):
+@templatekeyword('currentbookmark', requires={'repo', 'ctx'})
+def showcurrentbookmark(context, mapping):
     """String. The active bookmark, if it is associated with the changeset.
     (DEPRECATED)"""
-    return showactivebookmark(**args)
+    return showactivebookmark(context, mapping)
 
-@templatekeyword('activebookmark')
-def showactivebookmark(**args):
+@templatekeyword('activebookmark', requires={'repo', 'ctx'})
+def showactivebookmark(context, mapping):
     """String. The active bookmark, if it is associated with the changeset."""
-    active = args[r'repo']._activebookmark
-    if active and active in args[r'ctx'].bookmarks():
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    active = repo._activebookmark
+    if active and active in ctx.bookmarks():
         return active
     return ''
 
-@templatekeyword('date')
-def showdate(repo, ctx, templ, **args):
+@templatekeyword('date', requires={'ctx'})
+def showdate(context, mapping):
     """Date information. The date when the changeset was committed."""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.date()
 
-@templatekeyword('desc')
-def showdescription(repo, ctx, templ, **args):
+@templatekeyword('desc', requires={'ctx'})
+def showdescription(context, mapping):
     """String. The text of the changeset description."""
+    ctx = context.resource(mapping, 'ctx')
     s = ctx.description()
     if isinstance(s, encoding.localstr):
         # try hard to preserve utf-8 bytes
@@ -426,11 +433,12 @@ def showdescription(repo, ctx, templ, **args):
     else:
         return s.strip()
 
-@templatekeyword('diffstat')
-def showdiffstat(repo, ctx, templ, **args):
+@templatekeyword('diffstat', requires={'ctx'})
+def showdiffstat(context, mapping):
     """String. Statistics of changes with the following format:
     "modified files: +added/-removed lines"
     """
+    ctx = context.resource(mapping, 'ctx')
     stats = patch.diffstatdata(util.iterlines(ctx.diff(noprefix=False)))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%d: +%d/-%d' % (len(stats), adds, removes)
@@ -524,10 +532,12 @@ def showfiles(**args):
     args = pycompat.byteskwargs(args)
     return showlist('file', args['ctx'].files(), args)
 
-@templatekeyword('graphnode')
-def showgraphnode(repo, ctx, **args):
+@templatekeyword('graphnode', requires={'repo', 'ctx'})
+def showgraphnode(context, mapping):
     """String. The character representing the changeset node in an ASCII
     revision graph."""
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     return getgraphnode(repo, ctx)
 
 def getgraphnode(repo, ctx):
@@ -545,14 +555,14 @@ def getgraphnode(repo, ctx):
     else:
         return 'o'
 
-@templatekeyword('graphwidth')
-def showgraphwidth(repo, ctx, templ, **args):
+@templatekeyword('graphwidth', requires=())
+def showgraphwidth(context, mapping):
     """Integer. The width of the graph drawn by 'log --graph' or zero."""
     # just hosts documentation; should be overridden by template mapping
     return 0
 
-@templatekeyword('index')
-def showindex(**args):
+@templatekeyword('index', requires=())
+def showindex(context, mapping):
     """Integer. The current iteration of the loop. (0 indexed)"""
     # just hosts documentation; should be overridden by template mapping
     raise error.Abort(_("can't use index in this context"))
@@ -683,24 +693,27 @@ def shownamespaces(**args):
 
     return _hybrid(f, namespaces, makemap, pycompat.identity)
 
-@templatekeyword('node')
-def shownode(repo, ctx, templ, **args):
+@templatekeyword('node', requires={'ctx'})
+def shownode(context, mapping):
     """String. The changeset identification hash, as a 40 hexadecimal
     digit string.
     """
+    ctx = context.resource(mapping, 'ctx')
     return ctx.hex()
 
-@templatekeyword('obsolete')
-def showobsolete(repo, ctx, templ, **args):
+@templatekeyword('obsolete', requires={'ctx'})
+def showobsolete(context, mapping):
     """String. Whether the changeset is obsolete. (EXPERIMENTAL)"""
+    ctx = context.resource(mapping, 'ctx')
     if ctx.obsolete():
         return 'obsolete'
     return ''
 
-@templatekeyword('peerurls')
-def showpeerurls(repo, **args):
+@templatekeyword('peerurls', requires={'repo'})
+def showpeerurls(context, mapping):
     """A dictionary of repository locations defined in the [paths] section
     of your configuration file."""
+    repo = context.resource(mapping, 'repo')
     # see commands.paths() for naming of dictionary keys
     paths = repo.ui.paths
     urls = util.sortdict((k, p.rawloc) for k, p in sorted(paths.iteritems()))
@@ -711,9 +724,11 @@ def showpeerurls(repo, **args):
         return d
     return _hybrid(None, urls, makemap, lambda k: '%s=%s' % (k, urls[k]))
 
-@templatekeyword("predecessors")
-def showpredecessors(repo, ctx, **args):
+@templatekeyword("predecessors", requires={'repo', 'ctx'})
+def showpredecessors(context, mapping):
     """Returns the list if the closest visible successors. (EXPERIMENTAL)"""
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     predecessors = sorted(obsutil.closestpredecessors(repo, ctx.node()))
     predecessors = map(hex, predecessors)
 
@@ -721,19 +736,21 @@ def showpredecessors(repo, ctx, **args):
                    lambda x: {'ctx': repo[x], 'revcache': {}},
                    lambda x: scmutil.formatchangeid(repo[x]))
 
-@templatekeyword('reporoot')
-def showreporoot(repo, **args):
+@templatekeyword('reporoot', requires={'repo'})
+def showreporoot(context, mapping):
     """String. The root directory of the current repository."""
+    repo = context.resource(mapping, 'repo')
     return repo.root
 
-@templatekeyword("successorssets")
-def showsuccessorssets(repo, ctx, **args):
+@templatekeyword("successorssets", requires={'repo', 'ctx'})
+def showsuccessorssets(context, mapping):
     """Returns a string of sets of successors for a changectx. Format used
     is: [ctx1, ctx2], [ctx3] if ctx has been splitted into ctx1 and ctx2
     while also diverged into ctx3. (EXPERIMENTAL)"""
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
     if not ctx.obsolete():
         return ''
-    args = pycompat.byteskwargs(args)
 
     ssets = obsutil.successorssets(repo, ctx.node(), closest=True)
     ssets = [[hex(n) for n in ss] for ss in ssets]
@@ -797,30 +814,34 @@ def showsuccsandmarkers(repo, ctx, **args):
     f = _showlist('succsandmarkers', data, pycompat.byteskwargs(args))
     return _hybrid(f, data, lambda x: x, pycompat.identity)
 
-@templatekeyword('p1rev')
-def showp1rev(repo, ctx, templ, **args):
+@templatekeyword('p1rev', requires={'ctx'})
+def showp1rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
     first parent, or -1 if the changeset has no parents."""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.p1().rev()
 
-@templatekeyword('p2rev')
-def showp2rev(repo, ctx, templ, **args):
+@templatekeyword('p2rev', requires={'ctx'})
+def showp2rev(context, mapping):
     """Integer. The repository-local revision number of the changeset's
     second parent, or -1 if the changeset has no second parent."""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.p2().rev()
 
-@templatekeyword('p1node')
-def showp1node(repo, ctx, templ, **args):
+@templatekeyword('p1node', requires={'ctx'})
+def showp1node(context, mapping):
     """String. The identification hash of the changeset's first parent,
     as a 40 digit hexadecimal string. If the changeset has no parents, all
     digits are 0."""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.p1().hex()
 
-@templatekeyword('p2node')
-def showp2node(repo, ctx, templ, **args):
+@templatekeyword('p2node', requires={'ctx'})
+def showp2node(context, mapping):
     """String. The identification hash of the changeset's second
     parent, as a 40 digit hexadecimal string. If the changeset has no second
     parent, all digits are 0."""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.p2().hex()
 
 @templatekeyword('parents')
@@ -841,19 +862,22 @@ def showparents(**args):
     return _hybrid(f, prevs, lambda x: {'ctx': repo[x], 'revcache': {}},
                    lambda x: scmutil.formatchangeid(repo[x]), keytype=int)
 
-@templatekeyword('phase')
-def showphase(repo, ctx, templ, **args):
+@templatekeyword('phase', requires={'ctx'})
+def showphase(context, mapping):
     """String. The changeset phase name."""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.phasestr()
 
-@templatekeyword('phaseidx')
-def showphaseidx(repo, ctx, templ, **args):
+@templatekeyword('phaseidx', requires={'ctx'})
+def showphaseidx(context, mapping):
     """Integer. The changeset phase index. (ADVANCED)"""
+    ctx = context.resource(mapping, 'ctx')
     return ctx.phase()
 
-@templatekeyword('rev')
-def showrev(repo, ctx, templ, **args):
+@templatekeyword('rev', requires={'ctx'})
+def showrev(context, mapping):
     """Integer. The repository-local changeset revision number."""
+    ctx = context.resource(mapping, 'ctx')
     return scmutil.intrev(ctx)
 
 def showrevslist(name, revs, **args):
@@ -892,9 +916,10 @@ def showtags(**args):
     """List of strings. Any tags associated with the changeset."""
     return shownames('tags', **args)
 
-@templatekeyword('termwidth')
-def showtermwidth(ui, **args):
+@templatekeyword('termwidth', requires={'ui'})
+def showtermwidth(context, mapping):
     """Integer. The width of the current terminal."""
+    ui = context.resource(mapping, 'ui')
     return ui.termwidth()
 
 @templatekeyword('instabilities')
@@ -906,10 +931,11 @@ def showinstabilities(**args):
     return showlist('instability', args['ctx'].instabilities(), args,
                     plural='instabilities')
 
-@templatekeyword('verbosity')
-def showverbosity(ui, **args):
+@templatekeyword('verbosity', requires={'ui'})
+def showverbosity(context, mapping):
     """String. The current output verbosity in 'debug', 'quiet', 'verbose',
     or ''."""
+    ui = context.resource(mapping, 'ui')
     # see logcmdutil.changesettemplater for priority of these flags
     if ui.debugflag:
         return 'debug'

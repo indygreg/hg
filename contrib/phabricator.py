@@ -868,11 +868,12 @@ def phabupdate(ui, repo, spec, **opts):
 
 templatekeyword = registrar.templatekeyword()
 
-@templatekeyword('phabreview')
-def template_review(repo, ctx, revcache, **args):
+@templatekeyword('phabreview', requires={'ctx'})
+def template_review(context, mapping):
     """:phabreview: Object describing the review for this changeset.
     Has attributes `url` and `id`.
     """
+    ctx = context.resource(mapping, 'ctx')
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
         return {

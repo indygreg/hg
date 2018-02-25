@@ -744,10 +744,11 @@ def revsettransplanted(repo, subset, x):
 
 templatekeyword = registrar.templatekeyword()
 
-@templatekeyword('transplanted')
-def kwtransplanted(repo, ctx, **args):
+@templatekeyword('transplanted', requires={'ctx'})
+def kwtransplanted(context, mapping):
     """String. The node identifier of the transplanted
     changeset if any."""
+    ctx = context.resource(mapping, 'ctx')
     n = ctx.extra().get('transplant_source')
     return n and nodemod.hex(n) or ''
 

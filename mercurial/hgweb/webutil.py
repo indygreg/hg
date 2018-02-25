@@ -352,11 +352,15 @@ def linerange(req):
 def formatlinerange(fromline, toline):
     return '%d:%d' % (fromline + 1, toline)
 
-def succsandmarkers(repo, ctx, **args):
-    for item in templatekw.showsuccsandmarkers(repo, ctx, **args):
+def succsandmarkers(context, mapping):
+    repo = context.resource(mapping, 'repo')
+    for item in templatekw.showsuccsandmarkers(context, mapping):
         item['successors'] = _siblings(repo[successor]
                                        for successor in item['successors'])
         yield item
+
+# teach templater succsandmarkers is switched to (context, mapping) API
+succsandmarkers._requires = {'repo', 'ctx', 'templ'}
 
 def commonentry(repo, ctx):
     node = ctx.node()

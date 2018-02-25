@@ -658,23 +658,21 @@ def showmanifest(**args):
     # rev and node are completely different from changeset's.
     return _mappable(f, None, f, lambda x: {'rev': mrev, 'node': mhex})
 
-@templatekeyword('obsfate')
-def showobsfate(**args):
+@templatekeyword('obsfate', requires={'ui', 'repo', 'ctx', 'templ'})
+def showobsfate(context, mapping):
     # this function returns a list containing pre-formatted obsfate strings.
     #
     # This function will be replaced by templates fragments when we will have
     # the verbosity templatekw available.
-    succsandmarkers = showsuccsandmarkers(**args)
+    succsandmarkers = showsuccsandmarkers(context, mapping)
 
-    args = pycompat.byteskwargs(args)
-    ui = args['ui']
-
+    ui = context.resource(mapping, 'ui')
     values = []
 
     for x in succsandmarkers:
         values.append(obsutil.obsfateprinter(x['successors'], x['markers'], ui))
 
-    return showlist("fate", values, args)
+    return compatlist(context, mapping, "fate", values)
 
 def shownames(context, mapping, namespace):
     """helper method to generate a template keyword for a namespace"""
@@ -796,13 +794,16 @@ def showsuccessorssets(context, mapping):
     return _hybrid(gen(data), data, lambda x: {'successorset': x},
                    pycompat.identity)
 
-@templatekeyword("succsandmarkers")
-def showsuccsandmarkers(repo, ctx, **args):
+@templatekeyword("succsandmarkers", requires={'repo', 'ctx', 'templ'})
+def showsuccsandmarkers(context, mapping):
     """Returns a list of dict for each final successor of ctx. The dict
     contains successors node id in "successors" keys and the list of
     obs-markers from ctx to the set of successors in "markers".
     (EXPERIMENTAL)
     """
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    templ = context.resource(mapping, 'templ')
 
     values = obsutil.successorsandmarkers(repo, ctx)
 
@@ -833,8 +834,7 @@ def showsuccsandmarkers(repo, ctx, **args):
 
         data.append({'successors': successors, 'markers': finalmarkers})
 
-    args = pycompat.byteskwargs(args)
-    f = _showlist('succsandmarkers', data, args['templ'], args)
+    f = _showlist('succsandmarkers', data, templ, mapping)
     return _hybrid(f, data, lambda x: x, pycompat.identity)
 
 @templatekeyword('p1rev', requires={'ctx'})

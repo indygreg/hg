@@ -278,7 +278,12 @@ class changesetprinter(object):
         self._showpatch(ctx)
 
     def _showobsfate(self, ctx):
-        obsfate = templatekw.showobsfate(repo=self.repo, ctx=ctx, ui=self.ui)
+        # TODO: do not depend on templater
+        tres = formatter.templateresources(self.repo.ui, self.repo)
+        t = formatter.maketemplater(self.repo.ui, '{join(obsfate, "\n")}',
+                                    defaults=templatekw.keywords,
+                                    resources=tres)
+        obsfate = t.render({'ctx': ctx, 'revcache': {}}).splitlines()
 
         if obsfate:
             for obsfateline in obsfate:

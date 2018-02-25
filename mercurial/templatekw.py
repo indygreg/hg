@@ -495,17 +495,19 @@ def showfileadds(**args):
     args = pycompat.byteskwargs(args)
     return _showfilesbystat(args, 'file_add', 1)
 
-@templatekeyword('file_copies')
-def showfilecopies(**args):
+@templatekeyword('file_copies',
+                 requires={'repo', 'ctx', 'cache', 'revcache', 'templ'})
+def showfilecopies(context, mapping):
     """List of strings. Files copied in this changeset with
     their sources.
     """
-    args = pycompat.byteskwargs(args)
-    cache, ctx = args['cache'], args['ctx']
-    copies = args['revcache'].get('copies')
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+    cache = context.resource(mapping, 'cache')
+    copies = context.resource(mapping, 'revcache').get('copies')
     if copies is None:
         if 'getrenamed' not in cache:
-            cache['getrenamed'] = getrenamedfn(args['repo'])
+            cache['getrenamed'] = getrenamedfn(repo)
         copies = []
         getrenamed = cache['getrenamed']
         for fn in ctx.files():
@@ -514,22 +516,23 @@ def showfilecopies(**args):
                 copies.append((fn, rename[0]))
 
     copies = util.sortdict(copies)
-    return showdict('file_copy', copies, args, plural='file_copies',
-                    key='name', value='source', fmt='%s (%s)')
+    return compatdict(context, mapping, 'file_copy', copies,
+                      key='name', value='source', fmt='%s (%s)',
+                      plural='file_copies')
 
 # showfilecopiesswitch() displays file copies only if copy records are
 # provided before calling the templater, usually with a --copies
 # command line switch.
-@templatekeyword('file_copies_switch')
-def showfilecopiesswitch(**args):
+@templatekeyword('file_copies_switch', requires={'revcache', 'templ'})
+def showfilecopiesswitch(context, mapping):
     """List of strings. Like "file_copies" but displayed
     only if the --copied switch is set.
     """
-    args = pycompat.byteskwargs(args)
-    copies = args['revcache'].get('copies') or []
+    copies = context.resource(mapping, 'revcache').get('copies') or []
     copies = util.sortdict(copies)
-    return showdict('file_copy', copies, args, plural='file_copies',
-                    key='name', value='source', fmt='%s (%s)')
+    return compatdict(context, mapping, 'file_copy', copies,
+                      key='name', value='source', fmt='%s (%s)',
+                      plural='file_copies')
 
 @templatekeyword('file_dels')
 def showfiledels(**args):

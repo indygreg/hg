@@ -228,9 +228,7 @@ def reposetup(ui, repo):
 
 @templatekeyword('remotenames')
 def remotenameskw(**args):
-    """:remotenames: List of strings. List of remote names associated with the
-    changeset.
-    """
+    """List of strings. Remote names associated with the changeset."""
     args = pycompat.byteskwargs(args)
     repo, ctx = args['repo'], args['ctx']
 
@@ -246,9 +244,7 @@ def remotenameskw(**args):
 
 @templatekeyword('remotebookmarks')
 def remotebookmarkskw(**args):
-    """:remotebookmarks: List of strings. List of remote bookmarks associated
-    with the changeset.
-    """
+    """List of strings. Remote bookmarks associated with the changeset."""
     args = pycompat.byteskwargs(args)
     repo, ctx = args['repo'], args['ctx']
 
@@ -261,9 +257,7 @@ def remotebookmarkskw(**args):
 
 @templatekeyword('remotebranches')
 def remotebrancheskw(**args):
-    """:remotebranches: List of strings. List of remote branches associated
-    with the changeset.
-    """
+    """List of strings. Remote branches associated with the changeset."""
     args = pycompat.byteskwargs(args)
     repo, ctx = args['repo'], args['ctx']
 

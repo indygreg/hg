@@ -193,14 +193,11 @@ In the examples below, we will:
 
 from __future__ import absolute_import
 
-import getpass
-
 from mercurial.i18n import _
 from mercurial import (
     error,
     extensions,
     match,
-    pycompat,
     registrar,
     util,
 )
@@ -341,7 +338,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
             user = urlreq.unquote(url[3])
 
     if user is None:
-        user = pycompat.bytestr(getpass.getuser())
+        user = util.getuser()
 
     ui.debug('acl: checking access for user "%s"\n' % user)
 

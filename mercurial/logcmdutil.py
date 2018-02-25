@@ -889,7 +889,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
         firstedge = next(edges)
         width = firstedge[2]
         displayer.show(ctx, copies=copies,
-                       _graphwidth=width, **pycompat.strkwargs(props))
+                       graphwidth=width, **pycompat.strkwargs(props))
         lines = displayer.hunk.pop(rev).split('\n')
         if not lines[-1]:
             del lines[-1]

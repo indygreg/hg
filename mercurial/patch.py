@@ -566,7 +566,7 @@ class filestore(object):
                 root = tempfile.mkdtemp(prefix='hg-patch-')
                 self.opener = vfsmod.vfs(root)
             # Avoid filename issues with these simple names
-            fn = str(self.created)
+            fn = '%d' % self.created
             self.opener.write(fn, data)
             self.created += 1
             self.files[fname] = (fn, mode, copied)

@@ -656,7 +656,7 @@ class obsstore(object):
             self.caches.clear()
         # records the number of new markers for the transaction hooks
         previous = int(transaction.hookargs.get('new_obsmarkers', '0'))
-        transaction.hookargs['new_obsmarkers'] = str(previous + len(new))
+        transaction.hookargs['new_obsmarkers'] = '%d' % (previous + len(new))
         return len(new)
 
     def mergemarkers(self, transaction, data):

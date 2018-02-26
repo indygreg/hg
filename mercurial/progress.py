@@ -121,7 +121,7 @@ class progbar(object):
                 if total:
                     add = b'%*d/%d' % (len(str(total)), pos, total)
                 else:
-                    add = str(pos)
+                    add = b'%d' % pos
             elif indicator.startswith('item') and item:
                 slice = 'end'
                 if '-' in indicator:

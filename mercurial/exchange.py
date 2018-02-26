@@ -1151,8 +1151,8 @@ def _pushsyncphase(pushop):
         for newremotehead in outdated:
             r = pushop.remote.pushkey('phases',
                                       newremotehead.hex(),
-                                      str(phases.draft),
-                                      str(phases.public))
+                                      ('%d' % phases.draft),
+                                      ('%d' % phases.public))
             if not r:
                 pushop.ui.warn(_('updating %s to public failed!\n')
                                % newremotehead)

@@ -1763,19 +1763,19 @@ class TestResult(unittest._TextTestResult):
                 servefail, lines = getdiff(expected, got,
                                            test.refpath, test.errpath)
                 if servefail:
-                    raise test.failureException(
+                    self.stream.write(
                         'server failed to start (HGPORT=%s)' % test._startport)
-                else:
-                    self.stream.write('\n')
-                    for line in lines:
-                        line = highlightdiff(line, self.color)
-                        if PYTHON3:
-                            self.stream.flush()
-                            self.stream.buffer.write(line)
-                            self.stream.buffer.flush()
-                        else:
-                            self.stream.write(line)
-                            self.stream.flush()
+
+                self.stream.write('\n')
+                for line in lines:
+                    line = highlightdiff(line, self.color)
+                    if PYTHON3:
+                        self.stream.flush()
+                        self.stream.buffer.write(line)
+                        self.stream.buffer.flush()
+                    else:
+                        self.stream.write(line)
+                        self.stream.flush()
 
             # handle interactive prompt without releasing iolock
             if self._options.interactive:

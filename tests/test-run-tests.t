@@ -541,10 +541,16 @@ Verify that when a process fails to start we show a useful message
   >   $ echo 'abort: child process failed to start blah'
   > EOF
   $ rt test-serve-fail.t
+  server failed to start (HGPORT=*) (glob)
+  --- $TESTTMP/test-serve-fail.t
+  +++ $TESTTMP/test-serve-fail.t.err
+  @@ -1* +1,2 @@ (glob)
+     $ echo 'abort: child process failed to start blah'
+  +  abort: child process failed to start blah
   
   ERROR: test-serve-fail.t output changed
   !
-  Failed test-serve-fail.t: server failed to start (HGPORT=*) (glob)
+  Failed test-serve-fail.t: output changed
   # Ran 1 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]

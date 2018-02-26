@@ -93,7 +93,7 @@ class ErrorResponse(Exception):
     def __init__(self, code, message=None, headers=None):
         if message is None:
             message = _statusmessage(code)
-        Exception.__init__(self, message)
+        Exception.__init__(self, pycompat.sysstr(message))
         self.code = code
         if headers is None:
             headers = []

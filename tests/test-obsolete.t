@@ -1033,6 +1033,12 @@ test summary output
   orphan: 2 changesets
   phase-divergent: 1 changesets
 
+test debugwhyunstable output
+
+  $ hg debugwhyunstable 50c51b361e60
+  orphan: obsolete parent 3de5eca88c00aa039da7399a220f4a5221faa585
+  phase-divergent: immutable predecessor 245bde4270cd1072a27757984f9cda8ba26f08ca
+
 #if serve
 
   $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log

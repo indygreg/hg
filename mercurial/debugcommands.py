@@ -2529,6 +2529,17 @@ def debugwalk(ui, repo, *pats, **opts):
         line = fmt % (abs, f(m.rel(abs)), m.exact(abs) and 'exact' or '')
         ui.write("%s\n" % line.rstrip())
 
+@command('debugwhyunstable', [], _('REV'))
+def debugwhyunstable(ui, repo, rev):
+    """explain instabilities of a changeset"""
+    for entry in obsutil.whyunstable(repo, repo[rev]):
+        dnodes = ''
+        if entry.get('divergentnodes'):
+            dnodes = ' '.join('%s (%s)' % (ctx.hex(), ctx.phasestr())
+                              for ctx in entry['divergentnodes']) + ' '
+        ui.write('%s: %s%s %s\n' % (entry['instability'], dnodes,
+                                    entry['reason'], entry['node']))
+
 @command('debugwireargs',
     [('', 'three', '', 'three'),
     ('', 'four', '', 'four'),

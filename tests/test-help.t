@@ -985,6 +985,8 @@ Test list of internal help commands
    debugupgraderepo
                  upgrade a repository to use different features
    debugwalk     show how files match on given patterns
+   debugwhyunstable
+                 explain instabilities of a changeset
    debugwireargs
                  (no help text available)
    debugwireproto

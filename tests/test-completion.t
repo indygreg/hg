@@ -122,6 +122,7 @@ Show debug commands if there are no other candidates
   debugupdatecaches
   debugupgraderepo
   debugwalk
+  debugwhyunstable
   debugwireargs
   debugwireproto
 
@@ -306,6 +307,7 @@ Show all commands + options
   debugupdatecaches: 
   debugupgraderepo: optimize, run
   debugwalk: include, exclude
+  debugwhyunstable: 
   debugwireargs: three, four, five, ssh, remotecmd, insecure
   debugwireproto: localssh, peer, noreadstderr, ssh, remotecmd, insecure
   files: rev, print0, include, exclude, template, subrepos

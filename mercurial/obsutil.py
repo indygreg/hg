@@ -923,3 +923,55 @@ def _getfilteredreason(repo, changeid, ctx):
 
             args = (changeid, firstsuccessors, remainingnumber)
             return filteredmsgtable['superseded_split_several'] % args
+
+def divergentsets(repo, ctx):
+    """Compute sets of commits divergent with a given one"""
+    cache = {}
+    base = {}
+    for n in allpredecessors(repo.obsstore, [ctx.node()]):
+        if n == ctx.node():
+            # a node can't be a base for divergence with itself
+            continue
+        nsuccsets = successorssets(repo, n, cache)
+        for nsuccset in nsuccsets:
+            if ctx.node() in nsuccset:
+                # we are only interested in *other* successor sets
+                continue
+            if tuple(nsuccset) in base:
+                # we already know the latest base for this divergency
+                continue
+            base[tuple(nsuccset)] = n
+    return [{'divergentnodes': divset, 'commonpredecessor': b}
+            for divset, b in base.iteritems()]
+
+def whyunstable(repo, ctx):
+    result = []
+    if ctx.orphan():
+        for parent in ctx.parents():
+            kind = None
+            if parent.orphan():
+                kind = 'orphan'
+            elif parent.obsolete():
+                kind = 'obsolete'
+            if kind is not None:
+                result.append({'instability': 'orphan',
+                               'reason': '%s parent' % kind,
+                               'node': parent.hex()})
+    if ctx.phasedivergent():
+        predecessors = allpredecessors(repo.obsstore, [ctx.node()],
+                                       ignoreflags=bumpedfix)
+        immutable = [repo[p] for p in predecessors
+                     if p in repo and not repo[p].mutable()]
+        for predecessor in immutable:
+            result.append({'instability': 'phase-divergent',
+                           'reason': 'immutable predecessor',
+                           'node': predecessor.hex()})
+    if ctx.contentdivergent():
+        dsets = divergentsets(repo, ctx)
+        for dset in dsets:
+            divnodes = [repo[n] for n in dset['divergentnodes']]
+            result.append({'instability': 'content-divergent',
+                           'divergentnodes': divnodes,
+                           'reason': 'predecessor',
+                           'node': nodemod.hex(dset['commonpredecessor'])})
+    return result

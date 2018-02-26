@@ -668,7 +668,7 @@ def email(ui, repo, *revs, **opts):
         start_time = util.makedate()
 
     def genmsgid(id):
-        return '<%s.%s@%s>' % (id[:20], int(start_time[0]), socket.getfqdn())
+        return '<%s.%d@%s>' % (id[:20], int(start_time[0]), socket.getfqdn())
 
     # deprecated config: patchbomb.from
     sender = (opts.get('from') or ui.config('email', 'from') or

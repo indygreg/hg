@@ -192,11 +192,15 @@ if ispy3:
 
     def strurl(url):
         """Converts a bytes url back to str"""
-        return url.decode(u'ascii')
+        if isinstance(url, bytes):
+            return url.decode(u'ascii')
+        return url
 
     def bytesurl(url):
         """Converts a str url to bytes by encoding in ascii"""
-        return url.encode(u'ascii')
+        if isinstance(url, str):
+            return url.encode(u'ascii')
+        return url
 
     def raisewithtb(exc, tb):
         """Raise exception with the given traceback"""

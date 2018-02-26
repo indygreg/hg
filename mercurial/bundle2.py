@@ -2002,7 +2002,7 @@ def handlepushkey(op, inpart):
         for key in ('namespace', 'key', 'new', 'old', 'ret'):
             if key in inpart.params:
                 kwargs[key] = inpart.params[key]
-        raise error.PushkeyFailed(partid=str(inpart.id),
+        raise error.PushkeyFailed(partid='%d' % inpart.id,
                                   **pycompat.strkwargs(kwargs))
 
 @parthandler('bookmarks')

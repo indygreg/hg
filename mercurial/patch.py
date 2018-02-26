@@ -2518,7 +2518,7 @@ def difflabel(func, *args, **kw):
                                 yield (t, l)
                         else:
                             for token in tabsplitter.findall(stripline):
-                                if '\t' == token[0]:
+                                if token.startswith('\t'):
                                     yield (token, 'diff.tab')
                                 else:
                                     yield (token, label)

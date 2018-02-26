@@ -154,7 +154,7 @@ class tarit(object):
 
         def taropen(mode, name='', fileobj=None):
             if kind == 'gz':
-                mode = mode[0]
+                mode = mode[0:1]
                 if not fileobj:
                     fileobj = open(name, mode + 'b')
                 gzfileobj = self.GzipFileWithTime(name, mode + 'b',

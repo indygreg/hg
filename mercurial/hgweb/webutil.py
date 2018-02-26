@@ -449,7 +449,7 @@ def changesetentry(web, req, tmpl, ctx):
         diffsummary=lambda **x: diffsummary(diffstatsgen),
         diffstat=diffstats,
         archives=web.archivelist(ctx.hex()),
-        **commonentry(web.repo, ctx))
+        **pycompat.strkwargs(commonentry(web.repo, ctx)))
 
 def listfilediffs(tmpl, files, node, max):
     for f in files[:max]:

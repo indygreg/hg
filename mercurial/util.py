@@ -26,6 +26,7 @@ import errno
 import gc
 import hashlib
 import imp
+import io
 import itertools
 import mmap
 import os
@@ -1178,7 +1179,10 @@ def _sethgexecutable(path):
 
 def _isstdout(f):
     fileno = getattr(f, 'fileno', None)
-    return fileno and fileno() == sys.__stdout__.fileno()
+    try:
+        return fileno and fileno() == sys.__stdout__.fileno()
+    except io.UnsupportedOperation:
+        return False # fileno() raised UnsupportedOperation
 
 def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""

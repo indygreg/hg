@@ -38,7 +38,7 @@ def tidyprefix(dest, kind, prefix):
     if prefix:
         prefix = util.normpath(prefix)
     else:
-        if not isinstance(dest, str):
+        if not isinstance(dest, bytes):
             raise ValueError('dest must be string if no prefix')
         prefix = os.path.basename(dest)
         lower = prefix.lower()

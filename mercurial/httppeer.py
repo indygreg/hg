@@ -291,9 +291,6 @@ class httppeer(wireproto.wirepeer):
             size = data.length
         elif data is not None:
             size = len(data)
-        if size and self.ui.configbool('ui', 'usehttp2'):
-            headers[r'Expect'] = r'100-Continue'
-            headers[r'X-HgHttp2'] = r'1'
         if data is not None and r'Content-Type' not in headers:
             headers[r'Content-Type'] = r'application/mercurial-0.1'
 

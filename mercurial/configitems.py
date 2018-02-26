@@ -1026,9 +1026,6 @@ coreconfigitem('ui', 'formatted',
 coreconfigitem('ui', 'graphnodetemplate',
     default=None,
 )
-coreconfigitem('ui', 'http2debuglevel',
-    default=None,
-)
 coreconfigitem('ui', 'interactive',
     default=None,
 )
@@ -1125,9 +1122,6 @@ coreconfigitem('ui', 'traceback',
     default=False,
 )
 coreconfigitem('ui', 'tweakdefaults',
-    default=False,
-)
-coreconfigitem('ui', 'usehttp2',
     default=False,
 )
 coreconfigitem('ui', 'username',

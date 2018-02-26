@@ -13,8 +13,6 @@ New errors are not allowed. Warnings are strongly discouraged.
   > -X mercurial/thirdparty \
   > | sed 's-\\-/-g' | "$check_code" --warnings --per-file=0 - || false
   Skipping i18n/polib.py it has no-che?k-code (glob)
-  Skipping mercurial/httpclient/__init__.py it has no-che?k-code (glob)
-  Skipping mercurial/httpclient/_readers.py it has no-che?k-code (glob)
   Skipping mercurial/statprof.py it has no-che?k-code (glob)
   Skipping tests/badserverext.py it has no-che?k-code (glob)
 

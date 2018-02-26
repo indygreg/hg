@@ -470,17 +470,9 @@ def opener(ui, authinfo=None, useragent=None):
     construct an opener suitable for urllib2
     authinfo will be added to the password manager
     '''
-    # experimental config: ui.usehttp2
-    if ui.configbool('ui', 'usehttp2'):
-        handlers = [
-            httpconnectionmod.http2handler(
-                ui,
-                passwordmgr(ui, ui.httppasswordmgrdb))
-        ]
-    else:
-        handlers = [httphandler()]
-        if has_https:
-            handlers.append(httpshandler(ui))
+    handlers = [httphandler()]
+    if has_https:
+        handlers.append(httpshandler(ui))
 
     handlers.append(proxyhandler(ui))
 

@@ -2479,7 +2479,8 @@ def parsedate(date, formats=None, bias=None):
             else:
                 break
         else:
-            raise error.ParseError(_('invalid date: %r') % date)
+            raise error.ParseError(
+                _('invalid date: %r') % pycompat.bytestr(date))
     # validate explicit (probably user-specified) date and
     # time zone offset. values must fit in signed 32 bits for
     # current 32-bit linux runtimes. timezones go from UTC-12

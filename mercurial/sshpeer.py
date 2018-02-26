@@ -337,13 +337,16 @@ def _performhandshake(ui, stdin, stdout, stderr):
     return protoname, caps
 
 class sshv1peer(wireproto.wirepeer):
-    def __init__(self, ui, url, proc, stdin, stdout, stderr, caps):
+    def __init__(self, ui, url, proc, stdin, stdout, stderr, caps,
+                 autoreadstderr=True):
         """Create a peer from an existing SSH connection.
 
         ``proc`` is a handle on the underlying SSH process.
         ``stdin``, ``stdout``, and ``stderr`` are handles on the stdio
         pipes for that process.
         ``caps`` is a set of capabilities supported by the remote.
+        ``autoreadstderr`` denotes whether to automatically read from
+        stderr and to forward its output.
         """
         self._url = url
         self._ui = ui
@@ -353,8 +356,9 @@ class sshv1peer(wireproto.wirepeer):
 
         # And we hook up our "doublepipe" wrapper to allow querying
         # stderr any time we perform I/O.
-        stdout = doublepipe(ui, util.bufferedinputpipe(stdout), stderr)
-        stdin = doublepipe(ui, stdin, stderr)
+        if autoreadstderr:
+            stdout = doublepipe(ui, util.bufferedinputpipe(stdout), stderr)
+            stdin = doublepipe(ui, stdin, stderr)
 
         self._pipeo = stdin
         self._pipei = stdout
@@ -531,7 +535,7 @@ class sshv2peer(sshv1peer):
     # And handshake is performed before the peer is instantiated. So
     # we need no custom code.
 
-def makepeer(ui, path, proc, stdin, stdout, stderr):
+def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
     """Make a peer instance from existing pipes.
 
     ``path`` and ``proc`` are stored on the eventual peer instance and may
@@ -552,9 +556,11 @@ def makepeer(ui, path, proc, stdin, stdout, stderr):
         raise
 
     if protoname == wireprotoserver.SSHV1:
-        return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps)
+        return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps,
+                         autoreadstderr=autoreadstderr)
     elif protoname == wireprotoserver.SSHV2:
-        return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps)
+        return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps,
+                         autoreadstderr=autoreadstderr)
     else:
         _cleanuppipes(ui, stdout, stdin, stderr)
         raise error.RepoError(_('unknown version of SSH protocol: %s') %

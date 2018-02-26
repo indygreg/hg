@@ -1946,7 +1946,8 @@ def handleerrorpushkey(op, inpart):
         value = inpart.params.get(name)
         if value is not None:
             kwargs[name] = value
-    raise error.PushkeyFailed(inpart.params['in-reply-to'], **kwargs)
+    raise error.PushkeyFailed(inpart.params['in-reply-to'],
+                              **pycompat.strkwargs(kwargs))
 
 @parthandler('error:unsupportedcontent', ('parttype', 'params'))
 def handleerrorunsupportedcontent(op, inpart):
@@ -1959,7 +1960,7 @@ def handleerrorunsupportedcontent(op, inpart):
     if params is not None:
         kwargs['params'] = params.split('\0')
 
-    raise error.BundleUnknownFeatureError(**kwargs)
+    raise error.BundleUnknownFeatureError(**pycompat.strkwargs(kwargs))
 
 @parthandler('error:pushraced', ('message',))
 def handleerrorpushraced(op, inpart):
@@ -2001,7 +2002,8 @@ def handlepushkey(op, inpart):
         for key in ('namespace', 'key', 'new', 'old', 'ret'):
             if key in inpart.params:
                 kwargs[key] = inpart.params[key]
-        raise error.PushkeyFailed(partid=str(inpart.id), **kwargs)
+        raise error.PushkeyFailed(partid=str(inpart.id),
+                                  **pycompat.strkwargs(kwargs))
 
 @parthandler('bookmarks')
 def handlebookmark(op, inpart):

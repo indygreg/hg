@@ -73,7 +73,8 @@ def annotatesubrepoerror(func):
             raise ex
         except error.Abort as ex:
             subrepo = subrelpath(self)
-            errormsg = str(ex) + ' ' + _('(in subrepository "%s")') % subrepo
+            errormsg = (util.forcebytestr(ex) + ' '
+                        + _('(in subrepository "%s")') % subrepo)
             # avoid handling this exception by raising a SubrepoAbort exception
             raise SubrepoAbort(errormsg, hint=ex.hint, subrepo=subrepo,
                                cause=sys.exc_info())

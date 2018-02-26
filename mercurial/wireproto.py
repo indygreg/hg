@@ -955,7 +955,7 @@ def pushkey(repo, proto, namespace, key, old, new):
                          encoding.tolocal(old), new) or False
 
     output = output.getvalue() if output else ''
-    return bytesresponse('%s\n%s' % (int(r), output))
+    return bytesresponse('%d\n%s' % (int(r), output))
 
 @wireprotocommand('stream_out')
 def stream(repo, proto):

@@ -1188,7 +1188,7 @@ def shellenviron(environ=None):
             return '0'
         if val is True:
             return '1'
-        return str(val)
+        return pycompat.bytestr(val)
     env = dict(encoding.environ)
     if environ:
         env.update((k, py2shell(v)) for k, v in environ.iteritems())

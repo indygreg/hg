@@ -179,7 +179,7 @@ class bmstore(dict):
         self._aclean = True
 
     def _write(self, fp):
-        for name, node in self.iteritems():
+        for name, node in sorted(self.iteritems()):
             fp.write("%s %s\n" % (hex(node), encoding.fromlocal(name)))
         self._clean = True
         self._repo.invalidatevolatilesets()

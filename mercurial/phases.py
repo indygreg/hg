@@ -326,7 +326,7 @@ class phasecache(object):
 
     def _write(self, fp):
         for phase, roots in enumerate(self.phaseroots):
-            for h in roots:
+            for h in sorted(roots):
                 fp.write('%i %s\n' % (phase, hex(h)))
         self.dirty = False
 

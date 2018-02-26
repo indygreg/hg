@@ -439,6 +439,11 @@ class httppeer(wireproto.wirepeer):
             if len(vals) < 2:
                 raise error.ResponseError(_("unexpected response:"), r)
             return vals
+        except urlerr.httperror:
+            # Catch and re-raise these so we don't try and treat them
+            # like generic socket errors. They lack any values in
+            # .args on Python 3 which breaks our socket.error block.
+            raise
         except socket.error as err:
             if err.args[0] in (errno.ECONNRESET, errno.EPIPE):
                 raise error.Abort(_('push failed: %s') % err.args[1])

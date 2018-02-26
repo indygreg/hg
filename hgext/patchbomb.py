@@ -748,7 +748,7 @@ def email(ui, repo, *revs, **opts):
         if not parent.endswith('>'):
             parent += '>'
 
-    sender_addr = eutil.parseaddr(sender)[1]
+    sender_addr = eutil.parseaddr(encoding.strfromlocal(sender))[1]
     sender = mail.addressencode(ui, sender, _charsets, opts.get('test'))
     sendmail = None
     firstpatch = None

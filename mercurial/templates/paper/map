@@ -216,6 +216,9 @@ obsfateoperations = '{if(obsfateoperations(markers), ' using {join(obsfateoperat
 obsfateusers = '{if(obsfateusers(markers), ' by {join(obsfateusers(markers)%'{user|obfuscate}', ', ')}')}'
 obsfatedate = '{if(obsfatedate(markers), ' {ifeq(min(obsfatedate(markers)), max(obsfatedate(markers)), '<span class="age">{min(obsfatedate(markers))|rfc822date}</span>', 'between <span class="age">{min(obsfatedate(markers))|rfc822date}</span> and <span class="age">{max(obsfatedate(markers))|rfc822date}</span>')}')}'
 obsfateentry = '{obsfateverb}{obsfateoperations}{obsfatesuccessors}{obsfateusers}{obsfatedate}'
+instabilitychangesetlink = '<a href="{url|urlescape}rev/{node|short}{sessionvars%urlparameter}">{node|short}</a>'
+divergentnode = '{instabilitychangesetlink} ({phase})'
+whyunstableentry = '{instability}: {if(divergentnodes, divergentnodes%divergentnode)} {reason} {instabilitychangesetlink}'
 
 filediffparent = '
   <tr>

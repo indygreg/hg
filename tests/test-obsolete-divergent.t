@@ -720,3 +720,19 @@ Use scmutil.cleanupnodes API to create divergence
 
   $ hg debugwhyunstable 1a2a9b5b0030
   content-divergent: 70d5a63ca112acb3764bc1d7320ca90ea688d671 (draft) predecessor a178212c3433c4e77b573f6011e29affb8aefa33
+
+#if serve
+
+  $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+check explanation for a content-divergent changeset
+
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=paper' | grep divergent:
+   <td>content-divergent: <a href="/rev/70d5a63ca112?style=paper">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=paper">a178212c3433</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=coal' | grep divergent:
+   <td>content-divergent: <a href="/rev/70d5a63ca112?style=coal">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=coal">a178212c3433</a></td>
+
+  $ killdaemons.py
+
+#endif

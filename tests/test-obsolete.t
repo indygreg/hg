@@ -1072,9 +1072,19 @@ check changeset with instabilities
     <th class="instabilities">instabilities:</th>
     <td class="instabilities">orphan phase-divergent </td>
 
+check explanation for an orphan and phase-divergent changeset
+
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=paper' | egrep '(orphan|phase-divergent):'
+   <td>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a><br>
+  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=paper">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=coal' | egrep '(orphan|phase-divergent):'
+   <td>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a><br>
+  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=coal">245bde4270cd</a></td>
+
   $ killdaemons.py
 
   $ rm hg.pid access.log errors.log
+
 #endif
 
 Test incoming/outcoming with changesets obsoleted remotely, known locally

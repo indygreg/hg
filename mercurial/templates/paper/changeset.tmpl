@@ -53,6 +53,10 @@
  <th>obsolete</th>
  <td>{join(succsandmarkers%obsfateentry, '<br>\n')}</td>
 </tr>')}
+{if(instabilities, '<tr>
+ <th>unstable</th>
+ <td>{join(whyunstable%whyunstableentry, '<br>\n')}</td>
+</tr>')}
 <tr>
  <th class="author">parents</th>
  <td class="author">{ifeq(count(parent), '2', parent%changesetparentdiff, parent%changesetparent)}</td>

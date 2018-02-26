@@ -28,6 +28,7 @@ from .. import (
     error,
     match,
     mdiff,
+    obsutil,
     patch,
     pathutil,
     pycompat,
@@ -362,6 +363,18 @@ def succsandmarkers(context, mapping):
 # teach templater succsandmarkers is switched to (context, mapping) API
 succsandmarkers._requires = {'repo', 'ctx', 'templ'}
 
+def whyunstable(context, mapping):
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+
+    entries = obsutil.whyunstable(repo, ctx)
+    for entry in entries:
+        if entry.get('divergentnodes'):
+            entry['divergentnodes'] = _siblings(entry['divergentnodes'])
+        yield entry
+
+whyunstable._requires = {'repo', 'ctx', 'templ'}
+
 def commonentry(repo, ctx):
     node = ctx.node()
     return {
@@ -380,6 +393,7 @@ def commonentry(repo, ctx):
         'obsolete': ctx.obsolete(),
         'succsandmarkers': succsandmarkers,
         'instabilities': [{"instability": i} for i in ctx.instabilities()],
+        'whyunstable': whyunstable,
         'branch': nodebranchnodefault(ctx),
         'inbranch': nodeinbranch(repo, ctx),
         'branches': nodebranchdict(repo, ctx),

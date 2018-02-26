@@ -259,7 +259,8 @@ class localpeer(repository.peer):
                     bundle2.processbundle(self._repo, b)
                 raise
         except error.PushRaced as exc:
-            raise error.ResponseError(_('push failed:'), str(exc))
+            raise error.ResponseError(_('push failed:'),
+                                      util.forcebytestr(exc))
 
     # End of _basewirecommands interface.
 

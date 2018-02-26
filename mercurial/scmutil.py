@@ -208,7 +208,7 @@ def callcatch(ui, func):
             ui.warn(_("(%s)\n") % inst.hint)
     except ImportError as inst:
         ui.warn(_("abort: %s!\n") % inst)
-        m = str(inst).split()[-1]
+        m = util.forcebytestr(inst).split()[-1]
         if m in "mpatch bdiff".split():
             ui.warn(_("(did you forget to compile extensions?)\n"))
         elif m in "zlib".split():

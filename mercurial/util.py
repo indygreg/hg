@@ -3634,7 +3634,7 @@ class _zlibengine(compressionengine):
                 return zlib.decompress(data)
             except zlib.error as e:
                 raise error.RevlogError(_('revlog decompress error: %s') %
-                                        str(e))
+                                        forcebytestr(e))
 
     def revlogcompressor(self, opts=None):
         return self.zlibrevlogcompressor()
@@ -3860,7 +3860,7 @@ class _zstdengine(compressionengine):
                 return ''.join(chunks)
             except Exception as e:
                 raise error.RevlogError(_('revlog decompress error: %s') %
-                                        str(e))
+                                        forcebytestr(e))
 
     def revlogcompressor(self, opts=None):
         opts = opts or {}

@@ -2149,7 +2149,8 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
                 continue
             except error.UnsupportedBundleSpecification as e:
                 repo.ui.debug('filtering %s because unsupported bundle '
-                              'spec: %s\n' % (entry['URL'], str(e)))
+                              'spec: %s\n' % (
+                                  entry['URL'], util.forcebytestr(e)))
                 continue
         # If we don't have a spec and requested a stream clone, we don't know
         # what the entry is so don't attempt to apply it.
@@ -2254,7 +2255,8 @@ def trypullbundlefromurl(ui, repo, url):
                 bundle2.applybundle(repo, cg, tr, 'clonebundles', url)
             return True
         except urlerr.httperror as e:
-            ui.warn(_('HTTP error fetching bundle: %s\n') % str(e))
+            ui.warn(_('HTTP error fetching bundle: %s\n') %
+                    util.forcebytestr(e))
         except urlerr.urlerror as e:
             ui.warn(_('error fetching bundle: %s\n') % e.reason)
 

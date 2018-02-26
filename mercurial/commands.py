@@ -3899,7 +3899,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
         try:
             return hg.updatetotally(ui, repo, checkout, brev)
         except error.UpdateAbort as inst:
-            msg = _("not updating: %s") % str(inst)
+            msg = _("not updating: %s") % util.forcebytestr(inst)
             hint = inst.hint
             raise error.UpdateAbort(msg, hint=hint)
     if modheads > 1:

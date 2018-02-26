@@ -449,7 +449,7 @@ class cookiehandler(urlreq.basehandler):
             self.cookiejar = cookiejar
         except util.cookielib.LoadError as e:
             ui.warn(_('(error loading cookie file %s: %s; continuing without '
-                      'cookies)\n') % (cookiefile, str(e)))
+                      'cookies)\n') % (cookiefile, util.forcebytestr(e)))
 
     def http_request(self, request):
         if self.cookiejar:

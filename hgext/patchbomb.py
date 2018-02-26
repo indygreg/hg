@@ -74,6 +74,7 @@ You can set patchbomb to always ask for confirmation by setting
 from __future__ import absolute_import
 
 import email as emailmod
+import email.generator as emailgen
 import errno
 import os
 import socket
@@ -777,7 +778,7 @@ def email(ui, repo, *revs, **opts):
         if opts.get('test'):
             ui.status(_('displaying '), subj, ' ...\n')
             ui.pager('email')
-            generator = emailmod.Generator.Generator(ui, mangle_from_=False)
+            generator = emailgen.Generator(ui, mangle_from_=False)
             try:
                 generator.flatten(m, 0)
                 ui.write('\n')
@@ -794,7 +795,7 @@ def email(ui, repo, *revs, **opts):
                 # Exim does not remove the Bcc field
                 del m['Bcc']
             fp = stringio()
-            generator = emailmod.Generator.Generator(fp, mangle_from_=False)
+            generator = emailgen.Generator(fp, mangle_from_=False)
             generator.flatten(m, 0)
             sendmail(sender_addr, to + bcc + cc, fp.getvalue())
 

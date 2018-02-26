@@ -263,23 +263,34 @@ class _gitlfsremote(object):
             # server implementation (ex. lfs-test-server)  does not set "error"
             # but just removes "download" from "actions". Treat that case
             # as the same as 404 error.
-            notfound = (response.get('error', {}).get('code') == 404
-                        or (action == 'download'
-                            and action not in response.get('actions', [])))
-            if notfound:
-                ptrmap = {p.oid(): p for p in pointers}
-                p = ptrmap.get(response['oid'], None)
-                if p:
-                    filename = getattr(p, 'filename', 'unknown')
-                    raise LfsRemoteError(
-                        _(('LFS server error. Remote object '
-                          'for "%s" not found: %r')) % (filename, response))
+            if 'error' not in response:
+                if (action == 'download'
+                    and action not in response.get('actions', [])):
+                    code = 404
                 else:
-                    raise LfsRemoteError(
-                        _('LFS server error. Unsolicited response for oid %s')
-                        % response['oid'])
-            if 'error' in response:
-                raise LfsRemoteError(_('LFS server error: %r') % response)
+                    continue
+            else:
+                # An error dict without a code doesn't make much sense, so
+                # treat as a server error.
+                code = response.get('error').get('code', 500)
+
+            ptrmap = {p.oid(): p for p in pointers}
+            p = ptrmap.get(response['oid'], None)
+            if p:
+                filename = getattr(p, 'filename', 'unknown')
+                errors = {
+                    404: 'The object does not exist',
+                    410: 'The object was removed by the owner',
+                    422: 'Validation error',
+                    500: 'Internal server error',
+                }
+                msg = errors.get(code, 'status code %d' % code)
+                raise LfsRemoteError(_('LFS server error for "%s": %s')
+                                     % (filename, msg))
+            else:
+                raise LfsRemoteError(
+                    _('LFS server error. Unsolicited response for oid %s')
+                    % response['oid'])
 
     def _extractobjects(self, response, pointers, action):
         """extract objects from response of the batch API

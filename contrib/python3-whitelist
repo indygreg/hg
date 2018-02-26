@@ -6,6 +6,7 @@ test-amend-subrepo.t
 test-ancestor.py
 test-annotate.py
 test-automv.t
+test-backout.t
 test-backwards-remove.t
 test-bheads.t
 test-bisect2.t
@@ -33,7 +34,9 @@ test-children.t
 test-clone-pull-corruption.t
 test-clone-r.t
 test-clone-update-order.t
+test-commit-amend.t
 test-commit-unresolved.t
+test-commit.t
 test-completion.t
 test-conflict.t
 test-confused-revert.t
@@ -108,6 +111,7 @@ test-getbundle.t
 test-git-export.t
 test-glog-topological.t
 test-gpg.t
+test-graft.t
 test-hghave.t
 test-hgk.t
 test-histedit-arguments.t
@@ -253,6 +257,7 @@ test-rebase-bookmarks.t
 test-rebase-brute-force.t
 test-rebase-cache.t
 test-rebase-check-restore.t
+test-rebase-collapse.t
 test-rebase-dest.t
 test-rebase-detach.t
 test-rebase-emptycommit.t
@@ -262,10 +267,12 @@ test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
 test-rebase-named-branches.t
 test-rebase-newancestor.t
+test-rebase-obsolete.t
 test-rebase-parameters.t
 test-rebase-partial.t
 test-rebase-pull.t
 test-rebase-rename.t
+test-rebase-scenario-global.t
 test-rebase-templates.t
 test-rebase-transaction.t
 test-record.t

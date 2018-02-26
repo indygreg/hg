@@ -520,8 +520,8 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
             baselabel = 'base'
         env = {'HG_FILE': fcd.path(),
                'HG_MY_NODE': short(mynode),
-               'HG_OTHER_NODE': str(fco.changectx()),
-               'HG_BASE_NODE': str(fca.changectx()),
+               'HG_OTHER_NODE': short(fco.changectx().node()),
+               'HG_BASE_NODE': short(fca.changectx().node()),
                'HG_MY_ISLINK': 'l' in fcd.flags(),
                'HG_OTHER_ISLINK': 'l' in fco.flags(),
                'HG_BASE_ISLINK': 'l' in fca.flags(),

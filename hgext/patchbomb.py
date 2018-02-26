@@ -75,6 +75,7 @@ from __future__ import absolute_import
 
 import email as emailmod
 import email.generator as emailgen
+import email.utils as eutil
 import errno
 import os
 import socket
@@ -745,7 +746,7 @@ def email(ui, repo, *revs, **opts):
         if not parent.endswith('>'):
             parent += '>'
 
-    sender_addr = emailmod.Utils.parseaddr(sender)[1]
+    sender_addr = eutil.parseaddr(sender)[1]
     sender = mail.addressencode(ui, sender, _charsets, opts.get('test'))
     sendmail = None
     firstpatch = None
@@ -764,7 +765,7 @@ def email(ui, repo, *revs, **opts):
             parent = m['Message-Id']
 
         m['User-Agent'] = 'Mercurial-patchbomb/%s' % util.version()
-        m['Date'] = emailmod.Utils.formatdate(start_time[0], localtime=True)
+        m['Date'] = eutil.formatdate(start_time[0], localtime=True)
 
         start_time = (start_time[0] + 1, start_time[1])
         m['From'] = sender

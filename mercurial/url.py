@@ -528,4 +528,4 @@ def open(ui, url_, data=None):
         path = util.normpath(os.path.abspath(url_))
         url_ = 'file://' + urlreq.pathname2url(path)
         authinfo = None
-    return opener(ui, authinfo).open(url_, data)
+    return opener(ui, authinfo).open(pycompat.strurl(url_), data)

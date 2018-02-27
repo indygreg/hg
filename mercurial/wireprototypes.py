@@ -7,6 +7,12 @@ from __future__ import absolute_import
 
 import abc
 
+# Names of the SSH protocol implementations.
+SSHV1 = 'ssh-v1'
+# This is advertised over the wire. Incremental the counter at the end
+# to reflect BC breakages.
+SSHV2 = 'exp-ssh-v2-0001'
+
 class bytesresponse(object):
     """A wire protocol response consisting of raw bytes."""
     def __init__(self, data):

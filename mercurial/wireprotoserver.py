@@ -33,11 +33,8 @@ HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
 
-# Names of the SSH protocol implementations.
-SSHV1 = 'ssh-v1'
-# This is advertised over the wire. Incremental the counter at the end
-# to reflect BC breakages.
-SSHV2 = 'exp-ssh-v2-0001'
+SSHV1 = wireprototypes.SSHV1
+SSHV2 = wireprototypes.SSHV2
 
 def decodevaluefromheaders(req, headerprefix):
     """Decode a long value from multiple HTTP request headers.
@@ -324,7 +321,7 @@ class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
 
     @property
     def name(self):
-        return SSHV1
+        return wireprototypes.SSHV1
 
     def getargs(self, args):
         data = {}
@@ -492,7 +489,7 @@ def _runsshserver(ui, repo, fin, fout, ev):
             # We should never transition into this state if we've switched
             # protocols.
             assert not protoswitched
-            assert proto.name == SSHV1
+            assert proto.name == wireprototypes.SSHV1
 
             # Expected: upgrade <token> <capabilities>
             # If we get something else, the request is malformed. It could be

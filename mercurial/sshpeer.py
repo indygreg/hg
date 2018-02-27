@@ -17,6 +17,7 @@ from . import (
     util,
     wireproto,
     wireprotoserver,
+    wireprototypes,
 )
 
 def _serverquote(s):
@@ -257,7 +258,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
         badresponse()
 
     # Assume version 1 of wire protocol by default.
-    protoname = wireprotoserver.SSHV1
+    protoname = wireprototypes.SSHV1
     reupgraded = re.compile(b'^upgraded %s (.*)$' % re.escape(token))
 
     lines = ['', 'dummy']
@@ -296,7 +297,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     # For version 1, we should see a ``capabilities`` line in response to the
     # ``hello`` command.
-    if protoname == wireprotoserver.SSHV1:
+    if protoname == wireprototypes.SSHV1:
         for l in reversed(lines):
             # Look for response to ``hello`` command. Scan from the back so
             # we don't misinterpret banner output as the command reply.
@@ -555,10 +556,10 @@ def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
         _cleanuppipes(ui, stdout, stdin, stderr)
         raise
 
-    if protoname == wireprotoserver.SSHV1:
+    if protoname == wireprototypes.SSHV1:
         return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps,
                          autoreadstderr=autoreadstderr)
-    elif protoname == wireprotoserver.SSHV2:
+    elif protoname == wireprototypes.SSHV2:
         return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps,
                          autoreadstderr=autoreadstderr)
     else:

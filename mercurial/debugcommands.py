@@ -270,7 +270,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
             ui.write("\n%s%s\n" % (indent_string, named))
             for deltadata in gen.deltaiter():
                 node, p1, p2, cs, deltabase, delta, flags = deltadata
-                ui.write("%s%s %s %s %s %s %s\n" %
+                ui.write("%s%s %s %s %s %s %d\n" %
                          (indent_string, hex(node), hex(p1), hex(p2),
                           hex(cs), hex(deltabase), len(delta)))
 

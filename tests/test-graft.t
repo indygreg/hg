@@ -1373,3 +1373,40 @@ also detecting that both 3 and 5 should be skipped:
   note: graft of 7:d3c3f2b38ecc created no changes to commit
 
   $ cd ..
+
+Testing the reading of old format graftstate file with newer mercurial
+
+  $ hg init oldgraft
+  $ cd oldgraft
+  $ for ch in a b c; do echo foo > $ch; hg add $ch; hg ci -Aqm "added "$ch; done;
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  @  2:8be98ac1a569 added c
+  |
+  o  1:80e6d2c47cfe added b
+  |
+  o  0:f7ad41964313 added a
+  
+  $ hg up 0
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo bar > b
+  $ hg add b
+  $ hg ci -m "bar to b"
+  created new head
+  $ hg graft -r 1 -r 2
+  grafting 1:80e6d2c47cfe "added b"
+  merging b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+Writing the nodes in old format to graftstate
+
+  $ hg log -r 1 -r 2 -T '{node}\n' > .hg/graftstate
+  $ echo foo > b
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg graft --continue
+  $ hg graft --continue
+  grafting 1:80e6d2c47cfe "added b"
+  grafting 2:8be98ac1a569 "added c"

@@ -604,7 +604,7 @@ class commandentry(object):
         data not captured by the 2-tuple and a new instance containing
         the union of the two objects is returned.
         """
-        return commandentry(func, args)
+        return commandentry(func, args=args)
 
     # Old code treats instances as 2-tuples. So expose that interface.
     def __iter__(self):
@@ -640,7 +640,7 @@ class commanddict(dict):
             if k in self:
                 v = self[k]._merge(v[0], v[1])
             else:
-                v = commandentry(v[0], v[1])
+                v = commandentry(v[0], args=v[1])
         else:
             raise ValueError('command entries must be commandentry instances '
                              'or 2-tuples')
@@ -664,7 +664,7 @@ def wireprotocommand(name, args=''):
     accepts. ``*`` is a special value that says to accept all arguments.
     """
     def register(func):
-        commands[name] = commandentry(func, args)
+        commands[name] = commandentry(func, args=args)
         return func
     return register
 

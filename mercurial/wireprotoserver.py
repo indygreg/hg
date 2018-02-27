@@ -371,6 +371,10 @@ class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
 class sshv2protocolhandler(sshv1protocolhandler):
     """Protocol handler for version 2 of the SSH protocol."""
 
+    @property
+    def name(self):
+        return wireprototypes.SSHV2
+
 def _runsshserver(ui, repo, fin, fout, ev):
     # This function operates like a state machine of sorts. The following
     # states are defined:

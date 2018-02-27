@@ -498,7 +498,7 @@ debug output
   sending between command
   remote: 384 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
-  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
   remote: 1 (sshv1 !)
   query 1; heads
   devel-peer-request: batch

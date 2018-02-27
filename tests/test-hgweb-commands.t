@@ -1914,7 +1914,7 @@ capabilities
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities'; echo
   200 Script output follows
   
-  lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$
+  lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$
 
 heads
 
@@ -2113,10 +2113,10 @@ capabilities
 
 (plain version to check the format)
 
-  $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities' | dd ibs=75 count=1 2> /dev/null; echo
+  $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities' | dd ibs=76 count=1 2> /dev/null; echo
   200 Script output follows
   
-  lookup changegroupsubset branchmap pushkey known
+  lookup branchmap pushkey known getbundle unbundle
 
 (spread version to check the content)
 
@@ -2127,13 +2127,13 @@ capabilities
   follows
   
   lookup
-  changegroupsubset
   branchmap
   pushkey
   known
   getbundle
   unbundlehash
   batch
+  changegroupsubset
   stream-preferred
   streamreqs=generaldelta,revlogv1
   $USUAL_BUNDLE2_CAPS_SERVER$

@@ -783,7 +783,7 @@ def clonebundles(repo, proto):
     """
     return bytesresponse(repo.vfs.tryread('clonebundles.manifest'))
 
-wireprotocaps = ['lookup', 'changegroupsubset', 'branchmap', 'pushkey',
+wireprotocaps = ['lookup', 'branchmap', 'pushkey',
                  'known', 'getbundle', 'unbundlehash', 'batch']
 
 def _capabilities(repo, proto):
@@ -798,6 +798,12 @@ def _capabilities(repo, proto):
     """
     # copy to prevent modification of the global list
     caps = list(wireprotocaps)
+
+    # Command of same name as capability isn't exposed to version 1 of
+    # transports. So conditionally add it.
+    if commands.commandavailable('changegroupsubset', proto):
+        caps.append('changegroupsubset')
+
     if streamclone.allowservergeneration(repo):
         if repo.ui.configbool('server', 'preferuncompressed'):
             caps.append('stream-preferred')

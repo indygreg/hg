@@ -170,7 +170,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
         #    /pserver/user/server/path
         # are mapped to different cache file names.
         cachefile = root.split(":") + [directory, "cache"]
-        cachefile = ['-'.join(re.findall(r'\w+', s)) for s in cachefile if s]
+        cachefile = ['-'.join(re.findall(br'\w+', s)) for s in cachefile if s]
         cachefile = os.path.join(cachedir,
                                  '.'.join([s for s in cachefile if s]))
 

@@ -27,7 +27,7 @@ from mercurial import (
 from ..largefiles import lfutil
 
 # 64 bytes for SHA256
-_lfsre = re.compile(r'\A[a-f0-9]{64}\Z')
+_lfsre = re.compile(br'\A[a-f0-9]{64}\Z')
 
 class lfsvfs(vfsmod.vfs):
     def join(self, path):

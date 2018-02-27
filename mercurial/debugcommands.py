@@ -73,6 +73,7 @@ from . import (
     url as urlmod,
     util,
     vfs as vfsmod,
+    wireprotoserver,
 )
 
 release = lockmod.release
@@ -2229,6 +2230,37 @@ def debugrevspec(ui, repo, expr, **opts):
         return
     for c in revs:
         ui.write("%d\n" % c)
+
+@command('debugserve', [
+    ('', 'sshstdio', False, _('run an SSH server bound to process handles')),
+    ('', 'logiofd', '', _('file descriptor to log server I/O to')),
+    ('', 'logiofile', '', _('file to log server I/O to')),
+], '')
+def debugserve(ui, repo, **opts):
+    """run a server with advanced settings
+
+    This command is similar to :hg:`serve`. It exists partially as a
+    workaround to the fact that ``hg serve --stdio`` must have specific
+    arguments for security reasons.
+    """
+    opts = pycompat.byteskwargs(opts)
+
+    if not opts['sshstdio']:
+        raise error.Abort(_('only --sshstdio is currently supported'))
+
+    logfh = None
+
+    if opts['logiofd'] and opts['logiofile']:
+        raise error.Abort(_('cannot use both --logiofd and --logiofile'))
+
+    if opts['logiofd']:
+        # Line buffered because output is line based.
+        logfh = os.fdopen(int(opts['logiofd']), 'ab', 1)
+    elif opts['logiofile']:
+        logfh = open(opts['logiofile'], 'ab', 1)
+
+    s = wireprotoserver.sshserver(ui, repo, logfh=logfh)
+    s.serve_forever()
 
 @command('debugsetparents', [], _('REV1 [REV2]'))
 def debugsetparents(ui, repo, rev1, rev2=None):

@@ -967,6 +967,7 @@ Test list of internal help commands
    debugrename   dump rename information
    debugrevlog   show data and statistics about a revlog
    debugrevspec  parse and apply a revision specification
+   debugserve    run a server with advanced settings
    debugsetparents
                  manually set the parents of the current working directory
    debugssl      test a secure connection to a server

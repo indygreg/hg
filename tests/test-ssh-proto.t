@@ -39,6 +39,43 @@ Server should answer the "hello" command in isolation
   384
   capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
 
+`hg debugserve --sshstdio` works
+
+  $ cd server
+  $ hg debugserve --sshstdio << EOF
+  > hello
+  > EOF
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+
+I/O logging works
+
+  $ hg debugserve --sshstdio --logiofd 1 << EOF
+  > hello
+  > EOF
+  o> write(4) -> None:
+  o>     384\n
+  o> write(384) -> None:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> flush() -> None
+
+  $ hg debugserve --sshstdio --logiofile $TESTTMP/io << EOF
+  > hello
+  > EOF
+  384
+  capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+
+  $ cat $TESTTMP/io
+  o> write(4) -> None:
+  o>     384\n
+  o> write(384) -> None:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> flush() -> None
+
+  $ cd ..
+
 >=0.9.1 clients send a "hello" + "between" for the null range as part of handshake.
 Server should reply with capabilities and should send "1\n\n" as a successful
 reply with empty response to the "between".

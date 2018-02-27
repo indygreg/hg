@@ -2568,6 +2568,7 @@ def _parsewirelangblocks(fh):
     [
         ('', 'localssh', False, _('start an SSH server for this repo')),
         ('', 'peer', '', _('construct a specific version of the peer')),
+        ('', 'noreadstderr', False, _('do not read from stderr of the remote')),
     ] + cmdutil.remoteopts,
     _('[REPO]'),
     optionalrepo=True)
@@ -2585,6 +2586,10 @@ def debugwireproto(ui, repo, **opts):
     peer instance using the specified class type. Valid values are ``raw``,
     ``ssh1``, and ``ssh2``. ``raw`` instances only allow sending raw data
     payloads and don't support higher-level command actions.
+
+    ``--noreadstderr`` can be used to disable automatic reading from stderr
+    of the peer (for SSH connections only). Disabling automatic reading of
+    stderr is useful for making output more deterministic.
 
     Commands are issued via a mini language which is specified via stdin.
     The language consists of individual actions to perform. An action is
@@ -2628,6 +2633,16 @@ def debugwireproto(ui, repo, **opts):
 
     Values are interpreted as Python b'' literals. This allows encoding
     special byte sequences via backslash escaping.
+
+    The following arguments have special meaning:
+
+    ``PUSHFILE``
+        When defined, the *push* mechanism of the peer will be used instead
+        of the static request-response mechanism and the content of the
+        file specified in the value of this argument will be sent as the
+        command payload.
+
+        This can be used to submit a local bundle file to the remote.
 
     batchbegin
     ----------
@@ -2712,21 +2727,23 @@ def debugwireproto(ui, repo, **opts):
         # --localssh also implies the peer connection settings.
 
         url = 'ssh://localserver'
+        autoreadstderr = not opts['noreadstderr']
 
         if opts['peer'] == 'ssh1':
             ui.write(_('creating ssh peer for wire protocol version 1\n'))
             peer = sshpeer.sshv1peer(ui, url, proc, stdin, stdout, stderr,
-                                     None)
+                                     None, autoreadstderr=autoreadstderr)
         elif opts['peer'] == 'ssh2':
             ui.write(_('creating ssh peer for wire protocol version 2\n'))
             peer = sshpeer.sshv2peer(ui, url, proc, stdin, stdout, stderr,
-                                     None)
+                                     None, autoreadstderr=autoreadstderr)
         elif opts['peer'] == 'raw':
             ui.write(_('using raw connection to peer\n'))
             peer = None
         else:
             ui.write(_('creating ssh peer from handshake results\n'))
-            peer = sshpeer.makepeer(ui, url, proc, stdin, stdout, stderr)
+            peer = sshpeer.makepeer(ui, url, proc, stdin, stdout, stderr,
+                                    autoreadstderr=autoreadstderr)
 
     else:
         raise error.Abort(_('only --localssh is currently supported'))
@@ -2769,8 +2786,17 @@ def debugwireproto(ui, repo, **opts):
                 continue
 
             ui.status(_('sending %s command\n') % command)
-            res = peer._call(command, **args)
-            ui.status(_('response: %s\n') % util.escapedata(res))
+
+            if 'PUSHFILE' in args:
+                with open(args['PUSHFILE'], r'rb') as fh:
+                    del args['PUSHFILE']
+                    res, output = peer._callpush(command, fh, **args)
+                    ui.status(_('result: %s\n') % util.escapedata(res))
+                    ui.status(_('remote output: %s\n') %
+                              util.escapedata(output))
+            else:
+                res = peer._call(command, **args)
+                ui.status(_('response: %s\n') % util.escapedata(res))
 
         elif action == 'batchbegin':
             if batchedcommands is not None:

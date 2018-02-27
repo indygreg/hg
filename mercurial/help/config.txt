@@ -1791,6 +1791,11 @@ Controls generic server settings.
     are highly recommended. Partial clones will still be allowed.
     (default: False)
 
+``streamunbundle``
+    When set, servers will apply data sent from the client directly,
+    otherwise it will be written to a temporary file first. This option
+    effectively prevents concurrent pushes.
+
 ``concurrent-push-mode``
     Level of allowed race condition between two pushing clients.
 

@@ -106,15 +106,14 @@ class httpv1protocolhandler(object):
             self._protocaps = set(value.split(' '))
         return self._protocaps
 
-    def forwardpayload(self, fp):
+    def getpayload(self):
         # Existing clients *always* send Content-Length.
         length = int(self._req.headers[b'Content-Length'])
 
         # If httppostargs is used, we need to read Content-Length
         # minus the amount that was consumed by args.
         length -= int(self._req.headers.get(b'X-HgArgs-Post', 0))
-        for s in util.filechunkiter(self._req.bodyfh, limit=length):
-            fp.write(s)
+        return util.filechunkiter(self._req.bodyfh, limit=length)
 
     @contextlib.contextmanager
     def mayberedirectstdio(self):
@@ -610,7 +609,7 @@ class httpv2protocolhandler(object):
         # Protocol capabilities are currently not implemented for HTTP V2.
         return set()
 
-    def forwardpayload(self, fp):
+    def getpayload(self):
         raise NotImplementedError
 
     @contextlib.contextmanager
@@ -783,7 +782,7 @@ class sshv1protocolhandler(object):
     def getprotocaps(self):
         return self._protocaps
 
-    def forwardpayload(self, fpout):
+    def getpayload(self):
         # We initially send an empty response. This tells the client it is
         # OK to start sending data. If a client sees any other response, it
         # interprets it as an error.
@@ -796,7 +795,7 @@ class sshv1protocolhandler(object):
         # 0\n
         count = int(self._fin.readline())
         while count:
-            fpout.write(self._fin.read(count))
+            yield self._fin.read(count)
             count = int(self._fin.readline())
 
     @contextlib.contextmanager

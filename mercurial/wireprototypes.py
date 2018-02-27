@@ -123,10 +123,11 @@ class baseprotocolhandler(zi.Interface):
         Returns a list of capabilities as declared by the client for
         the current request (or connection for stateful protocol handlers)."""
 
-    def forwardpayload(fp):
-        """Read the raw payload and forward to a file.
+    def getpayload():
+        """Provide a generator for the raw payload.
 
-        The payload is read in full before the function returns.
+        The caller is responsible for ensuring that the full payload is
+        processed.
         """
 
     def mayberedirectstdio():

@@ -1082,14 +1082,33 @@ def unbundle(repo, proto, heads):
     with proto.mayberedirectstdio() as output:
         try:
             exchange.check_heads(repo, their_heads, 'preparing changes')
-
-            # write bundle data to temporary file because it can be big
-            fd, tempname = tempfile.mkstemp(prefix='hg-unbundle-')
-            fp = os.fdopen(fd, r'wb+')
-            r = 0
+            cleanup = lambda: None
             try:
-                proto.forwardpayload(fp)
-                fp.seek(0)
+                payload = proto.getpayload()
+                if repo.ui.configbool('server', 'streamunbundle'):
+                    def cleanup():
+                        # Ensure that the full payload is consumed, so
+                        # that the connection doesn't contain trailing garbage.
+                        for p in payload:
+                            pass
+                    fp = util.chunkbuffer(payload)
+                else:
+                    # write bundle data to temporary file as it can be big
+                    fp, tempname = None, None
+                    def cleanup():
+                        if fp:
+                            fp.close()
+                        if tempname:
+                            os.unlink(tempname)
+                    fd, tempname = tempfile.mkstemp(prefix='hg-unbundle-')
+                    repo.ui.debug('redirecting incoming bundle to %s\n' %
+                        tempname)
+                    fp = os.fdopen(fd, pycompat.sysstr('wb+'))
+                    r = 0
+                    for p in payload:
+                        fp.write(p)
+                    fp.seek(0)
+
                 gen = exchange.readbundle(repo.ui, fp, None)
                 if (isinstance(gen, changegroupmod.cg1unpacker)
                     and not bundle1allowed(repo, 'push')):
@@ -1112,8 +1131,7 @@ def unbundle(repo, proto, heads):
                     r, output.getvalue() if output else '')
 
             finally:
-                fp.close()
-                os.unlink(tempname)
+                cleanup()
 
         except (error.BundleValueError, error.Abort, error.PushRaced) as exc:
             # handle non-bundle2 case first

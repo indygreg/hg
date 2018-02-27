@@ -917,6 +917,9 @@ coreconfigitem('server', 'concurrent-push-mode',
 coreconfigitem('server', 'disablefullbundle',
     default=False,
 )
+coreconfigitem('server', 'streamunbundle',
+    default=False,
+)
 coreconfigitem('server', 'maxhttpheaderlen',
     default=1024,
 )

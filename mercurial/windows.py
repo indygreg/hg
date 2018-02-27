@@ -316,7 +316,7 @@ def popen(command, mode='r'):
     # Work around "popen spawned process may not write to stdout
     # under windows"
     # http://bugs.python.org/issue1366
-    command += " 2> %s" % os.devnull
+    command += " 2> %s" % pycompat.bytestr(os.devnull)
     return os.popen(quotecommand(command), mode)
 
 def explainexit(code):

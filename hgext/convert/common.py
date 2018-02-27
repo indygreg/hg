@@ -339,7 +339,7 @@ class commandline(object):
                 pass
         cmdline = [util.shellquote(arg) for arg in cmdline]
         if not self.ui.debugflag:
-            cmdline += ['2>', os.devnull]
+            cmdline += ['2>', pycompat.bytestr(os.devnull)]
         cmdline = ' '.join(cmdline)
         return cmdline
 

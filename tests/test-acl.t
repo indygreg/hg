@@ -21,6 +21,15 @@
   >     echo
   > }
 
+  > cat > posixgetuser.py <<'EOF'
+  > import getpass
+  > from mercurial import pycompat, util
+  > def posixgetuser():
+  >     return pycompat.fsencode(getpass.getuser())
+  > if not pycompat.isposix:
+  >     util.getuser = posixgetuser  # forcibly trust $LOGNAME
+  > EOF
+
   > init_config()
   > {
   >     cat > fakegroups.py <<EOF
@@ -41,6 +50,7 @@
   > sources = push
   > [extensions]
   > f=`pwd`/fakegroups.py
+  > posixgetuser=$TESTTMP/posixgetuser.py
   > EOF
   > }
 
@@ -72,6 +82,10 @@
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ config=b/.hg/hgrc
+  $ cat >> "$config" <<EOF
+  > [extensions]
+  > posixgetuser=$TESTTMP/posixgetuser.py
+  > EOF
 
 Extension disabled for lack of a hook
 
@@ -1126,6 +1140,7 @@ fred is always allowed
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow]
   ** = fred
   """
@@ -1206,6 +1221,7 @@ no one is allowed inside foo/Bar/
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow]
   ** = fred
   [acl.deny]
@@ -1287,6 +1303,7 @@ OS-level groups
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow]
   ** = @group1
   """
@@ -1368,6 +1385,7 @@ OS-level groups
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow]
   ** = @group1
   [acl.deny]
@@ -1491,6 +1509,7 @@ No branch acls specified
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   """
   pushing to ../b
   query 1; heads
@@ -1573,6 +1592,7 @@ Branch acl deny test
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.deny.branches]
   foobar = *
   """
@@ -1651,6 +1671,7 @@ Branch acl empty allow test
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow.branches]
   """
   pushing to ../b
@@ -1723,6 +1744,7 @@ Branch acl allow other
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow.branches]
   * = george
   """
@@ -1790,6 +1812,7 @@ Branch acl allow other
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow.branches]
   * = george
   """
@@ -1878,6 +1901,7 @@ push foobar into the remote
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.allow.branches]
   foobar = astro
   * = george
@@ -1965,6 +1989,7 @@ Branch acl conflicting deny
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.deny.branches]
   foobar = astro
   default = astro
@@ -2039,6 +2064,7 @@ User 'astro' must not be denied
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.deny.branches]
   default = !astro
   """
@@ -2121,6 +2147,7 @@ Non-astro users must be denied
   [acl]
   sources = push
   [extensions]
+  posixgetuser=$TESTTMP/posixgetuser.py
   [acl.deny.branches]
   default = !astro
   """

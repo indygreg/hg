@@ -1273,6 +1273,33 @@ Upgrade request must be followed by hello + between
   e>     malformed handshake protocol: missing pairs 81\n
   e>     -\n
 
+Legacy commands are not exposed to version 2 of protocol
+
+  $ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
+  > command branches
+  >     nodes 0000000000000000000000000000000000000000
+  > EOF
+  creating ssh peer from handshake results
+  sending branches command
+  response: 
+
+  $ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
+  > command changegroup
+  >     roots 0000000000000000000000000000000000000000
+  > EOF
+  creating ssh peer from handshake results
+  sending changegroup command
+  response: 
+
+  $ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
+  > command changegroupsubset
+  >     bases 0000000000000000000000000000000000000000
+  >     heads 0000000000000000000000000000000000000000
+  > EOF
+  creating ssh peer from handshake results
+  sending changegroupsubset command
+  response: 
+
   $ cd ..
 
 Test listkeys for listing namespaces

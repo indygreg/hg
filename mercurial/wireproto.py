@@ -740,6 +740,8 @@ def batch(repo, proto, cmds, others):
 
     return bytesresponse(';'.join(res))
 
+# TODO mark as version 1 transport only once interaction with
+# SSH handshake mechanism is figured out.
 @wireprotocommand('between', 'pairs')
 def between(repo, proto, pairs):
     pairs = [decodelist(p, '-') for p in pairs.split(" ")]
@@ -760,7 +762,7 @@ def branchmap(repo, proto):
 
     return bytesresponse('\n'.join(heads))
 
-@wireprotocommand('branches', 'nodes')
+@wireprotocommand('branches', 'nodes', transportpolicy=POLICY_V1_ONLY)
 def branches(repo, proto, nodes):
     nodes = decodelist(nodes)
     r = []
@@ -835,7 +837,7 @@ def _capabilities(repo, proto):
 def capabilities(repo, proto):
     return bytesresponse(' '.join(_capabilities(repo, proto)))
 
-@wireprotocommand('changegroup', 'roots')
+@wireprotocommand('changegroup', 'roots', transportpolicy=POLICY_V1_ONLY)
 def changegroup(repo, proto, roots):
     nodes = decodelist(roots)
     outgoing = discovery.outgoing(repo, missingroots=nodes,
@@ -844,7 +846,8 @@ def changegroup(repo, proto, roots):
     gen = iter(lambda: cg.read(32768), '')
     return streamres(gen=gen)
 
-@wireprotocommand('changegroupsubset', 'bases heads')
+@wireprotocommand('changegroupsubset', 'bases heads',
+                  transportpolicy=POLICY_V1_ONLY)
 def changegroupsubset(repo, proto, bases, heads):
     bases = decodelist(bases)
     heads = decodelist(heads)

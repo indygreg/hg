@@ -791,7 +791,7 @@ def showsuccsandmarkers(repo, ctx, **args):
 
         data.append({'successors': successors, 'markers': finalmarkers})
 
-    f = _showlist('succsandmarkers', data, args)
+    f = _showlist('succsandmarkers', data, pycompat.byteskwargs(args))
     return _hybrid(f, data, lambda x: x, pycompat.identity)
 
 @templatekeyword('p1rev')

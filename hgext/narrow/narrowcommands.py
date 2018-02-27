@@ -122,8 +122,8 @@ def pullnarrowcmd(orig, ui, repo, *args, **opts):
 
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             orig(pullop, kwargs)
-            if opts.get('depth'):
-                kwargs['depth'] = opts['depth']
+            if opts.get(r'depth'):
+                kwargs['depth'] = opts[r'depth']
         wrappedextraprepare = extensions.wrappedfunction(exchange,
             '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
 

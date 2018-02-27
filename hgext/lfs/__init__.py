@@ -385,6 +385,6 @@ def lfsfiles(repo, ctx, **args):
          [('r', 'rev', [], _('upload large files introduced by REV'))])
 def debuglfsupload(ui, repo, **opts):
     """upload lfs blobs added by the working copy parent or given revisions"""
-    revs = opts.get('rev', [])
+    revs = opts.get(r'rev', [])
     pointers = wrapper.extractpointers(repo, scmutil.revrange(repo, revs))
     wrapper.uploadblobs(repo, pointers)

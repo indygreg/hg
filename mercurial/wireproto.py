@@ -740,9 +740,7 @@ def batch(repo, proto, cmds, others):
 
     return bytesresponse(';'.join(res))
 
-# TODO mark as version 1 transport only once interaction with
-# SSH handshake mechanism is figured out.
-@wireprotocommand('between', 'pairs')
+@wireprotocommand('between', 'pairs', transportpolicy=POLICY_V1_ONLY)
 def between(repo, proto, pairs):
     pairs = [decodelist(p, '-') for p in pairs.split(" ")]
     r = []

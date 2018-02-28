@@ -919,7 +919,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
             dest = scmutil.revsingle(repo, destf)
         else:
             dest = repo[_destrebase(repo, base, destspace=destspace)]
-            destf = str(dest)
+            destf = bytes(dest)
 
         roots = [] # selected children of branching points
         bpbase = {} # {branchingpoint: [origbase]}
@@ -951,7 +951,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
                     ui.status(_('nothing to rebase - "base" %s is '
                                 'already an ancestor of destination '
                                 '%s\n') %
-                              ('+'.join(str(repo[r]) for r in base),
+                              ('+'.join(bytes(repo[r]) for r in base),
                                dest))
                 else:
                     ui.status(_('nothing to rebase - working '
@@ -959,7 +959,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
                                 'ancestor of destination %s\n') % dest)
             else: # can it happen?
                 ui.status(_('nothing to rebase from %s to %s\n') %
-                          ('+'.join(str(repo[r]) for r in base), dest))
+                          ('+'.join(bytes(repo[r]) for r in base), dest))
             return None
     # If rebasing the working copy parent, force in-memory merge to be off.
     #
@@ -981,7 +981,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
 
     if not destf:
         dest = repo[_destrebase(repo, rebaseset, destspace=destspace)]
-        destf = str(dest)
+        destf = bytes(dest)
 
     allsrc = revsetlang.formatspec('%ld', rebaseset)
     alias = {'ALLSRC': allsrc}
@@ -1039,7 +1039,7 @@ def externalparent(repo, state, destancestors):
     raise error.Abort(_('unable to collapse on top of %s, there is more '
                        'than one external parent: %s') %
                      (max(destancestors),
-                      ', '.join(str(p) for p in sorted(parents))))
+                      ', '.join("%d" % p for p in sorted(parents))))
 
 def concludememorynode(repo, rev, p1, p2, wctx=None,
                        commitmsg=None, editor=None, extrafn=None,
@@ -1233,7 +1233,7 @@ def _checkobsrebase(repo, ui, rebaseobsrevs, rebaseobsskipped):
     divergencebasecandidates = rebaseobsrevs - rebaseobsskipped
 
     if divergencebasecandidates and not divergenceok:
-        divhashes = (str(repo[r])
+        divhashes = (bytes(repo[r])
                      for r in divergencebasecandidates)
         msg = _("this rebase will cause "
                 "divergences from: %s")
@@ -1470,10 +1470,10 @@ def updatemq(repo, state, skipped, **opts):
         for rev in sorted(mqrebase, reverse=True):
             if rev not in skipped:
                 name, isgit = mqrebase[rev]
-                repo.ui.note(_('updating mq patch %s to %s:%s\n') %
+                repo.ui.note(_('updating mq patch %s to %d:%s\n') %
                              (name, state[rev], repo[state[rev]]))
                 mq.qimport(repo, (), patchname=name, git=isgit,
-                                rev=[str(state[rev])])
+                                rev=["%d" % state[rev]])
             else:
                 # Rebased and skipped
                 skippedpatches.add(mqrebase[rev][0])
@@ -1554,7 +1554,7 @@ def abort(repo, originalwd, destmap, state, activebookmark=None):
         cleanup = True
         if immutable:
             repo.ui.warn(_("warning: can't clean up public changesets %s\n")
-                        % ', '.join(str(repo[r]) for r in immutable),
+                        % ', '.join(bytes(repo[r]) for r in immutable),
                         hint=_("see 'hg help phases' for details"))
             cleanup = False
 

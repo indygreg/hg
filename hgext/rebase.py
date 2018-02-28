@@ -1036,7 +1036,7 @@ def externalparent(repo, state, destancestors):
         return nullrev
     if len(parents) == 1:
         return parents.pop()
-    raise error.Abort(_('unable to collapse on top of %s, there is more '
+    raise error.Abort(_('unable to collapse on top of %d, there is more '
                        'than one external parent: %s') %
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))

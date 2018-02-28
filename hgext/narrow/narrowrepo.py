@@ -73,7 +73,10 @@ def wraprepo(repo):
 
             A tuple of (includes, excludes).
             """
-            return narrowspec.load(self)
+            source = self
+            if self.shared():
+                source = hg.sharedreposource(self)
+            return narrowspec.load(source)
 
         @localrepo.repofilecache(narrowspec.FILENAME)
         def _narrowmatch(self):
@@ -87,7 +90,10 @@ def wraprepo(repo):
             return self._narrowmatch
 
         def setnarrowpats(self, newincludes, newexcludes):
-            narrowspec.save(self, newincludes, newexcludes)
+            target = self
+            if self.shared():
+                target = hg.sharedreposource(self)
+            narrowspec.save(target, newincludes, newexcludes)
             self.invalidate(clearfilecache=True)
 
         # I'm not sure this is the right place to do this filter.

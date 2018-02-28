@@ -12,7 +12,6 @@ import errno
 from .i18n import _
 from . import (
     error,
-    hg,
     match as matchmod,
     util,
 )
@@ -129,8 +128,6 @@ def needsexpansion(includes):
     return [i for i in includes if i.startswith('include:')]
 
 def load(repo):
-    if repo.shared():
-        repo = hg.sharedreposource(repo)
     try:
         spec = repo.vfs.read(FILENAME)
     except IOError as e:
@@ -146,8 +143,6 @@ def load(repo):
 
 def save(repo, includepats, excludepats):
     spec = format(includepats, excludepats)
-    if repo.shared():
-        repo = hg.sharedreposource(repo)
     repo.vfs.write(FILENAME, spec)
 
 def restrictpatterns(req_includes, req_excludes, repo_includes, repo_excludes):

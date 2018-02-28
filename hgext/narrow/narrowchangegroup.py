@@ -13,6 +13,7 @@ from mercurial import (
     error,
     extensions,
     manifest,
+    match as matchmod,
     mdiff,
     node,
     revlog,
@@ -21,12 +22,19 @@ from mercurial import (
 
 def setup():
 
+    def _cgmatcher(cgpacker):
+        localmatcher = getattr(cgpacker._repo, 'narrowmatch', lambda: None)()
+        remotematcher = getattr(cgpacker, '_narrow_matcher', lambda: None)()
+        if localmatcher and remotematcher:
+            return matchmod.intersectmatchers(localmatcher, remotematcher)
+        else:
+            return localmatcher or remotematcher
+
     def prune(orig, self, revlog, missing, commonrevs):
         if isinstance(revlog, manifest.manifestrevlog):
-            matcher = getattr(self._repo, 'narrowmatch',
-                              getattr(self, '_narrow_matcher', None))
-            if (matcher is not None and
-                not matcher().visitdir(revlog._dir[:-1] or '.')):
+            matcher = _cgmatcher(self)
+            if (matcher and
+                not matcher.visitdir(revlog._dir[:-1] or '.')):
                 return []
         return orig(self, revlog, missing, commonrevs)
 
@@ -34,11 +42,9 @@ def setup():
 
     def generatefiles(orig, self, changedfiles, linknodes, commonrevs,
                       source):
-        matcher = getattr(self._repo, 'narrowmatch',
-                          getattr(self, '_narrow_matcher', None))
-        if matcher is not None:
-            narrowmatch = matcher()
-            changedfiles = [f for f in changedfiles if narrowmatch(f)]
+        matcher = _cgmatcher(self)
+        if matcher:
+            changedfiles = filter(matcher, changedfiles)
         if getattr(self, 'is_shallow', False):
             # See comment in generate() for why this sadness is a thing.
             mfdicts = self._mfdicts

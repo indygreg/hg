@@ -137,13 +137,12 @@ narrow spec
   $ hg pull ssh://user@dummy/narrow2
   pulling from ssh://user@dummy/narrow2
   searching for changes
-  remote: abort: unable to resolve parent while packing 'data/inside2/f.i' 3 for changeset 5 (?)
   adding changesets
-  remote: abort: unexpected error: unable to resolve parent while packing 'data/inside2/f.i' 3 for changeset 5
-  transaction abort!
-  rollback completed
-  abort: pull failed on remote
-  [255]
+  adding manifests
+  adding file changes
+  added 1 changesets with 0 changes to 0 files
+  new changesets d78a96df731d
+  (run 'hg update' to get a working copy)
 
 Check that the resulting history is valid in the full repo
 
@@ -204,7 +203,7 @@ necessary content to be able to push to the target
   $ hg push ssh://user@dummy/narrow2
   pushing to ssh://user@dummy/narrow2
   searching for changes
-  remote has heads on branch 'default' that are not known locally: d78a96df731d
-  abort: push creates new remote head 5970befb64ba!
-  (pull and merge or see 'hg help push' for details about pushing new heads)
-  [255]
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 0 changes to 0 files

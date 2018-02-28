@@ -520,7 +520,7 @@ class revbranchcache(object):
                 self._rbcrevslen = revs
         except (IOError, OSError, error.Abort, error.LockError) as inst:
             repo.ui.debug("couldn't write revision branch cache%s: %s\n"
-                          % (step, inst))
+                          % (step, util.forcebytestr(inst)))
         finally:
             if wlock is not None:
                 wlock.release()

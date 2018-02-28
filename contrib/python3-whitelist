@@ -17,6 +17,7 @@ test-branch-option.t
 test-branch-tag-confict.t
 test-bundle-phases.t
 test-bundle-vs-outgoing.t
+test-bundle2-multiple-changegroups.t
 test-cappedreader.py
 test-casecollision.t
 test-cat.t
@@ -44,6 +45,7 @@ test-convert-hg-startrev.t
 test-copy-move-merge.t
 test-copytrace-heuristics.t
 test-debugbuilddag.t
+test-debugbundle.t
 test-debugindexdot.t
 test-debugrename.t
 test-diff-binary-file.t
@@ -101,6 +103,7 @@ test-filebranch.t
 test-fileset-generated.t
 test-flags.t
 test-generaldelta.t
+test-getbundle.t
 test-git-export.t
 test-glog-topological.t
 test-gpg.t
@@ -112,6 +115,7 @@ test-histedit-commute.t
 test-histedit-drop.t
 test-histedit-edit.t
 test-histedit-fold-non-commute.t
+test-histedit-fold.t
 test-histedit-no-change.t
 test-histedit-non-commute.t
 test-histedit-obsolete.t
@@ -158,6 +162,7 @@ test-merge-remove.t
 test-merge-revert.t
 test-merge-revert2.t
 test-merge-subrepos.t
+test-merge-symlinks.t
 test-merge1.t
 test-merge10.t
 test-merge2.t
@@ -185,6 +190,7 @@ test-narrow-patterns.t
 test-narrow-pull.t
 test-narrow-rebase.t
 test-narrow-shallow-merges.t
+test-narrow-shallow.t
 test-narrow-update.t
 test-newbranch.t
 test-obshistory.t
@@ -194,7 +200,9 @@ test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t
 test-obsolete-distributed.t
 test-parents.t
+test-pending.t
 test-permissions.t
+test-phases.t
 test-pull-branch.t
 test-pull-http.t
 test-pull-permission.t
@@ -230,11 +238,15 @@ test-push-checkheads-unpushed-D6.t
 test-push-checkheads-unpushed-D7.t
 test-push-http.t
 test-push-warn.t
+test-pushvars.t
+test-rebase-base-flag.t
 test-rebase-bookmarks.t
+test-rebase-brute-force.t
 test-rebase-check-restore.t
 test-rebase-dest.t
 test-rebase-emptycommit.t
 test-rebase-inmemory.t
+test-rebase-interruptions.t
 test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
 test-rebase-named-branches.t
@@ -244,6 +256,7 @@ test-rebase-pull.t
 test-rebase-rename.t
 test-rebase-transaction.t
 test-record.t
+test-relink.t
 test-remove.t
 test-rename-after-merge.t
 test-rename-dir-merge.t
@@ -253,6 +266,7 @@ test-repair-strip.t
 test-repo-compengines.t
 test-revert-flags.t
 test-revert-unknown.t
+test-revlog-ancestry.py
 test-revlog-group-emptyiter.t
 test-revlog-mmapindex.t
 test-revlog-packentry.t

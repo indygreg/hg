@@ -6,7 +6,7 @@ import unittest
 from mercurial import (
     mdiff,
 )
-from mercurial.context import (
+from mercurial.dagop import (
     annotateline,
     _annotatepair,
 )

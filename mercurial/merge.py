@@ -399,7 +399,7 @@ class mergestate(object):
 
     def _writerecordsv1(self, records):
         """Write current state on disk in a version 1 file"""
-        f = self._repo.vfs(self.statepathv1, 'w')
+        f = self._repo.vfs(self.statepathv1, 'wb')
         irecords = iter(records)
         lrecords = next(irecords)
         assert lrecords[0] == 'L'
@@ -415,7 +415,7 @@ class mergestate(object):
         See the docstring for _readrecordsv2 for why we use 't'."""
         # these are the records that all version 2 clients can read
         whitelist = 'LOF'
-        f = self._repo.vfs(self.statepathv2, 'w')
+        f = self._repo.vfs(self.statepathv2, 'wb')
         for key, data in records:
             assert len(key) == 1
             if key not in whitelist:

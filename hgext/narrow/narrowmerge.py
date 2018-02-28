@@ -13,7 +13,6 @@ from mercurial import (
     error,
     extensions,
     merge,
-    util,
 )
 
 def setup():
@@ -22,12 +21,12 @@ def setup():
         actions, diverge, renamedelete = orig(
             repo, wctx, p2, pa, branchmerge, *args, **kwargs)
 
-        if not util.safehasattr(repo, 'narrowmatch'):
+        narrowmatch = repo.narrowmatch()
+        if narrowmatch.always():
             return actions, diverge, renamedelete
 
         nooptypes = set(['k']) # TODO: handle with nonconflicttypes
         nonconflicttypes = set('a am c cm f g r e'.split())
-        narrowmatch = repo.narrowmatch()
         # We mutate the items in the dict during iteration, so iterate
         # over a copy.
         for f, action in list(actions.items()):
@@ -51,8 +50,8 @@ def setup():
     extensions.wrapfunction(merge, 'manifestmerge', _manifestmerge)
 
     def _checkcollision(orig, repo, wmf, actions):
-        if util.safehasattr(repo, 'narrowmatch'):
-            narrowmatch = repo.narrowmatch()
+        narrowmatch = repo.narrowmatch()
+        if not narrowmatch.always():
             wmf = wmf.matches(narrowmatch)
             if actions:
                 narrowactions = {}
@@ -68,10 +67,10 @@ def setup():
 
     def _computenonoverlap(orig, repo, *args, **kwargs):
         u1, u2 = orig(repo, *args, **kwargs)
-        if not util.safehasattr(repo, 'narrowmatch'):
+        narrowmatch = repo.narrowmatch()
+        if narrowmatch.always():
             return u1, u2
 
-        narrowmatch = repo.narrowmatch()
         u1 = [f for f in u1 if narrowmatch(f)]
         u2 = [f for f in u2 if narrowmatch(f)]
         return u1, u2

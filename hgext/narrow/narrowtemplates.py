@@ -10,7 +10,6 @@ from __future__ import absolute_import
 from mercurial import (
     registrar,
     revlog,
-    util,
 )
 
 keywords = {}
@@ -33,8 +32,8 @@ def ellipsis(repo, ctx, templ, **args):
 def outsidenarrow(repo, ctx, templ, **args):
     """String. 'outsidenarrow' if the change affects no tracked files,
     else ''."""
-    if util.safehasattr(repo, 'narrowmatch'):
-        m = repo.narrowmatch()
+    m = repo.narrowmatch()
+    if not m.always():
         if not any(m(f) for f in ctx.files()):
             return 'outsidenarrow'
     return ''

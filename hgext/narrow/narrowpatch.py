@@ -10,14 +10,13 @@ from __future__ import absolute_import
 from mercurial import (
     extensions,
     patch,
-    util,
 )
 
 def setup(repo):
     def _filepairs(orig, *args):
         """Only includes files within the narrow spec in the diff."""
-        if util.safehasattr(repo, 'narrowmatch'):
-            narrowmatch = repo.narrowmatch()
+        narrowmatch = repo.narrowmatch()
+        if not narrowmatch.always():
             for x in orig(*args):
                 f1, f2, copyop = x
                 if ((not f1 or narrowmatch(f1)) and
@@ -29,8 +28,8 @@ def setup(repo):
 
     def trydiff(orig, repo, revs, ctx1, ctx2, modified, added, removed,
                 copy, getfilectx, *args, **kwargs):
-        if util.safehasattr(repo, 'narrowmatch'):
-            narrowmatch = repo.narrowmatch()
+        narrowmatch = repo.narrowmatch()
+        if not narrowmatch.always():
             modified = [f for f in modified if narrowmatch(f)]
             added = [f for f in added if narrowmatch(f)]
             removed = [f for f in removed if narrowmatch(f)]

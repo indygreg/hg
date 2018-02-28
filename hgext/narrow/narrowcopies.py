@@ -11,23 +11,22 @@ from __future__ import absolute_import
 from mercurial import (
     copies,
     extensions,
-    util,
 )
 
 def setup(repo):
     def _computeforwardmissing(orig, a, b, match=None):
         missing = orig(a, b, match)
-        if util.safehasattr(repo, 'narrowmatch'):
-            narrowmatch = repo.narrowmatch()
-            missing = [f for f in missing if narrowmatch(f)]
+        narrowmatch = repo.narrowmatch()
+        if narrowmatch.always():
+            return missing
+        missing = [f for f in missing if narrowmatch(f)]
         return missing
 
     def _checkcopies(orig, srcctx, dstctx, f, base, tca, remotebase, limit,
                      data):
-        if util.safehasattr(repo, 'narrowmatch'):
-            narrowmatch = repo.narrowmatch()
-            if not narrowmatch(f):
-                return
+        narrowmatch = repo.narrowmatch()
+        if not narrowmatch(f):
+            return
         orig(srcctx, dstctx, f, base, tca, remotebase, limit, data)
 
     extensions.wrapfunction(copies, '_computeforwardmissing',

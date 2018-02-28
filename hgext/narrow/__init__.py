@@ -84,8 +84,7 @@ def _verifierinit(orig, self, repo, matcher=None):
     # be None from core. If another extension passes a matcher (unlikely),
     # we'll have to fail until matchers can be composed more easily.
     assert matcher is None
-    matcher = getattr(repo, 'narrowmatch', lambda: None)()
-    orig(self, repo, matcher)
+    orig(self, repo, repo.narrowmatch())
 
 def extsetup(ui):
     extensions.wrapfunction(verifymod.verifier, '__init__', _verifierinit)

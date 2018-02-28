@@ -23,12 +23,12 @@ from mercurial import (
 def setup():
 
     def _cgmatcher(cgpacker):
-        localmatcher = getattr(cgpacker._repo, 'narrowmatch', lambda: None)()
+        localmatcher = cgpacker._repo.narrowmatch()
         remotematcher = getattr(cgpacker, '_narrow_matcher', lambda: None)()
-        if localmatcher and remotematcher:
+        if remotematcher:
             return matchmod.intersectmatchers(localmatcher, remotematcher)
         else:
-            return localmatcher or remotematcher
+            return localmatcher
 
     def prune(orig, self, revlog, missing, commonrevs):
         if isinstance(revlog, manifest.manifestrevlog):

@@ -72,6 +72,59 @@ subrepo debug for 'main' clone
    source   ../sub
    revision 863c1745b441bd97a8c4a096e87793073f4fb215
 
+Test sharing with a remote URL reference
+
+  $ hg init absolute_subrepo
+  $ cd absolute_subrepo
+  $ echo foo > foo.txt
+  $ hg ci -Am 'initial commit'
+  adding foo.txt
+  $ echo "sub = http://localhost:$HGPORT/sub" > .hgsub
+  $ hg ci -Am 'add absolute subrepo'
+  adding .hgsub
+  $ cd ..
+
+BUG: Remote subrepos cannot be shared, and pooled repos don't have their
+relative subrepos in the relative location stated in .hgsub.
+
+  $ hg --config extensions.share= --config share.pool=$TESTTMP/pool \
+  >    clone absolute_subrepo cloned_from_abs
+  (sharing from new pooled repository 8d6a2f1e993b34b6557de0042cfe825ae12a8dae)
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 3 changes to 3 files
+  new changesets 8d6a2f1e993b:c6d0e6ebd1c9
+  searching for changes
+  no changes found
+  updating working directory
+  sharing subrepo sub from http://localhost:$HGPORT/sub
+  abort: can only share local repositories (in subrepository "sub")
+  [255]
+
+  $ hg --config extensions.share= share absolute_subrepo shared_from_abs
+  updating working directory
+  sharing subrepo sub from http://localhost:$HGPORT/sub
+  abort: can only share local repositories (in subrepository "sub")
+  [255]
+
+  $ hg --config extensions.share= share -U absolute_subrepo shared_from_abs2
+  $ hg -R shared_from_abs2 update -r tip
+  sharing subrepo sub from http://localhost:$HGPORT/sub
+  abort: can only share local repositories (in subrepository "sub")
+  [255]
+
+BUG: A repo without its subrepo available locally should be sharable if the
+subrepo is referenced by absolute path.
+
+  $ hg clone -U absolute_subrepo cloned_null_from_abs
+  $ hg --config extensions.share= share cloned_null_from_abs shared_from_null_abs
+  updating working directory
+  sharing subrepo sub from http://localhost:$HGPORT/sub
+  abort: can only share local repositories (in subrepository "sub")
+  [255]
+
   $ killdaemons.py
 
 subrepo paths with ssh urls

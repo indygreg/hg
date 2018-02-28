@@ -2258,6 +2258,7 @@ def trypullbundlefromurl(ui, repo, url):
             ui.warn(_('HTTP error fetching bundle: %s\n') %
                     util.forcebytestr(e))
         except urlerr.urlerror as e:
-            ui.warn(_('error fetching bundle: %s\n') % e.reason)
+            ui.warn(_('error fetching bundle: %s\n') %
+                    util.forcebytestr(e.reason))
 
         return False

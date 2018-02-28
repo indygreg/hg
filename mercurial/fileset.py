@@ -392,7 +392,7 @@ def sizematcher(x):
     elif expr.startswith(">"):
         a = util.sizetoint(expr[1:])
         return lambda x: x > a
-    elif expr[0].isdigit or expr[0] == '.':
+    elif expr[0:1].isdigit or expr.startswith('.'):
         a = util.sizetoint(expr)
         b = _sizetomax(expr)
         return lambda x: x >= a and x <= b

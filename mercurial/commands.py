@@ -4482,7 +4482,7 @@ def resolve(ui, repo, *pats, **opts):
                 for f in ms:
                     if not m(f):
                         continue
-                    flags = ''.join(['-%s ' % o[0] for o in flaglist
+                    flags = ''.join(['-%s ' % o[0:1] for o in flaglist
                                                    if opts.get(o)])
                     hint = _("(try: hg resolve %s%s)\n") % (
                              flags,

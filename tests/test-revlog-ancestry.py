@@ -15,7 +15,7 @@ def commit(text, time):
     repo.commit(text=text, date=b"%d 0" % time)
 
 def addcommit(name, time):
-    f = open(name, 'w')
+    f = open(name, 'wb')
     f.write(b'%s\n' % name)
     f.close()
     repo[None].add([name])

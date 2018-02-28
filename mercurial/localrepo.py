@@ -43,6 +43,7 @@ from . import (
     merge as mergemod,
     mergeutil,
     namespaces,
+    narrowspec,
     obsolete,
     pathutil,
     peer,
@@ -735,6 +736,37 @@ class localrepository(object):
                 self.ui.warn(_("warning: ignoring unknown"
                                " working parent %s!\n") % short(node))
             return nullid
+
+    @repofilecache(narrowspec.FILENAME)
+    def narrowpats(self):
+        """matcher patterns for this repository's narrowspec
+
+        A tuple of (includes, excludes).
+        """
+        source = self
+        if self.shared():
+            from . import hg
+            source = hg.sharedreposource(self)
+        return narrowspec.load(source)
+
+    @repofilecache(narrowspec.FILENAME)
+    def _narrowmatch(self):
+        if changegroup.NARROW_REQUIREMENT not in self.requirements:
+            return matchmod.always(self.root, '')
+        include, exclude = self.narrowpats
+        return narrowspec.match(self.root, include=include, exclude=exclude)
+
+    # TODO(martinvonz): make this property-like instead?
+    def narrowmatch(self):
+        return self._narrowmatch
+
+    def setnarrowpats(self, newincludes, newexcludes):
+        target = self
+        if self.shared():
+            from . import hg
+            target = hg.sharedreposource(self)
+        narrowspec.save(target, newincludes, newexcludes)
+        self.invalidate(clearfilecache=True)
 
     def __getitem__(self, changeid):
         if changeid is None:

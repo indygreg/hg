@@ -369,6 +369,11 @@ class annotateline(object):
     # Whether this annotation was the result of a skip-annotate.
     skip = attr.ib(default=False)
 
+def _countlines(text):
+    if text.endswith("\n"):
+        return text.count("\n")
+    return text.count("\n") + int(bool(text))
+
 def _annotatepair(parents, childfctx, child, skipchild, diffopts):
     r'''
     Given parent and child fctxes and annotate data for parents, for all lines
@@ -436,18 +441,13 @@ def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
     `parents(fctx)` is a function returning a list of parent filectxs.
     """
 
-    def lines(text):
-        if text.endswith("\n"):
-            return text.count("\n")
-        return text.count("\n") + int(bool(text))
-
     if linenumber:
         def decorate(text, rev):
             return ([annotateline(fctx=rev, lineno=i)
-                     for i in xrange(1, lines(text) + 1)], text)
+                     for i in xrange(1, _countlines(text) + 1)], text)
     else:
         def decorate(text, rev):
-            return ([annotateline(fctx=rev)] * lines(text), text)
+            return ([annotateline(fctx=rev)] * _countlines(text), text)
 
     # This algorithm would prefer to be recursive, but Python is a
     # bit recursion-hostile. Instead we do an iterative

@@ -898,6 +898,11 @@ def supportedoutgoingversions(repo):
         # support versions 01 and 02.
         versions.discard('01')
         versions.discard('02')
+    if NARROW_REQUIREMENT in repo.requirements:
+        # Versions 01 and 02 don't support revlog flags, and we need to
+        # support that for stripping and unbundling to work.
+        versions.discard('01')
+        versions.discard('02')
     return versions
 
 def localversion(repo):

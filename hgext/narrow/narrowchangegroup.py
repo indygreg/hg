@@ -21,16 +21,6 @@ from mercurial import (
 
 def setup():
 
-    def supportedoutgoingversions(orig, repo):
-        versions = orig(repo)
-        if changegroup.NARROW_REQUIREMENT in repo.requirements:
-            versions.discard('01')
-            versions.discard('02')
-        return versions
-
-    extensions.wrapfunction(changegroup, 'supportedoutgoingversions',
-                            supportedoutgoingversions)
-
     def prune(orig, self, revlog, missing, commonrevs):
         if isinstance(revlog, manifest.manifestrevlog):
             matcher = getattr(self._repo, 'narrowmatch',

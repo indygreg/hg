@@ -73,7 +73,7 @@ def reposetup(ui, repo):
         return
 
     if changegroup.NARROW_REQUIREMENT in repo.requirements:
-        narrowrepo.wraprepo(repo, True)
+        narrowrepo.wraprepo(repo)
         narrowcopies.setup(repo)
         narrowdirstate.setup(repo)
         narrowpatch.setup(repo)

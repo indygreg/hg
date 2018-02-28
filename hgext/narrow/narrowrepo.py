@@ -38,7 +38,7 @@ def unsharenarrowspec(orig, ui, repo, repopath):
             f.write(spec)
     return orig(ui, repo, repopath)
 
-def wraprepo(repo, opts_narrow):
+def wraprepo(repo):
     """Enables narrow clone functionality on a single local repository."""
 
     cacheprop = localrepo.storecache
@@ -77,9 +77,9 @@ def wraprepo(repo, opts_narrow):
 
         @localrepo.repofilecache(narrowspec.FILENAME)
         def _narrowmatch(self):
-            include, exclude = self.narrowpats
-            if not opts_narrow and not include and not exclude:
+            if changegroup.NARROW_REQUIREMENT not in self.requirements:
                 return matchmod.always(self.root, '')
+            include, exclude = self.narrowpats
             return narrowspec.match(self.root, include=include, exclude=exclude)
 
         # TODO(martinvonz): make this property-like instead?

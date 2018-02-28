@@ -101,7 +101,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
             '_pullbundle2extraprepare', pullbundle2extraprepare_widen)
 
     def pullnarrow(orig, repo, *args, **kwargs):
-        narrowrepo.wraprepo(repo.unfiltered(), opts_narrow)
+        narrowrepo.wraprepo(repo.unfiltered())
         if isinstance(repo, repoview.repoview):
             repo.__class__.__bases__ = (repo.__class__.__bases__[0],
                                         repo.unfiltered().__class__)

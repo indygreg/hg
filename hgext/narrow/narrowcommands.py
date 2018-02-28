@@ -10,6 +10,7 @@ import itertools
 
 from mercurial.i18n import _
 from mercurial import (
+    changegroup,
     cmdutil,
     commands,
     discovery,
@@ -105,7 +106,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
             repo.__class__.__bases__ = (repo.__class__.__bases__[0],
                                         repo.unfiltered().__class__)
         if opts_narrow:
-            repo.requirements.add(narrowrepo.REQUIREMENT)
+            repo.requirements.add(changegroup.NARROW_REQUIREMENT)
             repo._writerequirements()
 
         return orig(repo, *args, **kwargs)
@@ -118,7 +119,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
 def pullnarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps pull command to allow modifying narrow spec."""
     wrappedextraprepare = util.nullcontextmanager()
-    if narrowrepo.REQUIREMENT in repo.requirements:
+    if changegroup.NARROW_REQUIREMENT in repo.requirements:
 
         def pullbundle2extraprepare_widen(orig, pullop, kwargs):
             orig(pullop, kwargs)
@@ -132,7 +133,7 @@ def pullnarrowcmd(orig, ui, repo, *args, **opts):
 
 def archivenarrowcmd(orig, ui, repo, *args, **opts):
     """Wraps archive command to narrow the default includes."""
-    if narrowrepo.REQUIREMENT in repo.requirements:
+    if changegroup.NARROW_REQUIREMENT in repo.requirements:
         repo_includes, repo_excludes = repo.narrowpats
         includes = set(opts.get(r'include', []))
         excludes = set(opts.get(r'exclude', []))
@@ -146,7 +147,7 @@ def archivenarrowcmd(orig, ui, repo, *args, **opts):
 
 def pullbundle2extraprepare(orig, pullop, kwargs):
     repo = pullop.repo
-    if narrowrepo.REQUIREMENT not in repo.requirements:
+    if changegroup.NARROW_REQUIREMENT not in repo.requirements:
         return orig(pullop, kwargs)
 
     if narrowbundle2.NARROWCAP not in pullop.remotebundle2caps:
@@ -333,7 +334,7 @@ def trackedcmd(ui, repo, remotepath=None, *pats, **opts):
     empty and will not match any files.
     """
     opts = pycompat.byteskwargs(opts)
-    if narrowrepo.REQUIREMENT not in repo.requirements:
+    if changegroup.NARROW_REQUIREMENT not in repo.requirements:
         ui.warn(_('The narrow command is only supported on respositories cloned'
                   ' with --narrow.\n'))
         return 1

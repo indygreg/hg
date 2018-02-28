@@ -9,6 +9,7 @@ from __future__ import absolute_import
 
 from mercurial import (
     bundlerepo,
+    changegroup,
     hg,
     localrepo,
     match as matchmod,
@@ -20,19 +21,15 @@ from . import (
     narrowrevlog,
 )
 
-# When narrowing is finalized and no longer subject to format changes,
-# we should move this to just "narrow" or similar.
-REQUIREMENT = 'narrowhg-experimental'
-
 def wrappostshare(orig, sourcerepo, destrepo, **kwargs):
     orig(sourcerepo, destrepo, **kwargs)
-    if REQUIREMENT in sourcerepo.requirements:
+    if changegroup.NARROW_REQUIREMENT in sourcerepo.requirements:
         with destrepo.wlock():
             with destrepo.vfs('shared', 'a') as fp:
                 fp.write(narrowspec.FILENAME + '\n')
 
 def unsharenarrowspec(orig, ui, repo, repopath):
-    if (REQUIREMENT in repo.requirements
+    if (changegroup.NARROW_REQUIREMENT in repo.requirements
         and repo.path == repopath and repo.shared()):
         srcrepo = hg.sharedreposource(repo)
         with srcrepo.vfs(narrowspec.FILENAME) as f:

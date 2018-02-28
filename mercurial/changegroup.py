@@ -32,6 +32,10 @@ _CHANGEGROUPV1_DELTA_HEADER = "20s20s20s20s"
 _CHANGEGROUPV2_DELTA_HEADER = "20s20s20s20s20s"
 _CHANGEGROUPV3_DELTA_HEADER = ">20s20s20s20s20sH"
 
+# When narrowing is finalized and no longer subject to format changes,
+# we should move this to just "narrow" or similar.
+NARROW_REQUIREMENT = 'narrowhg-experimental'
+
 readexactly = util.readexactly
 
 def getchunk(stream):

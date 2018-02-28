@@ -30,10 +30,6 @@ from mercurial import (
     wireproto,
 )
 
-from . import (
-    narrowrepo,
-)
-
 NARROWCAP = 'narrow'
 _NARROWACL_SECTION = 'narrowhgacl'
 _CHANGESPECPART = NARROWCAP + ':changespec'
@@ -366,8 +362,8 @@ def _handlechangespec_2(op, inpart):
     includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
     excludepats = set(inpart.params.get(_SPECPART_EXCLUDE, '').splitlines())
     narrowspec.save(op.repo, includepats, excludepats)
-    if not narrowrepo.REQUIREMENT in op.repo.requirements:
-        op.repo.requirements.add(narrowrepo.REQUIREMENT)
+    if not changegroup.NARROW_REQUIREMENT in op.repo.requirements:
+        op.repo.requirements.add(changegroup.NARROW_REQUIREMENT)
         op.repo._writerequirements()
     op.repo.invalidate(clearfilecache=True)
 

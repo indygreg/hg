@@ -19,15 +19,11 @@ from mercurial import (
     util,
 )
 
-from . import (
-    narrowrepo,
-)
-
 def setup():
 
     def supportedoutgoingversions(orig, repo):
         versions = orig(repo)
-        if narrowrepo.REQUIREMENT in repo.requirements:
+        if changegroup.NARROW_REQUIREMENT in repo.requirements:
             versions.discard('01')
             versions.discard('02')
         return versions

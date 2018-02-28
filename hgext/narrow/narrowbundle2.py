@@ -361,11 +361,10 @@ def applyacl_narrow(repo, kwargs):
 def _handlechangespec_2(op, inpart):
     includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
     excludepats = set(inpart.params.get(_SPECPART_EXCLUDE, '').splitlines())
-    narrowspec.save(op.repo, includepats, excludepats)
     if not changegroup.NARROW_REQUIREMENT in op.repo.requirements:
         op.repo.requirements.add(changegroup.NARROW_REQUIREMENT)
         op.repo._writerequirements()
-    op.repo.invalidate(clearfilecache=True)
+    op.repo.setnarrowpats(includepats, excludepats)
 
 @bundle2.parthandler(_CHANGESPECPART)
 def _handlechangespec(op, inpart):

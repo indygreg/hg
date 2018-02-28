@@ -88,7 +88,7 @@ def clonenarrowcmd(orig, ui, repo, *args, **opts):
                 # everything, except what they asked to exclude.
                 includepats = {'path:.'}
 
-            narrowspec.save(pullop.repo, includepats, excludepats)
+            pullop.repo.setnarrowpats(includepats, excludepats)
 
             # This will populate 'includepats' etc with the values from the
             # narrowspec we just saved.

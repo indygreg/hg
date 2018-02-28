@@ -121,6 +121,24 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
             urlreq.quote(self._req.env.get('REMOTE_HOST', '')),
             urlreq.quote(self._req.env.get('REMOTE_USER', '')))
 
+    def addcapabilities(self, repo, caps):
+        caps.append('httpheader=%d' %
+                    repo.ui.configint('server', 'maxhttpheaderlen'))
+        if repo.ui.configbool('experimental', 'httppostargs'):
+            caps.append('httppostargs')
+
+        # FUTURE advertise 0.2rx once support is implemented
+        # FUTURE advertise minrx and mintx after consulting config option
+        caps.append('httpmediatype=0.1rx,0.1tx,0.2tx')
+
+        compengines = wireproto.supportedcompengines(repo.ui, util.SERVERROLE)
+        if compengines:
+            comptypes = ','.join(urlreq.quote(e.wireprotosupport().name)
+                                 for e in compengines)
+            caps.append('compression=%s' % comptypes)
+
+        return caps
+
 # This method exists mostly so that extensions like remotefilelog can
 # disable a kludgey legacy method only over http. As of early 2018,
 # there are no other known users, so with any luck we can discard this
@@ -367,6 +385,9 @@ class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
     def client(self):
         client = encoding.environ.get('SSH_CLIENT', '').split(' ', 1)[0]
         return 'remote:ssh:' + client
+
+    def addcapabilities(self, repo, caps):
+        return caps
 
 class sshv2protocolhandler(sshv1protocolhandler):
     """Protocol handler for version 2 of the SSH protocol."""

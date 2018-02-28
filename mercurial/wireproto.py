@@ -819,23 +819,7 @@ def _capabilities(repo, proto):
         caps.append('bundle2=' + urlreq.quote(capsblob))
     caps.append('unbundle=%s' % ','.join(bundle2.bundlepriority))
 
-    if proto.name == 'http-v1':
-        caps.append('httpheader=%d' %
-                    repo.ui.configint('server', 'maxhttpheaderlen'))
-        if repo.ui.configbool('experimental', 'httppostargs'):
-            caps.append('httppostargs')
-
-        # FUTURE advertise 0.2rx once support is implemented
-        # FUTURE advertise minrx and mintx after consulting config option
-        caps.append('httpmediatype=0.1rx,0.1tx,0.2tx')
-
-        compengines = supportedcompengines(repo.ui, util.SERVERROLE)
-        if compengines:
-            comptypes = ','.join(urlreq.quote(e.wireprotosupport().name)
-                                 for e in compengines)
-            caps.append('compression=%s' % comptypes)
-
-    return caps
+    return proto.addcapabilities(repo, caps)
 
 # If you are writing an extension and consider wrapping this function. Wrap
 # `_capabilities` instead.

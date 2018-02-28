@@ -137,3 +137,12 @@ class baseprotocolhandler(object):
     @abc.abstractmethod
     def client(self):
         """Returns a string representation of this client (as bytes)."""
+
+    @abc.abstractmethod
+    def addcapabilities(self, repo, caps):
+        """Adds advertised capabilities specific to this protocol.
+
+        Receives the list of capabilities collected so far.
+
+        Returns a list of capabilities. The passed in argument can be returned.
+        """

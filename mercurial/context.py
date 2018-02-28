@@ -32,7 +32,6 @@ from . import (
     error,
     fileset,
     match as matchmod,
-    mdiff,
     obsolete as obsmod,
     obsutil,
     patch,
@@ -976,22 +975,6 @@ class basefilectx(object):
         the line number at the first appearance in the managed file, otherwise,
         number has a fixed value of False.
         '''
-        annotateline = dagop.annotateline
-        _annotatepair = dagop._annotatepair
-
-        def lines(text):
-            if text.endswith("\n"):
-                return text.count("\n")
-            return text.count("\n") + int(bool(text))
-
-        if linenumber:
-            def decorate(text, rev):
-                return ([annotateline(fctx=rev, lineno=i)
-                         for i in xrange(1, lines(text) + 1)], text)
-        else:
-            def decorate(text, rev):
-                return ([annotateline(fctx=rev)] * lines(text), text)
-
         getlog = util.lrucachefunc(lambda x: self._repo.file(x))
 
         def parents(f):
@@ -1027,60 +1010,8 @@ class basefilectx(object):
                 ac = cl.ancestors([base.rev()], inclusive=True)
             base._ancestrycontext = ac
 
-        # This algorithm would prefer to be recursive, but Python is a
-        # bit recursion-hostile. Instead we do an iterative
-        # depth-first search.
-
-        # 1st DFS pre-calculates pcache and needed
-        visit = [base]
-        pcache = {}
-        needed = {base: 1}
-        while visit:
-            f = visit.pop()
-            if f in pcache:
-                continue
-            pl = parents(f)
-            pcache[f] = pl
-            for p in pl:
-                needed[p] = needed.get(p, 0) + 1
-                if p not in pcache:
-                    visit.append(p)
-
-        # 2nd DFS does the actual annotate
-        visit[:] = [base]
-        hist = {}
-        while visit:
-            f = visit[-1]
-            if f in hist:
-                visit.pop()
-                continue
-
-            ready = True
-            pl = pcache[f]
-            for p in pl:
-                if p not in hist:
-                    ready = False
-                    visit.append(p)
-            if ready:
-                visit.pop()
-                curr = decorate(f.data(), f)
-                skipchild = False
-                if skiprevs is not None:
-                    skipchild = f._changeid in skiprevs
-                curr = _annotatepair([hist[p] for p in pl], f, curr, skipchild,
-                                     diffopts)
-                for p in pl:
-                    if needed[p] == 1:
-                        del hist[p]
-                        del needed[p]
-                    else:
-                        needed[p] -= 1
-
-                hist[f] = curr
-                del pcache[f]
-
-        lineattrs, text = hist[base]
-        return pycompat.ziplist(lineattrs, mdiff.splitnewlines(text))
+        return dagop.annotate(base, parents, linenumber=linenumber,
+                              skiprevs=skiprevs, diffopts=diffopts)
 
     def ancestors(self, followfirst=False):
         visit = {}

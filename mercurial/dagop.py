@@ -17,6 +17,7 @@ from . import (
     mdiff,
     node,
     patch,
+    pycompat,
     smartset,
 )
 
@@ -428,6 +429,80 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
                         ak = min(a1 + (bk - b1), a2 - 1)
                         child[0][bk] = attr.evolve(parent[0][ak], skip=True)
     return child
+
+def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
+    """Core algorithm for filectx.annotate()
+
+    `parents(fctx)` is a function returning a list of parent filectxs.
+    """
+
+    def lines(text):
+        if text.endswith("\n"):
+            return text.count("\n")
+        return text.count("\n") + int(bool(text))
+
+    if linenumber:
+        def decorate(text, rev):
+            return ([annotateline(fctx=rev, lineno=i)
+                     for i in xrange(1, lines(text) + 1)], text)
+    else:
+        def decorate(text, rev):
+            return ([annotateline(fctx=rev)] * lines(text), text)
+
+    # This algorithm would prefer to be recursive, but Python is a
+    # bit recursion-hostile. Instead we do an iterative
+    # depth-first search.
+
+    # 1st DFS pre-calculates pcache and needed
+    visit = [base]
+    pcache = {}
+    needed = {base: 1}
+    while visit:
+        f = visit.pop()
+        if f in pcache:
+            continue
+        pl = parents(f)
+        pcache[f] = pl
+        for p in pl:
+            needed[p] = needed.get(p, 0) + 1
+            if p not in pcache:
+                visit.append(p)
+
+    # 2nd DFS does the actual annotate
+    visit[:] = [base]
+    hist = {}
+    while visit:
+        f = visit[-1]
+        if f in hist:
+            visit.pop()
+            continue
+
+        ready = True
+        pl = pcache[f]
+        for p in pl:
+            if p not in hist:
+                ready = False
+                visit.append(p)
+        if ready:
+            visit.pop()
+            curr = decorate(f.data(), f)
+            skipchild = False
+            if skiprevs is not None:
+                skipchild = f._changeid in skiprevs
+            curr = _annotatepair([hist[p] for p in pl], f, curr, skipchild,
+                                 diffopts)
+            for p in pl:
+                if needed[p] == 1:
+                    del hist[p]
+                    del needed[p]
+                else:
+                    needed[p] -= 1
+
+            hist[f] = curr
+            del pcache[f]
+
+    lineattrs, text = hist[base]
+    return pycompat.ziplist(lineattrs, mdiff.splitnewlines(text))
 
 def toposort(revs, parentsfunc, firstbranch=()):
     """Yield revisions from heads to roots one (topo) branch at a time.

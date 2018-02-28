@@ -149,7 +149,7 @@ def get_log_child(fp, url, paths, start, end, limit=0,
         pickle.dump(str(inst), fp, protocol)
     else:
         pickle.dump(None, fp, protocol)
-    fp.close()
+    fp.flush()
     # With large history, cleanup process goes crazy and suddenly
     # consumes *huge* amount of memory. The output file being closed,
     # there is no need for clean termination.

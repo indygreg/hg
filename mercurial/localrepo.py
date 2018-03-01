@@ -191,7 +191,9 @@ class localpeer(repository.peer):
 
     def debugwireargs(self, one, two, three=None, four=None, five=None):
         """Used to test argument passing over the wire"""
-        return "%s %s %s %s %s" % (one, two, three, four, five)
+        return "%s %s %s %s %s" % (one, two, pycompat.bytestr(three),
+                                   pycompat.bytestr(four),
+                                   pycompat.bytestr(five))
 
     def getbundle(self, source, heads=None, common=None, bundlecaps=None,
                   **kwargs):
@@ -2231,7 +2233,9 @@ class localrepository(object):
 
     def debugwireargs(self, one, two, three=None, four=None, five=None):
         '''used to test argument passing over the wire'''
-        return "%s %s %s %s %s" % (one, two, three, four, five)
+        return "%s %s %s %s %s" % (one, two, pycompat.bytestr(three),
+                                   pycompat.bytestr(four),
+                                   pycompat.bytestr(five))
 
     def savecommitmessage(self, text):
         fp = self.vfs('last-message.txt', 'wb')

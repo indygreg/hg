@@ -300,7 +300,7 @@ def _search(web, req, tmpl):
             pass
 
     lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
+    lessvars['revcount'] = max(revcount // 2, 1)
     lessvars['rev'] = query
     morevars = copy.copy(tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
@@ -395,7 +395,7 @@ def changelog(web, req, tmpl, shortlog=False):
             pass
 
     lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
+    lessvars['revcount'] = max(revcount // 2, 1)
     morevars = copy.copy(tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
@@ -990,7 +990,7 @@ def filelog(web, req, tmpl):
     lrange = webutil.linerange(req)
 
     lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
+    lessvars['revcount'] = max(revcount // 2, 1)
     morevars = copy.copy(tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
@@ -1208,7 +1208,7 @@ def graph(web, req, tmpl):
             pass
 
     lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
+    lessvars['revcount'] = max(revcount // 2, 1)
     morevars = copy.copy(tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 

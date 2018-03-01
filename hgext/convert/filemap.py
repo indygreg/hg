@@ -11,6 +11,7 @@ import posixpath
 from mercurial.i18n import _
 from mercurial import (
     error,
+    pycompat,
 )
 from . import common
 SKIPREV = common.SKIPREV
@@ -67,7 +68,8 @@ class filemapper(object):
                 name.endswith('/') or
                 '//' in name):
                 self.ui.warn(_('%s:%d: superfluous / in %s %r\n') %
-                             (lex.infile, lex.lineno, listname, name))
+                             (lex.infile, lex.lineno, listname,
+                              pycompat.bytestr(name)))
                 return 1
             return 0
         lex = common.shlexer(
@@ -92,7 +94,7 @@ class filemapper(object):
                 errs += self.parse(normalize(lex.get_token()))
             else:
                 self.ui.warn(_('%s:%d: unknown directive %r\n') %
-                             (lex.infile, lex.lineno, cmd))
+                             (lex.infile, lex.lineno, pycompat.bytestr(cmd)))
                 errs += 1
             cmd = lex.get_token()
         return errs

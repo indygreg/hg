@@ -145,7 +145,7 @@ def fill(text, width, initindent='', hangindent=''):
     global para_re, space_re
     if para_re is None:
         para_re = re.compile('(\n\n|\n\\s*[-*]\\s*)', re.M)
-        space_re = re.compile(r'  +')
+        space_re = re.compile(br'  +')
 
     def findparas():
         start = 0

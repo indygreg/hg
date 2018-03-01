@@ -18,7 +18,7 @@
   > def reposetup(ui, repo):
   >     class debugkeysrepo(repo.__class__):
   >         def listkeys(self, namespace):
-  >             ui.write('listkeys %s\n' % (namespace,))
+  >             ui.write(b'listkeys %s\n' % (namespace,))
   >             return super(debugkeysrepo, self).listkeys(namespace)
   > 
   >     if repo.local():
@@ -1279,12 +1279,12 @@ Test heads computation on pending index changes with obsolescence markers
   > 
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b"amendtransient",[], _('hg amendtransient [rev]'))
+  > @command(b"amendtransient",[], _(b'hg amendtransient [rev]'))
   > def amend(ui, repo, *pats, **opts):
   >   opts['message'] = 'Test'
   >   opts['logfile'] = None
   >   cmdutil.amend(ui, repo, repo['.'], {}, pats, opts)
-  >   ui.write('%s\n' % repo.changelog.headrevs())
+  >   ui.write(b'%s\n' % repo.changelog.headrevs())
   > EOF
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -1319,7 +1319,7 @@ bookmarks change
   >  def trhook(tr):
   >   repo = reporef()
   >   hidden1 = repoview.computehidden(repo)
-  >   hidden = repoview.filterrevs(repo, 'visible')
+  >   hidden = repoview.filterrevs(repo, b'visible')
   >   if sorted(hidden1) != sorted(hidden):
   >     print("cache inconsistency")
   >  bkmstoreinst._repo.currenttransaction().addpostclose('test_extension', trhook)

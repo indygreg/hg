@@ -44,7 +44,7 @@ def setup():
                       source):
         matcher = _cgmatcher(self)
         if matcher:
-            changedfiles = filter(matcher, changedfiles)
+            changedfiles = list(filter(matcher, changedfiles))
         if getattr(self, 'is_shallow', False):
             # See comment in generate() for why this sadness is a thing.
             mfdicts = self._mfdicts

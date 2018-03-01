@@ -98,8 +98,8 @@ def tokenize(program, start, end, term=None):
                 pos += 1
             yield ('integer', program[s:pos], s)
             pos -= 1
-        elif (c == '\\' and program[pos:pos + 2] in (r"\'", r'\"')
-              or c == 'r' and program[pos:pos + 3] in (r"r\'", r'r\"')):
+        elif (c == '\\' and program[pos:pos + 2] in (br"\'", br'\"')
+              or c == 'r' and program[pos:pos + 3] in (br"r\'", br'r\"')):
             # handle escaped quoted strings for compatibility with 2.9.2-3.4,
             # where some of nested templates were preprocessed as strings and
             # then compiled. therefore, \"...\" was allowed. (issue4733)

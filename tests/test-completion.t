@@ -121,6 +121,7 @@ Show debug commands if there are no other candidates
   debugupgraderepo
   debugwalk
   debugwireargs
+  debugwireproto
 
 Do not show the alias of a debug command if there are other candidates
 (this should hide rawcommit)
@@ -302,6 +303,7 @@ Show all commands + options
   debugupgraderepo: optimize, run
   debugwalk: include, exclude
   debugwireargs: three, four, five, ssh, remotecmd, insecure
+  debugwireproto: localssh, peer, ssh, remotecmd, insecure
   files: rev, print0, include, exclude, template, subrepos
   graft: rev, continue, edit, log, force, currentdate, currentuser, date, user, tool, dry-run
   grep: print0, all, text, follow, ignore-case, files-with-matches, line-number, rev, user, date, template, include, exclude

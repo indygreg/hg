@@ -983,6 +983,8 @@ Test list of internal help commands
    debugwalk     show how files match on given patterns
    debugwireargs
                  (no help text available)
+   debugwireproto
+                 send wire protocol commands to a server
   
   (use 'hg help -v debug' to show built-in aliases and global options)
 

@@ -17,6 +17,7 @@ import random
 import socket
 import ssl
 import string
+import subprocess
 import sys
 import tempfile
 import time
@@ -65,6 +66,7 @@ from . import (
     setdiscovery,
     simplemerge,
     smartset,
+    sshpeer,
     sslutil,
     streamclone,
     templater,
@@ -2529,3 +2531,204 @@ def debugwireargs(ui, repopath, *vals, **opts):
     ui.write("%s\n" % res1)
     if res1 != res2:
         ui.warn("%s\n" % res2)
+
+def _parsewirelangblocks(fh):
+    activeaction = None
+    blocklines = []
+
+    for line in fh:
+        line = line.rstrip()
+        if not line:
+            continue
+
+        if line.startswith(b'#'):
+            continue
+
+        if not line.startswith(' '):
+            # New block. Flush previous one.
+            if activeaction:
+                yield activeaction, blocklines
+
+            activeaction = line
+            blocklines = []
+            continue
+
+        # Else we start with an indent.
+
+        if not activeaction:
+            raise error.Abort(_('indented line outside of block'))
+
+        blocklines.append(line)
+
+    # Flush last block.
+    if activeaction:
+        yield activeaction, blocklines
+
+@command('debugwireproto',
+    [
+        ('', 'localssh', False, _('start an SSH server for this repo')),
+        ('', 'peer', '', _('construct a specific version of the peer')),
+    ] + cmdutil.remoteopts,
+    _('[REPO]'),
+    optionalrepo=True)
+def debugwireproto(ui, repo, **opts):
+    """send wire protocol commands to a server
+
+    This command can be used to issue wire protocol commands to remote
+    peers and to debug the raw data being exchanged.
+
+    ``--localssh`` will start an SSH server against the current repository
+    and connect to that. By default, the connection will perform a handshake
+    and establish an appropriate peer instance.
+
+    ``--peer`` can be used to bypass the handshake protocol and construct a
+    peer instance using the specified class type. Valid values are ``raw``,
+    ``ssh1``, and ``ssh2``. ``raw`` instances only allow sending raw data
+    payloads and don't support higher-level command actions.
+
+    Commands are issued via a mini language which is specified via stdin.
+    The language consists of individual actions to perform. An action is
+    defined by a block. A block is defined as a line with no leading
+    space followed by 0 or more lines with leading space. Blocks are
+    effectively a high-level command with additional metadata.
+
+    Lines beginning with ``#`` are ignored.
+
+    The following sections denote available actions.
+
+    raw
+    ---
+
+    Send raw data to the server.
+
+    The block payload contains the raw data to send as one atomic send
+    operation. The data may not actually be delivered in a single system
+    call: it depends on the abilities of the transport being used.
+
+    Each line in the block is de-indented and concatenated. Then, that
+    value is evaluated as a Python b'' literal. This allows the use of
+    backslash escaping, etc.
+
+    raw+
+    ----
+
+    Behaves like ``raw`` except flushes output afterwards.
+
+    close
+    -----
+
+    Close the connection to the server.
+
+    flush
+    -----
+
+    Flush data written to the server.
+
+    readavailable
+    -------------
+
+    Read all available data from the server.
+
+    If the connection to the server encompasses multiple pipes, we poll both
+    pipes and read available data.
+
+    readline
+    --------
+
+    Read a line of output from the server. If there are multiple output
+    pipes, reads only the main pipe.
+    """
+    opts = pycompat.byteskwargs(opts)
+
+    if opts['localssh'] and not repo:
+        raise error.Abort(_('--localssh requires a repository'))
+
+    if opts['peer'] and opts['peer'] not in ('raw', 'ssh1', 'ssh2'):
+        raise error.Abort(_('invalid value for --peer'),
+                          hint=_('valid values are "raw", "ssh1", and "ssh2"'))
+
+    if ui.interactive():
+        ui.write(_('(waiting for commands on stdin)\n'))
+
+    blocks = list(_parsewirelangblocks(ui.fin))
+
+    proc = None
+
+    if opts['localssh']:
+        # We start the SSH server in its own process so there is process
+        # separation. This prevents a whole class of potential bugs around
+        # shared state from interfering with server operation.
+        args = util.hgcmd() + [
+            '-R', repo.root,
+            'debugserve', '--sshstdio',
+        ]
+        proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                bufsize=0)
+
+        stdin = proc.stdin
+        stdout = proc.stdout
+        stderr = proc.stderr
+
+        # We turn the pipes into observers so we can log I/O.
+        if ui.verbose or opts['peer'] == 'raw':
+            stdin = util.makeloggingfileobject(ui, proc.stdin, b'i',
+                                               logdata=True)
+            stdout = util.makeloggingfileobject(ui, proc.stdout, b'o',
+                                                logdata=True)
+            stderr = util.makeloggingfileobject(ui, proc.stderr, b'e',
+                                                logdata=True)
+
+        # --localssh also implies the peer connection settings.
+
+        url = 'ssh://localserver'
+
+        if opts['peer'] == 'ssh1':
+            ui.write(_('creating ssh peer for wire protocol version 1\n'))
+            peer = sshpeer.sshv1peer(ui, url, proc, stdin, stdout, stderr,
+                                     None)
+        elif opts['peer'] == 'ssh2':
+            ui.write(_('creating ssh peer for wire protocol version 2\n'))
+            peer = sshpeer.sshv2peer(ui, url, proc, stdin, stdout, stderr,
+                                     None)
+        elif opts['peer'] == 'raw':
+            ui.write(_('using raw connection to peer\n'))
+            peer = None
+        else:
+            ui.write(_('creating ssh peer from handshake results\n'))
+            peer = sshpeer.makepeer(ui, url, proc, stdin, stdout, stderr)
+
+    else:
+        raise error.Abort(_('only --localssh is currently supported'))
+
+    # Now perform actions based on the parsed wire language instructions.
+    for action, lines in blocks:
+        if action in ('raw', 'raw+'):
+            # Concatenate the data together.
+            data = ''.join(l.lstrip() for l in lines)
+            data = util.unescapestr(data)
+            stdin.write(data)
+
+            if action == 'raw+':
+                stdin.flush()
+        elif action == 'flush':
+            stdin.flush()
+        elif action == 'close':
+            peer.close()
+        elif action == 'readavailable':
+            fds = util.poll([stdout.fileno(), stderr.fileno()])
+
+            if stdout.fileno() in fds:
+                util.readpipe(stdout)
+            if stderr.fileno() in fds:
+                util.readpipe(stderr)
+        elif action == 'readline':
+            stdout.readline()
+        else:
+            raise error.Abort(_('unknown action: %s') % action)
+
+    if peer:
+        peer.close()
+
+    if proc:
+        proc.kill()

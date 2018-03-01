@@ -84,9 +84,9 @@ Test sharing with a remote URL reference
   adding .hgsub
   $ cd ..
 
-Clone pooling works for local clones with a remote subrepo reference.
-
-BUG: subrepos should be shared out of the pool.
+Clone pooling works for local clones with a remote subrepo reference.  The
+subrepo is cloned to the pool and shared from there, so that all clones will
+share the same subrepo.
 
   $ hg --config extensions.share= --config share.pool=$TESTTMP/pool \
   >    clone absolute_subrepo cloned_from_abs
@@ -101,12 +101,15 @@ BUG: subrepos should be shared out of the pool.
   no changes found
   updating working directory
   cloning subrepo sub from http://localhost:$HGPORT/sub
+  (sharing from new pooled repository 863c1745b441bd97a8c4a096e87793073f4fb215)
   requesting all changes
   adding changesets
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets 863c1745b441
+  searching for changes
+  no changes found
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Vanilla sharing with a subrepo remote path reference will clone the subrepo.

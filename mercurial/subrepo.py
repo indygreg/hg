@@ -996,11 +996,25 @@ class hgsubrepo(abstractsubrepo):
                                   update=False, bookmarks=False)
                 self._repo = shared.local()
             else:
+                # TODO: find a common place for this and this code in the
+                # share.py wrap of the clone command.
+                if parentrepo.shared():
+                    pool = self.ui.config('share', 'pool')
+                    if pool:
+                        pool = util.expandpath(pool)
+
+                    shareopts = {
+                        'pool': pool,
+                        'mode': self.ui.config('share', 'poolnaming'),
+                    }
+                else:
+                    shareopts = {}
+
                 self.ui.status(_('cloning subrepo %s from %s\n')
                                % (subrelpath(self), srcurl))
                 other, cloned = hg.clone(self._repo._subparent.baseui, {},
                                          other, self._repo.root,
-                                         update=False)
+                                         update=False, shareopts=shareopts)
                 self._repo = cloned.local()
             self._initrepo(parentrepo, source, create=True)
             self._cachestorehash(srcurl)

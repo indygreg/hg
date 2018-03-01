@@ -433,7 +433,7 @@ def showdiffstat(repo, ctx, templ, **args):
     """
     stats = patch.diffstatdata(util.iterlines(ctx.diff(noprefix=False)))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
-    return '%s: +%s/-%s' % (len(stats), adds, removes)
+    return '%d: +%d/-%d' % (len(stats), adds, removes)
 
 @templatekeyword('envvars')
 def showenvvars(ui, **args):

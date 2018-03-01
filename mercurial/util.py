@@ -2353,6 +2353,7 @@ def shortdate(date=None):
 def parsetimezone(s):
     """find a trailing timezone, if any, in string, and return a
        (offset, remainder) pair"""
+    s = pycompat.bytestr(s)
 
     if s.endswith("GMT") or s.endswith("UTC"):
         return 0, s[:-3].rstrip()

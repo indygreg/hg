@@ -11,6 +11,7 @@ import datetime
 import errno
 import os
 import re
+import shlex
 import subprocess
 
 from mercurial.i18n import _
@@ -24,6 +25,58 @@ from mercurial import (
 
 pickle = util.pickle
 propertycache = util.propertycache
+
+def _encodeornone(d):
+    if d is None:
+        return
+    return d.encode('latin1')
+
+class _shlexpy3proxy(object):
+
+    def __init__(self, l):
+        self._l = l
+
+    def __iter__(self):
+        return (_encodeornone(v) for v in self._l)
+
+    def get_token(self):
+        return _encodeornone(self._l.get_token())
+
+    @property
+    def infile(self):
+        return self._l.infile or '<unknown>'
+
+    @property
+    def lineno(self):
+        return self._l.lineno
+
+def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
+    if data is None:
+        if pycompat.ispy3:
+            data = open(filepath, 'r', encoding=r'latin1')
+        else:
+            data = open(filepath, 'r')
+    else:
+        if filepath is not None:
+            raise error.ProgrammingError(
+                'shlexer only accepts data or filepath, not both')
+        if pycompat.ispy3:
+            data = data.decode('latin1')
+    l = shlex.shlex(data, infile=filepath, posix=True)
+    if whitespace is not None:
+        l.whitespace_split = True
+        if pycompat.ispy3:
+            l.whitespace += whitespace.decode('latin1')
+        else:
+            l.whitespace += whitespace
+    if wordchars is not None:
+        if pycompat.ispy3:
+            l.wordchars += wordchars.decode('latin1')
+        else:
+            l.wordchars += wordchars
+    if pycompat.ispy3:
+        return _shlexpy3proxy(l)
+    return l
 
 def encodeargs(args):
     def encodearg(s):

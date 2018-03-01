@@ -176,10 +176,10 @@ class baseformatter(object):
     def formatdate(self, date, fmt='%a %b %d %H:%M:%S %Y %1%2'):
         '''convert date tuple to appropriate format'''
         return self._converter.formatdate(date, fmt)
-    def formatdict(self, data, key='key', value='value', fmt='%s=%s', sep=' '):
+    def formatdict(self, data, key='key', value='value', fmt=None, sep=' '):
         '''convert dict or key-value pairs to appropriate dict format'''
         return self._converter.formatdict(data, key, value, fmt, sep)
-    def formatlist(self, data, name, fmt='%s', sep=' '):
+    def formatlist(self, data, name, fmt=None, sep=' '):
         '''convert iterable to appropriate list format'''
         # name is mandatory argument for now, but it could be optional if
         # we have default template keyword, e.g. {item}
@@ -248,10 +248,14 @@ class _plainconverter(object):
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''stringify key-value pairs separated by sep'''
+        if fmt is None:
+            fmt = '%s=%s'
         return sep.join(fmt % (k, v) for k, v in _iteritems(data))
     @staticmethod
     def formatlist(data, name, fmt, sep):
         '''stringify iterable separated by sep'''
+        if fmt is None:
+            fmt = '%s'
         return sep.join(fmt % e for e in data)
 
 class plainformatter(baseformatter):

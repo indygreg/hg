@@ -97,13 +97,17 @@ class _mappable(object):
     def itermaps(self):
         yield self.tomap()
 
-def hybriddict(data, key='key', value='value', fmt='%s=%s', gen=None):
+def hybriddict(data, key='key', value='value', fmt=None, gen=None):
     """Wrap data to support both dict-like and string-like operations"""
+    if fmt is None:
+        fmt = '%s=%s'
     return _hybrid(gen, data, lambda k: {key: k, value: data[k]},
                    lambda k: fmt % (k, data[k]))
 
-def hybridlist(data, name, fmt='%s', gen=None):
+def hybridlist(data, name, fmt=None, gen=None):
     """Wrap data to support both list-like and string-like operations"""
+    if fmt is None:
+        fmt = '%s'
     return _hybrid(gen, data, lambda x: {name: x}, lambda x: fmt % x)
 
 def unwraphybrid(thing):
@@ -137,7 +141,7 @@ def wraphybridvalue(container, key, value):
     return _mappable(None, key, value, makemap)
 
 def compatdict(context, mapping, name, data, key='key', value='value',
-               fmt='%s=%s', plural=None, separator=' '):
+               fmt=None, plural=None, separator=' '):
     """Wrap data like hybriddict(), but also supports old-style list template
 
     This exists for backward compatibility with the old-style template. Use
@@ -148,7 +152,7 @@ def compatdict(context, mapping, name, data, key='key', value='value',
     f = _showlist(name, c, t, mapping, plural, separator)
     return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
 
-def compatlist(context, mapping, name, data, element=None, fmt='%s',
+def compatlist(context, mapping, name, data, element=None, fmt=None,
                plural=None, separator=' '):
     """Wrap data like hybridlist(), but also supports old-style list template
 
@@ -160,7 +164,7 @@ def compatlist(context, mapping, name, data, element=None, fmt='%s',
     return hybridlist(data, name=element or name, fmt=fmt, gen=f)
 
 def showdict(name, data, mapping, plural=None, key='key', value='value',
-             fmt='%s=%s', separator=' '):
+             fmt=None, separator=' '):
     ui = mapping.get('ui')
     if ui:
         ui.deprecwarn("templatekw.showdict() is deprecated, use compatdict()",

@@ -246,6 +246,10 @@ if _dowarn:
     warnings.filterwarnings(r'default', r'', DeprecationWarning, r'mercurial')
     warnings.filterwarnings(r'default', r'', DeprecationWarning, r'hgext')
     warnings.filterwarnings(r'default', r'', DeprecationWarning, r'hgext3rd')
+if _dowarn and pycompat.ispy3:
+    # silence warning emitted by passing user string to re.sub()
+    warnings.filterwarnings(r'ignore', r'bad escape', DeprecationWarning,
+                            r'mercurial')
 
 def nouideprecwarn(msg, version, stacklevel=1):
     """Issue an python native deprecation warning

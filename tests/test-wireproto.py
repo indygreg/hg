@@ -2,6 +2,7 @@ from __future__ import absolute_import, print_function
 
 from mercurial import (
     error,
+    pycompat,
     util,
     wireproto,
     wireprototypes,
@@ -13,7 +14,7 @@ class proto(object):
         self.args = args
     def getargs(self, spec):
         args = self.args
-        args.setdefault('*', {})
+        args.setdefault(b'*', {})
         names = spec.split()
         return [args[n] for n in names]
 
@@ -26,7 +27,7 @@ class clientpeer(wireproto.wirepeer):
         return self.serverrepo.ui
 
     def url(self):
-        return 'test'
+        return b'test'
 
     def local(self):
         return None
@@ -41,9 +42,10 @@ class clientpeer(wireproto.wirepeer):
         pass
 
     def capabilities(self):
-        return ['batch']
+        return [b'batch']
 
     def _call(self, cmd, **args):
+        args = pycompat.byteskwargs(args)
         res = wireproto.dispatch(self.serverrepo, proto(args), cmd)
         if isinstance(res, wireprototypes.bytesresponse):
             return res.data
@@ -58,31 +60,31 @@ class clientpeer(wireproto.wirepeer):
     @wireproto.batchable
     def greet(self, name):
         f = wireproto.future()
-        yield {'name': mangle(name)}, f
+        yield {b'name': mangle(name)}, f
         yield unmangle(f.value)
 
 class serverrepo(object):
     def greet(self, name):
-        return "Hello, " + name
+        return b"Hello, " + name
 
     def filtered(self, name):
         return self
 
 def mangle(s):
-    return ''.join(chr(ord(c) + 1) for c in s)
+    return b''.join(pycompat.bytechr(ord(c) + 1) for c in pycompat.bytestr(s))
 def unmangle(s):
-    return ''.join(chr(ord(c) - 1) for c in s)
+    return b''.join(pycompat.bytechr(ord(c) - 1) for c in pycompat.bytestr(s))
 
 def greet(repo, proto, name):
     return mangle(repo.greet(unmangle(name)))
 
-wireproto.commands['greet'] = (greet, 'name',)
+wireproto.commands[b'greet'] = (greet, b'name',)
 
 srv = serverrepo()
 clt = clientpeer(srv)
 
-print(clt.greet("Foobar"))
+print(clt.greet(b"Foobar"))
 b = clt.iterbatch()
-map(b.greet, ('Fo, =;:<o', 'Bar'))
+list(map(b.greet, (b'Fo, =;:<o', b'Bar')))
 b.submit()
 print([r for r in b.results()])

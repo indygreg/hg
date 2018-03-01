@@ -2614,6 +2614,21 @@ def debugwireproto(ui, repo, **opts):
 
     Behaves like ``raw`` except flushes output afterwards.
 
+    command <X>
+    -----------
+
+    Send a request to run a named command, whose name follows the ``command``
+    string.
+
+    Arguments to the command are defined as lines in this block. The format of
+    each line is ``<key> <value>``. e.g.::
+
+       command listkeys
+           namespace bookmarks
+
+    Values are interpreted as Python b'' literals. This allows encoding
+    special byte sequences via backslash escaping.
+
     close
     -----
 
@@ -2713,6 +2728,29 @@ def debugwireproto(ui, repo, **opts):
                 stdin.flush()
         elif action == 'flush':
             stdin.flush()
+        elif action.startswith('command'):
+            if not peer:
+                raise error.Abort(_('cannot send commands unless peer instance '
+                                    'is available'))
+
+            command = action.split(' ', 1)[1]
+
+            args = {}
+            for line in lines:
+                # We need to allow empty values.
+                fields = line.lstrip().split(' ', 1)
+                if len(fields) == 1:
+                    key = fields[0]
+                    value = ''
+                else:
+                    key, value = fields
+
+                args[key] = util.unescapestr(value)
+
+            ui.status(_('sending %s command\n') % command)
+            res = peer._call(command, **args)
+            ui.status(_('response: %s\n') % util.escapedata(res))
+
         elif action == 'close':
             peer.close()
         elif action == 'readavailable':

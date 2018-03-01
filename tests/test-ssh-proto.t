@@ -1,3 +1,23 @@
+  $ cat > hgrc-sshv2 << EOF
+  > %include $HGRCPATH
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+
+Helper function to run protocol tests against multiple protocol versions.
+This is easier than using #testcases because managing differences between
+protocols with inline conditional output is hard to read.
+
+  $ debugwireproto() {
+  >   commands=`cat -`
+  >   echo 'testing ssh1'
+  >   echo "${commands}" | hg --verbose debugwireproto --localssh
+  >   echo ""
+  >   echo 'testing ssh2'
+  >   echo "${commands}" | HGRCPATH=$TESTTMP/hgrc-sshv2 hg --verbose debugwireproto --localssh
+  > }
+
   $ cat >> $HGRCPATH << EOF
   > [ui]
   > ssh = $PYTHON "$TESTDIR/dummyssh"
@@ -1252,3 +1272,561 @@ Upgrade request must be followed by hello + between
   e> read(-1) -> 49:
   e>     malformed handshake protocol: missing pairs 81\n
   e>     -\n
+
+  $ cd ..
+
+Test listkeys for listing namespaces
+
+  $ hg init empty
+  $ cd empty
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace namespaces
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(13) -> None:
+  i>     namespace 10\n
+  i> write(10) -> None: namespaces
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     30\n
+  o> bufferedread(30) -> 30:
+  o>     bookmarks	\n
+  o>     namespaces	\n
+  o>     phases	
+  response: bookmarks	\nnamespaces	\nphases	
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(13) -> None:
+  i>     namespace 10\n
+  i> write(10) -> None: namespaces
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     30\n
+  o> bufferedread(30) -> 30:
+  o>     bookmarks	\n
+  o>     namespaces	\n
+  o>     phases	
+  response: bookmarks	\nnamespaces	\nphases	
+
+  $ cd ..
+
+Test listkeys for bookmarks
+
+  $ hg init bookmarkrepo
+  $ cd bookmarkrepo
+  $ echo 0 > foo
+  $ hg add foo
+  $ hg -q commit -m initial
+  $ echo 1 > foo
+  $ hg commit -m second
+
+With no bookmarks set
+
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace bookmarks
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 9\n
+  i> write(9) -> None: bookmarks
+  i> flush() -> None
+  o> bufferedreadline() -> 2:
+  o>     0\n
+  response: 
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 9\n
+  i> write(9) -> None: bookmarks
+  i> flush() -> None
+  o> bufferedreadline() -> 2:
+  o>     0\n
+  response: 
+
+With a single bookmark set
+
+  $ hg book -r 0 bookA
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace bookmarks
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 9\n
+  i> write(9) -> None: bookmarks
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     46\n
+  o> bufferedread(46) -> 46: bookA	68986213bd4485ea51533535e3fc9e78007a711f
+  response: bookA	68986213bd4485ea51533535e3fc9e78007a711f
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 9\n
+  i> write(9) -> None: bookmarks
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     46\n
+  o> bufferedread(46) -> 46: bookA	68986213bd4485ea51533535e3fc9e78007a711f
+  response: bookA	68986213bd4485ea51533535e3fc9e78007a711f
+
+With multiple bookmarks set
+
+  $ hg book -r 1 bookB
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace bookmarks
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 9\n
+  i> write(9) -> None: bookmarks
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     93\n
+  o> bufferedread(93) -> 93:
+  o>     bookA	68986213bd4485ea51533535e3fc9e78007a711f\n
+  o>     bookB	1880f3755e2e52e3199e0ee5638128b08642f34d
+  response: bookA	68986213bd4485ea51533535e3fc9e78007a711f\nbookB	1880f3755e2e52e3199e0ee5638128b08642f34d
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 9\n
+  i> write(9) -> None: bookmarks
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     93\n
+  o> bufferedread(93) -> 93:
+  o>     bookA	68986213bd4485ea51533535e3fc9e78007a711f\n
+  o>     bookB	1880f3755e2e52e3199e0ee5638128b08642f34d
+  response: bookA	68986213bd4485ea51533535e3fc9e78007a711f\nbookB	1880f3755e2e52e3199e0ee5638128b08642f34d
+
+  $ cd ..
+
+Test listkeys for phases
+
+  $ hg init phasesrepo
+  $ cd phasesrepo
+
+Phases on empty repo
+
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace phases
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     15\n
+  o> bufferedread(15) -> 15: publishing	True
+  response: publishing	True
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     15\n
+  o> bufferedread(15) -> 15: publishing	True
+  response: publishing	True
+
+Create some commits
+
+  $ echo 0 > foo
+  $ hg add foo
+  $ hg -q commit -m initial
+  $ hg phase --public
+  $ echo 1 > foo
+  $ hg commit -m 'head 1 commit 1'
+  $ echo 2 > foo
+  $ hg commit -m 'head 1 commit 2'
+  $ hg -q up 0
+  $ echo 1a > foo
+  $ hg commit -m 'head 2 commit 1'
+  created new head
+  $ echo 2a > foo
+  $ hg commit -m 'head 2 commit 2'
+
+Two draft heads
+
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace phases
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 4:
+  o>     101\n
+  o> bufferedread(101) -> 101:
+  o>     20b8a89289d80036e6c4e87c2083e3bea1586637	1\n
+  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
+  o>     publishing	True
+  response: 20b8a89289d80036e6c4e87c2083e3bea1586637	1\nc4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 4:
+  o>     101\n
+  o> bufferedread(101) -> 101:
+  o>     20b8a89289d80036e6c4e87c2083e3bea1586637	1\n
+  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
+  o>     publishing	True
+  response: 20b8a89289d80036e6c4e87c2083e3bea1586637	1\nc4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True
+
+Single draft head
+
+  $ hg phase --public -r 2
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace phases
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     58\n
+  o> bufferedread(58) -> 58:
+  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
+  o>     publishing	True
+  response: c4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     58\n
+  o> bufferedread(58) -> 58:
+  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
+  o>     publishing	True
+  response: c4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True
+
+All public heads
+
+  $ hg phase --public -r 4
+  $ debugwireproto << EOF
+  > command listkeys
+  >     namespace phases
+  > EOF
+  testing ssh1
+  creating ssh peer from handshake results
+  i> write(104) -> None:
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 4:
+  o>     384\n
+  o> readline() -> 384:
+  o>     capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o> readline() -> 2:
+  o>     1\n
+  o> readline() -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     15\n
+  o> bufferedread(15) -> 15: publishing	True
+  response: publishing	True
+  
+  testing ssh2
+  creating ssh peer from handshake results
+  i> write(171) -> None:
+  i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
+  i>     hello\n
+  i>     between\n
+  i>     pairs 81\n
+  i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+  i> flush() -> None
+  o> readline() -> 62:
+  o>     upgraded * exp-ssh-v2-0001\n (glob)
+  o> readline() -> 4:
+  o>     383\n
+  o> read(383) -> 383: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(1) -> 1:
+  o>     \n
+  sending listkeys command
+  i> write(9) -> None:
+  i>     listkeys\n
+  i> write(12) -> None:
+  i>     namespace 6\n
+  i> write(6) -> None: phases
+  i> flush() -> None
+  o> bufferedreadline() -> 3:
+  o>     15\n
+  o> bufferedread(15) -> 15: publishing	True
+  response: publishing	True

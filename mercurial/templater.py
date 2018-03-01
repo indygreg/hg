@@ -968,7 +968,7 @@ def localdate(context, mapping, args):
     if len(args) >= 2:
         tzoffset = None
         tz = evalfuncarg(context, mapping, args[1])
-        if isinstance(tz, str):
+        if isinstance(tz, bytes):
             tzoffset, remainder = util.parsetimezone(tz)
             if remainder:
                 tzoffset = None
@@ -1602,10 +1602,10 @@ def stylemap(styles, paths=None):
 
     if paths is None:
         paths = templatepaths()
-    elif isinstance(paths, str):
+    elif isinstance(paths, bytes):
         paths = [paths]
 
-    if isinstance(styles, str):
+    if isinstance(styles, bytes):
         styles = [styles]
 
     for style in styles:

@@ -307,9 +307,21 @@ from there.
   searching for changes
   no changes found
   updating working directory
-  sharing subrepo foo from http://localhost:$HGPORT/foo
-  abort: can only share local repositories (in subrepository "foo")
-  [255]
+  cloning subrepo foo from http://localhost:$HGPORT/foo
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 7 changes to 3 files
+  new changesets af048e97ade2:65903cebad86
+  cloning subrepo foo/bar from http://localhost:$HGPORT/foo/bar
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 3 changes to 1 files
+  new changesets 4904098473f9:31ecbdafd357
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ cat access.log
   * "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
@@ -329,6 +341,11 @@ from there.
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D1326fa26d0c00d2146c63b56bb6a45149d7325ac x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
   $LOCALIP - - [$LOGDATE$] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=1326fa26d0c00d2146c63b56bb6a45149d7325ac&heads=1326fa26d0c00d2146c63b56bb6a45149d7325ac&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
   $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=65903cebad86f1a84bd4f1134f62fa7dcb7a1c98&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=31ecbdafd357f54b281c9bd1d681bb90de219e22&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
 
   $ killdaemons.py
   $ rm hg1.pid error.log access.log

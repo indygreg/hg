@@ -84,8 +84,9 @@ Test sharing with a remote URL reference
   adding .hgsub
   $ cd ..
 
-BUG: Remote subrepos cannot be shared, and pooled repos don't have their
-relative subrepos in the relative location stated in .hgsub.
+Clone pooling works for local clones with a remote subrepo reference.
+
+BUG: subrepos should be shared out of the pool.
 
   $ hg --config extensions.share= --config share.pool=$TESTTMP/pool \
   >    clone absolute_subrepo cloned_from_abs
@@ -99,31 +100,55 @@ relative subrepos in the relative location stated in .hgsub.
   searching for changes
   no changes found
   updating working directory
-  sharing subrepo sub from http://localhost:$HGPORT/sub
-  abort: can only share local repositories (in subrepository "sub")
-  [255]
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+Vanilla sharing with a subrepo remote path reference will clone the subrepo.
+Each share of these top level repos will end up with independent subrepo copies
+(potentially leaving the shared parent with dangling cset references).
 
   $ hg --config extensions.share= share absolute_subrepo shared_from_abs
   updating working directory
-  sharing subrepo sub from http://localhost:$HGPORT/sub
-  abort: can only share local repositories (in subrepository "sub")
-  [255]
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ hg --config extensions.share= share -U absolute_subrepo shared_from_abs2
   $ hg -R shared_from_abs2 update -r tip
-  sharing subrepo sub from http://localhost:$HGPORT/sub
-  abort: can only share local repositories (in subrepository "sub")
-  [255]
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
-BUG: A repo without its subrepo available locally should be sharable if the
+A parent repo without its subrepo available locally can be shared if the
 subrepo is referenced by absolute path.
 
   $ hg clone -U absolute_subrepo cloned_null_from_abs
   $ hg --config extensions.share= share cloned_null_from_abs shared_from_null_abs
   updating working directory
-  sharing subrepo sub from http://localhost:$HGPORT/sub
-  abort: can only share local repositories (in subrepository "sub")
-  [255]
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ killdaemons.py
 

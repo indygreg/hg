@@ -2217,9 +2217,9 @@ Age filter:
 
   >>> from __future__ import absolute_import
   >>> import datetime
-  >>> fp = open('a', 'w')
+  >>> fp = open('a', 'wb')
   >>> n = datetime.datetime.now() + datetime.timedelta(366 * 7)
-  >>> fp.write('%d-%d-%d 00:00' % (n.year, n.month, n.day))
+  >>> fp.write(b'%d-%d-%d 00:00' % (n.year, n.month, n.day))
   >>> fp.close()
   $ hg add a
   $ hg commit -m future -d "`cat a`"
@@ -4573,8 +4573,8 @@ Set up repository for non-ascii encoding tests:
   $ hg init nonascii
   $ cd nonascii
   $ $PYTHON <<EOF
-  > open('latin1', 'w').write('\xe9')
-  > open('utf-8', 'w').write('\xc3\xa9')
+  > open('latin1', 'wb').write(b'\xe9')
+  > open('utf-8', 'wb').write(b'\xc3\xa9')
   > EOF
   $ HGENCODING=utf-8 hg branch -q `cat utf-8`
   $ HGENCODING=utf-8 hg ci -qAm "non-ascii branch: `cat utf-8`" utf-8

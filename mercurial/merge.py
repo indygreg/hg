@@ -287,14 +287,14 @@ class mergestate(object):
             off = 0
             end = len(data)
             while off < end:
-                rtype = data[off]
+                rtype = data[off:off + 1]
                 off += 1
                 length = _unpack('>I', data[off:(off + 4)])[0]
                 off += 4
                 record = data[off:(off + length)]
                 off += length
                 if rtype == 't':
-                    rtype, record = record[0], record[1:]
+                    rtype, record = record[0:1], record[1:]
                 records.append((rtype, record))
             f.close()
         except IOError as err:

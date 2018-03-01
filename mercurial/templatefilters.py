@@ -264,9 +264,9 @@ def lower(text):
     return encoding.lower(text)
 
 @templatefilter('nonempty')
-def nonempty(str):
+def nonempty(text):
     """Any text. Returns '(none)' if the string is empty."""
-    return str or "(none)"
+    return text or "(none)"
 
 @templatefilter('obfuscate')
 def obfuscate(text):

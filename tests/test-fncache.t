@@ -236,7 +236,7 @@ Aborting lock does not prevent fncache writes
   >             wlock.release()
   > 
   > def extsetup(ui):
-  >     extensions.wrapcommand(commands.table, "commit", commitwrap)
+  >     extensions.wrapcommand(commands.table, b"commit", commitwrap)
   > EOF
   $ extpath=`pwd`/exceptionext.py
   $ hg init fncachetxn

@@ -4622,9 +4622,9 @@ Test that template function in extension is registered as expected
   > 
   > templatefunc = registrar.templatefunc()
   > 
-  > @templatefunc('custom()')
+  > @templatefunc(b'custom()')
   > def custom(context, mapping, args):
-  >     return 'custom'
+  >     return b'custom'
   > EOF
   $ cat <<EOF > .hg/hgrc
   > [extensions]

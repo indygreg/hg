@@ -7,12 +7,12 @@ from mercurial import (
 )
 
 def reposetup(ui, repo):
-    names = {'r%d' % rev: repo[rev].node() for rev in repo}
+    names = {b'r%d' % rev: repo[rev].node() for rev in repo}
     namemap = lambda r, name: names.get(name)
-    nodemap = lambda r, node: ['r%d' % repo[node].rev()]
+    nodemap = lambda r, node: [b'r%d' % repo[node].rev()]
 
-    ns = namespaces.namespace('revnames', templatename='revname',
-                              logname='revname',
+    ns = namespaces.namespace(b'revnames', templatename=b'revname',
+                              logname=b'revname',
                               listnames=lambda r: names.keys(),
                               namemap=namemap, nodemap=nodemap)
     repo.names.addnamespace(ns)

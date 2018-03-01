@@ -22,6 +22,7 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    pycompat,
     util,
 )
 
@@ -192,7 +193,7 @@ def unescapestr(s):
         return util.unescapestr(s)
     except ValueError as e:
         # mangle Python's exception into our format
-        raise error.ParseError(str(e).lower())
+        raise error.ParseError(pycompat.bytestr(e).lower())
 
 def _brepr(obj):
     if isinstance(obj, bytes):

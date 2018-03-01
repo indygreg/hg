@@ -8,7 +8,6 @@ from __future__ import absolute_import
 
 import collections
 import os
-import shlex
 import shutil
 
 from mercurial.i18n import _
@@ -211,9 +210,7 @@ class converter(object):
                     # Ignore blank lines
                     continue
                 # split line
-                lex = shlex.shlex(line, posix=True)
-                lex.whitespace_split = True
-                lex.whitespace += ','
+                lex = common.shlexer(data=line, whitespace=',')
                 line = list(lex)
                 # check number of parents
                 if not (2 <= len(line) <= 3):

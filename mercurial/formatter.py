@@ -248,15 +248,20 @@ class _plainconverter(object):
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''stringify key-value pairs separated by sep'''
+        prefmt = pycompat.identity
         if fmt is None:
             fmt = '%s=%s'
-        return sep.join(fmt % (k, v) for k, v in _iteritems(data))
+            prefmt = pycompat.bytestr
+        return sep.join(fmt % (prefmt(k), prefmt(v))
+                        for k, v in _iteritems(data))
     @staticmethod
     def formatlist(data, name, fmt, sep):
         '''stringify iterable separated by sep'''
+        prefmt = pycompat.identity
         if fmt is None:
             fmt = '%s'
-        return sep.join(fmt % e for e in data)
+            prefmt = pycompat.bytestr
+        return sep.join(fmt % prefmt(e) for e in data)
 
 class plainformatter(baseformatter):
     '''the default text output scheme'''

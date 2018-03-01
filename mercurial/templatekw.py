@@ -99,16 +99,20 @@ class _mappable(object):
 
 def hybriddict(data, key='key', value='value', fmt=None, gen=None):
     """Wrap data to support both dict-like and string-like operations"""
+    prefmt = pycompat.identity
     if fmt is None:
         fmt = '%s=%s'
+        prefmt = pycompat.bytestr
     return _hybrid(gen, data, lambda k: {key: k, value: data[k]},
-                   lambda k: fmt % (k, data[k]))
+                   lambda k: fmt % (prefmt(k), prefmt(data[k])))
 
 def hybridlist(data, name, fmt=None, gen=None):
     """Wrap data to support both list-like and string-like operations"""
+    prefmt = pycompat.identity
     if fmt is None:
         fmt = '%s'
-    return _hybrid(gen, data, lambda x: {name: x}, lambda x: fmt % x)
+        prefmt = pycompat.bytestr
+    return _hybrid(gen, data, lambda x: {name: x}, lambda x: fmt % prefmt(x))
 
 def unwraphybrid(thing):
     """Return an object which can be stringified possibly by using a legacy

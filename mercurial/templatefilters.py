@@ -152,12 +152,12 @@ def fill(text, width, initindent='', hangindent=''):
         while True:
             m = para_re.search(text, start)
             if not m:
-                uctext = unicode(text[start:], encoding.encoding)
+                uctext = encoding.unifromlocal(text[start:])
                 w = len(uctext)
                 while 0 < w and uctext[w - 1].isspace():
                     w -= 1
-                yield (uctext[:w].encode(encoding.encoding),
-                       uctext[w:].encode(encoding.encoding))
+                yield (encoding.unitolocal(uctext[:w]),
+                       encoding.unitolocal(uctext[w:]))
                 break
             yield text[start:m.start(0)], m.group(1)
             start = m.end(1)

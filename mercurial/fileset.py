@@ -392,11 +392,10 @@ def sizematcher(x):
     elif expr.startswith(">"):
         a = util.sizetoint(expr[1:])
         return lambda x: x > a
-    elif expr[0:1].isdigit or expr.startswith('.'):
+    else:
         a = util.sizetoint(expr)
         b = _sizetomax(expr)
         return lambda x: x >= a and x <= b
-    raise error.ParseError(_("couldn't parse size: %s") % expr)
 
 @predicate('size(expression)', callexisting=True)
 def size(mctx, x):

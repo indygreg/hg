@@ -559,7 +559,7 @@ def _tag(repo, names, node, message, local, user, date, extra=None,
 
     def writetags(fp, names, munge, prevtags):
         fp.seek(0, 2)
-        if prevtags and prevtags[-1] != '\n':
+        if prevtags and not prevtags.endswith('\n'):
             fp.write('\n')
         for name in names:
             if munge:

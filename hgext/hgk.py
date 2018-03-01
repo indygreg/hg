@@ -146,7 +146,7 @@ def catcommit(ui, repo, n, prefix, ctx=None):
 
     date = ctx.date()
     description = ctx.description().replace("\0", "")
-    ui.write(("author %s %s %s\n" % (ctx.user(), int(date[0]), date[1])))
+    ui.write(("author %s %d %d\n" % (ctx.user(), int(date[0]), date[1])))
 
     if 'committer' in ctx.extra():
         ui.write(("committer %s\n" % ctx.extra()['committer']))

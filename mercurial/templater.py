@@ -548,7 +548,7 @@ def runmember(context, mapping, data):
     if sym:
         raise error.ParseError(_("keyword '%s' has no member") % sym)
     else:
-        raise error.ParseError(_("%r has no member") % d)
+        raise error.ParseError(_("%r has no member") % pycompat.bytestr(d))
 
 def buildnegate(exp, context):
     arg = compileexp(exp[1], context, exprmethods)

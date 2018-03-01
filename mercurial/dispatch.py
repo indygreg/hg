@@ -132,7 +132,7 @@ def _formatparse(write, inst):
         similar = _getsimilar(inst.symbols, inst.function)
     if len(inst.args) > 1:
         write(_("hg: parse error at %s: %s\n") %
-                         (inst.args[1], inst.args[0]))
+              (pycompat.bytestr(inst.args[1]), inst.args[0]))
         if (inst.args[0][0] == ' '):
             write(_("unexpected leading whitespace\n"))
     else:

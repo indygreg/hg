@@ -1591,7 +1591,8 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
                                      metadata=metadata, ui=ui)
                 tr.close()
             except ValueError as exc:
-                raise error.Abort(_('bad obsmarker input: %s') % exc)
+                raise error.Abort(_('bad obsmarker input: %s') %
+                                  pycompat.bytestr(exc))
             finally:
                 tr.release()
         finally:

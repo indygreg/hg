@@ -45,6 +45,8 @@ test-contrib-check-commit.t
 test-convert-authormap.t
 test-convert-clonebranches.t
 test-convert-datesort.t
+test-convert-filemap.t
+test-convert-hg-sink.t
 test-convert-hg-startrev.t
 test-copy-move-merge.t
 test-copytrace-heuristics.t
@@ -194,6 +196,7 @@ test-narrow-clone.t
 test-narrow-copies.t
 test-narrow-debugrebuilddirstate.t
 test-narrow-exchange-merges.t
+test-narrow-exchange.t
 test-narrow-merge.t
 test-narrow-patch.t
 test-narrow-patterns.t

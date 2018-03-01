@@ -47,7 +47,7 @@ class LookupError(RevlogError, KeyError):
         # this can't be called 'message' because at least some installs of
         # Python 2.6+ complain about the 'message' property being deprecated
         self.lookupmessage = message
-        if isinstance(name, str) and len(name) == 20:
+        if isinstance(name, bytes) and len(name) == 20:
             from .node import short
             name = short(name)
         RevlogError.__init__(self, '%s@%s: %s' % (index, name, message))

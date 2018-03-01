@@ -1537,8 +1537,9 @@ class templater(object):
                 raise TemplateNotFound(_('"%s" not in template map') %
                                        inst.args[0])
             except IOError as inst:
-                raise IOError(inst.args[0], _('template file %s: %s') %
-                              (self.map[t][1], inst.args[1]))
+                reason = (_('template file %s: %s')
+                          % (self.map[t][1], util.forcebytestr(inst.args[1])))
+                raise IOError(inst.args[0], encoding.strfromlocal(reason))
         return self.cache[t]
 
     def render(self, mapping):

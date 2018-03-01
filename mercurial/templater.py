@@ -908,7 +908,7 @@ def join(context, mapping, args):
         joiner = evalstring(context, mapping, args[1])
 
     first = True
-    for x in joinset:
+    for x in pycompat.maybebytestr(joinset):
         if first:
             first = False
         else:
@@ -991,7 +991,7 @@ def max_(context, mapping, args, **kwargs):
 
     iterable = evalfuncarg(context, mapping, args[0])
     try:
-        x = max(iterable)
+        x = max(pycompat.maybebytestr(iterable))
     except (TypeError, ValueError):
         # i18n: "max" is a keyword
         raise error.ParseError(_("max first argument should be an iterable"))
@@ -1006,7 +1006,7 @@ def min_(context, mapping, args, **kwargs):
 
     iterable = evalfuncarg(context, mapping, args[0])
     try:
-        x = min(iterable)
+        x = min(pycompat.maybebytestr(iterable))
     except (TypeError, ValueError):
         # i18n: "min" is a keyword
         raise error.ParseError(_("min first argument should be an iterable"))

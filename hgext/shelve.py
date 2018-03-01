@@ -192,7 +192,7 @@ class shelvedstate(object):
             d['nodestoremove'] = [nodemod.bin(h)
                                   for h in d['nodestoremove'].split(' ')]
         except (ValueError, TypeError, KeyError) as err:
-            raise error.CorruptedState(str(err))
+            raise error.CorruptedState(pycompat.bytestr(err))
 
     @classmethod
     def _getversion(cls, repo):
@@ -201,7 +201,7 @@ class shelvedstate(object):
         try:
             version = int(fp.readline().strip())
         except ValueError as err:
-            raise error.CorruptedState(str(err))
+            raise error.CorruptedState(pycompat.bytestr(err))
         finally:
             fp.close()
         return version
@@ -251,7 +251,7 @@ class shelvedstate(object):
             if d.get('activebook', '') != cls._noactivebook:
                 obj.activebookmark = d.get('activebook', '')
         except (error.RepoLookupError, KeyError) as err:
-            raise error.CorruptedState(str(err))
+            raise error.CorruptedState(pycompat.bytestr(err))
 
         return obj
 
@@ -745,7 +745,7 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     try:
         rebase.rebase(ui, repo, **{
             r'rev': [shelvectx.rev()],
-            r'dest': str(tmpwctx.rev()),
+            r'dest': "%d" % tmpwctx.rev(),
             r'keep': True,
             r'tool': opts.get('tool', ''),
         })
@@ -881,7 +881,7 @@ def _dounshelve(ui, repo, *shelved, **opts):
                 raise
             cmdutil.wrongtooltocontinue(repo, _('unshelve'))
         except error.CorruptedState as err:
-            ui.debug(str(err) + '\n')
+            ui.debug(pycompat.bytestr(err) + '\n')
             if continuef:
                 msg = _('corrupted shelved state file')
                 hint = _('please run hg unshelve --abort to abort unshelve '

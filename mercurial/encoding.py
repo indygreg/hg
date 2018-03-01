@@ -181,7 +181,8 @@ def fromlocal(s):
         return u.encode("utf-8")
     except UnicodeDecodeError as inst:
         sub = s[max(0, inst.start - 10):inst.start + 10]
-        raise error.Abort("decoding near '%s': %s!" % (sub, inst))
+        raise error.Abort("decoding near '%s': %s!"
+                          % (sub, pycompat.bytestr(inst)))
     except LookupError as k:
         raise error.Abort(k, hint="please check your locale settings")
 

@@ -1087,7 +1087,7 @@ class Test(unittest.TestCase):
                 del env[k]
 
         # unset env related to hooks
-        for k in env.keys():
+        for k in list(env):
             if k.startswith('HG_'):
                 del env[k]
 

@@ -7,7 +7,6 @@
 from __future__ import absolute_import, print_function
 
 import posixpath
-import shlex
 
 from mercurial.i18n import _
 from mercurial import (
@@ -71,8 +70,8 @@ class filemapper(object):
                              (lex.infile, lex.lineno, listname, name))
                 return 1
             return 0
-        lex = shlex.shlex(open(path, 'rb'), path, True)
-        lex.wordchars += '!@#$%^&*()-=+[]{}|;:,./<>?'
+        lex = common.shlexer(
+            filepath=path, wordchars='!@#$%^&*()-=+[]{}|;:,./<>?')
         cmd = lex.get_token()
         while cmd:
             if cmd == 'include':

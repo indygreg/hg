@@ -64,8 +64,8 @@ class _hybrid(object):
     def __iter__(self):
         return iter(self._values)
     def __getattr__(self, name):
-        if name not in ('get', 'items', 'iteritems', 'iterkeys', 'itervalues',
-                        'keys', 'values'):
+        if name not in (r'get', r'items', r'iteritems', r'iterkeys',
+                        r'itervalues', r'keys', r'values'):
             raise AttributeError(name)
         return getattr(self._values, name)
 

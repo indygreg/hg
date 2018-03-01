@@ -371,7 +371,7 @@ def colorlabel(ui, msg, label):
     """add color control code according to the mode"""
     if ui._colormode == 'debug':
         if label and msg:
-            if msg[-1] == '\n':
+            if msg.endswith('\n'):
                 msg = "[%s|%s]\n" % (label, msg[:-1])
             else:
                 msg = "[%s|%s]" % (label, msg)

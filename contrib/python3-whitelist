@@ -35,6 +35,7 @@ test-clone-r.t
 test-clone-update-order.t
 test-commit-unresolved.t
 test-completion.t
+test-conflict.t
 test-confused-revert.t
 test-contrib-check-code.t
 test-contrib-check-commit.t
@@ -108,6 +109,7 @@ test-git-export.t
 test-glog-topological.t
 test-gpg.t
 test-hghave.t
+test-hgk.t
 test-histedit-arguments.t
 test-histedit-base.t
 test-histedit-bookmark-motion.t
@@ -117,9 +119,11 @@ test-histedit-edit.t
 test-histedit-fold-non-commute.t
 test-histedit-fold.t
 test-histedit-no-change.t
+test-histedit-non-commute-abort.t
 test-histedit-non-commute.t
 test-histedit-obsolete.t
 test-histedit-outgoing.t
+test-histedit-templates.t
 test-http-branchmap.t
 test-http-clone-r.t
 test-identify.t
@@ -163,6 +167,7 @@ test-merge-revert.t
 test-merge-revert2.t
 test-merge-subrepos.t
 test-merge-symlinks.t
+test-merge-types.t
 test-merge1.t
 test-merge10.t
 test-merge2.t
@@ -171,6 +176,7 @@ test-merge5.t
 test-merge6.t
 test-merge7.t
 test-merge8.t
+test-merge9.t
 test-mq-git.t
 test-mq-pull-from-bundle.t
 test-mq-qdiff.t
@@ -200,6 +206,8 @@ test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t
 test-obsolete-distributed.t
 test-parents.t
+test-pathconflicts-merge.t
+test-pathconflicts-update.t
 test-pending.t
 test-permissions.t
 test-phases.t
@@ -239,11 +247,14 @@ test-push-checkheads-unpushed-D7.t
 test-push-http.t
 test-push-warn.t
 test-pushvars.t
+test-rebase-abort.t
 test-rebase-base-flag.t
 test-rebase-bookmarks.t
 test-rebase-brute-force.t
+test-rebase-cache.t
 test-rebase-check-restore.t
 test-rebase-dest.t
+test-rebase-detach.t
 test-rebase-emptycommit.t
 test-rebase-inmemory.t
 test-rebase-interruptions.t
@@ -251,9 +262,11 @@ test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
 test-rebase-named-branches.t
 test-rebase-newancestor.t
+test-rebase-parameters.t
 test-rebase-partial.t
 test-rebase-pull.t
 test-rebase-rename.t
+test-rebase-templates.t
 test-rebase-transaction.t
 test-record.t
 test-relink.t
@@ -264,6 +277,7 @@ test-rename-merge1.t
 test-rename.t
 test-repair-strip.t
 test-repo-compengines.t
+test-resolve.t
 test-revert-flags.t
 test-revert-unknown.t
 test-revlog-ancestry.py

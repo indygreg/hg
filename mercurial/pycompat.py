@@ -224,8 +224,8 @@ if ispy3:
     xrange = builtins.range
     unicode = str
 
-    def open(name, mode='r', buffering=-1):
-        return builtins.open(name, sysstr(mode), buffering)
+    def open(name, mode='r', buffering=-1, encoding=None):
+        return builtins.open(name, sysstr(mode), buffering, encoding)
 
     def _getoptbwrapper(orig, args, shortlist, namelist):
         """

@@ -4438,7 +4438,7 @@ Test broken string escapes:
   hg: parse error: trailing \ in string
   [255]
   $ hg log -T "\\xy" -R a
-  hg: parse error: invalid \x escape
+  hg: parse error: invalid \x escape* (glob)
   [255]
 
 json filter should escape HTML tags so that the output can be embedded in hgweb:

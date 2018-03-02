@@ -363,7 +363,7 @@ class journalstorage(object):
                     # empty file, write version first
                     f.write(str(storageversion) + '\0')
                 f.seek(0, os.SEEK_END)
-                f.write(str(entry) + '\0')
+                f.write(bytes(entry) + '\0')
 
     def filtered(self, namespace=None, name=None):
         """Yield all journal entries with the given namespace or name

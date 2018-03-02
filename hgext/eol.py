@@ -222,7 +222,7 @@ class eolfile(object):
                 data = ctx[f].data()
                 if (target == "to-lf" and "\r\n" in data
                     or target == "to-crlf" and singlelf.search(data)):
-                    failed.append((f, target, str(ctx)))
+                    failed.append((f, target, bytes(ctx)))
                 break
         return failed
 

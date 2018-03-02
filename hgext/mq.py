@@ -780,7 +780,7 @@ class queue(object):
 
         diffopts = self.patchopts(diffopts, patch)
         patchf = self.opener(patch, "w")
-        comments = str(ph)
+        comments = bytes(ph)
         if comments:
             patchf.write(comments)
         self.printdiff(repo, diffopts, head, n, fp=patchf)

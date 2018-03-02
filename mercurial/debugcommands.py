@@ -2790,12 +2790,13 @@ def debugwireproto(ui, repo, **opts):
             if 'PUSHFILE' in args:
                 with open(args['PUSHFILE'], r'rb') as fh:
                     del args['PUSHFILE']
-                    res, output = peer._callpush(command, fh, **args)
+                    res, output = peer._callpush(command, fh,
+                                                 **pycompat.strkwargs(args))
                     ui.status(_('result: %s\n') % util.escapedata(res))
                     ui.status(_('remote output: %s\n') %
                               util.escapedata(output))
             else:
-                res = peer._call(command, **args)
+                res = peer._call(command, **pycompat.strkwargs(args))
                 ui.status(_('response: %s\n') % util.escapedata(res))
 
         elif action == 'batchbegin':

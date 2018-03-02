@@ -45,12 +45,12 @@ class gitlfspointer(dict):
 
     # regular expressions used by _validate
     # see https://github.com/git-lfs/git-lfs/blob/master/docs/spec.md
-    _keyre = re.compile(r'\A[a-z0-9.-]+\Z')
-    _valuere = re.compile(r'\A[^\n]*\Z')
+    _keyre = re.compile(br'\A[a-z0-9.-]+\Z')
+    _valuere = re.compile(br'\A[^\n]*\Z')
     _requiredre = {
-        'size': re.compile(r'\A[0-9]+\Z'),
-        'oid': re.compile(r'\Asha256:[0-9a-f]{64}\Z'),
-        'version': re.compile(r'\A%s\Z' % re.escape(VERSION)),
+        'size': re.compile(br'\A[0-9]+\Z'),
+        'oid': re.compile(br'\Asha256:[0-9a-f]{64}\Z'),
+        'version': re.compile(br'\A%s\Z' % re.escape(VERSION)),
     }
 
     def validate(self):

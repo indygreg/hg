@@ -365,6 +365,7 @@ class sshv1peer(wireproto.wirepeer):
         self._pipei = stdout
         self._pipee = stderr
         self._caps = caps
+        self._autoreadstderr = autoreadstderr
 
     # Commands that have a "framed" response where the first line of the
     # response contains the length of that response.
@@ -510,10 +511,12 @@ class sshv1peer(wireproto.wirepeer):
     def _getamount(self):
         l = self._pipei.readline()
         if l == '\n':
-            self._readerr()
+            if self._autoreadstderr:
+                self._readerr()
             msg = _('check previous remote output')
             self._abort(error.OutOfBandError(hint=msg))
-        self._readerr()
+        if self._autoreadstderr:
+            self._readerr()
         try:
             return int(l)
         except ValueError:
@@ -528,7 +531,8 @@ class sshv1peer(wireproto.wirepeer):
             self._pipeo.write(data)
         if flush:
             self._pipeo.flush()
-        self._readerr()
+        if self._autoreadstderr:
+            self._readerr()
 
 class sshv2peer(sshv1peer):
     """A peer that speakers version 2 of the transport protocol."""

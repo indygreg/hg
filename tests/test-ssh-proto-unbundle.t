@@ -45,6 +45,7 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -87,17 +88,15 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  e> read(-1) -> 115:
-  e>     abort: incompatible Mercurial client; bundle2 required\n
-  e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
-  remote: abort: incompatible Mercurial client; bundle2 required
-  remote: (see https://www.mercurial-scm.org/wiki/IncompatibleClient)
   o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  e> read(-1) -> 115:
+  e>     abort: incompatible Mercurial client; bundle2 required\n
+  e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
   
   testing ssh2
   creating ssh peer from handshake results
@@ -140,17 +139,15 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  e> read(-1) -> 115:
-  e>     abort: incompatible Mercurial client; bundle2 required\n
-  e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
-  remote: abort: incompatible Mercurial client; bundle2 required
-  remote: (see https://www.mercurial-scm.org/wiki/IncompatibleClient)
   o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  e> read(-1) -> 115:
+  e>     abort: incompatible Mercurial client; bundle2 required\n
+  e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
 
   $ cd ..
 
@@ -217,6 +214,7 @@ ui.write() in hook is redirected to stderr
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -259,6 +257,12 @@ ui.write() in hook is redirected to stderr
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 196:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -268,20 +272,6 @@ ui.write() in hook is redirected to stderr
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1 line
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -324,6 +314,12 @@ ui.write() in hook is redirected to stderr
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 196:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -333,20 +329,6 @@ ui.write() in hook is redirected to stderr
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1 line
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
 And a variation that writes multiple lines using ui.write
 
@@ -360,6 +342,7 @@ And a variation that writes multiple lines using ui.write
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -402,6 +385,12 @@ And a variation that writes multiple lines using ui.write
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -412,21 +401,6 @@ And a variation that writes multiple lines using ui.write
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 2 lines 1
-  remote: ui.write 2 lines 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -469,6 +443,12 @@ And a variation that writes multiple lines using ui.write
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -479,21 +459,6 @@ And a variation that writes multiple lines using ui.write
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 2 lines 1
-  remote: ui.write 2 lines 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
 And a variation that does a ui.flush() after writing output
 
@@ -507,6 +472,7 @@ And a variation that does a ui.flush() after writing output
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -549,6 +515,12 @@ And a variation that does a ui.flush() after writing output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 202:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -558,20 +530,6 @@ And a variation that does a ui.flush() after writing output
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1 line flush
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -614,6 +572,12 @@ And a variation that does a ui.flush() after writing output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 202:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -623,20 +587,6 @@ And a variation that does a ui.flush() after writing output
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1 line flush
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
 Multiple writes + flush
 
@@ -650,6 +600,7 @@ Multiple writes + flush
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -692,6 +643,12 @@ Multiple writes + flush
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 206:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -702,21 +659,6 @@ Multiple writes + flush
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1st
-  remote: ui.write 2nd
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -759,6 +701,12 @@ Multiple writes + flush
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 206:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -769,21 +717,6 @@ Multiple writes + flush
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1st
-  remote: ui.write 2nd
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
 ui.write() + ui.write_err() output is captured
 
@@ -797,6 +730,7 @@ ui.write() + ui.write_err() output is captured
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -839,6 +773,12 @@ ui.write() + ui.write_err() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 232:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -851,23 +791,6 @@ ui.write() + ui.write_err() output is captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1
-  remote: ui.write_err 1
-  remote: ui.write 2
-  remote: ui.write_err 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -910,6 +833,12 @@ ui.write() + ui.write_err() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 232:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -922,23 +851,6 @@ ui.write() + ui.write_err() output is captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1
-  remote: ui.write_err 1
-  remote: ui.write 2
-  remote: ui.write_err 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
 print() output is captured
 
@@ -952,6 +864,7 @@ print() output is captured
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -994,6 +907,12 @@ print() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 193:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1003,20 +922,6 @@ print() output is captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: printed line
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1059,6 +964,12 @@ print() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 193:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1068,20 +979,6 @@ print() output is captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: printed line
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
 Mixed print() and ui.write() are both captured
 
@@ -1095,6 +992,7 @@ Mixed print() and ui.write() are both captured
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -1137,6 +1035,12 @@ Mixed print() and ui.write() are both captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1149,23 +1053,6 @@ Mixed print() and ui.write() are both captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1
-  remote: ui.write 2
-  remote: print 1
-  remote: print 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1208,6 +1095,12 @@ Mixed print() and ui.write() are both captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1220,23 +1113,6 @@ Mixed print() and ui.write() are both captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1
-  remote: ui.write 2
-  remote: print 1
-  remote: print 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
 print() to stdout and stderr both get captured
 
@@ -1250,6 +1126,7 @@ print() to stdout and stderr both get captured
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -1292,6 +1169,12 @@ print() to stdout and stderr both get captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 216:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1304,23 +1187,6 @@ print() to stdout and stderr both get captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: stderr 1
-  remote: stderr 2
-  remote: stdout 1
-  remote: stdout 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1363,6 +1229,12 @@ print() to stdout and stderr both get captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 0
+  result: 0
+  remote output: 
   e> read(-1) -> 216:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1375,23 +1247,6 @@ print() to stdout and stderr both get captured
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: stderr 1
-  remote: stderr 2
-  remote: stdout 1
-  remote: stdout 2
-  remote: transaction abort!
-  remote: rollback completed
-  remote: abort: pretxnchangegroup.fail hook failed
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 0
-  result: 0
-  remote output: 
 
   $ cd ..
 
@@ -1405,6 +1260,7 @@ Pushing a bundle1 with no output
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -1447,21 +1303,17 @@ Pushing a bundle1 with no output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  e> read(-1) -> 100:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 1
   result: 1
   remote output: 
+  e> read(-1) -> 100:
+  e>     adding changesets\n
+  e>     adding manifests\n
+  e>     adding file changes\n
+  e>     added 1 changesets with 1 changes to 1 files\n
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1504,21 +1356,17 @@ Pushing a bundle1 with no output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  e> read(-1) -> 100:
-  e>     adding changesets\n
-  e>     adding manifests\n
-  e>     adding file changes\n
-  e>     added 1 changesets with 1 changes to 1 files\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
   o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 1
   result: 1
   remote output: 
+  e> read(-1) -> 100:
+  e>     adding changesets\n
+  e>     adding manifests\n
+  e>     adding file changes\n
+  e>     added 1 changesets with 1 changes to 1 files\n
 
   $ cd ..
 
@@ -1544,6 +1392,7 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   > # This is "force" in hex.
   >     heads 666f726365
   >     PUSHFILE ../initial.v1.hg
+  > readavailable
   > EOF
   testing ssh1
   creating ssh peer from handshake results
@@ -1586,6 +1435,12 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 1
+  result: 1
+  remote output: 
   e> read(-1) -> 152:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1595,20 +1450,6 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   e>     ui.write_err 1\n
   e>     ui.write 2\n
   e>     ui.write_err 2\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1
-  remote: ui.write_err 1
-  remote: ui.write 2
-  remote: ui.write_err 2
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 1
-  result: 1
-  remote output: 
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1651,6 +1492,12 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
+  o> read(0) -> 0: 
+  o> readline() -> 2:
+  o>     1\n
+  o> read(1) -> 1: 1
+  result: 1
+  remote output: 
   e> read(-1) -> 152:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1660,17 +1507,3 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   e>     ui.write_err 1\n
   e>     ui.write 2\n
   e>     ui.write_err 2\n
-  remote: adding changesets
-  remote: adding manifests
-  remote: adding file changes
-  remote: added 1 changesets with 1 changes to 1 files
-  remote: ui.write 1
-  remote: ui.write_err 1
-  remote: ui.write 2
-  remote: ui.write_err 2
-  o> read(0) -> 0: 
-  o> readline() -> 2:
-  o>     1\n
-  o> read(1) -> 1: 1
-  result: 1
-  remote output: 

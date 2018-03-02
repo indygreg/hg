@@ -14,8 +14,10 @@ test-bookmarks-current.t
 test-bookmarks-merge.t
 test-bookmarks-rebase.t
 test-bookmarks-strip.t
+test-bookmarks.t
 test-branch-option.t
 test-branch-tag-confict.t
+test-branches.t
 test-bundle-phases.t
 test-bundle-vs-outgoing.t
 test-bundle2-multiple-changegroups.t
@@ -47,11 +49,13 @@ test-convert-clonebranches.t
 test-convert-datesort.t
 test-convert-filemap.t
 test-convert-hg-sink.t
+test-convert-hg-source.t
 test-convert-hg-startrev.t
 test-copy-move-merge.t
 test-copytrace-heuristics.t
 test-debugbuilddag.t
 test-debugbundle.t
+test-debugextensions.t
 test-debugindexdot.t
 test-debugrename.t
 test-diff-binary-file.t
@@ -75,6 +79,7 @@ test-empty-file.t
 test-empty-group.t
 test-empty.t
 test-encoding-func.py
+test-encoding.t
 test-eol-add.t
 test-eol-clone.t
 test-eol-tag.t
@@ -115,6 +120,7 @@ test-glog-topological.t
 test-gpg.t
 test-graft.t
 test-hghave.t
+test-hgignore.t
 test-hgk.t
 test-histedit-arguments.t
 test-histedit-base.t
@@ -136,6 +142,7 @@ test-identify.t
 test-imports-checker.t
 test-inherit-mode.t
 test-issue1089.t
+test-issue1102.t
 test-issue1175.t
 test-issue1306.t
 test-issue1438.t
@@ -143,6 +150,7 @@ test-issue1502.t
 test-issue1802.t
 test-issue1877.t
 test-issue1993.t
+test-issue2137.t
 test-issue3084.t
 test-issue4074.t
 test-issue522.t
@@ -193,6 +201,7 @@ test-mq-qsave.t
 test-narrow-clone-no-ellipsis.t
 test-narrow-clone-nonlinear.t
 test-narrow-clone.t
+test-narrow-commit.t
 test-narrow-copies.t
 test-narrow-debugrebuilddirstate.t
 test-narrow-exchange-merges.t
@@ -212,6 +221,7 @@ test-obsolete-bundle-strip.t
 test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t
 test-obsolete-distributed.t
+test-obsolete-tag-cache.t
 test-parents.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t
@@ -224,6 +234,7 @@ test-pull-permission.t
 test-pull-pull-corruption.t
 test-pull-r.t
 test-pull-update.t
+test-purge.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t
 test-push-checkheads-partial-C3.t
@@ -299,6 +310,7 @@ test-revset-outgoing.t
 test-run-tests.py
 test-serve.t
 test-show-stack.t
+test-show-work.t
 test-show.t
 test-simple-update.t
 test-single-head.t
@@ -325,5 +337,6 @@ test-update-names.t
 test-update-reverse.t
 test-url-rev.t
 test-username-newline.t
+test-verify.t
 test-win32text.t
 test-xdg.t

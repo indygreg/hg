@@ -2257,7 +2257,7 @@ def debugserve(ui, repo, **opts):
 
     if opts['logiofd']:
         # Line buffered because output is line based.
-        logfh = os.fdopen(int(opts['logiofd']), 'ab', 1)
+        logfh = os.fdopen(int(opts['logiofd']), r'ab', 1)
     elif opts['logiofile']:
         logfh = open(opts['logiofile'], 'ab', 1)
 

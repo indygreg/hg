@@ -84,7 +84,7 @@ class bmstore(dict):
                         # - node in nm, for non-20-bytes entry
                         # - split(...), for string without ' '
                         repo.ui.warn(_('malformed line in .hg/bookmarks: %r\n')
-                                     % line)
+                                     % pycompat.bytestr(line))
         except IOError as inst:
             if inst.errno != errno.ENOENT:
                 raise

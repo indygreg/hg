@@ -2061,7 +2061,7 @@ def _orderedlist(repo, subset, x):
         try:
             # fast path for integer revision
             r = int(t)
-            if str(r) != t or r not in cl:
+            if ('%d' % r) != t or r not in cl:
                 raise ValueError
             revs = [r]
         except ValueError:

@@ -1005,7 +1005,7 @@ def debugignore(ui, repo, *files, **opts):
     ignore = repo.dirstate._ignore
     if not files:
         # Show all the patterns
-        ui.write("%s\n" % repr(ignore))
+        ui.write("%s\n" % pycompat.byterepr(ignore))
     else:
         m = scmutil.match(repo[None], pats=files)
         for f in m.files():

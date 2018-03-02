@@ -565,7 +565,6 @@ class rebaseruntime(object):
             editor = cmdutil.getcommiteditor(edit=editopt, editform=editform)
             revtoreuse = max(self.state)
 
-            dsguard = None
             if self.inmemory:
                 newnode = concludememorynode(repo, revtoreuse, p1,
                     self.external,
@@ -575,6 +574,7 @@ class rebaseruntime(object):
                     keepbranches=self.keepbranchesf,
                     date=self.date, wctx=self.wctx)
             else:
+                dsguard = None
                 if ui.configbool('rebase', 'singletransaction'):
                     dsguard = dirstateguard.dirstateguard(repo, 'rebase')
                 with util.acceptintervention(dsguard):
@@ -849,7 +849,6 @@ def _origrebase(ui, repo, inmemory=False, **opts):
                 return retcode
 
         tr = None
-        dsguard = None
 
         singletr = ui.configbool('rebase', 'singletransaction')
         if singletr:
@@ -861,6 +860,7 @@ def _origrebase(ui, repo, inmemory=False, **opts):
         with util.acceptintervention(tr):
             # Same logic for the dirstate guard, except we don't create one when
             # rebasing in-memory (it's not needed).
+            dsguard = None
             if singletr and not inmemory:
                 dsguard = dirstateguard.dirstateguard(repo, 'rebase')
             with util.acceptintervention(dsguard):

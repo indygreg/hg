@@ -509,8 +509,8 @@ class fileobjectproxy(object):
     )
 
     def __init__(self, fh, observer):
-        object.__setattr__(self, '_orig', fh)
-        object.__setattr__(self, '_observer', observer)
+        object.__setattr__(self, r'_orig', fh)
+        object.__setattr__(self, r'_observer', observer)
 
     def __getattribute__(self, name):
         ours = {

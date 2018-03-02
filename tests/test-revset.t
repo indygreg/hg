@@ -55,7 +55,7 @@ these predicates use '\0' as a separator:
   >     expr = revsetlang.formatspec(fmt, list(args))
   >     if ui.verbose:
   >         tree = revsetlang.parse(expr, lookup=repo.__contains__)
-  >         ui.note(revsetlang.prettyformat(tree), "\n")
+  >         ui.note(revsetlang.prettyformat(tree), b"\n")
   >         if opts["optimize"]:
   >             opttree = revsetlang.optimize(revsetlang.analyze(tree))
   >             ui.note(b"* optimized:\n", revsetlang.prettyformat(opttree),
@@ -65,7 +65,7 @@ these predicates use '\0' as a separator:
   >     if ui.verbose:
   >         ui.note(b"* set:\n", smartset.prettyformat(revs), b"\n")
   >     for c in revs:
-  >         ui.write(b"%s\n" % c)
+  >         ui.write(b"%d\n" % c)
   > EOF
   $ cat <<EOF >> $HGRCPATH
   > [extensions]

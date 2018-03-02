@@ -90,7 +90,7 @@ def writetostore(self, text):
 
     # replace contents with metadata
     longoid = 'sha256:%s' % oid
-    metadata = pointer.gitlfspointer(oid=longoid, size=str(len(text)))
+    metadata = pointer.gitlfspointer(oid=longoid, size='%d' % len(text))
 
     # by default, we expect the content to be binary. however, LFS could also
     # be used for non-binary content. add a special entry for non-binary data.

@@ -261,7 +261,8 @@ def checknewlabel(repo, lbl, kind):
         raise error.Abort(_("the name '%s' is reserved") % lbl)
     for c in (':', '\0', '\n', '\r'):
         if c in lbl:
-            raise error.Abort(_("%r cannot be used in a name") % c)
+            raise error.Abort(
+                _("%r cannot be used in a name") % pycompat.bytestr(c))
     try:
         int(lbl)
         raise error.Abort(_("cannot use an integer as a name"))

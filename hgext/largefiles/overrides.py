@@ -598,7 +598,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
     try:
         result = orig(ui, repo, pats, opts, rename)
     except error.Abort as e:
-        if str(e) != _('no files to copy'):
+        if pycompat.bytestr(e) != _('no files to copy'):
             raise e
         else:
             nonormalfiles = True
@@ -705,7 +705,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                 lfdirstate.add(destlfile)
         lfdirstate.write()
     except error.Abort as e:
-        if str(e) != _('no files to copy'):
+        if pycompat.bytestr(e) != _('no files to copy'):
             raise e
         else:
             nolfiles = True

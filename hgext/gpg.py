@@ -318,7 +318,7 @@ def _dosign(ui, repo, *revs, **opts):
         repo.commit(message, opts['user'], opts['date'], match=msigs,
                     editor=editor)
     except ValueError as inst:
-        raise error.Abort(str(inst))
+        raise error.Abort(pycompat.bytestr(inst))
 
 def node2txt(repo, node, ver):
     """map a manifest into some text"""

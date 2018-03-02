@@ -508,7 +508,7 @@ def journal(ui, repo, *args, **opts):
                     ctx = repo[hash]
                     displayer.show(ctx)
                 except error.RepoLookupError as e:
-                    fm.write('repolookuperror', "%s\n\n", str(e))
+                    fm.write('repolookuperror', "%s\n\n", pycompat.bytestr(e))
             displayer.close()
 
     fm.end()

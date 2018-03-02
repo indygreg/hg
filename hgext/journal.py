@@ -351,7 +351,7 @@ class journalstorage(object):
                 # Read just enough bytes to get a version number (up to 2
                 # digits plus separator)
                 version = f.read(3).partition('\0')[0]
-                if version and version != str(storageversion):
+                if version and version != "%d" % storageversion:
                     # different version of the storage. Exit early (and not
                     # write anything) if this is not a version we can handle or
                     # the file is corrupt. In future, perhaps rotate the file
@@ -361,7 +361,7 @@ class journalstorage(object):
                     return
                 if not version:
                     # empty file, write version first
-                    f.write(str(storageversion) + '\0')
+                    f.write(("%d" % storageversion) + '\0')
                 f.seek(0, os.SEEK_END)
                 f.write(bytes(entry) + '\0')
 
@@ -413,7 +413,7 @@ class journalstorage(object):
 
         lines = raw.split('\0')
         version = lines and lines[0]
-        if version != str(storageversion):
+        if version != "%d" % storageversion:
             version = version or _('not available')
             raise error.Abort(_("unknown journal file version '%s'") % version)
 

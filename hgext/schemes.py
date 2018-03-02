@@ -94,7 +94,7 @@ class ShortRepository(object):
             parts = parts[:-1]
         else:
             tail = ''
-        context = dict((str(i + 1), v) for i, v in enumerate(parts))
+        context = dict(('%d' % (i + 1), v) for i, v in enumerate(parts))
         return ''.join(self.templater.process(self.url, context)) + tail
 
 def hasdriveletter(orig, path):

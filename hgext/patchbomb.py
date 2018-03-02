@@ -212,7 +212,7 @@ def _formatprefix(ui, repo, rev, flags, idx, total, numbered):
     if not numbered:
         return '[PATCH%s]' % flag
     else:
-        tlen = len(str(total))
+        tlen = len("%d" % total)
         return '[PATCH %0*d of %d%s]' % (tlen, idx, total, flag)
 
 def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
@@ -630,7 +630,7 @@ def email(ui, repo, *revs, **opts):
     if outgoing:
         revs = _getoutgoing(repo, dest, revs)
     if bundle:
-        opts['revs'] = [str(r) for r in revs]
+        opts['revs'] = ["%d" % r for r in revs]
 
     # check if revision exist on the public destination
     publicurl = repo.ui.config('patchbomb', 'publicurl')

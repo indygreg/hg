@@ -1932,7 +1932,7 @@ class queue(object):
             length = len(self.series) - start
         if not missing:
             if self.ui.verbose:
-                idxwidth = len(str(start + length - 1))
+                idxwidth = len("%d" % (start + length - 1))
             for i in xrange(start, start + length):
                 patch = self.series[i]
                 if patch in applied:
@@ -2098,7 +2098,7 @@ class queue(object):
         if not self.ui.verbose:
             p = pname
         else:
-            p = str(self.series.index(pname)) + " " + pname
+            p = ("%d" % self.series.index(pname)) + " " + pname
         return p
 
     def qimport(self, repo, files, patchname=None, rev=None, existing=None,

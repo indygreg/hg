@@ -13,6 +13,22 @@ SSHV1 = 'ssh-v1'
 # to reflect BC breakages.
 SSHV2 = 'exp-ssh-v2-0001'
 
+# All available wire protocol transports.
+TRANSPORTS = {
+    SSHV1: {
+        'transport': 'ssh',
+        'version': 1,
+    },
+    SSHV2: {
+        'transport': 'ssh',
+        'version': 2,
+    },
+    'http-v1': {
+        'transport': 'http',
+        'version': 1,
+    }
+}
+
 class bytesresponse(object):
     """A wire protocol response consisting of raw bytes."""
     def __init__(self, data):

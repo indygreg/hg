@@ -24,6 +24,7 @@ from mercurial import (
     bookmarks,
     cmdutil,
     dispatch,
+    encoding,
     error,
     extensions,
     hg,
@@ -219,14 +220,16 @@ class journalentry(collections.namedtuple(
             (timestamp, tz), user, command, namespace, name,
             oldhashes, newhashes)
 
-    def __str__(self):
-        """String representation for storage"""
+    def __bytes__(self):
+        """bytes representation for storage"""
         time = ' '.join(map(str, self.timestamp))
         oldhashes = ','.join([node.hex(hash) for hash in self.oldhashes])
         newhashes = ','.join([node.hex(hash) for hash in self.newhashes])
         return '\n'.join((
             time, self.user, self.command, self.namespace, self.name,
             oldhashes, newhashes))
+
+    __str__ = encoding.strmethod(__bytes__)
 
 class journalstorage(object):
     """Storage for journal entries

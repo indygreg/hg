@@ -122,6 +122,7 @@ test-graft.t
 test-hghave.t
 test-hgignore.t
 test-hgk.t
+test-hgweb-removed.t
 test-histedit-arguments.t
 test-histedit-base.t
 test-histedit-bookmark-motion.t
@@ -216,6 +217,7 @@ test-narrow-shallow.t
 test-narrow-update.t
 test-newbranch.t
 test-obshistory.t
+test-obsmarker-template.t
 test-obsmarkers-effectflag.t
 test-obsolete-bundle-strip.t
 test-obsolete-changeset-exchange.t
@@ -309,6 +311,7 @@ test-revset-dirstate-parents.t
 test-revset-outgoing.t
 test-run-tests.py
 test-serve.t
+test-share.t
 test-show-stack.t
 test-show-work.t
 test-show.t
@@ -338,5 +341,6 @@ test-update-reverse.t
 test-url-rev.t
 test-username-newline.t
 test-verify.t
+test-websub.t
 test-win32text.t
 test-xdg.t

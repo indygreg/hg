@@ -12,6 +12,7 @@ import sys
 import traceback
 
 from mercurial import (
+    pycompat,
     server,
     sslutil,
     ui as uimod,
@@ -63,6 +64,19 @@ def run():
     except KeyboardInterrupt:
         pass
 
+def _encodestrsonly(v):
+    if isinstance(v, type(u'')):
+        return v.encode('ascii')
+    return v
+
+def bytesvars(obj):
+    unidict = vars(obj)
+    bd = {k.encode('ascii'): _encodestrsonly(v) for k, v in unidict.items()}
+    if bd[b'daemon_postexec'] is not None:
+        bd[b'daemon_postexec'] = [
+            _encodestrsonly(v) for v in bd[b'daemon_postexec']]
+    return bd
+
 def main():
     op = optparse.OptionParser()
     op.add_option('-d', '--daemon', action='store_true')
@@ -85,8 +99,10 @@ def main():
             dummysmtpsecureserver(addr, opts.certificate)
         log('listening at %s:%d\n' % addr)
 
-    server.runservice(vars(opts), initfn=init, runfn=run,
-                      runargs=[sys.executable, __file__] + sys.argv[1:])
+    server.runservice(
+        bytesvars(opts), initfn=init, runfn=run,
+        runargs=[pycompat.sysexecutable,
+                 pycompat.fsencode(__file__)] + pycompat.sysargv[1:])
 
 if __name__ == '__main__':
     main()

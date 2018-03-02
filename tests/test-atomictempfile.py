@@ -17,8 +17,8 @@ if pycompat.ispy3:
 
 class testatomictempfile(unittest.TestCase):
     def setUp(self):
-        self._testdir = tempfile.mkdtemp('atomictempfiletest')
-        self._filename = os.path.join(self._testdir, 'testfilename')
+        self._testdir = tempfile.mkdtemp(b'atomictempfiletest')
+        self._filename = os.path.join(self._testdir, b'testfilename')
 
     def tearDown(self):
         shutil.rmtree(self._testdir, True)
@@ -28,14 +28,14 @@ class testatomictempfile(unittest.TestCase):
         self.assertFalse(os.path.isfile(self._filename))
         tempfilename = file._tempname
         self.assertTrue(tempfilename in glob.glob(
-            os.path.join(self._testdir, '.testfilename-*')))
+            os.path.join(self._testdir, b'.testfilename-*')))
 
         file.write(b'argh\n')
         file.close()
 
         self.assertTrue(os.path.isfile(self._filename))
         self.assertTrue(tempfilename not in glob.glob(
-            os.path.join(self._testdir, '.testfilename-*')))
+            os.path.join(self._testdir, b'.testfilename-*')))
 
     # discard() removes the temp file without making the write permanent
     def testdiscard(self):
@@ -46,7 +46,7 @@ class testatomictempfile(unittest.TestCase):
         file.discard()
 
         self.assertFalse(os.path.isfile(self._filename))
-        self.assertTrue(basename not in os.listdir('.'))
+        self.assertTrue(basename not in os.listdir(b'.'))
 
     # if a programmer screws up and passes bad args to atomictempfile, they
     # get a plain ordinary TypeError, not infinite recursion
@@ -58,7 +58,7 @@ class testatomictempfile(unittest.TestCase):
     def testcheckambig(self):
         def atomicwrite(checkambig):
             f = atomictempfile(self._filename, checkambig=checkambig)
-            f.write('FOO')
+            f.write(b'FOO')
             f.close()
 
         # try some times, because reproduction of ambiguity depends on
@@ -97,27 +97,27 @@ class testatomictempfile(unittest.TestCase):
     def testread(self):
         with open(self._filename, 'wb') as f:
             f.write(b'foobar\n')
-        file = atomictempfile(self._filename, mode='rb')
+        file = atomictempfile(self._filename, mode=b'rb')
         self.assertTrue(file.read(), b'foobar\n')
         file.discard()
 
     def testcontextmanagersuccess(self):
         """When the context closes, the file is closed"""
-        with atomictempfile('foo') as f:
-            self.assertFalse(os.path.isfile('foo'))
+        with atomictempfile(b'foo') as f:
+            self.assertFalse(os.path.isfile(b'foo'))
             f.write(b'argh\n')
-        self.assertTrue(os.path.isfile('foo'))
+        self.assertTrue(os.path.isfile(b'foo'))
 
     def testcontextmanagerfailure(self):
         """On exception, the file is discarded"""
         try:
-            with atomictempfile('foo') as f:
-                self.assertFalse(os.path.isfile('foo'))
+            with atomictempfile(b'foo') as f:
+                self.assertFalse(os.path.isfile(b'foo'))
                 f.write(b'argh\n')
                 raise ValueError
         except ValueError:
             pass
-        self.assertFalse(os.path.isfile('foo'))
+        self.assertFalse(os.path.isfile(b'foo'))
 
 if __name__ == '__main__':
     import silenttestrunner

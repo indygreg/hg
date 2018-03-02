@@ -70,9 +70,10 @@ class verifier(object):
         self.errors += 1
 
     def exc(self, linkrev, msg, inst, filename=None):
-        if not str(inst):
-            inst = repr(inst)
-        self.err(linkrev, "%s: %s" % (msg, inst), filename)
+        fmsg = pycompat.bytestr(inst)
+        if not fmsg:
+            fmsg = pycompat.byterepr(inst)
+        self.err(linkrev, "%s: %s" % (msg, fmsg), filename)
 
     def checklog(self, obj, name, linkrev):
         if not len(obj) and (self.havecl or self.havemf):

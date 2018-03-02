@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import hashlib
 
 from mercurial.i18n import _
-from mercurial.node import bin, nullid, short
+from mercurial.node import bin, hex, nullid, short
 
 from mercurial import (
     error,
@@ -85,7 +85,7 @@ def writetostore(self, text):
         text = text[offset:]
 
     # git-lfs only supports sha256
-    oid = hashlib.sha256(text).hexdigest()
+    oid = hex(hashlib.sha256(text).digest())
     self.opener.lfslocalblobstore.write(oid, text)
 
     # replace contents with metadata

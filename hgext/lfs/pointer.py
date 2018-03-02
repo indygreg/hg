@@ -13,6 +13,7 @@ from mercurial.i18n import _
 
 from mercurial import (
     error,
+    pycompat,
 )
 
 class InvalidPointer(error.RevlogError):
@@ -23,7 +24,8 @@ class gitlfspointer(dict):
 
     def __init__(self, *args, **kwargs):
         self['version'] = self.VERSION
-        super(gitlfspointer, self).__init__(*args, **kwargs)
+        super(gitlfspointer, self).__init__(*args)
+        self.update(pycompat.byteskwargs(kwargs))
 
     @classmethod
     def deserialize(cls, text):

@@ -283,7 +283,6 @@ def _forcebundle1(op):
 
     This function is used to allow testing of the older bundle version"""
     ui = op.repo.ui
-    forcebundle1 = False
     # The goal is this config is to allow developer to choose the bundle
     # version used during exchanged. This is especially handy during test.
     # Value is a list of bundle version to be picked from, highest version

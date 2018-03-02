@@ -205,7 +205,9 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
             yield separator.join(values)
         else:
             for v in values:
-                yield dict(v, **strmapping)
+                r = dict(v)
+                r.update(mapping)
+                yield r
         return
     startname = 'start_' + plural
     if startname in templ:

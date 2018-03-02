@@ -18,6 +18,7 @@ from mercurial.i18n import _
 from mercurial import (
     error,
     pathutil,
+    pycompat,
     url as urlmod,
     util,
     vfs as vfsmod,
@@ -281,9 +282,9 @@ class _gitlfsremote(object):
         See https://github.com/git-lfs/git-lfs/blob/master/docs/api/\
         basic-transfers.md
         """
-        oid = str(obj['oid'])
+        oid = pycompat.bytestr(obj['oid'])
 
-        href = str(obj['actions'][action].get('href'))
+        href = pycompat.bytestr(obj['actions'][action].get('href'))
         headers = obj['actions'][action].get('header', {}).items()
 
         request = util.urlreq.request(href)

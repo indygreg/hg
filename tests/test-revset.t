@@ -410,7 +410,7 @@ quoting needed
   hg: parse error at 5: not a prefix: end
   [255]
   $ log 'date("\xy")'
-  hg: parse error: invalid \x escape
+  hg: parse error: invalid \x escape* (glob)
   [255]
   $ log 'date(tip)'
   hg: parse error: invalid date: 'tip'
@@ -1309,7 +1309,7 @@ test author
   (func
     (symbol 'grep')
     (string '('))
-  hg: parse error: invalid match pattern: unbalanced parenthesis
+  hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \),.*) (re)
   [255]
   $ try 'grep("\bissue\d+")'
   (func

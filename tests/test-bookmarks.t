@@ -980,14 +980,14 @@ ensure changelog is written before bookmarks
   >    tr = orig(self, desc, report)
   >    def sleep(*args, **kwargs):
   >        retry = 20
-  >        while retry > 0 and not os.path.exists("$TESTTMP/unpause"):
+  >        while retry > 0 and not os.path.exists(b"$TESTTMP/unpause"):
   >            retry -= 1
   >            time.sleep(0.5)
-  >        if os.path.exists("$TESTTMP/unpause"):
-  >            os.remove("$TESTTMP/unpause")
+  >        if os.path.exists(b"$TESTTMP/unpause"):
+  >            os.remove(b"$TESTTMP/unpause")
   >    # It is important that this finalizer start with 'a', so it runs before
   >    # the changelog finalizer appends to the changelog.
-  >    tr.addfinalize('a-sleep', sleep)
+  >    tr.addfinalize(b'a-sleep', sleep)
   >    return tr
   > 
   > def extsetup(ui):

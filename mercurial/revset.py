@@ -1011,7 +1011,8 @@ def grep(repo, subset, x):
         # i18n: "grep" is a keyword
         gr = re.compile(getstring(x, _("grep requires a string")))
     except re.error as e:
-        raise error.ParseError(_('invalid match pattern: %s') % e)
+        raise error.ParseError(
+            _('invalid match pattern: %s') % util.forcebytestr(e))
 
     def matches(x):
         c = repo[x]
@@ -1845,7 +1846,8 @@ def _getsortargs(x):
         if reverse:
             k = k[1:]
         if k not in _sortkeyfuncs and k != 'topo':
-            raise error.ParseError(_("unknown sort key %r") % fk)
+            raise error.ParseError(
+                _("unknown sort key %r") % pycompat.bytestr(fk))
         keyflags.append((k, reverse))
 
     if len(keyflags) > 1 and any(k == 'topo' for k, reverse in keyflags):

@@ -729,6 +729,9 @@ class fileobjectobserver(object):
     def read(self, res, size=-1):
         if not self.reads:
             return
+        # Python 3 can return None from reads at EOF instead of empty strings.
+        if res is None:
+            res = ''
 
         self.fh.write('%s> read(%d) -> %d' % (self.name, size, len(res)))
         self._writedata(res)

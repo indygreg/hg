@@ -16,6 +16,7 @@ from . import (
     encoding,
     error,
     pathutil,
+    pycompat,
     util,
 )
 
@@ -226,7 +227,7 @@ def _donormalize(patterns, default, root, cwd, auditor, warn):
             except IOError as inst:
                 if warn:
                     warn(_("skipping unreadable pattern file '%s': %s\n") %
-                         (pat, inst.strerror))
+                         (pat, util.forcebytestr(inst.strerror)))
             continue
         # else: re or relre - which cannot be normalized
         kindpats.append((kind, pat, ''))
@@ -428,7 +429,7 @@ class includematcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<includematcher includes=%r>' % self._pats)
+        return ('<includematcher includes=%r>' % pycompat.bytestr(self._pats))
 
 class exactmatcher(basematcher):
     '''Matches the input files exactly. They are interpreted as paths, not

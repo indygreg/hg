@@ -425,29 +425,26 @@ class rebaseruntime(object):
         total = len(cands)
         pos = 0
         for subset in sortsource(self.destmap):
-            pos = self._performrebasesubset(tr, subset, pos, total)
+            sortedrevs = self.repo.revs('sort(%ld, -topo)', subset)
+            allowdivergence = self.ui.configbool(
+                'experimental', 'evolution.allowdivergence')
+            if not allowdivergence:
+                sortedrevs -= self.repo.revs(
+                    'descendants(%ld) and not %ld',
+                    self.obsoletewithoutsuccessorindestination,
+                    self.obsoletewithoutsuccessorindestination,
+                )
+            posholder = [pos]
+            def progress(ctx):
+                posholder[0] += 1
+                self.repo.ui.progress(_("rebasing"), posholder[0],
+                                      ("%d:%s" % (ctx.rev(), ctx)),
+                                      _('changesets'), total)
+            for rev in sortedrevs:
+                self._rebasenode(tr, rev, allowdivergence, progress)
+            pos = posholder[0]
         ui.progress(_('rebasing'), None)
         ui.note(_('rebase merging completed\n'))
-
-    def _performrebasesubset(self, tr, subset, pos, total):
-        sortedrevs = self.repo.revs('sort(%ld, -topo)', subset)
-        allowdivergence = self.ui.configbool(
-            'experimental', 'evolution.allowdivergence')
-        if not allowdivergence:
-            sortedrevs -= self.repo.revs(
-                'descendants(%ld) and not %ld',
-                self.obsoletewithoutsuccessorindestination,
-                self.obsoletewithoutsuccessorindestination,
-            )
-        posholder = [pos]
-        def progress(ctx):
-            posholder[0] += 1
-            self.repo.ui.progress(_("rebasing"), posholder[0],
-                                  ("%d:%s" % (ctx.rev(), ctx)), _('changesets'),
-                                  total)
-        for rev in sortedrevs:
-            self._rebasenode(tr, rev, allowdivergence, progress)
-        return posholder[0]
 
     def _rebasenode(self, tr, rev, allowdivergence, progressfn):
         repo, ui, opts = self.repo, self.ui, self.opts

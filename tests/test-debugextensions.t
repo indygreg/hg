@@ -5,8 +5,8 @@
   $ cat > extwithoutinfos.py <<EOF
   > EOF
   $ cat > extwithinfos.py <<EOF
-  > testedwith = '3.0 3.1 3.2.1'
-  > buglink = 'https://example.org/bts'
+  > testedwith = b'3.0 3.1 3.2.1'
+  > buglink = b'https://example.org/bts'
   > EOF
 
   $ cat >> $HGRCPATH <<EOF

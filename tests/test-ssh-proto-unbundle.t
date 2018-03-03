@@ -158,36 +158,36 @@ Test pushing to a server that has a pretxnchangegroup Python hook that fails
   > from __future__ import print_function
   > import sys
   > def hook1line(ui, repo, **kwargs):
-  >     ui.write('ui.write 1 line\n')
+  >     ui.write(b'ui.write 1 line\n')
   >     return 1
   > def hook2lines(ui, repo, **kwargs):
-  >     ui.write('ui.write 2 lines 1\n')
-  >     ui.write('ui.write 2 lines 2\n')
+  >     ui.write(b'ui.write 2 lines 1\n')
+  >     ui.write(b'ui.write 2 lines 2\n')
   >     return 1
   > def hook1lineflush(ui, repo, **kwargs):
-  >     ui.write('ui.write 1 line flush\n')
+  >     ui.write(b'ui.write 1 line flush\n')
   >     ui.flush()
   >     return 1
   > def hookmultiflush(ui, repo, **kwargs):
-  >     ui.write('ui.write 1st\n')
+  >     ui.write(b'ui.write 1st\n')
   >     ui.flush()
-  >     ui.write('ui.write 2nd\n')
+  >     ui.write(b'ui.write 2nd\n')
   >     ui.flush()
   >     return 1
   > def hookwriteandwriteerr(ui, repo, **kwargs):
-  >     ui.write('ui.write 1\n')
-  >     ui.write_err('ui.write_err 1\n')
-  >     ui.write('ui.write 2\n')
-  >     ui.write_err('ui.write_err 2\n')
+  >     ui.write(b'ui.write 1\n')
+  >     ui.write_err(b'ui.write_err 1\n')
+  >     ui.write(b'ui.write 2\n')
+  >     ui.write_err(b'ui.write_err 2\n')
   >     return 1
   > def hookprintstdout(ui, repo, **kwargs):
   >     print('printed line')
   >     return 1
   > def hookprintandwrite(ui, repo, **kwargs):
   >     print('print 1')
-  >     ui.write('ui.write 1\n')
+  >     ui.write(b'ui.write 1\n')
   >     print('print 2')
-  >     ui.write('ui.write 2\n')
+  >     ui.write(b'ui.write 2\n')
   >     return 1
   > def hookprintstderrandstdout(ui, repo, **kwargs):
   >     print('stdout 1')
@@ -1901,10 +1901,10 @@ Pushing a bundle1 with ui.write() and ui.write_err()
 
   $ cat > $TESTTMP/hook << EOF
   > def hookuiwrite(ui, repo, **kwargs):
-  >     ui.write('ui.write 1\n')
-  >     ui.write_err('ui.write_err 1\n')
-  >     ui.write('ui.write 2\n')
-  >     ui.write_err('ui.write_err 2\n')
+  >     ui.write(b'ui.write 1\n')
+  >     ui.write_err(b'ui.write_err 1\n')
+  >     ui.write(b'ui.write 2\n')
+  >     ui.write_err(b'ui.write_err 2\n')
   > EOF
 
   $ hg init uiwriterepo

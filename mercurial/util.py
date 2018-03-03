@@ -749,6 +749,15 @@ class fileobjectobserver(object):
         self.fh.write('%s> readline() -> %d' % (self.name, len(res)))
         self._writedata(res)
 
+    def readinto(self, res, dest):
+        if not self.reads:
+            return
+
+        self.fh.write('%s> readinto(%d) -> %r' % (self.name, len(dest),
+                                                  res))
+        data = dest[0:res] if res is not None else b''
+        self._writedata(data)
+
     def write(self, res, data):
         if not self.writes:
             return

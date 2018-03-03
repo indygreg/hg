@@ -62,11 +62,11 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 {
 	char *sa, *sb, *rb, *ia, *ib;
 	PyObject *result = NULL;
-	struct bdiff_line *al, *bl;
+	struct bdiff_line *al = NULL, *bl = NULL;
 	struct bdiff_hunk l, *h;
 	int an, bn, count;
 	Py_ssize_t len = 0, la, lb, li = 0, lcommon = 0, lmax;
-	PyThreadState *_save;
+	PyThreadState *_save = NULL;
 
 	l.next = NULL;
 
@@ -89,12 +89,16 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 
 	an = bdiff_splitlines(sa + lcommon, la - lcommon, &al);
 	bn = bdiff_splitlines(sb + lcommon, lb - lcommon, &bl);
-	if (!al || !bl)
-		goto nomem;
+	if (!al || !bl) {
+		PyErr_NoMemory();
+		goto cleanup;
+	}
 
 	count = bdiff_diff(al, an, bl, bn, &l);
-	if (count < 0)
-		goto nomem;
+	if (count < 0) {
+		PyErr_NoMemory();
+		goto cleanup;
+	}
 
 	/* calculate length of output */
 	la = lb = 0;
@@ -110,7 +114,7 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 	result = PyBytes_FromStringAndSize(NULL, len);
 
 	if (!result)
-		goto nomem;
+		goto cleanup;
 
 	/* build binary patch */
 	rb = PyBytes_AsString(result);
@@ -130,13 +134,19 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 		lb = h->b2;
 	}
 
-nomem:
+cleanup:
 	if (_save)
 		PyEval_RestoreThread(_save);
-	free(al);
-	free(bl);
-	bdiff_freehunks(l.next);
-	return result ? result : PyErr_NoMemory();
+	if (al) {
+		free(al);
+	}
+	if (bl) {
+		free(bl);
+	}
+	if (l.next) {
+		bdiff_freehunks(l.next);
+	}
+	return result;
 }
 
 /*

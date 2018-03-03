@@ -44,11 +44,6 @@ except ImportError:
 if r'__pypy__' in sys.builtin_module_names:
     policy = b'cffi'
 
-# Our C extensions aren't yet compatible with Python 3. So use pure Python
-# on Python 3 for now.
-if sys.version_info[0] >= 3:
-    policy = b'py'
-
 # Environment variable can always force settings.
 if sys.version_info[0] >= 3:
     if r'HGMODULEPOLICY' in os.environ:

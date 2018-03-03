@@ -30,16 +30,8 @@ blocks = bdiff.blocks
 fixws = bdiff.fixws
 patches = mpatch.patches
 patchedsize = mpatch.patchedsize
-_textdiff = bdiff.bdiff
+textdiff = bdiff.bdiff
 splitnewlines = bdiff.splitnewlines
-
-# On Python 3, util.buffer() creates a memoryview, which appears not
-# supporting the buffer protocol
-if pycompat.ispy3:
-    def textdiff(a, b):
-        return _textdiff(bytes(a), bytes(b))
-else:
-    textdiff = _textdiff
 
 class diffopts(object):
     '''context is the number of context lines

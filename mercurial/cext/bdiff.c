@@ -60,7 +60,8 @@ nomem:
 
 static PyObject *bdiff(PyObject *self, PyObject *args)
 {
-	char *sa, *sb, *rb, *ia, *ib;
+	Py_buffer ba, bb;
+	char *rb, *ia, *ib;
 	PyObject *result = NULL;
 	struct bdiff_line *al = NULL, *bl = NULL;
 	struct bdiff_hunk l, *h;
@@ -70,25 +71,39 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 
 	l.next = NULL;
 
-	if (!PyArg_ParseTuple(args, PY23("s#s#:bdiff", "y#y#:bdiff"), &sa, &la,
-	                      &sb, &lb))
+	if (!PyArg_ParseTuple(args, PY23("s*s*:bdiff", "y*y*:bdiff"), &ba, &bb))
 		return NULL;
+
+	if (!PyBuffer_IsContiguous(&ba, 'C') || ba.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError, "bdiff input not contiguous");
+		goto cleanup;
+	}
+
+	if (!PyBuffer_IsContiguous(&bb, 'C') || bb.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError, "bdiff input not contiguous");
+		goto cleanup;
+	}
+
+	la = ba.len;
+	lb = bb.len;
 
 	if (la > UINT_MAX || lb > UINT_MAX) {
 		PyErr_SetString(PyExc_ValueError, "bdiff inputs too large");
-		return NULL;
+		goto cleanup;
 	}
 
 	_save = PyEval_SaveThread();
 
 	lmax = la > lb ? lb : la;
-	for (ia = sa, ib = sb; li < lmax && *ia == *ib; ++li, ++ia, ++ib)
+	for (ia = ba.buf, ib = bb.buf; li < lmax && *ia == *ib;
+	     ++li, ++ia, ++ib) {
 		if (*ia == '\n')
 			lcommon = li + 1;
+	}
 	/* we can almost add: if (li == lmax) lcommon = li; */
 
-	an = bdiff_splitlines(sa + lcommon, la - lcommon, &al);
-	bn = bdiff_splitlines(sb + lcommon, lb - lcommon, &bl);
+	an = bdiff_splitlines(ba.buf + lcommon, la - lcommon, &al);
+	bn = bdiff_splitlines(bb.buf + lcommon, lb - lcommon, &bl);
 	if (!al || !bl) {
 		PyErr_NoMemory();
 		goto cleanup;
@@ -137,6 +152,8 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 cleanup:
 	if (_save)
 		PyEval_RestoreThread(_save);
+	PyBuffer_Release(&ba);
+	PyBuffer_Release(&bb);
 	if (al) {
 		free(al);
 	}

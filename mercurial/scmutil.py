@@ -163,12 +163,12 @@ def callcatch(ui, func):
         else:
             reason = _('lock held by %r') % inst.locker
         ui.warn(_("abort: %s: %s\n")
-                % (inst.desc or encoding.strtolocal(inst.filename), reason))
+                % (inst.desc or util.forcebytestr(inst.filename), reason))
         if not inst.locker:
             ui.warn(_("(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
         ui.warn(_("abort: could not lock %s: %s\n") %
-                (inst.desc or encoding.strtolocal(inst.filename),
+                (inst.desc or util.forcebytestr(inst.filename),
                  encoding.strtolocal(inst.strerror)))
     except error.OutOfBandError as inst:
         if inst.args:
@@ -234,7 +234,7 @@ def callcatch(ui, func):
             if getattr(inst, "filename", None):
                 ui.warn(_("abort: %s: %s\n") % (
                     encoding.strtolocal(inst.strerror),
-                    encoding.strtolocal(inst.filename)))
+                    util.forcebytestr(inst.filename)))
             else:
                 ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
         else:
@@ -243,7 +243,7 @@ def callcatch(ui, func):
         if getattr(inst, "filename", None) is not None:
             ui.warn(_("abort: %s: '%s'\n") % (
                 encoding.strtolocal(inst.strerror),
-                encoding.strtolocal(inst.filename)))
+                util.forcebytestr(inst.filename)))
         else:
             ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:

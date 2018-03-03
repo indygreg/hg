@@ -325,8 +325,8 @@ def parsenotesfromrevisions(repo, directives, revs):
                     continue
 
                 if pblock['type'] != 'paragraph':
-                    raise error.Abort(_('unexpected block in release notes '
-                                        'directive %s') % directive)
+                    repo.ui.warn(_('unexpected block in release notes '
+                                        'directive %s\n') % directive)
 
                 if pblock['indent'] > 0:
                     paragraphs.append(pblock['lines'])

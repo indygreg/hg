@@ -723,7 +723,8 @@ class queue(object):
         try:
             os.unlink(undo)
         except OSError as inst:
-            self.ui.warn(_('error removing undo: %s\n') % str(inst))
+            self.ui.warn(_('error removing undo: %s\n') %
+                         util.forcebytestr(inst))
 
     def backup(self, repo, files, copy=False):
         # backup local changes in --force case

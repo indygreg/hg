@@ -147,7 +147,7 @@ def get_log_child(fp, url, paths, start, end, limit=0,
         # Caller may interrupt the iteration
         pickle.dump(None, fp, protocol)
     except Exception as inst:
-        pickle.dump(str(inst), fp, protocol)
+        pickle.dump(util.forcebytestr(inst), fp, protocol)
     else:
         pickle.dump(None, fp, protocol)
     fp.flush()

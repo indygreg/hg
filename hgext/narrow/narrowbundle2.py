@@ -449,7 +449,7 @@ def handlechangegroup_widen(op, inpart):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 ui.warn(_('error removing %s: %s\n') %
-                        (undovfs.join(undofile), str(e)))
+                        (undovfs.join(undofile), util.forcebytestr(e)))
 
     # Remove partial backup only if there were no exceptions
     vfs.unlink(chgrpfile)

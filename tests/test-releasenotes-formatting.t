@@ -457,3 +457,35 @@ Display release notes for specified revs if no file is mentioned
   ------------------
   
   First paragraph of fix 1.
+
+  $ cd ..
+
+Using multiple admonitions in same changeset
+
+  $ hg init relnotes-multiadmon
+  $ cd relnotes-multiadmon
+
+  $ touch file1
+  $ hg -q commit -A -l - << EOF
+  > commit 1
+  > 
+  > .. feature::
+  > 
+  >    Details about new feature.
+  > 
+  > .. perf::
+  > 
+  >    Improves the execution by 2x
+  > EOF
+
+  $ hg releasenotes -r . $TESTTMP/relnotes-multiple-admonitions
+  $ cat $TESTTMP/relnotes-multiple-admonitions
+  New Features
+  ============
+  
+  * Details about new feature.
+  
+  Performance Improvements
+  ========================
+  
+  * Improves the execution by 2x

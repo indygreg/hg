@@ -324,6 +324,9 @@ def parsenotesfromrevisions(repo, directives, revs):
                 if pblock['type'] == 'margin':
                     continue
 
+                if pblock['type'] == 'admonition':
+                    break
+
                 if pblock['type'] != 'paragraph':
                     repo.ui.warn(_('changeset %s: unexpected block in release '
                         'notes directive %s\n') % (ctx, directive))

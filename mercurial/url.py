@@ -67,7 +67,7 @@ class passwordmgr(object):
                 user, passwd = auth.get('username'), auth.get('password')
                 self.ui.debug("using auth.%s.* for authentication\n" % group)
         if not user or not passwd:
-            u = util.url(authuri)
+            u = util.url(pycompat.bytesurl(authuri))
             u.query = None
             if not self.ui.interactive():
                 raise error.Abort(_('http authorization required for %s') %
@@ -75,7 +75,7 @@ class passwordmgr(object):
 
             self.ui.write(_("http authorization required for %s\n") %
                           util.hidepassword(bytes(u)))
-            self.ui.write(_("realm: %s\n") % realm)
+            self.ui.write(_("realm: %s\n") % pycompat.bytesurl(realm))
             if user:
                 self.ui.write(_("user: %s\n") % user)
             else:
@@ -424,8 +424,8 @@ class httpbasicauthhandler(urlreq.httpbasicauthhandler):
         user, pw = self.passwd.find_user_password(
             realm, urllibcompat.getfullurl(req))
         if pw is not None:
-            raw = "%s:%s" % (user, pw)
-            auth = 'Basic %s' % base64.b64encode(raw).strip()
+            raw = "%s:%s" % (pycompat.bytesurl(user), pycompat.bytesurl(pw))
+            auth = r'Basic %s' % pycompat.strurl(base64.b64encode(raw).strip())
             if req.get_header(self.auth_header, None) == auth:
                 return None
             self.auth = auth

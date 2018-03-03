@@ -523,7 +523,11 @@ class sshv1peer(wireproto.wirepeer):
             self._abort(error.ResponseError(_("unexpected response:"), l))
 
     def _readframed(self):
-        return self._pipei.read(self._getamount())
+        size = self._getamount()
+        if not size:
+            return b''
+
+        return self._pipei.read(size)
 
     def _writeframed(self, data, flush=False):
         self._pipeo.write("%d\n" % len(data))

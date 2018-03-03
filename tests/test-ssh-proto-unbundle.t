@@ -88,7 +88,6 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -139,7 +138,6 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -257,7 +255,6 @@ ui.write() in hook is redirected to stderr
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -314,7 +311,6 @@ ui.write() in hook is redirected to stderr
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -385,7 +381,6 @@ And a variation that writes multiple lines using ui.write
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -443,7 +438,6 @@ And a variation that writes multiple lines using ui.write
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -515,7 +509,6 @@ And a variation that does a ui.flush() after writing output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -572,7 +565,6 @@ And a variation that does a ui.flush() after writing output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -643,7 +635,6 @@ Multiple writes + flush
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -701,7 +692,6 @@ Multiple writes + flush
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -773,7 +763,6 @@ ui.write() + ui.write_err() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -833,7 +822,6 @@ ui.write() + ui.write_err() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -907,7 +895,6 @@ print() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -964,7 +951,6 @@ print() output is captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1035,7 +1021,6 @@ Mixed print() and ui.write() are both captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1095,7 +1080,6 @@ Mixed print() and ui.write() are both captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1169,7 +1153,6 @@ print() to stdout and stderr both get captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1229,7 +1212,6 @@ print() to stdout and stderr both get captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1309,7 +1291,6 @@ Shell hook writing to stdout has output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1367,7 +1348,6 @@ Shell hook writing to stdout has output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1440,7 +1420,6 @@ Shell hook writing to stderr has output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1498,7 +1477,6 @@ Shell hook writing to stderr has output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1573,7 +1551,6 @@ Shell hook writing to stdout and stderr has output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1633,7 +1610,6 @@ Shell hook writing to stdout and stderr has output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1716,7 +1692,6 @@ Shell and Python hooks writing to stdout and stderr have output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1780,7 +1755,6 @@ Shell and Python hooks writing to stdout and stderr have output captured
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 0
@@ -1858,7 +1832,6 @@ Pushing a bundle1 with no output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 1
@@ -1911,7 +1884,6 @@ Pushing a bundle1 with no output
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 1
@@ -1990,7 +1962,6 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 1
@@ -2047,7 +2018,6 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   i> flush() -> None
   o> readline() -> 2:
   o>     0\n
-  o> read(0) -> 0: 
   o> readline() -> 2:
   o>     1\n
   o> read(1) -> 1: 1

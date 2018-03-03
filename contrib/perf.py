@@ -939,11 +939,16 @@ def perffncacheencode(ui, repo, **opts):
     timer(d)
     fm.end()
 
-def _bdiffworker(q, ready, done):
+def _bdiffworker(q, blocks, xdiff, ready, done):
     while not done.is_set():
         pair = q.get()
         while pair is not None:
-            mdiff.textdiff(*pair)
+            if xdiff:
+                mdiff.bdiff.xdiffblocks(*pair)
+            elif blocks:
+                mdiff.bdiff.blocks(*pair)
+            else:
+                mdiff.textdiff(*pair)
             q.task_done()
             pair = q.get()
         q.task_done() # for the None one
@@ -954,6 +959,8 @@ def _bdiffworker(q, ready, done):
     ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
     ('', 'alldata', False, 'test bdiffs for all associated revisions'),
     ('', 'threads', 0, 'number of thread to use (disable with 0)'),
+    ('', 'blocks', False, 'test computing diffs into blocks'),
+    ('', 'xdiff', False, 'use xdiff algorithm'),
     ],
 
     '-c|-m|FILE REV')
@@ -969,6 +976,11 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     measure bdiffs for all changes related to that changeset (manifest
     and filelogs).
     """
+    opts = pycompat.byteskwargs(opts)
+
+    if opts['xdiff'] and not opts['blocks']:
+        raise error.CommandError('perfbdiff', '--xdiff requires --blocks')
+
     if opts['alldata']:
         opts['changelog'] = True
 
@@ -977,6 +989,8 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     elif rev is None:
         raise error.CommandError('perfbdiff', 'invalid arguments')
 
+    blocks = opts['blocks']
+    xdiff = opts['xdiff']
     textpairs = []
 
     r = cmdutil.openrevlog(repo, 'perfbdiff', file_, opts)
@@ -1007,7 +1021,12 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     if not withthreads:
         def d():
             for pair in textpairs:
-                mdiff.textdiff(*pair)
+                if xdiff:
+                    mdiff.bdiff.xdiffblocks(*pair)
+                elif blocks:
+                    mdiff.bdiff.blocks(*pair)
+                else:
+                    mdiff.textdiff(*pair)
     else:
         q = util.queue()
         for i in xrange(threads):
@@ -1015,7 +1034,8 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
         ready = threading.Condition()
         done = threading.Event()
         for i in xrange(threads):
-            threading.Thread(target=_bdiffworker, args=(q, ready, done)).start()
+            threading.Thread(target=_bdiffworker,
+                             args=(q, blocks, xdiff, ready, done)).start()
         q.join()
         def d():
             for pair in textpairs:

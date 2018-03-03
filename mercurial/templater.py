@@ -246,14 +246,16 @@ def _scantemplate(tmpl, start, stop, quote='', raw=False):
     except error.ParseError as inst:
         if len(inst.args) > 1:  # has location
             loc = inst.args[1]
-            # TODO: Opportunity for improvement! If there is a newline in the
-            # template, this hint does not point to the right place, so skip.
-            if '\n' not in tmpl:
-                # We want the caret to point to the place in the template that
-                # failed to parse, but in a hint we get a open paren at the
-                # start. Therefore, we print "loc" spaces (instead of "loc - 1")
-                # to line up the caret with the location of the error.
-                inst.hint = tmpl + '\n' + ' ' * (loc) + '^ ' + _('here')
+            # Offset the caret location by the number of newlines before the
+            # location of the error, since we will replace one-char newlines
+            # with the two-char literal r'\n'.
+            offset = tmpl[:loc].count('\n')
+            tmpl = tmpl.replace('\n', br'\n')
+            # We want the caret to point to the place in the template that
+            # failed to parse, but in a hint we get a open paren at the
+            # start. Therefore, we print "loc" spaces (instead of "loc - 1")
+            # to line up the caret with the location of the error.
+            inst.hint = tmpl + '\n' + ' ' * (loc + offset) + '^ ' + _('here')
         raise
     yield ('end', None, pos)
 

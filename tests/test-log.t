@@ -2304,6 +2304,8 @@ multi-line template with error
   > {shortest(node}
   > line4\nline5'
   hg: parse error at 28: unexpected token: end
+  (line 1\nline2\n{shortest(node}\nline4\nline5
+                                ^ here)
   [255]
 
   $ cd ..

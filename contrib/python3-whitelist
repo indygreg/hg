@@ -8,6 +8,7 @@ test-annotate.py
 test-automv.t
 test-backout.t
 test-backwards-remove.t
+test-basic.t
 test-bheads.t
 test-bisect2.t
 test-bookmarks-current.t

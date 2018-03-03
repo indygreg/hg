@@ -59,7 +59,7 @@ Verify that updating to revision 0 via commands.update() works properly
   $ cat <<EOF > update_to_rev0.py
   > from mercurial import ui, hg, commands
   > myui = ui.ui.load()
-  > repo = hg.repository(myui, path='.')
+  > repo = hg.repository(myui, path=b'.')
   > commands.update(myui, repo, rev=0)
   > EOF
   $ hg up null

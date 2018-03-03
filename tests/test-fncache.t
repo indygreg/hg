@@ -259,14 +259,14 @@ Aborting transaction prevents fncache change
   > def wrapper(orig, self, *args, **kwargs):
   >     tr = orig(self, *args, **kwargs)
   >     def fail(tr):
-  >         raise error.Abort("forced transaction failure")
+  >         raise error.Abort(b"forced transaction failure")
   >     # zzz prefix to ensure it sorted after store.write
-  >     tr.addfinalize('zzz-forcefails', fail)
+  >     tr.addfinalize(b'zzz-forcefails', fail)
   >     return tr
   > 
   > def uisetup(ui):
   >     extensions.wrapfunction(
-  >         localrepo.localrepository, 'transaction', wrapper)
+  >         localrepo.localrepository, b'transaction', wrapper)
   > 
   > cmdtable = {}
   > 

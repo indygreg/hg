@@ -54,8 +54,8 @@ tool itself by doctest
 Check i18n cache isn't reused after encoding change:
 
   $ cat > $TESTTMP/encodingchange.py << EOF
-  > from mercurial import encoding, registrar
   > from mercurial.i18n import _
+  > from mercurial import encoding, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'encodingchange', norepo=True)

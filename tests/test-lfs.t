@@ -616,8 +616,8 @@ enabled adds the lfs requirement
   $ cat > $TESTTMP/dumpflog.py << EOF
   > # print raw revision sizes, flags, and hashes for certain files
   > import hashlib
-  > from mercurial import revlog
   > from mercurial.node import short
+  > from mercurial import revlog
   > def hash(rawtext):
   >     h = hashlib.sha512()
   >     h.update(rawtext)

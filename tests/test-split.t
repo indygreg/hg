@@ -2,7 +2,8 @@
 
   $ cat > $TESTTMP/editor.py <<EOF
   > #!$PYTHON
-  > import os, sys
+  > import os
+  > import sys
   > path = os.path.join(os.environ['TESTTMP'], 'messages')
   > messages = open(path).read().split('--\n')
   > prompt = open(sys.argv[1]).read()

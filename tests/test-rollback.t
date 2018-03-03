@@ -220,8 +220,8 @@ I/O errors on stdio are handled properly (issue5658)
   > import errno
   > from mercurial.i18n import _
   > from mercurial import (
-  >     registrar,
   >     error,
+  >     registrar,
   >     ui as uimod,
   > )
   > 

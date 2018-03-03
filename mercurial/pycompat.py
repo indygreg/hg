@@ -48,6 +48,7 @@ if ispy3:
 
     fsencode = os.fsencode
     fsdecode = os.fsdecode
+    oscurdir = os.curdir.encode('ascii')
     oslinesep = os.linesep.encode('ascii')
     osname = os.name.encode('ascii')
     ospathsep = os.pathsep.encode('ascii')
@@ -321,6 +322,7 @@ else:
     strkwargs = identity
     byteskwargs = identity
 
+    oscurdir = os.curdir
     oslinesep = os.linesep
     osname = os.name
     ospathsep = os.pathsep

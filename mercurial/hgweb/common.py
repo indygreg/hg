@@ -138,7 +138,7 @@ def ispathsafe(path):
     """Determine if a path is safe to use for filesystem access."""
     parts = path.split('/')
     for part in parts:
-        if (part in ('', os.curdir, pycompat.ospardir) or
+        if (part in ('', pycompat.oscurdir, pycompat.ospardir) or
             pycompat.ossep in part or
             pycompat.osaltsep is not None and pycompat.osaltsep in part):
             return False

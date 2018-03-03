@@ -65,7 +65,7 @@ class pathauditor(object):
         parts = util.splitpath(path)
         if (os.path.splitdrive(path)[0]
             or _lowerclean(parts[0]) in ('.hg', '.hg.', '')
-            or os.pardir in parts):
+            or pycompat.ospardir in parts):
             raise error.Abort(_("path contains illegal component: %s") % path)
         # Windows shortname aliases
         for p in parts:

@@ -1600,7 +1600,7 @@ def stylemap(styles, paths=None):
     for style in styles:
         # only plain name is allowed to honor template paths
         if (not style
-            or style in (os.curdir, os.pardir)
+            or style in (os.curdir, pycompat.ospardir)
             or pycompat.ossep in style
             or pycompat.osaltsep and pycompat.osaltsep in style):
             continue

@@ -51,6 +51,7 @@ if ispy3:
     oslinesep = os.linesep.encode('ascii')
     osname = os.name.encode('ascii')
     ospathsep = os.pathsep.encode('ascii')
+    ospardir = os.pardir.encode('ascii')
     ossep = os.sep.encode('ascii')
     osaltsep = os.altsep
     if osaltsep:
@@ -323,6 +324,7 @@ else:
     oslinesep = os.linesep
     osname = os.name
     ospathsep = os.pathsep
+    ospardir = os.pardir
     ossep = os.sep
     osaltsep = os.altsep
     stdin = sys.stdin

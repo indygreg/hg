@@ -213,35 +213,48 @@ def _scantemplate(tmpl, start, stop, quote='', raw=False):
     unescape = [parser.unescapestr, pycompat.identity][raw]
     pos = start
     p = parser.parser(elements)
-    while pos < stop:
-        n = min((tmpl.find(c, pos, stop) for c in sepchars),
-                key=lambda n: (n < 0, n))
-        if n < 0:
-            yield ('string', unescape(tmpl[pos:stop]), pos)
-            pos = stop
-            break
-        c = tmpl[n:n + 1]
-        bs = 0  # count leading backslashes
-        if not raw:
-            bs = (n - pos) - len(tmpl[pos:n].rstrip('\\'))
-        if bs % 2 == 1:
-            # escaped (e.g. '\{', '\\\{', but not '\\{')
-            yield ('string', unescape(tmpl[pos:n - 1]) + c, pos)
-            pos = n + 1
-            continue
-        if n > pos:
-            yield ('string', unescape(tmpl[pos:n]), pos)
-        if c == quote:
-            yield ('end', None, n + 1)
-            return
+    try:
+        while pos < stop:
+            n = min((tmpl.find(c, pos, stop) for c in sepchars),
+                    key=lambda n: (n < 0, n))
+            if n < 0:
+                yield ('string', unescape(tmpl[pos:stop]), pos)
+                pos = stop
+                break
+            c = tmpl[n:n + 1]
+            bs = 0  # count leading backslashes
+            if not raw:
+                bs = (n - pos) - len(tmpl[pos:n].rstrip('\\'))
+            if bs % 2 == 1:
+                # escaped (e.g. '\{', '\\\{', but not '\\{')
+                yield ('string', unescape(tmpl[pos:n - 1]) + c, pos)
+                pos = n + 1
+                continue
+            if n > pos:
+                yield ('string', unescape(tmpl[pos:n]), pos)
+            if c == quote:
+                yield ('end', None, n + 1)
+                return
 
-        parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, '}'))
-        if not tmpl.endswith('}', n + 1, pos):
-            raise error.ParseError(_("invalid token"), pos)
-        yield ('template', parseres, n)
+            parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, '}'))
+            if not tmpl.endswith('}', n + 1, pos):
+                raise error.ParseError(_("invalid token"), pos)
+            yield ('template', parseres, n)
 
-    if quote:
-        raise error.ParseError(_("unterminated string"), start)
+        if quote:
+            raise error.ParseError(_("unterminated string"), start)
+    except error.ParseError as inst:
+        if len(inst.args) > 1:  # has location
+            loc = inst.args[1]
+            # TODO: Opportunity for improvement! If there is a newline in the
+            # template, this hint does not point to the right place, so skip.
+            if '\n' not in tmpl:
+                # We want the caret to point to the place in the template that
+                # failed to parse, but in a hint we get a open paren at the
+                # start. Therefore, we print "loc" spaces (instead of "loc - 1")
+                # to line up the caret with the location of the error.
+                inst.hint = tmpl + '\n' + ' ' * (loc) + '^ ' + _('here')
+        raise
     yield ('end', None, pos)
 
 def _unnesttemplatelist(tree):

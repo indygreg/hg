@@ -2766,19 +2766,29 @@ Error on syntax:
 
   $ hg log -T '{date'
   hg: parse error at 1: unterminated template expansion
+  ({date
+   ^ here)
   [255]
   $ hg log -T '{date(}'
   hg: parse error at 7: not a prefix: end
+  ({date(}
+         ^ here)
   [255]
   $ hg log -T '{date)}'
   hg: parse error at 5: invalid token
+  ({date)}
+       ^ here)
   [255]
   $ hg log -T '{date date}'
   hg: parse error at 6: invalid token
+  ({date date}
+        ^ here)
   [255]
 
   $ hg log -T '{}'
   hg: parse error at 2: not a prefix: end
+  ({}
+    ^ here)
   [255]
   $ hg debugtemplate -v '{()}'
   (template
@@ -2827,10 +2837,14 @@ Error in nested template:
 
   $ hg log -T '{"date'
   hg: parse error at 2: unterminated string
+  ({"date
+    ^ here)
   [255]
 
   $ hg log -T '{"foo{date|?}"}'
   hg: parse error at 11: syntax error
+  ({"foo{date|?}"}
+             ^ here)
   [255]
 
 Thrown an error if a template function doesn't exist
@@ -3362,6 +3376,8 @@ Test integer literal:
   -4
   $ hg debugtemplate '{(-)}\n'
   hg: parse error at 3: not a prefix: )
+  ({(-)}\n
+     ^ here)
   [255]
   $ hg debugtemplate '{(-a)}\n'
   hg: parse error: negation needs an integer argument
@@ -3527,6 +3543,8 @@ escaped single quotes and errors:
   foo
   $ hg log -r 2 -T '{if(rev, "{if(rev, \")}")}\n'
   hg: parse error at 21: unterminated string
+  ({if(rev, "{if(rev, \")}")}\n
+                       ^ here)
   [255]
   $ hg log -r 2 -T '{if(rev, \"\\"")}\n'
   hg: parse error: trailing \ in string

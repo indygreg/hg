@@ -6,6 +6,7 @@ test-amend-subrepo.t
 test-ancestor.py
 test-annotate.py
 test-annotate.t
+test-atomictempfile.py
 test-audit-path.t
 test-audit-subrepo.t
 test-automv.t
@@ -167,6 +168,7 @@ test-issue619.t
 test-issue672.t
 test-issue842.t
 test-journal-exists.t
+test-largefiles-cache.t
 test-largefiles-small-disk.t
 test-locate.t
 test-lock-badness.t
@@ -200,12 +202,22 @@ test-merge7.t
 test-merge8.t
 test-merge9.t
 test-mq-git.t
+test-mq-header-date.t
+test-mq-header-from.t
 test-mq-pull-from-bundle.t
 test-mq-qdiff.t
+test-mq-qfold.t
+test-mq-qgoto.t
 test-mq-qimport-fail-cleanup.t
+test-mq-qpush-exact.t
 test-mq-qqueue.t
+test-mq-qrefresh-replace-log-message.t
 test-mq-qrefresh.t
+test-mq-qrename.t
 test-mq-qsave.t
+test-mq-safety.t
+test-mq-symlinks.t
+test-mv-cp-st-diff.t
 test-narrow-clone-no-ellipsis.t
 test-narrow-clone-nonlinear.t
 test-narrow-clone.t
@@ -222,6 +234,7 @@ test-narrow-rebase.t
 test-narrow-shallow-merges.t
 test-narrow-shallow.t
 test-narrow-update.t
+test-nested-repo.t
 test-newbranch.t
 test-obshistory.t
 test-obsmarker-template.t
@@ -288,6 +301,7 @@ test-rebase-inmemory.t
 test-rebase-interruptions.t
 test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
+test-rebase-mq-skip.t
 test-rebase-named-branches.t
 test-rebase-newancestor.t
 test-rebase-obsolete.t
@@ -335,6 +349,7 @@ test-status-rev.t
 test-status-terse.t
 test-strip-cross.t
 test-strip.t
+test-symlinks.t
 test-unamend.t
 test-uncommit.t
 test-unified-test.t

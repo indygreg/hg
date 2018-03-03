@@ -22,8 +22,8 @@ Test that raising an exception in the release function doesn't cause the lock to
   > def acquiretestlock(repo, releaseexc):
   >     def unlock():
   >         if releaseexc:
-  >             raise error.Abort('expected release exception')
-  >     l = repo._lock(repo.vfs, 'testlock', False, unlock, None, 'test lock')
+  >             raise error.Abort(b'expected release exception')
+  >     l = repo._lock(repo.vfs, b'testlock', False, unlock, None, b'test lock')
   >     return l
   > 
   > @command(b'testlockexc')
@@ -35,7 +35,7 @@ Test that raising an exception in the release function doesn't cause the lock to
   >         try:
   >             testlock = acquiretestlock(repo, False)
   >         except error.LockHeld:
-  >             raise error.Abort('lockfile on disk even after releasing!')
+  >             raise error.Abort(b'lockfile on disk even after releasing!')
   >         testlock.release()
   > EOF
   $ cat >> $HGRCPATH << EOF

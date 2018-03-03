@@ -496,7 +496,7 @@ class cmdalias(object):
             args = pycompat.shlexsplit(self.definition)
         except ValueError as inst:
             self.badalias = (_("error in definition for alias '%s': %s")
-                             % (self.name, inst))
+                             % (self.name, util.forcebytestr(inst)))
             return
         earlyopts, args = _earlysplitopts(args)
         if earlyopts:
@@ -623,7 +623,7 @@ def _parse(ui, args):
     try:
         args = fancyopts.fancyopts(args, commands.globalopts, options)
     except getopt.GetoptError as inst:
-        raise error.CommandError(None, inst)
+        raise error.CommandError(None, util.forcebytestr(inst))
 
     if args:
         cmd, args = args[0], args[1:]
@@ -647,7 +647,7 @@ def _parse(ui, args):
     try:
         args = fancyopts.fancyopts(args, c, cmdoptions, gnu=True)
     except getopt.GetoptError as inst:
-        raise error.CommandError(cmd, inst)
+        raise error.CommandError(cmd, util.forcebytestr(inst))
 
     # separate global options back out
     for o in commands.globalopts:
@@ -672,7 +672,8 @@ def _parseconfig(ui, config):
             configs.append((section, name, value))
         except (IndexError, ValueError):
             raise error.Abort(_('malformed --config option: %r '
-                               '(use --config section.name=value)') % cfg)
+                                '(use --config section.name=value)')
+                              % pycompat.bytestr(cfg))
 
     return configs
 

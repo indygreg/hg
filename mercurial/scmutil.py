@@ -162,13 +162,14 @@ def callcatch(ui, func):
             reason = _('timed out waiting for lock held by %r') % inst.locker
         else:
             reason = _('lock held by %r') % inst.locker
-        ui.warn(_("abort: %s: %s\n") % (inst.desc or inst.filename, reason))
+        ui.warn(_("abort: %s: %s\n")
+                % (inst.desc or encoding.strtolocal(inst.filename), reason))
         if not inst.locker:
             ui.warn(_("(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
         ui.warn(_("abort: could not lock %s: %s\n") %
-               (inst.desc or inst.filename,
-                encoding.strtolocal(inst.strerror)))
+                (inst.desc or encoding.strtolocal(inst.filename),
+                 encoding.strtolocal(inst.strerror)))
     except error.OutOfBandError as inst:
         if inst.args:
             msg = _("abort: remote error:\n")
@@ -207,7 +208,7 @@ def callcatch(ui, func):
         if inst.hint:
             ui.warn(_("(%s)\n") % inst.hint)
     except ImportError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
+        ui.warn(_("abort: %s!\n") % util.forcebytestr(inst))
         m = util.forcebytestr(inst).split()[-1]
         if m in "mpatch bdiff".split():
             ui.warn(_("(did you forget to compile extensions?)\n"))
@@ -232,7 +233,8 @@ def callcatch(ui, func):
         elif getattr(inst, "strerror", None):
             if getattr(inst, "filename", None):
                 ui.warn(_("abort: %s: %s\n") % (
-                    encoding.strtolocal(inst.strerror), inst.filename))
+                    encoding.strtolocal(inst.strerror),
+                    encoding.strtolocal(inst.filename)))
             else:
                 ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
         else:
@@ -240,7 +242,8 @@ def callcatch(ui, func):
     except OSError as inst:
         if getattr(inst, "filename", None) is not None:
             ui.warn(_("abort: %s: '%s'\n") % (
-                encoding.strtolocal(inst.strerror), inst.filename))
+                encoding.strtolocal(inst.strerror),
+                encoding.strtolocal(inst.filename)))
         else:
             ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:
@@ -250,7 +253,7 @@ def callcatch(ui, func):
         # Just in case catch this and and pass exit code to caller.
         return inst.code
     except socket.error as inst:
-        ui.warn(_("abort: %s\n") % inst.args[-1])
+        ui.warn(_("abort: %s\n") % util.forcebytestr(inst.args[-1]))
 
     return -1
 

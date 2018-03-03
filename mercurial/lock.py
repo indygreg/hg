@@ -198,9 +198,10 @@ class lock(object):
                         return
                     locker = self._testlock(locker)
                     if locker is not None:
-                        raise error.LockHeld(errno.EAGAIN,
-                                             self.vfs.join(self.f), self.desc,
-                                             locker)
+                        raise error.LockHeld(
+                            errno.EAGAIN,
+                            encoding.strfromlocal(self.vfs.join(self.f)),
+                            self.desc, locker)
                 else:
                     raise error.LockUnavailable(why.errno, why.strerror,
                                                 why.filename, self.desc)
@@ -209,7 +210,8 @@ class lock(object):
             # use empty locker to mean "busy for frequent lock/unlock
             # by many processes"
             raise error.LockHeld(errno.EAGAIN,
-                                 self.vfs.join(self.f), self.desc, "")
+                                 encoding.strfromlocal(self.vfs.join(self.f)),
+                                 self.desc, "")
 
     def _readlock(self):
         """read lock and return its value

@@ -14,6 +14,7 @@ from . import (
     encoding,
     error,
     extensions,
+    pycompat,
     util,
 )
 
@@ -200,6 +201,17 @@ class profile(object):
             elif self._output:
                 path = self._ui.expandpath(self._output)
                 self._fp = open(path, 'wb')
+            elif pycompat.iswindows:
+                # parse escape sequence by win32print()
+                class uifp(object):
+                    def __init__(self, ui):
+                        self._ui = ui
+                    def write(self, data):
+                        self._ui.write_err(data)
+                    def flush(self):
+                        self._ui.flush()
+                self._fpdoclose = False
+                self._fp = uifp(self._ui)
             else:
                 self._fpdoclose = False
                 self._fp = self._ui.ferr

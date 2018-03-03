@@ -186,7 +186,10 @@ def callcatch(ui, func):
             ui.warn(_("(%s)\n") % inst.hint)
     except error.ResponseError as inst:
         ui.warn(_("abort: %s") % inst.args[0])
-        if not isinstance(inst.args[1], basestring):
+        msg = inst.args[1]
+        if isinstance(msg, type(u'')):
+            msg = pycompat.sysbytes(msg)
+        elif not isinstance(inst.args[1], bytes):
             ui.warn(" %r\n" % (inst.args[1],))
         elif not inst.args[1]:
             ui.warn(_(" empty string\n"))

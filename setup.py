@@ -847,14 +847,33 @@ for plat, macro, code in [
 if sys.platform == 'darwin':
     osutil_ldflags += ['-framework', 'ApplicationServices']
 
+xdiff_srcs = [
+    'mercurial/thirdparty/xdiff/xdiffi.c',
+    'mercurial/thirdparty/xdiff/xemit.c',
+    'mercurial/thirdparty/xdiff/xmerge.c',
+    'mercurial/thirdparty/xdiff/xprepare.c',
+    'mercurial/thirdparty/xdiff/xutils.c',
+]
+
+xdiff_headers = [
+    'mercurial/thirdparty/xdiff/xdiff.h',
+    'mercurial/thirdparty/xdiff/xdiffi.h',
+    'mercurial/thirdparty/xdiff/xemit.h',
+    'mercurial/thirdparty/xdiff/xinclude.h',
+    'mercurial/thirdparty/xdiff/xmacros.h',
+    'mercurial/thirdparty/xdiff/xprepare.h',
+    'mercurial/thirdparty/xdiff/xtypes.h',
+    'mercurial/thirdparty/xdiff/xutils.h',
+]
+
 extmodules = [
     Extension('mercurial.cext.base85', ['mercurial/cext/base85.c'],
               include_dirs=common_include_dirs,
               depends=common_depends),
     Extension('mercurial.cext.bdiff', ['mercurial/bdiff.c',
-                                       'mercurial/cext/bdiff.c'],
+                                       'mercurial/cext/bdiff.c'] + xdiff_srcs,
               include_dirs=common_include_dirs,
-              depends=common_depends + ['mercurial/bdiff.h']),
+              depends=common_depends + ['mercurial/bdiff.h'] + xdiff_headers),
     Extension('mercurial.cext.diffhelpers', ['mercurial/cext/diffhelpers.c'],
               include_dirs=common_include_dirs,
               depends=common_depends),

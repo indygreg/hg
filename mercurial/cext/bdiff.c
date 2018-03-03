@@ -17,6 +17,7 @@
 
 #include "bdiff.h"
 #include "bitmanipulation.h"
+#include "thirdparty/xdiff/xdiff.h"
 #include "util.h"
 
 static PyObject *blocks(PyObject *self, PyObject *args)
@@ -256,6 +257,64 @@ abort:
 	return NULL;
 }
 
+static int hunk_consumer(long a1, long a2, long b1, long b2, void *priv)
+{
+	PyObject *rl = (PyObject *)priv;
+	PyObject *m = Py_BuildValue("llll", a1, a2, b1, b2);
+	if (!m)
+		return -1;
+	if (PyList_Append(rl, m) != 0) {
+		Py_DECREF(m);
+		return -1;
+	}
+	return 0;
+}
+
+static PyObject *xdiffblocks(PyObject *self, PyObject *args)
+{
+	Py_ssize_t la, lb;
+	mmfile_t a, b;
+	PyObject *rl;
+
+	xpparam_t xpp = {
+	    XDF_INDENT_HEURISTIC, /* flags */
+	    NULL,                 /* anchors */
+	    0,                    /* anchors_nr */
+	};
+	xdemitconf_t xecfg = {
+	    0,                  /* ctxlen */
+	    0,                  /* interhunkctxlen */
+	    XDL_EMIT_BDIFFHUNK, /* flags */
+	    NULL,               /* find_func */
+	    NULL,               /* find_func_priv */
+	    hunk_consumer,      /* hunk_consume_func */
+	};
+	xdemitcb_t ecb = {
+	    NULL, /* priv */
+	    NULL, /* outf */
+	};
+
+	if (!PyArg_ParseTuple(args, PY23("s#s#", "y#y#"), &a.ptr, &la, &b.ptr,
+	                      &lb))
+		return NULL;
+
+	a.size = la;
+	b.size = lb;
+
+	rl = PyList_New(0);
+	if (!rl)
+		return PyErr_NoMemory();
+
+	ecb.priv = rl;
+
+	if (xdl_diff(&a, &b, &xpp, &xecfg, &ecb) != 0) {
+		Py_DECREF(rl);
+		return PyErr_NoMemory();
+	}
+
+	return rl;
+}
+
 static char mdiff_doc[] = "Efficient binary diff.";
 
 static PyMethodDef methods[] = {
@@ -264,10 +323,12 @@ static PyMethodDef methods[] = {
     {"fixws", fixws, METH_VARARGS, "normalize diff whitespaces\n"},
     {"splitnewlines", splitnewlines, METH_VARARGS,
      "like str.splitlines, but only split on newlines\n"},
+    {"xdiffblocks", xdiffblocks, METH_VARARGS,
+     "find a list of matching lines using xdiff algorithm\n"},
     {NULL, NULL},
 };
 
-static const int version = 2;
+static const int version = 3;
 
 #ifdef IS_PY3K
 static struct PyModuleDef bdiff_module = {

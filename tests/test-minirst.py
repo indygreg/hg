@@ -28,7 +28,7 @@ def debugformats(title, text, **kwargs):
     debugformat(text, 30, **kwargs)
     debugformat(text, 'html', **kwargs)
 
-paragraphs = """
+paragraphs = b"""
 This is some text in the first paragraph.
 
   A small indented paragraph.
@@ -37,9 +37,9 @@ This is some text in the first paragraph.
  \n  \n   \nThe third and final paragraph.
 """
 
-debugformats('paragraphs', paragraphs)
+debugformats(b'paragraphs', paragraphs)
 
-definitions = """
+definitions = b"""
 A Term
   Definition. The indented
   lines make up the definition.
@@ -52,9 +52,9 @@ Another Term
     Definition.
 """
 
-debugformats('definitions', definitions)
+debugformats(b'definitions', definitions)
 
-literals = r"""
+literals = br"""
 The fully minimized form is the most
 convenient form::
 
@@ -76,9 +76,9 @@ simply ends with space-double-colon. ::
       with '::' disappears in the final output.
 """
 
-debugformats('literals', literals)
+debugformats(b'literals', literals)
 
-lists = """
+lists = b"""
 - This is the first list item.
 
   Second paragraph in the first list item.
@@ -127,9 +127,9 @@ Bullet lists are also detected:
 * This is the third bullet
 """
 
-debugformats('lists', lists)
+debugformats(b'lists', lists)
 
-options = """
+options = b"""
 There is support for simple option lists,
 but only with long options:
 
@@ -153,9 +153,9 @@ marker after the option. It is treated as a normal paragraph:
 --foo bar baz
 """
 
-debugformats('options', options)
+debugformats(b'options', options)
 
-fields = """
+fields = b"""
 :a: First item.
 :ab: Second item. Indentation and wrapping
      is handled automatically.
@@ -166,9 +166,9 @@ Next list:
 :much too large: This key is big enough to get its own line.
 """
 
-debugformats('fields', fields)
+debugformats(b'fields', fields)
 
-containers = """
+containers = b"""
 Normal output.
 
 .. container:: debug
@@ -184,17 +184,17 @@ Normal output.
       Debug output.
 """
 
-debugformats('containers (normal)', containers)
-debugformats('containers (verbose)', containers, keep=['verbose'])
-debugformats('containers (debug)', containers, keep=['debug'])
-debugformats('containers (verbose debug)', containers,
+debugformats(b'containers (normal)', containers)
+debugformats(b'containers (verbose)', containers, keep=['verbose'])
+debugformats(b'containers (debug)', containers, keep=['debug'])
+debugformats(b'containers (verbose debug)', containers,
             keep=['verbose', 'debug'])
 
-roles = """Please see :hg:`add`."""
-debugformats('roles', roles)
+roles = b"""Please see :hg:`add`."""
+debugformats(b'roles', roles)
 
 
-sections = """
+sections = b"""
 Title
 =====
 
@@ -207,10 +207,10 @@ Subsection
 Markup: ``foo`` and :hg:`help`
 ------------------------------
 """
-debugformats('sections', sections)
+debugformats(b'sections', sections)
 
 
-admonitions = """
+admonitions = b"""
 .. note::
 
    This is a note
@@ -225,9 +225,9 @@ admonitions = """
    This is danger
 """
 
-debugformats('admonitions', admonitions)
+debugformats(b'admonitions', admonitions)
 
-comments = """
+comments = b"""
 Some text.
 
 .. A comment
@@ -241,27 +241,27 @@ Some text.
 Empty comment above
 """
 
-debugformats('comments', comments)
+debugformats(b'comments', comments)
 
 
-data = [['a', 'b', 'c'],
-         ['1', '2', '3'],
-         ['foo', 'bar', 'baz this list is very very very long man']]
+data = [[b'a', b'b', b'c'],
+         [b'1', b'2', b'3'],
+         [b'foo', b'bar', b'baz this list is very very very long man']]
 
 rst = minirst.maketable(data, 2, True)
-table = ''.join(rst)
+table = b''.join(rst)
 
 print(table)
 
-debugformats('table', table)
+debugformats(b'table', table)
 
-data = [['s', 'long', 'line\ngoes on here'],
-        ['', 'xy', 'tried to fix here\n        by indenting']]
+data = [[b's', b'long', b'line\ngoes on here'],
+        [b'', b'xy', b'tried to fix here\n        by indenting']]
 
 rst = minirst.maketable(data, 1, False)
-table = ''.join(rst)
+table = b''.join(rst)
 
 print(table)
 
-debugformats('table+nl', table)
+debugformats(b'table+nl', table)
 

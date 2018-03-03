@@ -702,6 +702,9 @@ DATA_ESCAPE_MAP.update({
 DATA_ESCAPE_RE = remod.compile(br'[\x00-\x08\x0a-\x1f\\\x7f-\xff]')
 
 def escapedata(s):
+    if isinstance(s, bytearray):
+        s = bytes(s)
+
     return DATA_ESCAPE_RE.sub(lambda m: DATA_ESCAPE_MAP[m.group(0)], s)
 
 class fileobjectobserver(object):

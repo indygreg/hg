@@ -105,15 +105,37 @@ def run():
         # change the status code and move on.
         except IOError:
             status = -1
+
+    _silencestdio()
     sys.exit(status & 255)
 
 if pycompat.ispy3:
     def _initstdio():
         pass
+
+    def _silencestdio():
+        for fp in (sys.stdout, sys.stderr):
+            # Check if the file is okay
+            try:
+                fp.flush()
+                continue
+            except IOError:
+                pass
+            # Otherwise mark it as closed to silence "Exception ignored in"
+            # message emitted by the interpreter finalizer. Be careful to
+            # not close util.stdout, which may be a fdopen-ed file object and
+            # its close() actually closes the underlying file descriptor.
+            try:
+                fp.close()
+            except IOError:
+                pass
 else:
     def _initstdio():
         for fp in (sys.stdin, sys.stdout, sys.stderr):
             util.setbinary(fp)
+
+    def _silencestdio():
+        pass
 
 def _getsimilar(symbols, value):
     sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()

@@ -708,3 +708,12 @@ def has_clang_libfuzzer():
         # libfuzzer is new in clang 6
         return int(mat.group(1)) > 5
     return False
+
+@check("xdiff", "xdiff algorithm")
+def has_xdiff():
+    try:
+        from mercurial import policy
+        bdiff = policy.importmod('bdiff')
+        return bdiff.xdiffblocks('', '') == [(0, 0, 0, 0)]
+    except (ImportError, AttributeError) as ex:
+        return False

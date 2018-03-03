@@ -577,6 +577,9 @@ coreconfigitem('experimental', 'update.atomic-file',
 coreconfigitem('experimental', 'sshpeer.advertise-v2',
     default=False,
 )
+coreconfigitem('experimental', 'xdiff',
+    default=False,
+)
 coreconfigitem('extensions', '.*',
     default=None,
     generic=True,

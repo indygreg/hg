@@ -2256,6 +2256,7 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
         'context': get('unified', getter=ui.config),
     }
     buildopts['worddiff'] = ui.configbool('experimental', 'worddiff')
+    buildopts['xdiff'] = ui.configbool('experimental', 'xdiff')
 
     if git:
         buildopts['git'] = get('git')

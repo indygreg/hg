@@ -63,6 +63,7 @@ class diffopts(object):
         'upgrade': False,
         'showsimilarity': False,
         'worddiff': False,
+        'xdiff': False,
         }
 
     def __init__(self, **opts):
@@ -188,6 +189,13 @@ def blocksinrange(blocks, rangeb):
         raise error.Abort(_('line range exceeds file size'))
     return filteredblocks, (lba, uba)
 
+def chooseblocksfunc(opts=None):
+    if (opts is None or not opts.xdiff
+        or not util.safehasattr(bdiff, 'xdiffblocks')):
+        return bdiff.blocks
+    else:
+        return bdiff.xdiffblocks
+
 def allblocks(text1, text2, opts=None, lines1=None, lines2=None):
     """Return (block, type) tuples, where block is an mdiff.blocks
     line entry. type is '=' for blocks matching exactly one another
@@ -201,7 +209,7 @@ def allblocks(text1, text2, opts=None, lines1=None, lines2=None):
     if opts.ignorews or opts.ignorewsamount or opts.ignorewseol:
         text1 = wsclean(opts, text1, False)
         text2 = wsclean(opts, text2, False)
-    diff = bdiff.blocks(text1, text2)
+    diff = chooseblocksfunc(opts)(text1, text2)
     for i, s1 in enumerate(diff):
         # The first match is special.
         # we've either found a match starting at line 0 or a match later

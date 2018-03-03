@@ -79,7 +79,7 @@ Server should answer the "hello" command in isolation
   > readline
   > EOF
   using raw connection to peer
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
@@ -100,9 +100,9 @@ I/O logging works
   $ hg debugserve --sshstdio --logiofd 1 << EOF
   > hello
   > EOF
-  o> write(4) -> None:
+  o> write(4) -> 4:
   o>     384\n
-  o> write(384) -> None:
+  o> write(384) -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
   384
   capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
@@ -115,9 +115,9 @@ I/O logging works
   capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
 
   $ cat $TESTTMP/io
-  o> write(4) -> None:
+  o> write(4) -> 4:
   o>     384\n
-  o> write(384) -> None:
+  o> write(384) -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
   o> flush() -> None
 
@@ -140,13 +140,13 @@ reply with empty response to the "between".
   > readline
   > EOF
   using raw connection to peer
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -214,7 +214,7 @@ And test the banner with the raw protocol
   > readline
   > EOF
   using raw connection to peer
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 15:
   o>     banner: line 0\n
@@ -240,7 +240,7 @@ And test the banner with the raw protocol
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -283,15 +283,15 @@ Sending an unknown command to the server results in an empty response to that co
   > readline
   > EOF
   using raw connection to peer
-  i> write(10) -> None:
+  i> write(10) -> 10:
   i>     pre-hello\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -341,25 +341,25 @@ Send multiple unknown commands before hello
   > readline
   > EOF
   using raw connection to peer
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     unknown1\n
   o> readline() -> 2:
   o>     0\n
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     unknown2\n
   o> readline() -> 2:
   o>     0\n
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     unknown3\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -417,7 +417,7 @@ Send an unknown command before hello that has arguments
   > readline
   > EOF
   using raw connection to peer
-  i> write(52) -> None:
+  i> write(52) -> 52:
   i>     with-args\n
   i>     foo 13\n
   i>     value for foo\n
@@ -433,13 +433,13 @@ Send an unknown command before hello that has arguments
   o>     0\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -470,7 +470,7 @@ Send an unknown command having an argument that looks numeric
   > readline
   > EOF
   using raw connection to peer
-  i> write(16) -> None:
+  i> write(16) -> 16:
   i>     unknown\n
   i>     foo 1\n
   i>     0\n
@@ -480,13 +480,13 @@ Send an unknown command having an argument that looks numeric
   o>     0\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -515,7 +515,7 @@ Send an unknown command having an argument that looks numeric
   > readline
   > EOF
   using raw connection to peer
-  i> write(16) -> None:
+  i> write(16) -> 16:
   i>     unknown\n
   i>     foo 1\n
   i>     1\n
@@ -525,13 +525,13 @@ Send an unknown command having an argument that looks numeric
   o>     0\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -570,7 +570,7 @@ Dictionary value for unknown command
   > readline
   > EOF
   using raw connection to peer
-  i> write(48) -> None:
+  i> write(48) -> 48:
   i>     unknown\n
   i>     dict 3\n
   i>     key1 3\n
@@ -595,7 +595,7 @@ Dictionary value for unknown command
   o>     0\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
@@ -616,7 +616,7 @@ Incomplete dictionary send
   > readline
   > EOF
   using raw connection to peer
-  i> write(26) -> None:
+  i> write(26) -> 26:
   i>     unknown\n
   i>     dict 3\n
   i>     key1 3\n
@@ -643,7 +643,7 @@ Incomplete value send
   > readline
   > EOF
   using raw connection to peer
-  i> write(24) -> None:
+  i> write(24) -> 24:
   i>     unknown\n
   i>     dict 3\n
   i>     key1 3\n
@@ -673,17 +673,17 @@ Send a command line with spaces
   > readline
   > EOF
   using raw connection to peer
-  i> write(18) -> None:
+  i> write(18) -> 18:
   i>     unknown withspace\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -707,17 +707,17 @@ Send a command line with spaces
   > readline
   > EOF
   using raw connection to peer
-  i> write(29) -> None:
+  i> write(29) -> 29:
   i>     unknown with multiple spaces\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -744,7 +744,7 @@ Send a command line with spaces
   > readline
   > EOF
   using raw connection to peer
-  i> write(38) -> None:
+  i> write(38) -> 38:
   i>     unknown with spaces\n
   i>     key 10\n
   i>     some value\n
@@ -754,13 +754,13 @@ Send a command line with spaces
   o>     0\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -784,13 +784,13 @@ Send an unknown command after the "between"
   > readline
   > EOF
   using raw connection to peer
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(105) -> None:
+  i> write(105) -> 105:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000unknown
@@ -822,7 +822,7 @@ And one with arguments
   > readline
   > EOF
   using raw connection to peer
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -835,7 +835,7 @@ And one with arguments
   o>     1\n
   o> readline() -> 1:
   o>     \n
-  i> write(31) -> None:
+  i> write(31) -> 31:
   i>     unknown\n
   i>     foo 5\n
   i>     \n
@@ -865,11 +865,11 @@ Send a valid command before the handshake
   > readline
   > EOF
   using raw connection to peer
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     heads\n
   o> readline() -> 3:
   o>     41\n
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -895,11 +895,11 @@ And a variation that doesn't send the between command
   > readline
   > EOF
   using raw connection to peer
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     heads\n
   o> readline() -> 3:
   o>     41\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 41:
   o>     68986213bd4485ea51533535e3fc9e78007a711f\n
@@ -923,11 +923,11 @@ Send an upgrade request to a server that doesn't support that command
   > readline
   > EOF
   using raw connection to peer
-  i> write(77) -> None:
+  i> write(77) -> 77:
   i>     upgrade 2e82ab3f-9ce3-4b4e-8f8c-6fd1c0e9e23a proto=irrelevant1%2Cirrelevant2\n
   o> readline() -> 2:
   o>     0\n
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -984,7 +984,7 @@ Send an upgrade request to a server that supports upgrade
   > readline
   > EOF
   using raw connection to peer
-  i> write(153) -> None:
+  i> write(153) -> 153:
   i>     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
   i>     hello\n
   i>     between\n
@@ -1083,7 +1083,7 @@ Command after upgrade to version 2 is processed
   > readline
   > EOF
   using raw connection to peer
-  i> write(153) -> None:
+  i> write(153) -> 153:
   i>     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
   i>     hello\n
   i>     between\n
@@ -1095,7 +1095,7 @@ Command after upgrade to version 2 is processed
   o>     383\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     366\n
@@ -1121,7 +1121,7 @@ Multiple upgrades is not allowed
   > readavailable
   > EOF
   using raw connection to peer
-  i> write(153) -> None:
+  i> write(153) -> 153:
   i>     upgrade this-is-some-token proto=exp-ssh-v2-0001\n
   i>     hello\n
   i>     between\n
@@ -1133,7 +1133,7 @@ Multiple upgrades is not allowed
   o>     383\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(45) -> None:
+  i> write(45) -> 45:
   i>     upgrade another-token proto=irrelevant\n
   i>     hello\n
   o> readline() -> 1:
@@ -1150,7 +1150,7 @@ Malformed upgrade request line (not exactly 3 space delimited tokens)
   > readline
   > EOF
   using raw connection to peer
-  i> write(8) -> None:
+  i> write(8) -> 8:
   i>     upgrade\n
   o> readline() -> 2:
   o>     0\n
@@ -1161,7 +1161,7 @@ Malformed upgrade request line (not exactly 3 space delimited tokens)
   > readline
   > EOF
   using raw connection to peer
-  i> write(14) -> None:
+  i> write(14) -> 14:
   i>     upgrade token\n
   o> readline() -> 2:
   o>     0\n
@@ -1172,7 +1172,7 @@ Malformed upgrade request line (not exactly 3 space delimited tokens)
   > readline
   > EOF
   using raw connection to peer
-  i> write(34) -> None:
+  i> write(34) -> 34:
   i>     upgrade token foo=bar extra-token\n
   o> readline() -> 2:
   o>     0\n
@@ -1195,17 +1195,17 @@ Upgrade request to unsupported protocol is ignored
   > readline
   > EOF
   using raw connection to peer
-  i> write(51) -> None:
+  i> write(51) -> 51:
   i>     upgrade this-is-some-token proto=unknown1,unknown2\n
   o> readline() -> 2:
   o>     0\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     384\n
   o> readline() -> 384:
   o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
-  i> write(98) -> None:
+  i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
@@ -1224,7 +1224,7 @@ Upgrade request must be followed by hello + between
   > readavailable
   > EOF
   using raw connection to peer
-  i> write(44) -> None:
+  i> write(44) -> 44:
   i>     upgrade token proto=exp-ssh-v2-0001\n
   i>     invalid\n
   o> readline() -> 1:
@@ -1242,7 +1242,7 @@ Upgrade request must be followed by hello + between
   > readavailable
   > EOF
   using raw connection to peer
-  i> write(50) -> None:
+  i> write(50) -> 50:
   i>     upgrade token proto=exp-ssh-v2-0001\n
   i>     hello\n
   i>     invalid\n
@@ -1262,7 +1262,7 @@ Upgrade request must be followed by hello + between
   > readavailable
   > EOF
   using raw connection to peer
-  i> write(58) -> None:
+  i> write(58) -> 58:
   i>     upgrade token proto=exp-ssh-v2-0001\n
   i>     hello\n
   i>     between\n
@@ -1312,7 +1312,7 @@ Test listkeys for listing namespaces
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1327,11 +1327,11 @@ Test listkeys for listing namespaces
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(13) -> None:
+  i> write(13) -> 13:
   i>     namespace 10\n
-  i> write(10) -> None: namespaces
+  i> write(10) -> 10: namespaces
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     30\n
@@ -1343,7 +1343,7 @@ Test listkeys for listing namespaces
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1358,11 +1358,11 @@ Test listkeys for listing namespaces
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(13) -> None:
+  i> write(13) -> 13:
   i>     namespace 10\n
-  i> write(10) -> None: namespaces
+  i> write(10) -> 10: namespaces
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     30\n
@@ -1392,7 +1392,7 @@ With no bookmarks set
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1407,11 +1407,11 @@ With no bookmarks set
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
+  i> write(9) -> 9: bookmarks
   i> flush() -> None
   o> bufferedreadline() -> 2:
   o>     0\n
@@ -1419,7 +1419,7 @@ With no bookmarks set
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1434,11 +1434,11 @@ With no bookmarks set
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
+  i> write(9) -> 9: bookmarks
   i> flush() -> None
   o> bufferedreadline() -> 2:
   o>     0\n
@@ -1453,7 +1453,7 @@ With a single bookmark set
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1468,11 +1468,11 @@ With a single bookmark set
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
+  i> write(9) -> 9: bookmarks
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     46\n
@@ -1481,7 +1481,7 @@ With a single bookmark set
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1496,11 +1496,11 @@ With a single bookmark set
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
+  i> write(9) -> 9: bookmarks
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     46\n
@@ -1516,7 +1516,7 @@ With multiple bookmarks set
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1531,11 +1531,11 @@ With multiple bookmarks set
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
+  i> write(9) -> 9: bookmarks
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     93\n
@@ -1546,7 +1546,7 @@ With multiple bookmarks set
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1561,11 +1561,11 @@ With multiple bookmarks set
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
+  i> write(9) -> 9: bookmarks
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     93\n
@@ -1585,7 +1585,7 @@ Test pushkey for bookmarks
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1600,18 +1600,18 @@ Test pushkey for bookmarks
   o> readline() -> 1:
   o>     \n
   sending pushkey command
-  i> write(8) -> None:
+  i> write(8) -> 8:
   i>     pushkey\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     key 6\n
-  i> write(6) -> None: remote
-  i> write(12) -> None:
+  i> write(6) -> 6: remote
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
-  i> write(7) -> None:
+  i> write(9) -> 9: bookmarks
+  i> write(7) -> 7:
   i>     new 40\n
-  i> write(40) -> None: 68986213bd4485ea51533535e3fc9e78007a711f
-  i> write(6) -> None:
+  i> write(40) -> 40: 68986213bd4485ea51533535e3fc9e78007a711f
+  i> write(6) -> 6:
   i>     old 0\n
   i> flush() -> None
   o> bufferedreadline() -> 2:
@@ -1622,7 +1622,7 @@ Test pushkey for bookmarks
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1637,18 +1637,18 @@ Test pushkey for bookmarks
   o> read(1) -> 1:
   o>     \n
   sending pushkey command
-  i> write(8) -> None:
+  i> write(8) -> 8:
   i>     pushkey\n
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     key 6\n
-  i> write(6) -> None: remote
-  i> write(12) -> None:
+  i> write(6) -> 6: remote
+  i> write(12) -> 12:
   i>     namespace 9\n
-  i> write(9) -> None: bookmarks
-  i> write(7) -> None:
+  i> write(9) -> 9: bookmarks
+  i> write(7) -> 7:
   i>     new 40\n
-  i> write(40) -> None: 68986213bd4485ea51533535e3fc9e78007a711f
-  i> write(6) -> None:
+  i> write(40) -> 40: 68986213bd4485ea51533535e3fc9e78007a711f
+  i> write(6) -> 6:
   i>     old 0\n
   i> flush() -> None
   o> bufferedreadline() -> 2:
@@ -1677,7 +1677,7 @@ Phases on empty repo
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1692,11 +1692,11 @@ Phases on empty repo
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
@@ -1705,7 +1705,7 @@ Phases on empty repo
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1720,11 +1720,11 @@ Phases on empty repo
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
@@ -1756,7 +1756,7 @@ Two draft heads
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1771,11 +1771,11 @@ Two draft heads
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 4:
   o>     101\n
@@ -1787,7 +1787,7 @@ Two draft heads
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1802,11 +1802,11 @@ Two draft heads
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 4:
   o>     101\n
@@ -1825,7 +1825,7 @@ Single draft head
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1840,11 +1840,11 @@ Single draft head
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     58\n
@@ -1855,7 +1855,7 @@ Single draft head
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1870,11 +1870,11 @@ Single draft head
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     58\n
@@ -1892,7 +1892,7 @@ All public heads
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1907,11 +1907,11 @@ All public heads
   o> readline() -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
@@ -1920,7 +1920,7 @@ All public heads
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -1935,11 +1935,11 @@ All public heads
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
-  i> write(9) -> None:
+  i> write(9) -> 9:
   i>     listkeys\n
-  i> write(12) -> None:
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
+  i> write(6) -> 6: phases
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
@@ -1959,7 +1959,7 @@ Setting public phase via pushkey
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -1974,20 +1974,20 @@ Setting public phase via pushkey
   o> readline() -> 1:
   o>     \n
   sending pushkey command
-  i> write(8) -> None:
+  i> write(8) -> 8:
   i>     pushkey\n
-  i> write(7) -> None:
+  i> write(7) -> 7:
   i>     key 40\n
-  i> write(40) -> None: 7127240a084fd9dc86fe8d1f98e26229161ec82b
-  i> write(12) -> None:
+  i> write(40) -> 40: 7127240a084fd9dc86fe8d1f98e26229161ec82b
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
-  i> write(6) -> None:
+  i> write(6) -> 6: phases
+  i> write(6) -> 6:
   i>     new 1\n
-  i> write(1) -> None: 0
-  i> write(6) -> None:
+  i> write(1) -> 1: 0
+  i> write(6) -> 6:
   i>     old 1\n
-  i> write(1) -> None: 1
+  i> write(1) -> 1: 1
   i> flush() -> None
   o> bufferedreadline() -> 2:
   o>     2\n
@@ -1997,7 +1997,7 @@ Setting public phase via pushkey
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -2012,20 +2012,20 @@ Setting public phase via pushkey
   o> read(1) -> 1:
   o>     \n
   sending pushkey command
-  i> write(8) -> None:
+  i> write(8) -> 8:
   i>     pushkey\n
-  i> write(7) -> None:
+  i> write(7) -> 7:
   i>     key 40\n
-  i> write(40) -> None: 7127240a084fd9dc86fe8d1f98e26229161ec82b
-  i> write(12) -> None:
+  i> write(40) -> 40: 7127240a084fd9dc86fe8d1f98e26229161ec82b
+  i> write(12) -> 12:
   i>     namespace 6\n
-  i> write(6) -> None: phases
-  i> write(6) -> None:
+  i> write(6) -> 6: phases
+  i> write(6) -> 6:
   i>     new 1\n
-  i> write(1) -> None: 0
-  i> write(6) -> None:
+  i> write(1) -> 1: 0
+  i> write(6) -> 6:
   i>     old 1\n
-  i> write(1) -> None: 1
+  i> write(1) -> 1: 1
   i> flush() -> None
   o> bufferedreadline() -> 2:
   o>     2\n
@@ -2066,7 +2066,7 @@ Test batching of requests
   > EOF
   testing ssh1
   creating ssh peer from handshake results
-  i> write(104) -> None:
+  i> write(104) -> 104:
   i>     hello\n
   i>     between\n
   i>     pairs 81\n
@@ -2081,13 +2081,13 @@ Test batching of requests
   o> readline() -> 1:
   o>     \n
   sending batch with 3 sub-commands
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     batch\n
-  i> write(4) -> None:
+  i> write(4) -> 4:
   i>     * 0\n
-  i> write(8) -> None:
+  i> write(8) -> 8:
   i>     cmds 61\n
-  i> write(61) -> None: heads ;listkeys namespace=bookmarks;listkeys namespace=phases
+  i> write(61) -> 61: heads ;listkeys namespace=bookmarks;listkeys namespace=phases
   i> flush() -> None
   o> bufferedreadline() -> 4:
   o>     278\n
@@ -2103,7 +2103,7 @@ Test batching of requests
   
   testing ssh2
   creating ssh peer from handshake results
-  i> write(171) -> None:
+  i> write(171) -> 171:
   i>     upgrade * proto=exp-ssh-v2-0001\n (glob)
   i>     hello\n
   i>     between\n
@@ -2118,13 +2118,13 @@ Test batching of requests
   o> read(1) -> 1:
   o>     \n
   sending batch with 3 sub-commands
-  i> write(6) -> None:
+  i> write(6) -> 6:
   i>     batch\n
-  i> write(4) -> None:
+  i> write(4) -> 4:
   i>     * 0\n
-  i> write(8) -> None:
+  i> write(8) -> 8:
   i>     cmds 61\n
-  i> write(61) -> None: heads ;listkeys namespace=bookmarks;listkeys namespace=phases
+  i> write(61) -> 61: heads ;listkeys namespace=bookmarks;listkeys namespace=phases
   i> flush() -> None
   o> bufferedreadline() -> 4:
   o>     278\n

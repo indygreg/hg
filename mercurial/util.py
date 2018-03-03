@@ -762,6 +762,11 @@ class fileobjectobserver(object):
         if not self.writes:
             return
 
+        # Python 2 returns None from some write() calls. Python 3 (reasonably)
+        # returns the integer bytes written.
+        if res is None and data:
+            res = len(data)
+
         self.fh.write('%s> write(%d) -> %r' % (self.name, len(data), res))
         self._writedata(data)
 

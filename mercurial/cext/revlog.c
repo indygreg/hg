@@ -87,9 +87,9 @@ static const char nullid[20];
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 
 #if LONG_MAX == 0x7fffffffL
-static char *tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
+static const char *const tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
 #else
-static char *tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
+static const char *const tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */

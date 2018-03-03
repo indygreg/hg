@@ -37,7 +37,7 @@ static PyObject *b85encode(PyObject *self, PyObject *args)
 	unsigned int acc, val, ch;
 	int pad = 0;
 
-	if (!PyArg_ParseTuple(args, "s#|i", &text, &len, &pad))
+	if (!PyArg_ParseTuple(args, PY23("s#|i", "y#|i"), &text, &len, &pad))
 		return NULL;
 
 	if (pad)
@@ -84,7 +84,7 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 	int c;
 	unsigned int acc;
 
-	if (!PyArg_ParseTuple(args, "s#", &text, &len))
+	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &text, &len))
 		return NULL;
 
 	olen = len / 5 * 4;

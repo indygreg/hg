@@ -758,7 +758,7 @@ bail:
 static PyObject *setprocname(PyObject *self, PyObject *args)
 {
 	const char *name = NULL;
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, PY23("s", "y"), &name))
 		return NULL;
 
 #if defined(SETPROCNAME_USE_SETPROCTITLE)
@@ -1105,7 +1105,7 @@ static PyObject *getfstype(PyObject *self, PyObject *args)
 	const char *path = NULL;
 	struct statfs buf;
 	int r;
-	if (!PyArg_ParseTuple(args, "s", &path))
+	if (!PyArg_ParseTuple(args, PY23("s", "y"), &path))
 		return NULL;
 
 	memset(&buf, 0, sizeof(buf));
@@ -1123,7 +1123,7 @@ static PyObject *getfsmountpoint(PyObject *self, PyObject *args)
 	const char *path = NULL;
 	struct statfs buf;
 	int r;
-	if (!PyArg_ParseTuple(args, "s", &path))
+	if (!PyArg_ParseTuple(args, PY23("s", "y"), &path))
 		return NULL;
 
 	memset(&buf, 0, sizeof(buf));
@@ -1164,7 +1164,8 @@ static PyObject *listdir(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	static char *kwlist[] = {"path", "stat", "skip", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|OO:listdir",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, PY23("s#|OO:listdir",
+							    "y#|OO:listdir"),
 			kwlist, &path, &plen, &statobj, &skipobj))
 		return NULL;
 
@@ -1197,7 +1198,9 @@ static PyObject *posixfile(PyObject *self, PyObject *args, PyObject *kwds)
 	int plus;
 	FILE *fp;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:posixfile", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, PY23("et|si:posixfile",
+							  "et|yi:posixfile"),
+					 kwlist,
 					 Py_FileSystemDefaultEncoding,
 					 &name, &mode, &bufsize))
 		return NULL;

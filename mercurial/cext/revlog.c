@@ -1243,7 +1243,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 	char *node;
 	int rev, i;
 
-	if (!PyArg_ParseTuple(args, "s#", &node, &nodelen))
+	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &node, &nodelen))
 		return NULL;
 
 	if (nodelen < 4) {

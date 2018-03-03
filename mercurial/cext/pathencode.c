@@ -512,7 +512,8 @@ PyObject *lowerencode(PyObject *self, PyObject *args)
 	Py_ssize_t len, newlen;
 	PyObject *ret;
 
-	if (!PyArg_ParseTuple(args, "s#:lowerencode", &path, &len))
+	if (!PyArg_ParseTuple(args, PY23("s#:lowerencode", "y#:lowerencode"),
+	                      &path, &len))
 		return NULL;
 
 	newlen = _lowerencode(NULL, 0, path, len);

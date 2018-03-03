@@ -132,7 +132,8 @@ PyObject *isasciistr(PyObject *self, PyObject *args)
 {
 	const char *buf;
 	Py_ssize_t i, len;
-	if (!PyArg_ParseTuple(args, "s#:isasciistr", &buf, &len))
+	if (!PyArg_ParseTuple(args, PY23("s#:isasciistr", "y#:isasciistr"),
+	                      &buf, &len))
 		return NULL;
 	i = 0;
 	/* char array in PyStringObject should be at least 4-byte aligned */

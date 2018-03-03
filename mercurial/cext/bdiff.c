@@ -70,7 +70,8 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 
 	l.next = NULL;
 
-	if (!PyArg_ParseTuple(args, "s#s#:bdiff", &sa, &la, &sb, &lb))
+	if (!PyArg_ParseTuple(args, PY23("s#s#:bdiff", "y#y#:bdiff"), &sa, &la,
+	                      &sb, &lb))
 		return NULL;
 
 	if (la > UINT_MAX || lb > UINT_MAX) {
@@ -196,7 +197,7 @@ static PyObject *splitnewlines(PyObject *self, PyObject *args)
 	Py_ssize_t nelts = 0, size, i, start = 0;
 	PyObject *result = NULL;
 
-	if (!PyArg_ParseTuple(args, "s#", &text, &size)) {
+	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &text, &size)) {
 		goto abort;
 	}
 	if (!size) {

@@ -48,8 +48,9 @@ static PyObject *parse_manifest(PyObject *self, PyObject *args)
 	char *str, *start, *end;
 	int len;
 
-	if (!PyArg_ParseTuple(args, "O!O!s#:parse_manifest", &PyDict_Type,
-	                      &mfdict, &PyDict_Type, &fdict, &str, &len))
+	if (!PyArg_ParseTuple(
+	        args, PY23("O!O!s#:parse_manifest", "O!O!y#:parse_manifest"),
+	        &PyDict_Type, &mfdict, &PyDict_Type, &fdict, &str, &len))
 		goto quit;
 
 	start = str;
@@ -241,8 +242,9 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 	unsigned int flen, len, pos = 40;
 	int readlen;
 
-	if (!PyArg_ParseTuple(args, "O!O!s#:parse_dirstate", &PyDict_Type,
-	                      &dmap, &PyDict_Type, &cmap, &str, &readlen))
+	if (!PyArg_ParseTuple(
+	        args, PY23("O!O!s#:parse_dirstate", "O!O!y#:parse_dirstate"),
+	        &PyDict_Type, &dmap, &PyDict_Type, &cmap, &str, &readlen))
 		goto quit;
 
 	len = readlen;
@@ -645,7 +647,8 @@ static PyObject *fm1readmarkers(PyObject *self, PyObject *args)
 	Py_ssize_t offset, stop;
 	PyObject *markers = NULL;
 
-	if (!PyArg_ParseTuple(args, "s#nn", &data, &datalen, &offset, &stop)) {
+	if (!PyArg_ParseTuple(args, PY23("s#nn", "y#nn"), &data, &datalen,
+	                      &offset, &stop)) {
 		return NULL;
 	}
 	dataend = data + datalen;

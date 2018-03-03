@@ -134,7 +134,7 @@ static PyObject *patchedsize(PyObject *self, PyObject *args)
 	Py_ssize_t patchlen;
 	char *bin;
 
-	if (!PyArg_ParseTuple(args, "ls#", &orig, &bin, &patchlen))
+	if (!PyArg_ParseTuple(args, PY23("ls#", "ly#"), &orig, &bin, &patchlen))
 		return NULL;
 
 	while (pos >= 0 && pos < patchlen) {

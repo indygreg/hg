@@ -254,7 +254,7 @@ static PyObject *parse_dirstate(PyObject *self, PyObject *args)
 		goto quit;
 	}
 
-	parents = Py_BuildValue("s#s#", str, 20, str + 20, 20);
+	parents = Py_BuildValue(PY23("s#s#", "y#y#"), str, 20, str + 20, 20);
 	if (!parents)
 		goto quit;
 

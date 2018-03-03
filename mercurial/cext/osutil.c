@@ -184,7 +184,7 @@ static PyObject *make_item(const WIN32_FIND_DATAA *fd, int wantstat)
 		? _S_IFDIR : _S_IFREG;
 
 	if (!wantstat)
-		return Py_BuildValue("si", fd->cFileName, kind);
+		return Py_BuildValue(PY23("si", "yi"), fd->cFileName, kind);
 
 	py_st = PyObject_CallObject((PyObject *)&listdir_stat_type, NULL);
 	if (!py_st)
@@ -202,7 +202,7 @@ static PyObject *make_item(const WIN32_FIND_DATAA *fd, int wantstat)
 	if (kind == _S_IFREG)
 		stp->st_size = ((__int64)fd->nFileSizeHigh << 32)
 				+ fd->nFileSizeLow;
-	return Py_BuildValue("siN", fd->cFileName,
+	return Py_BuildValue(PY23("siN", "yiN"), fd->cFileName,
 		kind, py_st);
 }
 
@@ -390,9 +390,11 @@ static PyObject *_listdir_stat(char *path, int pathlen, int keepstat,
 			stat = makestat(&st);
 			if (!stat)
 				goto error;
-			elem = Py_BuildValue("siN", ent->d_name, kind, stat);
+			elem = Py_BuildValue(PY23("siN", "yiN"), ent->d_name,
+					     kind, stat);
 		} else
-			elem = Py_BuildValue("si", ent->d_name, kind);
+			elem = Py_BuildValue(PY23("si", "yi"), ent->d_name,
+					     kind);
 		if (!elem)
 			goto error;
 		stat = NULL;
@@ -570,9 +572,11 @@ static PyObject *_listdir_batch(char *path, int pathlen, int keepstat,
 				stat = makestat(&st);
 				if (!stat)
 					goto error;
-				elem = Py_BuildValue("siN", filename, kind, stat);
+				elem = Py_BuildValue(PY23("siN", "yiN"),
+						     filename, kind, stat);
 			} else
-				elem = Py_BuildValue("si", filename, kind);
+				elem = Py_BuildValue(PY23("si", "yi"),
+						     filename, kind);
 			if (!elem)
 				goto error;
 			stat = NULL;
@@ -1108,7 +1112,7 @@ static PyObject *getfstype(PyObject *self, PyObject *args)
 	r = statfs(path, &buf);
 	if (r != 0)
 		return PyErr_SetFromErrno(PyExc_OSError);
-	return Py_BuildValue("s", describefstype(&buf));
+	return Py_BuildValue(PY23("s", "y"), describefstype(&buf));
 }
 #endif /* defined(HAVE_LINUX_STATFS) || defined(HAVE_BSD_STATFS) */
 
@@ -1126,7 +1130,7 @@ static PyObject *getfsmountpoint(PyObject *self, PyObject *args)
 	r = statfs(path, &buf);
 	if (r != 0)
 		return PyErr_SetFromErrno(PyExc_OSError);
-	return Py_BuildValue("s", buf.f_mntonname);
+	return Py_BuildValue(PY23("s", "y"), buf.f_mntonname);
 }
 #endif /* defined(HAVE_BSD_STATFS) */
 

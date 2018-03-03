@@ -87,9 +87,9 @@ static const char nullid[20];
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 
 #if LONG_MAX == 0x7fffffffL
-static char *tuple_format = "Kiiiiiis#";
+static char *tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
 #else
-static char *tuple_format = "kiiiiiis#";
+static char *tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
@@ -2077,7 +2077,7 @@ void revlog_module_init(PyObject *mod)
 	Py_INCREF(&indexType);
 	PyModule_AddObject(mod, "index", (PyObject *)&indexType);
 
-	nullentry = Py_BuildValue("iiiiiiis#", 0, 0, 0,
+	nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
 				  -1, -1, -1, -1, nullid, 20);
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);

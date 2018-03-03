@@ -50,10 +50,12 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
         # show more details for new-style locks
         if ':' in locker:
             host, pid = locker.split(":", 1)
-            msg = _("waiting for lock on %s held by process %r "
-                    "on host %r\n") % (l.desc, pid, host)
+            msg = (_("waiting for lock on %s held by process %r on host %r\n")
+                   % (pycompat.bytestr(l.desc), pycompat.bytestr(pid),
+                      pycompat.bytestr(host)))
         else:
-            msg = _("waiting for lock on %s held by %r\n") % (l.desc, locker)
+            msg = (_("waiting for lock on %s held by %r\n")
+                   % (l.desc, pycompat.bytestr(locker)))
         printer(msg)
 
     l = lock(vfs, lockname, 0, *args, dolock=False, **kwargs)

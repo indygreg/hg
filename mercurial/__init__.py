@@ -31,6 +31,9 @@ if sys.version_info[0] >= 3:
             # Only handle Mercurial-related modules.
             if not fullname.startswith(('mercurial.', 'hgext.', 'hgext3rd.')):
                 return None
+            # don't try to parse binary
+            if fullname.startswith('mercurial.cext.'):
+                return None
             # third-party packages are expected to be dual-version clean
             if fullname.startswith('mercurial.thirdparty'):
                 return None

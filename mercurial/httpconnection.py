@@ -14,6 +14,7 @@ import os
 
 from .i18n import _
 from . import (
+    pycompat,
     util,
 )
 
@@ -62,6 +63,7 @@ class httpsendfile(object):
 
 # moved here from url.py to avoid a cycle
 def readauthforuri(ui, uri, user):
+    uri = pycompat.bytesurl(uri)
     # Read configuration
     groups = {}
     for key, val in ui.configitems('auth'):

@@ -1852,7 +1852,7 @@ def iterhunks(fp):
 
     for x in iter(lr.readline, ''):
         if state == BFILE and (
-            (not context and x[0] == '@')
+            (not context and x.startswith('@'))
             or (context is not False and x.startswith('***************'))
             or x.startswith('GIT binary patch')):
             gp = None

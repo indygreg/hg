@@ -1478,7 +1478,7 @@ def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
                     patch.patchrepo(ui, repo, p1, store, tmpname, strip, prefix,
                                     files, eolmode=None)
                 except error.PatchError as e:
-                    raise error.Abort(str(e))
+                    raise error.Abort(util.forcebytestr(e))
                 if opts.get('exact'):
                     editor = None
                 else:

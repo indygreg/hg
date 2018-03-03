@@ -97,7 +97,7 @@ def wirereposetup(ui, repo):
             # it ...
             if issubclass(self.__class__, httppeer.httppeer):
                 res = self._call('putlfile', data=fd, sha=sha,
-                    headers={'content-type':'application/mercurial-0.1'})
+                    headers={r'content-type': r'application/mercurial-0.1'})
                 try:
                     d, output = res.split('\n', 1)
                     for l in output.splitlines(True):

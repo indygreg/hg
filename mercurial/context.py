@@ -912,7 +912,7 @@ class basefilectx(object):
         """
         lkr = self.linkrev()
         attrs = vars(self)
-        noctx = not ('_changeid' in attrs or '_changectx' in attrs)
+        noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
         if noctx or self.rev() == lkr:
             return self.linkrev()
         return self._adjustlinkrev(self.rev(), inclusive=True)
@@ -928,14 +928,14 @@ class basefilectx(object):
     def _parentfilectx(self, path, fileid, filelog):
         """create parent filectx keeping ancestry info for _adjustlinkrev()"""
         fctx = filectx(self._repo, path, fileid=fileid, filelog=filelog)
-        if '_changeid' in vars(self) or '_changectx' in vars(self):
+        if r'_changeid' in vars(self) or r'_changectx' in vars(self):
             # If self is associated with a changeset (probably explicitly
             # fed), ensure the created filectx is associated with a
             # changeset that is an ancestor of self.changectx.
             # This lets us later use _adjustlinkrev to get a correct link.
             fctx._descendantrev = self.rev()
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)
-        elif '_descendantrev' in vars(self):
+        elif r'_descendantrev' in vars(self):
             # Otherwise propagate _descendantrev if we have one associated.
             fctx._descendantrev = self._descendantrev
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)

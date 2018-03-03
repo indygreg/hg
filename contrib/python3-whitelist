@@ -5,6 +5,7 @@ test-addremove.t
 test-amend-subrepo.t
 test-ancestor.py
 test-annotate.py
+test-annotate.t
 test-automv.t
 test-backout.t
 test-backwards-remove.t

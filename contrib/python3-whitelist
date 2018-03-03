@@ -172,6 +172,7 @@ test-largefiles-cache.t
 test-largefiles-small-disk.t
 test-locate.t
 test-lock-badness.t
+test-log.t
 test-logexchange.t
 test-lrucachedict.py
 test-mactext.t

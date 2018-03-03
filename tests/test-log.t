@@ -2016,33 +2016,31 @@ test -u/-k for problematic encoding
   $ hg init problematicencoding
   $ cd problematicencoding
 
-  $ $PYTHON > setup.sh <<EOF
-  > print(u'''
-  > echo a > text
-  > hg add text
-  > hg --encoding utf-8 commit -u '\u30A2' -m none
-  > echo b > text
-  > hg --encoding utf-8 commit -u '\u30C2' -m none
-  > echo c > text
-  > hg --encoding utf-8 commit -u none -m '\u30A2'
-  > echo d > text
-  > hg --encoding utf-8 commit -u none -m '\u30C2'
-  > '''.encode('utf-8'))
-  > EOF
+  >>> with open('setup.sh', 'wb') as f:
+  ...     f.write(u'''
+  ... echo a > text
+  ... hg add text
+  ... hg --encoding utf-8 commit -u '\u30A2' -m none
+  ... echo b > text
+  ... hg --encoding utf-8 commit -u '\u30C2' -m none
+  ... echo c > text
+  ... hg --encoding utf-8 commit -u none -m '\u30A2'
+  ... echo d > text
+  ... hg --encoding utf-8 commit -u none -m '\u30C2'
+  ... '''.encode('utf-8')) and None
   $ sh < setup.sh
 
 test in problematic encoding
-  $ $PYTHON > test.sh <<EOF
-  > print(u'''
-  > hg --encoding cp932 log --template '{rev}\\n' -u '\u30A2'
-  > echo ====
-  > hg --encoding cp932 log --template '{rev}\\n' -u '\u30C2'
-  > echo ====
-  > hg --encoding cp932 log --template '{rev}\\n' -k '\u30A2'
-  > echo ====
-  > hg --encoding cp932 log --template '{rev}\\n' -k '\u30C2'
-  > '''.encode('cp932'))
-  > EOF
+  >>> with open('test.sh', 'wb') as f:
+  ...     f.write(u'''
+  ... hg --encoding cp932 log --template '{rev}\\n' -u '\u30A2'
+  ... echo ====
+  ... hg --encoding cp932 log --template '{rev}\\n' -u '\u30C2'
+  ... echo ====
+  ... hg --encoding cp932 log --template '{rev}\\n' -k '\u30A2'
+  ... echo ====
+  ... hg --encoding cp932 log --template '{rev}\\n' -k '\u30C2'
+  ... '''.encode('cp932')) and None
   $ sh < test.sh
   0
   ====
@@ -2255,14 +2253,14 @@ Check that adding an arbitrary name shows up in log automatically
   > from mercurial import namespaces
   > 
   > def reposetup(ui, repo):
-  >     foo = {'foo': repo[0].node()}
+  >     foo = {b'foo': repo[0].node()}
   >     names = lambda r: foo.keys()
   >     namemap = lambda r, name: foo.get(name)
   >     nodemap = lambda r, node: [name for name, n in foo.items()
   >                                if n == node]
   >     ns = namespaces.namespace(
-  >         "bars", templatename="bar", logname="barlog",
-  >         colorname="barcolor", listnames=names, namemap=namemap,
+  >         b"bars", templatename=b"bar", logname=b"barlog",
+  >         colorname=b"barcolor", listnames=names, namemap=namemap,
   >         nodemap=nodemap)
   > 
   >     repo.names.addnamespace(ns)

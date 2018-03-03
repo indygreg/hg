@@ -193,7 +193,7 @@ Warn user in case of unexpected block while parsing
   > EOF
 
   $ hg releasenote -r .
-  unexpected block in release notes directive feature
+  changeset a4251905c440: unexpected block in release notes directive feature
   New Features
   ============
   

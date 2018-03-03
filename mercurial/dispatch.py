@@ -105,12 +105,15 @@ def run():
         # change the status code and move on.
         except IOError:
             status = -1
-
     sys.exit(status & 255)
 
-def _initstdio():
-    for fp in (sys.stdin, sys.stdout, sys.stderr):
-        util.setbinary(fp)
+if pycompat.ispy3:
+    def _initstdio():
+        pass
+else:
+    def _initstdio():
+        for fp in (sys.stdin, sys.stdout, sys.stderr):
+            util.setbinary(fp)
 
 def _getsimilar(symbols, value):
     sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()

@@ -921,16 +921,24 @@ Skips
 ================
   $ cat > test-skip.t <<EOF
   >   $ echo xyzzy
+  > #if true
   > #require false
+  > #end
+  > EOF
+  $ cat > test-noskip.t <<EOF
+  > #if false
+  > #require false
+  > #endif
   > EOF
   $ rt --nodiff
-  !.s
+  !.s.
   Skipped test-skip.t: missing feature: nail clipper
   Failed test-failure.t: output changed
-  # Ran 2 tests, 1 skipped, 1 failed.
+  # Ran 3 tests, 1 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
 
+  $ rm test-noskip.t
   $ rt --keyword xyzzy
   .s
   Skipped test-skip.t: missing feature: nail clipper

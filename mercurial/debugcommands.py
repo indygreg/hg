@@ -1770,15 +1770,15 @@ def debugpickmergetool(ui, repo, *pats, **opts):
     overrides = {}
     if opts['tool']:
         overrides[('ui', 'forcemerge')] = opts['tool']
-        ui.note(('with --tool %r\n') % (opts['tool']))
+        ui.note(('with --tool %r\n') % (pycompat.bytestr(opts['tool'])))
 
     with ui.configoverride(overrides, 'debugmergepatterns'):
         hgmerge = encoding.environ.get("HGMERGE")
         if hgmerge is not None:
-            ui.note(('with HGMERGE=%r\n') % (hgmerge))
+            ui.note(('with HGMERGE=%r\n') % (pycompat.bytestr(hgmerge)))
         uimerge = ui.config("ui", "merge")
         if uimerge:
-            ui.note(('with ui.merge=%r\n') % (uimerge))
+            ui.note(('with ui.merge=%r\n') % (pycompat.bytestr(uimerge)))
 
         ctx = scmutil.revsingle(repo, opts.get('rev'))
         m = scmutil.match(ctx, pats, opts)

@@ -2468,7 +2468,7 @@ class revlog(object):
                 if populatecachedelta:
                     dp = self.deltaparent(rev)
                     if dp != nullrev:
-                        cachedelta = (dp, str(self._chunk(rev)))
+                        cachedelta = (dp, bytes(self._chunk(rev)))
 
                 if not cachedelta:
                     rawtext = self.revision(rev, raw=True)

@@ -21,6 +21,7 @@ from . import (
     error,
     formatter,
     match as matchmod,
+    pycompat,
     scmutil,
     util,
     vfs as vfsmod,
@@ -171,13 +172,14 @@ class tarit(object):
             self.z = taropen('w|', fileobj=dest)
 
     def addfile(self, name, mode, islink, data):
+        name = pycompat.fsdecode(name)
         i = tarfile.TarInfo(name)
         i.mtime = self.mtime
         i.size = len(data)
         if islink:
             i.type = tarfile.SYMTYPE
             i.mode = 0o777
-            i.linkname = data
+            i.linkname = pycompat.fsdecode(data)
             data = None
             i.size = 0
         else:
@@ -218,7 +220,7 @@ class zipit(object):
                 dest.tell()
             except (AttributeError, IOError):
                 dest = tellable(dest)
-        self.z = zipfile.ZipFile(dest, r'w',
+        self.z = zipfile.ZipFile(pycompat.fsdecode(dest), r'w',
                                  compress and zipfile.ZIP_DEFLATED or
                                  zipfile.ZIP_STORED)
 
@@ -232,7 +234,7 @@ class zipit(object):
         self.date_time = time.gmtime(mtime)[:6]
 
     def addfile(self, name, mode, islink, data):
-        i = zipfile.ZipInfo(name, self.date_time)
+        i = zipfile.ZipInfo(pycompat.fsdecode(name), self.date_time)
         i.compress_type = self.z.compression
         # unzip will not honor unix file modes unless file creator is
         # set to unix (id 3).

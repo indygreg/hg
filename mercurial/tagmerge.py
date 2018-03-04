@@ -146,7 +146,7 @@ def writemergedtags(fcd, mergedtags):
     possible to the first parent's .hgtags file.
     '''
     # group the node-tag pairs that must be written next to each other
-    for tname, taglist in mergedtags.items():
+    for tname, taglist in list(mergedtags.items()):
         mergedtags[tname] = grouptagnodesbyline(taglist)
 
     # convert the grouped merged tags dict into a format that resembles the
@@ -269,4 +269,3 @@ def merge(repo, fcd, fco, fca):
     writemergedtags(fcd, mergedtags)
     ui.note(_('.hgtags merged successfully\n'))
     return False, 0
-

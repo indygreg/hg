@@ -411,7 +411,7 @@ class cg1unpacker(object):
                     newheads = [h for h in repo.heads()
                                 if h not in oldheads]
                     repo.ui.log("incoming",
-                                "%s incoming changes - new heads: %s\n",
+                                "%d incoming changes - new heads: %s\n",
                                 len(added),
                                 ', '.join([hex(c[:6]) for c in newheads]))
 

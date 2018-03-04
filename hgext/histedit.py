@@ -1317,8 +1317,8 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     # Create a backup so we can always abort completely.
     backupfile = None
     if not obsolete.isenabled(repo, obsolete.createmarkersopt):
-        backupfile = repair._bundle(repo, [parentctxnode], [topmost], root,
-                                    'histedit')
+        backupfile = repair.backupbundle(repo, [parentctxnode],
+                                         [topmost], root, 'histedit')
     state.backupfile = backupfile
 
 def _getsummary(ctx):

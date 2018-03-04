@@ -6,6 +6,7 @@ test-amend-subrepo.t
 test-ancestor.py
 test-annotate.py
 test-annotate.t
+test-archive-symlinks.t
 test-atomictempfile.py
 test-audit-path.t
 test-audit-subrepo.t
@@ -88,6 +89,7 @@ test-encoding-func.py
 test-encoding.t
 test-eol-add.t
 test-eol-clone.t
+test-eol-hook.t
 test-eol-tag.t
 test-eol-update.t
 test-excessive-merge.t
@@ -332,6 +334,7 @@ test-revlog-packentry.t
 test-revset-dirstate-parents.t
 test-revset-outgoing.t
 test-run-tests.py
+test-schemes.t
 test-serve.t
 test-share.t
 test-show-stack.t

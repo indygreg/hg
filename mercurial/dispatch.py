@@ -990,7 +990,7 @@ def _exceptionwarning(ui):
     if worst[0] is not None:
         name, testedwith, report = worst
         if not isinstance(testedwith, (bytes, str)):
-            testedwith = '.'.join([str(c) for c in testedwith])
+            testedwith = '.'.join([util.forcebytestr(c) for c in testedwith])
         warning = (_('** Unknown exception encountered with '
                      'possibly-broken third-party extension %s\n'
                      '** which supports versions %s of Mercurial.\n'

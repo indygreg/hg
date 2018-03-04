@@ -278,8 +278,6 @@ static PyObject *xdiffblocks(PyObject *self, PyObject *args)
 
 	xpparam_t xpp = {
 	    XDF_INDENT_HEURISTIC, /* flags */
-	    NULL,                 /* anchors */
-	    0,                    /* anchors_nr */
 	};
 	xdemitconf_t xecfg = {
 	    0,                  /* ctxlen */

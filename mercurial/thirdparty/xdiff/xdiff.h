@@ -41,14 +41,6 @@ extern "C" {
  * (a1, a2 - a1, b1, b2 - b1) hunks */
 #define XDL_EMIT_BDIFFHUNK (1 << 4)
 
-#define XDL_MMB_READONLY (1 << 0)
-
-#define XDL_MMF_ATOMIC (1 << 0)
-
-#define XDL_BDOP_INS 1
-#define XDL_BDOP_CPY 2
-#define XDL_BDOP_INSB 3
-
 /* merge simplification levels */
 #define XDL_MERGE_MINIMAL 0
 #define XDL_MERGE_EAGER 1
@@ -75,10 +67,6 @@ typedef struct s_mmbuffer {
 
 typedef struct s_xpparam {
 	unsigned long flags;
-
-	/* See Documentation/diff-options.txt. */
-	char **anchors;
-	size_t anchors_nr;
 } xpparam_t;
 
 typedef struct s_xdemitcb {
@@ -100,10 +88,6 @@ typedef struct s_xdemitconf {
 	void *find_func_priv;
 	xdl_emit_hunk_consume_func_t hunk_func;
 } xdemitconf_t;
-
-typedef struct s_bdiffparam {
-	long bsize;
-} bdiffparam_t;
 
 
 #define xdl_malloc(x) malloc(x)

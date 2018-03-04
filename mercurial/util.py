@@ -1676,6 +1676,11 @@ if safehasattr(time, "perf_counter"):
     timer = time.perf_counter
 
 def makelock(info, pathname):
+    """Create a lock file atomically if possible
+
+    This may leave a stale lock file if symlink isn't supported and signal
+    interrupt is enabled.
+    """
     try:
         return os.symlink(info, pathname)
     except OSError as why:

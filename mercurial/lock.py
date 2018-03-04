@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import contextlib
 import errno
 import os
+import signal
 import socket
 import time
 import warnings
@@ -38,6 +39,64 @@ def _getlockprefix():
             if ex.errno not in (errno.ENOENT, errno.EACCES, errno.ENOTDIR):
                 raise
     return result
+
+@contextlib.contextmanager
+def _delayedinterrupt():
+    """Block signal interrupt while doing something critical
+
+    This makes sure that the code block wrapped by this context manager won't
+    be interrupted.
+
+    For Windows developers: It appears not possible to guard time.sleep()
+    from CTRL_C_EVENT, so please don't use time.sleep() to test if this is
+    working.
+    """
+    assertedsigs = []
+    blocked = False
+    orighandlers = {}
+
+    def raiseinterrupt(num):
+        if (num == getattr(signal, 'SIGINT', None) or
+            num == getattr(signal, 'CTRL_C_EVENT', None)):
+            raise KeyboardInterrupt
+        else:
+            raise error.SignalInterrupt
+    def catchterm(num, frame):
+        if blocked:
+            assertedsigs.append(num)
+        else:
+            raiseinterrupt(num)
+
+    try:
+        # save handlers first so they can be restored even if a setup is
+        # interrupted between signal.signal() and orighandlers[] =.
+        for name in ['CTRL_C_EVENT', 'SIGINT', 'SIGBREAK', 'SIGHUP', 'SIGTERM']:
+            num = getattr(signal, name, None)
+            if num and num not in orighandlers:
+                orighandlers[num] = signal.getsignal(num)
+        try:
+            for num in orighandlers:
+                signal.signal(num, catchterm)
+        except ValueError:
+            pass # in a thread? no luck
+
+        blocked = True
+        yield
+    finally:
+        # no simple way to reliably restore all signal handlers because
+        # any loops, recursive function calls, except blocks, etc. can be
+        # interrupted. so instead, make catchterm() raise interrupt.
+        blocked = False
+        try:
+            for num, handler in orighandlers.items():
+                signal.signal(num, handler)
+        except ValueError:
+            pass # in a thread?
+
+    # re-raise interrupt exception if any, which may be shadowed by a new
+    # interrupt occurred while re-raising the first one
+    if assertedsigs:
+        raiseinterrupt(assertedsigs[0])
 
 def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
     """return an acquired lock or raise an a LockHeld exception
@@ -182,8 +241,9 @@ class lock(object):
         while not self.held and retry:
             retry -= 1
             try:
-                self.vfs.makelock(lockname, self.f)
-                self.held = 1
+                with _delayedinterrupt():
+                    self.vfs.makelock(lockname, self.f)
+                    self.held = 1
             except (OSError, IOError) as why:
                 if why.errno == errno.EEXIST:
                     locker = self._readlock()

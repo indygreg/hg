@@ -168,7 +168,7 @@ class tarit(object):
                 return tarfile.open(
                     name, pycompat.sysstr(mode + kind), fileobj)
 
-        if isinstance(dest, str):
+        if isinstance(dest, bytes):
             self.z = taropen('w:', name=dest)
         else:
             self.z = taropen('w|', fileobj=dest)
@@ -217,7 +217,7 @@ class zipit(object):
     or compressed with deflate.'''
 
     def __init__(self, dest, mtime, compress=True):
-        if not isinstance(dest, str):
+        if not isinstance(dest, bytes):
             try:
                 dest.tell()
             except (AttributeError, IOError):

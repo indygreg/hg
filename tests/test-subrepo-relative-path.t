@@ -72,6 +72,87 @@ subrepo debug for 'main' clone
    source   ../sub
    revision 863c1745b441bd97a8c4a096e87793073f4fb215
 
+Test sharing with a remote URL reference
+
+  $ hg init absolute_subrepo
+  $ cd absolute_subrepo
+  $ echo foo > foo.txt
+  $ hg ci -Am 'initial commit'
+  adding foo.txt
+  $ echo "sub = http://localhost:$HGPORT/sub" > .hgsub
+  $ hg ci -Am 'add absolute subrepo'
+  adding .hgsub
+  $ cd ..
+
+Clone pooling works for local clones with a remote subrepo reference.  The
+subrepo is cloned to the pool and shared from there, so that all clones will
+share the same subrepo.
+
+  $ hg --config extensions.share= --config share.pool=$TESTTMP/pool \
+  >    clone absolute_subrepo cloned_from_abs
+  (sharing from new pooled repository 8d6a2f1e993b34b6557de0042cfe825ae12a8dae)
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 3 changes to 3 files
+  new changesets 8d6a2f1e993b:* (glob)
+  searching for changes
+  no changes found
+  updating working directory
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  (sharing from new pooled repository 863c1745b441bd97a8c4a096e87793073f4fb215)
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  searching for changes
+  no changes found
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+Vanilla sharing with a subrepo remote path reference will clone the subrepo.
+Each share of these top level repos will end up with independent subrepo copies
+(potentially leaving the shared parent with dangling cset references).
+
+  $ hg --config extensions.share= share absolute_subrepo shared_from_abs
+  updating working directory
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg --config extensions.share= share -U absolute_subrepo shared_from_abs2
+  $ hg -R shared_from_abs2 update -r tip
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+A parent repo without its subrepo available locally can be shared if the
+subrepo is referenced by absolute path.
+
+  $ hg clone -U absolute_subrepo cloned_null_from_abs
+  $ hg --config extensions.share= share cloned_null_from_abs shared_from_null_abs
+  updating working directory
+  cloning subrepo sub from http://localhost:$HGPORT/sub
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 863c1745b441
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
   $ killdaemons.py
 
 subrepo paths with ssh urls

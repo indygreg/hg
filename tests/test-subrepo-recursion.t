@@ -292,6 +292,43 @@ Status between revisions:
   z2
   z3
 
+Clone pooling from a remote URL will share the top level repo and the subrepos,
+even if they are referenced by remote URL.
+
+  $ hg --config extensions.share= --config share.pool=$TESTTMP/pool \
+  >    clone http://localhost:$HGPORT shared
+  (sharing from new pooled repository 23376cbba0d87c15906bb3652584927c140907bf)
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 5 changes to 3 files
+  new changesets 23376cbba0d8:1326fa26d0c0
+  searching for changes
+  no changes found
+  updating working directory
+  cloning subrepo foo from http://localhost:$HGPORT/foo
+  (sharing from new pooled repository af048e97ade2e236f754f05d07013e586af0f8bf)
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 7 changes to 3 files
+  new changesets af048e97ade2:65903cebad86
+  searching for changes
+  no changes found
+  cloning subrepo foo/bar from http://localhost:$HGPORT/foo/bar
+  (sharing from new pooled repository 4904098473f96c900fec436dad267edd4da59fad)
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 3 changesets with 3 changes to 1 files
+  new changesets 4904098473f9:31ecbdafd357
+  searching for changes
+  no changes found
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
   $ cat access.log
   * "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
   * "GET /?cmd=batch HTTP/1.1" 200 - * (glob)
@@ -302,6 +339,27 @@ Status between revisions:
   * "GET /foo/bar?cmd=capabilities HTTP/1.1" 200 - (glob)
   * "GET /foo/bar?cmd=batch HTTP/1.1" 200 - * (glob)
   * "GET /foo/bar?cmd=getbundle HTTP/1.1" 200 - * (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=0 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=1326fa26d0c00d2146c63b56bb6a45149d7325ac&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D1326fa26d0c00d2146c63b56bb6a45149d7325ac x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=1326fa26d0c00d2146c63b56bb6a45149d7325ac&heads=1326fa26d0c00d2146c63b56bb6a45149d7325ac&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=0 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=65903cebad86f1a84bd4f1134f62fa7dcb7a1c98&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D65903cebad86f1a84bd4f1134f62fa7dcb7a1c98 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=65903cebad86f1a84bd4f1134f62fa7dcb7a1c98&heads=65903cebad86f1a84bd4f1134f62fa7dcb7a1c98&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=0 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=1&common=0000000000000000000000000000000000000000&heads=31ecbdafd357f54b281c9bd1d681bb90de219e22&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D31ecbdafd357f54b281c9bd1d681bb90de219e22 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /foo/bar?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&$USUAL_BUNDLE_CAPS$&cg=0&common=31ecbdafd357f54b281c9bd1d681bb90de219e22&heads=31ecbdafd357f54b281c9bd1d681bb90de219e22&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
 
   $ killdaemons.py
   $ rm hg1.pid error.log access.log
@@ -484,6 +542,22 @@ The newly cloned subrepos contain no working copy:
   branch: default
   commit: (clean)
   update: 4 new changesets (update)
+
+Sharing a local repo without the locally referenced subrepo (i.e. it was never
+updated from null), fails the same as a clone operation.
+
+  $ hg --config progress.disable=True clone -U ../empty ../empty2
+
+  $ hg --config extensions.share= --config progress.disable=True \
+  >    share ../empty2 ../empty_share
+  updating working directory
+  abort: repository $TESTTMP/empty2/foo not found!
+  [255]
+
+  $ hg --config progress.disable=True clone ../empty2 ../empty_clone
+  updating to branch default
+  abort: repository $TESTTMP/empty2/foo not found!
+  [255]
 
 Disable progress extension and cleanup:
 

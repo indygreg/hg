@@ -621,7 +621,13 @@ class hgsubrepo(abstractsubrepo):
         if len(self._repo) == 0:
             # use self._repo.vfs instead of self.wvfs to remove .hg only
             self._repo.vfs.rmtree()
-            if parentrepo.shared():
+
+            # A remote subrepo could be shared if there is a local copy
+            # relative to the parent's share source.  But clone pooling doesn't
+            # assemble the repos in a tree, so that can't be consistently done.
+            # A simpler option is for the user to configure clone pooling, and
+            # work with that.
+            if parentrepo.shared() and hg.islocal(srcurl):
                 self.ui.status(_('sharing subrepo %s from %s\n')
                                % (subrelpath(self), srcurl))
                 shared = hg.share(self._repo._subparent.baseui,
@@ -629,11 +635,25 @@ class hgsubrepo(abstractsubrepo):
                                   update=False, bookmarks=False)
                 self._repo = shared.local()
             else:
+                # TODO: find a common place for this and this code in the
+                # share.py wrap of the clone command.
+                if parentrepo.shared():
+                    pool = self.ui.config('share', 'pool')
+                    if pool:
+                        pool = util.expandpath(pool)
+
+                    shareopts = {
+                        'pool': pool,
+                        'mode': self.ui.config('share', 'poolnaming'),
+                    }
+                else:
+                    shareopts = {}
+
                 self.ui.status(_('cloning subrepo %s from %s\n')
                                % (subrelpath(self), srcurl))
                 other, cloned = hg.clone(self._repo._subparent.baseui, {},
                                          other, self._repo.root,
-                                         update=False)
+                                         update=False, shareopts=shareopts)
                 self._repo = cloned.local()
             self._initrepo(parentrepo, source, create=True)
             self._cachestorehash(srcurl)

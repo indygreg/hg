@@ -235,7 +235,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     ui.warn(_('error removing %s: %s\n') %
-                            (undovfs.join(undofile), str(e)))
+                            (undovfs.join(undofile), util.forcebytestr(e)))
 
     except: # re-raises
         if backupfile:

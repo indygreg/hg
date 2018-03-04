@@ -1996,7 +1996,8 @@ class revlog(object):
             try:
                 return _zlibdecompress(data)
             except zlib.error as e:
-                raise RevlogError(_('revlog decompress error: %s') % str(e))
+                raise RevlogError(_('revlog decompress error: %s') %
+                                  util.forcebytestr(e))
         # '\0' is more common than 'u' so it goes first.
         elif t == '\0':
             return data

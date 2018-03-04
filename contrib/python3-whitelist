@@ -177,6 +177,7 @@ test-issue672.t
 test-issue842.t
 test-journal-exists.t
 test-largefiles-cache.t
+test-largefiles-misc.t
 test-largefiles-small-disk.t
 test-locate.t
 test-lock-badness.t
@@ -227,6 +228,7 @@ test-mq-qsave.t
 test-mq-safety.t
 test-mq-symlinks.t
 test-mv-cp-st-diff.t
+test-narrow-archive.t
 test-narrow-clone-no-ellipsis.t
 test-narrow-clone-nonlinear.t
 test-narrow-clone.t
@@ -362,6 +364,7 @@ test-status-rev.t
 test-status-terse.t
 test-strip-cross.t
 test-strip.t
+test-subrepo-deep-nested-change.t
 test-subrepo.t
 test-symlinks.t
 test-treemanifest.t

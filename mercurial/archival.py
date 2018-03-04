@@ -142,8 +142,8 @@ class tarit(object):
             flags = 0
             if fname:
                 flags = gzip.FNAME
-            self.fileobj.write(chr(flags))
-            gzip.write32u(self.fileobj, long(self.timestamp))
+            self.fileobj.write(pycompat.bytechr(flags))
+            gzip.write32u(self.fileobj, int(self.timestamp))
             self.fileobj.write('\002')
             self.fileobj.write('\377')
             if fname:

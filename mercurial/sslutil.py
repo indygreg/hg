@@ -113,6 +113,7 @@ def _hostsettings(ui, hostname):
 
     Returns a dict of settings relevant to that hostname.
     """
+    bhostname = pycompat.bytesurl(hostname)
     s = {
         # Whether we should attempt to load default/available CA certs
         # if an explicit ``cafile`` is not defined.
@@ -162,14 +163,14 @@ def _hostsettings(ui, hostname):
             ui.warn(_('warning: connecting to %s using legacy security '
                       'technology (TLS 1.0); see '
                       'https://mercurial-scm.org/wiki/SecureConnections for '
-                      'more info\n') % hostname)
+                      'more info\n') % bhostname)
         defaultprotocol = 'tls1.0'
 
     key = 'minimumprotocol'
     protocol = ui.config('hostsecurity', key, defaultprotocol)
     validateprotocol(protocol, key)
 
-    key = '%s:minimumprotocol' % hostname
+    key = '%s:minimumprotocol' % bhostname
     protocol = ui.config('hostsecurity', key, protocol)
     validateprotocol(protocol, key)
 
@@ -182,16 +183,16 @@ def _hostsettings(ui, hostname):
     s['protocol'], s['ctxoptions'], s['protocolui'] = protocolsettings(protocol)
 
     ciphers = ui.config('hostsecurity', 'ciphers')
-    ciphers = ui.config('hostsecurity', '%s:ciphers' % hostname, ciphers)
+    ciphers = ui.config('hostsecurity', '%s:ciphers' % bhostname, ciphers)
     s['ciphers'] = ciphers
 
     # Look for fingerprints in [hostsecurity] section. Value is a list
     # of <alg>:<fingerprint> strings.
-    fingerprints = ui.configlist('hostsecurity', '%s:fingerprints' % hostname)
+    fingerprints = ui.configlist('hostsecurity', '%s:fingerprints' % bhostname)
     for fingerprint in fingerprints:
         if not (fingerprint.startswith(('sha1:', 'sha256:', 'sha512:'))):
             raise error.Abort(_('invalid fingerprint for %s: %s') % (
-                                hostname, fingerprint),
+                                bhostname, fingerprint),
                               hint=_('must begin with "sha1:", "sha256:", '
                                      'or "sha512:"'))
 
@@ -200,7 +201,7 @@ def _hostsettings(ui, hostname):
         s['certfingerprints'].append((alg, fingerprint))
 
     # Fingerprints from [hostfingerprints] are always SHA-1.
-    for fingerprint in ui.configlist('hostfingerprints', hostname):
+    for fingerprint in ui.configlist('hostfingerprints', bhostname):
         fingerprint = fingerprint.replace(':', '').lower()
         s['certfingerprints'].append(('sha1', fingerprint))
         s['legacyfingerprint'] = True
@@ -223,11 +224,11 @@ def _hostsettings(ui, hostname):
     # If both fingerprints and a per-host ca file are specified, issue a warning
     # because users should not be surprised about what security is or isn't
     # being performed.
-    cafile = ui.config('hostsecurity', '%s:verifycertsfile' % hostname)
+    cafile = ui.config('hostsecurity', '%s:verifycertsfile' % bhostname)
     if s['certfingerprints'] and cafile:
         ui.warn(_('(hostsecurity.%s:verifycertsfile ignored when host '
                   'fingerprints defined; using host fingerprints for '
-                  'verification)\n') % hostname)
+                  'verification)\n') % bhostname)
 
     # Try to hook up CA certificate validation unless something above
     # makes it not necessary.
@@ -237,8 +238,8 @@ def _hostsettings(ui, hostname):
             cafile = util.expandpath(cafile)
             if not os.path.exists(cafile):
                 raise error.Abort(_('path specified by %s does not exist: %s') %
-                                  ('hostsecurity.%s:verifycertsfile' % hostname,
-                                   cafile))
+                                  ('hostsecurity.%s:verifycertsfile' % (
+                                      bhostname,), cafile))
             s['cafile'] = cafile
         else:
             # Find global certificates file in config.
@@ -390,7 +391,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             else:
                 msg = e.args[1]
             raise error.Abort(_('error loading CA file %s: %s') % (
-                              settings['cafile'], msg),
+                              settings['cafile'], util.forcebytestr(msg)),
                               hint=_('file is empty or malformed?'))
         caloaded = True
     elif settings['allowloaddefaultcerts']:
@@ -583,8 +584,10 @@ def _dnsnamematch(dn, hostname, maxwildcards=1):
     pats = []
     if not dn:
         return False
+    dn = pycompat.bytesurl(dn)
+    hostname = pycompat.bytesurl(hostname)
 
-    pieces = dn.split(r'.')
+    pieces = dn.split('.')
     leftmost = pieces[0]
     remainder = pieces[1:]
     wildcards = leftmost.count('*')
@@ -637,17 +640,17 @@ def _verifycert(cert, hostname):
                 if _dnsnamematch(value, hostname):
                     return
             except wildcarderror as e:
-                return e.args[0]
+                return util.forcebytestr(e.args[0])
 
             dnsnames.append(value)
 
     if not dnsnames:
         # The subject is only checked when there is no DNS in subjectAltName.
-        for sub in cert.get('subject', []):
+        for sub in cert.get(r'subject', []):
             for key, value in sub:
                 # According to RFC 2818 the most specific Common Name must
                 # be used.
-                if key == 'commonName':
+                if key == r'commonName':
                     # 'subject' entries are unicode.
                     try:
                         value = value.encode('ascii')
@@ -658,7 +661,7 @@ def _verifycert(cert, hostname):
                         if _dnsnamematch(value, hostname):
                             return
                     except wildcarderror as e:
-                        return e.args[0]
+                        return util.forcebytestr(e.args[0])
 
                     dnsnames.append(value)
 
@@ -780,7 +783,8 @@ def validatesocket(sock):
 
     The passed socket must have been created with ``wrapsocket()``.
     """
-    host = sock._hgstate['hostname']
+    shost = sock._hgstate['hostname']
+    host = pycompat.bytesurl(shost)
     ui = sock._hgstate['ui']
     settings = sock._hgstate['settings']
 
@@ -856,7 +860,7 @@ def validatesocket(sock):
                    'hostsecurity.%s:fingerprints=%s to trust this server') %
                    (host, nicefingerprint))
 
-    msg = _verifycert(peercert2, host)
+    msg = _verifycert(peercert2, shost)
     if msg:
         raise error.Abort(_('%s certificate error: %s') % (host, msg),
                          hint=_('set hostsecurity.%s:certfingerprints=%s '

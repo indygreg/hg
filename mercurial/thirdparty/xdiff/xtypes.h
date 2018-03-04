@@ -46,15 +46,49 @@ typedef struct s_xrecord {
 } xrecord_t;
 
 typedef struct s_xdfile {
+	/* manual memory management */
 	chastore_t rcha;
+
+	/* number of records (lines) */
 	long nrec;
+
+	/* hash table size
+	 * the maximum hash value in the table is (1 << hbits) */
 	unsigned int hbits;
+
+	/* hash table, hash value => xrecord_t
+	 * note: xrecord_t is a linked list. */
 	xrecord_t **rhash;
+
+	/* range excluding common prefix and suffix
+	 * [recs[i] for i in range(0, dstart)] are common prefix.
+	 * [recs[i] for i in range(dstart, dend + 1 - dstart)] are interesting
+	 * lines */
 	long dstart, dend;
+
+	/* pointer to records (lines) */
 	xrecord_t **recs;
+
+	/* record changed, use original "recs" index
+	 * rchag[i] can be either 0 or 1. 1 means recs[i] (line i) is marked
+	 * "changed". */
 	char *rchg;
+
+	/* cleaned-up record index => original "recs" index
+	 * clean-up means:
+	 *  rule 1. remove common prefix and suffix
+	 *  rule 2. remove records that are only on one side, since they can
+	 *          not match the other side
+	 * rindex[0] is likely dstart, if not removed up by rule 2.
+	 * rindex[nreff - 1] is likely dend, if not removed by rule 2.
+	 */
 	long *rindex;
+
+	/* rindex size */
 	long nreff;
+
+	/* cleaned-up record index => hash value
+	 * ha[i] = recs[rindex[i]]->ha */
 	unsigned long *ha;
 } xdfile_t;
 

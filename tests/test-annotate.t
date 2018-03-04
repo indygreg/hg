@@ -903,6 +903,9 @@ Annotate with orphaned CR (issue5798)
 
   $ cat <<'EOF' >> "$TESTTMP/substcr.py"
   > import sys
+  > from mercurial import util
+  > util.setbinary(sys.stdin)
+  > util.setbinary(sys.stdout)
   > stdin = getattr(sys.stdin, 'buffer', sys.stdin)
   > stdout = getattr(sys.stdout, 'buffer', sys.stdout)
   > stdout.write(stdin.read().replace(b'\r', b'[CR]'))

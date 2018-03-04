@@ -265,7 +265,7 @@ Test log recursion from dirty status check
   > from mercurial import context, error, extensions
   > x=[False]
   > def status(orig, *args, **opts):
-  >     args[0].repo().ui.log("broken", "recursion?")
+  >     args[0].repo().ui.log(b"broken", b"recursion?")
   >     return orig(*args, **opts)
   > def reposetup(ui, repo):
   >     extensions.wrapfunction(context.basectx, 'status', status)
@@ -344,7 +344,7 @@ blackbox should work if repo.ui.log is not called (issue5518)
   > from mercurial import registrar, scmutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('raise')
+  > @command(b'raise')
   > def raisecmd(*args):
   >     raise RuntimeError('raise')
   > EOF

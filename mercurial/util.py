@@ -1685,7 +1685,8 @@ def makelock(info, pathname):
     except AttributeError: # no symlink in os
         pass
 
-    ld = os.open(pathname, os.O_CREAT | os.O_WRONLY | os.O_EXCL)
+    flags = os.O_CREAT | os.O_WRONLY | os.O_EXCL | getattr(os, 'O_BINARY', 0)
+    ld = os.open(pathname, flags)
     os.write(ld, info)
     os.close(ld)
 
@@ -1697,7 +1698,7 @@ def readlock(pathname):
             raise
     except AttributeError: # no symlink in os
         pass
-    fp = posixfile(pathname)
+    fp = posixfile(pathname, 'rb')
     r = fp.read()
     fp.close()
     return r

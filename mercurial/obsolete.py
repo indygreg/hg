@@ -133,20 +133,29 @@ def _getoptionvalue(repo, option):
 
         return option in result
 
+def getoptions(repo):
+    """Returns dicts showing state of obsolescence features."""
+
+    createmarkersvalue = _getoptionvalue(repo, createmarkersopt)
+    unstablevalue = _getoptionvalue(repo, allowunstableopt)
+    exchangevalue = _getoptionvalue(repo, exchangeopt)
+
+    # createmarkers must be enabled if other options are enabled
+    if ((unstablevalue or exchangevalue) and not createmarkersvalue):
+        raise error.Abort(_("'createmarkers' obsolete option must be enabled "
+                            "if other obsolete options are enabled"))
+
+    return {
+        createmarkersopt: createmarkersvalue,
+        allowunstableopt: unstablevalue,
+        exchangeopt: exchangevalue,
+    }
+
 def isenabled(repo, option):
     """Returns True if the given repository has the given obsolete option
     enabled.
     """
-    createmarkersvalue = _getoptionvalue(repo, createmarkersopt)
-    unstabluevalue = _getoptionvalue(repo, allowunstableopt)
-    exchangevalue = _getoptionvalue(repo, exchangeopt)
-
-    # createmarkers must be enabled if other options are enabled
-    if ((unstabluevalue or exchangevalue) and not createmarkersvalue):
-        raise error.Abort(_("'createmarkers' obsolete option must be enabled "
-                            "if other obsolete options are enabled"))
-
-    return _getoptionvalue(repo, option)
+    return getoptions(repo)[option]
 
 # Creating aliases for marker flags because evolve extension looks for
 # bumpedfix in obsolete.py

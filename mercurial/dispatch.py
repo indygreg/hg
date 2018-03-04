@@ -158,7 +158,7 @@ def _formatparse(write, inst):
     if len(inst.args) > 1:
         write(_("hg: parse error at %s: %s\n") %
               (pycompat.bytestr(inst.args[1]), inst.args[0]))
-        if (inst.args[0][0] == ' '):
+        if inst.args[0].startswith(' '):
             write(_("unexpected leading whitespace\n"))
     else:
         write(_("hg: parse error: %s\n") % inst.args[0])

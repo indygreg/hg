@@ -1757,7 +1757,7 @@ def pushurlpathoption(ui, path, value):
                   'ignoring)\n') % path.name)
         u.fragment = None
 
-    return str(u)
+    return bytes(u)
 
 @pathsuboption('pushrev', 'pushrev')
 def pushrevpathoption(ui, path, value):

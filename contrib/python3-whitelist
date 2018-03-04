@@ -69,6 +69,7 @@ test-debugbundle.t
 test-debugextensions.t
 test-debugindexdot.t
 test-debugrename.t
+test-default-push.t
 test-diff-binary-file.t
 test-diff-change.t
 test-diff-copy-depth.t

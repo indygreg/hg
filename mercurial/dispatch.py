@@ -85,7 +85,7 @@ def run():
     req = request(pycompat.sysargv[1:])
     err = None
     try:
-        status = (dispatch(req) or 0) & 255
+        status = (dispatch(req) or 0)
     except error.StdioError as e:
         err = e
         status = -1

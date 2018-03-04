@@ -1,7 +1,8 @@
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 import os
 from mercurial import (
     dispatch,
+    ui as uimod,
 )
 
 def testdispatch(cmd):
@@ -9,10 +10,11 @@ def testdispatch(cmd):
 
     Prints command and result value, but does not handle quoting.
     """
-    print("running: %s" % (cmd,))
-    req = dispatch.request(cmd.split())
+    ui = uimod.ui.load()
+    ui.status("running: %s\n" % cmd)
+    req = dispatch.request(cmd.split(), ui)
     result = dispatch.dispatch(req)
-    print("result: %r" % (result,))
+    ui.status("result: %r\n" % result)
 
 # create file 'foo', add and commit
 f = open('foo', 'wb')

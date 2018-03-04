@@ -221,7 +221,6 @@ def findcommonheads(ui, local, remote,
             sample = list(undecided)
         else:
             sample = samplefunc(dag, undecided, targetsize)
-            sample = _limitsample(sample, targetsize)
 
         roundtrips += 1
         ui.progress(_('searching'), roundtrips, unit=_('queries'))

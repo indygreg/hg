@@ -200,6 +200,7 @@ test-merge-closedheads.t
 test-merge-commit.t
 test-merge-criss-cross.t
 test-merge-default.t
+test-merge-force.t
 test-merge-internal-tools-pattern.t
 test-merge-local.t
 test-merge-remove.t

@@ -66,7 +66,7 @@ combinations = sorted(generatestates(maxchangesets, []))
 content = []
 for filename, states in combinations:
     if target == 'filelist':
-        print(filename)
+        print(filename.decode('ascii'))
     elif target == 'state':
         if depth == 'wc':
             # Make sure there is content so the file gets written and can be

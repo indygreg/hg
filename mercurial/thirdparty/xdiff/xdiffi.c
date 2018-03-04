@@ -30,6 +30,10 @@
 #define XDL_SNAKE_CNT 20
 #define XDL_K_HEUR 4
 
+/* VC 2008 doesn't know about the inline keyword. */
+#if defined(_MSC_VER)
+#define inline __forceinline
+#endif
 
 
 typedef struct s_xdpsplit {

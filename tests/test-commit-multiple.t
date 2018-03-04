@@ -90,23 +90,25 @@ now test that we fixed the bug for all scripts/extensions
   >     f.close()
   > 
   > def printfiles(repo, rev):
-  >     print("revision %s files: %s" % (rev, repo[rev].files()))
+  >     repo.ui.status(b"revision %d files: [%s]\n"
+  >                    % (rev, b', '.join(b"'%s'" % f
+  >                                       for f in repo[rev].files())))
   > 
-  > repo = hg.repository(ui.ui.load(), '.')
+  > repo = hg.repository(ui.ui.load(), b'.')
   > assert len(repo) == 6, \
   >        "initial: len(repo): %d, expected: 6" % len(repo)
   > 
-  > replacebyte("bugfix", "u")
+  > replacebyte(b"bugfix", b"u")
   > sleep(2)
   > try:
-  >     print("PRE: len(repo): %d" % len(repo))
+  >     repo.ui.status(b"PRE: len(repo): %d\n" % len(repo))
   >     wlock = repo.wlock()
   >     lock = repo.lock()
-  >     replacebyte("file1", "x")
-  >     repo.commit(text="x", user="test", date=(0, 0))
-  >     replacebyte("file1", "y")
-  >     repo.commit(text="y", user="test", date=(0, 0))
-  >     print("POST: len(repo): %d" % len(repo))
+  >     replacebyte(b"file1", b"x")
+  >     repo.commit(text=b"x", user=b"test", date=(0, 0))
+  >     replacebyte(b"file1", b"y")
+  >     repo.commit(text=b"y", user=b"test", date=(0, 0))
+  >     repo.ui.status(b"POST: len(repo): %d\n" % len(repo))
   > finally:
   >     lock.release()
   >     wlock.release()

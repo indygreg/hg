@@ -377,7 +377,7 @@ class hgweb(object):
         # translate user-visible url structure to internal structure
 
         args = query.split('/', 2)
-        if r'cmd' not in req.form and args and args[0]:
+        if 'cmd' not in req.form and args and args[0]:
             cmd = args.pop(0)
             style = cmd.rfind('-')
             if style != -1:
@@ -386,7 +386,7 @@ class hgweb(object):
 
             # avoid accepting e.g. style parameter as command
             if util.safehasattr(webcommands, cmd):
-                req.form[r'cmd'] = [cmd]
+                req.form['cmd'] = [cmd]
 
             if cmd == 'static':
                 req.form['file'] = ['/'.join(args)]
@@ -409,7 +409,7 @@ class hgweb(object):
                         req.form['node'] = [fn[:-len(ext)]]
                         req.form['type'] = [type_]
         else:
-            cmd = pycompat.sysbytes(req.form.get(r'cmd', [r''])[0])
+            cmd = req.form.get('cmd', [''])[0]
 
         # process the web interface request
 
@@ -423,8 +423,8 @@ class hgweb(object):
                 self.check_perm(rctx, req, None)
 
             if cmd == '':
-                req.form[r'cmd'] = [tmpl.cache['default']]
-                cmd = req.form[r'cmd'][0]
+                req.form['cmd'] = [tmpl.cache['default']]
+                cmd = req.form['cmd'][0]
 
             # Don't enable caching if using a CSP nonce because then it wouldn't
             # be a nonce.
@@ -433,7 +433,7 @@ class hgweb(object):
             if cmd not in webcommands.__all__:
                 msg = 'no such method: %s' % cmd
                 raise ErrorResponse(HTTP_BAD_REQUEST, msg)
-            elif cmd == 'file' and r'raw' in req.form.get(r'style', []):
+            elif cmd == 'file' and 'raw' in req.form.get('style', []):
                 rctx.ctype = ctype
                 content = webcommands.rawfile(rctx, req, tmpl)
             else:

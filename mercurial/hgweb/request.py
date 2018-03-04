@@ -48,9 +48,11 @@ def normalize(form):
                 form[name] = value
             del form[k]
     # And strip the values
+    bytesform = {}
     for k, v in form.iteritems():
-        form[k] = [i.strip() for i in v]
-    return form
+        bytesform[pycompat.bytesurl(k)] = [
+            pycompat.bytesurl(i.strip()) for i in v]
+    return bytesform
 
 class wsgirequest(object):
     """Higher-level API for a WSGI request.

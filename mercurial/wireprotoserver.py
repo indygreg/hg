@@ -159,10 +159,10 @@ def parsehttprequest(repo, req, query):
     # HTTP version 1 wire protocol requests are denoted by a "cmd" query
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
-    if r'cmd' not in req.form:
+    if 'cmd' not in req.form:
         return None
 
-    cmd = pycompat.sysbytes(req.form[r'cmd'][0])
+    cmd = req.form['cmd'][0]
 
     # The "cmd" request parameter is used by both the wire protocol and hgweb.
     # While not all wire protocol commands are available for all transports,

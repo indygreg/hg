@@ -106,7 +106,7 @@ def _takequicksample(dag, nodes, size):
     :nodes: set of nodes to discover
     :size: the maximum size of the sample"""
     sample = dag.headsetofconnecteds(nodes)
-    if size <= len(sample):
+    if len(sample) >= size:
         return _limitsample(sample, size)
     _updatesample(dag, None, sample, quicksamplesize=size)
     return sample

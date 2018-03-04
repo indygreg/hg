@@ -162,9 +162,11 @@ class tarit(object):
                                                   zlib.Z_BEST_COMPRESSION,
                                                   fileobj, timestamp=mtime)
                 self.fileobj = gzfileobj
-                return tarfile.TarFile.taropen(name, mode, gzfileobj)
+                return tarfile.TarFile.taropen(
+                    name, pycompat.sysstr(mode), gzfileobj)
             else:
-                return tarfile.open(name, mode + kind, fileobj)
+                return tarfile.open(
+                    name, pycompat.sysstr(mode + kind), fileobj)
 
         if isinstance(dest, str):
             self.z = taropen('w:', name=dest)

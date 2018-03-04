@@ -158,7 +158,8 @@ class tarit(object):
                 mode = mode[0:1]
                 if not fileobj:
                     fileobj = open(name, mode + 'b')
-                gzfileobj = self.GzipFileWithTime(name, mode + 'b',
+                gzfileobj = self.GzipFileWithTime(name,
+                                                  pycompat.sysstr(mode + 'b'),
                                                   zlib.Z_BEST_COMPRESSION,
                                                   fileobj, timestamp=mtime)
                 self.fileobj = gzfileobj

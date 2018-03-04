@@ -3097,7 +3097,7 @@ def checksafessh(path):
     path = urlreq.unquote(path)
     if path.startswith('ssh://-') or path.startswith('svn+ssh://-'):
         raise error.Abort(_('potentially unsafe url: %r') %
-                          (path,))
+                          (pycompat.bytestr(path),))
 
 def hidepassword(u):
     '''hide user credential in a url string'''

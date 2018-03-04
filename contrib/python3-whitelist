@@ -25,6 +25,7 @@ test-branch-option.t
 test-branch-tag-confict.t
 test-branches.t
 test-bundle-phases.t
+test-bundle-type.t
 test-bundle-vs-outgoing.t
 test-bundle2-multiple-changegroups.t
 test-cappedreader.py
@@ -59,6 +60,7 @@ test-convert-hg-sink.t
 test-convert-hg-source.t
 test-convert-hg-startrev.t
 test-copy-move-merge.t
+test-copy.t
 test-copytrace-heuristics.t
 test-debugbuilddag.t
 test-debugbundle.t
@@ -85,6 +87,7 @@ test-empty-dir.t
 test-empty-file.t
 test-empty-group.t
 test-empty.t
+test-encode.t
 test-encoding-func.py
 test-encoding.t
 test-eol-add.t
@@ -151,6 +154,7 @@ test-http-branchmap.t
 test-http-bundle1.t
 test-http-clone-r.t
 test-identify.t
+test-import-unknown.t
 test-imports-checker.t
 test-inherit-mode.t
 test-issue1089.t
@@ -228,9 +232,11 @@ test-narrow-clone-nonlinear.t
 test-narrow-clone.t
 test-narrow-commit.t
 test-narrow-copies.t
+test-narrow-debugcommands.t
 test-narrow-debugrebuilddirstate.t
 test-narrow-exchange-merges.t
 test-narrow-exchange.t
+test-narrow-expanddirstate.t
 test-narrow-merge.t
 test-narrow-patch.t
 test-narrow-patterns.t
@@ -238,6 +244,7 @@ test-narrow-pull.t
 test-narrow-rebase.t
 test-narrow-shallow-merges.t
 test-narrow-shallow.t
+test-narrow-strip.t
 test-narrow-update.t
 test-nested-repo.t
 test-newbranch.t
@@ -355,7 +362,9 @@ test-status-rev.t
 test-status-terse.t
 test-strip-cross.t
 test-strip.t
+test-subrepo.t
 test-symlinks.t
+test-treemanifest.t
 test-unamend.t
 test-uncommit.t
 test-unified-test.t
@@ -366,6 +375,7 @@ test-update-dest.t
 test-update-issue1456.t
 test-update-names.t
 test-update-reverse.t
+test-upgrade-repo.t
 test-url-rev.t
 test-username-newline.t
 test-verify.t

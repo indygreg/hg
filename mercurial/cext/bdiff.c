@@ -103,8 +103,8 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 	}
 	/* we can almost add: if (li == lmax) lcommon = li; */
 
-	an = bdiff_splitlines(ba.buf + lcommon, la - lcommon, &al);
-	bn = bdiff_splitlines(bb.buf + lcommon, lb - lcommon, &bl);
+	an = bdiff_splitlines((char *)ba.buf + lcommon, la - lcommon, &al);
+	bn = bdiff_splitlines((char *)bb.buf + lcommon, lb - lcommon, &bl);
 	if (!al || !bl) {
 		PyErr_NoMemory();
 		goto cleanup;

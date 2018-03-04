@@ -217,6 +217,7 @@ test-merge-revert.t
 test-merge-revert2.t
 test-merge-subrepos.t
 test-merge-symlinks.t
+test-merge-tools.t
 test-merge-types.t
 test-merge1.t
 test-merge10.t

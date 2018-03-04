@@ -219,7 +219,7 @@ Invalid pattern in file name:
   $ hg export -o '%m{' tip
   hg: parse error at 3: unterminated template expansion
   (%m{
-     ^ here)
+      ^ here)
   [255]
   $ hg export -o '%\' tip
   abort: invalid format spec '%\' in output filename

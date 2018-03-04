@@ -145,7 +145,7 @@ def tokenize(program, start, end, term=None):
             yield ('symbol', sym, s)
             pos -= 1
         elif c == term:
-            yield ('end', None, pos + 1)
+            yield ('end', None, pos)
             return
         else:
             raise error.ParseError(_("syntax error"), pos)
@@ -237,9 +237,10 @@ def _scantemplate(tmpl, start, stop, quote='', raw=False):
                 return
 
             parseres, pos = p.parse(tokenize(tmpl, n + 1, stop, '}'))
-            if not tmpl.endswith('}', n + 1, pos):
+            if not tmpl.startswith('}', pos):
                 raise error.ParseError(_("invalid token"), pos)
             yield ('template', parseres, n)
+            pos += 1
 
         if quote:
             raise error.ParseError(_("unterminated string"), start)
@@ -253,9 +254,10 @@ def _scantemplate(tmpl, start, stop, quote='', raw=False):
             tmpl = tmpl.replace('\n', br'\n')
             # We want the caret to point to the place in the template that
             # failed to parse, but in a hint we get a open paren at the
-            # start. Therefore, we print "loc" spaces (instead of "loc - 1")
+            # start. Therefore, we print "loc + 1" spaces (instead of "loc")
             # to line up the caret with the location of the error.
-            inst.hint = tmpl + '\n' + ' ' * (loc + offset) + '^ ' + _('here')
+            inst.hint = (tmpl + '\n'
+                         + ' ' * (loc + 1 + offset) + '^ ' + _('here'))
         raise
     yield ('end', None, pos)
 

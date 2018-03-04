@@ -543,16 +543,14 @@ def parse(spec, lookup=None):
         return _parsewith(spec, lookup=lookup)
     except error.ParseError as inst:
         if len(inst.args) > 1:  # has location
-            # Add 1 to location because unlike templates, revset parse errors
-            # point to the char where the error happened, not the char after.
-            loc = inst.args[1] + 1
+            loc = inst.args[1]
             # Remove newlines -- spaces are equivalent whitespace.
             spec = spec.replace('\n', ' ')
             # We want the caret to point to the place in the template that
             # failed to parse, but in a hint we get a open paren at the
             # start. Therefore, we print "loc + 1" spaces (instead of "loc")
             # to line up the caret with the location of the error.
-            inst.hint = spec + '\n' + ' ' * loc + '^ ' + _('here')
+            inst.hint = spec + '\n' + ' ' * (loc + 1) + '^ ' + _('here')
         raise
 
 def _quote(s):

@@ -2293,7 +2293,7 @@ Templater parse errors:
 
 simple error
   $ hg log -r . -T '{shortest(node}'
-  hg: parse error at 15: unexpected token: end
+  hg: parse error at 14: unexpected token: end
   ({shortest(node}
                  ^ here)
   [255]
@@ -2303,7 +2303,7 @@ multi-line template with error
   > line2
   > {shortest(node}
   > line4\nline5'
-  hg: parse error at 28: unexpected token: end
+  hg: parse error at 27: unexpected token: end
   (line 1\nline2\n{shortest(node}\nline4\nline5
                                 ^ here)
   [255]

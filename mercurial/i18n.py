@@ -51,7 +51,7 @@ _ugettext = None
 def setdatapath(datapath):
     datapath = pycompat.fsdecode(datapath)
     localedir = os.path.join(datapath, pycompat.sysstr('locale'))
-    t = gettextmod.translation('hg', localedir, _languages, fallback=True)
+    t = gettextmod.translation(r'hg', localedir, _languages, fallback=True)
     global _ugettext
     try:
         _ugettext = t.ugettext

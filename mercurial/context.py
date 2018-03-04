@@ -433,7 +433,7 @@ class changectx(basectx):
                 self._rev = changeid
                 return
             if not pycompat.ispy3 and isinstance(changeid, long):
-                changeid = str(changeid)
+                changeid = "%d" % changeid
             if changeid == 'null':
                 self._node = nullid
                 self._rev = nullrev

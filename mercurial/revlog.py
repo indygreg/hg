@@ -1367,7 +1367,7 @@ class revlog(object):
         try:
             # str(rev)
             rev = int(id)
-            if str(rev) != id:
+            if "%d" % rev != id:
                 raise ValueError
             if rev < 0:
                 rev = len(self) + rev

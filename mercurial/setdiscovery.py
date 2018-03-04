@@ -175,7 +175,7 @@ def findcommonheads(ui, local, remote,
         ui.debug("all remote heads known locally\n")
         return (srvheadhashes, False, srvheadhashes,)
 
-    if sample and len(ownheads) <= initialsamplesize and all(yesno):
+    if len(sample) == len(ownheads) and all(yesno):
         ui.note(_("all local heads known remotely\n"))
         ownheadhashes = dag.externalizeall(ownheads)
         return (ownheadhashes, True, srvheadhashes,)

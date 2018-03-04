@@ -73,8 +73,6 @@
 
 from __future__ import absolute_import
 
-import operator
-
 from .i18n import _
 from .node import (
     hex,
@@ -164,7 +162,7 @@ def writemergedtags(fcd, mergedtags):
     # before writing them
     # the position is calculated to ensure that the diff of the merged .hgtags
     # file to the first parent's .hgtags file is as small as possible
-    finaltags.sort(key=operator.itemgetter(0))
+    finaltags.sort(key=lambda x: -1 if x[0] is None else x[0])
 
     # finally we can join the sorted groups to get the final contents of the
     # merged .hgtags file, and then write it to disk

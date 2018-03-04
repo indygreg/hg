@@ -347,9 +347,7 @@ class rebaseruntime(object):
 
         if isabort:
             backup = backup and self.backupf
-            return self._abort(self.repo, self.originalwd, self.destmap,
-                               self.state, activebookmark=self.activebookmark,
-                               backup=backup, suppwarns=suppwarns)
+            return self._abort(backup=backup, suppwarns=suppwarns)
 
     def _preparenewrebase(self, destmap):
         if not destmap:
@@ -653,20 +651,17 @@ class rebaseruntime(object):
             repo['.'].node() == repo._bookmarks[self.activebookmark]):
                 bookmarks.activate(repo, self.activebookmark)
 
-    def _abort(self, repo, originalwd, destmap, state, activebookmark=None,
-        backup=True, suppwarns=False):
-        '''Restore the repository to its original state.  Additional args:
+    def _abort(self, backup=True, suppwarns=False):
+        '''Restore the repository to its original state.'''
 
-        activebookmark: the name of the bookmark that should be active after the
-            restore'''
-
+        repo = self.repo
         try:
             # If the first commits in the rebased set get skipped during the
             # rebase, their values within the state mapping will be the dest
             # rev id. The rebased list must must not contain the dest rev
             # (issue4896)
-            rebased = [s for r, s in state.items()
-                       if s >= 0 and s != r and s != destmap[r]]
+            rebased = [s for r, s in self.state.items()
+                       if s >= 0 and s != r and s != self.destmap[r]]
             immutable = [d for d in rebased if not repo[d].mutable()]
             cleanup = True
             if immutable:
@@ -690,21 +685,21 @@ class rebaseruntime(object):
                         c.node() for c in repo.set('roots(%ld)', rebased)]
 
                 updateifonnodes = set(rebased)
-                updateifonnodes.update(destmap.values())
-                updateifonnodes.add(originalwd)
+                updateifonnodes.update(self.destmap.values())
+                updateifonnodes.add(self.originalwd)
                 shouldupdate = repo['.'].rev() in updateifonnodes
 
                 # Update away from the rebase if necessary
-                if shouldupdate or needupdate(repo, state):
-                    mergemod.update(repo, originalwd, branchmerge=False,
+                if shouldupdate or needupdate(repo, self.state):
+                    mergemod.update(repo, self.originalwd, branchmerge=False,
                                     force=True)
 
                 # Strip from the first rebased revision
                 if rebased:
                     repair.strip(repo.ui, repo, strippoints, backup=backup)
 
-            if activebookmark and activebookmark in repo._bookmarks:
-                bookmarks.activate(repo, activebookmark)
+            if self.activebookmark and self.activebookmark in repo._bookmarks:
+                bookmarks.activate(repo, self.activebookmark)
 
         finally:
             clearstatus(repo)

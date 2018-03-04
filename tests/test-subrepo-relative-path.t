@@ -96,7 +96,7 @@ share the same subrepo.
   adding manifests
   adding file changes
   added 2 changesets with 3 changes to 3 files
-  new changesets 8d6a2f1e993b:c6d0e6ebd1c9
+  new changesets 8d6a2f1e993b:* (glob)
   searching for changes
   no changes found
   updating working directory

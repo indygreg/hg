@@ -3782,7 +3782,7 @@ def paths(ui, repo, search=None, **opts):
     if fm.isplain():
         hidepassword = util.hidepassword
     else:
-        hidepassword = str
+        hidepassword = bytes
     if ui.quiet:
         namefmt = '%s\n'
     else:

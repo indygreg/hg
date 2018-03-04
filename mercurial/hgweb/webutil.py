@@ -38,9 +38,9 @@ from .. import (
 )
 
 def up(p):
-    if p[0] != "/":
+    if p[0:1] != "/":
         p = "/" + p
-    if p[-1] == "/":
+    if p[-1:] == "/":
         p = p[:-1]
     up = os.path.dirname(p)
     if up == "/":

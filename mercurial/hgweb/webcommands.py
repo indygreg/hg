@@ -495,7 +495,7 @@ def manifest(web, req, tmpl):
     dirs = {}
     parity = paritygen(web.stripecount)
 
-    if path and path[-1] != "/":
+    if path and path[-1:] != "/":
         path += "/"
     l = len(path)
     abspath = "/" + path

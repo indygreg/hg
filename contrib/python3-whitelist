@@ -130,6 +130,8 @@ test-graft.t
 test-hghave.t
 test-hgignore.t
 test-hgk.t
+test-hgweb-bundle.t
+test-hgweb-descend-empties.t
 test-hgweb-removed.t
 test-histedit-arguments.t
 test-histedit-base.t

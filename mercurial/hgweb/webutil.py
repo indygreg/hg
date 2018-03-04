@@ -516,16 +516,18 @@ def compare(tmpl, context, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''
 
     def compline(type, leftlineno, leftline, rightlineno, rightline):
-        lineid = leftlineno and ("l%s" % leftlineno) or ''
-        lineid += rightlineno and ("r%s" % rightlineno) or ''
+        lineid = leftlineno and ("l%d" % leftlineno) or ''
+        lineid += rightlineno and ("r%d" % rightlineno) or ''
+        llno = '%d' % leftlineno if leftlineno else ''
+        rlno = '%d' % rightlineno if rightlineno else ''
         return tmpl('comparisonline',
                     type=type,
                     lineid=lineid,
                     leftlineno=leftlineno,
-                    leftlinenumber="% 6s" % (leftlineno or ''),
+                    leftlinenumber="% 6s" % llno,
                     leftline=leftline or '',
                     rightlineno=rightlineno,
-                    rightlinenumber="% 6s" % (rightlineno or ''),
+                    rightlinenumber="% 6s" % rlno,
                     rightline=rightline or '')
 
     def getblock(opcodes):

@@ -901,9 +901,12 @@ Annotate with orphaned CR (issue5798)
   $ hg init repo-cr
   $ cd repo-cr
 
-  $ substcr() {
-  > sed 's/\r/[CR]/g'
-  > }
+  $ cat <<'EOF' >> "$TESTTMP/substcr.py"
+  > import sys
+  > stdin = getattr(sys.stdin, 'buffer', sys.stdin)
+  > stdout = getattr(sys.stdout, 'buffer', sys.stdout)
+  > stdout.write(stdin.read().replace(b'\r', b'[CR]'))
+  > EOF
 
   >>> with open('a', 'wb') as f:
   ...     f.write(b'0a\r0b\r\n0c\r0d\r\n0e\n0f\n0g')
@@ -912,13 +915,13 @@ Annotate with orphaned CR (issue5798)
   ...     f.write(b'0a\r0b\r\n1c\r1d\r\n0e\n1f\n0g')
   $ hg ci -m1
 
-  $ hg annotate -r0 a | substcr
+  $ hg annotate -r0 a | $PYTHON "$TESTTMP/substcr.py"
   0: 0a[CR]0b[CR]
   0: 0c[CR]0d[CR]
   0: 0e
   0: 0f
   0: 0g
-  $ hg annotate -r1 a | substcr
+  $ hg annotate -r1 a | $PYTHON "$TESTTMP/substcr.py"
   0: 0a[CR]0b[CR]
   1: 1c[CR]1d[CR]
   0: 0e

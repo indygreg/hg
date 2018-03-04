@@ -370,8 +370,8 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         if util.safehasattr(entry[0], 'definition'):  # aliased command
             source = entry[0].source
             if entry[0].definition.startswith('!'):  # shell alias
-                doc = (_('shell alias for::\n\n    %s\n\ndefined by: %s\n') %
-                       (entry[0].definition[1:], source))
+                doc = (_('shell alias for: %s\n\n%s\n\ndefined by: %s\n') %
+                       (entry[0].definition[1:], doc, source))
             else:
                 doc = (_('alias for: hg %s\n\n%s\n\ndefined by: %s\n') %
                        (entry[0].definition, doc, source))

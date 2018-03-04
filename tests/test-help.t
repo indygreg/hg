@@ -777,9 +777,9 @@ Test for aliases
   $ hg help shellalias
   hg shellalias
   
-  shell alias for:
+  shell alias for: echo hi
   
-    echo hi
+  (no help text available)
   
   defined by: helpext
   

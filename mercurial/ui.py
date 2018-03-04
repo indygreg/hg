@@ -739,11 +739,7 @@ class ui(object):
     def configitems(self, section, untrusted=False, ignoresub=False):
         items = self._data(untrusted).items(section)
         if ignoresub:
-            newitems = {}
-            for k, v in items:
-                if ':' not in k:
-                    newitems[k] = v
-            items = list(newitems.iteritems())
+            items = [i for i in items if ':' not in i[0]]
         if self.debugflag and not untrusted and self._reportuntrusted:
             for k, v in self._ucfg.items(section):
                 if self._tcfg.get(section, k) != v:

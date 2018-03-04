@@ -427,7 +427,7 @@ def extsetup(ui):
                 continue
 
             # Same for aliases.
-            if ui.config('alias', name):
+            if ui.config('alias', name, None):
                 continue
 
             ui.setconfig('alias', name, 'show %s' % view, source='show')

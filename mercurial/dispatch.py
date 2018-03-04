@@ -450,7 +450,7 @@ def aliasinterpolate(name, args, cmd):
     return r.sub(lambda x: replacemap[x.group()], cmd)
 
 class cmdalias(object):
-    def __init__(self, name, definition, cmdtable, source):
+    def __init__(self, ui, name, definition, cmdtable, source):
         self.name = self.cmd = name
         self.cmdname = ''
         self.definition = definition
@@ -477,6 +477,7 @@ class cmdalias(object):
             return
 
         if self.definition.startswith('!'):
+            shdef = self.definition[1:]
             self.shell = True
             def fn(ui, *args):
                 env = {'HG_ARGS': ' '.join((self.name,) + args)}
@@ -490,11 +491,12 @@ class cmdalias(object):
                                  "of %i variable in alias '%s' definition.\n"
                                  % (int(m.groups()[0]), self.name))
                         return ''
-                cmd = re.sub(br'\$(\d+|\$)', _checkvar, self.definition[1:])
+                cmd = re.sub(br'\$(\d+|\$)', _checkvar, shdef)
                 cmd = aliasinterpolate(self.name, args, cmd)
                 return ui.system(cmd, environ=env,
                                  blockedtag='alias_%s' % self.name)
             self.fn = fn
+            self._populatehelp(ui, name, shdef, self.fn)
             return
 
         try:
@@ -516,14 +518,12 @@ class cmdalias(object):
         try:
             tableentry = cmdutil.findcmd(cmd, cmdtable, False)[1]
             if len(tableentry) > 2:
-                self.fn, self.opts, self.help = tableentry
+                self.fn, self.opts, cmdhelp = tableentry
             else:
                 self.fn, self.opts = tableentry
+                cmdhelp = None
 
-            if self.help.startswith("hg " + cmd):
-                # drop prefix in old-style help lines so hg shows the alias
-                self.help = self.help[4 + len(cmd):]
-            self.__doc__ = self.fn.__doc__
+            self._populatehelp(ui, name, cmd, self.fn, cmdhelp)
 
         except error.UnknownCommand:
             self.badalias = (_("alias '%s' resolves to unknown command '%s'")
@@ -532,6 +532,14 @@ class cmdalias(object):
         except error.AmbiguousCommand:
             self.badalias = (_("alias '%s' resolves to ambiguous command '%s'")
                              % (self.name, cmd))
+
+    def _populatehelp(self, ui, name, cmd, fn, defaulthelp=None):
+        self.help = ui.config('alias', '%s:help' % name, defaulthelp or '')
+        if self.help and self.help.startswith("hg " + cmd):
+            # drop prefix in old-style help lines so hg shows the alias
+            self.help = self.help[4 + len(cmd):]
+
+        self.__doc__ = ui.config('alias', '%s:doc' % name, fn.__doc__)
 
     @property
     def args(self):
@@ -577,7 +585,8 @@ class cmdalias(object):
 class lazyaliasentry(object):
     """like a typical command entry (func, opts, help), but is lazy"""
 
-    def __init__(self, name, definition, cmdtable, source):
+    def __init__(self, ui, name, definition, cmdtable, source):
+        self.ui = ui
         self.name = name
         self.definition = definition
         self.cmdtable = cmdtable.copy()
@@ -585,7 +594,8 @@ class lazyaliasentry(object):
 
     @util.propertycache
     def _aliasdef(self):
-        return cmdalias(self.name, self.definition, self.cmdtable, self.source)
+        return cmdalias(self.ui, self.name, self.definition, self.cmdtable,
+                        self.source)
 
     def __getitem__(self, n):
         aliasdef = self._aliasdef
@@ -609,7 +619,7 @@ def addaliases(ui, cmdtable):
     # aliases are processed after extensions have been loaded, so they
     # may use extension commands. Aliases can also use other alias definitions,
     # but only if they have been defined prior to the current definition.
-    for alias, definition in ui.configitems('alias'):
+    for alias, definition in ui.configitems('alias', ignoresub=True):
         try:
             if cmdtable[alias].definition == definition:
                 continue
@@ -618,7 +628,7 @@ def addaliases(ui, cmdtable):
             pass
 
         source = ui.configsource('alias', alias)
-        entry = lazyaliasentry(alias, definition, cmdtable, source)
+        entry = lazyaliasentry(ui, alias, definition, cmdtable, source)
         cmdtable[alias] = entry
 
 def _parse(ui, args):

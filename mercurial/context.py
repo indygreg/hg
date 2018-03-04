@@ -53,7 +53,7 @@ from .utils import dateutil
 
 propertycache = util.propertycache
 
-nonascii = re.compile(r'[^\x21-\x7f]').search
+nonascii = re.compile(br'[^\x21-\x7f]').search
 
 class basectx(object):
     """A basectx object represents the common logic for its children:

@@ -48,6 +48,8 @@ test-commit-amend.t
 test-commit-unresolved.t
 test-commit.t
 test-completion.t
+test-config-env.py
+test-config.t
 test-conflict.t
 test-confused-revert.t
 test-contrib-check-code.t

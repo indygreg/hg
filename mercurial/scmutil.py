@@ -189,12 +189,12 @@ def callcatch(ui, func):
         msg = inst.args[1]
         if isinstance(msg, type(u'')):
             msg = pycompat.sysbytes(msg)
-        elif not isinstance(inst.args[1], bytes):
-            ui.warn(" %r\n" % (inst.args[1],))
-        elif not inst.args[1]:
+        if not isinstance(msg, bytes):
+            ui.warn(" %r\n" % (msg,))
+        elif not msg:
             ui.warn(_(" empty string\n"))
         else:
-            ui.warn("\n%r\n" % util.ellipsis(inst.args[1]))
+            ui.warn("\n%r\n" % util.ellipsis(msg))
     except error.CensoredNodeError as inst:
         ui.warn(_("abort: file censored %s!\n") % inst)
     except error.RevlogError as inst:

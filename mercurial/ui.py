@@ -735,7 +735,7 @@ class ui(object):
             for k, v in items:
                 if ':' not in k:
                     newitems[k] = v
-            items = newitems.items()
+            items = list(newitems.iteritems())
         if self.debugflag and not untrusted and self._reportuntrusted:
             for k, v in self._ucfg.items(section):
                 if self._tcfg.get(section, k) != v:

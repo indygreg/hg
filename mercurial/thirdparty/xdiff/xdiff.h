@@ -32,17 +32,6 @@ extern "C" {
 /* xpparm_t.flags */
 #define XDF_NEED_MINIMAL (1 << 0)
 
-#define XDF_IGNORE_WHITESPACE (1 << 1)
-#define XDF_IGNORE_WHITESPACE_CHANGE (1 << 2)
-#define XDF_IGNORE_WHITESPACE_AT_EOL (1 << 3)
-#define XDF_IGNORE_CR_AT_EOL (1 << 4)
-#define XDF_WHITESPACE_FLAGS (XDF_IGNORE_WHITESPACE | \
-			      XDF_IGNORE_WHITESPACE_CHANGE | \
-			      XDF_IGNORE_WHITESPACE_AT_EOL | \
-			      XDF_IGNORE_CR_AT_EOL)
-
-#define XDF_IGNORE_BLANK_LINES (1 << 7)
-
 #define XDF_INDENT_HEURISTIC (1 << 23)
 
 /* xdemitconf_t.flags */

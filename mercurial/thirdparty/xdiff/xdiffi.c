@@ -1041,27 +1041,6 @@ static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 	return 0;
 }
 
-static void xdl_mark_ignorable(xdchange_t *xscr, xdfenv_t *xe, long flags)
-{
-	xdchange_t *xch;
-
-	for (xch = xscr; xch; xch = xch->next) {
-		int ignore = 1;
-		xrecord_t **rec;
-		long i;
-
-		rec = &xe->xdf1.recs[xch->i1];
-		for (i = 0; i < xch->chg1 && ignore; i++)
-			ignore = xdl_blankline(rec[i]->ptr, rec[i]->size, flags);
-
-		rec = &xe->xdf2.recs[xch->i2];
-		for (i = 0; i < xch->chg2 && ignore; i++)
-			ignore = xdl_blankline(rec[i]->ptr, rec[i]->size, flags);
-
-		xch->ignore = ignore;
-	}
-}
-
 int xdl_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 	     xdemitconf_t const *xecfg, xdemitcb_t *ecb) {
 	xdchange_t *xscr;
@@ -1080,8 +1059,6 @@ int xdl_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 		return -1;
 	}
 
-	if (xpp->flags & XDF_IGNORE_BLANK_LINES)
-		xdl_mark_ignorable(xscr, &xe, xpp->flags);
 	if (ef(&xe, xscr, ecb, xecfg) < 0) {
 		xdl_free_script(xscr);
 		xdl_free_env(&xe);

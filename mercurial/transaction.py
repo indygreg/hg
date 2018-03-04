@@ -18,6 +18,7 @@ import errno
 from .i18n import _
 from . import (
     error,
+    pycompat,
     util,
 )
 
@@ -604,7 +605,8 @@ def rollback(opener, vfsmap, file, report, checkambigfiles=None):
             f, o = l.split('\0')
             entries.append((f, int(o), None))
         except ValueError:
-            report(_("couldn't read journal entry %r!\n") % l)
+            report(
+                _("couldn't read journal entry %r!\n") % pycompat.bytestr(l))
 
     backupjournal = "%s.backupfiles" % file
     if opener.exists(backupjournal):

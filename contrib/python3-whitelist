@@ -347,6 +347,7 @@ test-revlog-mmapindex.t
 test-revlog-packentry.t
 test-revset-dirstate-parents.t
 test-revset-outgoing.t
+test-rollback.t
 test-run-tests.py
 test-schemes.t
 test-serve.t

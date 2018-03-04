@@ -48,6 +48,7 @@ test-command-template.t
 test-commit-amend.t
 test-commit-unresolved.t
 test-commit.t
+test-committer.t
 test-completion.t
 test-config-env.py
 test-config.t

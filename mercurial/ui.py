@@ -800,7 +800,8 @@ class ui(object):
             user = self.prompt(_("enter a commit username:"), default=None)
         if user is None and not self.interactive():
             try:
-                user = '%s@%s' % (util.getuser(), socket.getfqdn())
+                user = '%s@%s' % (util.getuser(),
+                                  encoding.strtolocal(socket.getfqdn()))
                 self.warn(_("no username found, using '%s' instead\n") % user)
             except KeyError:
                 pass

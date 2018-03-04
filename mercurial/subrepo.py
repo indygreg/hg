@@ -1123,7 +1123,7 @@ class svnsubrepo(abstractsubrepo):
         doc = xml.dom.minidom.parseString(output)
         paths = []
         for e in doc.getElementsByTagName('entry'):
-            kind = str(e.getAttribute('kind'))
+            kind = pycompat.bytestr(e.getAttribute('kind'))
             if kind != 'file':
                 continue
             name = ''.join(c.data for c

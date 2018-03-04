@@ -1197,7 +1197,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
         bcompression, cgversion, params = exchange.parsebundlespec(
                 repo, bundletype, strict=False)
     except error.UnsupportedBundleSpecification as e:
-        raise error.Abort(str(e),
+        raise error.Abort(pycompat.bytestr(e),
                           hint=_("see 'hg help bundlespec' for supported "
                                  "values for --type"))
 

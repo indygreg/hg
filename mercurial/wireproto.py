@@ -1043,7 +1043,7 @@ def unbundle(repo, proto, heads):
                         util.stderr.write("(%s)\n" % exc.hint)
                     return pushres(0, output.getvalue() if output else '')
                 except error.PushRaced:
-                    return pusherr(str(exc),
+                    return pusherr(pycompat.bytestr(exc),
                                    output.getvalue() if output else '')
 
             bundler = bundle2.bundle20(repo.ui)

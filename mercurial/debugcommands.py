@@ -1811,7 +1811,7 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
     if keyinfo:
         key, old, new = keyinfo
         r = target.pushkey(namespace, key, old, new)
-        ui.status(str(r) + '\n')
+        ui.status(pycompat.bytestr(r) + '\n')
         return not r
     else:
         for k, v in sorted(target.listkeys(namespace).iteritems()):

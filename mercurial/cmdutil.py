@@ -362,7 +362,7 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
                     ui.debug(fp.getvalue())
                     patch.internalpatch(ui, repo, fp, 1, eolmode=None)
                 except error.PatchError as err:
-                    raise error.Abort(str(err))
+                    raise error.Abort(pycompat.bytestr(err))
             del fp
 
             # 4. We prepared working directory according to filtered
@@ -1432,7 +1432,7 @@ def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
                             files=files, eolmode=None, similarity=sim / 100.0)
             except error.PatchError as e:
                 if not partial:
-                    raise error.Abort(str(e))
+                    raise error.Abort(pycompat.bytestr(e))
                 if partial:
                     rejects = True
 
@@ -3043,7 +3043,7 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
             try:
                 patch.internalpatch(repo.ui, repo, fp, 1, eolmode=None)
             except error.PatchError as err:
-                raise error.Abort(str(err))
+                raise error.Abort(pycompat.bytestr(err))
         del fp
     else:
         for f in actions['revert'][0]:

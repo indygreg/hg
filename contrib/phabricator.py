@@ -99,6 +99,17 @@ def urlencodenested(params):
     process('', params)
     return util.urlreq.urlencode(flatparams)
 
+def readlegacytoken(repo):
+    """Transitional support for old phabricator tokens.
+
+    Remove before the 4.6 release.
+    """
+    token = repo.ui.config('phabricator', 'token')
+    if token:
+        repo.ui.warn(_('phabricator.token is deprecated - please '
+                       'migrate to the phabricator.auth section.\n'))
+    return token
+
 def readurltoken(repo):
     """return conduit url, token and make sure they exist
 
@@ -128,8 +139,10 @@ def readurltoken(repo):
             break
 
     if not token:
-        raise error.Abort(_('Can\'t find conduit token associated to %s')
-                          % (url,))
+        token = readlegacytoken(repo)
+        if not token:
+            raise error.Abort(_('Can\'t find conduit token associated to %s')
+                              % (url,))
 
     return url, token
 

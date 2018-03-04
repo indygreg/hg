@@ -16,6 +16,39 @@ from . import (
     stack
 )
 
+def orphanpossibledestination(repo, rev):
+    """Return all changesets that may be a new parent for orphan `rev`.
+
+    This function works fine on non-orphan revisions, it's just silly
+    because there's no destination implied by obsolete markers, so
+    it'll return nothing.
+    """
+    tonode = repo.changelog.node
+    parents = repo.changelog.parentrevs
+    torev = repo.changelog.rev
+    dest = set()
+    tovisit = list(parents(rev))
+    while tovisit:
+        r = tovisit.pop()
+        succsets = obsutil.successorssets(repo, tonode(r))
+        if not succsets:
+            # if there are no successors for r, r was probably pruned
+            # and we should walk up to r's parents to try and find
+            # some successors.
+            tovisit.extend(parents(r))
+        else:
+            # We should probably pick only one destination from split
+            # (case where '1 < len(ss)'), This could be the currently
+            # tipmost, but the correct result is less clear when
+            # results of the split have been moved such that they
+            # reside on multiple branches.
+            for ss in succsets:
+                for n in ss:
+                    dr = torev(n)
+                    if dr != -1:
+                        dest.add(dr)
+    return dest
+
 def _destupdateobs(repo, clean):
     """decide of an update destination from obsolescence markers"""
     node = None

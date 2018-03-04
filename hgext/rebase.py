@@ -108,6 +108,25 @@ def _revsetdestrebase(repo, subset, x):
         sourceset = revset.getset(repo, smartset.fullreposet(repo), x)
     return subset & smartset.baseset([_destrebase(repo, sourceset)])
 
+@revsetpredicate('_destautoorphanrebase')
+def _revsetdestautoorphanrebase(repo, subset, x):
+    """automatic rebase destination for a single orphan revision"""
+    unfi = repo.unfiltered()
+    obsoleted = unfi.revs('obsolete()')
+
+    src = revset.getset(repo, subset, x).first()
+
+    # Empty src or already obsoleted - Do not return a destination
+    if not src or src in obsoleted:
+        return smartset.baseset()
+    dests = destutil.orphanpossibledestination(repo, src)
+    if len(dests) > 1:
+        raise error.Abort(
+            _("ambiguous automatic rebase: %r could end up on any of %r") % (
+                src, dests))
+    # We have zero or one destination, so we can just return here.
+    return smartset.baseset(dests)
+
 def _ctxdesc(ctx):
     """short description for a context"""
     desc = '%d:%s "%s"' % (ctx.rev(), ctx,
@@ -651,7 +670,10 @@ class rebaseruntime(object):
     ('i', 'interactive', False, _('(DEPRECATED)')),
     ('t', 'tool', '', _('specify merge tool')),
     ('c', 'continue', False, _('continue an interrupted rebase')),
-    ('a', 'abort', False, _('abort an interrupted rebase'))] +
+    ('a', 'abort', False, _('abort an interrupted rebase')),
+    ('', 'auto-orphans', '', _('automatically rebase orphan revisions '
+                               'in the specified revset (EXPERIMENTAL)')),
+     ] +
     cmdutil.formatteropts,
     _('[-s REV | -b REV] [-d REV] [OPTION]'))
 def rebase(ui, repo, **opts):
@@ -782,6 +804,15 @@ def rebase(ui, repo, **opts):
         # (Or if it is run within a transaction, since the restart logic can
         # fail the entire transaction.)
         inmemory = False
+
+    if opts.get('auto_orphans'):
+        for key in opts:
+            if key != 'auto_orphans' and opts.get(key):
+                raise error.Abort(_('--auto-orphans is incompatible with %s') %
+                                  ('--' + key))
+        userrevs = list(repo.revs(opts.get('auto_orphans')))
+        opts['rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
+        opts['dest'] = '_destautoorphanrebase(SRC)'
 
     if inmemory:
         try:

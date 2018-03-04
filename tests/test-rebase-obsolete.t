@@ -482,7 +482,34 @@ Test that rewriting leaving instability behind is allowed
   |/
   o  0:cd010b8cd998 A
   
+  $ cd ..
+  $ cp -R hidden stabilize
+  $ cd stabilize
+  $ hg rebase --auto-orphans '0::' -d 10
+  abort: --auto-orphans is incompatible with --dest
+  [255]
+  $ hg rebase --auto-orphans '0::'
+  rebasing 9:cf44d2f5a9f4 "D"
+  $ hg log -G
+  o  12:7e3935feaa68 D
+  |
+  o  11:0d8f238b634c C
+  |
+  o  10:7c6027df6a99 B
+  |
+  @  7:02de42196ebe H
+  |
+  | o  6:eea13746799a G
+  |/|
+  o |  5:24b6387c8c8c F
+  | |
+  | o  4:9520eea781bc E
+  |/
+  o  0:cd010b8cd998 A
+  
 
+  $ cd ../hidden
+  $ rm -r ../stabilize
 
 Test multiple root handling
 ------------------------------------

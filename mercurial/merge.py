@@ -65,6 +65,12 @@ MERGE_DRIVER_STATE_UNMARKED = b'u'
 MERGE_DRIVER_STATE_MARKED = b'm'
 MERGE_DRIVER_STATE_SUCCESS = b's'
 
+MERGE_RECORD_UNRESOLVED = b'u'
+MERGE_RECORD_RESOLVED = b'r'
+MERGE_RECORD_UNRESOLVED_PATH = b'pu'
+MERGE_RECORD_RESOLVED_PATH = b'pr'
+MERGE_RECORD_DRIVER_RESOLVED = b'd'
+
 class mergestate(object):
     '''track 3-way merge state of individual files
 
@@ -391,11 +397,12 @@ class mergestate(object):
         # to prevent older versions of Mercurial that do not support the feature
         # from loading them.
         for filename, v in self._state.iteritems():
-            if v[0] == 'd':
+            if v[0] == MERGE_RECORD_DRIVER_RESOLVED:
                 # Driver-resolved merge. These are stored in 'D' records.
                 records.append((RECORD_MERGE_DRIVER_MERGE,
                                 '\0'.join([filename] + v)))
-            elif v[0] in ('pu', 'pr'):
+            elif v[0] in (MERGE_RECORD_UNRESOLVED_PATH,
+                          MERGE_RECORD_RESOLVED_PATH):
                 # Path conflicts. These are stored in 'P' records.  The current
                 # resolution state ('pu' or 'pr') is stored within the record.
                 records.append((RECORD_PATH_CONFLICT,
@@ -467,7 +474,7 @@ class mergestate(object):
         else:
             hash = hex(hashlib.sha1(fcl.path()).digest())
             self._repo.vfs.write('merge/' + hash, fcl.data())
-        self._state[fd] = ['u', hash, fcl.path(),
+        self._state[fd] = [MERGE_RECORD_UNRESOLVED, hash, fcl.path(),
                            fca.path(), hex(fca.filenode()),
                            fco.path(), hex(fco.filenode()),
                            fcl.flags()]
@@ -480,7 +487,7 @@ class mergestate(object):
         frename: the filename the conflicting file was renamed to
         forigin: origin of the file ('l' or 'r' for local/remote)
         """
-        self._state[path] = ['pu', frename, forigin]
+        self._state[path] = [MERGE_RECORD_UNRESOLVED_PATH, frename, forigin]
         self._dirty = True
 
     def __contains__(self, dfile):
@@ -506,14 +513,15 @@ class mergestate(object):
         """Obtain the paths of unresolved files."""
 
         for f, entry in self._state.iteritems():
-            if entry[0] in ('u', 'pu'):
+            if entry[0] in (MERGE_RECORD_UNRESOLVED,
+                            MERGE_RECORD_UNRESOLVED_PATH):
                 yield f
 
     def driverresolved(self):
         """Obtain the paths of driver-resolved files."""
 
         for f, entry in self._state.items():
-            if entry[0] == 'd':
+            if entry[0] == MERGE_RECORD_DRIVER_RESOLVED:
                 yield f
 
     def extras(self, filename):
@@ -521,7 +529,8 @@ class mergestate(object):
 
     def _resolve(self, preresolve, dfile, wctx):
         """rerun merge process for file path `dfile`"""
-        if self[dfile] in 'rd':
+        if self[dfile] in (MERGE_RECORD_RESOLVED,
+                           MERGE_RECORD_DRIVER_RESOLVED):
             return True, 0
         stateentry = self._state[dfile]
         state, hash, lfile, afile, anode, ofile, onode, flags = stateentry
@@ -571,7 +580,7 @@ class mergestate(object):
             self._stateextras.pop(dfile, None)
             self._dirty = True
         elif not r:
-            self.mark(dfile, 'r')
+            self.mark(dfile, MERGE_RECORD_RESOLVED)
 
         if complete:
             action = None

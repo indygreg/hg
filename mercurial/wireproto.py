@@ -400,6 +400,13 @@ class wirepeer(repository.legacypeer):
 
         Returns an iterator of the raw responses from the server.
         """
+        ui = self.ui
+        if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
+            ui.debug('devel-peer-request: batched-content\n')
+            for op, args in req:
+                msg = 'devel-peer-request:    - %s (%d arguments)\n'
+                ui.debug(msg % (op, len(args)))
+
         rsp = self._callstream("batch", cmds=encodebatchcmds(req))
         chunk = rsp.read(1024)
         work = [chunk]

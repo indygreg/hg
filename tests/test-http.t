@@ -257,6 +257,9 @@ test http authentication
   http auth: user user, password ****
   devel-peer-request:   finished in *.???? seconds (200) (glob)
   query 1; heads
+  devel-peer-request: batched-content
+  devel-peer-request:    - heads (0 arguments)
+  devel-peer-request:    - known (1 arguments)
   sending batch command
   devel-peer-request: GET http://localhost:$HGPORT2/?cmd=batch
   devel-peer-request:   Vary X-HgArg-1,X-HgProto-1

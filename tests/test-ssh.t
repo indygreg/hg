@@ -501,6 +501,9 @@ debug output
   remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
   remote: 1 (sshv1 !)
   query 1; heads
+  devel-peer-request: batched-content
+  devel-peer-request:    - heads (0 arguments)
+  devel-peer-request:    - known (1 arguments)
   devel-peer-request: batch
   devel-peer-request:   cmds: 141 bytes
   sending batch command

@@ -1483,9 +1483,15 @@ class updateresult(object):
     removedcount = attr.ib()
     unresolvedcount = attr.ib()
 
+    def isempty(self):
+        return (not self.updatedcount and not self.mergedcount
+                and not self.removedcount and not self.unresolvedcount)
+
     # TODO remove container emulation once consumers switch to new API.
 
     def __getitem__(self, x):
+        util.nouideprecwarn('access merge.update() results by name instead of '
+                            'index', '4.6', 2)
         if x == 0:
             return self.updatedcount
         elif x == 1:
@@ -1498,6 +1504,8 @@ class updateresult(object):
             raise IndexError('can only access items 0-3')
 
     def __len__(self):
+        util.nouideprecwarn('access merge.update() results by name instead of '
+                            'index', '4.6', 2)
         return 4
 
 def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
@@ -2164,7 +2172,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
         sparse.prunetemporaryincludes(repo)
 
     if not partial:
-        repo.hook('update', parent1=xp1, parent2=xp2, error=stats[3])
+        repo.hook('update', parent1=xp1, parent2=xp2,
+                  error=stats.unresolvedcount)
     return stats
 
 def graft(repo, ctx, pctx, labels, keepparent=False):

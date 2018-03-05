@@ -499,7 +499,7 @@ class histeditaction(object):
         hg.update(repo, self.state.parentctxnode, quietempty=True)
         stats = applychanges(repo.ui, repo, rulectx, {})
         repo.dirstate.setbranch(rulectx.branch())
-        if stats and stats[3] > 0:
+        if stats.unresolvedcount:
             buf = repo.ui.popbuffer()
             repo.ui.write(buf)
             raise error.InterventionRequired(

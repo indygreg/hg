@@ -749,7 +749,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
     return srcpeer, destpeer
 
 def _showstats(repo, stats, quietempty=False):
-    if quietempty and not any(stats):
+    if quietempty and stats.isempty():
         return
     repo.ui.status(_("%d files updated, %d files merged, "
                      "%d files removed, %d files unresolved\n") % (
@@ -770,9 +770,9 @@ def update(repo, node, quietempty=False, updatecheck=None):
     """update the working directory to node"""
     stats = updaterepo(repo, node, False, updatecheck=updatecheck)
     _showstats(repo, stats, quietempty)
-    if stats[3]:
+    if stats.unresolvedcount:
         repo.ui.status(_("use 'hg resolve' to retry unresolved file merges\n"))
-    return stats[3] > 0
+    return stats.unresolvedcount > 0
 
 # naming conflict in clone()
 _update = update
@@ -783,7 +783,7 @@ def clean(repo, node, show_stats=True, quietempty=False):
     repo.vfs.unlinkpath('graftstate', ignoremissing=True)
     if show_stats:
         _showstats(repo, stats, quietempty)
-    return stats[3] > 0
+    return stats.unresolvedcount > 0
 
 # naming conflict in updatetotally()
 _clean = clean
@@ -882,12 +882,12 @@ def merge(repo, node, force=None, remind=True, mergeforce=False, labels=None,
                                 labels=labels)
 
     _showstats(repo, stats)
-    if stats[3]:
+    if stats.unresolvedcount:
         repo.ui.status(_("use 'hg resolve' to retry unresolved file merges "
                          "or 'hg merge --abort' to abandon\n"))
     elif remind and not abort:
         repo.ui.status(_("(branch merge, don't forget to commit)\n"))
-    return stats[3] > 0
+    return stats.unresolvedcount > 0
 
 def _incoming(displaychlist, subreporecurse, ui, repo, source,
         opts, buffered=False):

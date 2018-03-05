@@ -629,7 +629,7 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
             repo.setparents(op1, op2)
             dsguard.close()
             hg._showstats(repo, stats)
-            if stats[3]:
+            if stats.unresolvedcount:
                 repo.ui.status(_("use 'hg resolve' to retry unresolved "
                                  "file merges\n"))
                 return 1
@@ -2311,7 +2311,7 @@ def _dograft(ui, repo, *revs, **opts):
             finally:
                 repo.ui.setconfig('ui', 'forcemerge', '', 'graft')
             # report any conflicts
-            if stats[3] > 0:
+            if stats.unresolvedcount > 0:
                 # write out state for --continue
                 nodelines = [repo[rev].hex() + "\n" for rev in revs[pos:]]
                 repo.vfs.write('graftstate', ''.join(nodelines))

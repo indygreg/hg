@@ -525,7 +525,7 @@ class rebaseruntime(object):
                 with ui.configoverride(overrides, 'rebase'):
                     stats = rebasenode(repo, rev, p1, base, self.collapsef,
                                        dest, wctx=self.wctx)
-                    if stats[3] > 0:
+                    if stats.unresolvedcount > 0:
                         if self.inmemory:
                             raise error.InMemoryMergeConflictsError()
                         else:

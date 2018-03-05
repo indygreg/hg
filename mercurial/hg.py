@@ -752,7 +752,9 @@ def _showstats(repo, stats, quietempty=False):
     if quietempty and not any(stats):
         return
     repo.ui.status(_("%d files updated, %d files merged, "
-                     "%d files removed, %d files unresolved\n") % stats)
+                     "%d files removed, %d files unresolved\n") % (
+                   stats.updatedcount, stats.mergedcount,
+                   stats.removedcount, stats.unresolvedcount))
 
 def updaterepo(repo, node, overwrite, updatecheck=None):
     """Update the working directory to node.

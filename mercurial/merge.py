@@ -22,6 +22,9 @@ from .node import (
     nullid,
     nullrev,
 )
+from .thirdparty import (
+    attr,
+)
 from . import (
     copies,
     error,
@@ -1398,6 +1401,30 @@ def _prefetchfiles(repo, ctx, actions):
     prefetch = scmutil.fileprefetchhooks
     prefetch(repo, ctx, [f for sublist in oplist for f, args, msg in sublist])
 
+@attr.s(frozen=True)
+class updateresult(object):
+    updatedcount = attr.ib()
+    mergedcount = attr.ib()
+    removedcount = attr.ib()
+    unresolvedcount = attr.ib()
+
+    # TODO remove container emulation once consumers switch to new API.
+
+    def __getitem__(self, x):
+        if x == 0:
+            return self.updatedcount
+        elif x == 1:
+            return self.mergedcount
+        elif x == 2:
+            return self.removedcount
+        elif x == 3:
+            return self.unresolvedcount
+        else:
+            raise IndexError('can only access items 0-3')
+
+    def __len__(self):
+        return 4
+
 def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     """apply the merge action list to the working directory
 
@@ -1581,7 +1608,8 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         if not proceed:
             # XXX setting unresolved to at least 1 is a hack to make sure we
             # error out
-            return updated, merged, removed, max(len(unresolvedf), 1)
+            return updateresult(updated, merged, removed,
+                                max(len(unresolvedf), 1))
         newactions = []
         for f, args, msg in mergeactions:
             if f in unresolvedf:
@@ -1656,8 +1684,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         actions['m'] = [a for a in actions['m'] if a[0] in mfiles]
 
     progress(_updating, None, total=numupdates, unit=_files)
-
-    return updated, merged, removed, unresolved
+    return updateresult(updated, merged, removed, unresolved)
 
 def recordupdates(repo, actions, branchmerge):
     "record merge actions to the dirstate"
@@ -1878,7 +1905,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
                 # call the hooks and exit early
                 repo.hook('preupdate', throw=True, parent1=xp2, parent2='')
                 repo.hook('update', parent1=xp2, parent2='', error=0)
-                return 0, 0, 0, 0
+                return updateresult(0, 0, 0, 0)
 
             if (updatecheck == 'linear' and
                     pas not in ([p1], [p2])):  # nonlinear

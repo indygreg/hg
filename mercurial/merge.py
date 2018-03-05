@@ -47,6 +47,20 @@ def _droponode(data):
     bits = bits[:-2] + bits[-1:]
     return '\0'.join(bits)
 
+# Merge state record types. See ``mergestate`` docs for more.
+RECORD_LOCAL = b'L'
+RECORD_OTHER = b'O'
+RECORD_MERGED = b'F'
+RECORD_CHANGEDELETE_CONFLICT = b'C'
+RECORD_MERGE_DRIVER_MERGE = b'D'
+RECORD_PATH_CONFLICT = b'P'
+RECORD_MERGE_DRIVER_STATE = b'm'
+RECORD_FILE_VALUES = b'f'
+RECORD_LABELS = b'l'
+RECORD_OVERRIDE = b't'
+RECORD_UNSUPPORTED_MANDATORY = b'X'
+RECORD_UNSUPPORTED_ADVISORY = b'x'
+
 class mergestate(object):
     '''track 3-way merge state of individual files
 
@@ -158,11 +172,11 @@ class mergestate(object):
         unsupported = set()
         records = self._readrecords()
         for rtype, record in records:
-            if rtype == 'L':
+            if rtype == RECORD_LOCAL:
                 self._local = bin(record)
-            elif rtype == 'O':
+            elif rtype == RECORD_OTHER:
                 self._other = bin(record)
-            elif rtype == 'm':
+            elif rtype == RECORD_MERGE_DRIVER_STATE:
                 bits = record.split('\0', 1)
                 mdstate = bits[1]
                 if len(mdstate) != 1 or mdstate not in 'ums':
@@ -171,10 +185,11 @@ class mergestate(object):
 
                 self._readmergedriver = bits[0]
                 self._mdstate = mdstate
-            elif rtype in 'FDCP':
+            elif rtype in (RECORD_MERGED, RECORD_CHANGEDELETE_CONFLICT,
+                           RECORD_PATH_CONFLICT, RECORD_MERGE_DRIVER_MERGE):
                 bits = record.split('\0')
                 self._state[bits[0]] = bits[1:]
-            elif rtype == 'f':
+            elif rtype == RECORD_FILE_VALUES:
                 filename, rawextras = record.split('\0', 1)
                 extraparts = rawextras.split('\0')
                 extras = {}
@@ -184,7 +199,7 @@ class mergestate(object):
                     i += 2
 
                 self._stateextras[filename] = extras
-            elif rtype == 'l':
+            elif rtype == RECORD_LABELS:
                 labels = record.split('\0', 2)
                 self._labels = [l for l in labels if len(l) > 0]
             elif not rtype.islower():
@@ -218,12 +233,12 @@ class mergestate(object):
             # we have to infer the "other" changeset of the merge
             # we cannot do better than that with v1 of the format
             mctx = self._repo[None].parents()[-1]
-            v1records.append(('O', mctx.hex()))
+            v1records.append((RECORD_OTHER, mctx.hex()))
             # add place holder "other" file node information
             # nobody is using it yet so we do no need to fetch the data
             # if mctx was wrong `mctx[bits[-2]]` may fails.
             for idx, r in enumerate(v1records):
-                if r[0] == 'F':
+                if r[0] == RECORD_MERGED:
                     bits = r[1].split('\0')
                     bits.insert(-2, '')
                     v1records[idx] = (r[0], '\0'.join(bits))
@@ -232,11 +247,11 @@ class mergestate(object):
     def _v1v2match(self, v1records, v2records):
         oldv2 = set() # old format version of v2 record
         for rec in v2records:
-            if rec[0] == 'L':
+            if rec[0] == RECORD_LOCAL:
                 oldv2.add(rec)
-            elif rec[0] == 'F':
+            elif rec[0] == RECORD_MERGED:
                 # drop the onode data (not contained in v1)
-                oldv2.add(('F', _droponode(rec[1])))
+                oldv2.add((RECORD_MERGED, _droponode(rec[1])))
         for rec in v1records:
             if rec not in oldv2:
                 return False
@@ -256,9 +271,9 @@ class mergestate(object):
             f = self._repo.vfs(self.statepathv1)
             for i, l in enumerate(f):
                 if i == 0:
-                    records.append(('L', l[:-1]))
+                    records.append((RECORD_LOCAL, l[:-1]))
                 else:
-                    records.append(('F', l[:-1]))
+                    records.append((RECORD_MERGED, l[:-1]))
             f.close()
         except IOError as err:
             if err.errno != errno.ENOENT:
@@ -296,7 +311,7 @@ class mergestate(object):
                 off += 4
                 record = data[off:(off + length)]
                 off += length
-                if rtype == 't':
+                if rtype == RECORD_OVERRIDE:
                     rtype, record = record[0:1], record[1:]
                 records.append((rtype, record))
             f.close()
@@ -359,10 +374,10 @@ class mergestate(object):
 
     def _makerecords(self):
         records = []
-        records.append(('L', hex(self._local)))
-        records.append(('O', hex(self._other)))
+        records.append((RECORD_LOCAL, hex(self._local)))
+        records.append((RECORD_OTHER, hex(self._other)))
         if self.mergedriver:
-            records.append(('m', '\0'.join([
+            records.append((RECORD_MERGE_DRIVER_STATE, '\0'.join([
                 self.mergedriver, self._mdstate])))
         # Write out state items. In all cases, the value of the state map entry
         # is written as the contents of the record. The record type depends on
@@ -372,27 +387,32 @@ class mergestate(object):
         for filename, v in self._state.iteritems():
             if v[0] == 'd':
                 # Driver-resolved merge. These are stored in 'D' records.
-                records.append(('D', '\0'.join([filename] + v)))
+                records.append((RECORD_MERGE_DRIVER_MERGE,
+                                '\0'.join([filename] + v)))
             elif v[0] in ('pu', 'pr'):
                 # Path conflicts. These are stored in 'P' records.  The current
                 # resolution state ('pu' or 'pr') is stored within the record.
-                records.append(('P', '\0'.join([filename] + v)))
+                records.append((RECORD_PATH_CONFLICT,
+                                '\0'.join([filename] + v)))
             elif v[1] == nullhex or v[6] == nullhex:
                 # Change/Delete or Delete/Change conflicts. These are stored in
                 # 'C' records. v[1] is the local file, and is nullhex when the
                 # file is deleted locally ('dc'). v[6] is the remote file, and
                 # is nullhex when the file is deleted remotely ('cd').
-                records.append(('C', '\0'.join([filename] + v)))
+                records.append((RECORD_CHANGEDELETE_CONFLICT,
+                                '\0'.join([filename] + v)))
             else:
                 # Normal files.  These are stored in 'F' records.
-                records.append(('F', '\0'.join([filename] + v)))
+                records.append((RECORD_MERGED,
+                                '\0'.join([filename] + v)))
         for filename, extras in sorted(self._stateextras.iteritems()):
             rawextras = '\0'.join('%s\0%s' % (k, v) for k, v in
                                   extras.iteritems())
-            records.append(('f', '%s\0%s' % (filename, rawextras)))
+            records.append((RECORD_FILE_VALUES,
+                            '%s\0%s' % (filename, rawextras)))
         if self._labels is not None:
             labels = '\0'.join(self._labels)
-            records.append(('l', labels))
+            records.append((RECORD_LABELS, labels))
         return records
 
     def _writerecords(self, records):
@@ -405,10 +425,10 @@ class mergestate(object):
         f = self._repo.vfs(self.statepathv1, 'wb')
         irecords = iter(records)
         lrecords = next(irecords)
-        assert lrecords[0] == 'L'
+        assert lrecords[0] == RECORD_LOCAL
         f.write(hex(self._local) + '\n')
         for rtype, data in irecords:
-            if rtype == 'F':
+            if rtype == RECORD_MERGED:
                 f.write('%s\n' % _droponode(data))
         f.close()
 
@@ -417,12 +437,12 @@ class mergestate(object):
 
         See the docstring for _readrecordsv2 for why we use 't'."""
         # these are the records that all version 2 clients can read
-        whitelist = 'LOF'
+        allowlist = (RECORD_LOCAL, RECORD_OTHER, RECORD_MERGED)
         f = self._repo.vfs(self.statepathv2, 'wb')
         for key, data in records:
             assert len(key) == 1
-            if key not in whitelist:
-                key, data = 't', '%s%s' % (key, data)
+            if key not in allowlist:
+                key, data = RECORD_OVERRIDE, '%s%s' % (key, data)
             format = '>sI%is' % len(data)
             f.write(_pack(format, key, len(data), data))
         f.close()

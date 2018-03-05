@@ -257,8 +257,8 @@ class _httprequesthandlerssl(_httprequesthandler):
 
     def setup(self):
         self.connection = self.request
-        self.rfile = socket._fileobject(self.request, "rb", self.rbufsize)
-        self.wfile = socket._fileobject(self.request, "wb", self.wbufsize)
+        self.rfile = self.request.makefile(r"rb", self.rbufsize)
+        self.wfile = self.request.makefile(r"wb", self.wbufsize)
 
 try:
     import threading

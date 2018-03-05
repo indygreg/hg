@@ -617,8 +617,8 @@ class cachestat(object):
                     self.stat.st_uid == other.stat.st_uid and
                     self.stat.st_gid == other.stat.st_gid and
                     self.stat.st_size == other.stat.st_size and
-                    self.stat.st_mtime == other.stat.st_mtime and
-                    self.stat.st_ctime == other.stat.st_ctime)
+                    self.stat[stat.ST_MTIME] == other.stat[stat.ST_MTIME] and
+                    self.stat[stat.ST_CTIME] == other.stat[stat.ST_CTIME])
         except AttributeError:
             return False
 

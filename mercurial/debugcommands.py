@@ -16,6 +16,7 @@ import os
 import random
 import socket
 import ssl
+import stat
 import string
 import subprocess
 import sys
@@ -1373,9 +1374,9 @@ def debuglocks(ui, repo, **opts):
             l.release()
         else:
             try:
-                stat = vfs.lstat(name)
-                age = now - stat.st_mtime
-                user = util.username(stat.st_uid)
+                st = vfs.lstat(name)
+                age = now - st[stat.ST_MTIME]
+                user = util.username(st.st_uid)
                 locker = vfs.readlock(name)
                 if ":" in locker:
                     host, pid = locker.split(':')

@@ -25,6 +25,7 @@ from __future__ import absolute_import
 import collections
 import errno
 import itertools
+import stat
 
 from mercurial.i18n import _
 from mercurial import (
@@ -283,7 +284,7 @@ def cleanupoldbackups(repo):
     maxbackups = repo.ui.configint('shelve', 'maxbackups')
     hgfiles = [f for f in vfs.listdir()
                if f.endswith('.' + patchextension)]
-    hgfiles = sorted([(vfs.stat(f).st_mtime, f) for f in hgfiles])
+    hgfiles = sorted([(vfs.stat(f)[stat.ST_MTIME], f) for f in hgfiles])
     if 0 < maxbackups and maxbackups < len(hgfiles):
         bordermtime = hgfiles[-maxbackups][0]
     else:
@@ -542,7 +543,7 @@ def listshelves(repo):
         if not pfx or sfx != patchextension:
             continue
         st = shelvedfile(repo, name).stat()
-        info.append((st.st_mtime, shelvedfile(repo, pfx).filename()))
+        info.append((st[stat.ST_MTIME], shelvedfile(repo, pfx).filename()))
     return sorted(info, reverse=True)
 
 def listcmd(ui, repo, pats, opts):

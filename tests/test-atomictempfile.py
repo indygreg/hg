@@ -3,6 +3,7 @@ from __future__ import absolute_import
 import glob
 import os
 import shutil
+import stat
 import tempfile
 import unittest
 
@@ -66,7 +67,7 @@ class testatomictempfile(unittest.TestCase):
         for i in xrange(5):
             atomicwrite(False)
             oldstat = os.stat(self._filename)
-            if oldstat.st_ctime != oldstat.st_mtime:
+            if oldstat[stat.ST_CTIME] != oldstat[stat.ST_MTIME]:
                 # subsequent changing never causes ambiguity
                 continue
 
@@ -77,14 +78,14 @@ class testatomictempfile(unittest.TestCase):
             for j in xrange(repetition):
                 atomicwrite(True)
             newstat = os.stat(self._filename)
-            if oldstat.st_ctime != newstat.st_ctime:
+            if oldstat[stat.ST_CTIME] != newstat[stat.ST_CTIME]:
                 # timestamp ambiguity was naturally avoided while repetition
                 continue
 
             # st_mtime should be advanced "repetition" times, because
             # all atomicwrite() occurred at same time (in sec)
-            self.assertTrue(newstat.st_mtime ==
-                            ((oldstat.st_mtime + repetition) & 0x7fffffff))
+            oldtime = (oldstat[stat.ST_MTIME] + repetition) & 0x7fffffff
+            self.assertTrue(newstat[stat.ST_MTIME] == oldtime)
             # no more examination is needed, if assumption above is true
             break
         else:

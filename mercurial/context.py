@@ -1893,7 +1893,7 @@ class workingfilectx(committablefilectx):
     def date(self):
         t, tz = self._changectx.date()
         try:
-            return (self._repo.wvfs.lstat(self._path).st_mtime, tz)
+            return (self._repo.wvfs.lstat(self._path)[stat.ST_MTIME], tz)
         except OSError as err:
             if err.errno != errno.ENOENT:
                 raise

@@ -12,6 +12,7 @@ import errno
 import hashlib
 import os
 import shutil
+import stat
 
 from .i18n import _
 from .node import (
@@ -1113,8 +1114,8 @@ class cachedlocalrepo(object):
                 st = os.stat(p)
             except OSError:
                 st = os.stat(prefix)
-            state.append((st.st_mtime, st.st_size))
-            maxmtime = max(maxmtime, st.st_mtime)
+            state.append((st[stat.ST_MTIME], st.st_size))
+            maxmtime = max(maxmtime, st[stat.ST_MTIME])
 
         return tuple(state), maxmtime
 

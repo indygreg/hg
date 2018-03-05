@@ -65,6 +65,7 @@ from __future__ import absolute_import
 import os
 import re
 import shutil
+import stat
 import tempfile
 from mercurial.i18n import _
 from mercurial.node import (
@@ -297,7 +298,8 @@ def dodiff(ui, repo, cmdline, pats, opts):
             # copyfile() carries over the permission, so the mode check could
             # be in an 'elif' branch, but for the case where the file has
             # changed without affecting mtime or size.
-            if (cpstat.st_mtime != st.st_mtime or cpstat.st_size != st.st_size
+            if (cpstat[stat.ST_MTIME] != st[stat.ST_MTIME]
+                or cpstat.st_size != st.st_size
                 or (cpstat.st_mode & 0o100) != (st.st_mode & 0o100)):
                 ui.debug('file changed while diffing. '
                          'Overwriting: %s (src: %s)\n' % (working_fn, copy_fn))

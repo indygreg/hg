@@ -12,6 +12,7 @@ import base64
 import errno
 import mimetypes
 import os
+import stat
 
 from .. import (
     encoding,
@@ -132,7 +133,7 @@ def get_stat(spath, fn):
         return os.stat(spath)
 
 def get_mtime(spath):
-    return get_stat(spath, "00changelog.i").st_mtime
+    return get_stat(spath, "00changelog.i")[stat.ST_MTIME]
 
 def ispathsafe(path):
     """Determine if a path is safe to use for filesystem access."""

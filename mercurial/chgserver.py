@@ -45,6 +45,7 @@ import inspect
 import os
 import re
 import socket
+import stat
 import struct
 import time
 
@@ -161,7 +162,7 @@ def _mtimehash(paths):
     def trystat(path):
         try:
             st = os.stat(path)
-            return (st.st_mtime, st.st_size)
+            return (st[stat.ST_MTIME], st.st_size)
         except OSError:
             # could be ENOENT, EPERM etc. not fatal in any case
             pass
@@ -546,9 +547,9 @@ class chgunixservicehandler(object):
 
     def _issocketowner(self):
         try:
-            stat = os.stat(self._realaddress)
-            return (stat.st_ino == self._socketstat.st_ino and
-                    stat.st_mtime == self._socketstat.st_mtime)
+            st = os.stat(self._realaddress)
+            return (st.st_ino == self._socketstat.st_ino and
+                    st[stat.ST_MTIME] == self._socketstat[stat.ST_MTIME])
         except OSError:
             return False
 

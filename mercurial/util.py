@@ -1567,7 +1567,8 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
                     newstat = filestat.frompath(dest)
                     if newstat.isambig(oldstat):
                         # stat of copied file is ambiguous to original one
-                        advanced = (oldstat.stat.st_mtime + 1) & 0x7fffffff
+                        advanced = (
+                            oldstat.stat[stat.ST_MTIME] + 1) & 0x7fffffff
                         os.utime(dest, (advanced, advanced))
         except shutil.Error as inst:
             raise Abort(str(inst))
@@ -1963,8 +1964,8 @@ class filestat(object):
             # avoided, comparison of size, ctime and mtime is enough
             # to exactly detect change of a file regardless of platform
             return (self.stat.st_size == old.stat.st_size and
-                    self.stat.st_ctime == old.stat.st_ctime and
-                    self.stat.st_mtime == old.stat.st_mtime)
+                    self.stat[stat.ST_CTIME] == old.stat[stat.ST_CTIME] and
+                    self.stat[stat.ST_MTIME] == old.stat[stat.ST_MTIME])
         except AttributeError:
             pass
         try:
@@ -2003,7 +2004,7 @@ class filestat(object):
         S[n].mtime", even if size of a file isn't changed.
         """
         try:
-            return (self.stat.st_ctime == old.stat.st_ctime)
+            return (self.stat[stat.ST_CTIME] == old.stat[stat.ST_CTIME])
         except AttributeError:
             return False
 
@@ -2018,7 +2019,7 @@ class filestat(object):
 
         Otherwise, this returns True, as "ambiguity is avoided".
         """
-        advanced = (old.stat.st_mtime + 1) & 0x7fffffff
+        advanced = (old.stat[stat.ST_MTIME] + 1) & 0x7fffffff
         try:
             os.utime(path, (advanced, advanced))
         except OSError as inst:
@@ -2069,7 +2070,7 @@ class atomictempfile(object):
                 newstat = filestat.frompath(filename)
                 if newstat.isambig(oldstat):
                     # stat of changed file is ambiguous to original one
-                    advanced = (oldstat.stat.st_mtime + 1) & 0x7fffffff
+                    advanced = (oldstat.stat[stat.ST_MTIME] + 1) & 0x7fffffff
                     os.utime(filename, (advanced, advanced))
             else:
                 rename(self._tempname, filename)

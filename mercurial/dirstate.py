@@ -49,7 +49,7 @@ def _getfsnow(vfs):
     '''Get "now" timestamp on filesystem'''
     tmpfd, tmpname = vfs.mkstemp()
     try:
-        return os.fstat(tmpfd).st_mtime
+        return os.fstat(tmpfd)[stat.ST_MTIME]
     finally:
         os.close(tmpfd)
         vfs.unlink(tmpname)
@@ -387,7 +387,7 @@ class dirstate(object):
     def normal(self, f):
         '''Mark a file normal and clean.'''
         s = os.lstat(self._join(f))
-        mtime = s.st_mtime
+        mtime = s[stat.ST_MTIME]
         self._addpath(f, 'n', s.st_mode,
                       s.st_size & _rangemask, mtime & _rangemask)
         self._map.copymap.pop(f, None)
@@ -626,7 +626,7 @@ class dirstate(object):
             self._origpl = None
         # use the modification time of the newly created temporary file as the
         # filesystem's notion of 'now'
-        now = util.fstat(st).st_mtime & _rangemask
+        now = util.fstat(st)[stat.ST_MTIME] & _rangemask
 
         # enough 'delaywrite' prevents 'pack_dirstate' from dropping
         # timestamp of each entries in dirstate, because of 'now > mtime'
@@ -1068,9 +1068,10 @@ class dirstate(object):
                     or size == -2 # other parent
                     or fn in copymap):
                     madd(fn)
-                elif time != st.st_mtime and time != st.st_mtime & _rangemask:
+                elif (time != st[stat.ST_MTIME]
+                      and time != st[stat.ST_MTIME] & _rangemask):
                     ladd(fn)
-                elif st.st_mtime == lastnormaltime:
+                elif st[stat.ST_MTIME] == lastnormaltime:
                     # fn may have just been marked as normal and it may have
                     # changed in the same second without changing its size.
                     # This can happen if we quickly do multiple commits.

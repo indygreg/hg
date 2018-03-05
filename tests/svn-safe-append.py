@@ -6,6 +6,7 @@ __doc__ = """Same as `echo a >> b`, but ensures a changed mtime of b.
 Without this svn will not detect workspace changes."""
 
 import os
+import stat
 import sys
 
 text = sys.argv[1]
@@ -13,16 +14,15 @@ fname = sys.argv[2]
 
 f = open(fname, "ab")
 try:
-    before = os.fstat(f.fileno()).st_mtime
+    before = os.fstat(f.fileno())[stat.ST_MTIME]
     f.write(text)
     f.write("\n")
 finally:
     f.close()
 inc = 1
-now = os.stat(fname).st_mtime
+now = os.stat(fname)[stat.ST_MTIME]
 while now == before:
     t = now + inc
     inc += 1
     os.utime(fname, (t, t))
-    now = os.stat(fname).st_mtime
-
+    now = os.stat(fname)[stat.ST_MTIME]

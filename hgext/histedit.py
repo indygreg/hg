@@ -566,7 +566,7 @@ def applychanges(ui, repo, ctx, opts):
         # edits are "in place" we do not need to make any merge,
         # just applies changes on parent for editing
         cmdutil.revert(ui, repo, ctx, (wcpar, node.nullid), all=True)
-        stats = None
+        stats = mergemod.updateresult(0, 0, 0, 0)
     else:
         try:
             # ui.forcemerge is an internal variable, do not document

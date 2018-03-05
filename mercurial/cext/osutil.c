@@ -121,6 +121,27 @@ static void listdir_stat_dealloc(PyObject *o)
 	o->ob_type->tp_free(o);
 }
 
+static PyObject *listdir_stat_getitem(PyObject *self, PyObject *key)
+{
+	long index = PyLong_AsLong(key);
+	if (index == -1 && PyErr_Occurred()) {
+		return NULL;
+	}
+	if (index != 8) {
+		PyErr_Format(PyExc_IndexError, "osutil.stat objects only "
+		                               "support stat.ST_MTIME in "
+		                               "__getitem__");
+		return NULL;
+	}
+	return listdir_stat_st_mtime(self, NULL);
+}
+
+static PyMappingMethods listdir_stat_type_mapping_methods = {
+	(lenfunc)NULL,             /* mp_length */
+	(binaryfunc)listdir_stat_getitem,       /* mp_subscript */
+	(objobjargproc)NULL,    /* mp_ass_subscript */
+};
+
 static PyTypeObject listdir_stat_type = {
 	PyVarObject_HEAD_INIT(NULL, 0) /* header */
 	"osutil.stat",             /*tp_name*/
@@ -134,7 +155,7 @@ static PyTypeObject listdir_stat_type = {
 	0,                         /*tp_repr*/
 	0,                         /*tp_as_number*/
 	0,                         /*tp_as_sequence*/
-	0,                         /*tp_as_mapping*/
+	&listdir_stat_type_mapping_methods, /*tp_as_mapping*/
 	0,                         /*tp_hash */
 	0,                         /*tp_call*/
 	0,                         /*tp_str*/
@@ -1352,7 +1373,7 @@ static PyMethodDef methods[] = {
 	{NULL, NULL}
 };
 
-static const int version = 3;
+static const int version = 4;
 
 #ifdef IS_PY3K
 static struct PyModuleDef osutil_module = {

@@ -61,6 +61,10 @@ RECORD_OVERRIDE = b't'
 RECORD_UNSUPPORTED_MANDATORY = b'X'
 RECORD_UNSUPPORTED_ADVISORY = b'x'
 
+MERGE_DRIVER_STATE_UNMARKED = b'u'
+MERGE_DRIVER_STATE_MARKED = b'm'
+MERGE_DRIVER_STATE_SUCCESS = b's'
+
 class mergestate(object):
     '''track 3-way merge state of individual files
 
@@ -147,9 +151,9 @@ class mergestate(object):
             self._other = other
         self._readmergedriver = None
         if self.mergedriver:
-            self._mdstate = 's'
+            self._mdstate = MERGE_DRIVER_STATE_SUCCESS
         else:
-            self._mdstate = 'u'
+            self._mdstate = MERGE_DRIVER_STATE_UNMARKED
         shutil.rmtree(self._repo.vfs.join('merge'), True)
         self._results = {}
         self._dirty = False
@@ -168,7 +172,7 @@ class mergestate(object):
             if var in vars(self):
                 delattr(self, var)
         self._readmergedriver = None
-        self._mdstate = 's'
+        self._mdstate = MERGE_DRIVER_STATE_SUCCESS
         unsupported = set()
         records = self._readrecords()
         for rtype, record in records:
@@ -179,9 +183,11 @@ class mergestate(object):
             elif rtype == RECORD_MERGE_DRIVER_STATE:
                 bits = record.split('\0', 1)
                 mdstate = bits[1]
-                if len(mdstate) != 1 or mdstate not in 'ums':
+                if len(mdstate) != 1 or mdstate not in (
+                    MERGE_DRIVER_STATE_UNMARKED, MERGE_DRIVER_STATE_MARKED,
+                    MERGE_DRIVER_STATE_SUCCESS):
                     # the merge driver should be idempotent, so just rerun it
-                    mdstate = 'u'
+                    mdstate = MERGE_DRIVER_STATE_UNMARKED
 
                 self._readmergedriver = bits[0]
                 self._mdstate = mdstate
@@ -1665,7 +1671,8 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
 
     unresolved = ms.unresolvedcount()
 
-    if usemergedriver and not unresolved and ms.mdstate() != 's':
+    if (usemergedriver and not unresolved
+        and ms.mdstate() != MERGE_DRIVER_STATE_SUCCESS):
         if not driverconclude(repo, ms, wctx, labels=labels):
             # XXX setting unresolved to at least 1 is a hack to make sure we
             # error out

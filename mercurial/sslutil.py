@@ -346,10 +346,11 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
 
     for f in (keyfile, certfile):
         if f and not os.path.exists(f):
-            raise error.Abort(_('certificate file (%s) does not exist; '
-                                'cannot connect to %s') % (f, serverhostname),
-                              hint=_('restore missing file or fix references '
-                                     'in Mercurial config'))
+            raise error.Abort(
+                _('certificate file (%s) does not exist; cannot connect to %s')
+                % (f, pycompat.bytesurl(serverhostname)),
+                hint=_('restore missing file or fix references '
+                       'in Mercurial config'))
 
     settings = _hostsettings(ui, serverhostname)
 
@@ -372,9 +373,10 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
         try:
             sslcontext.set_ciphers(pycompat.sysstr(settings['ciphers']))
         except ssl.SSLError as e:
-            raise error.Abort(_('could not set ciphers: %s') % e.args[0],
-                              hint=_('change cipher string (%s) in config') %
-                                   settings['ciphers'])
+            raise error.Abort(
+                _('could not set ciphers: %s') % util.forcebytestr(e.args[0]),
+                hint=_('change cipher string (%s) in config') %
+                settings['ciphers'])
 
     if certfile is not None:
         def password():

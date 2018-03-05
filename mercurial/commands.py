@@ -2306,7 +2306,7 @@ def _dograft(ui, repo, *revs, **opts):
             finally:
                 repo.ui.setconfig('ui', 'forcemerge', '', 'graft')
             # report any conflicts
-            if stats and stats[3] > 0:
+            if stats[3] > 0:
                 # write out state for --continue
                 nodelines = [repo[rev].hex() + "\n" for rev in revs[pos:]]
                 repo.vfs.write('graftstate', ''.join(nodelines))

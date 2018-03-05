@@ -370,7 +370,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
 
     if settings['ciphers']:
         try:
-            sslcontext.set_ciphers(settings['ciphers'])
+            sslcontext.set_ciphers(pycompat.sysstr(settings['ciphers']))
         except ssl.SSLError as e:
             raise error.Abort(_('could not set ciphers: %s') % e.args[0],
                               hint=_('change cipher string (%s) in config') %

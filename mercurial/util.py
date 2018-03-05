@@ -176,11 +176,6 @@ except AttributeError:
 
 _notset = object()
 
-# disable Python's problematic floating point timestamps (issue4836)
-# (Python hypocritically says you shouldn't change this behavior in
-# libraries, and sure enough Mercurial is not a library.)
-os.stat_float_times(False)
-
 def safehasattr(thing, attr):
     return getattr(thing, attr, _notset) is not _notset
 

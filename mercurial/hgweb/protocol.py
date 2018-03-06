@@ -52,6 +52,7 @@ class webproto(wireproto.abstractserverproto):
         self.response = ''
         self.ui = ui
         self.name = 'http'
+        self.checkperm = req.checkperm
 
     def getargs(self, args):
         knownargs = self._args()

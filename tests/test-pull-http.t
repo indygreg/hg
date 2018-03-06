@@ -50,7 +50,6 @@ expect error, cloning not allowed
   $ hg serve -p $HGPORT -d --pid-file=hg.pid -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ test4 # bundle2+
-  requesting all changes
   abort: authorization failed
   [255]
   $ hg clone http://localhost:$HGPORT/ test4 --config devel.legacy.exchange=bundle1
@@ -74,7 +73,6 @@ expect error, pulling not allowed
 
   $ req
   pulling from http://localhost:$HGPORT/
-  searching for changes
   abort: authorization failed
   % serve errors
 

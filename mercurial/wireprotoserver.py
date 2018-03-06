@@ -179,7 +179,8 @@ def parsehttprequest(repo, req, query):
     return {
         'cmd': cmd,
         'proto': proto,
-        'dispatch': lambda: _callhttp(repo, req, proto, cmd),
+        'dispatch': lambda checkperm: _callhttp(repo, req, proto, cmd,
+                                                checkperm),
         'handleerror': lambda ex: _handlehttperror(ex, req, cmd),
     }
 
@@ -223,7 +224,7 @@ def _httpresponsetype(ui, req, prefer_uncompressed):
     opts = {'level': ui.configint('server', 'zliblevel')}
     return HGTYPE, util.compengines['zlib'], opts
 
-def _callhttp(repo, req, proto, cmd):
+def _callhttp(repo, req, proto, cmd, checkperm):
     def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
         # identifying the compression engine.
@@ -240,6 +241,12 @@ def _callhttp(repo, req, proto, cmd):
                     body=_('requested wire protocol command is not available '
                            'over HTTP'))
         return []
+
+    # Assume commands with no defined permissions are writes /
+    # for pushes. This is the safest from a security perspective
+    # because it doesn't allow commands with undefined semantics
+    # from bypassing permissions checks.
+    checkperm(wireproto.permissions.get(cmd, 'push'))
 
     rsp = wireproto.dispatch(repo, proto, cmd)
 

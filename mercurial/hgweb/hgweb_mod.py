@@ -357,22 +357,15 @@ class hgweb(object):
         protohandler = wireprotoserver.parsehttprequest(rctx.repo, req, query)
 
         if protohandler:
-            cmd = protohandler['cmd']
             try:
                 if query:
                     raise ErrorResponse(HTTP_NOT_FOUND)
 
                 # TODO fold this into parsehttprequest
-                req.checkperm = lambda op: self.check_perm(rctx, req, op)
-                protohandler['proto'].checkperm = req.checkperm
+                checkperm = lambda op: self.check_perm(rctx, req, op)
+                protohandler['proto'].checkperm = checkperm
 
-                # Assume commands with no defined permissions are writes /
-                # for pushes. This is the safest from a security perspective
-                # because it doesn't allow commands with undefined semantics
-                # from bypassing permissions checks.
-                req.checkperm(perms.get(cmd, 'push'))
-
-                return protohandler['dispatch']()
+                return protohandler['dispatch'](checkperm)
             except ErrorResponse as inst:
                 return protohandler['handleerror'](inst)
 

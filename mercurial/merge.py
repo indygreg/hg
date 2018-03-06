@@ -71,6 +71,23 @@ MERGE_RECORD_UNRESOLVED_PATH = b'pu'
 MERGE_RECORD_RESOLVED_PATH = b'pr'
 MERGE_RECORD_DRIVER_RESOLVED = b'd'
 
+ACTION_FORGET = b'f'
+ACTION_REMOVE = b'r'
+ACTION_ADD = b'a'
+ACTION_GET = b'g'
+ACTION_PATH_CONFLICT = b'p'
+ACTION_PATH_CONFLICT_RESOLVE = b'pr'
+ACTION_ADD_MODIFIED = b'am'
+ACTION_CREATED = b'c'
+ACTION_DELETED_CHANGED = b'dc'
+ACTION_CHANGED_DELETED = b'cd'
+ACTION_MERGE = b'm'
+ACTION_LOCAL_DIR_RENAME_GET = b'dg'
+ACTION_DIR_RENAME_MOVE_LOCAL = b'dm'
+ACTION_KEEP = b'k'
+ACTION_EXEC = b'e'
+ACTION_CREATED_MERGE = b'cm'
+
 class mergestate(object):
     '''track 3-way merge state of individual files
 
@@ -588,18 +605,18 @@ class mergestate(object):
                 if fcd.isabsent():
                     # dc: local picked. Need to drop if present, which may
                     # happen on re-resolves.
-                    action = 'f'
+                    action = ACTION_FORGET
                 else:
                     # cd: remote picked (or otherwise deleted)
-                    action = 'r'
+                    action = ACTION_REMOVE
             else:
                 if fcd.isabsent(): # dc: remote picked
-                    action = 'g'
+                    action = ACTION_GET
                 elif fco.isabsent(): # cd: local picked
                     if dfile in self.localctx:
-                        action = 'am'
+                        action = ACTION_ADD_MODIFIED
                     else:
-                        action = 'a'
+                        action = ACTION_ADD
                 # else: regular merges (no action necessary)
             self._results[dfile] = r, action
 
@@ -631,7 +648,7 @@ class mergestate(object):
             if r is None:
                 updated += 1
             elif r == 0:
-                if action == 'r':
+                if action == ACTION_REMOVE:
                     removed += 1
                 else:
                     merged += 1
@@ -643,7 +660,13 @@ class mergestate(object):
 
     def actions(self):
         """return lists of actions to perform on the dirstate"""
-        actions = {'r': [], 'f': [], 'a': [], 'am': [], 'g': []}
+        actions = {
+            ACTION_REMOVE: [],
+            ACTION_FORGET: [],
+            ACTION_ADD: [],
+            ACTION_ADD_MODIFIED: [],
+            ACTION_GET: [],
+        }
         for f, (r, action) in self._results.iteritems():
             if action is not None:
                 actions[action].append((f, None, "merge result"))
@@ -658,19 +681,19 @@ class mergestate(object):
         """queues a file to be removed from the dirstate
 
         Meant for use by custom merge drivers."""
-        self._results[f] = 0, 'r'
+        self._results[f] = 0, ACTION_REMOVE
 
     def queueadd(self, f):
         """queues a file to be added to the dirstate
 
         Meant for use by custom merge drivers."""
-        self._results[f] = 0, 'a'
+        self._results[f] = 0, ACTION_ADD
 
     def queueget(self, f):
         """queues a file to be marked modified in the dirstate
 
         Meant for use by custom merge drivers."""
-        self._results[f] = 0, 'g'
+        self._results[f] = 0, ACTION_GET
 
 def _getcheckunknownconfig(repo, section, name):
     config = repo.ui.config(section, name)
@@ -772,14 +795,14 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
 
         checkunknowndirs = _unknowndirschecker()
         for f, (m, args, msg) in actions.iteritems():
-            if m in ('c', 'dc'):
+            if m in (ACTION_CREATED, ACTION_DELETED_CHANGED):
                 if _checkunknownfile(repo, wctx, mctx, f):
                     fileconflicts.add(f)
                 elif pathconfig and f not in wctx:
                     path = checkunknowndirs(repo, wctx, f)
                     if path is not None:
                         pathconflicts.add(path)
-            elif m == 'dg':
+            elif m == ACTION_LOCAL_DIR_RENAME_GET:
                 if _checkunknownfile(repo, wctx, mctx, f, args[0]):
                     fileconflicts.add(f)
 
@@ -791,7 +814,7 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
         collectconflicts(unknownconflicts, unknownconfig)
     else:
         for f, (m, args, msg) in actions.iteritems():
-            if m == 'cm':
+            if m == ACTION_CREATED_MERGE:
                 fl2, anc = args
                 different = _checkunknownfile(repo, wctx, mctx, f)
                 if repo.dirstate._ignore(f):
@@ -812,16 +835,16 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
                 #     don't like an abort happening in the middle of
                 #     merge.update.
                 if not different:
-                    actions[f] = ('g', (fl2, False), "remote created")
+                    actions[f] = (ACTION_GET, (fl2, False), 'remote created')
                 elif mergeforce or config == 'abort':
-                    actions[f] = ('m', (f, f, None, False, anc),
-                                  "remote differs from untracked local")
+                    actions[f] = (ACTION_MERGE, (f, f, None, False, anc),
+                                  'remote differs from untracked local')
                 elif config == 'abort':
                     abortconflicts.add(f)
                 else:
                     if config == 'warn':
                         warnconflicts.add(f)
-                    actions[f] = ('g', (fl2, True), "remote created")
+                    actions[f] = (ACTION_GET, (fl2, True), 'remote created')
 
     for f in sorted(abortconflicts):
         warn = repo.ui.warn
@@ -843,11 +866,11 @@ def _checkunknownfiles(repo, wctx, mctx, force, actions, mergeforce):
             repo.ui.warn(_("%s: replacing untracked files in directory\n") % f)
 
     for f, (m, args, msg) in actions.iteritems():
-        if m == 'c':
+        if m == ACTION_CREATED:
             backup = (f in fileconflicts or f in pathconflicts or
                       any(p in pathconflicts for p in util.finddirs(f)))
             flags, = args
-            actions[f] = ('g', (flags, backup), msg)
+            actions[f] = (ACTION_GET, (flags, backup), msg)
 
 def _forgetremoved(wctx, mctx, branchmerge):
     """
@@ -865,9 +888,9 @@ def _forgetremoved(wctx, mctx, branchmerge):
     """
 
     actions = {}
-    m = 'f'
+    m = ACTION_FORGET
     if branchmerge:
-        m = 'r'
+        m = ACTION_REMOVE
     for f in wctx.deleted():
         if f not in mctx:
             actions[f] = m, None, "forget deleted"
@@ -875,7 +898,7 @@ def _forgetremoved(wctx, mctx, branchmerge):
     if not branchmerge:
         for f in wctx.removed():
             if f not in mctx:
-                actions[f] = 'f', None, "forget removed"
+                actions[f] = ACTION_FORGET, None, "forget removed"
 
     return actions
 
@@ -884,19 +907,20 @@ def _checkcollision(repo, wmf, actions):
     pmmf = set(wmf)
 
     if actions:
-        # k, dr, e and rd are no-op
-        for m in 'a', 'am', 'f', 'g', 'cd', 'dc':
+        # KEEP and EXEC are no-op
+        for m in (ACTION_ADD, ACTION_ADD_MODIFIED, ACTION_FORGET, ACTION_GET,
+                  ACTION_CHANGED_DELETED, ACTION_DELETED_CHANGED):
             for f, args, msg in actions[m]:
                 pmmf.add(f)
-        for f, args, msg in actions['r']:
+        for f, args, msg in actions[ACTION_REMOVE]:
             pmmf.discard(f)
-        for f, args, msg in actions['dm']:
+        for f, args, msg in actions[ACTION_DIR_RENAME_MOVE_LOCAL]:
             f2, flags = args
             pmmf.discard(f2)
             pmmf.add(f)
-        for f, args, msg in actions['dg']:
+        for f, args, msg in actions[ACTION_LOCAL_DIR_RENAME_GET]:
             pmmf.add(f)
-        for f, args, msg in actions['m']:
+        for f, args, msg in actions[ACTION_MERGE]:
             f1, f2, fa, move, anc = args
             if move:
                 pmmf.discard(f1)
@@ -972,7 +996,8 @@ def checkpathconflicts(repo, wctx, mctx, actions):
     deletedfiles = set()
 
     for f, (m, args, msg) in actions.items():
-        if m in ('c', 'dc', 'm', 'cm'):
+        if m in (ACTION_CREATED, ACTION_DELETED_CHANGED, ACTION_MERGE,
+                 ACTION_CREATED_MERGE):
             # This action may create a new local file.
             createdfiledirs.update(util.finddirs(f))
             if mf.hasdir(f):
@@ -981,13 +1006,13 @@ def checkpathconflicts(repo, wctx, mctx, actions):
                 # will be checked once we know what all the deleted files are.
                 remoteconflicts.add(f)
         # Track the names of all deleted files.
-        if m == 'r':
+        if m == ACTION_REMOVE:
             deletedfiles.add(f)
-        if m == 'm':
+        if m == ACTION_MERGE:
             f1, f2, fa, move, anc = args
             if move:
                 deletedfiles.add(f1)
-        if m == 'dm':
+        if m == ACTION_DIR_RENAME_MOVE_LOCAL:
             f2, flags = args
             deletedfiles.add(f2)
 
@@ -1003,7 +1028,10 @@ def checkpathconflicts(repo, wctx, mctx, actions):
                 # A file is in a directory which aliases a local file.
                 # We will need to rename the local file.
                 localconflicts.add(p)
-        if p in actions and actions[p][0] in ('c', 'dc', 'm', 'cm'):
+        if p in actions and actions[p][0] in (ACTION_CREATED,
+                                              ACTION_DELETED_CHANGED,
+                                              ACTION_MERGE,
+                                              ACTION_CREATED_MERGE):
             # The file is in a directory which aliases a remote file.
             # This is an internal inconsistency within the remote
             # manifest.
@@ -1014,8 +1042,10 @@ def checkpathconflicts(repo, wctx, mctx, actions):
         if p not in deletedfiles:
             ctxname = bytes(wctx).rstrip('+')
             pnew = util.safename(p, ctxname, wctx, set(actions.keys()))
-            actions[pnew] = ('pr', (p,), "local path conflict")
-            actions[p] = ('p', (pnew, 'l'), "path conflict")
+            actions[pnew] = (ACTION_PATH_CONFLICT_RESOLVE, (p,),
+                             'local path conflict')
+            actions[p] = (ACTION_PATH_CONFLICT, (pnew, 'l'),
+                          'path conflict')
 
     if remoteconflicts:
         # Check if all files in the conflicting directories have been removed.
@@ -1024,14 +1054,16 @@ def checkpathconflicts(repo, wctx, mctx, actions):
             if f not in deletedfiles:
                 m, args, msg = actions[p]
                 pnew = util.safename(p, ctxname, wctx, set(actions.keys()))
-                if m in ('dc', 'm'):
+                if m in (ACTION_DELETED_CHANGED, ACTION_MERGE):
                     # Action was merge, just update target.
                     actions[pnew] = (m, args, msg)
                 else:
                     # Action was create, change to renamed get action.
                     fl = args[0]
-                    actions[pnew] = ('dg', (p, fl), "remote path conflict")
-                actions[p] = ('p', (pnew, 'r'), "path conflict")
+                    actions[pnew] = (ACTION_LOCAL_DIR_RENAME_GET, (p, fl),
+                                     'remote path conflict')
+                actions[p] = (ACTION_PATH_CONFLICT, (pnew, ACTION_REMOVE),
+                              'path conflict')
                 remoteconflicts.remove(p)
                 break
 
@@ -1109,77 +1141,80 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
             if f not in ma:
                 fa = copy.get(f, None)
                 if fa is not None:
-                    actions[f] = ('m', (f, f, fa, False, pa.node()),
-                                  "both renamed from " + fa)
+                    actions[f] = (ACTION_MERGE, (f, f, fa, False, pa.node()),
+                                  'both renamed from %s' % fa)
                 else:
-                    actions[f] = ('m', (f, f, None, False, pa.node()),
-                                  "both created")
+                    actions[f] = (ACTION_MERGE, (f, f, None, False, pa.node()),
+                                  'both created')
             else:
                 a = ma[f]
                 fla = ma.flags(f)
                 nol = 'l' not in fl1 + fl2 + fla
                 if n2 == a and fl2 == fla:
-                    actions[f] = ('k', (), "remote unchanged")
+                    actions[f] = (ACTION_KEEP, (), 'remote unchanged')
                 elif n1 == a and fl1 == fla: # local unchanged - use remote
                     if n1 == n2: # optimization: keep local content
-                        actions[f] = ('e', (fl2,), "update permissions")
+                        actions[f] = (ACTION_EXEC, (fl2,), 'update permissions')
                     else:
-                        actions[f] = ('g', (fl2, False), "remote is newer")
+                        actions[f] = (ACTION_GET, (fl2, False),
+                                      'remote is newer')
                 elif nol and n2 == a: # remote only changed 'x'
-                    actions[f] = ('e', (fl2,), "update permissions")
+                    actions[f] = (ACTION_EXEC, (fl2,), 'update permissions')
                 elif nol and n1 == a: # local only changed 'x'
-                    actions[f] = ('g', (fl1, False), "remote is newer")
+                    actions[f] = (ACTION_GET, (fl1, False), 'remote is newer')
                 else: # both changed something
-                    actions[f] = ('m', (f, f, f, False, pa.node()),
-                                   "versions differ")
+                    actions[f] = (ACTION_MERGE, (f, f, f, False, pa.node()),
+                                  'versions differ')
         elif n1: # file exists only on local side
             if f in copied:
                 pass # we'll deal with it on m2 side
             elif f in movewithdir: # directory rename, move local
                 f2 = movewithdir[f]
                 if f2 in m2:
-                    actions[f2] = ('m', (f, f2, None, True, pa.node()),
-                                   "remote directory rename, both created")
+                    actions[f2] = (ACTION_MERGE, (f, f2, None, True, pa.node()),
+                                   'remote directory rename, both created')
                 else:
-                    actions[f2] = ('dm', (f, fl1),
-                                   "remote directory rename - move from " + f)
+                    actions[f2] = (ACTION_DIR_RENAME_MOVE_LOCAL, (f, fl1),
+                                   'remote directory rename - move from %s' % f)
             elif f in copy:
                 f2 = copy[f]
-                actions[f] = ('m', (f, f2, f2, False, pa.node()),
-                              "local copied/moved from " + f2)
+                actions[f] = (ACTION_MERGE, (f, f2, f2, False, pa.node()),
+                              'local copied/moved from %s' % f2)
             elif f in ma: # clean, a different, no remote
                 if n1 != ma[f]:
                     if acceptremote:
-                        actions[f] = ('r', None, "remote delete")
+                        actions[f] = (ACTION_REMOVE, None, 'remote delete')
                     else:
-                        actions[f] = ('cd', (f, None, f, False, pa.node()),
-                                      "prompt changed/deleted")
+                        actions[f] = (ACTION_CHANGED_DELETED,
+                                      (f, None, f, False, pa.node()),
+                                      'prompt changed/deleted')
                 elif n1 == addednodeid:
                     # This extra 'a' is added by working copy manifest to mark
                     # the file as locally added. We should forget it instead of
                     # deleting it.
-                    actions[f] = ('f', None, "remote deleted")
+                    actions[f] = (ACTION_FORGET, None, 'remote deleted')
                 else:
-                    actions[f] = ('r', None, "other deleted")
+                    actions[f] = (ACTION_REMOVE, None, 'other deleted')
         elif n2: # file exists only on remote side
             if f in copied:
                 pass # we'll deal with it on m1 side
             elif f in movewithdir:
                 f2 = movewithdir[f]
                 if f2 in m1:
-                    actions[f2] = ('m', (f2, f, None, False, pa.node()),
-                                   "local directory rename, both created")
+                    actions[f2] = (ACTION_MERGE,
+                                   (f2, f, None, False, pa.node()),
+                                   'local directory rename, both created')
                 else:
-                    actions[f2] = ('dg', (f, fl2),
-                                   "local directory rename - get from " + f)
+                    actions[f2] = (ACTION_LOCAL_DIR_RENAME_GET, (f, fl2),
+                                   'local directory rename - get from %s' % f)
             elif f in copy:
                 f2 = copy[f]
                 if f2 in m2:
-                    actions[f] = ('m', (f2, f, f2, False, pa.node()),
-                                  "remote copied from " + f2)
+                    actions[f] = (ACTION_MERGE, (f2, f, f2, False, pa.node()),
+                                  'remote copied from %s' % f2)
                 else:
-                    actions[f] = ('m', (f2, f, f2, True, pa.node()),
-                                  "remote moved from " + f2)
+                    actions[f] = (ACTION_MERGE, (f2, f, f2, True, pa.node()),
+                                  'remote moved from %s' % f2)
             elif f not in ma:
                 # local unknown, remote created: the logic is described by the
                 # following table:
@@ -1193,12 +1228,12 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
                 # Checking whether the files are different is expensive, so we
                 # don't do that when we can avoid it.
                 if not force:
-                    actions[f] = ('c', (fl2,), "remote created")
+                    actions[f] = (ACTION_CREATED, (fl2,), 'remote created')
                 elif not branchmerge:
-                    actions[f] = ('c', (fl2,), "remote created")
+                    actions[f] = (ACTION_CREATED, (fl2,), 'remote created')
                 else:
-                    actions[f] = ('cm', (fl2, pa.node()),
-                                  "remote created, get or merge")
+                    actions[f] = (ACTION_CREATED_MERGE, (fl2, pa.node()),
+                                  'remote created, get or merge')
             elif n2 != ma[f]:
                 df = None
                 for d in dirmove:
@@ -1207,13 +1242,15 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
                         df = dirmove[d] + f[len(d):]
                         break
                 if df is not None and df in m1:
-                    actions[df] = ('m', (df, f, f, False, pa.node()),
-                            "local directory rename - respect move from " + f)
+                    actions[df] = (ACTION_MERGE, (df, f, f, False, pa.node()),
+                                   'local directory rename - respect move '
+                                   'from %s' % f)
                 elif acceptremote:
-                    actions[f] = ('c', (fl2,), "remote recreating")
+                    actions[f] = (ACTION_CREATED, (fl2,), 'remote recreating')
                 else:
-                    actions[f] = ('dc', (None, f, f, False, pa.node()),
-                                  "prompt deleted/changed")
+                    actions[f] = (ACTION_DELETED_CHANGED,
+                                  (None, f, f, False, pa.node()),
+                                  'prompt deleted/changed')
 
     if repo.ui.configbool('experimental', 'merge.checkpathconflicts'):
         # If we are merging, look for path conflicts.
@@ -1227,10 +1264,12 @@ def _resolvetrivial(repo, wctx, mctx, ancestor, actions):
     # We force a copy of actions.items() because we're going to mutate
     # actions as we resolve trivial conflicts.
     for f, (m, args, msg) in list(actions.items()):
-        if m == 'cd' and f in ancestor and not wctx[f].cmp(ancestor[f]):
+        if (m == ACTION_CHANGED_DELETED and f in ancestor
+            and not wctx[f].cmp(ancestor[f])):
             # local did change but ended up with same content
-            actions[f] = 'r', None, "prompt same"
-        elif m == 'dc' and f in ancestor and not mctx[f].cmp(ancestor[f]):
+            actions[f] = ACTION_REMOVE, None, 'prompt same'
+        elif (m == ACTION_DELETED_CHANGED and f in ancestor
+              and not mctx[f].cmp(ancestor[f])):
             # remote did change but ended up with same content
             del actions[f] # don't get = keep local deleted
 
@@ -1294,18 +1333,18 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
                 if all(a == l[0] for a in l[1:]): # len(bids) is > 1
                     repo.ui.note(_(" %s: consensus for %s\n") % (f, m))
                     actions[f] = l[0]
-                    if m == 'dm':
+                    if m == ACTION_DIR_RENAME_MOVE_LOCAL:
                         dms.append(f)
                     continue
             # If keep is an option, just do it.
-            if 'k' in bids:
+            if ACTION_KEEP in bids:
                 repo.ui.note(_(" %s: picking 'keep' action\n") % f)
-                actions[f] = bids['k'][0]
+                actions[f] = bids[ACTION_KEEP][0]
                 continue
             # If there are gets and they all agree [how could they not?], do it.
-            if 'g' in bids:
-                ga0 = bids['g'][0]
-                if all(a == ga0 for a in bids['g'][1:]):
+            if ACTION_GET in bids:
+                ga0 = bids[ACTION_GET][0]
+                if all(a == ga0 for a in bids[ACTION_GET][1:]):
                     repo.ui.note(_(" %s: picking 'get' action\n") % f)
                     actions[f] = ga0
                     continue
@@ -1320,14 +1359,14 @@ def calculateupdates(repo, wctx, mctx, ancestors, branchmerge, force,
             repo.ui.warn(_(' %s: ambiguous merge - picked %s action\n') %
                          (f, m))
             actions[f] = l[0]
-            if m == 'dm':
+            if m == ACTION_DIR_RENAME_MOVE_LOCAL:
                 dms.append(f)
             continue
         # Work around 'dm' that can cause multiple actions for the same file
         for f in dms:
             dm, (f0, flags), msg = actions[f]
-            assert dm == 'dm', dm
-            if f0 in actions and actions[f0][0] == 'r':
+            assert dm == ACTION_DIR_RENAME_MOVE_LOCAL, dm
+            if f0 in actions and actions[f0][0] == ACTION_REMOVE:
                 # We have one bid for removing a file and another for moving it.
                 # These two could be merged as first move and then delete ...
                 # but instead drop moving and just delete.
@@ -1432,7 +1471,8 @@ def _prefetchfiles(repo, ctx, actions):
     # Skipping 'a', 'am', 'f', 'r', 'dm', 'e', 'k', 'p' and 'pr', because they
     # don't touch the context to be merged in.  'cd' is skipped, because
     # changed/deleted never resolves to something from the remote side.
-    oplist = [actions[a] for a in 'g dc dg m'.split()]
+    oplist = [actions[a] for a in (ACTION_GET, ACTION_DELETED_CHANGED,
+                                   ACTION_LOCAL_DIR_RENAME_GET, ACTION_MERGE)]
     prefetch = scmutil.fileprefetchhooks
     prefetch(repo, ctx, [f for sublist in oplist for f, args, msg in sublist])
 
@@ -1479,9 +1519,9 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         l.sort()
 
     # 'cd' and 'dc' actions are treated like other merge conflicts
-    mergeactions = sorted(actions['cd'])
-    mergeactions.extend(sorted(actions['dc']))
-    mergeactions.extend(actions['m'])
+    mergeactions = sorted(actions[ACTION_CHANGED_DELETED])
+    mergeactions.extend(sorted(actions[ACTION_DELETED_CHANGED]))
+    mergeactions.extend(actions[ACTION_MERGE])
     for f, args, msg in mergeactions:
         f1, f2, fa, move, anc = args
         if f == '.hgsubstate': # merged internally
@@ -1516,14 +1556,15 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
             wctx[f].audit()
             wctx[f].remove()
 
-    numupdates = sum(len(l) for m, l in actions.items() if m != 'k')
+    numupdates = sum(len(l) for m, l in actions.items()
+                     if m != ACTION_KEEP)
     z = 0
 
-    if [a for a in actions['r'] if a[0] == '.hgsubstate']:
+    if [a for a in actions[ACTION_REMOVE] if a[0] == '.hgsubstate']:
         subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
 
     # record path conflicts
-    for f, args, msg in actions['p']:
+    for f, args, msg in actions[ACTION_PATH_CONFLICT]:
         f1, fo = args
         s = repo.ui.status
         s(_("%s: path conflict - a file or link has the same name as a "
@@ -1543,14 +1584,14 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
 
     # remove in parallel (must come before resolving path conflicts and getting)
     prog = worker.worker(repo.ui, cost, batchremove, (repo, wctx),
-                         actions['r'])
+                         actions[ACTION_REMOVE])
     for i, item in prog:
         z += i
         progress(_updating, z, item=item, total=numupdates, unit=_files)
-    removed = len(actions['r'])
+    removed = len(actions[ACTION_REMOVE])
 
     # resolve path conflicts (must come before getting)
-    for f, args, msg in actions['pr']:
+    for f, args, msg in actions[ACTION_PATH_CONFLICT_RESOLVE]:
         repo.ui.debug(" %s: %s -> pr\n" % (f, msg))
         f0, = args
         if wctx[f0].lexists():
@@ -1563,40 +1604,40 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
 
     # get in parallel
     prog = worker.worker(repo.ui, cost, batchget, (repo, mctx, wctx),
-                         actions['g'])
+                         actions[ACTION_GET])
     for i, item in prog:
         z += i
         progress(_updating, z, item=item, total=numupdates, unit=_files)
-    updated = len(actions['g'])
+    updated = len(actions[ACTION_GET])
 
-    if [a for a in actions['g'] if a[0] == '.hgsubstate']:
+    if [a for a in actions[ACTION_GET] if a[0] == '.hgsubstate']:
         subrepoutil.submerge(repo, wctx, mctx, wctx, overwrite, labels)
 
     # forget (manifest only, just log it) (must come first)
-    for f, args, msg in actions['f']:
+    for f, args, msg in actions[ACTION_FORGET]:
         repo.ui.debug(" %s: %s -> f\n" % (f, msg))
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
 
     # re-add (manifest only, just log it)
-    for f, args, msg in actions['a']:
+    for f, args, msg in actions[ACTION_ADD]:
         repo.ui.debug(" %s: %s -> a\n" % (f, msg))
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
 
     # re-add/mark as modified (manifest only, just log it)
-    for f, args, msg in actions['am']:
+    for f, args, msg in actions[ACTION_ADD_MODIFIED]:
         repo.ui.debug(" %s: %s -> am\n" % (f, msg))
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
 
     # keep (noop, just log it)
-    for f, args, msg in actions['k']:
+    for f, args, msg in actions[ACTION_KEEP]:
         repo.ui.debug(" %s: %s -> k\n" % (f, msg))
         # no progress
 
     # directory rename, move local
-    for f, args, msg in actions['dm']:
+    for f, args, msg in actions[ACTION_DIR_RENAME_MOVE_LOCAL]:
         repo.ui.debug(" %s: %s -> dm\n" % (f, msg))
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
@@ -1608,7 +1649,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         updated += 1
 
     # local directory rename, get
-    for f, args, msg in actions['dg']:
+    for f, args, msg in actions[ACTION_LOCAL_DIR_RENAME_GET]:
         repo.ui.debug(" %s: %s -> dg\n" % (f, msg))
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
@@ -1618,7 +1659,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         updated += 1
 
     # exec
-    for f, args, msg in actions['e']:
+    for f, args, msg in actions[ACTION_EXEC]:
         repo.ui.debug(" %s: %s -> e\n" % (f, msg))
         z += 1
         progress(_updating, z, item=f, total=numupdates, unit=_files)
@@ -1696,17 +1737,17 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
 
     extraactions = ms.actions()
     if extraactions:
-        mfiles = set(a[0] for a in actions['m'])
+        mfiles = set(a[0] for a in actions[ACTION_MERGE])
         for k, acts in extraactions.iteritems():
             actions[k].extend(acts)
-            # Remove these files from actions['m'] as well. This is important
-            # because in recordupdates, files in actions['m'] are processed
-            # after files in other actions, and the merge driver might add
-            # files to those actions via extraactions above. This can lead to a
-            # file being recorded twice, with poor results. This is especially
-            # problematic for actions['r'] (currently only possible with the
-            # merge driver in the initial merge process; interrupted merges
-            # don't go through this flow).
+            # Remove these files from actions[ACTION_MERGE] as well. This is
+            # important because in recordupdates, files in actions[ACTION_MERGE]
+            # are processed after files in other actions, and the merge driver
+            # might add files to those actions via extraactions above. This can
+            # lead to a file being recorded twice, with poor results. This is
+            # especially problematic for actions[ACTION_REMOVE] (currently only
+            # possible with the merge driver in the initial merge process;
+            # interrupted merges don't go through this flow).
             #
             # The real fix here is to have indexes by both file and action so
             # that when the action for a file is changed it is automatically
@@ -1717,7 +1758,8 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
             # those lists aren't consulted again.
             mfiles.difference_update(a[0] for a in acts)
 
-        actions['m'] = [a for a in actions['m'] if a[0] in mfiles]
+        actions[ACTION_MERGE] = [a for a in actions[ACTION_MERGE]
+                                 if a[0] in mfiles]
 
     progress(_updating, None, total=numupdates, unit=_files)
     return updateresult(updated, merged, removed, unresolved)
@@ -1725,18 +1767,18 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
 def recordupdates(repo, actions, branchmerge):
     "record merge actions to the dirstate"
     # remove (must come first)
-    for f, args, msg in actions.get('r', []):
+    for f, args, msg in actions.get(ACTION_REMOVE, []):
         if branchmerge:
             repo.dirstate.remove(f)
         else:
             repo.dirstate.drop(f)
 
     # forget (must come first)
-    for f, args, msg in actions.get('f', []):
+    for f, args, msg in actions.get(ACTION_FORGET, []):
         repo.dirstate.drop(f)
 
     # resolve path conflicts
-    for f, args, msg in actions.get('pr', []):
+    for f, args, msg in actions.get(ACTION_PATH_CONFLICT_RESOLVE, []):
         f0, = args
         origf0 = repo.dirstate.copied(f0) or f0
         repo.dirstate.add(f)
@@ -1747,33 +1789,33 @@ def recordupdates(repo, actions, branchmerge):
             repo.dirstate.drop(f0)
 
     # re-add
-    for f, args, msg in actions.get('a', []):
+    for f, args, msg in actions.get(ACTION_ADD, []):
         repo.dirstate.add(f)
 
     # re-add/mark as modified
-    for f, args, msg in actions.get('am', []):
+    for f, args, msg in actions.get(ACTION_ADD_MODIFIED, []):
         if branchmerge:
             repo.dirstate.normallookup(f)
         else:
             repo.dirstate.add(f)
 
     # exec change
-    for f, args, msg in actions.get('e', []):
+    for f, args, msg in actions.get(ACTION_EXEC, []):
         repo.dirstate.normallookup(f)
 
     # keep
-    for f, args, msg in actions.get('k', []):
+    for f, args, msg in actions.get(ACTION_KEEP, []):
         pass
 
     # get
-    for f, args, msg in actions.get('g', []):
+    for f, args, msg in actions.get(ACTION_GET, []):
         if branchmerge:
             repo.dirstate.otherparent(f)
         else:
             repo.dirstate.normal(f)
 
     # merge
-    for f, args, msg in actions.get('m', []):
+    for f, args, msg in actions.get(ACTION_MERGE, []):
         f1, f2, fa, move, anc = args
         if branchmerge:
             # We've done a branch merge, mark this file as merged
@@ -1798,7 +1840,7 @@ def recordupdates(repo, actions, branchmerge):
                 repo.dirstate.drop(f1)
 
     # directory rename, move local
-    for f, args, msg in actions.get('dm', []):
+    for f, args, msg in actions.get(ACTION_DIR_RENAME_MOVE_LOCAL, []):
         f0, flag = args
         if branchmerge:
             repo.dirstate.add(f)
@@ -1809,7 +1851,7 @@ def recordupdates(repo, actions, branchmerge):
             repo.dirstate.drop(f0)
 
     # directory rename, get
-    for f, args, msg in actions.get('dg', []):
+    for f, args, msg in actions.get(ACTION_LOCAL_DIR_RENAME_GET, []):
         f0, flag = args
         if branchmerge:
             repo.dirstate.add(f)
@@ -1982,7 +2024,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
 
         if updatecheck == 'noconflict':
             for f, (m, args, msg) in actionbyfile.iteritems():
-                if m not in ('g', 'k', 'e', 'r', 'pr'):
+                if m not in (ACTION_GET, ACTION_KEEP, ACTION_EXEC,
+                             ACTION_REMOVE, ACTION_PATH_CONFLICT_RESOLVE):
                     msg = _("conflicting changes")
                     hint = _("commit or update --clean to discard changes")
                     raise error.Abort(msg, hint=hint)
@@ -1995,30 +2038,45 @@ def update(repo, node, branchmerge, force, ancestor=None,
             m, args, msg = actionbyfile[f]
             prompts = filemerge.partextras(labels)
             prompts['f'] = f
-            if m == 'cd':
+            if m == ACTION_CHANGED_DELETED:
                 if repo.ui.promptchoice(
                     _("local%(l)s changed %(f)s which other%(o)s deleted\n"
                       "use (c)hanged version or (d)elete?"
                       "$$ &Changed $$ &Delete") % prompts, 0):
-                    actionbyfile[f] = ('r', None, "prompt delete")
+                    actionbyfile[f] = (ACTION_REMOVE, None, 'prompt delete')
                 elif f in p1:
-                    actionbyfile[f] = ('am', None, "prompt keep")
+                    actionbyfile[f] = (ACTION_ADD_MODIFIED, None, 'prompt keep')
                 else:
-                    actionbyfile[f] = ('a', None, "prompt keep")
-            elif m == 'dc':
+                    actionbyfile[f] = (ACTION_ADD, None, 'prompt keep')
+            elif m == ACTION_DELETED_CHANGED:
                 f1, f2, fa, move, anc = args
                 flags = p2[f2].flags()
                 if repo.ui.promptchoice(
                     _("other%(o)s changed %(f)s which local%(l)s deleted\n"
                       "use (c)hanged version or leave (d)eleted?"
                       "$$ &Changed $$ &Deleted") % prompts, 0) == 0:
-                    actionbyfile[f] = ('g', (flags, False), "prompt recreating")
+                    actionbyfile[f] = (ACTION_GET, (flags, False),
+                                       'prompt recreating')
                 else:
                     del actionbyfile[f]
 
         # Convert to dictionary-of-lists format
         actions = dict((m, [])
-                       for m in 'a am f g cd dc r dm dg m e k p pr'.split())
+                       for m in (
+                           ACTION_ADD,
+                           ACTION_ADD_MODIFIED,
+                           ACTION_FORGET,
+                           ACTION_GET,
+                           ACTION_CHANGED_DELETED,
+                           ACTION_DELETED_CHANGED,
+                           ACTION_REMOVE,
+                           ACTION_DIR_RENAME_MOVE_LOCAL,
+                           ACTION_LOCAL_DIR_RENAME_GET,
+                           ACTION_MERGE,
+                           ACTION_EXEC,
+                           ACTION_KEEP,
+                           ACTION_PATH_CONFLICT,
+                           ACTION_PATH_CONFLICT_RESOLVE))
         for f, (m, args, msg) in actionbyfile.iteritems():
             if m not in actions:
                 actions[m] = []
@@ -2081,7 +2139,7 @@ def update(repo, node, branchmerge, force, ancestor=None,
         if (fsmonitorwarning
                 and not fsmonitorenabled
                 and p1.node() == nullid
-                and len(actions['g']) >= fsmonitorthreshold
+                and len(actions[ACTION_GET]) >= fsmonitorthreshold
                 and pycompat.sysplatform.startswith(('linux', 'darwin'))):
             repo.ui.warn(
                 _('(warning: large working directory being used without '

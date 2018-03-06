@@ -55,7 +55,7 @@ def bisect(repo, state):
         if (len(state['bad']) == 1 and len(state['good']) == 1 and
             state['bad'] != state['good']):
             raise error.Abort(_("starting revisions are not directly related"))
-        raise error.Abort(_("inconsistent state, %s:%s is good and bad")
+        raise error.Abort(_("inconsistent state, %d:%s is good and bad")
                          % (badrev, short(bad)))
 
     # build children dict

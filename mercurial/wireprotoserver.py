@@ -235,13 +235,13 @@ def _callhttp(repo, req, proto, cmd):
         for chunk in gen:
             yield chunk
 
-    rsp = wireproto.dispatch(repo, proto, cmd)
-
     if not wireproto.commands.commandavailable(cmd, proto):
         req.respond(HTTP_OK, HGERRTYPE,
                     body=_('requested wire protocol command is not available '
                            'over HTTP'))
         return []
+
+    rsp = wireproto.dispatch(repo, proto, cmd)
 
     if isinstance(rsp, bytes):
         req.respond(HTTP_OK, HGTYPE, body=rsp)

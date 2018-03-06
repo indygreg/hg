@@ -478,7 +478,6 @@ class rebaseruntime(object):
                                              self.state, self.skipped,
                                              self.obsoletenotrebased)
                 self.storestatus(tr=tr)
-                storecollapsemsg(repo, self.collapsemsg)
                 if len(repo[None].parents()) == 2:
                     repo.ui.debug('resuming interrupted rebase\n')
                 else:
@@ -846,6 +845,7 @@ def _origrebase(ui, repo, inmemory=False, **opts):
             retcode = rbsrt._preparenewrebase(destmap)
             if retcode is not None:
                 return retcode
+            storecollapsemsg(repo, rbsrt.collapsemsg)
 
         tr = None
 

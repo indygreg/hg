@@ -605,9 +605,8 @@ class rebaseruntime(object):
             hg.updaterepo(repo, newwd, False)
 
         collapsedas = None
-        if not self.keepf:
-            if self.collapsef:
-                collapsedas = newnode
+        if self.collapsef and not self.keepf:
+            collapsedas = newnode
         clearrebased(ui, repo, self.destmap, self.state, self.skipped,
                      collapsedas, self.keepf, fm=fm)
 

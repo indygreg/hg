@@ -976,6 +976,10 @@ Test list of internal help commands
                  show set of successors for revision
    debugtemplate
                  parse and apply a template
+   debuguigetpass
+                 show prompt to type password
+   debuguiprompt
+                 show plain prompt
    debugupdatecaches
                  warm all known caches in the repository
    debugupgraderepo

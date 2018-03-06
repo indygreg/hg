@@ -117,6 +117,8 @@ Show debug commands if there are no other candidates
   debugsub
   debugsuccessorssets
   debugtemplate
+  debuguigetpass
+  debuguiprompt
   debugupdatecaches
   debugupgraderepo
   debugwalk
@@ -299,6 +301,8 @@ Show all commands + options
   debugsub: rev
   debugsuccessorssets: closest
   debugtemplate: rev, define
+  debuguigetpass: prompt
+  debuguiprompt: prompt
   debugupdatecaches: 
   debugupgraderepo: optimize, run
   debugwalk: include, exclude

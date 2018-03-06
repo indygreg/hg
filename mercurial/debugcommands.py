@@ -2459,6 +2459,22 @@ def debugtemplate(ui, repo, tmpl, **opts):
             displayer.show(repo[r], **pycompat.strkwargs(props))
         displayer.close()
 
+@command('debuguigetpass', [
+    ('p', 'prompt', '', _('prompt text'), _('TEXT')),
+], _('[-p TEXT]'), norepo=True)
+def debuguigetpass(ui, prompt=''):
+    """show prompt to type password"""
+    r = ui.getpass(prompt)
+    ui.write(('respose: %s\n') % r)
+
+@command('debuguiprompt', [
+    ('p', 'prompt', '', _('prompt text'), _('TEXT')),
+], _('[-p TEXT]'), norepo=True)
+def debuguiprompt(ui, prompt=''):
+    """show plain prompt"""
+    r = ui.prompt(prompt)
+    ui.write(('response: %s\n') % r)
+
 @command('debugupdatecaches', [])
 def debugupdatecaches(ui, repo, *pats, **opts):
     """warm all known caches in the repository"""

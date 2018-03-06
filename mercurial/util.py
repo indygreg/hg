@@ -1430,12 +1430,18 @@ def _sethgexecutable(path):
     global _hgexecutable
     _hgexecutable = path
 
-def _isstdout(f):
+def _testfileno(f, stdf):
     fileno = getattr(f, 'fileno', None)
     try:
-        return fileno and fileno() == sys.__stdout__.fileno()
+        return fileno and fileno() == stdf.fileno()
     except io.UnsupportedOperation:
         return False # fileno() raised UnsupportedOperation
+
+def isstdin(f):
+    return _testfileno(f, sys.__stdin__)
+
+def isstdout(f):
+    return _testfileno(f, sys.__stdout__)
 
 def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""
@@ -1464,7 +1470,7 @@ def system(cmd, environ=None, cwd=None, out=None):
         pass
     cmd = quotecommand(cmd)
     env = shellenviron(environ)
-    if out is None or _isstdout(out):
+    if out is None or isstdout(out):
         rc = subprocess.call(cmd, shell=True, close_fds=closefds,
                              env=env, cwd=cwd)
     else:

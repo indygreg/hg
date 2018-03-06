@@ -1278,7 +1278,13 @@ class ui(object):
         # prompt ' ' must exist; otherwise readline may delete entire line
         # - http://bugs.python.org/issue12833
         with self.timeblockedsection('stdio'):
-            line = util.bytesinput(self.fin, self.fout, r' ')
+            sin, sout = sys.stdin, sys.stdout
+            try:
+                sys.stdin = encoding.strio(self.fin)
+                sys.stdout = encoding.strio(self.fout)
+                line = encoding.strtolocal(pycompat.rawinput(r' '))
+            finally:
+                sys.stdin, sys.stdout = sin, sout
 
         # When stdin is in binary mode on Windows, it can cause
         # raw_input() to emit an extra trailing carriage return

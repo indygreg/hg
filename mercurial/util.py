@@ -212,14 +212,6 @@ def rapply(f, xs):
         return xs
     return _rapply(f, xs)
 
-def bytesinput(fin, fout, *args, **kwargs):
-    sin, sout = sys.stdin, sys.stdout
-    try:
-        sys.stdin, sys.stdout = encoding.strio(fin), encoding.strio(fout)
-        return encoding.strtolocal(pycompat.rawinput(*args, **kwargs))
-    finally:
-        sys.stdin, sys.stdout = sin, sout
-
 def bitsfrom(container):
     bits = 0
     for bit in container:

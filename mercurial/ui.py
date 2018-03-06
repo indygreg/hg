@@ -1264,6 +1264,10 @@ class ui(object):
         return i
 
     def _readline(self):
+        # Replacing stdin/stdout temporarily is a hard problem on Python 3
+        # because they have to be text streams with *no buffering*. Instead,
+        # we use rawinput() only if call_readline() will be invoked by
+        # PyOS_Readline(), so no I/O will be made at Python layer.
         usereadline = (self._isatty(self.fin) and self._isatty(self.fout)
                        and util.isstdin(self.fin) and util.isstdout(self.fout))
         if usereadline:
@@ -1280,13 +1284,16 @@ class ui(object):
         # prompt ' ' must exist; otherwise readline may delete entire line
         # - http://bugs.python.org/issue12833
         with self.timeblockedsection('stdio'):
-            sin, sout = sys.stdin, sys.stdout
-            try:
-                sys.stdin = encoding.strio(self.fin)
-                sys.stdout = encoding.strio(self.fout)
+            if usereadline:
                 line = encoding.strtolocal(pycompat.rawinput(r' '))
-            finally:
-                sys.stdin, sys.stdout = sin, sout
+            else:
+                self.fout.write(b' ')
+                self.fout.flush()
+                line = self.fin.readline()
+                if not line:
+                    raise EOFError
+                if line.endswith(pycompat.oslinesep):
+                    line = line[:-len(pycompat.oslinesep)]
 
         # When stdin is in binary mode on Windows, it can cause
         # raw_input() to emit an extra trailing carriage return

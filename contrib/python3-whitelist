@@ -3,6 +3,7 @@ test-add.t
 test-addremove-similar.t
 test-addremove.t
 test-amend-subrepo.t
+test-amend.t
 test-ancestor.py
 test-annotate.py
 test-annotate.t
@@ -185,6 +186,8 @@ test-journal-exists.t
 test-largefiles-cache.t
 test-largefiles-misc.t
 test-largefiles-small-disk.t
+test-largefiles-update.t
+test-lfs-largefiles.t
 test-locate.t
 test-lock-badness.t
 test-log.t
@@ -196,11 +199,13 @@ test-manifest.py
 test-manifest.t
 test-match.py
 test-mdiff.py
+test-merge-changedelete.t
 test-merge-closedheads.t
 test-merge-commit.t
 test-merge-criss-cross.t
 test-merge-default.t
 test-merge-force.t
+test-merge-halt.t
 test-merge-internal-tools-pattern.t
 test-merge-local.t
 test-merge-remove.t
@@ -228,11 +233,13 @@ test-mq-qgoto.t
 test-mq-qimport-fail-cleanup.t
 test-mq-qpush-exact.t
 test-mq-qqueue.t
+test-mq-qrefresh-interactive.t
 test-mq-qrefresh-replace-log-message.t
 test-mq-qrefresh.t
 test-mq-qrename.t
 test-mq-qsave.t
 test-mq-safety.t
+test-mq-subrepo.t
 test-mq-symlinks.t
 test-mv-cp-st-diff.t
 test-narrow-archive.t

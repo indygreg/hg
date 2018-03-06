@@ -25,6 +25,7 @@ test-bookmarks-merge.t
 test-bookmarks-rebase.t
 test-bookmarks-strip.t
 test-bookmarks.t
+test-branch-change.t
 test-branch-option.t
 test-branch-tag-confict.t
 test-branches.t

@@ -14,7 +14,6 @@ import time
 from . import (
     encoding,
     error,
-    hbisect,
     node,
     pycompat,
     registrar,
@@ -343,13 +342,15 @@ def short(text):
     return text[:12]
 
 @templatefilter('shortbisect')
-def shortbisect(text):
-    """Any text. Treats `text` as a bisection status, and
+def shortbisect(label):
+    """Any text. Treats `label` as a bisection status, and
     returns a single-character representing the status (G: good, B: bad,
     S: skipped, U: untested, I: ignored). Returns single space if `text`
     is not a valid bisection status.
     """
-    return hbisect.shortlabel(text) or ' '
+    if label:
+        return label[0].upper()
+    return ' '
 
 @templatefilter('shortdate')
 def shortdate(text):

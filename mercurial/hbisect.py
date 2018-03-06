@@ -267,12 +267,6 @@ def label(repo, node):
 
     return None
 
-def shortlabel(label):
-    if label:
-        return label[0].upper()
-
-    return None
-
 def printresult(ui, repo, state, displayer, nodes, good):
     if len(nodes) == 1:
         # narrowed it down to a single revision

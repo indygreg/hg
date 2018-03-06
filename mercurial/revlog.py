@@ -77,6 +77,8 @@ REVIDX_FLAGS_ORDER = [
     REVIDX_EXTSTORED,
 ]
 REVIDX_KNOWN_FLAGS = util.bitsfrom(REVIDX_FLAGS_ORDER)
+# bitmark for flags that could cause rawdata content change
+REVIDX_RAWTEXT_CHANGING_FLAGS = REVIDX_ISCENSORED | REVIDX_EXTSTORED
 
 # max size of revlog with inline data
 _maxinline = 131072
@@ -96,7 +98,8 @@ def addflagprocessor(flag, processor):
     """Register a flag processor on a revision data flag.
 
     Invariant:
-    - Flags need to be defined in REVIDX_KNOWN_FLAGS and REVIDX_FLAGS_ORDER.
+    - Flags need to be defined in REVIDX_KNOWN_FLAGS and REVIDX_FLAGS_ORDER,
+      and REVIDX_RAWTEXT_CHANGING_FLAGS if they can alter rawtext.
     - Only one flag processor can be registered on a specific flag.
     - flagprocessors must be 3-tuples of functions (read, write, raw) with the
       following signatures:
@@ -333,7 +336,9 @@ class _deltacomputer(object):
                                                    len(delta) - hlen):
             btext[0] = delta[hlen:]
         else:
-            basetext = revlog.revision(baserev, _df=fh, raw=True)
+            # deltabase is rawtext before changed by flag processors, which is
+            # equivalent to non-raw text
+            basetext = revlog.revision(baserev, _df=fh, raw=False)
             btext[0] = mdiff.patch(basetext, delta)
 
         try:
@@ -404,6 +409,9 @@ class _deltacomputer(object):
         for candidaterevs in self._getcandidaterevs(p1, p2, cachedelta):
             nominateddeltas = []
             for candidaterev in candidaterevs:
+                # no delta for rawtext-changing revs (see "candelta" for why)
+                if revlog.flags(candidaterev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
+                    continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
                 if revlog._isgooddeltainfo(candidatedelta, revinfo.textlen):
                     nominateddeltas.append(candidatedelta)
@@ -737,6 +745,18 @@ class revlog(object):
             return True
         except KeyError:
             return False
+
+    def candelta(self, baserev, rev):
+        """whether two revisions (baserev, rev) can be delta-ed or not"""
+        # Disable delta if either rev requires a content-changing flag
+        # processor (ex. LFS). This is because such flag processor can alter
+        # the rawtext content that the delta will be based on, and two clients
+        # could have a same revlog node with different flags (i.e. different
+        # rawtext contents) and the delta could be incompatible.
+        if ((self.flags(baserev) & REVIDX_RAWTEXT_CHANGING_FLAGS)
+            or (self.flags(rev) & REVIDX_RAWTEXT_CHANGING_FLAGS)):
+            return False
+        return True
 
     def clearcaches(self):
         self._cache = None
@@ -2078,7 +2098,10 @@ class revlog(object):
         # full versions are inserted when the needed deltas
         # become comparable to the uncompressed text
         if rawtext is None:
-            textlen = mdiff.patchedsize(self.rawsize(cachedelta[0]),
+            # need rawtext size, before changed by flag processors, which is
+            # the non-raw size. use revlog explicitly to avoid filelog's extra
+            # logic that might remove metadata size.
+            textlen = mdiff.patchedsize(revlog.size(self, cachedelta[0]),
                                         cachedelta[1])
         else:
             textlen = len(rawtext)
@@ -2087,7 +2110,14 @@ class revlog(object):
             deltacomputer = _deltacomputer(self)
 
         revinfo = _revisioninfo(node, p1, p2, btext, textlen, cachedelta, flags)
-        deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
+
+        # no delta for flag processor revision (see "candelta" for why)
+        # not calling candelta since only one revision needs test, also to
+        # avoid overhead fetching flags again.
+        if flags & REVIDX_RAWTEXT_CHANGING_FLAGS:
+            deltainfo = None
+        else:
+            deltainfo = deltacomputer.finddeltainfo(revinfo, fh)
 
         if deltainfo is not None:
             base = deltainfo.base

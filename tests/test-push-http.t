@@ -307,28 +307,6 @@ Make phases updates work
   $ hg --config extensions.strip= strip -r 1:
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/ba677d0156c1-eea704d7-backup.hg
 
-expect authorization error: all users denied
-
-  $ echo '[web]' > .hg/hgrc
-  $ echo 'push_ssl = false' >> .hg/hgrc
-  $ echo 'deny_push = *' >> .hg/hgrc
-  $ req
-  pushing to http://localhost:$HGPORT/
-  searching for changes
-  abort: authorization failed
-  % serve errors
-  [255]
-
-expect authorization error: some users denied, users must be authenticated
-
-  $ echo 'deny_push = unperson' >> .hg/hgrc
-  $ req
-  pushing to http://localhost:$HGPORT/
-  searching for changes
-  abort: authorization failed
-  % serve errors
-  [255]
-
 #if bundle2
 
   $ cat > .hg/hgrc <<EOF

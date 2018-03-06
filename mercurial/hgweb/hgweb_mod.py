@@ -37,6 +37,7 @@ from .. import (
     templater,
     ui as uimod,
     util,
+    wireproto,
     wireprotoserver,
 )
 
@@ -46,15 +47,8 @@ from . import (
     wsgicgi,
 )
 
-perms = {
-    'changegroup': 'pull',
-    'changegroupsubset': 'pull',
-    'getbundle': 'pull',
-    'stream_out': 'pull',
-    'listkeys': 'pull',
-    'unbundle': 'push',
-    'pushkey': 'push',
-}
+# Aliased for API compatibility.
+perms = wireproto.permissions
 
 archivespecs = util.sortdict((
     ('zip', ('application/zip', 'zip', '.zip', None)),
@@ -367,12 +361,20 @@ class hgweb(object):
             try:
                 if query:
                     raise ErrorResponse(HTTP_NOT_FOUND)
-                if cmd in perms:
-                    self.check_perm(rctx, req, perms[cmd])
+
+                # TODO fold this into parsehttprequest
+                req.checkperm = lambda op: self.check_perm(rctx, req, op)
+                protohandler['proto'].checkperm = req.checkperm
+
+                # Assume commands with no defined permissions are writes /
+                # for pushes. This is the safest from a security perspective
+                # because it doesn't allow commands with undefined semantics
+                # from bypassing permissions checks.
+                req.checkperm(perms.get(cmd, 'push'))
+
+                return protohandler['dispatch']()
             except ErrorResponse as inst:
                 return protohandler['handleerror'](inst)
-
-            return protohandler['dispatch']()
 
         # translate user-visible url structure to internal structure
 

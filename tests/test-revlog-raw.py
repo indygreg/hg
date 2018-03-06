@@ -114,6 +114,8 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
             else:
                 # suboptimal deltaparent
                 deltaparent = min(0, parentrev)
+            if not rlog.candelta(deltaparent, r):
+                deltaparent = -1
             return {'node': rlog.node(r), 'p1': pnode, 'p2': node.nullid,
                     'cs': rlog.node(rlog.linkrev(r)), 'flags': rlog.flags(r),
                     'deltabase': rlog.node(deltaparent),
@@ -151,12 +153,14 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
     for r in rlog:
         p1 = rlog.node(r - 1)
         p2 = node.nullid
-        if r == 0:
+        if r == 0 or (rlog.flags(r) & revlog.REVIDX_EXTSTORED):
             text = rlog.revision(r, raw=True)
             cachedelta = None
         else:
-            # deltaparent is more interesting if it has the EXTSTORED flag.
-            deltaparent = max([0] + [p for p in range(r - 2) if rlog.flags(p)])
+            # deltaparent cannot have EXTSTORED flag.
+            deltaparent = max([-1] +
+                              [p for p in range(r)
+                               if rlog.flags(p) & revlog.REVIDX_EXTSTORED == 0])
             text = None
             cachedelta = (deltaparent, rlog.revdiff(deltaparent, r))
         flags = rlog.flags(r)
@@ -262,8 +266,9 @@ def writecases(rlog, tr):
         result.append((text, rawtext))
 
         # Verify flags like isdelta, isext work as expected
-        if bool(rlog.deltaparent(rev) > -1) != isdelta:
-            abort('rev %d: isdelta is ineffective' % rev)
+        # isdelta can be overridden to False if this or p1 has isext set
+        if bool(rlog.deltaparent(rev) > -1) and not isdelta:
+            abort('rev %d: isdelta is unexpected' % rev)
         if bool(rlog.flags(rev)) != isext:
             abort('rev %d: isext is ineffective' % rev)
     return result

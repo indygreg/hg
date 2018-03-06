@@ -371,7 +371,8 @@ def debugdrawdag(ui, repo, **opts):
     comments = list(_getcomments(text))
     filere = re.compile(br'^(\w+)/([\w/]+)\s*=\s*(.*)$', re.M)
     for name, path, content in filere.findall(b'\n'.join(comments)):
-        files[name][path] = content.replace(br'\n', b'\n')
+        content = content.replace(br'\n', b'\n').replace(br'\1', b'\1')
+        files[name][path] = content
 
     committed = {None: node.nullid}  # {name: node}
 

@@ -272,7 +272,7 @@ class fileit(object):
         if islink:
             self.opener.symlink(data, name)
             return
-        f = self.opener(name, "w", atomictemp=True)
+        f = self.opener(name, "w", atomictemp=False)
         f.write(data)
         f.close()
         destfile = os.path.join(self.basedir, name)

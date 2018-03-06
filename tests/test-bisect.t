@@ -465,8 +465,8 @@ test bisecting command
   > from __future__ import absolute_import
   > import sys
   > from mercurial import hg, ui as uimod
-  > repo = hg.repository(uimod.ui.load(), '.')
-  > if repo['.'].rev() < 6:
+  > repo = hg.repository(uimod.ui.load(), b'.')
+  > if repo[b'.'].rev() < 6:
   >     sys.exit(1)
   > EOF
   $ chmod +x script.py

@@ -16,6 +16,7 @@ test-backout.t
 test-backwards-remove.t
 test-basic.t
 test-bheads.t
+test-bisect.t
 test-bisect2.t
 test-blackbox.t
 test-bookmarks-current.t

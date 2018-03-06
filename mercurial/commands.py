@@ -4360,11 +4360,12 @@ def resolve(ui, repo, *pats, **opts):
         # as 'P'.  Resolved path conflicts show as 'R', the same as normal
         # resolved conflicts.
         mergestateinfo = {
-            'u': ('resolve.unresolved', 'U'),
-            'r': ('resolve.resolved', 'R'),
-            'pu': ('resolve.unresolved', 'P'),
-            'pr': ('resolve.resolved', 'R'),
-            'd': ('resolve.driverresolved', 'D'),
+            mergemod.MERGE_RECORD_UNRESOLVED: ('resolve.unresolved', 'U'),
+            mergemod.MERGE_RECORD_RESOLVED: ('resolve.resolved', 'R'),
+            mergemod.MERGE_RECORD_UNRESOLVED_PATH: ('resolve.unresolved', 'P'),
+            mergemod.MERGE_RECORD_RESOLVED_PATH: ('resolve.resolved', 'R'),
+            mergemod.MERGE_RECORD_DRIVER_RESOLVED: ('resolve.driverresolved',
+                                                    'D'),
         }
 
         for f in ms:
@@ -4387,7 +4388,8 @@ def resolve(ui, repo, *pats, **opts):
 
         wctx = repo[None]
 
-        if ms.mergedriver and ms.mdstate() == 'u':
+        if (ms.mergedriver
+            and ms.mdstate() == mergemod.MERGE_DRIVER_STATE_UNMARKED):
             proceed = mergemod.driverpreprocess(repo, ms, wctx)
             ms.commit()
             # allow mark and unmark to go through
@@ -4408,7 +4410,7 @@ def resolve(ui, repo, *pats, **opts):
 
             # don't let driver-resolved files be marked, and run the conclude
             # step if asked to resolve
-            if ms[f] == "d":
+            if ms[f] == mergemod.MERGE_RECORD_DRIVER_RESOLVED:
                 exact = m.exact(f)
                 if mark:
                     if exact:
@@ -4423,20 +4425,21 @@ def resolve(ui, repo, *pats, **opts):
                 continue
 
             # path conflicts must be resolved manually
-            if ms[f] in ("pu", "pr"):
+            if ms[f] in (mergemod.MERGE_RECORD_UNRESOLVED_PATH,
+                         mergemod.MERGE_RECORD_RESOLVED_PATH):
                 if mark:
-                    ms.mark(f, "pr")
+                    ms.mark(f, mergemod.MERGE_RECORD_RESOLVED_PATH)
                 elif unmark:
-                    ms.mark(f, "pu")
-                elif ms[f] == "pu":
+                    ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED_PATH)
+                elif ms[f] == mergemod.MERGE_RECORD_UNRESOLVED_PATH:
                     ui.warn(_('%s: path conflict must be resolved manually\n')
                             % f)
                 continue
 
             if mark:
-                ms.mark(f, "r")
+                ms.mark(f, mergemod.MERGE_RECORD_RESOLVED)
             elif unmark:
-                ms.mark(f, "u")
+                ms.mark(f, mergemod.MERGE_RECORD_UNRESOLVED)
             else:
                 # backup pre-resolve (merge uses .orig for its own purposes)
                 a = repo.wjoin(f)

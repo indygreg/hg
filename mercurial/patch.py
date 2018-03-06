@@ -1102,11 +1102,11 @@ all lines of the hunk are removed, then the edit is aborted and
 the hunk is left unchanged.
 """)
                 (patchfd, patchfn) = tempfile.mkstemp(prefix="hg-editor-",
-                        suffix=".diff", text=True)
+                                                      suffix=".diff")
                 ncpatchfp = None
                 try:
                     # Write the initial patch
-                    f = os.fdopen(patchfd, r"w")
+                    f = util.nativeeolwriter(os.fdopen(patchfd, r'wb'))
                     chunk.header.write(f)
                     chunk.write(f)
                     f.write('\n'.join(['# ' + i for i in phelp.splitlines()]))

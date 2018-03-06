@@ -2426,6 +2426,22 @@ bytecount = unitcountfn(
     (1, 1, _('%.0f bytes')),
     )
 
+class transformingwriter(object):
+    """Writable file wrapper to transform data by function"""
+
+    def __init__(self, fp, encode):
+        self._fp = fp
+        self._encode = encode
+
+    def close(self):
+        self._fp.close()
+
+    def flush(self):
+        self._fp.flush()
+
+    def write(self, data):
+        return self._fp.write(self._encode(data))
+
 # Matches a single EOL which can either be a CRLF where repeated CR
 # are removed or a LF. We do not care about old Macintosh files, so a
 # stray CR is an error.
@@ -2437,12 +2453,17 @@ def tolf(s):
 def tocrlf(s):
     return _eolre.sub('\r\n', s)
 
+def _crlfwriter(fp):
+    return transformingwriter(fp, tocrlf)
+
 if pycompat.oslinesep == '\r\n':
     tonativeeol = tocrlf
     fromnativeeol = tolf
+    nativeeolwriter = _crlfwriter
 else:
     tonativeeol = pycompat.identity
     fromnativeeol = pycompat.identity
+    nativeeolwriter = pycompat.identity
 
 def escapestr(s):
     # call underlying function of s.encode('string_escape') directly for

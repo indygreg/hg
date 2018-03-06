@@ -1286,6 +1286,10 @@ class ui(object):
         with self.timeblockedsection('stdio'):
             if usereadline:
                 line = encoding.strtolocal(pycompat.rawinput(r' '))
+                # When stdin is in binary mode on Windows, it can cause
+                # raw_input() to emit an extra trailing carriage return
+                if pycompat.oslinesep == b'\r\n' and line.endswith(b'\r'):
+                    line = line[:-1]
             else:
                 self.fout.write(b' ')
                 self.fout.flush()
@@ -1295,10 +1299,6 @@ class ui(object):
                 if line.endswith(pycompat.oslinesep):
                     line = line[:-len(pycompat.oslinesep)]
 
-        # When stdin is in binary mode on Windows, it can cause
-        # raw_input() to emit an extra trailing carriage return
-        if pycompat.oslinesep == '\r\n' and line and line[-1] == '\r':
-            line = line[:-1]
         return line
 
     def prompt(self, msg, default="y"):

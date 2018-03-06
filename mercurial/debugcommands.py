@@ -2818,11 +2818,16 @@ def debugwireproto(ui, repo, **opts):
         elif action == 'close':
             peer.close()
         elif action == 'readavailable':
-            fds = util.poll([stdout.fileno(), stderr.fileno()])
+            fds = [stdout.fileno(), stderr.fileno()]
+            try:
+                act = util.poll(fds)
+            except NotImplementedError:
+                # non supported yet case, assume all have data.
+                act = fds
 
-            if stdout.fileno() in fds:
+            if stdout.fileno() in act:
                 util.readpipe(stdout)
-            if stderr.fileno() in fds:
+            if stderr.fileno() in act:
                 util.readpipe(stderr)
         elif action == 'readline':
             stdout.readline()

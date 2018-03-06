@@ -18,6 +18,7 @@ test-basic.t
 test-bheads.t
 test-bisect.t
 test-bisect2.t
+test-bisect3.t
 test-blackbox.t
 test-bookmarks-current.t
 test-bookmarks-merge.t

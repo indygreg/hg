@@ -349,7 +349,7 @@ def shortbisect(label):
     is not a valid bisection status.
     """
     if label:
-        return label[0].upper()
+        return label[0:1].upper()
     return ' '
 
 @templatefilter('shortdate')

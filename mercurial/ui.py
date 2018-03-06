@@ -1264,7 +1264,9 @@ class ui(object):
         return i
 
     def _readline(self):
-        if self._isatty(self.fin):
+        usereadline = (self._isatty(self.fin) and self._isatty(self.fout)
+                       and util.isstdin(self.fin) and util.isstdout(self.fout))
+        if usereadline:
             try:
                 # magically add command line editing support, where
                 # available
@@ -1273,7 +1275,7 @@ class ui(object):
                 readline.read_history_file
                 # windows sometimes raises something other than ImportError
             except Exception:
-                pass
+                usereadline = False
 
         # prompt ' ' must exist; otherwise readline may delete entire line
         # - http://bugs.python.org/issue12833

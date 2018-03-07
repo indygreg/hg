@@ -18,19 +18,19 @@ x%.o: ../../mercurial/thirdparty/xdiff/x%.c ../../mercurial/thirdparty/xdiff/*.h
 	  -o $@ \
 	  $<
 
-xdiff: xdiff.cc xdiffi.o  xemit.o  xmerge.o  xprepare.o  xutils.o
+xdiff: xdiff.cc xdiffi.o xprepare.o  xutils.o
 	clang -DHG_FUZZER_INCLUDE_MAIN=1 -g -O1 -fsanitize=fuzzer-no-link,address \
 	  -I../../mercurial xdiff.cc \
-	  xdiffi.o xemit.o xmerge.o xprepare.o xutils.o -o xdiff
+	  xdiffi.o xprepare.o xutils.o -o xdiff
 
 fuzz-x%.o: ../../mercurial/thirdparty/xdiff/x%.c ../../mercurial/thirdparty/xdiff/*.h
 	$$CC $$CFLAGS -c \
 	  -o $@ \
 	  $<
 
-xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o  fuzz-xemit.o  fuzz-xmerge.o  fuzz-xprepare.o  fuzz-xutils.o
+xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o  fuzz-xutils.o
 	$$CXX $$CXXFLAGS -std=c++11 -I../../mercurial xdiff.cc \
-	  fuzz-xdiffi.o fuzz-xemit.o fuzz-xmerge.o fuzz-xprepare.o fuzz-xutils.o \
+	  fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o \
 	  -lFuzzingEngine -o $$OUT/xdiff_fuzzer
 
 all: bdiff xdiff

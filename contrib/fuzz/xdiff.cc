@@ -37,20 +37,13 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 	b.size = Size - split;
 	xpparam_t xpp = {
 	    XDF_INDENT_HEURISTIC, /* flags */
-	    NULL,                 /* anchors */
-	    0,                    /* anchors_nr */
 	};
 	xdemitconf_t xecfg = {
-	    0,                  /* ctxlen */
-	    0,                  /* interhunkctxlen */
 	    XDL_EMIT_BDIFFHUNK, /* flags */
-	    NULL,               /* find_func */
-	    NULL,               /* find_func_priv */
 	    hunk_consumer,      /* hunk_consume_func */
 	};
 	xdemitcb_t ecb = {
 	    NULL, /* priv */
-	    NULL, /* outf */
 	};
 	xdl_diff(&a, &b, &xpp, &xecfg, &ecb);
 	return 0; // Non-zero return values are reserved for future use.

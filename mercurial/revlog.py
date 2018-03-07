@@ -2557,6 +2557,15 @@ class revlog(object):
         if self._maxchainlen and  self._maxchainlen < deltainfo.chainlen:
             return False
 
+        # bad delta from intermediate snapshot size limit
+        #
+        #   If an intermediate snapshot size is higher than the limit.  The
+        #   limit exist to prevent endless chain of intermediate delta to be
+        #   created.
+        if (deltainfo.snapshotdepth is not None and
+                (textlen >> deltainfo.snapshotdepth) < deltainfo.deltalen):
+            return False
+
         return True
 
     def _addrevision(self, node, rawtext, transaction, link, p1, p2, flags,

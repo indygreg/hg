@@ -1062,6 +1062,7 @@ xdchange_t *xdl_get_hunk(xdchange_t **xscr, xdemitconf_t const *xecfg)
 static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 			      xdemitconf_t const *xecfg)
 {
+	long p = xe->nprefix, s = xe->nsuffix;
 	xdchange_t *xch, *xche;
 
 	if (!xecfg->hunk_func)
@@ -1073,6 +1074,10 @@ static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 			xche = xdl_get_hunk(&xch, xecfg);
 			if (!xch)
 				break;
+			if (xch != xche)
+				xdl_bug("xch != xche");
+			xch->i1 += p;
+			xch->i2 += p;
 			if (xch->i1 > i1 || xch->i2 > i2) {
 				if (xecfg->hunk_func(i1, xch->i1, i2, xch->i2, ecb->priv) < 0)
 					return -1;
@@ -1080,16 +1085,18 @@ static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 			i1 = xche->i1 + xche->chg1;
 			i2 = xche->i2 + xche->chg2;
 		}
-		if (xecfg->hunk_func(i1, n1, i2, n2, ecb->priv) < 0)
+		if (xecfg->hunk_func(i1, n1 + p + s, i2, n2 + p + s,
+				     ecb->priv) < 0)
 			return -1;
 	} else {
 		for (xch = xscr; xch; xch = xche->next) {
 			xche = xdl_get_hunk(&xch, xecfg);
 			if (!xch)
 				break;
-			if (xecfg->hunk_func(
-					xch->i1, xche->i1 + xche->chg1 - xch->i1,
-					xch->i2, xche->i2 + xche->chg2 - xch->i2,
+			if (xecfg->hunk_func(xch->i1 + p,
+					xche->i1 + xche->chg1 - xch->i1,
+					xch->i2 + p,
+					xche->i2 + xche->chg2 - xch->i2,
 					ecb->priv) < 0)
 				return -1;
 		}

@@ -2093,26 +2093,27 @@ class revlog(object):
 
         return compressor.decompress(data)
 
-    def _isgooddeltainfo(self, d, textlen):
+    def _isgooddeltainfo(self, deltainfo, textlen):
         """Returns True if the given delta is good. Good means that it is within
         the disk span, disk size, and chain length bounds that we know to be
         performant."""
-        if d is None:
+        if deltainfo is None:
             return False
 
-        # - 'd.distance' is the distance from the base revision -- bounding it
-        #   limits the amount of I/O we need to do.
-        # - 'd.compresseddeltalen' is the sum of the total size of deltas we
-        #   need to apply -- bounding it limits the amount of CPU we consume.
+        # - 'deltainfo.distance' is the distance from the base revision --
+        #   bounding it limits the amount of I/O we need to do.
+        # - 'deltainfo.compresseddeltalen' is the sum of the total size of
+        #   deltas we need to apply -- bounding it limits the amount of CPU
+        #   we consume.
 
         defaultmax = textlen * 4
         maxdist = self._maxdeltachainspan
         if not maxdist:
-            maxdist = d.distance # ensure the conditional pass
+            maxdist = deltainfo.distance # ensure the conditional pass
         maxdist = max(maxdist, defaultmax)
-        if (d.distance > maxdist or d.deltalen > textlen or
-            d.compresseddeltalen > textlen * 2 or
-            (self._maxchainlen and d.chainlen > self._maxchainlen)):
+        if (deltainfo.distance > maxdist or deltainfo.deltalen > textlen or
+            deltainfo.compresseddeltalen > textlen * 2 or
+            (self._maxchainlen and deltainfo.chainlen > self._maxchainlen)):
             return False
 
         return True

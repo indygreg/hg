@@ -449,7 +449,7 @@ class _deltacomputer(object):
                 if revlog.flags(candidaterev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
                     continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
-                if revlog._isgooddeltainfo(candidatedelta, revinfo.textlen):
+                if revlog._isgooddeltainfo(candidatedelta, revinfo):
                     nominateddeltas.append(candidatedelta)
             if nominateddeltas:
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
@@ -2093,7 +2093,7 @@ class revlog(object):
 
         return compressor.decompress(data)
 
-    def _isgooddeltainfo(self, deltainfo, textlen):
+    def _isgooddeltainfo(self, deltainfo, revinfo):
         """Returns True if the given delta is good. Good means that it is within
         the disk span, disk size, and chain length bounds that we know to be
         performant."""
@@ -2106,6 +2106,7 @@ class revlog(object):
         #   deltas we need to apply -- bounding it limits the amount of CPU
         #   we consume.
 
+        textlen = revinfo.textlen
         defaultmax = textlen * 4
         maxdist = self._maxdeltachainspan
         if not maxdist:

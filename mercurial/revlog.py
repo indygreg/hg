@@ -345,6 +345,7 @@ class _deltacomputer(object):
                 # other approach failed try against prev to hopefully save us a
                 # fulltext.
                 yield (prev,)
+                tested.add(prev)
 
     def buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision

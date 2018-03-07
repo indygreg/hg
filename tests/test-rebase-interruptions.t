@@ -463,3 +463,23 @@ Make sure merge state is cleaned up after a no-op rebase merge (issue5494)
   $ hg resolve --list
   $ test -d .hg/merge
   [1]
+Now try again with --collapse
+  $ hg unbundle -q .hg/strip-backup/fdaca8533b86-7fd70513-rebase.hg
+  $ hg rebase -s 2 -d 1 --noninteractive --collapse
+  rebasing 2:fdaca8533b86 "b" (tip)
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ echo a > a
+  $ echo c >> a
+  $ hg resolve --mark a
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue
+  rebasing 2:fdaca8533b86 "b" (tip)
+  saved backup bundle to $TESTTMP/repo/.hg/strip-backup/fdaca8533b86-7fd70513-rebase.hg
+BROKEN: the merge state was not cleared
+  $ hg resolve --list
+  R a
+  $ test -d .hg/merge

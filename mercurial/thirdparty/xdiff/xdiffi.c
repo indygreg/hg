@@ -1007,10 +1007,66 @@ void xdl_free_script(xdchange_t *xscr) {
 	}
 }
 
+
+/*
+ * Starting at the passed change atom, find the latest change atom to be included
+ * inside the differential hunk according to the specified configuration.
+ * Also advance xscr if the first changes must be discarded.
+ */
+xdchange_t *xdl_get_hunk(xdchange_t **xscr, xdemitconf_t const *xecfg)
+{
+	xdchange_t *xch, *xchp, *lxch;
+	long max_common = 0;
+	long max_ignorable = 0;
+	unsigned long ignored = 0; /* number of ignored blank lines */
+
+	/* remove ignorable changes that are too far before other changes */
+	for (xchp = *xscr; xchp && xchp->ignore; xchp = xchp->next) {
+		xch = xchp->next;
+
+		if (xch == NULL ||
+		    xch->i1 - (xchp->i1 + xchp->chg1) >= max_ignorable)
+			*xscr = xch;
+	}
+
+	if (*xscr == NULL)
+		return NULL;
+
+	lxch = *xscr;
+
+	for (xchp = *xscr, xch = xchp->next; xch; xchp = xch, xch = xch->next) {
+		long distance = xch->i1 - (xchp->i1 + xchp->chg1);
+		if (distance > max_common)
+			break;
+
+		if (distance < max_ignorable && (!xch->ignore || lxch == xchp)) {
+			lxch = xch;
+			ignored = 0;
+		} else if (distance < max_ignorable && xch->ignore) {
+			ignored += xch->chg2;
+		} else if (lxch != xchp &&
+			   xch->i1 + ignored - (lxch->i1 + lxch->chg1) > max_common) {
+			break;
+		} else if (!xch->ignore) {
+			lxch = xch;
+			ignored = 0;
+		} else {
+			ignored += xch->chg2;
+		}
+	}
+
+	return lxch;
+}
+
+
 static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 			      xdemitconf_t const *xecfg)
 {
 	xdchange_t *xch, *xche;
+
+	if (!xecfg->hunk_func)
+		return -1;
+
 	if ((xecfg->flags & XDL_EMIT_BDIFFHUNK) != 0) {
 		long i1 = 0, i2 = 0, n1 = xe->xdf1.nrec, n2 = xe->xdf2.nrec;
 		for (xch = xscr; xch; xch = xche->next) {
@@ -1045,7 +1101,6 @@ int xdl_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 	     xdemitconf_t const *xecfg, xdemitcb_t *ecb) {
 	xdchange_t *xscr;
 	xdfenv_t xe;
-	emit_func_t ef = xecfg->hunk_func ? xdl_call_hunk_func : xdl_emit_diff;
 
 	if (xdl_do_diff(mf1, mf2, xpp, &xe) < 0) {
 
@@ -1059,7 +1114,7 @@ int xdl_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 		return -1;
 	}
 
-	if (ef(&xe, xscr, ecb, xecfg) < 0) {
+	if (xdl_call_hunk_func(&xe, xscr, ecb, xecfg) < 0) {
 		xdl_free_script(xscr);
 		xdl_free_env(&xe);
 		return -1;

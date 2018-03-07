@@ -40,28 +40,6 @@ long xdl_bogosqrt(long n) {
 }
 
 
-int xdl_emit_diffrec(char const *rec, long size, char const *pre, long psize,
-		     xdemitcb_t *ecb) {
-	int i = 2;
-	mmbuffer_t mb[3];
-
-	mb[0].ptr = (char *) pre;
-	mb[0].size = psize;
-	mb[1].ptr = (char *) rec;
-	mb[1].size = size;
-	if (size > 0 && rec[size - 1] != '\n') {
-		mb[2].ptr = (char *) "\n\\ No newline at end of file\n";
-		mb[2].size = strlen(mb[2].ptr);
-		i++;
-	}
-	if (ecb->outf(ecb->priv, mb, i) < 0) {
-
-		return -1;
-	}
-
-	return 0;
-}
-
 void *xdl_mmfile_first(mmfile_t *mmf, long *size)
 {
 	*size = mmf->size;
@@ -168,76 +146,4 @@ unsigned int xdl_hashbits(unsigned int size) {
 
 	for (; val < size && bits < CHAR_BIT * sizeof(unsigned int); val <<= 1, bits++);
 	return bits ? bits: 1;
-}
-
-
-int xdl_num_out(char *out, long val) {
-	char *ptr, *str = out;
-	char buf[32];
-
-	ptr = buf + sizeof(buf) - 1;
-	*ptr = '\0';
-	if (val < 0) {
-		*--ptr = '-';
-		val = -val;
-	}
-	for (; val && ptr > buf; val /= 10)
-		*--ptr = "0123456789"[val % 10];
-	if (*ptr)
-		for (; *ptr; ptr++, str++)
-			*str = *ptr;
-	else
-		*str++ = '0';
-	*str = '\0';
-
-	return str - out;
-}
-
-int xdl_emit_hunk_hdr(long s1, long c1, long s2, long c2,
-		      const char *func, long funclen, xdemitcb_t *ecb) {
-	int nb = 0;
-	mmbuffer_t mb;
-	char buf[128];
-
-	memcpy(buf, "@@ -", 4);
-	nb += 4;
-
-	nb += xdl_num_out(buf + nb, c1 ? s1: s1 - 1);
-
-	if (c1 != 1) {
-		memcpy(buf + nb, ",", 1);
-		nb += 1;
-
-		nb += xdl_num_out(buf + nb, c1);
-	}
-
-	memcpy(buf + nb, " +", 2);
-	nb += 2;
-
-	nb += xdl_num_out(buf + nb, c2 ? s2: s2 - 1);
-
-	if (c2 != 1) {
-		memcpy(buf + nb, ",", 1);
-		nb += 1;
-
-		nb += xdl_num_out(buf + nb, c2);
-	}
-
-	memcpy(buf + nb, " @@", 3);
-	nb += 3;
-	if (func && funclen) {
-		buf[nb++] = ' ';
-		if (funclen > sizeof(buf) - nb - 1)
-			funclen = sizeof(buf) - nb - 1;
-		memcpy(buf + nb, func, funclen);
-		nb += funclen;
-	}
-	buf[nb++] = '\n';
-
-	mb.ptr = buf;
-	mb.size = nb;
-	if (ecb->outf(ecb->priv, &mb, 1) < 0)
-		return -1;
-
-	return 0;
 }

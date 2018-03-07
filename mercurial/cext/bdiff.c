@@ -280,16 +280,11 @@ static PyObject *xdiffblocks(PyObject *self, PyObject *args)
 	    XDF_INDENT_HEURISTIC, /* flags */
 	};
 	xdemitconf_t xecfg = {
-	    0,                  /* ctxlen */
-	    0,                  /* interhunkctxlen */
 	    XDL_EMIT_BDIFFHUNK, /* flags */
-	    NULL,               /* find_func */
-	    NULL,               /* find_func_priv */
 	    hunk_consumer,      /* hunk_consume_func */
 	};
 	xdemitcb_t ecb = {
 	    NULL, /* priv */
-	    NULL, /* outf */
 	};
 
 	if (!PyArg_ParseTuple(args, PY23("s#s#", "y#y#"), &a.ptr, &la, &b.ptr,

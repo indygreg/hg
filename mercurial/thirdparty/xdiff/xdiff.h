@@ -34,9 +34,6 @@ extern "C" {
 
 #define XDF_INDENT_HEURISTIC (1 << 23)
 
-/* xdemitconf_t.flags */
-#define XDL_EMIT_FUNCNAMES (1 << 0)
-#define XDL_EMIT_FUNCCONTEXT (1 << 2)
 /* emit bdiff-style "matched" (a1, a2, b1, b2) hunks instead of "different"
  * (a1, a2 - a1, b1, b2 - b1) hunks */
 #define XDL_EMIT_BDIFFHUNK (1 << 4)
@@ -71,21 +68,14 @@ typedef struct s_xpparam {
 
 typedef struct s_xdemitcb {
 	void *priv;
-	int (*outf)(void *, mmbuffer_t *, int);
 } xdemitcb_t;
-
-typedef long (*find_func_t)(const char *line, long line_len, char *buffer, long buffer_size, void *priv);
 
 typedef int (*xdl_emit_hunk_consume_func_t)(long start_a, long count_a,
 					    long start_b, long count_b,
 					    void *cb_data);
 
 typedef struct s_xdemitconf {
-	long ctxlen;
-	long interhunkctxlen;
 	unsigned long flags;
-	find_func_t find_func;
-	void *find_func_priv;
 	xdl_emit_hunk_consume_func_t hunk_func;
 } xdemitconf_t;
 

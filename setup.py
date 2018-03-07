@@ -850,7 +850,6 @@ if sys.platform == 'darwin':
 
 xdiff_srcs = [
     'mercurial/thirdparty/xdiff/xdiffi.c',
-    'mercurial/thirdparty/xdiff/xmerge.c',
     'mercurial/thirdparty/xdiff/xprepare.c',
     'mercurial/thirdparty/xdiff/xutils.c',
 ]

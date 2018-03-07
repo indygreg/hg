@@ -38,20 +38,6 @@ extern "C" {
  * (a1, a2 - a1, b1, b2 - b1) hunks */
 #define XDL_EMIT_BDIFFHUNK (1 << 4)
 
-/* merge simplification levels */
-#define XDL_MERGE_MINIMAL 0
-#define XDL_MERGE_EAGER 1
-#define XDL_MERGE_ZEALOUS 2
-#define XDL_MERGE_ZEALOUS_ALNUM 3
-
-/* merge favor modes */
-#define XDL_MERGE_FAVOR_OURS 1
-#define XDL_MERGE_FAVOR_THEIRS 2
-#define XDL_MERGE_FAVOR_UNION 3
-
-/* merge output styles */
-#define XDL_MERGE_DIFF3 1
-
 typedef struct s_mmfile {
 	char *ptr;
 	long size;
@@ -89,22 +75,6 @@ long xdl_mmfile_size(mmfile_t *mmf);
 
 int xdl_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 	     xdemitconf_t const *xecfg, xdemitcb_t *ecb);
-
-typedef struct s_xmparam {
-	xpparam_t xpp;
-	int marker_size;
-	int level;
-	int favor;
-	int style;
-	const char *ancestor;	/* label for orig */
-	const char *file1;	/* label for mf1 */
-	const char *file2;	/* label for mf2 */
-} xmparam_t;
-
-#define DEFAULT_CONFLICT_MARKER_SIZE 7
-
-int xdl_merge(mmfile_t *orig, mmfile_t *mf1, mmfile_t *mf2,
-		xmparam_t const *xmp, mmbuffer_t *result);
 
 #ifdef __cplusplus
 }

@@ -485,8 +485,8 @@ class rebaseruntime(object):
                     try:
                         ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
                                      'rebase')
-                        stats = rebasenode(repo, rev, p1, base, self.state,
-                                           self.collapsef, dest, wctx=self.wctx)
+                        stats = rebasenode(repo, rev, p1, base, self.collapsef,
+                                           dest, wctx=self.wctx)
                         if stats and stats[3] > 0:
                             if self.wctx.isinmemory():
                                 raise error.InMemoryMergeConflictsError()
@@ -1108,7 +1108,7 @@ def concludenode(repo, rev, p1, p2, commitmsg=None, editor=None, extrafn=None,
         repo.dirstate.setbranch(repo[newnode].branch())
         return newnode
 
-def rebasenode(repo, rev, p1, base, state, collapse, dest, wctx):
+def rebasenode(repo, rev, p1, base, collapse, dest, wctx):
     'Rebase a single revision rev on top of p1 using base as merge ancestor'
     # Merge phase
     # Update to destination and merge it with local

@@ -461,5 +461,5 @@ Make sure merge state is cleaned up after a no-op rebase merge (issue5494)
   note: rebase of 1:fdaca8533b86 created no changes to commit
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/fdaca8533b86-7fd70513-rebase.hg
   $ hg resolve --list
-  $ test -f .hg/merge
+  $ test -d .hg/merge
   [1]

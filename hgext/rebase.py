@@ -174,9 +174,6 @@ class rebaseruntime(object):
 
         self.keepf = opts.get('keep', False)
         self.keepbranchesf = opts.get('keepbranches', False)
-        # keepopen is not meant for use on the command line, but by
-        # other extensions
-        self.keepopen = opts.get('keepopen', False)
         self.obsoletenotrebased = {}
         self.obsoletewithoutsuccessorindestination = set()
         self.inmemory = inmemory
@@ -551,7 +548,7 @@ class rebaseruntime(object):
         repo, ui, opts = self.repo, self.ui, self.opts
         fm = ui.formatter('rebase', opts)
         fm.startitem()
-        if self.collapsef and not self.keepopen:
+        if self.collapsef:
             p1, p2, _base = defineparents(repo, min(self.state), self.destmap,
                                           self.state, self.skipped,
                                           self.obsoletenotrebased)

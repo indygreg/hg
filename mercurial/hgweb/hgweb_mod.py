@@ -350,18 +350,15 @@ class hgweb(object):
 
         # Route it to a wire protocol handler if it looks like a wire protocol
         # request.
-        protohandler = wireprotoserver.parsehttprequest(rctx.repo, req, query)
+        protohandler = wireprotoserver.parsehttprequest(rctx, req, query,
+                                                        self.check_perm)
 
         if protohandler:
             try:
                 if query:
                     raise ErrorResponse(HTTP_NOT_FOUND)
 
-                # TODO fold this into parsehttprequest
-                checkperm = lambda op: self.check_perm(rctx, req, op)
-                protohandler['proto'].checkperm = checkperm
-
-                return protohandler['dispatch'](checkperm)
+                return protohandler['dispatch']()
             except ErrorResponse as inst:
                 return protohandler['handleerror'](inst)
 

@@ -146,3 +146,12 @@ class baseprotocolhandler(object):
 
         Returns a list of capabilities. The passed in argument can be returned.
         """
+
+    @abc.abstractmethod
+    def checkperm(self, perm):
+        """Validate that the client has permissions to perform a request.
+
+        The argument is the permission required to proceed. If the client
+        doesn't have that permission, the exception should raise or abort
+        in a protocol specific manner.
+        """

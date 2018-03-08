@@ -731,13 +731,10 @@ def batch(repo, proto, cmds, others):
                 vals[unescapearg(n)] = unescapearg(v)
         func, spec = commands[op]
 
-        # If the protocol supports permissions checking, perform that
-        # checking on each batched command.
-        # TODO formalize permission checking as part of protocol interface.
-        if util.safehasattr(proto, 'checkperm'):
-            perm = commands[op].permission
-            assert perm in ('push', 'pull')
-            proto.checkperm(perm)
+        # Validate that client has permissions to perform this command.
+        perm = commands[op].permission
+        assert perm in ('push', 'pull')
+        proto.checkperm(perm)
 
         if spec:
             keys = spec.split()

@@ -18,6 +18,9 @@ class proto(object):
         names = spec.split()
         return [args[n] for n in names]
 
+    def checkperm(self, perm):
+        pass
+
 class clientpeer(wireproto.wirepeer):
     def __init__(self, serverrepo):
         self.serverrepo = serverrepo

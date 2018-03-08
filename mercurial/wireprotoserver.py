@@ -54,9 +54,10 @@ def decodevaluefromheaders(req, headerprefix):
     return ''.join(chunks)
 
 class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
-    def __init__(self, req, ui):
+    def __init__(self, req, ui, checkperm):
         self._req = req
         self._ui = ui
+        self._checkperm = checkperm
 
     @property
     def name(self):
@@ -139,6 +140,9 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 
         return caps
 
+    def checkperm(self, perm):
+        return self._checkperm(perm)
+
 # This method exists mostly so that extensions like remotefilelog can
 # disable a kludgey legacy method only over http. As of early 2018,
 # there are no other known users, so with any luck we can discard this
@@ -146,7 +150,7 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def parsehttprequest(repo, req, query):
+def parsehttprequest(rctx, req, query, checkperm):
     """Parse the HTTP request for a wire protocol request.
 
     If the current request appears to be a wire protocol request, this
@@ -156,6 +160,8 @@ def parsehttprequest(repo, req, query):
 
     ``req`` is a ``wsgirequest`` instance.
     """
+    repo = rctx.repo
+
     # HTTP version 1 wire protocol requests are denoted by a "cmd" query
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
@@ -174,13 +180,13 @@ def parsehttprequest(repo, req, query):
     if not iscmd(cmd):
         return None
 
-    proto = httpv1protocolhandler(req, repo.ui)
+    proto = httpv1protocolhandler(req, repo.ui,
+                                  lambda perm: checkperm(rctx, req, perm))
 
     return {
         'cmd': cmd,
         'proto': proto,
-        'dispatch': lambda checkperm: _callhttp(repo, req, proto, cmd,
-                                                checkperm),
+        'dispatch': lambda: _callhttp(repo, req, proto, cmd),
         'handleerror': lambda ex: _handlehttperror(ex, req, cmd),
     }
 
@@ -224,7 +230,7 @@ def _httpresponsetype(ui, req, prefer_uncompressed):
     opts = {'level': ui.configint('server', 'zliblevel')}
     return HGTYPE, util.compengines['zlib'], opts
 
-def _callhttp(repo, req, proto, cmd, checkperm):
+def _callhttp(repo, req, proto, cmd):
     def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
         # identifying the compression engine.
@@ -242,7 +248,7 @@ def _callhttp(repo, req, proto, cmd, checkperm):
                            'over HTTP'))
         return []
 
-    checkperm(wireproto.commands[cmd].permission)
+    proto.checkperm(wireproto.commands[cmd].permission)
 
     rsp = wireproto.dispatch(repo, proto, cmd)
 
@@ -391,6 +397,9 @@ class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
 
     def addcapabilities(self, repo, caps):
         return caps
+
+    def checkperm(self, perm):
+        pass
 
 class sshv2protocolhandler(sshv1protocolhandler):
     """Protocol handler for version 2 of the SSH protocol."""

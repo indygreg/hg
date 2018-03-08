@@ -177,8 +177,7 @@ class requestcontext(object):
         if style == styles[0]:
             vars['style'] = style
 
-        start = '&' if wsgireq.url[-1] == r'?' else '?'
-        sessionvars = webutil.sessionvars(vars, start)
+        sessionvars = webutil.sessionvars(vars, '?')
 
         if not self.reponame:
             self.reponame = (self.config('web', 'name', '')

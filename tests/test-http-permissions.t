@@ -21,12 +21,10 @@
   > @wireproto.wireprotocommand('customwritenoperm')
   > def customwritenoperm(repo, proto):
   >     return b'write command no defined permissions\n'
-  > wireproto.permissions['customreadwithperm'] = 'pull'
-  > @wireproto.wireprotocommand('customreadwithperm')
+  > @wireproto.wireprotocommand('customreadwithperm', permission='pull')
   > def customreadwithperm(repo, proto):
   >     return b'read-only command w/ defined permissions\n'
-  > wireproto.permissions['customwritewithperm'] = 'push'
-  > @wireproto.wireprotocommand('customwritewithperm')
+  > @wireproto.wireprotocommand('customwritewithperm', permission='push')
   > def customwritewithperm(repo, proto):
   >     return b'write command w/ defined permissions\n'
   > EOF

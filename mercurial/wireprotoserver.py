@@ -242,11 +242,7 @@ def _callhttp(repo, req, proto, cmd, checkperm):
                            'over HTTP'))
         return []
 
-    # Assume commands with no defined permissions are writes /
-    # for pushes. This is the safest from a security perspective
-    # because it doesn't allow commands with undefined semantics
-    # from bypassing permissions checks.
-    checkperm(wireproto.permissions.get(cmd, 'push'))
+    checkperm(wireproto.commands[cmd].permission)
 
     rsp = wireproto.dispatch(repo, proto, cmd)
 

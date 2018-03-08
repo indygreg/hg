@@ -37,7 +37,6 @@ from .. import (
     templater,
     ui as uimod,
     util,
-    wireproto,
     wireprotoserver,
 )
 
@@ -46,9 +45,6 @@ from . import (
     webutil,
     wsgicgi,
 )
-
-# Aliased for API compatibility.
-perms = wireproto.permissions
 
 archivespecs = util.sortdict((
     ('zip', ('application/zip', 'zip', '.zip', None)),

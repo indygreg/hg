@@ -164,20 +164,17 @@ def uisetup(ui):
                             overrides.openlargefile)
 
     # create the new wireproto commands ...
-    wireproto.wireprotocommand('putlfile', 'sha')(proto.putlfile)
-    wireproto.wireprotocommand('getlfile', 'sha')(proto.getlfile)
-    wireproto.wireprotocommand('statlfile', 'sha')(proto.statlfile)
-    wireproto.wireprotocommand('lheads', '')(wireproto.heads)
+    wireproto.wireprotocommand('putlfile', 'sha', permission='push')(
+        proto.putlfile)
+    wireproto.wireprotocommand('getlfile', 'sha', permission='pull')(
+        proto.getlfile)
+    wireproto.wireprotocommand('statlfile', 'sha', permission='pull')(
+        proto.statlfile)
+    wireproto.wireprotocommand('lheads', '', permission='pull')(
+        wireproto.heads)
 
     # ... and wrap some existing ones
     wireproto.commands['heads'].func = proto.heads
-
-    # make putlfile behave the same as push and {get,stat}lfile behave
-    # the same as pull w.r.t. permissions checks
-    wireproto.permissions['putlfile'] = 'push'
-    wireproto.permissions['getlfile'] = 'pull'
-    wireproto.permissions['statlfile'] = 'pull'
-    wireproto.permissions['lheads'] = 'pull'
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 

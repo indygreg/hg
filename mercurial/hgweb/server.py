@@ -124,8 +124,8 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'SERVER_NAME'] = self.server.server_name
         env[r'SERVER_PORT'] = str(self.server.server_port)
         env[r'REQUEST_URI'] = self.path
-        env[r'SCRIPT_NAME'] = self.server.prefix
-        env[r'PATH_INFO'] = path[len(self.server.prefix):]
+        env[r'SCRIPT_NAME'] = pycompat.sysstr(self.server.prefix)
+        env[r'PATH_INFO'] = pycompat.sysstr(path[len(self.server.prefix):])
         env[r'REMOTE_HOST'] = self.client_address[0]
         env[r'REMOTE_ADDR'] = self.client_address[0]
         if query:
@@ -154,7 +154,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
                 env[hkey] = hval
         env[r'SERVER_PROTOCOL'] = self.request_version
         env[r'wsgi.version'] = (1, 0)
-        env[r'wsgi.url_scheme'] = self.url_scheme
+        env[r'wsgi.url_scheme'] = pycompat.sysstr(self.url_scheme)
         if env.get(r'HTTP_EXPECT', '').lower() == '100-continue':
             self.rfile = common.continuereader(self.rfile, self.wfile.write)
 

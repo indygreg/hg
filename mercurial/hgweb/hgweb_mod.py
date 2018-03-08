@@ -159,7 +159,8 @@ class requestcontext(object):
         urlbase = r'%s://%s%s' % (proto, req.env[r'SERVER_NAME'], port)
         logourl = self.config('web', 'logourl')
         logoimg = self.config('web', 'logoimg')
-        staticurl = self.config('web', 'staticurl') or req.url + 'static/'
+        staticurl = (self.config('web', 'staticurl')
+                     or pycompat.sysbytes(req.url) + 'static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 
@@ -182,7 +183,7 @@ class requestcontext(object):
         if not self.reponame:
             self.reponame = (self.config('web', 'name', '')
                              or req.env.get('REPO_NAME')
-                             or req.url.strip('/') or self.repo.root)
+                             or req.url.strip(r'/') or self.repo.root)
 
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
@@ -190,7 +191,7 @@ class requestcontext(object):
         # create the templater
         # TODO: export all keywords: defaults = templatekw.keywords.copy()
         defaults = {
-            'url': req.url,
+            'url': pycompat.sysbytes(req.url),
             'logourl': logourl,
             'logoimg': logoimg,
             'staticurl': staticurl,
@@ -199,7 +200,7 @@ class requestcontext(object):
             'encoding': encoding.encoding,
             'motd': motd,
             'sessionvars': sessionvars,
-            'pathdef': makebreadcrumb(req.url),
+            'pathdef': makebreadcrumb(pycompat.sysbytes(req.url)),
             'style': style,
             'nonce': self.nonce,
         }
@@ -333,17 +334,17 @@ class hgweb(object):
         # use SCRIPT_NAME, PATH_INFO and QUERY_STRING as well as our REPO_NAME
 
         req.url = req.env[r'SCRIPT_NAME']
-        if not req.url.endswith('/'):
-            req.url += '/'
+        if not req.url.endswith(r'/'):
+            req.url += r'/'
         if req.env.get('REPO_NAME'):
             req.url += req.env[r'REPO_NAME'] + r'/'
 
         if r'PATH_INFO' in req.env:
-            parts = req.env[r'PATH_INFO'].strip('/').split('/')
+            parts = req.env[r'PATH_INFO'].strip(r'/').split(r'/')
             repo_parts = req.env.get(r'REPO_NAME', r'').split(r'/')
             if parts[:len(repo_parts)] == repo_parts:
                 parts = parts[len(repo_parts):]
-            query = '/'.join(parts)
+            query = r'/'.join(parts)
         else:
             query = req.env[r'QUERY_STRING'].partition(r'&')[0]
             query = query.partition(r';')[0]
@@ -364,7 +365,7 @@ class hgweb(object):
 
         # translate user-visible url structure to internal structure
 
-        args = query.split('/', 2)
+        args = query.split(r'/', 2)
         if 'cmd' not in req.form and args and args[0]:
             cmd = args.pop(0)
             style = cmd.rfind('-')

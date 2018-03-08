@@ -579,6 +579,12 @@ class rebaseruntime(object):
                     editor=editor,
                     keepbranches=self.keepbranchesf,
                     date=self.date)
+
+            if newnode is None:
+                # If it ended up being a no-op commit, then the normal
+                # merge state clean-up path doesn't happen, so do it
+                # here. Fix issue5494
+                mergemod.mergestate.clean(repo)
             if newnode is not None:
                 newrev = repo[newnode].rev()
                 for oldrev in self.state:

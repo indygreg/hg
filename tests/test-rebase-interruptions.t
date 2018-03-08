@@ -479,7 +479,6 @@ Now try again with --collapse
   $ hg rebase --continue
   rebasing 2:fdaca8533b86 "b" (tip)
   saved backup bundle to $TESTTMP/repo/.hg/strip-backup/fdaca8533b86-7fd70513-rebase.hg
-BROKEN: the merge state was not cleared
   $ hg resolve --list
-  R a
   $ test -d .hg/merge
+  [1]

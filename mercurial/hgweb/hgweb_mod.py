@@ -142,21 +142,9 @@ class requestcontext(object):
             if typ in allowed or self.configbool('web', 'allow%s' % typ):
                 yield {'type': typ, 'extension': spec[2], 'node': nodeid}
 
-    def templater(self, wsgireq):
+    def templater(self, wsgireq, req):
         # determine scheme, port and server name
         # this is needed to create absolute urls
-
-        proto = wsgireq.env.get('wsgi.url_scheme')
-        if proto == 'https':
-            proto = 'https'
-            default_port = '443'
-        else:
-            proto = 'http'
-            default_port = '80'
-
-        port = wsgireq.env[r'SERVER_PORT']
-        port = port != default_port and (r':' + port) or r''
-        urlbase = r'%s://%s%s' % (proto, wsgireq.env[r'SERVER_NAME'], port)
         logourl = self.config('web', 'logourl')
         logoimg = self.config('web', 'logoimg')
         staticurl = (self.config('web', 'staticurl')
@@ -194,7 +182,7 @@ class requestcontext(object):
             'logourl': logourl,
             'logoimg': logoimg,
             'staticurl': staticurl,
-            'urlbase': urlbase,
+            'urlbase': req.advertisedbaseurl,
             'repo': self.reponame,
             'encoding': encoding.encoding,
             'motd': motd,
@@ -396,7 +384,7 @@ class hgweb(object):
         # process the web interface request
 
         try:
-            tmpl = rctx.templater(wsgireq)
+            tmpl = rctx.templater(wsgireq, req)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
 

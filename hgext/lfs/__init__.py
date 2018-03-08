@@ -143,7 +143,7 @@ from mercurial import (
     registrar,
     revlog,
     scmutil,
-    templatekw,
+    templateutil,
     upgrade,
     util,
     vfs as vfsmod,
@@ -375,12 +375,12 @@ def lfsfiles(context, mapping):
     makemap = lambda v: {
         'file': v,
         'lfsoid': pointers[v].oid() if pointers[v] else None,
-        'lfspointer': templatekw.hybriddict(pointer(v)),
+        'lfspointer': templateutil.hybriddict(pointer(v)),
     }
 
     # TODO: make the separator ', '?
-    f = templatekw._showlist('lfs_file', files, templ, mapping)
-    return templatekw._hybrid(f, files, makemap, pycompat.identity)
+    f = templateutil._showlist('lfs_file', files, templ, mapping)
+    return templateutil.hybrid(f, files, makemap, pycompat.identity)
 
 @command('debuglfsupload',
          [('r', 'rev', [], _('upload large files introduced by REV'))])

@@ -17,7 +17,6 @@ from . import (
     node,
     pycompat,
     registrar,
-    templatekw,
     templateutil,
     url,
     util,
@@ -366,7 +365,7 @@ def slashpath(path):
 @templatefilter('splitlines')
 def splitlines(text):
     """Any text. Split text into a list of lines."""
-    return templatekw.hybridlist(text.splitlines(), name='line')
+    return templateutil.hybridlist(text.splitlines(), name='line')
 
 @templatefilter('stringescape')
 def stringescape(text):

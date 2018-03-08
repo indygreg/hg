@@ -498,7 +498,7 @@ def dict_(context, mapping, args):
 
     data.update((k, evalfuncarg(context, mapping, v))
                 for k, v in args['kwargs'].iteritems())
-    return templatekw.hybriddict(data)
+    return templateutil.hybriddict(data)
 
 @templatefunc('diff([includepattern [, excludepattern]])')
 def diff(context, mapping, args):
@@ -548,7 +548,7 @@ def files(context, mapping, args):
     ctx = context.resource(mapping, 'ctx')
     m = ctx.match([raw])
     files = list(ctx.matches(m))
-    return templatekw.compatlist(context, mapping, "file", files)
+    return templateutil.compatlist(context, mapping, "file", files)
 
 @templatefunc('fill(text[, width[, initialident[, hangindent]]])')
 def fill(context, mapping, args):
@@ -718,7 +718,7 @@ def join(context, mapping, args):
     # TODO: perhaps this should be evalfuncarg(), but it can't because hgweb
     # abuses generator as a keyword that returns a list of dicts.
     joinset = evalrawexp(context, mapping, args[0])
-    joinset = templatekw.unwrapvalue(joinset)
+    joinset = templateutil.unwrapvalue(joinset)
     joinfmt = getattr(joinset, 'joinfmt', pycompat.identity)
     joiner = " "
     if len(args) > 1:
@@ -808,7 +808,7 @@ def max_(context, mapping, args, **kwargs):
     except (TypeError, ValueError):
         # i18n: "max" is a keyword
         raise error.ParseError(_("max first argument should be an iterable"))
-    return templatekw.wraphybridvalue(iterable, x, x)
+    return templateutil.wraphybridvalue(iterable, x, x)
 
 @templatefunc('min(iterable)')
 def min_(context, mapping, args, **kwargs):
@@ -823,7 +823,7 @@ def min_(context, mapping, args, **kwargs):
     except (TypeError, ValueError):
         # i18n: "min" is a keyword
         raise error.ParseError(_("min first argument should be an iterable"))
-    return templatekw.wraphybridvalue(iterable, x, x)
+    return templateutil.wraphybridvalue(iterable, x, x)
 
 @templatefunc('mod(a, b)')
 def mod(context, mapping, args):
@@ -847,7 +847,7 @@ def obsfateoperations(context, mapping, args):
 
     try:
         data = obsutil.markersoperations(markers)
-        return templatekw.hybridlist(data, name='operation')
+        return templateutil.hybridlist(data, name='operation')
     except (TypeError, KeyError):
         # i18n: "obsfateoperations" is a keyword
         errmsg = _("obsfateoperations first argument should be an iterable")
@@ -864,7 +864,7 @@ def obsfatedate(context, mapping, args):
 
     try:
         data = obsutil.markersdates(markers)
-        return templatekw.hybridlist(data, name='date', fmt='%d %d')
+        return templateutil.hybridlist(data, name='date', fmt='%d %d')
     except (TypeError, KeyError):
         # i18n: "obsfatedate" is a keyword
         errmsg = _("obsfatedate first argument should be an iterable")
@@ -881,7 +881,7 @@ def obsfateusers(context, mapping, args):
 
     try:
         data = obsutil.markersusers(markers)
-        return templatekw.hybridlist(data, name='user')
+        return templateutil.hybridlist(data, name='user')
     except (TypeError, KeyError, ValueError):
         # i18n: "obsfateusers" is a keyword
         msg = _("obsfateusers first argument should be an iterable of "
@@ -1120,7 +1120,7 @@ def expandaliases(tree, aliases):
 
 def _flatten(thing):
     '''yield a single stream from a possibly nested set of iterators'''
-    thing = templatekw.unwraphybrid(thing)
+    thing = templateutil.unwraphybrid(thing)
     if isinstance(thing, bytes):
         yield thing
     elif isinstance(thing, str):
@@ -1134,7 +1134,7 @@ def _flatten(thing):
         yield pycompat.bytestr(thing)
     else:
         for i in thing:
-            i = templatekw.unwraphybrid(i)
+            i = templateutil.unwraphybrid(i)
             if isinstance(i, bytes):
                 yield i
             elif i is None:

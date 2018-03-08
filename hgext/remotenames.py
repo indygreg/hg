@@ -35,7 +35,7 @@ from mercurial import (
     registrar,
     revsetlang,
     smartset,
-    templatekw,
+    templateutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -237,8 +237,8 @@ def remotenameskw(context, mapping):
     if 'remotebranches' in repo.names:
         remotenames += repo.names['remotebranches'].names(repo, ctx.node())
 
-    return templatekw.compatlist(context, mapping, 'remotename', remotenames,
-                                 plural='remotenames')
+    return templateutil.compatlist(context, mapping, 'remotename', remotenames,
+                                   plural='remotenames')
 
 @templatekeyword('remotebookmarks', requires={'repo', 'ctx', 'templ'})
 def remotebookmarkskw(context, mapping):
@@ -250,8 +250,8 @@ def remotebookmarkskw(context, mapping):
     if 'remotebookmarks' in repo.names:
         remotebmarks = repo.names['remotebookmarks'].names(repo, ctx.node())
 
-    return templatekw.compatlist(context, mapping, 'remotebookmark',
-                                 remotebmarks, plural='remotebookmarks')
+    return templateutil.compatlist(context, mapping, 'remotebookmark',
+                                   remotebmarks, plural='remotebookmarks')
 
 @templatekeyword('remotebranches', requires={'repo', 'ctx', 'templ'})
 def remotebrancheskw(context, mapping):
@@ -263,8 +263,8 @@ def remotebrancheskw(context, mapping):
     if 'remotebranches' in repo.names:
         remotebranches = repo.names['remotebranches'].names(repo, ctx.node())
 
-    return templatekw.compatlist(context, mapping, 'remotebranch',
-                                 remotebranches, plural='remotebranches')
+    return templateutil.compatlist(context, mapping, 'remotebranch',
+                                   remotebranches, plural='remotebranches')
 
 def _revsetutil(repo, subset, x, rtypes):
     """utility function to return a set of revs based on the rtypes"""

@@ -78,6 +78,10 @@ class parsedrequest(object):
     dispatchpath = attr.ib()
     # Raw query string (part after "?" in URL).
     querystring = attr.ib()
+    # List of 2-tuples of query string arguments.
+    querystringlist = attr.ib()
+    # Dict of query string arguments. Values are lists with at least 1 item.
+    querystringdict = attr.ib()
 
 def parserequestfromenv(env):
     """Parse URL components from environment variables.
@@ -168,12 +172,25 @@ def parserequestfromenv(env):
 
     querystring = env.get('QUERY_STRING', '')
 
+    # We store as a list so we have ordering information. We also store as
+    # a dict to facilitate fast lookup.
+    querystringlist = util.urlreq.parseqsl(querystring, keep_blank_values=True)
+
+    querystringdict = {}
+    for k, v in querystringlist:
+        if k in querystringdict:
+            querystringdict[k].append(v)
+        else:
+            querystringdict[k] = [v]
+
     return parsedrequest(url=fullurl, baseurl=baseurl,
                          advertisedurl=advertisedfullurl,
                          advertisedbaseurl=advertisedbaseurl,
                          apppath=apppath,
                          dispatchparts=dispatchparts, dispatchpath=dispatchpath,
-                         querystring=querystring)
+                         querystring=querystring,
+                         querystringlist=querystringlist,
+                         querystringdict=querystringdict)
 
 class wsgirequest(object):
     """Higher-level API for a WSGI request.

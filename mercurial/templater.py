@@ -493,8 +493,8 @@ def buildfilter(exp, context):
         filt = context._filters[n]
         arg = compileexp(exp[1], context, methods)
         return (runfilter, (arg, filt))
-    if n in funcs:
-        f = funcs[n]
+    if n in context._funcs:
+        f = context._funcs[n]
         args = _buildfuncargs(exp[1], context, methods, n, f._argspec)
         return (f, args)
     raise error.ParseError(_("unknown function '%s'") % n)
@@ -595,8 +595,8 @@ def runarithmetic(context, mapping, data):
 
 def buildfunc(exp, context):
     n = getsymbol(exp[1])
-    if n in funcs:
-        f = funcs[n]
+    if n in context._funcs:
+        f = context._funcs[n]
         args = _buildfuncargs(exp[2], context, exprmethods, n, f._argspec)
         return (f, args)
     if n in context._filters:
@@ -1376,6 +1376,7 @@ class engine(object):
         if filters is None:
             filters = {}
         self._filters = filters
+        self._funcs = funcs  # make this a parameter if needed
         if defaults is None:
             defaults = {}
         if resources is None:

@@ -1192,7 +1192,9 @@ def copy(ui, repo, pats, opts, rename=False):
                     os.rename(src, tmp)
                     os.rename(tmp, target)
                 else:
-                    util.copyfile(src, target)
+                    # Preserve stat info on renames, not on copies; this matches
+                    # Linux CLI behavior.
+                    util.copyfile(src, target, copystat=rename)
                 srcexists = True
             except IOError as inst:
                 if inst.errno == errno.ENOENT:

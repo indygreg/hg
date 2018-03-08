@@ -667,7 +667,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
         try:
             origcopyfile = util.copyfile
             copiedfiles = []
-            def overridecopyfile(src, dest):
+            def overridecopyfile(src, dest, *args, **kwargs):
                 if (lfutil.shortname in src and
                     dest.startswith(repo.wjoin(lfutil.shortname))):
                     destlfile = dest.replace(lfutil.shortname, '')
@@ -675,7 +675,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                         raise IOError('',
                             _('destination largefile already exists'))
                 copiedfiles.append((src, dest))
-                origcopyfile(src, dest)
+                origcopyfile(src, dest, *args, **kwargs)
 
             util.copyfile = overridecopyfile
             result += orig(ui, repo, listpats, opts, rename)

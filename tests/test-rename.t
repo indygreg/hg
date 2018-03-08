@@ -657,3 +657,36 @@ check illegal path components
   [255]
   $ hg status -C
 
+check that stat information such as mtime is preserved on rename - it's unclear
+whether the `touch` and `stat` commands are portable, so we mimic them using
+python.  Not all platforms support precision of even one-second granularity, so
+we allow a rather generous fudge factor here; 1234567890 is 2009, and the
+primary thing we care about is that it's not the machine's current time;
+hopefully it's really unlikely for a machine to have such a broken clock that
+this test fails. :)
+
+  $ mkdir mtime
+Create the file (as empty), then update its mtime and atime to be 1234567890.
+  >>> import os
+  >>> filename = "mtime/f"
+  >>> mtime = 1234567890
+  >>> open(filename, "w").close()
+  >>> os.utime(filename, (mtime, mtime))
+  $ hg ci -qAm 'add mtime dir'
+"hg cp" does not preserve the mtime, so it should be newer than the 2009
+timestamp.
+  $ hg cp -q mtime mtime_cp
+  >>> from __future__ import print_function
+  >>> import os
+  >>> filename = "mtime_cp/f"
+  >>> print(os.stat(filename).st_mtime < 1234567999)
+  False
+"hg mv" preserves the mtime, so it should be ~equal to the 2009 timestamp
+(modulo some fudge factor due to not every system supporting 1s-level
+precision).
+  $ hg mv -q mtime mtime_mv
+  >>> from __future__ import print_function
+  >>> import os
+  >>> filename = "mtime_mv/f"
+  >>> print(os.stat(filename).st_mtime < 1234567999)
+  True

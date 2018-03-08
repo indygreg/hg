@@ -22,7 +22,7 @@ from . import (
     httpconnection,
     pycompat,
     statichttprepo,
-    url,
+    url as urlmod,
     util,
     wireproto,
 )
@@ -150,7 +150,7 @@ class httppeer(wireproto.wirepeer):
         self._ui = ui
         ui.debug('using %s\n' % self._url)
 
-        self._urlopener = url.opener(ui, authinfo)
+        self._urlopener = urlmod.opener(ui, authinfo)
         self._requestbuilder = urlreq.request
 
     def __del__(self):
@@ -486,7 +486,7 @@ def instance(ui, path, create):
     if create:
         raise error.Abort(_('cannot create new http repository'))
     try:
-        if path.startswith('https:') and not url.has_https:
+        if path.startswith('https:') and not urlmod.has_https:
             raise error.Abort(_('Python support for SSL and HTTPS '
                                 'is not installed'))
 

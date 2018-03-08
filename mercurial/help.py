@@ -26,8 +26,8 @@ from . import (
     pycompat,
     revset,
     templatefilters,
+    templatefuncs,
     templatekw,
-    templater,
     util,
 )
 from .hgweb import (
@@ -309,7 +309,7 @@ addtopicsymbols('merge-tools', '.. internaltoolsmarker',
 addtopicsymbols('revisions', '.. predicatesmarker', revset.symbols)
 addtopicsymbols('templates', '.. keywordsmarker', templatekw.keywords)
 addtopicsymbols('templates', '.. filtersmarker', templatefilters.filters)
-addtopicsymbols('templates', '.. functionsmarker', templater.funcs)
+addtopicsymbols('templates', '.. functionsmarker', templatefuncs.funcs)
 addtopicsymbols('hgweb', '.. webcommandsmarker', webcommands.commands,
                 dedent=True)
 

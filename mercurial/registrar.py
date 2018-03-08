@@ -368,7 +368,7 @@ class templatefunc(_templateregistrarbase):
     extension, if an instance named as 'templatefunc' is used for
     decorating in extension.
 
-    Otherwise, explicit 'templater.loadfunction()' is needed.
+    Otherwise, explicit 'templatefuncs.loadfunction()' is needed.
     """
     _getname = _funcregistrarbase._parsefuncdecl
 

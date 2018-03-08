@@ -290,8 +290,8 @@ def loadall(ui, whitelist=None):
         fileset,
         revset,
         templatefilters,
+        templatefuncs,
         templatekw,
-        templater,
     )
 
     # list of (objname, loadermod, loadername) tuple:
@@ -307,7 +307,7 @@ def loadall(ui, whitelist=None):
         ('internalmerge', filemerge, 'loadinternalmerge'),
         ('revsetpredicate', revset, 'loadpredicate'),
         ('templatefilter', templatefilters, 'loadfilter'),
-        ('templatefunc', templater, 'loadfunction'),
+        ('templatefunc', templatefuncs, 'loadfunction'),
         ('templatekeyword', templatekw, 'loadkeyword'),
     ]
     _loadextra(ui, newindex, extraloaders)

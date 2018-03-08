@@ -132,8 +132,9 @@ i18n/hg.pot: $(PYFILES) $(DOCFILES) i18n/posplit i18n/hggettext
 	$(PYTHON) i18n/hggettext mercurial/commands.py \
 	  hgext/*.py hgext/*/__init__.py \
 	  mercurial/fileset.py mercurial/revset.py \
-	  mercurial/templatefilters.py mercurial/templatekw.py \
-	  mercurial/templater.py \
+	  mercurial/templatefilters.py \
+	  mercurial/templatefuncs.py \
+	  mercurial/templatekw.py \
 	  mercurial/filemerge.py \
 	  mercurial/hgweb/webcommands.py \
 	  mercurial/util.py \

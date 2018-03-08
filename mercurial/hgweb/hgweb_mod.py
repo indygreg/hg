@@ -318,15 +318,10 @@ class hgweb(object):
                                if h[0] != 'Content-Security-Policy']
             wsgireq.headers.append(('Content-Security-Policy', rctx.csp))
 
-        if r'PATH_INFO' in wsgireq.env:
-            parts = wsgireq.env[r'PATH_INFO'].strip(r'/').split(r'/')
-            repo_parts = wsgireq.env.get(r'REPO_NAME', r'').split(r'/')
-            if parts[:len(repo_parts)] == repo_parts:
-                parts = parts[len(repo_parts):]
-            query = r'/'.join(parts)
+        if req.havepathinfo:
+            query = req.dispatchpath
         else:
-            query = wsgireq.env[r'QUERY_STRING'].partition(r'&')[0]
-            query = query.partition(r';')[0]
+            query = req.querystring.partition('&')[0].partition(';')[0]
 
         # Route it to a wire protocol handler if it looks like a wire protocol
         # request.
@@ -344,7 +339,7 @@ class hgweb(object):
 
         # translate user-visible url structure to internal structure
 
-        args = query.split(r'/', 2)
+        args = query.split('/', 2)
         if 'cmd' not in wsgireq.form and args and args[0]:
             cmd = args.pop(0)
             style = cmd.rfind('-')

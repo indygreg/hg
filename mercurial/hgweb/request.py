@@ -76,6 +76,9 @@ class parsedrequest(object):
     dispatchparts = attr.ib()
     # URL path component (no query string) used for dispatch.
     dispatchpath = attr.ib()
+    # Whether there is a path component to this request. This can be true
+    # when ``dispatchpath`` is empty due to REPO_NAME muckery.
+    havepathinfo = attr.ib()
     # Raw query string (part after "?" in URL).
     querystring = attr.ib()
     # List of 2-tuples of query string arguments.
@@ -188,6 +191,7 @@ def parserequestfromenv(env):
                          advertisedbaseurl=advertisedbaseurl,
                          apppath=apppath,
                          dispatchparts=dispatchparts, dispatchpath=dispatchpath,
+                         havepathinfo='PATH_INFO' in env,
                          querystring=querystring,
                          querystringlist=querystringlist,
                          querystringdict=querystringdict)

@@ -146,14 +146,13 @@ def parserequestfromenv(env):
     # root. We also exclude its path components from PATH_INFO when resolving
     # the dispatch path.
 
-    # TODO the use of trailing slashes in apppath is arguably wrong. We need it
-    # to appease low-level parts of hgweb_mod for now.
     apppath = env['SCRIPT_NAME']
-    if not apppath.endswith('/'):
-        apppath += '/'
 
     if env.get('REPO_NAME'):
-        apppath += env.get('REPO_NAME') + '/'
+        if not apppath.endswith('/'):
+            apppath += '/'
+
+        apppath += env.get('REPO_NAME')
 
     if 'PATH_INFO' in env:
         dispatchparts = env['PATH_INFO'].strip('/').split('/')

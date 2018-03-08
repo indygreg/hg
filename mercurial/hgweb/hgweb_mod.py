@@ -148,7 +148,7 @@ class requestcontext(object):
         logourl = self.config('web', 'logourl')
         logoimg = self.config('web', 'logoimg')
         staticurl = (self.config('web', 'staticurl')
-                     or pycompat.sysbytes(wsgireq.url) + 'static/')
+                     or req.apppath + '/static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 
@@ -170,7 +170,7 @@ class requestcontext(object):
         if not self.reponame:
             self.reponame = (self.config('web', 'name', '')
                              or wsgireq.env.get('REPO_NAME')
-                             or wsgireq.url.strip(r'/') or self.repo.root)
+                             or req.apppath or self.repo.root)
 
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
@@ -178,7 +178,7 @@ class requestcontext(object):
         # create the templater
         # TODO: export all keywords: defaults = templatekw.keywords.copy()
         defaults = {
-            'url': pycompat.sysbytes(wsgireq.url),
+            'url': req.apppath + '/',
             'logourl': logourl,
             'logoimg': logoimg,
             'staticurl': staticurl,
@@ -187,7 +187,7 @@ class requestcontext(object):
             'encoding': encoding.encoding,
             'motd': motd,
             'sessionvars': sessionvars,
-            'pathdef': makebreadcrumb(pycompat.sysbytes(wsgireq.url)),
+            'pathdef': makebreadcrumb(req.apppath),
             'style': style,
             'nonce': self.nonce,
         }
@@ -317,8 +317,6 @@ class hgweb(object):
             wsgireq.headers = [h for h in wsgireq.headers
                                if h[0] != 'Content-Security-Policy']
             wsgireq.headers.append(('Content-Security-Policy', rctx.csp))
-
-        wsgireq.url = pycompat.sysstr(req.apppath)
 
         if r'PATH_INFO' in wsgireq.env:
             parts = wsgireq.env[r'PATH_INFO'].strip(r'/').split(r'/')

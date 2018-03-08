@@ -134,32 +134,20 @@ class _multifile(object):
         self._index = 0
 
 class httppeer(wireproto.wirepeer):
-    def __init__(self, ui, path):
+    def __init__(self, ui, path, url, opener):
+        self._ui = ui
         self._path = path
+        self._url = url
         self._caps = None
-        self._urlopener = None
+        self._urlopener = opener
         # This is an its own attribute to facilitate extensions overriding
         # the default type.
         self._requestbuilder = urlreq.request
-        u = util.url(path)
-        if u.query or u.fragment:
-            raise error.Abort(_('unsupported URL component: "%s"') %
-                             (u.query or u.fragment))
-
-        # urllib cannot handle URLs with embedded user or passwd
-        self._url, authinfo = u.authinfo()
-
-        self._ui = ui
-        ui.debug('using %s\n' % self._url)
-
-        self._urlopener = urlmod.opener(ui, authinfo)
 
     def __del__(self):
-        urlopener = getattr(self, '_urlopener', None)
-        if urlopener:
-            for h in urlopener.handlers:
-                h.close()
-                getattr(h, "close_all", lambda: None)()
+        for h in self._urlopener.handlers:
+            h.close()
+            getattr(h, "close_all", lambda: None)()
 
     def _openurl(self, req):
         if (self._ui.debugflag
@@ -483,6 +471,20 @@ class httppeer(wireproto.wirepeer):
     def _abort(self, exception):
         raise exception
 
+def makepeer(ui, path):
+    u = util.url(path)
+    if u.query or u.fragment:
+        raise error.Abort(_('unsupported URL component: "%s"') %
+                          (u.query or u.fragment))
+
+    # urllib cannot handle URLs with embedded user or passwd.
+    url, authinfo = u.authinfo()
+    ui.debug('using %s\n' % url)
+
+    opener = urlmod.opener(ui, authinfo)
+
+    return httppeer(ui, path, url, opener)
+
 def instance(ui, path, create):
     if create:
         raise error.Abort(_('cannot create new http repository'))
@@ -491,7 +493,7 @@ def instance(ui, path, create):
             raise error.Abort(_('Python support for SSL and HTTPS '
                                 'is not installed'))
 
-        inst = httppeer(ui, path)
+        inst = makepeer(ui, path)
         inst._fetchcaps()
 
         return inst

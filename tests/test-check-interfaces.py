@@ -50,10 +50,13 @@ class dummyrepo(object):
     def _restrictcapabilities(self, caps):
         pass
 
+class dummyopener(object):
+    handlers = []
+
 # Facilitates testing sshpeer without requiring an SSH server.
 class badpeer(httppeer.httppeer):
     def __init__(self):
-        super(badpeer, self).__init__(uimod.ui(), 'http://localhost')
+        super(badpeer, self).__init__(None, None, None, dummyopener())
         self.badattribute = True
 
     def badmethod(self):
@@ -67,7 +70,7 @@ def main():
     ui = uimod.ui()
 
     checkobject(badpeer())
-    checkobject(httppeer.httppeer(ui, 'http://localhost'))
+    checkobject(httppeer.httppeer(None, None, None, dummyopener()))
     checkobject(localrepo.localpeer(dummyrepo()))
     checkobject(sshpeer.sshv1peer(ui, 'ssh://localhost/foo', None, dummypipe(),
                                   dummypipe(), None, None))

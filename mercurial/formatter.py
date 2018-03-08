@@ -124,6 +124,7 @@ from . import (
     templatefilters,
     templatekw,
     templater,
+    templateutil,
     util,
 )
 from .utils import dateutil
@@ -403,7 +404,7 @@ class templateformatter(baseformatter):
             props['revcache'] = {}
         props = pycompat.strkwargs(props)
         g = self._t(ref, **props)
-        self._out.write(templater.stringify(g))
+        self._out.write(templateutil.stringify(g))
 
     def end(self):
         baseformatter.end(self)

@@ -1118,8 +1118,6 @@ def expandaliases(tree, aliases):
 
 # template engine
 
-stringify = templatefilters.stringify
-
 def _flatten(thing):
     '''yield a single stream from a possibly nested set of iterators'''
     thing = templatekw.unwraphybrid(thing)
@@ -1366,7 +1364,7 @@ class templater(object):
     def render(self, mapping):
         """Render the default unnamed template and return result as string"""
         mapping = pycompat.strkwargs(mapping)
-        return stringify(self('', **mapping))
+        return templateutil.stringify(self('', **mapping))
 
     def __call__(self, t, **mapping):
         mapping = pycompat.byteskwargs(mapping)

@@ -33,6 +33,7 @@ from . import (
     smartset,
     templatekw,
     templater,
+    templateutil,
     util,
 )
 from .utils import dateutil
@@ -449,13 +450,15 @@ class changesettemplater(changesetprinter):
             self._parts.update(m)
 
         if self._parts['docheader']:
-            self.ui.write(templater.stringify(self.t(self._parts['docheader'])))
+            self.ui.write(
+                templateutil.stringify(self.t(self._parts['docheader'])))
 
     def close(self):
         if self._parts['docfooter']:
             if not self.footer:
                 self.footer = ""
-            self.footer += templater.stringify(self.t(self._parts['docfooter']))
+            self.footer += templateutil.stringify(
+                self.t(self._parts['docfooter']))
         return super(changesettemplater, self).close()
 
     def _show(self, ctx, copies, props):
@@ -470,11 +473,12 @@ class changesettemplater(changesetprinter):
         # since there's inherently a conflict between header (across items) and
         # separator (per item)
         if self._parts['separator'] and index > 0:
-            self.ui.write(templater.stringify(self.t(self._parts['separator'])))
+            self.ui.write(
+                templateutil.stringify(self.t(self._parts['separator'])))
 
         # write header
         if self._parts['header']:
-            h = templater.stringify(self.t(self._parts['header'], **props))
+            h = templateutil.stringify(self.t(self._parts['header'], **props))
             if self.buffered:
                 self.header[ctx.rev()] = h
             else:
@@ -484,12 +488,12 @@ class changesettemplater(changesetprinter):
 
         # write changeset metadata, then patch if requested
         key = self._parts[self._tref]
-        self.ui.write(templater.stringify(self.t(key, **props)))
+        self.ui.write(templateutil.stringify(self.t(key, **props)))
         self._showpatch(ctx)
 
         if self._parts['footer']:
             if not self.footer:
-                self.footer = templater.stringify(
+                self.footer = templateutil.stringify(
                     self.t(self._parts['footer'], **props))
 
 def templatespec(tmpl, mapfile):

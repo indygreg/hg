@@ -18,6 +18,7 @@ from . import (
     pycompat,
     registrar,
     templatekw,
+    templateutil,
     url,
     util,
 )
@@ -376,18 +377,7 @@ def stringify(thing):
     """Any type. Turns the value into text by converting values into
     text and concatenating them.
     """
-    thing = templatekw.unwraphybrid(thing)
-    if util.safehasattr(thing, '__iter__') and not isinstance(thing, bytes):
-        if isinstance(thing, str):
-            # This is only reachable on Python 3 (otherwise
-            # isinstance(thing, bytes) would have been true), and is
-            # here to prevent infinite recursion bugs on Python 3.
-            raise error.ProgrammingError(
-                'stringify got unexpected unicode string: %r' % thing)
-        return "".join([stringify(t) for t in thing if t is not None])
-    if thing is None:
-        return ""
-    return pycompat.bytestr(thing)
+    return templateutil.stringify(thing)
 
 @templatefilter('stripdir')
 def stripdir(text):

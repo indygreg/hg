@@ -13,7 +13,6 @@ from .i18n import _
 from . import (
     error,
     pycompat,
-    templatefilters,
     templatekw,
     util,
 )
@@ -23,6 +22,21 @@ class ResourceUnavailable(error.Abort):
 
 class TemplateNotFound(error.Abort):
     pass
+
+def stringify(thing):
+    """Turn values into bytes by converting into text and concatenating them"""
+    thing = templatekw.unwraphybrid(thing)
+    if util.safehasattr(thing, '__iter__') and not isinstance(thing, bytes):
+        if isinstance(thing, str):
+            # This is only reachable on Python 3 (otherwise
+            # isinstance(thing, bytes) would have been true), and is
+            # here to prevent infinite recursion bugs on Python 3.
+            raise error.ProgrammingError(
+                'stringify got unexpected unicode string: %r' % thing)
+        return "".join([stringify(t) for t in thing if t is not None])
+    if thing is None:
+        return ""
+    return pycompat.bytestr(thing)
 
 def findsymbolicname(arg):
     """Find symbolic name for the given compiled expression; returns None
@@ -223,5 +237,3 @@ def getdictitem(dictarg, key):
     if val is None:
         return
     return templatekw.wraphybridvalue(dictarg, key, val)
-
-stringify = templatefilters.stringify

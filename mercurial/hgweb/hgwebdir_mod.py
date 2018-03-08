@@ -34,6 +34,7 @@ from .. import (
     pycompat,
     scmutil,
     templater,
+    templateutil,
     ui as uimod,
     util,
 )
@@ -370,7 +371,7 @@ class hgwebdir(object):
             virtual = req.dispatchpath.strip('/')
             tmpl = self.templater(req, nonce)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
-            ctype = templater.stringify(ctype)
+            ctype = templateutil.stringify(ctype)
 
             # Global defaults. These can be overridden by any handler.
             res.status = '200 Script output follows'

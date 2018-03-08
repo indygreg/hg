@@ -1,7 +1,10 @@
 
   $ cat > engine.py << EOF
   > 
-  > from mercurial import templater
+  > from mercurial import (
+  >     templater,
+  >     templateutil,
+  > )
   > 
   > class mytemplater(object):
   >     def __init__(self, loader, filters, defaults, resources, aliases):
@@ -31,7 +34,7 @@
   >                 v = v(**props)
   >             elif callable(v):
   >                 v = v(self, props)
-  >             v = templater.stringify(v)
+  >             v = templateutil.stringify(v)
   >             tmpl = tmpl.replace('{{%s}}' % k, v)
   >         yield tmpl
   > 

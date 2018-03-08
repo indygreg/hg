@@ -13,6 +13,7 @@ import os
 import socket
 import sys
 import traceback
+import wsgiref.validate
 
 from ..i18n import _
 
@@ -128,8 +129,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'PATH_INFO'] = pycompat.sysstr(path[len(self.server.prefix):])
         env[r'REMOTE_HOST'] = self.client_address[0]
         env[r'REMOTE_ADDR'] = self.client_address[0]
-        if query:
-            env[r'QUERY_STRING'] = query
+        env[r'QUERY_STRING'] = query or r''
 
         if pycompat.ispy3:
             if self.headers.get_content_type() is None:
@@ -165,6 +165,8 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'wsgi.multiprocess'] = isinstance(self.server,
                                               socketserver.ForkingMixIn)
         env[r'wsgi.run_once'] = 0
+
+        wsgiref.validate.check_environ(env)
 
         self.saved_status = None
         self.saved_headers = []

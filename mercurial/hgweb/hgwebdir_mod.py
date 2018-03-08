@@ -26,7 +26,6 @@ from .common import (
     paritygen,
     staticfile,
 )
-from .request import wsgirequest
 
 from .. import (
     configitems,
@@ -43,6 +42,7 @@ from .. import (
 
 from . import (
     hgweb_mod,
+    request as requestmod,
     webutil,
     wsgicgi,
 )
@@ -197,10 +197,10 @@ class hgwebdir(object):
         wsgicgi.launch(self)
 
     def __call__(self, env, respond):
-        req = wsgirequest(env, respond)
-        return self.run_wsgi(req)
+        wsgireq = requestmod.wsgirequest(env, respond)
+        return self.run_wsgi(wsgireq)
 
-    def read_allowed(self, ui, req):
+    def read_allowed(self, ui, wsgireq):
         """Check allow_read and deny_read config options of a repo's ui object
         to determine user permissions.  By default, with neither option set (or
         both empty), allow all users to read the repo.  There are two ways a
@@ -209,7 +209,7 @@ class hgwebdir(object):
         allow_read is not empty and the user is not in allow_read.  Return True
         if user is allowed to read the repo, else return False."""
 
-        user = req.env.get('REMOTE_USER')
+        user = wsgireq.env.get('REMOTE_USER')
 
         deny_read = ui.configlist('web', 'deny_read', untrusted=True)
         if deny_read and (not user or ismember(ui, user, deny_read)):
@@ -222,31 +222,31 @@ class hgwebdir(object):
 
         return False
 
-    def run_wsgi(self, req):
+    def run_wsgi(self, wsgireq):
         profile = self.ui.configbool('profiling', 'enabled')
         with profiling.profile(self.ui, enabled=profile):
-            for r in self._runwsgi(req):
+            for r in self._runwsgi(wsgireq):
                 yield r
 
-    def _runwsgi(self, req):
+    def _runwsgi(self, wsgireq):
         try:
             self.refresh()
 
             csp, nonce = cspvalues(self.ui)
             if csp:
-                req.headers.append(('Content-Security-Policy', csp))
+                wsgireq.headers.append(('Content-Security-Policy', csp))
 
-            virtual = req.env.get("PATH_INFO", "").strip('/')
-            tmpl = self.templater(req, nonce)
+            virtual = wsgireq.env.get("PATH_INFO", "").strip('/')
+            tmpl = self.templater(wsgireq, nonce)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
 
             # a static file
-            if virtual.startswith('static/') or 'static' in req.form:
+            if virtual.startswith('static/') or 'static' in wsgireq.form:
                 if virtual.startswith('static/'):
                     fname = virtual[7:]
                 else:
-                    fname = req.form['static'][0]
+                    fname = wsgireq.form['static'][0]
                 static = self.ui.config("web", "static", None,
                                         untrusted=False)
                 if not static:
@@ -254,7 +254,7 @@ class hgwebdir(object):
                     if isinstance(tp, str):
                         tp = [tp]
                     static = [os.path.join(p, 'static') for p in tp]
-                staticfile(static, fname, req)
+                staticfile(static, fname, wsgireq)
                 return []
 
             # top-level index
@@ -262,16 +262,16 @@ class hgwebdir(object):
             repos = dict(self.repos)
 
             if (not virtual or virtual == 'index') and virtual not in repos:
-                req.respond(HTTP_OK, ctype)
-                return self.makeindex(req, tmpl)
+                wsgireq.respond(HTTP_OK, ctype)
+                return self.makeindex(wsgireq, tmpl)
 
             # nested indexes and hgwebs
 
             if virtual.endswith('/index') and virtual not in repos:
                 subdir = virtual[:-len('index')]
                 if any(r.startswith(subdir) for r in repos):
-                    req.respond(HTTP_OK, ctype)
-                    return self.makeindex(req, tmpl, subdir)
+                    wsgireq.respond(HTTP_OK, ctype)
+                    return self.makeindex(wsgireq, tmpl, subdir)
 
             def _virtualdirs():
                 # Check the full virtual path, each parent, and the root ('')
@@ -286,11 +286,11 @@ class hgwebdir(object):
             for virtualrepo in _virtualdirs():
                 real = repos.get(virtualrepo)
                 if real:
-                    req.env['REPO_NAME'] = virtualrepo
+                    wsgireq.env['REPO_NAME'] = virtualrepo
                     try:
                         # ensure caller gets private copy of ui
                         repo = hg.repository(self.ui.copy(), real)
-                        return hgweb_mod.hgweb(repo).run_wsgi(req)
+                        return hgweb_mod.hgweb(repo).run_wsgi(wsgireq)
                     except IOError as inst:
                         msg = encoding.strtolocal(inst.strerror)
                         raise ErrorResponse(HTTP_SERVER_ERROR, msg)
@@ -300,20 +300,20 @@ class hgwebdir(object):
             # browse subdirectories
             subdir = virtual + '/'
             if [r for r in repos if r.startswith(subdir)]:
-                req.respond(HTTP_OK, ctype)
-                return self.makeindex(req, tmpl, subdir)
+                wsgireq.respond(HTTP_OK, ctype)
+                return self.makeindex(wsgireq, tmpl, subdir)
 
             # prefixes not found
-            req.respond(HTTP_NOT_FOUND, ctype)
+            wsgireq.respond(HTTP_NOT_FOUND, ctype)
             return tmpl("notfound", repo=virtual)
 
         except ErrorResponse as err:
-            req.respond(err, ctype)
+            wsgireq.respond(err, ctype)
             return tmpl('error', error=err.message or '')
         finally:
             tmpl = None
 
-    def makeindex(self, req, tmpl, subdir=""):
+    def makeindex(self, wsgireq, tmpl, subdir=""):
 
         def archivelist(ui, nodeid, url):
             allowed = ui.configlist("web", "allow_archive", untrusted=True)
@@ -369,8 +369,8 @@ class hgwebdir(object):
 
                 parts = [name]
                 parts.insert(0, '/' + subdir.rstrip('/'))
-                if req.env['SCRIPT_NAME']:
-                    parts.insert(0, req.env['SCRIPT_NAME'])
+                if wsgireq.env['SCRIPT_NAME']:
+                    parts.insert(0, wsgireq.env['SCRIPT_NAME'])
                 url = re.sub(r'/+', '/', '/'.join(parts) + '/')
 
                 # show either a directory entry or a repository
@@ -413,7 +413,7 @@ class hgwebdir(object):
                 if u.configbool("web", "hidden", untrusted=True):
                     continue
 
-                if not self.read_allowed(u, req):
+                if not self.read_allowed(u, wsgireq):
                     continue
 
                 # update time with local timezone
@@ -465,8 +465,8 @@ class hgwebdir(object):
         self.refresh()
         sortable = ["name", "description", "contact", "lastchange"]
         sortcolumn, descending = sortdefault
-        if 'sort' in req.form:
-            sortcolumn = req.form['sort'][0]
+        if 'sort' in wsgireq.form:
+            sortcolumn = wsgireq.form['sort'][0]
             descending = sortcolumn.startswith('-')
             if descending:
                 sortcolumn = sortcolumn[1:]
@@ -479,14 +479,14 @@ class hgwebdir(object):
                 for column in sortable]
 
         self.refresh()
-        self.updatereqenv(req.env)
+        self.updatereqenv(wsgireq.env)
 
         return tmpl("index", entries=entries, subdir=subdir,
                     pathdef=hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),
                     sortcolumn=sortcolumn, descending=descending,
                     **dict(sort))
 
-    def templater(self, req, nonce):
+    def templater(self, wsgireq, nonce):
 
         def motd(**map):
             if self.motd is not None:
@@ -497,14 +497,14 @@ class hgwebdir(object):
         def config(section, name, default=uimod._unset, untrusted=True):
             return self.ui.config(section, name, default, untrusted)
 
-        self.updatereqenv(req.env)
+        self.updatereqenv(wsgireq.env)
 
-        url = req.env.get('SCRIPT_NAME', '')
+        url = wsgireq.env.get('SCRIPT_NAME', '')
         if not url.endswith('/'):
             url += '/'
 
         vars = {}
-        styles, (style, mapfile) = hgweb_mod.getstyle(req, config,
+        styles, (style, mapfile) = hgweb_mod.getstyle(wsgireq, config,
                                                       self.templatepath)
         if style == styles[0]:
             vars['style'] = style

@@ -36,7 +36,7 @@ HGERRTYPE = 'application/hg-error'
 SSHV1 = wireprototypes.SSHV1
 SSHV2 = wireprototypes.SSHV2
 
-def decodevaluefromheaders(req, headerprefix):
+def decodevaluefromheaders(wsgireq, headerprefix):
     """Decode a long value from multiple HTTP request headers.
 
     Returns the value as a bytes, not a str.
@@ -45,7 +45,7 @@ def decodevaluefromheaders(req, headerprefix):
     i = 1
     prefix = headerprefix.upper().replace(r'-', r'_')
     while True:
-        v = req.env.get(r'HTTP_%s_%d' % (prefix, i))
+        v = wsgireq.env.get(r'HTTP_%s_%d' % (prefix, i))
         if v is None:
             break
         chunks.append(pycompat.bytesurl(v))
@@ -54,8 +54,8 @@ def decodevaluefromheaders(req, headerprefix):
     return ''.join(chunks)
 
 class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
-    def __init__(self, req, ui, checkperm):
-        self._req = req
+    def __init__(self, wsgireq, ui, checkperm):
+        self._wsgireq = wsgireq
         self._ui = ui
         self._checkperm = checkperm
 
@@ -79,26 +79,26 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
         return [data[k] for k in keys]
 
     def _args(self):
-        args = util.rapply(pycompat.bytesurl, self._req.form.copy())
-        postlen = int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))
+        args = util.rapply(pycompat.bytesurl, self._wsgireq.form.copy())
+        postlen = int(self._wsgireq.env.get(r'HTTP_X_HGARGS_POST', 0))
         if postlen:
             args.update(urlreq.parseqs(
-                self._req.read(postlen), keep_blank_values=True))
+                self._wsgireq.read(postlen), keep_blank_values=True))
             return args
 
-        argvalue = decodevaluefromheaders(self._req, r'X-HgArg')
+        argvalue = decodevaluefromheaders(self._wsgireq, r'X-HgArg')
         args.update(urlreq.parseqs(argvalue, keep_blank_values=True))
         return args
 
     def forwardpayload(self, fp):
-        if r'HTTP_CONTENT_LENGTH' in self._req.env:
-            length = int(self._req.env[r'HTTP_CONTENT_LENGTH'])
+        if r'HTTP_CONTENT_LENGTH' in self._wsgireq.env:
+            length = int(self._wsgireq.env[r'HTTP_CONTENT_LENGTH'])
         else:
-            length = int(self._req.env[r'CONTENT_LENGTH'])
+            length = int(self._wsgireq.env[r'CONTENT_LENGTH'])
         # If httppostargs is used, we need to read Content-Length
         # minus the amount that was consumed by args.
-        length -= int(self._req.env.get(r'HTTP_X_HGARGS_POST', 0))
-        for s in util.filechunkiter(self._req, limit=length):
+        length -= int(self._wsgireq.env.get(r'HTTP_X_HGARGS_POST', 0))
+        for s in util.filechunkiter(self._wsgireq, limit=length):
             fp.write(s)
 
     @contextlib.contextmanager
@@ -118,9 +118,9 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 
     def client(self):
         return 'remote:%s:%s:%s' % (
-            self._req.env.get('wsgi.url_scheme') or 'http',
-            urlreq.quote(self._req.env.get('REMOTE_HOST', '')),
-            urlreq.quote(self._req.env.get('REMOTE_USER', '')))
+            self._wsgireq.env.get('wsgi.url_scheme') or 'http',
+            urlreq.quote(self._wsgireq.env.get('REMOTE_HOST', '')),
+            urlreq.quote(self._wsgireq.env.get('REMOTE_USER', '')))
 
     def addcapabilities(self, repo, caps):
         caps.append('httpheader=%d' %
@@ -150,7 +150,7 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def parsehttprequest(rctx, req, query, checkperm):
+def parsehttprequest(rctx, wsgireq, query, checkperm):
     """Parse the HTTP request for a wire protocol request.
 
     If the current request appears to be a wire protocol request, this
@@ -158,17 +158,17 @@ def parsehttprequest(rctx, req, query, checkperm):
     an ``abstractprotocolserver`` instance suitable for handling the
     request. Otherwise, ``None`` is returned.
 
-    ``req`` is a ``wsgirequest`` instance.
+    ``wsgireq`` is a ``wsgirequest`` instance.
     """
     repo = rctx.repo
 
     # HTTP version 1 wire protocol requests are denoted by a "cmd" query
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
-    if 'cmd' not in req.form:
+    if 'cmd' not in wsgireq.form:
         return None
 
-    cmd = req.form['cmd'][0]
+    cmd = wsgireq.form['cmd'][0]
 
     # The "cmd" request parameter is used by both the wire protocol and hgweb.
     # While not all wire protocol commands are available for all transports,
@@ -180,24 +180,24 @@ def parsehttprequest(rctx, req, query, checkperm):
     if not iscmd(cmd):
         return None
 
-    proto = httpv1protocolhandler(req, repo.ui,
-                                  lambda perm: checkperm(rctx, req, perm))
+    proto = httpv1protocolhandler(wsgireq, repo.ui,
+                                  lambda perm: checkperm(rctx, wsgireq, perm))
 
     return {
         'cmd': cmd,
         'proto': proto,
-        'dispatch': lambda: _callhttp(repo, req, proto, cmd),
-        'handleerror': lambda ex: _handlehttperror(ex, req, cmd),
+        'dispatch': lambda: _callhttp(repo, wsgireq, proto, cmd),
+        'handleerror': lambda ex: _handlehttperror(ex, wsgireq, cmd),
     }
 
-def _httpresponsetype(ui, req, prefer_uncompressed):
+def _httpresponsetype(ui, wsgireq, prefer_uncompressed):
     """Determine the appropriate response type and compression settings.
 
     Returns a tuple of (mediatype, compengine, engineopts).
     """
     # Determine the response media type and compression engine based
     # on the request parameters.
-    protocaps = decodevaluefromheaders(req, r'X-HgProto').split(' ')
+    protocaps = decodevaluefromheaders(wsgireq, r'X-HgProto').split(' ')
 
     if '0.2' in protocaps:
         # All clients are expected to support uncompressed data.
@@ -230,7 +230,7 @@ def _httpresponsetype(ui, req, prefer_uncompressed):
     opts = {'level': ui.configint('server', 'zliblevel')}
     return HGTYPE, util.compengines['zlib'], opts
 
-def _callhttp(repo, req, proto, cmd):
+def _callhttp(repo, wsgireq, proto, cmd):
     def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
         # identifying the compression engine.
@@ -243,9 +243,9 @@ def _callhttp(repo, req, proto, cmd):
             yield chunk
 
     if not wireproto.commands.commandavailable(cmd, proto):
-        req.respond(HTTP_OK, HGERRTYPE,
-                    body=_('requested wire protocol command is not available '
-                           'over HTTP'))
+        wsgireq.respond(HTTP_OK, HGERRTYPE,
+                        body=_('requested wire protocol command is not '
+                               'available over HTTP'))
         return []
 
     proto.checkperm(wireproto.commands[cmd].permission)
@@ -253,14 +253,14 @@ def _callhttp(repo, req, proto, cmd):
     rsp = wireproto.dispatch(repo, proto, cmd)
 
     if isinstance(rsp, bytes):
-        req.respond(HTTP_OK, HGTYPE, body=rsp)
+        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireprototypes.bytesresponse):
-        req.respond(HTTP_OK, HGTYPE, body=rsp.data)
+        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp.data)
         return []
     elif isinstance(rsp, wireprototypes.streamreslegacy):
         gen = rsp.gen
-        req.respond(HTTP_OK, HGTYPE)
+        wsgireq.respond(HTTP_OK, HGTYPE)
         return gen
     elif isinstance(rsp, wireprototypes.streamres):
         gen = rsp.gen
@@ -268,32 +268,32 @@ def _callhttp(repo, req, proto, cmd):
         # This code for compression should not be streamres specific. It
         # is here because we only compress streamres at the moment.
         mediatype, engine, engineopts = _httpresponsetype(
-            repo.ui, req, rsp.prefer_uncompressed)
+            repo.ui, wsgireq, rsp.prefer_uncompressed)
         gen = engine.compressstream(gen, engineopts)
 
         if mediatype == HGTYPE2:
             gen = genversion2(gen, engine, engineopts)
 
-        req.respond(HTTP_OK, mediatype)
+        wsgireq.respond(HTTP_OK, mediatype)
         return gen
     elif isinstance(rsp, wireprototypes.pushres):
         rsp = '%d\n%s' % (rsp.res, rsp.output)
-        req.respond(HTTP_OK, HGTYPE, body=rsp)
+        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireprototypes.pusherr):
         # This is the httplib workaround documented in _handlehttperror().
-        req.drain()
+        wsgireq.drain()
 
         rsp = '0\n%s\n' % rsp.res
-        req.respond(HTTP_OK, HGTYPE, body=rsp)
+        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireprototypes.ooberror):
         rsp = rsp.message
-        req.respond(HTTP_OK, HGERRTYPE, body=rsp)
+        wsgireq.respond(HTTP_OK, HGERRTYPE, body=rsp)
         return []
     raise error.ProgrammingError('hgweb.protocol internal failure', rsp)
 
-def _handlehttperror(e, req, cmd):
+def _handlehttperror(e, wsgireq, cmd):
     """Called when an ErrorResponse is raised during HTTP request processing."""
 
     # Clients using Python's httplib are stateful: the HTTP client
@@ -304,20 +304,20 @@ def _handlehttperror(e, req, cmd):
     # the HTTP response. In other words, it helps prevent deadlocks
     # on clients using httplib.
 
-    if (req.env[r'REQUEST_METHOD'] == r'POST' and
+    if (wsgireq.env[r'REQUEST_METHOD'] == r'POST' and
         # But not if Expect: 100-continue is being used.
-        (req.env.get('HTTP_EXPECT',
-                     '').lower() != '100-continue') or
+        (wsgireq.env.get('HTTP_EXPECT',
+                         '').lower() != '100-continue') or
         # Or the non-httplib HTTP library is being advertised by
         # the client.
-        req.env.get('X-HgHttp2', '')):
-        req.drain()
+        wsgireq.env.get('X-HgHttp2', '')):
+        wsgireq.drain()
     else:
-        req.headers.append((r'Connection', r'Close'))
+        wsgireq.headers.append((r'Connection', r'Close'))
 
     # TODO This response body assumes the failed command was
     # "unbundle." That assumption is not always valid.
-    req.respond(e, HGTYPE, body='0\n%s\n' % pycompat.bytestr(e))
+    wsgireq.respond(e, HGTYPE, body='0\n%s\n' % pycompat.bytestr(e))
 
     return ''
 

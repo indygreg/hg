@@ -22,7 +22,6 @@ from .common import (
     cspvalues,
     permhooks,
 )
-from .request import wsgirequest
 
 from .. import (
     encoding,
@@ -41,6 +40,7 @@ from .. import (
 )
 
 from . import (
+    request as requestmod,
     webcommands,
     webutil,
     wsgicgi,
@@ -142,11 +142,11 @@ class requestcontext(object):
             if typ in allowed or self.configbool('web', 'allow%s' % typ):
                 yield {'type': typ, 'extension': spec[2], 'node': nodeid}
 
-    def templater(self, req):
+    def templater(self, wsgireq):
         # determine scheme, port and server name
         # this is needed to create absolute urls
 
-        proto = req.env.get('wsgi.url_scheme')
+        proto = wsgireq.env.get('wsgi.url_scheme')
         if proto == 'https':
             proto = 'https'
             default_port = '443'
@@ -154,13 +154,13 @@ class requestcontext(object):
             proto = 'http'
             default_port = '80'
 
-        port = req.env[r'SERVER_PORT']
+        port = wsgireq.env[r'SERVER_PORT']
         port = port != default_port and (r':' + port) or r''
-        urlbase = r'%s://%s%s' % (proto, req.env[r'SERVER_NAME'], port)
+        urlbase = r'%s://%s%s' % (proto, wsgireq.env[r'SERVER_NAME'], port)
         logourl = self.config('web', 'logourl')
         logoimg = self.config('web', 'logoimg')
         staticurl = (self.config('web', 'staticurl')
-                     or pycompat.sysbytes(req.url) + 'static/')
+                     or pycompat.sysbytes(wsgireq.url) + 'static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 
@@ -172,18 +172,18 @@ class requestcontext(object):
         # figure out which style to use
 
         vars = {}
-        styles, (style, mapfile) = getstyle(req, self.config,
+        styles, (style, mapfile) = getstyle(wsgireq, self.config,
                                             self.templatepath)
         if style == styles[0]:
             vars['style'] = style
 
-        start = '&' if req.url[-1] == r'?' else '?'
+        start = '&' if wsgireq.url[-1] == r'?' else '?'
         sessionvars = webutil.sessionvars(vars, start)
 
         if not self.reponame:
             self.reponame = (self.config('web', 'name', '')
-                             or req.env.get('REPO_NAME')
-                             or req.url.strip(r'/') or self.repo.root)
+                             or wsgireq.env.get('REPO_NAME')
+                             or wsgireq.url.strip(r'/') or self.repo.root)
 
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
@@ -191,7 +191,7 @@ class requestcontext(object):
         # create the templater
         # TODO: export all keywords: defaults = templatekw.keywords.copy()
         defaults = {
-            'url': pycompat.sysbytes(req.url),
+            'url': pycompat.sysbytes(wsgireq.url),
             'logourl': logourl,
             'logoimg': logoimg,
             'staticurl': staticurl,
@@ -200,7 +200,7 @@ class requestcontext(object):
             'encoding': encoding.encoding,
             'motd': motd,
             'sessionvars': sessionvars,
-            'pathdef': makebreadcrumb(pycompat.sysbytes(req.url)),
+            'pathdef': makebreadcrumb(pycompat.sysbytes(wsgireq.url)),
             'style': style,
             'nonce': self.nonce,
         }
@@ -301,10 +301,10 @@ class hgweb(object):
 
         This may be called by multiple threads.
         """
-        req = wsgirequest(env, respond)
+        req = requestmod.wsgirequest(env, respond)
         return self.run_wsgi(req)
 
-    def run_wsgi(self, req):
+    def run_wsgi(self, wsgireq):
         """Internal method to run the WSGI application.
 
         This is typically only called by Mercurial. External consumers
@@ -313,45 +313,45 @@ class hgweb(object):
         with self._obtainrepo() as repo:
             profile = repo.ui.configbool('profiling', 'enabled')
             with profiling.profile(repo.ui, enabled=profile):
-                for r in self._runwsgi(req, repo):
+                for r in self._runwsgi(wsgireq, repo):
                     yield r
 
-    def _runwsgi(self, req, repo):
+    def _runwsgi(self, wsgireq, repo):
         rctx = requestcontext(self, repo)
 
         # This state is global across all threads.
         encoding.encoding = rctx.config('web', 'encoding')
-        rctx.repo.ui.environ = req.env
+        rctx.repo.ui.environ = wsgireq.env
 
         if rctx.csp:
             # hgwebdir may have added CSP header. Since we generate our own,
             # replace it.
-            req.headers = [h for h in req.headers
-                           if h[0] != 'Content-Security-Policy']
-            req.headers.append(('Content-Security-Policy', rctx.csp))
+            wsgireq.headers = [h for h in wsgireq.headers
+                               if h[0] != 'Content-Security-Policy']
+            wsgireq.headers.append(('Content-Security-Policy', rctx.csp))
 
         # work with CGI variables to create coherent structure
         # use SCRIPT_NAME, PATH_INFO and QUERY_STRING as well as our REPO_NAME
 
-        req.url = req.env[r'SCRIPT_NAME']
-        if not req.url.endswith(r'/'):
-            req.url += r'/'
-        if req.env.get('REPO_NAME'):
-            req.url += req.env[r'REPO_NAME'] + r'/'
+        wsgireq.url = wsgireq.env[r'SCRIPT_NAME']
+        if not wsgireq.url.endswith(r'/'):
+            wsgireq.url += r'/'
+        if wsgireq.env.get('REPO_NAME'):
+            wsgireq.url += wsgireq.env[r'REPO_NAME'] + r'/'
 
-        if r'PATH_INFO' in req.env:
-            parts = req.env[r'PATH_INFO'].strip(r'/').split(r'/')
-            repo_parts = req.env.get(r'REPO_NAME', r'').split(r'/')
+        if r'PATH_INFO' in wsgireq.env:
+            parts = wsgireq.env[r'PATH_INFO'].strip(r'/').split(r'/')
+            repo_parts = wsgireq.env.get(r'REPO_NAME', r'').split(r'/')
             if parts[:len(repo_parts)] == repo_parts:
                 parts = parts[len(repo_parts):]
             query = r'/'.join(parts)
         else:
-            query = req.env[r'QUERY_STRING'].partition(r'&')[0]
+            query = wsgireq.env[r'QUERY_STRING'].partition(r'&')[0]
             query = query.partition(r';')[0]
 
         # Route it to a wire protocol handler if it looks like a wire protocol
         # request.
-        protohandler = wireprotoserver.parsehttprequest(rctx, req, query,
+        protohandler = wireprotoserver.parsehttprequest(rctx, wsgireq, query,
                                                         self.check_perm)
 
         if protohandler:
@@ -366,83 +366,83 @@ class hgweb(object):
         # translate user-visible url structure to internal structure
 
         args = query.split(r'/', 2)
-        if 'cmd' not in req.form and args and args[0]:
+        if 'cmd' not in wsgireq.form and args and args[0]:
             cmd = args.pop(0)
             style = cmd.rfind('-')
             if style != -1:
-                req.form['style'] = [cmd[:style]]
+                wsgireq.form['style'] = [cmd[:style]]
                 cmd = cmd[style + 1:]
 
             # avoid accepting e.g. style parameter as command
             if util.safehasattr(webcommands, cmd):
-                req.form['cmd'] = [cmd]
+                wsgireq.form['cmd'] = [cmd]
 
             if cmd == 'static':
-                req.form['file'] = ['/'.join(args)]
+                wsgireq.form['file'] = ['/'.join(args)]
             else:
                 if args and args[0]:
                     node = args.pop(0).replace('%2F', '/')
-                    req.form['node'] = [node]
+                    wsgireq.form['node'] = [node]
                 if args:
-                    req.form['file'] = args
+                    wsgireq.form['file'] = args
 
-            ua = req.env.get('HTTP_USER_AGENT', '')
+            ua = wsgireq.env.get('HTTP_USER_AGENT', '')
             if cmd == 'rev' and 'mercurial' in ua:
-                req.form['style'] = ['raw']
+                wsgireq.form['style'] = ['raw']
 
             if cmd == 'archive':
-                fn = req.form['node'][0]
+                fn = wsgireq.form['node'][0]
                 for type_, spec in rctx.archivespecs.iteritems():
                     ext = spec[2]
                     if fn.endswith(ext):
-                        req.form['node'] = [fn[:-len(ext)]]
-                        req.form['type'] = [type_]
+                        wsgireq.form['node'] = [fn[:-len(ext)]]
+                        wsgireq.form['type'] = [type_]
         else:
-            cmd = req.form.get('cmd', [''])[0]
+            cmd = wsgireq.form.get('cmd', [''])[0]
 
         # process the web interface request
 
         try:
-            tmpl = rctx.templater(req)
+            tmpl = rctx.templater(wsgireq)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
 
             # check read permissions non-static content
             if cmd != 'static':
-                self.check_perm(rctx, req, None)
+                self.check_perm(rctx, wsgireq, None)
 
             if cmd == '':
-                req.form['cmd'] = [tmpl.cache['default']]
-                cmd = req.form['cmd'][0]
+                wsgireq.form['cmd'] = [tmpl.cache['default']]
+                cmd = wsgireq.form['cmd'][0]
 
             # Don't enable caching if using a CSP nonce because then it wouldn't
             # be a nonce.
             if rctx.configbool('web', 'cache') and not rctx.nonce:
-                caching(self, req) # sets ETag header or raises NOT_MODIFIED
+                caching(self, wsgireq) # sets ETag header or raises NOT_MODIFIED
             if cmd not in webcommands.__all__:
                 msg = 'no such method: %s' % cmd
                 raise ErrorResponse(HTTP_BAD_REQUEST, msg)
-            elif cmd == 'file' and 'raw' in req.form.get('style', []):
+            elif cmd == 'file' and 'raw' in wsgireq.form.get('style', []):
                 rctx.ctype = ctype
-                content = webcommands.rawfile(rctx, req, tmpl)
+                content = webcommands.rawfile(rctx, wsgireq, tmpl)
             else:
-                content = getattr(webcommands, cmd)(rctx, req, tmpl)
-                req.respond(HTTP_OK, ctype)
+                content = getattr(webcommands, cmd)(rctx, wsgireq, tmpl)
+                wsgireq.respond(HTTP_OK, ctype)
 
             return content
 
         except (error.LookupError, error.RepoLookupError) as err:
-            req.respond(HTTP_NOT_FOUND, ctype)
+            wsgireq.respond(HTTP_NOT_FOUND, ctype)
             msg = pycompat.bytestr(err)
             if (util.safehasattr(err, 'name') and
                 not isinstance(err,  error.ManifestLookupError)):
                 msg = 'revision not found: %s' % err.name
             return tmpl('error', error=msg)
         except (error.RepoError, error.RevlogError) as inst:
-            req.respond(HTTP_SERVER_ERROR, ctype)
+            wsgireq.respond(HTTP_SERVER_ERROR, ctype)
             return tmpl('error', error=pycompat.bytestr(inst))
         except ErrorResponse as inst:
-            req.respond(inst, ctype)
+            wsgireq.respond(inst, ctype)
             if inst.code == HTTP_NOT_MODIFIED:
                 # Not allowed to return a body on a 304
                 return ['']

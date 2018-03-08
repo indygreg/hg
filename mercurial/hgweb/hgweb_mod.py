@@ -318,24 +318,15 @@ class hgweb(object):
                                if h[0] != 'Content-Security-Policy']
             wsgireq.headers.append(('Content-Security-Policy', rctx.csp))
 
+        handled, res = wireprotoserver.handlewsgirequest(
+            rctx, wsgireq, req, self.check_perm)
+        if handled:
+            return res
+
         if req.havepathinfo:
             query = req.dispatchpath
         else:
             query = req.querystring.partition('&')[0].partition(';')[0]
-
-        # Route it to a wire protocol handler if it looks like a wire protocol
-        # request.
-        protohandler = wireprotoserver.parsehttprequest(rctx, wsgireq, req,
-                                                        self.check_perm)
-
-        if protohandler:
-            try:
-                if query:
-                    raise ErrorResponse(HTTP_NOT_FOUND)
-
-                return protohandler['dispatch']()
-            except ErrorResponse as inst:
-                return protohandler['handleerror'](inst)
 
         # translate user-visible url structure to internal structure
 

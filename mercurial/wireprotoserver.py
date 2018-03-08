@@ -150,24 +150,29 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def parsehttprequest(rctx, wsgireq, req, checkperm):
-    """Parse the HTTP request for a wire protocol request.
+def handlewsgirequest(rctx, wsgireq, req, checkperm):
+    """Possibly process a wire protocol request.
 
-    If the current request appears to be a wire protocol request, this
-    function returns a dict with details about that request, including
-    an ``abstractprotocolserver`` instance suitable for handling the
-    request. Otherwise, ``None`` is returned.
+    If the current request is a wire protocol request, the request is
+    processed by this function.
 
     ``wsgireq`` is a ``wsgirequest`` instance.
     ``req`` is a ``parsedrequest`` instance.
+
+    Returns a 2-tuple of (bool, response) where the 1st element indicates
+    whether the request was handled and the 2nd element is a return
+    value for a WSGI application (often a generator of bytes).
     """
+    # Avoid cycle involving hg module.
+    from .hgweb import common as hgwebcommon
+
     repo = rctx.repo
 
     # HTTP version 1 wire protocol requests are denoted by a "cmd" query
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
     if 'cmd' not in req.querystringdict:
-        return None
+        return False, None
 
     cmd = req.querystringdict['cmd'][0]
 
@@ -179,17 +184,32 @@ def parsehttprequest(rctx, wsgireq, req, checkperm):
     # known wire protocol commands and it is less confusing for machine
     # clients.
     if not iscmd(cmd):
-        return None
+        return False, None
+
+    # The "cmd" query string argument is only valid on the root path of the
+    # repo. e.g. ``/?cmd=foo``, ``/repo?cmd=foo``. URL paths within the repo
+    # like ``/blah?cmd=foo`` are not allowed. So don't recognize the request
+    # in this case. We send an HTTP 404 for backwards compatibility reasons.
+    if req.dispatchpath:
+        res = _handlehttperror(
+            hgwebcommon.ErrorResponse(hgwebcommon.HTTP_NOT_FOUND), wsgireq,
+            cmd)
+
+        return True, res
 
     proto = httpv1protocolhandler(wsgireq, repo.ui,
                                   lambda perm: checkperm(rctx, wsgireq, perm))
 
-    return {
-        'cmd': cmd,
-        'proto': proto,
-        'dispatch': lambda: _callhttp(repo, wsgireq, proto, cmd),
-        'handleerror': lambda ex: _handlehttperror(ex, wsgireq, cmd),
-    }
+    # The permissions checker should be the only thing that can raise an
+    # ErrorResponse. It is kind of a layer violation to catch an hgweb
+    # exception here. So consider refactoring into a exception type that
+    # is associated with the wire protocol.
+    try:
+        res = _callhttp(repo, wsgireq, proto, cmd)
+    except hgwebcommon.ErrorResponse as e:
+        res = _handlehttperror(e, wsgireq, cmd)
+
+    return True, res
 
 def _httpresponsetype(ui, wsgireq, prefer_uncompressed):
     """Determine the appropriate response type and compression settings.

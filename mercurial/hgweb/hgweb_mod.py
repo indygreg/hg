@@ -330,7 +330,7 @@ class hgweb(object):
 
         # Route it to a wire protocol handler if it looks like a wire protocol
         # request.
-        protohandler = wireprotoserver.parsehttprequest(rctx, wsgireq, query,
+        protohandler = wireprotoserver.parsehttprequest(rctx, wsgireq, req,
                                                         self.check_perm)
 
         if protohandler:

@@ -150,7 +150,7 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def parsehttprequest(rctx, wsgireq, query, checkperm):
+def parsehttprequest(rctx, wsgireq, req, checkperm):
     """Parse the HTTP request for a wire protocol request.
 
     If the current request appears to be a wire protocol request, this
@@ -159,16 +159,17 @@ def parsehttprequest(rctx, wsgireq, query, checkperm):
     request. Otherwise, ``None`` is returned.
 
     ``wsgireq`` is a ``wsgirequest`` instance.
+    ``req`` is a ``parsedrequest`` instance.
     """
     repo = rctx.repo
 
     # HTTP version 1 wire protocol requests are denoted by a "cmd" query
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
-    if 'cmd' not in wsgireq.form:
+    if 'cmd' not in req.querystringdict:
         return None
 
-    cmd = wsgireq.form['cmd'][0]
+    cmd = req.querystringdict['cmd'][0]
 
     # The "cmd" request parameter is used by both the wire protocol and hgweb.
     # While not all wire protocol commands are available for all transports,

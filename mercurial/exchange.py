@@ -620,8 +620,8 @@ def _pushdiscoverybookmarks(pushop):
         return hex(x)
 
     def hexifycompbookmarks(bookmarks):
-        for b, scid, dcid in bookmarks:
-            yield b, safehex(scid), safehex(dcid)
+        return [(b, safehex(scid), safehex(dcid))
+                for (b, scid, dcid) in bookmarks]
 
     comp = [hexifycompbookmarks(marks) for marks in comp]
     addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = comp

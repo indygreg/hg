@@ -29,10 +29,8 @@ Check that a simple rebase works
   >   |/
   >   A
   > EOF
-- We should only see two status stored messages. One from the start, one from
-- the end.
+- We should only see one status stored message. It comes from the start.
   $ hg rebase --debug -b D -d Z | grep 'status stored'
-  rebase status stored
   rebase status stored
   $ hg tglog
   o  5: D
@@ -64,7 +62,7 @@ Check that --collapse works
   >   A
   > EOF
 - We should only see two status stored messages. One from the start, one from
-- the end.
+- cmdutil.commitforceeditor() which forces tr.writepending()
   $ hg rebase --collapse --debug -b D -d Z | grep 'status stored'
   rebase status stored
   rebase status stored
@@ -162,12 +160,14 @@ rebase can then be continued
   rebasing 1:112478962961 "B" (B)
   rebasing 3:26805aba1e60 "C" (C)
   rebasing 5:f585351a92f8 "D" (D tip)
+  transaction abort!
+  rollback completed
   abort: edit failed: false exited with status 1
   [255]
   $ hg tglog
   o  5: D
   |
-  | @  4: Z
+  | o  4: Z
   | |
   o |  3: C
   | |
@@ -178,9 +178,9 @@ rebase can then be continued
   o  0: A
   
   $ hg rebase --continue
-  already rebased 1:112478962961 "B" (B) as e9b22a392ce0
-  already rebased 3:26805aba1e60 "C" (C) as e9b22a392ce0
-  already rebased 5:f585351a92f8 "D" (D tip) as e9b22a392ce0
+  rebasing 1:112478962961 "B" (B)
+  rebasing 3:26805aba1e60 "C" (C)
+  rebasing 5:f585351a92f8 "D" (D tip)
   saved backup bundle to $TESTTMP/collapse-cancel-editor/.hg/strip-backup/112478962961-cb2a9b47-rebase.hg
   $ hg tglog
   o  3: Collapsed revision

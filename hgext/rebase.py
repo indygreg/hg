@@ -573,16 +573,12 @@ class rebaseruntime(object):
                     keepbranches=self.keepbranchesf,
                     date=self.date, wctx=self.wctx)
             else:
-                dsguard = None
-                if ui.configbool('rebase', 'singletransaction'):
-                    dsguard = dirstateguard.dirstateguard(repo, 'rebase')
-                with util.acceptintervention(dsguard):
-                    newnode = concludenode(repo, revtoreuse, p1, self.external,
-                        commitmsg=commitmsg,
-                        extrafn=_makeextrafn(self.extrafns),
-                        editor=editor,
-                        keepbranches=self.keepbranchesf,
-                        date=self.date)
+                newnode = concludenode(repo, revtoreuse, p1, self.external,
+                    commitmsg=commitmsg,
+                    extrafn=_makeextrafn(self.extrafns),
+                    editor=editor,
+                    keepbranches=self.keepbranchesf,
+                    date=self.date)
             if newnode is not None:
                 newrev = repo[newnode].rev()
                 for oldrev in self.state:
@@ -864,8 +860,7 @@ def _origrebase(ui, repo, inmemory=False, **opts):
                 dsguard = dirstateguard.dirstateguard(repo, 'rebase')
             with util.acceptintervention(dsguard):
                 rbsrt._performrebase(tr)
-
-        rbsrt._finishrebase()
+                rbsrt._finishrebase()
 
 def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
                    revf=None, destspace=None):

@@ -99,13 +99,17 @@ def urlencodenested(params):
     process('', params)
     return util.urlreq.urlencode(flatparams)
 
+printed_token_warning = False
+
 def readlegacytoken(repo):
     """Transitional support for old phabricator tokens.
 
     Remove before the 4.6 release.
     """
+    global printed_token_warning
     token = repo.ui.config('phabricator', 'token')
-    if token:
+    if token and not printed_token_warning:
+        printed_token_warning = True
         repo.ui.warn(_('phabricator.token is deprecated - please '
                        'migrate to the phabricator.auth section.\n'))
     return token

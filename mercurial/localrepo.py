@@ -1177,7 +1177,7 @@ class localrepository(object):
                 raise error.ProgrammingError('transaction requires locking')
         tr = self.currenttransaction()
         if tr is not None:
-            return tr.nest()
+            return tr.nest(name=desc)
 
         # abort here if the journal already exists
         if self.svfs.exists("journal"):
@@ -1316,7 +1316,8 @@ class localrepository(object):
                                      self.store.createmode,
                                      validator=validate,
                                      releasefn=releasefn,
-                                     checkambigfiles=_cachedfiles)
+                                     checkambigfiles=_cachedfiles,
+                                     name=desc)
         tr.changes['revs'] = xrange(0, 0)
         tr.changes['obsmarkers'] = set()
         tr.changes['phases'] = {}

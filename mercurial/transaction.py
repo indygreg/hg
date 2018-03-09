@@ -105,7 +105,7 @@ def _playback(journal, report, opener, vfsmap, entries, backupentries,
 class transaction(util.transactional):
     def __init__(self, report, opener, vfsmap, journalname, undoname=None,
                  after=None, createmode=None, validator=None, releasefn=None,
-                 checkambigfiles=None):
+                 checkambigfiles=None, name=r'<unnamed>'):
         """Begin a new transaction
 
         Begins a new transaction that allows rolling back writes in the event of
@@ -149,6 +149,8 @@ class transaction(util.transactional):
         if checkambigfiles:
             self.checkambigfiles.update(checkambigfiles)
 
+        self.names = [name]
+
         # A dict dedicated to precisely tracking the changes introduced in the
         # transaction.
         self.changes = {}
@@ -185,6 +187,11 @@ class transaction(util.transactional):
         self._postclosecallback = {}
         # holds callbacks to call during abort
         self._abortcallback = {}
+
+    def __repr__(self):
+        name = r'/'.join(self.names)
+        return (r'<transaction name=%s, count=%d, usages=%d>' %
+                (name, self.count, self.usages))
 
     def __del__(self):
         if self.journal:
@@ -365,14 +372,17 @@ class transaction(util.transactional):
         self.file.flush()
 
     @active
-    def nest(self):
+    def nest(self, name=r'<unnamed>'):
         self.count += 1
         self.usages += 1
+        self.names.append(name)
         return self
 
     def release(self):
         if self.count > 0:
             self.usages -= 1
+        if self.names:
+            self.names.pop()
         # if the transaction scopes are left without being closed, fail
         if self.count > 0 and self.usages == 0:
             self._abort()

@@ -481,9 +481,8 @@ class rebaseruntime(object):
                 if len(repo[None].parents()) == 2:
                     repo.ui.debug('resuming interrupted rebase\n')
                 else:
-                    try:
-                        ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                                     'rebase')
+                    overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+                    with ui.configoverride(overrides, 'rebase'):
                         stats = rebasenode(repo, rev, p1, base, self.collapsef,
                                            dest, wctx=self.wctx)
                         if stats and stats[3] > 0:
@@ -493,8 +492,6 @@ class rebaseruntime(object):
                                 raise error.InterventionRequired(
                                     _('unresolved conflicts (see hg '
                                       'resolve, then hg rebase --continue)'))
-                    finally:
-                        ui.setconfig('ui', 'forcemerge', '', 'rebase')
                 if not self.collapsef:
                     merging = p2 != nullrev
                     editform = cmdutil.mergeeditform(merging, 'rebase')

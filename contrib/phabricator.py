@@ -22,7 +22,8 @@ Config::
     url = https://phab.example.com/
 
     # API token. Get it from https://$HOST/conduit/login/
-    token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    # Deprecated: see [phabricator.auth] below
+    #token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
     # Repo callsign. If a repo has a URL https://$HOST/diffusion/FOO, then its
     # callsign is "FOO".

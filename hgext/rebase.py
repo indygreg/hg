@@ -1054,9 +1054,9 @@ def concludememorynode(repo, rev, p1, p2, wctx=None,
 
     destphase = max(ctx.phase(), phases.draft)
     overrides = {('phases', 'new-commit'): destphase}
+    if keepbranch:
+        overrides[('ui', 'allowemptycommit')] = True
     with repo.ui.configoverride(overrides, 'rebase'):
-        if keepbranch:
-            repo.ui.setconfig('ui', 'allowemptycommit', True)
         # Replicates the empty check in ``repo.commit``.
         if wctx.isempty() and not repo.ui.configbool('ui', 'allowemptycommit'):
             return None
@@ -1096,9 +1096,9 @@ def concludenode(repo, rev, p1, p2, commitmsg=None, editor=None, extrafn=None,
 
         destphase = max(ctx.phase(), phases.draft)
         overrides = {('phases', 'new-commit'): destphase}
+        if keepbranch:
+            overrides[('ui', 'allowemptycommit')] = True
         with repo.ui.configoverride(overrides, 'rebase'):
-            if keepbranch:
-                repo.ui.setconfig('ui', 'allowemptycommit', True)
             # Commit might fail if unresolved files exist
             if date is None:
                 date = ctx.date()

@@ -1015,8 +1015,6 @@ void xdl_free_script(xdchange_t *xscr) {
 xdchange_t *xdl_get_hunk(xdchange_t **xscr)
 {
 	xdchange_t *xch, *xchp, *lxch;
-	int64_t max_common = 0;
-	int64_t max_ignorable = 0;
 	uint64_t ignored = 0; /* number of ignored blank lines */
 
 	/* remove ignorable changes that are too far before other changes */
@@ -1024,7 +1022,7 @@ xdchange_t *xdl_get_hunk(xdchange_t **xscr)
 		xch = xchp->next;
 
 		if (xch == NULL ||
-		    xch->i1 - (xchp->i1 + xchp->chg1) >= max_ignorable)
+		    xch->i1 - (xchp->i1 + xchp->chg1) >= 0)
 			*xscr = xch;
 	}
 
@@ -1035,16 +1033,16 @@ xdchange_t *xdl_get_hunk(xdchange_t **xscr)
 
 	for (xchp = *xscr, xch = xchp->next; xch; xchp = xch, xch = xch->next) {
 		int64_t distance = xch->i1 - (xchp->i1 + xchp->chg1);
-		if (distance > max_common)
+		if (distance > 0)
 			break;
 
-		if (distance < max_ignorable && (!xch->ignore || lxch == xchp)) {
+		if (distance < 0 && (!xch->ignore || lxch == xchp)) {
 			lxch = xch;
 			ignored = 0;
-		} else if (distance < max_ignorable && xch->ignore) {
+		} else if (distance < 0 && xch->ignore) {
 			ignored += xch->chg2;
 		} else if (lxch != xchp &&
-			   xch->i1 + ignored - (lxch->i1 + lxch->chg1) > max_common) {
+			   xch->i1 + ignored - (lxch->i1 + lxch->chg1) > 0) {
 			break;
 		} else if (!xch->ignore) {
 			lxch = xch;

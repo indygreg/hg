@@ -328,10 +328,7 @@ def _handlehttperror(e, wsgireq, cmd):
     if (wsgireq.env[r'REQUEST_METHOD'] == r'POST' and
         # But not if Expect: 100-continue is being used.
         (wsgireq.env.get('HTTP_EXPECT',
-                         '').lower() != '100-continue') or
-        # Or the non-httplib HTTP library is being advertised by
-        # the client.
-        wsgireq.env.get('X-HgHttp2', '')):
+                         '').lower() != '100-continue')):
         wsgireq.drain()
     else:
         wsgireq.headers.append((r'Connection', r'Close'))

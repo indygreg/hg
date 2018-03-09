@@ -121,14 +121,14 @@ int64_t xdl_guess_lines(mmfile_t *mf, int64_t sample) {
 	return nl + 1;
 }
 
-int xdl_recmatch(const char *l1, int64_t s1, const char *l2, int64_t s2, int64_t flags)
+int xdl_recmatch(const char *l1, int64_t s1, const char *l2, int64_t s2)
 {
 	if (s1 == s2 && !memcmp(l1, l2, s1))
 		return 1;
 	return 0;
 }
 
-uint64_t xdl_hash_record(char const **data, char const *top, int64_t flags) {
+uint64_t xdl_hash_record(char const **data, char const *top) {
 	uint64_t ha = 5381;
 	char const *ptr = *data;
 

@@ -398,12 +398,11 @@ static xdchange_t *xdl_add_change(xdchange_t *xscr, int64_t i1, int64_t i2, int6
 }
 
 
-static int recs_match(xrecord_t *rec1, xrecord_t *rec2, int64_t flags)
+static int recs_match(xrecord_t *rec1, xrecord_t *rec2)
 {
 	return (rec1->ha == rec2->ha &&
 		xdl_recmatch(rec1->ptr, rec1->size,
-			     rec2->ptr, rec2->size,
-			     flags));
+			     rec2->ptr, rec2->size));
 }
 
 /*
@@ -762,10 +761,10 @@ static inline int group_previous(xdfile_t *xdf, struct xdlgroup *g)
  * following group, expand this group to include it. Return 0 on success or -1
  * if g cannot be slid down.
  */
-static int group_slide_down(xdfile_t *xdf, struct xdlgroup *g, int64_t flags)
+static int group_slide_down(xdfile_t *xdf, struct xdlgroup *g)
 {
 	if (g->end < xdf->nrec &&
-	    recs_match(xdf->recs[g->start], xdf->recs[g->end], flags)) {
+	    recs_match(xdf->recs[g->start], xdf->recs[g->end])) {
 		xdf->rchg[g->start++] = 0;
 		xdf->rchg[g->end++] = 1;
 
@@ -783,10 +782,10 @@ static int group_slide_down(xdfile_t *xdf, struct xdlgroup *g, int64_t flags)
  * into a previous group, expand this group to include it. Return 0 on success
  * or -1 if g cannot be slid up.
  */
-static int group_slide_up(xdfile_t *xdf, struct xdlgroup *g, int64_t flags)
+static int group_slide_up(xdfile_t *xdf, struct xdlgroup *g)
 {
 	if (g->start > 0 &&
-	    recs_match(xdf->recs[g->start - 1], xdf->recs[g->end - 1], flags)) {
+	    recs_match(xdf->recs[g->start - 1], xdf->recs[g->end - 1])) {
 		xdf->rchg[--g->start] = 1;
 		xdf->rchg[--g->end] = 0;
 
@@ -847,7 +846,7 @@ int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, int64_t flags) {
 			end_matching_other = -1;
 
 			/* Shift the group backward as much as possible: */
-			while (!group_slide_up(xdf, &g, flags))
+			while (!group_slide_up(xdf, &g))
 				if (group_previous(xdfo, &go))
 					xdl_bug("group sync broken sliding up");
 
@@ -862,7 +861,7 @@ int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, int64_t flags) {
 
 			/* Now shift the group forward as far as possible: */
 			while (1) {
-				if (group_slide_down(xdf, &g, flags))
+				if (group_slide_down(xdf, &g))
 					break;
 				if (group_next(xdfo, &go))
 					xdl_bug("group sync broken sliding down");
@@ -889,7 +888,7 @@ int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, int64_t flags) {
 			 * that it can align with.
 			 */
 			while (go.end == go.start) {
-				if (group_slide_up(xdf, &g, flags))
+				if (group_slide_up(xdf, &g))
 					xdl_bug("match disappeared");
 				if (group_previous(xdfo, &go))
 					xdl_bug("group sync broken sliding to match");
@@ -950,7 +949,7 @@ int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, int64_t flags) {
 			}
 
 			while (g.end > best_shift) {
-				if (group_slide_up(xdf, &g, flags))
+				if (group_slide_up(xdf, &g))
 					xdl_bug("best shift unreached");
 				if (group_previous(xdfo, &go))
 					xdl_bug("group sync broken sliding to blank line");

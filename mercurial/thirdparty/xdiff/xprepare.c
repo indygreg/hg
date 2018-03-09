@@ -118,7 +118,7 @@ static int xdl_classify_record(unsigned int pass, xdlclassifier_t *cf, xrecord_t
 	for (rcrec = cf->rchash[hi]; rcrec; rcrec = rcrec->next)
 		if (rcrec->ha == rec->ha &&
 				xdl_recmatch(rcrec->line, rcrec->size,
-					rec->ptr, rec->size, cf->flags))
+					rec->ptr, rec->size))
 			break;
 
 	if (!rcrec) {
@@ -273,7 +273,7 @@ static int xdl_prepare_ctx(unsigned int pass, mmfile_t *mf, int64_t narec, xppar
 	if ((cur = blk = xdl_mmfile_first(mf, &bsize)) != NULL) {
 		for (top = blk + bsize; cur < top; ) {
 			prev = cur;
-			hav = xdl_hash_record(&cur, top, xpp->flags);
+			hav = xdl_hash_record(&cur, top);
 			if (nrec >= narec) {
 				narec *= 2;
 				if (!(rrecs = (xrecord_t **) xdl_realloc(recs, narec * sizeof(xrecord_t *))))

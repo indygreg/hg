@@ -27,8 +27,8 @@
 
 
 
-long xdl_bogosqrt(long n) {
-	long i;
+int64_t xdl_bogosqrt(int64_t n) {
+	int64_t i;
 
 	/*
 	 * Classical integer square root approximation using shifts.
@@ -40,20 +40,20 @@ long xdl_bogosqrt(long n) {
 }
 
 
-void *xdl_mmfile_first(mmfile_t *mmf, long *size)
+void *xdl_mmfile_first(mmfile_t *mmf, int64_t *size)
 {
 	*size = mmf->size;
 	return mmf->ptr;
 }
 
 
-long xdl_mmfile_size(mmfile_t *mmf)
+int64_t xdl_mmfile_size(mmfile_t *mmf)
 {
 	return mmf->size;
 }
 
 
-int xdl_cha_init(chastore_t *cha, long isize, long icount) {
+int xdl_cha_init(chastore_t *cha, int64_t isize, int64_t icount) {
 
 	cha->head = cha->tail = NULL;
 	cha->isize = isize;
@@ -100,8 +100,8 @@ void *xdl_cha_alloc(chastore_t *cha) {
 	return data;
 }
 
-long xdl_guess_lines(mmfile_t *mf, long sample) {
-	long nl = 0, size, tsize = 0;
+int64_t xdl_guess_lines(mmfile_t *mf, int64_t sample) {
+	int64_t nl = 0, size, tsize = 0;
 	char const *data, *cur, *top;
 
 	if ((cur = data = xdl_mmfile_first(mf, &size)) != NULL) {
@@ -121,15 +121,15 @@ long xdl_guess_lines(mmfile_t *mf, long sample) {
 	return nl + 1;
 }
 
-int xdl_recmatch(const char *l1, long s1, const char *l2, long s2, long flags)
+int xdl_recmatch(const char *l1, int64_t s1, const char *l2, int64_t s2, int64_t flags)
 {
 	if (s1 == s2 && !memcmp(l1, l2, s1))
 		return 1;
 	return 0;
 }
 
-unsigned long xdl_hash_record(char const **data, char const *top, long flags) {
-	unsigned long ha = 5381;
+uint64_t xdl_hash_record(char const **data, char const *top, int64_t flags) {
+	uint64_t ha = 5381;
 	char const *ptr = *data;
 
 	for (; ptr < top && *ptr != '\n'; ptr++) {

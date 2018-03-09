@@ -25,13 +25,13 @@
 
 
 
-long xdl_bogosqrt(long n);
-int xdl_cha_init(chastore_t *cha, long isize, long icount);
+int64_t xdl_bogosqrt(int64_t n);
+int xdl_cha_init(chastore_t *cha, int64_t isize, int64_t icount);
 void xdl_cha_free(chastore_t *cha);
 void *xdl_cha_alloc(chastore_t *cha);
-long xdl_guess_lines(mmfile_t *mf, long sample);
-int xdl_recmatch(const char *l1, long s1, const char *l2, long s2, long flags);
-unsigned long xdl_hash_record(char const **data, char const *top, long flags);
+int64_t xdl_guess_lines(mmfile_t *mf, int64_t sample);
+int xdl_recmatch(const char *l1, int64_t s1, const char *l2, int64_t s2, int64_t flags);
+uint64_t xdl_hash_record(char const **data, char const *top, int64_t flags);
 unsigned int xdl_hashbits(unsigned int size);
 
 

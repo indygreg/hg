@@ -37,18 +37,18 @@
 
 
 typedef struct s_xdpsplit {
-	long i1, i2;
+	int64_t i1, i2;
 	int min_lo, min_hi;
 } xdpsplit_t;
 
 
 
 
-static long xdl_split(unsigned long const *ha1, long off1, long lim1,
-		      unsigned long const *ha2, long off2, long lim2,
-		      long *kvdf, long *kvdb, int need_min, xdpsplit_t *spl,
+static int64_t xdl_split(uint64_t const *ha1, int64_t off1, int64_t lim1,
+		      uint64_t const *ha2, int64_t off2, int64_t lim2,
+		      int64_t *kvdf, int64_t *kvdb, int need_min, xdpsplit_t *spl,
 		      xdalgoenv_t *xenv);
-static xdchange_t *xdl_add_change(xdchange_t *xscr, long i1, long i2, long chg1, long chg2);
+static xdchange_t *xdl_add_change(xdchange_t *xscr, int64_t i1, int64_t i2, int64_t chg1, int64_t chg2);
 
 
 
@@ -63,16 +63,16 @@ static xdchange_t *xdl_add_change(xdchange_t *xscr, long i1, long i2, long chg1,
  * cases using this algorithm is full, so a little bit of heuristic is needed
  * to cut the search and to return a suboptimal point.
  */
-static long xdl_split(unsigned long const *ha1, long off1, long lim1,
-		      unsigned long const *ha2, long off2, long lim2,
-		      long *kvdf, long *kvdb, int need_min, xdpsplit_t *spl,
+static int64_t xdl_split(uint64_t const *ha1, int64_t off1, int64_t lim1,
+		      uint64_t const *ha2, int64_t off2, int64_t lim2,
+		      int64_t *kvdf, int64_t *kvdb, int need_min, xdpsplit_t *spl,
 		      xdalgoenv_t *xenv) {
-	long dmin = off1 - lim2, dmax = lim1 - off2;
-	long fmid = off1 - off2, bmid = lim1 - lim2;
-	long odd = (fmid - bmid) & 1;
-	long fmin = fmid, fmax = fmid;
-	long bmin = bmid, bmax = bmid;
-	long ec, d, i1, i2, prev1, best, dd, v, k;
+	int64_t dmin = off1 - lim2, dmax = lim1 - off2;
+	int64_t fmid = off1 - off2, bmid = lim1 - lim2;
+	int64_t odd = (fmid - bmid) & 1;
+	int64_t fmin = fmid, fmax = fmid;
+	int64_t bmin = bmid, bmax = bmid;
+	int64_t ec, d, i1, i2, prev1, best, dd, v, k;
 
 	/*
 	 * Set initial diagonal values for both forward and backward path.
@@ -221,7 +221,7 @@ static long xdl_split(unsigned long const *ha1, long off1, long lim1,
 		 * the furthest reaching path using the (i1 + i2) measure.
 		 */
 		if (ec >= xenv->mxcost) {
-			long fbest, fbest1, bbest, bbest1;
+			int64_t fbest, fbest1, bbest, bbest1;
 
 			fbest = fbest1 = -1;
 			for (d = fmax; d >= fmin; d -= 2) {
@@ -269,10 +269,10 @@ static long xdl_split(unsigned long const *ha1, long off1, long lim1,
  * the box splitting function. Note that the real job (marking changed lines)
  * is done in the two boundary reaching checks.
  */
-int xdl_recs_cmp(diffdata_t *dd1, long off1, long lim1,
-		 diffdata_t *dd2, long off2, long lim2,
-		 long *kvdf, long *kvdb, int need_min, xdalgoenv_t *xenv) {
-	unsigned long const *ha1 = dd1->ha, *ha2 = dd2->ha;
+int xdl_recs_cmp(diffdata_t *dd1, int64_t off1, int64_t lim1,
+		 diffdata_t *dd2, int64_t off2, int64_t lim2,
+		 int64_t *kvdf, int64_t *kvdb, int need_min, xdalgoenv_t *xenv) {
+	uint64_t const *ha1 = dd1->ha, *ha2 = dd2->ha;
 
 	/*
 	 * Shrink the box by walking through each diagonal snake (SW and NE).
@@ -286,13 +286,13 @@ int xdl_recs_cmp(diffdata_t *dd1, long off1, long lim1,
 	 */
 	if (off1 == lim1) {
 		char *rchg2 = dd2->rchg;
-		long *rindex2 = dd2->rindex;
+		int64_t *rindex2 = dd2->rindex;
 
 		for (; off2 < lim2; off2++)
 			rchg2[rindex2[off2]] = 1;
 	} else if (off2 == lim2) {
 		char *rchg1 = dd1->rchg;
-		long *rindex1 = dd1->rindex;
+		int64_t *rindex1 = dd1->rindex;
 
 		for (; off1 < lim1; off1++)
 			rchg1[rindex1[off1]] = 1;
@@ -327,8 +327,8 @@ int xdl_recs_cmp(diffdata_t *dd1, long off1, long lim1,
 
 int xdl_do_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 		xdfenv_t *xe) {
-	long ndiags;
-	long *kvd, *kvdf, *kvdb;
+	int64_t ndiags;
+	int64_t *kvd, *kvdf, *kvdb;
 	xdalgoenv_t xenv;
 	diffdata_t dd1, dd2;
 
@@ -342,7 +342,7 @@ int xdl_do_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 	 * One is to store the forward path and one to store the backward path.
 	 */
 	ndiags = xe->xdf1.nreff + xe->xdf2.nreff + 3;
-	if (!(kvd = (long *) xdl_malloc((2 * ndiags + 2) * sizeof(long)))) {
+	if (!(kvd = (int64_t *) xdl_malloc((2 * ndiags + 2) * sizeof(long)))) {
 
 		xdl_free_env(xe);
 		return -1;
@@ -381,7 +381,7 @@ int xdl_do_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 }
 
 
-static xdchange_t *xdl_add_change(xdchange_t *xscr, long i1, long i2, long chg1, long chg2) {
+static xdchange_t *xdl_add_change(xdchange_t *xscr, int64_t i1, int64_t i2, int64_t chg1, int64_t chg2) {
 	xdchange_t *xch;
 
 	if (!(xch = (xdchange_t *) xdl_malloc(sizeof(xdchange_t))))
@@ -398,7 +398,7 @@ static xdchange_t *xdl_add_change(xdchange_t *xscr, long i1, long i2, long chg1,
 }
 
 
-static int recs_match(xrecord_t *rec1, xrecord_t *rec2, long flags)
+static int recs_match(xrecord_t *rec1, xrecord_t *rec2, int64_t flags)
 {
 	return (rec1->ha == rec2->ha &&
 		xdl_recmatch(rec1->ptr, rec1->size,
@@ -421,7 +421,7 @@ static int recs_match(xrecord_t *rec1, xrecord_t *rec2, long flags)
  */
 static int get_indent(xrecord_t *rec)
 {
-	long i;
+	int64_t i;
 	int ret = 0;
 
 	for (i = 0; i < rec->size; i++) {
@@ -497,10 +497,10 @@ struct split_score {
 /*
  * Fill m with information about a hypothetical split of xdf above line split.
  */
-static void measure_split(const xdfile_t *xdf, long split,
+static void measure_split(const xdfile_t *xdf, int64_t split,
 			  struct split_measurement *m)
 {
-	long i;
+	int64_t i;
 
 	if (split >= xdf->nrec) {
 		m->end_of_file = 1;
@@ -706,13 +706,13 @@ struct xdlgroup {
 	 * The index of the first changed line in the group, or the index of
 	 * the unchanged line above which the (empty) group is located.
 	 */
-	long start;
+	int64_t start;
 
 	/*
 	 * The index of the first unchanged line after the group. For an empty
 	 * group, end is equal to start.
 	 */
-	long end;
+	int64_t end;
 };
 
 /*
@@ -762,7 +762,7 @@ static inline int group_previous(xdfile_t *xdf, struct xdlgroup *g)
  * following group, expand this group to include it. Return 0 on success or -1
  * if g cannot be slid down.
  */
-static int group_slide_down(xdfile_t *xdf, struct xdlgroup *g, long flags)
+static int group_slide_down(xdfile_t *xdf, struct xdlgroup *g, int64_t flags)
 {
 	if (g->end < xdf->nrec &&
 	    recs_match(xdf->recs[g->start], xdf->recs[g->end], flags)) {
@@ -783,7 +783,7 @@ static int group_slide_down(xdfile_t *xdf, struct xdlgroup *g, long flags)
  * into a previous group, expand this group to include it. Return 0 on success
  * or -1 if g cannot be slid up.
  */
-static int group_slide_up(xdfile_t *xdf, struct xdlgroup *g, long flags)
+static int group_slide_up(xdfile_t *xdf, struct xdlgroup *g, int64_t flags)
 {
 	if (g->start > 0 &&
 	    recs_match(xdf->recs[g->start - 1], xdf->recs[g->end - 1], flags)) {
@@ -818,10 +818,10 @@ static void xdl_bug(const char *msg)
  * This also helps in finding joinable change groups and reducing the diff
  * size.
  */
-int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, long flags) {
+int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, int64_t flags) {
 	struct xdlgroup g, go;
-	long earliest_end, end_matching_other;
-	long groupsize;
+	int64_t earliest_end, end_matching_other;
+	int64_t groupsize;
 
 	group_init(xdf, &g);
 	group_init(xdfo, &go);
@@ -906,7 +906,7 @@ int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, long flags) {
 			 * "score" for each position that the group can be shifted
 			 * to. Then we pick the shift with the lowest score.
 			 */
-			long shift, best_shift = -1;
+			int64_t shift, best_shift = -1;
 			struct split_score best_score;
 
 			/*
@@ -975,7 +975,7 @@ int xdl_change_compact(xdfile_t *xdf, xdfile_t *xdfo, long flags) {
 int xdl_build_script(xdfenv_t *xe, xdchange_t **xscr) {
 	xdchange_t *cscr = NULL, *xch;
 	char *rchg1 = xe->xdf1.rchg, *rchg2 = xe->xdf2.rchg;
-	long i1, i2, l1, l2;
+	int64_t i1, i2, l1, l2;
 
 	/*
 	 * Trivial. Collects "groups" of changes and creates an edit script.
@@ -1016,9 +1016,9 @@ void xdl_free_script(xdchange_t *xscr) {
 xdchange_t *xdl_get_hunk(xdchange_t **xscr, xdemitconf_t const *xecfg)
 {
 	xdchange_t *xch, *xchp, *lxch;
-	long max_common = 0;
-	long max_ignorable = 0;
-	unsigned long ignored = 0; /* number of ignored blank lines */
+	int64_t max_common = 0;
+	int64_t max_ignorable = 0;
+	uint64_t ignored = 0; /* number of ignored blank lines */
 
 	/* remove ignorable changes that are too far before other changes */
 	for (xchp = *xscr; xchp && xchp->ignore; xchp = xchp->next) {
@@ -1035,7 +1035,7 @@ xdchange_t *xdl_get_hunk(xdchange_t **xscr, xdemitconf_t const *xecfg)
 	lxch = *xscr;
 
 	for (xchp = *xscr, xch = xchp->next; xch; xchp = xch, xch = xch->next) {
-		long distance = xch->i1 - (xchp->i1 + xchp->chg1);
+		int64_t distance = xch->i1 - (xchp->i1 + xchp->chg1);
 		if (distance > max_common)
 			break;
 
@@ -1062,14 +1062,14 @@ xdchange_t *xdl_get_hunk(xdchange_t **xscr, xdemitconf_t const *xecfg)
 static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 			      xdemitconf_t const *xecfg)
 {
-	long p = xe->nprefix, s = xe->nsuffix;
+	int64_t p = xe->nprefix, s = xe->nsuffix;
 	xdchange_t *xch, *xche;
 
 	if (!xecfg->hunk_func)
 		return -1;
 
 	if ((xecfg->flags & XDL_EMIT_BDIFFHUNK) != 0) {
-		long i1 = 0, i2 = 0, n1 = xe->xdf1.nrec, n2 = xe->xdf2.nrec;
+		int64_t i1 = 0, i2 = 0, n1 = xe->xdf1.nrec, n2 = xe->xdf2.nrec;
 		for (xch = xscr; xch; xch = xche->next) {
 			xche = xdl_get_hunk(&xch, xecfg);
 			if (!xch)

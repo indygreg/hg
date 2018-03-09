@@ -27,22 +27,22 @@
 
 typedef struct s_chanode {
 	struct s_chanode *next;
-	long icurr;
+	int64_t icurr;
 } chanode_t;
 
 typedef struct s_chastore {
 	chanode_t *head, *tail;
-	long isize, nsize;
+	int64_t isize, nsize;
 	chanode_t *ancur;
 	chanode_t *sncur;
-	long scurr;
+	int64_t scurr;
 } chastore_t;
 
 typedef struct s_xrecord {
 	struct s_xrecord *next;
 	char const *ptr;
-	long size;
-	unsigned long ha;
+	int64_t size;
+	uint64_t ha;
 } xrecord_t;
 
 typedef struct s_xdfile {
@@ -50,7 +50,7 @@ typedef struct s_xdfile {
 	chastore_t rcha;
 
 	/* number of records (lines) */
-	long nrec;
+	int64_t nrec;
 
 	/* hash table size
 	 * the maximum hash value in the table is (1 << hbits) */
@@ -64,7 +64,7 @@ typedef struct s_xdfile {
 	 * [recs[i] for i in range(0, dstart)] are common prefix.
 	 * [recs[i] for i in range(dstart, dend + 1 - dstart)] are interesting
 	 * lines */
-	long dstart, dend;
+	int64_t dstart, dend;
 
 	/* pointer to records (lines) */
 	xrecord_t **recs;
@@ -82,14 +82,14 @@ typedef struct s_xdfile {
 	 * rindex[0] is likely dstart, if not removed up by rule 2.
 	 * rindex[nreff - 1] is likely dend, if not removed by rule 2.
 	 */
-	long *rindex;
+	int64_t *rindex;
 
 	/* rindex size */
-	long nreff;
+	int64_t nreff;
 
 	/* cleaned-up record index => hash value
 	 * ha[i] = recs[rindex[i]]->ha */
-	unsigned long *ha;
+	uint64_t *ha;
 } xdfile_t;
 
 typedef struct s_xdfenv {
@@ -97,7 +97,7 @@ typedef struct s_xdfenv {
 
 	/* number of lines for common prefix and suffix that are removed
 	 * from xdf1 and xdf2 as a preprocessing step */
-	long nprefix, nsuffix;
+	int64_t nprefix, nsuffix;
 } xdfenv_t;
 
 

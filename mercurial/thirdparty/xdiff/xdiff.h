@@ -40,28 +40,28 @@ extern "C" {
 
 typedef struct s_mmfile {
 	char *ptr;
-	long size;
+	int64_t size;
 } mmfile_t;
 
 typedef struct s_mmbuffer {
 	char *ptr;
-	long size;
+	int64_t size;
 } mmbuffer_t;
 
 typedef struct s_xpparam {
-	unsigned long flags;
+	uint64_t flags;
 } xpparam_t;
 
 typedef struct s_xdemitcb {
 	void *priv;
 } xdemitcb_t;
 
-typedef int (*xdl_emit_hunk_consume_func_t)(long start_a, long count_a,
-					    long start_b, long count_b,
+typedef int (*xdl_emit_hunk_consume_func_t)(int64_t start_a, int64_t count_a,
+					    int64_t start_b, int64_t count_b,
 					    void *cb_data);
 
 typedef struct s_xdemitconf {
-	unsigned long flags;
+	uint64_t flags;
 	xdl_emit_hunk_consume_func_t hunk_func;
 } xdemitconf_t;
 
@@ -70,8 +70,8 @@ typedef struct s_xdemitconf {
 #define xdl_free(ptr) free(ptr)
 #define xdl_realloc(ptr,x) realloc(ptr,x)
 
-void *xdl_mmfile_first(mmfile_t *mmf, long *size);
-long xdl_mmfile_size(mmfile_t *mmf);
+void *xdl_mmfile_first(mmfile_t *mmf, int64_t *size);
+int64_t xdl_mmfile_size(mmfile_t *mmf);
 
 int xdl_diff(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 	     xdemitconf_t const *xecfg, xdemitcb_t *ecb);

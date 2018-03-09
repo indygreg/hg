@@ -141,9 +141,10 @@ uint64_t xdl_hash_record(char const **data, char const *top) {
 	return ha;
 }
 
-unsigned int xdl_hashbits(unsigned int size) {
-	unsigned int val = 1, bits = 0;
+unsigned int xdl_hashbits(int64_t size) {
+	int64_t val = 1;
+	unsigned int bits = 0;
 
-	for (; val < size && bits < CHAR_BIT * sizeof(unsigned int); val <<= 1, bits++);
+	for (; val < size && bits < (int64_t) CHAR_BIT * sizeof(unsigned int); val <<= 1, bits++);
 	return bits ? bits: 1;
 }

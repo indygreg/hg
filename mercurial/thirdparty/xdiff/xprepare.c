@@ -70,7 +70,7 @@ static int xdl_optimize_ctxs(xdlclassifier_t *cf, xdfile_t *xdf1, xdfile_t *xdf2
 static int xdl_init_classifier(xdlclassifier_t *cf, int64_t size, int64_t flags) {
 	cf->flags = flags;
 
-	cf->hbits = xdl_hashbits((unsigned int) size);
+	cf->hbits = xdl_hashbits(size);
 	cf->hsize = 1 << cf->hbits;
 
 	if (xdl_cha_init(&cf->ncha, sizeof(xdlclass_t), size / 4 + 1) < 0) {
@@ -262,7 +262,7 @@ static int xdl_prepare_ctx(unsigned int pass, mmfile_t *mf, int64_t narec,
 		goto abort;
 
 	{
-		hbits = xdl_hashbits((unsigned int) narec);
+		hbits = xdl_hashbits(narec);
 		hsize = 1 << hbits;
 		if (!(rhash = (xrecord_t **) xdl_malloc(hsize * sizeof(xrecord_t *))))
 			goto abort;

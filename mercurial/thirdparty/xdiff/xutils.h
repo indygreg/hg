@@ -32,7 +32,7 @@ void *xdl_cha_alloc(chastore_t *cha);
 int64_t xdl_guess_lines(mmfile_t *mf, int64_t sample);
 int xdl_recmatch(const char *l1, int64_t s1, const char *l2, int64_t s2);
 uint64_t xdl_hash_record(char const **data, char const *top);
-unsigned int xdl_hashbits(unsigned int size);
+unsigned int xdl_hashbits(int64_t size);
 
 
 

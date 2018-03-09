@@ -624,12 +624,21 @@ def _pushdiscoverybookmarks(pushop):
                 for (b, scid, dcid) in bookmarks]
 
     comp = [hexifycompbookmarks(marks) for marks in comp]
+    return _processcompared(pushop, ancestors, explicit, remotebookmark, comp)
+
+def _processcompared(pushop, pushed, explicit, remotebms, comp):
+    """take decision on bookmark to pull from the remote bookmark
+
+    Exist to help extensions who want to alter this behavior.
+    """
     addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = comp
+
+    repo = pushop.repo
 
     for b, scid, dcid in advsrc:
         if b in explicit:
             explicit.remove(b)
-        if not ancestors or repo[scid].rev() in ancestors:
+        if not pushed or repo[scid].rev() in pushed:
             pushop.outbookmarks.append((b, dcid, scid))
     # search added bookmark
     for b, scid, dcid in addsrc:
@@ -655,8 +664,8 @@ def _pushdiscoverybookmarks(pushop):
     if explicit:
         explicit = sorted(explicit)
         # we should probably list all of them
-        ui.warn(_('bookmark %s does not exist on the local '
-                  'or remote repository!\n') % explicit[0])
+        pushop.ui.warn(_('bookmark %s does not exist on the local '
+                         'or remote repository!\n') % explicit[0])
         pushop.bkresult = 2
 
     pushop.outbookmarks.sort()

@@ -11,6 +11,7 @@ from __future__ import absolute_import
 import cgi
 import errno
 import socket
+import wsgiref.headers as wsgiheaders
 #import wsgiref.validate
 
 from .common import (
@@ -85,6 +86,9 @@ class parsedrequest(object):
     querystringlist = attr.ib()
     # Dict of query string arguments. Values are lists with at least 1 item.
     querystringdict = attr.ib()
+    # wsgiref.headers.Headers instance. Operates like a dict with case
+    # insensitive keys.
+    headers = attr.ib()
 
 def parserequestfromenv(env):
     """Parse URL components from environment variables.
@@ -186,6 +190,16 @@ def parserequestfromenv(env):
         else:
             querystringdict[k] = [v]
 
+    # HTTP_* keys contain HTTP request headers. The Headers structure should
+    # perform case normalization for us. We just rewrite underscore to dash
+    # so keys match what likely went over the wire.
+    headers = []
+    for k, v in env.iteritems():
+        if k.startswith('HTTP_'):
+            headers.append((k[len('HTTP_'):].replace('_', '-'), v))
+
+    headers = wsgiheaders.Headers(headers)
+
     return parsedrequest(url=fullurl, baseurl=baseurl,
                          advertisedurl=advertisedfullurl,
                          advertisedbaseurl=advertisedbaseurl,
@@ -194,7 +208,8 @@ def parserequestfromenv(env):
                          havepathinfo='PATH_INFO' in env,
                          querystring=querystring,
                          querystringlist=querystringlist,
-                         querystringdict=querystringdict)
+                         querystringdict=querystringdict,
+                         headers=headers)
 
 class wsgirequest(object):
     """Higher-level API for a WSGI request.

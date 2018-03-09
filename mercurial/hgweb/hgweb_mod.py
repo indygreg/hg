@@ -351,7 +351,7 @@ class hgweb(object):
                 if args:
                     wsgireq.form['file'] = args
 
-            ua = wsgireq.env.get('HTTP_USER_AGENT', '')
+            ua = req.headers.get('User-Agent', '')
             if cmd == 'rev' and 'mercurial' in ua:
                 wsgireq.form['style'] = ['raw']
 

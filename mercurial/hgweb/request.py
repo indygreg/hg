@@ -246,9 +246,6 @@ class wsgirequest(object):
         self.server_write = None
         self.headers = []
 
-    def __iter__(self):
-        return iter([])
-
     def drain(self):
         '''need to read all data from request, httplib is half-duplex'''
         length = int(self.env.get('CONTENT_LENGTH') or 0)

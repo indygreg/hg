@@ -192,7 +192,7 @@ def handlewsgirequest(rctx, wsgireq, req, checkperm):
     if req.dispatchpath:
         res = _handlehttperror(
             hgwebcommon.ErrorResponse(hgwebcommon.HTTP_NOT_FOUND), wsgireq,
-            req, cmd)
+            req)
 
         return True, res
 
@@ -206,7 +206,7 @@ def handlewsgirequest(rctx, wsgireq, req, checkperm):
     try:
         res = _callhttp(repo, wsgireq, req, proto, cmd)
     except hgwebcommon.ErrorResponse as e:
-        res = _handlehttperror(e, wsgireq, req, cmd)
+        res = _handlehttperror(e, wsgireq, req)
 
     return True, res
 
@@ -313,7 +313,7 @@ def _callhttp(repo, wsgireq, req, proto, cmd):
         return []
     raise error.ProgrammingError('hgweb.protocol internal failure', rsp)
 
-def _handlehttperror(e, wsgireq, req, cmd):
+def _handlehttperror(e, wsgireq, req):
     """Called when an ErrorResponse is raised during HTTP request processing."""
 
     # Clients using Python's httplib are stateful: the HTTP client

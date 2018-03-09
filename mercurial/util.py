@@ -4053,7 +4053,6 @@ def datestr(*args, **kwargs):
     msg = ("'util.datestr' is deprecated, "
            "use 'utils.dateutil.datestr'")
     nouideprecwarn(msg, "4.6")
-    debugstacktrace()
     return dateutil.datestr(*args, **kwargs)
 
 def shortdate(*args, **kwargs):

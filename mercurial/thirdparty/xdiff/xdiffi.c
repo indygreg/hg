@@ -1012,7 +1012,7 @@ void xdl_free_script(xdchange_t *xscr) {
  * inside the differential hunk according to the specified configuration.
  * Also advance xscr if the first changes must be discarded.
  */
-xdchange_t *xdl_get_hunk(xdchange_t **xscr, xdemitconf_t const *xecfg)
+xdchange_t *xdl_get_hunk(xdchange_t **xscr)
 {
 	xdchange_t *xch, *xchp, *lxch;
 	int64_t max_common = 0;
@@ -1070,7 +1070,7 @@ static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 	if ((xecfg->flags & XDL_EMIT_BDIFFHUNK) != 0) {
 		int64_t i1 = 0, i2 = 0, n1 = xe->xdf1.nrec, n2 = xe->xdf2.nrec;
 		for (xch = xscr; xch; xch = xche->next) {
-			xche = xdl_get_hunk(&xch, xecfg);
+			xche = xdl_get_hunk(&xch);
 			if (!xch)
 				break;
 			if (xch != xche)
@@ -1089,7 +1089,7 @@ static int xdl_call_hunk_func(xdfenv_t *xe, xdchange_t *xscr, xdemitcb_t *ecb,
 			return -1;
 	} else {
 		for (xch = xscr; xch; xch = xche->next) {
-			xche = xdl_get_hunk(&xch, xecfg);
+			xche = xdl_get_hunk(&xch);
 			if (!xch)
 				break;
 			if (xecfg->hunk_func(xch->i1 + p,

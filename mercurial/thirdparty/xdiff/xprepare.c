@@ -56,7 +56,7 @@ static int xdl_init_classifier(xdlclassifier_t *cf, int64_t size, int64_t flags)
 static void xdl_free_classifier(xdlclassifier_t *cf);
 static int xdl_classify_record(unsigned int pass, xdlclassifier_t *cf, xrecord_t **rhash,
 			       unsigned int hbits, xrecord_t *rec);
-static int xdl_prepare_ctx(unsigned int pass, mmfile_t *mf, int64_t narec, xpparam_t const *xpp,
+static int xdl_prepare_ctx(unsigned int pass, mmfile_t *mf, int64_t narec,
 			   xdlclassifier_t *cf, xdfile_t *xdf);
 static void xdl_free_ctx(xdfile_t *xdf);
 static int xdl_clean_mmatch(char const *dis, int64_t i, int64_t s, int64_t e);
@@ -237,7 +237,7 @@ static void xdl_trim_files(mmfile_t *mf1, mmfile_t *mf2, int64_t reserved,
 }
 
 
-static int xdl_prepare_ctx(unsigned int pass, mmfile_t *mf, int64_t narec, xpparam_t const *xpp,
+static int xdl_prepare_ctx(unsigned int pass, mmfile_t *mf, int64_t narec,
 			   xdlclassifier_t *cf, xdfile_t *xdf) {
 	unsigned int hbits;
 	int64_t nrec, hsize, bsize;
@@ -356,12 +356,12 @@ int xdl_prepare_env(mmfile_t *mf1, mmfile_t *mf2, xpparam_t const *xpp,
 
 	xdl_trim_files(mf1, mf2, TRIM_RESERVED_LINES, xe, &tmf1, &tmf2);
 
-	if (xdl_prepare_ctx(1, &tmf1, enl1, xpp, &cf, &xe->xdf1) < 0) {
+	if (xdl_prepare_ctx(1, &tmf1, enl1, &cf, &xe->xdf1) < 0) {
 
 		xdl_free_classifier(&cf);
 		return -1;
 	}
-	if (xdl_prepare_ctx(2, &tmf2, enl2, xpp, &cf, &xe->xdf2) < 0) {
+	if (xdl_prepare_ctx(2, &tmf2, enl2, &cf, &xe->xdf2) < 0) {
 
 		xdl_free_ctx(&xe->xdf1);
 		xdl_free_classifier(&cf);

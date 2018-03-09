@@ -2181,10 +2181,10 @@ def _dograft(ui, repo, *revs, **opts):
                 raise
             cmdutil.wrongtooltocontinue(repo, _('graft'))
     else:
-        cmdutil.checkunfinished(repo)
-        cmdutil.bailifchanged(repo)
         if not revs:
             raise error.Abort(_('no revisions specified'))
+        cmdutil.checkunfinished(repo)
+        cmdutil.bailifchanged(repo)
         revs = scmutil.revrange(repo, revs)
 
     skipped = set()

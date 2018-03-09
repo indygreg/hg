@@ -1,7 +1,12 @@
+Rebasing using a single transaction
+
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > rebase=
   > drawdag=$TESTDIR/drawdag.py
+  > 
+  > [rebase]
+  > singletransaction=True
   > 
   > [phases]
   > publish=False
@@ -10,13 +15,9 @@
   > tglog = log -G --template "{rev}: {desc}"
   > EOF
 
-Rebasing using a single transaction
+Check that a simple rebase works
 
-  $ hg init singletr && cd singletr
-  $ cat >> .hg/hgrc <<EOF
-  > [rebase]
-  > singletransaction=True
-  > EOF
+  $ hg init simple && cd simple
   $ hg debugdrawdag <<'EOF'
   >   Z
   >   |

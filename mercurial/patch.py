@@ -1120,9 +1120,10 @@ the hunk is left unchanged.
                         ui.warn(_("editor exited with exit code %d\n") % ret)
                         continue
                     # Remove comment lines
-                    patchfp = open(patchfn)
+                    patchfp = open(patchfn, r'rb')
                     ncpatchfp = stringio()
                     for line in util.iterfile(patchfp):
+                        line = util.fromnativeeol(line)
                         if not line.startswith('#'):
                             ncpatchfp.write(line)
                     patchfp.close()

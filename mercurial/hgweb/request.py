@@ -8,7 +8,6 @@
 
 from __future__ import absolute_import
 
-import cgi
 import errno
 import socket
 import wsgiref.headers as wsgiheaders
@@ -258,14 +257,11 @@ class wsgirequest(object):
         self.multiprocess = wsgienv[r'wsgi.multiprocess']
         self.run_once = wsgienv[r'wsgi.run_once']
         self.env = wsgienv
-        self.form = normalize(cgi.parse(inp,
-                                        self.env,
-                                        keep_blank_values=1))
+        self.req = parserequestfromenv(wsgienv, inp)
+        self.form = normalize(self.req.querystringdict)
         self._start_response = start_response
         self.server_write = None
         self.headers = []
-
-        self.req = parserequestfromenv(wsgienv, inp)
 
     def respond(self, status, type, filename=None, body=None):
         if not isinstance(type, str):

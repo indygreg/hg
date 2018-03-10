@@ -914,10 +914,10 @@ Annotate with orphaned CR (issue5798)
   > EOF
 
   >>> with open('a', 'wb') as f:
-  ...     f.write(b'0a\r0b\r\n0c\r0d\r\n0e\n0f\n0g')
+  ...     f.write(b'0a\r0b\r\n0c\r0d\r\n0e\n0f\n0g') and None
   $ hg ci -qAm0
   >>> with open('a', 'wb') as f:
-  ...     f.write(b'0a\r0b\r\n1c\r1d\r\n0e\n1f\n0g')
+  ...     f.write(b'0a\r0b\r\n1c\r1d\r\n0e\n1f\n0g') and None
   $ hg ci -m1
 
   $ hg annotate -r0 a | $PYTHON "$TESTTMP/substcr.py"

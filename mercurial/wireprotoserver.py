@@ -324,7 +324,7 @@ def _handlehttperror(e, wsgireq, req, cmd):
     # the HTTP response. In other words, it helps prevent deadlocks
     # on clients using httplib.
 
-    if (wsgireq.env[r'REQUEST_METHOD'] == r'POST' and
+    if (req.method == 'POST' and
         # But not if Expect: 100-continue is being used.
         (req.headers.get('Expect', '').lower() != '100-continue')):
         wsgireq.drain()

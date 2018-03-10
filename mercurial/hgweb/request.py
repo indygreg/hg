@@ -63,6 +63,8 @@ def normalize(form):
 class parsedrequest(object):
     """Represents a parsed WSGI request / static HTTP request parameters."""
 
+    # Request method.
+    method = attr.ib()
     # Full URL for this request.
     url = attr.ib()
     # URL without any path components. Just <proto>://<host><port>.
@@ -207,7 +209,8 @@ def parserequestfromenv(env):
     if 'CONTENT_LENGTH' in env and 'HTTP_CONTENT_LENGTH' not in env:
         headers['Content-Length'] = env['CONTENT_LENGTH']
 
-    return parsedrequest(url=fullurl, baseurl=baseurl,
+    return parsedrequest(method=env['REQUEST_METHOD'],
+                         url=fullurl, baseurl=baseurl,
                          advertisedurl=advertisedfullurl,
                          advertisedbaseurl=advertisedbaseurl,
                          apppath=apppath,

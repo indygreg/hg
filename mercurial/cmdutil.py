@@ -1996,7 +1996,7 @@ def addwebdirpath(repo, serverpath, webconf):
         for subpath in ctx.substate:
             ctx.sub(subpath).addwebdirpath(serverpath, webconf)
 
-def forget(ui, repo, match, prefix, explicitonly):
+def forget(ui, repo, match, prefix, explicitonly, dryrun):
     join = lambda f: os.path.join(prefix, f)
     bad = []
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
@@ -2012,7 +2012,7 @@ def forget(ui, repo, match, prefix, explicitonly):
         sub = wctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, match)
-            subbad, subforgot = sub.forget(submatch, prefix)
+            subbad, subforgot = sub.forget(submatch, prefix, dryrun=dryrun)
             bad.extend([subpath + '/' + f for f in subbad])
             forgot.extend([subpath + '/' + f for f in subforgot])
         except error.LookupError:
@@ -2039,9 +2039,10 @@ def forget(ui, repo, match, prefix, explicitonly):
         if ui.verbose or not match.exact(f):
             ui.status(_('removing %s\n') % match.rel(f))
 
-    rejected = wctx.forget(forget, prefix)
-    bad.extend(f for f in rejected if f in match.files())
-    forgot.extend(f for f in forget if f not in rejected)
+    if not dryrun:
+        rejected = wctx.forget(forget, prefix)
+        bad.extend(f for f in rejected if f in match.files())
+        forgot.extend(f for f in forget if f not in rejected)
     return bad, forgot
 
 def files(ui, ctx, m, fm, fmt, subrepos):

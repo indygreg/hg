@@ -256,3 +256,19 @@ and OS X
 #endif
 
   $ cd ..
+
+test --dry-run mode in forget
+
+  $ hg init testdir_forget
+  $ cd testdir_forget
+  $ echo foo > foo
+  $ hg add foo
+  $ hg commit -m "foo"
+  $ hg forget foo --dry-run -v
+  removing foo
+  $ hg diff
+  $ hg forget not_exist -n
+  not_exist: $ENOENT$
+  [1]
+
+  $ cd ..

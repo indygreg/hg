@@ -2036,7 +2036,10 @@ def files(ui, repo, *pats, **opts):
     with ui.formatter('files', opts) as fm:
         return cmdutil.files(ui, ctx, m, fm, fmt, opts.get('subrepos'))
 
-@command('^forget', walkopts, _('[OPTION]... FILE...'), inferrepo=True)
+@command(
+    '^forget',
+    walkopts + dryrunopts,
+    _('[OPTION]... FILE...'), inferrepo=True)
 def forget(ui, repo, *pats, **opts):
     """forget the specified files on the next commit
 
@@ -2071,7 +2074,9 @@ def forget(ui, repo, *pats, **opts):
         raise error.Abort(_('no files specified'))
 
     m = scmutil.match(repo[None], pats, opts)
-    rejected = cmdutil.forget(ui, repo, m, prefix="", explicitonly=False)[0]
+    dryrun = opts.get(r'dry_run')
+    rejected = cmdutil.forget(ui, repo, m, prefix="",
+                              explicitonly=False, dryrun=dryrun)[0]
     return rejected and 1 or 0
 
 @command(

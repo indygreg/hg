@@ -1296,8 +1296,7 @@ class ui(object):
                 line = self.fin.readline()
                 if not line:
                     raise EOFError
-                if line.endswith(pycompat.oslinesep):
-                    line = line[:-len(pycompat.oslinesep)]
+                line = line.rstrip(pycompat.oslinesep)
 
         return line
 

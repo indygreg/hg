@@ -144,6 +144,8 @@ class parsedrequest(object):
     # Whether there is a path component to this request. This can be true
     # when ``dispatchpath`` is empty due to REPO_NAME muckery.
     havepathinfo = attr.ib()
+    # The name of the repository being accessed.
+    reponame = attr.ib()
     # Raw query string (part after "?" in URL).
     querystring = attr.ib()
     # multidict of query string parameters.
@@ -282,6 +284,7 @@ def parserequestfromenv(env, bodyfh):
                          apppath=apppath,
                          dispatchparts=dispatchparts, dispatchpath=dispatchpath,
                          havepathinfo='PATH_INFO' in env,
+                         reponame=env.get('REPO_NAME'),
                          querystring=querystring,
                          qsparams=qsparams,
                          headers=headers,

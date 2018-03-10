@@ -141,7 +141,7 @@ class requestcontext(object):
             if typ in allowed or self.configbool('web', 'allow%s' % typ):
                 yield {'type': typ, 'extension': spec[2], 'node': nodeid}
 
-    def templater(self, wsgireq, req):
+    def templater(self, req):
         # determine scheme, port and server name
         # this is needed to create absolute urls
         logourl = self.config('web', 'logourl')
@@ -159,7 +159,7 @@ class requestcontext(object):
         # figure out which style to use
 
         vars = {}
-        styles, (style, mapfile) = getstyle(wsgireq.req, self.config,
+        styles, (style, mapfile) = getstyle(req, self.config,
                                             self.templatepath)
         if style == styles[0]:
             vars['style'] = style
@@ -168,8 +168,9 @@ class requestcontext(object):
 
         if not self.reponame:
             self.reponame = (self.config('web', 'name', '')
-                             or wsgireq.env.get('REPO_NAME')
-                             or req.apppath or self.repo.root)
+                             or req.reponame
+                             or req.apppath
+                             or self.repo.root)
 
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
@@ -372,7 +373,7 @@ class hgweb(object):
         # process the web interface request
 
         try:
-            tmpl = rctx.templater(wsgireq, req)
+            tmpl = rctx.templater(req)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
 

@@ -53,9 +53,8 @@ archivespecs = util.sortdict((
 ))
 
 def getstyle(req, configfn, templatepath):
-    fromreq = req.form.get('style', [None])[0]
     styles = (
-        fromreq,
+        req.qsparams.get('style', None),
         configfn('web', 'style'),
         'paper',
     )
@@ -160,7 +159,7 @@ class requestcontext(object):
         # figure out which style to use
 
         vars = {}
-        styles, (style, mapfile) = getstyle(wsgireq, self.config,
+        styles, (style, mapfile) = getstyle(wsgireq.req, self.config,
                                             self.templatepath)
         if style == styles[0]:
             vars['style'] = style
@@ -337,7 +336,7 @@ class hgweb(object):
             cmd = args.pop(0)
             style = cmd.rfind('-')
             if style != -1:
-                wsgireq.form['style'] = [cmd[:style]]
+                req.qsparams['style'] = cmd[:style]
                 cmd = cmd[style + 1:]
 
             # avoid accepting e.g. style parameter as command
@@ -355,7 +354,7 @@ class hgweb(object):
 
             ua = req.headers.get('User-Agent', '')
             if cmd == 'rev' and 'mercurial' in ua:
-                wsgireq.form['style'] = ['raw']
+                req.qsparams['style'] = 'raw'
 
             if cmd == 'archive':
                 fn = wsgireq.form['node'][0]
@@ -389,7 +388,7 @@ class hgweb(object):
             if cmd not in webcommands.__all__:
                 msg = 'no such method: %s' % cmd
                 raise ErrorResponse(HTTP_BAD_REQUEST, msg)
-            elif cmd == 'file' and 'raw' in wsgireq.form.get('style', []):
+            elif cmd == 'file' and req.qsparams.get('style') == 'raw':
                 rctx.ctype = ctype
                 content = webcommands.rawfile(rctx, wsgireq, tmpl)
             else:

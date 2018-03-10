@@ -438,8 +438,8 @@ def changesetentry(web, req, tmpl, ctx):
         basectx = ctx.p1()
 
     style = web.config('web', 'style')
-    if 'style' in req.form:
-        style = req.form['style'][0]
+    if 'style' in req.req.qsparams:
+        style = req.req.qsparams['style']
 
     diff = diffs(web, tmpl, ctx, basectx, None, style)
 

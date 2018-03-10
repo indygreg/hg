@@ -762,8 +762,8 @@ def filediff(web, req, tmpl):
     basectx = ctx.p1()
 
     style = web.config('web', 'style')
-    if 'style' in req.form:
-        style = req.form['style'][0]
+    if 'style' in req.req.qsparams:
+        style = req.req.qsparams['style']
 
     diffs = webutil.diffs(web, tmpl, ctx, basectx, [path], style)
     if fctx is not None:
@@ -1011,8 +1011,8 @@ def filelog(web, req, tmpl):
     entries = []
 
     diffstyle = web.config('web', 'style')
-    if 'style' in req.form:
-        diffstyle = req.form['style'][0]
+    if 'style' in req.req.qsparams:
+        diffstyle = req.req.qsparams['style']
 
     def diff(fctx, linerange=None):
         ctx = fctx.changectx()

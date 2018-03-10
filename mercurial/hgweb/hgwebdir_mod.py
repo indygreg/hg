@@ -510,7 +510,7 @@ class hgwebdir(object):
             url += '/'
 
         vars = {}
-        styles, (style, mapfile) = hgweb_mod.getstyle(wsgireq, config,
+        styles, (style, mapfile) = hgweb_mod.getstyle(wsgireq.req, config,
                                                       self.templatepath)
         if style == styles[0]:
             vars['style'] = style

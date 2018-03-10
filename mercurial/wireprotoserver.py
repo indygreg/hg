@@ -91,10 +91,9 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
         return args
 
     def forwardpayload(self, fp):
-        if b'Content-Length' in self._req.headers:
-            length = int(self._req.headers[b'Content-Length'])
-        else:
-            length = int(self._wsgireq.env[r'CONTENT_LENGTH'])
+        # Existing clients *always* send Content-Length.
+        length = int(self._req.headers[b'Content-Length'])
+
         # If httppostargs is used, we need to read Content-Length
         # minus the amount that was consumed by args.
         length -= int(self._req.headers.get(b'X-HgArgs-Post', 0))

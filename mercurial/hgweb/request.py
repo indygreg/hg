@@ -200,6 +200,13 @@ def parserequestfromenv(env):
 
     headers = wsgiheaders.Headers(headers)
 
+    # This is kind of a lie because the HTTP header wasn't explicitly
+    # sent. But for all intents and purposes it should be OK to lie about
+    # this, since a consumer will either either value to determine how many
+    # bytes are available to read.
+    if 'CONTENT_LENGTH' in env and 'HTTP_CONTENT_LENGTH' not in env:
+        headers['Content-Length'] = env['CONTENT_LENGTH']
+
     return parsedrequest(url=fullurl, baseurl=baseurl,
                          advertisedurl=advertisedfullurl,
                          advertisedbaseurl=advertisedbaseurl,

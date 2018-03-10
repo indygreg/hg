@@ -50,6 +50,7 @@ test-clone-r.t
 test-clone-update-order.t
 test-command-template.t
 test-commit-amend.t
+test-commit-interactive.t
 test-commit-multiple.t
 test-commit-unresolved.t
 test-commit.t

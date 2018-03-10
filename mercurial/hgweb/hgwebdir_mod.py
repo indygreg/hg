@@ -229,6 +229,8 @@ class hgwebdir(object):
                 yield r
 
     def _runwsgi(self, wsgireq):
+        req = wsgireq.req
+
         try:
             self.refresh()
 
@@ -242,11 +244,11 @@ class hgwebdir(object):
             ctype = templater.stringify(ctype)
 
             # a static file
-            if virtual.startswith('static/') or 'static' in wsgireq.form:
+            if virtual.startswith('static/') or 'static' in req.qsparams:
                 if virtual.startswith('static/'):
                     fname = virtual[7:]
                 else:
-                    fname = wsgireq.form['static'][0]
+                    fname = req.qsparams['static']
                 static = self.ui.config("web", "static", None,
                                         untrusted=False)
                 if not static:
@@ -471,8 +473,8 @@ class hgwebdir(object):
         self.refresh()
         sortable = ["name", "description", "contact", "lastchange"]
         sortcolumn, descending = sortdefault
-        if 'sort' in wsgireq.form:
-            sortcolumn = wsgireq.form['sort'][0]
+        if 'sort' in wsgireq.req.qsparams:
+            sortcolum = wsgireq.req.qsparams['sort']
             descending = sortcolumn.startswith('-')
             if descending:
                 sortcolumn = sortcolumn[1:]

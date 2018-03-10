@@ -177,7 +177,7 @@ def difffeatureopts(req, ui, section):
                                      section=section, whitespace=True)
 
     for k in ('ignorews', 'ignorewsamount', 'ignorewseol', 'ignoreblanklines'):
-        v = req.form.get(k, [None])[0]
+        v = req.req.qsparams.get(k)
         if v is not None:
             v = util.parsebool(v)
             setattr(diffopts, k, v if v is not None else True)
@@ -295,19 +295,19 @@ def changeidctx(repo, changeid):
 
 def changectx(repo, req):
     changeid = "tip"
-    if 'node' in req.form:
-        changeid = req.form['node'][0]
+    if 'node' in req.req.qsparams:
+        changeid = req.req.qsparams['node']
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[(ipos + 1):]
-    elif 'manifest' in req.form:
-        changeid = req.form['manifest'][0]
+    elif 'manifest' in req.req.qsparams:
+        changeid = req.req.qsparams['manifest']
 
     return changeidctx(repo, changeid)
 
 def basechangectx(repo, req):
-    if 'node' in req.form:
-        changeid = req.form['node'][0]
+    if 'node' in req.req.qsparams:
+        changeid = req.req.qsparams['node']
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[:ipos]
@@ -316,13 +316,13 @@ def basechangectx(repo, req):
     return None
 
 def filectx(repo, req):
-    if 'file' not in req.form:
+    if 'file' not in req.req.qsparams:
         raise ErrorResponse(HTTP_NOT_FOUND, 'file not given')
-    path = cleanpath(repo, req.form['file'][0])
-    if 'node' in req.form:
-        changeid = req.form['node'][0]
-    elif 'filenode' in req.form:
-        changeid = req.form['filenode'][0]
+    path = cleanpath(repo, req.req.qsparams['file'])
+    if 'node' in req.req.qsparams:
+        changeid = req.req.qsparams['node']
+    elif 'filenode' in req.req.qsparams:
+        changeid = req.req.qsparams['filenode']
     else:
         raise ErrorResponse(HTTP_NOT_FOUND, 'node or filenode not given')
     try:
@@ -333,8 +333,8 @@ def filectx(repo, req):
     return fctx
 
 def linerange(req):
-    linerange = req.form.get('linerange')
-    if linerange is None:
+    linerange = req.req.qsparams.getall('linerange')
+    if not linerange:
         return None
     if len(linerange) > 1:
         raise ErrorResponse(HTTP_BAD_REQUEST,
@@ -412,8 +412,8 @@ def changelistentry(web, ctx, tmpl):
     return entry
 
 def symrevorshortnode(req, ctx):
-    if 'node' in req.form:
-        return templatefilters.revescape(req.form['node'][0])
+    if 'node' in req.req.qsparams:
+        return templatefilters.revescape(req.req.qsparams['node'])
     else:
         return short(ctx.node())
 

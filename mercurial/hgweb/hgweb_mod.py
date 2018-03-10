@@ -332,7 +332,7 @@ class hgweb(object):
         # translate user-visible url structure to internal structure
 
         args = query.split('/', 2)
-        if 'cmd' not in wsgireq.form and args and args[0]:
+        if 'cmd' not in req.qsparams and args and args[0]:
             cmd = args.pop(0)
             style = cmd.rfind('-')
             if style != -1:
@@ -364,16 +364,16 @@ class hgweb(object):
                 req.qsparams['style'] = 'raw'
 
             if cmd == 'archive':
-                fn = wsgireq.form['node'][0]
+                fn = req.qsparams['node']
                 for type_, spec in rctx.archivespecs.iteritems():
                     ext = spec[2]
                     if fn.endswith(ext):
                         wsgireq.form['node'] = [fn[:-len(ext)]]
-                        req.qsparams['node'] = fn[:-len(next)]
+                        req.qsparams['node'] = fn[:-len(ext)]
                         wsgireq.form['type'] = [type_]
                         req.qsparams['type'] = type_
         else:
-            cmd = wsgireq.form.get('cmd', [''])[0]
+            cmd = req.qsparams.get('cmd', '')
 
         # process the web interface request
 
@@ -389,7 +389,7 @@ class hgweb(object):
             if cmd == '':
                 wsgireq.form['cmd'] = [tmpl.cache['default']]
                 req.qsparams['cmd'] = tmpl.cache['default']
-                cmd = wsgireq.form['cmd'][0]
+                cmd = req.qsparams['cmd']
 
             # Don't enable caching if using a CSP nonce because then it wouldn't
             # be a nonce.

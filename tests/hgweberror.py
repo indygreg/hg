@@ -10,7 +10,7 @@ def raiseerror(web, req, tmpl):
     '''Dummy web command that raises an uncaught Exception.'''
 
     # Simulate an error after partial response.
-    if 'partialresponse' in req.form:
+    if 'partialresponse' in req.req.qsparams:
         req.respond(200, 'text/plain')
         req.write('partial content\n')
 

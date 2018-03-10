@@ -60,6 +60,10 @@ interface = curses
 status.relative = yes
 # Refuse to perform an `hg update` that would cause a file content merge
 update.check = noconflict
+# Show conflicts information in `hg status`
+status.verbose = True
+# Skip the bisect state in conflicts information in `hg status`
+status.skipstates = bisect
 
 [diff]
 git = 1

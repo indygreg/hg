@@ -129,6 +129,12 @@ class parsedrequest(object):
     # of HTTP: Host header for hostname. This is likely what clients used.
     advertisedurl = attr.ib()
     advertisedbaseurl = attr.ib()
+    # URL scheme (part before ``://``). e.g. ``http`` or ``https``.
+    urlscheme = attr.ib()
+    # Value of REMOTE_USER, if set, or None.
+    remoteuser = attr.ib()
+    # Value of REMOTE_HOST, if set, or None.
+    remotehost = attr.ib()
     # WSGI application path.
     apppath = attr.ib()
     # List of path parts to be used for dispatch.
@@ -270,6 +276,9 @@ def parserequestfromenv(env, bodyfh):
                          url=fullurl, baseurl=baseurl,
                          advertisedurl=advertisedfullurl,
                          advertisedbaseurl=advertisedbaseurl,
+                         urlscheme=env['wsgi.url_scheme'],
+                         remoteuser=env.get('REMOTE_USER'),
+                         remotehost=env.get('REMOTE_HOST'),
                          apppath=apppath,
                          dispatchparts=dispatchparts, dispatchpath=dispatchpath,
                          havepathinfo='PATH_INFO' in env,

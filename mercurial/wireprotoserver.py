@@ -53,8 +53,7 @@ def decodevaluefromheaders(req, headerprefix):
     return ''.join(chunks)
 
 class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
-    def __init__(self, wsgireq, req, ui, checkperm):
-        self._wsgireq = wsgireq
+    def __init__(self, req, ui, checkperm):
         self._req = req
         self._ui = ui
         self._checkperm = checkperm
@@ -117,9 +116,9 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 
     def client(self):
         return 'remote:%s:%s:%s' % (
-            self._wsgireq.env.get('wsgi.url_scheme') or 'http',
-            urlreq.quote(self._wsgireq.env.get('REMOTE_HOST', '')),
-            urlreq.quote(self._wsgireq.env.get('REMOTE_USER', '')))
+            self._req.urlscheme,
+            urlreq.quote(self._req.remotehost or ''),
+            urlreq.quote(self._req.remoteuser or ''))
 
     def addcapabilities(self, repo, caps):
         caps.append('httpheader=%d' %
@@ -197,7 +196,7 @@ def handlewsgirequest(rctx, wsgireq, req, res, checkperm):
         res.setbodybytes('0\n%s\n' % b'Not Found')
         return True
 
-    proto = httpv1protocolhandler(wsgireq, req, repo.ui,
+    proto = httpv1protocolhandler(req, repo.ui,
                                   lambda perm: checkperm(rctx, wsgireq, perm))
 
     # The permissions checker should be the only thing that can raise an
@@ -205,7 +204,7 @@ def handlewsgirequest(rctx, wsgireq, req, res, checkperm):
     # exception here. So consider refactoring into a exception type that
     # is associated with the wire protocol.
     try:
-        _callhttp(repo, wsgireq, req, res, proto, cmd)
+        _callhttp(repo, req, res, proto, cmd)
     except hgwebcommon.ErrorResponse as e:
         for k, v in e.headers:
             res.headers[k] = v
@@ -256,7 +255,7 @@ def _httpresponsetype(ui, req, prefer_uncompressed):
     opts = {'level': ui.configint('server', 'zliblevel')}
     return HGTYPE, util.compengines['zlib'], opts
 
-def _callhttp(repo, wsgireq, req, res, proto, cmd):
+def _callhttp(repo, req, res, proto, cmd):
     # Avoid cycle involving hg module.
     from .hgweb import common as hgwebcommon
 

@@ -234,6 +234,14 @@ class wsgirequest(object):
             raise RuntimeError("Unknown and unsupported WSGI version %d.%d"
                                % version)
         self.inp = wsgienv[r'wsgi.input']
+
+        if r'HTTP_CONTENT_LENGTH' in wsgienv:
+            self.inp = util.cappedreader(self.inp,
+                                         int(wsgienv[r'HTTP_CONTENT_LENGTH']))
+        elif r'CONTENT_LENGTH' in wsgienv:
+            self.inp = util.cappedreader(self.inp,
+                                         int(wsgienv[r'CONTENT_LENGTH']))
+
         self.err = wsgienv[r'wsgi.errors']
         self.threaded = wsgienv[r'wsgi.multithread']
         self.multiprocess = wsgienv[r'wsgi.multiprocess']

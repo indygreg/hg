@@ -301,9 +301,6 @@ def _callhttp(repo, wsgireq, req, proto, cmd):
         wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
     elif isinstance(rsp, wireprototypes.pusherr):
-        # This is the httplib workaround documented in _handlehttperror().
-        wsgireq.drain()
-
         rsp = '0\n%s\n' % rsp.res
         wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
         return []
@@ -315,21 +312,6 @@ def _callhttp(repo, wsgireq, req, proto, cmd):
 
 def _handlehttperror(e, wsgireq, req):
     """Called when an ErrorResponse is raised during HTTP request processing."""
-
-    # Clients using Python's httplib are stateful: the HTTP client
-    # won't process an HTTP response until all request data is
-    # sent to the server. The intent of this code is to ensure
-    # we always read HTTP request data from the client, thus
-    # ensuring httplib transitions to a state that allows it to read
-    # the HTTP response. In other words, it helps prevent deadlocks
-    # on clients using httplib.
-
-    if (req.method == 'POST' and
-        # But not if Expect: 100-continue is being used.
-        (req.headers.get('Expect', '').lower() != '100-continue')):
-        wsgireq.drain()
-    else:
-        wsgireq.headers.append((r'Connection', r'Close'))
 
     # TODO This response body assumes the failed command was
     # "unbundle." That assumption is not always valid.

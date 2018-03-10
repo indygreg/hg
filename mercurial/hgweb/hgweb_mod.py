@@ -342,15 +342,22 @@ class hgweb(object):
             # avoid accepting e.g. style parameter as command
             if util.safehasattr(webcommands, cmd):
                 wsgireq.form['cmd'] = [cmd]
+                req.qsparams['cmd'] = cmd
 
             if cmd == 'static':
                 wsgireq.form['file'] = ['/'.join(args)]
+                req.qsparams['file'] = '/'.join(args)
             else:
                 if args and args[0]:
                     node = args.pop(0).replace('%2F', '/')
                     wsgireq.form['node'] = [node]
+                    req.qsparams['node'] = node
                 if args:
                     wsgireq.form['file'] = args
+                    if 'file' in req.qsparams:
+                        del req.qsparams['file']
+                    for a in args:
+                        req.qsparams.add('file', a)
 
             ua = req.headers.get('User-Agent', '')
             if cmd == 'rev' and 'mercurial' in ua:
@@ -362,7 +369,9 @@ class hgweb(object):
                     ext = spec[2]
                     if fn.endswith(ext):
                         wsgireq.form['node'] = [fn[:-len(ext)]]
+                        req.qsparams['node'] = fn[:-len(next)]
                         wsgireq.form['type'] = [type_]
+                        req.qsparams['type'] = type_
         else:
             cmd = wsgireq.form.get('cmd', [''])[0]
 
@@ -379,6 +388,7 @@ class hgweb(object):
 
             if cmd == '':
                 wsgireq.form['cmd'] = [tmpl.cache['default']]
+                req.qsparams['cmd'] = tmpl.cache['default']
                 cmd = wsgireq.form['cmd'][0]
 
             # Don't enable caching if using a CSP nonce because then it wouldn't

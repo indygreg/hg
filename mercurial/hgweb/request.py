@@ -11,6 +11,7 @@ from __future__ import absolute_import
 import cgi
 import errno
 import socket
+#import wsgiref.validate
 
 from .common import (
     ErrorResponse,
@@ -18,6 +19,9 @@ from .common import (
     statusmessage,
 )
 
+from ..thirdparty import (
+    attr,
+)
 from .. import (
     pycompat,
     util,
@@ -53,6 +57,124 @@ def normalize(form):
         bytesform[pycompat.bytesurl(k)] = [
             pycompat.bytesurl(i.strip()) for i in v]
     return bytesform
+
+@attr.s(frozen=True)
+class parsedrequest(object):
+    """Represents a parsed WSGI request / static HTTP request parameters."""
+
+    # Full URL for this request.
+    url = attr.ib()
+    # URL without any path components. Just <proto>://<host><port>.
+    baseurl = attr.ib()
+    # Advertised URL. Like ``url`` and ``baseurl`` but uses SERVER_NAME instead
+    # of HTTP: Host header for hostname. This is likely what clients used.
+    advertisedurl = attr.ib()
+    advertisedbaseurl = attr.ib()
+    # WSGI application path.
+    apppath = attr.ib()
+    # List of path parts to be used for dispatch.
+    dispatchparts = attr.ib()
+    # URL path component (no query string) used for dispatch.
+    dispatchpath = attr.ib()
+    # Raw query string (part after "?" in URL).
+    querystring = attr.ib()
+
+def parserequestfromenv(env):
+    """Parse URL components from environment variables.
+
+    WSGI defines request attributes via environment variables. This function
+    parses the environment variables into a data structure.
+    """
+    # PEP-0333 defines the WSGI spec and is a useful reference for this code.
+
+    # We first validate that the incoming object conforms with the WSGI spec.
+    # We only want to be dealing with spec-conforming WSGI implementations.
+    # TODO enable this once we fix internal violations.
+    #wsgiref.validate.check_environ(env)
+
+    # PEP-0333 states that environment keys and values are native strings
+    # (bytes on Python 2 and str on Python 3). The code points for the Unicode
+    # strings on Python 3 must be between \00000-\000FF. We deal with bytes
+    # in Mercurial, so mass convert string keys and values to bytes.
+    if pycompat.ispy3:
+        env = {k.encode('latin-1'): v for k, v in env.iteritems()}
+        env = {k: v.encode('latin-1') if isinstance(v, str) else v
+               for k, v in env.iteritems()}
+
+    # https://www.python.org/dev/peps/pep-0333/#environ-variables defines
+    # the environment variables.
+    # https://www.python.org/dev/peps/pep-0333/#url-reconstruction defines
+    # how URLs are reconstructed.
+    fullurl = env['wsgi.url_scheme'] + '://'
+    advertisedfullurl = fullurl
+
+    def addport(s):
+        if env['wsgi.url_scheme'] == 'https':
+            if env['SERVER_PORT'] != '443':
+                s += ':' + env['SERVER_PORT']
+        else:
+            if env['SERVER_PORT'] != '80':
+                s += ':' + env['SERVER_PORT']
+
+        return s
+
+    if env.get('HTTP_HOST'):
+        fullurl += env['HTTP_HOST']
+    else:
+        fullurl += env['SERVER_NAME']
+        fullurl = addport(fullurl)
+
+    advertisedfullurl += env['SERVER_NAME']
+    advertisedfullurl = addport(advertisedfullurl)
+
+    baseurl = fullurl
+    advertisedbaseurl = advertisedfullurl
+
+    fullurl += util.urlreq.quote(env.get('SCRIPT_NAME', ''))
+    advertisedfullurl += util.urlreq.quote(env.get('SCRIPT_NAME', ''))
+    fullurl += util.urlreq.quote(env.get('PATH_INFO', ''))
+    advertisedfullurl += util.urlreq.quote(env.get('PATH_INFO', ''))
+
+    if env.get('QUERY_STRING'):
+        fullurl += '?' + env['QUERY_STRING']
+        advertisedfullurl += '?' + env['QUERY_STRING']
+
+    # When dispatching requests, we look at the URL components (PATH_INFO
+    # and QUERY_STRING) after the application root (SCRIPT_NAME). But hgwebdir
+    # has the concept of "virtual" repositories. This is defined via REPO_NAME.
+    # If REPO_NAME is defined, we append it to SCRIPT_NAME to form a new app
+    # root. We also exclude its path components from PATH_INFO when resolving
+    # the dispatch path.
+
+    # TODO the use of trailing slashes in apppath is arguably wrong. We need it
+    # to appease low-level parts of hgweb_mod for now.
+    apppath = env['SCRIPT_NAME']
+    if not apppath.endswith('/'):
+        apppath += '/'
+
+    if env.get('REPO_NAME'):
+        apppath += env.get('REPO_NAME') + '/'
+
+    if 'PATH_INFO' in env:
+        dispatchparts = env['PATH_INFO'].strip('/').split('/')
+
+        # Strip out repo parts.
+        repoparts = env.get('REPO_NAME', '').split('/')
+        if dispatchparts[:len(repoparts)] == repoparts:
+            dispatchparts = dispatchparts[len(repoparts):]
+    else:
+        dispatchparts = []
+
+    dispatchpath = '/'.join(dispatchparts)
+
+    querystring = env.get('QUERY_STRING', '')
+
+    return parsedrequest(url=fullurl, baseurl=baseurl,
+                         advertisedurl=advertisedfullurl,
+                         advertisedbaseurl=advertisedbaseurl,
+                         apppath=apppath,
+                         dispatchparts=dispatchparts, dispatchpath=dispatchpath,
+                         querystring=querystring)
 
 class wsgirequest(object):
     """Higher-level API for a WSGI request.

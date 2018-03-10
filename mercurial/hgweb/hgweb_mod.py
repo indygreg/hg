@@ -316,6 +316,7 @@ class hgweb(object):
                     yield r
 
     def _runwsgi(self, wsgireq, repo):
+        req = requestmod.parserequestfromenv(wsgireq.env)
         rctx = requestcontext(self, repo)
 
         # This state is global across all threads.
@@ -329,14 +330,7 @@ class hgweb(object):
                                if h[0] != 'Content-Security-Policy']
             wsgireq.headers.append(('Content-Security-Policy', rctx.csp))
 
-        # work with CGI variables to create coherent structure
-        # use SCRIPT_NAME, PATH_INFO and QUERY_STRING as well as our REPO_NAME
-
-        wsgireq.url = wsgireq.env[r'SCRIPT_NAME']
-        if not wsgireq.url.endswith(r'/'):
-            wsgireq.url += r'/'
-        if wsgireq.env.get('REPO_NAME'):
-            wsgireq.url += wsgireq.env[r'REPO_NAME'] + r'/'
+        wsgireq.url = pycompat.sysstr(req.apppath)
 
         if r'PATH_INFO' in wsgireq.env:
             parts = wsgireq.env[r'PATH_INFO'].strip(r'/').split(r'/')

@@ -254,6 +254,8 @@ class wsgirequest(object):
         self.server_write = None
         self.headers = []
 
+        self.req = parserequestfromenv(wsgienv)
+
     def respond(self, status, type, filename=None, body=None):
         if not isinstance(type, str):
             type = pycompat.sysstr(type)

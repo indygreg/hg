@@ -304,7 +304,7 @@ class hgweb(object):
                     yield r
 
     def _runwsgi(self, wsgireq, repo):
-        req = requestmod.parserequestfromenv(wsgireq.env)
+        req = wsgireq.req
         rctx = requestcontext(self, repo)
 
         # This state is global across all threads.

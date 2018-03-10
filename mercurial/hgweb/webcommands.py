@@ -186,6 +186,9 @@ def file(web, req, tmpl):
     If ``path`` is not defined, information about the root directory will
     be rendered.
     """
+    if web.req.qsparams.get('style') == 'raw':
+        return rawfile(web, req, tmpl)
+
     path = webutil.cleanpath(web.repo, req.req.qsparams.get('file', ''))
     if not path:
         return manifest(web, req, tmpl)

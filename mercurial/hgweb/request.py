@@ -306,14 +306,7 @@ class wsgirequest(object):
                 if inst[0] != errno.ECONNRESET:
                     raise
 
-    def writelines(self, lines):
-        for line in lines:
-            self.write(line)
-
     def flush(self):
-        return None
-
-    def close(self):
         return None
 
 def wsgiapplication(app_maker):

@@ -704,12 +704,13 @@ def wireprotocommand(name, args='', transportpolicy=POLICY_ALL,
         transports = {k for k, v in wireprototypes.TRANSPORTS.items()
                       if v['version'] == 2}
     else:
-        raise error.Abort(_('invalid transport policy value: %s') %
-                          transportpolicy)
+        raise error.ProgrammingError('invalid transport policy value: %s' %
+                                     transportpolicy)
 
     if permission not in ('push', 'pull'):
-        raise error.Abort(_('invalid wire protocol permission; got %s; '
-                            'expected "push" or "pull"') % permission)
+        raise error.ProgrammingError('invalid wire protocol permission; '
+                                     'got %s; expected "push" or "pull"' %
+                                     permission)
 
     def register(func):
         commands[name] = commandentry(func, args=args, transports=transports,

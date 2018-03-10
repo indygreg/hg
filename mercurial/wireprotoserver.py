@@ -149,7 +149,7 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def handlewsgirequest(rctx, wsgireq, req, checkperm):
+def handlewsgirequest(rctx, wsgireq, req, res, checkperm):
     """Possibly process a wire protocol request.
 
     If the current request is a wire protocol request, the request is
@@ -157,10 +157,10 @@ def handlewsgirequest(rctx, wsgireq, req, checkperm):
 
     ``wsgireq`` is a ``wsgirequest`` instance.
     ``req`` is a ``parsedrequest`` instance.
+    ``res`` is a ``wsgiresponse`` instance.
 
-    Returns a 2-tuple of (bool, response) where the 1st element indicates
-    whether the request was handled and the 2nd element is a return
-    value for a WSGI application (often a generator of bytes).
+    Returns a bool indicating if the request was serviced. If set, the caller
+    should stop processing the request, as a response has already been issued.
     """
     # Avoid cycle involving hg module.
     from .hgweb import common as hgwebcommon
@@ -171,7 +171,7 @@ def handlewsgirequest(rctx, wsgireq, req, checkperm):
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
     if 'cmd' not in req.querystringdict:
-        return False, None
+        return False
 
     cmd = req.querystringdict['cmd'][0]
 
@@ -183,18 +183,19 @@ def handlewsgirequest(rctx, wsgireq, req, checkperm):
     # known wire protocol commands and it is less confusing for machine
     # clients.
     if not iscmd(cmd):
-        return False, None
+        return False
 
     # The "cmd" query string argument is only valid on the root path of the
     # repo. e.g. ``/?cmd=foo``, ``/repo?cmd=foo``. URL paths within the repo
     # like ``/blah?cmd=foo`` are not allowed. So don't recognize the request
     # in this case. We send an HTTP 404 for backwards compatibility reasons.
     if req.dispatchpath:
-        res = _handlehttperror(
-            hgwebcommon.ErrorResponse(hgwebcommon.HTTP_NOT_FOUND), wsgireq,
-            req)
-
-        return True, res
+        res.status = hgwebcommon.statusmessage(404)
+        res.headers['Content-Type'] = HGTYPE
+        # TODO This is not a good response to issue for this request. This
+        # is mostly for BC for now.
+        res.setbodybytes('0\n%s\n' % b'Not Found')
+        return True
 
     proto = httpv1protocolhandler(wsgireq, req, repo.ui,
                                   lambda perm: checkperm(rctx, wsgireq, perm))
@@ -204,11 +205,16 @@ def handlewsgirequest(rctx, wsgireq, req, checkperm):
     # exception here. So consider refactoring into a exception type that
     # is associated with the wire protocol.
     try:
-        res = _callhttp(repo, wsgireq, req, proto, cmd)
+        _callhttp(repo, wsgireq, req, res, proto, cmd)
     except hgwebcommon.ErrorResponse as e:
-        res = _handlehttperror(e, wsgireq, req)
+        for k, v in e.headers:
+            res.headers[k] = v
+        res.status = hgwebcommon.statusmessage(e.code, pycompat.bytestr(e))
+        # TODO This response body assumes the failed command was
+        # "unbundle." That assumption is not always valid.
+        res.setbodybytes('0\n%s\n' % pycompat.bytestr(e))
 
-    return True, res
+    return True
 
 def _httpresponsetype(ui, req, prefer_uncompressed):
     """Determine the appropriate response type and compression settings.
@@ -250,7 +256,10 @@ def _httpresponsetype(ui, req, prefer_uncompressed):
     opts = {'level': ui.configint('server', 'zliblevel')}
     return HGTYPE, util.compengines['zlib'], opts
 
-def _callhttp(repo, wsgireq, req, proto, cmd):
+def _callhttp(repo, wsgireq, req, res, proto, cmd):
+    # Avoid cycle involving hg module.
+    from .hgweb import common as hgwebcommon
+
     def genversion2(gen, engine, engineopts):
         # application/mercurial-0.2 always sends a payload header
         # identifying the compression engine.
@@ -262,26 +271,35 @@ def _callhttp(repo, wsgireq, req, proto, cmd):
         for chunk in gen:
             yield chunk
 
+    def setresponse(code, contenttype, bodybytes=None, bodygen=None):
+        if code == HTTP_OK:
+            res.status = '200 Script output follows'
+        else:
+            res.status = hgwebcommon.statusmessage(code)
+
+        res.headers['Content-Type'] = contenttype
+
+        if bodybytes is not None:
+            res.setbodybytes(bodybytes)
+        if bodygen is not None:
+            res.setbodygen(bodygen)
+
     if not wireproto.commands.commandavailable(cmd, proto):
-        wsgireq.respond(HTTP_OK, HGERRTYPE,
-                        body=_('requested wire protocol command is not '
-                               'available over HTTP'))
-        return []
+        setresponse(HTTP_OK, HGERRTYPE,
+                    _('requested wire protocol command is not available over '
+                      'HTTP'))
+        return
 
     proto.checkperm(wireproto.commands[cmd].permission)
 
     rsp = wireproto.dispatch(repo, proto, cmd)
 
     if isinstance(rsp, bytes):
-        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
-        return []
+        setresponse(HTTP_OK, HGTYPE, bodybytes=rsp)
     elif isinstance(rsp, wireprototypes.bytesresponse):
-        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp.data)
-        return []
+        setresponse(HTTP_OK, HGTYPE, bodybytes=rsp.data)
     elif isinstance(rsp, wireprototypes.streamreslegacy):
-        gen = rsp.gen
-        wsgireq.respond(HTTP_OK, HGTYPE)
-        return gen
+        setresponse(HTTP_OK, HGTYPE, bodygen=rsp.gen)
     elif isinstance(rsp, wireprototypes.streamres):
         gen = rsp.gen
 
@@ -294,30 +312,18 @@ def _callhttp(repo, wsgireq, req, proto, cmd):
         if mediatype == HGTYPE2:
             gen = genversion2(gen, engine, engineopts)
 
-        wsgireq.respond(HTTP_OK, mediatype)
-        return gen
+        setresponse(HTTP_OK, mediatype, bodygen=gen)
     elif isinstance(rsp, wireprototypes.pushres):
         rsp = '%d\n%s' % (rsp.res, rsp.output)
-        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
-        return []
+        setresponse(HTTP_OK, HGTYPE, bodybytes=rsp)
     elif isinstance(rsp, wireprototypes.pusherr):
         rsp = '0\n%s\n' % rsp.res
-        wsgireq.respond(HTTP_OK, HGTYPE, body=rsp)
-        return []
+        res.drain = True
+        setresponse(HTTP_OK, HGTYPE, bodybytes=rsp)
     elif isinstance(rsp, wireprototypes.ooberror):
-        rsp = rsp.message
-        wsgireq.respond(HTTP_OK, HGERRTYPE, body=rsp)
-        return []
-    raise error.ProgrammingError('hgweb.protocol internal failure', rsp)
-
-def _handlehttperror(e, wsgireq, req):
-    """Called when an ErrorResponse is raised during HTTP request processing."""
-
-    # TODO This response body assumes the failed command was
-    # "unbundle." That assumption is not always valid.
-    wsgireq.respond(e, HGTYPE, body='0\n%s\n' % pycompat.bytestr(e))
-
-    return ''
+        setresponse(HTTP_OK, HGERRTYPE, bodybytes=rsp.message)
+    else:
+        raise error.ProgrammingError('hgweb.protocol internal failure', rsp)
 
 def _sshv1respondbytes(fout, value):
     """Send a bytes response for protocol version 1."""

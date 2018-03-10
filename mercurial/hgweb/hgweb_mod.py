@@ -305,6 +305,7 @@ class hgweb(object):
 
     def _runwsgi(self, wsgireq, repo):
         req = wsgireq.req
+        res = wsgireq.res
         rctx = requestcontext(self, repo)
 
         # This state is global across all threads.
@@ -317,11 +318,12 @@ class hgweb(object):
             wsgireq.headers = [h for h in wsgireq.headers
                                if h[0] != 'Content-Security-Policy']
             wsgireq.headers.append(('Content-Security-Policy', rctx.csp))
+            res.headers['Content-Security-Policy'] = rctx.csp
 
-        handled, res = wireprotoserver.handlewsgirequest(
-            rctx, wsgireq, req, self.check_perm)
+        handled = wireprotoserver.handlewsgirequest(
+            rctx, wsgireq, req, res, self.check_perm)
         if handled:
-            return res
+            return res.sendresponse()
 
         if req.havepathinfo:
             query = req.dispatchpath

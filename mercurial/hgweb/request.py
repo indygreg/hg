@@ -23,6 +23,7 @@ from ..thirdparty import (
     attr,
 )
 from .. import (
+    error,
     pycompat,
     util,
 )
@@ -201,6 +202,128 @@ def parserequestfromenv(env, bodyfh):
                          headers=headers,
                          bodyfh=bodyfh)
 
+class wsgiresponse(object):
+    """Represents a response to a WSGI request.
+
+    A response consists of a status line, headers, and a body.
+
+    Consumers must populate the ``status`` and ``headers`` fields and
+    make a call to a ``setbody*()`` method before the response can be
+    issued.
+
+    When it is time to start sending the response over the wire,
+    ``sendresponse()`` is called. It handles emitting the header portion
+    of the response message. It then yields chunks of body data to be
+    written to the peer. Typically, the WSGI application itself calls
+    and returns the value from ``sendresponse()``.
+    """
+
+    def __init__(self, req, startresponse):
+        """Create an empty response tied to a specific request.
+
+        ``req`` is a ``parsedrequest``. ``startresponse`` is the
+        ``start_response`` function passed to the WSGI application.
+        """
+        self._req = req
+        self._startresponse = startresponse
+
+        self.status = None
+        self.headers = wsgiheaders.Headers([])
+
+        self._bodybytes = None
+        self._bodygen = None
+        self._started = False
+
+    def setbodybytes(self, b):
+        """Define the response body as static bytes."""
+        if self._bodybytes is not None or self._bodygen is not None:
+            raise error.ProgrammingError('cannot define body multiple times')
+
+        self._bodybytes = b
+        self.headers['Content-Length'] = '%d' % len(b)
+
+    def setbodygen(self, gen):
+        """Define the response body as a generator of bytes."""
+        if self._bodybytes is not None or self._bodygen is not None:
+            raise error.ProgrammingError('cannot define body multiple times')
+
+        self._bodygen = gen
+
+    def sendresponse(self):
+        """Send the generated response to the client.
+
+        Before this is called, ``status`` must be set and one of
+        ``setbodybytes()`` or ``setbodygen()`` must be called.
+
+        Calling this method multiple times is not allowed.
+        """
+        if self._started:
+            raise error.ProgrammingError('sendresponse() called multiple times')
+
+        self._started = True
+
+        if not self.status:
+            raise error.ProgrammingError('status line not defined')
+
+        if self._bodybytes is None and self._bodygen is None:
+            raise error.ProgrammingError('response body not defined')
+
+        # Various HTTP clients (notably httplib) won't read the HTTP response
+        # until the HTTP request has been sent in full. If servers (us) send a
+        # response before the HTTP request has been fully sent, the connection
+        # may deadlock because neither end is reading.
+        #
+        # We work around this by "draining" the request data before
+        # sending any response in some conditions.
+        drain = False
+        close = False
+
+        # If the client sent Expect: 100-continue, we assume it is smart enough
+        # to deal with the server sending a response before reading the request.
+        # (httplib doesn't do this.)
+        if self._req.headers.get('Expect', '').lower() == '100-continue':
+            pass
+        # Only tend to request methods that have bodies. Strictly speaking,
+        # we should sniff for a body. But this is fine for our existing
+        # WSGI applications.
+        elif self._req.method not in ('POST', 'PUT'):
+            pass
+        else:
+            # If we don't know how much data to read, there's no guarantee
+            # that we can drain the request responsibly. The WSGI
+            # specification only says that servers *should* ensure the
+            # input stream doesn't overrun the actual request. So there's
+            # no guarantee that reading until EOF won't corrupt the stream
+            # state.
+            if not isinstance(self._req.bodyfh, util.cappedreader):
+                close = True
+            else:
+                # We /could/ only drain certain HTTP response codes. But 200 and
+                # non-200 wire protocol responses both require draining. Since
+                # we have a capped reader in place for all situations where we
+                # drain, it is safe to read from that stream. We'll either do
+                # a drain or no-op if we're already at EOF.
+                drain = True
+
+        if close:
+            self.headers['Connection'] = 'Close'
+
+        if drain:
+            assert isinstance(self._req.bodyfh, util.cappedreader)
+            while True:
+                chunk = self._req.bodyfh.read(32768)
+                if not chunk:
+                    break
+
+        self._startresponse(pycompat.sysstr(self.status), self.headers.items())
+        if self._bodybytes:
+            yield self._bodybytes
+        elif self._bodygen:
+            for chunk in self._bodygen:
+                yield chunk
+        else:
+            error.ProgrammingError('do not know how to send body')
+
 class wsgirequest(object):
     """Higher-level API for a WSGI request.
 
@@ -228,6 +351,7 @@ class wsgirequest(object):
         self.env = wsgienv
         self.req = parserequestfromenv(wsgienv, inp)
         self.form = self.req.querystringdict
+        self.res = wsgiresponse(self.req, start_response)
         self._start_response = start_response
         self.server_write = None
         self.headers = []

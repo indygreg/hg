@@ -27,37 +27,6 @@ from .. import (
     util,
 )
 
-shortcuts = {
-    'cl': [('cmd', ['changelog']), ('rev', None)],
-    'sl': [('cmd', ['shortlog']), ('rev', None)],
-    'cs': [('cmd', ['changeset']), ('node', None)],
-    'f': [('cmd', ['file']), ('filenode', None)],
-    'fl': [('cmd', ['filelog']), ('filenode', None)],
-    'fd': [('cmd', ['filediff']), ('node', None)],
-    'fa': [('cmd', ['annotate']), ('filenode', None)],
-    'mf': [('cmd', ['manifest']), ('manifest', None)],
-    'ca': [('cmd', ['archive']), ('node', None)],
-    'tags': [('cmd', ['tags'])],
-    'tip': [('cmd', ['changeset']), ('node', ['tip'])],
-    'static': [('cmd', ['static']), ('file', None)]
-}
-
-def normalize(form):
-    # first expand the shortcuts
-    for k in shortcuts:
-        if k in form:
-            for name, value in shortcuts[k]:
-                if value is None:
-                    value = form[k]
-                form[name] = value
-            del form[k]
-    # And strip the values
-    bytesform = {}
-    for k, v in form.iteritems():
-        bytesform[pycompat.bytesurl(k)] = [
-            pycompat.bytesurl(i.strip()) for i in v]
-    return bytesform
-
 @attr.s(frozen=True)
 class parsedrequest(object):
     """Represents a parsed WSGI request.
@@ -258,7 +227,7 @@ class wsgirequest(object):
         self.run_once = wsgienv[r'wsgi.run_once']
         self.env = wsgienv
         self.req = parserequestfromenv(wsgienv, inp)
-        self.form = normalize(self.req.querystringdict)
+        self.form = self.req.querystringdict
         self._start_response = start_response
         self.server_write = None
         self.headers = []

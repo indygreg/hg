@@ -83,7 +83,7 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
         postlen = int(self._req.headers.get(b'X-HgArgs-Post', 0))
         if postlen:
             args.update(urlreq.parseqs(
-                self._wsgireq.inp.read(postlen), keep_blank_values=True))
+                self._req.bodyfh.read(postlen), keep_blank_values=True))
             return args
 
         argvalue = decodevaluefromheaders(self._req, b'X-HgArg')
@@ -97,7 +97,7 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
         # If httppostargs is used, we need to read Content-Length
         # minus the amount that was consumed by args.
         length -= int(self._req.headers.get(b'X-HgArgs-Post', 0))
-        for s in util.filechunkiter(self._wsgireq.inp, limit=length):
+        for s in util.filechunkiter(self._req.bodyfh, limit=length):
             fp.write(s)
 
     @contextlib.contextmanager

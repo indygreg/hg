@@ -291,7 +291,8 @@ class hgwebdir(object):
                     # variable.
                     # TODO this is kind of hacky and we should have a better
                     # way of doing this than with REPO_NAME side-effects.
-                    wsgireq.req = requestmod.parserequestfromenv(wsgireq.env)
+                    wsgireq.req = requestmod.parserequestfromenv(
+                        wsgireq.env, wsgireq.req.bodyfh)
                     try:
                         # ensure caller gets private copy of ui
                         repo = hg.repository(self.ui.copy(), real)

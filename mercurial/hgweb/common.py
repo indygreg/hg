@@ -101,6 +101,13 @@ class ErrorResponse(Exception):
         self.headers = headers
 
 class continuereader(object):
+    """File object wrapper to handle HTTP 100-continue.
+
+    This is used by servers so they automatically handle Expect: 100-continue
+    request headers. On first read of the request body, the 100 Continue
+    response is sent. This should trigger the client into actually sending
+    the request body.
+    """
     def __init__(self, f, write):
         self.f = f
         self._write = write

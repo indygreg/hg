@@ -1916,6 +1916,19 @@ capabilities
   
   lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$
 
+wire protocol command to wrong base URL
+
+  $ get-with-headers.py $LOCALIP:$HGPORT 'foo?cmd=capabilities' -
+  404 Not Found
+  content-length: 12
+  content-type: application/mercurial-0.1
+  date: * (glob)
+  server: * (glob)
+  
+  0
+  Not Found
+  [1]
+
 heads
 
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=heads'

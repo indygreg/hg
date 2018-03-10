@@ -543,6 +543,11 @@ class fileobjectproxy(object):
 
         return getattr(object.__getattribute__(self, r'_orig'), name)
 
+    def __nonzero__(self):
+        return bool(object.__getattribute__(self, r'_orig'))
+
+    __bool__ = __nonzero__
+
     def __delattr__(self, name):
         return delattr(object.__getattribute__(self, r'_orig'), name)
 

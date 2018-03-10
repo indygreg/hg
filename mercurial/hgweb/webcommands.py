@@ -1232,8 +1232,9 @@ def static(web, req, tmpl):
         if isinstance(tp, str):
             tp = [tp]
         static = [os.path.join(p, 'static') for p in tp]
-    staticfile(static, fname, req)
-    return []
+
+    staticfile(static, fname, web.res)
+    return web.res
 
 @webcommand('graph')
 def graph(web, req, tmpl):

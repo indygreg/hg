@@ -153,7 +153,7 @@ def ispathsafe(path):
 
     return True
 
-def staticfile(directory, fname, req):
+def staticfile(directory, fname, res):
     """return a file inside directory with guessed Content-Type header
 
     fname always uses '/' as directory separator and isn't allowed to
@@ -178,7 +178,9 @@ def staticfile(directory, fname, req):
         with open(path, 'rb') as fh:
             data = fh.read()
 
-        req.respond(HTTP_OK, ct, body=data)
+        res.headers['Content-Type'] = ct
+        res.setbodybytes(data)
+        return res
     except TypeError:
         raise ErrorResponse(HTTP_SERVER_ERROR, 'illegal filename')
     except OSError as err:

@@ -230,18 +230,24 @@ class hgwebdir(object):
 
     def _runwsgi(self, wsgireq):
         req = wsgireq.req
+        res = wsgireq.res
 
         try:
             self.refresh()
 
             csp, nonce = cspvalues(self.ui)
             if csp:
+                res.headers['Content-Security-Policy'] = csp
                 wsgireq.headers.append(('Content-Security-Policy', csp))
 
             virtual = wsgireq.env.get("PATH_INFO", "").strip('/')
             tmpl = self.templater(wsgireq, nonce)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
+
+            # Global defaults. These can be overridden by any handler.
+            res.status = '200 Script output follows'
+            res.headers['Content-Type'] = ctype
 
             # a static file
             if virtual.startswith('static/') or 'static' in req.qsparams:
@@ -256,8 +262,9 @@ class hgwebdir(object):
                     if isinstance(tp, str):
                         tp = [tp]
                     static = [os.path.join(p, 'static') for p in tp]
-                staticfile(static, fname, wsgireq)
-                return []
+
+                staticfile(static, fname, res)
+                return res.sendresponse()
 
             # top-level index
 

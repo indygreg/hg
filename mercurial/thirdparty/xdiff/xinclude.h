@@ -24,7 +24,13 @@
 #define XINCLUDE_H
 
 #include <ctype.h>
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
 #include <stdint.h>
+#else
+/* prior to Visual Studio 2010 */
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

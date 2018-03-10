@@ -18,7 +18,6 @@ from .common import (
     HTTP_NOT_MODIFIED,
     HTTP_OK,
     HTTP_SERVER_ERROR,
-    caching,
     cspvalues,
     permhooks,
 )
@@ -388,7 +387,13 @@ class hgweb(object):
             # Don't enable caching if using a CSP nonce because then it wouldn't
             # be a nonce.
             if rctx.configbool('web', 'cache') and not rctx.nonce:
-                caching(self, wsgireq) # sets ETag header or raises NOT_MODIFIED
+                tag = 'W/"%d"' % self.mtime
+                if req.headers.get('If-None-Match') == tag:
+                    raise ErrorResponse(HTTP_NOT_MODIFIED)
+
+                wsgireq.headers.append((r'ETag', pycompat.sysstr(tag)))
+                res.headers['ETag'] = tag
+
             if cmd not in webcommands.__all__:
                 msg = 'no such method: %s' % cmd
                 raise ErrorResponse(HTTP_BAD_REQUEST, msg)

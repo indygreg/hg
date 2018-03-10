@@ -214,12 +214,6 @@ def get_contact(config):
             config("ui", "username") or
             encoding.environ.get("EMAIL") or "")
 
-def caching(web, req):
-    tag = r'W/"%d"' % web.mtime
-    if req.env.get('HTTP_IF_NONE_MATCH') == tag:
-        raise ErrorResponse(HTTP_NOT_MODIFIED)
-    req.headers.append(('ETag', tag))
-
 def cspvalues(ui):
     """Obtain the Content-Security-Policy header and nonce value.
 

@@ -32,10 +32,11 @@ def _forwardoutput(ui, pipe):
     """display all data currently available on pipe as remote output.
 
     This is non blocking."""
-    s = util.readpipe(pipe)
-    if s:
-        for l in s.splitlines():
-            ui.status(_("remote: "), l, '\n')
+    if pipe:
+        s = util.readpipe(pipe)
+        if s:
+            for l in s.splitlines():
+                ui.status(_("remote: "), l, '\n')
 
 class doublepipe(object):
     """Operate a side-channel pipe in addition of a main one

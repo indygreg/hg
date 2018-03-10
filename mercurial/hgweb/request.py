@@ -426,7 +426,6 @@ class wsgirequest(object):
         self.run_once = wsgienv[r'wsgi.run_once']
         self.env = wsgienv
         self.req = parserequestfromenv(wsgienv, inp)
-        self.form = self.req.qsparams.asdictoflists()
         self.res = wsgiresponse(self.req, start_response)
         self._start_response = start_response
         self.server_write = None

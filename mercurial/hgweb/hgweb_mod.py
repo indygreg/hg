@@ -341,19 +341,15 @@ class hgweb(object):
 
             # avoid accepting e.g. style parameter as command
             if util.safehasattr(webcommands, cmd):
-                wsgireq.form['cmd'] = [cmd]
                 req.qsparams['cmd'] = cmd
 
             if cmd == 'static':
-                wsgireq.form['file'] = ['/'.join(args)]
                 req.qsparams['file'] = '/'.join(args)
             else:
                 if args and args[0]:
                     node = args.pop(0).replace('%2F', '/')
-                    wsgireq.form['node'] = [node]
                     req.qsparams['node'] = node
                 if args:
-                    wsgireq.form['file'] = args
                     if 'file' in req.qsparams:
                         del req.qsparams['file']
                     for a in args:
@@ -368,9 +364,7 @@ class hgweb(object):
                 for type_, spec in rctx.archivespecs.iteritems():
                     ext = spec[2]
                     if fn.endswith(ext):
-                        wsgireq.form['node'] = [fn[:-len(ext)]]
                         req.qsparams['node'] = fn[:-len(ext)]
-                        wsgireq.form['type'] = [type_]
                         req.qsparams['type'] = type_
         else:
             cmd = req.qsparams.get('cmd', '')
@@ -387,7 +381,6 @@ class hgweb(object):
                 self.check_perm(rctx, wsgireq, None)
 
             if cmd == '':
-                wsgireq.form['cmd'] = [tmpl.cache['default']]
                 req.qsparams['cmd'] = tmpl.cache['default']
                 cmd = req.qsparams['cmd']
 

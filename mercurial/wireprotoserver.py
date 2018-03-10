@@ -79,7 +79,7 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
         return [data[k] for k in keys]
 
     def _args(self):
-        args = util.rapply(pycompat.bytesurl, self._wsgireq.form.copy())
+        args = self._req.qsparams.asdictoflists()
         postlen = int(self._req.headers.get(b'X-HgArgs-Post', 0))
         if postlen:
             args.update(urlreq.parseqs(
@@ -170,10 +170,10 @@ def handlewsgirequest(rctx, wsgireq, req, res, checkperm):
     # HTTP version 1 wire protocol requests are denoted by a "cmd" query
     # string parameter. If it isn't present, this isn't a wire protocol
     # request.
-    if 'cmd' not in req.querystringdict:
+    if 'cmd' not in req.qsparams:
         return False
 
-    cmd = req.querystringdict['cmd'][0]
+    cmd = req.qsparams['cmd']
 
     # The "cmd" request parameter is used by both the wire protocol and hgweb.
     # While not all wire protocol commands are available for all transports,

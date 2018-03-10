@@ -216,7 +216,7 @@ def extract(ui, fileobj):
 
     data = {}
     fd, tmpname = tempfile.mkstemp(prefix='hg-patch-')
-    tmpfp = os.fdopen(fd, pycompat.sysstr('wb'))
+    tmpfp = os.fdopen(fd, r'wb')
     try:
         msg = pycompat.emailparser().parse(fileobj)
 
@@ -1106,7 +1106,7 @@ the hunk is left unchanged.
                 ncpatchfp = None
                 try:
                     # Write the initial patch
-                    f = os.fdopen(patchfd, pycompat.sysstr("w"))
+                    f = os.fdopen(patchfd, r"w")
                     chunk.header.write(f)
                     chunk.write(f)
                     f.write('\n'.join(['# ' + i for i in phelp.splitlines()]))

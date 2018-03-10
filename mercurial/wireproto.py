@@ -1027,7 +1027,7 @@ def unbundle(repo, proto, heads):
 
             # write bundle data to temporary file because it can be big
             fd, tempname = tempfile.mkstemp(prefix='hg-unbundle-')
-            fp = os.fdopen(fd, pycompat.sysstr('wb+'))
+            fp = os.fdopen(fd, r'wb+')
             r = 0
             try:
                 proto.forwardpayload(fp)

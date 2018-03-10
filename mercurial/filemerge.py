@@ -674,7 +674,7 @@ def _maketempfiles(repo, fco, fca):
         pre = "%s~%s." % (os.path.basename(fullbase), prefix)
         (fd, name) = tempfile.mkstemp(prefix=pre, suffix=ext)
         data = repo.wwritedata(ctx.path(), ctx.data())
-        f = os.fdopen(fd, pycompat.sysstr("wb"))
+        f = os.fdopen(fd, r"wb")
         f.write(data)
         f.close()
         return name

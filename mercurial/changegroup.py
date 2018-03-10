@@ -75,7 +75,7 @@ def writechunks(ui, chunks, filename, vfs=None):
                 fh = open(filename, "wb", 131072)
         else:
             fd, filename = tempfile.mkstemp(prefix="hg-bundle-", suffix=".hg")
-            fh = os.fdopen(fd, pycompat.sysstr("wb"))
+            fh = os.fdopen(fd, r"wb")
         cleanup = filename
         for c in chunks:
             fh.write(c)

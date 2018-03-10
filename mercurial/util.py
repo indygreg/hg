@@ -91,7 +91,7 @@ def isatty(fp):
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
 # buffering
 if isatty(stdout):
-    stdout = os.fdopen(stdout.fileno(), pycompat.sysstr('wb'), 1)
+    stdout = os.fdopen(stdout.fileno(), r'wb', 1)
 
 if pycompat.iswindows:
     from . import windows as platform
@@ -1251,7 +1251,7 @@ def tempfilter(s, cmd):
     inname, outname = None, None
     try:
         infd, inname = tempfile.mkstemp(prefix='hg-filter-in-')
-        fp = os.fdopen(infd, pycompat.sysstr('wb'))
+        fp = os.fdopen(infd, r'wb')
         fp.write(s)
         fp.close()
         outfd, outname = tempfile.mkstemp(prefix='hg-filter-out-')
@@ -1413,7 +1413,7 @@ def hgexecutable():
     """
     if _hgexecutable is None:
         hg = encoding.environ.get('HG')
-        mainmod = sys.modules[pycompat.sysstr('__main__')]
+        mainmod = sys.modules[r'__main__']
         if hg:
             _sethgexecutable(hg)
         elif mainfrozen():

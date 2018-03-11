@@ -30,7 +30,6 @@ from __future__ import absolute_import
 
 from . import highlight
 from mercurial.hgweb import (
-    common,
     webcommands,
     webutil,
 )
@@ -84,9 +83,12 @@ def annotate_highlight(orig, web, req, tmpl):
 def generate_css(web, req, tmpl):
     pg_style = web.config('web', 'pygments_style', 'colorful')
     fmter = highlight.HtmlFormatter(style=pg_style)
-    req.respond(common.HTTP_OK, 'text/css')
-    return ['/* pygments_style = %s */\n\n' % pg_style,
-            fmter.get_style_defs('')]
+    web.res.headers['Content-Type'] = 'text/css'
+    web.res.setbodybytes(''.join([
+        '/* pygments_style = %s */\n\n' % pg_style,
+        fmter.get_style_defs(''),
+    ]))
+    return web.res
 
 def extsetup():
     # monkeypatch in the new version

@@ -106,17 +106,13 @@ def rawfile(web, req, tmpl):
 
     path = webutil.cleanpath(web.repo, req.req.qsparams.get('file', ''))
     if not path:
-        content = manifest(web, req, tmpl)
-        req.respond(HTTP_OK, web.ctype)
-        return content
+        return manifest(web, req, tmpl)
 
     try:
         fctx = webutil.filectx(web.repo, req)
     except error.LookupError as inst:
         try:
-            content = manifest(web, req, tmpl)
-            req.respond(HTTP_OK, web.ctype)
-            return content
+            return manifest(web, req, tmpl)
         except ErrorResponse:
             raise inst
 
@@ -133,8 +129,12 @@ def rawfile(web, req, tmpl):
     if mt.startswith('text/'):
         mt += '; charset="%s"' % encoding.encoding
 
-    req.respond(HTTP_OK, mt, path, body=text)
-    return []
+    web.res.headers['Content-Type'] = mt
+    filename = (path.rpartition('/')[-1]
+                .replace('\\', '\\\\').replace('"', '\\"'))
+    web.res.headers['Content-Disposition'] = 'inline; filename="%s"' % filename
+    web.res.setbodybytes(text)
+    return web.res
 
 def _filerevision(web, req, tmpl, fctx):
     f = fctx.path()
@@ -153,15 +153,18 @@ def _filerevision(web, req, tmpl, fctx):
                    "linenumber": "% 6d" % (lineno + 1),
                    "parity": next(parity)}
 
-    return tmpl("filerevision",
-                file=f,
-                path=webutil.up(f),
-                text=lines(),
-                symrev=webutil.symrevorshortnode(req, fctx),
-                rename=webutil.renamelink(fctx),
-                permissions=fctx.manifest().flags(f),
-                ishead=int(ishead),
-                **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
+    web.res.setbodygen(tmpl(
+        'filerevision',
+        file=f,
+        path=webutil.up(f),
+        text=lines(),
+        symrev=webutil.symrevorshortnode(req, fctx),
+        rename=webutil.renamelink(fctx),
+        permissions=fctx.manifest().flags(f),
+        ishead=int(ishead),
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
+
+    return web.res
 
 @webcommand('file')
 def file(web, req, tmpl):
@@ -335,11 +338,20 @@ def _search(web, req, tmpl):
     tip = web.repo['tip']
     parity = paritygen(web.stripecount)
 
-    return tmpl('search', query=query, node=tip.hex(), symrev='tip',
-                entries=changelist, archives=web.archivelist("tip"),
-                morevars=morevars, lessvars=lessvars,
-                modedesc=searchfunc[1],
-                showforcekw=showforcekw, showunforcekw=showunforcekw)
+    web.res.setbodygen(tmpl(
+        'search',
+        query=query,
+        node=tip.hex(),
+        symrev='tip',
+        entries=changelist,
+        archives=web.archivelist('tip'),
+        morevars=morevars,
+        lessvars=lessvars,
+        modedesc=searchfunc[1],
+        showforcekw=showforcekw,
+        showunforcekw=showunforcekw))
+
+    return web.res
 
 @webcommand('changelog')
 def changelog(web, req, tmpl, shortlog=False):
@@ -423,12 +435,23 @@ def changelog(web, req, tmpl, shortlog=False):
     else:
         nextentry = []
 
-    return tmpl('shortlog' if shortlog else 'changelog', changenav=changenav,
-                node=ctx.hex(), rev=pos, symrev=symrev, changesets=count,
-                entries=entries,
-                latestentry=latestentry, nextentry=nextentry,
-                archives=web.archivelist("tip"), revcount=revcount,
-                morevars=morevars, lessvars=lessvars, query=query)
+    web.res.setbodygen(tmpl(
+        'shortlog' if shortlog else 'changelog',
+        changenav=changenav,
+        node=ctx.hex(),
+        rev=pos,
+        symrev=symrev,
+        changesets=count,
+        entries=entries,
+        latestentry=latestentry,
+        nextentry=nextentry,
+        archives=web.archivelist('tip'),
+        revcount=revcount,
+        morevars=morevars,
+        lessvars=lessvars,
+        query=query))
+
+    return web.res
 
 @webcommand('shortlog')
 def shortlog(web, req, tmpl):
@@ -461,8 +484,9 @@ def changeset(web, req, tmpl):
     templates related to diffs may all be used to produce the output.
     """
     ctx = webutil.changectx(web.repo, req)
-
-    return tmpl('changeset', **webutil.changesetentry(web, req, tmpl, ctx))
+    web.res.setbodygen(tmpl('changeset',
+                            **webutil.changesetentry(web, req, tmpl, ctx)))
+    return web.res
 
 rev = webcommand('rev')(changeset)
 
@@ -563,15 +587,18 @@ def manifest(web, req, tmpl):
                    "emptydirs": "/".join(emptydirs),
                    "basename": d}
 
-    return tmpl("manifest",
-                symrev=symrev,
-                path=abspath,
-                up=webutil.up(abspath),
-                upparity=next(parity),
-                fentries=filelist,
-                dentries=dirlist,
-                archives=web.archivelist(hex(node)),
-                **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
+    web.res.setbodygen(tmpl(
+        'manifest',
+        symrev=symrev,
+        path=abspath,
+        up=webutil.up(abspath),
+        upparity=next(parity),
+        fentries=filelist,
+        dentries=dirlist,
+        archives=web.archivelist(hex(node)),
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
+
+    return web.res
 
 @webcommand('tags')
 def tags(web, req, tmpl):
@@ -600,11 +627,14 @@ def tags(web, req, tmpl):
                    "date": web.repo[n].date(),
                    "node": hex(n)}
 
-    return tmpl("tags",
-                node=hex(web.repo.changelog.tip()),
-                entries=lambda **x: entries(False, False, **x),
-                entriesnotip=lambda **x: entries(True, False, **x),
-                latestentry=lambda **x: entries(True, True, **x))
+    web.res.setbodygen(tmpl(
+        'tags',
+        node=hex(web.repo.changelog.tip()),
+        entries=lambda **x: entries(False, False, **x),
+        entriesnotip=lambda **x: entries(True, False, **x),
+        latestentry=lambda **x: entries(True, True, **x)))
+
+    return web.res
 
 @webcommand('bookmarks')
 def bookmarks(web, req, tmpl):
@@ -638,11 +668,14 @@ def bookmarks(web, req, tmpl):
     else:
         latestrev = -1
 
-    return tmpl("bookmarks",
-                node=hex(web.repo.changelog.tip()),
-                lastchange=[{"date": web.repo[latestrev].date()}],
-                entries=lambda **x: entries(latestonly=False, **x),
-                latestentry=lambda **x: entries(latestonly=True, **x))
+    web.res.setbodygen(tmpl(
+        'bookmarks',
+        node=hex(web.repo.changelog.tip()),
+        lastchange=[{'date': web.repo[latestrev].date()}],
+        entries=lambda **x: entries(latestonly=False, **x),
+        latestentry=lambda **x: entries(latestonly=True, **x)))
+
+    return web.res
 
 @webcommand('branches')
 def branches(web, req, tmpl):
@@ -660,8 +693,14 @@ def branches(web, req, tmpl):
     """
     entries = webutil.branchentries(web.repo, web.stripecount)
     latestentry = webutil.branchentries(web.repo, web.stripecount, 1)
-    return tmpl('branches', node=hex(web.repo.changelog.tip()),
-                entries=entries, latestentry=latestentry)
+
+    web.res.setbodygen(tmpl(
+        'branches',
+        node=hex(web.repo.changelog.tip()),
+        entries=entries,
+        latestentry=latestentry))
+
+    return web.res
 
 @webcommand('summary')
 def summary(web, req, tmpl):
@@ -731,18 +770,22 @@ def summary(web, req, tmpl):
     desc = web.config("web", "description")
     if not desc:
         desc = 'unknown'
-    return tmpl("summary",
-                desc=desc,
-                owner=get_contact(web.config) or "unknown",
-                lastchange=tip.date(),
-                tags=tagentries,
-                bookmarks=bookmarks,
-                branches=webutil.branchentries(web.repo, web.stripecount, 10),
-                shortlog=changelist,
-                node=tip.hex(),
-                symrev='tip',
-                archives=web.archivelist("tip"),
-                labels=web.configlist('web', 'labels'))
+
+    web.res.setbodygen(tmpl(
+        'summary',
+        desc=desc,
+        owner=get_contact(web.config) or 'unknown',
+        lastchange=tip.date(),
+        tags=tagentries,
+        bookmarks=bookmarks,
+        branches=webutil.branchentries(web.repo, web.stripecount, 10),
+        shortlog=changelist,
+        node=tip.hex(),
+        symrev='tip',
+        archives=web.archivelist('tip'),
+        labels=web.configlist('web', 'labels')))
+
+    return web.res
 
 @webcommand('filediff')
 def filediff(web, req, tmpl):
@@ -782,12 +825,16 @@ def filediff(web, req, tmpl):
     else:
         rename = []
         ctx = ctx
-    return tmpl("filediff",
-                file=path,
-                symrev=webutil.symrevorshortnode(req, ctx),
-                rename=rename,
-                diff=diffs,
-                **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
+
+    web.res.setbodygen(tmpl(
+        'filediff',
+        file=path,
+        symrev=webutil.symrevorshortnode(req, ctx),
+        rename=rename,
+        diff=diffs,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
+
+    return web.res
 
 diff = webcommand('diff')(filediff)
 
@@ -853,16 +900,20 @@ def comparison(web, req, tmpl):
     else:
         rename = []
         ctx = ctx
-    return tmpl('filecomparison',
-                file=path,
-                symrev=webutil.symrevorshortnode(req, ctx),
-                rename=rename,
-                leftrev=leftrev,
-                leftnode=hex(leftnode),
-                rightrev=rightrev,
-                rightnode=hex(rightnode),
-                comparison=comparison,
-                **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
+
+    web.res.setbodygen(tmpl(
+        'filecomparison',
+        file=path,
+        symrev=webutil.symrevorshortnode(req, ctx),
+        rename=rename,
+        leftrev=leftrev,
+        leftnode=hex(leftnode),
+        rightrev=rightrev,
+        rightnode=hex(rightnode),
+        comparison=comparison,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
+
+    return web.res
 
 @webcommand('annotate')
 def annotate(web, req, tmpl):
@@ -944,16 +995,19 @@ def annotate(web, req, tmpl):
     diffopts = webutil.difffeatureopts(req, web.repo.ui, 'annotate')
     diffopts = {k: getattr(diffopts, k) for k in diffopts.defaults}
 
-    return tmpl("fileannotate",
-                file=f,
-                annotate=annotate,
-                path=webutil.up(f),
-                symrev=webutil.symrevorshortnode(req, fctx),
-                rename=webutil.renamelink(fctx),
-                permissions=fctx.manifest().flags(f),
-                ishead=int(ishead),
-                diffopts=diffopts,
-                **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
+    web.res.setbodygen(tmpl(
+        'fileannotate',
+        file=f,
+        annotate=annotate,
+        path=webutil.up(f),
+        symrev=webutil.symrevorshortnode(req, fctx),
+        rename=webutil.renamelink(fctx),
+        permissions=fctx.manifest().flags(f),
+        ishead=int(ishead),
+        diffopts=diffopts,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
+
+    return web.res
 
 @webcommand('filelog')
 def filelog(web, req, tmpl):
@@ -1318,17 +1372,26 @@ def graph(web, req, tmpl):
 
     rows = len(tree)
 
-    return tmpl('graph', rev=rev, symrev=symrev, revcount=revcount,
-                uprev=uprev,
-                lessvars=lessvars, morevars=morevars, downrev=downrev,
-                graphvars=graphvars,
-                rows=rows,
-                bg_height=bg_height,
-                changesets=count,
-                nextentry=nextentry,
-                jsdata=lambda **x: jsdata(),
-                nodes=lambda **x: nodes(),
-                node=ctx.hex(), changenav=changenav)
+    web.res.setbodygen(tmpl(
+        'graph',
+        rev=rev,
+        symrev=symrev,
+        revcount=revcount,
+        uprev=uprev,
+        lessvars=lessvars,
+        morevars=morevars,
+        downrev=downrev,
+        graphvars=graphvars,
+        rows=rows,
+        bg_height=bg_height,
+        changesets=count,
+        nextentry=nextentry,
+        jsdata=lambda **x: jsdata(),
+        nodes=lambda **x: nodes(),
+        node=ctx.hex(),
+        changenav=changenav))
+
+    return web.res
 
 def _getdoc(e):
     doc = e[0].__doc__
@@ -1384,8 +1447,13 @@ def help(web, req, tmpl):
             for c, doc in other:
                 yield {'topic': c, 'summary': doc}
 
-        return tmpl('helptopics', topics=topics, earlycommands=earlycommands,
-                    othercommands=othercommands, title='Index')
+        web.res.setbodygen(tmpl(
+            'helptopics',
+            topics=topics,
+            earlycommands=earlycommands,
+            othercommands=othercommands,
+            title='Index'))
+        return web.res
 
     # Render an index of sub-topics.
     if topicname in helpmod.subtopics:
@@ -1397,8 +1465,12 @@ def help(web, req, tmpl):
                 'summary': summary,
             })
 
-        return tmpl('helptopics', topics=topics, title=topicname,
-                    subindex=True)
+        web.res.setbodygen(tmpl(
+            'helptopics',
+            topics=topics,
+            title=topicname,
+            subindex=True))
+        return web.res
 
     u = webutil.wsgiui.load()
     u.verbose = True
@@ -1418,7 +1490,13 @@ def help(web, req, tmpl):
         doc = helpmod.help_(u, commands, topic, subtopic=subtopic)
     except error.Abort:
         raise ErrorResponse(HTTP_NOT_FOUND)
-    return tmpl('help', topic=topicname, doc=doc)
+
+    web.res.setbodygen(tmpl(
+        'help',
+        topic=topicname,
+        doc=doc))
+
+    return web.res
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = commands.values()

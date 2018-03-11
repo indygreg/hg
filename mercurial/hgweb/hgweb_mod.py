@@ -400,8 +400,11 @@ class hgweb(object):
                 msg = 'no such method: %s' % cmd
                 raise ErrorResponse(HTTP_BAD_REQUEST, msg)
             elif cmd == 'file' and req.qsparams.get('style') == 'raw':
-                rctx.ctype = ctype
+                res.status = '200 Script output follows'
+                res.headers['Content-Type'] = ctype
                 content = webcommands.rawfile(rctx, wsgireq, tmpl)
+                assert content is res
+                return res.sendresponse()
             else:
                 # Set some globals appropriate for web handlers. Commands can
                 # override easily enough.

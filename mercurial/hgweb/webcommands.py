@@ -93,7 +93,7 @@ def log(web, req, tmpl):
     file will be shown. This form is equivalent to the ``filelog`` handler.
     """
 
-    if req.req.qsparams.get('file'):
+    if web.req.qsparams.get('file'):
         return filelog(web, req, tmpl)
     else:
         return changelog(web, req, tmpl)
@@ -102,7 +102,7 @@ def log(web, req, tmpl):
 def rawfile(web, req, tmpl):
     guessmime = web.configbool('web', 'guessmime')
 
-    path = webutil.cleanpath(web.repo, req.req.qsparams.get('file', ''))
+    path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
         return manifest(web, req, tmpl)
 
@@ -187,7 +187,7 @@ def file(web, req, tmpl):
     if web.req.qsparams.get('style') == 'raw':
         return rawfile(web, req, tmpl)
 
-    path = webutil.cleanpath(web.repo, req.req.qsparams.get('file', ''))
+    path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
         return manifest(web, req, tmpl)
     try:
@@ -198,7 +198,7 @@ def file(web, req, tmpl):
         except ErrorResponse:
             raise inst
 
-def _search(web, req, tmpl):
+def _search(web, tmpl):
     MODE_REVISION = 'rev'
     MODE_KEYWORD = 'keyword'
     MODE_REVSET = 'revset'
@@ -303,11 +303,11 @@ def _search(web, req, tmpl):
             if count >= revcount:
                 break
 
-    query = req.req.qsparams['rev']
+    query = web.req.qsparams['rev']
     revcount = web.maxchanges
-    if 'revcount' in req.req.qsparams:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.req.qsparams.get('revcount', revcount))
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
             tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
@@ -322,7 +322,7 @@ def _search(web, req, tmpl):
 
     mode, funcarg = getsearchmode(query)
 
-    if 'forcekw' in req.req.qsparams:
+    if 'forcekw' in web.req.qsparams:
         showforcekw = ''
         showunforcekw = searchfuncs[mode][1]
         mode = MODE_KEYWORD
@@ -381,11 +381,11 @@ def changelog(web, req, tmpl, shortlog=False):
     """
 
     query = ''
-    if 'node' in req.req.qsparams:
+    if 'node' in web.req.qsparams:
         ctx = webutil.changectx(web.repo, req)
         symrev = webutil.symrevorshortnode(req, ctx)
-    elif 'rev' in req.req.qsparams:
-        return _search(web, req, tmpl)
+    elif 'rev' in web.req.qsparams:
+        return _search(web, tmpl)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'
@@ -409,9 +409,9 @@ def changelog(web, req, tmpl, shortlog=False):
     else:
         revcount = web.maxchanges
 
-    if 'revcount' in req.req.qsparams:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.req.qsparams.get('revcount', revcount))
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
             tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
@@ -516,13 +516,13 @@ def manifest(web, req, tmpl):
 
     The ``manifest`` template will be rendered for this handler.
     """
-    if 'node' in req.req.qsparams:
+    if 'node' in web.req.qsparams:
         ctx = webutil.changectx(web.repo, req)
         symrev = webutil.symrevorshortnode(req, ctx)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'
-    path = webutil.cleanpath(web.repo, req.req.qsparams.get('file', ''))
+    path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     mf = ctx.manifest()
     node = ctx.node()
 
@@ -806,7 +806,7 @@ def filediff(web, req, tmpl):
         fctx = webutil.filectx(web.repo, req)
     except LookupError:
         ctx = webutil.changectx(web.repo, req)
-        path = webutil.cleanpath(web.repo, req.req.qsparams['file'])
+        path = webutil.cleanpath(web.repo, web.req.qsparams['file'])
         if path not in ctx.files():
             raise
 
@@ -816,8 +816,8 @@ def filediff(web, req, tmpl):
     basectx = ctx.p1()
 
     style = web.config('web', 'style')
-    if 'style' in req.req.qsparams:
-        style = req.req.qsparams['style']
+    if 'style' in web.req.qsparams:
+        style = web.req.qsparams['style']
 
     diffs = webutil.diffs(web, tmpl, ctx, basectx, [path], style)
     if fctx is not None:
@@ -857,13 +857,13 @@ def comparison(web, req, tmpl):
     The ``filecomparison`` template is rendered.
     """
     ctx = webutil.changectx(web.repo, req)
-    if 'file' not in req.req.qsparams:
+    if 'file' not in web.req.qsparams:
         raise ErrorResponse(HTTP_NOT_FOUND, 'file not given')
-    path = webutil.cleanpath(web.repo, req.req.qsparams['file'])
+    path = webutil.cleanpath(web.repo, web.req.qsparams['file'])
 
     parsecontext = lambda v: v == 'full' and -1 or int(v)
-    if 'context' in req.req.qsparams:
-        context = parsecontext(req.req.qsparams['context'])
+    if 'context' in web.req.qsparams:
+        context = parsecontext(web.req.qsparams['context'])
     else:
         context = parsecontext(web.config('web', 'comparisoncontext', '5'))
 
@@ -1029,7 +1029,7 @@ def filelog(web, req, tmpl):
         f = fctx.path()
         fl = fctx.filelog()
     except error.LookupError:
-        f = webutil.cleanpath(web.repo, req.req.qsparams['file'])
+        f = webutil.cleanpath(web.repo, web.req.qsparams['file'])
         fl = web.repo.file(f)
         numrevs = len(fl)
         if not numrevs: # file doesn't exist at all
@@ -1044,9 +1044,9 @@ def filelog(web, req, tmpl):
         fctx = web.repo.filectx(f, fl.linkrev(frev))
 
     revcount = web.maxshortchanges
-    if 'revcount' in req.req.qsparams:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.req.qsparams.get('revcount', revcount))
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
             tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
@@ -1059,12 +1059,12 @@ def filelog(web, req, tmpl):
     morevars = copy.copy(tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
-    patch = 'patch' in req.req.qsparams
+    patch = 'patch' in web.req.qsparams
     if patch:
-        lessvars['patch'] = morevars['patch'] = req.req.qsparams['patch']
-    descend = 'descend' in req.req.qsparams
+        lessvars['patch'] = morevars['patch'] = web.req.qsparams['patch']
+    descend = 'descend' in web.req.qsparams
     if descend:
-        lessvars['descend'] = morevars['descend'] = req.req.qsparams['descend']
+        lessvars['descend'] = morevars['descend'] = web.req.qsparams['descend']
 
     count = fctx.filerev() + 1
     start = max(0, count - revcount) # first rev on this page
@@ -1076,8 +1076,8 @@ def filelog(web, req, tmpl):
     entries = []
 
     diffstyle = web.config('web', 'style')
-    if 'style' in req.req.qsparams:
-        diffstyle = req.req.qsparams['style']
+    if 'style' in web.req.qsparams:
+        diffstyle = web.req.qsparams['style']
 
     def diff(fctx, linerange=None):
         ctx = fctx.changectx()
@@ -1171,9 +1171,9 @@ def archive(web, req, tmpl):
     No template is used for this handler. Raw, binary content is generated.
     """
 
-    type_ = req.req.qsparams.get('type')
+    type_ = web.req.qsparams.get('type')
     allowed = web.configlist("web", "allow_archive")
-    key = req.req.qsparams['node']
+    key = web.req.qsparams['node']
 
     if type_ not in web.archivespecs:
         msg = 'Unsupported archive type: %s' % type_
@@ -1194,7 +1194,7 @@ def archive(web, req, tmpl):
     ctx = webutil.changectx(web.repo, req)
     pats = []
     match = scmutil.match(ctx, [])
-    file = req.req.qsparams.get('file')
+    file = web.req.qsparams.get('file')
     if file:
         pats = ['path:' + file]
         match = scmutil.match(ctx, pats, default='path')
@@ -1226,7 +1226,7 @@ def archive(web, req, tmpl):
 
 @webcommand('static')
 def static(web, req, tmpl):
-    fname = req.req.qsparams['file']
+    fname = web.req.qsparams['file']
     # a repo owner may set web.static in .hg/hgrc to get any file
     # readable by the user running the CGI script
     static = web.config("web", "static", None, untrusted=False)
@@ -1263,7 +1263,7 @@ def graph(web, req, tmpl):
     This handler will render the ``graph`` template.
     """
 
-    if 'node' in req.req.qsparams:
+    if 'node' in web.req.qsparams:
         ctx = webutil.changectx(web.repo, req)
         symrev = webutil.symrevorshortnode(req, ctx)
     else:
@@ -1273,9 +1273,9 @@ def graph(web, req, tmpl):
 
     bg_height = 39
     revcount = web.maxshortchanges
-    if 'revcount' in req.req.qsparams:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.req.qsparams.get('revcount', revcount))
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
             tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
@@ -1286,7 +1286,7 @@ def graph(web, req, tmpl):
     morevars = copy.copy(tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
-    graphtop = req.req.qsparams.get('graphtop', ctx.hex())
+    graphtop = web.req.qsparams.get('graphtop', ctx.hex())
     graphvars = copy.copy(tmpl.defaults['sessionvars'])
     graphvars['graphtop'] = graphtop
 
@@ -1425,7 +1425,7 @@ def help(web, req, tmpl):
     """
     from .. import commands, help as helpmod  # avoid cycle
 
-    topicname = req.req.qsparams.get('node')
+    topicname = web.req.qsparams.get('node')
     if not topicname:
         def topics(**map):
             for entries, summary, _doc in helpmod.helptable:

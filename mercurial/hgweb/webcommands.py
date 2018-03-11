@@ -53,6 +53,16 @@ class webcommand(object):
     The decorator takes as its positional arguments the name/path the
     command should be accessible under.
 
+    When called, functions receive as arguments a ``requestcontext``,
+    ``wsgirequest``, and a templater instance for generatoring output.
+    The functions should populate the ``rctx.res`` object with details
+    about the HTTP response.
+
+    The function can return the ``requestcontext.res`` instance to signal
+    that it wants to use this object to generate the response. If an iterable
+    is returned, the ``wsgirequest`` instance will be used and the returned
+    content will constitute the response body.
+
     Usage:
 
     @webcommand('mycommand')
@@ -1068,19 +1078,22 @@ def filelog(web, req, tmpl):
 
     latestentry = entries[:1]
 
-    return tmpl("filelog",
-                file=f,
-                nav=nav,
-                symrev=webutil.symrevorshortnode(req, fctx),
-                entries=entries,
-                descend=descend,
-                patch=patch,
-                latestentry=latestentry,
-                linerange=linerange,
-                revcount=revcount,
-                morevars=morevars,
-                lessvars=lessvars,
-                **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
+    web.res.setbodygen(tmpl(
+        'filelog',
+        file=f,
+        nav=nav,
+        symrev=webutil.symrevorshortnode(req, fctx),
+        entries=entries,
+        descend=descend,
+        patch=patch,
+        latestentry=latestentry,
+        linerange=linerange,
+        revcount=revcount,
+        morevars=morevars,
+        lessvars=lessvars,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
+
+    return web.res
 
 @webcommand('archive')
 def archive(web, req, tmpl):

@@ -91,9 +91,11 @@ class requestcontext(object):
     is prone to race conditions. Instances of this class exist to hold
     mutable and race-free state for requests.
     """
-    def __init__(self, app, repo):
+    def __init__(self, app, repo, req, res):
         self.repo = repo
         self.reponame = app.reponame
+        self.req = req
+        self.res = res
 
         self.archivespecs = archivespecs
 
@@ -305,7 +307,7 @@ class hgweb(object):
     def _runwsgi(self, wsgireq, repo):
         req = wsgireq.req
         res = wsgireq.res
-        rctx = requestcontext(self, repo)
+        rctx = requestcontext(self, repo, req, res)
 
         # This state is global across all threads.
         encoding.encoding = rctx.config('web', 'encoding')
@@ -401,7 +403,15 @@ class hgweb(object):
                 rctx.ctype = ctype
                 content = webcommands.rawfile(rctx, wsgireq, tmpl)
             else:
+                # Set some globals appropriate for web handlers. Commands can
+                # override easily enough.
+                res.status = '200 Script output follows'
+                res.headers['Content-Type'] = ctype
                 content = getattr(webcommands, cmd)(rctx, wsgireq, tmpl)
+
+                if content is res:
+                    return res.sendresponse()
+
                 wsgireq.respond(HTTP_OK, ctype)
 
             return content

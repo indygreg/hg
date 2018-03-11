@@ -152,7 +152,7 @@ class parsedrequest(object):
     # WSGI environment dict, unmodified.
     rawenv = attr.ib()
 
-def parserequestfromenv(env, bodyfh, reponame=None, altbaseurl=None):
+def parserequestfromenv(env, reponame=None, altbaseurl=None):
     """Parse URL components from environment variables.
 
     WSGI defines request attributes via environment variables. This function
@@ -325,11 +325,9 @@ def parserequestfromenv(env, bodyfh, reponame=None, altbaseurl=None):
     if 'CONTENT_LENGTH' in env and 'HTTP_CONTENT_LENGTH' not in env:
         headers['Content-Length'] = env['CONTENT_LENGTH']
 
-    # TODO do this once we remove wsgirequest.inp, otherwise we could have
-    # multiple readers from the underlying input stream.
-    #bodyfh = env['wsgi.input']
-    #if 'Content-Length' in headers:
-    #    bodyfh = util.cappedreader(bodyfh, int(headers['Content-Length']))
+    bodyfh = env['wsgi.input']
+    if 'Content-Length' in headers:
+        bodyfh = util.cappedreader(bodyfh, int(headers['Content-Length']))
 
     return parsedrequest(method=env['REQUEST_METHOD'],
                          url=fullurl, baseurl=baseurl,
@@ -577,34 +575,6 @@ class wsgiresponse(object):
 
         assert self._bodywritefn
         return offsettrackingwriter(self._bodywritefn)
-
-class wsgirequest(object):
-    """Higher-level API for a WSGI request.
-
-    WSGI applications are invoked with 2 arguments. They are used to
-    instantiate instances of this class, which provides higher-level APIs
-    for obtaining request parameters, writing HTTP output, etc.
-    """
-    def __init__(self, wsgienv, start_response, altbaseurl=None):
-        version = wsgienv[r'wsgi.version']
-        if (version < (1, 0)) or (version >= (2, 0)):
-            raise RuntimeError("Unknown and unsupported WSGI version %d.%d"
-                               % version)
-
-        inp = wsgienv[r'wsgi.input']
-
-        if r'HTTP_CONTENT_LENGTH' in wsgienv:
-            inp = util.cappedreader(inp, int(wsgienv[r'HTTP_CONTENT_LENGTH']))
-        elif r'CONTENT_LENGTH' in wsgienv:
-            inp = util.cappedreader(inp, int(wsgienv[r'CONTENT_LENGTH']))
-
-        self.err = wsgienv[r'wsgi.errors']
-        self.threaded = wsgienv[r'wsgi.multithread']
-        self.multiprocess = wsgienv[r'wsgi.multiprocess']
-        self.run_once = wsgienv[r'wsgi.run_once']
-        self.env = wsgienv
-        self.req = parserequestfromenv(wsgienv, inp, altbaseurl=altbaseurl)
-        self.res = wsgiresponse(self.req, start_response)
 
 def wsgiapplication(app_maker):
     '''For compatibility with old CGI scripts. A plain hgweb() or hgwebdir()

@@ -290,10 +290,12 @@ class hgweb(object):
 
         This may be called by multiple threads.
         """
-        req = requestmod.wsgirequest(env, respond)
-        return self.run_wsgi(req)
+        req = requestmod.parserequestfromenv(env)
+        res = requestmod.wsgiresponse(req, respond)
 
-    def run_wsgi(self, wsgireq):
+        return self.run_wsgi(req, res)
+
+    def run_wsgi(self, req, res):
         """Internal method to run the WSGI application.
 
         This is typically only called by Mercurial. External consumers
@@ -302,12 +304,10 @@ class hgweb(object):
         with self._obtainrepo() as repo:
             profile = repo.ui.configbool('profiling', 'enabled')
             with profiling.profile(repo.ui, enabled=profile):
-                for r in self._runwsgi(wsgireq, repo):
+                for r in self._runwsgi(req, res, repo):
                     yield r
 
-    def _runwsgi(self, wsgireq, repo):
-        req = wsgireq.req
-        res = wsgireq.res
+    def _runwsgi(self, req, res, repo):
         rctx = requestcontext(self, repo, req, res)
 
         # This state is global across all threads.

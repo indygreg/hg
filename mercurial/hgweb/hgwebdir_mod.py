@@ -348,19 +348,18 @@ class hgwebdir(object):
 
     def __call__(self, env, respond):
         baseurl = self.ui.config('web', 'baseurl')
-        wsgireq = requestmod.wsgirequest(env, respond, altbaseurl=baseurl)
-        return self.run_wsgi(wsgireq)
+        req = requestmod.parserequestfromenv(env, altbaseurl=baseurl)
+        res = requestmod.wsgiresponse(req, respond)
 
-    def run_wsgi(self, wsgireq):
+        return self.run_wsgi(req, res)
+
+    def run_wsgi(self, req, res):
         profile = self.ui.configbool('profiling', 'enabled')
         with profiling.profile(self.ui, enabled=profile):
-            for r in self._runwsgi(wsgireq):
+            for r in self._runwsgi(req, res):
                 yield r
 
-    def _runwsgi(self, wsgireq):
-        req = wsgireq.req
-        res = wsgireq.res
-
+    def _runwsgi(self, req, res):
         try:
             self.refresh()
 
@@ -423,13 +422,13 @@ class hgwebdir(object):
                 if real:
                     # Re-parse the WSGI environment to take into account our
                     # repository path component.
-                    wsgireq.req = requestmod.parserequestfromenv(
-                        wsgireq.env, wsgireq.req.bodyfh, reponame=virtualrepo,
+                    req = requestmod.parserequestfromenv(
+                        req.rawenv, reponame=virtualrepo,
                         altbaseurl=self.ui.config('web', 'baseurl'))
                     try:
                         # ensure caller gets private copy of ui
                         repo = hg.repository(self.ui.copy(), real)
-                        return hgweb_mod.hgweb(repo).run_wsgi(wsgireq)
+                        return hgweb_mod.hgweb(repo).run_wsgi(req, res)
                     except IOError as inst:
                         msg = encoding.strtolocal(inst.strerror)
                         raise ErrorResponse(HTTP_SERVER_ERROR, msg)

@@ -23,11 +23,11 @@ DEFAULT_ENV = {
     r'wsgi.run_once': False,
 }
 
-def parse(env, bodyfh=None, reponame=None, altbaseurl=None, extra=None):
+def parse(env, reponame=None, altbaseurl=None, extra=None):
     env = dict(env)
     env.update(extra or {})
 
-    return requestmod.parserequestfromenv(env, bodyfh, reponame=reponame,
+    return requestmod.parserequestfromenv(env, reponame=reponame,
                                           altbaseurl=altbaseurl)
 
 class ParseRequestTests(unittest.TestCase):

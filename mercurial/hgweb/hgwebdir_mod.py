@@ -273,6 +273,22 @@ def rawindexentries(ui, repos, wsgireq, req, subdir='', **map):
 
         yield row
 
+def indexentries(ui, repos, wsgireq, req, stripecount, sortcolumn='',
+                 descending=False, subdir='', **map):
+
+    rows = rawindexentries(ui, repos, wsgireq, req, subdir=subdir, **map)
+
+    sortdefault = None, False
+
+    if sortcolumn and sortdefault != (sortcolumn, descending):
+        sortkey = '%s_sort' % sortcolumn
+        rows = sorted(rows, key=lambda x: x[sortkey],
+                      reverse=descending)
+
+    for row, parity in zip(rows, paritygen(stripecount)):
+        row['parity'] = parity
+        yield row
+
 class hgwebdir(object):
     """HTTP server for multiple repositories.
 
@@ -472,22 +488,9 @@ class hgwebdir(object):
     def makeindex(self, wsgireq, tmpl, subdir=""):
         req = wsgireq.req
 
-        sortdefault = None, False
-        def entries(sortcolumn="", descending=False, subdir="", **map):
-            rows = rawindexentries(self.ui, self.repos, wsgireq, req,
-                                   subdir=subdir, **map)
-
-            if sortcolumn and sortdefault != (sortcolumn, descending):
-                sortkey = '%s_sort' % sortcolumn
-                rows = sorted(rows, key=lambda x: x[sortkey],
-                              reverse=descending)
-            for row, parity in zip(rows, paritygen(self.stripecount)):
-                row['parity'] = parity
-                yield row
-
         self.refresh()
         sortable = ["name", "description", "contact", "lastchange"]
-        sortcolumn, descending = sortdefault
+        sortcolumn, descending = None, False
         if 'sort' in req.qsparams:
             sortcolumn = req.qsparams['sort']
             descending = sortcolumn.startswith('-')
@@ -503,6 +506,10 @@ class hgwebdir(object):
 
         self.refresh()
         self.updatereqenv(wsgireq.env)
+
+        entries = indexentries(self.ui, self.repos, wsgireq, req,
+                               self.stripecount, sortcolumn=sortcolumn,
+                               descending=descending, subdir=subdir)
 
         return tmpl("index", entries=entries, subdir=subdir,
                     pathdef=hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),

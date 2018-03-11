@@ -496,10 +496,6 @@ class hgwebdir(object):
         def config(section, name, default=uimod._unset, untrusted=True):
             return self.ui.config(section, name, default, untrusted)
 
-        url = wsgireq.env.get('SCRIPT_NAME', '')
-        if not url.endswith('/'):
-            url += '/'
-
         vars = {}
         styles, (style, mapfile) = hgweb_mod.getstyle(wsgireq.req, config,
                                                       self.templatepath)
@@ -517,7 +513,7 @@ class hgwebdir(object):
         defaults = {
             "encoding": encoding.encoding,
             "motd": motd,
-            "url": url,
+            "url": wsgireq.req.apppath + '/',
             "logourl": logourl,
             "logoimg": logoimg,
             "staticurl": staticurl,

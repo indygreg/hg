@@ -195,34 +195,11 @@ class tarit(object):
         if self.fileobj:
             self.fileobj.close()
 
-class tellable(object):
-    '''provide tell method for zipfile.ZipFile when writing to http
-    response file object.'''
-
-    def __init__(self, fp):
-        self.fp = fp
-        self.offset = 0
-
-    def __getattr__(self, key):
-        return getattr(self.fp, key)
-
-    def write(self, s):
-        self.fp.write(s)
-        self.offset += len(s)
-
-    def tell(self):
-        return self.offset
-
 class zipit(object):
     '''write archive to zip file or stream.  can write uncompressed,
     or compressed with deflate.'''
 
     def __init__(self, dest, mtime, compress=True):
-        if not isinstance(dest, bytes):
-            try:
-                dest.tell()
-            except (AttributeError, IOError):
-                dest = tellable(dest)
         self.z = zipfile.ZipFile(pycompat.fsdecode(dest), r'w',
                                  compress and zipfile.ZIP_DEFLATED or
                                  zipfile.ZIP_STORED)

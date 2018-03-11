@@ -290,6 +290,37 @@ def parserequestfromenv(env, bodyfh):
                          headers=headers,
                          bodyfh=bodyfh)
 
+class offsettrackingwriter(object):
+    """A file object like object that is append only and tracks write count.
+
+    Instances are bound to a callable. This callable is called with data
+    whenever a ``write()`` is attempted.
+
+    Instances track the amount of written data so they can answer ``tell()``
+    requests.
+
+    The intent of this class is to wrap the ``write()`` function returned by
+    a WSGI ``start_response()`` function. Since ``write()`` is a callable and
+    not a file object, it doesn't implement other file object methods.
+    """
+    def __init__(self, writefn):
+        self._write = writefn
+        self._offset = 0
+
+    def write(self, s):
+        res = self._write(s)
+        # Some Python objects don't report the number of bytes written.
+        if res is None:
+            self._offset += len(s)
+        else:
+            self._offset += res
+
+    def flush(self):
+        pass
+
+    def tell(self):
+        return self._offset
+
 class wsgiresponse(object):
     """Represents a response to a WSGI request.
 

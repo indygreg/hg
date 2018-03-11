@@ -24,6 +24,9 @@ from .common import (
     paritygen,
     staticfile,
 )
+from . import (
+    request as requestmod,
+)
 
 from .. import (
     archival,
@@ -1215,7 +1218,9 @@ def archive(web, req, tmpl):
     req.headers.extend(headers)
     req.respond(HTTP_OK, mimetype)
 
-    archival.archive(web.repo, req, cnode, artype, prefix=name,
+    bodyfh = requestmod.offsettrackingwriter(req.write)
+
+    archival.archive(web.repo, bodyfh, cnode, artype, prefix=name,
                      matchfn=match,
                      subrepos=web.configbool("web", "archivesubrepos"))
     return []

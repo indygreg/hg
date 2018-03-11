@@ -119,7 +119,7 @@ def archivelist(ui, nodeid, url):
 
     return archives
 
-def rawindexentries(ui, repos, wsgireq, req, subdir=''):
+def rawindexentries(ui, repos, req, subdir=''):
     descend = ui.configbool('web', 'descend')
     collapse = ui.configbool('web', 'collapse')
     seenrepos = set()
@@ -161,7 +161,7 @@ def rawindexentries(ui, repos, wsgireq, req, subdir=''):
                     pass
 
         parts = [
-            wsgireq.req.apppath.strip('/'),
+            req.apppath.strip('/'),
             subdir.strip('/'),
             name.strip('/'),
         ]
@@ -245,10 +245,10 @@ def rawindexentries(ui, repos, wsgireq, req, subdir=''):
 
         yield row
 
-def indexentries(ui, repos, wsgireq, req, stripecount, sortcolumn='',
+def indexentries(ui, repos, req, stripecount, sortcolumn='',
                  descending=False, subdir=''):
 
-    rows = rawindexentries(ui, repos, wsgireq, req, subdir=subdir)
+    rows = rawindexentries(ui, repos, req, subdir=subdir)
 
     sortdefault = None, False
 
@@ -401,7 +401,7 @@ class hgwebdir(object):
 
             if (not virtual or virtual == 'index') and virtual not in repos:
                 wsgireq.respond(HTTP_OK, ctype)
-                return self.makeindex(wsgireq, tmpl)
+                return self.makeindex(req, tmpl)
 
             # nested indexes and hgwebs
 
@@ -409,7 +409,7 @@ class hgwebdir(object):
                 subdir = virtual[:-len('index')]
                 if any(r.startswith(subdir) for r in repos):
                     wsgireq.respond(HTTP_OK, ctype)
-                    return self.makeindex(wsgireq, tmpl, subdir)
+                    return self.makeindex(req, tmpl, subdir)
 
             def _virtualdirs():
                 # Check the full virtual path, each parent, and the root ('')
@@ -443,7 +443,7 @@ class hgwebdir(object):
             subdir = virtual + '/'
             if [r for r in repos if r.startswith(subdir)]:
                 wsgireq.respond(HTTP_OK, ctype)
-                return self.makeindex(wsgireq, tmpl, subdir)
+                return self.makeindex(req, tmpl, subdir)
 
             # prefixes not found
             wsgireq.respond(HTTP_NOT_FOUND, ctype)
@@ -455,9 +455,7 @@ class hgwebdir(object):
         finally:
             tmpl = None
 
-    def makeindex(self, wsgireq, tmpl, subdir=""):
-        req = wsgireq.req
-
+    def makeindex(self, req, tmpl, subdir=""):
         self.refresh()
         sortable = ["name", "description", "contact", "lastchange"]
         sortcolumn, descending = None, False
@@ -476,7 +474,7 @@ class hgwebdir(object):
 
         self.refresh()
 
-        entries = indexentries(self.ui, self.repos, wsgireq, req,
+        entries = indexentries(self.ui, self.repos, req,
                                self.stripecount, sortcolumn=sortcolumn,
                                descending=descending, subdir=subdir)
 

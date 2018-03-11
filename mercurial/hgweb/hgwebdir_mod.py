@@ -200,7 +200,7 @@ class hgwebdir(object):
         wsgireq = requestmod.wsgirequest(env, respond)
         return self.run_wsgi(wsgireq)
 
-    def read_allowed(self, ui, wsgireq):
+    def readallowed(self, ui, req):
         """Check allow_read and deny_read config options of a repo's ui object
         to determine user permissions.  By default, with neither option set (or
         both empty), allow all users to read the repo.  There are two ways a
@@ -209,7 +209,7 @@ class hgwebdir(object):
         allow_read is not empty and the user is not in allow_read.  Return True
         if user is allowed to read the repo, else return False."""
 
-        user = wsgireq.env.get('REMOTE_USER')
+        user = req.remoteuser
 
         deny_read = ui.configlist('web', 'deny_read', untrusted=True)
         if deny_read and (not user or ismember(ui, user, deny_read)):
@@ -329,6 +329,7 @@ class hgwebdir(object):
             tmpl = None
 
     def makeindex(self, wsgireq, tmpl, subdir=""):
+        req = wsgireq.req
 
         def archivelist(ui, nodeid, url):
             allowed = ui.configlist("web", "allow_archive", untrusted=True)
@@ -428,7 +429,7 @@ class hgwebdir(object):
                 if u.configbool("web", "hidden", untrusted=True):
                     continue
 
-                if not self.read_allowed(u, wsgireq):
+                if not self.readallowed(u, req):
                     continue
 
                 # update time with local timezone
@@ -480,8 +481,8 @@ class hgwebdir(object):
         self.refresh()
         sortable = ["name", "description", "contact", "lastchange"]
         sortcolumn, descending = sortdefault
-        if 'sort' in wsgireq.req.qsparams:
-            sortcolumn = wsgireq.req.qsparams['sort']
+        if 'sort' in req.qsparams:
+            sortcolumn = req.qsparams['sort']
             descending = sortcolumn.startswith('-')
             if descending:
                 sortcolumn = sortcolumn[1:]

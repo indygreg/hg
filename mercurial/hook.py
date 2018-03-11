@@ -265,12 +265,12 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
                 raised = False
 
             res[hname] = r, raised
-
-            # The stderr is fully buffered on Windows when connected to a pipe.
-            # A forcible flush is required to make small stderr data in the
-            # remote side available to the client immediately.
-            util.stderr.flush()
     finally:
+        # The stderr is fully buffered on Windows when connected to a pipe.
+        # A forcible flush is required to make small stderr data in the
+        # remote side available to the client immediately.
+        util.stderr.flush()
+
         if _redirect and oldstdout >= 0:
             util.stdout.flush()  # write hook output to stderr fd
             os.dup2(oldstdout, stdoutno)

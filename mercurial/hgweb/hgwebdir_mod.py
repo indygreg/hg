@@ -148,7 +148,7 @@ def archivelist(ui, nodeid, url):
 
     return archives
 
-def rawindexentries(ui, repos, wsgireq, req, subdir='', **map):
+def rawindexentries(ui, repos, wsgireq, req, subdir=''):
     descend = ui.configbool('web', 'descend')
     collapse = ui.configbool('web', 'collapse')
     seenrepos = set()
@@ -274,9 +274,9 @@ def rawindexentries(ui, repos, wsgireq, req, subdir='', **map):
         yield row
 
 def indexentries(ui, repos, wsgireq, req, stripecount, sortcolumn='',
-                 descending=False, subdir='', **map):
+                 descending=False, subdir=''):
 
-    rows = rawindexentries(ui, repos, wsgireq, req, subdir=subdir, **map)
+    rows = rawindexentries(ui, repos, wsgireq, req, subdir=subdir)
 
     sortdefault = None, False
 

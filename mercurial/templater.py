@@ -565,8 +565,6 @@ class engine(object):
         evaluation"""
         v = None
         if key in self._resources:
-            v = mapping.get(key)
-        if v is None and key in self._resources:
             v = self._resources[key](self, mapping, key)
         if v is None:
             raise templateutil.ResourceUnavailable(
@@ -671,8 +669,7 @@ class templater(object):
         - ``defaults``: a dict of symbol values/functions; may be overridden
           by a ``mapping`` dict.
         - ``resources``: a dict of functions returning internal data
-          (e.g. cache), inaccessible from user template; may be overridden by
-          a ``mapping`` dict.
+          (e.g. cache), inaccessible from user template.
         - ``cache``: a dict of preloaded template fragments.
         - ``aliases``: a list of alias (name, replacement) pairs.
 

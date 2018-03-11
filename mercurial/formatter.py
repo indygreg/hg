@@ -508,6 +508,9 @@ def templateresources(ui, repo=None):
     }
 
     def getsome(context, mapping, key):
+        v = mapping.get(key)
+        if v is not None:
+            return v
         return resmap.get(key)
 
     return {

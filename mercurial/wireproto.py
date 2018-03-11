@@ -1077,6 +1077,7 @@ def unbundle(repo, proto, heads):
                     util.stderr.write("abort: %s\n" % exc)
                     if exc.hint is not None:
                         util.stderr.write("(%s)\n" % exc.hint)
+                    util.stderr.flush()
                     return pushres(0, output.getvalue() if output else '')
                 except error.PushRaced:
                     return pusherr(pycompat.bytestr(exc),

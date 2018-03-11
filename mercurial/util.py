@@ -715,11 +715,13 @@ class fileobjectobserver(object):
     def _writedata(self, data):
         if not self.logdata:
             self.fh.write('\n')
+            self.fh.flush()
             return
 
         # Simple case writes all data on a single line.
         if b'\n' not in data:
             self.fh.write(': %s\n' % escapedata(data))
+            self.fh.flush()
             return
 
         # Data with newlines is written to multiple lines.
@@ -727,6 +729,7 @@ class fileobjectobserver(object):
         lines = data.splitlines(True)
         for line in lines:
             self.fh.write('%s>     %s\n' % (self.name, escapedata(line)))
+        self.fh.flush()
 
     def read(self, res, size=-1):
         if not self.reads:

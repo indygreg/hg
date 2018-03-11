@@ -188,7 +188,7 @@ class baseformatter(object):
     def context(self, **ctxs):
         '''insert context objects to be used to render template keywords'''
         ctxs = pycompat.byteskwargs(ctxs)
-        assert all(k == 'ctx' for k in ctxs)
+        assert all(k in {'ctx', 'fctx'} for k in ctxs)
         if self._converter.storecontext:
             self._item.update(ctxs)
     def data(self, **data):
@@ -395,13 +395,11 @@ class templateformatter(baseformatter):
             return
         ref = self._parts[part]
 
-        # TODO: add support for filectx
         props = {}
         # explicitly-defined fields precede templatekw
         props.update(item)
-        if 'ctx' in item:
+        if 'ctx' in item or 'fctx' in item:
             # but template resources must be always available
-            props['repo'] = props['ctx'].repo()
             props['revcache'] = {}
         props = pycompat.strkwargs(props)
         g = self._t(ref, **props)
@@ -513,10 +511,25 @@ def templateresources(ui, repo=None):
             return v
         return resmap.get(key)
 
+    def getctx(context, mapping, key):
+        ctx = mapping.get('ctx')
+        if ctx is not None:
+            return ctx
+        fctx = mapping.get('fctx')
+        if fctx is not None:
+            return fctx.changectx()
+
+    def getrepo(context, mapping, key):
+        ctx = getctx(context, mapping, 'ctx')
+        if ctx is not None:
+            return ctx.repo()
+        return getsome(context, mapping, key)
+
     return {
         'cache': getsome,
-        'ctx': getsome,
-        'repo': getsome,
+        'ctx': getctx,
+        'fctx': getsome,
+        'repo': getrepo,
         'revcache': getsome,  # per-ctx cache; set later
         'ui': getsome,
     }

@@ -15,7 +15,6 @@ import wsgiref.headers as wsgiheaders
 
 from .common import (
     ErrorResponse,
-    HTTP_NOT_MODIFIED,
     statusmessage,
 )
 
@@ -361,7 +360,10 @@ class wsgiresponse(object):
             raise error.ProgrammingError('cannot define body multiple times')
 
     def setbodybytes(self, b):
-        """Define the response body as static bytes."""
+        """Define the response body as static bytes.
+
+        The empty string signals that there is no response body.
+        """
         self._verifybody()
         self._bodybytes = b
         self.headers['Content-Length'] = '%d' % len(b)
@@ -407,6 +409,35 @@ class wsgiresponse(object):
         if (self._bodybytes is None and self._bodygen is None
             and not self._bodywillwrite):
             raise error.ProgrammingError('response body not defined')
+
+        # RFC 7232 Section 4.1 states that a 304 MUST generate one of
+        # {Cache-Control, Content-Location, Date, ETag, Expires, Vary}
+        # and SHOULD NOT generate other headers unless they could be used
+        # to guide cache updates. Furthermore, RFC 7230 Section 3.3.2
+        # states that no response body can be issued. Content-Length can
+        # be sent. But if it is present, it should be the size of the response
+        # that wasn't transferred.
+        if self.status.startswith('304 '):
+            # setbodybytes('') will set C-L to 0. This doesn't conform with the
+            # spec. So remove it.
+            if self.headers.get('Content-Length') == '0':
+                del self.headers['Content-Length']
+
+            # Strictly speaking, this is too strict. But until it causes
+            # problems, let's be strict.
+            badheaders = {k for k in self.headers.keys()
+                          if k.lower() not in ('date', 'etag', 'expires',
+                                               'cache-control',
+                                               'content-location',
+                                               'vary')}
+            if badheaders:
+                raise error.ProgrammingError(
+                    'illegal header on 304 response: %s' %
+                    ', '.join(sorted(badheaders)))
+
+            if self._bodygen is not None or self._bodywillwrite:
+                raise error.ProgrammingError("must use setbodybytes('') with "
+                                             "304 responses")
 
         # Various HTTP clients (notably httplib) won't read the HTTP response
         # until the HTTP request has been sent in full. If servers (us) send a
@@ -539,13 +570,6 @@ class wsgirequest(object):
 
             if isinstance(status, ErrorResponse):
                 self.headers.extend(status.headers)
-                if status.code == HTTP_NOT_MODIFIED:
-                    # RFC 2616 Section 10.3.5: 304 Not Modified has cases where
-                    # it MUST NOT include any headers other than these and no
-                    # body
-                    self.headers = [(k, v) for (k, v) in self.headers if
-                                    k in ('Date', 'ETag', 'Expires',
-                                          'Cache-Control', 'Vary')]
                 status = statusmessage(status.code, pycompat.bytestr(status))
             elif status == 200:
                 status = '200 Script output follows'

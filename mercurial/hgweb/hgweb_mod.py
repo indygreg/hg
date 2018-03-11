@@ -15,7 +15,6 @@ from .common import (
     ErrorResponse,
     HTTP_BAD_REQUEST,
     HTTP_NOT_FOUND,
-    HTTP_NOT_MODIFIED,
     HTTP_OK,
     HTTP_SERVER_ERROR,
     cspvalues,
@@ -391,7 +390,10 @@ class hgweb(object):
             if rctx.configbool('web', 'cache') and not rctx.nonce:
                 tag = 'W/"%d"' % self.mtime
                 if req.headers.get('If-None-Match') == tag:
-                    raise ErrorResponse(HTTP_NOT_MODIFIED)
+                    res.status = '304 Not Modified'
+                    # Response body not allowed on 304.
+                    res.setbodybytes('')
+                    return res.sendresponse()
 
                 wsgireq.headers.append((r'ETag', pycompat.sysstr(tag)))
                 res.headers['ETag'] = tag
@@ -426,9 +428,6 @@ class hgweb(object):
             return tmpl('error', error=pycompat.bytestr(inst))
         except ErrorResponse as inst:
             wsgireq.respond(inst, ctype)
-            if inst.code == HTTP_NOT_MODIFIED:
-                # Not allowed to return a body on a 304
-                return ['']
             return tmpl('error', error=pycompat.bytestr(inst))
 
     def check_perm(self, rctx, req, op):

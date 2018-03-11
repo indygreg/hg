@@ -399,7 +399,7 @@ def changelog(web, req, tmpl, shortlog=False):
             if curcount > revcount + 1:
                 break
 
-            entry = webutil.changelistentry(web, web.repo[rev], web.tmpl)
+            entry = webutil.changelistentry(web, web.repo[rev])
             entry['parity'] = next(parity)
             yield entry
 
@@ -485,7 +485,7 @@ def changeset(web, req, tmpl):
 
     return web.sendtemplate(
         'changeset',
-        **webutil.changesetentry(web, req, web.tmpl, ctx))
+        **webutil.changesetentry(web, req, ctx))
 
 rev = webcommand('rev')(changeset)
 
@@ -808,7 +808,7 @@ def filediff(web, req, tmpl):
     if 'style' in web.req.qsparams:
         style = web.req.qsparams['style']
 
-    diffs = webutil.diffs(web, web.tmpl, ctx, basectx, [path], style)
+    diffs = webutil.diffs(web, ctx, basectx, [path], style)
     if fctx is not None:
         rename = webutil.renamelink(fctx)
         ctx = fctx
@@ -1066,7 +1066,7 @@ def filelog(web, req, tmpl):
         ctx = fctx.changectx()
         basectx = ctx.p1()
         path = fctx.path()
-        return webutil.diffs(web, web.tmpl, ctx, basectx, [path], diffstyle,
+        return webutil.diffs(web, ctx, basectx, [path], diffstyle,
                              linerange=linerange,
                              lineidprefix='%s-' % ctx.hex()[:12])
 

@@ -389,7 +389,7 @@ def commonentry(repo, ctx):
         'child': lambda **x: children(ctx),
     }
 
-def changelistentry(web, ctx, tmpl):
+def changelistentry(web, ctx):
     '''Obtain a dictionary to be used for entries in a changelist.
 
     This function is called when producing items for the "entries" list passed
@@ -398,8 +398,8 @@ def changelistentry(web, ctx, tmpl):
     repo = web.repo
     rev = ctx.rev()
     n = ctx.node()
-    showtags = showtag(repo, tmpl, 'changelogtag', n)
-    files = listfilediffs(tmpl, ctx.files(), n, web.maxfiles)
+    showtags = showtag(repo, web.tmpl, 'changelogtag', n)
+    files = listfilediffs(web.tmpl, ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
     entry.update(
@@ -417,11 +417,11 @@ def symrevorshortnode(req, ctx):
     else:
         return short(ctx.node())
 
-def changesetentry(web, req, tmpl, ctx):
+def changesetentry(web, req, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
-    showtags = showtag(web.repo, tmpl, 'changesettag', ctx.node())
-    showbookmarks = showbookmark(web.repo, tmpl, 'changesetbookmark',
+    showtags = showtag(web.repo, web.tmpl, 'changesettag', ctx.node())
+    showbookmarks = showbookmark(web.repo, web.tmpl, 'changesetbookmark',
                                  ctx.node())
     showbranch = nodebranchnodefault(ctx)
 
@@ -429,9 +429,9 @@ def changesetentry(web, req, tmpl, ctx):
     parity = paritygen(web.stripecount)
     for blockno, f in enumerate(ctx.files()):
         template = 'filenodelink' if f in ctx else 'filenolink'
-        files.append(tmpl(template,
-                          node=ctx.hex(), file=f, blockno=blockno + 1,
-                          parity=next(parity)))
+        files.append(web.tmpl(template,
+                              node=ctx.hex(), file=f, blockno=blockno + 1,
+                              parity=next(parity)))
 
     basectx = basechangectx(web.repo, req)
     if basectx is None:
@@ -441,11 +441,11 @@ def changesetentry(web, req, tmpl, ctx):
     if 'style' in req.req.qsparams:
         style = req.req.qsparams['style']
 
-    diff = diffs(web, tmpl, ctx, basectx, None, style)
+    diff = diffs(web, ctx, basectx, None, style)
 
     parity = paritygen(web.stripecount)
     diffstatsgen = diffstatgen(ctx, basectx)
-    diffstats = diffstat(tmpl, ctx, diffstatsgen, parity)
+    diffstats = diffstat(web.tmpl, ctx, diffstatsgen, parity)
 
     return dict(
         diff=diff,
@@ -466,7 +466,7 @@ def listfilediffs(tmpl, files, node, max):
     if len(files) > max:
         yield tmpl('fileellipses')
 
-def diffs(web, tmpl, ctx, basectx, files, style, linerange=None,
+def diffs(web, ctx, basectx, files, style, linerange=None,
           lineidprefix=''):
 
     def prettyprintlines(lines, blockno):
@@ -480,11 +480,12 @@ def diffs(web, tmpl, ctx, basectx, files, style, linerange=None,
                 ltype = "difflineat"
             else:
                 ltype = "diffline"
-            yield tmpl(ltype,
-                       line=l,
-                       lineno=lineno,
-                       lineid=lineidprefix + "l%s" % difflineno,
-                       linenumber="% 8s" % difflineno)
+            yield web.tmpl(
+                ltype,
+                line=l,
+                lineno=lineno,
+                lineid=lineidprefix + "l%s" % difflineno,
+                linenumber="% 8s" % difflineno)
 
     repo = web.repo
     if files:
@@ -509,8 +510,8 @@ def diffs(web, tmpl, ctx, basectx, files, style, linerange=None,
                     continue
             lines.extend(hunklines)
         if lines:
-            yield tmpl('diffblock', parity=next(parity), blockno=blockno,
-                       lines=prettyprintlines(lines, blockno))
+            yield web.tmpl('diffblock', parity=next(parity), blockno=blockno,
+                           lines=prettyprintlines(lines, blockno))
 
 def compare(tmpl, context, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''

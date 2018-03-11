@@ -196,6 +196,10 @@ class requestcontext(object):
                                                resources=tres)
         return tmpl
 
+    def sendtemplate(self, name, **kwargs):
+        """Helper function to send a response generated from a template."""
+        self.res.setbodygen(self.tmpl(name, **kwargs))
+        return self.res.sendresponse()
 
 class hgweb(object):
     """HTTP server for individual repositories.
@@ -368,8 +372,8 @@ class hgweb(object):
         # process the web interface request
 
         try:
-            tmpl = rctx.templater(req)
-            ctype = tmpl('mimetype', encoding=encoding.encoding)
+            rctx.tmpl = rctx.templater(req)
+            ctype = rctx.tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
 
             # check read permissions non-static content
@@ -377,7 +381,7 @@ class hgweb(object):
                 self.check_perm(rctx, req, None)
 
             if cmd == '':
-                req.qsparams['cmd'] = tmpl.cache['default']
+                req.qsparams['cmd'] = rctx.tmpl.cache['default']
                 cmd = req.qsparams['cmd']
 
             # Don't enable caching if using a CSP nonce because then it wouldn't
@@ -400,7 +404,7 @@ class hgweb(object):
                 # override easily enough.
                 res.status = '200 Script output follows'
                 res.headers['Content-Type'] = ctype
-                return getattr(webcommands, cmd)(rctx, wsgireq, tmpl)
+                return getattr(webcommands, cmd)(rctx, wsgireq, rctx.tmpl)
 
         except (error.LookupError, error.RepoLookupError) as err:
             msg = pycompat.bytestr(err)
@@ -410,18 +414,15 @@ class hgweb(object):
 
             res.status = '404 Not Found'
             res.headers['Content-Type'] = ctype
-            res.setbodygen(tmpl('error', error=msg))
-            return res.sendresponse()
+            return rctx.sendtemplate('error', error=msg)
         except (error.RepoError, error.RevlogError) as e:
             res.status = '500 Internal Server Error'
             res.headers['Content-Type'] = ctype
-            res.setbodygen(tmpl('error', error=pycompat.bytestr(e)))
-            return res.sendresponse()
+            return rctx.sendtemplate('error', error=pycompat.bytestr(e))
         except ErrorResponse as e:
             res.status = statusmessage(e.code, pycompat.bytestr(e))
             res.headers['Content-Type'] = ctype
-            res.setbodygen(tmpl('error', error=pycompat.bytestr(e)))
-            return res.sendresponse()
+            return rctx.sendtemplate('error', error=pycompat.bytestr(e))
 
     def check_perm(self, rctx, req, op):
         for permhook in permhooks:

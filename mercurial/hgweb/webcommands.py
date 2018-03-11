@@ -59,7 +59,8 @@ class webcommand(object):
 
     The function returns a generator to be consumed by the WSGI application.
     For most commands, this should be the result from
-    ``web.res.sendresponse()``.
+    ``web.res.sendresponse()``. Many commands will call ``web.sendtemplate()``
+    to render a template.
 
     Usage:
 
@@ -151,7 +152,7 @@ def _filerevision(web, req, tmpl, fctx):
                    "linenumber": "% 6d" % (lineno + 1),
                    "parity": next(parity)}
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'filerevision',
         file=f,
         path=webutil.up(f),
@@ -160,9 +161,7 @@ def _filerevision(web, req, tmpl, fctx):
         rename=webutil.renamelink(fctx),
         permissions=fctx.manifest().flags(f),
         ishead=int(ishead),
-        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
-
-    return web.res.sendresponse()
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('file')
 def file(web, req, tmpl):
@@ -339,7 +338,7 @@ def _search(web, tmpl):
     tip = web.repo['tip']
     parity = paritygen(web.stripecount)
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'search',
         query=query,
         node=tip.hex(),
@@ -350,9 +349,7 @@ def _search(web, tmpl):
         lessvars=lessvars,
         modedesc=searchfunc[1],
         showforcekw=showforcekw,
-        showunforcekw=showunforcekw))
-
-    return web.res.sendresponse()
+        showunforcekw=showunforcekw)
 
 @webcommand('changelog')
 def changelog(web, req, tmpl, shortlog=False):
@@ -436,7 +433,7 @@ def changelog(web, req, tmpl, shortlog=False):
     else:
         nextentry = []
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'shortlog' if shortlog else 'changelog',
         changenav=changenav,
         node=ctx.hex(),
@@ -450,9 +447,7 @@ def changelog(web, req, tmpl, shortlog=False):
         revcount=revcount,
         morevars=morevars,
         lessvars=lessvars,
-        query=query))
-
-    return web.res.sendresponse()
+        query=query)
 
 @webcommand('shortlog')
 def shortlog(web, req, tmpl):
@@ -485,9 +480,10 @@ def changeset(web, req, tmpl):
     templates related to diffs may all be used to produce the output.
     """
     ctx = webutil.changectx(web.repo, req)
-    web.res.setbodygen(tmpl('changeset',
-                            **webutil.changesetentry(web, req, tmpl, ctx)))
-    return web.res.sendresponse()
+
+    return web.sendtemplate(
+        'changeset',
+        **webutil.changesetentry(web, req, tmpl, ctx))
 
 rev = webcommand('rev')(changeset)
 
@@ -588,7 +584,7 @@ def manifest(web, req, tmpl):
                    "emptydirs": "/".join(emptydirs),
                    "basename": d}
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'manifest',
         symrev=symrev,
         path=abspath,
@@ -597,9 +593,7 @@ def manifest(web, req, tmpl):
         fentries=filelist,
         dentries=dirlist,
         archives=web.archivelist(hex(node)),
-        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
-
-    return web.res.sendresponse()
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 @webcommand('tags')
 def tags(web, req, tmpl):
@@ -628,14 +622,12 @@ def tags(web, req, tmpl):
                    "date": web.repo[n].date(),
                    "node": hex(n)}
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'tags',
         node=hex(web.repo.changelog.tip()),
         entries=lambda **x: entries(False, False, **x),
         entriesnotip=lambda **x: entries(True, False, **x),
-        latestentry=lambda **x: entries(True, True, **x)))
-
-    return web.res.sendresponse()
+        latestentry=lambda **x: entries(True, True, **x))
 
 @webcommand('bookmarks')
 def bookmarks(web, req, tmpl):
@@ -669,14 +661,12 @@ def bookmarks(web, req, tmpl):
     else:
         latestrev = -1
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'bookmarks',
         node=hex(web.repo.changelog.tip()),
         lastchange=[{'date': web.repo[latestrev].date()}],
         entries=lambda **x: entries(latestonly=False, **x),
-        latestentry=lambda **x: entries(latestonly=True, **x)))
-
-    return web.res.sendresponse()
+        latestentry=lambda **x: entries(latestonly=True, **x))
 
 @webcommand('branches')
 def branches(web, req, tmpl):
@@ -695,13 +685,11 @@ def branches(web, req, tmpl):
     entries = webutil.branchentries(web.repo, web.stripecount)
     latestentry = webutil.branchentries(web.repo, web.stripecount, 1)
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'branches',
         node=hex(web.repo.changelog.tip()),
         entries=entries,
-        latestentry=latestentry))
-
-    return web.res.sendresponse()
+        latestentry=latestentry)
 
 @webcommand('summary')
 def summary(web, req, tmpl):
@@ -772,7 +760,7 @@ def summary(web, req, tmpl):
     if not desc:
         desc = 'unknown'
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'summary',
         desc=desc,
         owner=get_contact(web.config) or 'unknown',
@@ -784,9 +772,7 @@ def summary(web, req, tmpl):
         node=tip.hex(),
         symrev='tip',
         archives=web.archivelist('tip'),
-        labels=web.configlist('web', 'labels')))
-
-    return web.res.sendresponse()
+        labels=web.configlist('web', 'labels'))
 
 @webcommand('filediff')
 def filediff(web, req, tmpl):
@@ -827,15 +813,13 @@ def filediff(web, req, tmpl):
         rename = []
         ctx = ctx
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'filediff',
         file=path,
         symrev=webutil.symrevorshortnode(req, ctx),
         rename=rename,
         diff=diffs,
-        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
-
-    return web.res.sendresponse()
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 diff = webcommand('diff')(filediff)
 
@@ -902,7 +886,7 @@ def comparison(web, req, tmpl):
         rename = []
         ctx = ctx
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'filecomparison',
         file=path,
         symrev=webutil.symrevorshortnode(req, ctx),
@@ -912,9 +896,7 @@ def comparison(web, req, tmpl):
         rightrev=rightrev,
         rightnode=hex(rightnode),
         comparison=comparison,
-        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
-
-    return web.res.sendresponse()
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 @webcommand('annotate')
 def annotate(web, req, tmpl):
@@ -996,7 +978,7 @@ def annotate(web, req, tmpl):
     diffopts = webutil.difffeatureopts(req, web.repo.ui, 'annotate')
     diffopts = {k: getattr(diffopts, k) for k in diffopts.defaults}
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'fileannotate',
         file=f,
         annotate=annotate,
@@ -1006,9 +988,7 @@ def annotate(web, req, tmpl):
         permissions=fctx.manifest().flags(f),
         ishead=int(ishead),
         diffopts=diffopts,
-        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
-
-    return web.res.sendresponse()
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('filelog')
 def filelog(web, req, tmpl):
@@ -1133,7 +1113,7 @@ def filelog(web, req, tmpl):
 
     latestentry = entries[:1]
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'filelog',
         file=f,
         nav=nav,
@@ -1146,9 +1126,7 @@ def filelog(web, req, tmpl):
         revcount=revcount,
         morevars=morevars,
         lessvars=lessvars,
-        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
-
-    return web.res.sendresponse()
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('archive')
 def archive(web, req, tmpl):
@@ -1379,7 +1357,7 @@ def graph(web, req, tmpl):
 
     rows = len(tree)
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'graph',
         rev=rev,
         symrev=symrev,
@@ -1396,9 +1374,7 @@ def graph(web, req, tmpl):
         jsdata=lambda **x: jsdata(),
         nodes=lambda **x: nodes(),
         node=ctx.hex(),
-        changenav=changenav))
-
-    return web.res.sendresponse()
+        changenav=changenav)
 
 def _getdoc(e):
     doc = e[0].__doc__
@@ -1454,13 +1430,12 @@ def help(web, req, tmpl):
             for c, doc in other:
                 yield {'topic': c, 'summary': doc}
 
-        web.res.setbodygen(tmpl(
+        return web.sendtemplate(
             'helptopics',
             topics=topics,
             earlycommands=earlycommands,
             othercommands=othercommands,
-            title='Index'))
-        return web.res.sendresponse()
+            title='Index')
 
     # Render an index of sub-topics.
     if topicname in helpmod.subtopics:
@@ -1472,12 +1447,11 @@ def help(web, req, tmpl):
                 'summary': summary,
             })
 
-        web.res.setbodygen(tmpl(
+        return web.sendtemplate(
             'helptopics',
             topics=topics,
             title=topicname,
-            subindex=True))
-        return web.res.sendresponse()
+            subindex=True)
 
     u = webutil.wsgiui.load()
     u.verbose = True
@@ -1498,12 +1472,10 @@ def help(web, req, tmpl):
     except error.Abort:
         raise ErrorResponse(HTTP_NOT_FOUND)
 
-    web.res.setbodygen(tmpl(
+    return web.sendtemplate(
         'help',
         topic=topicname,
-        doc=doc))
-
-    return web.res.sendresponse()
+        doc=doc)
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = commands.values()

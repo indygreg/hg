@@ -369,7 +369,7 @@ class hgwebdir(object):
                 res.headers['Content-Security-Policy'] = csp
                 wsgireq.headers.append(('Content-Security-Policy', csp))
 
-            virtual = wsgireq.env.get("PATH_INFO", "").strip('/')
+            virtual = req.dispatchpath.strip('/')
             tmpl = self.templater(wsgireq, nonce)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)

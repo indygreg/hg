@@ -9,7 +9,6 @@
 from __future__ import absolute_import
 
 import os
-import re
 import time
 
 from ..i18n import _
@@ -161,11 +160,12 @@ def rawindexentries(ui, repos, wsgireq, req, subdir=''):
                 except (IOError, error.RepoError):
                     pass
 
-        parts = [name]
-        parts.insert(0, '/' + subdir.rstrip('/'))
-        if wsgireq.env['SCRIPT_NAME']:
-            parts.insert(0, wsgireq.env['SCRIPT_NAME'])
-        url = re.sub(r'/+', '/', '/'.join(parts) + '/')
+        parts = [
+            wsgireq.req.apppath.strip('/'),
+            subdir.strip('/'),
+            name.strip('/'),
+        ]
+        url = '/' + '/'.join(p for p in parts if p) + '/'
 
         # show either a directory entry or a repository
         if directory:

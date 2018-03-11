@@ -14,10 +14,14 @@ control the individually are as follows.
 Config options to tweak the default behaviour:
 
 remotenames.bookmarks
-  Boolean value to enable or disable showing of remotebookmarks
+  Boolean value to enable or disable showing of remotebookmarks (default: True)
 
 remotenames.branches
-  Boolean value to enable or disable showing of remotebranches
+  Boolean value to enable or disable showing of remotebranches (default: True)
+
+remotenames.hoistedpeer
+  Name of the peer whose remotebookmarks should be hoisted into the top-level
+  namespace (default: 'default')
 """
 
 from __future__ import absolute_import
@@ -60,6 +64,9 @@ configitem('remotenames', 'bookmarks',
 )
 configitem('remotenames', 'branches',
     default=True,
+)
+configitem('remotenames', 'hoistedpeer',
+    default='default',
 )
 
 class lazyremotenamedict(mutablemapping):
@@ -173,6 +180,8 @@ class remotenames(object):
     def _invalidatecache(self):
         self._nodetobmarks = None
         self._nodetobranch = None
+        self._hoisttonodes = None
+        self._nodetohoists = None
 
     def bmarktonodes(self):
         return self.bookmarks
@@ -197,6 +206,28 @@ class remotenames(object):
                     self._nodetobranch.setdefault(node, []).append(name)
         return self._nodetobranch
 
+    def hoisttonodes(self, hoist):
+        if not self._hoisttonodes:
+            marktonodes = self.bmarktonodes()
+            self._hoisttonodes = {}
+            hoist += '/'
+            for name, node in marktonodes.iteritems():
+                if name.startswith(hoist):
+                    name = name[len(hoist):]
+                    self._hoisttonodes[name] = node
+        return self._hoisttonodes
+
+    def nodetohoists(self, hoist):
+        if not self._nodetohoists:
+            marktonodes = self.bmarktonodes()
+            self._nodetohoists = {}
+            hoist += '/'
+            for name, node in marktonodes.iteritems():
+                if name.startswith(hoist):
+                    name = name[len(hoist):]
+                    self._nodetohoists.setdefault(node[0], []).append(name)
+        return self._nodetohoists
+
 def reposetup(ui, repo):
     if not repo.local():
         return
@@ -216,6 +247,22 @@ def reposetup(ui, repo):
             nodemap=lambda repo, node:
                 repo._remotenames.nodetobmarks().get(node, []))
         repo.names.addnamespace(remotebookmarkns)
+
+        # hoisting only works if there are remote bookmarks
+        hoist = ui.config('remotenames', 'hoistedpeer')
+        if hoist:
+            hoistednamens = ns(
+                'hoistednames',
+                templatename='hoistednames',
+                colorname='hoistedname',
+                logfmt='hoisted name:  %s\n',
+                listnames = lambda repo:
+                    repo._remotenames.hoisttonodes(hoist).keys(),
+                namemap = lambda repo, name:
+                    repo._remotenames.hoisttonodes(hoist).get(name, []),
+                nodemap = lambda repo, node:
+                    repo._remotenames.nodetohoists(hoist).get(node, []))
+            repo.names.addnamespace(hoistednamens)
 
     if ui.configbool('remotenames', 'branches'):
         remotebranchns = ns(

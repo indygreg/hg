@@ -145,6 +145,7 @@ Pulling form the new server
   | |  bookmark:    bar
   | |  remote bookmark:  $TESTTMP/server2/bar
   | |  remote bookmark:  default/bar
+  | |  hoisted name:  bar
   | |  user:        test
   | |  date:        Thu Jan 01 00:00:00 1970 +0000
   | |  summary:     Added g
@@ -163,6 +164,7 @@ Pulling form the new server
   |  bookmark:    foo
   |  remote bookmark:  $TESTTMP/server2/foo
   |  remote bookmark:  default/foo
+  |  hoisted name:  foo
   |  user:        test
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     Added d
@@ -226,6 +228,28 @@ Testing the templates provided by remotenames extension
   |
   o  0:18d04c59bb5d [] ()
   
+The `hoistednames` template keyword
+
+  $ hg log -GT "{rev}:{node|short} ({hoistednames})"
+  @  8:3e1487808078 ()
+  |
+  | o  7:ec2426147f0e ()
+  | |
+  | o  6:87d6d6676308 (bar)
+  | |
+  | o  5:825660c69f0c ()
+  |/
+  o  4:aa98ab95a928 ()
+  |
+  o  3:62615734edd5 (foo)
+  |
+  o  2:28ad74487de9 ()
+  |
+  o  1:29becc82797a ()
+  |
+  o  0:18d04c59bb5d ()
+  
+
 Testing the revsets provided by remotenames extension
 
 `remotenames` revset
@@ -259,3 +283,47 @@ Testing the revsets provided by remotenames extension
   o  3:62615734edd5 $TESTTMP/server2/foo default/foo
   |
   ~
+
+Updating to revision using hoisted name
+
+Deleting local bookmark to make sure we update to hoisted name only
+
+  $ hg bookmark -d bar
+
+  $ hg up bar
+  2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+  $ hg log -r .
+  changeset:   6:87d6d6676308
+  remote bookmark:  $TESTTMP/server2/bar
+  remote bookmark:  default/bar
+  hoisted name:  bar
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     Added g
+  
+When both local bookmark and hoisted name exists but on different revs
+
+  $ hg up 8
+  1 files updated, 0 files merged, 2 files removed, 0 files unresolved
+
+  $ hg bookmark foo
+  moving bookmark 'foo' forward from 62615734edd5
+
+Local bookmark should take precedence over hoisted name
+
+  $ hg up foo
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg log -r .
+  changeset:   8:3e1487808078
+  branch:      wat
+  bookmark:    foo
+  tag:         tip
+  remote branch:  $TESTTMP/server2/wat
+  remote branch:  default/wat
+  parent:      4:aa98ab95a928
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     added bar
+  

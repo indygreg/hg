@@ -42,8 +42,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.remotehost)
         self.assertEqual(r.apppath, b'')
         self.assertEqual(r.dispatchparts, [])
-        self.assertEqual(r.dispatchpath, b'')
-        self.assertFalse(r.havepathinfo)
+        self.assertIsNone(r.dispatchpath)
         self.assertIsNone(r.reponame)
         self.assertEqual(r.querystring, b'')
         self.assertEqual(len(r.qsparams), 0)
@@ -90,8 +89,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.advertisedbaseurl, b'http://testserver')
         self.assertEqual(r.apppath, b'')
         self.assertEqual(r.dispatchparts, [])
-        self.assertEqual(r.dispatchpath, b'')
-        self.assertFalse(r.havepathinfo)
+        self.assertIsNone(r.dispatchpath)
 
         r = parse(DEFAULT_ENV, extra={
             r'SCRIPT_NAME': r'/script',
@@ -103,8 +101,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.advertisedbaseurl, b'http://testserver')
         self.assertEqual(r.apppath, b'/script')
         self.assertEqual(r.dispatchparts, [])
-        self.assertEqual(r.dispatchpath, b'')
-        self.assertFalse(r.havepathinfo)
+        self.assertIsNone(r.dispatchpath)
 
         r = parse(DEFAULT_ENV, extra={
             r'SCRIPT_NAME': r'/multiple words',
@@ -116,8 +113,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.advertisedbaseurl, b'http://testserver')
         self.assertEqual(r.apppath, b'/multiple words')
         self.assertEqual(r.dispatchparts, [])
-        self.assertEqual(r.dispatchpath, b'')
-        self.assertFalse(r.havepathinfo)
+        self.assertIsNone(r.dispatchpath)
 
     def testpathinfo(self):
         r = parse(DEFAULT_ENV, extra={
@@ -131,7 +127,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'')
         self.assertEqual(r.dispatchparts, [])
         self.assertEqual(r.dispatchpath, b'')
-        self.assertTrue(r.havepathinfo)
 
         r = parse(DEFAULT_ENV, extra={
             r'PATH_INFO': r'/pathinfo',
@@ -144,7 +139,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'')
         self.assertEqual(r.dispatchparts, [b'pathinfo'])
         self.assertEqual(r.dispatchpath, b'pathinfo')
-        self.assertTrue(r.havepathinfo)
 
         r = parse(DEFAULT_ENV, extra={
             r'PATH_INFO': r'/one/two/',
@@ -157,7 +151,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'')
         self.assertEqual(r.dispatchparts, [b'one', b'two'])
         self.assertEqual(r.dispatchpath, b'one/two')
-        self.assertTrue(r.havepathinfo)
 
     def testscriptandpathinfo(self):
         r = parse(DEFAULT_ENV, extra={
@@ -172,7 +165,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'/script')
         self.assertEqual(r.dispatchparts, [b'pathinfo'])
         self.assertEqual(r.dispatchpath, b'pathinfo')
-        self.assertTrue(r.havepathinfo)
 
         r = parse(DEFAULT_ENV, extra={
             r'SCRIPT_NAME': r'/script1/script2',
@@ -188,7 +180,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'/script1/script2')
         self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
         self.assertEqual(r.dispatchpath, b'path1/path2')
-        self.assertTrue(r.havepathinfo)
 
         r = parse(DEFAULT_ENV, extra={
             r'HTTP_HOST': r'hostserver',
@@ -203,7 +194,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'/script')
         self.assertEqual(r.dispatchparts, [b'pathinfo'])
         self.assertEqual(r.dispatchpath, b'pathinfo')
-        self.assertTrue(r.havepathinfo)
 
     def testreponame(self):
         """repository path components get stripped from URL."""
@@ -236,7 +226,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'/repo')
         self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
         self.assertEqual(r.dispatchpath, b'path1/path2')
-        self.assertTrue(r.havepathinfo)
         self.assertEqual(r.reponame, b'repo')
 
         r = parse(DEFAULT_ENV, reponame=b'prefix/repo', extra={
@@ -251,7 +240,6 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.apppath, b'/prefix/repo')
         self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
         self.assertEqual(r.dispatchpath, b'path1/path2')
-        self.assertTrue(r.havepathinfo)
         self.assertEqual(r.reponame, b'prefix/repo')
 
 if __name__ == '__main__':

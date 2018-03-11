@@ -324,7 +324,11 @@ class hgweb(object):
         if handled:
             return res.sendresponse()
 
-        if req.havepathinfo:
+        # Old implementations of hgweb supported dispatching the request via
+        # the initial query string parameter instead of using PATH_INFO.
+        # If PATH_INFO is present (signaled by ``req.dispatchpath`` having
+        # a value), we use it. Otherwise fall back to the query string.
+        if req.dispatchpath is not None:
             query = req.dispatchpath
         else:
             query = req.querystring.partition('&')[0].partition(';')[0]

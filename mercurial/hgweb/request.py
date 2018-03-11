@@ -138,11 +138,12 @@ class parsedrequest(object):
     apppath = attr.ib()
     # List of path parts to be used for dispatch.
     dispatchparts = attr.ib()
-    # URL path component (no query string) used for dispatch.
+    # URL path component (no query string) used for dispatch. Can be
+    # ``None`` to signal no path component given to the request, an
+    # empty string to signal a request to the application's root URL,
+    # or a string not beginning with ``/`` containing the requested
+    # path under the application.
     dispatchpath = attr.ib()
-    # Whether there is a path component to this request. This can be true
-    # when ``dispatchpath`` is empty due to REPO_NAME muckery.
-    havepathinfo = attr.ib()
     # The name of the repository being accessed.
     reponame = attr.ib()
     # Raw query string (part after "?" in URL).
@@ -246,12 +247,18 @@ def parserequestfromenv(env, bodyfh, reponame=None):
 
         apppath = apppath.rstrip('/') + repoprefix
         dispatchparts = dispatchpath.strip('/').split('/')
-    elif env.get('PATH_INFO', '').strip('/'):
-        dispatchparts = env['PATH_INFO'].strip('/').split('/')
+        dispatchpath = '/'.join(dispatchparts)
+
+    elif 'PATH_INFO' in env:
+        if env['PATH_INFO'].strip('/'):
+            dispatchparts = env['PATH_INFO'].strip('/').split('/')
+            dispatchpath = '/'.join(dispatchparts)
+        else:
+            dispatchparts = []
+            dispatchpath = ''
     else:
         dispatchparts = []
-
-    dispatchpath = '/'.join(dispatchparts)
+        dispatchpath = None
 
     querystring = env.get('QUERY_STRING', '')
 
@@ -293,7 +300,6 @@ def parserequestfromenv(env, bodyfh, reponame=None):
                          remotehost=env.get('REMOTE_HOST'),
                          apppath=apppath,
                          dispatchparts=dispatchparts, dispatchpath=dispatchpath,
-                         havepathinfo='PATH_INFO' in env,
                          reponame=reponame,
                          querystring=querystring,
                          qsparams=qsparams,

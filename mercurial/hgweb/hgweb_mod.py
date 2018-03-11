@@ -312,7 +312,7 @@ class hgweb(object):
 
         # This state is global across all threads.
         encoding.encoding = rctx.config('web', 'encoding')
-        rctx.repo.ui.environ = wsgireq.env
+        rctx.repo.ui.environ = req.rawenv
 
         if rctx.csp:
             # hgwebdir may have added CSP header. Since we generate our own,

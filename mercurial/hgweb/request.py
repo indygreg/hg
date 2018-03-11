@@ -149,6 +149,8 @@ class parsedrequest(object):
     headers = attr.ib()
     # Request body input stream.
     bodyfh = attr.ib()
+    # WSGI environment dict, unmodified.
+    rawenv = attr.ib()
 
 def parserequestfromenv(env, bodyfh, reponame=None, altbaseurl=None):
     """Parse URL components from environment variables.
@@ -342,7 +344,8 @@ def parserequestfromenv(env, bodyfh, reponame=None, altbaseurl=None):
                          querystring=querystring,
                          qsparams=qsparams,
                          headers=headers,
-                         bodyfh=bodyfh)
+                         bodyfh=bodyfh,
+                         rawenv=env)
 
 class offsettrackingwriter(object):
     """A file object like object that is append only and tracks write count.

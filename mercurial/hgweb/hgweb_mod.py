@@ -313,9 +313,6 @@ class hgweb(object):
         if rctx.csp:
             # hgwebdir may have added CSP header. Since we generate our own,
             # replace it.
-            wsgireq.headers = [h for h in wsgireq.headers
-                               if h[0] != 'Content-Security-Policy']
-            wsgireq.headers.append(('Content-Security-Policy', rctx.csp))
             res.headers['Content-Security-Policy'] = rctx.csp
 
         handled = wireprotoserver.handlewsgirequest(
@@ -393,7 +390,6 @@ class hgweb(object):
                     res.setbodybytes('')
                     return res.sendresponse()
 
-                wsgireq.headers.append((r'ETag', pycompat.sysstr(tag)))
                 res.headers['ETag'] = tag
 
             if cmd not in webcommands.__all__:

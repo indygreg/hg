@@ -424,7 +424,7 @@ a large file from the server rather than to get it from the cache
   > import base64
   > from mercurial.hgweb import common
   > def perform_authentication(hgweb, req, op):
-  >     auth = req.env.get('HTTP_AUTHORIZATION')
+  >     auth = req.headers.get('Authorization')
   >     if not auth:
   >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, 'who',
   >                 [('WWW-Authenticate', 'Basic Realm="mercurial"')])

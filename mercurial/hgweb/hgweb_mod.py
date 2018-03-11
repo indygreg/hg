@@ -322,7 +322,7 @@ class hgweb(object):
             res.headers['Content-Security-Policy'] = rctx.csp
 
         handled = wireprotoserver.handlewsgirequest(
-            rctx, wsgireq, req, res, self.check_perm)
+            rctx, req, res, self.check_perm)
         if handled:
             return res.sendresponse()
 
@@ -380,7 +380,7 @@ class hgweb(object):
 
             # check read permissions non-static content
             if cmd != 'static':
-                self.check_perm(rctx, wsgireq, None)
+                self.check_perm(rctx, req, None)
 
             if cmd == '':
                 req.qsparams['cmd'] = tmpl.cache['default']

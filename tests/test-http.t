@@ -168,7 +168,7 @@ test http authentication
   > import base64
   > from mercurial.hgweb import common
   > def perform_authentication(hgweb, req, op):
-  >     auth = req.env.get('HTTP_AUTHORIZATION')
+  >     auth = req.headers.get('Authorization')
   >     if not auth:
   >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, 'who',
   >                 [('WWW-Authenticate', 'Basic Realm="mercurial"')])
@@ -510,7 +510,7 @@ We raise HTTP 500 because its message is printed in the abort message.
   > from mercurial import util
   > from mercurial.hgweb import common
   > def perform_authentication(hgweb, req, op):
-  >     cookie = req.env.get('HTTP_COOKIE')
+  >     cookie = req.headers.get('Cookie')
   >     if not cookie:
   >         raise common.ErrorResponse(common.HTTP_SERVER_ERROR, 'no-cookie')
   >     raise common.ErrorResponse(common.HTTP_SERVER_ERROR, 'Cookie: %s' % cookie)

@@ -148,13 +148,12 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
 def iscmd(cmd):
     return cmd in wireproto.commands
 
-def handlewsgirequest(rctx, wsgireq, req, res, checkperm):
+def handlewsgirequest(rctx, req, res, checkperm):
     """Possibly process a wire protocol request.
 
     If the current request is a wire protocol request, the request is
     processed by this function.
 
-    ``wsgireq`` is a ``wsgirequest`` instance.
     ``req`` is a ``parsedrequest`` instance.
     ``res`` is a ``wsgiresponse`` instance.
 
@@ -197,7 +196,7 @@ def handlewsgirequest(rctx, wsgireq, req, res, checkperm):
         return True
 
     proto = httpv1protocolhandler(req, repo.ui,
-                                  lambda perm: checkperm(rctx, wsgireq, perm))
+                                  lambda perm: checkperm(rctx, req, perm))
 
     # The permissions checker should be the only thing that can raise an
     # ErrorResponse. It is kind of a layer violation to catch an hgweb

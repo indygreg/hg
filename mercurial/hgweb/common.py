@@ -46,7 +46,7 @@ def checkauthz(hgweb, req, op):
     authentication info). Return if op allowed, else raise an ErrorResponse
     exception.'''
 
-    user = req.env.get(r'REMOTE_USER')
+    user = req.remoteuser
 
     deny_read = hgweb.configlist('web', 'deny_read')
     if deny_read and (not user or ismember(hgweb.repo.ui, user, deny_read)):
@@ -62,14 +62,13 @@ def checkauthz(hgweb, req, op):
         return
 
     # enforce that you can only push using POST requests
-    if req.env[r'REQUEST_METHOD'] != r'POST':
+    if req.method != 'POST':
         msg = 'push requires POST request'
         raise ErrorResponse(HTTP_METHOD_NOT_ALLOWED, msg)
 
     # require ssl by default for pushing, auth info cannot be sniffed
     # and replayed
-    scheme = req.env.get('wsgi.url_scheme')
-    if hgweb.configbool('web', 'push_ssl') and scheme != 'https':
+    if hgweb.configbool('web', 'push_ssl') and req.urlscheme != 'https':
         raise ErrorResponse(HTTP_FORBIDDEN, 'ssl required')
 
     deny = hgweb.configlist('web', 'deny_push')

@@ -369,7 +369,7 @@ class hgwebdir(object):
                 wsgireq.headers.append(('Content-Security-Policy', csp))
 
             virtual = req.dispatchpath.strip('/')
-            tmpl = self.templater(wsgireq, nonce)
+            tmpl = self.templater(req, nonce)
             ctype = tmpl('mimetype', encoding=encoding.encoding)
             ctype = templater.stringify(ctype)
 
@@ -485,7 +485,7 @@ class hgwebdir(object):
 
         return res.sendresponse()
 
-    def templater(self, wsgireq, nonce):
+    def templater(self, req, nonce):
 
         def motd(**map):
             if self.motd is not None:
@@ -497,7 +497,7 @@ class hgwebdir(object):
             return self.ui.config(section, name, default, untrusted)
 
         vars = {}
-        styles, (style, mapfile) = hgweb_mod.getstyle(wsgireq.req, config,
+        styles, (style, mapfile) = hgweb_mod.getstyle(req, config,
                                                       self.templatepath)
         if style == styles[0]:
             vars['style'] = style
@@ -506,14 +506,14 @@ class hgwebdir(object):
         logourl = config('web', 'logourl')
         logoimg = config('web', 'logoimg')
         staticurl = (config('web', 'staticurl')
-                     or wsgireq.req.apppath + '/static/')
+                     or req.apppath + '/static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 
         defaults = {
             "encoding": encoding.encoding,
             "motd": motd,
-            "url": wsgireq.req.apppath + '/',
+            "url": req.apppath + '/',
             "logourl": logourl,
             "logoimg": logoimg,
             "staticurl": staticurl,

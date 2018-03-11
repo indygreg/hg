@@ -405,14 +405,15 @@ def annotate(ui, repo, *pats, **opts):
                 formats.append(['%s' for x in l])
             pieces.append(l)
 
-        for f, p, l in zip(zip(*formats), zip(*pieces), lines):
+        for f, p, (n, l) in zip(zip(*formats), zip(*pieces), lines):
             fm.startitem()
+            fm.context(fctx=n.fctx)
             fm.write(fields, "".join(f), *p)
-            if l[0].skip:
+            if n.skip:
                 fmt = "* %s"
             else:
                 fmt = ": %s"
-            fm.write('line', fmt, l[1])
+            fm.write('line', fmt, l)
 
         if not lines[-1][1].endswith('\n'):
             fm.plain('\n')

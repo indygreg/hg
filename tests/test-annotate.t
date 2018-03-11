@@ -71,6 +71,11 @@ annotate (JSON)
    }
   ]
 
+log-like templating
+
+  $ hg annotate -T'{lines % "{rev} {node|shortest}: {line}"}' a
+  0 8435: a
+
   $ cat <<EOF >>a
   > a
   > a

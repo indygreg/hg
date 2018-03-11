@@ -15,7 +15,6 @@ from ..i18n import _
 
 from .common import (
     ErrorResponse,
-    HTTP_NOT_FOUND,
     HTTP_SERVER_ERROR,
     cspvalues,
     get_contact,
@@ -23,6 +22,7 @@ from .common import (
     ismember,
     paritygen,
     staticfile,
+    statusmessage,
 )
 
 from .. import (
@@ -31,6 +31,7 @@ from .. import (
     error,
     hg,
     profiling,
+    pycompat,
     scmutil,
     templater,
     ui as uimod,
@@ -442,12 +443,14 @@ class hgwebdir(object):
                 return self.makeindex(req, res, tmpl, subdir)
 
             # prefixes not found
-            wsgireq.respond(HTTP_NOT_FOUND, ctype)
-            return tmpl("notfound", repo=virtual)
+            res.status = '404 Not Found'
+            res.setbodygen(tmpl('notfound', repo=virtual))
+            return res.sendresponse()
 
-        except ErrorResponse as err:
-            wsgireq.respond(err, ctype)
-            return tmpl('error', error=err.message or '')
+        except ErrorResponse as e:
+            res.status = statusmessage(e.code, pycompat.bytestr(e))
+            res.setbodygen(tmpl('error', error=e.message or ''))
+            return res.sendresponse()
         finally:
             tmpl = None
 

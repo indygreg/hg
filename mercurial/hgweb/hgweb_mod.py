@@ -14,11 +14,10 @@ import os
 from .common import (
     ErrorResponse,
     HTTP_BAD_REQUEST,
-    HTTP_NOT_FOUND,
     HTTP_OK,
-    HTTP_SERVER_ERROR,
     cspvalues,
     permhooks,
+    statusmessage,
 )
 
 from .. import (
@@ -417,18 +416,25 @@ class hgweb(object):
                     return content
 
         except (error.LookupError, error.RepoLookupError) as err:
-            wsgireq.respond(HTTP_NOT_FOUND, ctype)
             msg = pycompat.bytestr(err)
             if (util.safehasattr(err, 'name') and
                 not isinstance(err,  error.ManifestLookupError)):
                 msg = 'revision not found: %s' % err.name
-            return tmpl('error', error=msg)
-        except (error.RepoError, error.RevlogError) as inst:
-            wsgireq.respond(HTTP_SERVER_ERROR, ctype)
-            return tmpl('error', error=pycompat.bytestr(inst))
-        except ErrorResponse as inst:
-            wsgireq.respond(inst, ctype)
-            return tmpl('error', error=pycompat.bytestr(inst))
+
+            res.status = '404 Not Found'
+            res.headers['Content-Type'] = ctype
+            res.setbodygen(tmpl('error', error=msg))
+            return res.sendresponse()
+        except (error.RepoError, error.RevlogError) as e:
+            res.status = '500 Internal Server Error'
+            res.headers['Content-Type'] = ctype
+            res.setbodygen(tmpl('error', error=pycompat.bytestr(e)))
+            return res.sendresponse()
+        except ErrorResponse as e:
+            res.status = statusmessage(e.code, pycompat.bytestr(e))
+            res.headers['Content-Type'] = ctype
+            res.setbodygen(tmpl('error', error=pycompat.bytestr(e)))
+            return res.sendresponse()
 
     def check_perm(self, rctx, req, op):
         for permhook in permhooks:

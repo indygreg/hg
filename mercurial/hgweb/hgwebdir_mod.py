@@ -481,7 +481,7 @@ class hgwebdir(object):
         sortable = ["name", "description", "contact", "lastchange"]
         sortcolumn, descending = sortdefault
         if 'sort' in wsgireq.req.qsparams:
-            sortcolum = wsgireq.req.qsparams['sort']
+            sortcolumn = wsgireq.req.qsparams['sort']
             descending = sortcolumn.startswith('-')
             if descending:
                 sortcolumn = sortcolumn[1:]

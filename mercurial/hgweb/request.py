@@ -134,7 +134,8 @@ class parsedrequest(object):
     remoteuser = attr.ib()
     # Value of REMOTE_HOST, if set, or None.
     remotehost = attr.ib()
-    # WSGI application path.
+    # Relative WSGI application path. If defined, will begin with a
+    # ``/``.
     apppath = attr.ib()
     # List of path parts to be used for dispatch.
     dispatchparts = attr.ib()

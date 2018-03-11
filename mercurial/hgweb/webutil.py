@@ -177,7 +177,7 @@ def difffeatureopts(req, ui, section):
                                      section=section, whitespace=True)
 
     for k in ('ignorews', 'ignorewsamount', 'ignorewseol', 'ignoreblanklines'):
-        v = req.req.qsparams.get(k)
+        v = req.qsparams.get(k)
         if v is not None:
             v = util.parsebool(v)
             setattr(diffopts, k, v if v is not None else True)
@@ -295,19 +295,19 @@ def changeidctx(repo, changeid):
 
 def changectx(repo, req):
     changeid = "tip"
-    if 'node' in req.req.qsparams:
-        changeid = req.req.qsparams['node']
+    if 'node' in req.qsparams:
+        changeid = req.qsparams['node']
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[(ipos + 1):]
-    elif 'manifest' in req.req.qsparams:
-        changeid = req.req.qsparams['manifest']
+    elif 'manifest' in req.qsparams:
+        changeid = req.qsparams['manifest']
 
     return changeidctx(repo, changeid)
 
 def basechangectx(repo, req):
-    if 'node' in req.req.qsparams:
-        changeid = req.req.qsparams['node']
+    if 'node' in req.qsparams:
+        changeid = req.qsparams['node']
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[:ipos]
@@ -316,13 +316,13 @@ def basechangectx(repo, req):
     return None
 
 def filectx(repo, req):
-    if 'file' not in req.req.qsparams:
+    if 'file' not in req.qsparams:
         raise ErrorResponse(HTTP_NOT_FOUND, 'file not given')
-    path = cleanpath(repo, req.req.qsparams['file'])
-    if 'node' in req.req.qsparams:
-        changeid = req.req.qsparams['node']
-    elif 'filenode' in req.req.qsparams:
-        changeid = req.req.qsparams['filenode']
+    path = cleanpath(repo, req.qsparams['file'])
+    if 'node' in req.qsparams:
+        changeid = req.qsparams['node']
+    elif 'filenode' in req.qsparams:
+        changeid = req.qsparams['filenode']
     else:
         raise ErrorResponse(HTTP_NOT_FOUND, 'node or filenode not given')
     try:
@@ -333,7 +333,7 @@ def filectx(repo, req):
     return fctx
 
 def linerange(req):
-    linerange = req.req.qsparams.getall('linerange')
+    linerange = req.qsparams.getall('linerange')
     if not linerange:
         return None
     if len(linerange) > 1:
@@ -412,12 +412,12 @@ def changelistentry(web, ctx):
     return entry
 
 def symrevorshortnode(req, ctx):
-    if 'node' in req.req.qsparams:
-        return templatefilters.revescape(req.req.qsparams['node'])
+    if 'node' in req.qsparams:
+        return templatefilters.revescape(req.qsparams['node'])
     else:
         return short(ctx.node())
 
-def changesetentry(web, req, ctx):
+def changesetentry(web, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
     showtags = showtag(web.repo, web.tmpl, 'changesettag', ctx.node())
@@ -433,13 +433,13 @@ def changesetentry(web, req, ctx):
                               node=ctx.hex(), file=f, blockno=blockno + 1,
                               parity=next(parity)))
 
-    basectx = basechangectx(web.repo, req)
+    basectx = basechangectx(web.repo, web.req)
     if basectx is None:
         basectx = ctx.p1()
 
     style = web.config('web', 'style')
-    if 'style' in req.req.qsparams:
-        style = req.req.qsparams['style']
+    if 'style' in web.req.qsparams:
+        style = web.req.qsparams['style']
 
     diff = diffs(web, ctx, basectx, None, style)
 
@@ -449,7 +449,7 @@ def changesetentry(web, req, ctx):
 
     return dict(
         diff=diff,
-        symrev=symrevorshortnode(req, ctx),
+        symrev=symrevorshortnode(web.req, ctx),
         basenode=basectx.hex(),
         changesettag=showtags,
         changesetbookmark=showbookmarks,

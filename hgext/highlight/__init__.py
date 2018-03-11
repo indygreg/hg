@@ -75,7 +75,7 @@ def filerevision_highlight(orig, web, req, fctx):
 def annotate_highlight(orig, web, req, tmpl):
     mt = ''.join(web.tmpl('mimetype', encoding=encoding.encoding))
     if 'html' in mt:
-        fctx = webutil.filectx(web.repo, req)
+        fctx = webutil.filectx(web.repo, web.req)
         pygmentize(web, 'annotateline', fctx, web.tmpl)
 
     return orig(web, req, web.tmpl)

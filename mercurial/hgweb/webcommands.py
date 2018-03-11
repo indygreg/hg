@@ -108,7 +108,7 @@ def rawfile(web, req, tmpl):
         return manifest(web, req, None)
 
     try:
-        fctx = webutil.filectx(web.repo, req)
+        fctx = webutil.filectx(web.repo, web.req)
     except error.LookupError as inst:
         try:
             return manifest(web, req, None)
@@ -157,7 +157,7 @@ def _filerevision(web, req, fctx):
         file=f,
         path=webutil.up(f),
         text=lines(),
-        symrev=webutil.symrevorshortnode(req, fctx),
+        symrev=webutil.symrevorshortnode(web.req, fctx),
         rename=webutil.renamelink(fctx),
         permissions=fctx.manifest().flags(f),
         ishead=int(ishead),
@@ -190,7 +190,7 @@ def file(web, req, tmpl):
     if not path:
         return manifest(web, req, None)
     try:
-        return _filerevision(web, req, webutil.filectx(web.repo, req))
+        return _filerevision(web, req, webutil.filectx(web.repo, web.req))
     except error.LookupError as inst:
         try:
             return manifest(web, req, None)
@@ -381,8 +381,8 @@ def changelog(web, req, tmpl, shortlog=False):
 
     query = ''
     if 'node' in web.req.qsparams:
-        ctx = webutil.changectx(web.repo, req)
-        symrev = webutil.symrevorshortnode(req, ctx)
+        ctx = webutil.changectx(web.repo, web.req)
+        symrev = webutil.symrevorshortnode(web.req, ctx)
     elif 'rev' in web.req.qsparams:
         return _search(web)
     else:
@@ -481,11 +481,11 @@ def changeset(web, req, tmpl):
     ``changesetbookmark``, ``filenodelink``, ``filenolink``, and the many
     templates related to diffs may all be used to produce the output.
     """
-    ctx = webutil.changectx(web.repo, req)
+    ctx = webutil.changectx(web.repo, web.req)
 
     return web.sendtemplate(
         'changeset',
-        **webutil.changesetentry(web, req, ctx))
+        **webutil.changesetentry(web, ctx))
 
 rev = webcommand('rev')(changeset)
 
@@ -515,8 +515,8 @@ def manifest(web, req, tmpl):
     The ``manifest`` template will be rendered for this handler.
     """
     if 'node' in web.req.qsparams:
-        ctx = webutil.changectx(web.repo, req)
-        symrev = webutil.symrevorshortnode(req, ctx)
+        ctx = webutil.changectx(web.repo, web.req)
+        symrev = webutil.symrevorshortnode(web.req, ctx)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'
@@ -792,9 +792,9 @@ def filediff(web, req, tmpl):
     """
     fctx, ctx = None, None
     try:
-        fctx = webutil.filectx(web.repo, req)
+        fctx = webutil.filectx(web.repo, web.req)
     except LookupError:
-        ctx = webutil.changectx(web.repo, req)
+        ctx = webutil.changectx(web.repo, web.req)
         path = webutil.cleanpath(web.repo, web.req.qsparams['file'])
         if path not in ctx.files():
             raise
@@ -819,7 +819,7 @@ def filediff(web, req, tmpl):
     return web.sendtemplate(
         'filediff',
         file=path,
-        symrev=webutil.symrevorshortnode(req, ctx),
+        symrev=webutil.symrevorshortnode(web.req, ctx),
         rename=rename,
         diff=diffs,
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
@@ -843,7 +843,7 @@ def comparison(web, req, tmpl):
 
     The ``filecomparison`` template is rendered.
     """
-    ctx = webutil.changectx(web.repo, req)
+    ctx = webutil.changectx(web.repo, web.req)
     if 'file' not in web.req.qsparams:
         raise ErrorResponse(HTTP_NOT_FOUND, 'file not given')
     path = webutil.cleanpath(web.repo, web.req.qsparams['file'])
@@ -892,7 +892,7 @@ def comparison(web, req, tmpl):
     return web.sendtemplate(
         'filecomparison',
         file=path,
-        symrev=webutil.symrevorshortnode(req, ctx),
+        symrev=webutil.symrevorshortnode(web.req, ctx),
         rename=rename,
         leftrev=leftrev,
         leftnode=hex(leftnode),
@@ -918,7 +918,7 @@ def annotate(web, req, tmpl):
 
     The ``fileannotate`` template is rendered.
     """
-    fctx = webutil.filectx(web.repo, req)
+    fctx = webutil.filectx(web.repo, web.req)
     f = fctx.path()
     parity = paritygen(web.stripecount)
     ishead = fctx.filerev() in fctx.filelog().headrevs()
@@ -948,7 +948,7 @@ def annotate(web, req, tmpl):
                   or 'application/octet-stream')
             lines = [((fctx.filectx(fctx.filerev()), 1), '(binary:%s)' % mt)]
         else:
-            lines = webutil.annotate(req, fctx, web.repo.ui)
+            lines = webutil.annotate(web.req, fctx, web.repo.ui)
 
         previousrev = None
         blockparitygen = paritygen(1)
@@ -978,7 +978,7 @@ def annotate(web, req, tmpl):
                    "linenumber": "% 6d" % (lineno + 1),
                    "revdate": f.date()}
 
-    diffopts = webutil.difffeatureopts(req, web.repo.ui, 'annotate')
+    diffopts = webutil.difffeatureopts(web.req, web.repo.ui, 'annotate')
     diffopts = {k: getattr(diffopts, k) for k in diffopts.defaults}
 
     return web.sendtemplate(
@@ -986,7 +986,7 @@ def annotate(web, req, tmpl):
         file=f,
         annotate=annotate,
         path=webutil.up(f),
-        symrev=webutil.symrevorshortnode(req, fctx),
+        symrev=webutil.symrevorshortnode(web.req, fctx),
         rename=webutil.renamelink(fctx),
         permissions=fctx.manifest().flags(f),
         ishead=int(ishead),
@@ -1008,7 +1008,7 @@ def filelog(web, req, tmpl):
     """
 
     try:
-        fctx = webutil.filectx(web.repo, req)
+        fctx = webutil.filectx(web.repo, web.req)
         f = fctx.path()
         fl = fctx.filelog()
     except error.LookupError:
@@ -1017,7 +1017,7 @@ def filelog(web, req, tmpl):
         numrevs = len(fl)
         if not numrevs: # file doesn't exist at all
             raise
-        rev = webutil.changectx(web.repo, req).rev()
+        rev = webutil.changectx(web.repo, web.req).rev()
         first = fl.linkrev(0)
         if rev < first: # current rev is from before file existed
             raise
@@ -1035,7 +1035,7 @@ def filelog(web, req, tmpl):
         except ValueError:
             pass
 
-    lrange = webutil.linerange(req)
+    lrange = webutil.linerange(web.req)
 
     lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
     lessvars['revcount'] = max(revcount // 2, 1)
@@ -1120,7 +1120,7 @@ def filelog(web, req, tmpl):
         'filelog',
         file=f,
         nav=nav,
-        symrev=webutil.symrevorshortnode(req, fctx),
+        symrev=webutil.symrevorshortnode(web.req, fctx),
         entries=entries,
         descend=descend,
         patch=patch,
@@ -1172,7 +1172,7 @@ def archive(web, req, tmpl):
         arch_version = short(cnode)
     name = "%s-%s" % (reponame, arch_version)
 
-    ctx = webutil.changectx(web.repo, req)
+    ctx = webutil.changectx(web.repo, web.req)
     pats = []
     match = scmutil.match(ctx, [])
     file = web.req.qsparams.get('file')
@@ -1245,8 +1245,8 @@ def graph(web, req, tmpl):
     """
 
     if 'node' in web.req.qsparams:
-        ctx = webutil.changectx(web.repo, req)
-        symrev = webutil.symrevorshortnode(req, ctx)
+        ctx = webutil.changectx(web.repo, web.req)
+        symrev = webutil.symrevorshortnode(web.req, ctx)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'

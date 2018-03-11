@@ -932,11 +932,11 @@ def overridearchivecmd(orig, ui, repo, dest, **opts):
     finally:
         repo.unfiltered().lfstatus = False
 
-def hgwebarchive(orig, web, req, tmpl):
+def hgwebarchive(orig, web):
     web.repo.lfstatus = True
 
     try:
-        return orig(web, req, tmpl)
+        return orig(web)
     finally:
         web.repo.lfstatus = False
 

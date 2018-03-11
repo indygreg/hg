@@ -614,14 +614,14 @@ def kwdiff(orig, repo, *args, **kwargs):
         if kwt:
             kwt.restrict = restrict
 
-def kwweb_skip(orig, web, req, tmpl):
+def kwweb_skip(orig, web):
     '''Wraps webcommands.x turning off keyword expansion.'''
     kwt = getattr(web.repo, '_keywordkwt', None)
     if kwt:
         origmatch = kwt.match
         kwt.match = util.never
     try:
-        for chunk in orig(web, req, tmpl):
+        for chunk in orig(web):
             yield chunk
     finally:
         if kwt:

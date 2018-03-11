@@ -58,7 +58,7 @@ def pygmentize(web, field, fctx, tmpl):
         highlight.pygmentize(field, fctx, style, tmpl,
                 guessfilenameonly=filenameonly)
 
-def filerevision_highlight(orig, web, req, fctx):
+def filerevision_highlight(orig, web, fctx):
     mt = ''.join(web.tmpl('mimetype', encoding=encoding.encoding))
     # only pygmentize for mimetype containing 'html' so we both match
     # 'text/html' and possibly 'application/xhtml+xml' in the future
@@ -70,17 +70,17 @@ def filerevision_highlight(orig, web, req, fctx):
     if 'html' in mt:
         pygmentize(web, 'fileline', fctx, web.tmpl)
 
-    return orig(web, req, fctx)
+    return orig(web, fctx)
 
-def annotate_highlight(orig, web, req, tmpl):
+def annotate_highlight(orig, web):
     mt = ''.join(web.tmpl('mimetype', encoding=encoding.encoding))
     if 'html' in mt:
         fctx = webutil.filectx(web.repo, web.req)
         pygmentize(web, 'annotateline', fctx, web.tmpl)
 
-    return orig(web, req, web.tmpl)
+    return orig(web)
 
-def generate_css(web, req, tmpl):
+def generate_css(web):
     pg_style = web.config('web', 'pygments_style', 'colorful')
     fmter = highlight.HtmlFormatter(style=pg_style)
     web.res.headers['Content-Type'] = 'text/css'

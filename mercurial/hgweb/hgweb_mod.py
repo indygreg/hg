@@ -404,7 +404,7 @@ class hgweb(object):
                 # override easily enough.
                 res.status = '200 Script output follows'
                 res.headers['Content-Type'] = ctype
-                return getattr(webcommands, cmd)(rctx, wsgireq, rctx.tmpl)
+                return getattr(webcommands, cmd)(rctx)
 
         except (error.LookupError, error.RepoLookupError) as err:
             msg = pycompat.bytestr(err)

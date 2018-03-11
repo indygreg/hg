@@ -6,7 +6,7 @@ from mercurial.hgweb import (
     webcommands,
 )
 
-def raiseerror(web, req, tmpl):
+def raiseerror(web):
     '''Dummy web command that raises an uncaught Exception.'''
 
     # Simulate an error after partial response.

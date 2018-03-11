@@ -65,7 +65,7 @@ class webcommand(object):
     Usage:
 
     @webcommand('mycommand')
-    def mycommand(web, req, tmpl):
+    def mycommand(web):
         pass
     """
 
@@ -78,7 +78,7 @@ class webcommand(object):
         return func
 
 @webcommand('log')
-def log(web, req, tmpl):
+def log(web):
     """
     /log[/{revision}[/{path}]]
     --------------------------
@@ -95,23 +95,23 @@ def log(web, req, tmpl):
     """
 
     if web.req.qsparams.get('file'):
-        return filelog(web, req, None)
+        return filelog(web)
     else:
-        return changelog(web, req, None)
+        return changelog(web)
 
 @webcommand('rawfile')
-def rawfile(web, req, tmpl):
+def rawfile(web):
     guessmime = web.configbool('web', 'guessmime')
 
     path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
-        return manifest(web, req, None)
+        return manifest(web)
 
     try:
         fctx = webutil.filectx(web.repo, web.req)
     except error.LookupError as inst:
         try:
-            return manifest(web, req, None)
+            return manifest(web)
         except ErrorResponse:
             raise inst
 
@@ -135,7 +135,7 @@ def rawfile(web, req, tmpl):
     web.res.setbodybytes(text)
     return web.res.sendresponse()
 
-def _filerevision(web, req, fctx):
+def _filerevision(web, fctx):
     f = fctx.path()
     text = fctx.data()
     parity = paritygen(web.stripecount)
@@ -164,7 +164,7 @@ def _filerevision(web, req, fctx):
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('file')
-def file(web, req, tmpl):
+def file(web):
     """
     /file/{revision}[/{path}]
     -------------------------
@@ -184,16 +184,16 @@ def file(web, req, tmpl):
     be rendered.
     """
     if web.req.qsparams.get('style') == 'raw':
-        return rawfile(web, req, None)
+        return rawfile(web)
 
     path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
-        return manifest(web, req, None)
+        return manifest(web)
     try:
-        return _filerevision(web, req, webutil.filectx(web.repo, web.req))
+        return _filerevision(web, webutil.filectx(web.repo, web.req))
     except error.LookupError as inst:
         try:
-            return manifest(web, req, None)
+            return manifest(web)
         except ErrorResponse:
             raise inst
 
@@ -354,7 +354,7 @@ def _search(web):
         showunforcekw=showunforcekw)
 
 @webcommand('changelog')
-def changelog(web, req, tmpl, shortlog=False):
+def changelog(web, shortlog=False):
     """
     /changelog[/{revision}]
     -----------------------
@@ -452,7 +452,7 @@ def changelog(web, req, tmpl, shortlog=False):
         query=query)
 
 @webcommand('shortlog')
-def shortlog(web, req, tmpl):
+def shortlog(web):
     """
     /shortlog
     ---------
@@ -463,10 +463,10 @@ def shortlog(web, req, tmpl):
     difference is the ``shortlog`` template will be rendered instead of the
     ``changelog`` template.
     """
-    return changelog(web, req, None, shortlog=True)
+    return changelog(web, shortlog=True)
 
 @webcommand('changeset')
-def changeset(web, req, tmpl):
+def changeset(web):
     """
     /changeset[/{revision}]
     -----------------------
@@ -498,7 +498,7 @@ def decodepath(path):
     return path
 
 @webcommand('manifest')
-def manifest(web, req, tmpl):
+def manifest(web):
     """
     /manifest[/{revision}[/{path}]]
     -------------------------------
@@ -598,7 +598,7 @@ def manifest(web, req, tmpl):
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 @webcommand('tags')
-def tags(web, req, tmpl):
+def tags(web):
     """
     /tags
     -----
@@ -632,7 +632,7 @@ def tags(web, req, tmpl):
         latestentry=lambda **x: entries(True, True, **x))
 
 @webcommand('bookmarks')
-def bookmarks(web, req, tmpl):
+def bookmarks(web):
     """
     /bookmarks
     ----------
@@ -671,7 +671,7 @@ def bookmarks(web, req, tmpl):
         latestentry=lambda **x: entries(latestonly=True, **x))
 
 @webcommand('branches')
-def branches(web, req, tmpl):
+def branches(web):
     """
     /branches
     ---------
@@ -694,7 +694,7 @@ def branches(web, req, tmpl):
         latestentry=latestentry)
 
 @webcommand('summary')
-def summary(web, req, tmpl):
+def summary(web):
     """
     /summary
     --------
@@ -778,7 +778,7 @@ def summary(web, req, tmpl):
         labels=web.configlist('web', 'labels'))
 
 @webcommand('filediff')
-def filediff(web, req, tmpl):
+def filediff(web):
     """
     /diff/{revision}/{path}
     -----------------------
@@ -827,7 +827,7 @@ def filediff(web, req, tmpl):
 diff = webcommand('diff')(filediff)
 
 @webcommand('comparison')
-def comparison(web, req, tmpl):
+def comparison(web):
     """
     /comparison/{revision}/{path}
     -----------------------------
@@ -902,7 +902,7 @@ def comparison(web, req, tmpl):
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 @webcommand('annotate')
-def annotate(web, req, tmpl):
+def annotate(web):
     """
     /annotate/{revision}/{path}
     ---------------------------
@@ -994,7 +994,7 @@ def annotate(web, req, tmpl):
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('filelog')
-def filelog(web, req, tmpl):
+def filelog(web):
     """
     /filelog/{revision}/{path}
     --------------------------
@@ -1132,7 +1132,7 @@ def filelog(web, req, tmpl):
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('archive')
-def archive(web, req, tmpl):
+def archive(web):
     """
     /archive/{revision}.{format}[/{path}]
     -------------------------------------
@@ -1206,7 +1206,7 @@ def archive(web, req, tmpl):
     return []
 
 @webcommand('static')
-def static(web, req, tmpl):
+def static(web):
     fname = web.req.qsparams['file']
     # a repo owner may set web.static in .hg/hgrc to get any file
     # readable by the user running the CGI script
@@ -1221,7 +1221,7 @@ def static(web, req, tmpl):
     return web.res.sendresponse()
 
 @webcommand('graph')
-def graph(web, req, tmpl):
+def graph(web):
     """
     /graph[/{revision}]
     -------------------
@@ -1388,7 +1388,7 @@ def _getdoc(e):
     return doc
 
 @webcommand('help')
-def help(web, req, tmpl):
+def help(web):
     """
     /help[/{topic}]
     ---------------

@@ -10,9 +10,12 @@ def raiseerror(web, req, tmpl):
     '''Dummy web command that raises an uncaught Exception.'''
 
     # Simulate an error after partial response.
-    if 'partialresponse' in req.req.qsparams:
-        req.respond(200, 'text/plain')
-        req.write('partial content\n')
+    if 'partialresponse' in web.req.qsparams:
+        web.res.status = b'200 Script output follows'
+        web.res.headers[b'Content-Type'] = b'text/plain'
+        web.res.setbodywillwrite()
+        list(web.res.sendresponse())
+        web.res.getbodyfile().write(b'partial content\n')
 
     raise AttributeError('I am an uncaught error!')
 

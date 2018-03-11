@@ -624,6 +624,9 @@ def kwweb_skip(orig, web, req, tmpl):
         res = orig(web, req, tmpl)
         if res is web.res:
             res = res.sendresponse()
+        elif res is True:
+            return
+
         for chunk in res:
             yield chunk
     finally:

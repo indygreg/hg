@@ -408,10 +408,11 @@ class hgweb(object):
 
                 if content is res:
                     return res.sendresponse()
-
-                wsgireq.respond(HTTP_OK, ctype)
-
-            return content
+                elif content is True:
+                    return []
+                else:
+                    wsgireq.respond(HTTP_OK, ctype)
+                    return content
 
         except (error.LookupError, error.RepoLookupError) as err:
             wsgireq.respond(HTTP_NOT_FOUND, ctype)

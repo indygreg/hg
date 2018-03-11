@@ -351,22 +351,42 @@ class wsgiresponse(object):
 
         self._bodybytes = None
         self._bodygen = None
+        self._bodywillwrite = False
         self._started = False
+        self._bodywritefn = None
+
+    def _verifybody(self):
+        if (self._bodybytes is not None or self._bodygen is not None
+            or self._bodywillwrite):
+            raise error.ProgrammingError('cannot define body multiple times')
 
     def setbodybytes(self, b):
         """Define the response body as static bytes."""
-        if self._bodybytes is not None or self._bodygen is not None:
-            raise error.ProgrammingError('cannot define body multiple times')
-
+        self._verifybody()
         self._bodybytes = b
         self.headers['Content-Length'] = '%d' % len(b)
 
     def setbodygen(self, gen):
         """Define the response body as a generator of bytes."""
-        if self._bodybytes is not None or self._bodygen is not None:
-            raise error.ProgrammingError('cannot define body multiple times')
-
+        self._verifybody()
         self._bodygen = gen
+
+    def setbodywillwrite(self):
+        """Signal an intent to use write() to emit the response body.
+
+        **This is the least preferred way to send a body.**
+
+        It is preferred for WSGI applications to emit a generator of chunks
+        constituting the response body. However, some consumers can't emit
+        data this way. So, WSGI provides a way to obtain a ``write(data)``
+        function that can be used to synchronously perform an unbuffered
+        write.
+
+        Calling this function signals an intent to produce the body in this
+        manner.
+        """
+        self._verifybody()
+        self._bodywillwrite = True
 
     def sendresponse(self):
         """Send the generated response to the client.
@@ -384,7 +404,8 @@ class wsgiresponse(object):
         if not self.status:
             raise error.ProgrammingError('status line not defined')
 
-        if self._bodybytes is None and self._bodygen is None:
+        if (self._bodybytes is None and self._bodygen is None
+            and not self._bodywillwrite):
             raise error.ProgrammingError('response body not defined')
 
         # Various HTTP clients (notably httplib) won't read the HTTP response
@@ -434,14 +455,39 @@ class wsgiresponse(object):
                 if not chunk:
                     break
 
-        self._startresponse(pycompat.sysstr(self.status), self.headers.items())
+        write = self._startresponse(pycompat.sysstr(self.status),
+                                    self.headers.items())
+
         if self._bodybytes:
             yield self._bodybytes
         elif self._bodygen:
             for chunk in self._bodygen:
                 yield chunk
+        elif self._bodywillwrite:
+            self._bodywritefn = write
         else:
             error.ProgrammingError('do not know how to send body')
+
+    def getbodyfile(self):
+        """Obtain a file object like object representing the response body.
+
+        For this to work, you must call ``setbodywillwrite()`` and then
+        ``sendresponse()`` first. ``sendresponse()`` is a generator and the
+        function won't run to completion unless the generator is advanced. The
+        generator yields not items. The easiest way to consume it is with
+        ``list(res.sendresponse())``, which should resolve to an empty list -
+        ``[]``.
+        """
+        if not self._bodywillwrite:
+            raise error.ProgrammingError('must call setbodywillwrite() first')
+
+        if not self._started:
+            raise error.ProgrammingError('must call sendresponse() first; did '
+                                         'you remember to consume it since it '
+                                         'is a generator?')
+
+        assert self._bodywritefn
+        return offsettrackingwriter(self._bodywritefn)
 
 class wsgirequest(object):
     """Higher-level API for a WSGI request.

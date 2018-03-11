@@ -19,13 +19,9 @@ from .common import (
     ErrorResponse,
     HTTP_FORBIDDEN,
     HTTP_NOT_FOUND,
-    HTTP_OK,
     get_contact,
     paritygen,
     staticfile,
-)
-from . import (
-    request as requestmod,
 )
 
 from .. import (
@@ -64,7 +60,9 @@ class webcommand(object):
     The function can return the ``requestcontext.res`` instance to signal
     that it wants to use this object to generate the response. If an iterable
     is returned, the ``wsgirequest`` instance will be used and the returned
-    content will constitute the response body.
+    content will constitute the response body. ``True`` can be returned to
+    indicate that the function already sent output and the caller doesn't
+    need to do anything more to send the response.
 
     Usage:
 
@@ -1210,21 +1208,24 @@ def archive(web, req, tmpl):
                     'file(s) not found: %s' % file)
 
     mimetype, artype, extension, encoding = web.archivespecs[type_]
-    headers = [
-        ('Content-Disposition', 'attachment; filename=%s%s' % (name, extension))
-        ]
-    if encoding:
-        headers.append(('Content-Encoding', encoding))
-    req.headers.extend(headers)
-    req.respond(HTTP_OK, mimetype)
 
-    bodyfh = requestmod.offsettrackingwriter(req.write)
+    web.res.headers['Content-Type'] = mimetype
+    web.res.headers['Content-Disposition'] = 'attachment; filename=%s%s' % (
+        name, extension)
+
+    if encoding:
+        web.res.headers['Content-Encoding'] = encoding
+
+    web.res.setbodywillwrite()
+    assert list(web.res.sendresponse()) == []
+
+    bodyfh = web.res.getbodyfile()
 
     archival.archive(web.repo, bodyfh, cnode, artype, prefix=name,
                      matchfn=match,
                      subrepos=web.configbool("web", "archivesubrepos"))
-    return []
 
+    return True
 
 @webcommand('static')
 def static(web, req, tmpl):

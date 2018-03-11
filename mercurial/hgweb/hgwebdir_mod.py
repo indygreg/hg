@@ -542,7 +542,8 @@ class hgwebdir(object):
         sessionvars = webutil.sessionvars(vars, r'?')
         logourl = config('web', 'logourl')
         logoimg = config('web', 'logoimg')
-        staticurl = config('web', 'staticurl') or url + 'static/'
+        staticurl = (config('web', 'staticurl')
+                     or wsgireq.req.apppath + '/static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 

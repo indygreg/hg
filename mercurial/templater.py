@@ -566,8 +566,8 @@ class engine(object):
         v = None
         if key in self._resources:
             v = mapping.get(key)
-        if v is None:
-            v = self._resources.get(key)
+        if v is None and key in self._resources:
+            v = self._resources[key](self, mapping, key)
         if v is None:
             raise templateutil.ResourceUnavailable(
                 _('template resource not available: %s') % key)
@@ -670,8 +670,9 @@ class templater(object):
         - ``filters``: a dict of functions to transform a value into another.
         - ``defaults``: a dict of symbol values/functions; may be overridden
           by a ``mapping`` dict.
-        - ``resources``: a dict of internal data (e.g. cache), inaccessible
-          from user template; may be overridden by a ``mapping`` dict.
+        - ``resources``: a dict of functions returning internal data
+          (e.g. cache), inaccessible from user template; may be overridden by
+          a ``mapping`` dict.
         - ``cache``: a dict of preloaded template fragments.
         - ``aliases``: a list of alias (name, replacement) pairs.
 
@@ -691,7 +692,7 @@ class templater(object):
         self.filters = templatefilters.filters.copy()
         self.filters.update(filters)
         self.defaults = defaults
-        self._resources = {'templ': self}
+        self._resources = {'templ': lambda context, mapping, key: self}
         self._resources.update(resources)
         self._aliases = aliases
         self.minchunk, self.maxchunk = minchunk, maxchunk

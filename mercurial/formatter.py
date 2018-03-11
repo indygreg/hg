@@ -501,12 +501,21 @@ def maketemplater(ui, tmpl, defaults=None, resources=None, cache=None):
 def templateresources(ui, repo=None):
     """Create a dict of template resources designed for the default templatekw
     and function"""
-    return {
+    resmap = {
         'cache': {},  # for templatekw/funcs to store reusable data
-        'ctx': None,
         'repo': repo,
-        'revcache': None,  # per-ctx cache; set later
         'ui': ui,
+    }
+
+    def getsome(context, mapping, key):
+        return resmap.get(key)
+
+    return {
+        'cache': getsome,
+        'ctx': getsome,
+        'repo': getsome,
+        'revcache': getsome,  # per-ctx cache; set later
+        'ui': getsome,
     }
 
 def formatter(ui, out, topic, opts):

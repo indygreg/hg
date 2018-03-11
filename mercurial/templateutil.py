@@ -350,7 +350,8 @@ def runsymbol(context, mapping, key, default=''):
             v = default
     if callable(v) and getattr(v, '_requires', None) is None:
         # old templatekw: expand all keywords and resources
-        props = context._resources.copy()
+        props = {k: f(context, mapping, k)
+                 for k, f in context._resources.items()}
         props.update(mapping)
         return v(**pycompat.strkwargs(props))
     if callable(v):

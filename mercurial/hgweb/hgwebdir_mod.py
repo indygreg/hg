@@ -132,6 +132,22 @@ def readallowed(ui, req):
 
     return False
 
+def archivelist(ui, nodeid, url):
+    allowed = ui.configlist('web', 'allow_archive', untrusted=True)
+    archives = []
+
+    for typ, spec in hgweb_mod.archivespecs.iteritems():
+        if typ in allowed or ui.configbool('web', 'allow' + typ,
+                                           untrusted=True):
+            archives.append({
+                'type': typ,
+                'extension': spec[2],
+                'node': nodeid,
+                'url': url,
+            })
+
+    return archives
+
 class hgwebdir(object):
     """HTTP server for multiple repositories.
 
@@ -330,16 +346,6 @@ class hgwebdir(object):
 
     def makeindex(self, wsgireq, tmpl, subdir=""):
         req = wsgireq.req
-
-        def archivelist(ui, nodeid, url):
-            allowed = ui.configlist("web", "allow_archive", untrusted=True)
-            archives = []
-            for typ, spec in hgweb_mod.archivespecs.iteritems():
-                if typ in allowed or ui.configbool("web", "allow" + typ,
-                                                    untrusted=True):
-                    archives.append({"type": typ, "extension": spec[2],
-                                     "node": nodeid, "url": url})
-            return archives
 
         def rawentries(subdir="", **map):
 

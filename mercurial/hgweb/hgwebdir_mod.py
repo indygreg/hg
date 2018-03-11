@@ -110,6 +110,28 @@ def geturlcgivars(baseurl, port):
 
     return name, pycompat.bytestr(port), path
 
+def readallowed(ui, req):
+    """Check allow_read and deny_read config options of a repo's ui object
+    to determine user permissions.  By default, with neither option set (or
+    both empty), allow all users to read the repo.  There are two ways a
+    user can be denied read access:  (1) deny_read is not empty, and the
+    user is unauthenticated or deny_read contains user (or *), and (2)
+    allow_read is not empty and the user is not in allow_read.  Return True
+    if user is allowed to read the repo, else return False."""
+
+    user = req.remoteuser
+
+    deny_read = ui.configlist('web', 'deny_read', untrusted=True)
+    if deny_read and (not user or ismember(ui, user, deny_read)):
+        return False
+
+    allow_read = ui.configlist('web', 'allow_read', untrusted=True)
+    # by default, allow reading if no allow_read option has been set
+    if not allow_read or ismember(ui, user, allow_read):
+        return True
+
+    return False
+
 class hgwebdir(object):
     """HTTP server for multiple repositories.
 
@@ -199,28 +221,6 @@ class hgwebdir(object):
     def __call__(self, env, respond):
         wsgireq = requestmod.wsgirequest(env, respond)
         return self.run_wsgi(wsgireq)
-
-    def readallowed(self, ui, req):
-        """Check allow_read and deny_read config options of a repo's ui object
-        to determine user permissions.  By default, with neither option set (or
-        both empty), allow all users to read the repo.  There are two ways a
-        user can be denied read access:  (1) deny_read is not empty, and the
-        user is unauthenticated or deny_read contains user (or *), and (2)
-        allow_read is not empty and the user is not in allow_read.  Return True
-        if user is allowed to read the repo, else return False."""
-
-        user = req.remoteuser
-
-        deny_read = ui.configlist('web', 'deny_read', untrusted=True)
-        if deny_read and (not user or ismember(ui, user, deny_read)):
-            return False
-
-        allow_read = ui.configlist('web', 'allow_read', untrusted=True)
-        # by default, allow reading if no allow_read option has been set
-        if (not allow_read) or ismember(ui, user, allow_read):
-            return True
-
-        return False
 
     def run_wsgi(self, wsgireq):
         profile = self.ui.configbool('profiling', 'enabled')
@@ -429,7 +429,7 @@ class hgwebdir(object):
                 if u.configbool("web", "hidden", untrusted=True):
                     continue
 
-                if not self.readallowed(u, req):
+                if not readallowed(u, req):
                     continue
 
                 # update time with local timezone

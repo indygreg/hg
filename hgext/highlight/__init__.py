@@ -58,8 +58,8 @@ def pygmentize(web, field, fctx, tmpl):
         highlight.pygmentize(field, fctx, style, tmpl,
                 guessfilenameonly=filenameonly)
 
-def filerevision_highlight(orig, web, req, tmpl, fctx):
-    mt = ''.join(tmpl('mimetype', encoding=encoding.encoding))
+def filerevision_highlight(orig, web, req, fctx):
+    mt = ''.join(web.tmpl('mimetype', encoding=encoding.encoding))
     # only pygmentize for mimetype containing 'html' so we both match
     # 'text/html' and possibly 'application/xhtml+xml' in the future
     # so that we don't have to touch the extension when the mimetype
@@ -68,17 +68,17 @@ def filerevision_highlight(orig, web, req, tmpl, fctx):
     # can't clash with the file's content-type here in case we
     # pygmentize a html file
     if 'html' in mt:
-        pygmentize(web, 'fileline', fctx, tmpl)
+        pygmentize(web, 'fileline', fctx, web.tmpl)
 
-    return orig(web, req, tmpl, fctx)
+    return orig(web, req, fctx)
 
 def annotate_highlight(orig, web, req, tmpl):
-    mt = ''.join(tmpl('mimetype', encoding=encoding.encoding))
+    mt = ''.join(web.tmpl('mimetype', encoding=encoding.encoding))
     if 'html' in mt:
         fctx = webutil.filectx(web.repo, req)
-        pygmentize(web, 'annotateline', fctx, tmpl)
+        pygmentize(web, 'annotateline', fctx, web.tmpl)
 
-    return orig(web, req, tmpl)
+    return orig(web, req, web.tmpl)
 
 def generate_css(web, req, tmpl):
     pg_style = web.config('web', 'pygments_style', 'colorful')

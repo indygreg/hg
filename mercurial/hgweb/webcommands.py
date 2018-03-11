@@ -95,9 +95,9 @@ def log(web, req, tmpl):
     """
 
     if web.req.qsparams.get('file'):
-        return filelog(web, req, tmpl)
+        return filelog(web, req, None)
     else:
-        return changelog(web, req, tmpl)
+        return changelog(web, req, None)
 
 @webcommand('rawfile')
 def rawfile(web, req, tmpl):
@@ -105,13 +105,13 @@ def rawfile(web, req, tmpl):
 
     path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
-        return manifest(web, req, tmpl)
+        return manifest(web, req, None)
 
     try:
         fctx = webutil.filectx(web.repo, req)
     except error.LookupError as inst:
         try:
-            return manifest(web, req, tmpl)
+            return manifest(web, req, None)
         except ErrorResponse:
             raise inst
 
@@ -135,7 +135,7 @@ def rawfile(web, req, tmpl):
     web.res.setbodybytes(text)
     return web.res.sendresponse()
 
-def _filerevision(web, req, tmpl, fctx):
+def _filerevision(web, req, fctx):
     f = fctx.path()
     text = fctx.data()
     parity = paritygen(web.stripecount)
@@ -184,20 +184,20 @@ def file(web, req, tmpl):
     be rendered.
     """
     if web.req.qsparams.get('style') == 'raw':
-        return rawfile(web, req, tmpl)
+        return rawfile(web, req, None)
 
     path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
-        return manifest(web, req, tmpl)
+        return manifest(web, req, None)
     try:
-        return _filerevision(web, req, tmpl, webutil.filectx(web.repo, req))
+        return _filerevision(web, req, webutil.filectx(web.repo, req))
     except error.LookupError as inst:
         try:
-            return manifest(web, req, tmpl)
+            return manifest(web, req, None)
         except ErrorResponse:
             raise inst
 
-def _search(web, tmpl):
+def _search(web):
     MODE_REVISION = 'rev'
     MODE_KEYWORD = 'keyword'
     MODE_REVSET = 'revset'
@@ -290,14 +290,16 @@ def _search(web, tmpl):
         for ctx in searchfunc[0](funcarg):
             count += 1
             n = ctx.node()
-            showtags = webutil.showtag(web.repo, tmpl, 'changelogtag', n)
-            files = webutil.listfilediffs(tmpl, ctx.files(), n, web.maxfiles)
+            showtags = webutil.showtag(web.repo, web.tmpl, 'changelogtag', n)
+            files = webutil.listfilediffs(web.tmpl, ctx.files(), n,
+                                          web.maxfiles)
 
-            yield tmpl('searchentry',
-                       parity=next(parity),
-                       changelogtag=showtags,
-                       files=files,
-                       **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
+            yield web.tmpl(
+                'searchentry',
+                parity=next(parity),
+                changelogtag=showtags,
+                files=files,
+                **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
             if count >= revcount:
                 break
@@ -308,14 +310,14 @@ def _search(web, tmpl):
         try:
             revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
     lessvars['revcount'] = max(revcount // 2, 1)
     lessvars['rev'] = query
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
     morevars['rev'] = query
 
@@ -382,7 +384,7 @@ def changelog(web, req, tmpl, shortlog=False):
         ctx = webutil.changectx(web.repo, req)
         symrev = webutil.symrevorshortnode(req, ctx)
     elif 'rev' in web.req.qsparams:
-        return _search(web, tmpl)
+        return _search(web)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'
@@ -397,7 +399,7 @@ def changelog(web, req, tmpl, shortlog=False):
             if curcount > revcount + 1:
                 break
 
-            entry = webutil.changelistentry(web, web.repo[rev], tmpl)
+            entry = webutil.changelistentry(web, web.repo[rev], web.tmpl)
             entry['parity'] = next(parity)
             yield entry
 
@@ -410,13 +412,13 @@ def changelog(web, req, tmpl, shortlog=False):
         try:
             revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
     lessvars['revcount'] = max(revcount // 2, 1)
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
     count = len(web.repo)
@@ -461,7 +463,7 @@ def shortlog(web, req, tmpl):
     difference is the ``shortlog`` template will be rendered instead of the
     ``changelog`` template.
     """
-    return changelog(web, req, tmpl, shortlog=True)
+    return changelog(web, req, None, shortlog=True)
 
 @webcommand('changeset')
 def changeset(web, req, tmpl):
@@ -483,7 +485,7 @@ def changeset(web, req, tmpl):
 
     return web.sendtemplate(
         'changeset',
-        **webutil.changesetentry(web, req, tmpl, ctx))
+        **webutil.changesetentry(web, req, web.tmpl, ctx))
 
 rev = webcommand('rev')(changeset)
 
@@ -717,11 +719,12 @@ def summary(web, req, tmpl):
             if count > 10: # limit to 10 tags
                 break
 
-            yield tmpl("tagentry",
-                       parity=next(parity),
-                       tag=k,
-                       node=hex(n),
-                       date=web.repo[n].date())
+            yield web.tmpl(
+                'tagentry',
+                parity=next(parity),
+                tag=k,
+                node=hex(n),
+                date=web.repo[n].date())
 
     def bookmarks(**map):
         parity = paritygen(web.stripecount)
@@ -743,7 +746,7 @@ def summary(web, req, tmpl):
         for i in revs:
             ctx = web.repo[i]
 
-            l.append(tmpl(
+            l.append(web.tmpl(
                 'shortlogentry',
                 parity=next(parity),
                 **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
@@ -805,7 +808,7 @@ def filediff(web, req, tmpl):
     if 'style' in web.req.qsparams:
         style = web.req.qsparams['style']
 
-    diffs = webutil.diffs(web, tmpl, ctx, basectx, [path], style)
+    diffs = webutil.diffs(web, web.tmpl, ctx, basectx, [path], style)
     if fctx is not None:
         rename = webutil.renamelink(fctx)
         ctx = fctx
@@ -878,7 +881,7 @@ def comparison(web, req, tmpl):
         pfctx = ctx.parents()[0][path]
         leftlines = filelines(pfctx)
 
-    comparison = webutil.compare(tmpl, context, leftlines, rightlines)
+    comparison = webutil.compare(web.tmpl, context, leftlines, rightlines)
     if fctx is not None:
         rename = webutil.renamelink(fctx)
         ctx = fctx
@@ -1028,15 +1031,15 @@ def filelog(web, req, tmpl):
         try:
             revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
     lrange = webutil.linerange(req)
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
     lessvars['revcount'] = max(revcount // 2, 1)
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
     patch = 'patch' in web.req.qsparams
@@ -1063,7 +1066,7 @@ def filelog(web, req, tmpl):
         ctx = fctx.changectx()
         basectx = ctx.p1()
         path = fctx.path()
-        return webutil.diffs(web, tmpl, ctx, basectx, [path], diffstyle,
+        return webutil.diffs(web, web.tmpl, ctx, basectx, [path], diffstyle,
                              linerange=linerange,
                              lineidprefix='%s-' % ctx.hex()[:12])
 
@@ -1255,17 +1258,17 @@ def graph(web, req, tmpl):
         try:
             revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
     lessvars['revcount'] = max(revcount // 2, 1)
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
     graphtop = web.req.qsparams.get('graphtop', ctx.hex())
-    graphvars = copy.copy(tmpl.defaults['sessionvars'])
+    graphvars = copy.copy(web.tmpl.defaults['sessionvars'])
     graphvars['graphtop'] = graphtop
 
     count = len(web.repo)

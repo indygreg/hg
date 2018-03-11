@@ -5,6 +5,9 @@ import unittest
 from mercurial.hgweb import (
     request as requestmod,
 )
+from mercurial import (
+    error,
+)
 
 DEFAULT_ENV = {
     r'REQUEST_METHOD': r'GET',
@@ -20,11 +23,11 @@ DEFAULT_ENV = {
     r'wsgi.run_once': False,
 }
 
-def parse(env, bodyfh=None, extra=None):
+def parse(env, bodyfh=None, reponame=None, extra=None):
     env = dict(env)
     env.update(extra or {})
 
-    return requestmod.parserequestfromenv(env, bodyfh)
+    return requestmod.parserequestfromenv(env, bodyfh, reponame=reponame)
 
 class ParseRequestTests(unittest.TestCase):
     def testdefault(self):
@@ -203,24 +206,26 @@ class ParseRequestTests(unittest.TestCase):
         self.assertTrue(r.havepathinfo)
 
     def testreponame(self):
-        """REPO_NAME path components get stripped from URL."""
-        r = parse(DEFAULT_ENV, extra={
-            r'REPO_NAME': r'repo',
-            r'PATH_INFO': r'/path1/path2'
-        })
+        """repository path components get stripped from URL."""
 
-        self.assertEqual(r.url, b'http://testserver/path1/path2')
-        self.assertEqual(r.baseurl, b'http://testserver')
-        self.assertEqual(r.advertisedurl, b'http://testserver/path1/path2')
-        self.assertEqual(r.advertisedbaseurl, b'http://testserver')
-        self.assertEqual(r.apppath, b'/repo')
-        self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
-        self.assertEqual(r.dispatchpath, b'path1/path2')
-        self.assertTrue(r.havepathinfo)
-        self.assertEqual(r.reponame, b'repo')
+        with self.assertRaisesRegexp(error.ProgrammingError,
+                                     b'reponame requires PATH_INFO'):
+            parse(DEFAULT_ENV, reponame=b'repo')
 
-        r = parse(DEFAULT_ENV, extra={
-            r'REPO_NAME': r'repo',
+        with self.assertRaisesRegexp(error.ProgrammingError,
+                                     b'PATH_INFO does not begin with repo '
+                                     b'name'):
+            parse(DEFAULT_ENV, reponame=b'repo', extra={
+                r'PATH_INFO': r'/pathinfo',
+            })
+
+        with self.assertRaisesRegexp(error.ProgrammingError,
+                                     b'reponame prefix of PATH_INFO'):
+            parse(DEFAULT_ENV, reponame=b'repo', extra={
+                r'PATH_INFO': r'/repoextra/path',
+            })
+
+        r = parse(DEFAULT_ENV, reponame=b'repo', extra={
             r'PATH_INFO': r'/repo/path1/path2',
         })
 
@@ -234,8 +239,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertTrue(r.havepathinfo)
         self.assertEqual(r.reponame, b'repo')
 
-        r = parse(DEFAULT_ENV, extra={
-            r'REPO_NAME': r'prefix/repo',
+        r = parse(DEFAULT_ENV, reponame=b'prefix/repo', extra={
             r'PATH_INFO': r'/prefix/repo/path1/path2',
         })
 

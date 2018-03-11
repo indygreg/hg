@@ -155,11 +155,16 @@ class parsedrequest(object):
     # Request body input stream.
     bodyfh = attr.ib()
 
-def parserequestfromenv(env, bodyfh):
+def parserequestfromenv(env, bodyfh, reponame=None):
     """Parse URL components from environment variables.
 
     WSGI defines request attributes via environment variables. This function
     parses the environment variables into a data structure.
+
+    If ``reponame`` is defined, the leading path components matching that
+    string are effectively shifted from ``PATH_INFO`` to ``SCRIPT_NAME``.
+    This simulates the world view of a WSGI application that processes
+    requests from the base URL of a repo.
     """
     # PEP-0333 defines the WSGI spec and is a useful reference for this code.
 
@@ -215,28 +220,34 @@ def parserequestfromenv(env, bodyfh):
         fullurl += '?' + env['QUERY_STRING']
         advertisedfullurl += '?' + env['QUERY_STRING']
 
-    # When dispatching requests, we look at the URL components (PATH_INFO
-    # and QUERY_STRING) after the application root (SCRIPT_NAME). But hgwebdir
-    # has the concept of "virtual" repositories. This is defined via REPO_NAME.
-    # If REPO_NAME is defined, we append it to SCRIPT_NAME to form a new app
-    # root. We also exclude its path components from PATH_INFO when resolving
-    # the dispatch path.
+    # If ``reponame`` is defined, that must be a prefix on PATH_INFO
+    # that represents the repository being dispatched to. When computing
+    # the dispatch info, we ignore these leading path components.
 
     apppath = env.get('SCRIPT_NAME', '')
 
-    if env.get('REPO_NAME'):
-        if not apppath.endswith('/'):
-            apppath += '/'
+    if reponame:
+        repoprefix = '/' + reponame.strip('/')
 
-        apppath += env.get('REPO_NAME')
+        if not env.get('PATH_INFO'):
+            raise error.ProgrammingError('reponame requires PATH_INFO')
 
-    if 'PATH_INFO' in env:
+        if not env['PATH_INFO'].startswith(repoprefix):
+            raise error.ProgrammingError('PATH_INFO does not begin with repo '
+                                         'name: %s (%s)' % (env['PATH_INFO'],
+                                                            reponame))
+
+        dispatchpath = env['PATH_INFO'][len(repoprefix):]
+
+        if dispatchpath and not dispatchpath.startswith('/'):
+            raise error.ProgrammingError('reponame prefix of PATH_INFO does '
+                                         'not end at path delimiter: %s (%s)' %
+                                         (env['PATH_INFO'], reponame))
+
+        apppath = apppath.rstrip('/') + repoprefix
+        dispatchparts = dispatchpath.strip('/').split('/')
+    elif env.get('PATH_INFO', '').strip('/'):
         dispatchparts = env['PATH_INFO'].strip('/').split('/')
-
-        # Strip out repo parts.
-        repoparts = env.get('REPO_NAME', '').split('/')
-        if dispatchparts[:len(repoparts)] == repoparts:
-            dispatchparts = dispatchparts[len(repoparts):]
     else:
         dispatchparts = []
 
@@ -283,7 +294,7 @@ def parserequestfromenv(env, bodyfh):
                          apppath=apppath,
                          dispatchparts=dispatchparts, dispatchpath=dispatchpath,
                          havepathinfo='PATH_INFO' in env,
-                         reponame=env.get('REPO_NAME'),
+                         reponame=reponame,
                          querystring=querystring,
                          qsparams=qsparams,
                          headers=headers,

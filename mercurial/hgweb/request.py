@@ -222,7 +222,7 @@ def parserequestfromenv(env, bodyfh):
     # root. We also exclude its path components from PATH_INFO when resolving
     # the dispatch path.
 
-    apppath = env['SCRIPT_NAME']
+    apppath = env.get('SCRIPT_NAME', '')
 
     if env.get('REPO_NAME'):
         if not apppath.endswith('/'):

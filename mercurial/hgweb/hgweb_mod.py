@@ -14,7 +14,6 @@ import os
 from .common import (
     ErrorResponse,
     HTTP_BAD_REQUEST,
-    HTTP_OK,
     cspvalues,
     permhooks,
     statusmessage,
@@ -405,15 +404,7 @@ class hgweb(object):
                 # override easily enough.
                 res.status = '200 Script output follows'
                 res.headers['Content-Type'] = ctype
-                content = getattr(webcommands, cmd)(rctx, wsgireq, tmpl)
-
-                if content is res:
-                    return res.sendresponse()
-                elif content is True:
-                    return []
-                else:
-                    wsgireq.respond(HTTP_OK, ctype)
-                    return content
+                return getattr(webcommands, cmd)(rctx, wsgireq, tmpl)
 
         except (error.LookupError, error.RepoLookupError) as err:
             msg = pycompat.bytestr(err)

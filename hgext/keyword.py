@@ -621,13 +621,7 @@ def kwweb_skip(orig, web, req, tmpl):
         origmatch = kwt.match
         kwt.match = util.never
     try:
-        res = orig(web, req, tmpl)
-        if res is web.res:
-            res = res.sendresponse()
-        elif res is True:
-            return
-
-        for chunk in res:
+        for chunk in orig(web, req, tmpl):
             yield chunk
     finally:
         if kwt:

@@ -57,12 +57,9 @@ class webcommand(object):
     The functions should populate the ``rctx.res`` object with details
     about the HTTP response.
 
-    The function can return the ``requestcontext.res`` instance to signal
-    that it wants to use this object to generate the response. If an iterable
-    is returned, the ``wsgirequest`` instance will be used and the returned
-    content will constitute the response body. ``True`` can be returned to
-    indicate that the function already sent output and the caller doesn't
-    need to do anything more to send the response.
+    The function returns a generator to be consumed by the WSGI application.
+    For most commands, this should be the result from
+    ``web.res.sendresponse()``.
 
     Usage:
 
@@ -135,7 +132,7 @@ def rawfile(web, req, tmpl):
                 .replace('\\', '\\\\').replace('"', '\\"'))
     web.res.headers['Content-Disposition'] = 'inline; filename="%s"' % filename
     web.res.setbodybytes(text)
-    return web.res
+    return web.res.sendresponse()
 
 def _filerevision(web, req, tmpl, fctx):
     f = fctx.path()
@@ -165,7 +162,7 @@ def _filerevision(web, req, tmpl, fctx):
         ishead=int(ishead),
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('file')
 def file(web, req, tmpl):
@@ -355,7 +352,7 @@ def _search(web, req, tmpl):
         showforcekw=showforcekw,
         showunforcekw=showunforcekw))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('changelog')
 def changelog(web, req, tmpl, shortlog=False):
@@ -455,7 +452,7 @@ def changelog(web, req, tmpl, shortlog=False):
         lessvars=lessvars,
         query=query))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('shortlog')
 def shortlog(web, req, tmpl):
@@ -490,7 +487,7 @@ def changeset(web, req, tmpl):
     ctx = webutil.changectx(web.repo, req)
     web.res.setbodygen(tmpl('changeset',
                             **webutil.changesetentry(web, req, tmpl, ctx)))
-    return web.res
+    return web.res.sendresponse()
 
 rev = webcommand('rev')(changeset)
 
@@ -602,7 +599,7 @@ def manifest(web, req, tmpl):
         archives=web.archivelist(hex(node)),
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('tags')
 def tags(web, req, tmpl):
@@ -638,7 +635,7 @@ def tags(web, req, tmpl):
         entriesnotip=lambda **x: entries(True, False, **x),
         latestentry=lambda **x: entries(True, True, **x)))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('bookmarks')
 def bookmarks(web, req, tmpl):
@@ -679,7 +676,7 @@ def bookmarks(web, req, tmpl):
         entries=lambda **x: entries(latestonly=False, **x),
         latestentry=lambda **x: entries(latestonly=True, **x)))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('branches')
 def branches(web, req, tmpl):
@@ -704,7 +701,7 @@ def branches(web, req, tmpl):
         entries=entries,
         latestentry=latestentry))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('summary')
 def summary(web, req, tmpl):
@@ -789,7 +786,7 @@ def summary(web, req, tmpl):
         archives=web.archivelist('tip'),
         labels=web.configlist('web', 'labels')))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('filediff')
 def filediff(web, req, tmpl):
@@ -838,7 +835,7 @@ def filediff(web, req, tmpl):
         diff=diffs,
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
 
-    return web.res
+    return web.res.sendresponse()
 
 diff = webcommand('diff')(filediff)
 
@@ -917,7 +914,7 @@ def comparison(web, req, tmpl):
         comparison=comparison,
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('annotate')
 def annotate(web, req, tmpl):
@@ -1011,7 +1008,7 @@ def annotate(web, req, tmpl):
         diffopts=diffopts,
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('filelog')
 def filelog(web, req, tmpl):
@@ -1151,7 +1148,7 @@ def filelog(web, req, tmpl):
         lessvars=lessvars,
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx))))
 
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('archive')
 def archive(web, req, tmpl):
@@ -1225,7 +1222,7 @@ def archive(web, req, tmpl):
                      matchfn=match,
                      subrepos=web.configbool("web", "archivesubrepos"))
 
-    return True
+    return []
 
 @webcommand('static')
 def static(web, req, tmpl):
@@ -1240,7 +1237,7 @@ def static(web, req, tmpl):
         static = [os.path.join(p, 'static') for p in tp]
 
     staticfile(static, fname, web.res)
-    return web.res
+    return web.res.sendresponse()
 
 @webcommand('graph')
 def graph(web, req, tmpl):
@@ -1401,7 +1398,7 @@ def graph(web, req, tmpl):
         node=ctx.hex(),
         changenav=changenav))
 
-    return web.res
+    return web.res.sendresponse()
 
 def _getdoc(e):
     doc = e[0].__doc__
@@ -1463,7 +1460,7 @@ def help(web, req, tmpl):
             earlycommands=earlycommands,
             othercommands=othercommands,
             title='Index'))
-        return web.res
+        return web.res.sendresponse()
 
     # Render an index of sub-topics.
     if topicname in helpmod.subtopics:
@@ -1480,7 +1477,7 @@ def help(web, req, tmpl):
             topics=topics,
             title=topicname,
             subindex=True))
-        return web.res
+        return web.res.sendresponse()
 
     u = webutil.wsgiui.load()
     u.verbose = True
@@ -1506,7 +1503,7 @@ def help(web, req, tmpl):
         topic=topicname,
         doc=doc))
 
-    return web.res
+    return web.res.sendresponse()
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = commands.values()

@@ -88,7 +88,7 @@ def generate_css(web, req, tmpl):
         '/* pygments_style = %s */\n\n' % pg_style,
         fmter.get_style_defs(''),
     ]))
-    return web.res
+    return web.res.sendresponse()
 
 def extsetup():
     # monkeypatch in the new version

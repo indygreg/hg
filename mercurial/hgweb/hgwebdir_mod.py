@@ -16,7 +16,6 @@ from ..i18n import _
 from .common import (
     ErrorResponse,
     HTTP_NOT_FOUND,
-    HTTP_OK,
     HTTP_SERVER_ERROR,
     cspvalues,
     get_contact,
@@ -400,16 +399,14 @@ class hgwebdir(object):
             repos = dict(self.repos)
 
             if (not virtual or virtual == 'index') and virtual not in repos:
-                wsgireq.respond(HTTP_OK, ctype)
-                return self.makeindex(req, tmpl)
+                return self.makeindex(req, res, tmpl)
 
             # nested indexes and hgwebs
 
             if virtual.endswith('/index') and virtual not in repos:
                 subdir = virtual[:-len('index')]
                 if any(r.startswith(subdir) for r in repos):
-                    wsgireq.respond(HTTP_OK, ctype)
-                    return self.makeindex(req, tmpl, subdir)
+                    return self.makeindex(req, res, tmpl, subdir)
 
             def _virtualdirs():
                 # Check the full virtual path, each parent, and the root ('')
@@ -442,8 +439,7 @@ class hgwebdir(object):
             # browse subdirectories
             subdir = virtual + '/'
             if [r for r in repos if r.startswith(subdir)]:
-                wsgireq.respond(HTTP_OK, ctype)
-                return self.makeindex(req, tmpl, subdir)
+                return self.makeindex(req, res, tmpl, subdir)
 
             # prefixes not found
             wsgireq.respond(HTTP_NOT_FOUND, ctype)
@@ -455,7 +451,7 @@ class hgwebdir(object):
         finally:
             tmpl = None
 
-    def makeindex(self, req, tmpl, subdir=""):
+    def makeindex(self, req, res, tmpl, subdir=""):
         self.refresh()
         sortable = ["name", "description", "contact", "lastchange"]
         sortcolumn, descending = None, False
@@ -478,10 +474,16 @@ class hgwebdir(object):
                                self.stripecount, sortcolumn=sortcolumn,
                                descending=descending, subdir=subdir)
 
-        return tmpl("index", entries=entries, subdir=subdir,
-                    pathdef=hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),
-                    sortcolumn=sortcolumn, descending=descending,
-                    **dict(sort))
+        res.setbodygen(tmpl(
+            'index',
+            entries=entries,
+            subdir=subdir,
+            pathdef=hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),
+            sortcolumn=sortcolumn,
+            descending=descending,
+            **dict(sort)))
+
+        return res.sendresponse()
 
     def templater(self, wsgireq, nonce):
 

@@ -23,11 +23,12 @@ DEFAULT_ENV = {
     r'wsgi.run_once': False,
 }
 
-def parse(env, bodyfh=None, reponame=None, extra=None):
+def parse(env, bodyfh=None, reponame=None, altbaseurl=None, extra=None):
     env = dict(env)
     env.update(extra or {})
 
-    return requestmod.parserequestfromenv(env, bodyfh, reponame=reponame)
+    return requestmod.parserequestfromenv(env, bodyfh, reponame=reponame,
+                                          altbaseurl=altbaseurl)
 
 class ParseRequestTests(unittest.TestCase):
     def testdefault(self):
@@ -241,6 +242,174 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
         self.assertEqual(r.dispatchpath, b'path1/path2')
         self.assertEqual(r.reponame, b'prefix/repo')
+
+    def testaltbaseurl(self):
+        # Simple hostname remap.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver')
+
+        self.assertEqual(r.url, b'http://testserver')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'http://altserver')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'')
+        self.assertEqual(r.dispatchparts, [])
+        self.assertIsNone(r.dispatchpath)
+        self.assertIsNone(r.reponame)
+
+        # With a custom port.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver:8000')
+        self.assertEqual(r.url, b'http://testserver')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'http://altserver:8000')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver:8000')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'')
+        self.assertEqual(r.dispatchparts, [])
+        self.assertIsNone(r.dispatchpath)
+        self.assertIsNone(r.reponame)
+
+        # With a changed protocol.
+        r = parse(DEFAULT_ENV, altbaseurl='https://altserver')
+        self.assertEqual(r.url, b'http://testserver')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'https://altserver')
+        self.assertEqual(r.advertisedbaseurl, b'https://altserver')
+        # URL scheme is defined as the actual scheme, not advertised.
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'')
+        self.assertEqual(r.dispatchparts, [])
+        self.assertIsNone(r.dispatchpath)
+        self.assertIsNone(r.reponame)
+
+        # Need to specify explicit port number for proper https:// alt URLs.
+        r = parse(DEFAULT_ENV, altbaseurl='https://altserver:443')
+        self.assertEqual(r.url, b'http://testserver')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'https://altserver')
+        self.assertEqual(r.advertisedbaseurl, b'https://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'')
+        self.assertEqual(r.dispatchparts, [])
+        self.assertIsNone(r.dispatchpath)
+        self.assertIsNone(r.reponame)
+
+        # With only PATH_INFO defined.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver', extra={
+            r'PATH_INFO': r'/path1/path2',
+        })
+        self.assertEqual(r.url, b'http://testserver/path1/path2')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'http://altserver/path1/path2')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'')
+        self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
+        self.assertEqual(r.dispatchpath, b'path1/path2')
+        self.assertIsNone(r.reponame)
+
+        # Path on alt URL.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath')
+        self.assertEqual(r.url, b'http://testserver')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'http://altserver/altpath')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'/altpath')
+        self.assertEqual(r.dispatchparts, [])
+        self.assertIsNone(r.dispatchpath)
+        self.assertIsNone(r.reponame)
+
+        # With a trailing slash.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath/')
+        self.assertEqual(r.url, b'http://testserver')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'http://altserver/altpath/')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'/altpath/')
+        self.assertEqual(r.dispatchparts, [])
+        self.assertIsNone(r.dispatchpath)
+        self.assertIsNone(r.reponame)
+
+        # PATH_INFO + path on alt URL.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath', extra={
+            r'PATH_INFO': r'/path1/path2',
+        })
+        self.assertEqual(r.url, b'http://testserver/path1/path2')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl,
+                         b'http://altserver/altpath/path1/path2')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'/altpath')
+        self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
+        self.assertEqual(r.dispatchpath, b'path1/path2')
+        self.assertIsNone(r.reponame)
+
+        # PATH_INFO + path on alt URL with trailing slash.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath/', extra={
+            r'PATH_INFO': r'/path1/path2',
+        })
+        self.assertEqual(r.url, b'http://testserver/path1/path2')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl,
+                         b'http://altserver/altpath//path1/path2')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'/altpath/')
+        self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
+        self.assertEqual(r.dispatchpath, b'path1/path2')
+        self.assertIsNone(r.reponame)
+
+        # Local SCRIPT_NAME is ignored.
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver', extra={
+            r'SCRIPT_NAME': r'/script',
+            r'PATH_INFO': r'/path1/path2',
+        })
+        self.assertEqual(r.url, b'http://testserver/script/path1/path2')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl, b'http://altserver/path1/path2')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'')
+        self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
+        self.assertEqual(r.dispatchpath, b'path1/path2')
+        self.assertIsNone(r.reponame)
+
+        # Use remote's path for script name, app path
+        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altroot', extra={
+            r'SCRIPT_NAME': r'/script',
+            r'PATH_INFO': r'/path1/path2',
+        })
+        self.assertEqual(r.url, b'http://testserver/script/path1/path2')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl,
+                         b'http://altserver/altroot/path1/path2')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.urlscheme, b'http')
+        self.assertEqual(r.apppath, b'/altroot')
+        self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
+        self.assertEqual(r.dispatchpath, b'path1/path2')
+        self.assertIsNone(r.reponame)
+
+        # reponame is factored in properly.
+        r = parse(DEFAULT_ENV, reponame=b'repo',
+                  altbaseurl='http://altserver/altroot',
+                  extra={
+                r'SCRIPT_NAME': r'/script',
+                r'PATH_INFO': r'/repo/path1/path2',
+            })
+
+        self.assertEqual(r.url, b'http://testserver/script/repo/path1/path2')
+        self.assertEqual(r.baseurl, b'http://testserver')
+        self.assertEqual(r.advertisedurl,
+                         b'http://altserver/altroot/repo/path1/path2')
+        self.assertEqual(r.advertisedbaseurl, b'http://altserver')
+        self.assertEqual(r.apppath, b'/altroot/repo')
+        self.assertEqual(r.dispatchparts, [b'path1', b'path2'])
+        self.assertEqual(r.dispatchpath, b'path1/path2')
+        self.assertEqual(r.reponame, b'repo')
 
 if __name__ == '__main__':
     import silenttestrunner

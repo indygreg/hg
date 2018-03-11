@@ -33,7 +33,6 @@ from .. import (
     error,
     hg,
     profiling,
-    pycompat,
     scmutil,
     templater,
     ui as uimod,
@@ -82,33 +81,6 @@ def urlrepos(prefix, roothead, paths):
         path = os.path.normpath(path)
         yield (prefix + '/' +
                util.pconvert(path[len(roothead):]).lstrip('/')).strip('/'), path
-
-def geturlcgivars(baseurl, port):
-    """
-    Extract CGI variables from baseurl
-
-    >>> geturlcgivars(b"http://host.org/base", b"80")
-    ('host.org', '80', '/base')
-    >>> geturlcgivars(b"http://host.org:8000/base", b"80")
-    ('host.org', '8000', '/base')
-    >>> geturlcgivars(b'/base', 8000)
-    ('', '8000', '/base')
-    >>> geturlcgivars(b"base", b'8000')
-    ('', '8000', '/base')
-    >>> geturlcgivars(b"http://host", b'8000')
-    ('host', '8000', '/')
-    >>> geturlcgivars(b"http://host/", b'8000')
-    ('host', '8000', '/')
-    """
-    u = util.url(baseurl)
-    name = u.host or ''
-    if u.port:
-        port = u.port
-    path = u.path or ""
-    if not path.startswith('/'):
-        path = '/' + path
-
-    return name, pycompat.bytestr(port), path
 
 def readallowed(ui, req):
     """Check allow_read and deny_read config options of a repo's ui object
@@ -359,7 +331,6 @@ class hgwebdir(object):
         self.stripecount = self.ui.config('web', 'stripes')
         if self.stripecount:
             self.stripecount = int(self.stripecount)
-        self._baseurl = self.ui.config('web', 'baseurl')
         prefix = self.ui.config('web', 'prefix')
         if prefix.startswith('/'):
             prefix = prefix[1:]
@@ -376,7 +347,8 @@ class hgwebdir(object):
         wsgicgi.launch(self)
 
     def __call__(self, env, respond):
-        wsgireq = requestmod.wsgirequest(env, respond)
+        baseurl = self.ui.config('web', 'baseurl')
+        wsgireq = requestmod.wsgirequest(env, respond, altbaseurl=baseurl)
         return self.run_wsgi(wsgireq)
 
     def run_wsgi(self, wsgireq):
@@ -455,7 +427,8 @@ class hgwebdir(object):
                     # Re-parse the WSGI environment to take into account our
                     # repository path component.
                     wsgireq.req = requestmod.parserequestfromenv(
-                        wsgireq.env, wsgireq.req.bodyfh, reponame=virtualrepo)
+                        wsgireq.env, wsgireq.req.bodyfh, reponame=virtualrepo,
+                        altbaseurl=self.ui.config('web', 'baseurl'))
                     try:
                         # ensure caller gets private copy of ui
                         repo = hg.repository(self.ui.copy(), real)
@@ -502,7 +475,6 @@ class hgwebdir(object):
                 for column in sortable]
 
         self.refresh()
-        self.updatereqenv(wsgireq.env)
 
         entries = indexentries(self.ui, self.repos, wsgireq, req,
                                self.stripecount, sortcolumn=sortcolumn,
@@ -523,8 +495,6 @@ class hgwebdir(object):
 
         def config(section, name, default=uimod._unset, untrusted=True):
             return self.ui.config(section, name, default, untrusted)
-
-        self.updatereqenv(wsgireq.env)
 
         url = wsgireq.env.get('SCRIPT_NAME', '')
         if not url.endswith('/'):
@@ -557,10 +527,3 @@ class hgwebdir(object):
         }
         tmpl = templater.templater.frommapfile(mapfile, defaults=defaults)
         return tmpl
-
-    def updatereqenv(self, env):
-        if self._baseurl is not None:
-            name, port, path = geturlcgivars(self._baseurl, env['SERVER_PORT'])
-            env['SERVER_NAME'] = name
-            env['SERVER_PORT'] = port
-            env['SCRIPT_NAME'] = path

@@ -157,7 +157,7 @@ class parsedrequest(object):
     # Request body input stream.
     bodyfh = attr.ib()
 
-def parserequestfromenv(env, bodyfh, reponame=None):
+def parserequestfromenv(env, bodyfh, reponame=None, altbaseurl=None):
     """Parse URL components from environment variables.
 
     WSGI defines request attributes via environment variables. This function
@@ -167,8 +167,18 @@ def parserequestfromenv(env, bodyfh, reponame=None):
     string are effectively shifted from ``PATH_INFO`` to ``SCRIPT_NAME``.
     This simulates the world view of a WSGI application that processes
     requests from the base URL of a repo.
+
+    If ``altbaseurl`` (typically comes from ``web.baseurl`` config option)
+    is defined, it is used - instead of the WSGI environment variables - for
+    constructing URL components up to and including the WSGI application path.
+    For example, if the current WSGI application is at ``/repo`` and a request
+    is made to ``/rev/@`` with this argument set to
+    ``http://myserver:9000/prefix``, the URL and path components will resolve as
+    if the request were to ``http://myserver:9000/prefix/rev/@``. In other
+    words, ``wsgi.url_scheme``, ``SERVER_NAME``, ``SERVER_PORT``, and
+    ``SCRIPT_NAME`` are all effectively replaced by components from this URL.
     """
-    # PEP-0333 defines the WSGI spec and is a useful reference for this code.
+    # PEP 3333 defines the WSGI spec and is a useful reference for this code.
 
     # We first validate that the incoming object conforms with the WSGI spec.
     # We only want to be dealing with spec-conforming WSGI implementations.
@@ -184,20 +194,27 @@ def parserequestfromenv(env, bodyfh, reponame=None):
         env = {k: v.encode('latin-1') if isinstance(v, str) else v
                for k, v in env.iteritems()}
 
+    if altbaseurl:
+        altbaseurl = util.url(altbaseurl)
+
     # https://www.python.org/dev/peps/pep-0333/#environ-variables defines
     # the environment variables.
     # https://www.python.org/dev/peps/pep-0333/#url-reconstruction defines
     # how URLs are reconstructed.
     fullurl = env['wsgi.url_scheme'] + '://'
-    advertisedfullurl = fullurl
 
-    def addport(s):
-        if env['wsgi.url_scheme'] == 'https':
-            if env['SERVER_PORT'] != '443':
-                s += ':' + env['SERVER_PORT']
+    if altbaseurl and altbaseurl.scheme:
+        advertisedfullurl = altbaseurl.scheme + '://'
+    else:
+        advertisedfullurl = fullurl
+
+    def addport(s, port):
+        if s.startswith('https://'):
+            if port != '443':
+                s += ':' + port
         else:
-            if env['SERVER_PORT'] != '80':
-                s += ':' + env['SERVER_PORT']
+            if port != '80':
+                s += ':' + port
 
         return s
 
@@ -205,17 +222,39 @@ def parserequestfromenv(env, bodyfh, reponame=None):
         fullurl += env['HTTP_HOST']
     else:
         fullurl += env['SERVER_NAME']
-        fullurl = addport(fullurl)
+        fullurl = addport(fullurl, env['SERVER_PORT'])
 
-    advertisedfullurl += env['SERVER_NAME']
-    advertisedfullurl = addport(advertisedfullurl)
+    if altbaseurl and altbaseurl.host:
+        advertisedfullurl += altbaseurl.host
+
+        if altbaseurl.port:
+            port = altbaseurl.port
+        elif altbaseurl.scheme == 'http' and not altbaseurl.port:
+            port = '80'
+        elif altbaseurl.scheme == 'https' and not altbaseurl.port:
+            port = '443'
+        else:
+            port = env['SERVER_PORT']
+
+        advertisedfullurl = addport(advertisedfullurl, port)
+    else:
+        advertisedfullurl += env['SERVER_NAME']
+        advertisedfullurl = addport(advertisedfullurl, env['SERVER_PORT'])
 
     baseurl = fullurl
     advertisedbaseurl = advertisedfullurl
 
     fullurl += util.urlreq.quote(env.get('SCRIPT_NAME', ''))
-    advertisedfullurl += util.urlreq.quote(env.get('SCRIPT_NAME', ''))
     fullurl += util.urlreq.quote(env.get('PATH_INFO', ''))
+
+    if altbaseurl:
+        path = altbaseurl.path or ''
+        if path and not path.startswith('/'):
+            path = '/' + path
+        advertisedfullurl += util.urlreq.quote(path)
+    else:
+        advertisedfullurl += util.urlreq.quote(env.get('SCRIPT_NAME', ''))
+
     advertisedfullurl += util.urlreq.quote(env.get('PATH_INFO', ''))
 
     if env.get('QUERY_STRING'):
@@ -226,7 +265,12 @@ def parserequestfromenv(env, bodyfh, reponame=None):
     # that represents the repository being dispatched to. When computing
     # the dispatch info, we ignore these leading path components.
 
-    apppath = env.get('SCRIPT_NAME', '')
+    if altbaseurl:
+        apppath = altbaseurl.path or ''
+        if apppath and not apppath.startswith('/'):
+            apppath = '/' + apppath
+    else:
+        apppath = env.get('SCRIPT_NAME', '')
 
     if reponame:
         repoprefix = '/' + reponame.strip('/')
@@ -545,7 +589,7 @@ class wsgirequest(object):
     instantiate instances of this class, which provides higher-level APIs
     for obtaining request parameters, writing HTTP output, etc.
     """
-    def __init__(self, wsgienv, start_response):
+    def __init__(self, wsgienv, start_response, altbaseurl=None):
         version = wsgienv[r'wsgi.version']
         if (version < (1, 0)) or (version >= (2, 0)):
             raise RuntimeError("Unknown and unsupported WSGI version %d.%d"
@@ -563,7 +607,7 @@ class wsgirequest(object):
         self.multiprocess = wsgienv[r'wsgi.multiprocess']
         self.run_once = wsgienv[r'wsgi.run_once']
         self.env = wsgienv
-        self.req = parserequestfromenv(wsgienv, inp)
+        self.req = parserequestfromenv(wsgienv, inp, altbaseurl=altbaseurl)
         self.res = wsgiresponse(self.req, start_response)
         self._start_response = start_response
         self.server_write = None

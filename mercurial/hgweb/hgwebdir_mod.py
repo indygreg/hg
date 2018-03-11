@@ -148,6 +148,131 @@ def archivelist(ui, nodeid, url):
 
     return archives
 
+def rawindexentries(ui, repos, wsgireq, req, subdir='', **map):
+    descend = ui.configbool('web', 'descend')
+    collapse = ui.configbool('web', 'collapse')
+    seenrepos = set()
+    seendirs = set()
+    for name, path in repos:
+
+        if not name.startswith(subdir):
+            continue
+        name = name[len(subdir):]
+        directory = False
+
+        if '/' in name:
+            if not descend:
+                continue
+
+            nameparts = name.split('/')
+            rootname = nameparts[0]
+
+            if not collapse:
+                pass
+            elif rootname in seendirs:
+                continue
+            elif rootname in seenrepos:
+                pass
+            else:
+                directory = True
+                name = rootname
+
+                # redefine the path to refer to the directory
+                discarded = '/'.join(nameparts[1:])
+
+                # remove name parts plus accompanying slash
+                path = path[:-len(discarded) - 1]
+
+                try:
+                    r = hg.repository(ui, path)
+                    directory = False
+                except (IOError, error.RepoError):
+                    pass
+
+        parts = [name]
+        parts.insert(0, '/' + subdir.rstrip('/'))
+        if wsgireq.env['SCRIPT_NAME']:
+            parts.insert(0, wsgireq.env['SCRIPT_NAME'])
+        url = re.sub(r'/+', '/', '/'.join(parts) + '/')
+
+        # show either a directory entry or a repository
+        if directory:
+            # get the directory's time information
+            try:
+                d = (get_mtime(path), dateutil.makedate()[1])
+            except OSError:
+                continue
+
+            # add '/' to the name to make it obvious that
+            # the entry is a directory, not a regular repository
+            row = {'contact': "",
+                   'contact_sort': "",
+                   'name': name + '/',
+                   'name_sort': name,
+                   'url': url,
+                   'description': "",
+                   'description_sort': "",
+                   'lastchange': d,
+                   'lastchange_sort': d[1] - d[0],
+                   'archives': [],
+                   'isdirectory': True,
+                   'labels': [],
+                   }
+
+            seendirs.add(name)
+            yield row
+            continue
+
+        u = ui.copy()
+        try:
+            u.readconfig(os.path.join(path, '.hg', 'hgrc'))
+        except Exception as e:
+            u.warn(_('error reading %s/.hg/hgrc: %s\n') % (path, e))
+            continue
+
+        def get(section, name, default=uimod._unset):
+            return u.config(section, name, default, untrusted=True)
+
+        if u.configbool("web", "hidden", untrusted=True):
+            continue
+
+        if not readallowed(u, req):
+            continue
+
+        # update time with local timezone
+        try:
+            r = hg.repository(ui, path)
+        except IOError:
+            u.warn(_('error accessing repository at %s\n') % path)
+            continue
+        except error.RepoError:
+            u.warn(_('error accessing repository at %s\n') % path)
+            continue
+        try:
+            d = (get_mtime(r.spath), dateutil.makedate()[1])
+        except OSError:
+            continue
+
+        contact = get_contact(get)
+        description = get("web", "description")
+        seenrepos.add(name)
+        name = get("web", "name", name)
+        row = {'contact': contact or "unknown",
+               'contact_sort': contact.upper() or "unknown",
+               'name': name,
+               'name_sort': name,
+               'url': url,
+               'description': description or "unknown",
+               'description_sort': description.upper() or "unknown",
+               'lastchange': d,
+               'lastchange_sort': d[1] - d[0],
+               'archives': archivelist(u, "tip", url),
+               'isdirectory': None,
+               'labels': u.configlist('web', 'labels', untrusted=True),
+               }
+
+        yield row
+
 class hgwebdir(object):
     """HTTP server for multiple repositories.
 
@@ -347,134 +472,10 @@ class hgwebdir(object):
     def makeindex(self, wsgireq, tmpl, subdir=""):
         req = wsgireq.req
 
-        def rawentries(subdir="", **map):
-
-            descend = self.ui.configbool('web', 'descend')
-            collapse = self.ui.configbool('web', 'collapse')
-            seenrepos = set()
-            seendirs = set()
-            for name, path in self.repos:
-
-                if not name.startswith(subdir):
-                    continue
-                name = name[len(subdir):]
-                directory = False
-
-                if '/' in name:
-                    if not descend:
-                        continue
-
-                    nameparts = name.split('/')
-                    rootname = nameparts[0]
-
-                    if not collapse:
-                        pass
-                    elif rootname in seendirs:
-                        continue
-                    elif rootname in seenrepos:
-                        pass
-                    else:
-                        directory = True
-                        name = rootname
-
-                        # redefine the path to refer to the directory
-                        discarded = '/'.join(nameparts[1:])
-
-                        # remove name parts plus accompanying slash
-                        path = path[:-len(discarded) - 1]
-
-                        try:
-                            r = hg.repository(self.ui, path)
-                            directory = False
-                        except (IOError, error.RepoError):
-                            pass
-
-                parts = [name]
-                parts.insert(0, '/' + subdir.rstrip('/'))
-                if wsgireq.env['SCRIPT_NAME']:
-                    parts.insert(0, wsgireq.env['SCRIPT_NAME'])
-                url = re.sub(r'/+', '/', '/'.join(parts) + '/')
-
-                # show either a directory entry or a repository
-                if directory:
-                    # get the directory's time information
-                    try:
-                        d = (get_mtime(path), dateutil.makedate()[1])
-                    except OSError:
-                        continue
-
-                    # add '/' to the name to make it obvious that
-                    # the entry is a directory, not a regular repository
-                    row = {'contact': "",
-                           'contact_sort': "",
-                           'name': name + '/',
-                           'name_sort': name,
-                           'url': url,
-                           'description': "",
-                           'description_sort': "",
-                           'lastchange': d,
-                           'lastchange_sort': d[1]-d[0],
-                           'archives': [],
-                           'isdirectory': True,
-                           'labels': [],
-                           }
-
-                    seendirs.add(name)
-                    yield row
-                    continue
-
-                u = self.ui.copy()
-                try:
-                    u.readconfig(os.path.join(path, '.hg', 'hgrc'))
-                except Exception as e:
-                    u.warn(_('error reading %s/.hg/hgrc: %s\n') % (path, e))
-                    continue
-                def get(section, name, default=uimod._unset):
-                    return u.config(section, name, default, untrusted=True)
-
-                if u.configbool("web", "hidden", untrusted=True):
-                    continue
-
-                if not readallowed(u, req):
-                    continue
-
-                # update time with local timezone
-                try:
-                    r = hg.repository(self.ui, path)
-                except IOError:
-                    u.warn(_('error accessing repository at %s\n') % path)
-                    continue
-                except error.RepoError:
-                    u.warn(_('error accessing repository at %s\n') % path)
-                    continue
-                try:
-                    d = (get_mtime(r.spath), dateutil.makedate()[1])
-                except OSError:
-                    continue
-
-                contact = get_contact(get)
-                description = get("web", "description")
-                seenrepos.add(name)
-                name = get("web", "name", name)
-                row = {'contact': contact or "unknown",
-                       'contact_sort': contact.upper() or "unknown",
-                       'name': name,
-                       'name_sort': name,
-                       'url': url,
-                       'description': description or "unknown",
-                       'description_sort': description.upper() or "unknown",
-                       'lastchange': d,
-                       'lastchange_sort': d[1]-d[0],
-                       'archives': archivelist(u, "tip", url),
-                       'isdirectory': None,
-                       'labels': u.configlist('web', 'labels', untrusted=True),
-                       }
-
-                yield row
-
         sortdefault = None, False
         def entries(sortcolumn="", descending=False, subdir="", **map):
-            rows = rawentries(subdir=subdir, **map)
+            rows = rawindexentries(self.ui, self.repos, wsgireq, req,
+                                   subdir=subdir, **map)
 
             if sortcolumn and sortdefault != (sortcolumn, descending):
                 sortkey = '%s_sort' % sortcolumn

@@ -367,7 +367,6 @@ class hgwebdir(object):
             csp, nonce = cspvalues(self.ui)
             if csp:
                 res.headers['Content-Security-Policy'] = csp
-                wsgireq.headers.append(('Content-Security-Policy', csp))
 
             virtual = req.dispatchpath.strip('/')
             tmpl = self.templater(req, nonce)

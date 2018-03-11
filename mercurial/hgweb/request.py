@@ -8,15 +8,8 @@
 
 from __future__ import absolute_import
 
-import errno
-import socket
 import wsgiref.headers as wsgiheaders
 #import wsgiref.validate
-
-from .common import (
-    ErrorResponse,
-    statusmessage,
-)
 
 from ..thirdparty import (
     attr,
@@ -609,100 +602,6 @@ class wsgirequest(object):
         self.env = wsgienv
         self.req = parserequestfromenv(wsgienv, inp, altbaseurl=altbaseurl)
         self.res = wsgiresponse(self.req, start_response)
-        self._start_response = start_response
-        self.server_write = None
-        self.headers = []
-
-    def respond(self, status, type, filename=None, body=None):
-        if not isinstance(type, str):
-            type = pycompat.sysstr(type)
-        if self._start_response is not None:
-            self.headers.append((r'Content-Type', type))
-            if filename:
-                filename = (filename.rpartition('/')[-1]
-                            .replace('\\', '\\\\').replace('"', '\\"'))
-                self.headers.append(('Content-Disposition',
-                                     'inline; filename="%s"' % filename))
-            if body is not None:
-                self.headers.append((r'Content-Length', str(len(body))))
-
-            for k, v in self.headers:
-                if not isinstance(v, str):
-                    raise TypeError('header value must be string: %r' % (v,))
-
-            if isinstance(status, ErrorResponse):
-                self.headers.extend(status.headers)
-                status = statusmessage(status.code, pycompat.bytestr(status))
-            elif status == 200:
-                status = '200 Script output follows'
-            elif isinstance(status, int):
-                status = statusmessage(status)
-
-            # Various HTTP clients (notably httplib) won't read the HTTP
-            # response until the HTTP request has been sent in full. If servers
-            # (us) send a response before the HTTP request has been fully sent,
-            # the connection may deadlock because neither end is reading.
-            #
-            # We work around this by "draining" the request data before
-            # sending any response in some conditions.
-            drain = False
-            close = False
-
-            # If the client sent Expect: 100-continue, we assume it is smart
-            # enough to deal with the server sending a response before reading
-            # the request. (httplib doesn't do this.)
-            if self.env.get(r'HTTP_EXPECT', r'').lower() == r'100-continue':
-                pass
-            # Only tend to request methods that have bodies. Strictly speaking,
-            # we should sniff for a body. But this is fine for our existing
-            # WSGI applications.
-            elif self.env[r'REQUEST_METHOD'] not in (r'POST', r'PUT'):
-                pass
-            else:
-                # If we don't know how much data to read, there's no guarantee
-                # that we can drain the request responsibly. The WSGI
-                # specification only says that servers *should* ensure the
-                # input stream doesn't overrun the actual request. So there's
-                # no guarantee that reading until EOF won't corrupt the stream
-                # state.
-                if not isinstance(self.req.bodyfh, util.cappedreader):
-                    close = True
-                else:
-                    # We /could/ only drain certain HTTP response codes. But 200
-                    # and non-200 wire protocol responses both require draining.
-                    # Since we have a capped reader in place for all situations
-                    # where we drain, it is safe to read from that stream. We'll
-                    # either do a drain or no-op if we're already at EOF.
-                    drain = True
-
-            if close:
-                self.headers.append((r'Connection', r'Close'))
-
-            if drain:
-                assert isinstance(self.req.bodyfh, util.cappedreader)
-                while True:
-                    chunk = self.req.bodyfh.read(32768)
-                    if not chunk:
-                        break
-
-            self.server_write = self._start_response(
-                pycompat.sysstr(status), self.headers)
-            self._start_response = None
-            self.headers = []
-        if body is not None:
-            self.write(body)
-            self.server_write = None
-
-    def write(self, thing):
-        if thing:
-            try:
-                self.server_write(thing)
-            except socket.error as inst:
-                if inst[0] != errno.ECONNRESET:
-                    raise
-
-    def flush(self):
-        return None
 
 def wsgiapplication(app_maker):
     '''For compatibility with old CGI scripts. A plain hgweb() or hgwebdir()

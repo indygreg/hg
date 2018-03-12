@@ -1138,6 +1138,7 @@ Multiple upgrades is not allowed
   i>     hello\n
   o> readline() -> 1:
   o>     \n
+  o> read(-1) -> 0: 
   e> read(-1) -> 42:
   e>     cannot upgrade protocols multiple times\n
   e>     -\n
@@ -1229,6 +1230,7 @@ Upgrade request must be followed by hello + between
   i>     invalid\n
   o> readline() -> 1:
   o>     \n
+  o> read(-1) -> 0: 
   e> read(-1) -> 46:
   e>     malformed handshake protocol: missing hello\n
   e>     -\n
@@ -1248,6 +1250,7 @@ Upgrade request must be followed by hello + between
   i>     invalid\n
   o> readline() -> 1:
   o>     \n
+  o> read(-1) -> 0: 
   e> read(-1) -> 48:
   e>     malformed handshake protocol: missing between\n
   e>     -\n
@@ -1269,6 +1272,7 @@ Upgrade request must be followed by hello + between
   i>     invalid\n
   o> readline() -> 1:
   o>     \n
+  o> read(-1) -> 0: 
   e> read(-1) -> 49:
   e>     malformed handshake protocol: missing pairs 81\n
   e>     -\n

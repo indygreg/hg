@@ -2690,7 +2690,8 @@ def debugwireproto(ui, repo, **opts):
     readavailable
     -------------
 
-    Read all available data from the server.
+    Close the write end of the connection and read all available data from
+    the server.
 
     If the connection to the server encompasses multiple pipes, we poll both
     pipes and read available data.
@@ -2835,17 +2836,9 @@ def debugwireproto(ui, repo, **opts):
         elif action == 'close':
             peer.close()
         elif action == 'readavailable':
-            fds = [stdout.fileno(), stderr.fileno()]
-            try:
-                act = util.poll(fds)
-            except NotImplementedError:
-                # non supported yet case, assume all have data.
-                act = fds
-
-            if stdout.fileno() in act:
-                util.readpipe(stdout)
-            if stderr.fileno() in act:
-                util.readpipe(stderr)
+            stdin.close()
+            stdout.read()
+            stderr.read()
         elif action == 'readline':
             stdout.readline()
         else:

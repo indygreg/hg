@@ -93,6 +93,7 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 115:
   e>     abort: incompatible Mercurial client; bundle2 required\n
   e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
@@ -143,6 +144,7 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 115:
   e>     abort: incompatible Mercurial client; bundle2 required\n
   e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
@@ -260,6 +262,7 @@ ui.write() in hook is redirected to stderr
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 196:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -316,6 +319,7 @@ ui.write() in hook is redirected to stderr
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 196:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -386,6 +390,7 @@ And a variation that writes multiple lines using ui.write
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -443,6 +448,7 @@ And a variation that writes multiple lines using ui.write
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -514,6 +520,7 @@ And a variation that does a ui.flush() after writing output
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 202:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -570,6 +577,7 @@ And a variation that does a ui.flush() after writing output
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 202:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -640,6 +648,7 @@ Multiple writes + flush
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 206:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -697,6 +706,7 @@ Multiple writes + flush
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 206:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -768,6 +778,7 @@ ui.write() + ui.write_err() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 232:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -827,6 +838,7 @@ ui.write() + ui.write_err() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 232:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -900,6 +912,7 @@ print() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 193:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -956,6 +969,7 @@ print() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 193:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1026,6 +1040,7 @@ Mixed print() and ui.write() are both captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1085,6 +1100,7 @@ Mixed print() and ui.write() are both captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1158,6 +1174,7 @@ print() to stdout and stderr both get captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 216:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1217,6 +1234,7 @@ print() to stdout and stderr both get captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 216:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1296,6 +1314,7 @@ Shell hook writing to stdout has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1353,6 +1372,7 @@ Shell hook writing to stdout has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1425,6 +1445,7 @@ Shell hook writing to stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1482,6 +1503,7 @@ Shell hook writing to stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1556,6 +1578,7 @@ Shell hook writing to stdout and stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 230:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1615,6 +1638,7 @@ Shell hook writing to stdout and stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 230:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1697,6 +1721,7 @@ Shell and Python hooks writing to stdout and stderr have output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 273:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1760,6 +1785,7 @@ Shell and Python hooks writing to stdout and stderr have output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 273:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1837,6 +1863,7 @@ Pushing a bundle1 with no output
   o> read(1) -> 1: 1
   result: 1
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 100:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1889,6 +1916,7 @@ Pushing a bundle1 with no output
   o> read(1) -> 1: 1
   result: 1
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 100:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1967,6 +1995,7 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   o> read(1) -> 1: 1
   result: 1
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 152:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -2023,6 +2052,7 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   o> read(1) -> 1: 1
   result: 1
   remote output: 
+  o> read(-1) -> 0: 
   e> read(-1) -> 152:
   e>     adding changesets\n
   e>     adding manifests\n

@@ -8,6 +8,7 @@
 
 from __future__ import absolute_import
 
+import gc
 import os
 import re
 import time
@@ -224,8 +225,18 @@ class hgwebdir(object):
     def run_wsgi(self, req):
         profile = self.ui.configbool('profiling', 'enabled')
         with profiling.profile(self.ui, enabled=profile):
-            for r in self._runwsgi(req):
-                yield r
+            try:
+                for r in self._runwsgi(req):
+                    yield r
+            finally:
+                # There are known cycles in localrepository that prevent
+                # those objects (and tons of held references) from being
+                # collected through normal refcounting. We mitigate those
+                # leaks by performing an explicit GC on every request.
+                # TODO remove this once leaks are fixed.
+                # TODO only run this on requests that create localrepository
+                # instances instead of every request.
+                gc.collect()
 
     def _runwsgi(self, req):
         try:

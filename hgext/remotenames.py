@@ -32,6 +32,8 @@ from mercurial.node import (
     bin,
 )
 from mercurial import (
+    bookmarks,
+    extensions,
     logexchange,
     namespaces,
     pycompat,
@@ -227,6 +229,24 @@ class remotenames(object):
                     name = name[len(hoist):]
                     self._nodetohoists.setdefault(node[0], []).append(name)
         return self._nodetohoists
+
+def wrapprintbookmarks(orig, ui, repo, bmarks, **opts):
+    if 'remotebookmarks' not in repo.names:
+        return
+    ns = repo.names['remotebookmarks']
+
+    for name in ns.listnames(repo):
+        nodes = ns.nodes(repo, name)
+        if not nodes:
+            continue
+        node = nodes[0]
+
+        bmarks[name] = (node, ' ', '')
+
+    return orig(ui, repo, bmarks, **opts)
+
+def extsetup(ui):
+    extensions.wrapfunction(bookmarks, '_printbookmarks', wrapprintbookmarks)
 
 def reposetup(ui, repo):
     if not repo.local():

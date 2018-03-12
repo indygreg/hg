@@ -327,3 +327,9 @@ Local bookmark should take precedence over hoisted name
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     added bar
   
+  $ hg bookmarks
+     $TESTTMP/server2/bar 6:87d6d6676308
+     $TESTTMP/server2/foo 3:62615734edd5
+     default/bar               6:87d6d6676308
+     default/foo               3:62615734edd5
+   * foo                       8:3e1487808078

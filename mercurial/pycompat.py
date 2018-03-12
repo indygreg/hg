@@ -71,6 +71,9 @@ if ispy3:
     def maplist(*args):
         return list(map(*args))
 
+    def rangelist(*args):
+        return list(range(*args))
+
     def ziplist(*args):
         return list(zip(*args))
 
@@ -348,6 +351,7 @@ else:
     bytesio = cStringIO.StringIO
     stringio = bytesio
     maplist = map
+    rangelist = range
     ziplist = zip
     rawinput = raw_input
     getargspec = inspect.getargspec

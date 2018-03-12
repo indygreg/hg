@@ -369,6 +369,15 @@ class annotateline(object):
     # Whether this annotation was the result of a skip-annotate.
     skip = attr.ib(default=False)
 
+@attr.s(slots=True, frozen=True)
+class _annotatedfile(object):
+    # list indexed by lineno - 1
+    fctxs = attr.ib()
+    linenos = attr.ib()
+    skips = attr.ib()
+    # full file content
+    text = attr.ib()
+
 def _countlines(text):
     if text.endswith("\n"):
         return text.count("\n")
@@ -385,7 +394,7 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
 
     See test-annotate.py for unit tests.
     '''
-    pblocks = [(parent, mdiff.allblocks(parent[1], child[1], opts=diffopts))
+    pblocks = [(parent, mdiff.allblocks(parent.text, child.text, opts=diffopts))
                for parent in parents]
 
     if skipchild:
@@ -398,7 +407,9 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
             # Changed blocks ('!') or blocks made only of blank lines ('~')
             # belong to the child.
             if t == '=':
-                child[0][b1:b2] = parent[0][a1:a2]
+                child.fctxs[b1:b2] = parent.fctxs[a1:a2]
+                child.linenos[b1:b2] = parent.linenos[a1:a2]
+                child.skips[b1:b2] = parent.skips[a1:a2]
 
     if skipchild:
         # Now try and match up anything that couldn't be matched,
@@ -419,9 +430,11 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
             for (a1, a2, b1, b2), _t in blocks:
                 if a2 - a1 >= b2 - b1:
                     for bk in xrange(b1, b2):
-                        if child[0][bk].fctx == childfctx:
+                        if child.fctxs[bk] == childfctx:
                             ak = min(a1 + (bk - b1), a2 - 1)
-                            child[0][bk] = attr.evolve(parent[0][ak], skip=True)
+                            child.fctxs[bk] = parent.fctxs[ak]
+                            child.linenos[bk] = parent.linenos[ak]
+                            child.skips[bk] = True
                 else:
                     remaining[idx][1].append((a1, a2, b1, b2))
 
@@ -430,9 +443,11 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
         for parent, blocks in remaining:
             for a1, a2, b1, b2 in blocks:
                 for bk in xrange(b1, b2):
-                    if child[0][bk].fctx == childfctx:
+                    if child.fctxs[bk] == childfctx:
                         ak = min(a1 + (bk - b1), a2 - 1)
-                        child[0][bk] = attr.evolve(parent[0][ak], skip=True)
+                        child.fctxs[bk] = parent.fctxs[ak]
+                        child.linenos[bk] = parent.linenos[ak]
+                        child.skips[bk] = True
     return child
 
 def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
@@ -443,11 +458,13 @@ def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
 
     if linenumber:
         def decorate(text, fctx):
-            return ([annotateline(fctx=fctx, lineno=i)
-                     for i in xrange(1, _countlines(text) + 1)], text)
+            n = _countlines(text)
+            linenos = pycompat.rangelist(1, n + 1)
+            return _annotatedfile([fctx] * n, linenos, [False] * n, text)
     else:
         def decorate(text, fctx):
-            return ([annotateline(fctx=fctx)] * _countlines(text), text)
+            n = _countlines(text)
+            return _annotatedfile([fctx] * n, [False] * n, [False] * n, text)
 
     # This algorithm would prefer to be recursive, but Python is a
     # bit recursion-hostile. Instead we do an iterative
@@ -501,8 +518,10 @@ def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
             hist[f] = curr
             del pcache[f]
 
-    lineattrs, text = hist[base]
-    return pycompat.ziplist(lineattrs, mdiff.splitnewlines(text))
+    a = hist[base]
+    return [(annotateline(fctx, lineno, skip), line)
+            for fctx, lineno, skip, line
+            in zip(a.fctxs, a.linenos, a.skips, mdiff.splitnewlines(a.text))]
 
 def toposort(revs, parentsfunc, firstbranch=()):
     """Yield revisions from heads to roots one (topo) branch at a time.

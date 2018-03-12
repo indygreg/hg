@@ -25,8 +25,8 @@ class AnnotateTests(unittest.TestCase):
         childdata = b'a\nb2\nc\nc2\nd\n'
         diffopts = mdiff.diffopts()
 
-        def decorate(text, rev):
-            return ([annotateline(fctx=rev, lineno=i)
+        def decorate(text, fctx):
+            return ([annotateline(fctx=fctx, lineno=i)
                      for i in range(1, text.count(b'\n') + 1)],
                     text)
 

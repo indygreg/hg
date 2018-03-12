@@ -442,12 +442,12 @@ def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
     """
 
     if linenumber:
-        def decorate(text, rev):
-            return ([annotateline(fctx=rev, lineno=i)
+        def decorate(text, fctx):
+            return ([annotateline(fctx=fctx, lineno=i)
                      for i in xrange(1, _countlines(text) + 1)], text)
     else:
-        def decorate(text, rev):
-            return ([annotateline(fctx=rev)] * _countlines(text), text)
+        def decorate(text, fctx):
+            return ([annotateline(fctx=fctx)] * _countlines(text), text)
 
     # This algorithm would prefer to be recursive, but Python is a
     # bit recursion-hostile. Instead we do an iterative

@@ -2715,6 +2715,21 @@ def debugwireproto(ui, repo, **opts):
 
     Read a line of output from the server. If there are multiple output
     pipes, reads only the main pipe.
+
+    ereadline
+    ---------
+
+    Like ``readline``, but read from the stderr pipe, if available.
+
+    read <X>
+    --------
+
+    ``read()`` N bytes from the server's main output pipe.
+
+    eread <X>
+    ---------
+
+    ``read()`` N bytes from the server's stderr pipe, if available.
     """
     opts = pycompat.byteskwargs(opts)
 
@@ -2855,6 +2870,14 @@ def debugwireproto(ui, repo, **opts):
             stderr.read()
         elif action == 'readline':
             stdout.readline()
+        elif action == 'ereadline':
+            stderr.readline()
+        elif action.startswith('read '):
+            count = int(action.split(' ', 1)[1])
+            stdout.read(count)
+        elif action.startswith('eread '):
+            count = int(action.split(' ', 1)[1])
+            stderr.read(count)
         else:
             raise error.Abort(_('unknown action: %s') % action)
 

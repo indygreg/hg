@@ -430,115 +430,122 @@ class rebaseruntime(object):
         ui.note(_('rebase merging completed\n'))
 
     def _performrebasesubset(self, tr, subset, pos, total):
-        repo, ui, opts = self.repo, self.ui, self.opts
-        sortedrevs = repo.revs('sort(%ld, -topo)', subset)
+        sortedrevs = self.repo.revs('sort(%ld, -topo)', subset)
         allowdivergence = self.ui.configbool(
             'experimental', 'evolution.allowdivergence')
         if not allowdivergence:
-            sortedrevs -= repo.revs(
+            sortedrevs -= self.repo.revs(
                 'descendants(%ld) and not %ld',
                 self.obsoletewithoutsuccessorindestination,
                 self.obsoletewithoutsuccessorindestination,
             )
+        posholder = [pos]
+        def progress(ctx):
+            posholder[0] += 1
+            self.repo.ui.progress(_("rebasing"), posholder[0],
+                                  ("%d:%s" % (ctx.rev(), ctx)), _('changesets'),
+                                  total)
         for rev in sortedrevs:
-            dest = self.destmap[rev]
-            ctx = repo[rev]
-            desc = _ctxdesc(ctx)
-            if self.state[rev] == rev:
-                ui.status(_('already rebased %s\n') % desc)
-            elif (not allowdivergence
-                  and rev in self.obsoletewithoutsuccessorindestination):
-                msg = _('note: not rebasing %s and its descendants as '
-                        'this would cause divergence\n') % desc
-                repo.ui.status(msg)
-                self.skipped.add(rev)
-            elif rev in self.obsoletenotrebased:
-                succ = self.obsoletenotrebased[rev]
-                if succ is None:
-                    msg = _('note: not rebasing %s, it has no '
-                            'successor\n') % desc
-                else:
-                    succdesc = _ctxdesc(repo[succ])
-                    msg = (_('note: not rebasing %s, already in '
-                             'destination as %s\n') % (desc, succdesc))
-                repo.ui.status(msg)
-                # Make clearrebased aware state[rev] is not a true successor
-                self.skipped.add(rev)
-                # Record rev as moved to its desired destination in self.state.
-                # This helps bookmark and working parent movement.
-                dest = max(adjustdest(repo, rev, self.destmap, self.state,
-                                      self.skipped))
-                self.state[rev] = dest
-            elif self.state[rev] == revtodo:
-                pos += 1
-                ui.status(_('rebasing %s\n') % desc)
-                ui.progress(_("rebasing"), pos, ("%d:%s" % (rev, ctx)),
-                            _('changesets'), total)
-                p1, p2, base = defineparents(repo, rev, self.destmap,
-                                             self.state, self.skipped,
-                                             self.obsoletenotrebased)
-                self.storestatus(tr=tr)
-                if len(repo[None].parents()) == 2:
-                    repo.ui.debug('resuming interrupted rebase\n')
-                else:
-                    overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
-                    with ui.configoverride(overrides, 'rebase'):
-                        stats = rebasenode(repo, rev, p1, base, self.collapsef,
-                                           dest, wctx=self.wctx)
-                        if stats and stats[3] > 0:
-                            if self.wctx.isinmemory():
-                                raise error.InMemoryMergeConflictsError()
-                            else:
-                                raise error.InterventionRequired(
-                                    _('unresolved conflicts (see hg '
-                                      'resolve, then hg rebase --continue)'))
-                if not self.collapsef:
-                    merging = p2 != nullrev
-                    editform = cmdutil.mergeeditform(merging, 'rebase')
-                    editor = cmdutil.getcommiteditor(editform=editform,
-                                                     **pycompat.strkwargs(opts))
-                    if self.wctx.isinmemory():
-                        newnode = concludememorynode(repo, rev, p1, p2,
-                            wctx=self.wctx,
-                            extrafn=_makeextrafn(self.extrafns),
-                            editor=editor,
-                            keepbranches=self.keepbranchesf,
-                            date=self.date)
-                        mergemod.mergestate.clean(repo)
-                    else:
-                        newnode = concludenode(repo, rev, p1, p2,
-                            extrafn=_makeextrafn(self.extrafns),
-                            editor=editor,
-                            keepbranches=self.keepbranchesf,
-                            date=self.date)
+            self._rebasenode(tr, rev, allowdivergence, progress)
+        return posholder[0]
 
-                    if newnode is None:
-                        # If it ended up being a no-op commit, then the normal
-                        # merge state clean-up path doesn't happen, so do it
-                        # here. Fix issue5494
-                        mergemod.mergestate.clean(repo)
-                else:
-                    # Skip commit if we are collapsing
-                    if self.wctx.isinmemory():
-                        self.wctx.setbase(repo[p1])
-                    else:
-                        repo.setparents(repo[p1].node())
-                    newnode = None
-                # Update the state
-                if newnode is not None:
-                    self.state[rev] = repo[newnode].rev()
-                    ui.debug('rebased as %s\n' % short(newnode))
-                else:
-                    if not self.collapsef:
-                        ui.warn(_('note: rebase of %d:%s created no changes '
-                                  'to commit\n') % (rev, ctx))
-                        self.skipped.add(rev)
-                    self.state[rev] = p1
-                    ui.debug('next revision set to %d\n' % p1)
+    def _rebasenode(self, tr, rev, allowdivergence, progressfn):
+        repo, ui, opts = self.repo, self.ui, self.opts
+        dest = self.destmap[rev]
+        ctx = repo[rev]
+        desc = _ctxdesc(ctx)
+        if self.state[rev] == rev:
+            ui.status(_('already rebased %s\n') % desc)
+        elif (not allowdivergence
+              and rev in self.obsoletewithoutsuccessorindestination):
+            msg = _('note: not rebasing %s and its descendants as '
+                    'this would cause divergence\n') % desc
+            repo.ui.status(msg)
+            self.skipped.add(rev)
+        elif rev in self.obsoletenotrebased:
+            succ = self.obsoletenotrebased[rev]
+            if succ is None:
+                msg = _('note: not rebasing %s, it has no '
+                        'successor\n') % desc
             else:
-                ui.status(_('already rebased %s as %s\n') %
-                          (desc, repo[self.state[rev]]))
-        return pos
+                succdesc = _ctxdesc(repo[succ])
+                msg = (_('note: not rebasing %s, already in '
+                         'destination as %s\n') % (desc, succdesc))
+            repo.ui.status(msg)
+            # Make clearrebased aware state[rev] is not a true successor
+            self.skipped.add(rev)
+            # Record rev as moved to its desired destination in self.state.
+            # This helps bookmark and working parent movement.
+            dest = max(adjustdest(repo, rev, self.destmap, self.state,
+                                  self.skipped))
+            self.state[rev] = dest
+        elif self.state[rev] == revtodo:
+            ui.status(_('rebasing %s\n') % desc)
+            progressfn(ctx)
+            p1, p2, base = defineparents(repo, rev, self.destmap,
+                                         self.state, self.skipped,
+                                         self.obsoletenotrebased)
+            self.storestatus(tr=tr)
+            if len(repo[None].parents()) == 2:
+                repo.ui.debug('resuming interrupted rebase\n')
+            else:
+                overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+                with ui.configoverride(overrides, 'rebase'):
+                    stats = rebasenode(repo, rev, p1, base, self.collapsef,
+                                       dest, wctx=self.wctx)
+                    if stats and stats[3] > 0:
+                        if self.wctx.isinmemory():
+                            raise error.InMemoryMergeConflictsError()
+                        else:
+                            raise error.InterventionRequired(
+                                _('unresolved conflicts (see hg '
+                                  'resolve, then hg rebase --continue)'))
+            if not self.collapsef:
+                merging = p2 != nullrev
+                editform = cmdutil.mergeeditform(merging, 'rebase')
+                editor = cmdutil.getcommiteditor(editform=editform,
+                                                 **pycompat.strkwargs(opts))
+                if self.wctx.isinmemory():
+                    newnode = concludememorynode(repo, rev, p1, p2,
+                        wctx=self.wctx,
+                        extrafn=_makeextrafn(self.extrafns),
+                        editor=editor,
+                        keepbranches=self.keepbranchesf,
+                        date=self.date)
+                    mergemod.mergestate.clean(repo)
+                else:
+                    newnode = concludenode(repo, rev, p1, p2,
+                        extrafn=_makeextrafn(self.extrafns),
+                        editor=editor,
+                        keepbranches=self.keepbranchesf,
+                        date=self.date)
+
+                if newnode is None:
+                    # If it ended up being a no-op commit, then the normal
+                    # merge state clean-up path doesn't happen, so do it
+                    # here. Fix issue5494
+                    mergemod.mergestate.clean(repo)
+            else:
+                # Skip commit if we are collapsing
+                if self.wctx.isinmemory():
+                    self.wctx.setbase(repo[p1])
+                else:
+                    repo.setparents(repo[p1].node())
+                newnode = None
+            # Update the state
+            if newnode is not None:
+                self.state[rev] = repo[newnode].rev()
+                ui.debug('rebased as %s\n' % short(newnode))
+            else:
+                if not self.collapsef:
+                    ui.warn(_('note: rebase of %d:%s created no changes '
+                              'to commit\n') % (rev, ctx))
+                    self.skipped.add(rev)
+                self.state[rev] = p1
+                ui.debug('next revision set to %d\n' % p1)
+        else:
+            ui.status(_('already rebased %s as %s\n') %
+                      (desc, repo[self.state[rev]]))
 
     def _finishrebase(self):
         repo, ui, opts = self.repo, self.ui, self.opts

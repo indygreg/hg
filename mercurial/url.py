@@ -296,6 +296,34 @@ class httphandler(keepalive.HTTPHandler):
         _generic_start_transaction(self, h, req)
         return keepalive.HTTPHandler._start_transaction(self, h, req)
 
+class logginghttpconnection(keepalive.HTTPConnection):
+    def __init__(self, createconn, *args, **kwargs):
+        keepalive.HTTPConnection.__init__(self, *args, **kwargs)
+        self._create_connection = createconn
+
+class logginghttphandler(httphandler):
+    """HTTP handler that logs socket I/O."""
+    def __init__(self, logfh, name, observeropts):
+        super(logginghttphandler, self).__init__()
+
+        self._logfh = logfh
+        self._logname = name
+        self._observeropts = observeropts
+
+    # do_open() calls the passed class to instantiate an HTTPConnection. We
+    # pass in a callable method that creates a custom HTTPConnection instance
+    # whose callback to create the socket knows how to proxy the socket.
+    def http_open(self, req):
+        return self.do_open(self._makeconnection, req)
+
+    def _makeconnection(self, *args, **kwargs):
+        def createconnection(*args, **kwargs):
+            sock = socket.create_connection(*args, **kwargs)
+            return util.makeloggingsocket(self._logfh, sock, self._logname,
+                                          **self._observeropts)
+
+        return logginghttpconnection(createconnection, *args, **kwargs)
+
 if has_https:
     class httpsconnection(httplib.HTTPConnection):
         response_class = keepalive.HTTPResponse
@@ -465,14 +493,32 @@ class cookiehandler(urlreq.basehandler):
 
 handlerfuncs = []
 
-def opener(ui, authinfo=None, useragent=None):
+def opener(ui, authinfo=None, useragent=None, loggingfh=None,
+           loggingname=b's', loggingopts=None):
     '''
     construct an opener suitable for urllib2
     authinfo will be added to the password manager
+
+    The opener can be configured to log socket events if the various
+    ``logging*`` arguments are specified.
+
+    ``loggingfh`` denotes a file object to log events to.
+    ``loggingname`` denotes the name of the to print when logging.
+    ``loggingopts`` is a dict of keyword arguments to pass to the constructed
+    ``util.socketobserver`` instance.
     '''
-    handlers = [httphandler()]
-    if has_https:
-        handlers.append(httpshandler(ui))
+    handlers = []
+
+    if loggingfh:
+        handlers.append(logginghttphandler(loggingfh, loggingname,
+                                           loggingopts or {}))
+        # We don't yet support HTTPS when logging I/O. If we attempt to open
+        # an HTTPS URL, we'll likely fail due to unknown protocol.
+
+    else:
+        handlers.append(httphandler())
+        if has_https:
+            handlers.append(httpshandler(ui))
 
     handlers.append(proxyhandler(ui))
 

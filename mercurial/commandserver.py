@@ -16,8 +16,13 @@ import socket
 import struct
 import traceback
 
+try:
+    import selectors
+    selectors.BaseSelector
+except ImportError:
+    from .thirdparty import selectors2 as selectors
+
 from .i18n import _
-from .thirdparty import selectors2
 from . import (
     encoding,
     error,
@@ -476,8 +481,8 @@ class unixforkingservice(object):
     def _mainloop(self):
         exiting = False
         h = self._servicehandler
-        selector = selectors2.DefaultSelector()
-        selector.register(self._sock, selectors2.EVENT_READ)
+        selector = selectors.DefaultSelector()
+        selector.register(self._sock, selectors.EVENT_READ)
         while True:
             if not exiting and h.shouldexit():
                 # clients can no longer connect() to the domain socket, so

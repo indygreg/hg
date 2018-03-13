@@ -76,8 +76,8 @@ substitutions = [
      lambda m: br' - - [$LOGDATE$] "' + m.group(1)
     ),
     # HTTP header dates- RFC 1123
-    (br'Date: [A-Za-z]{3}, \d\d [A-Za-z]{3} \d{4} \d\d:\d\d:\d\d GMT',
-     br'Date: $HTTP_DATE$'
+    (br'([Dd]ate): [A-Za-z]{3}, \d\d [A-Za-z]{3} \d{4} \d\d:\d\d:\d\d GMT',
+     lambda m: br'%s: $HTTP_DATE$' % m.group(1)
     ),
     # LFS expiration value
     (br'"expires_at": "\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"',

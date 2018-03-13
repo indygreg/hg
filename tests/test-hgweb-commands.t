@@ -1923,7 +1923,7 @@ wire protocol command to wrong base URL
   404 Not Found
   content-length: 12
   content-type: application/mercurial-0.1
-  date: * (glob)
+  date: $HTTP_DATE$
   server: * (glob)
   
   0

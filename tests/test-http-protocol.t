@@ -49,7 +49,7 @@ Server should send application/mercurial-0.1 to clients if no Accept is used
   $ get-with-headers.py --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.1
-  date: * (glob)
+  date: $HTTP_DATE$
   server: * (glob)
   transfer-encoding: chunked
 
@@ -58,7 +58,7 @@ Server should send application/mercurial-0.1 when client says it wants it
   $ get-with-headers.py --hgproto '0.1' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.1
-  date: * (glob)
+  date: $HTTP_DATE$
   server: * (glob)
   transfer-encoding: chunked
 
@@ -67,14 +67,14 @@ Server should send application/mercurial-0.2 when client says it wants it
   $ get-with-headers.py --hgproto '0.2' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.2
-  date: * (glob)
+  date: $HTTP_DATE$
   server: * (glob)
   transfer-encoding: chunked
 
   $ get-with-headers.py --hgproto '0.1 0.2' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.2
-  date: * (glob)
+  date: $HTTP_DATE$
   server: * (glob)
   transfer-encoding: chunked
 
@@ -83,7 +83,7 @@ Requesting a compression format that server doesn't support results will fall ba
   $ get-with-headers.py --hgproto '0.2 comp=aa' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.1
-  date: * (glob)
+  date: $HTTP_DATE$
   server: * (glob)
   transfer-encoding: chunked
 
@@ -105,7 +105,7 @@ application/mercurial-0.2 is not yet used on non-streaming responses
   200 Script output follows
   content-length: 41
   content-type: application/mercurial-0.1
-  date: * (glob)
+  date: $HTTP_DATE$
   server: * (glob)
   
   e93700bd72895c5addab234c56d4024b487a362f

@@ -126,7 +126,7 @@ check http return codes
   200 Script output follows
   content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.gz
   content-type: application/x-gzip
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -135,7 +135,7 @@ check http return codes
   % tar.bz2 and zip disallowed should both give 403
   403 Archive type not allowed: bz2
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -143,7 +143,7 @@ check http return codes
   body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
   403 Archive type not allowed: zip
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -154,7 +154,7 @@ check http return codes
   200 Script output follows
   content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.bz2
   content-type: application/x-bzip2
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -163,7 +163,7 @@ check http return codes
   % zip and tar.gz disallowed should both give 403
   403 Archive type not allowed: zip
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -171,7 +171,7 @@ check http return codes
   body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
   403 Archive type not allowed: gz
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -182,7 +182,7 @@ check http return codes
   200 Script output follows
   content-disposition: attachment; filename=test-archive-1701ef1f1510.zip
   content-type: application/zip
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -191,7 +191,7 @@ check http return codes
   % tar.gz and tar.bz2 disallowed should both give 403
   403 Archive type not allowed: gz
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -199,7 +199,7 @@ check http return codes
   body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
   403 Archive type not allowed: bz2
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -213,7 +213,7 @@ check http return codes (with deprecated option)
   200 Script output follows
   content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.gz
   content-type: application/x-gzip
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -222,7 +222,7 @@ check http return codes (with deprecated option)
   % tar.bz2 and zip disallowed should both give 403
   403 Archive type not allowed: bz2
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -230,7 +230,7 @@ check http return codes (with deprecated option)
   body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
   403 Archive type not allowed: zip
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -241,7 +241,7 @@ check http return codes (with deprecated option)
   200 Script output follows
   content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.bz2
   content-type: application/x-bzip2
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -250,7 +250,7 @@ check http return codes (with deprecated option)
   % zip and tar.gz disallowed should both give 403
   403 Archive type not allowed: zip
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -258,7 +258,7 @@ check http return codes (with deprecated option)
   body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
   403 Archive type not allowed: gz
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -269,7 +269,7 @@ check http return codes (with deprecated option)
   200 Script output follows
   content-disposition: attachment; filename=test-archive-1701ef1f1510.zip
   content-type: application/zip
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -278,7 +278,7 @@ check http return codes (with deprecated option)
   % tar.gz and tar.bz2 disallowed should both give 403
   403 Archive type not allowed: gz
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked
@@ -286,7 +286,7 @@ check http return codes (with deprecated option)
   body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
   403 Archive type not allowed: bz2
   content-type: text/html; charset=ascii
-  date: * (glob)
+  date: $HTTP_DATE$
   etag: W/"*" (glob)
   server: * (glob)
   transfer-encoding: chunked

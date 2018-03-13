@@ -372,7 +372,7 @@ def has_hardlink():
 def has_hardlink_whitelisted():
     from mercurial import util
     try:
-        fstype = util.getfstype('.')
+        fstype = util.getfstype(b'.')
     except OSError:
         return False
     return fstype in util._hardlinkfswhitelist

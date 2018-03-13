@@ -22,8 +22,6 @@ remotenames.branches
 
 from __future__ import absolute_import
 
-import collections
-
 from mercurial.i18n import _
 
 from mercurial.node import (
@@ -32,11 +30,19 @@ from mercurial.node import (
 from mercurial import (
     logexchange,
     namespaces,
+    pycompat,
     registrar,
     revsetlang,
     smartset,
     templateutil,
 )
+
+if pycompat.ispy3:
+    import collections.abc
+    mutablemapping = collections.abc.MutableMapping
+else:
+    import collections
+    mutablemapping = collections.MutableMapping
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -56,7 +62,7 @@ configitem('remotenames', 'branches',
     default=True,
 )
 
-class lazyremotenamedict(collections.MutableMapping):
+class lazyremotenamedict(mutablemapping):
     """
     Read-only dict-like Class to lazily resolve remotename entries
 

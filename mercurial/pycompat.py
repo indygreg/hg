@@ -65,8 +65,13 @@ if ispy3:
     if sysexecutable:
         sysexecutable = os.fsencode(sysexecutable)
     stringio = io.BytesIO
-    maplist = lambda *args: list(map(*args))
-    ziplist = lambda *args: list(zip(*args))
+
+    def maplist(*args):
+        return list(map(*args))
+
+    def ziplist(*args):
+        return list(zip(*args))
+
     rawinput = input
     getargspec = inspect.getfullargspec
 

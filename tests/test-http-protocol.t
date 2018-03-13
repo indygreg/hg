@@ -226,4 +226,39 @@ Test listkeys for listing namespaces
   s>     phases	
   response: bookmarks	\nnamespaces	\nphases	
 
+Same thing, but with "httprequest" command
+
+  $ hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT << EOF
+  > httprequest GET ?cmd=listkeys
+  >     accept: application/mercurial-0.1
+  >     user-agent: mercurial/proto-1.0 (Mercurial 42)
+  >     x-hgarg-1: namespace=namespaces
+  > EOF
+  using raw connection to peer
+  s> sendall(*, 0): (glob)
+  s>     GET /?cmd=listkeys HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     user-agent: mercurial/proto-1.0 (Mercurial 42)\r\n (glob)
+  s>     x-hgarg-1: namespace=namespaces\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s> readline() -> 36:
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s> readline() -> 28:
+  s>     Server: testing stub value\r\n
+  s> readline() -> *: (glob)
+  s>     Date: $HTTP_DATE$\r\n
+  s> readline() -> 41:
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s> readline() -> 20:
+  s>     Content-Length: 30\r\n
+  s> readline() -> 2:
+  s>     \r\n
+  s> read(30) -> 30:
+  s>     bookmarks	\n
+  s>     namespaces	\n
+  s>     phases	
+
   $ killdaemons.py

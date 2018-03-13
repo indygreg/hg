@@ -14,6 +14,7 @@ import errno
 import operator
 import os
 import random
+import re
 import socket
 import ssl
 import stat
@@ -2692,6 +2693,24 @@ def debugwireproto(ui, repo, path=None, **opts):
 
     This action MUST be paired with a ``batchbegin`` action.
 
+    httprequest <method> <path>
+    ---------------------------
+
+    (HTTP peer only)
+
+    Send an HTTP request to the peer.
+
+    The HTTP request line follows the ``httprequest`` action. e.g. ``GET /foo``.
+
+    Arguments of the form ``<key>: <value>`` are interpreted as HTTP request
+    headers to add to the request. e.g. ``Accept: foo``.
+
+    The following arguments are special:
+
+    ``BODYFILE``
+        The content of the file defined as the value to this argument will be
+        transferred verbatim as the HTTP request body.
+
     close
     -----
 
@@ -2754,6 +2773,7 @@ def debugwireproto(ui, repo, path=None, **opts):
     stdin = None
     stdout = None
     stderr = None
+    opener = None
 
     if opts['localssh']:
         # We start the SSH server in its own process so there is process
@@ -2909,6 +2929,42 @@ def debugwireproto(ui, repo, path=None, **opts):
                 ui.status(_('response #%d: %s\n') % (i, util.escapedata(chunk)))
 
             batchedcommands = None
+
+        elif action.startswith('httprequest '):
+            if not opener:
+                raise error.Abort(_('cannot use httprequest without an HTTP '
+                                    'peer'))
+
+            request = action.split(' ', 2)
+            if len(request) != 3:
+                raise error.Abort(_('invalid httprequest: expected format is '
+                                    '"httprequest <method> <path>'))
+
+            method, httppath = request[1:]
+            headers = {}
+            body = None
+            for line in lines:
+                line = line.lstrip()
+                m = re.match(b'^([a-zA-Z0-9_-]+): (.*)$', line)
+                if m:
+                    headers[m.group(1)] = m.group(2)
+                    continue
+
+                if line.startswith(b'BODYFILE '):
+                    with open(line.split(b' ', 1), 'rb') as fh:
+                        body = fh.read()
+                else:
+                    raise error.Abort(_('unknown argument to httprequest: %s') %
+                                      line)
+
+            url = path + httppath
+            req = urlmod.urlreq.request(pycompat.strurl(url), body, headers)
+
+            try:
+                opener.open(req).read()
+            except util.urlerr.urlerror as e:
+                e.read()
+
         elif action == 'close':
             peer.close()
         elif action == 'readavailable':

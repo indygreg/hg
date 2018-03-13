@@ -387,8 +387,8 @@ def annotate(ui, repo, *pats, **opts):
             continue
 
         fm = rootfm.nested('lines')
-        lines = fctx.annotate(follow=follow, linenumber=linenumber,
-                              skiprevs=skiprevs, diffopts=diffopts)
+        lines = fctx.annotate(follow=follow, skiprevs=skiprevs,
+                              diffopts=diffopts)
         if not lines:
             fm.end()
             continue

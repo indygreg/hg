@@ -187,7 +187,7 @@ def difffeatureopts(req, ui, section):
 
 def annotate(req, fctx, ui):
     diffopts = difffeatureopts(req, ui, 'annotate')
-    return fctx.annotate(follow=True, linenumber=True, diffopts=diffopts)
+    return fctx.annotate(follow=True, diffopts=diffopts)
 
 def parents(ctx, hide=None):
     if isinstance(ctx, context.basefilectx):

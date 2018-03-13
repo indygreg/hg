@@ -967,14 +967,13 @@ class basefilectx(object):
             return p[1]
         return filectx(self._repo, self._path, fileid=-1, filelog=self._filelog)
 
-    def annotate(self, follow=False, linenumber=False, skiprevs=None,
-                 diffopts=None):
-        '''returns a list of tuples of ((ctx, number), line) for each line
-        in the file, where ctx is the filectx of the node where
-        that line was last changed; if linenumber parameter is true, number is
-        the line number at the first appearance in the managed file, otherwise,
-        number has a fixed value of False.
-        '''
+    def annotate(self, follow=False, skiprevs=None, diffopts=None):
+        """Returns a list of tuples of (attr, line) for each line in the file
+
+        - attr.fctx is the filectx of the node where that line was last changed
+        - attr.lineno is the line number at the first appearance in the managed
+          file
+        """
         getlog = util.lrucachefunc(lambda x: self._repo.file(x))
 
         def parents(f):
@@ -1010,8 +1009,8 @@ class basefilectx(object):
                 ac = cl.ancestors([base.rev()], inclusive=True)
             base._ancestrycontext = ac
 
-        return dagop.annotate(base, parents, linenumber=linenumber,
-                              skiprevs=skiprevs, diffopts=diffopts)
+        return dagop.annotate(base, parents, skiprevs=skiprevs,
+                              diffopts=diffopts)
 
     def ancestors(self, followfirst=False):
         visit = {}

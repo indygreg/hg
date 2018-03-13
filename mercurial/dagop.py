@@ -365,7 +365,7 @@ def blockdescendants(fctx, fromline, toline):
 @attr.s(slots=True, frozen=True)
 class annotateline(object):
     fctx = attr.ib()
-    lineno = attr.ib(default=False)
+    lineno = attr.ib()
     # Whether this annotation was the result of a skip-annotate.
     skip = attr.ib(default=False)
 
@@ -382,6 +382,11 @@ def _countlines(text):
     if text.endswith("\n"):
         return text.count("\n")
     return text.count("\n") + int(bool(text))
+
+def _decoratelines(text, fctx):
+    n = _countlines(text)
+    linenos = pycompat.rangelist(1, n + 1)
+    return _annotatedfile([fctx] * n, linenos, [False] * n, text)
 
 def _annotatepair(parents, childfctx, child, skipchild, diffopts):
     r'''
@@ -450,21 +455,11 @@ def _annotatepair(parents, childfctx, child, skipchild, diffopts):
                         child.skips[bk] = True
     return child
 
-def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
+def annotate(base, parents, skiprevs=None, diffopts=None):
     """Core algorithm for filectx.annotate()
 
     `parents(fctx)` is a function returning a list of parent filectxs.
     """
-
-    if linenumber:
-        def decorate(text, fctx):
-            n = _countlines(text)
-            linenos = pycompat.rangelist(1, n + 1)
-            return _annotatedfile([fctx] * n, linenos, [False] * n, text)
-    else:
-        def decorate(text, fctx):
-            n = _countlines(text)
-            return _annotatedfile([fctx] * n, [False] * n, [False] * n, text)
 
     # This algorithm would prefer to be recursive, but Python is a
     # bit recursion-hostile. Instead we do an iterative
@@ -502,7 +497,7 @@ def annotate(base, parents, linenumber=False, skiprevs=None, diffopts=None):
                 visit.append(p)
         if ready:
             visit.pop()
-            curr = decorate(f.data(), f)
+            curr = _decoratelines(f.data(), f)
             skipchild = False
             if skiprevs is not None:
                 skipchild = f._changeid in skiprevs

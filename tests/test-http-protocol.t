@@ -161,3 +161,69 @@ Client receives only supported format even if not server preferred format
   0000: 32 30 30 20 53 63 72 69 70 74 20 6f 75 74 70 75 |200 Script outpu|
   0010: 74 20 66 6f 6c 6c 6f 77 73 0a 0a 04 7a 6c 69 62 |t follows...zlib|
   0020: 78                                              |x|
+
+  $ killdaemons.py
+  $ cd ..
+
+Test listkeys for listing namespaces
+
+  $ hg init empty
+  $ hg -R empty serve -p $HGPORT -d --pid-file hg.pid
+  $ cat hg.pid > $DAEMON_PIDS
+
+  $ hg --verbose debugwireproto http://$LOCALIP:$HGPORT << EOF
+  > command listkeys
+  >     namespace namespaces
+  > EOF
+  s> sendall(*, 0): (glob)
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: mercurial/proto-1.0 (Mercurial *)\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s> readline() -> 36:
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s> readline() -> 28:
+  s>     Server: testing stub value\r\n
+  s> readline() -> *: (glob)
+  s>     Date: $HTTP_DATE$\r\n
+  s> readline() -> 41:
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s> readline() -> 21:
+  s>     Content-Length: *\r\n (glob)
+  s> readline() -> 2:
+  s>     \r\n
+  s> read(*) -> *: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$ (glob)
+  sending listkeys command
+  s> sendall(*, 0): (glob)
+  s>     GET /?cmd=listkeys HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgArg-1,X-HgProto-1\r\n
+  s>     x-hgarg-1: namespace=namespaces\r\n
+  s>     x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: mercurial/proto-1.0 (Mercurial *)\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s> readline() -> 36:
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s> readline() -> 28:
+  s>     Server: testing stub value\r\n
+  s> readline() -> *: (glob)
+  s>     Date: $HTTP_DATE$\r\n
+  s> readline() -> 41:
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s> readline() -> 20:
+  s>     Content-Length: 30\r\n
+  s> readline() -> 2:
+  s>     \r\n
+  s> read(30) -> 30:
+  s>     bookmarks	\n
+  s>     namespaces	\n
+  s>     phases	
+  response: bookmarks	\nnamespaces	\nphases	
+
+  $ killdaemons.py

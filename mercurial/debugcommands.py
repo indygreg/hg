@@ -48,6 +48,7 @@ from . import (
     fileset,
     formatter,
     hg,
+    httppeer,
     localrepo,
     lock as lockmod,
     logcmdutil,
@@ -2602,9 +2603,9 @@ def _parsewirelangblocks(fh):
         ('', 'peer', '', _('construct a specific version of the peer')),
         ('', 'noreadstderr', False, _('do not read from stderr of the remote')),
     ] + cmdutil.remoteopts,
-    _('[REPO]'),
+    _('[PATH]'),
     optionalrepo=True)
-def debugwireproto(ui, repo, **opts):
+def debugwireproto(ui, repo, path=None, **opts):
     """send wire protocol commands to a server
 
     This command can be used to issue wire protocol commands to remote
@@ -2740,12 +2741,19 @@ def debugwireproto(ui, repo, **opts):
         raise error.Abort(_('invalid value for --peer'),
                           hint=_('valid values are "raw", "ssh1", and "ssh2"'))
 
+    if path and opts['localssh']:
+        raise error.Abort(_('cannot specify --localssh with an explicit '
+                            'path'))
+
     if ui.interactive():
         ui.write(_('(waiting for commands on stdin)\n'))
 
     blocks = list(_parsewirelangblocks(ui.fin))
 
     proc = None
+    stdin = None
+    stdout = None
+    stderr = None
 
     if opts['localssh']:
         # We start the SSH server in its own process so there is process
@@ -2793,14 +2801,51 @@ def debugwireproto(ui, repo, **opts):
             peer = sshpeer.makepeer(ui, url, proc, stdin, stdout, stderr,
                                     autoreadstderr=autoreadstderr)
 
+    elif path:
+        # We bypass hg.peer() so we can proxy the sockets.
+        # TODO consider not doing this because we skip
+        # ``hg.wirepeersetupfuncs`` and potentially other useful functionality.
+        u = util.url(path)
+        if u.scheme != 'http':
+            raise error.Abort(_('only http:// paths are currently supported'))
+
+        url, authinfo = u.authinfo()
+        openerargs = {}
+
+        # Turn pipes/sockets into observers so we can log I/O.
+        if ui.verbose:
+            openerargs = {
+                r'loggingfh': ui,
+                r'loggingname': b's',
+                r'loggingopts': {
+                    r'logdata': True,
+                },
+            }
+
+        opener = urlmod.opener(ui, authinfo, **openerargs)
+
+        if opts['peer'] == 'raw':
+            ui.write(_('using raw connection to peer\n'))
+            peer = None
+        elif opts['peer']:
+            raise error.Abort(_('--peer %s not supported with HTTP peers') %
+                              opts['peer'])
+        else:
+            peer = httppeer.httppeer(ui, path, url, opener)
+            peer._fetchcaps()
+
+        # We /could/ populate stdin/stdout with sock.makefile()...
     else:
-        raise error.Abort(_('only --localssh is currently supported'))
+        raise error.Abort(_('unsupported connection configuration'))
 
     batchedcommands = None
 
     # Now perform actions based on the parsed wire language instructions.
     for action, lines in blocks:
         if action in ('raw', 'raw+'):
+            if not stdin:
+                raise error.Abort(_('cannot call raw/raw+ on this peer'))
+
             # Concatenate the data together.
             data = ''.join(l.lstrip() for l in lines)
             data = util.unescapestr(data)
@@ -2809,6 +2854,8 @@ def debugwireproto(ui, repo, **opts):
             if action == 'raw+':
                 stdin.flush()
         elif action == 'flush':
+            if not stdin:
+                raise error.Abort(_('cannot call flush on this peer'))
             stdin.flush()
         elif action.startswith('command'):
             if not peer:
@@ -2865,18 +2912,30 @@ def debugwireproto(ui, repo, **opts):
         elif action == 'close':
             peer.close()
         elif action == 'readavailable':
+            if not stdout or not stderr:
+                raise error.Abort(_('readavailable not available on this peer'))
+
             stdin.close()
             stdout.read()
             stderr.read()
+
         elif action == 'readline':
+            if not stdout:
+                raise error.Abort(_('readline not available on this peer'))
             stdout.readline()
         elif action == 'ereadline':
+            if not stderr:
+                raise error.Abort(_('ereadline not available on this peer'))
             stderr.readline()
         elif action.startswith('read '):
             count = int(action.split(' ', 1)[1])
+            if not stdout:
+                raise error.Abort(_('read not available on this peer'))
             stdout.read(count)
         elif action.startswith('eread '):
             count = int(action.split(' ', 1)[1])
+            if not stderr:
+                raise error.Abort(_('eread not available on this peer'))
             stderr.read(count)
         else:
             raise error.Abort(_('unknown action: %s') % action)

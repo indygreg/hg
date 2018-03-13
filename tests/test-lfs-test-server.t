@@ -54,7 +54,32 @@ store.
   checking for updated bookmarks
   listing keys for "bookmarks"
   lfs: computing set of blobs to upload
+  Status: 200
+  Content-Length: 309
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "upload": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
+          }
+        }, 
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        "size": 12
+      }
+    ]
+  }
   lfs: uploading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
+  Status: 200
+  Content-Length: 0
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
   lfs: uploaded 1 files (12 bytes)
   1 changesets found
@@ -99,7 +124,32 @@ Clear the cache to force a download
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 000000000000, local: 000000000000+, remote: 99a7098854a3
+  Status: 200
+  Content-Length: 311
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
+          }
+        }, 
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        "size": 12
+      }
+    ]
+  }
   lfs: downloading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
+  Status: 200
+  Content-Length: 12
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b to the usercache
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
    a: remote created -> g
@@ -125,10 +175,65 @@ When the server has some blobs already
   listing keys for "bookmarks"
   listing keys for "bookmarks"
   lfs: computing set of blobs to upload
+  Status: 200
+  Content-Length: 901
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
+          }
+        }, 
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        "size": 12
+      }, 
+      {
+        "actions": {
+          "upload": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
+          }
+        }, 
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        "size": 20
+      }, 
+      {
+        "actions": {
+          "upload": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
+          }
+        }, 
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        "size": 19
+      }
+    ]
+  }
   lfs: need to transfer 2 objects (39 bytes)
   lfs: uploading 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 (20 bytes)
+  Status: 200
+  Content-Length: 0
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: processed: 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19
   lfs: uploading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
+  Status: 200
+  Content-Length: 0
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   lfs: uploaded 2 files (39 bytes)
   1 changesets found
@@ -175,11 +280,53 @@ Clear the cache to force a download
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 99a7098854a3, local: 99a7098854a3+, remote: dfca2c9e2ef2
+  Status: 200
+  Content-Length: 608
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
+          }
+        }, 
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        "size": 20
+      }, 
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
+          }
+        }, 
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        "size": 19
+      }
+    ]
+  }
   lfs: need to transfer 2 objects (39 bytes)
   lfs: downloading 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 (20 bytes)
+  Status: 200
+  Content-Length: 20
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 to the usercache
   lfs: processed: 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19
   lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
+  Status: 200
+  Content-Length: 19
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
    b: remote created -> g
@@ -206,7 +353,32 @@ Test a corrupt file download, but clear the cache first to force a download.
   resolving manifests
    branchmerge: False, force: True, partial: False
    ancestor: dfca2c9e2ef2+, local: dfca2c9e2ef2+, remote: dfca2c9e2ef2
+  Status: 200
+  Content-Length: 311
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
+          }
+        }, 
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        "size": 19
+      }
+    ]
+  }
   lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
+  Status: 200
+  Content-Length: 7
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   abort: corrupt remote lfs object: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   [255]
 
@@ -235,6 +407,27 @@ Test a corrupted file upload
   listing keys for "bookmarks"
   listing keys for "bookmarks"
   lfs: computing set of blobs to upload
+  Status: 200
+  Content-Length: 309
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "upload": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0"
+          }
+        }, 
+        "oid": "e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0", 
+        "size": 17
+      }
+    ]
+  }
   lfs: uploading e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0 (17 bytes)
   abort: detected corrupt lfs object: e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0
   (run hg verify)
@@ -245,14 +438,73 @@ Archive will prefetch blobs in a group
   $ rm -rf .hg/store/lfs `hg config lfs.usercache`
   $ hg archive --debug -r 1 ../archive
   http auth: user foo, password ***
+  Status: 200
+  Content-Length: 905
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
+          }
+        }, 
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        "size": 12
+      }, 
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
+          }
+        }, 
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        "size": 20
+      }, 
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
+          }
+        }, 
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        "size": 19
+      }
+    ]
+  }
   lfs: need to transfer 3 objects (51 bytes)
   lfs: downloading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
+  Status: 200
+  Content-Length: 12
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b to the usercache
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
   lfs: downloading 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 (20 bytes)
+  Status: 200
+  Content-Length: 20
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 to the usercache
   lfs: processed: 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19
   lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
+  Status: 200
+  Content-Length: 19
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
@@ -272,11 +524,53 @@ Cat will prefetch blobs in a group
   $ rm -rf .hg/store/lfs `hg config lfs.usercache`
   $ hg cat --debug -r 1 a b c
   http auth: user foo, password ***
+  Status: 200
+  Content-Length: 608
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
+          }
+        }, 
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        "size": 12
+      }, 
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
+          }
+        }, 
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        "size": 19
+      }
+    ]
+  }
   lfs: need to transfer 2 objects (31 bytes)
   lfs: downloading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
+  Status: 200
+  Content-Length: 12
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b to the usercache
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
   lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
+  Status: 200
+  Content-Length: 19
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
@@ -297,14 +591,73 @@ Revert will prefetch blobs in a group
   reverting b
   reverting c
   reverting d
+  Status: 200
+  Content-Length: 905
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
+          }
+        }, 
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        "size": 12
+      }, 
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
+          }
+        }, 
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        "size": 20
+      }, 
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
+          }
+        }, 
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        "size": 19
+      }
+    ]
+  }
   lfs: need to transfer 3 objects (51 bytes)
   lfs: downloading 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b (12 bytes)
+  Status: 200
+  Content-Length: 12
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b to the usercache
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
   lfs: downloading 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 (20 bytes)
+  Status: 200
+  Content-Length: 20
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 to the usercache
   lfs: processed: 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19
   lfs: downloading d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 (19 bytes)
+  Status: 200
+  Content-Length: 19
+  Content-Type: text/plain; charset=utf-8
+  Date: $HTTP_DATE$
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
@@ -325,6 +678,27 @@ Check error message when the remote missed a blob:
   resolving manifests
    branchmerge: False, force: True, partial: False
    ancestor: 62fdbaf221c6+, local: 62fdbaf221c6+, remote: ef0564edf47e
+  Status: 200
+  Content-Length: 308
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "upload": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/8e6ea5f6c066b44a0efa43bcce86aea73f17e6e23f0663df0251e7524e140a13"
+          }
+        }, 
+        "oid": "8e6ea5f6c066b44a0efa43bcce86aea73f17e6e23f0663df0251e7524e140a13", 
+        "size": 6
+      }
+    ]
+  }
   abort: LFS server error. Remote object for "b" not found:(.*)! (re)
   [255]
 
@@ -371,6 +745,27 @@ Check error message when object does not exist:
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 000000000000, local: 000000000000+, remote: d2a338f184a8
+  Status: 200
+  Content-Length: 308
+  Content-Type: application/vnd.git-lfs+json
+  Date: $HTTP_DATE$
+  {
+    "objects": [
+      {
+        "actions": {
+          "upload": {
+            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+            }, 
+            "href": "http://localhost:$HGPORT/objects/bdc26931acfb734b142a8d675f205becf27560dc461f501822de13274fe6fc8a"
+          }
+        }, 
+        "oid": "bdc26931acfb734b142a8d675f205becf27560dc461f501822de13274fe6fc8a", 
+        "size": 6
+      }
+    ]
+  }
   abort: LFS server error. Remote object for "a" not found:(.*)! (re)
   [255]
 

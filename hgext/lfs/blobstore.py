@@ -217,7 +217,8 @@ class _gitlfsremote(object):
         batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
         batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
         try:
-            rawjson = self.urlopener.open(batchreq).read()
+            rsp = self.urlopener.open(batchreq)
+            rawjson = rsp.read()
         except util.urlerr.httperror as ex:
             raise LfsRemoteError(_('LFS HTTP error: %s (action=%s)')
                                  % (ex, action))
@@ -226,6 +227,19 @@ class _gitlfsremote(object):
         except ValueError:
             raise LfsRemoteError(_('LFS server returns invalid JSON: %s')
                                  % rawjson)
+
+        if self.ui.debugflag:
+            self.ui.debug('Status: %d\n' % rsp.status)
+            # lfs-test-server and hg serve return headers in different order
+            self.ui.debug('%s\n'
+                          % '\n'.join(sorted(str(rsp.info()).splitlines())))
+
+            if 'objects' in response:
+                response['objects'] = sorted(response['objects'],
+                                             key=lambda p: p['oid'])
+            self.ui.debug('%s\n'
+                          % json.dumps(response, indent=2, sort_keys=True))
+
         return response
 
     def _checkforservererror(self, pointers, responses, action):
@@ -301,6 +315,13 @@ class _gitlfsremote(object):
         response = b''
         try:
             req = self.urlopener.open(request)
+
+            if self.ui.debugflag:
+                self.ui.debug('Status: %d\n' % req.status)
+                # lfs-test-server and hg serve return headers in different order
+                self.ui.debug('%s\n'
+                              % '\n'.join(sorted(str(req.info()).splitlines())))
+
             if action == 'download':
                 # If downloading blobs, store downloaded data to local blobstore
                 localstore.download(oid, req)

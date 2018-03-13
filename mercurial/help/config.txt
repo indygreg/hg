@@ -2527,6 +2527,9 @@ The full set of options is:
     Values less than or equal to 0 always refresh.
     (default: 20)
 
+``server-header``
+    Value for HTTP ``Server`` response header.
+
 ``staticurl``
     Base URL to use for static files. If unset, static files (e.g. the
     hgicon.png favicon) will be served by the CGI script itself. Use

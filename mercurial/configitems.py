@@ -1255,6 +1255,9 @@ coreconfigitem('web', 'push_ssl',
 coreconfigitem('web', 'refreshinterval',
     default=20,
 )
+coreconfigitem('web', 'server-header',
+    default=None,
+)
 coreconfigitem('web', 'staticurl',
     default=None,
 )

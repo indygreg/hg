@@ -1924,7 +1924,7 @@ wire protocol command to wrong base URL
   content-length: 12
   content-type: application/mercurial-0.1
   date: $HTTP_DATE$
-  server: * (glob)
+  server: testing stub value
   
   0
   Not Found

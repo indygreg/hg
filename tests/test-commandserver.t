@@ -215,6 +215,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ui.nontty=true
   web.address=localhost
   web\.ipv6=(?:True|False) (re)
+  web.server-header=testing stub value
   *** runcommand init foo
   *** runcommand -R foo showconfig ui defaults
   ui.slash=True

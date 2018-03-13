@@ -1119,6 +1119,7 @@ class Test(unittest.TestCase):
             hgrc.write(b'[web]\n')
             hgrc.write(b'address = localhost\n')
             hgrc.write(b'ipv6 = %s\n' % str(self._useipv6).encode('ascii'))
+            hgrc.write(b'server-header = testing stub value\n')
 
             for opt in self._extraconfigopts:
                 section, key = opt.encode('utf-8').split(b'.', 1)

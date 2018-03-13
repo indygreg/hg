@@ -50,7 +50,7 @@ Server should send application/mercurial-0.1 to clients if no Accept is used
   200 Script output follows
   content-type: application/mercurial-0.1
   date: $HTTP_DATE$
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
 
 Server should send application/mercurial-0.1 when client says it wants it
@@ -59,7 +59,7 @@ Server should send application/mercurial-0.1 when client says it wants it
   200 Script output follows
   content-type: application/mercurial-0.1
   date: $HTTP_DATE$
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
 
 Server should send application/mercurial-0.2 when client says it wants it
@@ -68,14 +68,14 @@ Server should send application/mercurial-0.2 when client says it wants it
   200 Script output follows
   content-type: application/mercurial-0.2
   date: $HTTP_DATE$
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
 
   $ get-with-headers.py --hgproto '0.1 0.2' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.2
   date: $HTTP_DATE$
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
 
 Requesting a compression format that server doesn't support results will fall back to 0.1
@@ -84,7 +84,7 @@ Requesting a compression format that server doesn't support results will fall ba
   200 Script output follows
   content-type: application/mercurial-0.1
   date: $HTTP_DATE$
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
 
 #if zstd
@@ -106,7 +106,7 @@ application/mercurial-0.2 is not yet used on non-streaming responses
   content-length: 41
   content-type: application/mercurial-0.1
   date: $HTTP_DATE$
-  server: * (glob)
+  server: testing stub value
   
   e93700bd72895c5addab234c56d4024b487a362f
 

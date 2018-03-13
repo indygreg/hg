@@ -12,6 +12,7 @@ Create a repository:
   ui.promptecho=True
   web.address=localhost
   web\.ipv6=(?:True|False) (re)
+  web.server-header=testing stub value
   $ hg init t
   $ cd t
 

@@ -231,6 +231,11 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             self.wfile.write('0\r\n\r\n')
             self.wfile.flush()
 
+    def version_string(self):
+        if self.server.serverheader:
+            return self.server.serverheader
+        return httpservermod.basehttprequesthandler.version_string(self)
+
 class _httprequesthandlerssl(_httprequesthandler):
     """HTTPS handler based on Python's ssl module"""
 
@@ -303,6 +308,8 @@ class MercurialHTTPServer(_mixin, httpservermod.httpserver, object):
 
         self.addr, self.port = self.socket.getsockname()[0:2]
         self.fqaddr = socket.getfqdn(addr[0])
+
+        self.serverheader = ui.config('web', 'server-header')
 
 class IPv6HTTPServer(MercurialHTTPServer):
     address_family = getattr(socket, 'AF_INET6', None)

@@ -128,7 +128,7 @@ check http return codes
   content-type: application/x-gzip
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505
@@ -137,7 +137,7 @@ check http return codes
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
@@ -145,7 +145,7 @@ check http return codes
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
@@ -156,7 +156,7 @@ check http return codes
   content-type: application/x-bzip2
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b
@@ -165,7 +165,7 @@ check http return codes
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
@@ -173,7 +173,7 @@ check http return codes
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
@@ -184,7 +184,7 @@ check http return codes
   content-type: application/zip
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1377, sha1=677b14d3d048778d5eb5552c14a67e6192068650
@@ -193,7 +193,7 @@ check http return codes
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
@@ -201,7 +201,7 @@ check http return codes
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
@@ -215,7 +215,7 @@ check http return codes (with deprecated option)
   content-type: application/x-gzip
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505
@@ -224,7 +224,7 @@ check http return codes (with deprecated option)
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
@@ -232,7 +232,7 @@ check http return codes (with deprecated option)
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
@@ -243,7 +243,7 @@ check http return codes (with deprecated option)
   content-type: application/x-bzip2
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b
@@ -252,7 +252,7 @@ check http return codes (with deprecated option)
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
@@ -260,7 +260,7 @@ check http return codes (with deprecated option)
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
@@ -271,7 +271,7 @@ check http return codes (with deprecated option)
   content-type: application/zip
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1377, sha1=677b14d3d048778d5eb5552c14a67e6192068650
@@ -280,7 +280,7 @@ check http return codes (with deprecated option)
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
@@ -288,7 +288,7 @@ check http return codes (with deprecated option)
   content-type: text/html; charset=ascii
   date: $HTTP_DATE$
   etag: W/"*" (glob)
-  server: * (glob)
+  server: testing stub value
   transfer-encoding: chunked
   
   body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352

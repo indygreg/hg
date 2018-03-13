@@ -714,6 +714,6 @@ def has_xdiff():
     try:
         from mercurial import policy
         bdiff = policy.importmod('bdiff')
-        return bdiff.xdiffblocks('', '') == [(0, 0, 0, 0)]
+        return bdiff.xdiffblocks(b'', b'') == [(0, 0, 0, 0)]
     except (ImportError, AttributeError):
         return False

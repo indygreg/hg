@@ -298,6 +298,9 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None):
     if 'CONTENT_LENGTH' in env and 'HTTP_CONTENT_LENGTH' not in env:
         headers['Content-Length'] = env['CONTENT_LENGTH']
 
+    if 'CONTENT_TYPE' in env and 'HTTP_CONTENT_TYPE' not in env:
+        headers['Content-Type'] = env['CONTENT_TYPE']
+
     bodyfh = env['wsgi.input']
     if 'Content-Length' in headers:
         bodyfh = util.cappedreader(bodyfh, int(headers['Content-Length']))

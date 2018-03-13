@@ -296,9 +296,9 @@ static int xdl_prepare_ctx(unsigned int pass, mmfile_t *mf, int64_t narec,
 		goto abort;
 	memset(rchg, 0, (nrec + 2) * sizeof(char));
 
-	if (!(rindex = (int64_t *) xdl_malloc((nrec + 1) * sizeof(long))))
+	if (!(rindex = (int64_t *) xdl_malloc((nrec + 1) * sizeof(int64_t))))
 		goto abort;
-	if (!(ha = (uint64_t *) xdl_malloc((nrec + 1) * sizeof(unsigned long))))
+	if (!(ha = (uint64_t *) xdl_malloc((nrec + 1) * sizeof(uint64_t))))
 		goto abort;
 
 	xdf->nrec = nrec;

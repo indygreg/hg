@@ -215,15 +215,13 @@ Same thing, but with "httprequest" command
 
   $ hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT << EOF
   > httprequest GET ?cmd=listkeys
-  >     accept: application/mercurial-0.1
-  >     user-agent: mercurial/proto-1.0 (Mercurial 42)
+  >     user-agent: test
   >     x-hgarg-1: namespace=namespaces
   > EOF
   using raw connection to peer
   s>     GET /?cmd=listkeys HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-0.1\r\n
-  s>     user-agent: mercurial/proto-1.0 (Mercurial 42)\r\n
+  s>     user-agent: test\r\n
   s>     x-hgarg-1: namespace=namespaces\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n

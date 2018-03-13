@@ -494,7 +494,7 @@ class cookiehandler(urlreq.basehandler):
 handlerfuncs = []
 
 def opener(ui, authinfo=None, useragent=None, loggingfh=None,
-           loggingname=b's', loggingopts=None):
+           loggingname=b's', loggingopts=None, sendaccept=True):
     '''
     construct an opener suitable for urllib2
     authinfo will be added to the password manager
@@ -506,6 +506,9 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
     ``loggingname`` denotes the name of the to print when logging.
     ``loggingopts`` is a dict of keyword arguments to pass to the constructed
     ``util.socketobserver`` instance.
+
+    ``sendaccept`` allows controlling whether the ``Accept`` request header
+    is sent. The header is sent by default.
     '''
     handlers = []
 
@@ -562,7 +565,9 @@ def opener(ui, authinfo=None, useragent=None, loggingfh=None,
     # been sent on all requests since forever. We keep sending it for backwards
     # compatibility reasons. Modern versions of the wire protocol use
     # X-HgProto-<N> for advertising client support.
-    opener.addheaders.append((r'Accept', r'application/mercurial-0.1'))
+    if sendaccept:
+        opener.addheaders.append((r'Accept', r'application/mercurial-0.1'))
+
     return opener
 
 def open(ui, url_, data=None):

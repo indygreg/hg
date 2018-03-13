@@ -2846,6 +2846,12 @@ def debugwireproto(ui, repo, path=None, **opts):
         if ui.debugflag:
             openerargs[r'loggingopts'][r'logdataapis'] = True
 
+        # Don't send default headers when in raw mode. This allows us to
+        # bypass most of the behavior of our URL handling code so we can
+        # have near complete control over what's sent on the wire.
+        if opts['peer'] == 'raw':
+            openerargs[r'sendaccept'] = False
+
         opener = urlmod.opener(ui, authinfo, **openerargs)
 
         if opts['peer'] == 'raw':

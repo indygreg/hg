@@ -299,6 +299,12 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
         res.setbodybytes(_('unknown permission: %s') % permission)
         return
 
+    if req.method != 'POST':
+        res.status = b'405 Method Not Allowed'
+        res.headers[b'Allow'] = b'POST'
+        res.setbodybytes(_('commands require POST requests'))
+        return
+
     # At some point we'll want to use our own API instead of recycling the
     # behavior of version 1 of the wire protocol...
     # TODO return reasonable responses - not responses that overload the

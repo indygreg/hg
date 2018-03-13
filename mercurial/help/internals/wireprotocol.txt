@@ -152,10 +152,13 @@ HTTP Version 2 Transport
 Version 2 of the HTTP protocol is exposed under the ``/api/*`` URL space.
 It's final API name is not yet formalized.
 
-Commands are triggered by sending HTTP requests against URLs of the
+Commands are triggered by sending HTTP POST requests against URLs of the
 form ``<permission>/<command>``, where ``<permission>`` is ``ro`` or
 ``rw``, meaning read-only and read-write, respectively and ``<command>``
 is a named wire protocol command.
+
+Non-POST request methods MUST be rejected by the server with an HTTP
+405 response.
 
 Commands that modify repository state in meaningful ways MUST NOT be
 exposed under the ``ro`` URL prefix. All available commands MUST be

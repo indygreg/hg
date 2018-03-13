@@ -29,6 +29,14 @@ extern "C" {
 
 #include <stddef.h> /* size_t */
 
+#if !defined(_MSC_VER) || _MSC_VER >= 1600
+#include <stdint.h>
+#else
+/* prior to Visual Studio 2010 */
+typedef long long int64_t;
+typedef unsigned long long uint64_t;
+#endif
+
 /* xpparm_t.flags */
 #define XDF_NEED_MINIMAL (1 << 0)
 

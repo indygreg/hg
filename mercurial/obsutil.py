@@ -17,6 +17,39 @@ from . import (
 )
 from .utils import dateutil
 
+### obsolescence marker flag
+
+## bumpedfix flag
+#
+# When a changeset A' succeed to a changeset A which became public, we call A'
+# "bumped" because it's a successors of a public changesets
+#
+# o    A' (bumped)
+# |`:
+# | o  A
+# |/
+# o    Z
+#
+# The way to solve this situation is to create a new changeset Ad as children
+# of A. This changeset have the same content than A'. So the diff from A to A'
+# is the same than the diff from A to Ad. Ad is marked as a successors of A'
+#
+# o   Ad
+# |`:
+# | x A'
+# |'|
+# o | A
+# |/
+# o Z
+#
+# But by transitivity Ad is also a successors of A. To avoid having Ad marked
+# as bumped too, we add the `bumpedfix` flag to the marker. <A', (Ad,)>.
+# This flag mean that the successors express the changes between the public and
+# bumped version and fix the situation, breaking the transitivity of
+# "bumped" here.
+bumpedfix = 1
+usingsha256 = 2
+
 class marker(object):
     """Wrap obsolete marker raw data"""
 

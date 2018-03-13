@@ -2839,8 +2839,12 @@ def debugwireproto(ui, repo, path=None, **opts):
                 r'loggingname': b's',
                 r'loggingopts': {
                     r'logdata': True,
+                    r'logdataapis': False,
                 },
             }
+
+        if ui.debugflag:
+            openerargs[r'loggingopts'][r'logdataapis'] = True
 
         opener = urlmod.opener(ui, authinfo, **openerargs)
 

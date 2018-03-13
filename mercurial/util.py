@@ -762,7 +762,8 @@ class socketproxy(object):
         return makeloggingfileobject(observer.fh, res, observer.name,
                                      reads=observer.reads,
                                      writes=observer.writes,
-                                     logdata=observer.logdata)
+                                     logdata=observer.logdata,
+                                     logdataapis=observer.logdataapis)
 
     def recv(self, *args, **kwargs):
         return object.__getattribute__(self, r'_observedcall')(
@@ -825,18 +826,24 @@ def escapedata(s):
 class baseproxyobserver(object):
     def _writedata(self, data):
         if not self.logdata:
-            self.fh.write('\n')
-            self.fh.flush()
+            if self.logdataapis:
+                self.fh.write('\n')
+                self.fh.flush()
             return
 
         # Simple case writes all data on a single line.
         if b'\n' not in data:
-            self.fh.write(': %s\n' % escapedata(data))
+            if self.logdataapis:
+                self.fh.write(': %s\n' % escapedata(data))
+            else:
+                self.fh.write('%s>     %s\n' % (self.name, escapedata(data)))
             self.fh.flush()
             return
 
         # Data with newlines is written to multiple lines.
-        self.fh.write(':\n')
+        if self.logdataapis:
+            self.fh.write(':\n')
+
         lines = data.splitlines(True)
         for line in lines:
             self.fh.write('%s>     %s\n' % (self.name, escapedata(line)))
@@ -844,10 +851,12 @@ class baseproxyobserver(object):
 
 class fileobjectobserver(baseproxyobserver):
     """Logs file object activity."""
-    def __init__(self, fh, name, reads=True, writes=True, logdata=False):
+    def __init__(self, fh, name, reads=True, writes=True, logdata=False,
+                 logdataapis=True):
         self.fh = fh
         self.name = name
         self.logdata = logdata
+        self.logdataapis = logdataapis
         self.reads = reads
         self.writes = writes
 
@@ -858,22 +867,28 @@ class fileobjectobserver(baseproxyobserver):
         if res is None:
             res = ''
 
-        self.fh.write('%s> read(%d) -> %d' % (self.name, size, len(res)))
+        if self.logdataapis:
+            self.fh.write('%s> read(%d) -> %d' % (self.name, size, len(res)))
+
         self._writedata(res)
 
     def readline(self, res, limit=-1):
         if not self.reads:
             return
 
-        self.fh.write('%s> readline() -> %d' % (self.name, len(res)))
+        if self.logdataapis:
+            self.fh.write('%s> readline() -> %d' % (self.name, len(res)))
+
         self._writedata(res)
 
     def readinto(self, res, dest):
         if not self.reads:
             return
 
-        self.fh.write('%s> readinto(%d) -> %r' % (self.name, len(dest),
-                                                  res))
+        if self.logdataapis:
+            self.fh.write('%s> readinto(%d) -> %r' % (self.name, len(dest),
+                                                      res))
+
         data = dest[0:res] if res is not None else b''
         self._writedata(data)
 
@@ -886,7 +901,9 @@ class fileobjectobserver(baseproxyobserver):
         if res is None and data:
             res = len(data)
 
-        self.fh.write('%s> write(%d) -> %r' % (self.name, len(data), res))
+        if self.logdataapis:
+            self.fh.write('%s> write(%d) -> %r' % (self.name, len(data), res))
+
         self._writedata(data)
 
     def flush(self, res):
@@ -897,32 +914,44 @@ class fileobjectobserver(baseproxyobserver):
 
     # For observedbufferedinputpipe.
     def bufferedread(self, res, size):
-        self.fh.write('%s> bufferedread(%d) -> %d' % (
-            self.name, size, len(res)))
+        if not self.reads:
+            return
+
+        if self.logdataapis:
+            self.fh.write('%s> bufferedread(%d) -> %d' % (
+                self.name, size, len(res)))
+
         self._writedata(res)
 
     def bufferedreadline(self, res):
-        self.fh.write('%s> bufferedreadline() -> %d' % (self.name, len(res)))
+        if not self.reads:
+            return
+
+        if self.logdataapis:
+            self.fh.write('%s> bufferedreadline() -> %d' % (
+                self.name, len(res)))
+
         self._writedata(res)
 
 def makeloggingfileobject(logh, fh, name, reads=True, writes=True,
-                          logdata=False):
+                          logdata=False, logdataapis=True):
     """Turn a file object into a logging file object."""
 
     observer = fileobjectobserver(logh, name, reads=reads, writes=writes,
-                                  logdata=logdata)
+                                  logdata=logdata, logdataapis=logdataapis)
     return fileobjectproxy(fh, observer)
 
 class socketobserver(baseproxyobserver):
     """Logs socket activity."""
     def __init__(self, fh, name, reads=True, writes=True, states=True,
-                 logdata=False):
+                 logdata=False, logdataapis=True):
         self.fh = fh
         self.name = name
         self.reads = reads
         self.writes = writes
         self.states = states
         self.logdata = logdata
+        self.logdataapis = logdataapis
 
     def makefile(self, res, mode=None, bufsize=None):
         if not self.states:
@@ -935,32 +964,39 @@ class socketobserver(baseproxyobserver):
         if not self.reads:
             return
 
-        self.fh.write('%s> recv(%d, %d) -> %d' % (
-            self.name, size, flags, len(res)))
+        if self.logdataapis:
+            self.fh.write('%s> recv(%d, %d) -> %d' % (
+                self.name, size, flags, len(res)))
         self._writedata(res)
 
     def recvfrom(self, res, size, flags=0):
         if not self.reads:
             return
 
-        self.fh.write('%s> recvfrom(%d, %d) -> %d' % (
-            self.name, size, flags, len(res[0])))
+        if self.logdataapis:
+            self.fh.write('%s> recvfrom(%d, %d) -> %d' % (
+                self.name, size, flags, len(res[0])))
+
         self._writedata(res[0])
 
     def recvfrom_into(self, res, buf, size, flags=0):
         if not self.reads:
             return
 
-        self.fh.write('%s> recvfrom_into(%d, %d) -> %d' % (
-            self.name, size, flags, res[0]))
+        if self.logdataapis:
+            self.fh.write('%s> recvfrom_into(%d, %d) -> %d' % (
+                self.name, size, flags, res[0]))
+
         self._writedata(buf[0:res[0]])
 
     def recv_into(self, res, buf, size=0, flags=0):
         if not self.reads:
             return
 
-        self.fh.write('%s> recv_into(%d, %d) -> %d' % (
-            self.name, size, flags, res))
+        if self.logdataapis:
+            self.fh.write('%s> recv_into(%d, %d) -> %d' % (
+                self.name, size, flags, res))
+
         self._writedata(buf[0:res])
 
     def send(self, res, data, flags=0):
@@ -975,9 +1011,11 @@ class socketobserver(baseproxyobserver):
         if not self.writes:
             return
 
-        # Returns None on success. So don't bother reporting return value.
-        self.fh.write('%s> sendall(%d, %d)' % (
-            self.name, len(data), flags))
+        if self.logdataapis:
+            # Returns None on success. So don't bother reporting return value.
+            self.fh.write('%s> sendall(%d, %d)' % (
+                self.name, len(data), flags))
+
         self._writedata(data)
 
     def sendto(self, res, data, flagsoraddress, address=None):
@@ -989,8 +1027,10 @@ class socketobserver(baseproxyobserver):
         else:
             flags = 0
 
-        self.fh.write('%s> sendto(%d, %d, %r) -> %d' % (
-            self.name, len(data), flags, address, res))
+        if self.logdataapis:
+            self.fh.write('%s> sendto(%d, %d, %r) -> %d' % (
+                self.name, len(data), flags, address, res))
+
         self._writedata(data)
 
     def setblocking(self, res, flag):
@@ -1019,11 +1059,12 @@ class socketobserver(baseproxyobserver):
             self.name, level, optname, value))
 
 def makeloggingsocket(logh, fh, name, reads=True, writes=True, states=True,
-                      logdata=False):
+                      logdata=False, logdataapis=True):
     """Turn a socket into a logging socket."""
 
     observer = socketobserver(logh, name, reads=reads, writes=writes,
-                              states=states, logdata=logdata)
+                              states=states, logdata=logdata,
+                              logdataapis=logdataapis)
     return socketproxy(fh, observer)
 
 def version():

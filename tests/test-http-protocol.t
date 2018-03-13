@@ -175,7 +175,6 @@ Test listkeys for listing namespaces
   > command listkeys
   >     namespace namespaces
   > EOF
-  s> sendall(*, 0): (glob)
   s>     GET /?cmd=capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-0.1\r\n
@@ -183,21 +182,14 @@ Test listkeys for listing namespaces
   s>     user-agent: mercurial/proto-1.0 (Mercurial *)\r\n (glob)
   s>     \r\n
   s> makefile('rb', None)
-  s> readline() -> 36:
   s>     HTTP/1.1 200 Script output follows\r\n
-  s> readline() -> 28:
   s>     Server: testing stub value\r\n
-  s> readline() -> *: (glob)
   s>     Date: $HTTP_DATE$\r\n
-  s> readline() -> 41:
   s>     Content-Type: application/mercurial-0.1\r\n
-  s> readline() -> 21:
   s>     Content-Length: *\r\n (glob)
-  s> readline() -> 2:
   s>     \r\n
-  s> read(*) -> *: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$ (glob)
+  s>     lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$
   sending listkeys command
-  s> sendall(*, 0): (glob)
   s>     GET /?cmd=listkeys HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     vary: X-HgArg-1,X-HgProto-1\r\n
@@ -208,19 +200,12 @@ Test listkeys for listing namespaces
   s>     user-agent: mercurial/proto-1.0 (Mercurial *)\r\n (glob)
   s>     \r\n
   s> makefile('rb', None)
-  s> readline() -> 36:
   s>     HTTP/1.1 200 Script output follows\r\n
-  s> readline() -> 28:
   s>     Server: testing stub value\r\n
-  s> readline() -> *: (glob)
   s>     Date: $HTTP_DATE$\r\n
-  s> readline() -> 41:
   s>     Content-Type: application/mercurial-0.1\r\n
-  s> readline() -> 20:
   s>     Content-Length: 30\r\n
-  s> readline() -> 2:
   s>     \r\n
-  s> read(30) -> 30:
   s>     bookmarks	\n
   s>     namespaces	\n
   s>     phases	
@@ -235,7 +220,6 @@ Same thing, but with "httprequest" command
   >     x-hgarg-1: namespace=namespaces
   > EOF
   using raw connection to peer
-  s> sendall(*, 0): (glob)
   s>     GET /?cmd=listkeys HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-0.1\r\n
@@ -244,19 +228,12 @@ Same thing, but with "httprequest" command
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
   s> makefile('rb', None)
-  s> readline() -> 36:
   s>     HTTP/1.1 200 Script output follows\r\n
-  s> readline() -> 28:
   s>     Server: testing stub value\r\n
-  s> readline() -> *: (glob)
   s>     Date: $HTTP_DATE$\r\n
-  s> readline() -> 41:
   s>     Content-Type: application/mercurial-0.1\r\n
-  s> readline() -> 20:
   s>     Content-Length: 30\r\n
-  s> readline() -> 2:
   s>     \r\n
-  s> read(30) -> 30:
   s>     bookmarks	\n
   s>     namespaces	\n
   s>     phases	

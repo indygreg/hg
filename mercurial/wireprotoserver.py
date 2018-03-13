@@ -33,6 +33,7 @@ HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
 
+HTTPV2 = wireprototypes.HTTPV2
 SSHV1 = wireprototypes.SSHV1
 SSHV2 = wireprototypes.SSHV2
 
@@ -213,6 +214,75 @@ def handlewsgirequest(rctx, req, res, checkperm):
         res.setbodybytes('0\n%s\n' % pycompat.bytestr(e))
 
     return True
+
+def handlewsgiapirequest(rctx, req, res, checkperm):
+    """Handle requests to /api/*."""
+    assert req.dispatchparts[0] == b'api'
+
+    repo = rctx.repo
+
+    # This whole URL space is experimental for now. But we want to
+    # reserve the URL space. So, 404 all URLs if the feature isn't enabled.
+    if not repo.ui.configbool('experimental', 'web.apiserver'):
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('Experimental API server endpoint not enabled'))
+        return
+
+    # The URL space is /api/<protocol>/*. The structure of URLs under varies
+    # by <protocol>.
+
+    # Registered APIs are made available via config options of the name of
+    # the protocol.
+    availableapis = set()
+    for k, v in API_HANDLERS.items():
+        section, option = v['config']
+        if repo.ui.configbool(section, option):
+            availableapis.add(k)
+
+    # Requests to /api/ list available APIs.
+    if req.dispatchparts == [b'api']:
+        res.status = b'200 OK'
+        res.headers[b'Content-Type'] = b'text/plain'
+        lines = [_('APIs can be accessed at /api/<name>, where <name> can be '
+                   'one of the following:\n')]
+        if availableapis:
+            lines.extend(sorted(availableapis))
+        else:
+            lines.append(_('(no available APIs)\n'))
+        res.setbodybytes(b'\n'.join(lines))
+        return
+
+    proto = req.dispatchparts[1]
+
+    if proto not in API_HANDLERS:
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('Unknown API: %s\nKnown APIs: %s') % (
+            proto, b', '.join(sorted(availableapis))))
+        return
+
+    if proto not in availableapis:
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('API %s not enabled\n') % proto)
+        return
+
+    API_HANDLERS[proto]['handler'](rctx, req, res, checkperm,
+                                   req.dispatchparts[2:])
+
+def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
+    res.status = b'200 OK'
+    res.headers[b'Content-Type'] = b'text/plain'
+    res.setbodybytes(b'/'.join(urlparts) + b'\n')
+
+# Maps API name to metadata so custom API can be registered.
+API_HANDLERS = {
+    HTTPV2: {
+        'config': ('experimental', 'web.api.http-v2'),
+        'handler': _handlehttpv2request,
+    },
+}
 
 def _httpresponsetype(ui, req, prefer_uncompressed):
     """Determine the appropriate response type and compression settings.

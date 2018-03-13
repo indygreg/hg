@@ -9,9 +9,10 @@ import abc
 
 # Names of the SSH protocol implementations.
 SSHV1 = 'ssh-v1'
-# This is advertised over the wire. Incremental the counter at the end
+# These are advertised over the wire. Increment the counters at the end
 # to reflect BC breakages.
 SSHV2 = 'exp-ssh-v2-0001'
+HTTPV2 = 'exp-http-v2-0001'
 
 # All available wire protocol transports.
 TRANSPORTS = {
@@ -26,6 +27,10 @@ TRANSPORTS = {
     'http-v1': {
         'transport': 'http',
         'version': 1,
+    },
+    HTTPV2: {
+        'transport': 'http',
+        'version': 2,
     }
 }
 

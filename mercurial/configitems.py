@@ -580,6 +580,12 @@ coreconfigitem('experimental', 'update.atomic-file',
 coreconfigitem('experimental', 'sshpeer.advertise-v2',
     default=False,
 )
+coreconfigitem('experimental', 'web.apiserver',
+    default=False,
+)
+coreconfigitem('experimental', 'web.api.http-v2',
+    default=False,
+)
 coreconfigitem('experimental', 'xdiff',
     default=False,
 )

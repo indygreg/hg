@@ -320,6 +320,13 @@ class hgweb(object):
             # replace it.
             res.headers['Content-Security-Policy'] = rctx.csp
 
+        # /api/* is reserved for various API implementations. Dispatch
+        # accordingly.
+        if req.dispatchparts and req.dispatchparts[0] == b'api':
+            wireprotoserver.handlewsgiapirequest(rctx, req, res,
+                                                 self.check_perm)
+            return res.sendresponse()
+
         handled = wireprotoserver.handlewsgirequest(
             rctx, req, res, self.check_perm)
         if handled:

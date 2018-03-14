@@ -542,8 +542,11 @@ def _preparepats():
             for i, pseq in enumerate(pats):
                 # fix-up regexes for multi-line searches
                 p = pseq[0]
-                # \s doesn't match \n
-                p = re.sub(r'(?<!\\)\\s', r'[ \\t]', p)
+                # \s doesn't match \n (done in two steps)
+                # first, we replace \s that appears in a set already
+                p = re.sub(r'\[\\s', r'[ \\t', p)
+                # now we replace other \s instances.
+                p = re.sub(r'(?<!(\\|\[))\\s', r'[ \\t]', p)
                 # [^...] doesn't match newline
                 p = re.sub(r'(?<!\\)\[\^', r'[^\\n', p)
 

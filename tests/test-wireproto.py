@@ -3,6 +3,7 @@ from __future__ import absolute_import, print_function
 from mercurial import (
     error,
     pycompat,
+    ui as uimod,
     util,
     wireproto,
     wireprototypes,
@@ -22,12 +23,13 @@ class proto(object):
         pass
 
 class clientpeer(wireproto.wirepeer):
-    def __init__(self, serverrepo):
+    def __init__(self, serverrepo, ui):
         self.serverrepo = serverrepo
+        self._ui = ui
 
     @property
     def ui(self):
-        return self.serverrepo.ui
+        return self._ui
 
     def url(self):
         return b'test'
@@ -84,7 +86,7 @@ def greet(repo, proto, name):
 wireproto.commands[b'greet'] = (greet, b'name',)
 
 srv = serverrepo()
-clt = clientpeer(srv)
+clt = clientpeer(srv, uimod.ui())
 
 print(clt.greet(b"Foobar"))
 b = clt.iterbatch()

@@ -2564,6 +2564,14 @@ class cappedreader(object):
 
         return data
 
+    def readinto(self, b):
+        res = self.read(len(b))
+        if res is None:
+            return None
+
+        b[0:len(res)] = res
+        return len(res)
+
 def stringmatcher(pattern, casesensitive=True):
     """
     accepts a string, possibly starting with 're:' or 'literal:' prefix.

@@ -19,6 +19,7 @@ from . import (
     pycompat,
     util,
     wireproto,
+    wireprotoframing,
     wireprototypes,
 )
 
@@ -319,6 +320,11 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
         res.setbodybytes('permission denied')
         return
 
+    # We have a special endpoint to reflect the request back at the client.
+    if command == b'debugreflect':
+        _processhttpv2reflectrequest(rctx.repo.ui, rctx.repo, req, res)
+        return
+
     if command not in wireproto.commands:
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
@@ -343,8 +349,7 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
                            % FRAMINGTYPE)
         return
 
-    if (b'Content-Type' in req.headers
-        and req.headers[b'Content-Type'] != FRAMINGTYPE):
+    if req.headers.get(b'Content-Type') != FRAMINGTYPE:
         res.status = b'415 Unsupported Media Type'
         # TODO we should send a response with appropriate media type,
         # since client does Accept it.
@@ -357,6 +362,49 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = b'text/plain'
     res.setbodybytes(b'/'.join(urlparts) + b'\n')
+
+def _processhttpv2reflectrequest(ui, repo, req, res):
+    """Reads unified frame protocol request and dumps out state to client.
+
+    This special endpoint can be used to help debug the wire protocol.
+
+    Instead of routing the request through the normal dispatch mechanism,
+    we instead read all frames, decode them, and feed them into our state
+    tracker. We then dump the log of all that activity back out to the
+    client.
+    """
+    import json
+
+    # Reflection APIs have a history of being abused, accidentally disclosing
+    # sensitive data, etc. So we have a config knob.
+    if not ui.configbool('experimental', 'web.api.debugreflect'):
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('debugreflect service not available'))
+        return
+
+    # We assume we have a unified framing protocol request body.
+
+    reactor = wireprotoframing.serverreactor()
+    states = []
+
+    while True:
+        frame = wireprotoframing.readframe(req.bodyfh)
+
+        if not frame:
+            states.append(b'received: <no frame>')
+            break
+
+        frametype, frameflags, payload = frame
+        states.append(b'received: %d %d %s' % (frametype, frameflags, payload))
+
+        action, meta = reactor.onframerecv(frametype, frameflags, payload)
+        states.append(json.dumps((action, meta), sort_keys=True,
+                                 separators=(', ', ': ')))
+
+    res.status = b'200 OK'
+    res.headers[b'Content-Type'] = b'text/plain'
+    res.setbodybytes(b'\n'.join(states))
 
 # Maps API name to metadata so custom API can be registered.
 API_HANDLERS = {

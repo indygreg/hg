@@ -586,6 +586,9 @@ coreconfigitem('experimental', 'web.apiserver',
 coreconfigitem('experimental', 'web.api.http-v2',
     default=False,
 )
+coreconfigitem('experimental', 'web.api.debugreflect',
+    default=False,
+)
 coreconfigitem('experimental', 'xdiff',
     default=False,
 )

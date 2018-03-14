@@ -276,7 +276,7 @@ Restart server to allow non-ssl read-write operations
   > allow-push = *
   > EOF
 
-  $ hg -R server serve -p $HGPORT -d --pid-file hg.pid
+  $ hg -R server serve -p $HGPORT -d --pid-file hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
 Authorized request for valid read-write command works
@@ -329,3 +329,78 @@ Authorized request for unknown command is rejected
   s>     Content-Length: 42\r\n
   s>     \r\n
   s>     unknown wire protocol command: badcommand\n
+
+debugreflect isn't enabled by default
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/debugreflect
+  >     user-agent: test
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/debugreflect HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     user-agent: test\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 404 Not Found\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 34\r\n
+  s>     \r\n
+  s>     debugreflect service not available
+
+Restart server to get debugreflect endpoint
+
+  $ killdaemons.py
+  $ cat > server/.hg/hgrc << EOF
+  > [experimental]
+  > web.apiserver = true
+  > web.api.debugreflect = true
+  > web.api.http-v2 = true
+  > [web]
+  > push_ssl = false
+  > allow-push = *
+  > EOF
+
+  $ hg -R server serve -p $HGPORT -d --pid-file hg.pid -E error.log
+  $ cat hg.pid > $DAEMON_PIDS
+
+Command frames can be reflected via debugreflect
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/debugreflect
+  >     accept: $MEDIATYPE
+  >     content-type: $MEDIATYPE
+  >     user-agent: test
+  >     frame command-name have-args command1
+  >     frame command-argument 0 \x03\x00\x04\x00fooval1
+  >     frame command-argument eoa \x04\x00\x03\x00bar1val
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/debugreflect HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0001\r\n
+  s>     content-type: application/mercurial-exp-framing-0001\r\n
+  s>     user-agent: test\r\n
+  s>     content-length: 42\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s>     \x08\x00\x00\x12command1\x0b\x00\x00 \x03\x00\x04\x00fooval1\x0b\x00\x00"\x04\x00\x03\x00bar1val
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 291\r\n
+  s>     \r\n
+  s>     received: 1 2 command1\n
+  s>     ["wantframe", {"state": "command-receiving-args"}]\n
+  s>     received: 2 0 \x03\x00\x04\x00fooval1\n
+  s>     ["wantframe", {"state": "command-receiving-args"}]\n
+  s>     received: 2 2 \x04\x00\x03\x00bar1val\n
+  s>     ["runcommand", {"args": {"bar1": "val", "foo": "val1"}, "command": "command1", "data": null}]\n
+  s>     received: <no frame>
+
+  $ cat error.log

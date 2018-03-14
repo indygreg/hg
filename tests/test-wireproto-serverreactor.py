@@ -196,6 +196,19 @@ class ServerReactorTests(unittest.TestCase):
             'message': b'expected command frame; got 2',
         })
 
+    def testunexpectedcommandargumentreceiving(self):
+        """Same as above but the command is receiving."""
+        results = list(sendframes(makereactor(), [
+            ffs(b'1 command-name have-data command'),
+            ffs(b'1 command-argument eoa ignored'),
+        ]))
+
+        self.assertaction(results[1], 'error')
+        self.assertEqual(results[1][1], {
+            'message': b'received command argument frame for request that is '
+                       b'not expecting arguments: 1',
+        })
+
     def testunexpectedcommanddata(self):
         """Command argument frame when not running a command is an error."""
         result = self._sendsingleframe(makereactor(),
@@ -203,6 +216,19 @@ class ServerReactorTests(unittest.TestCase):
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
             'message': b'expected command frame; got 3',
+        })
+
+    def testunexpectedcommanddatareceiving(self):
+        """Same as above except the command is receiving."""
+        results = list(sendframes(makereactor(), [
+            ffs(b'1 command-name have-args command'),
+            ffs(b'1 command-data eos ignored'),
+        ]))
+
+        self.assertaction(results[1], 'error')
+        self.assertEqual(results[1][1], {
+            'message': b'received command data frame for request that is not '
+                       b'expecting data: 1',
         })
 
     def testmissingcommandframeflags(self):
@@ -214,19 +240,77 @@ class ServerReactorTests(unittest.TestCase):
             'message': b'missing frame flags on command frame',
         })
 
-    def testmissingargumentframe(self):
-        frames = [
-            ffs(b'1 command-name have-args command'),
-            ffs(b'1 command-name 0 ignored'),
-        ]
+    def testconflictingrequestid(self):
+        """Multiple fully serviced commands with same request ID is allowed."""
+        results = list(sendframes(makereactor(), [
+            ffs(b'1 command-name eos command'),
+            ffs(b'1 command-name eos command'),
+            ffs(b'1 command-name eos command'),
+        ]))
+        for i in range(3):
+            self.assertaction(results[i], 'runcommand')
+            self.assertEqual(results[i][1], {
+                'requestid': 1,
+                'command': b'command',
+                'args': {},
+                'data': None,
+            })
 
-        results = list(sendframes(makereactor(), frames))
-        self.assertEqual(len(results), 2)
+    def testconflictingrequestid(self):
+        """Request ID for new command matching in-flight command is illegal."""
+        results = list(sendframes(makereactor(), [
+            ffs(b'1 command-name have-args command'),
+            ffs(b'1 command-name eos command'),
+        ]))
+
         self.assertaction(results[0], 'wantframe')
         self.assertaction(results[1], 'error')
         self.assertEqual(results[1][1], {
-            'message': b'expected command argument frame; got 1',
+            'message': b'request with ID 1 already received',
         })
+
+    def testinterleavedcommands(self):
+        results = list(sendframes(makereactor(), [
+            ffs(b'1 command-name have-args command1'),
+            ffs(b'3 command-name have-args command3'),
+            ffs(br'1 command-argument 0 \x03\x00\x03\x00foobar'),
+            ffs(br'3 command-argument 0 \x03\x00\x03\x00bizbaz'),
+            ffs(br'3 command-argument eoa \x03\x00\x03\x00keyval'),
+            ffs(br'1 command-argument eoa \x04\x00\x03\x00key1val'),
+        ]))
+
+        self.assertEqual([t[0] for t in results], [
+            'wantframe',
+            'wantframe',
+            'wantframe',
+            'wantframe',
+            'runcommand',
+            'runcommand',
+        ])
+
+        self.assertEqual(results[4][1], {
+            'requestid': 3,
+            'command': 'command3',
+            'args': {b'biz': b'baz', b'key': b'val'},
+            'data': None,
+        })
+        self.assertEqual(results[5][1], {
+            'requestid': 1,
+            'command': 'command1',
+            'args': {b'foo': b'bar', b'key1': b'val'},
+            'data': None,
+        })
+
+    def testmissingargumentframe(self):
+        # This test attempts to test behavior when reactor has an incomplete
+        # command request waiting on argument data. But it doesn't handle that
+        # scenario yet. So this test does nothing of value.
+        frames = [
+            ffs(b'1 command-name have-args command'),
+        ]
+
+        results = list(sendframes(makereactor(), frames))
+        self.assertaction(results[0], 'wantframe')
 
     def testincompleteargumentname(self):
         """Argument frame with incomplete name."""
@@ -259,17 +343,16 @@ class ServerReactorTests(unittest.TestCase):
         })
 
     def testmissingcommanddataframe(self):
+        # The reactor doesn't currently handle partially received commands.
+        # So this test is failing to do anything with request 1.
         frames = [
             ffs(b'1 command-name have-data command1'),
-            ffs(b'1 command-name eos command2'),
+            ffs(b'3 command-name eos command2'),
         ]
         results = list(sendframes(makereactor(), frames))
         self.assertEqual(len(results), 2)
         self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'error')
-        self.assertEqual(results[1][1], {
-            'message': b'expected command data frame; got 1',
-        })
+        self.assertaction(results[1], 'runcommand')
 
     def testmissingcommanddataframeflags(self):
         frames = [
@@ -282,6 +365,18 @@ class ServerReactorTests(unittest.TestCase):
         self.assertaction(results[1], 'error')
         self.assertEqual(results[1][1], {
             'message': b'command data frame without flags',
+        })
+
+    def testframefornonreceivingrequest(self):
+        """Receiving a frame for a command that is not receiving is illegal."""
+        results = list(sendframes(makereactor(), [
+            ffs(b'1 command-name eos command1'),
+            ffs(b'3 command-name have-data command3'),
+            ffs(b'1 command-argument eoa ignored'),
+        ]))
+        self.assertaction(results[2], 'error')
+        self.assertEqual(results[2][1], {
+            'message': b'received frame for request that is not receiving: 1',
         })
 
     def testsimpleresponse(self):

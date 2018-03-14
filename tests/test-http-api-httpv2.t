@@ -401,12 +401,12 @@ Command frames can be reflected via debugreflect
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 332\r\n
+  s>     Content-Length: 322\r\n
   s>     \r\n
   s>     received: 1 2 1 command1\n
-  s>     ["wantframe", {"state": "command-receiving-args"}]\n
+  s>     ["wantframe", {"state": "command-receiving"}]\n
   s>     received: 2 0 1 \x03\x00\x04\x00fooval1\n
-  s>     ["wantframe", {"state": "command-receiving-args"}]\n
+  s>     ["wantframe", {"state": "command-receiving"}]\n
   s>     received: 2 2 1 \x04\x00\x03\x00bar1val\n
   s>     ["runcommand", {"args": {"bar1": "val", "foo": "val1"}, "command": "command1", "data": null, "requestid": 1}]\n
   s>     received: <no frame>\n

@@ -493,15 +493,20 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 
     rsp = wireproto.dispatch(repo, proto, command['command'])
 
-    # TODO use proper response format.
     res.status = b'200 OK'
-    res.headers[b'Content-Type'] = b'text/plain'
+    res.headers[b'Content-Type'] = FRAMINGTYPE
 
     if isinstance(rsp, wireprototypes.bytesresponse):
-        res.setbodybytes(rsp.data)
+        action, meta = reactor.onbytesresponseready(rsp.data)
     else:
-        res.setbodybytes(b'unhandled response type from wire proto '
-                         'command')
+        action, meta = reactor.onapplicationerror(
+            _('unhandled response type from wire proto command'))
+
+    if action == 'sendframes':
+        res.setbodygen(meta['framegen'])
+    else:
+        raise error.ProgrammingError('unhandled event from reactor: %s' %
+                                     action)
 
 # Maps API name to metadata so custom API can be registered.
 API_HANDLERS = {

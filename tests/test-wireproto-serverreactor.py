@@ -79,6 +79,10 @@ class ServerReactorTests(unittest.TestCase):
         self.assertIsInstance(res[1], dict)
         self.assertEqual(res[0], expected)
 
+    def assertframesequal(self, frames, framestrings):
+        expected = [ffs(s) for s in framestrings]
+        self.assertEqual(list(frames), expected)
+
     def test1framecommand(self):
         """Receiving a command in a single frame yields request to run it."""
         reactor = makereactor()
@@ -269,6 +273,42 @@ class ServerReactorTests(unittest.TestCase):
         self.assertEqual(results[1][1], {
             'message': b'command data frame without flags',
         })
+
+    def testsimpleresponse(self):
+        """Bytes response to command sends result frames."""
+        reactor = makereactor()
+        list(sendcommandframes(reactor, b'mycommand', {}))
+
+        result = reactor.onbytesresponseready(b'response')
+        self.assertaction(result, 'sendframes')
+        self.assertframesequal(result[1]['framegen'], [
+            b'bytes-response eos response',
+        ])
+
+    def testmultiframeresponse(self):
+        """Bytes response spanning multiple frames is handled."""
+        first = b'x' * framing.DEFAULT_MAX_FRAME_SIZE
+        second = b'y' * 100
+
+        reactor = makereactor()
+        list(sendcommandframes(reactor, b'mycommand', {}))
+
+        result = reactor.onbytesresponseready(first + second)
+        self.assertaction(result, 'sendframes')
+        self.assertframesequal(result[1]['framegen'], [
+            b'bytes-response continuation %s' % first,
+            b'bytes-response eos %s' % second,
+        ])
+
+    def testapplicationerror(self):
+        reactor = makereactor()
+        list(sendcommandframes(reactor, b'mycommand', {}))
+
+        result = reactor.onapplicationerror(b'some message')
+        self.assertaction(result, 'sendframes')
+        self.assertframesequal(result[1]['framegen'], [
+            b'error-response application some message',
+        ])
 
 if __name__ == '__main__':
     import silenttestrunner

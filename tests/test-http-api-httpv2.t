@@ -195,10 +195,14 @@ Request to read-only command works out of the box
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 29\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0001\r\n
+  s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     customreadonly bytes response
+  s>     21\r\n
+  s>     \x1d\x00\x00Bcustomreadonly bytes response
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
 
 Request to read-write command fails because server is read-only by default
 
@@ -302,10 +306,14 @@ Authorized request for valid read-write command works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 29\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0001\r\n
+  s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     customreadonly bytes response
+  s>     21\r\n
+  s>     \x1d\x00\x00Bcustomreadonly bytes response
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
 
 Authorized request for unknown command is rejected
 

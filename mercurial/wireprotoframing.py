@@ -25,11 +25,15 @@ DEFAULT_MAX_FRAME_SIZE = 32768
 FRAME_TYPE_COMMAND_NAME = 0x01
 FRAME_TYPE_COMMAND_ARGUMENT = 0x02
 FRAME_TYPE_COMMAND_DATA = 0x03
+FRAME_TYPE_BYTES_RESPONSE = 0x04
+FRAME_TYPE_ERROR_RESPONSE = 0x05
 
 FRAME_TYPES = {
     b'command-name': FRAME_TYPE_COMMAND_NAME,
     b'command-argument': FRAME_TYPE_COMMAND_ARGUMENT,
     b'command-data': FRAME_TYPE_COMMAND_DATA,
+    b'bytes-response': FRAME_TYPE_BYTES_RESPONSE,
+    b'error-response': FRAME_TYPE_ERROR_RESPONSE,
 }
 
 FLAG_COMMAND_NAME_EOS = 0x01
@@ -58,11 +62,29 @@ FLAGS_COMMAND_DATA = {
     b'eos': FLAG_COMMAND_DATA_EOS,
 }
 
+FLAG_BYTES_RESPONSE_CONTINUATION = 0x01
+FLAG_BYTES_RESPONSE_EOS = 0x02
+
+FLAGS_BYTES_RESPONSE = {
+    b'continuation': FLAG_BYTES_RESPONSE_CONTINUATION,
+    b'eos': FLAG_BYTES_RESPONSE_EOS,
+}
+
+FLAG_ERROR_RESPONSE_PROTOCOL = 0x01
+FLAG_ERROR_RESPONSE_APPLICATION = 0x02
+
+FLAGS_ERROR_RESPONSE = {
+    b'protocol': FLAG_ERROR_RESPONSE_PROTOCOL,
+    b'application': FLAG_ERROR_RESPONSE_APPLICATION,
+}
+
 # Maps frame types to their available flags.
 FRAME_TYPE_FLAGS = {
     FRAME_TYPE_COMMAND_NAME: FLAGS_COMMAND,
     FRAME_TYPE_COMMAND_ARGUMENT: FLAGS_COMMAND_ARGUMENT,
     FRAME_TYPE_COMMAND_DATA: FLAGS_COMMAND_DATA,
+    FRAME_TYPE_BYTES_RESPONSE: FLAGS_BYTES_RESPONSE,
+    FRAME_TYPE_ERROR_RESPONSE: FLAGS_ERROR_RESPONSE,
 }
 
 ARGUMENT_FRAME_HEADER = struct.Struct(r'<HH')
@@ -202,6 +224,47 @@ def createcommandframes(cmd, args, datafh=None):
             if done:
                 break
 
+def createbytesresponseframesfrombytes(data,
+                                       maxframesize=DEFAULT_MAX_FRAME_SIZE):
+    """Create a raw frame to send a bytes response from static bytes input.
+
+    Returns a generator of bytearrays.
+    """
+
+    # Simple case of a single frame.
+    if len(data) <= maxframesize:
+        yield makeframe(FRAME_TYPE_BYTES_RESPONSE,
+                        FLAG_BYTES_RESPONSE_EOS, data)
+        return
+
+    offset = 0
+    while True:
+        chunk = data[offset:offset + maxframesize]
+        offset += len(chunk)
+        done = offset == len(data)
+
+        if done:
+            flags = FLAG_BYTES_RESPONSE_EOS
+        else:
+            flags = FLAG_BYTES_RESPONSE_CONTINUATION
+
+        yield makeframe(FRAME_TYPE_BYTES_RESPONSE, flags, chunk)
+
+        if done:
+            break
+
+def createerrorframe(msg, protocol=False, application=False):
+    # TODO properly handle frame size limits.
+    assert len(msg) <= DEFAULT_MAX_FRAME_SIZE
+
+    flags = 0
+    if protocol:
+        flags |= FLAG_ERROR_RESPONSE_PROTOCOL
+    if application:
+        flags |= FLAG_ERROR_RESPONSE_APPLICATION
+
+    yield makeframe(FRAME_TYPE_ERROR_RESPONSE, flags, msg)
+
 class serverreactor(object):
     """Holds state of a server handling frame-based protocol requests.
 
@@ -229,6 +292,11 @@ class serverreactor(object):
     will contain a reference to those frames.
 
     Valid actions that consumers can be instructed to take are:
+
+    sendframes
+       Indicates that frames should be sent to the client. The ``framegen``
+       key contains a generator of frames that should be sent. The server
+       assumes that all frames are sent to the client.
 
     error
        Indicates that an error occurred. Consumer should probably abort.
@@ -270,6 +338,20 @@ class serverreactor(object):
             raise error.ProgrammingError('unhandled state: %s' % self._state)
 
         return meth(frametype, frameflags, payload)
+
+    def onbytesresponseready(self, data):
+        """Signal that a bytes response is ready to be sent to the client.
+
+        The raw bytes response is passed as an argument.
+        """
+        return 'sendframes', {
+            'framegen': createbytesresponseframesfrombytes(data),
+        }
+
+    def onapplicationerror(self, msg):
+        return 'sendframes', {
+            'framegen': createerrorframe(msg, application=True),
+        }
 
     def _makeerrorresult(self, msg):
         return 'error', {

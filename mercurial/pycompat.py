@@ -64,7 +64,9 @@ if ispy3:
     sysexecutable = sys.executable
     if sysexecutable:
         sysexecutable = os.fsencode(sysexecutable)
-    stringio = io.BytesIO
+    bytesio = io.BytesIO
+    # TODO deprecate stringio name, as it is a lie on Python 3.
+    stringio = bytesio
 
     def maplist(*args):
         return list(map(*args))
@@ -343,7 +345,8 @@ else:
     getcwd = os.getcwd
     sysexecutable = sys.executable
     shlexsplit = shlex.split
-    stringio = cStringIO.StringIO
+    bytesio = cStringIO.StringIO
+    stringio = bytesio
     maplist = map
     ziplist = zip
     rawinput = raw_input

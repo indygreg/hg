@@ -12,7 +12,7 @@ import zlib
 
 from ..node import nullid
 from .. import pycompat
-stringio = pycompat.stringio
+stringio = pycompat.bytesio
 
 
 _pack = struct.pack

@@ -71,7 +71,9 @@ socketserver = pycompat.socketserver
 stderr = pycompat.stderr
 stdin = pycompat.stdin
 stdout = pycompat.stdout
-stringio = pycompat.stringio
+bytesio = pycompat.bytesio
+# TODO deprecate stringio name, as it is a lie on Python 3.
+stringio = bytesio
 xmlrpclib = pycompat.xmlrpclib
 
 httpserver = urllibcompat.httpserver

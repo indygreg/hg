@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import struct
 
 from .. import pycompat
-stringio = pycompat.stringio
+stringio = pycompat.bytesio
 
 class mpatchError(Exception):
     """error raised when a delta cannot be decoded

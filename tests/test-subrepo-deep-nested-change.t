@@ -114,6 +114,7 @@ are also available as siblings of 'main'.
   * "GET /?cmd=batch HTTP/1.1" 200 - * (glob)
   * "GET /?cmd=getbundle HTTP/1.1" 200 - * (glob)
   * "GET /../sub1?cmd=capabilities HTTP/1.1" 404 - (glob)
+  $ cat error.log
 
   $ killdaemons.py
   $ rm hg1.pid error.log access.log

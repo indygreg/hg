@@ -1,4 +1,5 @@
   $ HTTPV2=exp-http-v2-0001
+  $ MEDIATYPE=application/mercurial-tbd
 
   $ send() {
   >   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
@@ -60,27 +61,6 @@ Restart server with support for HTTP v2 API
   $ hg -R server serve -p $HGPORT -d --pid-file hg.pid
   $ cat hg.pid > $DAEMON_PIDS
 
-Request to read-only command works out of the box
-
-  $ send << EOF
-  > httprequest POST api/$HTTPV2/ro/customreadonly
-  >     user-agent: test
-  > EOF
-  using raw connection to peer
-  s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
-  s>     Accept-Encoding: identity\r\n
-  s>     user-agent: test\r\n
-  s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     \r\n
-  s> makefile('rb', None)
-  s>     HTTP/1.1 200 OK\r\n
-  s>     Server: testing stub value\r\n
-  s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 18\r\n
-  s>     \r\n
-  s>     ro/customreadonly\n
-
 Request to unknown command yields 404
 
   $ send << EOF
@@ -122,6 +102,100 @@ GET to read-only command yields a 405
   s>     Content-Length: 30\r\n
   s>     \r\n
   s>     commands require POST requests
+
+Missing Accept header results in 406
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/customreadonly
+  >     user-agent: test
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     user-agent: test\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 406 Not Acceptable\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 72\r\n
+  s>     \r\n
+  s>     client MUST specify Accept header with value: application/mercurial-tbd\n
+
+Bad Accept header results in 406
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/customreadonly
+  >     accept: invalid
+  >     user-agent: test
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: invalid\r\n
+  s>     user-agent: test\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 406 Not Acceptable\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 72\r\n
+  s>     \r\n
+  s>     client MUST specify Accept header with value: application/mercurial-tbd\n
+
+Bad Content-Type header results in 415
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/customreadonly
+  >     accept: $MEDIATYPE
+  >     user-agent: test
+  >     content-type: badmedia
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-tbd\r\n
+  s>     content-type: badmedia\r\n
+  s>     user-agent: test\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 415 Unsupported Media Type\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 75\r\n
+  s>     \r\n
+  s>     client MUST send Content-Type header with value: application/mercurial-tbd\n
+
+Request to read-only command works out of the box
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/customreadonly
+  >     accept: $MEDIATYPE
+  >     content-type: $MEDIATYPE
+  >     user-agent: test
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-tbd\r\n
+  s>     content-type: application/mercurial-tbd\r\n
+  s>     user-agent: test\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 18\r\n
+  s>     \r\n
+  s>     ro/customreadonly\n
 
 Request to read-write command fails because server is read-only by default
 
@@ -207,10 +281,14 @@ Authorized request for valid read-write command works
   $ send << EOF
   > httprequest POST api/$HTTPV2/rw/customreadonly
   >     user-agent: test
+  >     accept: $MEDIATYPE
+  >     content-type: $MEDIATYPE
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/rw/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-tbd\r\n
+  s>     content-type: application/mercurial-tbd\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
@@ -228,10 +306,12 @@ Authorized request for unknown command is rejected
   $ send << EOF
   > httprequest POST api/$HTTPV2/rw/badcommand
   >     user-agent: test
+  >     accept: $MEDIATYPE
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/rw/badcommand HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-tbd\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n

@@ -32,6 +32,7 @@ HTTP_OK = 200
 HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
+HTTPV2TYPE = 'application/mercurial-tbd'
 
 HTTPV2 = wireprototypes.HTTPV2
 SSHV1 = wireprototypes.SSHV1
@@ -333,6 +334,23 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(_('invalid wire protocol command: %s') % command)
+        return
+
+    if req.headers.get(b'Accept') != HTTPV2TYPE:
+        res.status = b'406 Not Acceptable'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('client MUST specify Accept header with value: %s\n')
+                           % HTTPV2TYPE)
+        return
+
+    if (b'Content-Type' in req.headers
+        and req.headers[b'Content-Type'] != HTTPV2TYPE):
+        res.status = b'415 Unsupported Media Type'
+        # TODO we should send a response with appropriate media type,
+        # since client does Accept it.
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('client MUST send Content-Type header with '
+                           'value: %s\n') % HTTPV2TYPE)
         return
 
     # We don't do anything meaningful yet.

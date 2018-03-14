@@ -187,6 +187,19 @@ exchange takes place. This provides a better end-user experience.
 Requests to unknown commands or URLS result in an HTTP 404.
 TODO formally define response type, how error is communicated, etc.
 
+HTTP request and response bodies use the *TBD Protocol* for media exchange.
+
+Clients and servers MUST advertise the ``TBD`` media type via the
+``Content-Type`` request and response headers. In addition, clients MUST
+advertise this media type value in their ``Accept`` request header in all
+requests.
+
+Servers receiving requests without an ``Accept`` header SHOULD respond with
+an HTTP 406.
+
+Servers receiving requests with an invalid ``Content-Type`` header SHOULD
+respond with an HTTP 415.
+
 SSH Protocol
 ============
 

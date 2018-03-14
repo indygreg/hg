@@ -157,7 +157,7 @@ def uncommit(ui, repo, *pats, **opts):
     with repo.wlock(), repo.lock():
 
         if not pats and not repo.ui.configbool('experimental',
-                                                'uncommitondirtywdir'):
+                                               'uncommitondirtywdir'):
             cmdutil.bailifchanged(repo)
         old = repo['.']
         rewriteutil.precheck(repo, [old.rev()], 'uncommit')

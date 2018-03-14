@@ -360,10 +360,7 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
                            'value: %s\n') % FRAMINGTYPE)
         return
 
-    # We don't do anything meaningful yet.
-    res.status = b'200 OK'
-    res.headers[b'Content-Type'] = b'text/plain'
-    res.setbodybytes(b'/'.join(urlparts) + b'\n')
+    _processhttpv2request(ui, repo, req, res, permission, command, proto)
 
 def _processhttpv2reflectrequest(ui, repo, req, res):
     """Reads unified frame protocol request and dumps out state to client.
@@ -408,6 +405,104 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
     res.headers[b'Content-Type'] = b'text/plain'
     res.setbodybytes(b'\n'.join(states))
 
+def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
+    """Post-validation handler for HTTPv2 requests.
+
+    Called when the HTTP request contains unified frame-based protocol
+    frames for evaluation.
+    """
+    reactor = wireprotoframing.serverreactor()
+    seencommand = False
+
+    while True:
+        frame = wireprotoframing.readframe(req.bodyfh)
+        if not frame:
+            break
+
+        action, meta = reactor.onframerecv(*frame)
+
+        if action == 'wantframe':
+            # Need more data before we can do anything.
+            continue
+        elif action == 'runcommand':
+            # We currently only support running a single command per
+            # HTTP request.
+            if seencommand:
+                # TODO define proper error mechanism.
+                res.status = b'200 OK'
+                res.headers[b'Content-Type'] = b'text/plain'
+                res.setbodybytes(_('support for multiple commands per request '
+                                   'not yet implemented'))
+                return
+
+            _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand,
+                              reactor, meta)
+
+        elif action == 'error':
+            # TODO define proper error mechanism.
+            res.status = b'200 OK'
+            res.headers[b'Content-Type'] = b'text/plain'
+            res.setbodybytes(meta['message'] + b'\n')
+            return
+        else:
+            raise error.ProgrammingError(
+                'unhandled action from frame processor: %s' % action)
+
+def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
+                      command):
+    """Dispatch a wire protocol command made from HTTPv2 requests.
+
+    The authenticated permission (``authedperm``) along with the original
+    command from the URL (``reqcommand``) are passed in.
+    """
+    # We already validated that the session has permissions to perform the
+    # actions in ``authedperm``. In the unified frame protocol, the canonical
+    # command to run is expressed in a frame. However, the URL also requested
+    # to run a specific command. We need to be careful that the command we
+    # run doesn't have permissions requirements greater than what was granted
+    # by ``authedperm``.
+    #
+    # For now, this is no big deal, as we only allow a single command per
+    # request and that command must match the command in the URL. But when
+    # things change, we need to watch out...
+    if reqcommand != command['command']:
+        # TODO define proper error mechanism
+        res.status = b'200 OK'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('command in frame must match command in URL'))
+        return
+
+    # TODO once we get rid of the command==URL restriction, we'll need to
+    # revalidate command validity and auth here. checkperm,
+    # wireproto.commands.commandavailable(), etc.
+
+    proto = httpv2protocolhandler(req, ui, args=command['args'])
+    assert wireproto.commands.commandavailable(command['command'], proto)
+    wirecommand = wireproto.commands[command['command']]
+
+    assert authedperm in (b'ro', b'rw')
+    assert wirecommand.permission in ('push', 'pull')
+
+    # We already checked this as part of the URL==command check, but
+    # permissions are important, so do it again.
+    if authedperm == b'ro':
+        assert wirecommand.permission == 'pull'
+    elif authedperm == b'rw':
+        # We are allowed to access read-only commands under the rw URL.
+        assert wirecommand.permission in ('push', 'pull')
+
+    rsp = wireproto.dispatch(repo, proto, command['command'])
+
+    # TODO use proper response format.
+    res.status = b'200 OK'
+    res.headers[b'Content-Type'] = b'text/plain'
+
+    if isinstance(rsp, wireprototypes.bytesresponse):
+        res.setbodybytes(rsp.data)
+    else:
+        res.setbodybytes(b'unhandled response type from wire proto '
+                         'command')
+
 # Maps API name to metadata so custom API can be registered.
 API_HANDLERS = {
     HTTPV2: {
@@ -417,16 +512,24 @@ API_HANDLERS = {
 }
 
 class httpv2protocolhandler(wireprototypes.baseprotocolhandler):
-    def __init__(self, req, ui):
+    def __init__(self, req, ui, args=None):
         self._req = req
         self._ui = ui
+        self._args = args
 
     @property
     def name(self):
         return HTTPV2
 
     def getargs(self, args):
-        raise NotImplementedError
+        data = {}
+        for k in args.split():
+            if k == '*':
+                raise NotImplementedError('do not support * args')
+            else:
+                data[k] = self._args[k]
+
+        return [data[k] for k in args.split()]
 
     def forwardpayload(self, fp):
         raise NotImplementedError
@@ -439,7 +542,7 @@ class httpv2protocolhandler(wireprototypes.baseprotocolhandler):
         raise NotImplementedError
 
     def addcapabilities(self, repo, caps):
-        raise NotImplementedError
+        return caps
 
     def checkperm(self, perm):
         raise NotImplementedError

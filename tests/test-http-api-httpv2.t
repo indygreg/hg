@@ -196,9 +196,9 @@ Request to read-only command works out of the box
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 18\r\n
+  s>     Content-Length: 29\r\n
   s>     \r\n
-  s>     ro/customreadonly\n
+  s>     customreadonly bytes response
 
 Request to read-write command fails because server is read-only by default
 
@@ -303,9 +303,9 @@ Authorized request for valid read-write command works
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 18\r\n
+  s>     Content-Length: 29\r\n
   s>     \r\n
-  s>     rw/customreadonly\n
+  s>     customreadonly bytes response
 
 Authorized request for unknown command is rejected
 

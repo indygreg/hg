@@ -33,7 +33,7 @@ HTTP_OK = 200
 HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
-FRAMINGTYPE = b'application/mercurial-exp-framing-0001'
+FRAMINGTYPE = b'application/mercurial-exp-framing-0002'
 
 HTTPV2 = wireprototypes.HTTPV2
 SSHV1 = wireprototypes.SSHV1
@@ -394,10 +394,12 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
             states.append(b'received: <no frame>')
             break
 
-        frametype, frameflags, payload = frame
-        states.append(b'received: %d %d %s' % (frametype, frameflags, payload))
+        requestid, frametype, frameflags, payload = frame
+        states.append(b'received: %d %d %d %s' % (frametype, frameflags,
+                                                  requestid, payload))
 
-        action, meta = reactor.onframerecv(frametype, frameflags, payload)
+        action, meta = reactor.onframerecv(requestid, frametype, frameflags,
+                                           payload)
         states.append(json.dumps((action, meta), sort_keys=True,
                                  separators=(', ', ': ')))
 
@@ -517,7 +519,8 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     res.headers[b'Content-Type'] = FRAMINGTYPE
 
     if isinstance(rsp, wireprototypes.bytesresponse):
-        action, meta = reactor.onbytesresponseready(rsp.data)
+        action, meta = reactor.onbytesresponseready(command['requestid'],
+                                                    rsp.data)
     else:
         action, meta = reactor.onapplicationerror(
             _('unhandled response type from wire proto command'))

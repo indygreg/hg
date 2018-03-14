@@ -469,22 +469,26 @@ for sending data and another for receiving.
 
 The protocol is request-response based: the client issues requests to
 the server, which issues replies to those requests. Server-initiated
-messaging is not supported.
+messaging is not currently supported, but this specification carves
+out room to implement it.
 
 All data is read and written in atomic units called *frames*. These
 are conceptually similar to TCP packets. Higher-level functionality
 is built on the exchange and processing of frames.
 
-Frames begin with a 4 octet header followed by a variable length
+All frames are associated with a numbered request. Frames can thus
+be logically grouped by their request ID.
+
+Frames begin with a 6 octet header followed by a variable length
 payload::
 
     +-----------------------------------------------+
     |                 Length (24)                   |
-    +-----------+-----------------------------------+
-    | Type (4)  |
-    +-----------+
-    | Flags (4) |
-    +===========+===================================================|
+    +---------------------------------+-------------+
+    |         Request ID (16)         |
+    +----------+-----------+----------+
+    | Type (4) | Flags (4) |
+    +==========+===========+========================================|
     |                     Frame Payload (0...)                    ...
     +---------------------------------------------------------------+
 
@@ -493,6 +497,15 @@ little endian integer. Values larger than 65535 MUST NOT be used unless
 given permission by the server as part of the negotiated capabilities
 during the handshake. The frame header is not part of the advertised
 frame length.
+
+The 16-bit ``Request ID`` field denotes the integer request identifier,
+stored as an unsigned little endian integer. Odd numbered requests are
+client-initiated. Even numbered requests are server-initiated. This
+refers to where the *request* was initiated - not where the *frame* was
+initiated, so servers will send frames with odd ``Request ID`` in
+response to client-initiated requests. Implementations are advised to
+start ordering request identifiers at ``1`` and ``0``, increment by
+``2``, and wrap around if all available numbers have been exhausted.
 
 The 4-bit ``Type`` field denotes the type of message being sent.
 
@@ -632,6 +645,28 @@ A client can request that a remote run a command by sending it
 frames defining that command. This logical stream is composed of
 1 ``Command Request`` frame, 0 or more ``Command Argument`` frames,
 and 0 or more ``Command Data`` frames.
+
+All frames composing a single command request MUST be associated with
+the same ``Request ID``.
+
+Clients MAY send additional command requests without waiting on the
+response to a previous command request. If they do so, they MUST ensure
+that the ``Request ID`` field of outbound frames does not conflict
+with that of an active ``Request ID`` whose response has not yet been
+fully received.
+
+Servers MAY respond to commands in a different order than they were
+sent over the wire. Clients MUST be prepared to deal with this. Servers
+also MAY start executing commands in a different order than they were
+received, or MAY execute multiple commands concurrently.
+
+If there is a dependency between commands or a race condition between
+commands executing (e.g. a read-only command that depends on the results
+of a command that mutates the repository), then clients MUST NOT send
+frames issuing a command until a response to all dependent commands has
+been received.
+TODO think about whether we should express dependencies between commands
+to avoid roundtrip latency.
 
 Argument frames are the recommended mechanism for transferring fixed
 sets of parameters to a command. Data frames are appropriate for

@@ -18,52 +18,53 @@ def sendframes(reactor, gen):
     Emits a generator of results from ``onframerecv()`` calls.
     """
     for frame in gen:
-        frametype, frameflags, framelength = framing.parseheader(frame)
+        rid, frametype, frameflags, framelength = framing.parseheader(frame)
         payload = frame[framing.FRAME_HEADER_SIZE:]
         assert len(payload) == framelength
 
-        yield reactor.onframerecv(frametype, frameflags, payload)
+        yield reactor.onframerecv(rid, frametype, frameflags, payload)
 
-def sendcommandframes(reactor, cmd, args, datafh=None):
+def sendcommandframes(reactor, rid, cmd, args, datafh=None):
     """Generate frames to run a command and send them to a reactor."""
-    return sendframes(reactor, framing.createcommandframes(cmd, args, datafh))
+    return sendframes(reactor,
+                      framing.createcommandframes(rid, cmd, args, datafh))
 
 class FrameTests(unittest.TestCase):
     def testdataexactframesize(self):
         data = util.bytesio(b'x' * framing.DEFAULT_MAX_FRAME_SIZE)
 
-        frames = list(framing.createcommandframes(b'command', {}, data))
+        frames = list(framing.createcommandframes(1, b'command', {}, data))
         self.assertEqual(frames, [
-            ffs(b'command-name have-data command'),
-            ffs(b'command-data continuation %s' % data.getvalue()),
-            ffs(b'command-data eos ')
+            ffs(b'1 command-name have-data command'),
+            ffs(b'1 command-data continuation %s' % data.getvalue()),
+            ffs(b'1 command-data eos ')
         ])
 
     def testdatamultipleframes(self):
         data = util.bytesio(b'x' * (framing.DEFAULT_MAX_FRAME_SIZE + 1))
-        frames = list(framing.createcommandframes(b'command', {}, data))
+        frames = list(framing.createcommandframes(1, b'command', {}, data))
         self.assertEqual(frames, [
-            ffs(b'command-name have-data command'),
-            ffs(b'command-data continuation %s' % (
+            ffs(b'1 command-name have-data command'),
+            ffs(b'1 command-data continuation %s' % (
                 b'x' * framing.DEFAULT_MAX_FRAME_SIZE)),
-            ffs(b'command-data eos x'),
+            ffs(b'1 command-data eos x'),
         ])
 
     def testargsanddata(self):
         data = util.bytesio(b'x' * 100)
 
-        frames = list(framing.createcommandframes(b'command', {
+        frames = list(framing.createcommandframes(1, b'command', {
             b'key1': b'key1value',
             b'key2': b'key2value',
             b'key3': b'key3value',
         }, data))
 
         self.assertEqual(frames, [
-            ffs(b'command-name have-args|have-data command'),
-            ffs(br'command-argument 0 \x04\x00\x09\x00key1key1value'),
-            ffs(br'command-argument 0 \x04\x00\x09\x00key2key2value'),
-            ffs(br'command-argument eoa \x04\x00\x09\x00key3key3value'),
-            ffs(b'command-data eos %s' % data.getvalue()),
+            ffs(b'1 command-name have-args|have-data command'),
+            ffs(br'1 command-argument 0 \x04\x00\x09\x00key1key1value'),
+            ffs(br'1 command-argument 0 \x04\x00\x09\x00key2key2value'),
+            ffs(br'1 command-argument eoa \x04\x00\x09\x00key3key3value'),
+            ffs(b'1 command-data eos %s' % data.getvalue()),
         ])
 
 class ServerReactorTests(unittest.TestCase):
@@ -86,10 +87,11 @@ class ServerReactorTests(unittest.TestCase):
     def test1framecommand(self):
         """Receiving a command in a single frame yields request to run it."""
         reactor = makereactor()
-        results = list(sendcommandframes(reactor, b'mycommand', {}))
+        results = list(sendcommandframes(reactor, 1, b'mycommand', {}))
         self.assertEqual(len(results), 1)
         self.assertaction(results[0], 'runcommand')
         self.assertEqual(results[0][1], {
+            'requestid': 1,
             'command': b'mycommand',
             'args': {},
             'data': None,
@@ -100,12 +102,13 @@ class ServerReactorTests(unittest.TestCase):
 
     def test1argument(self):
         reactor = makereactor()
-        results = list(sendcommandframes(reactor, b'mycommand',
+        results = list(sendcommandframes(reactor, 41, b'mycommand',
                                          {b'foo': b'bar'}))
         self.assertEqual(len(results), 2)
         self.assertaction(results[0], 'wantframe')
         self.assertaction(results[1], 'runcommand')
         self.assertEqual(results[1][1], {
+            'requestid': 41,
             'command': b'mycommand',
             'args': {b'foo': b'bar'},
             'data': None,
@@ -113,13 +116,14 @@ class ServerReactorTests(unittest.TestCase):
 
     def testmultiarguments(self):
         reactor = makereactor()
-        results = list(sendcommandframes(reactor, b'mycommand',
+        results = list(sendcommandframes(reactor, 1, b'mycommand',
                                          {b'foo': b'bar', b'biz': b'baz'}))
         self.assertEqual(len(results), 3)
         self.assertaction(results[0], 'wantframe')
         self.assertaction(results[1], 'wantframe')
         self.assertaction(results[2], 'runcommand')
         self.assertEqual(results[2][1], {
+            'requestid': 1,
             'command': b'mycommand',
             'args': {b'foo': b'bar', b'biz': b'baz'},
             'data': None,
@@ -127,12 +131,13 @@ class ServerReactorTests(unittest.TestCase):
 
     def testsimplecommanddata(self):
         reactor = makereactor()
-        results = list(sendcommandframes(reactor, b'mycommand', {},
+        results = list(sendcommandframes(reactor, 1, b'mycommand', {},
                                          util.bytesio(b'data!')))
         self.assertEqual(len(results), 2)
         self.assertaction(results[0], 'wantframe')
         self.assertaction(results[1], 'runcommand')
         self.assertEqual(results[1][1], {
+            'requestid': 1,
             'command': b'mycommand',
             'args': {},
             'data': b'data!',
@@ -140,10 +145,10 @@ class ServerReactorTests(unittest.TestCase):
 
     def testmultipledataframes(self):
         frames = [
-            ffs(b'command-name have-data mycommand'),
-            ffs(b'command-data continuation data1'),
-            ffs(b'command-data continuation data2'),
-            ffs(b'command-data eos data3'),
+            ffs(b'1 command-name have-data mycommand'),
+            ffs(b'1 command-data continuation data1'),
+            ffs(b'1 command-data continuation data2'),
+            ffs(b'1 command-data eos data3'),
         ]
 
         reactor = makereactor()
@@ -153,6 +158,7 @@ class ServerReactorTests(unittest.TestCase):
             self.assertaction(results[i], 'wantframe')
         self.assertaction(results[3], 'runcommand')
         self.assertEqual(results[3][1], {
+            'requestid': 1,
             'command': b'mycommand',
             'args': {},
             'data': b'data1data2data3',
@@ -160,11 +166,11 @@ class ServerReactorTests(unittest.TestCase):
 
     def testargumentanddata(self):
         frames = [
-            ffs(b'command-name have-args|have-data command'),
-            ffs(br'command-argument 0 \x03\x00\x03\x00keyval'),
-            ffs(br'command-argument eoa \x03\x00\x03\x00foobar'),
-            ffs(b'command-data continuation value1'),
-            ffs(b'command-data eos value2'),
+            ffs(b'1 command-name have-args|have-data command'),
+            ffs(br'1 command-argument 0 \x03\x00\x03\x00keyval'),
+            ffs(br'1 command-argument eoa \x03\x00\x03\x00foobar'),
+            ffs(b'1 command-data continuation value1'),
+            ffs(b'1 command-data eos value2'),
         ]
 
         reactor = makereactor()
@@ -172,6 +178,7 @@ class ServerReactorTests(unittest.TestCase):
 
         self.assertaction(results[-1], 'runcommand')
         self.assertEqual(results[-1][1], {
+            'requestid': 1,
             'command': b'command',
             'args': {
                 b'key': b'val',
@@ -183,7 +190,7 @@ class ServerReactorTests(unittest.TestCase):
     def testunexpectedcommandargument(self):
         """Command argument frame when not running a command is an error."""
         result = self._sendsingleframe(makereactor(),
-                                       b'command-argument 0 ignored')
+                                       b'1 command-argument 0 ignored')
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
             'message': b'expected command frame; got 2',
@@ -192,7 +199,7 @@ class ServerReactorTests(unittest.TestCase):
     def testunexpectedcommanddata(self):
         """Command argument frame when not running a command is an error."""
         result = self._sendsingleframe(makereactor(),
-                                       b'command-data 0 ignored')
+                                       b'1 command-data 0 ignored')
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
             'message': b'expected command frame; got 3',
@@ -201,7 +208,7 @@ class ServerReactorTests(unittest.TestCase):
     def testmissingcommandframeflags(self):
         """Command name frame must have flags set."""
         result = self._sendsingleframe(makereactor(),
-                                       b'command-name 0 command')
+                                       b'1 command-name 0 command')
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
             'message': b'missing frame flags on command frame',
@@ -209,8 +216,8 @@ class ServerReactorTests(unittest.TestCase):
 
     def testmissingargumentframe(self):
         frames = [
-            ffs(b'command-name have-args command'),
-            ffs(b'command-name 0 ignored'),
+            ffs(b'1 command-name have-args command'),
+            ffs(b'1 command-name 0 ignored'),
         ]
 
         results = list(sendframes(makereactor(), frames))
@@ -224,8 +231,8 @@ class ServerReactorTests(unittest.TestCase):
     def testincompleteargumentname(self):
         """Argument frame with incomplete name."""
         frames = [
-            ffs(b'command-name have-args command1'),
-            ffs(br'command-argument eoa \x04\x00\xde\xadfoo'),
+            ffs(b'1 command-name have-args command1'),
+            ffs(br'1 command-argument eoa \x04\x00\xde\xadfoo'),
         ]
 
         results = list(sendframes(makereactor(), frames))
@@ -239,8 +246,8 @@ class ServerReactorTests(unittest.TestCase):
     def testincompleteargumentvalue(self):
         """Argument frame with incomplete value."""
         frames = [
-            ffs(b'command-name have-args command'),
-            ffs(br'command-argument eoa \x03\x00\xaa\xaafoopartialvalue'),
+            ffs(b'1 command-name have-args command'),
+            ffs(br'1 command-argument eoa \x03\x00\xaa\xaafoopartialvalue'),
         ]
 
         results = list(sendframes(makereactor(), frames))
@@ -253,8 +260,8 @@ class ServerReactorTests(unittest.TestCase):
 
     def testmissingcommanddataframe(self):
         frames = [
-            ffs(b'command-name have-data command1'),
-            ffs(b'command-name eos command2'),
+            ffs(b'1 command-name have-data command1'),
+            ffs(b'1 command-name eos command2'),
         ]
         results = list(sendframes(makereactor(), frames))
         self.assertEqual(len(results), 2)
@@ -266,8 +273,8 @@ class ServerReactorTests(unittest.TestCase):
 
     def testmissingcommanddataframeflags(self):
         frames = [
-            ffs(b'command-name have-data command1'),
-            ffs(b'command-data 0 data'),
+            ffs(b'1 command-name have-data command1'),
+            ffs(b'1 command-data 0 data'),
         ]
         results = list(sendframes(makereactor(), frames))
         self.assertEqual(len(results), 2)
@@ -280,12 +287,12 @@ class ServerReactorTests(unittest.TestCase):
     def testsimpleresponse(self):
         """Bytes response to command sends result frames."""
         reactor = makereactor()
-        list(sendcommandframes(reactor, b'mycommand', {}))
+        list(sendcommandframes(reactor, 1, b'mycommand', {}))
 
-        result = reactor.onbytesresponseready(b'response')
+        result = reactor.onbytesresponseready(1, b'response')
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
-            b'bytes-response eos response',
+            b'1 bytes-response eos response',
         ])
 
     def testmultiframeresponse(self):
@@ -294,54 +301,73 @@ class ServerReactorTests(unittest.TestCase):
         second = b'y' * 100
 
         reactor = makereactor()
-        list(sendcommandframes(reactor, b'mycommand', {}))
+        list(sendcommandframes(reactor, 1, b'mycommand', {}))
 
-        result = reactor.onbytesresponseready(first + second)
+        result = reactor.onbytesresponseready(1, first + second)
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
-            b'bytes-response continuation %s' % first,
-            b'bytes-response eos %s' % second,
+            b'1 bytes-response continuation %s' % first,
+            b'1 bytes-response eos %s' % second,
         ])
 
     def testapplicationerror(self):
         reactor = makereactor()
-        list(sendcommandframes(reactor, b'mycommand', {}))
+        list(sendcommandframes(reactor, 1, b'mycommand', {}))
 
-        result = reactor.onapplicationerror(b'some message')
+        result = reactor.onapplicationerror(1, b'some message')
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
-            b'error-response application some message',
+            b'1 error-response application some message',
         ])
 
     def test1commanddeferresponse(self):
         """Responses when in deferred output mode are delayed until EOF."""
         reactor = makereactor(deferoutput=True)
-        results = list(sendcommandframes(reactor, b'mycommand', {}))
+        results = list(sendcommandframes(reactor, 1, b'mycommand', {}))
         self.assertEqual(len(results), 1)
         self.assertaction(results[0], 'runcommand')
 
-        result = reactor.onbytesresponseready(b'response')
+        result = reactor.onbytesresponseready(1, b'response')
         self.assertaction(result, 'noop')
         result = reactor.oninputeof()
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
-            b'bytes-response eos response',
+            b'1 bytes-response eos response',
         ])
 
     def testmultiplecommanddeferresponse(self):
         reactor = makereactor(deferoutput=True)
-        list(sendcommandframes(reactor, b'command1', {}))
-        list(sendcommandframes(reactor, b'command2', {}))
+        list(sendcommandframes(reactor, 1, b'command1', {}))
+        list(sendcommandframes(reactor, 3, b'command2', {}))
 
-        result = reactor.onbytesresponseready(b'response1')
+        result = reactor.onbytesresponseready(1, b'response1')
         self.assertaction(result, 'noop')
-        result = reactor.onbytesresponseready(b'response2')
+        result = reactor.onbytesresponseready(3, b'response2')
         self.assertaction(result, 'noop')
         result = reactor.oninputeof()
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
-            b'bytes-response eos response1',
-            b'bytes-response eos response2'
+            b'1 bytes-response eos response1',
+            b'3 bytes-response eos response2'
+        ])
+
+    def testrequestidtracking(self):
+        reactor = makereactor(deferoutput=True)
+        list(sendcommandframes(reactor, 1, b'command1', {}))
+        list(sendcommandframes(reactor, 3, b'command2', {}))
+        list(sendcommandframes(reactor, 5, b'command3', {}))
+
+        # Register results for commands out of order.
+        reactor.onbytesresponseready(3, b'response3')
+        reactor.onbytesresponseready(1, b'response1')
+        reactor.onbytesresponseready(5, b'response5')
+
+        result = reactor.oninputeof()
+        self.assertaction(result, 'sendframes')
+        self.assertframesequal(result[1]['framegen'], [
+            b'3 bytes-response eos response3',
+            b'1 bytes-response eos response1',
+            b'5 bytes-response eos response5',
         ])
 
 if __name__ == '__main__':

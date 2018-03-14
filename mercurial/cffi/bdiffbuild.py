@@ -4,9 +4,10 @@ import cffi
 import os
 
 ffi = cffi.FFI()
-ffi.set_source("mercurial.cffi._bdiff",
-    open(os.path.join(os.path.join(os.path.dirname(__file__), '..'),
-        'bdiff.c')).read(), include_dirs=['mercurial'])
+with open(os.path.join(os.path.join(os.path.dirname(__file__), '..'),
+                       'bdiff.c')) as f:
+    ffi.set_source("mercurial.cffi._bdiff",
+                   f.read(), include_dirs=['mercurial'])
 ffi.cdef("""
 struct bdiff_line {
     int hash, n, e;

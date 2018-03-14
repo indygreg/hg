@@ -264,7 +264,8 @@ def checklink(path):
                 # already exists.
                 target = 'checklink-target'
                 try:
-                    open(os.path.join(cachedir, target), 'w').close()
+                    fullpath = os.path.join(cachedir, target)
+                    open(fullpath, 'w').close()
                 except IOError as inst:
                     if inst[0] == errno.EACCES:
                         # If we can't write to cachedir, just pretend

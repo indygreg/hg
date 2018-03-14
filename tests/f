@@ -61,7 +61,8 @@ def visit(opts, filenames, outfile):
             if opts.type:
                 facts.append(b'file')
             if any((opts.hexdump, opts.dump, opts.md5, opts.sha1, opts.sha256)):
-                content = open(f, 'rb').read()
+                with open(f, 'rb') as fobj:
+                    content = fobj.read()
         elif islink:
             if opts.type:
                 facts.append(b'link')

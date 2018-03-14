@@ -401,7 +401,7 @@ Command frames can be reflected via debugreflect
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 291\r\n
+  s>     Content-Length: 310\r\n
   s>     \r\n
   s>     received: 1 2 command1\n
   s>     ["wantframe", {"state": "command-receiving-args"}]\n
@@ -409,6 +409,7 @@ Command frames can be reflected via debugreflect
   s>     ["wantframe", {"state": "command-receiving-args"}]\n
   s>     received: 2 2 \x04\x00\x03\x00bar1val\n
   s>     ["runcommand", {"args": {"bar1": "val", "foo": "val1"}, "command": "command1", "data": null}]\n
-  s>     received: <no frame>
+  s>     received: <no frame>\n
+  s>     {"action": "noop"}
 
   $ cat error.log

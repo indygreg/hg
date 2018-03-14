@@ -9,8 +9,8 @@ from mercurial import (
 
 ffs = framing.makeframefromhumanstring
 
-def makereactor():
-    return framing.serverreactor()
+def makereactor(deferoutput=False):
+    return framing.serverreactor(deferoutput=deferoutput)
 
 def sendframes(reactor, gen):
     """Send a generator of frame bytearray to a reactor.
@@ -94,6 +94,9 @@ class ServerReactorTests(unittest.TestCase):
             'args': {},
             'data': None,
         })
+
+        result = reactor.oninputeof()
+        self.assertaction(result, 'noop')
 
     def test1argument(self):
         reactor = makereactor()
@@ -308,6 +311,37 @@ class ServerReactorTests(unittest.TestCase):
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
             b'error-response application some message',
+        ])
+
+    def test1commanddeferresponse(self):
+        """Responses when in deferred output mode are delayed until EOF."""
+        reactor = makereactor(deferoutput=True)
+        results = list(sendcommandframes(reactor, b'mycommand', {}))
+        self.assertEqual(len(results), 1)
+        self.assertaction(results[0], 'runcommand')
+
+        result = reactor.onbytesresponseready(b'response')
+        self.assertaction(result, 'noop')
+        result = reactor.oninputeof()
+        self.assertaction(result, 'sendframes')
+        self.assertframesequal(result[1]['framegen'], [
+            b'bytes-response eos response',
+        ])
+
+    def testmultiplecommanddeferresponse(self):
+        reactor = makereactor(deferoutput=True)
+        list(sendcommandframes(reactor, b'command1', {}))
+        list(sendcommandframes(reactor, b'command2', {}))
+
+        result = reactor.onbytesresponseready(b'response1')
+        self.assertaction(result, 'noop')
+        result = reactor.onbytesresponseready(b'response2')
+        self.assertaction(result, 'noop')
+        result = reactor.oninputeof()
+        self.assertaction(result, 'sendframes')
+        self.assertframesequal(result[1]['framegen'], [
+            b'bytes-response eos response1',
+            b'bytes-response eos response2'
         ])
 
 if __name__ == '__main__':

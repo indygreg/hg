@@ -308,10 +308,24 @@ class serverreactor(object):
     wantframe
        Indicates that nothing of interest happened and the server is waiting on
        more frames from the client before anything interesting can be done.
+
+    noop
+       Indicates no additional action is required.
     """
 
-    def __init__(self):
+    def __init__(self, deferoutput=False):
+        """Construct a new server reactor.
+
+        ``deferoutput`` can be used to indicate that no output frames should be
+        instructed to be sent until input has been exhausted. In this mode,
+        events that would normally generate output frames (such as a command
+        response being ready) will instead defer instructing the consumer to
+        send those frames. This is useful for half-duplex transports where the
+        sender cannot receive until all data has been transmitted.
+        """
+        self._deferoutput = deferoutput
         self._state = 'idle'
+        self._bufferedframegens = []
         self._activecommand = None
         self._activeargs = None
         self._activedata = None
@@ -344,8 +358,33 @@ class serverreactor(object):
 
         The raw bytes response is passed as an argument.
         """
+        framegen = createbytesresponseframesfrombytes(data)
+
+        if self._deferoutput:
+            self._bufferedframegens.append(framegen)
+            return 'noop', {}
+        else:
+            return 'sendframes', {
+                'framegen': framegen,
+            }
+
+    def oninputeof(self):
+        """Signals that end of input has been received.
+
+        No more frames will be received. All pending activity should be
+        completed.
+        """
+        if not self._deferoutput or not self._bufferedframegens:
+            return 'noop', {}
+
+        # If we buffered all our responses, emit those.
+        def makegen():
+            for gen in self._bufferedframegens:
+                for frame in gen:
+                    yield frame
+
         return 'sendframes', {
-            'framegen': createbytesresponseframesfrombytes(data),
+            'framegen': makegen(),
         }
 
     def onapplicationerror(self, msg):

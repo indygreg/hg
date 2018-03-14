@@ -401,6 +401,10 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
         states.append(json.dumps((action, meta), sort_keys=True,
                                  separators=(', ', ': ')))
 
+    action, meta = reactor.oninputeof()
+    meta['action'] = action
+    states.append(json.dumps(meta, sort_keys=True, separators=(', ',': ')))
+
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = b'text/plain'
     res.setbodybytes(b'\n'.join(states))
@@ -411,7 +415,10 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
     Called when the HTTP request contains unified frame-based protocol
     frames for evaluation.
     """
-    reactor = wireprotoframing.serverreactor()
+    # TODO Some HTTP clients are full duplex and can receive data before
+    # the entire request is transmitted. Figure out a way to indicate support
+    # for that so we can opt into full duplex mode.
+    reactor = wireprotoframing.serverreactor(deferoutput=True)
     seencommand = False
 
     while True:
@@ -447,6 +454,19 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
         else:
             raise error.ProgrammingError(
                 'unhandled action from frame processor: %s' % action)
+
+    action, meta = reactor.oninputeof()
+    if action == 'sendframes':
+        # We assume we haven't started sending the response yet. If we're
+        # wrong, the response type will raise an exception.
+        res.status = b'200 OK'
+        res.headers[b'Content-Type'] = FRAMINGTYPE
+        res.setbodygen(meta['framegen'])
+    elif action == 'noop':
+        pass
+    else:
+        raise error.ProgrammingError('unhandled action from frame processor: %s'
+                                     % action)
 
 def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
                       command):
@@ -504,6 +524,8 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 
     if action == 'sendframes':
         res.setbodygen(meta['framegen'])
+    elif action == 'noop':
+        pass
     else:
         raise error.ProgrammingError('unhandled event from reactor: %s' %
                                      action)

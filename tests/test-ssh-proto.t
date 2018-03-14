@@ -64,7 +64,7 @@ Test a normal behaving server, for sanity
   devel-peer-request:   pairs: 81 bytes
   sending between command
   remote: 403
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   remote: 1
   url: ssh://user@dummy/server
   local: no
@@ -84,7 +84,7 @@ Server should answer the "hello" command in isolation
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
 
 `hg debugserve --sshstdio` works
 
@@ -93,7 +93,7 @@ Server should answer the "hello" command in isolation
   > hello
   > EOF
   403
-  capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
 
 I/O logging works
 
@@ -103,22 +103,22 @@ I/O logging works
   o> write(4) -> 4:
   o>     403\n
   o> write(403) -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   403
-  capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> flush() -> None
 
   $ hg debugserve --sshstdio --logiofile $TESTTMP/io << EOF
   > hello
   > EOF
   403
-  capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
 
   $ cat $TESTTMP/io
   o> write(4) -> 4:
   o>     403\n
   o> write(403) -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> flush() -> None
 
   $ cd ..
@@ -145,7 +145,7 @@ reply with empty response to the "between".
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -183,7 +183,7 @@ SSH banner is not printed by default, ignored by clients
   remote: banner: line 8
   remote: banner: line 9
   remote: 403
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   remote: 1
   url: ssh://user@dummy/server
   local: no
@@ -239,7 +239,7 @@ And test the banner with the raw protocol
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -296,7 +296,7 @@ Sending an unknown command to the server results in an empty response to that co
   i>     pairs 81\n
   i>     0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
 
@@ -311,7 +311,7 @@ Sending an unknown command to the server results in an empty response to that co
   sending between command
   remote: 0
   remote: 403
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   remote: 1
   url: ssh://user@dummy/server
   local: no
@@ -358,7 +358,7 @@ Send multiple unknown commands before hello
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -383,7 +383,7 @@ Send multiple unknown commands before hello
   remote: 0
   remote: 0
   remote: 403
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   remote: 1
   url: ssh://user@dummy/server
   local: no
@@ -438,7 +438,7 @@ Send an unknown command before hello that has arguments
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -485,7 +485,7 @@ Send an unknown command having an argument that looks numeric
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -530,7 +530,7 @@ Send an unknown command having an argument that looks numeric
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -600,7 +600,7 @@ Dictionary value for unknown command
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
 
 Incomplete dictionary send
 
@@ -682,7 +682,7 @@ Send a command line with spaces
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -716,7 +716,7 @@ Send a command line with spaces
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -759,7 +759,7 @@ Send a command line with spaces
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -788,7 +788,7 @@ Send an unknown command after the "between"
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(105) -> 105:
   i>     between\n
   i>     pairs 81\n
@@ -829,7 +829,7 @@ And one with arguments
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -878,7 +878,7 @@ Send a valid command before the handshake
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
 
@@ -934,7 +934,7 @@ Send an upgrade request to a server that doesn't support that command
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -953,7 +953,7 @@ Send an upgrade request to a server that doesn't support that command
   sending between command
   remote: 0
   remote: 403
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   remote: 1
   url: ssh://user@dummy/server
   local: no
@@ -994,7 +994,7 @@ Send an upgrade request to a server that supports upgrade
   o> readline() -> 4:
   o>     402\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
 
   $ cd ..
 
@@ -1008,7 +1008,7 @@ Send an upgrade request to a server that supports upgrade
   devel-peer-request:   pairs: 81 bytes
   sending between command
   protocol upgraded to exp-ssh-v2-0001
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   url: ssh://user@dummy/server
   local: no
   pushable: yes
@@ -1025,7 +1025,7 @@ Verify the peer has capabilities
   devel-peer-request:   pairs: 81 bytes
   sending between command
   protocol upgraded to exp-ssh-v2-0001
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   Main capabilities:
     batch
     branchmap
@@ -1094,13 +1094,13 @@ Command after upgrade to version 2 is processed
   o> readline() -> 4:
   o>     402\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
   o>     385\n
   o> readline() -> 385:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
 
 Multiple upgrades is not allowed
 
@@ -1132,7 +1132,7 @@ Multiple upgrades is not allowed
   o> readline() -> 4:
   o>     402\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(45) -> 45:
   i>     upgrade another-token proto=irrelevant\n
   i>     hello\n
@@ -1205,7 +1205,7 @@ Upgrade request to unsupported protocol is ignored
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   i> write(98) -> 98:
   i>     between\n
   i>     pairs 81\n
@@ -1325,7 +1325,7 @@ Test listkeys for listing namespaces
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1358,7 +1358,7 @@ Test listkeys for listing namespaces
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1405,7 +1405,7 @@ With no bookmarks set
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1434,7 +1434,7 @@ With no bookmarks set
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1466,7 +1466,7 @@ With a single bookmark set
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1496,7 +1496,7 @@ With a single bookmark set
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1529,7 +1529,7 @@ With multiple bookmarks set
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1561,7 +1561,7 @@ With multiple bookmarks set
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1598,7 +1598,7 @@ Test pushkey for bookmarks
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1637,7 +1637,7 @@ Test pushkey for bookmarks
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending pushkey command
@@ -1690,7 +1690,7 @@ Phases on empty repo
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1720,7 +1720,7 @@ Phases on empty repo
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1769,7 +1769,7 @@ Two draft heads
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1802,7 +1802,7 @@ Two draft heads
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1838,7 +1838,7 @@ Single draft head
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1870,7 +1870,7 @@ Single draft head
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1905,7 +1905,7 @@ All public heads
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -1935,7 +1935,7 @@ All public heads
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending listkeys command
@@ -1972,7 +1972,7 @@ Setting public phase via pushkey
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -2012,7 +2012,7 @@ Setting public phase via pushkey
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending pushkey command
@@ -2079,7 +2079,7 @@ Test batching of requests
   o> readline() -> 4:
   o>     403\n
   o> readline() -> 403:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN\n
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
   o> readline() -> 2:
   o>     1\n
   o> readline() -> 1:
@@ -2118,7 +2118,7 @@ Test batching of requests
   o>     upgraded * exp-ssh-v2-0001\n (glob)
   o> readline() -> 4:
   o>     402\n
-  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  o> read(402) -> 402: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   o> read(1) -> 1:
   o>     \n
   sending batch with 3 sub-commands

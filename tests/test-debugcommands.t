@@ -399,7 +399,7 @@ Test debugpeer
   devel-peer-request:   pairs: 81 bytes
   sending between command
   remote: 403
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash batch changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
   remote: 1
   url: ssh://user@dummy/debugrevlog
   local: no

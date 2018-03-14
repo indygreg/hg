@@ -124,6 +124,8 @@ class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
             urlreq.quote(self._req.remoteuser or ''))
 
     def addcapabilities(self, repo, caps):
+        caps.append(b'batch')
+
         caps.append('httpheader=%d' %
                     repo.ui.configint('server', 'maxhttpheaderlen'))
         if repo.ui.configbool('experimental', 'httppostargs'):
@@ -626,6 +628,7 @@ class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
         return 'remote:ssh:' + client
 
     def addcapabilities(self, repo, caps):
+        caps.append(b'batch')
         return caps
 
     def checkperm(self, perm):

@@ -714,6 +714,12 @@ def wireprotocommand(name, args='', transportpolicy=POLICY_ALL,
         raise error.ProgrammingError('invalid transport policy value: %s' %
                                      transportpolicy)
 
+    # Because SSHv2 is a mirror of SSHv1, we allow "batch" commands through to
+    # SSHv2.
+    # TODO undo this hack when SSH is using the unified frame protocol.
+    if name == b'batch':
+        transports.add(wireprototypes.SSHV2)
+
     if permission not in ('push', 'pull'):
         raise error.ProgrammingError('invalid wire protocol permission; '
                                      'got %s; expected "push" or "pull"' %
@@ -726,7 +732,8 @@ def wireprotocommand(name, args='', transportpolicy=POLICY_ALL,
     return register
 
 # TODO define a more appropriate permissions type to use for this.
-@wireprotocommand('batch', 'cmds *', permission='pull')
+@wireprotocommand('batch', 'cmds *', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def batch(repo, proto, cmds, others):
     repo = repo.filtered("served")
     res = []
@@ -815,7 +822,7 @@ def clonebundles(repo, proto):
     return bytesresponse(repo.vfs.tryread('clonebundles.manifest'))
 
 wireprotocaps = ['lookup', 'branchmap', 'pushkey',
-                 'known', 'getbundle', 'unbundlehash', 'batch']
+                 'known', 'getbundle', 'unbundlehash']
 
 def _capabilities(repo, proto):
     """return a list of capabilities for a repo

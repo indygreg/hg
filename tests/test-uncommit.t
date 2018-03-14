@@ -158,7 +158,7 @@ Uncommit with dirty state
   $ cat files
   abcde
   foo
-  $ hg commit -m "files abcde + foo"
+  $ hg commit --amend -m "files abcde + foo"
 
 Testing the 'experimental.uncommitondirtywdir' config
 
@@ -188,16 +188,16 @@ Uncommit in the middle of a stack, does not move bookmark
   +abc
   
   $ hg bookmark
-     foo                       9:48e5bd7cd583
+     foo                       10:48e5bd7cd583
   $ hg uncommit
   3 new orphan changesets
   $ hg status
   M files
   A file-abc
   $ hg heads -T '{rev}:{node} {desc}'
-  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo (no-eol)
+  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo (no-eol)
   $ hg bookmark
-     foo                       9:48e5bd7cd583
+     foo                       10:48e5bd7cd583
   $ hg commit -m 'new abc'
   created new head
 
@@ -219,36 +219,38 @@ Partial uncommit in the middle, does not move bookmark
   +ab
   
   $ hg bookmark
-     foo                       9:48e5bd7cd583
+     foo                       10:48e5bd7cd583
   $ hg uncommit file-ab
   1 new orphan changesets
   $ hg status
   A file-ab
 
   $ hg heads -T '{rev}:{node} {desc}\n'
-  11:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
-  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
-  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
+  12:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
+  11:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
+  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
 
   $ hg bookmark
-     foo                       9:48e5bd7cd583
+     foo                       10:48e5bd7cd583
   $ hg commit -m 'update ab'
   $ hg status
   $ hg heads -T '{rev}:{node} {desc}\n'
-  12:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
-  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
-  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
+  13:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
+  11:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
+  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
 
   $ hg log -G -T '{rev}:{node} {desc}' --hidden
-  @  12:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
+  @  13:f21039c59242b085491bb58f591afc4ed1c04c09 update ab
   |
-  o  11:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
+  o  12:8eb87968f2edb7f27f27fe676316e179de65fff6 added file-ab
   |
-  | *  10:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
+  | *  11:5dc89ca4486f8a88716c5797fa9f498d13d7c2e1 new abc
   | |
-  | | *  9:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
+  | | *  10:48e5bd7cd583eb24164ef8b89185819c84c96ed7 files abcde + foo
   | | |
-  | | | x  8:83815831694b1271e9f207cb1b79b2b19275edcb files abcde + foo
+  | | | x  9:8a6b58c173ca6a2e3745d8bd86698718d664bc6c files abcde + foo
+  | | |/
+  | | | x  8:39ad452c7f684a55d161c574340c5766c4569278 update files for abcde
   | | |/
   | | | x  7:0977fa602c2fd7d8427ed4e7ee15ea13b84c9173 update files for abcde
   | | |/
@@ -270,7 +272,7 @@ Uncommit with draft parent
 
   $ hg uncommit
   $ hg phase -r .
-  11: draft
+  12: draft
   $ hg commit -m 'update ab again'
 
 Uncommit with public parent
@@ -278,7 +280,7 @@ Uncommit with public parent
   $ hg phase -p "::.^"
   $ hg uncommit
   $ hg phase -r .
-  11: public
+  12: public
 
 Partial uncommit with public parent
 
@@ -289,9 +291,9 @@ Partial uncommit with public parent
   $ hg status
   A xyz
   $ hg phase -r .
-  15: draft
+  16: draft
   $ hg phase -r ".^"
-  11: public
+  12: public
 
 Uncommit leaving an empty changeset
 

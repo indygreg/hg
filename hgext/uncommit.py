@@ -166,7 +166,8 @@ def uncommit(ui, repo, *pats, **opts):
 
         with repo.transaction('uncommit'):
             match = scmutil.match(old, pats, opts)
-            newid = _commitfiltered(repo, old, match, opts.get('keep'))
+            allowempty = opts.get('keep') or pats
+            newid = _commitfiltered(repo, old, match, allowempty)
             if newid is None:
                 ui.status(_("nothing to uncommit\n"))
                 return 1

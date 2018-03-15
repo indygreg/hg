@@ -27,6 +27,7 @@ FRAME_TYPE_COMMAND_ARGUMENT = 0x02
 FRAME_TYPE_COMMAND_DATA = 0x03
 FRAME_TYPE_BYTES_RESPONSE = 0x04
 FRAME_TYPE_ERROR_RESPONSE = 0x05
+FRAME_TYPE_TEXT_OUTPUT = 0x06
 
 FRAME_TYPES = {
     b'command-name': FRAME_TYPE_COMMAND_NAME,
@@ -34,6 +35,7 @@ FRAME_TYPES = {
     b'command-data': FRAME_TYPE_COMMAND_DATA,
     b'bytes-response': FRAME_TYPE_BYTES_RESPONSE,
     b'error-response': FRAME_TYPE_ERROR_RESPONSE,
+    b'text-output': FRAME_TYPE_TEXT_OUTPUT,
 }
 
 FLAG_COMMAND_NAME_EOS = 0x01
@@ -85,6 +87,7 @@ FRAME_TYPE_FLAGS = {
     FRAME_TYPE_COMMAND_DATA: FLAGS_COMMAND_DATA,
     FRAME_TYPE_BYTES_RESPONSE: FLAGS_BYTES_RESPONSE,
     FRAME_TYPE_ERROR_RESPONSE: FLAGS_ERROR_RESPONSE,
+    FRAME_TYPE_TEXT_OUTPUT: {},
 }
 
 ARGUMENT_FRAME_HEADER = struct.Struct(r'<HH')
@@ -280,6 +283,74 @@ def createerrorframe(requestid, msg, protocol=False, application=False):
         flags |= FLAG_ERROR_RESPONSE_APPLICATION
 
     yield makeframe(requestid, FRAME_TYPE_ERROR_RESPONSE, flags, msg)
+
+def createtextoutputframe(requestid, atoms):
+    """Create a text output frame to render text to people.
+
+    ``atoms`` is a 3-tuple of (formatting string, args, labels).
+
+    The formatting string contains ``%s`` tokens to be replaced by the
+    corresponding indexed entry in ``args``. ``labels`` is an iterable of
+    formatters to be applied at rendering time. In terms of the ``ui``
+    class, each atom corresponds to a ``ui.write()``.
+    """
+    bytesleft = DEFAULT_MAX_FRAME_SIZE
+    atomchunks = []
+
+    for (formatting, args, labels) in atoms:
+        if len(args) > 255:
+            raise ValueError('cannot use more than 255 formatting arguments')
+        if len(labels) > 255:
+            raise ValueError('cannot use more than 255 labels')
+
+        # TODO look for localstr, other types here?
+
+        if not isinstance(formatting, bytes):
+            raise ValueError('must use bytes formatting strings')
+        for arg in args:
+            if not isinstance(arg, bytes):
+                raise ValueError('must use bytes for arguments')
+        for label in labels:
+            if not isinstance(label, bytes):
+                raise ValueError('must use bytes for labels')
+
+        # Formatting string must be UTF-8.
+        formatting = formatting.decode(r'utf-8', r'replace').encode(r'utf-8')
+
+        # Arguments must be UTF-8.
+        args = [a.decode(r'utf-8', r'replace').encode(r'utf-8') for a in args]
+
+        # Labels must be ASCII.
+        labels = [l.decode(r'ascii', r'strict').encode(r'ascii')
+                  for l in labels]
+
+        if len(formatting) > 65535:
+            raise ValueError('formatting string cannot be longer than 64k')
+
+        if any(len(a) > 65535 for a in args):
+            raise ValueError('argument string cannot be longer than 64k')
+
+        if any(len(l) > 255 for l in labels):
+            raise ValueError('label string cannot be longer than 255 bytes')
+
+        chunks = [
+            struct.pack(r'<H', len(formatting)),
+            struct.pack(r'<BB', len(labels), len(args)),
+            struct.pack(r'<' + r'B' * len(labels), *map(len, labels)),
+            struct.pack(r'<' + r'H' * len(args), *map(len, args)),
+        ]
+        chunks.append(formatting)
+        chunks.extend(labels)
+        chunks.extend(args)
+
+        atom = b''.join(chunks)
+        atomchunks.append(atom)
+        bytesleft -= len(atom)
+
+    if bytesleft < 0:
+        raise ValueError('cannot encode data in a single frame')
+
+    yield makeframe(requestid, FRAME_TYPE_TEXT_OUTPUT, 0, b''.join(atomchunks))
 
 class serverreactor(object):
     """Holds state of a server handling frame-based protocol requests.

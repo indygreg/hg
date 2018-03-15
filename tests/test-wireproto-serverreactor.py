@@ -67,6 +67,109 @@ class FrameTests(unittest.TestCase):
             ffs(b'1 command-data eos %s' % data.getvalue()),
         ])
 
+    def testtextoutputexcessiveargs(self):
+        """At most 255 formatting arguments are allowed."""
+        with self.assertRaisesRegexp(ValueError,
+                                     'cannot use more than 255 formatting'):
+            args = [b'x' for i in range(256)]
+            list(framing.createtextoutputframe(1, [(b'bleh', args, [])]))
+
+    def testtextoutputexcessivelabels(self):
+        """At most 255 labels are allowed."""
+        with self.assertRaisesRegexp(ValueError,
+                                     'cannot use more than 255 labels'):
+            labels = [b'l' for i in range(256)]
+            list(framing.createtextoutputframe(1, [(b'bleh', [], labels)]))
+
+    def testtextoutputformattingstringtype(self):
+        """Formatting string must be bytes."""
+        with self.assertRaisesRegexp(ValueError, 'must use bytes formatting '):
+            list(framing.createtextoutputframe(1, [
+                (b'foo'.decode('ascii'), [], [])]))
+
+    def testtextoutputargumentbytes(self):
+        with self.assertRaisesRegexp(ValueError, 'must use bytes for argument'):
+            list(framing.createtextoutputframe(1, [
+                (b'foo', [b'foo'.decode('ascii')], [])]))
+
+    def testtextoutputlabelbytes(self):
+        with self.assertRaisesRegexp(ValueError, 'must use bytes for labels'):
+            list(framing.createtextoutputframe(1, [
+                (b'foo', [], [b'foo'.decode('ascii')])]))
+
+    def testtextoutputtoolongformatstring(self):
+        with self.assertRaisesRegexp(ValueError,
+                                     'formatting string cannot be longer than'):
+            list(framing.createtextoutputframe(1, [
+                (b'x' * 65536, [], [])]))
+
+    def testtextoutputtoolongargumentstring(self):
+        with self.assertRaisesRegexp(ValueError,
+                                     'argument string cannot be longer than'):
+            list(framing.createtextoutputframe(1, [
+                (b'bleh', [b'x' * 65536], [])]))
+
+    def testtextoutputtoolonglabelstring(self):
+        with self.assertRaisesRegexp(ValueError,
+                                     'label string cannot be longer than'):
+            list(framing.createtextoutputframe(1, [
+                (b'bleh', [], [b'x' * 65536])]))
+
+    def testtextoutput1simpleatom(self):
+        val = list(framing.createtextoutputframe(1, [
+            (b'foo', [], [])]))
+
+        self.assertEqual(val, [
+            ffs(br'1 text-output 0 \x03\x00\x00\x00foo'),
+        ])
+
+    def testtextoutput2simpleatoms(self):
+        val = list(framing.createtextoutputframe(1, [
+            (b'foo', [], []),
+            (b'bar', [], []),
+        ]))
+
+        self.assertEqual(val, [
+            ffs(br'1 text-output 0 \x03\x00\x00\x00foo\x03\x00\x00\x00bar'),
+        ])
+
+    def testtextoutput1arg(self):
+        val = list(framing.createtextoutputframe(1, [
+            (b'foo %s', [b'val1'], []),
+        ]))
+
+        self.assertEqual(val, [
+            ffs(br'1 text-output 0 \x06\x00\x00\x01\x04\x00foo %sval1'),
+        ])
+
+    def testtextoutput2arg(self):
+        val = list(framing.createtextoutputframe(1, [
+            (b'foo %s %s', [b'val', b'value'], []),
+        ]))
+
+        self.assertEqual(val, [
+            ffs(br'1 text-output 0 \x09\x00\x00\x02\x03\x00\x05\x00'
+                br'foo %s %svalvalue'),
+        ])
+
+    def testtextoutput1label(self):
+        val = list(framing.createtextoutputframe(1, [
+            (b'foo', [], [b'label']),
+        ]))
+
+        self.assertEqual(val, [
+            ffs(br'1 text-output 0 \x03\x00\x01\x00\x05foolabel'),
+        ])
+
+    def testargandlabel(self):
+        val = list(framing.createtextoutputframe(1, [
+            (b'foo %s', [b'arg'], [b'label']),
+        ]))
+
+        self.assertEqual(val, [
+            ffs(br'1 text-output 0 \x06\x00\x01\x01\x05\x03\x00foo %slabelarg'),
+        ])
+
 class ServerReactorTests(unittest.TestCase):
     def _sendsingleframe(self, reactor, s):
         results = list(sendframes(reactor, [ffs(s)]))

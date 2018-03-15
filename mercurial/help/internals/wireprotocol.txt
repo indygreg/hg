@@ -660,6 +660,64 @@ The following flag values are defined for this type:
 0x02
    The error occurred at the application level. e.g. invalid command.
 
+Human Output Side-Channel (``0x06``)
+------------------------------------
+
+This frame contains a message that is intended to be displayed to
+people. Whereas most frames communicate machine readable data, this
+frame communicates textual data that is intended to be shown to
+humans.
+
+The frame consists of a series of *formatting requests*. Each formatting
+request consists of a formatting string, arguments for that formatting
+string, and labels to apply to that formatting string.
+
+A formatting string is a printf()-like string that allows variable
+substitution within the string. Labels allow the rendered text to be
+*decorated*. Assuming use of the canonical Mercurial code base, a
+formatting string can be the input to the ``i18n._`` function. This
+allows messages emitted from the server to be localized. So even if
+the server has different i18n settings, people could see messages in
+their *native* settings. Similarly, the use of labels allows
+decorations like coloring and underlining to be applied using the
+client's configured rendering settings.
+
+Formatting strings are similar to ``printf()`` strings or how
+Python's ``%`` operator works. The only supported formatting sequences
+are ``%s`` and ``%%``. ``%s`` will be replaced by whatever the string
+at that position resolves to. ``%%`` will be replaced by ``%``. All
+other 2-byte sequences beginning with ``%`` represent a literal
+``%`` followed by that character. However, future versions of the
+wire protocol reserve the right to allow clients to opt in to receiving
+formatting strings with additional formatters, hence why ``%%`` is
+required to represent the literal ``%``.
+
+The raw frame consists of a series of data structures representing
+textual atoms to print. Each atom begins with a struct defining the
+size of the data that follows:
+
+* A 16-bit little endian unsigned integer denoting the length of the
+  formatting string.
+* An 8-bit unsigned integer denoting the number of label strings
+  that follow.
+* An 8-bit unsigned integer denoting the number of formatting string
+  arguments strings that follow.
+* An array of 8-bit unsigned integers denoting the lengths of
+  *labels* data.
+* An array of 16-bit unsigned integers denoting the lengths of
+  formatting strings.
+* The formatting string, encoded as UTF-8.
+* 0 or more ASCII strings defining labels to apply to this atom.
+* 0 or more UTF-8 strings that will be used as arguments to the
+  formatting string.
+
+All data to be printed MUST be encoded into a single frame: this frame
+does not support spanning data across multiple frames.
+
+All textual data encoded in these frames is assumed to be line delimited.
+The last atom in the frame SHOULD end with a newline (``\n``). If it
+doesn't, clients MAY add a newline to facilitate immediate printing.
+
 Issuing Commands
 ----------------
 

@@ -400,12 +400,11 @@ def _processhttpv2reflectrequest(ui, repo, req, res):
             states.append(b'received: <no frame>')
             break
 
-        requestid, frametype, frameflags, payload = frame
-        states.append(b'received: %d %d %d %s' % (frametype, frameflags,
-                                                  requestid, payload))
+        states.append(b'received: %d %d %d %s' % (frame.typeid, frame.flags,
+                                                  frame.requestid,
+                                                  frame.payload))
 
-        action, meta = reactor.onframerecv(requestid, frametype, frameflags,
-                                           payload)
+        action, meta = reactor.onframerecv(frame)
         states.append(json.dumps((action, meta), sort_keys=True,
                                  separators=(', ', ': ')))
 
@@ -434,7 +433,7 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
         if not frame:
             break
 
-        action, meta = reactor.onframerecv(*frame)
+        action, meta = reactor.onframerecv(frame)
 
         if action == 'wantframe':
             # Need more data before we can do anything.

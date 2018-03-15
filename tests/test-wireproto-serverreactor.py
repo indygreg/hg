@@ -18,11 +18,14 @@ def sendframes(reactor, gen):
     Emits a generator of results from ``onframerecv()`` calls.
     """
     for frame in gen:
-        rid, frametype, frameflags, framelength = framing.parseheader(frame)
+        header = framing.parseheader(frame)
         payload = frame[framing.FRAME_HEADER_SIZE:]
-        assert len(payload) == framelength
+        assert len(payload) == header.length
 
-        yield reactor.onframerecv(rid, frametype, frameflags, payload)
+        yield reactor.onframerecv(framing.frame(header.requestid,
+                                                header.typeid,
+                                                header.flags,
+                                                payload))
 
 def sendcommandframes(reactor, rid, cmd, args, datafh=None):
     """Generate frames to run a command and send them to a reactor."""

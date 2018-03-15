@@ -48,6 +48,11 @@ simple templated
   port:4:914fa752cdea:vaPORTight
   port:4:914fa752cdea:imPORT/exPORT
 
+  $ hg grep port -T '{file}:{rev}:{texts}\n'
+  port:4:export
+  port:4:vaportight
+  port:4:import/export
+
 simple JSON (no "change" field)
 
   $ hg grep -Tjson port

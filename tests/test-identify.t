@@ -62,6 +62,8 @@ test template keywords and functions which require changectx:
   2147483647 ffff
   $ hg id -T '{parents % "{rev} {node|shortest} {desc}\n"}'
   0 cb9a a
+  $ hg id -T '{parents}\n'
+  0:cb9a9f314b8b
 
 test nested template: '{tags}'/'{node}' constants shouldn't override the
 default keywords, but '{id}' persists because there's no default keyword

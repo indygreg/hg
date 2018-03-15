@@ -90,6 +90,28 @@ log-like templating
   > EOF
   $ hg ci -mb2 -d '2 0'
 
+default output of '{lines}' should be readable
+
+  $ hg annotate -T'{lines}' a
+  0: a
+  1: a
+  1: a
+  $ hg annotate -T'{join(lines, "\n")}' a
+  0: a
+  
+  1: a
+  
+  1: a
+
+several filters can be applied to '{lines}'
+
+  $ hg annotate -T'{lines|stringify}' a
+  0: a
+  1: a
+  1: a
+  $ hg annotate -T'{lines|count}\n' a
+  3
+
 annotate multiple files (JSON)
 
   $ hg annotate -Tjson a b

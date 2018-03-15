@@ -386,7 +386,7 @@ def annotate(ui, repo, *pats, **opts):
                          % ((pats and m.rel(abs)) or abs))
             continue
 
-        fm = rootfm.nested('lines')
+        fm = rootfm.nested('lines', tmpl='{rev}: {line}')
         lines = fctx.annotate(follow=follow, skiprevs=skiprevs,
                               diffopts=diffopts)
         if not lines:
@@ -2506,7 +2506,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                 if not opts.get('text') and binary():
                     fm.plain(_(" Binary file matches"))
                 else:
-                    displaymatches(fm.nested('texts'), l)
+                    displaymatches(fm.nested('texts', tmpl='{text}'), l)
             fm.plain(eol)
             found = True
             if opts.get('files_with_matches'):
@@ -2848,7 +2848,7 @@ def identify(ui, repo, source=None, rev=None,
                 numoutput = ["%d" % p.rev() for p in parents]
                 output.append("%s%s" % ('+'.join(numoutput), dirty))
 
-            fn = fm.nested('parents')
+            fn = fm.nested('parents', tmpl='{rev}:{node|formatnode}', sep=' ')
             for p in parents:
                 fn.startitem()
                 fn.data(rev=p.rev())
@@ -5615,7 +5615,7 @@ def version_(ui, **opts):
         names.append(name)
         vers.append(extensions.moduleversion(module) or None)
         isinternals.append(extensions.ismoduleinternal(module))
-    fn = fm.nested("extensions")
+    fn = fm.nested("extensions", tmpl='{name}\n')
     if names:
         namefmt = "  %%-%ds  " % max(len(n) for n in names)
         places = [_("external"), _("internal")]

@@ -95,7 +95,7 @@ Nested example:
 >>> def subrepos(ui, fm):
 ...     fm.startitem()
 ...     fm.write(b'reponame', b'[%s]\\n', b'baz')
-...     files(ui, fm.nested(b'files'))
+...     files(ui, fm.nested(b'files', tmpl=b'{reponame}'))
 ...     fm.end()
 >>> show(subrepos)
 [baz]
@@ -137,6 +137,10 @@ class _nullconverter(object):
     # set to True if context object should be stored as item
     storecontext = False
 
+    @staticmethod
+    def wrapnested(data, tmpl, sep):
+        '''wrap nested data by appropriate type'''
+        return data
     @staticmethod
     def formatdate(date, fmt):
         '''convert date tuple to appropriate format'''
@@ -210,9 +214,10 @@ class baseformatter(object):
     def isplain(self):
         '''check for plain formatter usage'''
         return False
-    def nested(self, field):
+    def nested(self, field, tmpl=None, sep=''):
         '''sub formatter to store nested data in the specified field'''
-        self._item[field] = data = []
+        data = []
+        self._item[field] = self._converter.wrapnested(data, tmpl, sep)
         return _nestedformatter(self._ui, self._converter, data)
     def end(self):
         '''end output for the formatter'''
@@ -242,6 +247,9 @@ class _plainconverter(object):
 
     storecontext = False
 
+    @staticmethod
+    def wrapnested(data, tmpl, sep):
+        raise error.ProgrammingError('plainformatter should never be nested')
     @staticmethod
     def formatdate(date, fmt):
         '''stringify date tuple in the given format'''
@@ -290,7 +298,7 @@ class plainformatter(baseformatter):
         self._write(text, **opts)
     def isplain(self):
         return True
-    def nested(self, field):
+    def nested(self, field, tmpl=None, sep=''):
         # nested data will be directly written to ui
         return self
     def end(self):
@@ -349,6 +357,10 @@ class _templateconverter(object):
 
     storecontext = True
 
+    @staticmethod
+    def wrapnested(data, tmpl, sep):
+        '''wrap nested data by templatable type'''
+        return templateutil.mappinglist(data, tmpl=tmpl, sep=sep)
     @staticmethod
     def formatdate(date, fmt):
         '''return date tuple'''

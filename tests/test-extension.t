@@ -1407,6 +1407,11 @@ Test version number support in 'hg version':
   $ hg version -q --config extensions.throw=throw.py
   Mercurial Distributed SCM (version *) (glob)
 
+Test template output:
+
+  $ hg version --config extensions.strip= -T'{extensions}'
+  strip
+
 Test JSON output of version:
 
   $ hg version -Tjson

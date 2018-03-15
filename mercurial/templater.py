@@ -563,6 +563,10 @@ class resourcemapper(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
+    def availablekeys(self, context, mapping):
+        """Return a set of available resource keys based on the given mapping"""
+
+    @abc.abstractmethod
     def knownkeys(self):
         """Return a set of supported resource keys"""
 
@@ -571,6 +575,9 @@ class resourcemapper(object):
         """Return a resource for the key if available; otherwise None"""
 
 class nullresourcemapper(resourcemapper):
+    def availablekeys(self, context, mapping):
+        return set()
+
     def knownkeys(self):
         return set()
 
@@ -616,9 +623,22 @@ class engine(object):
     def overlaymap(self, origmapping, newmapping):
         """Create combined mapping from the original mapping and partial
         mapping to override the original"""
-        mapping = origmapping.copy()
+        # do not copy symbols which overrides the defaults depending on
+        # new resources, so the defaults will be re-evaluated (issue5612)
+        knownres = self._resources.knownkeys()
+        newres = self._resources.availablekeys(self, newmapping)
+        mapping = {k: v for k, v in origmapping.iteritems()
+                   if (k in knownres  # not a symbol per self.symbol()
+                       or newres.isdisjoint(self._defaultrequires(k)))}
         mapping.update(newmapping)
         return mapping
+
+    def _defaultrequires(self, key):
+        """Resource keys required by the specified default symbol function"""
+        v = self._defaults.get(key)
+        if v is None or not callable(v):
+            return ()
+        return getattr(v, '_requires', ())
 
     def symbol(self, mapping, key):
         """Resolve symbol to value or function; None if nothing found"""

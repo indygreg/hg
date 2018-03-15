@@ -504,6 +504,10 @@ class templateresources(templater.resourcemapper):
             'ui': ui,
         }
 
+    def availablekeys(self, context, mapping):
+        return {k for k, g in self._gettermap.iteritems()
+                if g(self, context, mapping, k) is not None}
+
     def knownkeys(self):
         return self._knownkeys
 

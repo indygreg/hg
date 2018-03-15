@@ -599,8 +599,7 @@ class rebaseruntime(object):
         if newwd < 0:
             # original directory is a parent of rebase set root or ignored
             newwd = self.originalwd
-        if (newwd not in [c.rev() for c in repo[None].parents()] and
-                not self.inmemory):
+        if newwd not in [c.rev() for c in repo[None].parents()]:
             ui.note(_("update back to initial working directory parent\n"))
             hg.updaterepo(repo, newwd, False)
 
@@ -957,20 +956,10 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
                 ui.status(_('nothing to rebase from %s to %s\n') %
                           ('+'.join(bytes(repo[r]) for r in base), dest))
             return None
-    # If rebasing the working copy parent, force in-memory merge to be off.
-    #
-    # This is because the extra work of checking out the newly rebased commit
-    # outweights the benefits of rebasing in-memory, and executing an extra
-    # update command adds a bit of overhead, so better to just do it on disk. In
-    # all other cases leave it on.
-    #
-    # Note that there are cases where this isn't true -- e.g., rebasing large
-    # stacks that include the WCP. However, I'm not yet sure where the cutoff
-    # is.
+
     rebasingwcp = repo['.'].rev() in rebaseset
     ui.log("rebase", "", rebase_rebasing_wcp=rebasingwcp)
     if rbsrt.inmemory and rebasingwcp:
-        rbsrt.inmemory = False
         # Check these since we did not before.
         cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)

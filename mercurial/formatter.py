@@ -517,6 +517,9 @@ class templateresources(templater.resourcemapper):
             return None
         return get(self, context, mapping, key)
 
+    def populatemap(self, context, origmapping, newmapping):
+        return {}
+
     def _getsome(self, context, mapping, key):
         v = mapping.get(key)
         if v is not None:

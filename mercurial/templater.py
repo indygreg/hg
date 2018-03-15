@@ -577,6 +577,11 @@ class resourcemapper(object):
     def lookup(self, context, mapping, key):
         """Return a resource for the key if available; otherwise None"""
 
+    @abc.abstractmethod
+    def populatemap(self, context, origmapping, newmapping):
+        """Return a dict of additional mapping items which should be paired
+        with the given new mapping"""
+
 class nullresourcemapper(resourcemapper):
     def availablekeys(self, context, mapping):
         return set()
@@ -586,6 +591,9 @@ class nullresourcemapper(resourcemapper):
 
     def lookup(self, context, mapping, key):
         return None
+
+    def populatemap(self, context, origmapping, newmapping):
+        return {}
 
 class engine(object):
     '''template expansion engine.
@@ -634,6 +642,8 @@ class engine(object):
                    if (k in knownres  # not a symbol per self.symbol()
                        or newres.isdisjoint(self._defaultrequires(k)))}
         mapping.update(newmapping)
+        mapping.update(
+            self._resources.populatemap(self, origmapping, newmapping))
         return mapping
 
     def _defaultrequires(self, key):
@@ -689,6 +699,13 @@ class engine(object):
         mapping contains added elements for use during expansion. Is a
         generator.'''
         func, data = self._load(t)
+        # populate additional items only if they don't exist in the given
+        # mapping. this is slightly different from overlaymap() because the
+        # initial 'revcache' may contain pre-computed items.
+        extramapping = self._resources.populatemap(self, {}, mapping)
+        if extramapping:
+            extramapping.update(mapping)
+            mapping = extramapping
         return _flatten(func(self, mapping, data))
 
 engines = {'default': engine}

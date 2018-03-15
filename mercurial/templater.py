@@ -644,6 +644,14 @@ class engine(object):
             v = self._defaults.get(key)
         return v
 
+    def availableresourcekeys(self, mapping):
+        """Return a set of available resource keys based on the given mapping"""
+        return self._resources.availablekeys(self, mapping)
+
+    def knownresourcekeys(self):
+        """Return a set of supported resource keys"""
+        return self._resources.knownkeys()
+
     def resource(self, mapping, key):
         """Return internal data (e.g. cache) used for keyword/function
         evaluation"""

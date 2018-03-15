@@ -583,7 +583,7 @@ def showpredecessors(context, mapping):
     predecessors = map(hex, predecessors)
 
     return _hybrid(None, predecessors,
-                   lambda x: {'ctx': repo[x], 'revcache': {}},
+                   lambda x: {'ctx': repo[x]},
                    lambda x: scmutil.formatchangeid(repo[x]))
 
 @templatekeyword('reporoot', requires={'repo'})
@@ -607,7 +607,7 @@ def showsuccessorssets(context, mapping):
 
     data = []
     for ss in ssets:
-        h = _hybrid(None, ss, lambda x: {'ctx': repo[x], 'revcache': {}},
+        h = _hybrid(None, ss, lambda x: {'ctx': repo[x]},
                     lambda x: scmutil.formatchangeid(repo[x]))
         data.append(h)
 
@@ -647,7 +647,7 @@ def showsuccsandmarkers(context, mapping):
 
         successors = [hex(n) for n in successors]
         successors = _hybrid(None, successors,
-                             lambda x: {'ctx': repo[x], 'revcache': {}},
+                             lambda x: {'ctx': repo[x]},
                              lambda x: scmutil.formatchangeid(repo[x]))
 
         # Format markers
@@ -710,7 +710,7 @@ def showparents(context, mapping):
                 ('phase', p.phasestr())]
                for p in pctxs]
     f = _showcompatlist(context, mapping, 'parent', parents)
-    return _hybrid(f, prevs, lambda x: {'ctx': repo[x], 'revcache': {}},
+    return _hybrid(f, prevs, lambda x: {'ctx': repo[x]},
                    lambda x: scmutil.formatchangeid(repo[x]), keytype=int)
 
 @templatekeyword('phase', requires={'ctx'})
@@ -737,7 +737,7 @@ def showrevslist(context, mapping, name, revs):
     repo = context.resource(mapping, 'repo')
     f = _showcompatlist(context, mapping, name, ['%d' % r for r in revs])
     return _hybrid(f, revs,
-                   lambda x: {name: x, 'ctx': repo[x], 'revcache': {}},
+                   lambda x: {name: x, 'ctx': repo[x]},
                    pycompat.identity, keytype=int)
 
 @templatekeyword('subrepos', requires={'ctx'})

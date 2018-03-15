@@ -394,14 +394,7 @@ class templateformatter(baseformatter):
         if part not in self._parts:
             return
         ref = self._parts[part]
-
-        props = {}
-        # explicitly-defined fields precede templatekw
-        props.update(item)
-        if 'ctx' in item or 'fctx' in item:
-            # but template resources must be always available
-            props['revcache'] = {}
-        self._out.write(self._t.render(ref, props))
+        self._out.write(self._t.render(ref, item))
 
     def end(self):
         baseformatter.end(self)
@@ -518,13 +511,19 @@ class templateresources(templater.resourcemapper):
         return get(self, context, mapping, key)
 
     def populatemap(self, context, origmapping, newmapping):
-        return {}
+        mapping = {}
+        if self._hasctx(newmapping):
+            mapping['revcache'] = {}  # per-ctx cache
+        return mapping
 
     def _getsome(self, context, mapping, key):
         v = mapping.get(key)
         if v is not None:
             return v
         return self._resmap.get(key)
+
+    def _hasctx(self, mapping):
+        return 'ctx' in mapping or 'fctx' in mapping
 
     def _getctx(self, context, mapping, key):
         ctx = mapping.get('ctx')
@@ -545,7 +544,7 @@ class templateresources(templater.resourcemapper):
         'ctx': _getctx,
         'fctx': _getsome,
         'repo': _getrepo,
-        'revcache': _getsome,  # per-ctx cache; set later
+        'revcache': _getsome,
         'ui': _getsome,
     }
     _knownkeys = set(_gettermap.keys())

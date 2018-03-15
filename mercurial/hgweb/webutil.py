@@ -392,7 +392,6 @@ def commonentry(repo, ctx):
         # filectx, but I'm not pretty sure if that would always work because
         # fctx.parents() != fctx.changectx.parents() for example.
         'ctx': ctx,
-        'revcache': {},
         'rev': ctx.rev(),
         'node': hex(node),
         'author': ctx.user(),

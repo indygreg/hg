@@ -909,7 +909,7 @@ def rendertemplate(ctx, tmpl, props=None):
     tres = formatter.templateresources(repo.ui, repo)
     t = formatter.maketemplater(repo.ui, tmpl, defaults=templatekw.keywords,
                                 resources=tres)
-    mapping = {'ctx': ctx, 'revcache': {}}
+    mapping = {'ctx': ctx}
     if props:
         mapping.update(props)
     return t.renderdefault(mapping)

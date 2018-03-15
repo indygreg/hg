@@ -288,7 +288,7 @@ class changesetprinter(object):
         t = formatter.maketemplater(self.repo.ui, '{join(obsfate, "\n")}',
                                     defaults=templatekw.keywords,
                                     resources=tres)
-        obsfate = t.renderdefault({'ctx': ctx, 'revcache': {}}).splitlines()
+        obsfate = t.renderdefault({'ctx': ctx}).splitlines()
 
         if obsfate:
             for obsfateline in obsfate:
@@ -856,7 +856,7 @@ def _graphnodeformatter(ui, displayer):
     templ = formatter.maketemplater(ui, spec, defaults=templatekw.keywords,
                                     resources=tres)
     def formatnode(repo, ctx):
-        props = {'ctx': ctx, 'repo': repo, 'revcache': {}}
+        props = {'ctx': ctx, 'repo': repo}
         return templ.renderdefault(props)
     return formatnode
 

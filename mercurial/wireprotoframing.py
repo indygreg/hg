@@ -113,7 +113,7 @@ class frame(object):
     flags = attr.ib()
     payload = attr.ib()
 
-def makeframe(requestid, frametype, frameflags, payload):
+def makeframe(requestid, typeid, flags, payload):
     """Assemble a frame into a byte array."""
     # TODO assert size of payload.
     frame = bytearray(FRAME_HEADER_SIZE + len(payload))
@@ -126,7 +126,7 @@ def makeframe(requestid, frametype, frameflags, payload):
     l = struct.pack(r'<I', len(payload))
     frame[0:3] = l[0:3]
     struct.pack_into(r'<H', frame, 3, requestid)
-    frame[5] = (frametype << 4) | frameflags
+    frame[5] = (typeid << 4) | flags
     frame[6:] = payload
 
     return frame
@@ -166,7 +166,8 @@ def makeframefromhumanstring(s):
 
     payload = util.unescapestr(payload)
 
-    return makeframe(requestid, frametype, finalflags, payload)
+    return makeframe(requestid=requestid, typeid=frametype,
+                     flags=finalflags, payload=payload)
 
 def parseheader(data):
     """Parse a unified framing protocol frame header from a buffer.
@@ -229,7 +230,8 @@ def createcommandframes(requestid, cmd, args, datafh=None):
     if not flags:
         flags |= FLAG_COMMAND_NAME_EOS
 
-    yield makeframe(requestid, FRAME_TYPE_COMMAND_NAME, flags, cmd)
+    yield makeframe(requestid=requestid, typeid=FRAME_TYPE_COMMAND_NAME,
+                    flags=flags, payload=cmd)
 
     for i, k in enumerate(sorted(args)):
         v = args[k]
@@ -245,7 +247,10 @@ def createcommandframes(requestid, cmd, args, datafh=None):
         payload[offset:offset + len(v)] = v
 
         flags = FLAG_COMMAND_ARGUMENT_EOA if last else 0
-        yield makeframe(requestid, FRAME_TYPE_COMMAND_ARGUMENT, flags, payload)
+        yield makeframe(requestid=requestid,
+                        typeid=FRAME_TYPE_COMMAND_ARGUMENT,
+                        flags=flags,
+                        payload=payload)
 
     if datafh:
         while True:
@@ -259,7 +264,10 @@ def createcommandframes(requestid, cmd, args, datafh=None):
                 assert datafh.read(1) == b''
                 done = True
 
-            yield makeframe(requestid, FRAME_TYPE_COMMAND_DATA, flags, data)
+            yield makeframe(requestid=requestid,
+                            typeid=FRAME_TYPE_COMMAND_DATA,
+                            flags=flags,
+                            payload=data)
 
             if done:
                 break
@@ -273,8 +281,10 @@ def createbytesresponseframesfrombytes(requestid, data,
 
     # Simple case of a single frame.
     if len(data) <= maxframesize:
-        yield makeframe(requestid, FRAME_TYPE_BYTES_RESPONSE,
-                        FLAG_BYTES_RESPONSE_EOS, data)
+        yield makeframe(requestid=requestid,
+                        typeid=FRAME_TYPE_BYTES_RESPONSE,
+                        flags=FLAG_BYTES_RESPONSE_EOS,
+                        payload=data)
         return
 
     offset = 0
@@ -288,7 +298,10 @@ def createbytesresponseframesfrombytes(requestid, data,
         else:
             flags = FLAG_BYTES_RESPONSE_CONTINUATION
 
-        yield makeframe(requestid, FRAME_TYPE_BYTES_RESPONSE, flags, chunk)
+        yield makeframe(requestid=requestid,
+                        typeid=FRAME_TYPE_BYTES_RESPONSE,
+                        flags=flags,
+                        payload=chunk)
 
         if done:
             break
@@ -303,7 +316,10 @@ def createerrorframe(requestid, msg, protocol=False, application=False):
     if application:
         flags |= FLAG_ERROR_RESPONSE_APPLICATION
 
-    yield makeframe(requestid, FRAME_TYPE_ERROR_RESPONSE, flags, msg)
+    yield makeframe(requestid=requestid,
+                    typeid=FRAME_TYPE_ERROR_RESPONSE,
+                    flags=flags,
+                    payload=msg)
 
 def createtextoutputframe(requestid, atoms):
     """Create a text output frame to render text to people.
@@ -371,7 +387,10 @@ def createtextoutputframe(requestid, atoms):
     if bytesleft < 0:
         raise ValueError('cannot encode data in a single frame')
 
-    yield makeframe(requestid, FRAME_TYPE_TEXT_OUTPUT, 0, b''.join(atomchunks))
+    yield makeframe(requestid=requestid,
+                    typeid=FRAME_TYPE_TEXT_OUTPUT,
+                    flags=0,
+                    payload=b''.join(atomchunks))
 
 class serverreactor(object):
     """Holds state of a server handling frame-based protocol requests.

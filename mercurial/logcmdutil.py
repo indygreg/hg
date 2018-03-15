@@ -416,13 +416,13 @@ class changesettemplater(changesetprinter):
     def __init__(self, ui, repo, tmplspec, differ=None, diffopts=None,
                  buffered=False):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
-        tres = formatter.templateresources(ui, repo)
+        # tres is shared with _graphnodeformatter()
+        self._tresources = tres = formatter.templateresources(ui, repo)
         self.t = formatter.loadtemplater(ui, tmplspec,
                                          defaults=templatekw.keywords,
                                          resources=tres,
                                          cache=templatekw.defaulttempl)
         self._counter = itertools.count()
-        self._getcache = tres['cache']  # shared with _graphnodeformatter()
 
         self._tref = tmplspec.ref
         self._parts = {'header': '', 'footer': '',
@@ -844,10 +844,11 @@ def _graphnodeformatter(ui, displayer):
         return templatekw.getgraphnode  # fast path for "{graphnode}"
 
     spec = templater.unquotestring(spec)
-    tres = formatter.templateresources(ui)
     if isinstance(displayer, changesettemplater):
         # reuse cache of slow templates
-        tres['cache'] = displayer._getcache
+        tres = displayer._tresources
+    else:
+        tres = formatter.templateresources(ui)
     templ = formatter.maketemplater(ui, spec, defaults=templatekw.keywords,
                                     resources=tres)
     def formatnode(repo, ctx):

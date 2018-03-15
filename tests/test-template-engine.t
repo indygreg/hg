@@ -6,23 +6,12 @@
   >     templateutil,
   > )
   > 
-  > class mytemplater(object):
-  >     def __init__(self, loader, filters, defaults, resources, aliases):
-  >         self.loader = loader
-  >         self._defaults = defaults
-  >         self._resources = resources
-  > 
-  >     def symbol(self, mapping, key):
-  >         return mapping[key]
-  > 
-  >     def resource(self, mapping, key):
-  >         v = self._resources[key]
-  >         if v is None:
-  >             v = mapping[key]
-  >         return v
+  > class mytemplater(templater.engine):
+  >     def _load(self, t):
+  >         return self._loader(t)
   > 
   >     def process(self, t, map):
-  >         tmpl = self.loader(t)
+  >         tmpl = self._load(t)
   >         props = self._defaults.copy()
   >         props.update(map)
   >         for k, v in props.items():

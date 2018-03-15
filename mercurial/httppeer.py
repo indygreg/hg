@@ -138,7 +138,9 @@ class httppeer(wireproto.wirepeer):
         self._path = path
         self._caps = None
         self._urlopener = None
-        self._requestbuilder = None
+        # This is an its own attribute to facilitate extensions overriding
+        # the default type.
+        self._requestbuilder = urlreq.request
         u = util.url(path)
         if u.query or u.fragment:
             raise error.Abort(_('unsupported URL component: "%s"') %
@@ -151,7 +153,6 @@ class httppeer(wireproto.wirepeer):
         ui.debug('using %s\n' % self._url)
 
         self._urlopener = urlmod.opener(ui, authinfo)
-        self._requestbuilder = urlreq.request
 
     def __del__(self):
         urlopener = getattr(self, '_urlopener', None)

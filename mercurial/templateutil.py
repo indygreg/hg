@@ -349,8 +349,8 @@ def runsymbol(context, mapping, key, default=''):
     if callable(v) and getattr(v, '_requires', None) is None:
         # old templatekw: expand all keywords and resources
         # (TODO: deprecate this after porting web template keywords to new API)
-        props = {k: f(context, mapping, k)
-                 for k, f in context._resources.items()}
+        props = {k: context._resources.lookup(context, mapping, k)
+                 for k in context._resources.knownkeys()}
         # pass context to _showcompatlist() through templatekw._showlist()
         props['templ'] = context
         props.update(mapping)

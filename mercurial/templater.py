@@ -48,6 +48,7 @@ mappable
 
 from __future__ import absolute_import, print_function
 
+import abc
 import os
 
 from .i18n import _
@@ -556,6 +557,26 @@ def unquotestring(s):
         return s
     return s[1:-1]
 
+class resourcemapper(object):
+    """Mapper of internal template resources"""
+
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def knownkeys(self):
+        """Return a set of supported resource keys"""
+
+    @abc.abstractmethod
+    def lookup(self, context, mapping, key):
+        """Return a resource for the key if available; otherwise None"""
+
+class nullresourcemapper(resourcemapper):
+    def knownkeys(self):
+        return set()
+
+    def lookup(self, context, mapping, key):
+        return None
+
 class engine(object):
     '''template expansion engine.
 
@@ -586,7 +607,7 @@ class engine(object):
         if defaults is None:
             defaults = {}
         if resources is None:
-            resources = {}
+            resources = nullresourcemapper()
         self._defaults = defaults
         self._resources = resources
         self._aliasmap = _aliasrules.buildmap(aliases)
@@ -595,7 +616,7 @@ class engine(object):
     def symbol(self, mapping, key):
         """Resolve symbol to value or function; None if nothing found"""
         v = None
-        if key not in self._resources:
+        if key not in self._resources.knownkeys():
             v = mapping.get(key)
         if v is None:
             v = self._defaults.get(key)
@@ -604,9 +625,7 @@ class engine(object):
     def resource(self, mapping, key):
         """Return internal data (e.g. cache) used for keyword/function
         evaluation"""
-        v = None
-        if key in self._resources:
-            v = self._resources[key](self, mapping, key)
+        v = self._resources.lookup(self, mapping, key)
         if v is None:
             raise templateutil.ResourceUnavailable(
                 _('template resource not available: %s') % key)
@@ -717,7 +736,7 @@ class templater(object):
         - ``filters``: a dict of functions to transform a value into another.
         - ``defaults``: a dict of symbol values/functions; may be overridden
           by a ``mapping`` dict.
-        - ``resources``: a dict of functions returning internal data
+        - ``resources``: a resourcemapper object to look up internal data
           (e.g. cache), inaccessible from user template.
         - ``cache``: a dict of preloaded template fragments.
         - ``aliases``: a list of alias (name, replacement) pairs.
@@ -729,8 +748,6 @@ class templater(object):
             filters = {}
         if defaults is None:
             defaults = {}
-        if resources is None:
-            resources = {}
         if cache is None:
             cache = {}
         self.cache = cache.copy()

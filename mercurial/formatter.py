@@ -494,22 +494,32 @@ def maketemplater(ui, tmpl, defaults=None, resources=None, cache=None):
         t.cache[''] = tmpl
     return t
 
-def templateresources(ui, repo=None):
-    """Create a dict of template resources designed for the default templatekw
-    and function"""
-    resmap = {
-        'cache': {},  # for templatekw/funcs to store reusable data
-        'repo': repo,
-        'ui': ui,
-    }
+class templateresources(templater.resourcemapper):
+    """Resource mapper designed for the default templatekw and function"""
 
-    def getsome(context, mapping, key):
+    def __init__(self, ui, repo=None):
+        self._resmap = {
+            'cache': {},  # for templatekw/funcs to store reusable data
+            'repo': repo,
+            'ui': ui,
+        }
+
+    def knownkeys(self):
+        return self._knownkeys
+
+    def lookup(self, context, mapping, key):
+        get = self._gettermap.get(key)
+        if not get:
+            return None
+        return get(self, context, mapping, key)
+
+    def _getsome(self, context, mapping, key):
         v = mapping.get(key)
         if v is not None:
             return v
-        return resmap.get(key)
+        return self._resmap.get(key)
 
-    def getctx(context, mapping, key):
+    def _getctx(self, context, mapping, key):
         ctx = mapping.get('ctx')
         if ctx is not None:
             return ctx
@@ -517,20 +527,21 @@ def templateresources(ui, repo=None):
         if fctx is not None:
             return fctx.changectx()
 
-    def getrepo(context, mapping, key):
-        ctx = getctx(context, mapping, 'ctx')
+    def _getrepo(self, context, mapping, key):
+        ctx = self._getctx(context, mapping, 'ctx')
         if ctx is not None:
             return ctx.repo()
-        return getsome(context, mapping, key)
+        return self._getsome(context, mapping, key)
 
-    return {
-        'cache': getsome,
-        'ctx': getctx,
-        'fctx': getsome,
-        'repo': getrepo,
-        'revcache': getsome,  # per-ctx cache; set later
-        'ui': getsome,
+    _gettermap = {
+        'cache': _getsome,
+        'ctx': _getctx,
+        'fctx': _getsome,
+        'repo': _getrepo,
+        'revcache': _getsome,  # per-ctx cache; set later
+        'ui': _getsome,
     }
+    _knownkeys = set(_gettermap.keys())
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")

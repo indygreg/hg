@@ -249,7 +249,8 @@ class _gitlfsremote(object):
                 response['objects'] = sorted(response['objects'],
                                              key=lambda p: p['oid'])
             self.ui.debug('%s\n'
-                          % json.dumps(response, indent=2, sort_keys=True))
+                          % json.dumps(response, indent=2,
+                                       separators=('', ': '), sort_keys=True))
 
         return response
 

@@ -63,14 +63,14 @@ store.
       {
         "actions": {
           "upload": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
           }
-        }, 
-        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        }
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
         "size": 12
       }
     ]
@@ -133,14 +133,14 @@ Clear the cache to force a download
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
           }
-        }, 
-        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        }
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
         "size": 12
       }
     ]
@@ -184,40 +184,40 @@ When the server has some blobs already
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
           }
-        }, 
-        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        }
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
         "size": 12
-      }, 
+      }
       {
         "actions": {
           "upload": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
           }
-        }, 
-        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        }
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
         "size": 20
-      }, 
+      }
       {
         "actions": {
           "upload": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
           }
-        }, 
-        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        }
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
         "size": 19
       }
     ]
@@ -289,27 +289,27 @@ Clear the cache to force a download
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
           }
-        }, 
-        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        }
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
         "size": 20
-      }, 
+      }
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
           }
-        }, 
-        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        }
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
         "size": 19
       }
     ]
@@ -362,14 +362,14 @@ Test a corrupt file download, but clear the cache first to force a download.
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
           }
-        }, 
-        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        }
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
         "size": 19
       }
     ]
@@ -416,14 +416,14 @@ Test a corrupted file upload
       {
         "actions": {
           "upload": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0"
           }
-        }, 
-        "oid": "e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0", 
+        }
+        "oid": "e659058e26b07b39d2a9c7145b3f99b41f797b6621c8076600e9cb7ee88291f0"
         "size": 17
       }
     ]
@@ -447,40 +447,40 @@ Archive will prefetch blobs in a group
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
           }
-        }, 
-        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        }
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
         "size": 12
-      }, 
+      }
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
           }
-        }, 
-        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        }
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
         "size": 20
-      }, 
+      }
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
           }
-        }, 
-        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        }
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
         "size": 19
       }
     ]
@@ -533,27 +533,27 @@ Cat will prefetch blobs in a group
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
           }
-        }, 
-        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        }
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
         "size": 12
-      }, 
+      }
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
           }
-        }, 
-        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        }
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
         "size": 19
       }
     ]
@@ -600,40 +600,40 @@ Revert will prefetch blobs in a group
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
           }
-        }, 
-        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b", 
+        }
+        "oid": "31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b"
         "size": 12
-      }, 
+      }
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
           }
-        }, 
-        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19", 
+        }
+        "oid": "37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19"
         "size": 20
-      }, 
+      }
       {
         "actions": {
           "download": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
           }
-        }, 
-        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998", 
+        }
+        "oid": "d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998"
         "size": 19
       }
     ]
@@ -687,14 +687,14 @@ Check error message when the remote missed a blob:
       {
         "actions": {
           "upload": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/8e6ea5f6c066b44a0efa43bcce86aea73f17e6e23f0663df0251e7524e140a13"
           }
-        }, 
-        "oid": "8e6ea5f6c066b44a0efa43bcce86aea73f17e6e23f0663df0251e7524e140a13", 
+        }
+        "oid": "8e6ea5f6c066b44a0efa43bcce86aea73f17e6e23f0663df0251e7524e140a13"
         "size": 6
       }
     ]
@@ -754,14 +754,14 @@ Check error message when object does not exist:
       {
         "actions": {
           "upload": {
-            "expires_at": "$ISO_8601_DATE_TIME$", 
+            "expires_at": "$ISO_8601_DATE_TIME$"
             "header": {
               "Accept": "application/vnd.git-lfs"
-            }, 
+            }
             "href": "http://localhost:$HGPORT/objects/bdc26931acfb734b142a8d675f205becf27560dc461f501822de13274fe6fc8a"
           }
-        }, 
-        "oid": "bdc26931acfb734b142a8d675f205becf27560dc461f501822de13274fe6fc8a", 
+        }
+        "oid": "bdc26931acfb734b142a8d675f205becf27560dc461f501822de13274fe6fc8a"
         "size": 6
       }
     ]

@@ -613,6 +613,13 @@ class engine(object):
         self._aliasmap = _aliasrules.buildmap(aliases)
         self._cache = {}  # key: (func, data)
 
+    def overlaymap(self, origmapping, newmapping):
+        """Create combined mapping from the original mapping and partial
+        mapping to override the original"""
+        mapping = origmapping.copy()
+        mapping.update(newmapping)
+        return mapping
+
     def symbol(self, mapping, key):
         """Resolve symbol to value or function; None if nothing found"""
         v = None

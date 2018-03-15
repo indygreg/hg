@@ -202,8 +202,8 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
     startname = 'start_' + plural
     if context.preload(startname):
         yield context.process(startname, mapping)
-    vmapping = mapping.copy()
     def one(v, tag=name):
+        vmapping = {}
         try:
             vmapping.update(v)
         # Python 2 raises ValueError if the type of v is wrong. Python
@@ -216,6 +216,7 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
                     vmapping[a] = b
             except (TypeError, ValueError):
                 vmapping[name] = v
+        vmapping = context.overlaymap(mapping, vmapping)
         return context.process(tag, vmapping)
     lastname = 'last_' + name
     if context.preload(lastname):
@@ -399,10 +400,9 @@ def runmap(context, mapping, data):
                 raise error.ParseError(_("%r is not iterable") % d)
 
     for i, v in enumerate(diter):
-        lm = mapping.copy()
-        lm['index'] = i
         if isinstance(v, dict):
-            lm.update(v)
+            lm = context.overlaymap(mapping, v)
+            lm['index'] = i
             lm['originalnode'] = mapping.get('node')
             yield evalrawexp(context, lm, targ)
         else:
@@ -415,8 +415,7 @@ def runmember(context, mapping, data):
     darg, memb = data
     d = evalrawexp(context, mapping, darg)
     if util.safehasattr(d, 'tomap'):
-        lm = mapping.copy()
-        lm.update(d.tomap())
+        lm = context.overlaymap(mapping, d.tomap())
         return runsymbol(context, lm, memb)
     if util.safehasattr(d, 'get'):
         return getdictitem(d, memb)

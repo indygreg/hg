@@ -449,8 +449,8 @@ def showlatesttagdistance(context, mapping):
 @templatekeyword('changessincelatesttag', requires={'repo', 'ctx', 'cache'})
 def showchangessincelatesttag(context, mapping):
     """Integer. All ancestors not in the latest tag."""
-    mapping = mapping.copy()
-    mapping['tag'] = getlatesttags(context, mapping)[2][0]
+    tag = getlatesttags(context, mapping)[2][0]
+    mapping = context.overlaymap(mapping, {'tag': tag})
     return _showchangessincetag(context, mapping)
 
 def _showchangessincetag(context, mapping):
@@ -480,8 +480,7 @@ def showmanifest(context, mapping):
         return
     mrev = repo.manifestlog._revlog.rev(mnode)
     mhex = hex(mnode)
-    mapping = mapping.copy()
-    mapping.update({'rev': mrev, 'node': mhex})
+    mapping = context.overlaymap(mapping, {'rev': mrev, 'node': mhex})
     f = context.process('manifest', mapping)
     # TODO: perhaps 'ctx' should be dropped from mapping because manifest
     # rev and node are completely different from changeset's.

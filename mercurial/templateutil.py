@@ -148,8 +148,7 @@ def compatdict(context, mapping, name, data, key='key', value='value',
     hybriddict() for new template keywords.
     """
     c = [{key: k, value: v} for k, v in data.iteritems()]
-    t = context.resource(mapping, 'templ')
-    f = _showlist(name, c, t, mapping, plural, separator)
+    f = _showcompatlist(context, mapping, name, c, plural, separator)
     return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
 
 def compatlist(context, mapping, name, data, element=None, fmt=None,
@@ -159,12 +158,12 @@ def compatlist(context, mapping, name, data, element=None, fmt=None,
     This exists for backward compatibility with the old-style template. Use
     hybridlist() for new template keywords.
     """
-    t = context.resource(mapping, 'templ')
-    f = _showlist(name, data, t, mapping, plural, separator)
+    f = _showcompatlist(context, mapping, name, data, plural, separator)
     return hybridlist(data, name=element or name, fmt=fmt, gen=f)
 
-def _showlist(name, values, templ, mapping, plural=None, separator=' '):
-    '''expand set of values.
+def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
+    """Return a generator that renders old-style list template
+
     name is name of key in template map.
     values is list of strings or dicts.
     plural is plural of name, if not simply name + 's'.
@@ -183,15 +182,15 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
     map, expand it instead of 'foo' for last key.
 
     expand 'end_foos'.
-    '''
+    """
     if not plural:
         plural = name + 's'
     if not values:
         noname = 'no_' + plural
-        if noname in templ:
-            yield templ.generate(noname, mapping)
+        if context.preload(noname):
+            yield context.process(noname, mapping)
         return
-    if name not in templ:
+    if not context.preload(name):
         if isinstance(values[0], bytes):
             yield separator.join(values)
         else:
@@ -201,8 +200,8 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
                 yield r
         return
     startname = 'start_' + plural
-    if startname in templ:
-        yield templ.generate(startname, mapping)
+    if context.preload(startname):
+        yield context.process(startname, mapping)
     vmapping = mapping.copy()
     def one(v, tag=name):
         try:
@@ -217,9 +216,9 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
                     vmapping[a] = b
             except (TypeError, ValueError):
                 vmapping[name] = v
-        return templ.generate(tag, vmapping)
+        return context.process(tag, vmapping)
     lastname = 'last_' + name
-    if lastname in templ:
+    if context.preload(lastname):
         last = values.pop()
     else:
         last = None
@@ -228,8 +227,8 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
     if last is not None:
         yield one(last, tag=lastname)
     endname = 'end_' + plural
-    if endname in templ:
-        yield templ.generate(endname, mapping)
+    if context.preload(endname):
+        yield context.process(endname, mapping)
 
 def stringify(thing):
     """Turn values into bytes by converting into text and concatenating them"""

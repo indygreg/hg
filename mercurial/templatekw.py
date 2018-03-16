@@ -29,11 +29,26 @@ from . import (
 
 _hybrid = templateutil.hybrid
 _mappable = templateutil.mappable
-_showlist = templateutil._showlist
 hybriddict = templateutil.hybriddict
 hybridlist = templateutil.hybridlist
 compatdict = templateutil.compatdict
 compatlist = templateutil.compatlist
+_showcompatlist = templateutil._showcompatlist
+
+# TODO: temporary hack for porting; will be removed soon
+class _fakecontextwrapper(object):
+    def __init__(self, templ):
+        self._templ = templ
+
+    def preload(self, t):
+        return t in self._templ
+
+    def process(self, t, mapping):
+        return self._templ.generatenamed(t, mapping)
+
+def _showlist(name, values, templ, mapping, plural=None, separator=' '):
+    context = _fakecontextwrapper(templ)
+    return _showcompatlist(context, mapping, name, values, plural, separator)
 
 def showdict(name, data, mapping, plural=None, key='key', value='value',
              fmt=None, separator=' '):
@@ -203,7 +218,7 @@ def showbranch(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.branch()
 
-@templatekeyword('branches', requires={'ctx', 'templ'})
+@templatekeyword('branches', requires={'ctx'})
 def showbranches(context, mapping):
     """List of strings. The name of the branch on which the
     changeset was committed. Will be empty if the branch name was
@@ -230,7 +245,7 @@ def showbookmarks(context, mapping):
     f = _showlist('bookmark', bookmarks, templ, mapping)
     return _hybrid(f, bookmarks, makemap, pycompat.identity)
 
-@templatekeyword('children', requires={'ctx', 'templ'})
+@templatekeyword('children', requires={'ctx'})
 def showchildren(context, mapping):
     """List of strings. The children of the changeset."""
     ctx = context.resource(mapping, 'ctx')
@@ -281,7 +296,7 @@ def showdiffstat(context, mapping):
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%d: +%d/-%d' % (len(stats), adds, removes)
 
-@templatekeyword('envvars', requires={'ui', 'templ'})
+@templatekeyword('envvars', requires={'ui'})
 def showenvvars(context, mapping):
     """A dictionary of environment variables. (EXPERIMENTAL)"""
     ui = context.resource(mapping, 'ui')
@@ -312,13 +327,13 @@ def _showfilesbystat(context, mapping, name, index):
     files = revcache['files'][index]
     return compatlist(context, mapping, name, files, element='file')
 
-@templatekeyword('file_adds', requires={'repo', 'ctx', 'revcache', 'templ'})
+@templatekeyword('file_adds', requires={'repo', 'ctx', 'revcache'})
 def showfileadds(context, mapping):
     """List of strings. Files added by this changeset."""
     return _showfilesbystat(context, mapping, 'file_add', 1)
 
 @templatekeyword('file_copies',
-                 requires={'repo', 'ctx', 'cache', 'revcache', 'templ'})
+                 requires={'repo', 'ctx', 'cache', 'revcache'})
 def showfilecopies(context, mapping):
     """List of strings. Files copied in this changeset with
     their sources.
@@ -345,7 +360,7 @@ def showfilecopies(context, mapping):
 # showfilecopiesswitch() displays file copies only if copy records are
 # provided before calling the templater, usually with a --copies
 # command line switch.
-@templatekeyword('file_copies_switch', requires={'revcache', 'templ'})
+@templatekeyword('file_copies_switch', requires={'revcache'})
 def showfilecopiesswitch(context, mapping):
     """List of strings. Like "file_copies" but displayed
     only if the --copied switch is set.
@@ -356,17 +371,17 @@ def showfilecopiesswitch(context, mapping):
                       key='name', value='source', fmt='%s (%s)',
                       plural='file_copies')
 
-@templatekeyword('file_dels', requires={'repo', 'ctx', 'revcache', 'templ'})
+@templatekeyword('file_dels', requires={'repo', 'ctx', 'revcache'})
 def showfiledels(context, mapping):
     """List of strings. Files removed by this changeset."""
     return _showfilesbystat(context, mapping, 'file_del', 2)
 
-@templatekeyword('file_mods', requires={'repo', 'ctx', 'revcache', 'templ'})
+@templatekeyword('file_mods', requires={'repo', 'ctx', 'revcache'})
 def showfilemods(context, mapping):
     """List of strings. Files modified by this changeset."""
     return _showfilesbystat(context, mapping, 'file_mod', 0)
 
-@templatekeyword('files', requires={'ctx', 'templ'})
+@templatekeyword('files', requires={'ctx'})
 def showfiles(context, mapping):
     """List of strings. All files modified, added, or removed by this
     changeset.
@@ -465,11 +480,10 @@ def _showchangessincetag(context, mapping):
 # teach templater latesttags.changes is switched to (context, mapping) API
 _showchangessincetag._requires = {'repo', 'ctx'}
 
-@templatekeyword('manifest', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('manifest', requires={'repo', 'ctx'})
 def showmanifest(context, mapping):
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
-    templ = context.resource(mapping, 'templ')
     mnode = ctx.manifestnode()
     if mnode is None:
         # just avoid crash, we might want to use the 'ff...' hash in future
@@ -478,7 +492,7 @@ def showmanifest(context, mapping):
     mhex = hex(mnode)
     mapping = mapping.copy()
     mapping.update({'rev': mrev, 'node': mhex})
-    f = templ.generate('manifest', mapping)
+    f = context.process('manifest', mapping)
     # TODO: perhaps 'ctx' should be dropped from mapping because manifest
     # rev and node are completely different from changeset's.
     return _mappable(f, None, f, lambda x: {'rev': mrev, 'node': mhex})
@@ -738,7 +752,7 @@ def showrevslist(context, mapping, name, revs):
                    lambda x: {name: x, 'ctx': repo[x], 'revcache': {}},
                    pycompat.identity, keytype=int)
 
-@templatekeyword('subrepos', requires={'ctx', 'templ'})
+@templatekeyword('subrepos', requires={'ctx'})
 def showsubrepos(context, mapping):
     """List of strings. Updated subrepositories in the changeset."""
     ctx = context.resource(mapping, 'ctx')
@@ -758,7 +772,7 @@ def showsubrepos(context, mapping):
 # don't remove "showtags" definition, even though namespaces will put
 # a helper function for "tags" keyword into "keywords" map automatically,
 # because online help text is built without namespaces initialization
-@templatekeyword('tags', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('tags', requires={'repo', 'ctx'})
 def showtags(context, mapping):
     """List of strings. Any tags associated with the changeset."""
     return shownames(context, mapping, 'tags')
@@ -769,7 +783,7 @@ def showtermwidth(context, mapping):
     ui = context.resource(mapping, 'ui')
     return ui.termwidth()
 
-@templatekeyword('instabilities', requires={'ctx', 'templ'})
+@templatekeyword('instabilities', requires={'ctx'})
 def showinstabilities(context, mapping):
     """List of strings. Evolution instabilities affecting the changeset.
     (EXPERIMENTAL)

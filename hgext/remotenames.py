@@ -230,7 +230,7 @@ def reposetup(ui, repo):
                 repo._remotenames.nodetobranch().get(node, []))
         repo.names.addnamespace(remotebranchns)
 
-@templatekeyword('remotenames', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('remotenames', requires={'repo', 'ctx'})
 def remotenameskw(context, mapping):
     """List of strings. Remote names associated with the changeset."""
     repo = context.resource(mapping, 'repo')
@@ -246,7 +246,7 @@ def remotenameskw(context, mapping):
     return templateutil.compatlist(context, mapping, 'remotename', remotenames,
                                    plural='remotenames')
 
-@templatekeyword('remotebookmarks', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('remotebookmarks', requires={'repo', 'ctx'})
 def remotebookmarkskw(context, mapping):
     """List of strings. Remote bookmarks associated with the changeset."""
     repo = context.resource(mapping, 'repo')
@@ -259,7 +259,7 @@ def remotebookmarkskw(context, mapping):
     return templateutil.compatlist(context, mapping, 'remotebookmark',
                                    remotebmarks, plural='remotebookmarks')
 
-@templatekeyword('remotebranches', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('remotebranches', requires={'repo', 'ctx'})
 def remotebrancheskw(context, mapping):
     """List of strings. Remote branches associated with the changeset."""
     repo = context.resource(mapping, 'repo')

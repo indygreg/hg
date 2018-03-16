@@ -28,39 +28,22 @@ class multidict(object):
     This is inspired by WebOb's class of the same name.
     """
     def __init__(self):
-        # Stores (key, value) 2-tuples. This isn't the most efficient. But we
-        # don't rely on parameters that much, so it shouldn't be a perf issue.
-        # we can always add dict for fast lookups.
-        self._items = []
+        self._items = {}
 
     def __getitem__(self, key):
         """Returns the last set value for a key."""
-        for k, v in reversed(self._items):
-            if k == key:
-                return v
-
-        raise KeyError(key)
+        return self._items[key][-1]
 
     def __setitem__(self, key, value):
         """Replace a values for a key with a new value."""
-        try:
-            del self[key]
-        except KeyError:
-            pass
-
-        self._items.append((key, value))
+        self._items[key] = [value]
 
     def __delitem__(self, key):
         """Delete all values for a key."""
-        oldlen = len(self._items)
-
-        self._items[:] = [(k, v) for k, v in self._items if k != key]
-
-        if oldlen == len(self._items):
-            raise KeyError(key)
+        del self._items[key]
 
     def __contains__(self, key):
-        return any(k == key for k, v in self._items)
+        return key in self._items
 
     def __len__(self):
         return len(self._items)
@@ -73,21 +56,18 @@ class multidict(object):
 
     def add(self, key, value):
         """Add a new value for a key. Does not replace existing values."""
-        self._items.append((key, value))
+        self._items.setdefault(key, []).append(value)
 
     def getall(self, key):
         """Obtains all values for a key."""
-        return [v for k, v in self._items if k == key]
+        return self._items.get(key, [])
 
     def getone(self, key):
         """Obtain a single value for a key.
 
         Raises KeyError if key not defined or it has multiple values set.
         """
-        vals = self.getall(key)
-
-        if not vals:
-            raise KeyError(key)
+        vals = self._items[key]
 
         if len(vals) > 1:
             raise KeyError('multiple values for %r' % key)
@@ -95,14 +75,7 @@ class multidict(object):
         return vals[0]
 
     def asdictoflists(self):
-        d = {}
-        for k, v in self._items:
-            if k in d:
-                d[k].append(v)
-            else:
-                d[k] = [v]
-
-        return d
+        return {k: list(v) for k, v in self._items.iteritems()}
 
 @attr.s(frozen=True)
 class parsedrequest(object):

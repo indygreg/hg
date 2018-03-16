@@ -16,8 +16,7 @@
   >         props = self._defaults.copy()
   >         props.update(map)
   >         for k, v in props.items():
-  >             if k in (b'templ', b'ctx', b'repo', b'revcache', b'cache',
-  >                      b'troubles'):
+  >             if b'{{%s}}' % k not in tmpl:
   >                 continue
   >             if callable(v) and getattr(v, '_requires', None) is None:
   >                 props = self._resources.copy()

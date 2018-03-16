@@ -738,8 +738,7 @@ class templater(object):
         self.filters = templatefilters.filters.copy()
         self.filters.update(filters)
         self.defaults = defaults
-        self._resources = {'templ': lambda context, mapping, key: self}
-        self._resources.update(resources)
+        self._resources = resources
         self._aliases = aliases
         self.minchunk, self.maxchunk = minchunk, maxchunk
         self.ecache = {}

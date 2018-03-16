@@ -35,19 +35,8 @@ compatdict = templateutil.compatdict
 compatlist = templateutil.compatlist
 _showcompatlist = templateutil._showcompatlist
 
-# TODO: temporary hack for porting; will be removed soon
-class _fakecontextwrapper(object):
-    def __init__(self, templ):
-        self._templ = templ
-
-    def preload(self, t):
-        return t in self._templ
-
-    def process(self, t, mapping):
-        return self._templ.generatenamed(t, mapping)
-
 def _showlist(name, values, templ, mapping, plural=None, separator=' '):
-    context = _fakecontextwrapper(templ)
+    context = templ  # this is actually a template context, not a templater
     return _showcompatlist(context, mapping, name, values, plural, separator)
 
 def showdict(name, data, mapping, plural=None, key='key', value='value',

@@ -348,8 +348,11 @@ def runsymbol(context, mapping, key, default=''):
             v = default
     if callable(v) and getattr(v, '_requires', None) is None:
         # old templatekw: expand all keywords and resources
+        # (TODO: deprecate this after porting web template keywords to new API)
         props = {k: f(context, mapping, k)
                  for k, f in context._resources.items()}
+        # pass context to _showcompatlist() through templatekw._showlist()
+        props['templ'] = context
         props.update(mapping)
         return v(**pycompat.strkwargs(props))
     if callable(v):

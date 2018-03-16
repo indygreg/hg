@@ -36,6 +36,10 @@ compatlist = templateutil.compatlist
 _showcompatlist = templateutil._showcompatlist
 
 def _showlist(name, values, templ, mapping, plural=None, separator=' '):
+    ui = mapping.get('ui')
+    if ui:
+        ui.deprecwarn("templatekw._showlist() is deprecated, use "
+                      "templateutil._showcompatlist()", '4.6')
     context = templ  # this is actually a template context, not a templater
     return _showcompatlist(context, mapping, name, values, plural, separator)
 

@@ -1544,7 +1544,8 @@ def abort(repo, originalwd, destmap, state, activebookmark=None):
         # If the first commits in the rebased set get skipped during the rebase,
         # their values within the state mapping will be the dest rev id. The
         # rebased list must must not contain the dest rev (issue4896)
-        rebased = [s for r, s in state.items() if s >= 0 and s != destmap[r]]
+        rebased = [s for r, s in state.items()
+                   if s >= 0 and s != r and s != destmap[r]]
         immutable = [d for d in rebased if not repo[d].mutable()]
         cleanup = True
         if immutable:

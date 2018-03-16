@@ -87,13 +87,13 @@ Abort doesn't lose the commits that were already in the right place
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
   $ hg rebase --abort
-  saved backup bundle to $TESTTMP/abort/.hg/strip-backup/79f6d6ab7b14-cce2340e-backup.hg
   rebase aborted
-BROKEN: C got stripped
   $ hg tglog
-  o  2: ef8c0fe0897b D
+  o  3: 79f6d6ab7b14 C
   |
-  | o  1: 594087dbaf71 B
+  | o  2: ef8c0fe0897b D
+  | |
+  o |  1: 594087dbaf71 B
   |/
   o  0: 426bada5c675 A
   

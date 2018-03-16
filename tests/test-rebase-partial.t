@@ -69,6 +69,36 @@ Can collapse commits even if one is already in the right place
   |/
   o  0: 426bada5c675 A
   
+Abort doesn't lose the commits that were already in the right place
+
+  $ hg init abort
+  $ cd abort
+  $ hg debugdrawdag <<EOF
+  > C
+  > |
+  > B D  # B/file = B
+  > |/   # D/file = D
+  > A
+  > EOF
+  $ hg rebase -r C+D -d B
+  rebasing 2:ef8c0fe0897b "D" (D)
+  merging file
+  warning: conflicts while merging file! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --abort
+  saved backup bundle to $TESTTMP/abort/.hg/strip-backup/79f6d6ab7b14-cce2340e-backup.hg
+  rebase aborted
+BROKEN: C got stripped
+  $ hg tglog
+  o  2: ef8c0fe0897b D
+  |
+  | o  1: 594087dbaf71 B
+  |/
+  o  0: 426bada5c675 A
+  
+  $ cd ..
+
 Rebase with "holes". The commits after the hole should end up on the parent of
 the hole (B below), not on top of the destination (A).
 

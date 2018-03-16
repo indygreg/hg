@@ -472,6 +472,10 @@ class serverreactor(object):
         self._bufferedframegens = []
         # request id -> dict of commands that are actively being received.
         self._receivingcommands = {}
+        # Request IDs that have been received and are actively being processed.
+        # Once all output for a request has been sent, it is removed from this
+        # set.
+        self._activecommands = set()
 
     def onframerecv(self, frame):
         """Process a frame that has been received off the wire.
@@ -496,14 +500,20 @@ class serverreactor(object):
 
         The raw bytes response is passed as an argument.
         """
-        framegen = createbytesresponseframesfrombytes(requestid, data)
+        def sendframes():
+            for frame in createbytesresponseframesfrombytes(requestid, data):
+                yield frame
+
+            self._activecommands.remove(requestid)
+
+        result = sendframes()
 
         if self._deferoutput:
-            self._bufferedframegens.append(framegen)
+            self._bufferedframegens.append(result)
             return 'noop', {}
         else:
             return 'sendframes', {
-                'framegen': framegen,
+                'framegen': result,
             }
 
     def oninputeof(self):
@@ -546,6 +556,9 @@ class serverreactor(object):
         else:
             self._state = 'idle'
 
+        assert requestid not in self._activecommands
+        self._activecommands.add(requestid)
+
         return 'runcommand', {
             'requestid': requestid,
             'command': entry['command'],
@@ -570,6 +583,11 @@ class serverreactor(object):
             self._state = 'errored'
             return self._makeerrorresult(
                 _('request with ID %d already received') % frame.requestid)
+
+        if frame.requestid in self._activecommands:
+            self._state = 'errored'
+            return self._makeerrorresult((
+                _('request with ID %d is already active') % frame.requestid))
 
         expectingargs = bool(frame.flags & FLAG_COMMAND_NAME_HAVE_ARGS)
         expectingdata = bool(frame.flags & FLAG_COMMAND_NAME_HAVE_DATA)
@@ -599,7 +617,13 @@ class serverreactor(object):
             return self._onframeidle(frame)
 
         # All other frames should be related to a command that is currently
-        # receiving.
+        # receiving but is not active.
+        if frame.requestid in self._activecommands:
+            self._state = 'errored'
+            return self._makeerrorresult(
+                _('received frame for request that is still active: %d') %
+                frame.requestid)
+
         if frame.requestid not in self._receivingcommands:
             self._state = 'errored'
             return self._makeerrorresult(

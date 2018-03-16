@@ -478,11 +478,11 @@ class ServerReactorTests(unittest.TestCase):
         results = list(sendframes(makereactor(), [
             ffs(b'1 command-name eos command1'),
             ffs(b'3 command-name have-data command3'),
-            ffs(b'1 command-argument eoa ignored'),
+            ffs(b'5 command-argument eoa ignored'),
         ]))
         self.assertaction(results[2], 'error')
         self.assertEqual(results[2][1], {
-            'message': b'received frame for request that is not receiving: 1',
+            'message': b'received frame for request that is not receiving: 5',
         })
 
     def testsimpleresponse(self):
@@ -570,6 +570,56 @@ class ServerReactorTests(unittest.TestCase):
             b'1 bytes-response eos response1',
             b'5 bytes-response eos response5',
         ])
+
+    def testduplicaterequestonactivecommand(self):
+        """Receiving a request ID that matches a request that isn't finished."""
+        reactor = makereactor()
+        list(sendcommandframes(reactor, 1, b'command1', {}))
+        results = list(sendcommandframes(reactor, 1, b'command1', {}))
+
+        self.assertaction(results[0], 'error')
+        self.assertEqual(results[0][1], {
+            'message': b'request with ID 1 is already active',
+        })
+
+    def testduplicaterequestonactivecommandnosend(self):
+        """Same as above but we've registered a response but haven't sent it."""
+        reactor = makereactor()
+        list(sendcommandframes(reactor, 1, b'command1', {}))
+        reactor.onbytesresponseready(1, b'response')
+
+        # We've registered the response but haven't sent it. From the
+        # perspective of the reactor, the command is still active.
+
+        results = list(sendcommandframes(reactor, 1, b'command1', {}))
+        self.assertaction(results[0], 'error')
+        self.assertEqual(results[0][1], {
+            'message': b'request with ID 1 is already active',
+        })
+
+    def testduplicaterequestargumentframe(self):
+        """Variant on above except we sent an argument frame instead of name."""
+        reactor = makereactor()
+        list(sendcommandframes(reactor, 1, b'command', {}))
+        results = list(sendframes(reactor, [
+            ffs(b'3 command-name have-args command'),
+            ffs(b'1 command-argument 0 ignored'),
+        ]))
+        self.assertaction(results[0], 'wantframe')
+        self.assertaction(results[1], 'error')
+        self.assertEqual(results[1][1], {
+            'message': 'received frame for request that is still active: 1',
+        })
+
+    def testduplicaterequestaftersend(self):
+        """We can use a duplicate request ID after we've sent the response."""
+        reactor = makereactor()
+        list(sendcommandframes(reactor, 1, b'command1', {}))
+        res = reactor.onbytesresponseready(1, b'response')
+        list(res[1]['framegen'])
+
+        results = list(sendcommandframes(reactor, 1, b'command1', {}))
+        self.assertaction(results[0], 'runcommand')
 
 if __name__ == '__main__':
     import silenttestrunner

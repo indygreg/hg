@@ -30,7 +30,6 @@ from .. import (
     repoview,
     templatefilters,
     templater,
-    templateutil,
     ui as uimod,
     util,
     wireprotoserver,
@@ -378,8 +377,8 @@ class hgweb(object):
 
         try:
             rctx.tmpl = rctx.templater(req)
-            ctype = rctx.tmpl('mimetype', encoding=encoding.encoding)
-            ctype = templateutil.stringify(ctype)
+            ctype = rctx.tmpl.render('mimetype',
+                                     {'encoding': encoding.encoding})
 
             # check read permissions non-static content
             if cmd != 'static':

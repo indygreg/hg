@@ -401,9 +401,7 @@ class templateformatter(baseformatter):
         if 'ctx' in item or 'fctx' in item:
             # but template resources must be always available
             props['revcache'] = {}
-        props = pycompat.strkwargs(props)
-        g = self._t(ref, **props)
-        self._out.write(templateutil.stringify(g))
+        self._out.write(self._t.render(ref, props))
 
     def end(self):
         baseformatter.end(self)

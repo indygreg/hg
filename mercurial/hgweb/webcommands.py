@@ -1195,7 +1195,9 @@ def archive(web):
         web.res.headers['Content-Encoding'] = encoding
 
     web.res.setbodywillwrite()
-    assert list(web.res.sendresponse()) == []
+    if list(web.res.sendresponse()):
+        raise error.ProgrammingError('sendresponse() should not emit data '
+                                     'if writing later')
 
     bodyfh = web.res.getbodyfile()
 

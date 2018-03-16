@@ -627,6 +627,14 @@ class engine(object):
                 raise
         return self._cache[t]
 
+    def preload(self, t):
+        """Load, parse, and cache the specified template if available"""
+        try:
+            self._load(t)
+            return True
+        except templateutil.TemplateNotFound:
+            return False
+
     def process(self, t, mapping):
         '''Perform expansion. t is name of map element to expand.
         mapping contains added elements for use during expansion. Is a

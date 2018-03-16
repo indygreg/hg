@@ -770,11 +770,11 @@ class templater(object):
 
     def render(self, t, mapping):
         """Render the specified named template and return result as string"""
-        mapping = pycompat.strkwargs(mapping)
-        return templateutil.stringify(self(t, **mapping))
+        return templateutil.stringify(self.generate(t, mapping))
 
-    def __call__(self, t, **mapping):
-        mapping = pycompat.byteskwargs(mapping)
+    def generate(self, t, mapping):
+        """Return a generator that renders the specified named template and
+        yields chunks"""
         ttype = t in self.map and self.map[t][0] or 'default'
         if ttype not in self.ecache:
             try:

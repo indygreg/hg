@@ -478,7 +478,7 @@ def showmanifest(context, mapping):
     mhex = hex(mnode)
     mapping = mapping.copy()
     mapping.update({'rev': mrev, 'node': mhex})
-    f = templ('manifest', **pycompat.strkwargs(mapping))
+    f = templ.generate('manifest', mapping)
     # TODO: perhaps 'ctx' should be dropped from mapping because manifest
     # rev and node are completely different from changeset's.
     return _mappable(f, None, f, lambda x: {'rev': mrev, 'node': mhex})

@@ -452,12 +452,12 @@ class hgwebdir(object):
 
             # prefixes not found
             res.status = '404 Not Found'
-            res.setbodygen(tmpl('notfound', repo=virtual))
+            res.setbodygen(tmpl.generate('notfound', {'repo': virtual}))
             return res.sendresponse()
 
         except ErrorResponse as e:
             res.status = statusmessage(e.code, pycompat.bytestr(e))
-            res.setbodygen(tmpl('error', error=e.message or ''))
+            res.setbodygen(tmpl.generate('error', {'error': e.message or ''}))
             return res.sendresponse()
         finally:
             tmpl = None
@@ -485,15 +485,15 @@ class hgwebdir(object):
                                self.stripecount, sortcolumn=sortcolumn,
                                descending=descending, subdir=subdir)
 
-        res.setbodygen(tmpl(
-            'index',
-            entries=entries,
-            subdir=subdir,
-            pathdef=hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),
-            sortcolumn=sortcolumn,
-            descending=descending,
-            **dict(sort)))
-
+        mapping = {
+            'entries': entries,
+            'subdir': subdir,
+            'pathdef': hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),
+            'sortcolumn': sortcolumn,
+            'descending': descending,
+        }
+        mapping.update(sort)
+        res.setbodygen(tmpl.generate('index', mapping))
         return res.sendresponse()
 
     def templater(self, req, nonce):

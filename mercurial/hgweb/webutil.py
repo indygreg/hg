@@ -243,12 +243,18 @@ def nodebranchnodefault(ctx):
     return branches
 
 def showtag(repo, tmpl, t1, node=nullid, **args):
+    args = pycompat.byteskwargs(args)
     for t in repo.nodetags(node):
-        yield tmpl(t1, tag=t, **args)
+        lm = args.copy()
+        lm['tag'] = t
+        yield tmpl.generate(t1, lm)
 
 def showbookmark(repo, tmpl, t1, node=nullid, **args):
+    args = pycompat.byteskwargs(args)
     for t in repo.nodebookmarks(node):
-        yield tmpl(t1, bookmark=t, **args)
+        lm = args.copy()
+        lm['bookmark'] = t
+        yield tmpl.generate(t1, lm)
 
 def branchentries(repo, stripecount, limit=0):
     tips = []
@@ -443,9 +449,12 @@ def changesetentry(web, ctx):
     parity = paritygen(web.stripecount)
     for blockno, f in enumerate(ctx.files()):
         template = 'filenodelink' if f in ctx else 'filenolink'
-        files.append(web.tmpl(template,
-                              node=ctx.hex(), file=f, blockno=blockno + 1,
-                              parity=next(parity)))
+        files.append(web.tmpl.generate(template, {
+            'node': ctx.hex(),
+            'file': f,
+            'blockno': blockno + 1,
+            'parity': next(parity),
+        }))
 
     basectx = basechangectx(web.repo, web.req)
     if basectx is None:
@@ -476,9 +485,9 @@ def changesetentry(web, ctx):
 
 def listfilediffs(tmpl, files, node, max):
     for f in files[:max]:
-        yield tmpl('filedifflink', node=hex(node), file=f)
+        yield tmpl.generate('filedifflink', {'node': hex(node), 'file': f})
     if len(files) > max:
-        yield tmpl('fileellipses')
+        yield tmpl.generate('fileellipses', {})
 
 def diffs(web, ctx, basectx, files, style, linerange=None,
           lineidprefix=''):
@@ -494,12 +503,12 @@ def diffs(web, ctx, basectx, files, style, linerange=None,
                 ltype = "difflineat"
             else:
                 ltype = "diffline"
-            yield web.tmpl(
-                ltype,
-                line=l,
-                lineno=lineno,
-                lineid=lineidprefix + "l%s" % difflineno,
-                linenumber="% 8s" % difflineno)
+            yield web.tmpl.generate(ltype, {
+                'line': l,
+                'lineno': lineno,
+                'lineid': lineidprefix + "l%s" % difflineno,
+                'linenumber': "% 8s" % difflineno,
+            })
 
     repo = web.repo
     if files:
@@ -524,8 +533,11 @@ def diffs(web, ctx, basectx, files, style, linerange=None,
                     continue
             lines.extend(hunklines)
         if lines:
-            yield web.tmpl('diffblock', parity=next(parity), blockno=blockno,
-                           lines=prettyprintlines(lines, blockno))
+            yield web.tmpl.generate('diffblock', {
+                'parity': next(parity),
+                'blockno': blockno,
+                'lines': prettyprintlines(lines, blockno),
+            })
 
 def compare(tmpl, context, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''
@@ -535,15 +547,16 @@ def compare(tmpl, context, leftlines, rightlines):
         lineid += rightlineno and ("r%d" % rightlineno) or ''
         llno = '%d' % leftlineno if leftlineno else ''
         rlno = '%d' % rightlineno if rightlineno else ''
-        return tmpl('comparisonline',
-                    type=type,
-                    lineid=lineid,
-                    leftlineno=leftlineno,
-                    leftlinenumber="% 6s" % llno,
-                    leftline=leftline or '',
-                    rightlineno=rightlineno,
-                    rightlinenumber="% 6s" % rlno,
-                    rightline=rightline or '')
+        return tmpl.generate('comparisonline', {
+            'type': type,
+            'lineid': lineid,
+            'leftlineno': leftlineno,
+            'leftlinenumber': "% 6s" % llno,
+            'leftline': leftline or '',
+            'rightlineno': rightlineno,
+            'rightlinenumber': "% 6s" % rlno,
+            'rightline': rightline or '',
+        })
 
     def getblock(opcodes):
         for type, llo, lhi, rlo, rhi in opcodes:
@@ -573,10 +586,11 @@ def compare(tmpl, context, leftlines, rightlines):
 
     s = difflib.SequenceMatcher(None, leftlines, rightlines)
     if context < 0:
-        yield tmpl('comparisonblock', lines=getblock(s.get_opcodes()))
+        yield tmpl.generate('comparisonblock',
+                            {'lines': getblock(s.get_opcodes())})
     else:
         for oc in s.get_grouped_opcodes(n=context):
-            yield tmpl('comparisonblock', lines=getblock(oc))
+            yield tmpl.generate('comparisonblock', {'lines': getblock(oc)})
 
 def diffstatgen(ctx, basectx):
     '''Generator function that provides the diffstat data.'''
@@ -610,9 +624,15 @@ def diffstat(tmpl, ctx, statgen, parity):
         template = 'diffstatlink' if filename in files else 'diffstatnolink'
         total = adds + removes
         fileno += 1
-        yield tmpl(template, node=ctx.hex(), file=filename, fileno=fileno,
-                   total=total, addpct=pct(adds), removepct=pct(removes),
-                   parity=next(parity))
+        yield tmpl.generate(template, {
+            'node': ctx.hex(),
+            'file': filename,
+            'fileno': fileno,
+            'total': total,
+            'addpct': pct(adds),
+            'removepct': pct(removes),
+            'parity': next(parity),
+        })
 
 class sessionvars(object):
     def __init__(self, vars, start='?'):

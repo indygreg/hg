@@ -184,13 +184,12 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
 
     expand 'end_foos'.
     '''
-    strmapping = pycompat.strkwargs(mapping)
     if not plural:
         plural = name + 's'
     if not values:
         noname = 'no_' + plural
         if noname in templ:
-            yield templ(noname, **strmapping)
+            yield templ.generate(noname, mapping)
         return
     if name not in templ:
         if isinstance(values[0], bytes):
@@ -203,7 +202,7 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
         return
     startname = 'start_' + plural
     if startname in templ:
-        yield templ(startname, **strmapping)
+        yield templ.generate(startname, mapping)
     vmapping = mapping.copy()
     def one(v, tag=name):
         try:
@@ -218,7 +217,7 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
                     vmapping[a] = b
             except (TypeError, ValueError):
                 vmapping[name] = v
-        return templ(tag, **pycompat.strkwargs(vmapping))
+        return templ.generate(tag, vmapping)
     lastname = 'last_' + name
     if lastname in templ:
         last = values.pop()
@@ -230,7 +229,7 @@ def _showlist(name, values, templ, mapping, plural=None, separator=' '):
         yield one(last, tag=lastname)
     endname = 'end_' + plural
     if endname in templ:
-        yield templ(endname, **strmapping)
+        yield templ.generate(endname, mapping)
 
 def stringify(thing):
     """Turn values into bytes by converting into text and concatenating them"""

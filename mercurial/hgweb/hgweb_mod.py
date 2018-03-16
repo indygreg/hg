@@ -198,7 +198,8 @@ class requestcontext(object):
 
     def sendtemplate(self, name, **kwargs):
         """Helper function to send a response generated from a template."""
-        self.res.setbodygen(self.tmpl(name, **kwargs))
+        kwargs = pycompat.byteskwargs(kwargs)
+        self.res.setbodygen(self.tmpl.generate(name, kwargs))
         return self.res.sendresponse()
 
 class hgweb(object):

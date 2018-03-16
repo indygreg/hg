@@ -294,12 +294,13 @@ def _search(web):
             files = webutil.listfilediffs(web.tmpl, ctx.files(), n,
                                           web.maxfiles)
 
-            yield web.tmpl(
-                'searchentry',
-                parity=next(parity),
-                changelogtag=showtags,
-                files=files,
-                **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
+            lm = webutil.commonentry(web.repo, ctx)
+            lm.update({
+                'parity': next(parity),
+                'changelogtag': showtags,
+                'files': files,
+            })
+            yield web.tmpl.generate('searchentry', lm)
 
             if count >= revcount:
                 break
@@ -719,12 +720,12 @@ def summary(web):
             if count > 10: # limit to 10 tags
                 break
 
-            yield web.tmpl(
-                'tagentry',
-                parity=next(parity),
-                tag=k,
-                node=hex(n),
-                date=web.repo[n].date())
+            yield web.tmpl.generate('tagentry', {
+                'parity': next(parity),
+                'tag': k,
+                'node': hex(n),
+                'date': web.repo[n].date(),
+            })
 
     def bookmarks(**map):
         parity = paritygen(web.stripecount)
@@ -745,11 +746,9 @@ def summary(web):
             revs = web.repo.changelog.revs(start, end - 1)
         for i in revs:
             ctx = web.repo[i]
-
-            l.append(web.tmpl(
-                'shortlogentry',
-                parity=next(parity),
-                **pycompat.strkwargs(webutil.commonentry(web.repo, ctx))))
+            lm = webutil.commonentry(web.repo, ctx)
+            lm['parity'] = next(parity)
+            l.append(web.tmpl.generate('shortlogentry', lm))
 
         for entry in reversed(l):
             yield entry

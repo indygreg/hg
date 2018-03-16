@@ -367,7 +367,7 @@ def succsandmarkers(context, mapping):
         yield item
 
 # teach templater succsandmarkers is switched to (context, mapping) API
-succsandmarkers._requires = {'repo', 'ctx', 'templ'}
+succsandmarkers._requires = {'repo', 'ctx'}
 
 def whyunstable(context, mapping):
     repo = context.resource(mapping, 'repo')
@@ -379,7 +379,7 @@ def whyunstable(context, mapping):
             entry['divergentnodes'] = _siblings(entry['divergentnodes'])
         yield entry
 
-whyunstable._requires = {'repo', 'ctx', 'templ'}
+whyunstable._requires = {'repo', 'ctx'}
 
 def commonentry(repo, ctx):
     node = ctx.node()

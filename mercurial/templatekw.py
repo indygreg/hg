@@ -231,18 +231,17 @@ def showbranches(context, mapping):
                           plural='branches')
     return compatlist(context, mapping, 'branch', [], plural='branches')
 
-@templatekeyword('bookmarks', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('bookmarks', requires={'repo', 'ctx'})
 def showbookmarks(context, mapping):
     """List of strings. Any bookmarks associated with the
     changeset. Also sets 'active', the name of the active bookmark.
     """
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
-    templ = context.resource(mapping, 'templ')
     bookmarks = ctx.bookmarks()
     active = repo._activebookmark
     makemap = lambda v: {'bookmark': v, 'active': active, 'current': active}
-    f = _showlist('bookmark', bookmarks, templ, mapping)
+    f = _showcompatlist(context, mapping, 'bookmark', bookmarks)
     return _hybrid(f, bookmarks, makemap, pycompat.identity)
 
 @templatekeyword('children', requires={'ctx'})
@@ -304,17 +303,16 @@ def showenvvars(context, mapping):
     env = util.sortdict((k, env[k]) for k in sorted(env))
     return compatdict(context, mapping, 'envvar', env, plural='envvars')
 
-@templatekeyword('extras', requires={'ctx', 'templ'})
+@templatekeyword('extras', requires={'ctx'})
 def showextras(context, mapping):
     """List of dicts with key, value entries of the 'extras'
     field of this changeset."""
     ctx = context.resource(mapping, 'ctx')
-    templ = context.resource(mapping, 'templ')
     extras = ctx.extra()
     extras = util.sortdict((k, extras[k]) for k in sorted(extras))
     makemap = lambda k: {'key': k, 'value': extras[k]}
     c = [makemap(k) for k in extras]
-    f = _showlist('extra', c, templ, mapping, plural='extras')
+    f = _showcompatlist(context, mapping, 'extra', c, plural='extras')
     return _hybrid(f, extras, makemap,
                    lambda k: '%s=%s' % (k, util.escapestr(extras[k])))
 
@@ -424,7 +422,7 @@ def showindex(context, mapping):
     # just hosts documentation; should be overridden by template mapping
     raise error.Abort(_("can't use index in this context"))
 
-@templatekeyword('latesttag', requires={'repo', 'ctx', 'cache', 'templ'})
+@templatekeyword('latesttag', requires={'repo', 'ctx', 'cache'})
 def showlatesttag(context, mapping):
     """List of strings. The global tags on the most recent globally
     tagged ancestor of this changeset.  If no such tags exist, the list
@@ -447,8 +445,7 @@ def showlatesttags(context, mapping, pattern):
     }
 
     tags = latesttags[2]
-    templ = context.resource(mapping, 'templ')
-    f = _showlist('latesttag', tags, templ, mapping, separator=':')
+    f = _showcompatlist(context, mapping, 'latesttag', tags, separator=':')
     return _hybrid(f, tags, makemap, pycompat.identity)
 
 @templatekeyword('latesttagdistance', requires={'repo', 'ctx', 'cache'})
@@ -497,7 +494,7 @@ def showmanifest(context, mapping):
     # rev and node are completely different from changeset's.
     return _mappable(f, None, f, lambda x: {'rev': mrev, 'node': mhex})
 
-@templatekeyword('obsfate', requires={'ui', 'repo', 'ctx', 'templ'})
+@templatekeyword('obsfate', requires={'ui', 'repo', 'ctx'})
 def showobsfate(context, mapping):
     # this function returns a list containing pre-formatted obsfate strings.
     #
@@ -522,13 +519,12 @@ def shownames(context, mapping, namespace):
     return compatlist(context, mapping, ns.templatename, names,
                       plural=namespace)
 
-@templatekeyword('namespaces', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('namespaces', requires={'repo', 'ctx'})
 def shownamespaces(context, mapping):
     """Dict of lists. Names attached to this changeset per
     namespace."""
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
-    templ = context.resource(mapping, 'templ')
 
     namespaces = util.sortdict()
     def makensmapfn(ns):
@@ -537,10 +533,10 @@ def shownamespaces(context, mapping):
 
     for k, ns in repo.names.iteritems():
         names = ns.names(repo, ctx.node())
-        f = _showlist('name', names, templ, mapping)
+        f = _showcompatlist(context, mapping, 'name', names)
         namespaces[k] = _hybrid(f, names, makensmapfn(ns), pycompat.identity)
 
-    f = _showlist('namespace', list(namespaces), templ, mapping)
+    f = _showcompatlist(context, mapping, 'namespace', list(namespaces))
 
     def makemap(ns):
         return {
@@ -633,7 +629,7 @@ def showsuccessorssets(context, mapping):
     return _hybrid(gen(data), data, lambda x: {'successorset': x},
                    pycompat.identity)
 
-@templatekeyword("succsandmarkers", requires={'repo', 'ctx', 'templ'})
+@templatekeyword("succsandmarkers", requires={'repo', 'ctx'})
 def showsuccsandmarkers(context, mapping):
     """Returns a list of dict for each final successor of ctx. The dict
     contains successors node id in "successors" keys and the list of
@@ -642,7 +638,6 @@ def showsuccsandmarkers(context, mapping):
     """
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
-    templ = context.resource(mapping, 'templ')
 
     values = obsutil.successorsandmarkers(repo, ctx)
 
@@ -673,7 +668,7 @@ def showsuccsandmarkers(context, mapping):
 
         data.append({'successors': successors, 'markers': finalmarkers})
 
-    f = _showlist('succsandmarkers', data, templ, mapping)
+    f = _showcompatlist(context, mapping, 'succsandmarkers', data)
     return _hybrid(f, data, lambda x: x, pycompat.identity)
 
 @templatekeyword('p1rev', requires={'ctx'})
@@ -706,21 +701,20 @@ def showp2node(context, mapping):
     ctx = context.resource(mapping, 'ctx')
     return ctx.p2().hex()
 
-@templatekeyword('parents', requires={'repo', 'ctx', 'templ'})
+@templatekeyword('parents', requires={'repo', 'ctx'})
 def showparents(context, mapping):
     """List of strings. The parents of the changeset in "rev:node"
     format. If the changeset has only one "natural" parent (the predecessor
     revision) nothing is shown."""
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
-    templ = context.resource(mapping, 'templ')
     pctxs = scmutil.meaningfulparents(repo, ctx)
     prevs = [p.rev() for p in pctxs]
     parents = [[('rev', p.rev()),
                 ('node', p.hex()),
                 ('phase', p.phasestr())]
                for p in pctxs]
-    f = _showlist('parent', parents, templ, mapping)
+    f = _showcompatlist(context, mapping, 'parent', parents)
     return _hybrid(f, prevs, lambda x: {'ctx': repo[x], 'revcache': {}},
                    lambda x: scmutil.formatchangeid(repo[x]), keytype=int)
 
@@ -746,8 +740,7 @@ def showrevslist(context, mapping, name, revs):
     """helper to generate a list of revisions in which a mapped template will
     be evaluated"""
     repo = context.resource(mapping, 'repo')
-    templ = context.resource(mapping, 'templ')
-    f = _showlist(name, ['%d' % r for r in revs], templ, mapping)
+    f = _showcompatlist(context, mapping, name, ['%d' % r for r in revs])
     return _hybrid(f, revs,
                    lambda x: {name: x, 'ctx': repo[x], 'revcache': {}},
                    pycompat.identity, keytype=int)

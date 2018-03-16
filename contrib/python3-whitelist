@@ -388,6 +388,7 @@ test-subrepo.t
 test-symlinks.t
 test-tag.t
 test-tags.t
+test-template-engine.t
 test-treemanifest.t
 test-unamend.t
 test-uncommit.t

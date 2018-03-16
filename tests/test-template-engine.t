@@ -2,6 +2,7 @@
   $ cat > engine.py << EOF
   > 
   > from mercurial import (
+  >     pycompat,
   >     templater,
   >     templateutil,
   > )
@@ -15,19 +16,20 @@
   >         props = self._defaults.copy()
   >         props.update(map)
   >         for k, v in props.items():
-  >             if k in ('templ', 'ctx', 'repo', 'revcache', 'cache', 'troubles'):
+  >             if k in (b'templ', b'ctx', b'repo', b'revcache', b'cache',
+  >                      b'troubles'):
   >                 continue
   >             if callable(v) and getattr(v, '_requires', None) is None:
   >                 props = self._resources.copy()
   >                 props.update(map)
-  >                 v = v(**props)
+  >                 v = v(**pycompat.strkwargs(props))
   >             elif callable(v):
   >                 v = v(self, props)
   >             v = templateutil.stringify(v)
-  >             tmpl = tmpl.replace('{{%s}}' % k, v)
+  >             tmpl = tmpl.replace(b'{{%s}}' % k, v)
   >         yield tmpl
   > 
-  > templater.engines['my'] = mytemplater
+  > templater.engines[b'my'] = mytemplater
   > EOF
   $ hg init test
   $ echo '[extensions]' > test/.hg/hgrc

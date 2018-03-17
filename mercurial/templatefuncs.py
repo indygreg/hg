@@ -283,7 +283,8 @@ def ifcontains(context, mapping, args):
     keytype = getattr(haystack, 'keytype', None)
     try:
         needle = evalrawexp(context, mapping, args[0])
-        needle = templateutil.unwrapastype(needle, keytype or bytes)
+        needle = templateutil.unwrapastype(context, mapping, needle,
+                                           keytype or bytes)
         found = (needle in haystack)
     except error.ParseError:
         found = False

@@ -120,7 +120,7 @@ def hybridlist(data, name, fmt=None, gen=None):
         prefmt = pycompat.bytestr
     return hybrid(gen, data, lambda x: {name: x}, lambda x: fmt % prefmt(x))
 
-def unwraphybrid(thing):
+def unwraphybrid(context, mapping, thing):
     """Return an object which can be stringified possibly by using a legacy
     template"""
     gen = getattr(thing, 'gen', None)
@@ -241,9 +241,9 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
     if context.preload(endname):
         yield context.process(endname, mapping)
 
-def flatten(thing):
+def flatten(context, mapping, thing):
     """Yield a single stream from a possibly nested set of iterators"""
-    thing = unwraphybrid(thing)
+    thing = unwraphybrid(context, mapping, thing)
     if isinstance(thing, bytes):
         yield thing
     elif isinstance(thing, str):
@@ -257,7 +257,7 @@ def flatten(thing):
         yield pycompat.bytestr(thing)
     else:
         for i in thing:
-            i = unwraphybrid(i)
+            i = unwraphybrid(context, mapping, i)
             if isinstance(i, bytes):
                 yield i
             elif i is None:
@@ -265,14 +265,14 @@ def flatten(thing):
             elif not util.safehasattr(i, '__iter__'):
                 yield pycompat.bytestr(i)
             else:
-                for j in flatten(i):
+                for j in flatten(context, mapping, i):
                     yield j
 
-def stringify(thing):
+def stringify(context, mapping, thing):
     """Turn values into bytes by converting into text and concatenating them"""
     if isinstance(thing, bytes):
         return thing  # retain localstr to be round-tripped
-    return b''.join(flatten(thing))
+    return b''.join(flatten(context, mapping, thing))
 
 def findsymbolicname(arg):
     """Find symbolic name for the given compiled expression; returns None
@@ -294,17 +294,17 @@ def evalrawexp(context, mapping, arg):
 
 def evalfuncarg(context, mapping, arg):
     """Evaluate given argument as value type"""
-    return _unwrapvalue(evalrawexp(context, mapping, arg))
+    return _unwrapvalue(context, mapping, evalrawexp(context, mapping, arg))
 
 # TODO: unify this with unwrapvalue() once the bug of templatefunc.join()
 # is fixed. we can't do that right now because join() has to take a generator
 # of byte strings as it is, not a lazy byte string.
-def _unwrapvalue(thing):
+def _unwrapvalue(context, mapping, thing):
     thing = unwrapvalue(thing)
     # evalrawexp() may return string, generator of strings or arbitrary object
     # such as date tuple, but filter does not want generator.
     if isinstance(thing, types.GeneratorType):
-        thing = stringify(thing)
+        thing = stringify(context, mapping, thing)
     return thing
 
 def evalboolean(context, mapping, arg):
@@ -322,15 +322,16 @@ def evalboolean(context, mapping, arg):
         return thing
     # other objects are evaluated as strings, which means 0 is True, but
     # empty dict/list should be False as they are expected to be ''
-    return bool(stringify(thing))
+    return bool(stringify(context, mapping, thing))
 
 def evaldate(context, mapping, arg, err=None):
     """Evaluate given argument as a date tuple or a date string; returns
     a (unixtime, offset) tuple"""
-    return unwrapdate(evalrawexp(context, mapping, arg), err)
+    thing = evalrawexp(context, mapping, arg)
+    return unwrapdate(context, mapping, thing, err)
 
-def unwrapdate(thing, err=None):
-    thing = _unwrapvalue(thing)
+def unwrapdate(context, mapping, thing, err=None):
+    thing = _unwrapvalue(context, mapping, thing)
     try:
         return dateutil.parsedate(thing)
     except AttributeError:
@@ -341,17 +342,18 @@ def unwrapdate(thing, err=None):
         raise error.ParseError(err)
 
 def evalinteger(context, mapping, arg, err=None):
-    return unwrapinteger(evalrawexp(context, mapping, arg), err)
+    thing = evalrawexp(context, mapping, arg)
+    return unwrapinteger(context, mapping, thing, err)
 
-def unwrapinteger(thing, err=None):
-    thing = _unwrapvalue(thing)
+def unwrapinteger(context, mapping, thing, err=None):
+    thing = _unwrapvalue(context, mapping, thing)
     try:
         return int(thing)
     except (TypeError, ValueError):
         raise error.ParseError(err or _('not an integer'))
 
 def evalstring(context, mapping, arg):
-    return stringify(evalrawexp(context, mapping, arg))
+    return stringify(context, mapping, evalrawexp(context, mapping, arg))
 
 def evalstringliteral(context, mapping, arg):
     """Evaluate given argument as string template, but returns symbol name
@@ -361,7 +363,7 @@ def evalstringliteral(context, mapping, arg):
         thing = func(context, mapping, data, default=data)
     else:
         thing = func(context, mapping, data)
-    return stringify(thing)
+    return stringify(context, mapping, thing)
 
 _unwrapfuncbytype = {
     None: _unwrapvalue,
@@ -370,13 +372,13 @@ _unwrapfuncbytype = {
     int: unwrapinteger,
 }
 
-def unwrapastype(thing, typ):
+def unwrapastype(context, mapping, thing, typ):
     """Move the inner value object out of the wrapper and coerce its type"""
     try:
         f = _unwrapfuncbytype[typ]
     except KeyError:
         raise error.ProgrammingError('invalid type specified: %r' % typ)
-    return f(thing)
+    return f(context, mapping, thing)
 
 def runinteger(context, mapping, data):
     return int(data)
@@ -425,8 +427,9 @@ def runtemplate(context, mapping, template):
 def runfilter(context, mapping, data):
     arg, filt = data
     thing = evalrawexp(context, mapping, arg)
+    intype = getattr(filt, '_intype', None)
     try:
-        thing = unwrapastype(thing, getattr(filt, '_intype', None))
+        thing = unwrapastype(context, mapping, thing, intype)
         return filt(thing)
     except error.ParseError as e:
         raise error.ParseError(bytes(e), hint=_formatfiltererror(arg, filt))

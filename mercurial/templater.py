@@ -679,7 +679,7 @@ class engine(object):
         if extramapping:
             extramapping.update(mapping)
             mapping = extramapping
-        return templateutil.flatten(func(self, mapping, data))
+        return templateutil.flatten(self, mapping, func(self, mapping, data))
 
 engines = {'default': engine}
 

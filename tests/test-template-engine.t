@@ -24,7 +24,7 @@
   >                 v = v(**pycompat.strkwargs(props))
   >             elif callable(v):
   >                 v = v(self, props)
-  >             v = templateutil.stringify(v)
+  >             v = templateutil.stringify(self, props, v)
   >             tmpl = tmpl.replace(b'{{%s}}' % k, v)
   >         yield tmpl
   > 

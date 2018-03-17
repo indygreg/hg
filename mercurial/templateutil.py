@@ -61,12 +61,13 @@ class hybrid(wrapped):
 
     def __init__(self, gen, values, makemap, joinfmt, keytype=None):
         if gen is not None:
-            self.gen = gen  # generator or function returning generator
+            self._gen = gen  # generator or function returning generator
         self._values = values
         self._makemap = makemap
         self.joinfmt = joinfmt
         self.keytype = keytype  # hint for 'x in y' where type(x) is unresolved
-    def gen(self):
+
+    def _gen(self):
         """Default generator to stringify this as {join(self, ' ')}"""
         for i, x in enumerate(self._values):
             if i > 0:
@@ -79,7 +80,7 @@ class hybrid(wrapped):
 
     def show(self, context, mapping):
         # TODO: switch gen to (context, mapping) API?
-        gen = self.gen
+        gen = self._gen
         if callable(gen):
             return gen()
         return gen
@@ -113,12 +114,12 @@ class mappable(wrapped):
 
     def __init__(self, gen, key, value, makemap):
         if gen is not None:
-            self.gen = gen  # generator or function returning generator
+            self._gen = gen  # generator or function returning generator
         self._key = key
         self._value = value  # may be generator of strings
         self._makemap = makemap
 
-    def gen(self):
+    def _gen(self):
         yield pycompat.bytestr(self._value)
 
     def tomap(self):
@@ -129,7 +130,7 @@ class mappable(wrapped):
 
     def show(self, context, mapping):
         # TODO: switch gen to (context, mapping) API?
-        gen = self.gen
+        gen = self._gen
         if callable(gen):
             return gen()
         return gen

@@ -2455,7 +2455,7 @@ def debugtemplate(ui, repo, tmpl, **opts):
     if revs is None:
         tres = formatter.templateresources(ui, repo)
         t = formatter.maketemplater(ui, tmpl, resources=tres)
-        ui.write(t.render(props))
+        ui.write(t.renderdefault(props))
     else:
         displayer = logcmdutil.maketemplater(ui, repo, tmpl)
         for r in revs:

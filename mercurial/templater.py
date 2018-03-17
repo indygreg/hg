@@ -723,7 +723,7 @@ class templater(object):
                 raise IOError(inst.args[0], encoding.strfromlocal(reason))
         return self.cache[t]
 
-    def render(self, mapping):
+    def renderdefault(self, mapping):
         """Render the default unnamed template and return result as string"""
         mapping = pycompat.strkwargs(mapping)
         return templateutil.stringify(self('', **mapping))

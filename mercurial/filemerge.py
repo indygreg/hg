@@ -563,7 +563,7 @@ def _formatconflictmarker(ctx, template, label, pad):
         ctx = ctx.p1()
 
     props = {'ctx': ctx}
-    templateresult = template.render(props)
+    templateresult = template.renderdefault(props)
 
     label = ('%s:' % label).ljust(pad + 1)
     mark = '%s %s' % (label, templateresult)

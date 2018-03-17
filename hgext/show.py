@@ -260,7 +260,7 @@ def showstack(ui, repo, displayer):
     shortesttmpl = formatter.maketemplater(ui, '{shortest(node, %d)}' % nodelen,
                                            resources=tres)
     def shortest(ctx):
-        return shortesttmpl.render({'ctx': ctx, 'node': ctx.hex()})
+        return shortesttmpl.renderdefault({'ctx': ctx, 'node': ctx.hex()})
 
     # We write out new heads to aid in DAG awareness and to help with decision
     # making on how the stack should be reconciled with commits made since the

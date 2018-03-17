@@ -907,7 +907,7 @@ def rendertemplate(ctx, tmpl, props=None):
     mapping = {'ctx': ctx, 'revcache': {}}
     if props:
         mapping.update(props)
-    return t.render(mapping)
+    return t.renderdefault(mapping)
 
 def _buildfntemplate(pat, total=None, seqno=None, revwidth=None, pathname=None):
     r"""Convert old-style filename format string to template string

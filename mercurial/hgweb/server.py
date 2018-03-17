@@ -112,6 +112,9 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             self.log_error(r"Exception happened during processing "
                            r"request '%s':%s%s", self.path, newline, tb)
 
+    def do_PUT(self):
+        self.do_POST()
+
     def do_GET(self):
         self.do_POST()
 

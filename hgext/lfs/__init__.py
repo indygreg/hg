@@ -148,10 +148,12 @@ from mercurial import (
     util,
     vfs as vfsmod,
     wireproto,
+    wireprotoserver,
 )
 
 from . import (
     blobstore,
+    wireprotolfsserver,
     wrapper,
 )
 
@@ -314,6 +316,8 @@ def extsetup(ui):
 
     wrapfunction(exchange, 'push', wrapper.push)
     wrapfunction(wireproto, '_capabilities', wrapper._capabilities)
+    wrapfunction(wireprotoserver, 'handlewsgirequest',
+                 wireprotolfsserver.handlewsgirequest)
 
     wrapfunction(context.basefilectx, 'cmp', wrapper.filectxcmp)
     wrapfunction(context.basefilectx, 'isbinary', wrapper.filectxisbinary)

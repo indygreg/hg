@@ -61,8 +61,13 @@ def checkauthz(hgweb, req, op):
     elif op == 'pull' or op is None: # op is None for interface requests
         return
 
+    # Allow LFS uploading via PUT requests
+    if op == 'upload':
+        if req.method != 'PUT':
+            msg = 'upload requires PUT request'
+            raise ErrorResponse(HTTP_METHOD_NOT_ALLOWED, msg)
     # enforce that you can only push using POST requests
-    if req.method != 'POST':
+    elif req.method != 'POST':
         msg = 'push requires POST request'
         raise ErrorResponse(HTTP_METHOD_NOT_ALLOWED, msg)
 
@@ -81,7 +86,7 @@ def checkauthz(hgweb, req, op):
 
 # Hooks for hgweb permission checks; extensions can add hooks here.
 # Each hook is invoked like this: hook(hgweb, request, operation),
-# where operation is either read, pull or push. Hooks should either
+# where operation is either read, pull, push or upload. Hooks should either
 # raise an ErrorResponse exception, or just return.
 #
 # It is possible to do both authentication and authorization through

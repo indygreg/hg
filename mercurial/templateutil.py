@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import abc
 import types
 
 from .i18n import _
@@ -26,12 +27,27 @@ class ResourceUnavailable(error.Abort):
 class TemplateNotFound(error.Abort):
     pass
 
+class wrapped(object):
+    """Object requiring extra conversion prior to displaying or processing
+    as value"""
+
+    __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def show(self, context, mapping):
+        """Return a bytes or (possibly nested) generator of bytes representing
+        the underlying object
+
+        A pre-configured template may be rendered if the underlying object is
+        not printable.
+        """
+
 # stub for representing a date type; may be a real date type that can
 # provide a readable string value
 class date(object):
     pass
 
-class hybrid(object):
+class hybrid(wrapped):
     """Wrapper for list or dict to support legacy template
 
     This class allows us to handle both:
@@ -60,6 +76,14 @@ class hybrid(object):
         makemap = self._makemap
         for x in self._values:
             yield makemap(x)
+
+    def show(self, context, mapping):
+        # TODO: switch gen to (context, mapping) API?
+        gen = self.gen
+        if callable(gen):
+            return gen()
+        return gen
+
     def __contains__(self, x):
         return x in self._values
     def __getitem__(self, key):
@@ -74,7 +98,7 @@ class hybrid(object):
             raise AttributeError(name)
         return getattr(self._values, name)
 
-class mappable(object):
+class mappable(wrapped):
     """Wrapper for non-list/dict object to support map operation
 
     This class allows us to handle both:
@@ -103,6 +127,13 @@ class mappable(object):
     def itermaps(self):
         yield self.tomap()
 
+    def show(self, context, mapping):
+        # TODO: switch gen to (context, mapping) API?
+        gen = self.gen
+        if callable(gen):
+            return gen()
+        return gen
+
 def hybriddict(data, key='key', value='value', fmt=None, gen=None):
     """Wrap data to support both dict-like and string-like operations"""
     prefmt = pycompat.identity
@@ -123,12 +154,9 @@ def hybridlist(data, name, fmt=None, gen=None):
 def unwraphybrid(context, mapping, thing):
     """Return an object which can be stringified possibly by using a legacy
     template"""
-    gen = getattr(thing, 'gen', None)
-    if gen is None:
+    if not isinstance(thing, wrapped):
         return thing
-    if callable(gen):
-        return gen()
-    return gen
+    return thing.show(context, mapping)
 
 def unwrapvalue(thing):
     """Move the inner value object out of the wrapper"""

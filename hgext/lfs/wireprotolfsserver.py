@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import datetime
 import errno
 import json
+import os
 
 from mercurial.hgweb import (
     common as hgwebcommon,
@@ -20,6 +21,7 @@ from mercurial import (
 )
 
 HTTP_OK = hgwebcommon.HTTP_OK
+HTTP_CREATED = hgwebcommon.HTTP_CREATED
 HTTP_BAD_REQUEST = hgwebcommon.HTTP_BAD_REQUEST
 
 def handlewsgirequest(orig, rctx, req, res, checkperm):
@@ -237,10 +239,46 @@ def _processbasictransfer(repo, req, res, checkperm):
     """
 
     method = req.method
+    oid = os.path.basename(req.dispatchpath)
+    localstore = repo.svfs.lfslocalblobstore
 
     if method == b'PUT':
         checkperm('upload')
+
+        # TODO: verify Content-Type?
+
+        existed = localstore.has(oid)
+
+        # TODO: how to handle timeouts?  The body proxy handles limiting to
+        #       Content-Length, but what happens if a client sends less than it
+        #       says it will?
+
+        # TODO: download() will abort if the checksum fails.  It should raise
+        #       something checksum specific that can be caught here, and turned
+        #       into an http code.
+        localstore.download(oid, req.bodyfh)
+
+        statusmessage = hgwebcommon.statusmessage
+        res.status = statusmessage(HTTP_OK if existed else HTTP_CREATED)
+
+        # There's no payload here, but this is the header that lfs-test-server
+        # sends back.  This eliminates some gratuitous test output conditionals.
+        res.headers[b'Content-Type'] = b'text/plain; charset=utf-8'
+        res.setbodybytes(b'')
+
+        return True
     elif method == b'GET':
         checkperm('pull')
 
-    return False
+        res.status = hgwebcommon.statusmessage(HTTP_OK)
+        res.headers[b'Content-Type'] = b'application/octet-stream'
+
+        # TODO: figure out how to send back the file in chunks, instead of
+        #       reading the whole thing.
+        res.setbodybytes(localstore.read(oid))
+
+        return True
+    else:
+        _sethttperror(res, HTTP_BAD_REQUEST,
+                      message=b'Unsupported LFS transfer method: %s' % method)
+        return True

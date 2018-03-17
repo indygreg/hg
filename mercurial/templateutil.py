@@ -113,14 +113,10 @@ class mappable(wrapped):
     """
 
     def __init__(self, gen, key, value, makemap):
-        if gen is not None:
-            self._gen = gen  # generator or function returning generator
+        self._gen = gen  # generator or function returning generator
         self._key = key
         self._value = value  # may be generator of strings
         self._makemap = makemap
-
-    def _gen(self):
-        yield pycompat.bytestr(self._value)
 
     def tomap(self):
         return self._makemap(self._key)
@@ -131,6 +127,8 @@ class mappable(wrapped):
     def show(self, context, mapping):
         # TODO: switch gen to (context, mapping) API?
         gen = self._gen
+        if gen is None:
+            return pycompat.bytestr(self._value)
         if callable(gen):
             return gen()
         return gen

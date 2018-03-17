@@ -815,7 +815,7 @@ class templater(object):
 
     def render(self, t, mapping):
         """Render the specified named template and return result as string"""
-        return templateutil.stringify(self.generate(t, mapping))
+        return b''.join(self.generate(t, mapping))
 
     def generate(self, t, mapping):
         """Return a generator that renders the specified named template and

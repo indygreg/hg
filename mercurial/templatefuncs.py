@@ -316,16 +316,16 @@ def join(context, mapping, args):
         # i18n: "join" is a keyword
         raise error.ParseError(_("join expects one or two arguments"))
 
-    # TODO: perhaps this should be evalfuncarg(), but it can't because hgweb
-    # abuses generator as a keyword that returns a list of dicts.
     joinset = evalrawexp(context, mapping, args[0])
-    joinset = templateutil.unwrapvalue(context, mapping, joinset)
-    joinfmt = getattr(joinset, 'joinfmt', pycompat.identity)
     joiner = " "
     if len(args) > 1:
         joiner = evalstring(context, mapping, args[1])
-    itemiter = (joinfmt(x) for x in pycompat.maybebytestr(joinset))
-    return templateutil.joinitems(itemiter, joiner)
+    if isinstance(joinset, templateutil.wrapped):
+        return joinset.join(context, mapping, joiner)
+    # TODO: perhaps a generator should be stringify()-ed here, but we can't
+    # because hgweb abuses it as a keyword that returns a list of dicts.
+    joinset = templateutil.unwrapvalue(context, mapping, joinset)
+    return templateutil.joinitems(pycompat.maybebytestr(joinset), joiner)
 
 @templatefunc('label(label, expr)')
 def label(context, mapping, args):

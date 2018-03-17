@@ -75,19 +75,12 @@ class hybrid(wrapped):
     """
 
     def __init__(self, gen, values, makemap, joinfmt, keytype=None):
-        if gen is not None:
-            self._gen = gen  # generator or function returning generator
+        self._gen = gen  # generator or function returning generator
         self._values = values
         self._makemap = makemap
         self.joinfmt = joinfmt
         self.keytype = keytype  # hint for 'x in y' where type(x) is unresolved
 
-    def _gen(self):
-        """Default generator to stringify this as {join(self, ' ')}"""
-        for i, x in enumerate(self._values):
-            if i > 0:
-                yield ' '
-            yield self.joinfmt(x)
     def itermaps(self, context):
         makemap = self._makemap
         for x in self._values:
@@ -96,6 +89,8 @@ class hybrid(wrapped):
     def show(self, context, mapping):
         # TODO: switch gen to (context, mapping) API?
         gen = self._gen
+        if gen is None:
+            return joinitems((self.joinfmt(x) for x in self._values), ' ')
         if callable(gen):
             return gen()
         return gen
@@ -556,3 +551,13 @@ def getdictitem(dictarg, key):
     if val is None:
         return
     return wraphybridvalue(dictarg, key, val)
+
+def joinitems(itemiter, sep):
+    """Join items with the separator; Returns generator of bytes"""
+    first = True
+    for x in itemiter:
+        if first:
+            first = False
+        else:
+            yield sep
+        yield x

@@ -324,14 +324,8 @@ def join(context, mapping, args):
     joiner = " "
     if len(args) > 1:
         joiner = evalstring(context, mapping, args[1])
-
-    first = True
-    for x in pycompat.maybebytestr(joinset):
-        if first:
-            first = False
-        else:
-            yield joiner
-        yield joinfmt(x)
+    itemiter = (joinfmt(x) for x in pycompat.maybebytestr(joinset))
+    return templateutil.joinitems(itemiter, joiner)
 
 @templatefunc('label(label, expr)')
 def label(context, mapping, args):

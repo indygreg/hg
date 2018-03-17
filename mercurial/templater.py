@@ -402,7 +402,7 @@ def _buildfuncargs(exp, context, curmethods, funcname, argspec):
     """Compile parsed tree of function arguments into list or dict of
     (func, data) pairs
 
-    >>> context = engine(lambda t: (runsymbol, t))
+    >>> context = engine(lambda t: (templateutil.runsymbol, t))
     >>> def fargs(expr, argspec):
     ...     x = _parseexpr(expr)
     ...     n = getsymbol(x[1])

@@ -29,7 +29,11 @@ class TemplateNotFound(error.Abort):
 
 class wrapped(object):
     """Object requiring extra conversion prior to displaying or processing
-    as value"""
+    as value
+
+    Use unwrapvalue(), unwrapastype(), or unwraphybrid() to obtain the inner
+    object.
+    """
 
     __metaclass__ = abc.ABCMeta
 
@@ -40,6 +44,13 @@ class wrapped(object):
 
         A pre-configured template may be rendered if the underlying object is
         not printable.
+        """
+
+    @abc.abstractmethod
+    def tovalue(self, context, mapping):
+        """Move the inner value object out or create a value representation
+
+        A returned value must be serializable by templaterfilters.json().
         """
 
 # stub for representing a date type; may be a real date type that can
@@ -85,6 +96,10 @@ class hybrid(wrapped):
             return gen()
         return gen
 
+    def tovalue(self, context, mapping):
+        # TODO: return self._values and get rid of proxy methods
+        return self
+
     def __contains__(self, x):
         return x in self._values
     def __getitem__(self, key):
@@ -108,8 +123,7 @@ class mappable(wrapped):
     - "{manifest.rev}"
 
     Unlike a hybrid, this does not simulate the behavior of the underling
-    value. Use unwrapvalue(), unwrapastype(), or unwraphybrid() to obtain
-    the inner object.
+    value.
     """
 
     def __init__(self, gen, key, value, makemap):
@@ -132,6 +146,9 @@ class mappable(wrapped):
         if callable(gen):
             return gen()
         return gen
+
+    def tovalue(self, context, mapping):
+        return _unthunk(context, mapping, self._value)
 
 def hybriddict(data, key='key', value='value', fmt=None, gen=None):
     """Wrap data to support both dict-like and string-like operations"""
@@ -159,9 +176,9 @@ def unwraphybrid(context, mapping, thing):
 
 def unwrapvalue(context, mapping, thing):
     """Move the inner value object out of the wrapper"""
-    if not util.safehasattr(thing, '_value'):
+    if not isinstance(thing, wrapped):
         return thing
-    return thing._value
+    return thing.tovalue(context, mapping)
 
 def wraphybridvalue(container, key, value):
     """Wrap an element of hybrid container to be mappable

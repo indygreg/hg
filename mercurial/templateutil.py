@@ -200,7 +200,14 @@ class _mappingsequence(wrapped):
         return self.join(context, mapping, self._defaultsep)
 
     def tovalue(self, context, mapping):
-        return list(self.itermaps(context))
+        knownres = context.knownresourcekeys()
+        items = []
+        for nm in self.itermaps(context):
+            # drop internal resources (recursively) which shouldn't be displayed
+            lm = context.overlaymap(mapping, nm)
+            items.append({k: unwrapvalue(context, lm, v)
+                          for k, v in nm.iteritems() if k not in knownres})
+        return items
 
 class mappinggenerator(_mappingsequence):
     """Wrapper for generator of template mappings

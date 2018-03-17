@@ -105,6 +105,8 @@ default output of '{lines}' should be readable
 
 several filters can be applied to '{lines}'
 
+  $ hg annotate -T'{lines|json}\n' a
+  [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}]
   $ hg annotate -T'{lines|stringify}' a
   0: a
   1: a

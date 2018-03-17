@@ -87,7 +87,7 @@ class hybrid(wrapped):
         self._gen = gen  # generator or function returning generator
         self._values = values
         self._makemap = makemap
-        self.joinfmt = joinfmt
+        self._joinfmt = joinfmt
         self.keytype = keytype  # hint for 'x in y' where type(x) is unresolved
 
     def itermaps(self, context):
@@ -97,7 +97,7 @@ class hybrid(wrapped):
 
     def join(self, context, mapping, sep):
         # TODO: switch gen to (context, mapping) API?
-        return joinitems((self.joinfmt(x) for x in self._values), sep)
+        return joinitems((self._joinfmt(x) for x in self._values), sep)
 
     def show(self, context, mapping):
         # TODO: switch gen to (context, mapping) API?

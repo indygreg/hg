@@ -234,6 +234,33 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
     if context.preload(endname):
         yield context.process(endname, mapping)
 
+def flatten(thing):
+    """Yield a single stream from a possibly nested set of iterators"""
+    thing = unwraphybrid(thing)
+    if isinstance(thing, bytes):
+        yield thing
+    elif isinstance(thing, str):
+        # We can only hit this on Python 3, and it's here to guard
+        # against infinite recursion.
+        raise error.ProgrammingError('Mercurial IO including templates is done'
+                                     ' with bytes, not strings, got %r' % thing)
+    elif thing is None:
+        pass
+    elif not util.safehasattr(thing, '__iter__'):
+        yield pycompat.bytestr(thing)
+    else:
+        for i in thing:
+            i = unwraphybrid(i)
+            if isinstance(i, bytes):
+                yield i
+            elif i is None:
+                pass
+            elif not util.safehasattr(i, '__iter__'):
+                yield pycompat.bytestr(i)
+            else:
+                for j in flatten(i):
+                    yield j
+
 def stringify(thing):
     """Turn values into bytes by converting into text and concatenating them"""
     thing = unwraphybrid(thing)

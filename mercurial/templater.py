@@ -527,33 +527,6 @@ def expandaliases(tree, aliases):
 
 # template engine
 
-def _flatten(thing):
-    '''yield a single stream from a possibly nested set of iterators'''
-    thing = templateutil.unwraphybrid(thing)
-    if isinstance(thing, bytes):
-        yield thing
-    elif isinstance(thing, str):
-        # We can only hit this on Python 3, and it's here to guard
-        # against infinite recursion.
-        raise error.ProgrammingError('Mercurial IO including templates is done'
-                                     ' with bytes, not strings, got %r' % thing)
-    elif thing is None:
-        pass
-    elif not util.safehasattr(thing, '__iter__'):
-        yield pycompat.bytestr(thing)
-    else:
-        for i in thing:
-            i = templateutil.unwraphybrid(i)
-            if isinstance(i, bytes):
-                yield i
-            elif i is None:
-                pass
-            elif not util.safehasattr(i, '__iter__'):
-                yield pycompat.bytestr(i)
-            else:
-                for j in _flatten(i):
-                    yield j
-
 def unquotestring(s):
     '''unwrap quotes if any; otherwise returns unmodified string'''
     if len(s) < 2 or s[0] not in "'\"" or s[0] != s[-1]:
@@ -706,7 +679,7 @@ class engine(object):
         if extramapping:
             extramapping.update(mapping)
             mapping = extramapping
-        return _flatten(func(self, mapping, data))
+        return templateutil.flatten(func(self, mapping, data))
 
 engines = {'default': engine}
 

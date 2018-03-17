@@ -514,8 +514,10 @@ class templateresources(templater.resourcemapper):
         mapping = {}
         if self._hasctx(newmapping):
             mapping['revcache'] = {}  # per-ctx cache
-        if 'node' in origmapping and 'node' in newmapping:
-            mapping['originalnode'] = origmapping['node']
+        if (('node' in origmapping or self._hasctx(origmapping))
+            and ('node' in newmapping or self._hasctx(newmapping))):
+            orignode = templateutil.runsymbol(context, origmapping, 'node')
+            mapping['originalnode'] = orignode
         return mapping
 
     def _getsome(self, context, mapping, key):

@@ -4199,6 +4199,13 @@ Invalid arguments passed to revset()
   hg: parse error: invalid argument for revspec
   [255]
 
+Test 'originalnode'
+
+  $ hg log -r 1 -T '{revset("null") % "{node|short} {originalnode|short}"}\n'
+  000000000000 bcc7ff960b8e
+  $ hg log -r 0 -T '{manifest % "{node} {originalnode}"}\n'
+  a0c8bcbbb45c63b90b70ad007bf38961f64f2af0 f7769ec2ab975ad19684098ad1ffd9b81ecc71a1
+
 Test files function
 
   $ hg log -T "{rev}\n{join(files('*'), '\n')}\n"

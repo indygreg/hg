@@ -613,10 +613,7 @@ def showsuccessorssets(context, mapping):
 
     # Format the successorssets
     def render(d):
-        t = []
-        for i in d.gen():
-            t.append(i)
-        return "".join(t)
+        return templateutil.stringify(context, mapping, d)
 
     def gen(data):
         yield "; ".join(render(d) for d in data)

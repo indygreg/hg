@@ -38,6 +38,10 @@ class wrapped(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
+    def itermaps(self):
+        """Yield each template mapping"""
+
+    @abc.abstractmethod
     def show(self, context, mapping):
         """Return a bytes or (possibly nested) generator of bytes representing
         the underlying object
@@ -493,7 +497,7 @@ def _formatfiltererror(arg, filt):
 def runmap(context, mapping, data):
     darg, targ = data
     d = evalrawexp(context, mapping, darg)
-    if util.safehasattr(d, 'itermaps'):
+    if isinstance(d, wrapped):
         diter = d.itermaps()
     else:
         try:

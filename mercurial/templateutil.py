@@ -170,6 +170,63 @@ class mappable(wrapped):
     def tovalue(self, context, mapping):
         return _unthunk(context, mapping, self._value)
 
+class _mappingsequence(wrapped):
+    """Wrapper for sequence of template mappings
+
+    This represents an inner template structure (i.e. a list of dicts),
+    which can also be rendered by the specified named/literal template.
+
+    Template mappings may be nested.
+    """
+
+    def __init__(self, name=None, tmpl=None, sep=''):
+        if name is not None and tmpl is not None:
+            raise error.ProgrammingError('name and tmpl are mutually exclusive')
+        self._name = name
+        self._tmpl = tmpl
+        self._defaultsep = sep
+
+    def join(self, context, mapping, sep):
+        mapsiter = _iteroverlaymaps(context, mapping, self.itermaps(context))
+        if self._name:
+            itemiter = (context.process(self._name, m) for m in mapsiter)
+        elif self._tmpl:
+            itemiter = (context.expand(self._tmpl, m) for m in mapsiter)
+        else:
+            raise error.ParseError(_('not displayable without template'))
+        return joinitems(itemiter, sep)
+
+    def show(self, context, mapping):
+        return self.join(context, mapping, self._defaultsep)
+
+    def tovalue(self, context, mapping):
+        return list(self.itermaps(context))
+
+class mappinggenerator(_mappingsequence):
+    """Wrapper for generator of template mappings
+
+    The function ``make(context, *args)`` should return a generator of
+    mapping dicts.
+    """
+
+    def __init__(self, make, args=(), name=None, tmpl=None, sep=''):
+        super(mappinggenerator, self).__init__(name, tmpl, sep)
+        self._make = make
+        self._args = args
+
+    def itermaps(self, context):
+        return self._make(context, *self._args)
+
+class mappinglist(_mappingsequence):
+    """Wrapper for list of template mappings"""
+
+    def __init__(self, mappings, name=None, tmpl=None, sep=''):
+        super(mappinglist, self).__init__(name, tmpl, sep)
+        self._mappings = mappings
+
+    def itermaps(self, context):
+        return iter(self._mappings)
+
 def hybriddict(data, key='key', value='value', fmt=None, gen=None):
     """Wrap data to support both dict-like and string-like operations"""
     prefmt = pycompat.identity
@@ -509,6 +566,14 @@ def _formatfiltererror(arg, filt):
         return _("incompatible use of template filter '%s'") % fn
     return (_("template filter '%s' is not compatible with keyword '%s'")
             % (fn, sym))
+
+def _iteroverlaymaps(context, origmapping, newmappings):
+    """Generate combined mappings from the original mapping and an iterable
+    of partial mappings to override the original"""
+    for i, nm in enumerate(newmappings):
+        lm = context.overlaymap(origmapping, nm)
+        lm['index'] = i
+        yield lm
 
 def runmap(context, mapping, data):
     darg, targ = data

@@ -44,6 +44,10 @@ hybrid
 
 mappable
     represents a scalar printable value, also supports % operator.
+
+mappinggenerator, mappinglist
+    represents mappings (i.e. a list of dicts), which may have default
+    output format.
 """
 
 from __future__ import absolute_import, print_function

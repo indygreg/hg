@@ -406,7 +406,6 @@ def runmap(context, mapping, data):
         if isinstance(v, dict):
             lm = context.overlaymap(mapping, v)
             lm['index'] = i
-            lm['originalnode'] = mapping.get('node')
             yield evalrawexp(context, lm, targ)
         else:
             # v is not an iterable of dicts, this happen when 'key'

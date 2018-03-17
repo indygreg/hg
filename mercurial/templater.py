@@ -603,6 +603,7 @@ class engine(object):
         self._resources = resources
         self._aliasmap = _aliasrules.buildmap(aliases)
         self._cache = {}  # key: (func, data)
+        self._tmplcache = {}  # literal template: (func, data)
 
     def overlaymap(self, origmapping, newmapping):
         """Create combined mapping from the original mapping and partial
@@ -659,6 +660,13 @@ class engine(object):
                 raise
         return self._cache[t]
 
+    def _parse(self, tmpl):
+        """Parse and cache a literal template"""
+        if tmpl not in self._tmplcache:
+            x = parse(tmpl)
+            self._tmplcache[tmpl] = compileexp(x, self, methods)
+        return self._tmplcache[tmpl]
+
     def preload(self, t):
         """Load, parse, and cache the specified template if available"""
         try:
@@ -672,6 +680,18 @@ class engine(object):
         mapping contains added elements for use during expansion. Is a
         generator.'''
         func, data = self._load(t)
+        return self._expand(func, data, mapping)
+
+    def expand(self, tmpl, mapping):
+        """Perform expansion over a literal template
+
+        No user aliases will be expanded since this is supposed to be called
+        with an internal template string.
+        """
+        func, data = self._parse(tmpl)
+        return self._expand(func, data, mapping)
+
+    def _expand(self, func, data, mapping):
         # populate additional items only if they don't exist in the given
         # mapping. this is slightly different from overlaymap() because the
         # initial 'revcache' may contain pre-computed items.

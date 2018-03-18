@@ -871,7 +871,7 @@ Renames are followed.
 Binary files work but without diff hunks filtering.
 (Checking w/ and w/o diff.git option.)
 
-  >>> open('binary', 'wb').write('this\nis\na\nbinary\0')
+  >>> open('binary', 'wb').write(b'this\nis\na\nbinary\0') and None
   $ hg add binary
   $ hg ci -m 'add a binary file' --quiet
   $ hg log -f -L binary,1:2 -p

@@ -235,22 +235,12 @@ class hybrid(wrapped):
         return gen
 
     def tovalue(self, context, mapping):
-        # TODO: return self._values and get rid of proxy methods
-        return self
-
-    def __contains__(self, x):
-        return x in self._values
-    def __getitem__(self, key):
-        return self._values[key]
-    def __len__(self):
-        return len(self._values)
-    def __iter__(self):
-        return iter(self._values)
-    def __getattr__(self, name):
-        if name not in (r'get', r'items', r'iteritems', r'iterkeys',
-                        r'itervalues', r'keys', r'values'):
-            raise AttributeError(name)
-        return getattr(self._values, name)
+        # TODO: make it non-recursive for trivial lists/dicts
+        xs = self._values
+        if util.safehasattr(xs, 'get'):
+            return {k: unwrapvalue(context, mapping, v)
+                    for k, v in xs.iteritems()}
+        return [unwrapvalue(context, mapping, x) for x in xs]
 
 class mappable(wrapped):
     """Wrapper for non-list/dict object to support map operation
@@ -259,9 +249,6 @@ class mappable(wrapped):
     - "{manifest}"
     - "{manifest % '{rev}:{node}'}"
     - "{manifest.rev}"
-
-    Unlike a hybrid, this does not simulate the behavior of the underling
-    value.
     """
 
     def __init__(self, gen, key, value, makemap):

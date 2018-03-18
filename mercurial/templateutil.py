@@ -567,6 +567,20 @@ def _formatfiltererror(arg, filt):
     return (_("template filter '%s' is not compatible with keyword '%s'")
             % (fn, sym))
 
+def _checkeditermaps(darg, d):
+    try:
+        for v in d:
+            if not isinstance(v, dict):
+                raise TypeError
+            yield v
+    except TypeError:
+        sym = findsymbolicname(darg)
+        if sym:
+            raise error.ParseError(_("keyword '%s' is not iterable of mappings")
+                                   % sym)
+        else:
+            raise error.ParseError(_("%r is not iterable of mappings") % d)
+
 def _iteroverlaymaps(context, origmapping, newmappings):
     """Generate combined mappings from the original mapping and an iterable
     of partial mappings to override the original"""
@@ -578,28 +592,17 @@ def _iteroverlaymaps(context, origmapping, newmappings):
 def runmap(context, mapping, data):
     darg, targ = data
     d = evalrawexp(context, mapping, darg)
+    # TODO: a generator should be rejected because it is a thunk of lazy
+    # string, but we can't because hgweb abuses generator as a keyword
+    # that returns a list of dicts.
     if isinstance(d, wrapped):
         diter = d.itermaps(context)
     else:
-        try:
-            diter = iter(d)
-        except TypeError:
-            sym = findsymbolicname(darg)
-            if sym:
-                raise error.ParseError(_("keyword '%s' is not iterable") % sym)
-            else:
-                raise error.ParseError(_("%r is not iterable") % d)
-
+        diter = _checkeditermaps(darg, d)
     for i, v in enumerate(diter):
-        if isinstance(v, dict):
-            lm = context.overlaymap(mapping, v)
-            lm['index'] = i
-            yield evalrawexp(context, lm, targ)
-        else:
-            # v is not an iterable of dicts, this happen when 'key'
-            # has been fully expanded already and format is useless.
-            # If so, return the expanded value.
-            yield v
+        lm = context.overlaymap(mapping, v)
+        lm['index'] = i
+        yield evalrawexp(context, lm, targ)
 
 def runmember(context, mapping, data):
     darg, memb = data

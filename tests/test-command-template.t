@@ -3210,10 +3210,13 @@ Test new-style inline templating:
   
 
   $ hg log -R latesttag -r tip -T '{rev % "a"}\n'
-  hg: parse error: keyword 'rev' is not iterable
+  hg: parse error: keyword 'rev' is not iterable of mappings
   [255]
   $ hg log -R latesttag -r tip -T '{get(extras, "unknown") % "a"}\n'
-  hg: parse error: None is not iterable
+  hg: parse error: None is not iterable of mappings
+  [255]
+  $ hg log -R latesttag -r tip -T '{extras % "{key}\n" % "{key}\n"}'
+  hg: parse error: <generator *> is not iterable of mappings (glob)
   [255]
 
 Test new-style inline templating of non-list/dict type:
@@ -3228,7 +3231,7 @@ Test new-style inline templating of non-list/dict type:
   $ hg log -R latesttag -r tip -T '{get(extras, "branch") % "{key}: {value}\n"}'
   branch: default
   $ hg log -R latesttag -r tip -T '{get(extras, "unknown") % "{key}\n"}'
-  hg: parse error: None is not iterable
+  hg: parse error: None is not iterable of mappings
   [255]
   $ hg log -R latesttag -r tip -T '{min(extras) % "{key}: {value}\n"}'
   branch: default

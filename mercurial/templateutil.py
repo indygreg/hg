@@ -330,6 +330,10 @@ def unwrapdate(thing, err=None):
         return dateutil.parsedate(thing)
     except AttributeError:
         raise error.ParseError(err or _('not a date tuple nor a string'))
+    except error.ParseError:
+        if not err:
+            raise
+        raise error.ParseError(err)
 
 def evalinteger(context, mapping, arg, err=None):
     return unwrapinteger(evalrawexp(context, mapping, arg), err)

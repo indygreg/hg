@@ -52,18 +52,16 @@ def date(context, mapping, args):
         # i18n: "date" is a keyword
         raise error.ParseError(_("date expects one or two arguments"))
 
-    date = evalfuncarg(context, mapping, args[0])
+    date = evaldate(context, mapping, args[0],
+                    # i18n: "date" is a keyword
+                    _("date expects a date information"))
     fmt = None
     if len(args) == 2:
         fmt = evalstring(context, mapping, args[1])
-    try:
-        if fmt is None:
-            return dateutil.datestr(date)
-        else:
-            return dateutil.datestr(date, fmt)
-    except (TypeError, ValueError):
-        # i18n: "date" is a keyword
-        raise error.ParseError(_("date expects a date information"))
+    if fmt is None:
+        return dateutil.datestr(date)
+    else:
+        return dateutil.datestr(date, fmt)
 
 @templatefunc('dict([[key=]value...])', argspec='*args **kwargs')
 def dict_(context, mapping, args):

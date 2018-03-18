@@ -109,6 +109,7 @@ from mercurial import (
     registrar,
     scmutil,
     templatefilters,
+    templateutil,
     util,
 )
 from mercurial.utils import (
@@ -156,27 +157,27 @@ configitem('keywordset', 'svn',
     default=False,
 )
 # date like in cvs' $Date
-@templatefilter('utcdate')
-def utcdate(text):
+@templatefilter('utcdate', intype=templateutil.date)
+def utcdate(date):
     '''Date. Returns a UTC-date in this format: "2009/08/18 11:00:13".
     '''
     dateformat = '%Y/%m/%d %H:%M:%S'
-    return dateutil.datestr((dateutil.parsedate(text)[0], 0), dateformat)
+    return dateutil.datestr((date[0], 0), dateformat)
 # date like in svn's $Date
-@templatefilter('svnisodate')
-def svnisodate(text):
+@templatefilter('svnisodate', intype=templateutil.date)
+def svnisodate(date):
     '''Date. Returns a date in this format: "2009-08-18 13:00:13
     +0200 (Tue, 18 Aug 2009)".
     '''
-    return dateutil.datestr(text, '%Y-%m-%d %H:%M:%S %1%2 (%a, %d %b %Y)')
+    return dateutil.datestr(date, '%Y-%m-%d %H:%M:%S %1%2 (%a, %d %b %Y)')
 # date like in svn's $Id
-@templatefilter('svnutcdate')
-def svnutcdate(text):
+@templatefilter('svnutcdate', intype=templateutil.date)
+def svnutcdate(date):
     '''Date. Returns a UTC-date in this format: "2009-08-18
     11:00:13Z".
     '''
     dateformat = '%Y-%m-%d %H:%M:%SZ'
-    return dateutil.datestr((dateutil.parsedate(text)[0], 0), dateformat)
+    return dateutil.datestr((date[0], 0), dateformat)
 
 # make keyword tools accessible
 kwtools = {'hgcmd': ''}

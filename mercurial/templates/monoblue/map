@@ -57,7 +57,6 @@ filenav = '{before%filenaventry}{after%filenaventry}'
 
 fileellipses = '...'
 changelogentry = changelogentry.tmpl
-searchentry = changelogentry.tmpl
 changeset = changeset.tmpl
 manifest = manifest.tmpl
 direntry = '

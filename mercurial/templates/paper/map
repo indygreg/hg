@@ -33,7 +33,6 @@ fileellipses = '...'
 diffstatlink = diffstat.tmpl
 diffstatnolink = diffstat.tmpl
 changelogentry = shortlogentry.tmpl
-searchentry = shortlogentry.tmpl
 changeset = changeset.tmpl
 manifest = manifest.tmpl
 

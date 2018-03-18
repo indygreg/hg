@@ -36,6 +36,7 @@ from .. import (
     scmutil,
     smartset,
     templater,
+    templateutil,
 )
 
 from ..utils import (
@@ -287,7 +288,7 @@ def _search(web):
                 LookupError):
             return MODE_KEYWORD, query
 
-    def changelist(**map):
+    def changelist(context):
         count = 0
 
         for ctx in searchfunc[0](funcarg):
@@ -303,7 +304,7 @@ def _search(web):
                 'changelogtag': showtags,
                 'files': files,
             })
-            yield web.tmpl.generate('searchentry', lm)
+            yield lm
 
             if count >= revcount:
                 break
@@ -349,7 +350,7 @@ def _search(web):
         query=query,
         node=tip.hex(),
         symrev='tip',
-        entries=changelist,
+        entries=templateutil.mappinggenerator(changelist, name='searchentry'),
         archives=web.archivelist('tip'),
         morevars=morevars,
         lessvars=lessvars,

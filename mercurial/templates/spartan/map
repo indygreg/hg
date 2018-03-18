@@ -17,7 +17,6 @@ filenodelink = '<a href="{url|urlescape}file/{node|short}/{file|urlescape}{sessi
 filenolink = '{file|escape} '
 fileellipses = '...'
 changelogentry = changelogentry.tmpl
-searchentry = changelogentry.tmpl
 changeset = changeset.tmpl
 manifest = manifest.tmpl
 

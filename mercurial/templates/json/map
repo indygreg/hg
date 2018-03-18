@@ -18,9 +18,8 @@ lineentry = '\{
 search = '\{
   "node": {node|json},
   "query": {query|json},
-  "entries": [{join(entries%searchentry, ", ")}]
+  "entries": [{join(entries%changelistentry, ", ")}]
   }'
-searchentry = '{changelistentry}'
 # changelog and shortlog are the same web API but with different
 # number of entries.
 changelog = changelist.tmpl

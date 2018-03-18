@@ -38,7 +38,7 @@ class wrapped(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def itermaps(self):
+    def itermaps(self, context):
         """Yield each template mapping"""
 
     @abc.abstractmethod
@@ -88,7 +88,7 @@ class hybrid(wrapped):
             if i > 0:
                 yield ' '
             yield self.joinfmt(x)
-    def itermaps(self):
+    def itermaps(self, context):
         makemap = self._makemap
         for x in self._values:
             yield makemap(x)
@@ -139,7 +139,7 @@ class mappable(wrapped):
     def tomap(self):
         return self._makemap(self._key)
 
-    def itermaps(self):
+    def itermaps(self, context):
         yield self.tomap()
 
     def show(self, context, mapping):
@@ -498,7 +498,7 @@ def runmap(context, mapping, data):
     darg, targ = data
     d = evalrawexp(context, mapping, darg)
     if isinstance(d, wrapped):
-        diter = d.itermaps()
+        diter = d.itermaps(context)
     else:
         try:
             diter = iter(d)

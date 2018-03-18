@@ -713,6 +713,10 @@ class sessionvars(templateutil.wrapped):
     def __copy__(self):
         return sessionvars(copy.copy(self._vars), self._start)
 
+    def contains(self, context, mapping, item):
+        item = templateutil.unwrapvalue(context, mapping, item)
+        return item in self._vars
+
     def getmember(self, context, mapping, key):
         key = templateutil.unwrapvalue(context, mapping, key)
         return self._vars.get(key)

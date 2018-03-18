@@ -4166,6 +4166,15 @@ Test ifcontains function
   1
   0
 
+  $ hg log -l1 -T '{ifcontains("branch", extras, "t", "f")}\n'
+  t
+  $ hg log -l1 -T '{ifcontains("branch", extras % "{key}", "t", "f")}\n'
+  t
+  $ hg log -l1 -T '{ifcontains("branc", extras % "{key}", "t", "f")}\n'
+  f
+  $ hg log -l1 -T '{ifcontains("branc", stringify(extras % "{key}"), "t", "f")}\n'
+  t
+
 Test revset function
 
   $ hg log --template '{rev} {ifcontains(rev, revset("."), "current rev", "not current rev")}\n'

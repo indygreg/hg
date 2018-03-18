@@ -38,6 +38,13 @@ class wrapped(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
+    def contains(self, context, mapping, item):
+        """Test if the specified item is in self
+
+        The item argument may be a wrapped object.
+        """
+
+    @abc.abstractmethod
     def getmember(self, context, mapping, key):
         """Return a member item for the specified key
 
@@ -91,6 +98,10 @@ class wrappedbytes(wrapped):
     def __init__(self, value):
         self._value = value
 
+    def contains(self, context, mapping, item):
+        item = stringify(context, mapping, item)
+        return item in self._value
+
     def getmember(self, context, mapping, key):
         raise error.ParseError(_('%r is not a dictionary')
                                % pycompat.bytestr(self._value))
@@ -124,6 +135,9 @@ class wrappedvalue(wrapped):
 
     def __init__(self, value):
         self._value = value
+
+    def contains(self, context, mapping, item):
+        raise error.ParseError(_("%r is not iterable") % self._value)
 
     def getmember(self, context, mapping, key):
         raise error.ParseError(_('%r is not a dictionary') % self._value)
@@ -170,6 +184,10 @@ class hybrid(wrapped):
         self._makemap = makemap
         self._joinfmt = joinfmt
         self.keytype = keytype  # hint for 'x in y' where type(x) is unresolved
+
+    def contains(self, context, mapping, item):
+        item = unwrapastype(context, mapping, item, self.keytype)
+        return item in self._values
 
     def getmember(self, context, mapping, key):
         # TODO: maybe split hybrid list/dict types?
@@ -255,6 +273,10 @@ class mappable(wrapped):
     def tomap(self):
         return self._makemap(self._key)
 
+    def contains(self, context, mapping, item):
+        w = makewrapped(context, mapping, self._value)
+        return w.contains(context, mapping, item)
+
     def getmember(self, context, mapping, key):
         w = makewrapped(context, mapping, self._value)
         return w.getmember(context, mapping, key)
@@ -301,6 +323,9 @@ class _mappingsequence(wrapped):
         self._name = name
         self._tmpl = tmpl
         self._defaultsep = sep
+
+    def contains(self, context, mapping, item):
+        raise error.ParseError(_('not comparable'))
 
     def getmember(self, context, mapping, key):
         raise error.ParseError(_('not a dictionary'))
@@ -370,6 +395,10 @@ class mappedgenerator(wrapped):
     def __init__(self, make, args=()):
         self._make = make
         self._args = args
+
+    def contains(self, context, mapping, item):
+        item = stringify(context, mapping, item)
+        return item in self.tovalue(context, mapping)
 
     def _gen(self, context):
         return self._make(context, *self._args)

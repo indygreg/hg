@@ -291,13 +291,10 @@ def ifcontains(context, mapping, args):
         # i18n: "ifcontains" is a keyword
         raise error.ParseError(_("ifcontains expects three or four arguments"))
 
-    haystack = evalfuncarg(context, mapping, args[1])
-    keytype = getattr(haystack, 'keytype', None)
+    haystack = evalwrapped(context, mapping, args[1])
     try:
         needle = evalrawexp(context, mapping, args[0])
-        needle = templateutil.unwrapastype(context, mapping, needle,
-                                           keytype or bytes)
-        found = (needle in haystack)
+        found = haystack.contains(context, mapping, needle)
     except error.ParseError:
         found = False
 

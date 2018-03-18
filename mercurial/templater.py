@@ -48,6 +48,10 @@ mappable
 mappinggenerator, mappinglist
     represents mappings (i.e. a list of dicts), which may have default
     output format.
+
+mappedgenerator
+    a lazily-evaluated list of byte strings, which is e.g. a result of %
+    operation.
 """
 
 from __future__ import absolute_import, print_function

@@ -3217,7 +3217,7 @@ Test new-style inline templating:
   hg: parse error: None is not iterable of mappings
   [255]
   $ hg log -R latesttag -r tip -T '{extras % "{key}\n" % "{key}\n"}'
-  hg: parse error: <generator *> is not iterable of mappings (glob)
+  hg: parse error: list of strings is not mappable
   [255]
 
 Test new-style inline templating of non-list/dict type:
@@ -3254,6 +3254,13 @@ Test min/max of integers
   9
   $ hg log -R latesttag -l1 -T '{max(revset("9:10"))}\n'
   10
+
+Test min/max over map operation:
+
+  $ hg log -R latesttag -r3 -T '{min(tags % "{tag}")}\n'
+  at3
+  $ hg log -R latesttag -r3 -T '{max(tags % "{tag}")}\n'
+  t3
 
 Test min/max of if() result
 
@@ -3841,6 +3848,11 @@ Test json filter applied to hybrid object:
   ["a"]
   $ hg log -r0 -T '{extras|json}\n'
   {"branch": "default"}
+
+Test json filter applied to map result:
+
+  $ hg log -r0 -T '{json(extras % "{key}")}\n'
+  ["branch"]
 
 Test localdate(date, tz) function:
 

@@ -227,6 +227,33 @@ class mappinglist(_mappingsequence):
     def itermaps(self, context):
         return iter(self._mappings)
 
+class mappedgenerator(wrapped):
+    """Wrapper for generator of strings which acts as a list
+
+    The function ``make(context, *args)`` should return a generator of
+    byte strings, or a generator of (possibly nested) generators of byte
+    strings (i.e. a generator for a list of byte strings.)
+    """
+
+    def __init__(self, make, args=()):
+        self._make = make
+        self._args = args
+
+    def _gen(self, context):
+        return self._make(context, *self._args)
+
+    def itermaps(self, context):
+        raise error.ParseError(_('list of strings is not mappable'))
+
+    def join(self, context, mapping, sep):
+        return joinitems(self._gen(context), sep)
+
+    def show(self, context, mapping):
+        return self.join(context, mapping, '')
+
+    def tovalue(self, context, mapping):
+        return [stringify(context, mapping, x) for x in self._gen(context)]
+
 def hybriddict(data, key='key', value='value', fmt=None, gen=None):
     """Wrap data to support both dict-like and string-like operations"""
     prefmt = pycompat.identity
@@ -589,18 +616,23 @@ def _iteroverlaymaps(context, origmapping, newmappings):
         lm['index'] = i
         yield lm
 
+def _applymap(context, mapping, diter, targ):
+    for lm in _iteroverlaymaps(context, mapping, diter):
+        yield evalrawexp(context, lm, targ)
+
 def runmap(context, mapping, data):
     darg, targ = data
     d = evalrawexp(context, mapping, darg)
     # TODO: a generator should be rejected because it is a thunk of lazy
     # string, but we can't because hgweb abuses generator as a keyword
     # that returns a list of dicts.
+    # TODO: drop _checkeditermaps() and pass 'd' to mappedgenerator so it
+    # can be restarted.
     if isinstance(d, wrapped):
         diter = d.itermaps(context)
     else:
         diter = _checkeditermaps(darg, d)
-    for lm in _iteroverlaymaps(context, mapping, diter):
-        yield evalrawexp(context, lm, targ)
+    return mappedgenerator(_applymap, args=(mapping, diter, targ))
 
 def runmember(context, mapping, data):
     darg, memb = data

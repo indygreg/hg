@@ -55,7 +55,7 @@ agescales = [("year", 3600 * 24 * 365, 'Y'),
              ("minute", 60, 'm'),
              ("second", 1, 's')]
 
-@templatefilter('age')
+@templatefilter('age', intype=templateutil.date)
 def age(date, abbrev=False):
     """Date. Returns a human-readable date/time difference between the
     given date/time and the current date/time.
@@ -195,21 +195,21 @@ def hexfilter(text):
     """
     return node.hex(text)
 
-@templatefilter('hgdate')
+@templatefilter('hgdate', intype=templateutil.date)
 def hgdate(text):
     """Date. Returns the date as a pair of numbers: "1157407993
     25200" (Unix timestamp, timezone offset).
     """
     return "%d %d" % text
 
-@templatefilter('isodate')
+@templatefilter('isodate', intype=templateutil.date)
 def isodate(text):
     """Date. Returns the date in ISO 8601 format: "2009-08-18 13:00
     +0200".
     """
     return dateutil.datestr(text, '%Y-%m-%d %H:%M %1%2')
 
-@templatefilter('isodatesec')
+@templatefilter('isodatesec', intype=templateutil.date)
 def isodatesec(text):
     """Date. Returns the date in ISO 8601 format, including
     seconds: "2009-08-18 13:00:13 +0200". See also the rfc3339date
@@ -303,14 +303,14 @@ def revescape(text):
     """
     return urlreq.quote(text, safe='/@').replace('/', '%252F')
 
-@templatefilter('rfc3339date')
+@templatefilter('rfc3339date', intype=templateutil.date)
 def rfc3339date(text):
     """Date. Returns a date using the Internet date format
     specified in RFC 3339: "2009-08-18T13:00:13+02:00".
     """
     return dateutil.datestr(text, "%Y-%m-%dT%H:%M:%S%1:%2")
 
-@templatefilter('rfc822date')
+@templatefilter('rfc822date', intype=templateutil.date)
 def rfc822date(text):
     """Date. Returns a date using the same format used in email
     headers: "Tue, 18 Aug 2009 13:00:13 +0200".
@@ -335,7 +335,7 @@ def shortbisect(label):
         return label[0:1].upper()
     return ' '
 
-@templatefilter('shortdate')
+@templatefilter('shortdate', intype=templateutil.date)
 def shortdate(text):
     """Date. Returns a date like "2006-09-18"."""
     return dateutil.shortdate(text)

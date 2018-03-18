@@ -333,7 +333,7 @@ class templatefilter(_templateregistrarbase):
     The first string argument is used also in online help.
 
     Optional argument 'intype' defines the type of the input argument,
-    which should be (bytes, int, or None for any.)
+    which should be (bytes, int, templateutil.date, or None for any.)
 
     'templatefilter' instance in example above can be used to
     decorate multiple functions.

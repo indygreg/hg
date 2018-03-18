@@ -2806,7 +2806,8 @@ Behind the scenes, this would throw TypeError without intype=bytes
 Behind the scenes, this will throw a ValueError
 
   $ hg log -l 3 --template 'line: {desc|shortdate}\n'
-  abort: template filter 'shortdate' is not compatible with keyword 'desc'
+  hg: parse error: invalid date: 'Modify, add, remove, rename'
+  (template filter 'shortdate' is not compatible with keyword 'desc')
   [255]
 
 Behind the scenes, this would throw AttributeError without intype=bytes
@@ -2827,11 +2828,13 @@ Behind the scenes, this will throw ValueError
   [255]
 
   $ hg tip -T '{author|email|shortdate}\n'
-  abort: template filter 'shortdate' is not compatible with keyword 'author'
+  hg: parse error: invalid date: 'test'
+  (template filter 'shortdate' is not compatible with keyword 'author')
   [255]
 
   $ hg tip -T '{get(extras, "branch")|shortdate}\n'
-  abort: incompatible use of template filter 'shortdate'
+  hg: parse error: invalid date: 'default'
+  (incompatible use of template filter 'shortdate')
   [255]
 
 Error in nested template:

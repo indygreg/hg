@@ -26,6 +26,11 @@ class ResourceUnavailable(error.Abort):
 class TemplateNotFound(error.Abort):
     pass
 
+# stub for representing a date type; may be a real date type that can
+# provide a readable string value
+class date(object):
+    pass
+
 class hybrid(object):
     """Wrapper for list or dict to support legacy template
 
@@ -361,6 +366,7 @@ def evalstringliteral(context, mapping, arg):
 _unwrapfuncbytype = {
     None: _unwrapvalue,
     bytes: stringify,
+    date: unwrapdate,
     int: unwrapinteger,
 }
 

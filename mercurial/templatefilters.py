@@ -263,8 +263,7 @@ def json(obj, paranoid=True):
     elif util.safehasattr(obj, '__iter__'):
         out = [json(i, paranoid) for i in obj]
         return '[' + ', '.join(out) + ']'
-    else:
-        raise TypeError('cannot encode type %s' % obj.__class__.__name__)
+    raise error.ProgrammingError('cannot encode %r' % obj)
 
 @templatefilter('lower', intype=bytes)
 def lower(text):

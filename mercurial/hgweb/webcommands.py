@@ -1082,7 +1082,7 @@ def filelog(web):
         linerange = webutil.formatlinerange(*lrange)
         # deactivate numeric nav links when linerange is specified as this
         # would required a dedicated "revnav" class
-        nav = None
+        nav = []
         if descend:
             it = dagop.blockdescendants(fctx, *lrange)
         else:

@@ -755,7 +755,7 @@ before addition - error
   <div class="navigate">
   <a href="/log/tip/c?linerange=1%3A2&revcount=30">less</a>
   <a href="/log/tip/c?linerange=1%3A2&revcount=120">more</a>
-  |  </div>
+  | </div>
   
   <table class="bigtable">
   <thead>
@@ -791,7 +791,7 @@ before addition - error
   <div class="navigate">
   <a href="/log/tip/c?linerange=1%3A2&revcount=30">less</a>
   <a href="/log/tip/c?linerange=1%3A2&revcount=120">more</a>
-  |  
+  | 
   </div>
   
   </div>
@@ -875,7 +875,7 @@ before addition - error
   <div class="navigate">
   <a href="/log/tip/c?linerange=1%3A2&revcount=1">less</a>
   <a href="/log/tip/c?linerange=1%3A2&revcount=2">more</a>
-  |  </div>
+  | </div>
   
   <table class="bigtable">
   <thead>
@@ -902,7 +902,7 @@ before addition - error
   <div class="navigate">
   <a href="/log/tip/c?linerange=1%3A2&revcount=1">less</a>
   <a href="/log/tip/c?linerange=1%3A2&revcount=2">more</a>
-  |  
+  | 
   </div>
   
   </div>
@@ -1394,7 +1394,7 @@ filelog with 'linerange' and 'patch'
   <div class="navigate">
   <a href="/log/tip/c?linerange=3%3A4&patch=&revcount=30">less</a>
   <a href="/log/tip/c?linerange=3%3A4&patch=&revcount=120">more</a>
-  |  </div>
+  | </div>
   
   <table class="bigtable">
   <thead>
@@ -1500,7 +1500,7 @@ filelog with 'linerange' and 'patch'
   <div class="navigate">
   <a href="/log/tip/c?linerange=3%3A4&patch=&revcount=30">less</a>
   <a href="/log/tip/c?linerange=3%3A4&patch=&revcount=120">more</a>
-  |  
+  | 
   </div>
   
   </div>
@@ -1651,7 +1651,7 @@ filelog with 'linerange' and 'patch'
   <div class="navigate">
   <a href="/log/8/c?descend=&linerange=3%3A4&revcount=30">less</a>
   <a href="/log/8/c?descend=&linerange=3%3A4&revcount=120">more</a>
-  |  </div>
+  | </div>
   
   <table class="bigtable">
   <thead>
@@ -1696,7 +1696,7 @@ filelog with 'linerange' and 'patch'
   <div class="navigate">
   <a href="/log/8/c?descend=&linerange=3%3A4&revcount=30">less</a>
   <a href="/log/8/c?descend=&linerange=3%3A4&revcount=120">more</a>
-  |  
+  | 
   </div>
   
   </div>

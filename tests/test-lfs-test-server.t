@@ -86,13 +86,13 @@ store.
   list of changesets:
   99a7098854a3984a5c9eab0fc7a2906697b7cb5c
   bundle2-output-bundle: "HG20", 4 parts total
-  bundle2-output-part: "replycaps" 191 bytes payload
+  bundle2-output-part: "replycaps" * bytes payload (glob)
   bundle2-output-part: "check:heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 191
+  bundle2-input-part: total payload size * (glob)
   bundle2-input-part: "check:heads" supported
   bundle2-input-part: total payload size 20
   bundle2-input-part: "changegroup" (params: 1 mandatory) supported
@@ -240,14 +240,14 @@ When the server has some blobs already
   list of changesets:
   dfca2c9e2ef24996aa61ba2abd99277d884b3d63
   bundle2-output-bundle: "HG20", 5 parts total
-  bundle2-output-part: "replycaps" 191 bytes payload
+  bundle2-output-part: "replycaps" * bytes payload (glob)
   bundle2-output-part: "check:phases" 24 bytes payload
   bundle2-output-part: "check:heads" streamed payload
   bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "replycaps" supported
-  bundle2-input-part: total payload size 191
+  bundle2-input-part: total payload size * (glob)
   bundle2-input-part: "check:phases" supported
   bundle2-input-part: total payload size 24
   bundle2-input-part: "check:heads" supported

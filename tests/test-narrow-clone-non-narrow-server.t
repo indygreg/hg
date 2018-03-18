@@ -19,7 +19,7 @@ Test attempting a narrow clone against a server that doesn't support narrowhg.
 
 Verify that narrow is advertised in the bundle2 capabilities:
   $ echo hello | hg -R . serve --stdio | \
-  >   $PYTHON -c "import sys, urllib; print urllib.unquote_plus(list(sys.stdin)[1])" | grep narrow
+  >   $PYTHON -c "from __future__ import print_function; import sys, urllib; print(urllib.unquote_plus(list(sys.stdin)[1]))" | grep narrow
   narrow=v0
 
   $ cd ..

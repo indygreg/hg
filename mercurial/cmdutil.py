@@ -2358,8 +2358,6 @@ def amend(ui, repo, old, extra, pats, opts):
             if subs:
                 subrepoutil.writestate(repo, newsubstate)
 
-        # avoid cycle (TODO: should be removed in default branch)
-        from . import merge as mergemod
         ms = mergemod.mergestate.read(repo)
         mergeutil.checkunresolved(ms)
 

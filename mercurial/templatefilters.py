@@ -354,12 +354,12 @@ def splitlines(text):
 def stringescape(text):
     return stringutil.escapestr(text)
 
-@templatefilter('stringify')
+@templatefilter('stringify', intype=bytes)
 def stringify(thing):
     """Any type. Turns the value into text by converting values into
     text and concatenating them.
     """
-    return templateutil.stringify(thing)
+    return thing  # coerced by the intype
 
 @templatefilter('stripdir')
 def stripdir(text):

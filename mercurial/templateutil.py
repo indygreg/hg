@@ -342,6 +342,7 @@ def evalstringliteral(context, mapping, arg):
     return stringify(thing)
 
 _unwrapfuncbytype = {
+    None: _unwrapvalue,
     bytes: stringify,
     int: unwrapinteger,
 }
@@ -400,8 +401,9 @@ def runtemplate(context, mapping, template):
 
 def runfilter(context, mapping, data):
     arg, filt = data
-    thing = evalfuncarg(context, mapping, arg)
+    thing = evalrawexp(context, mapping, arg)
     try:
+        thing = unwrapastype(thing, getattr(filt, '_intype', None))
         return filt(thing)
     except (ValueError, AttributeError, TypeError):
         sym = findsymbolicname(arg)

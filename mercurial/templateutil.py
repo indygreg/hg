@@ -157,7 +157,7 @@ def unwraphybrid(context, mapping, thing):
         return thing
     return thing.show(context, mapping)
 
-def unwrapvalue(thing):
+def unwrapvalue(context, mapping, thing):
     """Move the inner value object out of the wrapper"""
     if not util.safehasattr(thing, '_value'):
         return thing
@@ -327,7 +327,7 @@ def evalfuncarg(context, mapping, arg):
 # is fixed. we can't do that right now because join() has to take a generator
 # of byte strings as it is, not a lazy byte string.
 def _unwrapvalue(context, mapping, thing):
-    thing = unwrapvalue(thing)
+    thing = unwrapvalue(context, mapping, thing)
     # evalrawexp() may return string, generator of strings or arbitrary object
     # such as date tuple, but filter does not want generator.
     if isinstance(thing, types.GeneratorType):
@@ -344,7 +344,7 @@ def evalboolean(context, mapping, arg):
             thing = stringutil.parsebool(data)
     else:
         thing = func(context, mapping, data)
-    thing = unwrapvalue(thing)
+    thing = unwrapvalue(context, mapping, thing)
     if isinstance(thing, bool):
         return thing
     # other objects are evaluated as strings, which means 0 is True, but

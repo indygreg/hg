@@ -319,7 +319,7 @@ def join(context, mapping, args):
     # TODO: perhaps this should be evalfuncarg(), but it can't because hgweb
     # abuses generator as a keyword that returns a list of dicts.
     joinset = evalrawexp(context, mapping, args[0])
-    joinset = templateutil.unwrapvalue(joinset)
+    joinset = templateutil.unwrapvalue(context, mapping, joinset)
     joinfmt = getattr(joinset, 'joinfmt', pycompat.identity)
     joiner = " "
     if len(args) > 1:

@@ -713,7 +713,7 @@ def summary(web):
     """
     i = reversed(web.repo.tagslist())
 
-    def tagentries(**map):
+    def tagentries(context):
         parity = paritygen(web.stripecount)
         count = 0
         for k, n in i:
@@ -724,12 +724,12 @@ def summary(web):
             if count > 10: # limit to 10 tags
                 break
 
-            yield web.tmpl.generate('tagentry', {
+            yield {
                 'parity': next(parity),
                 'tag': k,
                 'node': hex(n),
                 'date': web.repo[n].date(),
-            })
+            }
 
     def bookmarks(**map):
         parity = paritygen(web.stripecount)
@@ -742,7 +742,7 @@ def summary(web):
                    'date': web.repo[n].date(),
                    'node': hex(n)}
 
-    def changelist(**map):
+    def changelist(context):
         parity = paritygen(web.stripecount, offset=start - end)
         l = [] # build a list in forward order for efficiency
         revs = []
@@ -752,7 +752,7 @@ def summary(web):
             ctx = web.repo[i]
             lm = webutil.commonentry(web.repo, ctx)
             lm['parity'] = next(parity)
-            l.append(web.tmpl.generate('shortlogentry', lm))
+            l.append(lm)
 
         for entry in reversed(l):
             yield entry
@@ -771,10 +771,11 @@ def summary(web):
         desc=desc,
         owner=get_contact(web.config) or 'unknown',
         lastchange=tip.date(),
-        tags=tagentries,
+        tags=templateutil.mappinggenerator(tagentries, name='tagentry'),
         bookmarks=bookmarks,
         branches=webutil.branchentries(web.repo, web.stripecount, 10),
-        shortlog=changelist,
+        shortlog=templateutil.mappinggenerator(changelist,
+                                               name='shortlogentry'),
         node=tip.hex(),
         symrev='tip',
         archives=web.archivelist('tip'),

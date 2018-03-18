@@ -39,7 +39,7 @@
 
     <h2><a href="{url|urlescape}shortlog{sessionvars%urlparameter}">Changes</a></h2>
     <table>
-{shortlog}
+{shortlog%shortlogentry}
         <tr class="light">
             <td colspan="4"><a class="list" href="{url|urlescape}shortlog{sessionvars%urlparameter}">...</a></td>
         </tr>
@@ -47,7 +47,7 @@
 
     <h2><a href="{url|urlescape}tags{sessionvars%urlparameter}">Tags</a></h2>
     <table>
-{tags}
+{tags%tagentry}
         <tr class="light">
             <td colspan="3"><a class="list" href="{url|urlescape}tags{sessionvars%urlparameter}">...</a></td>
         </tr>

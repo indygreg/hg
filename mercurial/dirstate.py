@@ -371,7 +371,8 @@ class dirstate(object):
         if state == 'a' or oldstate == 'r':
             scmutil.checkfilename(f)
             if self._map.hastrackeddir(f):
-                raise error.Abort(_('directory %r already in dirstate') % f)
+                raise error.Abort(_('directory %r already in dirstate') %
+                                  pycompat.bytestr(f))
             # shadows
             for d in util.finddirs(f):
                 if self._map.hastrackeddir(d):
@@ -379,7 +380,8 @@ class dirstate(object):
                 entry = self._map.get(d)
                 if entry is not None and entry[0] != 'r':
                     raise error.Abort(
-                        _('file %r in dirstate clashes with %r') % (d, f))
+                        _('file %r in dirstate clashes with %r') %
+                        (pycompat.bytestr(d), pycompat.bytestr(f)))
         self._dirty = True
         self._updatedfiles.add(f)
         self._map.addfile(f, oldstate, state, mode, size, mtime)

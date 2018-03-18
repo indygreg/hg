@@ -2284,8 +2284,7 @@ Upper/lower filters:
   $ hg log -r0 --template '{author|lower}\n'
   user name <user@hostname>
   $ hg log -r0 --template '{date|upper}\n'
-  abort: template filter 'upper' is not compatible with keyword 'date'
-  [255]
+  1000000.00
 
 Add a commit that does all possible modifications at once
 
@@ -2797,11 +2796,12 @@ Error on syntax:
   hg: parse error: missing argument
   [255]
 
-Behind the scenes, this will throw TypeError
+Behind the scenes, this would throw TypeError without intype=bytes
 
   $ hg log -l 3 --template '{date|obfuscate}\n'
-  abort: template filter 'obfuscate' is not compatible with keyword 'date'
-  [255]
+  &#48;&#46;&#48;&#48;
+  &#48;&#46;&#48;&#48;
+  &#49;&#53;&#55;&#55;&#56;&#55;&#50;&#56;&#54;&#48;&#46;&#48;&#48;
 
 Behind the scenes, this will throw a ValueError
 
@@ -2809,11 +2809,12 @@ Behind the scenes, this will throw a ValueError
   abort: template filter 'shortdate' is not compatible with keyword 'desc'
   [255]
 
-Behind the scenes, this will throw AttributeError
+Behind the scenes, this would throw AttributeError without intype=bytes
 
   $ hg log -l 3 --template 'line: {date|escape}\n'
-  abort: template filter 'escape' is not compatible with keyword 'date'
-  [255]
+  line: 0.00
+  line: 0.00
+  line: 1577872860.00
 
   $ hg log -l 3 --template 'line: {extras|localdate}\n'
   hg: parse error: localdate expects a date information
@@ -4656,9 +4657,8 @@ utf8 filter:
   $ HGENCODING=ascii hg log -T "replaced: {'`cat latin1`'|utf8|hex}\n" -l1
   abort: decoding near * (glob)
   [255]
-  $ hg log -T "invalid type: {rev|utf8}\n" -r0
-  abort: template filter 'utf8' is not compatible with keyword 'rev'
-  [255]
+  $ hg log -T "coerced to string: {rev|utf8}\n" -r0
+  coerced to string: 0
 
 pad width:
 

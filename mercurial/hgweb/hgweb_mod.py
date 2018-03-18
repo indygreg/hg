@@ -173,7 +173,7 @@ class requestcontext(object):
 
         filters = {}
         templatefilter = registrar.templatefilter(filters)
-        @templatefilter('websub')
+        @templatefilter('websub', intype=bytes)
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
 

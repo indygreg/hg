@@ -3274,6 +3274,51 @@ Test min/max over map operation:
   $ hg log -R latesttag -r3 -T '{max(tags % "{tag}")}\n'
   t3
 
+Test min/max of strings:
+
+  $ hg log -R latesttag -l1 -T '{min(desc)}\n'
+  3
+  $ hg log -R latesttag -l1 -T '{max(desc)}\n'
+  t
+
+Test min/max of non-iterable:
+
+  $ hg debugtemplate '{min(1)}'
+  hg: parse error: 1 is not iterable
+  (min first argument should be an iterable)
+  [255]
+  $ hg debugtemplate '{max(2)}'
+  hg: parse error: 2 is not iterable
+  (max first argument should be an iterable)
+  [255]
+
+Test min/max of empty sequence:
+
+  $ hg debugtemplate '{min("")}'
+  hg: parse error: empty string
+  (min first argument should be an iterable)
+  [255]
+  $ hg debugtemplate '{max("")}'
+  hg: parse error: empty string
+  (max first argument should be an iterable)
+  [255]
+  $ hg debugtemplate '{min(dict())}'
+  hg: parse error: empty sequence
+  (min first argument should be an iterable)
+  [255]
+  $ hg debugtemplate '{max(dict())}'
+  hg: parse error: empty sequence
+  (max first argument should be an iterable)
+  [255]
+  $ hg debugtemplate '{min(dict() % "")}'
+  hg: parse error: empty sequence
+  (min first argument should be an iterable)
+  [255]
+  $ hg debugtemplate '{max(dict() % "")}'
+  hg: parse error: empty sequence
+  (max first argument should be an iterable)
+  [255]
+
 Test min/max of if() result
 
   $ cd latesttag

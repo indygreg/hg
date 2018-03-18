@@ -47,6 +47,16 @@ class wrapped(object):
         """
 
     @abc.abstractmethod
+    def getmin(self, context, mapping):
+        """Return the smallest item, which may be either a wrapped or a pure
+        value depending on the self type"""
+
+    @abc.abstractmethod
+    def getmax(self, context, mapping):
+        """Return the largest item, which may be either a wrapped or a pure
+        value depending on the self type"""
+
+    @abc.abstractmethod
     def itermaps(self, context):
         """Yield each template mapping"""
 
@@ -85,6 +95,17 @@ class wrappedbytes(wrapped):
         raise error.ParseError(_('%r is not a dictionary')
                                % pycompat.bytestr(self._value))
 
+    def getmin(self, context, mapping):
+        return self._getby(context, mapping, min)
+
+    def getmax(self, context, mapping):
+        return self._getby(context, mapping, max)
+
+    def _getby(self, context, mapping, func):
+        if not self._value:
+            raise error.ParseError(_('empty string'))
+        return func(pycompat.iterbytestr(self._value))
+
     def itermaps(self, context):
         raise error.ParseError(_('%r is not iterable of mappings')
                                % pycompat.bytestr(self._value))
@@ -106,6 +127,12 @@ class wrappedvalue(wrapped):
 
     def getmember(self, context, mapping, key):
         raise error.ParseError(_('%r is not a dictionary') % self._value)
+
+    def getmin(self, context, mapping):
+        raise error.ParseError(_("%r is not iterable") % self._value)
+
+    def getmax(self, context, mapping):
+        raise error.ParseError(_("%r is not iterable") % self._value)
 
     def itermaps(self, context):
         raise error.ParseError(_('%r is not iterable of mappings')
@@ -150,6 +177,18 @@ class hybrid(wrapped):
             raise error.ParseError(_('not a dictionary'))
         key = unwrapastype(context, mapping, key, self.keytype)
         return self._wrapvalue(key, self._values.get(key))
+
+    def getmin(self, context, mapping):
+        return self._getby(context, mapping, min)
+
+    def getmax(self, context, mapping):
+        return self._getby(context, mapping, max)
+
+    def _getby(self, context, mapping, func):
+        if not self._values:
+            raise error.ParseError(_('empty sequence'))
+        val = func(self._values)
+        return self._wrapvalue(val, val)
 
     def _wrapvalue(self, key, val):
         if val is None:
@@ -217,6 +256,14 @@ class mappable(wrapped):
         w = makewrapped(context, mapping, self._value)
         return w.getmember(context, mapping, key)
 
+    def getmin(self, context, mapping):
+        w = makewrapped(context, mapping, self._value)
+        return w.getmin(context, mapping)
+
+    def getmax(self, context, mapping):
+        w = makewrapped(context, mapping, self._value)
+        return w.getmax(context, mapping)
+
     def itermaps(self, context):
         yield self.tomap()
 
@@ -254,6 +301,12 @@ class _mappingsequence(wrapped):
 
     def getmember(self, context, mapping, key):
         raise error.ParseError(_('not a dictionary'))
+
+    def getmin(self, context, mapping):
+        raise error.ParseError(_('not comparable'))
+
+    def getmax(self, context, mapping):
+        raise error.ParseError(_('not comparable'))
 
     def join(self, context, mapping, sep):
         mapsiter = _iteroverlaymaps(context, mapping, self.itermaps(context))
@@ -320,6 +373,18 @@ class mappedgenerator(wrapped):
 
     def getmember(self, context, mapping, key):
         raise error.ParseError(_('not a dictionary'))
+
+    def getmin(self, context, mapping):
+        return self._getby(context, mapping, min)
+
+    def getmax(self, context, mapping):
+        return self._getby(context, mapping, max)
+
+    def _getby(self, context, mapping, func):
+        xs = self.tovalue(context, mapping)
+        if not xs:
+            raise error.ParseError(_('empty sequence'))
+        return func(xs)
 
     def itermaps(self, context):
         raise error.ParseError(_('list of strings is not mappable'))

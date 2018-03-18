@@ -717,6 +717,12 @@ class sessionvars(templateutil.wrapped):
         key = templateutil.unwrapvalue(context, mapping, key)
         return self._vars.get(key)
 
+    def getmin(self, context, mapping):
+        raise error.ParseError(_('not comparable'))
+
+    def getmax(self, context, mapping):
+        raise error.ParseError(_('not comparable'))
+
     def itermaps(self, context):
         separator = self._start
         for key, value in sorted(self._vars.iteritems()):

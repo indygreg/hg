@@ -20,7 +20,6 @@ from . import (
     error,
     minirst,
     obsutil,
-    pycompat,
     registrar,
     revset as revsetmod,
     revsetlang,
@@ -404,13 +403,13 @@ def max_(context, mapping, args, **kwargs):
         # i18n: "max" is a keyword
         raise error.ParseError(_("max expects one argument"))
 
-    iterable = evalfuncarg(context, mapping, args[0])
+    iterable = evalwrapped(context, mapping, args[0])
     try:
-        x = max(pycompat.maybebytestr(iterable))
-    except (TypeError, ValueError):
+        return iterable.getmax(context, mapping)
+    except error.ParseError as err:
         # i18n: "max" is a keyword
-        raise error.ParseError(_("max first argument should be an iterable"))
-    return templateutil.wraphybridvalue(iterable, x, x)
+        hint = _("max first argument should be an iterable")
+        raise error.ParseError(bytes(err), hint=hint)
 
 @templatefunc('min(iterable)')
 def min_(context, mapping, args, **kwargs):
@@ -419,13 +418,13 @@ def min_(context, mapping, args, **kwargs):
         # i18n: "min" is a keyword
         raise error.ParseError(_("min expects one argument"))
 
-    iterable = evalfuncarg(context, mapping, args[0])
+    iterable = evalwrapped(context, mapping, args[0])
     try:
-        x = min(pycompat.maybebytestr(iterable))
-    except (TypeError, ValueError):
+        return iterable.getmin(context, mapping)
+    except error.ParseError as err:
         # i18n: "min" is a keyword
-        raise error.ParseError(_("min first argument should be an iterable"))
-    return templateutil.wraphybridvalue(iterable, x, x)
+        hint = _("min first argument should be an iterable")
+        raise error.ParseError(bytes(err), hint=hint)
 
 @templatefunc('mod(a, b)')
 def mod(context, mapping, args):

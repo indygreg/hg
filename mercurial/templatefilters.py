@@ -11,6 +11,7 @@ import os
 import re
 import time
 
+from .i18n import _
 from . import (
     encoding,
     error,
@@ -101,7 +102,10 @@ def basename(path):
 @templatefilter('count')
 def count(i):
     """List or text. Returns the length as an integer."""
-    return len(i)
+    try:
+        return len(i)
+    except TypeError:
+        raise error.ParseError(_('not countable'))
 
 @templatefilter('dirname', intype=bytes)
 def dirname(path):

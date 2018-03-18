@@ -2277,6 +2277,11 @@ Count filter:
   o  0: children: 1, tags: 0, file_adds: 1, ancestors: 1
   
 
+  $ hg log -l1 -T '{termwidth|count}\n'
+  hg: parse error: not countable
+  (template filter 'count' is not compatible with keyword 'termwidth')
+  [255]
+
 Upper/lower filters:
 
   $ hg log -r0 --template '{branch|upper}\n'
@@ -3266,7 +3271,8 @@ Test min/max of if() result
 Test laziness of if() then/else clause
 
   $ hg debugtemplate '{count(0)}'
-  abort: incompatible use of template filter 'count'
+  hg: parse error: not countable
+  (incompatible use of template filter 'count')
   [255]
   $ hg debugtemplate '{if(true, "", count(0))}'
   $ hg debugtemplate '{if(false, count(0), "")}'

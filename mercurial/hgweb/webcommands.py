@@ -945,13 +945,14 @@ def annotate(web):
         if fctx.isbinary():
             mt = (mimetypes.guess_type(fctx.path())[0]
                   or 'application/octet-stream')
-            lines = [((fctx.filectx(fctx.filerev()), 1), '(binary:%s)' % mt)]
+            lines = [dagop.annotateline(fctx=fctx.filectx(fctx.filerev()),
+                                        lineno=1, text='(binary:%s)' % mt)]
         else:
             lines = webutil.annotate(web.req, fctx, web.repo.ui)
 
         previousrev = None
         blockparitygen = paritygen(1)
-        for lineno, (aline, l) in enumerate(lines):
+        for lineno, aline in enumerate(lines):
             f = aline.fctx
             rev = f.rev()
             if rev != previousrev:
@@ -971,7 +972,7 @@ def annotate(web):
                    "blockhead": blockhead,
                    "blockparity": blockparity,
                    "targetline": aline.lineno,
-                   "line": l,
+                   "line": aline.text,
                    "lineno": lineno + 1,
                    "lineid": "l%d" % (lineno + 1),
                    "linenumber": "% 6d" % (lineno + 1),

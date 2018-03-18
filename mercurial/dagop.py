@@ -368,6 +368,7 @@ class annotateline(object):
     lineno = attr.ib()
     # Whether this annotation was the result of a skip-annotate.
     skip = attr.ib(default=False)
+    text = attr.ib(default=None)
 
 @attr.s(slots=True, frozen=True)
 class _annotatedfile(object):
@@ -514,9 +515,8 @@ def annotate(base, parents, skiprevs=None, diffopts=None):
             del pcache[f]
 
     a = hist[base]
-    return [(annotateline(fctx, lineno, skip), line)
-            for fctx, lineno, skip, line
-            in zip(a.fctxs, a.linenos, a.skips, mdiff.splitnewlines(a.text))]
+    return [annotateline(*r) for r in zip(a.fctxs, a.linenos, a.skips,
+                                          mdiff.splitnewlines(a.text))]
 
 def toposort(revs, parentsfunc, firstbranch=()):
     """Yield revisions from heads to roots one (topo) branch at a time.

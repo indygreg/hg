@@ -396,7 +396,7 @@ def annotate(ui, repo, *pats, **opts):
         pieces = []
 
         for f, sep in funcmap:
-            l = [f(n) for n, dummy in lines]
+            l = [f(n) for n in lines]
             if fm.isplain():
                 sizes = [encoding.colwidth(x) for x in l]
                 ml = max(sizes)
@@ -405,7 +405,7 @@ def annotate(ui, repo, *pats, **opts):
                 formats.append(['%s' for x in l])
             pieces.append(l)
 
-        for f, p, (n, l) in zip(zip(*formats), zip(*pieces), lines):
+        for f, p, n in zip(zip(*formats), zip(*pieces), lines):
             fm.startitem()
             fm.context(fctx=n.fctx)
             fm.write(fields, "".join(f), *p)
@@ -413,9 +413,9 @@ def annotate(ui, repo, *pats, **opts):
                 fmt = "* %s"
             else:
                 fmt = ": %s"
-            fm.write('line', fmt, l)
+            fm.write('line', fmt, n.text)
 
-        if not lines[-1][1].endswith('\n'):
+        if not lines[-1].text.endswith('\n'):
             fm.plain('\n')
         fm.end()
 

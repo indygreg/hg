@@ -968,11 +968,12 @@ class basefilectx(object):
         return filectx(self._repo, self._path, fileid=-1, filelog=self._filelog)
 
     def annotate(self, follow=False, skiprevs=None, diffopts=None):
-        """Returns a list of tuples of (attr, line) for each line in the file
+        """Returns a list of annotateline objects for each line in the file
 
-        - attr.fctx is the filectx of the node where that line was last changed
-        - attr.lineno is the line number at the first appearance in the managed
+        - line.fctx is the filectx of the node where that line was last changed
+        - line.lineno is the line number at the first appearance in the managed
           file
+        - line.text is the data on that line (including newline character)
         """
         getlog = util.lrucachefunc(lambda x: self._repo.file(x))
 

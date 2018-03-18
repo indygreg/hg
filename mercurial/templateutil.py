@@ -16,6 +16,7 @@ from . import (
     util,
 )
 from .utils import (
+    dateutil,
     stringutil,
 )
 
@@ -317,6 +318,18 @@ def evalboolean(context, mapping, arg):
     # other objects are evaluated as strings, which means 0 is True, but
     # empty dict/list should be False as they are expected to be ''
     return bool(stringify(thing))
+
+def evaldate(context, mapping, arg, err=None):
+    """Evaluate given argument as a date tuple or a date string; returns
+    a (unixtime, offset) tuple"""
+    return unwrapdate(evalrawexp(context, mapping, arg), err)
+
+def unwrapdate(thing, err=None):
+    thing = _unwrapvalue(thing)
+    try:
+        return dateutil.parsedate(thing)
+    except AttributeError:
+        raise error.ParseError(err or _('not a date tuple nor a string'))
 
 def evalinteger(context, mapping, arg, err=None):
     return unwrapinteger(evalrawexp(context, mapping, arg), err)

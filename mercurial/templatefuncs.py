@@ -34,6 +34,7 @@ from .utils import (
 evalrawexp = templateutil.evalrawexp
 evalfuncarg = templateutil.evalfuncarg
 evalboolean = templateutil.evalboolean
+evaldate = templateutil.evaldate
 evalinteger = templateutil.evalinteger
 evalstring = templateutil.evalstring
 evalstringliteral = templateutil.evalstringliteral
@@ -373,12 +374,9 @@ def localdate(context, mapping, args):
         # i18n: "localdate" is a keyword
         raise error.ParseError(_("localdate expects one or two arguments"))
 
-    date = evalfuncarg(context, mapping, args[0])
-    try:
-        date = dateutil.parsedate(date)
-    except AttributeError:  # not str nor date tuple
-        # i18n: "localdate" is a keyword
-        raise error.ParseError(_("localdate expects a date information"))
+    date = evaldate(context, mapping, args[0],
+                    # i18n: "localdate" is a keyword
+                    _("localdate expects a date information"))
     if len(args) >= 2:
         tzoffset = None
         tz = evalfuncarg(context, mapping, args[1])

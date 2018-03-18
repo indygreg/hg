@@ -428,8 +428,6 @@ def runfilter(context, mapping, data):
     try:
         thing = unwrapastype(thing, getattr(filt, '_intype', None))
         return filt(thing)
-    except (ValueError, AttributeError, TypeError):
-        raise error.Abort(_formatfiltererror(arg, filt))
     except error.ParseError as e:
         raise error.ParseError(bytes(e), hint=_formatfiltererror(arg, filt))
 

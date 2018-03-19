@@ -324,6 +324,76 @@ Preserves external parent
 
   $ cd ..
 
+Rebasing from multiple bases:
+
+  $ hg init multiple-bases
+  $ cd multiple-bases
+  $ hg debugdrawdag << 'EOF'
+  >   C B
+  > D |/
+  > |/
+  > A
+  > EOF
+  $ hg rebase --collapse -r 'B+C' -d D
+  rebasing 1:fc2b737bb2e5 "B" (B)
+  rebasing 2:dc0947a82db8 "C" (C)
+  saved backup bundle to $TESTTMP/multiple-bases/.hg/strip-backup/dc0947a82db8-b0c1a7ea-rebase.hg
+  $ hg tglog
+  o  2: 2127ae44d291 'Collapsed revision
+  |  * B
+  |  * C'
+  o  1: b18e25de2cf5 'D'
+  |
+  o  0: 426bada5c675 'A'
+  
+  $ cd ..
+
+With non-contiguous commits:
+
+  $ hg init non-contiguous
+  $ cd non-contiguous
+  $ cat >> .hg/hgrc <<EOF
+  > [experimental]
+  > evolution=all
+  > EOF
+
+  $ hg debugdrawdag << 'EOF'
+  > F
+  > |
+  > E
+  > |
+  > D
+  > |
+  > C
+  > |
+  > B G
+  > |/
+  > A
+  > EOF
+
+BROKEN: should be allowed
+  $ hg rebase --collapse -r 'B+D+F' -d G
+  abort: unable to collapse on top of 2, there is more than one external parent: 3, 5
+  [255]
+  $ cd ..
+
+
+  $ hg init multiple-external-parents-2
+  $ cd multiple-external-parents-2
+  $ hg debugdrawdag << 'EOF'
+  > D       G
+  > |\     /|
+  > B C   E F
+  >  \|   |/
+  >   \ H /
+  >    \|/
+  >     A
+  > EOF
+
+  $ hg rebase --collapse -d H -s 'B+F'
+  abort: unable to collapse on top of 5, there is more than one external parent: 1, 3
+  [255]
+  $ cd ..
 
 With internal merge:
 
@@ -660,3 +730,102 @@ running into merge conflict and invoking rebase --continue.
   summary:     A
   
   $ cd ..
+
+Test aborted editor on final message
+
+  $ HGMERGE=:merge3
+  $ export HGMERGE
+  $ hg init aborted-editor
+  $ cd aborted-editor
+  $ hg debugdrawdag << 'EOF'
+  > C   # D/A = D\n
+  > |   # C/A = C\n
+  > B D # B/A = B\n
+  > |/  # A/A = A\n
+  > A
+  > EOF
+  $ hg rebase --collapse -t internal:merge3 -s B -d D
+  rebasing 1:f899f3910ce7 "B" (B)
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg tglog
+  o  3: 63668d570d21 'C'
+  |
+  | @  2: 82b8abf9c185 'D'
+  | |
+  @ |  1: f899f3910ce7 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+  $ cat A
+  <<<<<<< dest:   82b8abf9c185 D - test: D
+  D
+  ||||||| base
+  A
+  =======
+  B
+  >>>>>>> source: f899f3910ce7 B - test: B
+  $ echo BC > A
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue
+  rebasing 1:f899f3910ce7 "B" (B)
+  rebasing 3:63668d570d21 "C" (C tip)
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg tglog
+  @  3: 63668d570d21 'C'
+  |
+  | @  2: 82b8abf9c185 'D'
+  | |
+  o |  1: f899f3910ce7 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+  $ cat A
+  <<<<<<< dest:   82b8abf9c185 D - test: D
+  BC
+  ||||||| base
+  B
+  =======
+  C
+  >>>>>>> source: 63668d570d21 C tip - test: C
+  $ echo BD > A
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ HGEDITOR=false hg rebase --continue --config ui.interactive=1
+  already rebased 1:f899f3910ce7 "B" (B) as 82b8abf9c185
+  rebasing 3:63668d570d21 "C" (C tip)
+  abort: edit failed: false exited with status 1
+  [255]
+  $ hg tglog
+  o  3: 63668d570d21 'C'
+  |
+  | @  2: 82b8abf9c185 'D'
+  | |
+  o |  1: f899f3910ce7 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+BROKEN: should not result in a conflict
+  $ hg rebase --continue
+  already rebased 1:f899f3910ce7 "B" (B) as 82b8abf9c185
+  rebasing 3:63668d570d21 "C" (C tip)
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ cat A
+  <<<<<<< dest:   82b8abf9c185 D - test: D
+  BD
+  ||||||| base
+  B
+  =======
+  C
+  >>>>>>> source: 63668d570d21 C tip - test: C

@@ -272,6 +272,64 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
                                    req.dispatchparts[2:])
 
 def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
+    from .hgweb import common as hgwebcommon
+
+    # URL space looks like: <permissions>/<command>, where <permission> can
+    # be ``ro`` or ``rw`` to signal read-only or read-write, respectively.
+
+    # Root URL does nothing meaningful... yet.
+    if not urlparts:
+        res.status = b'200 OK'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('HTTP version 2 API handler'))
+        return
+
+    if len(urlparts) == 1:
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('do not know how to process %s\n') %
+                         req.dispatchpath)
+        return
+
+    permission, command = urlparts[0:2]
+
+    if permission not in (b'ro', b'rw'):
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('unknown permission: %s') % permission)
+        return
+
+    # At some point we'll want to use our own API instead of recycling the
+    # behavior of version 1 of the wire protocol...
+    # TODO return reasonable responses - not responses that overload the
+    # HTTP status line message for error reporting.
+    try:
+        checkperm(rctx, req, 'pull' if permission == b'ro' else 'push')
+    except hgwebcommon.ErrorResponse as e:
+        res.status = hgwebcommon.statusmessage(e.code, pycompat.bytestr(e))
+        for k, v in e.headers:
+            res.headers[k] = v
+        res.setbodybytes('permission denied')
+        return
+
+    if command not in wireproto.commands:
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('unknown wire protocol command: %s\n') % command)
+        return
+
+    repo = rctx.repo
+    ui = repo.ui
+
+    proto = httpv2protocolhandler(req, ui)
+
+    if not wireproto.commands.commandavailable(command, proto):
+        res.status = b'404 Not Found'
+        res.headers[b'Content-Type'] = b'text/plain'
+        res.setbodybytes(_('invalid wire protocol command: %s') % command)
+        return
+
+    # We don't do anything meaningful yet.
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = b'text/plain'
     res.setbodybytes(b'/'.join(urlparts) + b'\n')
@@ -283,6 +341,34 @@ API_HANDLERS = {
         'handler': _handlehttpv2request,
     },
 }
+
+class httpv2protocolhandler(wireprototypes.baseprotocolhandler):
+    def __init__(self, req, ui):
+        self._req = req
+        self._ui = ui
+
+    @property
+    def name(self):
+        return HTTPV2
+
+    def getargs(self, args):
+        raise NotImplementedError
+
+    def forwardpayload(self, fp):
+        raise NotImplementedError
+
+    @contextlib.contextmanager
+    def mayberedirectstdio(self):
+        raise NotImplementedError
+
+    def client(self):
+        raise NotImplementedError
+
+    def addcapabilities(self, repo, caps):
+        raise NotImplementedError
+
+    def checkperm(self, perm):
+        raise NotImplementedError
 
 def _httpresponsetype(ui, req, prefer_uncompressed):
     """Determine the appropriate response type and compression settings.

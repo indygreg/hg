@@ -2970,6 +2970,11 @@ def debugwireproto(ui, repo, path=None, **opts):
             url = path + httppath
             req = urlmod.urlreq.request(pycompat.strurl(url), body, headers)
 
+            # urllib.Request insists on using has_data() as a proxy for
+            # determining the request method. Override that to use our
+            # explicitly requested method.
+            req.get_method = lambda: method
+
             try:
                 opener.open(req).read()
             except util.urlerr.urlerror as e:

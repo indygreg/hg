@@ -144,6 +144,46 @@ A command returning a ``stream`` response issues a
 ``application/mercurial-0.*`` media type and the HTTP response is typically
 using *chunked transfer* (``Transfer-Encoding: chunked``).
 
+HTTP Version 2 Transport
+------------------------
+
+**Experimental - feature under active development**
+
+Version 2 of the HTTP protocol is exposed under the ``/api/*`` URL space.
+It's final API name is not yet formalized.
+
+Commands are triggered by sending HTTP requests against URLs of the
+form ``<permission>/<command>``, where ``<permission>`` is ``ro`` or
+``rw``, meaning read-only and read-write, respectively and ``<command>``
+is a named wire protocol command.
+
+Commands that modify repository state in meaningful ways MUST NOT be
+exposed under the ``ro`` URL prefix. All available commands MUST be
+available under the ``rw`` URL prefix.
+
+Server adminstrators MAY implement blanket HTTP authentication keyed
+off the URL prefix. For example, a server may require authentication
+for all ``rw/*`` URLs and let unauthenticated requests to ``ro/*``
+URL proceed. A server MAY issue an HTTP 401, 403, or 407 response
+in accordance with RFC 7235. Clients SHOULD recognize the HTTP Basic
+(RFC 7617) and Digest (RFC 7616) authentication schemes. Clients SHOULD
+make an attempt to recognize unknown schemes using the
+``WWW-Authenticate`` response header on a 401 response, as defined by
+RFC 7235.
+
+Read-only commands are accessible under ``rw/*`` URLs so clients can
+signal the intent of the operation very early in the connection
+lifecycle. For example, a ``push`` operation - which consists of
+various read-only commands mixed with at least one read-write command -
+can perform all commands against ``rw/*`` URLs so that any server-side
+authentication requirements are discovered upon attempting the first
+command - not potentially several commands into the exchange. This
+allows clients to fail faster or prompt for credentials as soon as the
+exchange takes place. This provides a better end-user experience.
+
+Requests to unknown commands or URLS result in an HTTP 404.
+TODO formally define response type, how error is communicated, etc.
+
 SSH Protocol
 ============
 

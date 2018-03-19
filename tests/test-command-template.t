@@ -3242,6 +3242,35 @@ Test min/max of integers
   $ hg log -R latesttag -l1 -T '{max(revset("9:10"))}\n'
   10
 
+Test min/max of if() result
+
+  $ cd latesttag
+  $ hg log -l1 -T '{min(if(true, revset("9:10"), ""))}\n'
+  9
+  $ hg log -l1 -T '{max(if(false, "", revset("9:10")))}\n'
+  10
+  $ hg log -l1 -T '{min(ifcontains("a", "aa", revset("9:10"), ""))}\n'
+  9
+  $ hg log -l1 -T '{max(ifcontains("a", "bb", "", revset("9:10")))}\n'
+  10
+  $ hg log -l1 -T '{min(ifeq(0, 0, revset("9:10"), ""))}\n'
+  9
+  $ hg log -l1 -T '{max(ifeq(0, 1, "", revset("9:10")))}\n'
+  10
+  $ cd ..
+
+Test laziness of if() then/else clause
+
+  $ hg debugtemplate '{count(0)}'
+  abort: incompatible use of template filter 'count'
+  [255]
+  $ hg debugtemplate '{if(true, "", count(0))}'
+  $ hg debugtemplate '{if(false, count(0), "")}'
+  $ hg debugtemplate '{ifcontains("a", "aa", "", count(0))}'
+  $ hg debugtemplate '{ifcontains("a", "bb", count(0), "")}'
+  $ hg debugtemplate '{ifeq(0, 0, "", count(0))}'
+  $ hg debugtemplate '{ifeq(0, 1, count(0), "")}'
+
 Test dot operator precedence:
 
   $ hg debugtemplate -R latesttag -r0 -v '{manifest.node|short}\n'

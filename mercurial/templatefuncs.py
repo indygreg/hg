@@ -248,9 +248,9 @@ def if_(context, mapping, args):
 
     test = evalboolean(context, mapping, args[0])
     if test:
-        yield evalrawexp(context, mapping, args[1])
+        return evalrawexp(context, mapping, args[1])
     elif len(args) == 3:
-        yield evalrawexp(context, mapping, args[2])
+        return evalrawexp(context, mapping, args[2])
 
 @templatefunc('ifcontains(needle, haystack, then[, else])')
 def ifcontains(context, mapping, args):
@@ -269,9 +269,9 @@ def ifcontains(context, mapping, args):
         found = False
 
     if found:
-        yield evalrawexp(context, mapping, args[2])
+        return evalrawexp(context, mapping, args[2])
     elif len(args) == 4:
-        yield evalrawexp(context, mapping, args[3])
+        return evalrawexp(context, mapping, args[3])
 
 @templatefunc('ifeq(expr1, expr2, then[, else])')
 def ifeq(context, mapping, args):
@@ -284,9 +284,9 @@ def ifeq(context, mapping, args):
     test = evalstring(context, mapping, args[0])
     match = evalstring(context, mapping, args[1])
     if test == match:
-        yield evalrawexp(context, mapping, args[2])
+        return evalrawexp(context, mapping, args[2])
     elif len(args) == 4:
-        yield evalrawexp(context, mapping, args[3])
+        return evalrawexp(context, mapping, args[3])
 
 @templatefunc('join(list, sep)')
 def join(context, mapping, args):

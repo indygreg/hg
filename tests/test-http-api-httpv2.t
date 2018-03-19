@@ -1,5 +1,5 @@
   $ HTTPV2=exp-http-v2-0001
-  $ MEDIATYPE=application/mercurial-tbd
+  $ MEDIATYPE=application/mercurial-exp-framing-0001
 
   $ send() {
   >   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
@@ -120,9 +120,9 @@ Missing Accept header results in 406
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 72\r\n
+  s>     Content-Length: 85\r\n
   s>     \r\n
-  s>     client MUST specify Accept header with value: application/mercurial-tbd\n
+  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0001\n
 
 Bad Accept header results in 406
 
@@ -143,9 +143,9 @@ Bad Accept header results in 406
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 72\r\n
+  s>     Content-Length: 85\r\n
   s>     \r\n
-  s>     client MUST specify Accept header with value: application/mercurial-tbd\n
+  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0001\n
 
 Bad Content-Type header results in 415
 
@@ -158,7 +158,7 @@ Bad Content-Type header results in 415
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-tbd\r\n
+  s>     accept: application/mercurial-exp-framing-0001\r\n
   s>     content-type: badmedia\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -168,9 +168,9 @@ Bad Content-Type header results in 415
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 75\r\n
+  s>     Content-Length: 88\r\n
   s>     \r\n
-  s>     client MUST send Content-Type header with value: application/mercurial-tbd\n
+  s>     client MUST send Content-Type header with value: application/mercurial-exp-framing-0001\n
 
 Request to read-only command works out of the box
 
@@ -179,15 +179,18 @@ Request to read-only command works out of the box
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
+  >     frame command-name eos customreadonly
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-tbd\r\n
-  s>     content-type: application/mercurial-tbd\r\n
+  s>     accept: application/mercurial-exp-framing-0001\r\n
+  s>     content-type: application/mercurial-exp-framing-0001\r\n
   s>     user-agent: test\r\n
+  s>     content-length: 18\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
+  s>     \x0e\x00\x00\x11customreadonly
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -283,15 +286,18 @@ Authorized request for valid read-write command works
   >     user-agent: test
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
+  >     frame command-name eos customreadonly
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/rw/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-tbd\r\n
-  s>     content-type: application/mercurial-tbd\r\n
+  s>     accept: application/mercurial-exp-framing-0001\r\n
+  s>     content-type: application/mercurial-exp-framing-0001\r\n
   s>     user-agent: test\r\n
+  s>     content-length: 18\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
+  s>     \x0e\x00\x00\x11customreadonly
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -311,7 +317,7 @@ Authorized request for unknown command is rejected
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/rw/badcommand HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-tbd\r\n
+  s>     accept: application/mercurial-exp-framing-0001\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n

@@ -78,6 +78,7 @@ from . import (
     url as urlmod,
     util,
     vfs as vfsmod,
+    wireprotoframing,
     wireprotoserver,
 )
 from .utils import dateutil
@@ -2711,6 +2712,12 @@ def debugwireproto(ui, repo, path=None, **opts):
         The content of the file defined as the value to this argument will be
         transferred verbatim as the HTTP request body.
 
+    ``frame <type> <flags> <payload>``
+        Send a unified protocol frame as part of the request body.
+
+        All frames will be collected and sent as the body to the HTTP
+        request.
+
     close
     -----
 
@@ -2750,6 +2757,28 @@ def debugwireproto(ui, repo, path=None, **opts):
     ---------
 
     ``read()`` N bytes from the server's stderr pipe, if available.
+
+    Specifying Unified Frame-Based Protocol Frames
+    ----------------------------------------------
+
+    It is possible to emit a *Unified Frame-Based Protocol* by using special
+    syntax.
+
+    A frame is composed as a type, flags, and payload. These can be parsed
+    from a string of the form ``<type> <flags> <payload>``. That is, 3
+    space-delimited strings.
+
+    ``payload`` is the simplest: it is evaluated as a Python byte string
+    literal.
+
+    ``type`` can be an integer value for the frame type or the string name
+    of the type. The strings are defined in ``wireprotoframing.py``. e.g.
+    ``command-name``.
+
+    ``flags`` is a ``|`` delimited list of flag components. Each component
+    (and there can be just one) can be an integer or a flag name for the
+    specified frame type. Values are resolved to integers and then bitwise
+    OR'd together.
     """
     opts = pycompat.byteskwargs(opts)
 
@@ -2953,6 +2982,7 @@ def debugwireproto(ui, repo, path=None, **opts):
             method, httppath = request[1:]
             headers = {}
             body = None
+            frames = []
             for line in lines:
                 line = line.lstrip()
                 m = re.match(b'^([a-zA-Z0-9_-]+): (.*)$', line)
@@ -2963,11 +2993,20 @@ def debugwireproto(ui, repo, path=None, **opts):
                 if line.startswith(b'BODYFILE '):
                     with open(line.split(b' ', 1), 'rb') as fh:
                         body = fh.read()
+                elif line.startswith(b'frame '):
+                    frame = wireprotoframing.makeframefromhumanstring(
+                        line[len(b'frame '):])
+
+                    frames.append(frame)
                 else:
                     raise error.Abort(_('unknown argument to httprequest: %s') %
                                       line)
 
             url = path + httppath
+
+            if frames:
+                body = b''.join(bytes(f) for f in frames)
+
             req = urlmod.urlreq.request(pycompat.strurl(url), body, headers)
 
             # urllib.Request insists on using has_data() as a proxy for

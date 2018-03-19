@@ -832,7 +832,7 @@ def markersoperations(markers):
 
     return sorted(operations)
 
-def obsfateprinter(successors, markers, ui):
+def obsfateprinter(ui, repo, successors, markers, formatctx):
     """ Build a obsfate string for a single successorset using all obsfate
     related function defined in obsutil
     """
@@ -852,7 +852,7 @@ def obsfateprinter(successors, markers, ui):
 
     # Successors
     if successors:
-        fmtsuccessors = [successors.joinfmt(succ) for succ in successors]
+        fmtsuccessors = [formatctx(repo[succ]) for succ in successors]
         line.append(" as %s" % ", ".join(fmtsuccessors))
 
     # Users

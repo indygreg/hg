@@ -498,10 +498,13 @@ def showobsfate(context, mapping):
     succsandmarkers = showsuccsandmarkers(context, mapping)
 
     ui = context.resource(mapping, 'ui')
+    repo = context.resource(mapping, 'repo')
     values = []
 
     for x in succsandmarkers:
-        values.append(obsutil.obsfateprinter(x['successors'], x['markers'], ui))
+        v = obsutil.obsfateprinter(ui, repo, x['successors'], x['markers'],
+                                   scmutil.formatchangeid)
+        values.append(v)
 
     return compatlist(context, mapping, "fate", values)
 

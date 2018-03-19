@@ -501,7 +501,7 @@ def showobsfate(context, mapping):
     repo = context.resource(mapping, 'repo')
     values = []
 
-    for x in succsandmarkers:
+    for x in succsandmarkers.tovalue(context, mapping):
         v = obsutil.obsfateprinter(ui, repo, x['successors'], x['markers'],
                                    scmutil.formatchangeid)
         values.append(v)
@@ -663,8 +663,7 @@ def showsuccsandmarkers(context, mapping):
 
         data.append({'successors': successors, 'markers': finalmarkers})
 
-    f = _showcompatlist(context, mapping, 'succsandmarkers', data)
-    return _hybrid(f, data, lambda x: x, pycompat.identity)
+    return templateutil.mappinglist(data)
 
 @templatekeyword('p1rev', requires={'ctx'})
 def showp1rev(context, mapping):

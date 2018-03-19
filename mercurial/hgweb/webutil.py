@@ -355,7 +355,8 @@ def formatlinerange(fromline, toline):
 
 def succsandmarkers(context, mapping):
     repo = context.resource(mapping, 'repo')
-    for item in templatekw.showsuccsandmarkers(context, mapping):
+    itemmappings = templatekw.showsuccsandmarkers(context, mapping)
+    for item in itemmappings.tovalue(context, mapping):
         item['successors'] = _siblings(repo[successor]
                                        for successor in item['successors'])
         yield item

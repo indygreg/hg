@@ -35,7 +35,6 @@ from mercurial.hgweb import (
 )
 
 from mercurial import (
-    encoding,
     extensions,
     fileset,
 )
@@ -59,7 +58,7 @@ def pygmentize(web, field, fctx, tmpl):
                 guessfilenameonly=filenameonly)
 
 def filerevision_highlight(orig, web, fctx):
-    mt = ''.join(web.tmpl('mimetype', encoding=encoding.encoding))
+    mt = web.res.headers['Content-Type']
     # only pygmentize for mimetype containing 'html' so we both match
     # 'text/html' and possibly 'application/xhtml+xml' in the future
     # so that we don't have to touch the extension when the mimetype
@@ -73,7 +72,7 @@ def filerevision_highlight(orig, web, fctx):
     return orig(web, fctx)
 
 def annotate_highlight(orig, web):
-    mt = ''.join(web.tmpl('mimetype', encoding=encoding.encoding))
+    mt = web.res.headers['Content-Type']
     if 'html' in mt:
         fctx = webutil.filectx(web.repo, web.req)
         pygmentize(web, 'annotateline', fctx, web.tmpl)

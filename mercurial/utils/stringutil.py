@@ -14,6 +14,7 @@ import re as remod
 import textwrap
 
 from ..i18n import _
+from ..thirdparty import attr
 
 from .. import (
     encoding,
@@ -157,6 +158,136 @@ def person(author):
         return author[:f].strip(' "').replace('\\"', '"')
     f = author.find('@')
     return author[:f].replace('.', ' ')
+
+@attr.s(hash=True)
+class mailmapping(object):
+    '''Represents a username/email key or value in
+    a mailmap file'''
+    email = attr.ib()
+    name = attr.ib(default=None)
+
+def parsemailmap(mailmapcontent):
+    """Parses data in the .mailmap format
+
+    >>> mmdata = b"\\n".join([
+    ... b'# Comment',
+    ... b'Name <commit1@email.xx>',
+    ... b'<name@email.xx> <commit2@email.xx>',
+    ... b'Name <proper@email.xx> <commit3@email.xx>',
+    ... b'Name <proper@email.xx> Commit <commit4@email.xx>',
+    ... ])
+    >>> mm = parsemailmap(mmdata)
+    >>> for key in sorted(mm.keys()):
+    ...     print(key)
+    mailmapping(email='commit1@email.xx', name=None)
+    mailmapping(email='commit2@email.xx', name=None)
+    mailmapping(email='commit3@email.xx', name=None)
+    mailmapping(email='commit4@email.xx', name='Commit')
+    >>> for val in sorted(mm.values()):
+    ...     print(val)
+    mailmapping(email='commit1@email.xx', name='Name')
+    mailmapping(email='name@email.xx', name=None)
+    mailmapping(email='proper@email.xx', name='Name')
+    mailmapping(email='proper@email.xx', name='Name')
+    """
+    mailmap = {}
+
+    if mailmapcontent is None:
+        return mailmap
+
+    for line in mailmapcontent.splitlines():
+
+        # Don't bother checking the line if it is a comment or
+        # is an improperly formed author field
+        if line.lstrip().startswith('#') or any(c not in line for c in '<>@'):
+            continue
+
+        # name, email hold the parsed emails and names for each line
+        # name_builder holds the words in a persons name
+        name, email = [], []
+        namebuilder = []
+
+        for element in line.split():
+            if element.startswith('#'):
+                # If we reach a comment in the mailmap file, move on
+                break
+
+            elif element.startswith('<') and element.endswith('>'):
+                # We have found an email.
+                # Parse it, and finalize any names from earlier
+                email.append(element[1:-1])  # Slice off the "<>"
+
+                if namebuilder:
+                    name.append(' '.join(namebuilder))
+                    namebuilder = []
+
+                # Break if we have found a second email, any other
+                # data does not fit the spec for .mailmap
+                if len(email) > 1:
+                    break
+
+            else:
+                # We have found another word in the committers name
+                namebuilder.append(element)
+
+        mailmapkey = mailmapping(
+            email=email[-1],
+            name=name[-1] if len(name) == 2 else None,
+        )
+
+        mailmap[mailmapkey] = mailmapping(
+            email=email[0],
+            name=name[0] if name else None,
+        )
+
+    return mailmap
+
+def mapname(mailmap, author):
+    """Returns the author field according to the mailmap cache, or
+    the original author field.
+
+    >>> mmdata = b"\\n".join([
+    ...     b'# Comment',
+    ...     b'Name <commit1@email.xx>',
+    ...     b'<name@email.xx> <commit2@email.xx>',
+    ...     b'Name <proper@email.xx> <commit3@email.xx>',
+    ...     b'Name <proper@email.xx> Commit <commit4@email.xx>',
+    ... ])
+    >>> m = parsemailmap(mmdata)
+    >>> mapname(m, b'Commit <commit1@email.xx>')
+    'Name <commit1@email.xx>'
+    >>> mapname(m, b'Name <commit2@email.xx>')
+    'Name <name@email.xx>'
+    >>> mapname(m, b'Commit <commit3@email.xx>')
+    'Name <proper@email.xx>'
+    >>> mapname(m, b'Commit <commit4@email.xx>')
+    'Name <proper@email.xx>'
+    >>> mapname(m, b'Unknown Name <unknown@email.com>')
+    'Unknown Name <unknown@email.com>'
+    """
+    # If the author field coming in isn't in the correct format,
+    # or the mailmap is empty just return the original author field
+    if not isauthorwellformed(author) or not mailmap:
+        return author
+
+    # Turn the user name into a mailmaptup
+    commit = mailmapping(name=person(author), email=email(author))
+
+    try:
+        # Try and use both the commit email and name as the key
+        proper = mailmap[commit]
+
+    except KeyError:
+        # If the lookup fails, use just the email as the key instead
+        # We call this commit2 as not to erase original commit fields
+        commit2 = mailmapping(email=commit.email)
+        proper = mailmap.get(commit2, mailmapping(None, None))
+
+    # Return the author field with proper values filled in
+    return '%s <%s>' % (
+        proper.name if proper.name else commit.name,
+        proper.email if proper.email else commit.email,
+    )
 
 _correctauthorformat = remod.compile(br'^[^<]+\s\<[^<>]+@[^<>]+\>$')
 

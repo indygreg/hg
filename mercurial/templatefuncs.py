@@ -26,7 +26,10 @@ from . import (
     templateutil,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 evalrawexp = templateutil.evalrawexp
 evalfuncarg = templateutil.evalfuncarg
@@ -165,6 +168,24 @@ def formatnode(context, mapping, args):
     if ui.debugflag:
         return node
     return templatefilters.short(node)
+
+@templatefunc('mailmap(author)')
+def mailmap(context, mapping, args):
+    """Return the author, updated according to the value
+    set in the .mailmap file"""
+    if len(args) != 1:
+        raise error.ParseError(_("mailmap expects one argument"))
+
+    author = evalfuncarg(context, mapping, args[0])
+
+    cache = context.resource(mapping, 'cache')
+    repo = context.resource(mapping, 'repo')
+
+    if 'mailmap' not in cache:
+        data = repo.wvfs.tryread('.mailmap')
+        cache['mailmap'] = stringutil.parsemailmap(data)
+
+    return stringutil.mapname(cache['mailmap'], author) or author
 
 @templatefunc('pad(text, width[, fillchar=\' \'[, left=False]])',
               argspec='text width fillchar left')

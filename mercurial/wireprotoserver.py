@@ -327,7 +327,12 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
         _processhttpv2reflectrequest(rctx.repo.ui, rctx.repo, req, res)
         return
 
-    if command not in wireproto.commands:
+    # Extra commands that we handle that aren't really wire protocol
+    # commands. Think extra hard before making this hackery available to
+    # extension.
+    extracommands = {'multirequest'}
+
+    if command not in wireproto.commands and command not in extracommands:
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(_('unknown wire protocol command: %s\n') % command)
@@ -338,7 +343,8 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
 
     proto = httpv2protocolhandler(req, ui)
 
-    if not wireproto.commands.commandavailable(command, proto):
+    if (not wireproto.commands.commandavailable(command, proto)
+        and command not in extracommands):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(_('invalid wire protocol command: %s') % command)
@@ -434,18 +440,14 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
             # Need more data before we can do anything.
             continue
         elif action == 'runcommand':
-            # We currently only support running a single command per
-            # HTTP request.
-            if seencommand:
-                # TODO define proper error mechanism.
-                res.status = b'200 OK'
-                res.headers[b'Content-Type'] = b'text/plain'
-                res.setbodybytes(_('support for multiple commands per request '
-                                   'not yet implemented'))
+            sentoutput = _httpv2runcommand(ui, repo, req, res, authedperm,
+                                           reqcommand, reactor, meta,
+                                           issubsequent=seencommand)
+
+            if sentoutput:
                 return
 
-            _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand,
-                              reactor, meta)
+            seencommand = True
 
         elif action == 'error':
             # TODO define proper error mechanism.
@@ -471,7 +473,7 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
                                      % action)
 
 def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
-                      command):
+                      command, issubsequent):
     """Dispatch a wire protocol command made from HTTPv2 requests.
 
     The authenticated permission (``authedperm``) along with the original
@@ -484,34 +486,57 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     # run doesn't have permissions requirements greater than what was granted
     # by ``authedperm``.
     #
-    # For now, this is no big deal, as we only allow a single command per
-    # request and that command must match the command in the URL. But when
-    # things change, we need to watch out...
-    if reqcommand != command['command']:
-        # TODO define proper error mechanism
-        res.status = b'200 OK'
-        res.headers[b'Content-Type'] = b'text/plain'
-        res.setbodybytes(_('command in frame must match command in URL'))
-        return
-
-    # TODO once we get rid of the command==URL restriction, we'll need to
-    # revalidate command validity and auth here. checkperm,
-    # wireproto.commands.commandavailable(), etc.
+    # Our rule for this is we only allow one command per HTTP request and
+    # that command must match the command in the URL. However, we make
+    # an exception for the ``multirequest`` URL. This URL is allowed to
+    # execute multiple commands. We double check permissions of each command
+    # as it is invoked to ensure there is no privilege escalation.
+    # TODO consider allowing multiple commands to regular command URLs
+    # iff each command is the same.
 
     proto = httpv2protocolhandler(req, ui, args=command['args'])
-    assert wireproto.commands.commandavailable(command['command'], proto)
-    wirecommand = wireproto.commands[command['command']]
 
-    assert authedperm in (b'ro', b'rw')
-    assert wirecommand.permission in ('push', 'pull')
+    if reqcommand == b'multirequest':
+        if not wireproto.commands.commandavailable(command['command'], proto):
+            # TODO proper error mechanism
+            res.status = b'200 OK'
+            res.headers[b'Content-Type'] = b'text/plain'
+            res.setbodybytes(_('wire protocol command not available: %s') %
+                             command['command'])
+            return True
 
-    # We already checked this as part of the URL==command check, but
-    # permissions are important, so do it again.
-    if authedperm == b'ro':
-        assert wirecommand.permission == 'pull'
-    elif authedperm == b'rw':
-        # We are allowed to access read-only commands under the rw URL.
+        assert authedperm in (b'ro', b'rw')
+        wirecommand = wireproto.commands[command['command']]
         assert wirecommand.permission in ('push', 'pull')
+
+        if authedperm == b'ro' and wirecommand.permission != 'pull':
+            # TODO proper error mechanism
+            res.status = b'403 Forbidden'
+            res.headers[b'Content-Type'] = b'text/plain'
+            res.setbodybytes(_('insufficient permissions to execute '
+                               'command: %s') % command['command'])
+            return True
+
+        # TODO should we also call checkperm() here? Maybe not if we're going
+        # to overhaul that API. The granted scope from the URL check should
+        # be good enough.
+
+    else:
+        # Don't allow multiple commands outside of ``multirequest`` URL.
+        if issubsequent:
+            # TODO proper error mechanism
+            res.status = b'200 OK'
+            res.headers[b'Content-Type'] = b'text/plain'
+            res.setbodybytes(_('multiple commands cannot be issued to this '
+                               'URL'))
+            return True
+
+        if reqcommand != command['command']:
+            # TODO define proper error mechanism
+            res.status = b'200 OK'
+            res.headers[b'Content-Type'] = b'text/plain'
+            res.setbodybytes(_('command in frame must match command in URL'))
+            return True
 
     rsp = wireproto.dispatch(repo, proto, command['command'])
 
@@ -527,6 +552,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 
     if action == 'sendframes':
         res.setbodygen(meta['framegen'])
+        return True
     elif action == 'noop':
         pass
     else:

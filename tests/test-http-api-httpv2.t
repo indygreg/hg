@@ -412,4 +412,153 @@ Command frames can be reflected via debugreflect
   s>     received: <no frame>\n
   s>     {"action": "noop"}
 
+Multiple requests to regular command URL are not allowed
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/customreadonly
+  >     accept: $MEDIATYPE
+  >     content-type: $MEDIATYPE
+  >     user-agent: test
+  >     frame 1 command-name eos customreadonly
+  >     frame 3 command-name eos customreadonly
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0002\r\n
+  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     user-agent: test\r\n
+  s>     content-length: 40\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s>     \x0e\x00\x00\x01\x00\x11customreadonly\x0e\x00\x00\x03\x00\x11customreadonly
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 46\r\n
+  s>     \r\n
+  s>     multiple commands cannot be issued to this URL
+
+Multiple requests to "multirequest" URL are allowed
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/multirequest
+  >     accept: $MEDIATYPE
+  >     content-type: $MEDIATYPE
+  >     user-agent: test
+  >     frame 1 command-name eos customreadonly
+  >     frame 3 command-name eos customreadonly
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/multirequest HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0002\r\n
+  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     user-agent: test\r\n
+  s>     *\r\n (glob)
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s>     \x0e\x00\x00\x01\x00\x11customreadonly\x0e\x00\x00\x03\x00\x11customreadonly
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0002\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     *\r\n (glob)
+  s>     \x1d\x00\x00\x01\x00Bcustomreadonly bytes response
+  s>     \r\n
+  s>     23\r\n
+  s>     \x1d\x00\x00\x03\x00Bcustomreadonly bytes response
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+
+Interleaved requests to "multirequest" are processed
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/multirequest
+  >     accept: $MEDIATYPE
+  >     content-type: $MEDIATYPE
+  >     user-agent: test
+  >     frame 1 command-name have-args listkeys
+  >     frame 3 command-name have-args listkeys
+  >     frame 3 command-argument eoa \x09\x00\x09\x00namespacebookmarks
+  >     frame 1 command-argument eoa \x09\x00\x0a\x00namespacenamespaces
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/multirequest HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0002\r\n
+  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     user-agent: test\r\n
+  s>     content-length: 85\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s>     \x08\x00\x00\x01\x00\x12listkeys\x08\x00\x00\x03\x00\x12listkeys\x16\x00\x00\x03\x00"	\x00	\x00namespacebookmarks\x17\x00\x00\x01\x00"	\x00\n
+  s>     \x00namespacenamespaces
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0002\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     6\r\n
+  s>     \x00\x00\x00\x03\x00B
+  s>     \r\n
+  s>     24\r\n
+  s>     \x1e\x00\x00\x01\x00Bbookmarks	\n
+  s>     namespaces	\n
+  s>     phases	
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
+
+Restart server to disable read-write access
+
+  $ killdaemons.py
+  $ cat > server/.hg/hgrc << EOF
+  > [experimental]
+  > web.apiserver = true
+  > web.api.debugreflect = true
+  > web.api.http-v2 = true
+  > [web]
+  > push_ssl = false
+  > EOF
+
+  $ hg -R server serve -p $HGPORT -d --pid-file hg.pid -E error.log
+  $ cat hg.pid > $DAEMON_PIDS
+
+Attempting to run a read-write command via multirequest on read-only URL is not allowed
+
+  $ send << EOF
+  > httprequest POST api/$HTTPV2/ro/multirequest
+  >     accept: $MEDIATYPE
+  >     content-type: $MEDIATYPE
+  >     user-agent: test
+  >     frame 1 command-name eos unbundle
+  > EOF
+  using raw connection to peer
+  s>     POST /api/exp-http-v2-0001/ro/multirequest HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0002\r\n
+  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     user-agent: test\r\n
+  s>     content-length: 14\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s>     \x08\x00\x00\x01\x00\x11unbundle
+  s> makefile('rb', None)
+  s>     HTTP/1.1 403 Forbidden\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: text/plain\r\n
+  s>     Content-Length: 53\r\n
+  s>     \r\n
+  s>     insufficient permissions to execute command: unbundle
+
   $ cat error.log

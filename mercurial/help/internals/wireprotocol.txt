@@ -203,6 +203,28 @@ an HTTP 406.
 Servers receiving requests with an invalid ``Content-Type`` header SHOULD
 respond with an HTTP 415.
 
+The command to run is specified in the POST payload as defined by the
+*Unified Frame-Based Protocol*. This is redundant with data already
+encoded in the URL. This is by design, so server operators can have
+better understanding about server activity from looking merely at
+HTTP access logs.
+
+In most circumstances, the command specified in the URL MUST match
+the command specified in the frame-based payload or the server will
+respond with an error. The exception to this is the special
+``multirequest`` URL. (See below.) In addition, HTTP requests
+are limited to one command invocation. The exception is the special
+``multirequest`` URL.
+
+The ``multirequest`` command endpoints (``ro/multirequest`` and
+``rw/multirequest``) are special in that they allow the execution of
+*any* command and allow the execution of multiple commands. If the
+HTTP request issues multiple commands across multiple frames, all
+issued commands will be processed by the server. Per the defined
+behavior of the *Unified Frame-Based Protocol*, commands may be
+issued interleaved and responses may come back in a different order
+than they were issued. Clients MUST be able to deal with this.
+
 SSH Protocol
 ============
 

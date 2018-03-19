@@ -5,6 +5,47 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+"""Slightly complicated template engine for commands and hgweb
+
+This module provides low-level interface to the template engine. See the
+formatter and cmdutil modules if you are looking for high-level functions
+such as ``cmdutil.rendertemplate(ctx, tmpl)``.
+
+Internal Data Types
+-------------------
+
+Template keywords and functions take a dictionary of current symbols and
+resources (a "mapping") and return result. Inputs and outputs must be one
+of the following data types:
+
+bytes
+    a byte string, which is generally a human-readable text in local encoding.
+
+generator
+    a lazily-evaluated byte string, which is a possibly nested generator of
+    values of any printable types, and  will be folded by ``stringify()``
+    or ``flatten()``.
+
+    BUG: hgweb overloads this type for mappings (i.e. some hgweb keywords
+    returns a generator of dicts.)
+
+None
+    sometimes represents an empty value, which can be stringified to ''.
+
+True, False, int, float
+    can be stringified as such.
+
+date tuple
+    a (unixtime, offset) tuple, which produces no meaningful output by itself.
+
+hybrid
+    represents a list/dict of printable values, which can also be converted
+    to mappings by % operator.
+
+mappable
+    represents a scalar printable value, also supports % operator.
+"""
+
 from __future__ import absolute_import, print_function
 
 import os

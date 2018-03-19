@@ -27,6 +27,7 @@ from .. import (
     hook,
     profiling,
     pycompat,
+    registrar,
     repoview,
     templatefilters,
     templater,
@@ -170,6 +171,9 @@ class requestcontext(object):
                              or req.apppath
                              or self.repo.root)
 
+        filters = {}
+        templatefilter = registrar.templatefilter(filters)
+        @templatefilter('websub')
         def websubfilter(text):
             return templatefilters.websub(text, self.websubtable)
 
@@ -191,7 +195,7 @@ class requestcontext(object):
         }
         tres = formatter.templateresources(self.repo.ui, self.repo)
         tmpl = templater.templater.frommapfile(mapfile,
-                                               filters={'websub': websubfilter},
+                                               filters=filters,
                                                defaults=defaults,
                                                resources=tres)
         return tmpl

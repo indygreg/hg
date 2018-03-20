@@ -238,6 +238,11 @@ obsfatedate = '{if(obsfatedate(markers), ' {ifeq(min(obsfatedate(markers)), max(
 obsfateentry = '
   <dt>obsolete</dt>
   <dd>{obsfateverb}{obsfateoperations}{obsfatesuccessors}{obsfateusers}{obsfatedate}</dd>'
+instabilitychangesetlink = '<a href="{url|urlescape}rev/{node|short}{sessionvars%urlparameter}">{node|short}</a>'
+divergentnode = '{instabilitychangesetlink} ({phase})'
+whyunstableentry = '
+  <dt>unstable</dt>
+  <dd>{instability}: {if(divergentnodes, divergentnodes%divergentnode)} {reason} {instabilitychangesetlink}</dd>'
 shortlogentry = '
   <tr class="parity{parity}">
     <td class="nowrap age">{date|rfc822date}</td>

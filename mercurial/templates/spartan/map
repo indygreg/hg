@@ -177,6 +177,13 @@ obsfateentry = '
     <th class="obsolete">obsolete:</th>
     <td class="obsolete">{obsfateverb}{obsfateoperations}{obsfatesuccessors}{obsfateusers}{obsfatedate}</td>
   </tr>'
+instabilitychangesetlink = '<a href="{url|urlescape}rev/{node|short}{sessionvars%urlparameter}">{node|short}</a>'
+divergentnode = '{instabilitychangesetlink} ({phase})'
+whyunstableentry = '
+  <tr>
+    <th class="unstable">unstable:</th>
+    <td class="unstable">{instability}: {if(divergentnodes, divergentnodes%divergentnode)} {reason} {instabilitychangesetlink}</td>
+  </tr>'
 filediffparent = '
   <tr>
     <th class="parent">parent {rev}:</th>

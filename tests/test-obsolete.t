@@ -1068,9 +1068,11 @@ check changeset with instabilities
     <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=monoblue' | grep '<span class="logtags">'
           <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
-  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=spartan' | grep 'class="instabilities"'
-    <th class="instabilities">instabilities:</th>
-    <td class="instabilities">orphan phase-divergent </td>
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=spartan' | grep 'class="unstable"'
+  <th class="unstable">unstable:</th>
+  <td class="unstable">orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a></td>
+  <th class="unstable">unstable:</th>
+  <td class="unstable">phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
 
 check explanation for an orphan and phase-divergent changeset
 
@@ -1080,6 +1082,15 @@ check explanation for an orphan and phase-divergent changeset
   $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=coal' | egrep '(orphan|phase-divergent):'
    <td>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a><br>
   phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=coal">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=gitweb' | egrep '(orphan|phase-divergent):'
+  <td>orphan:  obsolete parent <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a></td>
+  <td>phase-divergent:  immutable predecessor <a class="list" href="/rev/245bde4270cd?style=gitweb">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=monoblue' | egrep '(orphan|phase-divergent):'
+  <dd>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a></dd>
+  <dd>phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=monoblue">245bde4270cd</a></dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=spartan' | egrep '(orphan|phase-divergent):'
+  <td class="unstable">orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a></td>
+  <td class="unstable">phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
 
   $ killdaemons.py
 

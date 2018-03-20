@@ -282,6 +282,13 @@ obsfateentry = '
     <td>obsolete</td>
     <td>{obsfateverb}{obsfateoperations}{obsfatesuccessors}{obsfateusers}{obsfatedate}</td>
   </tr>'
+instabilitychangesetlink = '<a class="list" href="{url|urlescape}rev/{node|short}{sessionvars%urlparameter}">{node|short}</a>'
+divergentnode = '{instabilitychangesetlink} ({phase})'
+whyunstableentry = '
+  <tr>
+    <td>unstable</td>
+    <td>{instability}: {if(divergentnodes, divergentnodes%divergentnode)} {reason} {instabilitychangesetlink}</td>
+  </tr>'
 shortlogentry = '
   <tr class="parity{parity}">
     <td class="age"><i class="age">{date|rfc822date}</i></td>

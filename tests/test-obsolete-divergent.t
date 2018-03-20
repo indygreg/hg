@@ -732,6 +732,12 @@ check explanation for a content-divergent changeset
    <td>content-divergent: <a href="/rev/70d5a63ca112?style=paper">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=paper">a178212c3433</a></td>
   $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=coal' | grep divergent:
    <td>content-divergent: <a href="/rev/70d5a63ca112?style=coal">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=coal">a178212c3433</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=gitweb' | grep divergent:
+  <td>content-divergent: <a class="list" href="/rev/70d5a63ca112?style=gitweb">70d5a63ca112</a> (draft) predecessor <a class="list" href="/rev/a178212c3433?style=gitweb">a178212c3433</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=monoblue' | grep divergent:
+  <dd>content-divergent: <a href="/rev/70d5a63ca112?style=monoblue">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=monoblue">a178212c3433</a></dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=spartan' | grep divergent:
+  <td class="unstable">content-divergent: <a href="/rev/70d5a63ca112?style=spartan">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=spartan">a178212c3433</a></td>
 
   $ killdaemons.py
 

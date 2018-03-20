@@ -423,14 +423,17 @@ def runfilter(context, mapping, data):
         thing = unwrapastype(thing, getattr(filt, '_intype', None))
         return filt(thing)
     except (ValueError, AttributeError, TypeError):
-        sym = findsymbolicname(arg)
-        if sym:
-            msg = (_("template filter '%s' is not compatible with keyword '%s'")
-                   % (pycompat.sysbytes(filt.__name__), sym))
-        else:
-            msg = (_("incompatible use of template filter '%s'")
-                   % pycompat.sysbytes(filt.__name__))
-        raise error.Abort(msg)
+        raise error.Abort(_formatfiltererror(arg, filt))
+    except error.ParseError as e:
+        raise error.ParseError(bytes(e), hint=_formatfiltererror(arg, filt))
+
+def _formatfiltererror(arg, filt):
+    fn = pycompat.sysbytes(filt.__name__)
+    sym = findsymbolicname(arg)
+    if not sym:
+        return _("incompatible use of template filter '%s'") % fn
+    return (_("template filter '%s' is not compatible with keyword '%s'")
+            % (fn, sym))
 
 def runmap(context, mapping, data):
     darg, targ = data

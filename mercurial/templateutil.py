@@ -128,6 +128,17 @@ class hybrid(wrapped):
         self._joinfmt = joinfmt
         self.keytype = keytype  # hint for 'x in y' where type(x) is unresolved
 
+    def getmember(self, context, mapping, key):
+        # TODO: maybe split hybrid list/dict types?
+        if not util.safehasattr(self._values, 'get'):
+            raise error.ParseError(_('not a dictionary'))
+        return self._wrapvalue(key, self._values.get(key))
+
+    def _wrapvalue(self, key, val):
+        if val is None:
+            return
+        return wraphybridvalue(self, key, val)
+
     def itermaps(self, context):
         makemap = self._makemap
         for x in self._values:
@@ -667,8 +678,8 @@ def runmember(context, mapping, data):
         lm = context.overlaymap(mapping, d.tomap())
         return runsymbol(context, lm, memb)
     try:
-        if util.safehasattr(d, 'get'):
-            return getdictitem(d, memb)
+        if util.safehasattr(d, 'getmember'):
+            return d.getmember(context, mapping, memb)
         raise error.ParseError
     except error.ParseError:
         sym = findsymbolicname(darg)
@@ -692,12 +703,6 @@ def runarithmetic(context, mapping, data):
         return func(left, right)
     except ZeroDivisionError:
         raise error.Abort(_('division by zero is not defined'))
-
-def getdictitem(dictarg, key):
-    val = dictarg.get(key)
-    if val is None:
-        return
-    return wraphybridvalue(dictarg, key, val)
 
 def joinitems(itemiter, sep):
     """Join items with the separator; Returns generator of bytes"""

@@ -148,6 +148,8 @@ def isenabled(repo, option):
 
     return _getoptionvalue(repo, option)
 
+# Creating aliases for marker flags because evolve extension looks for
+# bumpedfix in obsolete.py
 bumpedfix = obsutil.bumpedfix
 usingsha256 = obsutil.usingsha256
 

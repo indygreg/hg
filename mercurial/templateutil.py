@@ -662,7 +662,7 @@ def runmap(context, mapping, data):
 
 def runmember(context, mapping, data):
     darg, memb = data
-    d = evalrawexp(context, mapping, darg)
+    d = evalwrapped(context, mapping, darg)
     if util.safehasattr(d, 'tomap'):
         lm = context.overlaymap(mapping, d.tomap())
         return runsymbol(context, lm, memb)

@@ -261,7 +261,7 @@ def get(context, mapping, args):
         # i18n: "get" is a keyword
         raise error.ParseError(_("get() expects two arguments"))
 
-    dictarg = evalfuncarg(context, mapping, args[0])
+    dictarg = evalwrapped(context, mapping, args[0])
     if not util.safehasattr(dictarg, 'get'):
         # i18n: "get" is a keyword
         raise error.ParseError(_("get() expects a dict as first argument"))

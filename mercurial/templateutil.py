@@ -558,6 +558,6 @@ def joinitems(itemiter, sep):
     for x in itemiter:
         if first:
             first = False
-        else:
+        elif sep:
             yield sep
         yield x

@@ -32,6 +32,9 @@ None
 True, False, int, float
     can be stringified as such.
 
+wrappedbytes, wrappedvalue
+    a wrapper for the above printable types.
+
 date tuple
     a (unixtime, offset) tuple, which produces no meaningful output by itself.
 

@@ -66,6 +66,44 @@ class wrapped(object):
         A returned value must be serializable by templaterfilters.json().
         """
 
+class wrappedbytes(wrapped):
+    """Wrapper for byte string"""
+
+    def __init__(self, value):
+        self._value = value
+
+    def itermaps(self, context):
+        raise error.ParseError(_('%r is not iterable of mappings')
+                               % pycompat.bytestr(self._value))
+
+    def join(self, context, mapping, sep):
+        return joinitems(pycompat.iterbytestr(self._value), sep)
+
+    def show(self, context, mapping):
+        return self._value
+
+    def tovalue(self, context, mapping):
+        return self._value
+
+class wrappedvalue(wrapped):
+    """Generic wrapper for pure non-list/dict/bytes value"""
+
+    def __init__(self, value):
+        self._value = value
+
+    def itermaps(self, context):
+        raise error.ParseError(_('%r is not iterable of mappings')
+                               % self._value)
+
+    def join(self, context, mapping, sep):
+        raise error.ParseError(_('%r is not iterable') % self._value)
+
+    def show(self, context, mapping):
+        return pycompat.bytestr(self._value)
+
+    def tovalue(self, context, mapping):
+        return self._value
+
 # stub for representing a date type; may be a real date type that can
 # provide a readable string value
 class date(object):
@@ -446,6 +484,20 @@ def evalrawexp(context, mapping, arg):
     further processing (such as folding generator of strings)"""
     func, data = arg
     return func(context, mapping, data)
+
+def evalwrapped(context, mapping, arg):
+    """Evaluate given argument to wrapped object"""
+    thing = evalrawexp(context, mapping, arg)
+    return makewrapped(context, mapping, thing)
+
+def makewrapped(context, mapping, thing):
+    """Lift object to a wrapped type"""
+    if isinstance(thing, wrapped):
+        return thing
+    thing = _unthunk(context, mapping, thing)
+    if isinstance(thing, bytes):
+        return wrappedbytes(thing)
+    return wrappedvalue(thing)
 
 def evalfuncarg(context, mapping, arg):
     """Evaluate given argument as value type"""

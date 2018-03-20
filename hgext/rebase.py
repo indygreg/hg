@@ -840,8 +840,8 @@ def _origrebase(ui, repo, inmemory=False, **opts):
             if retcode is not None:
                 return retcode
         else:
-            destmap = _definedestmap(ui, repo, rbsrt, destf, srcf, basef, revf,
-                                     destspace=destspace)
+            destmap = _definedestmap(ui, repo, inmemory, destf, srcf, basef,
+                                     revf, destspace=destspace)
             retcode = rbsrt._preparenewrebase(destmap)
             if retcode is not None:
                 return retcode
@@ -866,7 +866,7 @@ def _origrebase(ui, repo, inmemory=False, **opts):
                 rbsrt._performrebase(tr)
                 rbsrt._finishrebase()
 
-def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
+def _definedestmap(ui, repo, inmemory, destf=None, srcf=None, basef=None,
                    revf=None, destspace=None):
     """use revisions argument to define destmap {srcrev: destrev}"""
     if revf is None:
@@ -881,7 +881,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
     if revf and srcf:
         raise error.Abort(_('cannot specify both a revision and a source'))
 
-    if not rbsrt.inmemory:
+    if not inmemory:
         cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)
 
@@ -959,7 +959,7 @@ def _definedestmap(ui, repo, rbsrt, destf=None, srcf=None, basef=None,
 
     rebasingwcp = repo['.'].rev() in rebaseset
     ui.log("rebase", "", rebase_rebasing_wcp=rebasingwcp)
-    if rbsrt.inmemory and rebasingwcp:
+    if inmemory and rebasingwcp:
         # Check these since we did not before.
         cmdutil.checkunfinished(repo)
         cmdutil.bailifchanged(repo)

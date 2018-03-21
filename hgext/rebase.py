@@ -390,7 +390,7 @@ class rebaseruntime(object):
         else:
             self.wctx = self.repo[None]
             self.repo.ui.debug("rebasing on disk\n")
-        self.repo.ui.log("rebase", "", rebase_imm_used=self.wctx.isinmemory())
+        self.repo.ui.log("rebase", "", rebase_imm_used=self.inmemory)
 
     def _performrebase(self, tr):
         self._assignworkingcopy()
@@ -489,7 +489,7 @@ class rebaseruntime(object):
                     stats = rebasenode(repo, rev, p1, base, self.collapsef,
                                        dest, wctx=self.wctx)
                     if stats[3] > 0:
-                        if self.wctx.isinmemory():
+                        if self.inmemory:
                             raise error.InMemoryMergeConflictsError()
                         else:
                             raise error.InterventionRequired(
@@ -500,7 +500,7 @@ class rebaseruntime(object):
                 editform = cmdutil.mergeeditform(merging, 'rebase')
                 editor = cmdutil.getcommiteditor(editform=editform,
                                                  **pycompat.strkwargs(opts))
-                if self.wctx.isinmemory():
+                if self.inmemory:
                     newnode = concludememorynode(repo, rev, p1, p2,
                         wctx=self.wctx,
                         extrafn=_makeextrafn(self.extrafns),
@@ -522,7 +522,7 @@ class rebaseruntime(object):
                     mergemod.mergestate.clean(repo)
             else:
                 # Skip commit if we are collapsing
-                if self.wctx.isinmemory():
+                if self.inmemory:
                     self.wctx.setbase(repo[p1])
                 else:
                     repo.setparents(repo[p1].node())

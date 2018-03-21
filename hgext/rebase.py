@@ -87,17 +87,6 @@ def _savegraft(ctx, extra):
 def _savebranch(ctx, extra):
     extra['branch'] = ctx.branch()
 
-def _makeextrafn(copiers):
-    """make an extrafn out of the given copy-functions.
-
-    A copy function takes a context and an extra dict, and mutates the
-    extra dict as needed based on the given context.
-    """
-    def extrafn(ctx, extra):
-        for c in copiers:
-            c(ctx, extra)
-    return extrafn
-
 def _destrebase(repo, sourceset, destspace=None):
     """small wrapper around destmerge to pass the right extra args
 
@@ -457,10 +446,9 @@ class rebaseruntime(object):
         ctx = repo[rev]
         if commitmsg is None:
             commitmsg = ctx.description()
-        extrafn = _makeextrafn(self.extrafns)
         extra = {'rebase_source': ctx.hex()}
-        if extrafn:
-            extrafn(ctx, extra)
+        for c in self.extrafns:
+            c(ctx, extra)
         if self.inmemory:
             newnode = concludememorynode(repo, ctx, p1, p2,
                 wctx=self.wctx,

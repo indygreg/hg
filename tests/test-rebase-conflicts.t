@@ -239,7 +239,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   rebase status stored
   rebasing 9:e31216eec445 "more changes to f1"
    future parents are 2 and -1
-  rebase status stored
    update to 2:4bc80088dc6b
   resolving manifests
    branchmerge: False, force: True, partial: False
@@ -264,9 +263,9 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   committing changelog
   updating the branch cache
   rebased as 19c888675e13
+  rebase status stored
   rebasing 10:2f2496ddf49d "merge" (tip)
    future parents are 11 and 7
-  rebase status stored
    already in destination
    merge against 10:2f2496ddf49d
      detach base 9:e31216eec445
@@ -284,6 +283,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   committing changelog
   updating the branch cache
   rebased as 2a7f09cac94c
+  rebase status stored
   rebase merging completed
   update back to initial working directory parent
   resolving manifests

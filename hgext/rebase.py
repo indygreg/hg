@@ -484,8 +484,6 @@ class rebaseruntime(object):
             p1, p2, base = defineparents(repo, rev, self.destmap,
                                          self.state, self.skipped,
                                          self.obsoletenotrebased)
-            if not tr:
-                self.storestatus()
             if len(repo[None].parents()) == 2:
                 repo.ui.debug('resuming interrupted rebase\n')
             else:
@@ -546,6 +544,12 @@ class rebaseruntime(object):
         else:
             ui.status(_('already rebased %s as %s\n') %
                       (desc, repo[self.state[rev]]))
+        if not tr:
+            # When not using single transaction, store state after each
+            # commit is completely done. On InterventionRequired, we thus
+            # won't store the status. Instead, we'll hit the "len(parents) == 2"
+            # case and realize that the commit was in progress.
+            self.storestatus()
 
     def _finishrebase(self):
         repo, ui, opts = self.repo, self.ui, self.opts

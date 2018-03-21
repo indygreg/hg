@@ -813,19 +813,7 @@ Test aborted editor on final message
   |/
   o  0: 4a2df7238c3b 'A'
   
-BROKEN: should not result in a conflict
   $ hg rebase --continue
   already rebased 1:f899f3910ce7 "B" (B) as 82b8abf9c185
-  rebasing 3:63668d570d21 "C" (C tip)
-  merging A
-  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
-  [1]
-  $ cat A
-  <<<<<<< dest:   82b8abf9c185 D - test: D
-  BD
-  ||||||| base
-  B
-  =======
-  C
-  >>>>>>> source: 63668d570d21 C tip - test: C
+  already rebased 3:63668d570d21 "C" (C tip) as 82b8abf9c185
+  saved backup bundle to $TESTTMP/aborted-editor/.hg/strip-backup/f899f3910ce7-7cab5e15-rebase.hg

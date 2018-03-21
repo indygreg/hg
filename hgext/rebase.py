@@ -450,13 +450,17 @@ class rebaseruntime(object):
         for c in self.extrafns:
             c(ctx, extra)
         keepbranch = self.keepbranchesf and repo[p1].branch() != ctx.branch()
+        destphase = max(ctx.phase(), phases.draft)
+        overrides = {('phases', 'new-commit'): destphase}
+        if keepbranch:
+            overrides[('ui', 'allowemptycommit')] = True
         if self.inmemory:
             newnode = concludememorynode(repo, ctx, p1, p2,
                 wctx=self.wctx,
                 extra=extra,
                 commitmsg=commitmsg,
                 editor=editor,
-                keepbranch=keepbranch,
+                overrides=overrides,
                 date=self.date)
             mergemod.mergestate.clean(repo)
         else:
@@ -464,7 +468,7 @@ class rebaseruntime(object):
                 extra=extra,
                 commitmsg=commitmsg,
                 editor=editor,
-                keepbranch=keepbranch,
+                overrides=overrides,
                 date=self.date)
 
         if newnode is None:
@@ -1024,15 +1028,11 @@ def externalparent(repo, state, destancestors):
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))
 
-def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, keepbranch,
-                       date, commitmsg):
+def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, overrides, date,
+                       commitmsg):
     '''Commit the memory changes with parents p1 and p2. Reuse commit info from
     ctx.
     Return node of committed revision.'''
-    destphase = max(ctx.phase(), phases.draft)
-    overrides = {('phases', 'new-commit'): destphase}
-    if keepbranch:
-        overrides[('ui', 'allowemptycommit')] = True
     with repo.ui.configoverride(overrides, 'rebase'):
         # Replicates the empty check in ``repo.commit``.
         if wctx.isempty() and not repo.ui.configbool('ui', 'allowemptycommit'):
@@ -1053,7 +1053,7 @@ def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, keepbranch,
         wctx.clean() # Might be reused
         return commitres
 
-def concludenode(repo, ctx, p1, p2, editor, extra, keepbranch, date,
+def concludenode(repo, ctx, p1, p2, editor, extra, overrides, date,
                  commitmsg):
     '''Commit the wd changes with parents p1 and p2. Reuse commit info from ctx.
     Return node of committed revision.'''
@@ -1063,10 +1063,6 @@ def concludenode(repo, ctx, p1, p2, editor, extra, keepbranch, date,
     with dsguard:
         repo.setparents(repo[p1].node(), repo[p2].node())
 
-        destphase = max(ctx.phase(), phases.draft)
-        overrides = {('phases', 'new-commit'): destphase}
-        if keepbranch:
-            overrides[('ui', 'allowemptycommit')] = True
         with repo.ui.configoverride(overrides, 'rebase'):
             # Commit might fail if unresolved files exist
             if date is None:

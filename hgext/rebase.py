@@ -420,6 +420,10 @@ class rebaseruntime(object):
         # Store the state before we begin so users can run 'hg rebase --abort'
         # if we fail before the transaction closes.
         self.storestatus()
+        if tr:
+            # When using single transaction, store state when transaction
+            # commits.
+            self.storestatus(tr)
 
         cands = [k for k, v in self.state.iteritems() if v == revtodo]
         total = len(cands)
@@ -480,7 +484,8 @@ class rebaseruntime(object):
             p1, p2, base = defineparents(repo, rev, self.destmap,
                                          self.state, self.skipped,
                                          self.obsoletenotrebased)
-            self.storestatus(tr=tr)
+            if not tr:
+                self.storestatus()
             if len(repo[None].parents()) == 2:
                 repo.ui.debug('resuming interrupted rebase\n')
             else:

@@ -901,32 +901,33 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             repls[key] = value
         replacements = repls
 
+    # Unfiltered repo is needed since nodes in replacements might be hidden.
+    unfi = repo.unfiltered()
+
     # Calculate bookmark movements
     if moves is None:
         moves = {}
-    # Unfiltered repo is needed since nodes in replacements might be hidden.
-    unfi = repo.unfiltered()
-    for oldnodes, newnodes in replacements.items():
-        for oldnode in oldnodes:
-            if oldnode in moves:
-                continue
-            if len(newnodes) > 1:
-                # usually a split, take the one with biggest rev number
-                newnode = next(unfi.set('max(%ln)', newnodes)).node()
-            elif len(newnodes) == 0:
-                # move bookmark backwards
-                allreplaced = []
-                for rep in replacements:
-                    allreplaced.extend(rep)
-                roots = list(unfi.set('max((::%n) - %ln)', oldnode,
-                                      allreplaced))
-                if roots:
-                    newnode = roots[0].node()
+        for oldnodes, newnodes in replacements.items():
+            for oldnode in oldnodes:
+                if oldnode in moves:
+                    continue
+                if len(newnodes) > 1:
+                    # usually a split, take the one with biggest rev number
+                    newnode = next(unfi.set('max(%ln)', newnodes)).node()
+                elif len(newnodes) == 0:
+                    # move bookmark backwards
+                    allreplaced = []
+                    for rep in replacements:
+                        allreplaced.extend(rep)
+                    roots = list(unfi.set('max((::%n) - %ln)', oldnode,
+                                          allreplaced))
+                    if roots:
+                        newnode = roots[0].node()
+                    else:
+                        newnode = nullid
                 else:
-                    newnode = nullid
-            else:
-                newnode = newnodes[0]
-            moves[oldnode] = newnode
+                    newnode = newnodes[0]
+                moves[oldnode] = newnode
 
     allnewnodes = [n for ns in replacements.values() for n in ns]
     toretract = {}

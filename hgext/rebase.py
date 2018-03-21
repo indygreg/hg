@@ -454,8 +454,9 @@ class rebaseruntime(object):
         Reuse commit info from rev but also store useful information in extra.
         Return node of committed revision.'''
         repo = self.repo
+        ctx = repo[rev]
         if self.inmemory:
-            newnode = concludememorynode(repo, rev, p1, p2,
+            newnode = concludememorynode(repo, ctx, p1, p2,
                 wctx=self.wctx,
                 extrafn=_makeextrafn(self.extrafns),
                 commitmsg=commitmsg,
@@ -464,7 +465,7 @@ class rebaseruntime(object):
                 date=self.date)
             mergemod.mergestate.clean(repo)
         else:
-            newnode = concludenode(repo, rev, p1, p2,
+            newnode = concludenode(repo, ctx, p1, p2,
                 extrafn=_makeextrafn(self.extrafns),
                 commitmsg=commitmsg,
                 editor=editor,
@@ -1028,12 +1029,11 @@ def externalparent(repo, state, destancestors):
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))
 
-def concludememorynode(repo, rev, p1, p2, wctx, editor, extrafn, keepbranches,
+def concludememorynode(repo, ctx, p1, p2, wctx, editor, extrafn, keepbranches,
                        date, commitmsg=None):
     '''Commit the memory changes with parents p1 and p2. Reuse commit info from
-    rev but also store useful information in extra.
+    ctx but also store useful information in extra.
     Return node of committed revision.'''
-    ctx = repo[rev]
     if commitmsg is None:
         commitmsg = ctx.description()
     keepbranch = keepbranches and repo[p1].branch() != ctx.branch()
@@ -1065,9 +1065,9 @@ def concludememorynode(repo, rev, p1, p2, wctx, editor, extrafn, keepbranches,
         wctx.clean() # Might be reused
         return commitres
 
-def concludenode(repo, rev, p1, p2, editor, extrafn, keepbranches, date,
+def concludenode(repo, ctx, p1, p2, editor, extrafn, keepbranches, date,
                  commitmsg=None):
-    '''Commit the wd changes with parents p1 and p2. Reuse commit info from rev
+    '''Commit the wd changes with parents p1 and p2. Reuse commit info from ctx
     but also store useful information in extra.
     Return node of committed revision.'''
     dsguard = util.nullcontextmanager()
@@ -1075,7 +1075,6 @@ def concludenode(repo, rev, p1, p2, editor, extrafn, keepbranches, date,
         dsguard = dirstateguard.dirstateguard(repo, 'rebase')
     with dsguard:
         repo.setparents(repo[p1].node(), repo[p2].node())
-        ctx = repo[rev]
         if commitmsg is None:
             commitmsg = ctx.description()
         keepbranch = keepbranches and repo[p1].branch() != ctx.branch()

@@ -457,10 +457,14 @@ class rebaseruntime(object):
         ctx = repo[rev]
         if commitmsg is None:
             commitmsg = ctx.description()
+        extrafn = _makeextrafn(self.extrafns)
+        extra = {'rebase_source': ctx.hex()}
+        if extrafn:
+            extrafn(ctx, extra)
         if self.inmemory:
             newnode = concludememorynode(repo, ctx, p1, p2,
                 wctx=self.wctx,
-                extrafn=_makeextrafn(self.extrafns),
+                extra=extra,
                 commitmsg=commitmsg,
                 editor=editor,
                 keepbranches=self.keepbranchesf,
@@ -468,7 +472,7 @@ class rebaseruntime(object):
             mergemod.mergestate.clean(repo)
         else:
             newnode = concludenode(repo, ctx, p1, p2,
-                extrafn=_makeextrafn(self.extrafns),
+                extra=extra,
                 commitmsg=commitmsg,
                 editor=editor,
                 keepbranches=self.keepbranchesf,
@@ -1031,15 +1035,12 @@ def externalparent(repo, state, destancestors):
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))
 
-def concludememorynode(repo, ctx, p1, p2, wctx, editor, extrafn, keepbranches,
+def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, keepbranches,
                        date, commitmsg):
     '''Commit the memory changes with parents p1 and p2. Reuse commit info from
-    ctx but also store useful information in extra.
+    ctx.
     Return node of committed revision.'''
     keepbranch = keepbranches and repo[p1].branch() != ctx.branch()
-    extra = {'rebase_source': ctx.hex()}
-    if extrafn:
-        extrafn(ctx, extra)
 
     destphase = max(ctx.phase(), phases.draft)
     overrides = {('phases', 'new-commit'): destphase}
@@ -1065,10 +1066,9 @@ def concludememorynode(repo, ctx, p1, p2, wctx, editor, extrafn, keepbranches,
         wctx.clean() # Might be reused
         return commitres
 
-def concludenode(repo, ctx, p1, p2, editor, extrafn, keepbranches, date,
+def concludenode(repo, ctx, p1, p2, editor, extra, keepbranches, date,
                  commitmsg):
-    '''Commit the wd changes with parents p1 and p2. Reuse commit info from ctx
-    but also store useful information in extra.
+    '''Commit the wd changes with parents p1 and p2. Reuse commit info from ctx.
     Return node of committed revision.'''
     dsguard = util.nullcontextmanager()
     if not repo.ui.configbool('rebase', 'singletransaction'):
@@ -1076,9 +1076,6 @@ def concludenode(repo, ctx, p1, p2, editor, extrafn, keepbranches, date,
     with dsguard:
         repo.setparents(repo[p1].node(), repo[p2].node())
         keepbranch = keepbranches and repo[p1].branch() != ctx.branch()
-        extra = {'rebase_source': ctx.hex()}
-        if extrafn:
-            extrafn(ctx, extra)
 
         destphase = max(ctx.phase(), phases.draft)
         overrides = {('phases', 'new-commit'): destphase}

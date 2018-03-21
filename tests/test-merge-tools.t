@@ -1385,7 +1385,7 @@ Same test with experimental.mergetempdirprefix set:
   arg: "ll:working copy"
   arg: "lo:"
   arg: "merge rev"
-  arg: "lb:base: $TESTTMP/hgmerge.*/f~base" (glob)
+  arg: "lb:base: */hgmerge.*/f~base" (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ rm -f 'printargs_merge_tool'

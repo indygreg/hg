@@ -448,6 +448,36 @@ class rebaseruntime(object):
         ui.progress(_('rebasing'), None)
         ui.note(_('rebase merging completed\n'))
 
+    def _concludenode(self, rev, p1, p2, editor, commitmsg=None):
+        '''Commit the wd changes with parents p1 and p2.
+
+        Reuse commit info from rev but also store useful information in extra.
+        Return node of committed revision.'''
+        repo = self.repo
+        if self.inmemory:
+            newnode = concludememorynode(repo, rev, p1, p2,
+                wctx=self.wctx,
+                extrafn=_makeextrafn(self.extrafns),
+                commitmsg=commitmsg,
+                editor=editor,
+                keepbranches=self.keepbranchesf,
+                date=self.date)
+            mergemod.mergestate.clean(repo)
+        else:
+            newnode = concludenode(repo, rev, p1, p2,
+                extrafn=_makeextrafn(self.extrafns),
+                commitmsg=commitmsg,
+                editor=editor,
+                keepbranches=self.keepbranchesf,
+                date=self.date)
+
+        if newnode is None:
+            # If it ended up being a no-op commit, then the normal
+            # merge state clean-up path doesn't happen, so do it
+            # here. Fix issue5494
+            mergemod.mergestate.clean(repo)
+        return newnode
+
     def _rebasenode(self, tr, rev, allowdivergence, progressfn):
         repo, ui, opts = self.repo, self.ui, self.opts
         dest = self.destmap[rev]
@@ -503,26 +533,7 @@ class rebaseruntime(object):
                 editform = cmdutil.mergeeditform(merging, 'rebase')
                 editor = cmdutil.getcommiteditor(editform=editform,
                                                  **pycompat.strkwargs(opts))
-                if self.inmemory:
-                    newnode = concludememorynode(repo, rev, p1, p2,
-                        wctx=self.wctx,
-                        extrafn=_makeextrafn(self.extrafns),
-                        editor=editor,
-                        keepbranches=self.keepbranchesf,
-                        date=self.date)
-                    mergemod.mergestate.clean(repo)
-                else:
-                    newnode = concludenode(repo, rev, p1, p2,
-                        extrafn=_makeextrafn(self.extrafns),
-                        editor=editor,
-                        keepbranches=self.keepbranchesf,
-                        date=self.date)
-
-                if newnode is None:
-                    # If it ended up being a no-op commit, then the normal
-                    # merge state clean-up path doesn't happen, so do it
-                    # here. Fix issue5494
-                    mergemod.mergestate.clean(repo)
+                newnode = self._concludenode(rev, p1, p2, editor)
             else:
                 # Skip commit if we are collapsing
                 if self.inmemory:
@@ -572,27 +583,9 @@ class rebaseruntime(object):
             editor = cmdutil.getcommiteditor(edit=editopt, editform=editform)
             revtoreuse = max(self.state)
 
-            if self.inmemory:
-                newnode = concludememorynode(repo, revtoreuse, p1,
-                    self.external,
-                    commitmsg=commitmsg,
-                    extrafn=_makeextrafn(self.extrafns),
-                    editor=editor,
-                    keepbranches=self.keepbranchesf,
-                    date=self.date, wctx=self.wctx)
-            else:
-                newnode = concludenode(repo, revtoreuse, p1, self.external,
-                    commitmsg=commitmsg,
-                    extrafn=_makeextrafn(self.extrafns),
-                    editor=editor,
-                    keepbranches=self.keepbranchesf,
-                    date=self.date)
+            newnode = self._concludenode(revtoreuse, p1, self.external,
+                                         editor, commitmsg=commitmsg)
 
-            if newnode is None:
-                # If it ended up being a no-op commit, then the normal
-                # merge state clean-up path doesn't happen, so do it
-                # here. Fix issue5494
-                mergemod.mergestate.clean(repo)
             if newnode is not None:
                 newrev = repo[newnode].rev()
                 for oldrev in self.state:

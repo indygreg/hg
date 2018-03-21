@@ -446,6 +446,9 @@ class rebaseruntime(object):
         ctx = repo[rev]
         if commitmsg is None:
             commitmsg = ctx.description()
+        date = self.date
+        if date is None:
+            date = ctx.date()
         extra = {'rebase_source': ctx.hex()}
         for c in self.extrafns:
             c(ctx, extra)
@@ -461,14 +464,14 @@ class rebaseruntime(object):
                     extra=extra,
                     commitmsg=commitmsg,
                     editor=editor,
-                    date=self.date)
+                    date=date)
                 mergemod.mergestate.clean(repo)
             else:
                 newnode = concludenode(repo, ctx, p1, p2,
                     extra=extra,
                     commitmsg=commitmsg,
                     editor=editor,
-                    date=self.date)
+                    date=date)
 
             if newnode is None:
                 # If it ended up being a no-op commit, then the normal
@@ -1035,9 +1038,6 @@ def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, date, commitmsg):
     if wctx.isempty() and not repo.ui.configbool('ui', 'allowemptycommit'):
         return None
 
-    if date is None:
-        date = ctx.date()
-
     # By convention, ``extra['branch']`` (set by extrafn) clobbers
     # ``branch`` (used when passing ``--keepbranches``).
     branch = repo[p1].branch()
@@ -1060,8 +1060,6 @@ def concludenode(repo, ctx, p1, p2, editor, extra, date, commitmsg):
         repo.setparents(repo[p1].node(), repo[p2].node())
 
         # Commit might fail if unresolved files exist
-        if date is None:
-            date = ctx.date()
         newnode = repo.commit(text=commitmsg, user=ctx.user(),
                               date=date, extra=extra, editor=editor)
 

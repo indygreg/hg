@@ -31,8 +31,7 @@ class wrapped(object):
     """Object requiring extra conversion prior to displaying or processing
     as value
 
-    Use unwrapvalue(), unwrapastype(), or unwraphybrid() to obtain the inner
-    object.
+    Use unwrapvalue() or unwrapastype() to obtain the inner object.
     """
 
     __metaclass__ = abc.ABCMeta
@@ -434,13 +433,6 @@ def hybridlist(data, name, fmt=None, gen=None):
         prefmt = pycompat.bytestr
     return hybrid(gen, data, lambda x: {name: x}, lambda x: fmt % prefmt(x))
 
-def unwraphybrid(context, mapping, thing):
-    """Return an object which can be stringified possibly by using a legacy
-    template"""
-    if not isinstance(thing, wrapped):
-        return thing
-    return thing.show(context, mapping)
-
 def compatdict(context, mapping, name, data, key='key', value='value',
                fmt=None, plural=None, separator=' '):
     """Wrap data like hybriddict(), but also supports old-style list template
@@ -534,7 +526,8 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
 
 def flatten(context, mapping, thing):
     """Yield a single stream from a possibly nested set of iterators"""
-    thing = unwraphybrid(context, mapping, thing)
+    if isinstance(thing, wrapped):
+        thing = thing.show(context, mapping)
     if isinstance(thing, bytes):
         yield thing
     elif isinstance(thing, str):
@@ -548,7 +541,8 @@ def flatten(context, mapping, thing):
         yield pycompat.bytestr(thing)
     else:
         for i in thing:
-            i = unwraphybrid(context, mapping, i)
+            if isinstance(i, wrapped):
+                i = i.show(context, mapping)
             if isinstance(i, bytes):
                 yield i
             elif i is None:

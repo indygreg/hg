@@ -199,7 +199,7 @@ def featuresetup(ui, supported):
     supported |= {'lfs'}
 
 def uisetup(ui):
-    localrepo.localrepository.featuresetupfuncs.add(featuresetup)
+    localrepo.featuresetupfuncs.add(featuresetup)
 
 def reposetup(ui, repo):
     # Nothing to do with a remote repo

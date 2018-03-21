@@ -146,7 +146,7 @@ def featuresetup(ui, supported):
     supported |= {'largefiles'}
 
 def uisetup(ui):
-    localrepo.localrepository.featuresetupfuncs.add(featuresetup)
+    localrepo.featuresetupfuncs.add(featuresetup)
     hg.wirepeersetupfuncs.append(proto.wirereposetup)
     uisetupmod.uisetup(ui)
 

@@ -309,6 +309,15 @@ class locallegacypeer(repository.legacypeer, localpeer):
 # clients.
 REVLOGV2_REQUIREMENT = 'exp-revlogv2.0'
 
+# Functions receiving (ui, features) that extensions can register to impact
+# the ability to load repositories with custom requirements. Only
+# functions defined in loaded extensions are called.
+#
+# The function receives a set of requirement strings that the repository
+# is capable of opening. Functions will typically add elements to the
+# set to reflect that the extension knows how to handle that requirements.
+featuresetupfuncs = set()
+
 class localrepository(object):
 
     # obsolete experimental requirements:
@@ -335,10 +344,6 @@ class localrepository(object):
         'generaldelta',
         'treemanifest',
     }
-
-    # a list of (ui, featureset) functions.
-    # only functions defined in module of enabled extensions are invoked
-    featuresetupfuncs = set()
 
     # list of prefix for file which can be written without 'wlock'
     # Extensions should extend this list when needed
@@ -399,11 +404,11 @@ class localrepository(object):
         except IOError:
             pass
 
-        if self.featuresetupfuncs:
+        if featuresetupfuncs:
             self.supported = set(self._basesupported) # use private copy
             extmods = set(m.__name__ for n, m
                           in extensions.extensions(self.ui))
-            for setupfunc in self.featuresetupfuncs:
+            for setupfunc in featuresetupfuncs:
                 if setupfunc.__module__ in extmods:
                     setupfunc(self.ui, self.supported)
         else:

@@ -56,10 +56,12 @@ configitem('experimental', 'narrowservebrokenellipses',
 # Export the commands table for Mercurial to see.
 cmdtable = narrowcommands.table
 
-localrepo.localrepository._basesupported.add(changegroup.NARROW_REQUIREMENT)
+def featuresetup(ui, features):
+    features.add(changegroup.NARROW_REQUIREMENT)
 
 def uisetup(ui):
     """Wraps user-facing mercurial commands with narrow-aware versions."""
+    localrepo.featuresetupfuncs.add(featuresetup)
     narrowrevlog.setup()
     narrowbundle2.setup()
     narrowmerge.setup()

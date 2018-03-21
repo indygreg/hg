@@ -1026,9 +1026,8 @@ def externalparent(repo, state, destancestors):
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))
 
-def concludememorynode(repo, rev, p1, p2, wctx=None,
-                       commitmsg=None, editor=None, extrafn=None,
-                       keepbranches=False, date=None):
+def concludememorynode(repo, rev, p1, p2, wctx, editor, extrafn, keepbranches,
+                       date, commitmsg=None):
     '''Commit the memory changes with parents p1 and p2. Reuse commit info from
     rev but also store useful information in extra.
     Return node of committed revision.'''
@@ -1064,8 +1063,8 @@ def concludememorynode(repo, rev, p1, p2, wctx=None,
         wctx.clean() # Might be reused
         return commitres
 
-def concludenode(repo, rev, p1, p2, commitmsg=None, editor=None, extrafn=None,
-                 keepbranches=False, date=None):
+def concludenode(repo, rev, p1, p2, editor, extrafn, keepbranches, date,
+                 commitmsg=None):
     '''Commit the wd changes with parents p1 and p2. Reuse commit info from rev
     but also store useful information in extra.
     Return node of committed revision.'''

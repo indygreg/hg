@@ -262,12 +262,13 @@ def get(context, mapping, args):
         raise error.ParseError(_("get() expects two arguments"))
 
     dictarg = evalwrapped(context, mapping, args[0])
-    if not util.safehasattr(dictarg, 'getmember'):
-        # i18n: "get" is a keyword
-        raise error.ParseError(_("get() expects a dict as first argument"))
-
     key = evalfuncarg(context, mapping, args[1])
-    return dictarg.getmember(context, mapping, key)
+    try:
+        return dictarg.getmember(context, mapping, key)
+    except error.ParseError as err:
+        # i18n: "get" is a keyword
+        hint = _("get() expects a dict as first argument")
+        raise error.ParseError(bytes(err), hint=hint)
 
 @templatefunc('if(expr, then[, else])')
 def if_(context, mapping, args):

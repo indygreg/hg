@@ -38,6 +38,14 @@ class wrapped(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
+    def getmember(self, context, mapping, key):
+        """Return a member item for the specified key
+
+        A returned object may be either a wrapped object or a pure value
+        depending on the self type.
+        """
+
+    @abc.abstractmethod
     def itermaps(self, context):
         """Yield each template mapping"""
 
@@ -72,6 +80,10 @@ class wrappedbytes(wrapped):
     def __init__(self, value):
         self._value = value
 
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('%r is not a dictionary')
+                               % pycompat.bytestr(self._value))
+
     def itermaps(self, context):
         raise error.ParseError(_('%r is not iterable of mappings')
                                % pycompat.bytestr(self._value))
@@ -90,6 +102,9 @@ class wrappedvalue(wrapped):
 
     def __init__(self, value):
         self._value = value
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('%r is not a dictionary') % self._value)
 
     def itermaps(self, context):
         raise error.ParseError(_('%r is not iterable of mappings')
@@ -196,6 +211,10 @@ class mappable(wrapped):
     def tomap(self):
         return self._makemap(self._key)
 
+    def getmember(self, context, mapping, key):
+        w = makewrapped(context, mapping, self._value)
+        return w.getmember(context, mapping, key)
+
     def itermaps(self, context):
         yield self.tomap()
 
@@ -230,6 +249,9 @@ class _mappingsequence(wrapped):
         self._name = name
         self._tmpl = tmpl
         self._defaultsep = sep
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('not a dictionary'))
 
     def join(self, context, mapping, sep):
         mapsiter = _iteroverlaymaps(context, mapping, self.itermaps(context))
@@ -293,6 +315,9 @@ class mappedgenerator(wrapped):
 
     def _gen(self, context):
         return self._make(context, *self._args)
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('not a dictionary'))
 
     def itermaps(self, context):
         raise error.ParseError(_('list of strings is not mappable'))
@@ -678,15 +703,13 @@ def runmember(context, mapping, data):
         lm = context.overlaymap(mapping, d.tomap())
         return runsymbol(context, lm, memb)
     try:
-        if util.safehasattr(d, 'getmember'):
-            return d.getmember(context, mapping, memb)
-        raise error.ParseError
-    except error.ParseError:
+        return d.getmember(context, mapping, memb)
+    except error.ParseError as err:
         sym = findsymbolicname(darg)
-        if sym:
-            raise error.ParseError(_("keyword '%s' has no member") % sym)
-        else:
-            raise error.ParseError(_("%r has no member") % pycompat.bytestr(d))
+        if not sym:
+            raise
+        hint = _("keyword '%s' does not support member operation") % sym
+        raise error.ParseError(bytes(err), hint=hint)
 
 def runnegate(context, mapping, data):
     data = evalinteger(context, mapping, data,

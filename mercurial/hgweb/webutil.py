@@ -713,6 +713,9 @@ class sessionvars(templateutil.wrapped):
     def __copy__(self):
         return sessionvars(copy.copy(self._vars), self._start)
 
+    def getmember(self, context, mapping, key):
+        return self._vars.get(key)
+
     def itermaps(self, context):
         separator = self._start
         for key, value in sorted(self._vars.iteritems()):

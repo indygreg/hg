@@ -3345,10 +3345,11 @@ Test evaluation of dot operator:
   default
 
   $ hg log -R latesttag -l1 -T '{author.invalid}\n'
-  hg: parse error: keyword 'author' has no member
+  hg: parse error: 'test' is not a dictionary
+  (keyword 'author' does not support member operation)
   [255]
   $ hg log -R latesttag -l1 -T '{min("abc").invalid}\n'
-  hg: parse error: 'a' has no member
+  hg: parse error: 'a' is not a dictionary
   [255]
 
 Test the sub function of templating for expansion:
@@ -3851,7 +3852,8 @@ Test get function:
   $ hg log -r 0 --template '{get(extras, "br{"anch"}")}\n'
   default
   $ hg log -r 0 --template '{get(files, "should_fail")}\n'
-  hg: parse error: get() expects a dict as first argument
+  hg: parse error: not a dictionary
+  (get() expects a dict as first argument)
   [255]
 
 Test json filter applied to hybrid object:

@@ -455,6 +455,8 @@ class rebaseruntime(object):
         Return node of committed revision.'''
         repo = self.repo
         ctx = repo[rev]
+        if commitmsg is None:
+            commitmsg = ctx.description()
         if self.inmemory:
             newnode = concludememorynode(repo, ctx, p1, p2,
                 wctx=self.wctx,
@@ -1030,12 +1032,10 @@ def externalparent(repo, state, destancestors):
                       ', '.join("%d" % p for p in sorted(parents))))
 
 def concludememorynode(repo, ctx, p1, p2, wctx, editor, extrafn, keepbranches,
-                       date, commitmsg=None):
+                       date, commitmsg):
     '''Commit the memory changes with parents p1 and p2. Reuse commit info from
     ctx but also store useful information in extra.
     Return node of committed revision.'''
-    if commitmsg is None:
-        commitmsg = ctx.description()
     keepbranch = keepbranches and repo[p1].branch() != ctx.branch()
     extra = {'rebase_source': ctx.hex()}
     if extrafn:
@@ -1066,7 +1066,7 @@ def concludememorynode(repo, ctx, p1, p2, wctx, editor, extrafn, keepbranches,
         return commitres
 
 def concludenode(repo, ctx, p1, p2, editor, extrafn, keepbranches, date,
-                 commitmsg=None):
+                 commitmsg):
     '''Commit the wd changes with parents p1 and p2. Reuse commit info from ctx
     but also store useful information in extra.
     Return node of committed revision.'''
@@ -1075,8 +1075,6 @@ def concludenode(repo, ctx, p1, p2, editor, extrafn, keepbranches, date,
         dsguard = dirstateguard.dirstateguard(repo, 'rebase')
     with dsguard:
         repo.setparents(repo[p1].node(), repo[p2].node())
-        if commitmsg is None:
-            commitmsg = ctx.description()
         keepbranch = keepbranches and repo[p1].branch() != ctx.branch()
         extra = {'rebase_source': ctx.hex()}
         if extrafn:

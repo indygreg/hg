@@ -2083,7 +2083,7 @@ def files(ui, ctx, m, fm, fmt, subrepos):
 
     return ret
 
-def remove(ui, repo, m, prefix, after, force, subrepos, warnings=None):
+def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
     join = lambda f: os.path.join(prefix, f)
     ret = 0
     s = repo.status(match=m, clean=True)
@@ -2108,7 +2108,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, warnings=None):
             sub = wctx.sub(subpath)
             try:
                 if sub.removefiles(submatch, prefix, after, force, subrepos,
-                                   warnings):
+                                   dryrun, warnings):
                     ret = 1
             except error.LookupError:
                 warnings.append(_("skipping missing subrepository: %s\n")
@@ -2188,13 +2188,14 @@ def remove(ui, repo, m, prefix, after, force, subrepos, warnings=None):
             ui.status(_('removing %s\n') % m.rel(f))
     ui.progress(_('deleting'), None)
 
-    with repo.wlock():
-        if not after:
-            for f in list:
-                if f in added:
-                    continue # we never unlink added files on remove
-                repo.wvfs.unlinkpath(f, ignoremissing=True)
-        repo[None].forget(list)
+    if not dryrun:
+        with repo.wlock():
+            if not after:
+                for f in list:
+                    if f in added:
+                        continue # we never unlink added files on remove
+                    repo.wvfs.unlinkpath(f, ignoremissing=True)
+            repo[None].forget(list)
 
     if warn:
         for warning in warnings:

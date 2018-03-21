@@ -178,7 +178,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, **opts):
         added = [f for f in lfnames if f not in bad]
     return added, bad
 
-def removelargefiles(ui, repo, isaddremove, matcher, **opts):
+def removelargefiles(ui, repo, isaddremove, matcher, dryrun, **opts):
     after = opts.get(r'after')
     m = composelargefilematcher(matcher, repo[None].manifest())
     try:
@@ -223,11 +223,11 @@ def removelargefiles(ui, repo, isaddremove, matcher, **opts):
                     name = m.rel(f)
                 ui.status(_('removing %s\n') % name)
 
-            if not opts.get(r'dry_run'):
+            if not dryrun:
                 if not after:
                     repo.wvfs.unlinkpath(f, ignoremissing=True)
 
-        if opts.get(r'dry_run'):
+        if dryrun:
             return result
 
         remove = [lfutil.standin(f) for f in remove]
@@ -271,10 +271,12 @@ def cmdutiladd(orig, ui, repo, matcher, prefix, explicitonly, **opts):
     bad.extend(f for f in lbad)
     return bad
 
-def cmdutilremove(orig, ui, repo, matcher, prefix, after, force, subrepos):
+def cmdutilremove(orig, ui, repo, matcher, prefix, after, force, subrepos,
+                  dryrun):
     normalmatcher = composenormalfilematcher(matcher, repo[None].manifest())
-    result = orig(ui, repo, normalmatcher, prefix, after, force, subrepos)
-    return removelargefiles(ui, repo, False, matcher, after=after,
+    result = orig(ui, repo, normalmatcher, prefix, after, force, subrepos,
+                  dryrun)
+    return removelargefiles(ui, repo, False, matcher, dryrun, after=after,
                             force=force) or result
 
 def overridestatusfn(orig, repo, rev2, **opts):
@@ -1238,7 +1240,8 @@ def scmutiladdremove(orig, repo, matcher, prefix, opts=None, dry_run=None,
         matchfn = m.matchfn
         m.matchfn = lambda f: f in s.deleted and matchfn(f)
 
-        removelargefiles(repo.ui, repo, True, m, **pycompat.strkwargs(opts))
+        removelargefiles(repo.ui, repo, True, m, opts.get('dry_run'),
+                         **pycompat.strkwargs(opts))
     # Call into the normal add code, and any files that *should* be added as
     # largefiles will be
     added, bad = addlargefiles(repo.ui, repo, True, matcher,

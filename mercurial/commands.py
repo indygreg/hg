@@ -4213,7 +4213,7 @@ def recover(ui, repo):
     [('A', 'after', None, _('record delete for missing files')),
     ('f', 'force', None,
      _('forget added files, delete modified files')),
-    ] + subrepoopts + walkopts,
+    ] + subrepoopts + walkopts + dryrunopts,
     _('[OPTION]... FILE...'),
     inferrepo=True)
 def remove(ui, repo, *pats, **opts):
@@ -4257,12 +4257,14 @@ def remove(ui, repo, *pats, **opts):
 
     opts = pycompat.byteskwargs(opts)
     after, force = opts.get('after'), opts.get('force')
+    dryrun = opts.get('dry_run')
     if not pats and not after:
         raise error.Abort(_('no files specified'))
 
     m = scmutil.match(repo[None], pats, opts)
     subrepos = opts.get('subrepos')
-    return cmdutil.remove(ui, repo, m, "", after, force, subrepos)
+    return cmdutil.remove(ui, repo, m, "", after, force, subrepos,
+                          dryrun=dryrun)
 
 @command('rename|move|mv',
     [('A', 'after', None, _('record a rename that has already occurred')),

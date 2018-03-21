@@ -2857,6 +2857,9 @@ Dish up an empty repo; serve it cold.
   <tr><td>-X</td>
   <td>--exclude PATTERN [+]</td>
   <td>exclude names matching the given patterns</td></tr>
+  <tr><td>-n</td>
+  <td>--dry-run</td>
+  <td>do not perform actions, just print output</td></tr>
   </table>
   <p>
   global options ([+] can be repeated):

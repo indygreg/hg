@@ -449,13 +449,14 @@ class rebaseruntime(object):
         extra = {'rebase_source': ctx.hex()}
         for c in self.extrafns:
             c(ctx, extra)
+        keepbranch = self.keepbranchesf and repo[p1].branch() != ctx.branch()
         if self.inmemory:
             newnode = concludememorynode(repo, ctx, p1, p2,
                 wctx=self.wctx,
                 extra=extra,
                 commitmsg=commitmsg,
                 editor=editor,
-                keepbranches=self.keepbranchesf,
+                keepbranch=keepbranch,
                 date=self.date)
             mergemod.mergestate.clean(repo)
         else:
@@ -463,7 +464,7 @@ class rebaseruntime(object):
                 extra=extra,
                 commitmsg=commitmsg,
                 editor=editor,
-                keepbranches=self.keepbranchesf,
+                keepbranch=keepbranch,
                 date=self.date)
 
         if newnode is None:
@@ -1023,13 +1024,11 @@ def externalparent(repo, state, destancestors):
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))
 
-def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, keepbranches,
+def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, keepbranch,
                        date, commitmsg):
     '''Commit the memory changes with parents p1 and p2. Reuse commit info from
     ctx.
     Return node of committed revision.'''
-    keepbranch = keepbranches and repo[p1].branch() != ctx.branch()
-
     destphase = max(ctx.phase(), phases.draft)
     overrides = {('phases', 'new-commit'): destphase}
     if keepbranch:
@@ -1054,7 +1053,7 @@ def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, keepbranches,
         wctx.clean() # Might be reused
         return commitres
 
-def concludenode(repo, ctx, p1, p2, editor, extra, keepbranches, date,
+def concludenode(repo, ctx, p1, p2, editor, extra, keepbranch, date,
                  commitmsg):
     '''Commit the wd changes with parents p1 and p2. Reuse commit info from ctx.
     Return node of committed revision.'''
@@ -1063,7 +1062,6 @@ def concludenode(repo, ctx, p1, p2, editor, extra, keepbranches, date,
         dsguard = dirstateguard.dirstateguard(repo, 'rebase')
     with dsguard:
         repo.setparents(repo[p1].node(), repo[p2].node())
-        keepbranch = keepbranches and repo[p1].branch() != ctx.branch()
 
         destphase = max(ctx.phase(), phases.draft)
         overrides = {('phases', 'new-commit'): destphase}

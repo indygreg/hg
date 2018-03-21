@@ -512,8 +512,11 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         return False, 1, None
     unused, unused, unused, back = files
     localpath = _workingpath(repo, fcd)
-    with _maketempfiles(repo, fco, fca) as temppaths:
-        basepath, otherpath = temppaths
+    args = _toolstr(repo.ui, tool, "args")
+
+    with _maketempfiles(repo, fco, fca, repo.wvfs.join(back.path()),
+                        "$output" in args) as temppaths:
+        basepath, otherpath, localoutputpath = temppaths
         outpath = ""
         mylabel, otherlabel = labels[:2]
         if len(labels) >= 3:
@@ -533,11 +536,10 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
                }
         ui = repo.ui
 
-        args = _toolstr(ui, tool, "args")
         if "$output" in args:
             # read input from backup, write to original
             outpath = localpath
-            localpath = repo.wvfs.join(back.path())
+            localpath = localoutputpath
         replace = {'local': localpath, 'base': basepath, 'other': otherpath,
                    'output': outpath, 'labellocal': mylabel,
                    'labelother': otherlabel, 'labelbase': baselabel}
@@ -665,17 +667,18 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
         return context.arbitraryfilectx(back, repo=repo)
 
 @contextlib.contextmanager
-def _maketempfiles(repo, fco, fca):
-    """Writes out `fco` and `fca` as temporary files, so an external merge
-    tool may use them.
+def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
+    """Writes out `fco` and `fca` as temporary files, and (if uselocalpath)
+    copies `localpath` to another temporary file, so an external merge tool may
+    use them.
     """
     tmproot = None
     tmprootprefix = repo.ui.config('experimental', 'mergetempdirprefix')
     if tmprootprefix:
         tmproot = tempfile.mkdtemp(prefix=tmprootprefix)
 
-    def temp(prefix, ctx):
-        fullbase, ext = os.path.splitext(ctx.path())
+    def maketempfrompath(prefix, path):
+        fullbase, ext = os.path.splitext(path)
         pre = "%s~%s" % (os.path.basename(fullbase), prefix)
         if tmproot:
             name = os.path.join(tmproot, pre)
@@ -683,23 +686,42 @@ def _maketempfiles(repo, fco, fca):
                 name += ext
             f = open(name, r"wb")
         else:
-            (fd, name) = tempfile.mkstemp(prefix=pre + '.', suffix=ext)
+            fd, name = tempfile.mkstemp(prefix=pre + '.', suffix=ext)
             f = os.fdopen(fd, r"wb")
+        return f, name
+
+    def tempfromcontext(prefix, ctx):
+        f, name = maketempfrompath(prefix, ctx.path())
         data = repo.wwritedata(ctx.path(), ctx.data())
         f.write(data)
         f.close()
         return name
 
-    b = temp("base", fca)
-    c = temp("other", fco)
+    b = tempfromcontext("base", fca)
+    c = tempfromcontext("other", fco)
+    d = localpath
+    if uselocalpath:
+        # We start off with this being the backup filename, so remove the .orig
+        # to make syntax-highlighting more likely.
+        if d.endswith('.orig'):
+            d, _ = os.path.splitext(d)
+        f, d = maketempfrompath("local", d)
+        with open(localpath, 'rb') as src:
+            f.write(src.read())
+        f.close()
+
     try:
-        yield b, c
+        yield b, c, d
     finally:
         if tmproot:
             shutil.rmtree(tmproot)
         else:
             util.unlink(b)
             util.unlink(c)
+            # if not uselocalpath, d is the 'orig'/backup file which we
+            # shouldn't delete.
+            if d and uselocalpath:
+                util.unlink(d)
 
 def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     """perform a 3-way merge in the working directory

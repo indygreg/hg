@@ -459,7 +459,7 @@ class rebaseruntime(object):
             overrides[('ui', 'allowemptycommit')] = True
         with repo.ui.configoverride(overrides, 'rebase'):
             if self.inmemory:
-                newnode = concludememorynode(repo, p1, p2,
+                newnode = commitmemorynode(repo, p1, p2,
                     wctx=self.wctx,
                     extra=extra,
                     commitmsg=commitmsg,
@@ -468,7 +468,7 @@ class rebaseruntime(object):
                     date=date)
                 mergemod.mergestate.clean(repo)
             else:
-                newnode = concludenode(repo, p1, p2,
+                newnode = commitnode(repo, p1, p2,
                     extra=extra,
                     commitmsg=commitmsg,
                     editor=editor,
@@ -1032,8 +1032,7 @@ def externalparent(repo, state, destancestors):
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))
 
-def concludememorynode(repo, p1, p2, wctx, editor, extra, user, date,
-                       commitmsg):
+def commitmemorynode(repo, p1, p2, wctx, editor, extra, user, date, commitmsg):
     '''Commit the memory changes with parents p1 and p2.
     Return node of committed revision.'''
     # Replicates the empty check in ``repo.commit``.
@@ -1052,7 +1051,7 @@ def concludememorynode(repo, p1, p2, wctx, editor, extra, user, date,
     wctx.clean() # Might be reused
     return commitres
 
-def concludenode(repo, p1, p2, editor, extra, user, date, commitmsg):
+def commitnode(repo, p1, p2, editor, extra, user, date, commitmsg):
     '''Commit the wd changes with parents p1 and p2.
     Return node of committed revision.'''
     dsguard = util.nullcontextmanager()

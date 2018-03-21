@@ -459,18 +459,20 @@ class rebaseruntime(object):
             overrides[('ui', 'allowemptycommit')] = True
         with repo.ui.configoverride(overrides, 'rebase'):
             if self.inmemory:
-                newnode = concludememorynode(repo, ctx, p1, p2,
+                newnode = concludememorynode(repo, p1, p2,
                     wctx=self.wctx,
                     extra=extra,
                     commitmsg=commitmsg,
                     editor=editor,
+                    user=ctx.user(),
                     date=date)
                 mergemod.mergestate.clean(repo)
             else:
-                newnode = concludenode(repo, ctx, p1, p2,
+                newnode = concludenode(repo, p1, p2,
                     extra=extra,
                     commitmsg=commitmsg,
                     editor=editor,
+                    user=ctx.user(),
                     date=date)
 
             if newnode is None:
@@ -1030,9 +1032,9 @@ def externalparent(repo, state, destancestors):
                      (max(destancestors),
                       ', '.join("%d" % p for p in sorted(parents))))
 
-def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, date, commitmsg):
-    '''Commit the memory changes with parents p1 and p2. Reuse commit info from
-    ctx.
+def concludememorynode(repo, p1, p2, wctx, editor, extra, user, date,
+                       commitmsg):
+    '''Commit the memory changes with parents p1 and p2.
     Return node of committed revision.'''
     # Replicates the empty check in ``repo.commit``.
     if wctx.isempty() and not repo.ui.configbool('ui', 'allowemptycommit'):
@@ -1045,13 +1047,13 @@ def concludememorynode(repo, ctx, p1, p2, wctx, editor, extra, date, commitmsg):
         branch = extra['branch']
 
     memctx = wctx.tomemctx(commitmsg, parents=(p1, p2), date=date,
-        extra=extra, user=ctx.user(), branch=branch, editor=editor)
+        extra=extra, user=user, branch=branch, editor=editor)
     commitres = repo.commitctx(memctx)
     wctx.clean() # Might be reused
     return commitres
 
-def concludenode(repo, ctx, p1, p2, editor, extra, date, commitmsg):
-    '''Commit the wd changes with parents p1 and p2. Reuse commit info from ctx.
+def concludenode(repo, p1, p2, editor, extra, user, date, commitmsg):
+    '''Commit the wd changes with parents p1 and p2.
     Return node of committed revision.'''
     dsguard = util.nullcontextmanager()
     if not repo.ui.configbool('rebase', 'singletransaction'):
@@ -1060,8 +1062,8 @@ def concludenode(repo, ctx, p1, p2, editor, extra, date, commitmsg):
         repo.setparents(repo[p1].node(), repo[p2].node())
 
         # Commit might fail if unresolved files exist
-        newnode = repo.commit(text=commitmsg, user=ctx.user(),
-                              date=date, extra=extra, editor=editor)
+        newnode = repo.commit(text=commitmsg, user=user, date=date,
+                              extra=extra, editor=editor)
 
         repo.dirstate.setbranch(repo[newnode].branch())
         return newnode

@@ -91,7 +91,6 @@ import random
 import re
 import socket
 import subprocess
-import sys
 import tempfile
 import time
 
@@ -312,7 +311,6 @@ def clientextsetup(ui):
          _('force push to go to bundle store (EXPERIMENTAL)')))
 
     extensions.wrapcommand(commands.table, 'pull', _pull)
-    extensions.wrapcommand(commands.table, 'update', _update)
 
     extensions.wrapfunction(discovery, 'checkheads', _checkheads)
 
@@ -576,39 +574,6 @@ def _lookupwrap(orig):
                     r = str(inst)
                     return "%s %s\n" % (0, r)
     return _lookup
-
-def _update(orig, ui, repo, node=None, rev=None, **opts):
-    if rev and node:
-        raise error.Abort(_("please specify just one revision"))
-
-    if not opts.get('date') and (rev or node) not in repo:
-        mayberemote = rev or node
-        mayberemote = _tryhoist(ui, mayberemote)
-        dopull = False
-        kwargs = {}
-        if _scratchbranchmatcher(mayberemote):
-            dopull = True
-            kwargs['bookmark'] = [mayberemote]
-        elif len(mayberemote) == 40 and _maybehash(mayberemote):
-            dopull = True
-            kwargs['rev'] = [mayberemote]
-
-        if dopull:
-            ui.warn(
-                _("'%s' does not exist locally - looking for it " +
-                  "remotely...\n") % mayberemote)
-            # Try pulling node from remote repo
-            try:
-                cmdname = '^pull'
-                pullcmd = commands.table[cmdname][0]
-                pullopts = dict(opt[1:3] for opt in commands.table[cmdname][1])
-                pullopts.update(kwargs)
-                pullcmd(ui, repo, **pullopts)
-            except Exception:
-                ui.warn(_('pull failed: %s\n') % sys.exc_info()[1])
-            else:
-                ui.warn(_("'%s' found remotely\n") % mayberemote)
-    return orig(ui, repo, node, rev, **opts)
 
 def _pull(orig, ui, repo, source="default", **opts):
     # Copy paste from `pull` command

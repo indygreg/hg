@@ -495,7 +495,7 @@ class localrepository(object):
 
         self._branchcaches = {}
         self._revbranchcache = None
-        self.filterpats = {}
+        self._filterpats = {}
         self._datafilters = {}
         self._transref = self._lockref = self._wlockref = None
 
@@ -1098,7 +1098,7 @@ class localrepository(object):
         return self.dirstate.pathto(f, cwd)
 
     def _loadfilter(self, filter):
-        if filter not in self.filterpats:
+        if filter not in self._filterpats:
             l = []
             for pat, cmd in self.ui.configitems(filter):
                 if cmd == '!':
@@ -1118,8 +1118,8 @@ class localrepository(object):
                     oldfn = fn
                     fn = lambda s, c, **kwargs: oldfn(s, c)
                 l.append((mf, fn, params))
-            self.filterpats[filter] = l
-        return self.filterpats[filter]
+            self._filterpats[filter] = l
+        return self._filterpats[filter]
 
     def _filter(self, filterpats, filename, data):
         for mf, fn, cmd in filterpats:

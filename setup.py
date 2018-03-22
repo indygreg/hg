@@ -812,6 +812,8 @@ packages = ['mercurial',
             'mercurial.thirdparty.attr',
             'mercurial.thirdparty.cbor',
             'mercurial.thirdparty.cbor.cbor2',
+            'mercurial.thirdparty.zope',
+            'mercurial.thirdparty.zope.interface',
             'mercurial.utils',
             'hgext', 'hgext.convert', 'hgext.fsmonitor',
             'hgext.fsmonitor.pywatchman', 'hgext.highlight',
@@ -894,6 +896,10 @@ extmodules = [
               extra_compile_args=osutil_cflags,
               extra_link_args=osutil_ldflags,
               depends=common_depends),
+    Extension(
+        'mercurial.thirdparty.zope.interface._zope_interface_coptimizations', [
+        'mercurial/thirdparty/zope/interface/_zope_interface_coptimizations.c',
+        ]),
     Extension('hgext.fsmonitor.pywatchman.bser',
               ['hgext/fsmonitor/pywatchman/bser.c']),
     ]

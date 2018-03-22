@@ -37,6 +37,8 @@ allowsymbolimports = (
     'mercurial.pure.parsers',
     # third-party imports should be directly imported
     'mercurial.thirdparty',
+    'mercurial.thirdparty.zope',
+    'mercurial.thirdparty.zope.interface',
 )
 
 # Whitelist of symbols that can be directly imported.

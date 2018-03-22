@@ -2,15 +2,26 @@
 
 from __future__ import absolute_import, print_function
 
+import os
+
+from mercurial.thirdparty.zope import (
+    interface as zi,
+)
+from mercurial.thirdparty.zope.interface import (
+    verify as ziverify,
+)
 from mercurial import (
     bundlerepo,
     httppeer,
     localrepo,
+    repository,
     sshpeer,
     statichttprepo,
     ui as uimod,
     unionrepo,
 )
+
+rootdir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 
 def checkobject(o):
     """Verify a constructed object conforms to interface rules.
@@ -41,6 +52,30 @@ def checkobject(o):
         print('public attributes not in abstract interface: %s.%s' % (
             name, attr))
 
+def checkzobject(o):
+    """Verify an object with a zope interface."""
+    ifaces = zi.providedBy(o)
+    if not ifaces:
+        print('%r does not provide any zope interfaces' % o)
+        return
+
+    # Run zope.interface's built-in verification routine. This verifies that
+    # everything that is supposed to be present is present.
+    for iface in ifaces:
+        ziverify.verifyObject(iface, o)
+
+    # Now verify that the object provides no extra public attributes that
+    # aren't declared as part of interfaces.
+    allowed = set()
+    for iface in ifaces:
+        allowed |= set(iface.names(all=True))
+
+    public = {a for a in dir(o) if not a.startswith('_')}
+
+    for attr in sorted(public - allowed):
+        print('public attribute not declared in interfaces: %s.%s' % (
+            o.__class__.__name__, attr))
+
 # Facilitates testing localpeer.
 class dummyrepo(object):
     def __init__(self):
@@ -68,6 +103,8 @@ class dummypipe(object):
 
 def main():
     ui = uimod.ui()
+    # Needed so we can open a local repo with obsstore without a warning.
+    ui.setconfig('experimental', 'evolution.createmarkers', True)
 
     checkobject(badpeer())
     checkobject(httppeer.httppeer(None, None, None, dummyopener()))
@@ -79,5 +116,10 @@ def main():
     checkobject(bundlerepo.bundlepeer(dummyrepo()))
     checkobject(statichttprepo.statichttppeer(dummyrepo()))
     checkobject(unionrepo.unionpeer(dummyrepo()))
+
+    ziverify.verifyClass(repository.completelocalrepository,
+                         localrepo.localrepository)
+    repo = localrepo.localrepository(ui, rootdir)
+    checkzobject(repo)
 
 main()

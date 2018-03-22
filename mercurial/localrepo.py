@@ -20,6 +20,9 @@ from .node import (
     nullid,
     short,
 )
+from .thirdparty.zope import (
+    interface as zi,
+)
 from . import (
     bookmarks,
     branchmap,
@@ -318,6 +321,7 @@ REVLOGV2_REQUIREMENT = 'exp-revlogv2.0'
 # set to reflect that the extension knows how to handle that requirements.
 featuresetupfuncs = set()
 
+@zi.implementer(repository.completelocalrepository)
 class localrepository(object):
 
     # obsolete experimental requirements:

@@ -4079,8 +4079,6 @@ strdate = _deprecatedfunc(dateutil.strdate, '4.6')
 parsedate = _deprecatedfunc(dateutil.parsedate, '4.6')
 matchdate = _deprecatedfunc(dateutil.matchdate, '4.6')
 
-def _deprecatedfunc(func, version):  # TODO
-    return func
 escapedata = _deprecatedfunc(stringutil.escapedata, '4.6')
 binary = _deprecatedfunc(stringutil.binary, '4.6')
 stringmatcher = _deprecatedfunc(stringutil.stringmatcher, '4.6')

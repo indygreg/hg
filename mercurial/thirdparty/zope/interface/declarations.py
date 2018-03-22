@@ -34,7 +34,7 @@ from types import MethodType
 from types import ModuleType
 import weakref
 
-from .advice import addClassAdvisor
+from . import advice as advicemod
 from .interface import InterfaceClass
 from .interface import SpecificationBase
 from .interface import Specification
@@ -451,7 +451,7 @@ def _implements(name, interfaces, classImplements):
         raise TypeError(name+" can be used only once in a class definition.")
 
     locals['__implements_advice_data__'] = interfaces, classImplements
-    addClassAdvisor(_implements_advice, depth=3)
+    advicemod.addClassAdvisor(_implements_advice, depth=3)
 
 def implements(*interfaces):
     """Declare interfaces implemented by instances of a class
@@ -732,7 +732,7 @@ def classProvides(*interfaces):
 
     locals["__provides__"] = _normalizeargs(interfaces)
 
-    addClassAdvisor(_classProvides_advice, depth=2)
+    advicemod.addClassAdvisor(_classProvides_advice, depth=2)
 
 def _classProvides_advice(cls):
     # This entire approach is invalid under Py3K.  Don't even try to fix

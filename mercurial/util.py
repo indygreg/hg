@@ -4326,48 +4326,22 @@ def uvarintdecodestream(fh):
 # Deprecation warnings for util.py splitting
 ###
 
+def _deprecatedfunc(func, version):
+    def wrapped(*args, **kwargs):
+        fn = pycompat.sysbytes(func.__name__)
+        mn = pycompat.sysbytes(func.__module__)[len('mercurial.'):]
+        msg = "'util.%s' is deprecated, use '%s.%s'" % (fn, mn, fn)
+        nouideprecwarn(msg, version)
+        return func(*args, **kwargs)
+    wrapped.__name__ = func.__name__
+    return wrapped
+
 defaultdateformats = dateutil.defaultdateformats
-
 extendeddateformats = dateutil.extendeddateformats
-
-def makedate(*args, **kwargs):
-    msg = ("'util.makedate' is deprecated, "
-           "use 'utils.dateutil.makedate'")
-    nouideprecwarn(msg, "4.6")
-    return dateutil.makedate(*args, **kwargs)
-
-def datestr(*args, **kwargs):
-    msg = ("'util.datestr' is deprecated, "
-           "use 'utils.dateutil.datestr'")
-    nouideprecwarn(msg, "4.6")
-    return dateutil.datestr(*args, **kwargs)
-
-def shortdate(*args, **kwargs):
-    msg = ("'util.shortdate' is deprecated, "
-           "use 'utils.dateutil.shortdate'")
-    nouideprecwarn(msg, "4.6")
-    return dateutil.shortdate(*args, **kwargs)
-
-def parsetimezone(*args, **kwargs):
-    msg = ("'util.parsetimezone' is deprecated, "
-           "use 'utils.dateutil.parsetimezone'")
-    nouideprecwarn(msg, "4.6")
-    return dateutil.parsetimezone(*args, **kwargs)
-
-def strdate(*args, **kwargs):
-    msg = ("'util.strdate' is deprecated, "
-           "use 'utils.dateutil.strdate'")
-    nouideprecwarn(msg, "4.6")
-    return dateutil.strdate(*args, **kwargs)
-
-def parsedate(*args, **kwargs):
-    msg = ("'util.parsedate' is deprecated, "
-           "use 'utils.dateutil.parsedate'")
-    nouideprecwarn(msg, "4.6")
-    return dateutil.parsedate(*args, **kwargs)
-
-def matchdate(*args, **kwargs):
-    msg = ("'util.matchdate' is deprecated, "
-           "use 'utils.dateutil.matchdate'")
-    nouideprecwarn(msg, "4.6")
-    return dateutil.matchdate(*args, **kwargs)
+makedate = _deprecatedfunc(dateutil.makedate, '4.6')
+datestr = _deprecatedfunc(dateutil.datestr, '4.6')
+shortdate = _deprecatedfunc(dateutil.shortdate, '4.6')
+parsetimezone = _deprecatedfunc(dateutil.parsetimezone, '4.6')
+strdate = _deprecatedfunc(dateutil.strdate, '4.6')
+parsedate = _deprecatedfunc(dateutil.parsedate, '4.6')
+matchdate = _deprecatedfunc(dateutil.matchdate, '4.6')

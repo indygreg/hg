@@ -2883,11 +2883,11 @@ def wrap(line, width, initindent='', hangindent=''):
         # adjust for weird terminal size
         width = max(78, maxindent + 1)
     line = line.decode(pycompat.sysstr(encoding.encoding),
-                    pycompat.sysstr(encoding.encodingmode))
+                       pycompat.sysstr(encoding.encodingmode))
     initindent = initindent.decode(pycompat.sysstr(encoding.encoding),
-                    pycompat.sysstr(encoding.encodingmode))
+                                   pycompat.sysstr(encoding.encodingmode))
     hangindent = hangindent.decode(pycompat.sysstr(encoding.encoding),
-                    pycompat.sysstr(encoding.encodingmode))
+                                   pycompat.sysstr(encoding.encodingmode))
     wrapper = _MBTextWrapper(width=width,
                              initial_indent=initindent,
                              subsequent_indent=hangindent)

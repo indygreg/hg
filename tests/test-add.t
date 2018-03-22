@@ -272,3 +272,58 @@ test --dry-run mode in forget
   [1]
 
   $ cd ..
+
+test --confirm option in forget
+
+  $ hg init forgetconfirm
+  $ cd forgetconfirm
+  $ echo foo > foo
+  $ hg commit -qAm "foo"
+  $ echo bar > bar
+  $ hg commit -qAm "bar"
+  $ hg forget foo --dry-run --confirm
+  abort: cannot specify both --dry-run and --confirm
+  [255]
+
+  $ hg forget foo --config ui.interactive=True --confirm << EOF
+  > ?
+  > n
+  > EOF
+  forget foo [Ynsa?] ?
+  y - yes, forget this file
+  n - no, skip this file
+  s - skip remaining files
+  a - include all remaining files
+  ? - ? (display help)
+  forget foo [Ynsa?] n
+
+  $ hg forget foo bar --config ui.interactive=True --confirm << EOF
+  > y
+  > n
+  > EOF
+  forget bar [Ynsa?] y
+  forget foo [Ynsa?] n
+  removing bar
+  $ hg status
+  R bar
+  $ hg up -qC .
+
+  $ hg forget foo bar --config ui.interactive=True --confirm << EOF
+  > s
+  > EOF
+  forget bar [Ynsa?] s
+  $ hg st
+  $ hg up -qC .
+
+  $ hg forget foo bar --config ui.interactive=True --confirm << EOF
+  > a
+  > EOF
+  forget bar [Ynsa?] a
+  removing bar
+  removing foo
+  $ hg status
+  R bar
+  R foo
+  $ hg up -qC .
+
+  $ cd ..

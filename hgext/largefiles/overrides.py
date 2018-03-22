@@ -1079,9 +1079,10 @@ def postcommitstatus(orig, repo, *args, **kwargs):
     finally:
         repo.lfstatus = False
 
-def cmdutilforget(orig, ui, repo, match, prefix, explicitonly, dryrun):
+def cmdutilforget(orig, ui, repo, match, prefix, explicitonly, dryrun, confirm):
     normalmatcher = composenormalfilematcher(match, repo[None].manifest())
-    bad, forgot = orig(ui, repo, normalmatcher, prefix, explicitonly, dryrun)
+    bad, forgot = orig(ui, repo, normalmatcher, prefix, explicitonly, dryrun,
+                       confirm)
     m = composelargefilematcher(match, repo[None].manifest())
 
     try:

@@ -63,6 +63,11 @@ dryrunopts = [
      _('do not perform actions, just print output')),
 ]
 
+confirmopts = [
+    ('', 'confirm', None,
+     _('ask before applying actions')),
+]
+
 remoteopts = [
     ('e', 'ssh', '',
      _('specify ssh command to use'), _('CMD')),
@@ -2022,7 +2027,9 @@ def addwebdirpath(repo, serverpath, webconf):
         for subpath in ctx.substate:
             ctx.sub(subpath).addwebdirpath(serverpath, webconf)
 
-def forget(ui, repo, match, prefix, explicitonly, dryrun):
+def forget(ui, repo, match, prefix, explicitonly, dryrun, confirm):
+    if dryrun and confirm:
+        raise error.Abort(_("cannot specify both --dry-run and --confirm"))
     join = lambda f: os.path.join(prefix, f)
     bad = []
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
@@ -2038,7 +2045,8 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun):
         sub = wctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, match)
-            subbad, subforgot = sub.forget(submatch, prefix, dryrun=dryrun)
+            subbad, subforgot = sub.forget(submatch, prefix,
+                                           dryrun=dryrun, confirm=confirm)
             bad.extend([subpath + '/' + f for f in subbad])
             forgot.extend([subpath + '/' + f for f in subforgot])
         except error.LookupError:
@@ -2061,8 +2069,34 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun):
                                 % match.rel(f))
                     bad.append(f)
 
+    if confirm:
+        responses = _('[Ynsa?]'
+                      '$$ &Yes, forget this file'
+                      '$$ &No, skip this file'
+                      '$$ &Skip remaining files'
+                      '$$ Include &all remaining files'
+                      '$$ &? (display help)')
+        for filename in forget[:]:
+            r = ui.promptchoice(_('forget %s %s') % (filename, responses))
+            if r == 4: # ?
+                while r == 4:
+                    for c, t in ui.extractchoices(responses)[1]:
+                        ui.write('%s - %s\n' % (c, encoding.lower(t)))
+                    r = ui.promptchoice(_('forget %s %s') % (filename,
+                                                                 responses))
+            if r == 0: # yes
+                continue
+            elif r == 1: # no
+                forget.remove(filename)
+            elif r == 2: # Skip
+                fnindex = forget.index(filename)
+                del forget[fnindex:]
+                break
+            elif r == 3: # All
+                break
+
     for f in forget:
-        if ui.verbose or not match.exact(f):
+        if ui.verbose or not match.exact(f) or confirm:
             ui.status(_('removing %s\n') % match.rel(f))
 
     if not dryrun:

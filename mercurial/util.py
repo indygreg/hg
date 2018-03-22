@@ -34,7 +34,6 @@ import shutil
 import signal
 import socket
 import stat
-import string
 import subprocess
 import sys
 import tempfile
@@ -3075,9 +3074,6 @@ def parsebool(s):
     If s is not a valid boolean, returns None.
     """
     return _booleans.get(s.lower(), None)
-
-_hextochr = dict((a + b, chr(int(a + b, 16)))
-                 for a in string.hexdigits for b in string.hexdigits)
 
 class url(object):
     r"""Reliable URL parser.

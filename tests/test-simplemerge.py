@@ -22,6 +22,10 @@ from mercurial import (
     util,
 )
 
+from mercurial.utils import (
+    stringutil,
+)
+
 TestCase = unittest.TestCase
 # bzr compatible interface, for the tests
 class Merge3(simplemerge.Merge3Text):
@@ -34,7 +38,8 @@ class Merge3(simplemerge.Merge3Text):
         basetext = '\n'.join([i.strip('\n') for i in base] + [''])
         atext = '\n'.join([i.strip('\n') for i in a] + [''])
         btext = '\n'.join([i.strip('\n') for i in b] + [''])
-        if util.binary(basetext) or util.binary(atext) or util.binary(btext):
+        if (stringutil.binary(basetext) or stringutil.binary(atext)
+            or stringutil.binary(btext)):
             raise error.Abort("don't know how to merge binary files")
         simplemerge.Merge3Text.__init__(self, basetext, atext, btext,
                                         base, a, b)
@@ -358,4 +363,3 @@ if __name__ == '__main__':
         unittest.main()
     finally:
         time.time = orig
-

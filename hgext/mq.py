@@ -98,7 +98,10 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 release = lockmod.release
 seriesopts = [('s', 'summary', None, _('print first line of patch header'))]
@@ -469,7 +472,7 @@ class queue(object):
         self.guardsdirty = False
         # Handle mq.git as a bool with extended values
         gitmode = ui.config('mq', 'git').lower()
-        boolmode = util.parsebool(gitmode)
+        boolmode = stringutil.parsebool(gitmode)
         if boolmode is not None:
             if boolmode:
                 gitmode = 'yes'
@@ -724,7 +727,7 @@ class queue(object):
             os.unlink(undo)
         except OSError as inst:
             self.ui.warn(_('error removing undo: %s\n') %
-                         util.forcebytestr(inst))
+                         stringutil.forcebytestr(inst))
 
     def backup(self, repo, files, copy=False):
         # backup local changes in --force case
@@ -857,7 +860,7 @@ class queue(object):
                                   files=files, eolmode=None)
             return (True, list(files), fuzz)
         except Exception as inst:
-            self.ui.note(util.forcebytestr(inst) + '\n')
+            self.ui.note(stringutil.forcebytestr(inst) + '\n')
             if not self.ui.verbose:
                 self.ui.warn(_("patch failed, unable to continue (try -v)\n"))
             self.ui.traceback()
@@ -1917,7 +1920,7 @@ class queue(object):
                 if self.ui.formatted():
                     width = self.ui.termwidth() - len(pfx) - len(patchname) - 2
                     if width > 0:
-                        msg = util.ellipsis(msg, width)
+                        msg = stringutil.ellipsis(msg, width)
                     else:
                         msg = ''
                 self.ui.write(patchname, label='qseries.' + state)

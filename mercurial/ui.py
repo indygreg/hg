@@ -37,7 +37,10 @@ from . import (
     scmutil,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 urlreq = util.urlreq
 
@@ -371,7 +374,7 @@ class ui(object):
         except error.ConfigError as inst:
             if trusted:
                 raise
-            self.warn(_("ignored: %s\n") % util.forcebytestr(inst))
+            self.warn(_("ignored: %s\n") % stringutil.forcebytestr(inst))
 
         if self.plain():
             for k in ('debug', 'fallbackencoding', 'quiet', 'slash',
@@ -591,7 +594,7 @@ class ui(object):
             return default
         if isinstance(v, bool):
             return v
-        b = util.parsebool(v)
+        b = stringutil.parsebool(v)
         if b is None:
             raise error.ConfigError(_("%s.%s is not a boolean ('%s')")
                                     % (section, name, v))
@@ -821,7 +824,7 @@ class ui(object):
     def shortuser(self, user):
         """Return a short representation of a user name or email address."""
         if not self.verbose:
-            user = util.shortuser(user)
+            user = stringutil.shortuser(user)
         return user
 
     def expandpath(self, loc, default=None):

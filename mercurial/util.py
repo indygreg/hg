@@ -820,9 +820,10 @@ class baseproxyobserver(object):
         # Simple case writes all data on a single line.
         if b'\n' not in data:
             if self.logdataapis:
-                self.fh.write(': %s\n' % escapedata(data))
+                self.fh.write(': %s\n' % stringutil.escapedata(data))
             else:
-                self.fh.write('%s>     %s\n' % (self.name, escapedata(data)))
+                self.fh.write('%s>     %s\n'
+                              % (self.name, stringutil.escapedata(data)))
             self.fh.flush()
             return
 
@@ -832,7 +833,8 @@ class baseproxyobserver(object):
 
         lines = data.splitlines(True)
         for line in lines:
-            self.fh.write('%s>     %s\n' % (self.name, escapedata(line)))
+            self.fh.write('%s>     %s\n'
+                          % (self.name, stringutil.escapedata(line)))
         self.fh.flush()
 
 class fileobjectobserver(baseproxyobserver):
@@ -1915,7 +1917,7 @@ def checkwinfilename(path):
                          "on Windows") % c
             if ord(c) <= 31:
                 return _("filename contains '%s', which is invalid "
-                         "on Windows") % escapestr(c)
+                         "on Windows") % stringutil.escapestr(c)
         base = n.split('.')[0]
         if base and base.lower() in _winreservednames:
             return _("filename contains '%s', which is reserved "
@@ -3679,7 +3681,7 @@ class _zlibengine(compressionengine):
                 return zlib.decompress(data)
             except zlib.error as e:
                 raise error.RevlogError(_('revlog decompress error: %s') %
-                                        forcebytestr(e))
+                                        stringutil.forcebytestr(e))
 
     def revlogcompressor(self, opts=None):
         return self.zlibrevlogcompressor()
@@ -3905,7 +3907,7 @@ class _zstdengine(compressionengine):
                 return ''.join(chunks)
             except Exception as e:
                 raise error.RevlogError(_('revlog decompress error: %s') %
-                                        forcebytestr(e))
+                                        stringutil.forcebytestr(e))
 
     def revlogcompressor(self, opts=None):
         opts = opts or {}

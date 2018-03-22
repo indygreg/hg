@@ -25,6 +25,10 @@ from . import (
     util,
 )
 
+from .utils import (
+    stringutil,
+)
+
 _extensions = {}
 _disabledextensions = {}
 _aftercallbacks = {}
@@ -118,7 +122,7 @@ def _reportimporterror(ui, err, failed, next):
     # note: this ui.debug happens before --debug is processed,
     #       Use --config ui.debug=1 to see them.
     ui.debug('could not import %s (%s): trying %s\n'
-             % (failed, util.forcebytestr(err), next))
+             % (failed, stringutil.forcebytestr(err), next))
     if ui.debugflag:
         ui.traceback()
 
@@ -129,7 +133,7 @@ def _rejectunicode(name, xs):
     elif isinstance(xs, dict):
         for k, v in xs.items():
             _rejectunicode(name, k)
-            _rejectunicode(b'%s.%s' % (name, util.forcebytestr(k)), v)
+            _rejectunicode(b'%s.%s' % (name, stringutil.forcebytestr(k)), v)
     elif isinstance(xs, type(u'')):
         raise error.ProgrammingError(b"unicode %r found in %s" % (xs, name),
                                      hint="use b'' to make it byte string")
@@ -198,7 +202,7 @@ def _runuisetup(name, ui):
             uisetup(ui)
         except Exception as inst:
             ui.traceback(force=True)
-            msg = util.forcebytestr(inst)
+            msg = stringutil.forcebytestr(inst)
             ui.warn(_("*** failed to set up extension %s: %s\n") % (name, msg))
             return False
     return True
@@ -215,7 +219,7 @@ def _runextsetup(name, ui):
                 extsetup() # old extsetup with no ui argument
         except Exception as inst:
             ui.traceback(force=True)
-            msg = util.forcebytestr(inst)
+            msg = stringutil.forcebytestr(inst)
             ui.warn(_("*** failed to set up extension %s: %s\n") % (name, msg))
             return False
     return True
@@ -233,7 +237,7 @@ def loadall(ui, whitelist=None):
         try:
             load(ui, name, path)
         except Exception as inst:
-            msg = util.forcebytestr(inst)
+            msg = stringutil.forcebytestr(inst)
             if path:
                 ui.warn(_("*** failed to import extension %s from %s: %s\n")
                         % (name, path, msg))

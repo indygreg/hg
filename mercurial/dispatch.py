@@ -41,6 +41,10 @@ from . import (
     util,
 )
 
+from .utils import (
+    stringutil,
+)
+
 unrecoverablewrite = registrar.command.unrecoverablewrite
 
 class request(object):
@@ -496,7 +500,7 @@ class cmdalias(object):
             args = pycompat.shlexsplit(self.definition)
         except ValueError as inst:
             self.badalias = (_("error in definition for alias '%s': %s")
-                             % (self.name, util.forcebytestr(inst)))
+                             % (self.name, stringutil.forcebytestr(inst)))
             return
         earlyopts, args = _earlysplitopts(args)
         if earlyopts:
@@ -623,7 +627,7 @@ def _parse(ui, args):
     try:
         args = fancyopts.fancyopts(args, commands.globalopts, options)
     except getopt.GetoptError as inst:
-        raise error.CommandError(None, util.forcebytestr(inst))
+        raise error.CommandError(None, stringutil.forcebytestr(inst))
 
     if args:
         cmd, args = args[0], args[1:]
@@ -647,7 +651,7 @@ def _parse(ui, args):
     try:
         args = fancyopts.fancyopts(args, c, cmdoptions, gnu=True)
     except getopt.GetoptError as inst:
-        raise error.CommandError(cmd, util.forcebytestr(inst))
+        raise error.CommandError(cmd, stringutil.forcebytestr(inst))
 
     # separate global options back out
     for o in commands.globalopts:
@@ -872,7 +876,7 @@ def _dispatch(req):
                 ui_.setconfig('ui', 'color', coloropt, '--color')
             color.setup(ui_)
 
-        if util.parsebool(options['pager']):
+        if stringutil.parsebool(options['pager']):
             # ui.pager() expects 'internal-always-' prefix in this case
             ui.pager('internal-always-' + cmd)
         elif options['pager'] != 'auto':
@@ -968,7 +972,7 @@ def _exceptionwarning(ui):
         for name, mod in extensions.extensions():
             # 'testedwith' should be bytes, but not all extensions are ported
             # to py3 and we don't want UnicodeException because of that.
-            testedwith = util.forcebytestr(getattr(mod, 'testedwith', ''))
+            testedwith = stringutil.forcebytestr(getattr(mod, 'testedwith', ''))
             report = getattr(mod, 'buglink', _('the extension author.'))
             if not testedwith.strip():
                 # We found an untested extension. It's likely the culprit.
@@ -990,7 +994,8 @@ def _exceptionwarning(ui):
     if worst[0] is not None:
         name, testedwith, report = worst
         if not isinstance(testedwith, (bytes, str)):
-            testedwith = '.'.join([util.forcebytestr(c) for c in testedwith])
+            testedwith = '.'.join([stringutil.forcebytestr(c)
+                                   for c in testedwith])
         warning = (_('** Unknown exception encountered with '
                      'possibly-broken third-party extension %s\n'
                      '** which supports versions %s of Mercurial.\n'

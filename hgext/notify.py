@@ -149,7 +149,10 @@ from mercurial import (
     registrar,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -277,7 +280,7 @@ class notifier(object):
     def fixmail(self, addr):
         '''try to clean up email addresses.'''
 
-        addr = util.email(addr.strip())
+        addr = stringutil.email(addr.strip())
         if self.domain:
             a = addr.find('@localhost')
             if a != -1:
@@ -372,7 +375,7 @@ class notifier(object):
                 subject = '%s: %s' % (self.root, s)
         maxsubject = int(self.ui.config('notify', 'maxsubject'))
         if maxsubject:
-            subject = util.ellipsis(subject, maxsubject)
+            subject = stringutil.ellipsis(subject, maxsubject)
         msg['Subject'] = mail.headencode(self.ui, subject,
                                          self.charsets, self.test)
 
@@ -399,7 +402,7 @@ class notifier(object):
         else:
             self.ui.status(_('notify: sending %d subscribers %d changes\n') %
                            (len(subs), count))
-            mail.sendmail(self.ui, util.email(msg['From']),
+            mail.sendmail(self.ui, stringutil.email(msg['From']),
                           subs, msgtext, mbox=self.mbox)
 
     def diff(self, ctx, ref=None):

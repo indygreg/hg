@@ -35,7 +35,10 @@ from . import (
     templater,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 def getlimit(opts):
     """get the log limit according to option -l/--limit"""
@@ -260,7 +263,8 @@ class changesetprinter(object):
         extra = ctx.extra()
         if extra and self.ui.debugflag:
             for key, value in sorted(extra.items()):
-                self.ui.write(columns['extra'] % (key, util.escapestr(value)),
+                self.ui.write(columns['extra']
+                              % (key, stringutil.escapestr(value)),
                               label='ui.debug log.extra')
 
         description = ctx.description().strip()

@@ -15,6 +15,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 class ResourceUnavailable(error.Abort):
     pass
@@ -281,7 +284,7 @@ def evalboolean(context, mapping, arg):
         thing = func(context, mapping, data, default=None)
         if thing is None:
             # not a template keyword, takes as a boolean literal
-            thing = util.parsebool(data)
+            thing = stringutil.parsebool(data)
     else:
         thing = func(context, mapping, data)
     thing = unwrapvalue(thing)

@@ -36,7 +36,10 @@ from . import (
     util,
     vfs as vfsmod,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 hg = None
 reporelpath = subrepoutil.reporelpath
@@ -74,7 +77,7 @@ def annotatesubrepoerror(func):
             raise ex
         except error.Abort as ex:
             subrepo = subrelpath(self)
-            errormsg = (util.forcebytestr(ex) + ' '
+            errormsg = (stringutil.forcebytestr(ex) + ' '
                         + _('(in subrepository "%s")') % subrepo)
             # avoid handling this exception by raising a SubrepoAbort exception
             raise SubrepoAbort(errormsg, hint=ex.hint, subrepo=subrepo,

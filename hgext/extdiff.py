@@ -82,6 +82,9 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -367,8 +370,8 @@ class savedcmd(object):
     def __init__(self, path, cmdline):
         # We can't pass non-ASCII through docstrings (and path is
         # in an unknown encoding anyway)
-        docpath = util.escapestr(path)
-        self.__doc__ %= {r'path': pycompat.sysstr(util.uirepr(docpath))}
+        docpath = stringutil.escapestr(path)
+        self.__doc__ %= {r'path': pycompat.sysstr(stringutil.uirepr(docpath))}
         self._cmdline = cmdline
 
     def __call__(self, ui, repo, *pats, **opts):

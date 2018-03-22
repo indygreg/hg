@@ -22,6 +22,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 calcsize = struct.calcsize
 pack_into = struct.pack_into
@@ -256,7 +259,7 @@ class branchcache(dict):
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
             repo.ui.debug("couldn't write branch cache: %s\n" %
-                          util.forcebytestr(inst))
+                          stringutil.forcebytestr(inst))
 
     def update(self, repo, revgen):
         """Given a branchhead cache, self, that may have extra nodes or be
@@ -378,7 +381,7 @@ class revbranchcache(object):
                 self._rbcrevs[:] = data
             except (IOError, OSError) as inst:
                 repo.ui.debug("couldn't read revision branch cache: %s\n" %
-                              util.forcebytestr(inst))
+                              stringutil.forcebytestr(inst))
         # remember number of good records on disk
         self._rbcrevslen = min(len(self._rbcrevs) // _rbcrecsize,
                                len(repo.changelog))
@@ -540,7 +543,7 @@ class revbranchcache(object):
                 self._rbcrevslen = revs
         except (IOError, OSError, error.Abort, error.LockError) as inst:
             repo.ui.debug("couldn't write revision branch cache%s: %s\n"
-                          % (step, util.forcebytestr(inst)))
+                          % (step, stringutil.forcebytestr(inst)))
         finally:
             if wlock is not None:
                 wlock.release()

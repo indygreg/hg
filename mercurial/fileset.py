@@ -20,6 +20,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
@@ -445,7 +448,7 @@ def eol(mctx, x):
     s = []
     for f in mctx.existing():
         d = mctx.ctx[f].data()
-        if util.binary(d):
+        if stringutil.binary(d):
             continue
         if (enc == 'dos' or enc == 'win') and '\r\n' in d:
             s.append(f)

@@ -209,6 +209,9 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 pickle = util.pickle
 release = lock.release
@@ -465,7 +468,7 @@ class histeditaction(object):
         # (the 5 more are left for verb)
         maxlen = self.repo.ui.configint('histedit', 'linelen')
         maxlen = max(maxlen, 22) # avoid truncating hash
-        return util.ellipsis(line, maxlen)
+        return stringutil.ellipsis(line, maxlen)
 
     def tostate(self):
         """Print an action in format used by histedit state files

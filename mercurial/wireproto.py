@@ -34,6 +34,10 @@ from . import (
     wireprototypes,
 )
 
+from .utils import (
+    stringutil,
+)
+
 urlerr = util.urlerr
 urlreq = util.urlreq
 
@@ -994,7 +998,7 @@ def lookup(repo, proto, key):
         r = c.hex()
         success = 1
     except Exception as inst:
-        r = util.forcebytestr(inst)
+        r = stringutil.forcebytestr(inst)
         success = 0
     return bytesresponse('%d %s\n' % (success, r))
 
@@ -1007,7 +1011,7 @@ def known(repo, proto, nodes, others):
 def pushkey(repo, proto, namespace, key, old, new):
     # compatibility with pre-1.8 clients which were accidentally
     # sending raw binary nodes rather than utf-8-encoded hex
-    if len(new) == 20 and util.escapestr(new) != new:
+    if len(new) == 20 and stringutil.escapestr(new) != new:
         # looks like it could be a binary node
         try:
             new.decode('utf-8')
@@ -1123,7 +1127,7 @@ def unbundle(repo, proto, heads):
                 if exc.params:
                     errpart.addparam('params', '\0'.join(exc.params))
             except error.Abort as exc:
-                manargs = [('message', util.forcebytestr(exc))]
+                manargs = [('message', stringutil.forcebytestr(exc))]
                 advargs = []
                 if exc.hint is not None:
                     advargs.append(('hint', exc.hint))
@@ -1131,5 +1135,5 @@ def unbundle(repo, proto, heads):
                                                    manargs, advargs))
             except error.PushRaced as exc:
                 bundler.newpart('error:pushraced',
-                                [('message', util.forcebytestr(exc))])
+                                [('message', stringutil.forcebytestr(exc))])
             return streamres_legacy(gen=bundler.getchunks())

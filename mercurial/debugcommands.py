@@ -81,7 +81,10 @@ from . import (
     wireprotoframing,
     wireprotoserver,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 release = lockmod.release
 
@@ -1141,7 +1144,7 @@ def debuginstall(ui, **opts):
     try:
         codecs.lookup(pycompat.sysstr(encoding.encoding))
     except LookupError as inst:
-        err = util.forcebytestr(inst)
+        err = stringutil.forcebytestr(inst)
         problems += 1
     fm.condwrite(err, 'encodingerror', _(" %s\n"
                  " (check that your locale is properly set)\n"), err)
@@ -1197,7 +1200,7 @@ def debuginstall(ui, **opts):
             )
             dir(bdiff), dir(mpatch), dir(base85), dir(osutil) # quiet pyflakes
         except Exception as inst:
-            err = util.forcebytestr(inst)
+            err = stringutil.forcebytestr(inst)
             problems += 1
         fm.condwrite(err, 'extensionserror', " %s\n", err)
 
@@ -1234,7 +1237,7 @@ def debuginstall(ui, **opts):
             try:
                 templater.templater.frommapfile(m)
             except Exception as inst:
-                err = util.forcebytestr(inst)
+                err = stringutil.forcebytestr(inst)
                 p = None
             fm.condwrite(err, 'defaulttemplateerror', " %s\n", err)
         else:
@@ -1271,7 +1274,7 @@ def debuginstall(ui, **opts):
     try:
         username = ui.username()
     except error.Abort as e:
-        err = util.forcebytestr(e)
+        err = stringutil.forcebytestr(e)
         problems += 1
 
     fm.condwrite(username, 'username',  _("checking username (%s)\n"), username)
@@ -1822,8 +1825,8 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
         return not r
     else:
         for k, v in sorted(target.listkeys(namespace).iteritems()):
-            ui.write("%s\t%s\n" % (util.escapestr(k),
-                                   util.escapestr(v)))
+            ui.write("%s\t%s\n" % (stringutil.escapestr(k),
+                                   stringutil.escapestr(v)))
 
 @command('debugpvec', [], _('A B'))
 def debugpvec(ui, repo, a, b=None):
@@ -2909,7 +2912,7 @@ def debugwireproto(ui, repo, path=None, **opts):
 
             # Concatenate the data together.
             data = ''.join(l.lstrip() for l in lines)
-            data = util.unescapestr(data)
+            data = stringutil.unescapestr(data)
             stdin.write(data)
 
             if action == 'raw+':
@@ -2935,7 +2938,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                 else:
                     key, value = fields
 
-                args[key] = util.unescapestr(value)
+                args[key] = stringutil.unescapestr(value)
 
             if batchedcommands is not None:
                 batchedcommands.append((command, args))
@@ -2948,12 +2951,12 @@ def debugwireproto(ui, repo, path=None, **opts):
                     del args['PUSHFILE']
                     res, output = peer._callpush(command, fh,
                                                  **pycompat.strkwargs(args))
-                    ui.status(_('result: %s\n') % util.escapedata(res))
+                    ui.status(_('result: %s\n') % stringutil.escapedata(res))
                     ui.status(_('remote output: %s\n') %
-                              util.escapedata(output))
+                              stringutil.escapedata(output))
             else:
                 res = peer._call(command, **pycompat.strkwargs(args))
-                ui.status(_('response: %s\n') % util.escapedata(res))
+                ui.status(_('response: %s\n') % stringutil.escapedata(res))
 
         elif action == 'batchbegin':
             if batchedcommands is not None:
@@ -2967,7 +2970,8 @@ def debugwireproto(ui, repo, path=None, **opts):
             ui.status(_('sending batch with %d sub-commands\n') %
                       len(batchedcommands))
             for i, chunk in enumerate(peer._submitbatch(batchedcommands)):
-                ui.status(_('response #%d: %s\n') % (i, util.escapedata(chunk)))
+                ui.status(_('response #%d: %s\n') %
+                          (i, stringutil.escapedata(chunk)))
 
             batchedcommands = None
 

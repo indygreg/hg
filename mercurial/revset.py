@@ -31,7 +31,10 @@ from . import (
     stack,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 # helpers for processing parsed tree
 getsymbol = revsetlang.getsymbol
@@ -447,7 +450,7 @@ def bookmark(repo, subset, x):
         bm = getstring(args[0],
                        # i18n: "bookmark" is a keyword
                        _('the argument to bookmark must be a string'))
-        kind, pattern, matcher = util.stringmatcher(bm)
+        kind, pattern, matcher = stringutil.stringmatcher(bm)
         bms = set()
         if kind == 'literal':
             bmrev = repo._bookmarks.get(pattern, None)
@@ -492,7 +495,7 @@ def branch(repo, subset, x):
         # not a string, but another revspec, e.g. tip()
         pass
     else:
-        kind, pattern, matcher = util.stringmatcher(b)
+        kind, pattern, matcher = stringutil.stringmatcher(b)
         if kind == 'literal':
             # note: falls through to the revspec case if no branch with
             # this name exists and pattern kind is not specified explicitly
@@ -819,7 +822,7 @@ def extra(repo, subset, x):
         # i18n: "extra" is a keyword
         value = getstring(args['value'], _('second argument to extra must be '
                                            'a string'))
-        kind, value, matcher = util.stringmatcher(value)
+        kind, value, matcher = stringutil.stringmatcher(value)
 
     def _matchvalue(r):
         extra = repo[r].extra()
@@ -1014,7 +1017,7 @@ def grep(repo, subset, x):
         gr = re.compile(getstring(x, _("grep requires a string")))
     except re.error as e:
         raise error.ParseError(
-            _('invalid match pattern: %s') % util.forcebytestr(e))
+            _('invalid match pattern: %s') % stringutil.forcebytestr(e))
 
     def matches(x):
         c = repo[x]
@@ -1286,7 +1289,7 @@ def named(repo, subset, x):
     ns = getstring(args[0],
                    # i18n: "named" is a keyword
                    _('the argument to named must be a string'))
-    kind, pattern, matcher = util.stringmatcher(ns)
+    kind, pattern, matcher = stringutil.stringmatcher(ns)
     namespaces = set()
     if kind == 'literal':
         if pattern not in repo.names:
@@ -1942,7 +1945,7 @@ def subrepo(repo, subset, x):
     m = matchmod.exact(repo.root, repo.root, ['.hgsubstate'])
 
     def submatches(names):
-        k, p, m = util.stringmatcher(pat)
+        k, p, m = stringutil.stringmatcher(pat)
         for name in names:
             if m(name):
                 yield name
@@ -1995,8 +1998,8 @@ def successors(repo, subset, x):
     return subset & d
 
 def _substringmatcher(pattern, casesensitive=True):
-    kind, pattern, matcher = util.stringmatcher(pattern,
-                                                casesensitive=casesensitive)
+    kind, pattern, matcher = stringutil.stringmatcher(
+        pattern, casesensitive=casesensitive)
     if kind == 'literal':
         if not casesensitive:
             pattern = encoding.lower(pattern)
@@ -2019,7 +2022,7 @@ def tag(repo, subset, x):
         pattern = getstring(args[0],
                             # i18n: "tag" is a keyword
                             _('the argument to tag must be a string'))
-        kind, pattern, matcher = util.stringmatcher(pattern)
+        kind, pattern, matcher = stringutil.stringmatcher(pattern)
         if kind == 'literal':
             # avoid resolving all tags
             tn = repo._tagscache.tags.get(pattern, None)

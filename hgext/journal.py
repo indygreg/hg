@@ -36,7 +36,10 @@ from mercurial import (
     registrar,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -376,9 +379,9 @@ class journalstorage(object):
 
         """
         if namespace is not None:
-            namespace = util.stringmatcher(namespace)[-1]
+            namespace = stringutil.stringmatcher(namespace)[-1]
         if name is not None:
-            name = util.stringmatcher(name)[-1]
+            name = stringutil.stringmatcher(name)[-1]
         for entry in self:
             if namespace is not None and not namespace(entry.namespace):
                 continue

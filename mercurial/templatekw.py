@@ -26,6 +26,9 @@ from . import (
     templateutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 _hybrid = templateutil.hybrid
 _mappable = templateutil.mappable
@@ -72,7 +75,7 @@ def getlatesttags(context, mapping, pattern=None):
     cachename = 'latesttags'
     if pattern is not None:
         cachename += '-' + pattern
-        match = util.stringmatcher(pattern)[2]
+        match = stringutil.stringmatcher(pattern)[2]
     else:
         match = util.always
 
@@ -307,7 +310,7 @@ def showextras(context, mapping):
     c = [makemap(k) for k in extras]
     f = _showcompatlist(context, mapping, 'extra', c, plural='extras')
     return _hybrid(f, extras, makemap,
-                   lambda k: '%s=%s' % (k, util.escapestr(extras[k])))
+                   lambda k: '%s=%s' % (k, stringutil.escapestr(extras[k])))
 
 def _showfilesbystat(context, mapping, name, index):
     repo = context.resource(mapping, 'repo')

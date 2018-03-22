@@ -28,6 +28,10 @@ from . import (
     util,
 )
 
+from .utils import (
+    stringutil,
+)
+
 _CHANGEGROUPV1_DELTA_HEADER = "20s20s20s20s"
 _CHANGEGROUPV2_DELTA_HEADER = "20s20s20s20s20s"
 _CHANGEGROUPV3_DELTA_HEADER = ">20s20s20s20s20sH"
@@ -514,7 +518,7 @@ class cg1packer(object):
         if reorder == 'auto':
             reorder = None
         else:
-            reorder = util.parsebool(reorder)
+            reorder = stringutil.parsebool(reorder)
         self._repo = repo
         self._reorder = reorder
         self._progress = repo.ui.progress

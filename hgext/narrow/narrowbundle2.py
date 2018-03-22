@@ -29,6 +29,9 @@ from mercurial import (
     util,
     wireproto,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 NARROWCAP = 'narrow'
 _NARROWACL_SECTION = 'narrowhgacl'
@@ -449,7 +452,7 @@ def handlechangegroup_widen(op, inpart):
         except OSError as e:
             if e.errno != errno.ENOENT:
                 ui.warn(_('error removing %s: %s\n') %
-                        (undovfs.join(undofile), util.forcebytestr(e)))
+                        (undovfs.join(undofile), stringutil.forcebytestr(e)))
 
     # Remove partial backup only if there were no exceptions
     vfs.unlink(chgrpfile)

@@ -21,7 +21,10 @@ from . import (
     url,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -128,7 +131,7 @@ def email(text):
     address. Example: ``User <user@example.com>`` becomes
     ``user@example.com``.
     """
-    return util.email(text)
+    return stringutil.email(text)
 
 @templatefilter('escape')
 def escape(text):
@@ -162,8 +165,9 @@ def fill(text, width, initindent='', hangindent=''):
             yield text[start:m.start(0)], m.group(1)
             start = m.end(1)
 
-    return "".join([util.wrap(space_re.sub(' ', util.wrap(para, width)),
-                              width, initindent, hangindent) + rest
+    return "".join([stringutil.wrap(space_re.sub(' ',
+                                                 stringutil.wrap(para, width)),
+                                    width, initindent, hangindent) + rest
                     for para, rest in findparas()])
 
 @templatefilter('fill68')
@@ -369,7 +373,7 @@ def splitlines(text):
 
 @templatefilter('stringescape')
 def stringescape(text):
-    return util.escapestr(text)
+    return stringutil.escapestr(text)
 
 @templatefilter('stringify')
 def stringify(thing):
@@ -412,12 +416,12 @@ def urlescape(text):
 def userfilter(text):
     """Any text. Returns a short representation of a user name or email
     address."""
-    return util.shortuser(text)
+    return stringutil.shortuser(text)
 
 @templatefilter('emailuser')
 def emailuser(text):
     """Any text. Returns the user portion of an email address."""
-    return util.emailuser(text)
+    return stringutil.emailuser(text)
 
 @templatefilter('utf8')
 def utf8(text):

@@ -171,6 +171,9 @@ from . import (
     url,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -1091,7 +1094,7 @@ class bundlepart(object):
             ui.debug('bundle2-generatorexit\n')
             raise
         except BaseException as exc:
-            bexc = util.forcebytestr(exc)
+            bexc = stringutil.forcebytestr(exc)
             # backup exception data for later
             ui.debug('bundle2-input-stream-interrupt: encoding exception %s'
                      % bexc)

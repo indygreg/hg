@@ -19,6 +19,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
                    'listfile', 'listfile0', 'set', 'include', 'subinclude',
@@ -227,7 +230,7 @@ def _donormalize(patterns, default, root, cwd, auditor, warn):
             except IOError as inst:
                 if warn:
                     warn(_("skipping unreadable pattern file '%s': %s\n") %
-                         (pat, util.forcebytestr(inst.strerror)))
+                         (pat, stringutil.forcebytestr(inst.strerror)))
             continue
         # else: re or relre - which cannot be normalized
         kindpats.append((kind, pat, ''))

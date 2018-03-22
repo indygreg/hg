@@ -17,7 +17,10 @@ from mercurial import (
     pycompat,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 pickle = util.pickle
 
@@ -452,7 +455,8 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             rcsmap[e.rcs.replace('/Attic/', '/')] = e.rcs
 
             if len(log) % 100 == 0:
-                ui.status(util.ellipsis('%d %s' % (len(log), e.file), 80)+'\n')
+                ui.status(stringutil.ellipsis('%d %s' % (len(log), e.file), 80)
+                          + '\n')
 
     log.sort(key=lambda x: (x.rcs, x.revision))
 
@@ -608,7 +612,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             files = set()
             if len(changesets) % 100 == 0:
                 t = '%d %s' % (len(changesets), repr(e.comment)[1:-1])
-                ui.status(util.ellipsis(t, 80) + '\n')
+                ui.status(stringutil.ellipsis(t, 80) + '\n')
 
         c.entries.append(e)
         files.add(e.file)

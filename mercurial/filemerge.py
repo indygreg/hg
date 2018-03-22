@@ -31,6 +31,10 @@ from . import (
     util,
 )
 
+from .utils import (
+    stringutil,
+)
+
 def _toolstr(ui, tool, part, *args):
     return ui.config("merge-tools", tool + "." + part, *args)
 
@@ -573,7 +577,7 @@ def _formatconflictmarker(ctx, template, label, pad):
         mark = mark.splitlines()[0] # split for safety
 
     # 8 for the prefix of conflict marker lines (e.g. '<<<<<<< ')
-    return util.ellipsis(mark, 80 - 8)
+    return stringutil.ellipsis(mark, 80 - 8)
 
 _defaultconflictlabels = ['local', 'other']
 

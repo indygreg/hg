@@ -56,7 +56,10 @@ from mercurial import (
 from . import (
     rebase,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -477,7 +480,7 @@ def _docreatecmd(ui, repo, pats, opts):
         _shelvecreatedcommit(repo, node, name)
 
         if ui.formatted():
-            desc = util.ellipsis(desc, ui.termwidth())
+            desc = stringutil.ellipsis(desc, ui.termwidth())
         ui.status(_('shelved as %s\n') % name)
         hg.update(repo, parent.node())
         if origbranch != repo['.'].branch() and not _isbareshelve(pats, opts):
@@ -578,7 +581,7 @@ def listcmd(ui, repo, pats, opts):
                 if not line.startswith('#'):
                     desc = line.rstrip()
                     if ui.formatted():
-                        desc = util.ellipsis(desc, width - used)
+                        desc = stringutil.ellipsis(desc, width - used)
                     ui.write(desc)
                     break
             ui.write('\n')

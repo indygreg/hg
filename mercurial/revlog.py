@@ -45,6 +45,9 @@ from . import (
     templatefilters,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 parsers = policy.importmod(r'parsers')
 
@@ -2017,7 +2020,7 @@ class revlog(object):
                 return _zlibdecompress(data)
             except zlib.error as e:
                 raise RevlogError(_('revlog decompress error: %s') %
-                                  util.forcebytestr(e))
+                                  stringutil.forcebytestr(e))
         # '\0' is more common than 'u' so it goes first.
         elif t == '\0':
             return data

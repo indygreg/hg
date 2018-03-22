@@ -111,7 +111,10 @@ from mercurial import (
     templatefilters,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -272,7 +275,8 @@ class kwtemplater(object):
 
     def expand(self, path, node, data):
         '''Returns data with keywords expanded.'''
-        if not self.restrict and self.match(path) and not util.binary(data):
+        if (not self.restrict and self.match(path)
+            and not stringutil.binary(data)):
             ctx = self.linkctx(path, node)
             return self.substitute(data, path, ctx, self.rekw.sub)
         return data
@@ -304,7 +308,7 @@ class kwtemplater(object):
                 data = self.repo.file(f).read(mf[f])
             else:
                 data = self.repo.wread(f)
-            if util.binary(data):
+            if stringutil.binary(data):
                 continue
             if expand:
                 parents = ctx.parents()
@@ -335,7 +339,7 @@ class kwtemplater(object):
 
     def shrink(self, fname, text):
         '''Returns text with all keyword substitutions removed.'''
-        if self.match(fname) and not util.binary(text):
+        if self.match(fname) and not stringutil.binary(text):
             return _shrinktext(text, self.rekwexp.sub)
         return text
 
@@ -343,7 +347,7 @@ class kwtemplater(object):
         '''Returns lines with keyword substitutions removed.'''
         if self.match(fname):
             text = ''.join(lines)
-            if not util.binary(text):
+            if not stringutil.binary(text):
                 return _shrinktext(text, self.rekwexp.sub).splitlines(True)
         return lines
 

@@ -16,7 +16,10 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 from . import common
 
@@ -147,7 +150,7 @@ def get_log_child(fp, url, paths, start, end, limit=0,
         # Caller may interrupt the iteration
         pickle.dump(None, fp, protocol)
     except Exception as inst:
-        pickle.dump(util.forcebytestr(inst), fp, protocol)
+        pickle.dump(stringutil.forcebytestr(inst), fp, protocol)
     else:
         pickle.dump(None, fp, protocol)
     fp.flush()
@@ -1315,7 +1318,7 @@ class svn_sink(converter_sink, commandline):
         fp.close()
         try:
             output = self.run0('commit',
-                               username=util.shortuser(commit.author),
+                               username=stringutil.shortuser(commit.author),
                                file=messagefile,
                                encoding='utf-8')
             try:

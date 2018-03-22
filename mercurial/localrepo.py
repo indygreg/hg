@@ -64,6 +64,9 @@ from . import (
     util,
     vfs as vfsmod,
 )
+from .utils import (
+    stringutil,
+)
 
 release = lockmod.release
 urlerr = util.urlerr
@@ -263,7 +266,7 @@ class localpeer(repository.peer):
                 raise
         except error.PushRaced as exc:
             raise error.ResponseError(_('push failed:'),
-                                      util.forcebytestr(exc))
+                                      stringutil.forcebytestr(exc))
 
     # End of _basewirecommands interface.
 

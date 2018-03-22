@@ -17,6 +17,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
@@ -207,7 +210,7 @@ def getinteger(x, err, default=_notset):
         raise error.ParseError(err)
 
 def getboolean(x, err):
-    value = util.parsebool(getsymbol(x))
+    value = stringutil.parsebool(getsymbol(x))
     if value is not None:
         return value
     raise error.ParseError(err)
@@ -565,7 +568,7 @@ def _quote(s):
     >>> _quote(1)
     "'1'"
     """
-    return "'%s'" % util.escapestr(pycompat.bytestr(s))
+    return "'%s'" % stringutil.escapestr(pycompat.bytestr(s))
 
 def _formatargtype(c, arg):
     if c == 'd':

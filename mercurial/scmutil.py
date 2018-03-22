@@ -41,6 +41,10 @@ from . import (
     vfs,
 )
 
+from .utils import (
+    stringutil,
+)
+
 if pycompat.iswindows:
     from . import scmwindows as scmplatform
 else:
@@ -163,12 +167,12 @@ def callcatch(ui, func):
         else:
             reason = _('lock held by %r') % inst.locker
         ui.warn(_("abort: %s: %s\n")
-                % (inst.desc or util.forcebytestr(inst.filename), reason))
+                % (inst.desc or stringutil.forcebytestr(inst.filename), reason))
         if not inst.locker:
             ui.warn(_("(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
         ui.warn(_("abort: could not lock %s: %s\n") %
-                (inst.desc or util.forcebytestr(inst.filename),
+                (inst.desc or stringutil.forcebytestr(inst.filename),
                  encoding.strtolocal(inst.strerror)))
     except error.OutOfBandError as inst:
         if inst.args:
@@ -194,7 +198,7 @@ def callcatch(ui, func):
         elif not msg:
             ui.warn(_(" empty string\n"))
         else:
-            ui.warn("\n%r\n" % util.ellipsis(msg))
+            ui.warn("\n%r\n" % stringutil.ellipsis(msg))
     except error.CensoredNodeError as inst:
         ui.warn(_("abort: file censored %s!\n") % inst)
     except error.RevlogError as inst:
@@ -211,15 +215,15 @@ def callcatch(ui, func):
         if inst.hint:
             ui.warn(_("(%s)\n") % inst.hint)
     except ImportError as inst:
-        ui.warn(_("abort: %s!\n") % util.forcebytestr(inst))
-        m = util.forcebytestr(inst).split()[-1]
+        ui.warn(_("abort: %s!\n") % stringutil.forcebytestr(inst))
+        m = stringutil.forcebytestr(inst).split()[-1]
         if m in "mpatch bdiff".split():
             ui.warn(_("(did you forget to compile extensions?)\n"))
         elif m in "zlib".split():
             ui.warn(_("(is your Python install correct?)\n"))
     except IOError as inst:
         if util.safehasattr(inst, "code"):
-            ui.warn(_("abort: %s\n") % util.forcebytestr(inst))
+            ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst))
         elif util.safehasattr(inst, "reason"):
             try: # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]
@@ -237,7 +241,7 @@ def callcatch(ui, func):
             if getattr(inst, "filename", None):
                 ui.warn(_("abort: %s: %s\n") % (
                     encoding.strtolocal(inst.strerror),
-                    util.forcebytestr(inst.filename)))
+                    stringutil.forcebytestr(inst.filename)))
             else:
                 ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
         else:
@@ -246,7 +250,7 @@ def callcatch(ui, func):
         if getattr(inst, "filename", None) is not None:
             ui.warn(_("abort: %s: '%s'\n") % (
                 encoding.strtolocal(inst.strerror),
-                util.forcebytestr(inst.filename)))
+                stringutil.forcebytestr(inst.filename)))
         else:
             ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:
@@ -256,7 +260,7 @@ def callcatch(ui, func):
         # Just in case catch this and and pass exit code to caller.
         return inst.code
     except socket.error as inst:
-        ui.warn(_("abort: %s\n") % util.forcebytestr(inst.args[-1]))
+        ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
 
     return -1
 
@@ -299,7 +303,7 @@ def checkportabilityalert(ui):
     non-portable filenames'''
     val = ui.config('ui', 'portablefilenames')
     lval = val.lower()
-    bval = util.parsebool(val)
+    bval = stringutil.parsebool(val)
     abort = pycompat.iswindows or lval == 'abort'
     warn = bval or lval == 'warn'
     if bval is None and not (warn or abort or lval == 'ignore'):

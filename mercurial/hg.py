@@ -48,6 +48,10 @@ from . import (
     vfs as vfsmod,
 )
 
+from .utils import (
+    stringutil,
+)
+
 release = lock.release
 
 # shared features
@@ -270,7 +274,7 @@ def share(ui, source, dest=None, update=True, bookmarks=True, defaultpath=None,
             # ValueError is raised on Windows if the drive letters differ on
             # each path
             raise error.Abort(_('cannot calculate relative path'),
-                              hint=util.forcebytestr(e))
+                              hint=stringutil.forcebytestr(e))
     else:
         requirements += 'shared\n'
 

@@ -38,6 +38,10 @@ from .. import (
     util,
 )
 
+from ..utils import (
+    stringutil,
+)
+
 def up(p):
     if p[0:1] != "/":
         p = "/" + p
@@ -180,7 +184,7 @@ def difffeatureopts(req, ui, section):
     for k in ('ignorews', 'ignorewsamount', 'ignorewseol', 'ignoreblanklines'):
         v = req.qsparams.get(k)
         if v is not None:
-            v = util.parsebool(v)
+            v = stringutil.parsebool(v)
             setattr(diffopts, k, v if v is not None else True)
 
     return diffopts

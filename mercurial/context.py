@@ -46,7 +46,10 @@ from . import (
     subrepoutil,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 propertycache = util.propertycache
 
@@ -818,7 +821,7 @@ class basefilectx(object):
 
     def isbinary(self):
         try:
-            return util.binary(self.data())
+            return stringutil.binary(self.data())
         except IOError:
             return False
     def isexec(self):
@@ -1500,7 +1503,8 @@ class workingctx(committablectx):
         for f in files:
             if self.flags(f) == 'l':
                 d = self[f].data()
-                if d == '' or len(d) >= 1024 or '\n' in d or util.binary(d):
+                if (d == '' or len(d) >= 1024 or '\n' in d
+                    or stringutil.binary(d)):
                     self._repo.ui.debug('ignoring suspect symlink placeholder'
                                         ' "%s"\n' % f)
                     continue

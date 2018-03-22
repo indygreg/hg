@@ -27,7 +27,9 @@ from . import (
     encoding,
     pycompat,
     url,
-    util,
+)
+from .utils import (
+    stringutil,
 )
 
 def section(s):
@@ -459,9 +461,9 @@ def formatoption(block, width):
     hanging = block['optstrwidth']
     initindent = '%s%s  ' % (block['optstr'], ' ' * ((hanging - colwidth)))
     hangindent = ' ' * (encoding.colwidth(initindent) + 1)
-    return ' %s\n' % (util.wrap(desc, usablewidth,
-                                           initindent=initindent,
-                                           hangindent=hangindent))
+    return ' %s\n' % (stringutil.wrap(desc, usablewidth,
+                                      initindent=initindent,
+                                      hangindent=hangindent))
 
 def formatblock(block, width):
     """Format a block according to width."""
@@ -477,9 +479,9 @@ def formatblock(block, width):
         defindent = indent + hang * ' '
         text = ' '.join(map(bytes.strip, block['lines']))
         return '%s\n%s\n' % (indent + admonition,
-                             util.wrap(text, width=width,
-                                       initindent=defindent,
-                                       hangindent=defindent))
+                             stringutil.wrap(text, width=width,
+                                             initindent=defindent,
+                                             hangindent=defindent))
     if block['type'] == 'margin':
         return '\n'
     if block['type'] == 'literal':
@@ -503,7 +505,9 @@ def formatblock(block, width):
                 pad = ' ' * (w - encoding.colwidth(v))
                 l.append(v + pad)
             l = ' '.join(l)
-            l = util.wrap(l, width=width, initindent=indent, hangindent=hang)
+            l = stringutil.wrap(l, width=width,
+                                initindent=indent,
+                                hangindent=hang)
             if not text and block['header']:
                 text = l + '\n' + indent + '-' * (min(width, span)) + '\n'
             else:
@@ -514,9 +518,9 @@ def formatblock(block, width):
         hang = len(block['lines'][-1]) - len(block['lines'][-1].lstrip())
         defindent = indent + hang * ' '
         text = ' '.join(map(bytes.strip, block['lines'][1:]))
-        return '%s\n%s\n' % (term, util.wrap(text, width=width,
-                                             initindent=defindent,
-                                             hangindent=defindent))
+        return '%s\n%s\n' % (term, stringutil.wrap(text, width=width,
+                                                   initindent=defindent,
+                                                   hangindent=defindent))
     subindent = indent
     if block['type'] == 'bullet':
         if block['lines'][0].startswith('| '):
@@ -540,9 +544,9 @@ def formatblock(block, width):
         return formatoption(block, width)
 
     text = ' '.join(map(bytes.strip, block['lines']))
-    return util.wrap(text, width=width,
-                     initindent=indent,
-                     hangindent=subindent) + '\n'
+    return stringutil.wrap(text, width=width,
+                           initindent=indent,
+                           hangindent=subindent) + '\n'
 
 def formathtml(blocks):
     """Format RST blocks as HTML"""

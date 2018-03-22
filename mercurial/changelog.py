@@ -24,7 +24,10 @@ from . import (
     revlog,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 _defaultextra = {'branch': 'default'}
 
@@ -36,7 +39,7 @@ def _string_escape(text):
     >>> s
     'ab\\ncd\\\\\\\\n\\x00ab\\rcd\\\\\\n'
     >>> res = _string_escape(s)
-    >>> s == util.unescapestr(res)
+    >>> s == stringutil.unescapestr(res)
     True
     """
     # subset of the string_escape codec
@@ -62,7 +65,7 @@ def decodeextra(text):
                 l = l.replace('\\\\', '\\\\\n')
                 l = l.replace('\\0', '\0')
                 l = l.replace('\n', '')
-            k, v = util.unescapestr(l).split(':', 1)
+            k, v = stringutil.unescapestr(l).split(':', 1)
             extra[k] = v
     return extra
 

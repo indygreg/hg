@@ -21,6 +21,9 @@ from . import (
     error,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 FRAME_HEADER_SIZE = 6
 DEFAULT_MAX_FRAME_SIZE = 32768
@@ -164,7 +167,7 @@ def makeframefromhumanstring(s):
         else:
             finalflags |= int(flag)
 
-    payload = util.unescapestr(payload)
+    payload = stringutil.unescapestr(payload)
 
     return makeframe(requestid=requestid, typeid=frametype,
                      flags=finalflags, payload=payload)

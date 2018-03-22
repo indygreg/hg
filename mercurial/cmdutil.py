@@ -48,7 +48,12 @@ from . import (
     util,
     vfs as vfsmod,
 )
-from .utils import dateutil
+
+from .utils import (
+    dateutil,
+    stringutil,
+)
+
 stringio = util.stringio
 
 # templates of common command options
@@ -962,9 +967,9 @@ def _buildfntemplate(pat, total=None, seqno=None, revwidth=None, pathname=None):
         while i < end:
             n = pat.find(b'%', i, end)
             if n < 0:
-                newname.append(util.escapestr(pat[i:end]))
+                newname.append(stringutil.escapestr(pat[i:end]))
                 break
-            newname.append(util.escapestr(pat[i:n]))
+            newname.append(stringutil.escapestr(pat[i:n]))
             if n + 2 > end:
                 raise error.Abort(_("incomplete format spec in output "
                                     "filename"))
@@ -1479,7 +1484,7 @@ def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
                     patch.patchrepo(ui, repo, p1, store, tmpname, strip, prefix,
                                     files, eolmode=None)
                 except error.PatchError as e:
-                    raise error.Abort(util.forcebytestr(e))
+                    raise error.Abort(stringutil.forcebytestr(e))
                 if opts.get('exact'):
                     editor = None
                 else:

@@ -23,7 +23,9 @@ from . import (
     error,
     mdiff,
     pycompat,
-    util,
+)
+from .utils import (
+    stringutil,
 )
 
 class CantReprocessAndShowBase(Exception):
@@ -397,7 +399,7 @@ class Merge3Text(object):
 def _verifytext(text, path, ui, opts):
     """verifies that text is non-binary (unless opts[text] is passed,
     then we just warn)"""
-    if util.binary(text):
+    if stringutil.binary(text):
         msg = _("%s looks like a binary file.") % path
         if not opts.get('quiet'):
             ui.warn(_('warning: %s\n') % msg)

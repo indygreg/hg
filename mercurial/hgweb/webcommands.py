@@ -36,7 +36,10 @@ from .. import (
     scmutil,
     smartset,
     templater,
-    util,
+)
+
+from ..utils import (
+    stringutil,
 )
 
 from . import (
@@ -121,7 +124,7 @@ def rawfile(web):
     if guessmime:
         mt = mimetypes.guess_type(path)[0]
         if mt is None:
-            if util.binary(text):
+            if stringutil.binary(text):
                 mt = 'application/binary'
             else:
                 mt = 'text/plain'
@@ -141,7 +144,7 @@ def _filerevision(web, fctx):
     parity = paritygen(web.stripecount)
     ishead = fctx.filerev() in fctx.filelog().headrevs()
 
-    if util.binary(text):
+    if stringutil.binary(text):
         mt = mimetypes.guess_type(f)[0] or 'application/octet-stream'
         text = '(binary:%s)' % mt
 

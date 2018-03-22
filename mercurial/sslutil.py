@@ -21,6 +21,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 # Python 2.7.9+ overhauled the built-in SSL/TLS features of Python. It added
 # support for TLS 1.1, TLS 1.2, SNI, system CA stores, etc. These features are
@@ -374,7 +377,8 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             sslcontext.set_ciphers(pycompat.sysstr(settings['ciphers']))
         except ssl.SSLError as e:
             raise error.Abort(
-                _('could not set ciphers: %s') % util.forcebytestr(e.args[0]),
+                _('could not set ciphers: %s')
+                % stringutil.forcebytestr(e.args[0]),
                 hint=_('change cipher string (%s) in config') %
                 settings['ciphers'])
 
@@ -393,7 +397,7 @@ def wrapsocket(sock, keyfile, certfile, ui, serverhostname=None):
             else:
                 msg = e.args[1]
             raise error.Abort(_('error loading CA file %s: %s') % (
-                              settings['cafile'], util.forcebytestr(msg)),
+                              settings['cafile'], stringutil.forcebytestr(msg)),
                               hint=_('file is empty or malformed?'))
         caloaded = True
     elif settings['allowloaddefaultcerts']:
@@ -642,7 +646,7 @@ def _verifycert(cert, hostname):
                 if _dnsnamematch(value, hostname):
                     return
             except wildcarderror as e:
-                return util.forcebytestr(e.args[0])
+                return stringutil.forcebytestr(e.args[0])
 
             dnsnames.append(value)
 
@@ -663,7 +667,7 @@ def _verifycert(cert, hostname):
                         if _dnsnamematch(value, hostname):
                             return
                     except wildcarderror as e:
-                        return util.forcebytestr(e.args[0])
+                        return stringutil.forcebytestr(e.args[0])
 
                     dnsnames.append(value)
 

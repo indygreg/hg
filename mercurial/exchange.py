@@ -35,6 +35,9 @@ from . import (
     url as urlmod,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 urlerr = util.urlerr
 urlreq = util.urlreq
@@ -2180,7 +2183,7 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
             except error.UnsupportedBundleSpecification as e:
                 repo.ui.debug('filtering %s because unsupported bundle '
                               'spec: %s\n' % (
-                                  entry['URL'], util.forcebytestr(e)))
+                                  entry['URL'], stringutil.forcebytestr(e)))
                 continue
         # If we don't have a spec and requested a stream clone, we don't know
         # what the entry is so don't attempt to apply it.
@@ -2286,9 +2289,9 @@ def trypullbundlefromurl(ui, repo, url):
             return True
         except urlerr.httperror as e:
             ui.warn(_('HTTP error fetching bundle: %s\n') %
-                    util.forcebytestr(e))
+                    stringutil.forcebytestr(e))
         except urlerr.urlerror as e:
             ui.warn(_('error fetching bundle: %s\n') %
-                    util.forcebytestr(e.reason))
+                    stringutil.forcebytestr(e.reason))
 
         return False

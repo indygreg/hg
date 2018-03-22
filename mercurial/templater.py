@@ -63,6 +63,9 @@ from . import (
     templateutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 # template parsing
 
@@ -811,7 +814,8 @@ class templater(object):
                     _('"%s" not in template map') % inst.args[0])
             except IOError as inst:
                 reason = (_('template file %s: %s')
-                          % (self.map[t][1], util.forcebytestr(inst.args[1])))
+                          % (self.map[t][1],
+                             stringutil.forcebytestr(inst.args[1])))
                 raise IOError(inst.args[0], encoding.strfromlocal(reason))
         return self.cache[t]
 

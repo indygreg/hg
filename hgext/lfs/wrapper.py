@@ -19,6 +19,10 @@ from mercurial import (
     util,
 )
 
+from mercurial.utils import (
+    stringutil,
+)
+
 from ..largefiles import lfutil
 
 from . import (
@@ -95,7 +99,7 @@ def writetostore(self, text):
     # by default, we expect the content to be binary. however, LFS could also
     # be used for non-binary content. add a special entry for non-binary data.
     # this will be used by filectx.isbinary().
-    if not util.binary(text):
+    if not stringutil.binary(text):
         # not hg filelog metadata (affecting commit hash), no "x-hg-" prefix
         metadata['x-is-binary'] = '0'
 

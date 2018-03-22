@@ -28,6 +28,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 # Tags computation can be expensive and caches exist to make it fast in
 # the common case.
@@ -783,6 +786,6 @@ class hgtagsfnodescache(object):
         except (IOError, OSError) as inst:
             repo.ui.log('tagscache',
                         "couldn't write cache/%s: %s\n" % (
-                        _fnodescachefile, util.forcebytestr(inst)))
+                            _fnodescachefile, stringutil.forcebytestr(inst)))
         finally:
             lock.release()

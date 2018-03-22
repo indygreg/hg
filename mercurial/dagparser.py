@@ -14,7 +14,9 @@ from .i18n import _
 from . import (
     error,
     pycompat,
-    util,
+)
+from .utils import (
+    stringutil,
 )
 
 def parsedag(desc):
@@ -372,8 +374,8 @@ def dagtextlines(events,
                 else:
                     raise error.Abort(_("invalid event type in dag: "
                                         "('%s', '%s')")
-                                      % (util.escapestr(kind),
-                                         util.escapestr(data)))
+                                      % (stringutil.escapestr(kind),
+                                         stringutil.escapestr(data)))
         if run:
             yield '+%d' % run
 

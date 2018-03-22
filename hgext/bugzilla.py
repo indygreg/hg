@@ -307,6 +307,9 @@ from mercurial import (
     url,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 xmlrpclib = util.xmlrpclib
 
@@ -1099,7 +1102,8 @@ class bugzilla(object):
                root=self.repo.root,
                webroot=webroot(self.repo.root))
         data = self.ui.popbuffer()
-        self.bzdriver.updatebug(bugid, newstate, data, util.email(ctx.user()))
+        self.bzdriver.updatebug(bugid, newstate, data,
+                                stringutil.email(ctx.user()))
 
     def notify(self, bugs, committer):
         '''ensure Bugzilla users are notified of bug change.'''
@@ -1119,6 +1123,6 @@ def hook(ui, repo, hooktype, node=None, **kwargs):
         if bugs:
             for bug in bugs:
                 bz.update(bug, bugs[bug], ctx)
-            bz.notify(bugs, util.email(ctx.user()))
+            bz.notify(bugs, stringutil.email(ctx.user()))
     except Exception as e:
         raise error.Abort(_('Bugzilla error: %s') % e)

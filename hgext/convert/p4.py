@@ -14,7 +14,10 @@ from mercurial import (
     error,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    stringutil,
+)
 
 from . import common
 
@@ -169,7 +172,7 @@ class p4_source(common.converter_source):
                 shortdesc = '**empty changelist description**'
 
             t = '%s %s' % (c.rev, repr(shortdesc)[1:-1])
-            ui.status(util.ellipsis(t, 80) + '\n')
+            ui.status(stringutil.ellipsis(t, 80) + '\n')
 
             files = []
             copies = {}

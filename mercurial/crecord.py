@@ -23,6 +23,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 stringio = util.stringio
 
 # This is required for ncurses to display non-ASCII characters in default user
@@ -585,7 +588,7 @@ class curseschunkselector(object):
         # long as not explicitly set to a falsy value - especially,
         # when not set at all. This is to stay most compatible with
         # previous (color only) behaviour.
-        uicolor = util.parsebool(self.ui.config('ui', 'color'))
+        uicolor = stringutil.parsebool(self.ui.config('ui', 'color'))
         self.usecolor = uicolor is not False
 
         # the currently selected header, hunk, or hunk-line
@@ -1058,7 +1061,7 @@ class curseschunkselector(object):
         if len(lines) != self.numstatuslines:
             self.numstatuslines = len(lines)
             self.statuswin.resize(self.numstatuslines, self.xscreensize)
-        return [util.ellipsis(l, self.xscreensize - 1) for l in lines]
+        return [stringutil.ellipsis(l, self.xscreensize - 1) for l in lines]
 
     def updatescreen(self):
         self.statuswin.erase()

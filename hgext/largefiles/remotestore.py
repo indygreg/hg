@@ -14,6 +14,10 @@ from mercurial import (
     util,
 )
 
+from mercurial.utils import (
+    stringutil,
+)
+
 from . import (
     basestore,
     lfutil,
@@ -52,7 +56,7 @@ class remotestore(basestore.basestore):
         except IOError as e:
             raise error.Abort(
                 _('remotestore: could not open file %s: %s')
-                % (filename, util.forcebytestr(e)))
+                % (filename, stringutil.forcebytestr(e)))
 
     def _getfile(self, tmpfile, filename, hash):
         try:
@@ -61,7 +65,7 @@ class remotestore(basestore.basestore):
             # 401s get converted to error.Aborts; everything else is fine being
             # turned into a StoreError
             raise basestore.StoreError(filename, hash, self.url,
-                                       util.forcebytestr(e))
+                                       stringutil.forcebytestr(e))
         except urlerr.urlerror as e:
             # This usually indicates a connection problem, so don't
             # keep trying with the other files... they will probably
@@ -70,7 +74,7 @@ class remotestore(basestore.basestore):
                              (util.hidepassword(self.url), e.reason))
         except IOError as e:
             raise basestore.StoreError(filename, hash, self.url,
-                                       util.forcebytestr(e))
+                                       stringutil.forcebytestr(e))
 
         return lfutil.copyandhash(chunks, tmpfile)
 

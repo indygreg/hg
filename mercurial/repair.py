@@ -26,6 +26,9 @@ from . import (
     obsutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 def backupbundle(repo, bases, heads, node, suffix, compress=True,
                  obsolescence=True):
@@ -236,7 +239,8 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     ui.warn(_('error removing %s: %s\n') %
-                            (undovfs.join(undofile), util.forcebytestr(e)))
+                            (undovfs.join(undofile),
+                             stringutil.forcebytestr(e)))
 
     except: # re-raises
         if backupfile:

@@ -105,6 +105,9 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -133,7 +136,7 @@ def inconsistenteol(data):
 
 def tolf(s, params, ui, **kwargs):
     """Filter to convert to LF EOLs."""
-    if util.binary(s):
+    if stringutil.binary(s):
         return s
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
@@ -144,7 +147,7 @@ def tolf(s, params, ui, **kwargs):
 
 def tocrlf(s, params, ui, **kwargs):
     """Filter to convert to CRLF EOLs."""
-    if util.binary(s):
+    if stringutil.binary(s):
         return s
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
@@ -403,7 +406,7 @@ def reposetup(ui, repo):
                 if fctx is None:
                     continue
                 data = fctx.data()
-                if util.binary(data):
+                if stringutil.binary(data):
                     # We should not abort here, since the user should
                     # be able to say "** = native" to automatically
                     # have all non-binary files taken care of.

@@ -24,6 +24,9 @@ from . import (
     sslutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 class STARTTLS(smtplib.SMTP):
     '''Derived class to verify the peer certificate for STARTTLS.
@@ -81,7 +84,7 @@ def _smtp(ui):
     local_hostname = ui.config('smtp', 'local_hostname')
     tls = ui.config('smtp', 'tls')
     # backward compatible: when tls = true, we use starttls.
-    starttls = tls == 'starttls' or util.parsebool(tls)
+    starttls = tls == 'starttls' or stringutil.parsebool(tls)
     smtps = tls == 'smtps'
     if (starttls or smtps) and not util.safehasattr(socket, 'ssl'):
         raise error.Abort(_("can't use TLS: Python SSL support not installed"))
@@ -137,8 +140,8 @@ def _smtp(ui):
 def _sendmail(ui, sender, recipients, msg):
     '''send mail using sendmail.'''
     program = ui.config('email', 'method')
-    cmdline = '%s -f %s %s' % (program, util.email(sender),
-                               ' '.join(map(util.email, recipients)))
+    cmdline = '%s -f %s %s' % (program, stringutil.email(sender),
+                               ' '.join(map(stringutil.email, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
     fp = util.popen(cmdline, 'w')
     fp.write(msg)

@@ -14,7 +14,10 @@ from .i18n import _
 from . import (
     encoding,
     pycompat,
-    util
+)
+
+from .utils import (
+    stringutil,
 )
 
 try:
@@ -200,7 +203,7 @@ def _modesetup(ui):
 
     auto = (config == 'auto')
     always = False
-    if not auto and util.parsebool(config):
+    if not auto and stringutil.parsebool(config):
         # We want the config to behave like a boolean, "on" is actually auto,
         # but "always" value is treated as a special case to reduce confusion.
         if ui.configsource('ui', 'color') == '--color' or config == 'always':

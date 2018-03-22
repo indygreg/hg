@@ -61,7 +61,10 @@ from . import (
     util,
     wireprotoserver,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    stringutil,
+)
 
 release = lockmod.release
 
@@ -2469,7 +2472,7 @@ def grep(ui, repo, pattern, *pats, **opts):
         @util.cachefunc
         def binary():
             flog = getfile(fn)
-            return util.binary(flog.read(ctx.filenode(fn)))
+            return stringutil.binary(flog.read(ctx.filenode(fn)))
 
         fieldnamemap = {'filename': 'file', 'linenumber': 'line_number'}
         if opts.get('all'):
@@ -3914,7 +3917,7 @@ def postincoming(ui, repo, modheads, optupdate, checkout, brev):
         try:
             return hg.updatetotally(ui, repo, checkout, brev)
         except error.UpdateAbort as inst:
-            msg = _("not updating: %s") % util.forcebytestr(inst)
+            msg = _("not updating: %s") % stringutil.forcebytestr(inst)
             hint = inst.hint
             raise error.UpdateAbort(msg, hint=hint)
     if modheads > 1:

@@ -18,6 +18,9 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -187,7 +190,7 @@ def do_relink(src, dst, files, ui):
             relinked += 1
             savedbytes += sz
         except OSError as inst:
-            ui.warn('%s: %s\n' % (tgt, util.forcebytestr(inst)))
+            ui.warn('%s: %s\n' % (tgt, stringutil.forcebytestr(inst)))
 
     ui.progress(_('relinking'), None)
 

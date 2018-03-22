@@ -2774,7 +2774,7 @@ def uirepr(s):
     return pycompat.byterepr(pycompat.bytestr(s)).replace(b'\\\\', b'\\')
 
 # delay import of textwrap
-def MBTextWrapper(**kwargs):
+def _MBTextWrapper(**kwargs):
     class tw(textwrap.TextWrapper):
         """
         Extend TextWrapper for width-awareness.
@@ -2873,8 +2873,8 @@ def MBTextWrapper(**kwargs):
 
             return lines
 
-    global MBTextWrapper
-    MBTextWrapper = tw
+    global _MBTextWrapper
+    _MBTextWrapper = tw
     return tw(**kwargs)
 
 def wrap(line, width, initindent='', hangindent=''):
@@ -2888,9 +2888,9 @@ def wrap(line, width, initindent='', hangindent=''):
                     pycompat.sysstr(encoding.encodingmode))
     hangindent = hangindent.decode(pycompat.sysstr(encoding.encoding),
                     pycompat.sysstr(encoding.encodingmode))
-    wrapper = MBTextWrapper(width=width,
-                            initial_indent=initindent,
-                            subsequent_indent=hangindent)
+    wrapper = _MBTextWrapper(width=width,
+                             initial_indent=initindent,
+                             subsequent_indent=hangindent)
     return wrapper.fill(line).encode(pycompat.sysstr(encoding.encoding))
 
 if (pyplatform.python_implementation() == 'CPython' and

@@ -131,6 +131,29 @@ def email(author):
         r = None
     return author[author.find('<') + 1:r]
 
+_correctauthorformat = remod.compile(br'^[^<]+\s\<[^<>]+@[^<>]+\>$')
+
+def isauthorwellformed(author):
+    '''Return True if the author field is well formed
+    (ie "Contributor Name <contrib@email.dom>")
+
+    >>> isauthorwellformed(b'Good Author <good@author.com>')
+    True
+    >>> isauthorwellformed(b'Author <good@author.com>')
+    True
+    >>> isauthorwellformed(b'Bad Author')
+    False
+    >>> isauthorwellformed(b'Bad Author <author@author.com')
+    False
+    >>> isauthorwellformed(b'Bad Author author@author.com')
+    False
+    >>> isauthorwellformed(b'<author@author.com>')
+    False
+    >>> isauthorwellformed(b'Bad Author <author>')
+    False
+    '''
+    return _correctauthorformat.match(author) is not None
+
 def ellipsis(text, maxlength=400):
     """Trim string to at most maxlength (default: 400) columns in display."""
     return encoding.trim(text, maxlength, ellipsis='...')

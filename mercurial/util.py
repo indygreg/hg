@@ -809,19 +809,19 @@ class socketproxy(object):
         return object.__getattribute__(self, r'_observedcall')(
             r'setsockopt', *args, **kwargs)
 
-DATA_ESCAPE_MAP = {pycompat.bytechr(i): br'\x%02x' % i for i in range(256)}
-DATA_ESCAPE_MAP.update({
+_DATA_ESCAPE_MAP = {pycompat.bytechr(i): br'\x%02x' % i for i in range(256)}
+_DATA_ESCAPE_MAP.update({
     b'\\': b'\\\\',
     b'\r': br'\r',
     b'\n': br'\n',
 })
-DATA_ESCAPE_RE = remod.compile(br'[\x00-\x08\x0a-\x1f\\\x7f-\xff]')
+_DATA_ESCAPE_RE = remod.compile(br'[\x00-\x08\x0a-\x1f\\\x7f-\xff]')
 
 def escapedata(s):
     if isinstance(s, bytearray):
         s = bytes(s)
 
-    return DATA_ESCAPE_RE.sub(lambda m: DATA_ESCAPE_MAP[m.group(0)], s)
+    return _DATA_ESCAPE_RE.sub(lambda m: _DATA_ESCAPE_MAP[m.group(0)], s)
 
 class baseproxyobserver(object):
     def _writedata(self, data):

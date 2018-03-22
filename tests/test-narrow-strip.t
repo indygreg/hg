@@ -55,7 +55,7 @@ Can strip and recover changesets affecting only files within narrow spec
 
   $ hg co -r 'desc("modify inside")'
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ rm -f $TESTTMP/narrow/.hg/strip-backup/*-backup.hg
+  $ rm -f .hg/strip-backup/*-backup.hg
   $ hg strip .
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-backup.hg (glob)
@@ -84,7 +84,7 @@ Can strip and recover changesets affecting files outside of narrow spec
   inside\x006a8bc41df94075d501f9740587a0c0e13c170dc5t (esc) (tree !)
   outside\x00255c2627ebdd3c7dcaa6945246f9b9f02bd45a09t (esc) (tree !)
 
-  $ rm -f $TESTTMP/narrow/.hg/strip-backup/*-backup.hg
+  $ rm -f .hg/strip-backup/*-backup.hg
   $ hg strip .
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-backup.hg (glob)

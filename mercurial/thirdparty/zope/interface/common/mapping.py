@@ -13,7 +13,10 @@
 ##############################################################################
 """Mapping Interfaces
 """
-from zope.interface import Interface
+
+from __future__ import absolute_import
+
+from .. import Interface
 
 class IItemMapping(Interface):
     """Simplest readable mapping object
@@ -42,13 +45,13 @@ class IReadMapping(IItemMapping):
 
 class IWriteMapping(Interface):
     """Mapping methods for changing data"""
-    
+
     def __delitem__(key):
         """Delete a value from the mapping using the key."""
 
     def __setitem__(key, value):
         """Set a new item in the mapping."""
-        
+
 
 class IEnumerableMapping(IReadMapping):
     """Mapping objects whose items can be enumerated.
@@ -89,32 +92,32 @@ class IIterableMapping(IEnumerableMapping):
         "iterate over items"
 
 class IClonableMapping(Interface):
-    
+
     def copy():
         "return copy of dict"
 
 class IExtendedReadMapping(IIterableMapping):
-    
+
     def has_key(key):
         """Tell if a key exists in the mapping; equivalent to __contains__"""
 
 class IExtendedWriteMapping(IWriteMapping):
-    
+
     def clear():
         "delete all items"
-    
+
     def update(d):
         " Update D from E: for k in E.keys(): D[k] = E[k]"
-    
+
     def setdefault(key, default=None):
         "D.setdefault(k[,d]) -> D.get(k,d), also set D[k]=d if k not in D"
-    
+
     def pop(k, *args):
         """remove specified key and return the corresponding value
         *args may contain a single default value, or may not be supplied.
-        If key is not found, default is returned if given, otherwise 
+        If key is not found, default is returned if given, otherwise
         KeyError is raised"""
-    
+
     def popitem():
         """remove and return some (key, value) pair as a
         2-tuple; but raise KeyError if mapping is empty"""

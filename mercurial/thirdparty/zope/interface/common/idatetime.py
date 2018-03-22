@@ -1,7 +1,7 @@
 ##############################################################################
 # Copyright (c) 2002 Zope Foundation and Contributors.
 # All Rights Reserved.
-# 
+#
 # This software is subject to the provisions of the Zope Public License,
 # Version 2.1 (ZPL).  A copy of the ZPL should accompany this distribution.
 # THIS SOFTWARE IS PROVIDED "AS IS" AND ANY AND ALL EXPRESS OR IMPLIED
@@ -15,8 +15,10 @@ This module is called idatetime because if it were called datetime the import
 of the real datetime would fail.
 """
 
-from zope.interface import Interface, Attribute
-from zope.interface import classImplements
+from __future__ import absolute_import
+
+from .. import Interface, Attribute
+from .. import classImplements
 
 from datetime import timedelta, date, datetime, time, tzinfo
 
@@ -112,7 +114,7 @@ class IDate(IDateClass):
 
         Except for those members given new values by whichever keyword
         arguments are specified. For example, if d == date(2002, 12, 31), then
-        d.replace(day=26) == date(2000, 12, 26). 
+        d.replace(day=26) == date(2000, 12, 26).
         """
 
     def timetuple():
@@ -232,7 +234,7 @@ class IDateTimeClass(Interface):
         """Return the current UTC date and time, with tzinfo None.
 
         This is like now(), but returns the current UTC date and time, as a
-        naive datetime object. 
+        naive datetime object.
 
         See also now().
         """
@@ -357,7 +359,7 @@ class IDateTime(IDate, IDateTimeClass):
         If you merely want to attach a time zone object tz to a datetime dt
         without adjustment of date and time members, use dt.replace(tzinfo=tz).
         If you merely want to remove the time zone object from an aware
-        datetime dt without conversion of date and time members, use 
+        datetime dt without conversion of date and time members, use
         dt.replace(tzinfo=None).
 
         Note that the default tzinfo.fromutc() method can be overridden in a

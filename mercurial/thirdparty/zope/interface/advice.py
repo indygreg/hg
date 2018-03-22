@@ -25,6 +25,8 @@ models, object-relational persistence, aspect-oriented programming, and more.
 Visit the PEAK home page at http://peak.telecommunity.com for more information.
 """
 
+from __future__ import absolute_import
+
 from types import FunctionType
 try:
     from types import ClassType

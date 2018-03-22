@@ -13,8 +13,11 @@
 ##############################################################################
 """Interfaces for standard python exceptions
 """
-from zope.interface import Interface
-from zope.interface import classImplements
+
+from __future__ import absolute_import
+
+from .. import Interface
+from .. import classImplements
 
 class IException(Interface): pass
 class IStandardError(IException): pass

@@ -16,8 +16,10 @@
 This module provides a function, asStructuredText, for rendering an
 interface as structured text.
 """
-import zope.interface
 
+from __future__ import absolute_import
+
+from . import Interface
 
 def asStructuredText(I, munge=0, rst=False):
     """ Output structured text format.  Note, this will whack any existing
@@ -41,7 +43,7 @@ def asStructuredText(I, munge=0, rst=False):
 
     bases = [base
              for base in I.__bases__
-             if base is not zope.interface.Interface
+             if base is not Interface
              ]
     if bases:
         outp(_justify_and_indent("This interface extends:", level, munge))

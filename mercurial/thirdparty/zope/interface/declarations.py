@@ -24,6 +24,8 @@ There are three flavors of declarations:
     provided by objects.
 
 """
+from __future__ import absolute_import
+
 __docformat__ = 'restructuredtext'
 
 import sys
@@ -32,12 +34,12 @@ from types import MethodType
 from types import ModuleType
 import weakref
 
-from zope.interface.advice import addClassAdvisor
-from zope.interface.interface import InterfaceClass
-from zope.interface.interface import SpecificationBase
-from zope.interface.interface import Specification
-from zope.interface._compat import CLASS_TYPES as DescriptorAwareMetaClasses
-from zope.interface._compat import PYTHON3
+from .advice import addClassAdvisor
+from .interface import InterfaceClass
+from .interface import SpecificationBase
+from .interface import Specification
+from ._compat import CLASS_TYPES as DescriptorAwareMetaClasses
+from ._compat import PYTHON3
 
 # Registry of class-implementation specifications
 BuiltinImplementationSpecifications = {}
@@ -638,11 +640,11 @@ ClassProvidesBase = ClassProvidesBaseFallback
 
 # Try to get C base:
 try:
-    import zope.interface._zope_interface_coptimizations
+    from . import _zope_interface_coptimizations
 except ImportError:
     pass
 else:
-    from zope.interface._zope_interface_coptimizations import ClassProvidesBase
+    from ._zope_interface_coptimizations import ClassProvidesBase
 
 
 class ClassProvides(Declaration, ClassProvidesBase):
@@ -915,15 +917,15 @@ def _normalizeargs(sequence, output = None):
 _empty = Declaration()
 
 try:
-    import zope.interface._zope_interface_coptimizations
+    from . import _zope_interface_coptimizations
 except ImportError:
     pass
 else:
-    from zope.interface._zope_interface_coptimizations import implementedBy
-    from zope.interface._zope_interface_coptimizations import providedBy
-    from zope.interface._zope_interface_coptimizations import (
+    from ._zope_interface_coptimizations import implementedBy
+    from ._zope_interface_coptimizations import providedBy
+    from ._zope_interface_coptimizations import (
         getObjectSpecification)
-    from zope.interface._zope_interface_coptimizations import (
+    from ._zope_interface_coptimizations import (
         ObjectSpecificationDescriptor)
 
 objectSpecificationDescriptor = ObjectSpecificationDescriptor()

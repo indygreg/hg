@@ -13,16 +13,18 @@
 ##############################################################################
 """Adapter management
 """
+from __future__ import absolute_import
+
 import weakref
 
-from zope.interface import implementer
-from zope.interface import providedBy
-from zope.interface import Interface
-from zope.interface import ro
-from zope.interface.interfaces import IAdapterRegistry
+from . import implementer
+from . import providedBy
+from . import Interface
+from . import ro
+from .interfaces import IAdapterRegistry
 
-from zope.interface._compat import _normalize_name
-from zope.interface._compat import STRING_TYPES
+from ._compat import _normalize_name
+from ._compat import STRING_TYPES
 
 _BLANK = u''
 
@@ -409,7 +411,7 @@ class LookupBaseFallback(object):
 LookupBasePy = LookupBaseFallback # BBB
 
 try:
-    from zope.interface._zope_interface_coptimizations import LookupBase
+    from ._zope_interface_coptimizations import LookupBase
 except ImportError:
     LookupBase = LookupBaseFallback
 
@@ -445,7 +447,7 @@ class VerifyingBaseFallback(LookupBaseFallback):
 VerifyingBasePy = VerifyingBaseFallback #BBB
 
 try:
-    from zope.interface._zope_interface_coptimizations import VerifyingBase
+    from ._zope_interface_coptimizations import VerifyingBase
 except ImportError:
     VerifyingBase = VerifyingBaseFallback
 

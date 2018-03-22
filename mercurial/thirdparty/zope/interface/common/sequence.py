@@ -13,8 +13,11 @@
 ##############################################################################
 """Sequence Interfaces
 """
+
+from __future__ import absolute_import
+
 __docformat__ = 'restructuredtext'
-from zope.interface import Interface
+from .. import Interface
 
 class IMinimalSequence(Interface):
     """Most basic sequence interface.

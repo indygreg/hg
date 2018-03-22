@@ -13,7 +13,7 @@
 ##############################################################################
 """Interface object implementation
 """
-from __future__ import generators
+from __future__ import absolute_import, generators
 
 import sys
 from types import MethodType
@@ -21,8 +21,8 @@ from types import FunctionType
 import warnings
 import weakref
 
-from zope.interface.exceptions import Invalid
-from zope.interface.ro import ro
+from .exceptions import Invalid
+from .ro import ro
 
 
 CO_VARARGS = 4
@@ -114,7 +114,7 @@ class SpecificationBasePy(object):
 
 SpecificationBase = SpecificationBasePy
 try:
-    from zope.interface._zope_interface_coptimizations import SpecificationBase
+    from ._zope_interface_coptimizations import SpecificationBase
 except ImportError:
     pass
 
@@ -155,14 +155,14 @@ class InterfaceBasePy(object):
 
 InterfaceBase = InterfaceBasePy
 try:
-    from zope.interface._zope_interface_coptimizations import InterfaceBase
+    from ._zope_interface_coptimizations import InterfaceBase
 except ImportError:
     pass
 
 
 adapter_hooks = []
 try:
-    from zope.interface._zope_interface_coptimizations import adapter_hooks
+    from ._zope_interface_coptimizations import adapter_hooks
 except ImportError:
     pass
 
@@ -665,22 +665,22 @@ def fromMethod(meth, interface=None, name=None):
 
 # Now we can create the interesting interfaces and wire them up:
 def _wire():
-    from zope.interface.declarations import classImplements
+    from .declarations import classImplements
 
-    from zope.interface.interfaces import IAttribute
+    from .interfaces import IAttribute
     classImplements(Attribute, IAttribute)
 
-    from zope.interface.interfaces import IMethod
+    from .interfaces import IMethod
     classImplements(Method, IMethod)
 
-    from zope.interface.interfaces import IInterface
+    from .interfaces import IInterface
     classImplements(InterfaceClass, IInterface)
 
-    from zope.interface.interfaces import ISpecification
+    from .interfaces import ISpecification
     classImplements(Specification, ISpecification)
 
 # We import this here to deal with module dependencies.
-from zope.interface.declarations import implementedBy
-from zope.interface.declarations import providedBy
-from zope.interface.exceptions import InvalidInterface
-from zope.interface.exceptions import BrokenImplementation
+from .declarations import implementedBy
+from .declarations import providedBy
+from .exceptions import InvalidInterface
+from .exceptions import BrokenImplementation

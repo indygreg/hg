@@ -13,31 +13,34 @@
 ##############################################################################
 """Basic components support
 """
+
+from __future__ import absolute_import
+
 from collections import defaultdict
 
 try:
-    from zope.event import notify
+    from ..event import notify
 except ImportError: # pragma: no cover
     def notify(*arg, **kw): pass
 
-from zope.interface.interfaces import ISpecification
-from zope.interface.interfaces import ComponentLookupError
-from zope.interface.interfaces import IAdapterRegistration
-from zope.interface.interfaces import IComponents
-from zope.interface.interfaces import IHandlerRegistration
-from zope.interface.interfaces import ISubscriptionAdapterRegistration
-from zope.interface.interfaces import IUtilityRegistration
-from zope.interface.interfaces import Registered
-from zope.interface.interfaces import Unregistered
+from .interfaces import ISpecification
+from .interfaces import ComponentLookupError
+from .interfaces import IAdapterRegistration
+from .interfaces import IComponents
+from .interfaces import IHandlerRegistration
+from .interfaces import ISubscriptionAdapterRegistration
+from .interfaces import IUtilityRegistration
+from .interfaces import Registered
+from .interfaces import Unregistered
 
-from zope.interface.interface import Interface
-from zope.interface.declarations import implementedBy
-from zope.interface.declarations import implementer
-from zope.interface.declarations import implementer_only
-from zope.interface.declarations import providedBy
-from zope.interface.adapter import AdapterRegistry
-from zope.interface._compat import CLASS_TYPES
-from zope.interface._compat import STRING_TYPES
+from .interface import Interface
+from .declarations import implementedBy
+from .declarations import implementer
+from .declarations import implementer_only
+from .declarations import providedBy
+from .adapter import AdapterRegistry
+from ._compat import CLASS_TYPES
+from ._compat import STRING_TYPES
 
 
 class _UnhashableComponentCounter(object):

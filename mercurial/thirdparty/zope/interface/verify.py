@@ -13,10 +13,12 @@
 ##############################################################################
 """Verify interface implementations
 """
-from zope.interface.exceptions import BrokenImplementation, DoesNotImplement
-from zope.interface.exceptions import BrokenMethodImplementation
+from __future__ import absolute_import
+
+from .exceptions import BrokenImplementation, DoesNotImplement
+from .exceptions import BrokenMethodImplementation
 from types import FunctionType, MethodType
-from zope.interface.interface import fromMethod, fromFunction, Method
+from .interface import fromMethod, fromFunction, Method
 import sys
 
 # This will be monkey-patched when running under Zope 2, so leave this

@@ -47,7 +47,8 @@ import_declarations(void)
 {
   PyObject *declarations, *i;
 
-  declarations = PyImport_ImportModule("zope.interface.declarations");
+  declarations = PyImport_ImportModule(
+    "mercurial.thirdparty.zope.interface.declarations");
   if (declarations == NULL)
     return -1;
 
@@ -1336,7 +1337,7 @@ verifying_clear(verify *self)
 static void
 verifying_dealloc(verify *self)
 {
-  PyObject_GC_UnTrack((PyObject *)self);   	
+  PyObject_GC_UnTrack((PyObject *)self);
   verifying_clear(self);
   Py_TYPE(self)->tp_free((PyObject*)self);
 }

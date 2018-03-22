@@ -48,42 +48,45 @@ The package has several public modules:
 
 See the module doc strings for more information.
 """
+
+from __future__ import absolute_import
+
 __docformat__ = 'restructuredtext'
 
-from zope.interface.interface import Interface
-from zope.interface.interface import _wire
+from .interface import Interface
+from .interface import _wire
 
 # Need to actually get the interface elements to implement the right interfaces
 _wire()
 del _wire
 
-from zope.interface.declarations import Declaration
-from zope.interface.declarations import alsoProvides
-from zope.interface.declarations import classImplements
-from zope.interface.declarations import classImplementsOnly
-from zope.interface.declarations import classProvides
-from zope.interface.declarations import directlyProvidedBy
-from zope.interface.declarations import directlyProvides
-from zope.interface.declarations import implementedBy
-from zope.interface.declarations import implementer
-from zope.interface.declarations import implementer_only
-from zope.interface.declarations import implements
-from zope.interface.declarations import implementsOnly
-from zope.interface.declarations import moduleProvides
-from zope.interface.declarations import named
-from zope.interface.declarations import noLongerProvides
-from zope.interface.declarations import providedBy
-from zope.interface.declarations import provider
-from zope.interface.exceptions import Invalid
-from zope.interface.interface import Attribute
-from zope.interface.interface import invariant
-from zope.interface.interface import taggedValue
+from .declarations import Declaration
+from .declarations import alsoProvides
+from .declarations import classImplements
+from .declarations import classImplementsOnly
+from .declarations import classProvides
+from .declarations import directlyProvidedBy
+from .declarations import directlyProvides
+from .declarations import implementedBy
+from .declarations import implementer
+from .declarations import implementer_only
+from .declarations import implements
+from .declarations import implementsOnly
+from .declarations import moduleProvides
+from .declarations import named
+from .declarations import noLongerProvides
+from .declarations import providedBy
+from .declarations import provider
+from .exceptions import Invalid
+from .interface import Attribute
+from .interface import invariant
+from .interface import taggedValue
 
 # The following are to make spec pickles cleaner
-from zope.interface.declarations import Provides
+from .declarations import Provides
 
 
-from zope.interface.interfaces import IInterfaceDeclaration
+from .interfaces import IInterfaceDeclaration
 
 moduleProvides(IInterfaceDeclaration)
 

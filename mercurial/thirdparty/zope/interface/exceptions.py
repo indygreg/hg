@@ -14,6 +14,8 @@
 """Interface-specific exceptions
 """
 
+from __future__ import absolute_import
+
 class Invalid(Exception):
     """A specification is violated
     """

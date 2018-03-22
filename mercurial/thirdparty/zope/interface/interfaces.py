@@ -13,11 +13,14 @@
 ##############################################################################
 """Interface Package Interfaces
 """
+
+from __future__ import absolute_import
+
 __docformat__ = 'restructuredtext'
 
-from zope.interface.interface import Attribute
-from zope.interface.interface import Interface
-from zope.interface.declarations import implementer
+from .interface import Attribute
+from .interface import Interface
+from .declarations import implementer
 
 
 _BLANK = u''
@@ -447,10 +450,10 @@ class IInterfaceDeclaration(Interface):
         Instances of ``C`` provide only ``I1``, ``I2``, and regardless of
         whatever interfaces instances of ``A`` and ``B`` implement.
         """
-        
+
     def implementer_only(*interfaces):
-        """Create a decorator for declaring the only interfaces implemented 
-        
+        """Create a decorator for declaring the only interfaces implemented
+
         A callable is returned that makes an implements declaration on
         objects passed to it.
         """

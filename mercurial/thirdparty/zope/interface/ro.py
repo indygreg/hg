@@ -13,6 +13,9 @@
 ##############################################################################
 """Compute a resolution order for an object and its bases
 """
+
+from __future__ import absolute_import
+
 __docformat__ = 'restructuredtext'
 
 def _mergeOrderings(orderings):

@@ -716,15 +716,23 @@ this is a section and erroring out weirdly.
 
   $ cat > helpext.py <<EOF
   > import os
-  > from mercurial import commands, registrar
+  > from mercurial import commands, fancyopts, registrar
   > 
+  > def func(arg):
+  >     return '%sfoo' % arg
+  > class customopt(fancyopts.customopt):
+  >     def newstate(self, oldstate, newparam, abort):
+  >         return '%sbar' % oldstate
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > 
   > @command(b'nohelp',
-  >     [(b'', b'longdesc', 3, b'x'*90),
+  >     [(b'', b'longdesc', 3, b'x'*67),
   >     (b'n', b'', None, b'normal desc'),
-  >     (b'', b'newline', b'', b'line1\nline2')],
+  >     (b'', b'newline', b'', b'line1\nline2'),
+  >     (b'', b'callableopt', func, b'adds foo'),
+  >     (b'', b'customopt', customopt(''), b'adds bar'),
+  >     (b'', b'customopt-withdefault', customopt('foo'), b'adds bar')],
   >     b'hg nohelp',
   >     norepo=True)
   > @command(b'debugoptADV', [(b'', b'aopt', None, b'option is (ADVANCED)')])
@@ -786,10 +794,14 @@ Test command with no help text
   
   options:
   
-      --longdesc VALUE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-                       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (default: 3)
-   -n --               normal desc
-      --newline VALUE  line1 line2
+      --longdesc VALUE
+                                    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                                    xxxxxxxxxxxxxxxxxxxxxxx (default: 3)
+   -n --                            normal desc
+      --newline VALUE               line1 line2
+      --callableopt VALUE           adds foo
+      --customopt VALUE             adds bar
+      --customopt-withdefault VALUE adds bar (default: foo)
   
   (some details hidden, use --verbose to show complete help)
 

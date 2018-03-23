@@ -20,6 +20,7 @@ from . import (
     encoding,
     error,
     extensions,
+    fancyopts,
     filemerge,
     fileset,
     minirst,
@@ -84,7 +85,10 @@ def optrst(header, options, verbose):
         if shortopt:
             so = '-' + shortopt
         lo = '--' + longopt
-        if default:
+
+        if isinstance(default, fancyopts.customopt):
+            default = default.defaultvalue
+        if default and not callable(default):
             # default is of unknown type, and in Python 2 we abused
             # the %s-shows-repr property to handle integers etc. To
             # match that behavior on Python 3, we do str(default) and

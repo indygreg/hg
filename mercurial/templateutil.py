@@ -318,9 +318,12 @@ def evalboolean(context, mapping, arg):
     return bool(stringify(thing))
 
 def evalinteger(context, mapping, arg, err=None):
-    v = evalfuncarg(context, mapping, arg)
+    return unwrapinteger(evalrawexp(context, mapping, arg), err)
+
+def unwrapinteger(thing, err=None):
+    thing = _unwrapvalue(thing)
     try:
-        return int(v)
+        return int(thing)
     except (TypeError, ValueError):
         raise error.ParseError(err or _('not an integer'))
 

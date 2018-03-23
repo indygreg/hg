@@ -77,7 +77,8 @@ class mappable(object):
     - "{manifest.rev}"
 
     Unlike a hybrid, this does not simulate the behavior of the underling
-    value. Use unwrapvalue() or unwraphybrid() to obtain the inner object.
+    value. Use unwrapvalue(), unwrapastype(), or unwraphybrid() to obtain
+    the inner object.
     """
 
     def __init__(self, gen, key, value, makemap):
@@ -340,18 +341,18 @@ def evalstringliteral(context, mapping, arg):
         thing = func(context, mapping, data)
     return stringify(thing)
 
-_evalfuncbytype = {
-    bytes: evalstring,
-    int: evalinteger,
+_unwrapfuncbytype = {
+    bytes: stringify,
+    int: unwrapinteger,
 }
 
-def evalastype(context, mapping, arg, typ):
-    """Evaluate given argument and coerce its type"""
+def unwrapastype(thing, typ):
+    """Move the inner value object out of the wrapper and coerce its type"""
     try:
-        f = _evalfuncbytype[typ]
+        f = _unwrapfuncbytype[typ]
     except KeyError:
         raise error.ProgrammingError('invalid type specified: %r' % typ)
-    return f(context, mapping, arg)
+    return f(thing)
 
 def runinteger(context, mapping, data):
     return int(data)

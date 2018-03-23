@@ -34,7 +34,6 @@ evalboolean = templateutil.evalboolean
 evalinteger = templateutil.evalinteger
 evalstring = templateutil.evalstring
 evalstringliteral = templateutil.evalstringliteral
-evalastype = templateutil.evalastype
 
 # dict of template built-in functions
 funcs = {}
@@ -261,9 +260,10 @@ def ifcontains(context, mapping, args):
         raise error.ParseError(_("ifcontains expects three or four arguments"))
 
     haystack = evalfuncarg(context, mapping, args[1])
+    keytype = getattr(haystack, 'keytype', None)
     try:
-        needle = evalastype(context, mapping, args[0],
-                            getattr(haystack, 'keytype', None) or bytes)
+        needle = evalrawexp(context, mapping, args[0])
+        needle = templateutil.unwrapastype(needle, keytype or bytes)
         found = (needle in haystack)
     except error.ParseError:
         found = False

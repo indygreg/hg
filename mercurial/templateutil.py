@@ -333,7 +333,6 @@ def evalstringliteral(context, mapping, arg):
     return stringify(thing)
 
 _evalfuncbytype = {
-    bool: evalboolean,
     bytes: evalstring,
     int: evalinteger,
 }

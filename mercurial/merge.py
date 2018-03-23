@@ -706,7 +706,8 @@ class _unknowndirschecker(object):
             # Does the directory contain any files that are not in the dirstate?
             for p, dirs, files in repo.wvfs.walk(f):
                 for fn in files:
-                    relf = repo.dirstate.normalize(repo.wvfs.reljoin(p, fn))
+                    relf = util.pconvert(repo.wvfs.reljoin(p, fn))
+                    relf = repo.dirstate.normalize(relf)
                     if relf not in repo.dirstate:
                         return f
         return None

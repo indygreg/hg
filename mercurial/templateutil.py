@@ -183,17 +183,17 @@ class hybrid(wrapped):
         self._values = values
         self._makemap = makemap
         self._joinfmt = joinfmt
-        self.keytype = keytype  # hint for 'x in y' where type(x) is unresolved
+        self._keytype = keytype  # hint for 'x in y' where type(x) is unresolved
 
     def contains(self, context, mapping, item):
-        item = unwrapastype(context, mapping, item, self.keytype)
+        item = unwrapastype(context, mapping, item, self._keytype)
         return item in self._values
 
     def getmember(self, context, mapping, key):
         # TODO: maybe split hybrid list/dict types?
         if not util.safehasattr(self._values, 'get'):
             raise error.ParseError(_('not a dictionary'))
-        key = unwrapastype(context, mapping, key, self.keytype)
+        key = unwrapastype(context, mapping, key, self._keytype)
         return self._wrapvalue(key, self._values.get(key))
 
     def getmin(self, context, mapping):

@@ -707,7 +707,7 @@ class _unknowndirschecker(object):
             for p, dirs, files in repo.wvfs.walk(f):
                 for fn in files:
                     relf = util.pconvert(repo.wvfs.reljoin(p, fn))
-                    relf = repo.dirstate.normalize(relf)
+                    relf = repo.dirstate.normalize(relf, isknown=True)
                     if relf not in repo.dirstate:
                         return f
         return None

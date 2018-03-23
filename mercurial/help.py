@@ -87,7 +87,7 @@ def optrst(header, options, verbose):
         lo = '--' + longopt
 
         if isinstance(default, fancyopts.customopt):
-            default = default.defaultvalue
+            default = default.getdefaultvalue()
         if default and not callable(default):
             # default is of unknown type, and in Python 2 we abused
             # the %s-shows-repr property to handle integers etc. To

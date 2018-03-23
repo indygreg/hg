@@ -208,10 +208,17 @@ class customopt(object):
     __metaclass__ = abc.ABCMeta
 
     def __init__(self, defaultvalue):
-        self.defaultvalue = defaultvalue
+        self._defaultvalue = defaultvalue
 
     def _isboolopt(self):
         return False
+
+    def getdefaultvalue(self):
+        """Returns the default value for this opt.
+
+        Subclasses should override this to return a new value if the value type
+        is mutable."""
+        return self._defaultvalue
 
     @abc.abstractmethod
     def newstate(self, oldstate, newparam, abort):
@@ -221,7 +228,7 @@ class customopt(object):
 
 class _simpleopt(customopt):
     def _isboolopt(self):
-        return isinstance(self.defaultvalue, (bool, type(None)))
+        return isinstance(self._defaultvalue, (bool, type(None)))
 
     def newstate(self, oldstate, newparam, abort):
         return newparam
@@ -235,6 +242,9 @@ class _callableopt(customopt):
         return self.callablefn(newparam)
 
 class _listopt(customopt):
+    def getdefaultvalue(self):
+        return self._defaultvalue[:]
+
     def newstate(self, oldstate, newparam, abort):
         oldstate.append(newparam)
         return oldstate
@@ -313,7 +323,7 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
         defmap[name] = _defaultopt(default)
 
         # copy defaults to state
-        state[name] = defmap[name].defaultvalue
+        state[name] = defmap[name].getdefaultvalue()
 
         # does it take a parameter?
         if not defmap[name]._isboolopt():

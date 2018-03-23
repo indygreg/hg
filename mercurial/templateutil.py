@@ -313,6 +313,12 @@ def findsymbolicname(arg):
         else:
             return None
 
+def _unthunk(context, mapping, thing):
+    """Evaluate a lazy byte string into value"""
+    if not isinstance(thing, types.GeneratorType):
+        return thing
+    return stringify(context, mapping, thing)
+
 def evalrawexp(context, mapping, arg):
     """Evaluate given argument as a bare template object which may require
     further processing (such as folding generator of strings)"""
@@ -330,9 +336,7 @@ def _unwrapvalue(context, mapping, thing):
     thing = unwrapvalue(context, mapping, thing)
     # evalrawexp() may return string, generator of strings or arbitrary object
     # such as date tuple, but filter does not want generator.
-    if isinstance(thing, types.GeneratorType):
-        thing = stringify(context, mapping, thing)
-    return thing
+    return _unthunk(context, mapping, thing)
 
 def evalboolean(context, mapping, arg):
     """Evaluate given argument as boolean, but also takes boolean literals"""

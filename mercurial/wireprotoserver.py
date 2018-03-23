@@ -12,6 +12,9 @@ import sys
 import threading
 
 from .i18n import _
+from .thirdparty.zope import (
+    interface as zi,
+)
 from . import (
     encoding,
     error,
@@ -58,7 +61,8 @@ def decodevaluefromheaders(req, headerprefix):
 
     return ''.join(chunks)
 
-class httpv1protocolhandler(wireprototypes.baseprotocolhandler):
+@zi.implementer(wireprototypes.baseprotocolhandler)
+class httpv1protocolhandler(object):
     def __init__(self, req, ui, checkperm):
         self._req = req
         self._ui = ui
@@ -574,7 +578,8 @@ API_HANDLERS = {
     },
 }
 
-class httpv2protocolhandler(wireprototypes.baseprotocolhandler):
+@zi.implementer(wireprototypes.baseprotocolhandler)
+class httpv2protocolhandler(object):
     def __init__(self, req, ui, args=None):
         self._req = req
         self._ui = ui
@@ -737,7 +742,8 @@ def _sshv1respondooberror(fout, ferr, rsp):
     fout.write(b'\n')
     fout.flush()
 
-class sshv1protocolhandler(wireprototypes.baseprotocolhandler):
+@zi.implementer(wireprototypes.baseprotocolhandler)
+class sshv1protocolhandler(object):
     """Handler for requests services via version 1 of SSH protocol."""
     def __init__(self, ui, fin, fout):
         self._ui = ui

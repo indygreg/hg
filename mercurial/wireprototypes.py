@@ -5,7 +5,9 @@
 
 from __future__ import absolute_import
 
-import abc
+from .thirdparty.zope import (
+    interface as zi,
+)
 
 # Names of the SSH protocol implementations.
 SSHV1 = 'ssh-v1'
@@ -95,7 +97,7 @@ class streamreslegacy(object):
     def __init__(self, gen=None):
         self.gen = gen
 
-class baseprotocolhandler(object):
+class baseprotocolhandler(zi.Interface):
     """Abstract base class for wire protocol handlers.
 
     A wire protocol handler serves as an interface between protocol command
@@ -104,30 +106,24 @@ class baseprotocolhandler(object):
     the request, handle response types, etc.
     """
 
-    __metaclass__ = abc.ABCMeta
-
-    @abc.abstractproperty
-    def name(self):
+    name = zi.Attribute(
         """The name of the protocol implementation.
 
         Used for uniquely identifying the transport type.
-        """
+        """)
 
-    @abc.abstractmethod
-    def getargs(self, args):
+    def getargs(args):
         """return the value for arguments in <args>
 
         returns a list of values (same order as <args>)"""
 
-    @abc.abstractmethod
-    def forwardpayload(self, fp):
+    def forwardpayload(fp):
         """Read the raw payload and forward to a file.
 
         The payload is read in full before the function returns.
         """
 
-    @abc.abstractmethod
-    def mayberedirectstdio(self):
+    def mayberedirectstdio():
         """Context manager to possibly redirect stdio.
 
         The context manager yields a file-object like object that receives
@@ -140,12 +136,10 @@ class baseprotocolhandler(object):
         won't be captured.
         """
 
-    @abc.abstractmethod
-    def client(self):
+    def client():
         """Returns a string representation of this client (as bytes)."""
 
-    @abc.abstractmethod
-    def addcapabilities(self, repo, caps):
+    def addcapabilities(repo, caps):
         """Adds advertised capabilities specific to this protocol.
 
         Receives the list of capabilities collected so far.
@@ -153,8 +147,7 @@ class baseprotocolhandler(object):
         Returns a list of capabilities. The passed in argument can be returned.
         """
 
-    @abc.abstractmethod
-    def checkperm(self, perm):
+    def checkperm(perm):
         """Validate that the client has permissions to perform a request.
 
         The argument is the permission required to proceed. If the client

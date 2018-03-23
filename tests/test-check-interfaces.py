@@ -19,6 +19,8 @@ from mercurial import (
     statichttprepo,
     ui as uimod,
     unionrepo,
+    wireprotoserver,
+    wireprototypes,
 )
 
 rootdir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
@@ -121,5 +123,24 @@ def main():
                          localrepo.localrepository)
     repo = localrepo.localrepository(ui, rootdir)
     checkzobject(repo)
+
+    ziverify.verifyClass(wireprototypes.baseprotocolhandler,
+                         wireprotoserver.sshv1protocolhandler)
+    ziverify.verifyClass(wireprototypes.baseprotocolhandler,
+                         wireprotoserver.sshv2protocolhandler)
+    ziverify.verifyClass(wireprototypes.baseprotocolhandler,
+                         wireprotoserver.httpv1protocolhandler)
+    ziverify.verifyClass(wireprototypes.baseprotocolhandler,
+                         wireprotoserver.httpv2protocolhandler)
+
+    sshv1 = wireprotoserver.sshv1protocolhandler(None, None, None)
+    checkzobject(sshv1)
+    sshv2 = wireprotoserver.sshv2protocolhandler(None, None, None)
+    checkzobject(sshv2)
+
+    httpv1 = wireprotoserver.httpv1protocolhandler(None, None, None)
+    checkzobject(httpv1)
+    httpv2 = wireprotoserver.httpv2protocolhandler(None, None)
+    checkzobject(httpv2)
 
 main()

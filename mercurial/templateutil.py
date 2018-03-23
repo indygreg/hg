@@ -287,7 +287,12 @@ def evalrawexp(context, mapping, arg):
 
 def evalfuncarg(context, mapping, arg):
     """Evaluate given argument as value type"""
-    thing = evalrawexp(context, mapping, arg)
+    return _unwrapvalue(evalrawexp(context, mapping, arg))
+
+# TODO: unify this with unwrapvalue() once the bug of templatefunc.join()
+# is fixed. we can't do that right now because join() has to take a generator
+# of byte strings as it is, not a lazy byte string.
+def _unwrapvalue(thing):
     thing = unwrapvalue(thing)
     # evalrawexp() may return string, generator of strings or arbitrary object
     # such as date tuple, but filter does not want generator.

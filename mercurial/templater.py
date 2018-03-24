@@ -35,8 +35,8 @@ True, False, int, float
 wrappedbytes, wrappedvalue
     a wrapper for the above printable types.
 
-date tuple
-    a (unixtime, offset) tuple, which produces no meaningful output by itself.
+date
+    represents a (unixtime, offset) tuple.
 
 hybrid
     represents a list/dict of printable values, which can also be converted

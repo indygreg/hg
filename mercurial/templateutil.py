@@ -172,10 +172,37 @@ class wrappedvalue(wrapped):
     def tovalue(self, context, mapping):
         return self._value
 
-# stub for representing a date type; may be a real date type that can
-# provide a readable string value
-class date(object):
-    pass
+class date(wrapped):
+    """Wrapper for date tuple"""
+
+    def __init__(self, value):
+        # value may be (float, int), but public interface shouldn't support
+        # floating-point timestamp
+        self._unixtime, self._tzoffset = map(int, value)
+
+    def contains(self, context, mapping, item):
+        raise error.ParseError(_('date is not iterable'))
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('date is not a dictionary'))
+
+    def getmin(self, context, mapping):
+        raise error.ParseError(_('date is not iterable'))
+
+    def getmax(self, context, mapping):
+        raise error.ParseError(_('date is not iterable'))
+
+    def itermaps(self, context):
+        raise error.ParseError(_("date is not iterable"))
+
+    def join(self, context, mapping, sep):
+        raise error.ParseError(_("date is not iterable"))
+
+    def show(self, context, mapping):
+        return '%d %d' % (self._unixtime, self._tzoffset)
+
+    def tovalue(self, context, mapping):
+        return (self._unixtime, self._tzoffset)
 
 class hybrid(wrapped):
     """Wrapper for list or dict to support legacy template
@@ -643,6 +670,9 @@ def evaldate(context, mapping, arg, err=None):
     return unwrapdate(context, mapping, thing, err)
 
 def unwrapdate(context, mapping, thing, err=None):
+    if isinstance(thing, date):
+        return thing.tovalue(context, mapping)
+    # TODO: update hgweb to not return bare tuple; then just stringify 'thing'
     thing = unwrapvalue(context, mapping, thing)
     try:
         return dateutil.parsedate(thing)

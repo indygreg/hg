@@ -391,7 +391,7 @@ def localdate(context, mapping, args):
                 raise error.ParseError(_("localdate expects a timezone"))
     else:
         tzoffset = dateutil.makedate()[1]
-    return (date[0], tzoffset)
+    return templateutil.date((date[0], tzoffset))
 
 @templatefunc('max(iterable)')
 def max_(context, mapping, args, **kwargs):
@@ -461,6 +461,7 @@ def obsfatedate(context, mapping, args):
     markers = evalfuncarg(context, mapping, args[0])
 
     try:
+        # TODO: maybe this has to be a wrapped list of date wrappers?
         data = obsutil.markersdates(markers)
         return templateutil.hybridlist(data, name='date', fmt='%d %d')
     except (TypeError, KeyError):

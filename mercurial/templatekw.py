@@ -240,7 +240,7 @@ def showactivebookmark(context, mapping):
 def showdate(context, mapping):
     """Date information. The date when the changeset was committed."""
     ctx = context.resource(mapping, 'ctx')
-    return ctx.date()
+    return templateutil.date(ctx.date())
 
 @templatekeyword('desc', requires={'ctx'})
 def showdescription(context, mapping):

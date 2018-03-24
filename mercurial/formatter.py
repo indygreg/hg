@@ -367,7 +367,7 @@ class _templateconverter(object):
     @staticmethod
     def formatdate(date, fmt):
         '''return date tuple'''
-        return date
+        return templateutil.date(date)
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''build object that can be evaluated as either plain string or dict'''

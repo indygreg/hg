@@ -1548,33 +1548,33 @@ Keys work:
   branches--debug: 
   branches--debug: 
   branches--debug: 
-  date: 1577872860.00
-  date: 1000000.00
-  date: 1500001.00
-  date: 1500000.00
-  date: 1400000.00
-  date: 1300000.00
-  date: 1200000.00
-  date: 1100000.00
-  date: 1000000.00
-  date--verbose: 1577872860.00
-  date--verbose: 1000000.00
-  date--verbose: 1500001.00
-  date--verbose: 1500000.00
-  date--verbose: 1400000.00
-  date--verbose: 1300000.00
-  date--verbose: 1200000.00
-  date--verbose: 1100000.00
-  date--verbose: 1000000.00
-  date--debug: 1577872860.00
-  date--debug: 1000000.00
-  date--debug: 1500001.00
-  date--debug: 1500000.00
-  date--debug: 1400000.00
-  date--debug: 1300000.00
-  date--debug: 1200000.00
-  date--debug: 1100000.00
-  date--debug: 1000000.00
+  date: 1577872860 0
+  date: 1000000 0
+  date: 1500001 0
+  date: 1500000 0
+  date: 1400000 0
+  date: 1300000 0
+  date: 1200000 0
+  date: 1100000 0
+  date: 1000000 0
+  date--verbose: 1577872860 0
+  date--verbose: 1000000 0
+  date--verbose: 1500001 0
+  date--verbose: 1500000 0
+  date--verbose: 1400000 0
+  date--verbose: 1300000 0
+  date--verbose: 1200000 0
+  date--verbose: 1100000 0
+  date--verbose: 1000000 0
+  date--debug: 1577872860 0
+  date--debug: 1000000 0
+  date--debug: 1500001 0
+  date--debug: 1500000 0
+  date--debug: 1400000 0
+  date--debug: 1300000 0
+  date--debug: 1200000 0
+  date--debug: 1100000 0
+  date--debug: 1000000 0
   desc: third
   desc: second
   desc: merge
@@ -2291,7 +2291,7 @@ Upper/lower filters:
   $ hg log -r0 --template '{author|lower}\n'
   user name <user@hostname>
   $ hg log -r0 --template '{date|upper}\n'
-  1000000.00
+  1000000 0
 
 Add a commit that does all possible modifications at once
 
@@ -2806,9 +2806,9 @@ Error on syntax:
 Behind the scenes, this would throw TypeError without intype=bytes
 
   $ hg log -l 3 --template '{date|obfuscate}\n'
-  &#48;&#46;&#48;&#48;
-  &#48;&#46;&#48;&#48;
-  &#49;&#53;&#55;&#55;&#56;&#55;&#50;&#56;&#54;&#48;&#46;&#48;&#48;
+  &#48;&#32;&#48;
+  &#48;&#32;&#48;
+  &#49;&#53;&#55;&#55;&#56;&#55;&#50;&#56;&#54;&#48;&#32;&#48;
 
 Behind the scenes, this will throw a ValueError
 
@@ -2820,9 +2820,9 @@ Behind the scenes, this will throw a ValueError
 Behind the scenes, this would throw AttributeError without intype=bytes
 
   $ hg log -l 3 --template 'line: {date|escape}\n'
-  line: 0.00
-  line: 0.00
-  line: 1577872860.00
+  line: 0 0
+  line: 0 0
+  line: 1577872860 0
 
   $ hg log -l 3 --template 'line: {extras|localdate}\n'
   hg: parse error: localdate expects a date information
@@ -3290,6 +3290,15 @@ Test min/max of non-iterable:
   [255]
   $ hg debugtemplate '{max(2)}'
   hg: parse error: 2 is not iterable
+  (max first argument should be an iterable)
+  [255]
+
+  $ hg log -R latesttag -l1 -T '{min(date)}'
+  hg: parse error: date is not iterable
+  (min first argument should be an iterable)
+  [255]
+  $ hg log -R latesttag -l1 -T '{max(date)}'
+  hg: parse error: date is not iterable
   (max first argument should be an iterable)
   [255]
 
@@ -3902,12 +3911,14 @@ Test get function:
   (get() expects a dict as first argument)
   [255]
 
-Test json filter applied to hybrid object:
+Test json filter applied to wrapped object:
 
   $ hg log -r0 -T '{files|json}\n'
   ["a"]
   $ hg log -r0 -T '{extras|json}\n'
   {"branch": "default"}
+  $ hg log -r0 -T '{date|json}\n'
+  [0, 0]
 
 Test json filter applied to map result:
 
@@ -4608,8 +4619,8 @@ Test indent and not adding to empty lines
 Test with non-strings like dates
 
   $ hg log -T "{indent(date, '   ')}\n" -r 2:3 -R a
-     1200000.00
-     1300000.00
+     1200000 0
+     1300000 0
 
 Test broken string escapes:
 

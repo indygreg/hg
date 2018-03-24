@@ -179,6 +179,19 @@ This should not throw error
    foo
   -bar
 
+Test special hash/rev
+
+  $ hg log -qr 'null:wdir() & 000000000000'
+  -1:000000000000
+  $ hg log -qr 'null:wdir() & ffffffffffff'
+  2147483647:ffffffffffff
+  $ hg log -qr 'null:wdir() & rev(-1)'
+  -1:000000000000
+  $ hg log -qr 'null:wdir() & rev(2147483647)'
+  2147483647:ffffffffffff
+  $ hg log -qr 'null:wdir() & 2147483647'
+  2147483647:ffffffffffff
+
 Commands with undefined cmdtype should not work right now
 
   $ hg phase -r 28ad74

@@ -1419,7 +1419,7 @@ def _getrevsfromsymbols(repo, symbols):
 
         try:
             s = pmatch(s)
-        except error.LookupError:
+        except (error.LookupError, error.WdirUnsupported):
             s = None
 
         if s is not None:

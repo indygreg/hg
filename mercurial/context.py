@@ -1808,10 +1808,11 @@ class workingfilectx(committablefilectx):
         wvfs.audit(f)
         if wvfs.isdir(f) and not wvfs.islink(f):
             wvfs.rmtree(f, forcibly=True)
-        for p in reversed(list(util.finddirs(f))):
-            if wvfs.isfileorlink(p):
-                wvfs.unlink(p)
-                break
+        if self._repo.ui.configbool('experimental', 'merge.checkpathconflicts'):
+            for p in reversed(list(util.finddirs(f))):
+                if wvfs.isfileorlink(p):
+                    wvfs.unlink(p)
+                    break
 
     def setflags(self, l, x):
         self._repo.wvfs.setflags(self._path, l, x)

@@ -1541,14 +1541,14 @@ def tempfilter(s, cmd):
         except OSError:
             pass
 
-filtertable = {
+_filtertable = {
     'tempfile:': tempfilter,
     'pipe:': pipefilter,
-    }
+}
 
 def filter(s, cmd):
     "filter a string through a command that transforms its input to its output"
-    for name, fn in filtertable.iteritems():
+    for name, fn in _filtertable.iteritems():
         if cmd.startswith(name):
             return fn(s, cmd[len(name):].lstrip())
     return pipefilter(s, cmd)

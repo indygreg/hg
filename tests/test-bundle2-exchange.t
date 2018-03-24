@@ -933,10 +933,10 @@ Test lazily acquiring the lock during unbundle
 
   $ cat >> $TESTTMP/locktester.py <<EOF
   > import os
-  > from mercurial import extensions, bundle2, util
+  > from mercurial import extensions, bundle2, error
   > def checklock(orig, repo, *args, **kwargs):
   >     if repo.svfs.lexists("lock"):
-  >         raise util.Abort("Lock should not be taken")
+  >         raise error.Abort("Lock should not be taken")
   >     return orig(repo, *args, **kwargs)
   > def extsetup(ui):
   >    extensions.wrapfunction(bundle2, 'processbundle', checklock)

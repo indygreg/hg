@@ -12,6 +12,7 @@ from __future__ import absolute_import
 import base64
 import os
 import socket
+import sys
 
 from .i18n import _
 from . import (
@@ -303,6 +304,16 @@ class logginghttpconnection(keepalive.HTTPConnection):
     def __init__(self, createconn, *args, **kwargs):
         keepalive.HTTPConnection.__init__(self, *args, **kwargs)
         self._create_connection = createconn
+
+    if sys.version_info < (2, 7, 7):
+        # copied from 2.7.14, since old implementations directly call
+        # socket.create_connection()
+        def connect(self):
+            self.sock = self._create_connection((self.host, self.port),
+                                                self.timeout,
+                                                self.source_address)
+            if self._tunnel_host:
+                self._tunnel()
 
 class logginghttphandler(httphandler):
     """HTTP handler that logs socket I/O."""

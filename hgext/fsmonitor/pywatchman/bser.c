@@ -128,27 +128,38 @@ static PyObject* bserobj_getattrro(PyObject* o, PyObject* name) {
   Py_ssize_t i, n;
   PyObject* name_bytes = NULL;
   PyObject* ret = NULL;
-  const char* namestr;
+  const char* namestr = NULL;
 
   if (PyIndex_Check(name)) {
     i = PyNumber_AsSsize_t(name, PyExc_IndexError);
     if (i == -1 && PyErr_Occurred()) {
       goto bail;
     }
-    ret = PySequence_GetItem(obj->values, i);
-    goto bail;
-  }
 
-  // We can be passed in Unicode objects here -- we don't support anything other
-  // than UTF-8 for keys.
-  if (PyUnicode_Check(name)) {
-    name_bytes = PyUnicode_AsUTF8String(name);
-    if (name_bytes == NULL) {
+    if (i == 8 && PySequence_Size(obj->values) < 9) {
+      // Hack alert: Python 3 removed support for os.stat().st_mtime
+      // being an integer.Instead, if you need an integer, you have to
+      // use os.stat()[stat.ST_MTIME] instead. stat.ST_MTIME is 8, and
+      // our stat tuples are shorter than that, so we can detect
+      // requests for index 8 on tuples shorter than that and return
+      // st_mtime instead.
+      namestr = "st_mtime";
+    } else {
+      ret = PySequence_GetItem(obj->values, i);
       goto bail;
     }
-    namestr = PyBytes_AsString(name_bytes);
   } else {
-    namestr = PyBytes_AsString(name);
+    // We can be passed in Unicode objects here -- we don't support anything other
+    // than UTF-8 for keys.
+    if (PyUnicode_Check(name)) {
+      name_bytes = PyUnicode_AsUTF8String(name);
+      if (name_bytes == NULL) {
+        goto bail;
+      }
+      namestr = PyBytes_AsString(name_bytes);
+    } else {
+      namestr = PyBytes_AsString(name);
+    }
   }
 
   if (namestr == NULL) {

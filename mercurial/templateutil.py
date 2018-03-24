@@ -172,7 +172,7 @@ class wrappedvalue(wrapped):
     def tovalue(self, context, mapping):
         return self._value
 
-class date(wrapped):
+class date(mappable, wrapped):
     """Wrapper for date tuple"""
 
     def __init__(self, value):
@@ -192,14 +192,14 @@ class date(wrapped):
     def getmax(self, context, mapping):
         raise error.ParseError(_('date is not iterable'))
 
-    def itermaps(self, context):
-        raise error.ParseError(_("date is not iterable"))
-
     def join(self, context, mapping, sep):
         raise error.ParseError(_("date is not iterable"))
 
     def show(self, context, mapping):
         return '%d %d' % (self._unixtime, self._tzoffset)
+
+    def tomap(self, context):
+        return {'unixtime': self._unixtime, 'tzoffset': self._tzoffset}
 
     def tovalue(self, context, mapping):
         return (self._unixtime, self._tzoffset)

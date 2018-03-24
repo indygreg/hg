@@ -3398,6 +3398,8 @@ Test evaluation of dot operator:
   ce3cec86e6c26bd9bdfc590a6b92abc9680f1796
   $ hg log -R latesttag -r0 -T '{extras.branch}\n'
   default
+  $ hg log -R latesttag -r0 -T '{date.unixtime} {localdate(date, "+0200").tzoffset}\n'
+  0 -7200
 
   $ hg log -R latesttag -l1 -T '{author.invalid}\n'
   hg: parse error: 'test' is not a dictionary

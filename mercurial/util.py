@@ -3772,10 +3772,10 @@ def uvarintdecodestream(fh):
 # Deprecation warnings for util.py splitting
 ###
 
-def _deprecatedfunc(func, version):
+def _deprecatedfunc(func, version, modname=None):
     def wrapped(*args, **kwargs):
         fn = pycompat.sysbytes(func.__name__)
-        mn = pycompat.sysbytes(func.__module__)[len('mercurial.'):]
+        mn = modname or pycompat.sysbytes(func.__module__)[len('mercurial.'):]
         msg = "'util.%s' is deprecated, use '%s.%s'" % (fn, mn, fn)
         nouideprecwarn(msg, version)
         return func(*args, **kwargs)
@@ -3795,46 +3795,55 @@ matchdate = _deprecatedfunc(dateutil.matchdate, '4.6')
 stderr = procutil.stderr
 stdin = procutil.stdin
 stdout = procutil.stdout
-explainexit = procutil.explainexit
-findexe = procutil.findexe
-getuser = procutil.getuser
-getpid = procutil.getpid
-hidewindow = procutil.hidewindow
-popen = procutil.popen
-quotecommand = procutil.quotecommand
-readpipe = procutil.readpipe
-setbinary = procutil.setbinary
-setsignalhandler = procutil.setsignalhandler
-shellquote = procutil.shellquote
-shellsplit = procutil.shellsplit
-spawndetached = procutil.spawndetached
-sshargs = procutil.sshargs
-testpid = procutil.testpid
+explainexit = _deprecatedfunc(procutil.explainexit, '4.6',
+                              modname='utils.procutil')
+findexe = _deprecatedfunc(procutil.findexe, '4.6', modname='utils.procutil')
+getuser = _deprecatedfunc(procutil.getuser, '4.6', modname='utils.procutil')
+getpid = _deprecatedfunc(procutil.getpid, '4.6', modname='utils.procutil')
+hidewindow = _deprecatedfunc(procutil.hidewindow, '4.6',
+                             modname='utils.procutil')
+popen = _deprecatedfunc(procutil.popen, '4.6', modname='utils.procutil')
+quotecommand = _deprecatedfunc(procutil.quotecommand, '4.6',
+                               modname='utils.procutil')
+readpipe = _deprecatedfunc(procutil.readpipe, '4.6', modname='utils.procutil')
+setbinary = _deprecatedfunc(procutil.setbinary, '4.6', modname='utils.procutil')
+setsignalhandler = _deprecatedfunc(procutil.setsignalhandler, '4.6',
+                                   modname='utils.procutil')
+shellquote = _deprecatedfunc(procutil.shellquote, '4.6',
+                             modname='utils.procutil')
+shellsplit = _deprecatedfunc(procutil.shellsplit, '4.6',
+                             modname='utils.procutil')
+spawndetached = _deprecatedfunc(procutil.spawndetached, '4.6',
+                                modname='utils.procutil')
+sshargs = _deprecatedfunc(procutil.sshargs, '4.6', modname='utils.procutil')
+testpid = _deprecatedfunc(procutil.testpid, '4.6', modname='utils.procutil')
 try:
-    setprocname = procutil.setprocname
+    setprocname = _deprecatedfunc(procutil.setprocname, '4.6',
+                                  modname='utils.procutil')
 except AttributeError:
     pass
 try:
-    unblocksignal = procutil.unblocksignal
+    unblocksignal = _deprecatedfunc(procutil.unblocksignal, '4.6',
+                                    modname='utils.procutil')
 except AttributeError:
     pass
 closefds = procutil.closefds
-isatty = procutil.isatty
-popen2 = procutil.popen2
-popen3 = procutil.popen3
-popen4 = procutil.popen4
-pipefilter = procutil.pipefilter
-tempfilter = procutil.tempfilter
-filter = procutil.filter
-mainfrozen = procutil.mainfrozen
-hgexecutable = procutil.hgexecutable
-isstdin = procutil.isstdin
-isstdout = procutil.isstdout
-shellenviron = procutil.shellenviron
-system = procutil.system
-gui = procutil.gui
-hgcmd = procutil.hgcmd
-rundetached = procutil.rundetached
+isatty = _deprecatedfunc(procutil.isatty, '4.6')
+popen2 = _deprecatedfunc(procutil.popen2, '4.6')
+popen3 = _deprecatedfunc(procutil.popen3, '4.6')
+popen4 = _deprecatedfunc(procutil.popen4, '4.6')
+pipefilter = _deprecatedfunc(procutil.pipefilter, '4.6')
+tempfilter = _deprecatedfunc(procutil.tempfilter, '4.6')
+filter = _deprecatedfunc(procutil.filter, '4.6')
+mainfrozen = _deprecatedfunc(procutil.mainfrozen, '4.6')
+hgexecutable = _deprecatedfunc(procutil.hgexecutable, '4.6')
+isstdin = _deprecatedfunc(procutil.isstdin, '4.6')
+isstdout = _deprecatedfunc(procutil.isstdout, '4.6')
+shellenviron = _deprecatedfunc(procutil.shellenviron, '4.6')
+system = _deprecatedfunc(procutil.system, '4.6')
+gui = _deprecatedfunc(procutil.gui, '4.6')
+hgcmd = _deprecatedfunc(procutil.hgcmd, '4.6')
+rundetached = _deprecatedfunc(procutil.rundetached, '4.6')
 
 escapedata = _deprecatedfunc(stringutil.escapedata, '4.6')
 binary = _deprecatedfunc(stringutil.binary, '4.6')

@@ -282,7 +282,7 @@ class digester(object):
         self._hashes = {}
         for k in digests:
             if k not in DIGESTS:
-                raise Abort(_('unknown digest type: %s') % k)
+                raise error.Abort(_('unknown digest type: %s') % k)
             self._hashes[k] = DIGESTS[k]()
         if s:
             self.update(s)
@@ -293,7 +293,7 @@ class digester(object):
 
     def __getitem__(self, key):
         if key not in DIGESTS:
-            raise Abort(_('unknown digest type: %s') % k)
+            raise error.Abort(_('unknown digest type: %s') % k)
         return nodemod.hex(self._hashes[key].digest())
 
     def __iter__(self):
@@ -332,13 +332,13 @@ class digestchecker(object):
 
     def validate(self):
         if self._size != self._got:
-            raise Abort(_('size mismatch: expected %d, got %d') %
-                (self._size, self._got))
+            raise error.Abort(_('size mismatch: expected %d, got %d') %
+                              (self._size, self._got))
         for k, v in self._digests.items():
             if v != self._digester[k]:
                 # i18n: first parameter is a digest name
-                raise Abort(_('%s mismatch: expected %s, got %s') %
-                    (k, v, self._digester[k]))
+                raise error.Abort(_('%s mismatch: expected %s, got %s') %
+                                  (k, v, self._digester[k]))
 
 try:
     buffer = buffer
@@ -1528,8 +1528,8 @@ def tempfilter(s, cmd):
         if pycompat.sysplatform == 'OpenVMS' and code & 1:
             code = 0
         if code:
-            raise Abort(_("command '%s' failed: %s") %
-                        (cmd, explainexit(code)))
+            raise error.Abort(_("command '%s' failed: %s") %
+                              (cmd, explainexit(code)))
         return readfile(outname)
     finally:
         try:
@@ -1831,7 +1831,7 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
                             oldstat.stat[stat.ST_MTIME] + 1) & 0x7fffffff
                         os.utime(dest, (advanced, advanced))
         except shutil.Error as inst:
-            raise Abort(str(inst))
+            raise error.Abort(str(inst))
 
 def copyfiles(src, dst, hardlink=None, progress=lambda t, pos: None):
     """Copy a directory tree using hardlinks if possible."""
@@ -2809,7 +2809,8 @@ def getport(port):
     try:
         return socket.getservbyname(pycompat.sysstr(port))
     except socket.error:
-        raise Abort(_("no port number associated with service '%s'") % port)
+        raise error.Abort(_("no port number associated with service '%s'")
+                          % port)
 
 class url(object):
     r"""Reliable URL parser.
@@ -2970,7 +2971,7 @@ class url(object):
 
             if (self.host and self.scheme == 'file' and
                 self.host not in ('localhost', '127.0.0.1', '[::1]')):
-                raise Abort(_('file:// URLs can only refer to localhost'))
+                raise error.Abort(_('file:// URLs can only refer to localhost'))
 
         self.path = path
 

@@ -626,9 +626,6 @@ class cachestat(object):
     def __ne__(self, other):
         return not self == other
 
-def executablepath():
-    return None # available on Windows only
-
 def statislink(st):
     '''check whether a stat result is a symlink'''
     return st and stat.S_ISLNK(st.st_mode)

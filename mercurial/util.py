@@ -1586,8 +1586,6 @@ def increasingchunks(source, min=1024, max=65536):
     if buf:
         yield ''.join(buf)
 
-Abort = error.Abort
-
 def always(fn):
     return True
 

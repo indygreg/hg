@@ -900,7 +900,9 @@ This tests that translated help message is lower()-ed correctly.
   > from __future__ import absolute_import
   > from mercurial import (
   >     pycompat,
-  >     util,
+  > )
+  > from mercurial.utils import (
+  >     procutil,
   > )
   > def escape(c):
   >     o = ord(c)
@@ -908,8 +910,9 @@ This tests that translated help message is lower()-ed correctly.
   >         return c
   >     else:
   >         return br'\x%02x' % o # escape char setting MSB
-  > for l in util.stdin:
-  >     util.stdout.write(b''.join(escape(c) for c in pycompat.iterbytestr(l)))
+  > for l in procutil.stdin:
+  >     procutil.stdout.write(
+  >         b''.join(escape(c) for c in pycompat.iterbytestr(l)))
   > EOF
 
   $ hg commit -i --encoding cp932 2>&1 <<EOF | $PYTHON $TESTTMP/escape.py | grep '^y - '

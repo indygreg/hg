@@ -61,6 +61,10 @@ from . import (
     util,
 )
 
+from .utils import (
+    procutil,
+)
+
 _log = commandserver.log
 
 def _hashlist(items):
@@ -200,7 +204,7 @@ def _newchgui(srcui, csystem, attachio):
             # these situations and will behave differently (write to stdout).
             if (out is not self.fout
                 or not util.safehasattr(self.fout, 'fileno')
-                or self.fout.fileno() != util.stdout.fileno()):
+                or self.fout.fileno() != procutil.stdout.fileno()):
                 return util.system(cmd, environ=environ, cwd=cwd, out=out)
             self.flush()
             return self._csystem(cmd, util.shellenviron(environ), cwd)

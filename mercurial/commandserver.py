@@ -29,6 +29,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    procutil,
+)
 
 logfile = None
 
@@ -308,8 +311,8 @@ def _protectio(ui):
     ui.flush()
     newfiles = []
     nullfd = os.open(os.devnull, os.O_RDWR)
-    for f, sysf, mode in [(ui.fin, util.stdin, r'rb'),
-                          (ui.fout, util.stdout, r'wb')]:
+    for f, sysf, mode in [(ui.fin, procutil.stdin, r'rb'),
+                          (ui.fout, procutil.stdout, r'wb')]:
         if f is sysf:
             newfd = os.dup(f.fileno())
             os.dup2(nullfd, f.fileno())

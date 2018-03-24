@@ -35,6 +35,7 @@ from . import (
 )
 
 from .utils import (
+    procutil,
     stringutil,
 )
 
@@ -519,8 +520,8 @@ def options(cmd, keys, others):
             opts[k] = others[k]
             del others[k]
     if others:
-        util.stderr.write("warning: %s ignored unexpected arguments %s\n"
-                          % (cmd, ",".join(others)))
+        procutil.stderr.write("warning: %s ignored unexpected arguments %s\n"
+                              % (cmd, ",".join(others)))
     return opts
 
 def bundle1allowed(repo, action):
@@ -1081,14 +1082,14 @@ def unbundle(repo, proto, heads):
                 try:
                     raise
                 except error.Abort:
-                    # The old code we moved used util.stderr directly.
+                    # The old code we moved used procutil.stderr directly.
                     # We did not change it to minimise code change.
                     # This need to be moved to something proper.
                     # Feel free to do it.
-                    util.stderr.write("abort: %s\n" % exc)
+                    procutil.stderr.write("abort: %s\n" % exc)
                     if exc.hint is not None:
-                        util.stderr.write("(%s)\n" % exc.hint)
-                    util.stderr.flush()
+                        procutil.stderr.write("(%s)\n" % exc.hint)
+                    procutil.stderr.flush()
                     return pushres(0, output.getvalue() if output else '')
                 except error.PushRaced:
                     return pusherr(pycompat.bytestr(exc),

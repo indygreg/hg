@@ -11,6 +11,10 @@ from mercurial import (
     util,
 )
 
+from mercurial.utils import (
+    procutil,
+)
+
 testtmp = encoding.environ[b'TESTTMP']
 
 # prepare hgrc files
@@ -41,9 +45,9 @@ def printconfigs(env):
     ui = uimod.ui.load()
     for section, name, value in ui.walkconfig():
         source = ui.configsource(section, name)
-        util.stdout.write(b'%s.%s=%s # %s\n'
-                          % (section, name, value, util.pconvert(source)))
-    util.stdout.write(b'\n')
+        procutil.stdout.write(b'%s.%s=%s # %s\n'
+                              % (section, name, value, util.pconvert(source)))
+    procutil.stdout.write(b'\n')
 
 # environment variable overrides
 printconfigs({})

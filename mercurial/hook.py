@@ -19,6 +19,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    procutil,
+)
 
 def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
     '''call python hook. hook is callable object, looked up as
@@ -222,11 +225,11 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
         for hname, cmd in hooks:
             if oldstdout == -1 and _redirect:
                 try:
-                    stdoutno = util.stdout.fileno()
-                    stderrno = util.stderr.fileno()
+                    stdoutno = procutil.stdout.fileno()
+                    stderrno = procutil.stderr.fileno()
                     # temporarily redirect stdout to stderr, if possible
                     if stdoutno >= 0 and stderrno >= 0:
-                        util.stdout.flush()
+                        procutil.stdout.flush()
                         oldstdout = os.dup(stdoutno)
                         os.dup2(stderrno, stdoutno)
                 except (OSError, AttributeError):
@@ -269,10 +272,10 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
         # The stderr is fully buffered on Windows when connected to a pipe.
         # A forcible flush is required to make small stderr data in the
         # remote side available to the client immediately.
-        util.stderr.flush()
+        procutil.stderr.flush()
 
         if _redirect and oldstdout >= 0:
-            util.stdout.flush()  # write hook output to stderr fd
+            procutil.stdout.flush()  # write hook output to stderr fd
             os.dup2(oldstdout, stdoutno)
             os.close(oldstdout)
 

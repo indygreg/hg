@@ -97,6 +97,9 @@ from . import (
     urllibcompat,
     util,
 )
+from .utils import (
+    procutil,
+)
 
 httplib = util.httplib
 urlerr = util.urlerr
@@ -635,14 +638,14 @@ def continuity(url):
 def comp(N, url):
     print('  making %i connections to:\n  %s' % (N, url))
 
-    util.stdout.write('  first using the normal urllib handlers')
+    procutil.stdout.write('  first using the normal urllib handlers')
     # first use normal opener
     opener = urlreq.buildopener()
     urlreq.installopener(opener)
     t1 = fetch(N, url)
     print('  TIME: %.3f s' % t1)
 
-    util.stdout.write('  now using the keepalive handler       ')
+    procutil.stdout.write('  now using the keepalive handler       ')
     # now install the keepalive handler and try again
     opener = urlreq.buildopener(HTTPHandler())
     urlreq.installopener(opener)
@@ -687,11 +690,11 @@ def test_timeout(url):
     i = 20
     print("  waiting %i seconds for the server to close the connection" % i)
     while i > 0:
-        util.stdout.write('\r  %2i' % i)
-        util.stdout.flush()
+        procutil.stdout.write('\r  %2i' % i)
+        procutil.stdout.flush()
         time.sleep(1)
         i -= 1
-    util.stderr.write('\r')
+    procutil.stderr.write('\r')
 
     print("  fetching the file a second time")
     fo = urlreq.urlopen(url)

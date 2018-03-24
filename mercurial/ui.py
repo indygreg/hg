@@ -39,6 +39,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -250,9 +251,9 @@ class ui(object):
             self.httppasswordmgrdb = src.httppasswordmgrdb
             self._blockedtimes = src._blockedtimes
         else:
-            self.fout = util.stdout
-            self.ferr = util.stderr
-            self.fin = util.stdin
+            self.fout = procutil.stdout
+            self.ferr = procutil.stderr
+            self.fin = procutil.stdin
             self.pageractive = False
             self._disablepager = False
             self._tweaked = False
@@ -1099,7 +1100,7 @@ class ui(object):
             pager = subprocess.Popen(
                 command, shell=shell, bufsize=-1,
                 close_fds=util.closefds, stdin=subprocess.PIPE,
-                stdout=util.stdout, stderr=util.stderr,
+                stdout=procutil.stdout, stderr=procutil.stderr,
                 env=util.shellenviron(env))
         except OSError as e:
             if e.errno == errno.ENOENT and not shell:
@@ -1109,20 +1110,20 @@ class ui(object):
             raise
 
         # back up original file descriptors
-        stdoutfd = os.dup(util.stdout.fileno())
-        stderrfd = os.dup(util.stderr.fileno())
+        stdoutfd = os.dup(procutil.stdout.fileno())
+        stderrfd = os.dup(procutil.stderr.fileno())
 
-        os.dup2(pager.stdin.fileno(), util.stdout.fileno())
-        if self._isatty(util.stderr):
-            os.dup2(pager.stdin.fileno(), util.stderr.fileno())
+        os.dup2(pager.stdin.fileno(), procutil.stdout.fileno())
+        if self._isatty(procutil.stderr):
+            os.dup2(pager.stdin.fileno(), procutil.stderr.fileno())
 
         @self.atexit
         def killpager():
             if util.safehasattr(signal, "SIGINT"):
                 signal.signal(signal.SIGINT, signal.SIG_IGN)
             # restore original fds, closing pager.stdin copies in the process
-            os.dup2(stdoutfd, util.stdout.fileno())
-            os.dup2(stderrfd, util.stderr.fileno())
+            os.dup2(stdoutfd, procutil.stdout.fileno())
+            os.dup2(stderrfd, procutil.stderr.fileno())
             pager.stdin.close()
             pager.wait()
 

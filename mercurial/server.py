@@ -22,6 +22,10 @@ from . import (
     util,
 )
 
+from .utils import (
+    procutil,
+)
+
 def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                runargs=None, appendpid=False):
     '''Run a command as a service.'''
@@ -87,8 +91,8 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                 raise error.Abort(_('invalid value for --daemon-postexec: %s')
                                   % inst)
         util.hidewindow()
-        util.stdout.flush()
-        util.stderr.flush()
+        procutil.stdout.flush()
+        procutil.stderr.flush()
 
         nullfd = os.open(os.devnull, os.O_RDWR)
         logfilefd = nullfd

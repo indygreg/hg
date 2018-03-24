@@ -42,6 +42,7 @@ from . import (
 )
 
 from .utils import (
+    procutil,
     stringutil,
 )
 
@@ -127,8 +128,8 @@ if pycompat.ispy3:
                 pass
             # Otherwise mark it as closed to silence "Exception ignored in"
             # message emitted by the interpreter finalizer. Be careful to
-            # not close util.stdout, which may be a fdopen-ed file object and
-            # its close() actually closes the underlying file descriptor.
+            # not close procutil.stdout, which may be a fdopen-ed file object
+            # and its close() actually closes the underlying file descriptor.
             try:
                 fp.close()
             except IOError:
@@ -180,7 +181,7 @@ def dispatch(req):
     elif req.ui:
         ferr = req.ui.ferr
     else:
-        ferr = util.stderr
+        ferr = procutil.stderr
 
     try:
         if not req.ui:

@@ -22,18 +22,14 @@ import contextlib
 import errno
 import gc
 import hashlib
-import imp
-import io
 import itertools
 import mmap
 import os
 import platform as pyplatform
 import re as remod
 import shutil
-import signal
 import socket
 import stat
-import subprocess
 import sys
 import tempfile
 import time
@@ -52,6 +48,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -69,9 +66,6 @@ pickle = pycompat.pickle
 queue = pycompat.queue
 safehasattr = pycompat.safehasattr
 socketserver = pycompat.socketserver
-stderr = pycompat.stderr
-stdin = pycompat.stdin
-stdout = pycompat.stdout
 bytesio = pycompat.bytesio
 # TODO deprecate stringio name, as it is a lie on Python 3.
 stringio = bytesio
@@ -84,21 +78,8 @@ urlreq = urllibcompat.urlreq
 # workaround for win32mbcs
 _filenamebytestr = pycompat.bytestr
 
-def isatty(fp):
-    try:
-        return fp.isatty()
-    except AttributeError:
-        return False
-
-# glibc determines buffering on first write to stdout - if we replace a TTY
-# destined stdout with a pipe destined stdout (e.g. pager), we want line
-# buffering
-if isatty(stdout):
-    stdout = os.fdopen(stdout.fileno(), r'wb', 1)
-
 if pycompat.iswindows:
     from . import windows as platform
-    stdout = platform.winstdout(stdout)
 else:
     from . import posix as platform
 
@@ -110,16 +91,10 @@ checkexec = platform.checkexec
 checklink = platform.checklink
 copymode = platform.copymode
 expandglobs = platform.expandglobs
-explainexit = platform.explainexit
-findexe = platform.findexe
 getfsmountpoint = platform.getfsmountpoint
 getfstype = platform.getfstype
-_gethgcmd = platform.gethgcmd
-getuser = platform.getuser
-getpid = os.getpid
 groupmembers = platform.groupmembers
 groupname = platform.groupname
-hidewindow = platform.hidewindow
 isexec = platform.isexec
 isowner = platform.isowner
 listdir = osutil.listdir
@@ -136,41 +111,23 @@ oslink = platform.oslink
 parsepatchoutput = platform.parsepatchoutput
 pconvert = platform.pconvert
 poll = platform.poll
-popen = platform.popen
 posixfile = platform.posixfile
-quotecommand = platform.quotecommand
-readpipe = platform.readpipe
 rename = platform.rename
 removedirs = platform.removedirs
 samedevice = platform.samedevice
 samefile = platform.samefile
 samestat = platform.samestat
-setbinary = platform.setbinary
 setflags = platform.setflags
-setsignalhandler = platform.setsignalhandler
-shellquote = platform.shellquote
-shellsplit = platform.shellsplit
-spawndetached = platform.spawndetached
 split = platform.split
-sshargs = platform.sshargs
 statfiles = getattr(osutil, 'statfiles', platform.statfiles)
 statisexec = platform.statisexec
 statislink = platform.statislink
-testpid = platform.testpid
 umask = platform.umask
 unlink = platform.unlink
 username = platform.username
 
 try:
     recvfds = osutil.recvfds
-except AttributeError:
-    pass
-try:
-    setprocname = osutil.setprocname
-except AttributeError:
-    pass
-try:
-    unblocksignal = osutil.unblocksignal
 except AttributeError:
     pass
 
@@ -346,8 +303,6 @@ except NameError:
             return memoryview(sliceable)[offset:offset + length]
         return memoryview(sliceable)[offset:]
 
-closefds = pycompat.isposix
-
 _chunksize = 4096
 
 class bufferedinputpipe(object):
@@ -463,30 +418,6 @@ def mmapread(fp):
         if os.fstat(fd).st_size == 0:
             return ''
         raise
-
-def popen2(cmd, env=None, newlines=False):
-    # Setting bufsize to -1 lets the system decide the buffer size.
-    # The default for bufsize is 0, meaning unbuffered. This leads to
-    # poor performance on Mac OS X: http://bugs.python.org/issue4194
-    p = subprocess.Popen(cmd, shell=True, bufsize=-1,
-                         close_fds=closefds,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         universal_newlines=newlines,
-                         env=env)
-    return p.stdin, p.stdout
-
-def popen3(cmd, env=None, newlines=False):
-    stdin, stdout, stderr, p = popen4(cmd, env, newlines)
-    return stdin, stdout, stderr
-
-def popen4(cmd, env=None, newlines=False, bufsize=-1):
-    p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
-                         close_fds=closefds,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         universal_newlines=newlines,
-                         env=env)
-    return p.stdin, p.stdout, p.stderr, p
 
 class fileobjectproxy(object):
     """A proxy around file objects that tells a watcher when events occur.
@@ -1500,60 +1431,6 @@ def clearcachedproperty(obj, prop):
     if prop in obj.__dict__:
         del obj.__dict__[prop]
 
-def pipefilter(s, cmd):
-    '''filter string S through command CMD, returning its output'''
-    p = subprocess.Popen(cmd, shell=True, close_fds=closefds,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE)
-    pout, perr = p.communicate(s)
-    return pout
-
-def tempfilter(s, cmd):
-    '''filter string S through a pair of temporary files with CMD.
-    CMD is used as a template to create the real command to be run,
-    with the strings INFILE and OUTFILE replaced by the real names of
-    the temporary files generated.'''
-    inname, outname = None, None
-    try:
-        infd, inname = tempfile.mkstemp(prefix='hg-filter-in-')
-        fp = os.fdopen(infd, r'wb')
-        fp.write(s)
-        fp.close()
-        outfd, outname = tempfile.mkstemp(prefix='hg-filter-out-')
-        os.close(outfd)
-        cmd = cmd.replace('INFILE', inname)
-        cmd = cmd.replace('OUTFILE', outname)
-        code = os.system(cmd)
-        if pycompat.sysplatform == 'OpenVMS' and code & 1:
-            code = 0
-        if code:
-            raise error.Abort(_("command '%s' failed: %s") %
-                              (cmd, explainexit(code)))
-        with open(outname, 'rb') as fp:
-            return fp.read()
-    finally:
-        try:
-            if inname:
-                os.unlink(inname)
-        except OSError:
-            pass
-        try:
-            if outname:
-                os.unlink(outname)
-        except OSError:
-            pass
-
-_filtertable = {
-    'tempfile:': tempfilter,
-    'pipe:': pipefilter,
-}
-
-def filter(s, cmd):
-    "filter a string through a command that transforms its input to its output"
-    for name, fn in _filtertable.iteritems():
-        if cmd.startswith(name):
-            return fn(s, cmd[len(name):].lstrip())
-    return pipefilter(s, cmd)
-
 def increasingchunks(source, min=1024, max=65536):
     '''return no less than min bytes per chunk while data remains,
     doubling min after each chunk until it reaches max'''
@@ -1644,110 +1521,14 @@ def pathto(root, n1, n2):
     b.reverse()
     return pycompat.ossep.join((['..'] * len(a)) + b) or '.'
 
-def mainfrozen():
-    """return True if we are a frozen executable.
-
-    The code supports py2exe (most common, Windows only) and tools/freeze
-    (portable, not much used).
-    """
-    return (safehasattr(sys, "frozen") or # new py2exe
-            safehasattr(sys, "importers") or # old py2exe
-            imp.is_frozen(u"__main__")) # tools/freeze
-
 # the location of data files matching the source code
-if mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
+if procutil.mainfrozen() and getattr(sys, 'frozen', None) != 'macosx_app':
     # executable version (py2exe) doesn't support __file__
     datapath = os.path.dirname(pycompat.sysexecutable)
 else:
     datapath = os.path.dirname(pycompat.fsencode(__file__))
 
 i18n.setdatapath(datapath)
-
-_hgexecutable = None
-
-def hgexecutable():
-    """return location of the 'hg' executable.
-
-    Defaults to $HG or 'hg' in the search path.
-    """
-    if _hgexecutable is None:
-        hg = encoding.environ.get('HG')
-        mainmod = sys.modules[r'__main__']
-        if hg:
-            _sethgexecutable(hg)
-        elif mainfrozen():
-            if getattr(sys, 'frozen', None) == 'macosx_app':
-                # Env variable set by py2app
-                _sethgexecutable(encoding.environ['EXECUTABLEPATH'])
-            else:
-                _sethgexecutable(pycompat.sysexecutable)
-        elif (os.path.basename(
-            pycompat.fsencode(getattr(mainmod, '__file__', ''))) == 'hg'):
-            _sethgexecutable(pycompat.fsencode(mainmod.__file__))
-        else:
-            exe = findexe('hg') or os.path.basename(sys.argv[0])
-            _sethgexecutable(exe)
-    return _hgexecutable
-
-def _sethgexecutable(path):
-    """set location of the 'hg' executable"""
-    global _hgexecutable
-    _hgexecutable = path
-
-def _testfileno(f, stdf):
-    fileno = getattr(f, 'fileno', None)
-    try:
-        return fileno and fileno() == stdf.fileno()
-    except io.UnsupportedOperation:
-        return False # fileno() raised UnsupportedOperation
-
-def isstdin(f):
-    return _testfileno(f, sys.__stdin__)
-
-def isstdout(f):
-    return _testfileno(f, sys.__stdout__)
-
-def shellenviron(environ=None):
-    """return environ with optional override, useful for shelling out"""
-    def py2shell(val):
-        'convert python object into string that is useful to shell'
-        if val is None or val is False:
-            return '0'
-        if val is True:
-            return '1'
-        return pycompat.bytestr(val)
-    env = dict(encoding.environ)
-    if environ:
-        env.update((k, py2shell(v)) for k, v in environ.iteritems())
-    env['HG'] = hgexecutable()
-    return env
-
-def system(cmd, environ=None, cwd=None, out=None):
-    '''enhanced shell command execution.
-    run with environment maybe modified, maybe in different dir.
-
-    if out is specified, it is assumed to be a file-like object that has a
-    write() method. stdout and stderr will be redirected to out.'''
-    try:
-        stdout.flush()
-    except Exception:
-        pass
-    cmd = quotecommand(cmd)
-    env = shellenviron(environ)
-    if out is None or isstdout(out):
-        rc = subprocess.call(cmd, shell=True, close_fds=closefds,
-                             env=env, cwd=cwd)
-    else:
-        proc = subprocess.Popen(cmd, shell=True, close_fds=closefds,
-                                env=env, cwd=cwd, stdout=subprocess.PIPE,
-                                stderr=subprocess.STDOUT)
-        for line in iter(proc.stdout.readline, ''):
-            out.write(line)
-        proc.wait()
-        rc = proc.returncode
-    if pycompat.sysplatform == 'OpenVMS' and rc & 1:
-        rc = 0
-    return rc
 
 def checksignature(func):
     '''wrap a function with code to check for calling errors'''
@@ -2132,21 +1913,6 @@ def splitpath(path):
     It is recommended to use os.path.normpath() before using this
     function if need.'''
     return path.split(pycompat.ossep)
-
-def gui():
-    '''Are we running in a GUI?'''
-    if pycompat.isdarwin:
-        if 'SSH_CONNECTION' in encoding.environ:
-            # handle SSH access to a box where the user is logged in
-            return False
-        elif getattr(osutil, 'isgui', None):
-            # check if a CoreGraphics session is available
-            return osutil.isgui()
-        else:
-            # pure build; use a safe default
-            return True
-    else:
-        return pycompat.iswindows or encoding.environ.get("DISPLAY")
 
 def mktempcopy(name, emptyok=False, createmode=None):
     """Create a temporary file with the same contents from name
@@ -2716,56 +2482,6 @@ def iterlines(iterator):
 def expandpath(path):
     return os.path.expanduser(os.path.expandvars(path))
 
-def hgcmd():
-    """Return the command used to execute current hg
-
-    This is different from hgexecutable() because on Windows we want
-    to avoid things opening new shell windows like batch files, so we
-    get either the python call or current executable.
-    """
-    if mainfrozen():
-        if getattr(sys, 'frozen', None) == 'macosx_app':
-            # Env variable set by py2app
-            return [encoding.environ['EXECUTABLEPATH']]
-        else:
-            return [pycompat.sysexecutable]
-    return _gethgcmd()
-
-def rundetached(args, condfn):
-    """Execute the argument list in a detached process.
-
-    condfn is a callable which is called repeatedly and should return
-    True once the child process is known to have started successfully.
-    At this point, the child process PID is returned. If the child
-    process fails to start or finishes before condfn() evaluates to
-    True, return -1.
-    """
-    # Windows case is easier because the child process is either
-    # successfully starting and validating the condition or exiting
-    # on failure. We just poll on its PID. On Unix, if the child
-    # process fails to start, it will be left in a zombie state until
-    # the parent wait on it, which we cannot do since we expect a long
-    # running process on success. Instead we listen for SIGCHLD telling
-    # us our child process terminated.
-    terminated = set()
-    def handler(signum, frame):
-        terminated.add(os.wait())
-    prevhandler = None
-    SIGCHLD = getattr(signal, 'SIGCHLD', None)
-    if SIGCHLD is not None:
-        prevhandler = signal.signal(SIGCHLD, handler)
-    try:
-        pid = spawndetached(args)
-        while not condfn():
-            if ((pid in terminated or not testpid(pid))
-                and not condfn()):
-                return -1
-            time.sleep(0.1)
-        return pid
-    finally:
-        if prevhandler is not None:
-            signal.signal(signal.SIGCHLD, prevhandler)
-
 def interpolate(prefix, mapping, s, fn=None, escape_prefix=False):
     """Return the result of interpolating items in the mapping into string s.
 
@@ -3257,7 +2973,7 @@ def getstackframes(skip=0, line=' %-*s in %s\n', fileline='%s:%d', depth=0):
                 yield line % (fnmax, fnln, func)
 
 def debugstacktrace(msg='stacktrace', skip=0,
-                    f=stderr, otherf=stdout, depth=0):
+                    f=procutil.stderr, otherf=procutil.stdout, depth=0):
     '''Writes a message to f (stderr) with a nicely formatted stacktrace.
     Skips the 'skip' entries closest to the call, then show 'depth' entries.
     By default it will flush stdout first.
@@ -4075,6 +3791,50 @@ parsetimezone = _deprecatedfunc(dateutil.parsetimezone, '4.6')
 strdate = _deprecatedfunc(dateutil.strdate, '4.6')
 parsedate = _deprecatedfunc(dateutil.parsedate, '4.6')
 matchdate = _deprecatedfunc(dateutil.matchdate, '4.6')
+
+stderr = procutil.stderr
+stdin = procutil.stdin
+stdout = procutil.stdout
+explainexit = procutil.explainexit
+findexe = procutil.findexe
+getuser = procutil.getuser
+getpid = procutil.getpid
+hidewindow = procutil.hidewindow
+popen = procutil.popen
+quotecommand = procutil.quotecommand
+readpipe = procutil.readpipe
+setbinary = procutil.setbinary
+setsignalhandler = procutil.setsignalhandler
+shellquote = procutil.shellquote
+shellsplit = procutil.shellsplit
+spawndetached = procutil.spawndetached
+sshargs = procutil.sshargs
+testpid = procutil.testpid
+try:
+    setprocname = procutil.setprocname
+except AttributeError:
+    pass
+try:
+    unblocksignal = procutil.unblocksignal
+except AttributeError:
+    pass
+closefds = procutil.closefds
+isatty = procutil.isatty
+popen2 = procutil.popen2
+popen3 = procutil.popen3
+popen4 = procutil.popen4
+pipefilter = procutil.pipefilter
+tempfilter = procutil.tempfilter
+filter = procutil.filter
+mainfrozen = procutil.mainfrozen
+hgexecutable = procutil.hgexecutable
+isstdin = procutil.isstdin
+isstdout = procutil.isstdout
+shellenviron = procutil.shellenviron
+system = procutil.system
+gui = procutil.gui
+hgcmd = procutil.hgcmd
+rundetached = procutil.rundetached
 
 escapedata = _deprecatedfunc(stringutil.escapedata, '4.6')
 binary = _deprecatedfunc(stringutil.binary, '4.6')

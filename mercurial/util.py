@@ -67,6 +67,7 @@ empty = pycompat.empty
 httplib = pycompat.httplib
 pickle = pycompat.pickle
 queue = pycompat.queue
+safehasattr = pycompat.safehasattr
 socketserver = pycompat.socketserver
 stderr = pycompat.stderr
 stdin = pycompat.stdin
@@ -176,9 +177,6 @@ except AttributeError:
 # Python compatibility
 
 _notset = object()
-
-def safehasattr(thing, attr):
-    return getattr(thing, attr, _notset) is not _notset
 
 def _rapply(f, xs):
     if xs is None:

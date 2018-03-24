@@ -243,6 +243,8 @@ if ispy3:
     def open(name, mode='r', buffering=-1, encoding=None):
         return builtins.open(name, sysstr(mode), buffering, encoding)
 
+    safehasattr = _wrapattrfunc(builtins.hasattr)
+
     def _getoptbwrapper(orig, args, shortlist, namelist):
         """
         Takes bytes arguments, converts them to unicode, pass them to
@@ -325,6 +327,11 @@ else:
 
     def getdoc(obj):
         return getattr(obj, '__doc__', None)
+
+    _notset = object()
+
+    def safehasattr(thing, attr):
+        return getattr(thing, attr, _notset) is not _notset
 
     def _getoptbwrapper(orig, args, shortlist, namelist):
         return orig(args, shortlist, namelist)

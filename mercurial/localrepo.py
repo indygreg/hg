@@ -65,6 +65,7 @@ from . import (
     vfs as vfsmod,
 )
 from .utils import (
+    procutil,
     stringutil,
 )
 
@@ -1106,7 +1107,7 @@ class localrepository(object):
                         params = cmd[len(name):].lstrip()
                         break
                 if not fn:
-                    fn = lambda s, c, **kwargs: util.filter(s, c)
+                    fn = lambda s, c, **kwargs: procutil.filter(s, c)
                 # Wrap old filters not supporting keyword arguments
                 if not pycompat.getargspec(fn)[2]:
                     oldfn = fn

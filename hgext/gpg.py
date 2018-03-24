@@ -19,9 +19,11 @@ from mercurial import (
     node as hgnode,
     pycompat,
     registrar,
-    util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    procutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -52,7 +54,7 @@ class gpg(object):
 
     def sign(self, data):
         gpgcmd = "%s --sign --detach-sign%s" % (self.path, self.key)
-        return util.filter(data, gpgcmd)
+        return procutil.filter(data, gpgcmd)
 
     def verify(self, data, sig):
         """ returns of the good and bad signatures"""
@@ -69,7 +71,7 @@ class gpg(object):
             fp.close()
             gpgcmd = ("%s --logger-fd 1 --status-fd 1 --verify "
                       "\"%s\" \"%s\"" % (self.path, sigfile, datafile))
-            ret = util.filter("", gpgcmd)
+            ret = procutil.filter("", gpgcmd)
         finally:
             for f in (sigfile, datafile):
                 try:

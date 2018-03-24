@@ -201,6 +201,9 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import (
+    procutil,
+)
 
 urlreq = util.urlreq
 
@@ -338,7 +341,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
             user = urlreq.unquote(url[3])
 
     if user is None:
-        user = util.getuser()
+        user = procutil.getuser()
 
     ui.debug('acl: checking access for user "%s"\n' % user)
 

@@ -808,7 +808,7 @@ class ui(object):
             user = self.prompt(_("enter a commit username:"), default=None)
         if user is None and not self.interactive():
             try:
-                user = '%s@%s' % (util.getuser(),
+                user = '%s@%s' % (procutil.getuser(),
                                   encoding.strtolocal(socket.getfqdn()))
                 self.warn(_("no username found, using '%s' instead\n") % user)
             except KeyError:
@@ -992,7 +992,7 @@ class ui(object):
     def _isatty(self, fh):
         if self.configbool('ui', 'nontty'):
             return False
-        return util.isatty(fh)
+        return procutil.isatty(fh)
 
     def disablepager(self):
         self._disablepager = True
@@ -1088,7 +1088,7 @@ class ui(object):
             # user so we can also get sane bad PAGER behavior.  MSYS has
             # `more.exe`, so do a cmd.exe style resolution of the executable to
             # determine which one to use.
-            fullcmd = util.findexe(command)
+            fullcmd = procutil.findexe(command)
             if not fullcmd:
                 self.warn(_("missing pager command '%s', skipping pager\n")
                           % command)
@@ -1099,9 +1099,9 @@ class ui(object):
         try:
             pager = subprocess.Popen(
                 command, shell=shell, bufsize=-1,
-                close_fds=util.closefds, stdin=subprocess.PIPE,
+                close_fds=procutil.closefds, stdin=subprocess.PIPE,
                 stdout=procutil.stdout, stderr=procutil.stderr,
-                env=util.shellenviron(env))
+                env=procutil.shellenviron(env))
         except OSError as e:
             if e.errno == errno.ENOENT and not shell:
                 self.warn(_("missing pager command '%s', skipping pager\n")
@@ -1277,7 +1277,8 @@ class ui(object):
         # we use rawinput() only if call_readline() will be invoked by
         # PyOS_Readline(), so no I/O will be made at Python layer.
         usereadline = (self._isatty(self.fin) and self._isatty(self.fout)
-                       and util.isstdin(self.fin) and util.isstdout(self.fout))
+                       and procutil.isstdin(self.fin)
+                       and procutil.isstdout(self.fout))
         if usereadline:
             try:
                 # magically add command line editing support, where
@@ -1504,7 +1505,7 @@ class ui(object):
             rc = self._runsystem(cmd, environ=environ, cwd=cwd, out=out)
         if rc and onerr:
             errmsg = '%s %s' % (os.path.basename(cmd.split(None, 1)[0]),
-                                util.explainexit(rc)[0])
+                                procutil.explainexit(rc)[0])
             if errprefix:
                 errmsg = '%s: %s' % (errprefix, errmsg)
             raise onerr(errmsg)
@@ -1513,7 +1514,7 @@ class ui(object):
     def _runsystem(self, cmd, environ, cwd, out):
         """actually execute the given shell command (can be overridden by
         extensions like chg)"""
-        return util.system(cmd, environ=environ, cwd=cwd, out=out)
+        return procutil.system(cmd, environ=environ, cwd=cwd, out=out)
 
     def traceback(self, exc=None, force=False):
         '''print exception traceback if traceback printing enabled or forced.

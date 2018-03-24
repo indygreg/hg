@@ -39,6 +39,7 @@ from mercurial import (
     vfs as vfsmod,
 )
 from mercurial.utils import (
+    procutil,
     stringutil,
 )
 
@@ -271,8 +272,9 @@ class transplanter(object):
         fp.close()
 
         try:
-            self.ui.system('%s %s %s' % (filter, util.shellquote(headerfile),
-                                         util.shellquote(patchfile)),
+            self.ui.system('%s %s %s' % (filter,
+                                         procutil.shellquote(headerfile),
+                                         procutil.shellquote(patchfile)),
                            environ={'HGUSER': changelog[1],
                                     'HGREVISION': nodemod.hex(node),
                                     },

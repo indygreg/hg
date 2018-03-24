@@ -32,6 +32,7 @@ from . import (
 )
 
 from .utils import (
+    procutil,
     stringutil,
 )
 
@@ -122,11 +123,11 @@ def findexternaltool(ui, tool):
             continue
         p = util.lookupreg(k, _toolstr(ui, tool, "regname"))
         if p:
-            p = util.findexe(p + _toolstr(ui, tool, "regappend", ""))
+            p = procutil.findexe(p + _toolstr(ui, tool, "regappend", ""))
             if p:
                 return p
     exe = _toolstr(ui, tool, "executable", tool)
-    return util.findexe(util.expandpath(exe))
+    return procutil.findexe(util.expandpath(exe))
 
 def _picktool(repo, ui, path, binary, symlink, changedelete):
     def supportscd(tool):
@@ -149,7 +150,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
             # the nomerge tools are the only tools that support change/delete
             # conflicts
             pass
-        elif not util.gui() and _toolbool(ui, tool, "gui"):
+        elif not procutil.gui() and _toolbool(ui, tool, "gui"):
             ui.warn(_("tool %s requires a GUI\n") % tmsg)
         else:
             return True
@@ -164,7 +165,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
             return ":prompt", None
         else:
             if toolpath:
-                return (force, util.shellquote(toolpath))
+                return (force, procutil.shellquote(toolpath))
             else:
                 # mimic HGMERGE if given tool not found
                 return (force, force)
@@ -182,7 +183,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
         mf = match.match(repo.root, '', [pat])
         if mf(path) and check(tool, pat, symlink, False, changedelete):
             toolpath = _findtool(ui, tool)
-            return (tool, util.shellquote(toolpath))
+            return (tool, procutil.shellquote(toolpath))
 
     # then merge tools
     tools = {}
@@ -207,7 +208,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
     for p, t in tools:
         if check(t, None, symlink, binary, changedelete):
             toolpath = _findtool(ui, t)
-            return (t, util.shellquote(toolpath))
+            return (t, procutil.shellquote(toolpath))
 
     # internal merge or prompt as last resort
     if symlink or binary or changedelete:
@@ -547,8 +548,9 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         replace = {'local': localpath, 'base': basepath, 'other': otherpath,
                    'output': outpath, 'labellocal': mylabel,
                    'labelother': otherlabel, 'labelbase': baselabel}
-        args = util.interpolate(br'\$', replace, args,
-                                lambda s: util.shellquote(util.localpath(s)))
+        args = util.interpolate(
+            br'\$', replace, args,
+            lambda s: procutil.shellquote(util.localpath(s)))
         cmd = toolpath + ' ' + args
         if _toolbool(ui, tool, "gui"):
             repo.ui.status(_('running merge tool %s for file %s\n') %

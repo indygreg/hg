@@ -42,6 +42,7 @@ from . import (
 )
 
 from .utils import (
+    procutil,
     stringutil,
 )
 
@@ -293,7 +294,7 @@ def checkportable(ui, f):
     if abort or warn:
         msg = util.checkwinfilename(f)
         if msg:
-            msg = "%s: %s" % (msg, util.shellquote(f))
+            msg = "%s: %s" % (msg, procutil.shellquote(f))
             if abort:
                 raise error.Abort(msg)
             ui.warn(_("warning: %s\n") % msg)
@@ -1090,7 +1091,7 @@ def extdatasource(repo, source):
             # external commands should be run relative to the repo root
             cmd = spec[6:]
             proc = subprocess.Popen(cmd, shell=True, bufsize=-1,
-                                    close_fds=util.closefds,
+                                    close_fds=procutil.closefds,
                                     stdout=subprocess.PIPE, cwd=repo.root)
             src = proc.stdout
         else:
@@ -1114,7 +1115,7 @@ def extdatasource(repo, source):
             src.close()
     if proc and proc.returncode != 0:
         raise error.Abort(_("extdata command '%s' failed: %s")
-                          % (cmd, util.explainexit(proc.returncode)[0]))
+                          % (cmd, procutil.explainexit(proc.returncode)[0]))
 
     return data
 

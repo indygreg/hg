@@ -38,6 +38,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -255,7 +256,7 @@ class journalstorage(object):
     _lockref = None
 
     def __init__(self, repo):
-        self.user = util.getuser()
+        self.user = procutil.getuser()
         self.ui = repo.ui
         self.vfs = repo.vfs
 
@@ -272,7 +273,7 @@ class journalstorage(object):
     @property
     def command(self):
         commandstr = ' '.join(
-            map(util.shellquote, journalstorage._currentcommand))
+            map(procutil.shellquote, journalstorage._currentcommand))
         if '\n' in commandstr:
             # truncate multi-line commands
             commandstr = commandstr.partition('\n')[0] + ' ...'

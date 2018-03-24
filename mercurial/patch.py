@@ -42,6 +42,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -2100,9 +2101,9 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files,
     args = []
     cwd = repo.root
     if cwd:
-        args.append('-d %s' % util.shellquote(cwd))
-    fp = util.popen('%s %s -p%d < %s' % (patcher, ' '.join(args), strip,
-                                       util.shellquote(patchname)))
+        args.append('-d %s' % procutil.shellquote(cwd))
+    fp = procutil.popen('%s %s -p%d < %s' % (patcher, ' '.join(args), strip,
+                                             procutil.shellquote(patchname)))
     try:
         for line in util.iterfile(fp):
             line = line.rstrip()
@@ -2130,7 +2131,7 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files,
     code = fp.close()
     if code:
         raise PatchError(_("patch command failed: %s") %
-                         util.explainexit(code)[0])
+                         procutil.explainexit(code)[0])
     return fuzz
 
 def patchbackend(ui, backend, patchobj, strip, prefix, files=None,

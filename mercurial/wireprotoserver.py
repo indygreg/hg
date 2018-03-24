@@ -22,6 +22,9 @@ from . import (
     wireprotoframing,
     wireprototypes,
 )
+from .utils import (
+    procutil,
+)
 
 stringio = util.stringio
 
@@ -1030,8 +1033,8 @@ class sshserver(object):
         ui.fout = repo.ui.fout = ui.ferr
 
         # Prevent insertion/deletion of CRs
-        util.setbinary(self._fin)
-        util.setbinary(self._fout)
+        procutil.setbinary(self._fin)
+        procutil.setbinary(self._fout)
 
     def serve_forever(self):
         self.serveuntil(threading.Event())

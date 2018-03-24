@@ -83,6 +83,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -1254,9 +1255,9 @@ def debuginstall(ui, **opts):
     # editor
     editor = ui.geteditor()
     editor = util.expandpath(editor)
-    editorbin = util.shellsplit(editor)[0]
+    editorbin = procutil.shellsplit(editor)[0]
     fm.write('editor', _("checking commit editor... (%s)\n"), editorbin)
-    cmdpath = util.findexe(editorbin)
+    cmdpath = procutil.findexe(editorbin)
     fm.condwrite(not cmdpath and editor == 'vi', 'vinotfound',
                  _(" No commit editor set and can't find %s in PATH\n"
                    " (specify a commit editor in your configuration"
@@ -2813,7 +2814,7 @@ def debugwireproto(ui, repo, path=None, **opts):
         # We start the SSH server in its own process so there is process
         # separation. This prevents a whole class of potential bugs around
         # shared state from interfering with server operation.
-        args = util.hgcmd() + [
+        args = procutil.hgcmd() + [
             '-R', repo.root,
             'debugserve', '--sshstdio',
         ]

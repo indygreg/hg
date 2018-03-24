@@ -38,6 +38,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -912,7 +913,7 @@ class svnsubrepo(abstractsubrepo):
     def __init__(self, ctx, path, state, allowcreate):
         super(svnsubrepo, self).__init__(ctx, path)
         self._state = state
-        self._exe = util.findexe('svn')
+        self._exe = procutil.findexe('svn')
         if not self._exe:
             raise error.Abort(_("'svn' executable not found for subrepo '%s'")
                              % self._path)
@@ -942,7 +943,7 @@ class svnsubrepo(abstractsubrepo):
             env['LANG'] = lc_all
             del env['LC_ALL']
         env['LC_MESSAGES'] = 'C'
-        p = subprocess.Popen(cmd, bufsize=-1, close_fds=util.closefds,
+        p = subprocess.Popen(cmd, bufsize=-1, close_fds=procutil.closefds,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               universal_newlines=True, env=env, **extrakw)
         stdout, stderr = p.communicate()
@@ -1260,7 +1261,7 @@ class gitsubrepo(abstractsubrepo):
             # the end of git diff arguments is used for paths
             commands.insert(1, '--color')
         p = subprocess.Popen([self._gitexecutable] + commands, bufsize=-1,
-                             cwd=cwd, env=env, close_fds=util.closefds,
+                             cwd=cwd, env=env, close_fds=procutil.closefds,
                              stdout=subprocess.PIPE, stderr=errpipe)
         if stream:
             return p.stdout, None

@@ -44,7 +44,7 @@ def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
                 % (hname, funcname))
         modname = funcname[:d]
         oldpaths = sys.path
-        if util.mainfrozen():
+        if procutil.mainfrozen():
             # binary installs require sys.path manipulation
             modpath, modfile = os.path.split(modname)
             if modpath and modfile:
@@ -154,7 +154,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     ui.log('exthook', 'exthook-%s: %s finished in %0.2f seconds\n',
            name, cmd, duration)
     if r:
-        desc, r = util.explainexit(r)
+        desc, r = procutil.explainexit(r)
         if throw:
             raise error.HookAbort(_('%s hook %s') % (name, desc))
         ui.warn(_('warning: %s hook %s\n') % (name, desc))

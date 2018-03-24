@@ -288,7 +288,7 @@ class server(object):
         hellomsg += '\n'
         hellomsg += 'encoding: ' + encoding.encoding
         hellomsg += '\n'
-        hellomsg += 'pid: %d' % util.getpid()
+        hellomsg += 'pid: %d' % procutil.getpid()
         if util.safehasattr(os, 'getpgid'):
             hellomsg += '\n'
             hellomsg += 'pgid: %d' % os.getpgid(0)
@@ -457,8 +457,8 @@ class unixforkingservice(object):
     def init(self):
         self._sock = socket.socket(socket.AF_UNIX)
         self._servicehandler.bindsocket(self._sock, self.address)
-        if util.safehasattr(util, 'unblocksignal'):
-            util.unblocksignal(signal.SIGCHLD)
+        if util.safehasattr(procutil, 'unblocksignal'):
+            procutil.unblocksignal(signal.SIGCHLD)
         o = signal.signal(signal.SIGCHLD, self._sigchldhandler)
         self._oldsigchldhandler = o
         self._socketunlinked = False

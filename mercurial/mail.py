@@ -25,6 +25,7 @@ from . import (
     util,
 )
 from .utils import (
+    procutil,
     stringutil,
 )
 
@@ -143,13 +144,13 @@ def _sendmail(ui, sender, recipients, msg):
     cmdline = '%s -f %s %s' % (program, stringutil.email(sender),
                                ' '.join(map(stringutil.email, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
-    fp = util.popen(cmdline, 'w')
+    fp = procutil.popen(cmdline, 'w')
     fp.write(msg)
     ret = fp.close()
     if ret:
         raise error.Abort('%s %s' % (
             os.path.basename(program.split(None, 1)[0]),
-            util.explainexit(ret)[0]))
+            procutil.explainexit(ret)[0]))
 
 def _mbox(mbox, sender, recipients, msg):
     '''write mails to mbox'''
@@ -184,7 +185,7 @@ def validateconfig(ui):
             raise error.Abort(_('smtp specified as email transport, '
                                'but no smtp host configured'))
     else:
-        if not util.findexe(method):
+        if not procutil.findexe(method):
             raise error.Abort(_('%r specified as email transport, '
                                'but not in PATH') % method)
 

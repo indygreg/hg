@@ -18,7 +18,10 @@ from mercurial import (
     pycompat,
     util,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+    procutil,
+)
 
 from . import (
     common,
@@ -197,9 +200,9 @@ class convert_cvs(converter_source):
                     cmd = [rsh, host] + cmd
 
             # popen2 does not support argument lists under Windows
-            cmd = [util.shellquote(arg) for arg in cmd]
-            cmd = util.quotecommand(' '.join(cmd))
-            self.writep, self.readp = util.popen2(cmd)
+            cmd = [procutil.shellquote(arg) for arg in cmd]
+            cmd = procutil.quotecommand(' '.join(cmd))
+            self.writep, self.readp = procutil.popen2(cmd)
 
         self.realroot = root
 

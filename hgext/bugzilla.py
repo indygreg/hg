@@ -308,6 +308,7 @@ from mercurial import (
     util,
 )
 from mercurial.utils import (
+    procutil,
     stringutil,
 )
 
@@ -527,13 +528,13 @@ class bzmysql(bzaccess):
             except TypeError:
                 cmd = cmdfmt % {'bzdir': bzdir, 'id': id, 'user': user}
             self.ui.note(_('running notify command %s\n') % cmd)
-            fp = util.popen('(%s) 2>&1' % cmd)
+            fp = procutil.popen('(%s) 2>&1' % cmd)
             out = fp.read()
             ret = fp.close()
             if ret:
                 self.ui.warn(out)
                 raise error.Abort(_('bugzilla notify command %s') %
-                                 util.explainexit(ret)[0])
+                                  procutil.explainexit(ret)[0])
         self.ui.status(_('done\n'))
 
     def get_user_id(self, user):

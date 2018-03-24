@@ -23,11 +23,12 @@
 
   > cat > posixgetuser.py <<'EOF'
   > import getpass
-  > from mercurial import pycompat, util
+  > from mercurial import pycompat
+  > from mercurial.utils import procutil
   > def posixgetuser():
   >     return pycompat.fsencode(getpass.getuser())
   > if not pycompat.isposix:
-  >     util.getuser = posixgetuser  # forcibly trust $LOGNAME
+  >     procutil.getuser = posixgetuser  # forcibly trust $LOGNAME
   > EOF
 
   > init_config()

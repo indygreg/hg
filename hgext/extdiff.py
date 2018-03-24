@@ -83,6 +83,7 @@ from mercurial import (
     util,
 )
 from mercurial.utils import (
+    procutil,
     stringutil,
 )
 
@@ -280,7 +281,7 @@ def dodiff(ui, repo, cmdline, pats, opts):
             key = match.group(3)
             if not do3way and key == 'parent2':
                 return pre
-            return pre + util.shellquote(replace[key])
+            return pre + procutil.shellquote(replace[key])
 
         # Match parent2 first, so 'parent1?' will match both parent1 and parent
         regex = (br'''(['"]?)([^\s'"$]*)'''
@@ -349,7 +350,7 @@ def extdiff(ui, repo, *pats, **opts):
     if not program:
         program = 'diff'
         option = option or ['-Npru']
-    cmdline = ' '.join(map(util.shellquote, [program] + option))
+    cmdline = ' '.join(map(procutil.shellquote, [program] + option))
     return dodiff(ui, repo, cmdline, pats, opts)
 
 class savedcmd(object):
@@ -376,7 +377,7 @@ class savedcmd(object):
 
     def __call__(self, ui, repo, *pats, **opts):
         opts = pycompat.byteskwargs(opts)
-        options = ' '.join(map(util.shellquote, opts['option']))
+        options = ' '.join(map(procutil.shellquote, opts['option']))
         if options:
             options = ' ' + options
         return dodiff(ui, repo, self._cmdline + options, pats, opts)
@@ -387,11 +388,11 @@ def uisetup(ui):
         if cmd.startswith('cmd.'):
             cmd = cmd[4:]
             if not path:
-                path = util.findexe(cmd)
+                path = procutil.findexe(cmd)
                 if path is None:
                     path = filemerge.findexternaltool(ui, cmd) or cmd
             diffopts = ui.config('extdiff', 'opts.' + cmd)
-            cmdline = util.shellquote(path)
+            cmdline = procutil.shellquote(path)
             if diffopts:
                 cmdline += ' ' + diffopts
         elif cmd.startswith('opts.'):
@@ -403,10 +404,10 @@ def uisetup(ui):
                 diffopts = len(pycompat.shlexsplit(cmdline)) > 1
             else:
                 # case "cmd ="
-                path = util.findexe(cmd)
+                path = procutil.findexe(cmd)
                 if path is None:
                     path = filemerge.findexternaltool(ui, cmd) or cmd
-                cmdline = util.shellquote(path)
+                cmdline = procutil.shellquote(path)
                 diffopts = False
         # look for diff arguments in [diff-tools] then [merge-tools]
         if not diffopts:

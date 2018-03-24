@@ -22,6 +22,7 @@ from . import (
     util,
 )
 from .utils import (
+    procutil,
     stringutil,
 )
 
@@ -686,7 +687,7 @@ def _plainapplepython():
       for using system certificate store CAs in addition to the provided
       cacerts file
     """
-    if (not pycompat.isdarwin or util.mainfrozen() or
+    if (not pycompat.isdarwin or procutil.mainfrozen() or
         not pycompat.sysexecutable):
         return False
     exe = os.path.realpath(pycompat.sysexecutable).lower()

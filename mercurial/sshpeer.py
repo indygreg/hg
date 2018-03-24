@@ -19,6 +19,9 @@ from . import (
     wireprotoserver,
     wireprototypes,
 )
+from .utils import (
+    procutil,
+)
 
 def _serverquote(s):
     """quote a string for the remote shell ... which we assume is sh"""
@@ -33,7 +36,7 @@ def _forwardoutput(ui, pipe):
 
     This is non blocking."""
     if pipe:
-        s = util.readpipe(pipe)
+        s = procutil.readpipe(pipe)
         if s:
             for l in s.splitlines():
                 ui.status(_("remote: "), l, '\n')
@@ -147,16 +150,16 @@ def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
     cmd = '%s %s %s' % (
         sshcmd,
         args,
-        util.shellquote('%s -R %s serve --stdio' % (
+        procutil.shellquote('%s -R %s serve --stdio' % (
             _serverquote(remotecmd), _serverquote(path))))
 
     ui.debug('running %s\n' % cmd)
-    cmd = util.quotecommand(cmd)
+    cmd = procutil.quotecommand(cmd)
 
     # no buffer allow the use of 'select'
     # feel free to remove buffering and select usage when we ultimately
     # move to threading.
-    stdin, stdout, stderr, proc = util.popen4(cmd, bufsize=0, env=sshenv)
+    stdin, stdout, stderr, proc = procutil.popen4(cmd, bufsize=0, env=sshenv)
 
     return proc, stdin, stdout, stderr
 
@@ -593,14 +596,14 @@ def instance(ui, path, create):
     sshcmd = ui.config('ui', 'ssh')
     remotecmd = ui.config('ui', 'remotecmd')
     sshaddenv = dict(ui.configitems('sshenv'))
-    sshenv = util.shellenviron(sshaddenv)
+    sshenv = procutil.shellenviron(sshaddenv)
     remotepath = u.path or '.'
 
-    args = util.sshargs(sshcmd, u.host, u.user, u.port)
+    args = procutil.sshargs(sshcmd, u.host, u.user, u.port)
 
     if create:
         cmd = '%s %s %s' % (sshcmd, args,
-            util.shellquote('%s init %s' %
+            procutil.shellquote('%s init %s' %
                 (_serverquote(remotecmd), _serverquote(remotepath))))
         ui.debug('running %s\n' % cmd)
         res = ui.system(cmd, blockedtag='sshpeer', environ=sshenv)

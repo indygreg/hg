@@ -63,6 +63,7 @@ from . import (
 )
 from .utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -2316,9 +2317,9 @@ def _dograft(ui, repo, *revs, **opts):
                 repo.vfs.write('graftstate', ''.join(nodelines))
                 extra = ''
                 if opts.get('user'):
-                    extra += ' --user %s' % util.shellquote(opts['user'])
+                    extra += ' --user %s' % procutil.shellquote(opts['user'])
                 if opts.get('date'):
-                    extra += ' --date %s' % util.shellquote(opts['date'])
+                    extra += ' --date %s' % procutil.shellquote(opts['date'])
                 if opts.get('log'):
                     extra += ' --log'
                 hint=_("use 'hg resolve' and 'hg graft --continue%s'") % extra

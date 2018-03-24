@@ -26,7 +26,9 @@ from mercurial import (
     error,
     fancyopts,
     registrar,
-    util,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -625,7 +627,7 @@ def lsfiles(ui, repo, *args, **kwargs):
         cmd['-0'] = None
     cmd.append('.')
     for include in args:
-        cmd['-I'] = util.shellquote(include)
+        cmd['-I'] = procutil.shellquote(include)
 
     ui.status((bytes(cmd)), "\n")
 

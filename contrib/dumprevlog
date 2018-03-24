@@ -8,11 +8,13 @@ import sys
 from mercurial import (
     node,
     revlog,
-    util,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 for fp in (sys.stdin, sys.stdout, sys.stderr):
-    util.setbinary(fp)
+    procutil.setbinary(fp)
 
 def binopen(path, mode='rb'):
     if 'b' not in mode:

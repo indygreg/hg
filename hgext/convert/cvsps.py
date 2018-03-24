@@ -19,6 +19,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -223,11 +224,11 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     state = 0
     store = False # set when a new record can be appended
 
-    cmd = [util.shellquote(arg) for arg in cmd]
+    cmd = [procutil.shellquote(arg) for arg in cmd]
     ui.note(_("running %s\n") % (' '.join(cmd)))
     ui.debug("prefix=%r directory=%r root=%r\n" % (prefix, directory, root))
 
-    pfp = util.popen(' '.join(cmd))
+    pfp = procutil.popen(' '.join(cmd))
     peek = pfp.readline()
     while True:
         line = peek

@@ -12,7 +12,6 @@ from __future__ import absolute_import
 
 from .. import (
     encoding,
-    util,
 )
 
 from ..utils import (
@@ -24,8 +23,8 @@ from . import (
 )
 
 def launch(application):
-    util.setbinary(procutil.stdin)
-    util.setbinary(procutil.stdout)
+    procutil.setbinary(procutil.stdin)
+    procutil.setbinary(procutil.stdout)
 
     environ = dict(encoding.environ.iteritems())
     environ.setdefault(r'PATH_INFO', '')

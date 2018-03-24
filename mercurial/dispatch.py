@@ -137,7 +137,7 @@ if pycompat.ispy3:
 else:
     def _initstdio():
         for fp in (sys.stdin, sys.stdout, sys.stderr):
-            util.setbinary(fp)
+            procutil.setbinary(fp)
 
     def _silencestdio():
         pass
@@ -172,7 +172,7 @@ def _formatparse(write, inst):
         write(_("(%s)\n") % inst.hint)
 
 def _formatargs(args):
-    return ' '.join(util.shellquote(a) for a in args)
+    return ' '.join(procutil.shellquote(a) for a in args)
 
 def dispatch(req):
     "run the command specified in req.args"
@@ -413,7 +413,7 @@ def aliasargs(fn, givenargs):
     if not util.safehasattr(fn, '_origfunc'):
         args = getattr(fn, 'args', args)
     if args:
-        cmd = ' '.join(map(util.shellquote, args))
+        cmd = ' '.join(map(procutil.shellquote, args))
 
         nums = []
         def replacer(m):
@@ -443,7 +443,7 @@ def aliasinterpolate(name, args, cmd):
     # parameters, separated out into words. Emulate the same behavior here by
     # quoting the arguments individually. POSIX shells will then typically
     # tokenize each argument into exactly one word.
-    replacemap['"$@"'] = ' '.join(util.shellquote(arg) for arg in args)
+    replacemap['"$@"'] = ' '.join(procutil.shellquote(arg) for arg in args)
     # escape '\$' for regex
     regex = '|'.join(replacemap.keys()).replace('$', br'\$')
     r = re.compile(regex)

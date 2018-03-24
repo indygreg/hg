@@ -46,7 +46,7 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
         os.close(lockfd)
         try:
             if not runargs:
-                runargs = util.hgcmd() + pycompat.sysargv[1:]
+                runargs = procutil.hgcmd() + pycompat.sysargv[1:]
             runargs.append('--daemon-postexec=unlink:%s' % lockpath)
             # Don't pass --cwd to the child process, because we've already
             # changed directory.
@@ -59,7 +59,7 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                     break
             def condfn():
                 return not os.path.exists(lockpath)
-            pid = util.rundetached(runargs, condfn)
+            pid = procutil.rundetached(runargs, condfn)
             if pid < 0:
                 raise error.Abort(_('child process failed to start'))
             writepid(pid)
@@ -74,7 +74,7 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
         initfn()
 
     if not opts['daemon']:
-        writepid(util.getpid())
+        writepid(procutil.getpid())
 
     if opts['daemon_postexec']:
         try:
@@ -90,7 +90,7 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
             elif inst != 'none':
                 raise error.Abort(_('invalid value for --daemon-postexec: %s')
                                   % inst)
-        util.hidewindow()
+        procutil.hidewindow()
         procutil.stdout.flush()
         procutil.stderr.flush()
 

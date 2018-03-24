@@ -18,6 +18,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     dateutil,
+    procutil,
     stringutil,
 )
 
@@ -1069,9 +1070,9 @@ class svn_source(converter_source):
         if not self.ui.configbool('convert', 'svn.debugsvnlog'):
             return directlogstream(*args)
         arg = encodeargs(args)
-        hgexe = util.hgexecutable()
-        cmd = '%s debugsvnlog' % util.shellquote(hgexe)
-        stdin, stdout = util.popen2(util.quotecommand(cmd))
+        hgexe = procutil.hgexecutable()
+        cmd = '%s debugsvnlog' % procutil.shellquote(hgexe)
+        stdin, stdout = procutil.popen2(procutil.quotecommand(cmd))
         stdin.write(arg)
         try:
             stdin.close()

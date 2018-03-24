@@ -21,7 +21,10 @@ from . import (
     encoding,
     error,
     pycompat,
-    util,
+)
+
+from .utils import (
+    procutil,
 )
 
 def _getlockprefix():
@@ -212,8 +215,8 @@ class lock(object):
         self.release()
 
     def _getpid(self):
-        # wrapper around util.getpid() to make testing easier
-        return util.getpid()
+        # wrapper around procutil.getpid() to make testing easier
+        return procutil.getpid()
 
     def lock(self):
         timeout = self.timeout
@@ -299,7 +302,7 @@ class lock(object):
             pid = int(pid)
         except ValueError:
             return locker
-        if util.testpid(pid):
+        if procutil.testpid(pid):
             return locker
         # if locker dead, break lock.  must do this with another lock
         # held, or can race and break valid lock.

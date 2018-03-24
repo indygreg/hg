@@ -205,12 +205,12 @@ def _newchgui(srcui, csystem, attachio):
             if (out is not self.fout
                 or not util.safehasattr(self.fout, 'fileno')
                 or self.fout.fileno() != procutil.stdout.fileno()):
-                return util.system(cmd, environ=environ, cwd=cwd, out=out)
+                return procutil.system(cmd, environ=environ, cwd=cwd, out=out)
             self.flush()
-            return self._csystem(cmd, util.shellenviron(environ), cwd)
+            return self._csystem(cmd, procutil.shellenviron(environ), cwd)
 
         def _runpager(self, cmd, env=None):
-            self._csystem(cmd, util.shellenviron(env), type='pager',
+            self._csystem(cmd, procutil.shellenviron(env), type='pager',
                           cmdtable={'attachio': attachio})
             return True
 
@@ -271,7 +271,7 @@ class channeledsystem(object):
         self.channel = channel
 
     def __call__(self, cmd, environ, cwd=None, type='system', cmdtable=None):
-        args = [type, util.quotecommand(cmd), os.path.abspath(cwd or '.')]
+        args = [type, procutil.quotecommand(cmd), os.path.abspath(cwd or '.')]
         args.extend('%s=%s' % (k, v) for k, v in environ.iteritems())
         data = '\0'.join(args)
         self.out.write(struct.pack('>cI', self.channel, len(data)))
@@ -477,12 +477,12 @@ class chgcmdserver(commandserver.server):
                          'setenv': setenv,
                          'setumask': setumask})
 
-    if util.safehasattr(util, 'setprocname'):
+    if util.safehasattr(procutil, 'setprocname'):
         def setprocname(self):
             """Change process title"""
             name = self._readstr()
             _log('setprocname: %r\n' % name)
-            util.setprocname(name)
+            procutil.setprocname(name)
         capabilities['setprocname'] = setprocname
 
 def _tempaddress(address):

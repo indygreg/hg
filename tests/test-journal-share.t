@@ -1,9 +1,10 @@
 Journal extension test: tests the share extension support
 
   $ cat >> testmocks.py << EOF
-  > # mock out util.getuser() and util.makedate() to supply testable values
+  > # mock out procutil.getuser() and util.makedate() to supply testable values
   > import os
   > from mercurial import util
+  > from mercurial.utils import procutil
   > def mockgetuser():
   >     return 'foobar'
   > 
@@ -18,7 +19,7 @@ Journal extension test: tests the share extension support
   >         timef.write(str(time))
   >     return (time, 0)
   > 
-  > util.getuser = mockgetuser
+  > procutil.getuser = mockgetuser
   > util.makedate = mockmakedate
   > EOF
 

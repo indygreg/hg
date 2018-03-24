@@ -6,9 +6,12 @@ import unittest
 import silenttestrunner
 
 from mercurial import (
-    util,
     wireproto,
     wireprotoserver,
+)
+
+from mercurial.utils import (
+    procutil,
 )
 
 class SSHServerGetArgsTests(unittest.TestCase):
@@ -46,5 +49,5 @@ class mockui(object):
 
 if __name__ == '__main__':
     # Don't call into msvcrt to set BytesIO to binary mode
-    util.setbinary = lambda fp: True
+    procutil.setbinary = lambda fp: True
     silenttestrunner.main(__name__)

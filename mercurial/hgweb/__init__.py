@@ -15,7 +15,10 @@ from ..i18n import _
 from .. import (
     error,
     pycompat,
-    util,
+)
+
+from ..utils import (
+    procutil,
 )
 
 from . import (
@@ -51,7 +54,7 @@ class httpservice(object):
         self.opts = opts
 
     def init(self):
-        util.setsignalhandler()
+        procutil.setsignalhandler()
         self.httpd = server.create_server(self.ui, self.app)
 
         if self.opts['port'] and not self.ui.verbose:

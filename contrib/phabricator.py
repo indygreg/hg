@@ -66,6 +66,9 @@ from mercurial import (
     url as urlmod,
     util,
 )
+from mercurial.utils import (
+    procutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -161,7 +164,8 @@ def callconduit(repo, name, params):
     data = urlencodenested(params)
     curlcmd = repo.ui.config('phabricator', 'curlcmd')
     if curlcmd:
-        sin, sout = util.popen2('%s -d @- %s' % (curlcmd, util.shellquote(url)))
+        sin, sout = procutil.popen2('%s -d @- %s'
+                                    % (curlcmd, procutil.shellquote(url)))
         sin.write(data)
         sin.close()
         body = sout.read()

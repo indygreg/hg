@@ -22,6 +22,9 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import (
+    procutil,
+)
 
 pickle = util.pickle
 propertycache = util.propertycache
@@ -96,7 +99,7 @@ class MissingTool(Exception):
 
 def checktool(exe, name=None, abort=True):
     name = name or exe
-    if not util.findexe(exe):
+    if not procutil.findexe(exe):
         if abort:
             exc = error.Abort
         else:
@@ -390,7 +393,7 @@ class commandline(object):
                     cmdline[-1] += '=' + v
             except TypeError:
                 pass
-        cmdline = [util.shellquote(arg) for arg in cmdline]
+        cmdline = [procutil.shellquote(arg) for arg in cmdline]
         if not self.ui.debugflag:
             cmdline += ['2>', pycompat.bytestr(os.devnull)]
         cmdline = ' '.join(cmdline)
@@ -399,16 +402,16 @@ class commandline(object):
     def _run(self, cmd, *args, **kwargs):
         def popen(cmdline):
             p = subprocess.Popen(cmdline, shell=True, bufsize=-1,
-                    close_fds=util.closefds,
-                    stdout=subprocess.PIPE)
+                                 close_fds=procutil.closefds,
+                                 stdout=subprocess.PIPE)
             return p
         return self._dorun(popen, cmd, *args, **kwargs)
 
     def _run2(self, cmd, *args, **kwargs):
-        return self._dorun(util.popen2, cmd, *args, **kwargs)
+        return self._dorun(procutil.popen2, cmd, *args, **kwargs)
 
     def _run3(self, cmd, *args, **kwargs):
-        return self._dorun(util.popen3, cmd, *args, **kwargs)
+        return self._dorun(procutil.popen3, cmd, *args, **kwargs)
 
     def _dorun(self, openfunc, cmd,  *args, **kwargs):
         cmdline = self._cmdline(cmd, *args, **kwargs)
@@ -437,7 +440,7 @@ class commandline(object):
             if output:
                 self.ui.warn(_('%s error:\n') % self.command)
                 self.ui.warn(output)
-            msg = util.explainexit(status)[0]
+            msg = procutil.explainexit(status)[0]
             raise error.Abort('%s %s' % (self.command, msg))
 
     def run0(self, cmd, *args, **kwargs):

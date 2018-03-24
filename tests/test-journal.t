@@ -1,10 +1,10 @@
 Tests for the journal extension; records bookmark locations.
 
   $ cat >> testmocks.py << EOF
-  > # mock out util.getuser() and util.makedate() to supply testable values
+  > # mock out procutil.getuser() and util.makedate() to supply testable values
   > import os
   > from mercurial import util
-  > from mercurial.utils import dateutil
+  > from mercurial.utils import dateutil, procutil
   > def mockgetuser():
   >     return 'foobar'
   > 
@@ -19,7 +19,7 @@ Tests for the journal extension; records bookmark locations.
   >         timef.write(str(time))
   >     return (time, 0)
   > 
-  > util.getuser = mockgetuser
+  > procutil.getuser = mockgetuser
   > dateutil.makedate = mockmakedate
   > EOF
 

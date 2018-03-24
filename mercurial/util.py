@@ -114,7 +114,7 @@ explainexit = platform.explainexit
 findexe = platform.findexe
 getfsmountpoint = platform.getfsmountpoint
 getfstype = platform.getfstype
-gethgcmd = platform.gethgcmd
+_gethgcmd = platform.gethgcmd
 getuser = platform.getuser
 getpid = os.getpid
 groupmembers = platform.groupmembers
@@ -2728,7 +2728,7 @@ def hgcmd():
             return [encoding.environ['EXECUTABLEPATH']]
         else:
             return [pycompat.sysexecutable]
-    return gethgcmd()
+    return _gethgcmd()
 
 def rundetached(args, condfn):
     """Execute the argument list in a detached process.

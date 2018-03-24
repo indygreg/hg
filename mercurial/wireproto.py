@@ -159,6 +159,18 @@ def encodebatchcmds(req):
 
     return ';'.join(cmds)
 
+def clientcompressionsupport(proto):
+    """Returns a list of compression methods supported by the client.
+
+    Returns a list of the compression methods supported by the client
+    according to the protocol capabilities. If no such capability has
+    been announced, fallback to the default of zlib and uncompressed.
+    """
+    for cap in proto.getprotocaps():
+        if cap.startswith('comp='):
+            return cap[5:].split(',')
+    return ['zlib', 'none']
+
 # mapping of options accepted by getbundle and their types
 #
 # Meant to be extended by extensions. It is extensions responsibility to ensure
@@ -1026,6 +1038,13 @@ def lookup(repo, proto, key):
 def known(repo, proto, nodes, others):
     v = ''.join(b and '1' or '0' for b in repo.known(decodelist(nodes)))
     return wireprototypes.bytesresponse(v)
+
+@wireprotocommand('protocaps', 'caps', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
+def protocaps(repo, proto, caps):
+    if proto.name == wireprototypes.SSHV1:
+        proto._protocaps = set(caps.split(' '))
+    return wireprototypes.bytesresponse('OK')
 
 @wireprotocommand('pushkey', 'namespace key old new', permission='push')
 def pushkey(repo, proto, namespace, key, old, new):

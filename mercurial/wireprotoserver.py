@@ -67,6 +67,7 @@ class httpv1protocolhandler(object):
         self._req = req
         self._ui = ui
         self._checkperm = checkperm
+        self._protocaps = None
 
     @property
     def name(self):
@@ -98,6 +99,12 @@ class httpv1protocolhandler(object):
         argvalue = decodevaluefromheaders(self._req, b'X-HgArg')
         args.update(urlreq.parseqs(argvalue, keep_blank_values=True))
         return args
+
+    def getprotocaps(self):
+        if self._protocaps is None:
+            value = decodevaluefromheaders(self._req, r'X-HgProto')
+            self._protocaps = set(value.split(' '))
+        return self._protocaps
 
     def forwardpayload(self, fp):
         # Existing clients *always* send Content-Length.
@@ -599,6 +606,10 @@ class httpv2protocolhandler(object):
 
         return [data[k] for k in args.split()]
 
+    def getprotocaps(self):
+        # Protocol capabilities are currently not implemented for HTTP V2.
+        return set()
+
     def forwardpayload(self, fp):
         raise NotImplementedError
 
@@ -615,28 +626,21 @@ class httpv2protocolhandler(object):
     def checkperm(self, perm):
         raise NotImplementedError
 
-def _httpresponsetype(ui, req, prefer_uncompressed):
+def _httpresponsetype(ui, proto, prefer_uncompressed):
     """Determine the appropriate response type and compression settings.
 
     Returns a tuple of (mediatype, compengine, engineopts).
     """
     # Determine the response media type and compression engine based
     # on the request parameters.
-    protocaps = decodevaluefromheaders(req, 'X-HgProto').split(' ')
 
-    if '0.2' in protocaps:
+    if '0.2' in proto.getprotocaps():
         # All clients are expected to support uncompressed data.
         if prefer_uncompressed:
             return HGTYPE2, util._noopengine(), {}
 
-        # Default as defined by wire protocol spec.
-        compformats = ['zlib', 'none']
-        for cap in protocaps:
-            if cap.startswith('comp='):
-                compformats = cap[5:].split(',')
-                break
-
         # Now find an agreed upon compression format.
+        compformats = wireproto.clientcompressionsupport(proto)
         for engine in wireproto.supportedcompengines(ui, util.SERVERROLE):
             if engine.wireprotosupport().name in compformats:
                 opts = {}
@@ -705,7 +709,7 @@ def _callhttp(repo, req, res, proto, cmd):
         # This code for compression should not be streamres specific. It
         # is here because we only compress streamres at the moment.
         mediatype, engine, engineopts = _httpresponsetype(
-            repo.ui, req, rsp.prefer_uncompressed)
+            repo.ui, proto, rsp.prefer_uncompressed)
         gen = engine.compressstream(gen, engineopts)
 
         if mediatype == HGTYPE2:
@@ -749,6 +753,7 @@ class sshv1protocolhandler(object):
         self._ui = ui
         self._fin = fin
         self._fout = fout
+        self._protocaps = set()
 
     @property
     def name(self):
@@ -775,6 +780,9 @@ class sshv1protocolhandler(object):
                 data[arg] = val
         return [data[k] for k in keys]
 
+    def getprotocaps(self):
+        return self._protocaps
+
     def forwardpayload(self, fpout):
         # We initially send an empty response. This tells the client it is
         # OK to start sending data. If a client sees any other response, it
@@ -800,6 +808,8 @@ class sshv1protocolhandler(object):
         return 'remote:ssh:' + client
 
     def addcapabilities(self, repo, caps):
+        if self.name == wireprototypes.SSHV1:
+            caps.append(b'protocaps')
         caps.append(b'batch')
         return caps
 

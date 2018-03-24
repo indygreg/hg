@@ -495,10 +495,13 @@ debug output
   devel-peer-request: between
   devel-peer-request:   pairs: 81 bytes
   sending between command
-  remote: 403 (sshv1 !)
+  remote: 413 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch
+  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN protocaps batch
   remote: 1 (sshv1 !)
+  devel-peer-request: protocaps
+  devel-peer-request:   caps: * bytes (glob)
+  sending protocaps command
   query 1; heads
   devel-peer-request: batched-content
   devel-peer-request:    - heads (0 arguments)

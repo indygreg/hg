@@ -163,6 +163,17 @@ def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
 
     return proc, stdin, stdout, stderr
 
+def _clientcapabilities():
+    """Return list of capabilities of this client.
+
+    Returns a list of capabilities that are supported by this client.
+    """
+    protoparams = []
+    comps = [e.wireprotosupport().name for e in
+             util.compengines.supportedwireengines(util.CLIENTROLE)]
+    protoparams.append('comp=%s' % ','.join(comps))
+    return protoparams
+
 def _performhandshake(ui, stdin, stdout, stderr):
     def badresponse():
         # Flush any output on stderr.
@@ -609,4 +620,15 @@ def instance(ui, path, create):
     proc, stdin, stdout, stderr = _makeconnection(ui, sshcmd, args, remotecmd,
                                                   remotepath, sshenv)
 
-    return makepeer(ui, path, proc, stdin, stdout, stderr)
+    peer = makepeer(ui, path, proc, stdin, stdout, stderr)
+
+    # Finally, if supported by the server, notify it about our own
+    # capabilities.
+    if 'protocaps' in peer.capabilities():
+        try:
+            peer._call("protocaps", caps=' '.join(_clientcapabilities()))
+        except IOError:
+            peer._cleanup()
+            raise error.RepoError(_('capability exchange failed'))
+
+    return peer

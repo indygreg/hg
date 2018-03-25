@@ -245,7 +245,7 @@ Test wdir
   $ hg stat
   M port2
   $ hg grep -r 'wdir()' port
-  abort: data/port2.i@303030303030: no node!
+  abort: working directory revision cannot be specified
   [255]
 
   $ cd ..

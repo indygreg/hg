@@ -29,6 +29,7 @@ from .node import (
     hex,
     nullid,
     nullrev,
+    wdirfilenodeids,
     wdirhex,
     wdirid,
     wdirrev,
@@ -807,7 +808,7 @@ class revlog(object):
             raise
         except RevlogError:
             # parsers.c radix tree lookup failed
-            if node == wdirid:
+            if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
             raise LookupError(node, self.indexfile, _('no node'))
         except KeyError:
@@ -823,7 +824,7 @@ class revlog(object):
                 if v == node:
                     self._nodepos = r - 1
                     return r
-            if node == wdirid:
+            if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
             raise LookupError(node, self.indexfile, _('no node'))
 
@@ -1436,6 +1437,7 @@ class revlog(object):
                 pass
 
     def _partialmatch(self, id):
+        # we don't care wdirfilenodeids as they should be always full hash
         maybewdir = wdirhex.startswith(id)
         try:
             partial = self.index.partialmatch(id)
@@ -2114,7 +2116,7 @@ class revlog(object):
         if node == nullid:
             raise RevlogError(_("%s: attempt to add null revision") %
                               (self.indexfile))
-        if node == wdirid:
+        if node == wdirid or node in wdirfilenodeids:
             raise RevlogError(_("%s: attempt to add wdir revision") %
                               (self.indexfile))
 

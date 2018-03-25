@@ -280,7 +280,7 @@ def _makegetfctx(ctx):
         ac = repo.changelog.ancestors(revs, inclusive=True)
         ctx._ancestrycontext = ac
     def makectx(f, n):
-        if n in node.wdirnodes:  # in a working context?
+        if n in node.wdirfilenodeids:  # in a working context?
             if ctx.rev() is None:
                 return ctx.filectx(f)
             return repo[None][f]

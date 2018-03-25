@@ -30,7 +30,7 @@ newnodeid = '!' * 20
 addednodeid = ('0' * 15) + 'added'
 modifiednodeid = ('0' * 12) + 'modified'
 
-wdirnodes = {newnodeid, addednodeid, modifiednodeid}
+wdirfilenodeids = {newnodeid, addednodeid, modifiednodeid}
 
 # pseudo identifiers for working directory
 # (they are experimental, so don't add too many dependencies on them)

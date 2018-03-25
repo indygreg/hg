@@ -272,12 +272,14 @@ a bad, evil hook that prints to stdout
   $ cat <<EOF > $TESTTMP/badhook
   > import sys
   > sys.stdout.write("KABOOM\n")
+  > sys.stdout.flush()
   > EOF
 
   $ cat <<EOF > $TESTTMP/badpyhook.py
   > import sys
   > def hook(ui, repo, hooktype, **kwargs):
   >     sys.stdout.write("KABOOM IN PROCESS\n")
+  >     sys.stdout.flush()
   > EOF
 
   $ cat <<EOF >> ../remote/.hg/hgrc
@@ -456,6 +458,7 @@ stderr from remote commands should be printed before stdout from local code (iss
   > def wrappedpush(orig, repo, *args, **kwargs):
   >     res = orig(repo, *args, **kwargs)
   >     repo.ui.write('local stdout\n')
+  >     repo.ui.flush()
   >     return res
   > 
   > def extsetup(ui):

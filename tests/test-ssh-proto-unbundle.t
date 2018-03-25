@@ -161,10 +161,12 @@ Test pushing to a server that has a pretxnchangegroup Python hook that fails
   > import sys
   > def hook1line(ui, repo, **kwargs):
   >     ui.write(b'ui.write 1 line\n')
+  >     ui.flush()
   >     return 1
   > def hook2lines(ui, repo, **kwargs):
   >     ui.write(b'ui.write 2 lines 1\n')
   >     ui.write(b'ui.write 2 lines 2\n')
+  >     ui.flush()
   >     return 1
   > def hook1lineflush(ui, repo, **kwargs):
   >     ui.write(b'ui.write 1 line flush\n')
@@ -181,21 +183,31 @@ Test pushing to a server that has a pretxnchangegroup Python hook that fails
   >     ui.write_err(b'ui.write_err 1\n')
   >     ui.write(b'ui.write 2\n')
   >     ui.write_err(b'ui.write_err 2\n')
+  >     ui.flush()
   >     return 1
   > def hookprintstdout(ui, repo, **kwargs):
   >     print('printed line')
+  >     sys.stdout.flush()
   >     return 1
   > def hookprintandwrite(ui, repo, **kwargs):
   >     print('print 1')
+  >     sys.stdout.flush()
   >     ui.write(b'ui.write 1\n')
+  >     ui.flush()
   >     print('print 2')
+  >     sys.stdout.flush()
   >     ui.write(b'ui.write 2\n')
+  >     ui.flush()
   >     return 1
   > def hookprintstderrandstdout(ui, repo, **kwargs):
   >     print('stdout 1')
+  >     sys.stdout.flush()
   >     print('stderr 1', file=sys.stderr)
+  >     sys.stderr.flush()
   >     print('stdout 2')
+  >     sys.stdout.flush()
   >     print('stderr 2', file=sys.stderr)
+  >     sys.stderr.flush()
   >     return 1
   > EOF
 
@@ -1046,10 +1058,10 @@ Mixed print() and ui.write() are both captured
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     ui.write 1\n
-  e>     ui.write 2\n
   e>     print 1\n
+  e>     ui.write 1\n
   e>     print 2\n
+  e>     ui.write 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1106,10 +1118,10 @@ Mixed print() and ui.write() are both captured
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     ui.write 1\n
-  e>     ui.write 2\n
   e>     print 1\n
+  e>     ui.write 1\n
   e>     print 2\n
+  e>     ui.write 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1180,10 +1192,10 @@ print() to stdout and stderr both get captured
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1240,10 +1252,10 @@ print() to stdout and stderr both get captured
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1731,10 +1743,10 @@ Shell and Python hooks writing to stdout and stderr have output captured
   e>     shell stderr 1\n
   e>     shell stdout 2\n
   e>     shell stderr 2\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.b hook failed\n
@@ -1795,10 +1807,10 @@ Shell and Python hooks writing to stdout and stderr have output captured
   e>     shell stderr 1\n
   e>     shell stdout 2\n
   e>     shell stderr 2\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.b hook failed\n

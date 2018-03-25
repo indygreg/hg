@@ -221,17 +221,18 @@ def protectstdio(uin, uout):
     "owned" in that print(), exec(), etc. never reach to them.
     """
     uout.flush()
-    newfiles = []
     nullfd = os.open(os.devnull, os.O_RDWR)
-    for f, sysf, mode in [(uin, stdin, r'rb'),
-                          (uout, stdout, r'wb')]:
-        if f is sysf:
-            newfd = os.dup(f.fileno())
-            os.dup2(nullfd, f.fileno())
-            f = os.fdopen(newfd, mode)
-        newfiles.append(f)
+    fin, fout = uin, uout
+    if uin is stdin:
+        newfd = os.dup(uin.fileno())
+        os.dup2(nullfd, uin.fileno())
+        fin = os.fdopen(newfd, r'rb')
+    if uout is stdout:
+        newfd = os.dup(uout.fileno())
+        os.dup2(nullfd, uout.fileno())
+        fout = os.fdopen(newfd, r'wb')
     os.close(nullfd)
-    return tuple(newfiles)
+    return fin, fout
 
 def restorestdio(uin, uout, fin, fout):
     """Restore (uin, uout) streams from possibly duplicated (fin, fout)"""

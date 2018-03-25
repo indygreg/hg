@@ -306,13 +306,19 @@ class server(object):
 
         return 0
 
-def _protectio(ui):
-    """ duplicates streams and redirect original to null if ui uses stdio """
-    ui.flush()
+def _protectio(uin, uout):
+    """Duplicate streams and redirect original to null if (uin, uout) are
+    stdio
+
+    Returns (fin, fout) which point to the original (uin, uout) fds, but
+    may be copy of (uin, uout). The returned streams can be considered
+    "owned" in that print(), exec(), etc. never reach to them.
+    """
+    uout.flush()
     newfiles = []
     nullfd = os.open(os.devnull, os.O_RDWR)
-    for f, sysf, mode in [(ui.fin, procutil.stdin, r'rb'),
-                          (ui.fout, procutil.stdout, r'wb')]:
+    for f, sysf, mode in [(uin, procutil.stdin, r'rb'),
+                          (uout, procutil.stdout, r'wb')]:
         if f is sysf:
             newfd = os.dup(f.fileno())
             os.dup2(nullfd, f.fileno())
@@ -321,10 +327,10 @@ def _protectio(ui):
     os.close(nullfd)
     return tuple(newfiles)
 
-def _restoreio(ui, fin, fout):
-    """ restores streams from duplicated ones """
-    ui.flush()
-    for f, uif in [(fin, ui.fin), (fout, ui.fout)]:
+def _restoreio(uin, uout, fin, fout):
+    """Restore (uin, uout) streams from possibly duplicated (fin, fout)"""
+    uout.flush()
+    for f, uif in [(fin, uin), (fout, uout)]:
         if f is not uif:
             os.dup2(f.fileno(), uif.fileno())
             f.close()
@@ -341,13 +347,13 @@ class pipeservice(object):
         ui = self.ui
         # redirect stdio to null device so that broken extensions or in-process
         # hooks will never cause corruption of channel protocol.
-        fin, fout = _protectio(ui)
+        fin, fout = _protectio(ui.fin, ui.fout)
         try:
             sv = server(ui, self.repo, fin, fout)
             return sv.serve()
         finally:
             sv.cleanup()
-            _restoreio(ui, fin, fout)
+            _restoreio(ui.fin, ui.fout, fin, fout)
 
 def _initworkerprocess():
     # use a different process group from the master process, in order to:

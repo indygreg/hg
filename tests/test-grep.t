@@ -237,6 +237,17 @@ follow
   $ hg grep -f port
   [1]
 
+Test wdir
+(at least, this shouldn't crash)
+
+  $ hg up -q
+  $ echo wport >> port2
+  $ hg stat
+  M port2
+  $ hg grep -r 'wdir()' port
+  abort: data/port2.i@303030303030: no node!
+  [255]
+
   $ cd ..
   $ hg init t2
   $ cd t2

@@ -1330,6 +1330,11 @@ class workingctx(committablectx):
             p = p[:-1]
         return [changectx(self._repo, x) for x in p]
 
+    def _fileinfo(self, path):
+        # populate __dict__['_manifest'] as workingctx has no _manifestdelta
+        self._manifest
+        return super(workingctx, self)._fileinfo(path)
+
     def filectx(self, path, filelog=None):
         """get a file context from the working directory"""
         return workingfilectx(self._repo, path, workingctx=self,

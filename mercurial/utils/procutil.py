@@ -211,6 +211,35 @@ def isstdin(f):
 def isstdout(f):
     return _testfileno(f, sys.__stdout__)
 
+def protectstdio(uin, uout):
+    """Duplicate streams and redirect original to null if (uin, uout) are
+    stdio
+
+    Returns (fin, fout) which point to the original (uin, uout) fds, but
+    may be copy of (uin, uout). The returned streams can be considered
+    "owned" in that print(), exec(), etc. never reach to them.
+    """
+    uout.flush()
+    newfiles = []
+    nullfd = os.open(os.devnull, os.O_RDWR)
+    for f, sysf, mode in [(uin, stdin, r'rb'),
+                          (uout, stdout, r'wb')]:
+        if f is sysf:
+            newfd = os.dup(f.fileno())
+            os.dup2(nullfd, f.fileno())
+            f = os.fdopen(newfd, mode)
+        newfiles.append(f)
+    os.close(nullfd)
+    return tuple(newfiles)
+
+def restorestdio(uin, uout, fin, fout):
+    """Restore (uin, uout) streams from possibly duplicated (fin, fout)"""
+    uout.flush()
+    for f, uif in [(fin, uin), (fout, uout)]:
+        if f is not uif:
+            os.dup2(f.fileno(), uif.fileno())
+            f.close()
+
 def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""
     def py2shell(val):

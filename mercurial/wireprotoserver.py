@@ -798,10 +798,6 @@ class sshserver(object):
         hook.redirect(True)
         ui.fout = repo.ui.fout = ui.ferr
 
-        # Prevent insertion/deletion of CRs
-        procutil.setbinary(self._fin)
-        procutil.setbinary(self._fout)
-
     def serve_forever(self):
         self.serveuntil(threading.Event())
         sys.exit(0)

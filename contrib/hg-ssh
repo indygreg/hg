@@ -43,6 +43,9 @@ from mercurial import (
 )
 
 def main():
+    # Prevent insertion/deletion of CRs
+    dispatch.initstdio()
+
     cwd = os.getcwd()
     readonly = False
     args = sys.argv[1:]

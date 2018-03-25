@@ -83,7 +83,7 @@ class request(object):
 
 def run():
     "run the command in sys.argv"
-    _initstdio()
+    initstdio()
     req = request(pycompat.sysargv[1:])
     err = None
     try:
@@ -112,7 +112,7 @@ def run():
     sys.exit(status & 255)
 
 if pycompat.ispy3:
-    def _initstdio():
+    def initstdio():
         pass
 
     def _silencestdio():
@@ -132,7 +132,7 @@ if pycompat.ispy3:
             except IOError:
                 pass
 else:
-    def _initstdio():
+    def initstdio():
         for fp in (sys.stdin, sys.stdout, sys.stderr):
             procutil.setbinary(fp)
 

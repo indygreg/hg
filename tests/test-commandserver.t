@@ -249,6 +249,8 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ...                input=stringio('some input'))
   *** runcommand --config hooks.pre-identify=python:hook.hook id
   eff892de26ec tip
+  hook talking
+  now try to read something: ''
 
 Clean hook cached version
   $ rm hook.py*
@@ -619,7 +621,7 @@ changelog and manifest would have invalid node:
   > @command(b"debugwritestdout", norepo=True)
   > def debugwritestdout(ui):
   >     os.write(1, "low-level stdout fd and\n")
-  >     sys.stdout.write("stdout should be redirected to /dev/null\n")
+  >     sys.stdout.write("stdout should be redirected to stderr\n")
   >     sys.stdout.flush()
   > EOF
   $ cat <<EOF >> .hg/hgrc
@@ -657,6 +659,8 @@ changelog and manifest would have invalid node:
   *** runcommand debugreadstdin
   read: ''
   *** runcommand debugwritestdout
+  low-level stdout fd and
+  stdout should be redirected to stderr
 
 
 run commandserver in commandserver, which is silly but should work:

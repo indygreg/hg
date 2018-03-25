@@ -213,25 +213,27 @@ def isstdout(f):
     return _testfileno(f, sys.__stdout__)
 
 def protectstdio(uin, uout):
-    """Duplicate streams and redirect original to null if (uin, uout) are
-    stdio
+    """Duplicate streams and redirect original if (uin, uout) are stdio
+
+    If uin is stdin, it's redirected to /dev/null. If uout is stdout, it's
+    redirected to stderr so the output is still readable.
 
     Returns (fin, fout) which point to the original (uin, uout) fds, but
     may be copy of (uin, uout). The returned streams can be considered
     "owned" in that print(), exec(), etc. never reach to them.
     """
     uout.flush()
-    nullfd = os.open(os.devnull, os.O_RDWR)
     fin, fout = uin, uout
     if uin is stdin:
         newfd = os.dup(uin.fileno())
+        nullfd = os.open(os.devnull, os.O_RDONLY)
         os.dup2(nullfd, uin.fileno())
+        os.close(nullfd)
         fin = os.fdopen(newfd, r'rb')
     if uout is stdout:
         newfd = os.dup(uout.fileno())
-        os.dup2(nullfd, uout.fileno())
+        os.dup2(stderr.fileno(), uout.fileno())
         fout = os.fdopen(newfd, r'wb')
-    os.close(nullfd)
     return fin, fout
 
 def restorestdio(uin, uout, fin, fout):

@@ -318,13 +318,12 @@ class pipeservice(object):
         ui = self.ui
         # redirect stdio to null device so that broken extensions or in-process
         # hooks will never cause corruption of channel protocol.
-        fin, fout = procutil.protectstdio(ui.fin, ui.fout)
-        try:
-            sv = server(ui, self.repo, fin, fout)
-            return sv.serve()
-        finally:
-            sv.cleanup()
-            procutil.restorestdio(ui.fin, ui.fout, fin, fout)
+        with procutil.protectedstdio(ui.fin, ui.fout) as (fin, fout):
+            try:
+                sv = server(ui, self.repo, fin, fout)
+                return sv.serve()
+            finally:
+                sv.cleanup()
 
 def _initworkerprocess():
     # use a different process group from the master process, in order to:

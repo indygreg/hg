@@ -9,6 +9,7 @@
 
 from __future__ import absolute_import
 
+import contextlib
 import imp
 import io
 import os
@@ -239,6 +240,15 @@ def restorestdio(uin, uout, fin, fout):
         if f is not uif:
             os.dup2(f.fileno(), uif.fileno())
             f.close()
+
+@contextlib.contextmanager
+def protectedstdio(uin, uout):
+    """Run code block with protected standard streams"""
+    fin, fout = protectstdio(uin, uout)
+    try:
+        yield fin, fout
+    finally:
+        restorestdio(uin, uout, fin, fout)
 
 def shellenviron(environ=None):
     """return environ with optional override, useful for shelling out"""

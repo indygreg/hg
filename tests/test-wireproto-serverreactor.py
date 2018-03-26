@@ -174,8 +174,8 @@ class FrameTests(unittest.TestCase):
         ])
 
 class ServerReactorTests(unittest.TestCase):
-    def _sendsingleframe(self, reactor, s):
-        results = list(sendframes(reactor, [ffs(s)]))
+    def _sendsingleframe(self, reactor, f):
+        results = list(sendframes(reactor, [f]))
         self.assertEqual(len(results), 1)
 
         return results[0]
@@ -296,7 +296,7 @@ class ServerReactorTests(unittest.TestCase):
     def testunexpectedcommandargument(self):
         """Command argument frame when not running a command is an error."""
         result = self._sendsingleframe(makereactor(),
-                                       b'1 command-argument 0 ignored')
+                                       ffs(b'1 command-argument 0 ignored'))
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
             'message': b'expected command frame; got 2',
@@ -318,7 +318,7 @@ class ServerReactorTests(unittest.TestCase):
     def testunexpectedcommanddata(self):
         """Command argument frame when not running a command is an error."""
         result = self._sendsingleframe(makereactor(),
-                                       b'1 command-data 0 ignored')
+                                       ffs(b'1 command-data 0 ignored'))
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
             'message': b'expected command frame; got 3',
@@ -340,19 +340,32 @@ class ServerReactorTests(unittest.TestCase):
     def testmissingcommandframeflags(self):
         """Command name frame must have flags set."""
         result = self._sendsingleframe(makereactor(),
-                                       b'1 command-name 0 command')
+                                       ffs(b'1 command-name 0 command'))
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
             'message': b'missing frame flags on command frame',
         })
 
-    def testconflictingrequestid(self):
+    def testconflictingrequestidallowed(self):
         """Multiple fully serviced commands with same request ID is allowed."""
-        results = list(sendframes(makereactor(), [
-            ffs(b'1 command-name eos command'),
-            ffs(b'1 command-name eos command'),
-            ffs(b'1 command-name eos command'),
-        ]))
+        reactor = makereactor()
+        results = []
+        results.append(self._sendsingleframe(
+            reactor, ffs(b'1 command-name eos command')))
+        result = reactor.onbytesresponseready(1, b'response1')
+        self.assertaction(result, 'sendframes')
+        list(result[1]['framegen'])
+        results.append(self._sendsingleframe(
+            reactor, ffs(b'1 command-name eos command')))
+        result = reactor.onbytesresponseready(1, b'response2')
+        self.assertaction(result, 'sendframes')
+        list(result[1]['framegen'])
+        results.append(self._sendsingleframe(
+            reactor, ffs(b'1 command-name eos command')))
+        result = reactor.onbytesresponseready(1, b'response3')
+        self.assertaction(result, 'sendframes')
+        list(result[1]['framegen'])
+
         for i in range(3):
             self.assertaction(results[i], 'runcommand')
             self.assertEqual(results[i][1], {

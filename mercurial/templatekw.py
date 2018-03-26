@@ -793,6 +793,28 @@ def showverbosity(context, mapping):
         return 'verbose'
     return ''
 
+@templatekeyword('whyunstable', requires={'repo', 'ctx'})
+def showwhyunstable(context, mapping):
+    """List of dicts explaining all instabilities of a changeset.
+    (EXPERIMENTAL)
+    """
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+
+    def formatnode(ctx):
+        return ' %s (%s)' % (scmutil.formatchangeid(ctx), ctx.phasestr())
+
+    entries = obsutil.whyunstable(repo, ctx)
+
+    for entry in entries:
+        if entry.get('divergentnodes'):
+            dnodes = entry['divergentnodes']
+            entry['divergentnodes'] = ''.join(formatnode(dnode)
+                                              for dnode in dnodes)
+
+    tmpl = '{instability}:{divergentnodes} {reason} {node|short}'
+    return templateutil.mappinglist(entries, tmpl=tmpl, sep='\n')
+
 def loadkeyword(ui, extname, registrarobj):
     """Load template keyword from specified registrarobj
     """

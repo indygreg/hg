@@ -721,6 +721,11 @@ Use scmutil.cleanupnodes API to create divergence
   $ hg debugwhyunstable 1a2a9b5b0030
   content-divergent: 70d5a63ca112acb3764bc1d7320ca90ea688d671 (draft) predecessor a178212c3433c4e77b573f6011e29affb8aefa33
 
+  $ hg log -r 1a2a9b5b0030 --hidden -T '{whyunstable}\n'
+  content-divergent: 4:70d5a63ca112 (draft) predecessor a178212c3433
+  $ hg log -r 1a2a9b5b0030 --hidden -T '{whyunstable%"{instability}:{divergentnodes} {reason} {node}\n"}'
+  content-divergent: 4:70d5a63ca112 (draft) predecessor a178212c3433c4e77b573f6011e29affb8aefa33
+
 #if serve
 
   $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log

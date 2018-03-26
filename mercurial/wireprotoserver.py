@@ -36,7 +36,7 @@ HTTP_OK = 200
 HGTYPE = 'application/mercurial-0.1'
 HGTYPE2 = 'application/mercurial-0.2'
 HGERRTYPE = 'application/hg-error'
-FRAMINGTYPE = b'application/mercurial-exp-framing-0002'
+FRAMINGTYPE = b'application/mercurial-exp-framing-0003'
 
 HTTPV2 = wireprototypes.HTTPV2
 SSHV1 = wireprototypes.SSHV1

@@ -2,6 +2,9 @@ from __future__ import absolute_import, print_function
 
 import unittest
 
+from mercurial.thirdparty import (
+    cbor,
+)
 from mercurial import (
     util,
     wireprotoframing as framing,
@@ -96,7 +99,8 @@ class FrameTests(unittest.TestCase):
         frames = list(framing.createcommandframes(stream, 1, b'command',
                                                   {}, data))
         self.assertEqual(frames, [
-            ffs(b'1 1 stream-begin command-name have-data command'),
+            ffs(b'1 1 stream-begin command-request new|have-data '
+                b"cbor:{b'name': b'command'}"),
             ffs(b'1 1 0 command-data continuation %s' % data.getvalue()),
             ffs(b'1 1 0 command-data eos ')
         ])
@@ -108,7 +112,8 @@ class FrameTests(unittest.TestCase):
         frames = list(framing.createcommandframes(stream, 1, b'command', {},
                                                   data))
         self.assertEqual(frames, [
-            ffs(b'1 1 stream-begin command-name have-data command'),
+            ffs(b'1 1 stream-begin command-request new|have-data '
+                b"cbor:{b'name': b'command'}"),
             ffs(b'1 1 0 command-data continuation %s' % (
                 b'x' * framing.DEFAULT_MAX_FRAME_SIZE)),
             ffs(b'1 1 0 command-data eos x'),
@@ -125,10 +130,9 @@ class FrameTests(unittest.TestCase):
         }, data))
 
         self.assertEqual(frames, [
-            ffs(b'1 1 stream-begin command-name have-args|have-data command'),
-            ffs(br'1 1 0 command-argument 0 \x04\x00\x09\x00key1key1value'),
-            ffs(br'1 1 0 command-argument 0 \x04\x00\x09\x00key2key2value'),
-            ffs(br'1 1 0 command-argument eoa \x04\x00\x09\x00key3key3value'),
+            ffs(b'1 1 stream-begin command-request new|have-data '
+                b"cbor:{b'name': b'command', b'args': {b'key1': b'key1value', "
+                b"b'key2': b'key2value', b'key3': b'key3value'}}"),
             ffs(b'1 1 0 command-data eos %s' % data.getvalue()),
         ])
 
@@ -286,10 +290,9 @@ class ServerReactorTests(unittest.TestCase):
         stream = framing.stream(1)
         results = list(sendcommandframes(reactor, stream, 41, b'mycommand',
                                          {b'foo': b'bar'}))
-        self.assertEqual(len(results), 2)
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'runcommand')
-        self.assertEqual(results[1][1], {
+        self.assertEqual(len(results), 1)
+        self.assertaction(results[0], 'runcommand')
+        self.assertEqual(results[0][1], {
             'requestid': 41,
             'command': b'mycommand',
             'args': {b'foo': b'bar'},
@@ -301,11 +304,9 @@ class ServerReactorTests(unittest.TestCase):
         stream = framing.stream(1)
         results = list(sendcommandframes(reactor, stream, 1, b'mycommand',
                                          {b'foo': b'bar', b'biz': b'baz'}))
-        self.assertEqual(len(results), 3)
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'wantframe')
-        self.assertaction(results[2], 'runcommand')
-        self.assertEqual(results[2][1], {
+        self.assertEqual(len(results), 1)
+        self.assertaction(results[0], 'runcommand')
+        self.assertEqual(results[0][1], {
             'requestid': 1,
             'command': b'mycommand',
             'args': {b'foo': b'bar', b'biz': b'baz'},
@@ -329,7 +330,8 @@ class ServerReactorTests(unittest.TestCase):
 
     def testmultipledataframes(self):
         frames = [
-            ffs(b'1 1 stream-begin command-name have-data mycommand'),
+            ffs(b'1 1 stream-begin command-request new|have-data '
+                b"cbor:{b'name': b'mycommand'}"),
             ffs(b'1 1 0 command-data continuation data1'),
             ffs(b'1 1 0 command-data continuation data2'),
             ffs(b'1 1 0 command-data eos data3'),
@@ -350,9 +352,9 @@ class ServerReactorTests(unittest.TestCase):
 
     def testargumentanddata(self):
         frames = [
-            ffs(b'1 1 stream-begin command-name have-args|have-data command'),
-            ffs(br'1 1 0 command-argument 0 \x03\x00\x03\x00keyval'),
-            ffs(br'1 1 0 command-argument eoa \x03\x00\x03\x00foobar'),
+            ffs(b'1 1 stream-begin command-request new|have-data '
+                b"cbor:{b'name': b'command', b'args': {b'key': b'val',"
+                b"b'foo': b'bar'}}"),
             ffs(b'1 1 0 command-data continuation value1'),
             ffs(b'1 1 0 command-data eos value2'),
         ]
@@ -371,57 +373,46 @@ class ServerReactorTests(unittest.TestCase):
             'data': b'value1value2',
         })
 
-    def testunexpectedcommandargument(self):
-        """Command argument frame when not running a command is an error."""
-        result = self._sendsingleframe(
-            makereactor(), ffs(b'1 1 stream-begin command-argument 0 ignored'))
+    def testnewandcontinuation(self):
+        result = self._sendsingleframe(makereactor(),
+            ffs(b'1 1 stream-begin command-request new|continuation '))
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
-            'message': b'expected command frame; got 2',
+            'message': b'received command request frame with both new and '
+                       b'continuation flags set',
         })
 
-    def testunexpectedcommandargumentreceiving(self):
-        """Same as above but the command is receiving."""
-        results = list(sendframes(makereactor(), [
-            ffs(b'1 1 stream-begin command-name have-data command'),
-            ffs(b'1 1 0 command-argument eoa ignored'),
-        ]))
-
-        self.assertaction(results[1], 'error')
-        self.assertEqual(results[1][1], {
-            'message': b'received command argument frame for request that is '
-                       b'not expecting arguments: 1',
+    def testneithernewnorcontinuation(self):
+        result = self._sendsingleframe(makereactor(),
+            ffs(b'1 1 stream-begin command-request 0 '))
+        self.assertaction(result, 'error')
+        self.assertEqual(result[1], {
+            'message': b'received command request frame with neither new nor '
+                       b'continuation flags set',
         })
 
     def testunexpectedcommanddata(self):
-        """Command argument frame when not running a command is an error."""
-        result = self._sendsingleframe(
-            makereactor(), ffs(b'1 1 stream-begin command-data 0 ignored'))
+        """Command data frame when not running a command is an error."""
+        result = self._sendsingleframe(makereactor(),
+            ffs(b'1 1 stream-begin command-data 0 ignored'))
         self.assertaction(result, 'error')
         self.assertEqual(result[1], {
-            'message': b'expected command frame; got 3',
+            'message': b'expected command request frame; got 3',
         })
 
     def testunexpectedcommanddatareceiving(self):
         """Same as above except the command is receiving."""
         results = list(sendframes(makereactor(), [
-            ffs(b'1 1 stream-begin command-name have-args command'),
+            ffs(b'1 1 stream-begin command-request new|more '
+                b"cbor:{b'name': b'ignored'}"),
             ffs(b'1 1 0 command-data eos ignored'),
         ]))
 
+        self.assertaction(results[0], 'wantframe')
         self.assertaction(results[1], 'error')
         self.assertEqual(results[1][1], {
             'message': b'received command data frame for request that is not '
                        b'expecting data: 1',
-        })
-
-    def testmissingcommandframeflags(self):
-        """Command name frame must have flags set."""
-        result = self._sendsingleframe(
-            makereactor(), ffs(b'1 1 stream-begin command-name 0 command'))
-        self.assertaction(result, 'error')
-        self.assertEqual(result[1], {
-            'message': b'missing frame flags on command frame',
         })
 
     def testconflictingrequestidallowed(self):
@@ -430,17 +421,20 @@ class ServerReactorTests(unittest.TestCase):
         results = []
         outstream = reactor.makeoutputstream()
         results.append(self._sendsingleframe(
-            reactor, ffs(b'1 1 stream-begin command-name eos command')))
+            reactor, ffs(b'1 1 stream-begin command-request new '
+                         b"cbor:{b'name': b'command'}")))
         result = reactor.onbytesresponseready(outstream, 1, b'response1')
         self.assertaction(result, 'sendframes')
         list(result[1]['framegen'])
         results.append(self._sendsingleframe(
-            reactor, ffs(b'1 1 0 command-name eos command')))
+            reactor, ffs(b'1 1 stream-begin command-request new '
+                         b"cbor:{b'name': b'command'}")))
         result = reactor.onbytesresponseready(outstream, 1, b'response2')
         self.assertaction(result, 'sendframes')
         list(result[1]['framegen'])
         results.append(self._sendsingleframe(
-            reactor, ffs(b'1 1 0 command-name eos command')))
+            reactor, ffs(b'1 1 stream-begin command-request new '
+                         b"cbor:{b'name': b'command'}")))
         result = reactor.onbytesresponseready(outstream, 1, b'response3')
         self.assertaction(result, 'sendframes')
         list(result[1]['framegen'])
@@ -457,8 +451,10 @@ class ServerReactorTests(unittest.TestCase):
     def testconflictingrequestid(self):
         """Request ID for new command matching in-flight command is illegal."""
         results = list(sendframes(makereactor(), [
-            ffs(b'1 1 stream-begin command-name have-args command'),
-            ffs(b'1 1 0 command-name eos command'),
+            ffs(b'1 1 stream-begin command-request new|more '
+                b"cbor:{b'name': b'command'}"),
+            ffs(b'1 1 0 command-request new '
+                b"cbor:{b'name': b'command1'}"),
         ]))
 
         self.assertaction(results[0], 'wantframe')
@@ -468,13 +464,28 @@ class ServerReactorTests(unittest.TestCase):
         })
 
     def testinterleavedcommands(self):
+        cbor1 = cbor.dumps({
+            b'name': b'command1',
+            b'args': {
+                b'foo': b'bar',
+                b'key1': b'val',
+            }
+        }, canonical=True)
+        cbor3 = cbor.dumps({
+            b'name': b'command3',
+            b'args': {
+                b'biz': b'baz',
+                b'key': b'val',
+            },
+        }, canonical=True)
+
         results = list(sendframes(makereactor(), [
-            ffs(b'1 1 stream-begin command-name have-args command1'),
-            ffs(b'3 1 0 command-name have-args command3'),
-            ffs(br'1 1 0 command-argument 0 \x03\x00\x03\x00foobar'),
-            ffs(br'3 1 0 command-argument 0 \x03\x00\x03\x00bizbaz'),
-            ffs(br'3 1 0 command-argument eoa \x03\x00\x03\x00keyval'),
-            ffs(br'1 1 0 command-argument eoa \x04\x00\x03\x00key1val'),
+            ffs(b'1 1 stream-begin command-request new|more %s' % cbor1[0:6]),
+            ffs(b'3 1 0 command-request new|more %s' % cbor3[0:10]),
+            ffs(b'1 1 0 command-request continuation|more %s' % cbor1[6:9]),
+            ffs(b'3 1 0 command-request continuation|more %s' % cbor3[10:13]),
+            ffs(b'3 1 0 command-request continuation %s' % cbor3[13:]),
+            ffs(b'1 1 0 command-request continuation %s' % cbor1[9:]),
         ]))
 
         self.assertEqual([t[0] for t in results], [
@@ -499,53 +510,14 @@ class ServerReactorTests(unittest.TestCase):
             'data': None,
         })
 
-    def testmissingargumentframe(self):
-        # This test attempts to test behavior when reactor has an incomplete
-        # command request waiting on argument data. But it doesn't handle that
-        # scenario yet. So this test does nothing of value.
-        frames = [
-            ffs(b'1 1 stream-begin command-name have-args command'),
-        ]
-
-        results = list(sendframes(makereactor(), frames))
-        self.assertaction(results[0], 'wantframe')
-
-    def testincompleteargumentname(self):
-        """Argument frame with incomplete name."""
-        frames = [
-            ffs(b'1 1 stream-begin command-name have-args command1'),
-            ffs(br'1 1 0 command-argument eoa \x04\x00\xde\xadfoo'),
-        ]
-
-        results = list(sendframes(makereactor(), frames))
-        self.assertEqual(len(results), 2)
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'error')
-        self.assertEqual(results[1][1], {
-            'message': b'malformed argument frame: partial argument name',
-        })
-
-    def testincompleteargumentvalue(self):
-        """Argument frame with incomplete value."""
-        frames = [
-            ffs(b'1 1 stream-begin command-name have-args command'),
-            ffs(br'1 1 0 command-argument eoa \x03\x00\xaa\xaafoopartialvalue'),
-        ]
-
-        results = list(sendframes(makereactor(), frames))
-        self.assertEqual(len(results), 2)
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'error')
-        self.assertEqual(results[1][1], {
-            'message': b'malformed argument frame: partial argument value',
-        })
-
     def testmissingcommanddataframe(self):
         # The reactor doesn't currently handle partially received commands.
         # So this test is failing to do anything with request 1.
         frames = [
-            ffs(b'1 1 stream-begin command-name have-data command1'),
-            ffs(b'3 1 0 command-name eos command2'),
+            ffs(b'1 1 stream-begin command-request new|have-data '
+                b"cbor:{b'name': b'command1'}"),
+            ffs(b'3 1 0 command-request new '
+                b"cbor:{b'name': b'command2'}"),
         ]
         results = list(sendframes(makereactor(), frames))
         self.assertEqual(len(results), 2)
@@ -554,7 +526,8 @@ class ServerReactorTests(unittest.TestCase):
 
     def testmissingcommanddataframeflags(self):
         frames = [
-            ffs(b'1 1 stream-begin command-name have-data command1'),
+            ffs(b'1 1 stream-begin command-request new|have-data '
+                b"cbor:{b'name': b'command1'}"),
             ffs(b'1 1 0 command-data 0 data'),
         ]
         results = list(sendframes(makereactor(), frames))
@@ -568,9 +541,11 @@ class ServerReactorTests(unittest.TestCase):
     def testframefornonreceivingrequest(self):
         """Receiving a frame for a command that is not receiving is illegal."""
         results = list(sendframes(makereactor(), [
-            ffs(b'1 1 stream-begin command-name eos command1'),
-            ffs(b'3 1 0 command-name have-data command3'),
-            ffs(b'5 1 0 command-argument eoa ignored'),
+            ffs(b'1 1 stream-begin command-request new '
+                b"cbor:{b'name': b'command1'}"),
+            ffs(b'3 1 0 command-request new|have-data '
+                b"cbor:{b'name': b'command3'}"),
+            ffs(b'5 1 0 command-data eos ignored'),
         ]))
         self.assertaction(results[2], 'error')
         self.assertEqual(results[2][1], {
@@ -703,21 +678,6 @@ class ServerReactorTests(unittest.TestCase):
         self.assertaction(results[0], 'error')
         self.assertEqual(results[0][1], {
             'message': b'request with ID 1 is already active',
-        })
-
-    def testduplicaterequestargumentframe(self):
-        """Variant on above except we sent an argument frame instead of name."""
-        reactor = makereactor()
-        stream = framing.stream(1)
-        list(sendcommandframes(reactor, stream, 1, b'command', {}))
-        results = list(sendframes(reactor, [
-            ffs(b'3 1 stream-begin command-name have-args command'),
-            ffs(b'1 1 0 command-argument 0 ignored'),
-        ]))
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'error')
-        self.assertEqual(results[1][1], {
-            'message': 'received frame for request that is still active: 1',
         })
 
     def testduplicaterequestaftersend(self):

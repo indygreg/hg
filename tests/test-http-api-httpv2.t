@@ -1,5 +1,5 @@
   $ HTTPV2=exp-http-v2-0001
-  $ MEDIATYPE=application/mercurial-exp-framing-0002
+  $ MEDIATYPE=application/mercurial-exp-framing-0003
 
   $ send() {
   >   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
@@ -122,7 +122,7 @@ Missing Accept header results in 406
   s>     Content-Type: text/plain\r\n
   s>     Content-Length: 85\r\n
   s>     \r\n
-  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0002\n
+  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0003\n
 
 Bad Accept header results in 406
 
@@ -145,7 +145,7 @@ Bad Accept header results in 406
   s>     Content-Type: text/plain\r\n
   s>     Content-Length: 85\r\n
   s>     \r\n
-  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0002\n
+  s>     client MUST specify Accept header with value: application/mercurial-exp-framing-0003\n
 
 Bad Content-Type header results in 415
 
@@ -158,7 +158,7 @@ Bad Content-Type header results in 415
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
   s>     content-type: badmedia\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
@@ -170,7 +170,7 @@ Bad Content-Type header results in 415
   s>     Content-Type: text/plain\r\n
   s>     Content-Length: 88\r\n
   s>     \r\n
-  s>     client MUST send Content-Type header with value: application/mercurial-exp-framing-0002\n
+  s>     client MUST send Content-Type header with value: application/mercurial-exp-framing-0003\n
 
 Request to read-only command works out of the box
 
@@ -179,23 +179,23 @@ Request to read-only command works out of the box
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
-  >     frame 1 1 stream-begin command-name eos customreadonly
+  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
-  s>     content-type: application/mercurial-exp-framing-0002\r\n
-  s>     user-agent: test\r\n
   s>     *\r\n (glob)
+  s>     content-type: application/mercurial-exp-framing-0003\r\n
+  s>     user-agent: test\r\n
+  s>     content-length: 29\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x0e\x00\x00\x01\x00\x01\x01\x11customreadonly
+  s>     \x15\x00\x00\x01\x00\x01\x01\x11\xa1DnameNcustomreadonly
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0002\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     25\r\n
@@ -290,23 +290,23 @@ Authorized request for valid read-write command works
   >     user-agent: test
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
-  >     frame 1 1 stream-begin command-name eos customreadonly
+  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/rw/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
-  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
+  s>     content-type: application/mercurial-exp-framing-0003\r\n
   s>     user-agent: test\r\n
-  s>     content-length: 22\r\n
+  s>     content-length: 29\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x0e\x00\x00\x01\x00\x01\x01\x11customreadonly
+  s>     \x15\x00\x00\x01\x00\x01\x01\x11\xa1DnameNcustomreadonly
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0002\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     25\r\n
@@ -325,7 +325,7 @@ Authorized request for unknown command is rejected
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/rw/badcommand HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
   s>     user-agent: test\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
@@ -382,32 +382,26 @@ Command frames can be reflected via debugreflect
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
-  >     frame 1 1 stream-begin command-name have-args command1
-  >     frame 1 1 0 command-argument 0 \x03\x00\x04\x00fooval1
-  >     frame 1 1 0 command-argument eoa \x04\x00\x03\x00bar1val
+  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'command1', b'args': {b'foo': b'val1', b'bar1': b'val'}}
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/debugreflect HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
-  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
+  s>     content-type: application/mercurial-exp-framing-0003\r\n
   s>     user-agent: test\r\n
-  s>     content-length: 54\r\n
+  s>     content-length: 47\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x08\x00\x00\x01\x00\x01\x01\x12command1\x0b\x00\x00\x01\x00\x01\x00 \x03\x00\x04\x00fooval1\x0b\x00\x00\x01\x00\x01\x00"\x04\x00\x03\x00bar1val
+  s>     '\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2CfooDval1Dbar1CvalDnameHcommand1
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 322\r\n
+  s>     Content-Length: 205\r\n
   s>     \r\n
-  s>     received: 1 2 1 command1\n
-  s>     ["wantframe", {"state": "command-receiving"}]\n
-  s>     received: 2 0 1 \x03\x00\x04\x00fooval1\n
-  s>     ["wantframe", {"state": "command-receiving"}]\n
-  s>     received: 2 2 1 \x04\x00\x03\x00bar1val\n
+  s>     received: 1 1 1 \xa2Dargs\xa2CfooDval1Dbar1CvalDnameHcommand1\n
   s>     ["runcommand", {"args": {"bar1": "val", "foo": "val1"}, "command": "command1", "data": null, "requestid": 1}]\n
   s>     received: <no frame>\n
   s>     {"action": "noop"}
@@ -419,27 +413,30 @@ Multiple requests to regular command URL are not allowed
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
-  >     frame 1 1 stream-begin command-name eos customreadonly
-  >     frame 3 1 0 command-name eos customreadonly
+  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
-  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
+  s>     content-type: application/mercurial-exp-framing-0003\r\n
   s>     user-agent: test\r\n
-  s>     content-length: 44\r\n
+  s>     content-length: 29\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x0e\x00\x00\x01\x00\x01\x01\x11customreadonly\x0e\x00\x00\x03\x00\x01\x00\x11customreadonly
+  s>     \x15\x00\x00\x01\x00\x01\x01\x11\xa1DnameNcustomreadonly
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 46\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
+  s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     multiple commands cannot be issued to this URL
+  s>     25\r\n
+  s>     \x1d\x00\x00\x01\x00\x02\x01Bcustomreadonly bytes response
+  s>     \r\n
+  s>     0\r\n
+  s>     \r\n
 
 Multiple requests to "multirequest" URL are allowed
 
@@ -448,27 +445,27 @@ Multiple requests to "multirequest" URL are allowed
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
-  >     frame 1 1 stream-begin command-name eos customreadonly
-  >     frame 3 1 0 command-name eos customreadonly
+  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'customreadonly'}
+  >     frame 3 1 0 command-request new cbor:{b'name': b'customreadonly'}
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
-  s>     content-type: application/mercurial-exp-framing-0002\r\n
-  s>     user-agent: test\r\n
   s>     *\r\n (glob)
+  s>     *\r\n (glob)
+  s>     user-agent: test\r\n
+  s>     content-length: 58\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x0e\x00\x00\x01\x00\x01\x01\x11customreadonly\x0e\x00\x00\x03\x00\x01\x00\x11customreadonly
+  s>     \x15\x00\x00\x01\x00\x01\x01\x11\xa1DnameNcustomreadonly\x15\x00\x00\x03\x00\x01\x00\x11\xa1DnameNcustomreadonly
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0002\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     *\r\n (glob)
+  s>     25\r\n
   s>     \x1d\x00\x00\x01\x00\x02\x01Bcustomreadonly bytes response
   s>     \r\n
   s>     25\r\n
@@ -484,36 +481,35 @@ Interleaved requests to "multirequest" are processed
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
-  >     frame 1 1 stream-begin command-name have-args listkeys
-  >     frame 3 1 0 command-name have-args listkeys
-  >     frame 3 1 0 command-argument eoa \x09\x00\x09\x00namespacebookmarks
-  >     frame 1 1 0 command-argument eoa \x09\x00\x0a\x00namespacenamespaces
+  >     frame 1 1 stream-begin command-request new|more \xa2Dargs\xa1Inamespace
+  >     frame 3 1 0 command-request new|more \xa2Dargs\xa1Inamespace
+  >     frame 3 1 0 command-request continuation JnamespacesDnameHlistkeys
+  >     frame 1 1 0 command-request continuation IbookmarksDnameHlistkeys
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
-  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
+  s>     content-type: application/mercurial-exp-framing-0003\r\n
   s>     user-agent: test\r\n
-  s>     content-length: 93\r\n
+  s>     content-length: 115\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x08\x00\x00\x01\x00\x01\x01\x12listkeys\x08\x00\x00\x03\x00\x01\x00\x12listkeys\x16\x00\x00\x03\x00\x01\x00"	\x00	\x00namespacebookmarks\x17\x00\x00\x01\x00\x01\x00"	\x00\n
-  s>     \x00namespacenamespaces
+  s>     \x11\x00\x00\x01\x00\x01\x01\x15\xa2Dargs\xa1Inamespace\x11\x00\x00\x03\x00\x01\x00\x15\xa2Dargs\xa1Inamespace\x19\x00\x00\x03\x00\x01\x00\x12JnamespacesDnameHlistkeys\x18\x00\x00\x01\x00\x01\x00\x12IbookmarksDnameHlistkeys
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0002\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     8\r\n
-  s>     \x00\x00\x00\x03\x00\x02\x01B
-  s>     \r\n
   s>     26\r\n
-  s>     \x1e\x00\x00\x01\x00\x02\x00Bbookmarks	\n
+  s>     \x1e\x00\x00\x03\x00\x02\x01Bbookmarks	\n
   s>     namespaces	\n
   s>     phases	
+  s>     \r\n
+  s>     8\r\n
+  s>     \x00\x00\x00\x01\x00\x02\x00B
   s>     \r\n
   s>     0\r\n
   s>     \r\n
@@ -540,18 +536,18 @@ Attempting to run a read-write command via multirequest on read-only URL is not 
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
-  >     frame 1 1 stream-begin command-name eos unbundle
+  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'unbundle'}
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/multirequest HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0002\r\n
-  s>     content-type: application/mercurial-exp-framing-0002\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
+  s>     content-type: application/mercurial-exp-framing-0003\r\n
   s>     user-agent: test\r\n
-  s>     content-length: 16\r\n
+  s>     content-length: 23\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x08\x00\x00\x01\x00\x01\x01\x11unbundle
+  s>     \x0f\x00\x00\x01\x00\x01\x01\x11\xa1DnameHunbundle
   s> makefile('rb', None)
   s>     HTTP/1.1 403 Forbidden\r\n
   s>     Server: testing stub value\r\n

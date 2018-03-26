@@ -561,8 +561,17 @@ Command Request (``0x01``)
 
 This frame contains a request to run a command.
 
-The name of the command to run constitutes the entirety of the frame
-payload.
+The payload consists of a CBOR map defining the command request. The
+bytestring keys of that map are:
+
+name
+   Name of the command that should be executed (bytestring).
+args
+   Map of bytestring keys to various value types containing the named
+   arguments to this command.
+
+   Each command defines its own set of argument names and their expected
+   types.
 
 This frame type MUST ONLY be sent from clients to servers: it is illegal
 for a server to send this frame to a client.
@@ -570,54 +579,30 @@ for a server to send this frame to a client.
 The following flag values are defined for this type:
 
 0x01
-   End of command data. When set, the client will not send any command
-   arguments or additional command data. When set, the command has been
-   fully issued and the server has the full context to process the command.
-   The next frame issued by the client is not part of this command.
+   New command request. When set, this frame represents the beginning
+   of a new request to run a command. The ``Request ID`` attached to this
+   frame MUST NOT be active.
 0x02
-   Command argument frames expected. When set, the client will send
-   *Command Argument* frames containing command argument data.
+   Command request continuation. When set, this frame is a continuation
+   from a previous command request frame for its ``Request ID``. This
+   flag is set when the CBOR data for a command request does not fit
+   in a single frame.
 0x04
-   Command data frames expected. When set, the client will send
-   *Command Data* frames containing a raw stream of data for this
-   command.
+   Additional frames expected. When set, the command request didn't fit
+   into a single frame and additional CBOR data follows in a subsequent
+   frame.
+0x08
+   Command data frames expected. When set, command data frames are
+   expected to follow the final command request frame for this request.
 
-The ``0x01`` flag is mutually exclusive with both the ``0x02`` and ``0x04``
-flags.
+``0x01`` MUST be set on the initial command request frame for a
+``Request ID``.
 
-Command Argument (``0x02``)
----------------------------
+``0x01`` or ``0x02`` MUST be set to indicate this frame's role in
+a series of command request frames.
 
-This frame contains a named argument for a command.
-
-The frame type MUST ONLY be sent from clients to servers: it is illegal
-for a server to send this frame to a client.
-
-The payload consists of:
-
-* A 16-bit little endian integer denoting the length of the
-  argument name.
-* A 16-bit little endian integer denoting the length of the
-  argument value.
-* N bytes of ASCII data containing the argument name.
-* N bytes of binary data containing the argument value.
-
-The payload MUST hold the entirety of the 32-bit header and the
-argument name. The argument value MAY span multiple frames. If this
-occurs, the appropriate frame flag should be set to indicate this.
-
-The following flag values are defined for this type:
-
-0x01
-   Argument data continuation. When set, the data for this argument did
-   not fit in a single frame and the next frame will contain additional
-   argument data.
-
-0x02
-   End of arguments data. When set, the client will not send any more
-   command arguments for the command this frame is associated with.
-   The next frame issued by the client will be command data or
-   belong to a separate request.
+If command data frames are to be sent, ``0x10`` MUST be set on ALL
+command request frames.
 
 Command Data (``0x03``)
 -----------------------
@@ -903,8 +888,8 @@ Issuing Commands
 
 A client can request that a remote run a command by sending it
 frames defining that command. This logical stream is composed of
-1 ``Command Request`` frame, 0 or more ``Command Argument`` frames,
-and 0 or more ``Command Data`` frames.
+1 or more ``Command Request`` frames and and 0 or more ``Command Data``
+frames.
 
 All frames composing a single command request MUST be associated with
 the same ``Request ID``.
@@ -928,14 +913,17 @@ been received.
 TODO think about whether we should express dependencies between commands
 to avoid roundtrip latency.
 
-Argument frames are the recommended mechanism for transferring fixed
-sets of parameters to a command. Data frames are appropriate for
-transferring variable data. A similar comparison would be to HTTP:
-argument frames are headers and the message body is data frames.
+A command is defined by a command name, 0 or more command arguments,
+and optional command data.
+
+Arguments are the recommended mechanism for transferring fixed sets of
+parameters to a command. Data is appropriate for transferring variable
+data. Thinking in terms of HTTP, arguments would be headers and data
+would be the message body.
 
 It is recommended for servers to delay the dispatch of a command
-until all argument frames for that command have been received. Servers
-MAY impose limits on the maximum argument size.
+until all argument have been received. Servers MAY impose limits on the
+maximum argument size.
 TODO define failure mechanism.
 
 Servers MAY dispatch to commands immediately once argument data

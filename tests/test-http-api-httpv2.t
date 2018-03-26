@@ -472,7 +472,7 @@ Multiple requests to "multirequest" URL are allowed
   s>     \x1d\x00\x00\x01\x00\x02\x01Bcustomreadonly bytes response
   s>     \r\n
   s>     25\r\n
-  s>     \x1d\x00\x00\x03\x00\x02\x01Bcustomreadonly bytes response
+  s>     \x1d\x00\x00\x03\x00\x02\x00Bcustomreadonly bytes response
   s>     \r\n
   s>     0\r\n
   s>     \r\n
@@ -511,7 +511,7 @@ Interleaved requests to "multirequest" are processed
   s>     \x00\x00\x00\x03\x00\x02\x01B
   s>     \r\n
   s>     26\r\n
-  s>     \x1e\x00\x00\x01\x00\x02\x01Bbookmarks	\n
+  s>     \x1e\x00\x00\x01\x00\x02\x00Bbookmarks	\n
   s>     namespaces	\n
   s>     phases	
   s>     \r\n

@@ -533,9 +533,11 @@ class serverreactor(object):
         """
         self._deferoutput = deferoutput
         self._state = 'idle'
+        self._nextoutgoingstreamid = 2
         self._bufferedframegens = []
         # stream id -> stream instance for all active streams from the client.
         self._incomingstreams = {}
+        self._outgoingstreams = {}
         # request id -> dict of commands that are actively being received.
         self._receivingcommands = {}
         # Request IDs that have been received and are actively being processed.
@@ -637,6 +639,16 @@ class serverreactor(object):
             'framegen': createerrorframe(stream, requestid, msg,
                                          application=True),
         }
+
+    def makeoutputstream(self):
+        """Create a stream to be used for sending data to the client."""
+        streamid = self._nextoutgoingstreamid
+        self._nextoutgoingstreamid += 2
+
+        s = stream(streamid)
+        self._outgoingstreams[streamid] = s
+
+        return s
 
     def _makeerrorresult(self, msg):
         return 'error', {

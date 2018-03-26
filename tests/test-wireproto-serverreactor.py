@@ -375,7 +375,7 @@ class ServerReactorTests(unittest.TestCase):
         """Multiple fully serviced commands with same request ID is allowed."""
         reactor = makereactor()
         results = []
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         results.append(self._sendsingleframe(
             reactor, ffs(b'1 1 stream-begin command-name eos command')))
         result = reactor.onbytesresponseready(outstream, 1, b'response1')
@@ -530,7 +530,7 @@ class ServerReactorTests(unittest.TestCase):
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'mycommand', {}))
 
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, b'response')
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
@@ -546,7 +546,7 @@ class ServerReactorTests(unittest.TestCase):
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'mycommand', {}))
 
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, first + second)
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
@@ -559,7 +559,7 @@ class ServerReactorTests(unittest.TestCase):
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'mycommand', {}))
 
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         result = reactor.onapplicationerror(outstream, 1, b'some message')
         self.assertaction(result, 'sendframes')
         self.assertframesequal(result[1]['framegen'], [
@@ -575,7 +575,7 @@ class ServerReactorTests(unittest.TestCase):
         self.assertEqual(len(results), 1)
         self.assertaction(results[0], 'runcommand')
 
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, b'response')
         self.assertaction(result, 'noop')
         result = reactor.oninputeof()
@@ -590,7 +590,7 @@ class ServerReactorTests(unittest.TestCase):
         list(sendcommandframes(reactor, instream, 1, b'command1', {}))
         list(sendcommandframes(reactor, instream, 3, b'command2', {}))
 
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, b'response1')
         self.assertaction(result, 'noop')
         result = reactor.onbytesresponseready(outstream, 3, b'response2')
@@ -610,7 +610,7 @@ class ServerReactorTests(unittest.TestCase):
         list(sendcommandframes(reactor, instream, 5, b'command3', {}))
 
         # Register results for commands out of order.
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         reactor.onbytesresponseready(outstream, 3, b'response3')
         reactor.onbytesresponseready(outstream, 1, b'response1')
         reactor.onbytesresponseready(outstream, 5, b'response5')
@@ -640,7 +640,7 @@ class ServerReactorTests(unittest.TestCase):
         reactor = makereactor()
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'command1', {}))
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         reactor.onbytesresponseready(outstream, 1, b'response')
 
         # We've registered the response but haven't sent it. From the
@@ -672,7 +672,7 @@ class ServerReactorTests(unittest.TestCase):
         reactor = makereactor()
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'command1', {}))
-        outstream = framing.stream(2)
+        outstream = reactor.makeoutputstream()
         res = reactor.onbytesresponseready(outstream, 1, b'response')
         list(res[1]['framegen'])
 

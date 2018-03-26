@@ -432,6 +432,8 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
     reactor = wireprotoframing.serverreactor(deferoutput=True)
     seencommand = False
 
+    outstream = reactor.makeoutputstream()
+
     while True:
         frame = wireprotoframing.readframe(req.bodyfh)
         if not frame:
@@ -444,8 +446,8 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
             continue
         elif action == 'runcommand':
             sentoutput = _httpv2runcommand(ui, repo, req, res, authedperm,
-                                           reqcommand, reactor, meta,
-                                           issubsequent=seencommand)
+                                           reqcommand, reactor, outstream,
+                                           meta, issubsequent=seencommand)
 
             if sentoutput:
                 return
@@ -476,7 +478,7 @@ def _processhttpv2request(ui, repo, req, res, authedperm, reqcommand, proto):
                                      % action)
 
 def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
-                      command, issubsequent):
+                      outstream, command, issubsequent):
     """Dispatch a wire protocol command made from HTTPv2 requests.
 
     The authenticated permission (``authedperm``) along with the original
@@ -546,10 +548,9 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = FRAMINGTYPE
-    stream = wireprotoframing.stream(2)
 
     if isinstance(rsp, wireprototypes.bytesresponse):
-        action, meta = reactor.onbytesresponseready(stream,
+        action, meta = reactor.onbytesresponseready(outstream,
                                                     command['requestid'],
                                                     rsp.data)
     else:

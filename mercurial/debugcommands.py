@@ -2777,22 +2777,23 @@ def debugwireproto(ui, repo, path=None, **opts):
     syntax.
 
     A frame is composed as a type, flags, and payload. These can be parsed
-    from a string of the form ``<requestid> <type> <flags> <payload>``. That is,
-    4 space-delimited strings.
+    from a string of the form:
 
-    ``payload`` is the simplest: it is evaluated as a Python byte string
-    literal.
+       <request-id> <stream-id> <stream-flags> <type> <flags> <payload>
 
-    ``requestid`` is an integer defining the request identifier.
+    ``request-id`` and ``stream-id`` are integers defining the request and
+    stream identifiers.
 
     ``type`` can be an integer value for the frame type or the string name
     of the type. The strings are defined in ``wireprotoframing.py``. e.g.
     ``command-name``.
 
-    ``flags`` is a ``|`` delimited list of flag components. Each component
-    (and there can be just one) can be an integer or a flag name for the
-    specified frame type. Values are resolved to integers and then bitwise
-    OR'd together.
+    ``stream-flags`` and ``flags`` are a ``|`` delimited list of flag
+    components. Each component (and there can be just one) can be an integer
+    or a flag name for stream flags or frame flags, respectively. Values are
+    resolved to integers and then bitwise OR'd together.
+
+    ``payload`` is is evaluated as a Python byte string literal.
     """
     opts = pycompat.byteskwargs(opts)
 

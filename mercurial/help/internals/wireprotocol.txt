@@ -489,28 +489,37 @@ To operate the protocol, a bi-directional, half-duplex pipe supporting
 ordered sends and receives is required. That is, each peer has one pipe
 for sending data and another for receiving.
 
+All data is read and written in atomic units called *frames*. These
+are conceptually similar to TCP packets. Higher-level functionality
+is built on the exchange and processing of frames.
+
+All frames are associated with a *stream*. A *stream* provides a
+unidirectional grouping of frames. Streams facilitate two goals:
+content encoding and parallelism. There is a dedicated section on
+streams below.
+
 The protocol is request-response based: the client issues requests to
 the server, which issues replies to those requests. Server-initiated
 messaging is not currently supported, but this specification carves
 out room to implement it.
 
-All data is read and written in atomic units called *frames*. These
-are conceptually similar to TCP packets. Higher-level functionality
-is built on the exchange and processing of frames.
-
 All frames are associated with a numbered request. Frames can thus
 be logically grouped by their request ID.
 
-Frames begin with a 6 octet header followed by a variable length
+Frames begin with an 8 octet header followed by a variable length
 payload::
 
-    +-----------------------------------------------+
-    |                 Length (24)                   |
-    +---------------------------------+-------------+
-    |         Request ID (16)         |
-    +----------+-----------+----------+
-    | Type (4) | Flags (4) |
-    +==========+===========+========================================|
+    +------------------------------------------------+
+    |                 Length (24)                    |
+    +--------------------------------+---------------+
+    |         Request ID (16)        | Stream ID (8) |
+    +------------------+-------------+---------------+
+    | Stream Flags (8) |
+    +-----------+------+
+    | Type (4)  |
+    +-----------+
+    | Flags (4) |
+    +===========+===================================================|
     |                     Frame Payload (0...)                    ...
     +---------------------------------------------------------------+
 
@@ -518,7 +527,9 @@ The length of the frame payload is expressed as an unsigned 24 bit
 little endian integer. Values larger than 65535 MUST NOT be used unless
 given permission by the server as part of the negotiated capabilities
 during the handshake. The frame header is not part of the advertised
-frame length.
+frame length. The payload length is the over-the-wire length. If there
+is content encoding applied to the payload as part of the frame's stream,
+the length is the output of that content encoding, not the input.
 
 The 16-bit ``Request ID`` field denotes the integer request identifier,
 stored as an unsigned little endian integer. Odd numbered requests are
@@ -529,7 +540,16 @@ response to client-initiated requests. Implementations are advised to
 start ordering request identifiers at ``1`` and ``0``, increment by
 ``2``, and wrap around if all available numbers have been exhausted.
 
-The 4-bit ``Type`` field denotes the type of message being sent.
+The 8-bit ``Stream ID`` field denotes the stream that the frame is
+associated with. Frames belonging to a stream may have content
+encoding applied and the receiver may need to decode the raw frame
+payload to obtain the original data. Odd numbered IDs are
+client-initiated. Even numbered IDs are server-initiated.
+
+The 8-bit ``Stream Flags`` field defines stream processing semantics.
+See the section on streams below.
+
+The 4-bit ``Type`` field denotes the type of frame being sent.
 
 The 4-bit ``Flags`` field defines special, per-type attributes for
 the frame.
@@ -719,6 +739,126 @@ does not support spanning data across multiple frames.
 All textual data encoded in these frames is assumed to be line delimited.
 The last atom in the frame SHOULD end with a newline (``\n``). If it
 doesn't, clients MAY add a newline to facilitate immediate printing.
+
+Stream Encoding Settings (``0x08``)
+-----------------------------------
+
+This frame type holds information defining the content encoding
+settings for a *stream*.
+
+This frame type is likely consumed by the protocol layer and is not
+passed on to applications.
+
+This frame type MUST ONLY occur on frames having the *Beginning of Stream*
+``Stream Flag`` set.
+
+The payload of this frame defines what content encoding has (possibly)
+been applied to the payloads of subsequent frames in this stream.
+
+The payload begins with an 8-bit integer defining the length of the
+encoding *profile*, followed by the string name of that profile, which
+must be an ASCII string. All bytes that follow can be used by that
+profile for supplemental settings definitions. See the section below
+on defined encoding profiles.
+
+Stream States and Flags
+-----------------------
+
+Streams can be in two states: *open* and *closed*. An *open* stream
+is active and frames attached to that stream could arrive at any time.
+A *closed* stream is not active. If a frame attached to a *closed*
+stream arrives, that frame MUST have an appropriate stream flag
+set indicating beginning of stream. All streams are in the *closed*
+state by default.
+
+The ``Stream Flags`` field denotes a set of bit flags for defining
+the relationship of this frame within a stream. The following flags
+are defined:
+
+0x01
+   Beginning of stream. The first frame in the stream MUST set this
+   flag. When received, the ``Stream ID`` this frame is attached to
+   becomes ``open``.
+
+0x02
+   End of stream. The last frame in a stream MUST set this flag. When
+   received, the ``Stream ID`` this frame is attached to becomes
+   ``closed``. Any content encoding context associated with this stream
+   can be destroyed after processing the payload of this frame.
+
+0x04
+   Apply content encoding. When set, any content encoding settings
+   defined by the stream should be applied when attempting to read
+   the frame. When not set, the frame payload isn't encoded.
+
+Streams
+-------
+
+Streams - along with ``Request IDs`` - facilitate grouping of frames.
+But the purpose of each is quite different and the groupings they
+constitute are independent.
+
+A ``Request ID`` is essentially a tag. It tells you which logical
+request a frame is associated with.
+
+A *stream* is a sequence of frames grouped for the express purpose
+of applying a stateful encoding or for denoting sub-groups of frames.
+
+Unlike ``Request ID``s which span the request and response, a stream
+is unidirectional and stream IDs are independent from client to
+server.
+
+There is no strict hierarchical relationship between ``Request IDs``
+and *streams*. A stream can contain frames having multiple
+``Request IDs``. Frames belonging to the same ``Request ID`` can
+span multiple streams.
+
+One goal of streams is to facilitate content encoding. A stream can
+define an encoding to be applied to frame payloads. For example, the
+payload transmitted over the wire may contain output from a
+zstandard compression operation and the receiving end may decompress
+that payload to obtain the original data.
+
+The other goal of streams is to facilitate concurrent execution. For
+example, a server could spawn 4 threads to service a request that can
+be easily parallelized. Each of those 4 threads could write into its
+own stream. Those streams could then in turn be delivered to 4 threads
+on the receiving end, with each thread consuming its stream in near
+isolation. The *main* thread on both ends merely does I/O and
+encodes/decodes frame headers: the bulk of the work is done by worker
+threads.
+
+In addition, since content encoding is defined per stream, each
+*worker thread* could perform potentially CPU bound work concurrently
+with other threads. This approach of applying encoding at the
+sub-protocol / stream level eliminates a potential resource constraint
+on the protocol stream as a whole (it is common for the throughput of
+a compression engine to be smaller than the throughput of a network).
+
+Having multiple streams - each with their own encoding settings - also
+facilitates the use of advanced data compression techniques. For
+example, a transmitter could see that it is generating data faster
+and slower than the receiving end is consuming it and adjust its
+compression settings to trade CPU for compression ratio accordingly.
+
+While streams can define a content encoding, not all frames within
+that stream must use that content encoding. This can be useful when
+data is being served from caches and being derived dynamically. A
+cache could pre-compressed data so the server doesn't have to
+recompress it. The ability to pick and choose which frames are
+compressed allows servers to easily send data to the wire without
+involving potentially expensive encoding overhead.
+
+Content Encoding Profiles
+-------------------------
+
+Streams can have named content encoding *profiles* associated with
+them. A profile defines a shared understanding of content encoding
+settings and behavior.
+
+The following profiles are defined:
+
+TBD
 
 Issuing Commands
 ----------------

@@ -546,7 +546,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = FRAMINGTYPE
-    stream = wireprotoframing.stream()
+    stream = wireprotoframing.stream(2)
 
     if isinstance(rsp, wireprototypes.bytesresponse):
         action, meta = reactor.onbytesresponseready(stream,

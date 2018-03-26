@@ -740,6 +740,44 @@ All textual data encoded in these frames is assumed to be line delimited.
 The last atom in the frame SHOULD end with a newline (``\n``). If it
 doesn't, clients MAY add a newline to facilitate immediate printing.
 
+Progress Update (``0x07``)
+--------------------------
+
+This frame holds the progress of an operation on the peer. Consumption
+of these frames allows clients to display progress bars, estimated
+completion times, etc.
+
+Each frame defines the progress of a single operation on the peer. The
+payload consists of a CBOR map with the following bytestring keys:
+
+topic
+   Topic name (string)
+pos
+   Current numeric position within the topic (integer)
+total
+   Total/end numeric position of this topic (unsigned integer)
+label (optional)
+   Unit label (string)
+item (optional)
+   Item name (string)
+
+Progress state is created when a frame is received referencing a
+*topic* that isn't currently tracked. Progress tracking for that
+*topic* is finished when a frame is received reporting the current
+position of that topic as ``-1``.
+
+Multiple *topics* may be active at any given time.
+
+Rendering of progress information is not mandated or governed by this
+specification: implementations MAY render progress information however
+they see fit, including not at all.
+
+The string data describing the topic SHOULD be static strings to
+facilitate receivers localizing that string data. The emitter
+MUST normalize all string data to valid UTF-8 and receivers SHOULD
+validate that received data conforms to UTF-8. The topic name
+SHOULD be ASCII.
+
 Stream Encoding Settings (``0x08``)
 -----------------------------------
 

@@ -711,6 +711,8 @@ size of the data that follows:
 * 0 or more UTF-8 strings that will be used as arguments to the
   formatting string.
 
+TODO use ASCII for formatting string.
+
 All data to be printed MUST be encoded into a single frame: this frame
 does not support spanning data across multiple frames.
 

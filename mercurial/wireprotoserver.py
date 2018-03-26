@@ -353,6 +353,7 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
         res.setbodybytes(_('invalid wire protocol command: %s') % command)
         return
 
+    # TODO consider cases where proxies may add additional Accept headers.
     if req.headers.get(b'Accept') != FRAMINGTYPE:
         res.status = b'406 Not Acceptable'
         res.headers[b'Content-Type'] = b'text/plain'
@@ -507,6 +508,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
                              command['command'])
             return True
 
+        # TODO don't use assert here, since it may be elided by -O.
         assert authedperm in (b'ro', b'rw')
         wirecommand = wireproto.commands[command['command']]
         assert wirecommand.permission in ('push', 'pull')
@@ -556,7 +558,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
         res.setbodygen(meta['framegen'])
         return True
     elif action == 'noop':
-        pass
+        return False
     else:
         raise error.ProgrammingError('unhandled event from reactor: %s' %
                                      action)

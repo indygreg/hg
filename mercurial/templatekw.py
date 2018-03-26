@@ -111,7 +111,7 @@ def getrenamedfn(repo, endrev=None):
             for i in fl:
                 lr = fl.linkrev(i)
                 renamed = fl.renamed(fl.node(i))
-                rcache[fn][lr] = renamed
+                rcache[fn][lr] = renamed and renamed[0]
                 if lr >= endrev:
                     break
         if rev in rcache[fn]:
@@ -120,7 +120,8 @@ def getrenamedfn(repo, endrev=None):
         # If linkrev != rev (i.e. rev not found in rcache) fallback to
         # filectx logic.
         try:
-            return repo[rev][fn].renamed()
+            renamed = repo[rev][fn].renamed()
+            return renamed and renamed[0]
         except error.LookupError:
             return None
 
@@ -318,7 +319,7 @@ def showfilecopies(context, mapping):
         for fn in ctx.files():
             rename = getrenamed(fn, ctx.rev())
             if rename:
-                copies.append((fn, rename[0]))
+                copies.append((fn, rename))
 
     copies = util.sortdict(copies)
     return compatdict(context, mapping, 'file_copy', copies,

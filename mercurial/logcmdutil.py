@@ -865,7 +865,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
             for fn in ctx.files():
                 rename = getrenamed(fn, ctx.rev())
                 if rename:
-                    copies.append((fn, rename[0]))
+                    copies.append((fn, rename))
         edges = edgefn(type, char, state, rev, parents)
         firstedge = next(edges)
         width = firstedge[2]
@@ -893,7 +893,7 @@ def displayrevs(ui, repo, revs, displayer, getrenamed):
             for fn in ctx.files():
                 rename = getrenamed(fn, rev)
                 if rename:
-                    copies.append((fn, rename[0]))
+                    copies.append((fn, rename))
         displayer.show(ctx, copies=copies)
         displayer.flush(ctx)
     displayer.close()

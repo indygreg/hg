@@ -1,24 +1,5 @@
-  $ HTTPV2=exp-http-v2-0001
-  $ MEDIATYPE=application/mercurial-exp-framing-0003
-
-  $ send() {
-  >   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
-  > }
-
-  $ cat > dummycommands.py << EOF
-  > from mercurial import wireprototypes, wireproto
-  > @wireproto.wireprotocommand('customreadonly', permission='pull')
-  > def customreadonly(repo, proto):
-  >     return wireprototypes.bytesresponse(b'customreadonly bytes response')
-  > @wireproto.wireprotocommand('customreadwrite', permission='push')
-  > def customreadwrite(repo, proto):
-  >     return wireprototypes.bytesresponse(b'customreadwrite bytes response')
-  > EOF
-
-  $ cat >> $HGRCPATH << EOF
-  > [extensions]
-  > dummycommands = $TESTTMP/dummycommands.py
-  > EOF
+  $ . $TESTDIR/wireprotohelpers.sh
+  $ enabledummycommands
 
   $ hg init server
   $ cat > server/.hg/hgrc << EOF
@@ -30,7 +11,7 @@
 
 HTTP v2 protocol not enabled by default
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest GET api/$HTTPV2
   >     user-agent: test
   > EOF
@@ -52,18 +33,13 @@ HTTP v2 protocol not enabled by default
 Restart server with support for HTTP v2 API
 
   $ killdaemons.py
-  $ cat > server/.hg/hgrc << EOF
-  > [experimental]
-  > web.apiserver = true
-  > web.api.http-v2 = true
-  > EOF
-
+  $ enablehttpv2 server
   $ hg -R server serve -p $HGPORT -d --pid-file hg.pid
   $ cat hg.pid > $DAEMON_PIDS
 
 Request to unknown command yields 404
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/badcommand
   >     user-agent: test
   > EOF
@@ -84,7 +60,7 @@ Request to unknown command yields 404
 
 GET to read-only command yields a 405
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest GET api/$HTTPV2/ro/customreadonly
   >     user-agent: test
   > EOF
@@ -105,7 +81,7 @@ GET to read-only command yields a 405
 
 Missing Accept header results in 406
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/customreadonly
   >     user-agent: test
   > EOF
@@ -126,7 +102,7 @@ Missing Accept header results in 406
 
 Bad Accept header results in 406
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/customreadonly
   >     accept: invalid
   >     user-agent: test
@@ -149,7 +125,7 @@ Bad Accept header results in 406
 
 Bad Content-Type header results in 415
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/customreadonly
   >     accept: $MEDIATYPE
   >     user-agent: test
@@ -174,7 +150,7 @@ Bad Content-Type header results in 415
 
 Request to read-only command works out of the box
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/customreadonly
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
@@ -208,7 +184,7 @@ Request to read-write command fails because server is read-only by default
 
 GET to read-write request yields 405
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest GET api/$HTTPV2/rw/customreadonly
   >     user-agent: test
   > EOF
@@ -229,7 +205,7 @@ GET to read-write request yields 405
 
 Even for unknown commands
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest GET api/$HTTPV2/rw/badcommand
   >     user-agent: test
   > EOF
@@ -250,7 +226,7 @@ Even for unknown commands
 
 SSL required by default
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/rw/customreadonly
   >     user-agent: test
   > EOF
@@ -285,7 +261,7 @@ Restart server to allow non-ssl read-write operations
 
 Authorized request for valid read-write command works
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/rw/customreadonly
   >     user-agent: test
   >     accept: $MEDIATYPE
@@ -317,7 +293,7 @@ Authorized request for valid read-write command works
 
 Authorized request for unknown command is rejected
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/rw/badcommand
   >     user-agent: test
   >     accept: $MEDIATYPE
@@ -340,7 +316,7 @@ Authorized request for unknown command is rejected
 
 debugreflect isn't enabled by default
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/debugreflect
   >     user-agent: test
   > EOF
@@ -377,7 +353,7 @@ Restart server to get debugreflect endpoint
 
 Command frames can be reflected via debugreflect
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/debugreflect
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
@@ -408,7 +384,7 @@ Command frames can be reflected via debugreflect
 
 Multiple requests to regular command URL are not allowed
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/customreadonly
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
@@ -440,7 +416,7 @@ Multiple requests to regular command URL are not allowed
 
 Multiple requests to "multirequest" URL are allowed
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/multirequest
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
@@ -476,7 +452,7 @@ Multiple requests to "multirequest" URL are allowed
 
 Interleaved requests to "multirequest" are processed
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/multirequest
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
@@ -531,7 +507,7 @@ Restart server to disable read-write access
 
 Attempting to run a read-write command via multirequest on read-only URL is not allowed
 
-  $ send << EOF
+  $ sendhttpraw << EOF
   > httprequest POST api/$HTTPV2/ro/multirequest
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE

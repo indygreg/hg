@@ -72,6 +72,9 @@
     # bundle for storage. Defaults to False.
     storeallparts = True
 
+    # routes each incoming push to the bundlestore. defaults to False
+    pushtobundlestore = True
+
     [remotenames]
     # Client-side option
     # This option should be set only if remotenames extension is enabled.
@@ -162,6 +165,9 @@ configitem('scratchbranch', 'storepath',
 )
 configitem('infinitepush', 'branchpattern',
     default='',
+)
+configitem('infinitepush', 'pushtobundlestore',
+    default=False,
 )
 configitem('experimental', 'server-bundlestore-bookmark',
     default='',
@@ -868,6 +874,56 @@ def _getorcreateinfinitepushlogger(op):
         logger = logger[0]
     return logger
 
+def storetobundlestore(orig, repo, op, unbundler):
+    """stores the incoming bundle coming from push command to the bundlestore
+    instead of applying on the revlogs"""
+
+    repo.ui.status(_("storing changesets on the bundlestore\n"))
+    bundler = bundle2.bundle20(repo.ui)
+
+    # processing each part and storing it in bundler
+    with bundle2.partiterator(repo, op, unbundler) as parts:
+        for part in parts:
+            bundlepart = None
+            if part.type == 'replycaps':
+                # This configures the current operation to allow reply parts.
+                bundle2._processpart(op, part)
+            else:
+                bundlepart = bundle2.bundlepart(part.type, data=part.read())
+                for key, value in part.params.iteritems():
+                    bundlepart.addparam(key, value)
+
+                # Certain parts require a response
+                if part.type in ('pushkey', 'changegroup'):
+                    if op.reply is not None:
+                        rpart = op.reply.newpart('reply:%s' % part.type)
+                        rpart.addparam('in-reply-to', str(part.id),
+                                       mandatory=False)
+                        rpart.addparam('return', '1', mandatory=False)
+
+            op.records.add(part.type, {
+                'return': 1,
+            })
+            if bundlepart:
+                bundler.addpart(bundlepart)
+
+    # storing the bundle in the bundlestore
+    buf = util.chunkbuffer(bundler.getchunks())
+    fd, bundlefile = tempfile.mkstemp()
+    try:
+        try:
+            fp = os.fdopen(fd, 'wb')
+            fp.write(buf.read())
+        finally:
+            fp.close()
+        storebundle(op, {}, bundlefile)
+    finally:
+        try:
+            os.unlink(bundlefile)
+        except Exception:
+            # we would rather see the original exception
+            pass
+
 def processparts(orig, repo, op, unbundler):
 
     # make sure we don't wrap processparts in case of `hg unbundle`
@@ -875,6 +931,10 @@ def processparts(orig, repo, op, unbundler):
     if tr:
         if tr.names[0].startswith('unbundle'):
             return orig(repo, op, unbundler)
+
+    # this server routes each push to bundle store
+    if repo.ui.configbool('infinitepush', 'pushtobundlestore'):
+        return storetobundlestore(orig, repo, op, unbundler)
 
     if unbundler.params.get('infinitepush') != 'True':
         return orig(repo, op, unbundler)

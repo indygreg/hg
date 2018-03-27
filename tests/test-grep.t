@@ -330,6 +330,17 @@ of just using revision numbers.
   color:3:-:red
   color:1:+:red
 
+Issue3885: test that changing revision order does not alter the
+revisions printed, just their order.
+
+  $ hg grep --all red -r "all()"
+  color:1:+:red
+  color:3:-:red
+
+  $ hg grep --all red -r "reverse(all())"
+  color:3:-:red
+  color:1:+:red
+
   $ cd ..
 
   $ hg init a

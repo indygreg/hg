@@ -2590,8 +2590,11 @@ def grep(ui, repo, pattern, *pats, **opts):
                     skip[fn] = True
                     if copy:
                         skip[copy] = True
-        del matches[rev]
         del revfiles[rev]
+        # We will keep the matches dict for the duration of the window
+        # clear the matches dict once the window is over
+        if not revfiles:
+            matches.clear()
     fm.end()
 
     return not found

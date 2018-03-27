@@ -30,14 +30,6 @@ from . import (
     pointer,
 )
 
-def supportedoutgoingversions(orig, repo):
-    versions = orig(repo)
-    if 'lfs' in repo.requirements:
-        versions.discard('01')
-        versions.discard('02')
-    versions.add('03')
-    return versions
-
 def allsupportedversions(orig, ui):
     versions = orig(ui)
     versions.add('03')

@@ -307,9 +307,6 @@ def extsetup(ui):
                  wrapper.upgraderequirements)
 
     wrapfunction(changegroup,
-                 'supportedoutgoingversions',
-                 wrapper.supportedoutgoingversions)
-    wrapfunction(changegroup,
                  'allsupportedversions',
                  wrapper.allsupportedversions)
 

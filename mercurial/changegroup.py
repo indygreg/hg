@@ -36,6 +36,8 @@ _CHANGEGROUPV1_DELTA_HEADER = "20s20s20s20s"
 _CHANGEGROUPV2_DELTA_HEADER = "20s20s20s20s20s"
 _CHANGEGROUPV3_DELTA_HEADER = ">20s20s20s20s20sH"
 
+LFS_REQUIREMENT = 'lfs'
+
 # When narrowing is finalized and no longer subject to format changes,
 # we should move this to just "narrow" or similar.
 NARROW_REQUIREMENT = 'narrowhg-experimental'
@@ -912,6 +914,12 @@ def supportedoutgoingversions(repo):
         # support that for stripping and unbundling to work.
         versions.discard('01')
         versions.discard('02')
+    if LFS_REQUIREMENT in repo.requirements:
+        # Versions 01 and 02 don't support revlog flags, and we need to
+        # mark LFS entries with REVIDX_EXTSTORED.
+        versions.discard('01')
+        versions.discard('02')
+
     return versions
 
 def localversion(repo):

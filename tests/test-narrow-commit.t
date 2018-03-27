@@ -28,7 +28,11 @@ create full repo
 
   $ cd ..
 
-  $ hg clone --narrow ssh://user@dummy/master narrow --include inside
+(The lfs extension does nothing here, but this test ensures that its hook that
+determines whether to add the lfs requirement, respects the narrow boundaries.)
+
+  $ hg --config extensions.lfs= clone --narrow ssh://user@dummy/master narrow \
+  >    --include inside
   requesting all changes
   adding changesets
   adding manifests

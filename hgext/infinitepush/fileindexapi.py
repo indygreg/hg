@@ -15,7 +15,7 @@ from __future__ import absolute_import
 
 import os
 
-from mercurial import util
+from mercurial.utils import stringutil
 
 from . import indexapi
 
@@ -77,7 +77,7 @@ class fileindexapi(indexapi.indexapi):
     def _listbookmarks(self, pattern):
         if pattern.endswith('*'):
             pattern = 're:^' + pattern[:-1] + '.*'
-        kind, pat, matcher = util.stringmatcher(pattern)
+        kind, pat, matcher = stringutil.stringmatcher(pattern)
         prefixlen = len(self._bookmarkmap) + 1
         for dirpath, _, books in self._repo.vfs.walk(self._bookmarkmap):
             for book in books:

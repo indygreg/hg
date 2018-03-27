@@ -101,6 +101,11 @@ from mercurial.node import (
 
 from mercurial.i18n import _
 
+from mercurial.utils import (
+    procutil,
+    stringutil,
+)
+
 from mercurial import (
     bundle2,
     changegroup,
@@ -270,7 +275,8 @@ def commonsetup(ui):
     scratchbranchpat = ui.config('infinitepush', 'branchpattern')
     if scratchbranchpat:
         global _scratchbranchmatcher
-        kind, pat, _scratchbranchmatcher = util.stringmatcher(scratchbranchpat)
+        kind, pat, _scratchbranchmatcher = \
+                stringutil.stringmatcher(scratchbranchpat)
 
 def serverextsetup(ui):
     origpushkeyhandler = bundle2.parthandlermapping['pushkey']
@@ -331,7 +337,7 @@ def localrepolistkeys(orig, self, namespace, patterns=None):
             results.update(index.getbookmarks(pattern))
             if pattern.endswith('*'):
                 pattern = 're:^' + pattern[:-1] + '.*'
-            kind, pat, matcher = util.stringmatcher(pattern)
+            kind, pat, matcher = stringutil.stringmatcher(pattern)
             for bookmark, node in bookmarks.iteritems():
                 if matcher(bookmark):
                     results[bookmark] = node
@@ -843,7 +849,7 @@ def _getorcreateinfinitepushlogger(op):
     if not logger:
         ui = op.repo.ui
         try:
-            username = util.getuser()
+            username = procutil.getuser()
         except Exception:
             username = 'unknown'
         # Generate random request id to be able to find all logged entries

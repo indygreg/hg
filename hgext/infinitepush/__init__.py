@@ -68,12 +68,6 @@
     # patterns to list if no patterns are specified.
     defaultremotepatterns = ['*']
 
-    # Server-side option. If bookmark that was pushed matches
-    # `fillmetadatabranchpattern` then background
-    # `hg debugfillinfinitepushmetadata` process will save metadata
-    # in infinitepush index for nodes that are ancestor of the bookmark.
-    fillmetadatabranchpattern = ''
-
     # Instructs infinitepush to forward all received bundle2 parts to the
     # bundle for storage. Defaults to False.
     storeallparts = True
@@ -152,9 +146,6 @@ configitem('infinitepush', 'indextype',
     default='',
 )
 configitem('infinitepush', 'indexpath',
-    default='',
-)
-configitem('infinitepush', 'fillmetadatabranchpattern',
     default='',
 )
 configitem('infinitepush', 'storeallparts',
@@ -1082,13 +1073,6 @@ def storebundle(op, params, bundlefile):
         log(scratchbranchparttype, eventtype='success',
             elapsedms=(time.time() - parthandlerstart) * 1000)
 
-        fillmetadatabranchpattern = op.repo.ui.config(
-            'infinitepush', 'fillmetadatabranchpattern', '')
-        if bookmark and fillmetadatabranchpattern:
-            __, __, matcher = util.stringmatcher(fillmetadatabranchpattern)
-            if matcher(bookmark):
-                _asyncsavemetadata(op.repo.root,
-                                   [ctx.hex() for ctx in nodesctx])
     except Exception as e:
         log(scratchbranchparttype, eventtype='failure',
             elapsedms=(time.time() - parthandlerstart) * 1000,

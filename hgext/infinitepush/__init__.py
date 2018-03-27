@@ -869,6 +869,13 @@ def _getorcreateinfinitepushlogger(op):
     return logger
 
 def processparts(orig, repo, op, unbundler):
+
+    # make sure we don't wrap processparts in case of `hg unbundle`
+    tr = repo.currenttransaction()
+    if tr:
+        if tr.names[0].startswith('unbundle'):
+            return orig(repo, op, unbundler)
+
     if unbundler.params.get('infinitepush') != 'True':
         return orig(repo, op, unbundler)
 

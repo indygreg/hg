@@ -16,6 +16,9 @@ import struct
 import tempfile
 
 from .i18n import _
+from .thirdparty import (
+    cbor,
+)
 from . import (
     bundle2,
     error,
@@ -25,6 +28,8 @@ from . import (
     url as urlmod,
     util,
     wireproto,
+    wireprotoframing,
+    wireprotoserver,
 )
 
 httplib = util.httplib
@@ -466,6 +471,95 @@ class httppeer(wireproto.wirepeer):
 
     def _abort(self, exception):
         raise exception
+
+# TODO implement interface for version 2 peers
+class httpv2peer(object):
+    def __init__(self, ui, repourl, opener):
+        self.ui = ui
+
+        if repourl.endswith('/'):
+            repourl = repourl[:-1]
+
+        self.url = repourl
+        self._opener = opener
+        # This is an its own attribute to facilitate extensions overriding
+        # the default type.
+        self._requestbuilder = urlreq.request
+
+    def close(self):
+        pass
+
+    # TODO require to be part of a batched primitive, use futures.
+    def _call(self, name, **args):
+        """Call a wire protocol command with arguments."""
+
+        # TODO permissions should come from capabilities results.
+        permission = wireproto.commandsv2[name].permission
+        if permission not in ('push', 'pull'):
+            raise error.ProgrammingError('unknown permission type: %s' %
+                                         permission)
+
+        permission = {
+            'push': 'rw',
+            'pull': 'ro',
+        }[permission]
+
+        url = '%s/api/%s/%s/%s' % (self.url, wireprotoserver.HTTPV2, permission,
+                                   name)
+
+        # TODO modify user-agent to reflect v2.
+        headers = {
+            r'Accept': wireprotoserver.FRAMINGTYPE,
+            r'Content-Type': wireprotoserver.FRAMINGTYPE,
+        }
+
+        # TODO this should be part of a generic peer for the frame-based
+        # protocol.
+        stream = wireprotoframing.stream(1)
+        frames = wireprotoframing.createcommandframes(stream, 1,
+                                                      name, args)
+
+        body = b''.join(map(bytes, frames))
+        req = self._requestbuilder(pycompat.strurl(url), body, headers)
+        req.add_unredirected_header(r'Content-Length', r'%d' % len(body))
+
+        # TODO unify this code with httppeer.
+        try:
+            res = self._opener.open(req)
+        except urlerr.httperror as e:
+            if e.code == 401:
+                raise error.Abort(_('authorization failed'))
+
+            raise
+        except httplib.HTTPException as e:
+            self.ui.traceback()
+            raise IOError(None, e)
+
+        # TODO validate response type, wrap response to handle I/O errors.
+        # TODO more robust frame receiver.
+        results = []
+
+        while True:
+            frame = wireprotoframing.readframe(res)
+            if frame is None:
+                break
+
+            self.ui.note(_('received %r\n') % frame)
+
+            if frame.typeid == wireprotoframing.FRAME_TYPE_BYTES_RESPONSE:
+                if frame.flags & wireprotoframing.FLAG_BYTES_RESPONSE_CBOR:
+                    payload = util.bytesio(frame.payload)
+
+                    decoder = cbor.CBORDecoder(payload)
+                    while payload.tell() + 1 < len(frame.payload):
+                        results.append(decoder.decode())
+                else:
+                    results.append(frame.payload)
+            else:
+                error.ProgrammingError('unhandled frame type: %d' %
+                                       frame.typeid)
+
+        return results
 
 def makepeer(ui, path):
     u = util.url(path)

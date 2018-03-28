@@ -5,6 +5,10 @@ sendhttpraw() {
   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
 }
 
+sendhttpv2peer() {
+  hg --verbose debugwireproto --peer http2 http://$LOCALIP:$HGPORT/
+}
+
 cat > dummycommands.py << EOF
 from mercurial import (
     wireprototypes,

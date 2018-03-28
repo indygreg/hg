@@ -180,6 +180,36 @@ Request to read-only command works out of the box
   s>     0\r\n
   s>     \r\n
 
+  $ sendhttpv2peer << EOF
+  > command customreadonly
+  > EOF
+  creating http peer for wire protocol version 2
+  sending customreadonly command
+  s>     POST /api/exp-http-v2-0001/ro/customreadonly HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0003\r\n
+  s>     content-type: application/mercurial-exp-framing-0003\r\n
+  s>     content-length: 29\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     \x15\x00\x00\x01\x00\x01\x01\x11\xa1DnameNcustomreadonly
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     25\r\n
+  s>     \x1d\x00\x00\x01\x00\x02\x01B
+  s>     customreadonly bytes response
+  s>     \r\n
+  received frame(size=29; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  s>     0\r\n
+  s>     \r\n
+  response: [b'customreadonly bytes response']
+
 Request to read-write command fails because server is read-only by default
 
 GET to read-write request yields 405

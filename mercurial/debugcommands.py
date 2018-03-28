@@ -2631,8 +2631,8 @@ def debugwireproto(ui, repo, path=None, **opts):
 
     ``--peer`` can be used to bypass the handshake protocol and construct a
     peer instance using the specified class type. Valid values are ``raw``,
-    ``ssh1``, and ``ssh2``. ``raw`` instances only allow sending raw data
-    payloads and don't support higher-level command actions.
+    ``http2``, ``ssh1``, and ``ssh2``. ``raw`` instances only allow sending
+    raw data payloads and don't support higher-level command actions.
 
     ``--noreadstderr`` can be used to disable automatic reading from stderr
     of the peer (for SSH connections only). Disabling automatic reading of
@@ -2678,8 +2678,10 @@ def debugwireproto(ui, repo, path=None, **opts):
        command listkeys
            namespace bookmarks
 
-    Values are interpreted as Python b'' literals. This allows encoding
-    special byte sequences via backslash escaping.
+    If the value begins with ``eval:``, it will be interpreted as a Python
+    literal expression. Otherwise values are interpreted as Python b'' literals.
+    This allows sending complex types and encoding special byte sequences via
+    backslash escaping.
 
     The following arguments have special meaning:
 
@@ -2803,7 +2805,7 @@ def debugwireproto(ui, repo, path=None, **opts):
     if opts['localssh'] and not repo:
         raise error.Abort(_('--localssh requires a repository'))
 
-    if opts['peer'] and opts['peer'] not in ('raw', 'ssh1', 'ssh2'):
+    if opts['peer'] and opts['peer'] not in ('raw', 'http2', 'ssh1', 'ssh2'):
         raise error.Abort(_('invalid value for --peer'),
                           hint=_('valid values are "raw", "ssh1", and "ssh2"'))
 
@@ -2877,18 +2879,20 @@ def debugwireproto(ui, repo, path=None, **opts):
             raise error.Abort(_('only http:// paths are currently supported'))
 
         url, authinfo = u.authinfo()
-        openerargs = {}
+        openerargs = {
+            r'useragent': b'Mercurial debugwireproto',
+        }
 
         # Turn pipes/sockets into observers so we can log I/O.
         if ui.verbose:
-            openerargs = {
+            openerargs.update({
                 r'loggingfh': ui,
                 r'loggingname': b's',
                 r'loggingopts': {
                     r'logdata': True,
                     r'logdataapis': False,
                 },
-            }
+            })
 
         if ui.debugflag:
             openerargs[r'loggingopts'][r'logdataapis'] = True
@@ -2901,7 +2905,10 @@ def debugwireproto(ui, repo, path=None, **opts):
 
         opener = urlmod.opener(ui, authinfo, **openerargs)
 
-        if opts['peer'] == 'raw':
+        if opts['peer'] == 'http2':
+            ui.write(_('creating http peer for wire protocol version 2\n'))
+            peer = httppeer.httpv2peer(ui, path, opener)
+        elif opts['peer'] == 'raw':
             ui.write(_('using raw connection to peer\n'))
             peer = None
         elif opts['peer']:
@@ -2951,7 +2958,12 @@ def debugwireproto(ui, repo, path=None, **opts):
                 else:
                     key, value = fields
 
-                args[key] = stringutil.unescapestr(value)
+                if value.startswith('eval:'):
+                    value = stringutil.evalpythonliteral(value[5:])
+                else:
+                    value = stringutil.unescapestr(value)
+
+                args[key] = value
 
             if batchedcommands is not None:
                 batchedcommands.append((command, args))

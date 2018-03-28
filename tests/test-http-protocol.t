@@ -179,7 +179,7 @@ Test listkeys for listing namespaces
   s>     Accept-Encoding: identity\r\n
   s>     accept: application/mercurial-0.1\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: mercurial/proto-1.0 (Mercurial *)\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
   s> makefile('rb', None)
   s>     HTTP/1.1 200 Script output follows\r\n
@@ -197,7 +197,7 @@ Test listkeys for listing namespaces
   s>     x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$\r\n
   s>     accept: application/mercurial-0.1\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
-  s>     user-agent: mercurial/proto-1.0 (Mercurial *)\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
   s>     \r\n
   s> makefile('rb', None)
   s>     HTTP/1.1 200 Script output follows\r\n

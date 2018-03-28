@@ -22,7 +22,8 @@ TRANSPORTS = {
     },
     SSHV2: {
         'transport': 'ssh',
-        'version': 2,
+        # TODO mark as version 2 once all commands are implemented.
+        'version': 1,
     },
     'http-v1': {
         'transport': 'http',

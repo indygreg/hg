@@ -1098,9 +1098,9 @@ Command after upgrade to version 2 is processed
   i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
-  o>     385\n
-  o> readline() -> 385:
-  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
+  o>     403\n
+  o> readline() -> 403:
+  o>     capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch\n
 
 Multiple upgrades is not allowed
 
@@ -1279,30 +1279,32 @@ Upgrade request must be followed by hello + between
 
 Legacy commands are not exposed to version 2 of protocol
 
-  $ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
-  > command branches
-  >     nodes 0000000000000000000000000000000000000000
-  > EOF
-  creating ssh peer from handshake results
-  sending branches command
-  response: 
+TODO re-enable these once we're back to actually using v2 commands
 
-  $ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
-  > command changegroup
-  >     roots 0000000000000000000000000000000000000000
-  > EOF
-  creating ssh peer from handshake results
-  sending changegroup command
-  response: 
+$ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
+> command branches
+>     nodes 0000000000000000000000000000000000000000
+> EOF
+creating ssh peer from handshake results
+sending branches command
+response:
 
-  $ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
-  > command changegroupsubset
-  >     bases 0000000000000000000000000000000000000000
-  >     heads 0000000000000000000000000000000000000000
-  > EOF
-  creating ssh peer from handshake results
-  sending changegroupsubset command
-  response: 
+$ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
+> command changegroup
+>     roots 0000000000000000000000000000000000000000
+> EOF
+creating ssh peer from handshake results
+sending changegroup command
+response:
+
+$ hg --config experimental.sshpeer.advertise-v2=true debugwireproto --localssh << EOF
+> command changegroupsubset
+>     bases 0000000000000000000000000000000000000000
+>     heads 0000000000000000000000000000000000000000
+> EOF
+creating ssh peer from handshake results
+sending changegroupsubset command
+response:
 
   $ cd ..
 

@@ -3258,10 +3258,9 @@ def locate(ui, repo, *pats, **opts):
         end = '\0'
     else:
         end = '\n'
-    rev = scmutil.revsingle(repo, opts.get('rev'), None).node()
+    ctx = scmutil.revsingle(repo, opts.get('rev'), None)
 
     ret = 1
-    ctx = repo[rev]
     m = scmutil.match(ctx, pats, opts, default='relglob',
                       badfn=lambda x, y: False)
 

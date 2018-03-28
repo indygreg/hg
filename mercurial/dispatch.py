@@ -551,7 +551,10 @@ class cmdalias(object):
             # drop prefix in old-style help lines so hg shows the alias
             self.help = self.help[4 + len(cmd):]
 
-        self.__doc__ = cfg.get('doc', fn.__doc__)
+        doc = cfg.get('doc', pycompat.getdoc(fn))
+        if doc is not None:
+            doc = pycompat.sysstr(doc)
+        self.__doc__ = doc
 
     @property
     def args(self):

@@ -50,11 +50,12 @@ def putlfile(repo, proto, sha):
         except IOError as e:
             repo.ui.warn(_('largefiles: failed to put %s into store: %s\n') %
                          (sha, e.strerror))
-            return wireproto.pushres(1, output.getvalue() if output else '')
+            return wireprototypes.pushres(
+                1, output.getvalue() if output else '')
         finally:
             tmpfp.discard()
 
-    return wireproto.pushres(0, output.getvalue() if output else '')
+    return wireprototypes.pushres(0, output.getvalue() if output else '')
 
 def getlfile(repo, proto, sha):
     '''Server command for retrieving a largefile from the repository-local
@@ -75,7 +76,7 @@ def getlfile(repo, proto, sha):
         yield '%d\n' % length
         for chunk in util.filechunkiter(f):
             yield chunk
-    return wireproto.streamres_legacy(gen=generator())
+    return wireprototypes.streamreslegacy(gen=generator())
 
 def statlfile(repo, proto, sha):
     '''Server command for checking if a largefile is present - returns '2\n' if
@@ -170,7 +171,7 @@ def heads(repo, proto):
     '''Wrap server command - largefile capable clients will know to call
     lheads instead'''
     if lfutil.islfilesrepo(repo):
-        return wireproto.ooberror(LARGEFILES_REQUIRED_MSG)
+        return wireprototypes.ooberror(LARGEFILES_REQUIRED_MSG)
     return wireproto.heads(repo, proto)
 
 def sshrepocallstream(self, cmd, **args):

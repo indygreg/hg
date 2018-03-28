@@ -509,13 +509,11 @@ Interleaved requests to "multirequest" are processed
   s>     Content-Type: application/mercurial-exp-framing-0003\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     26\r\n
-  s>     \x1e\x00\x00\x03\x00\x02\x01Bbookmarks\t\n
-  s>     namespaces\t\n
-  s>     phases\t
+  s>     28\r\n
+  s>      \x00\x00\x03\x00\x02\x01F\xa3Fphases@Ibookmarks@Jnamespaces@
   s>     \r\n
-  s>     8\r\n
-  s>     \x00\x00\x00\x01\x00\x02\x00B
+  s>     9\r\n
+  s>     \x01\x00\x00\x01\x00\x02\x00F\xa0
   s>     \r\n
   s>     0\r\n
   s>     \r\n

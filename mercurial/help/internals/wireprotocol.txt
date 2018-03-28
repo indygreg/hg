@@ -1702,3 +1702,17 @@ The response is a bytestring where each byte contains a 0 or 1 for the
 corresponding requested node at the same index.
 
 TODO use a bit array for even more compact response
+
+listkeys
+--------
+
+List values in a specified ``pushkey`` namespace.
+
+The command receives the following arguments:
+
+namespace
+   (bytestring) Pushkey namespace to query.
+
+The response is a map with bytestring keys and values.
+
+TODO consider using binary to represent nodes in certain pushkey namespaces.

@@ -1024,7 +1024,8 @@ def hello(repo, proto):
     caps = capabilities(repo, proto).data
     return wireprototypes.bytesresponse('capabilities: %s\n' % caps)
 
-@wireprotocommand('listkeys', 'namespace', permission='pull')
+@wireprotocommand('listkeys', 'namespace', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def listkeys(repo, proto, namespace):
     d = sorted(repo.listkeys(encoding.tolocal(namespace)).items())
     return wireprototypes.bytesresponse(pushkeymod.encodekeys(d))
@@ -1223,3 +1224,12 @@ def knownv2(repo, proto, nodes=None):
     nodes = nodes or []
     result = b''.join(b'1' if n else b'0' for n in repo.known(nodes))
     return wireprototypes.cborresponse(result)
+
+@wireprotocommand('listkeys', 'namespace', permission='pull',
+                  transportpolicy=POLICY_V2_ONLY)
+def listkeysv2(repo, proto, namespace=None):
+    keys = repo.listkeys(encoding.tolocal(namespace))
+    keys = {encoding.fromlocal(k): encoding.fromlocal(v)
+            for k, v in keys.iteritems()}
+
+    return wireprototypes.cborresponse(keys)

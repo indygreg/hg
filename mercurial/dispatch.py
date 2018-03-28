@@ -534,12 +534,24 @@ class cmdalias(object):
                              % (self.name, cmd))
 
     def _populatehelp(self, ui, name, cmd, fn, defaulthelp=None):
-        self.help = ui.config('alias', '%s:help' % name, defaulthelp or '')
+        # confine strings to be passed to i18n.gettext()
+        cfg = {}
+        for k in ('doc', 'help'):
+            v = ui.config('alias', '%s:%s' % (name, k), None)
+            if v is None:
+                continue
+            if not encoding.isasciistr(v):
+                self.badalias = (_("non-ASCII character in alias definition "
+                                   "'%s:%s'") % (name, k))
+                return
+            cfg[k] = v
+
+        self.help = cfg.get('help', defaulthelp or '')
         if self.help and self.help.startswith("hg " + cmd):
             # drop prefix in old-style help lines so hg shows the alias
             self.help = self.help[4 + len(cmd):]
 
-        self.__doc__ = ui.config('alias', '%s:doc' % name, fn.__doc__)
+        self.__doc__ = cfg.get('doc', fn.__doc__)
 
     @property
     def args(self):

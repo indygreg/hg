@@ -106,6 +106,15 @@ FRAME_TYPE_FLAGS = {
 
 ARGUMENT_RECORD_HEADER = struct.Struct(r'<HH')
 
+def humanflags(mapping, value):
+    """Convert a numeric flags value to a human value, using a mapping table."""
+    flags = []
+    for val, name in sorted({v: k for k, v in mapping.iteritems()}.iteritems()):
+        if value & val:
+            flags.append(name)
+
+    return b'|'.join(flags)
+
 @attr.s(slots=True)
 class frameheader(object):
     """Represents the data in a frame header."""
@@ -117,7 +126,7 @@ class frameheader(object):
     typeid = attr.ib()
     flags = attr.ib()
 
-@attr.s(slots=True)
+@attr.s(slots=True, repr=False)
 class frame(object):
     """Represents a parsed frame."""
 
@@ -127,6 +136,19 @@ class frame(object):
     typeid = attr.ib()
     flags = attr.ib()
     payload = attr.ib()
+
+    def __repr__(self):
+        typename = '<unknown>'
+        for name, value in FRAME_TYPES.iteritems():
+            if value == self.typeid:
+                typename = name
+                break
+
+        return ('frame(size=%d; request=%d; stream=%d; streamflags=%s; '
+                'type=%s; flags=%s)' % (
+            len(self.payload), self.requestid, self.streamid,
+            humanflags(STREAM_FLAGS, self.streamflags), typename,
+            humanflags(FRAME_TYPE_FLAGS[self.typeid], self.flags)))
 
 def makeframe(requestid, streamid, streamflags, typeid, flags, payload):
     """Assemble a frame into a byte array."""

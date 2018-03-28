@@ -1010,7 +1010,7 @@ def heads(repo, proto):
     h = repo.heads()
     return wireprototypes.bytesresponse(encodelist(h) + '\n')
 
-@wireprotocommand('hello', permission='pull')
+@wireprotocommand('hello', permission='pull', transportpolicy=POLICY_V1_ONLY)
 def hello(repo, proto):
     """Called as part of SSH handshake to obtain server info.
 

@@ -30,6 +30,27 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                runargs=None, appendpid=False):
     '''Run a command as a service.'''
 
+    # When daemonized on Windows, redirect stdout/stderr to the lockfile (which
+    # gets cleaned up after the child is up and running), so that the parent can
+    # read and print the error if this child dies early.  See 594dd384803c.  On
+    # other platforms, the child can write to the parent's stdio directly, until
+    # it is redirected prior to runfn().
+    if pycompat.iswindows and opts['daemon_postexec']:
+        for inst in opts['daemon_postexec']:
+            if inst.startswith('unlink:'):
+                lockpath = inst[7:]
+                if os.path.exists(lockpath):
+                    procutil.stdout.flush()
+                    procutil.stderr.flush()
+
+                    fd = os.open(lockpath,
+                                 os.O_WRONLY | os.O_APPEND | os.O_BINARY)
+                    try:
+                        os.dup2(fd, 1)
+                        os.dup2(fd, 2)
+                    finally:
+                        os.close(fd)
+
     def writepid(pid):
         if opts['pid_file']:
             if appendpid:
@@ -61,6 +82,12 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                 return not os.path.exists(lockpath)
             pid = procutil.rundetached(runargs, condfn)
             if pid < 0:
+                # If the daemonized process managed to write out an error msg,
+                # report it.
+                if pycompat.iswindows and os.path.exists(lockpath):
+                    with open(lockpath) as log:
+                        for line in log:
+                            procutil.stderr.write(line)
                 raise error.Abort(_('child process failed to start'))
             writepid(pid)
         finally:
@@ -81,10 +108,11 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
             os.setsid()
         except AttributeError:
             pass
+
+        lockpath = None
         for inst in opts['daemon_postexec']:
             if inst.startswith('unlink:'):
                 lockpath = inst[7:]
-                os.unlink(lockpath)
             elif inst.startswith('chdir:'):
                 os.chdir(inst[6:])
             elif inst != 'none':
@@ -106,6 +134,11 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
             os.close(nullfd)
         if logfile and logfilefd not in (0, 1, 2):
             os.close(logfilefd)
+
+        # Only unlink after redirecting stdout/stderr, so Windows doesn't
+        # complain about a sharing violation.
+        if lockpath:
+            os.unlink(lockpath)
 
     if runfn:
         return runfn()

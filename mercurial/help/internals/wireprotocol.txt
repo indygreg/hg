@@ -1670,6 +1670,16 @@ format: each command defines its own response format.
 TODO require node type be specified, as N bytes of binary node value
 could be ambiguous once SHA-1 is replaced.
 
+branchmap
+---------
+
+Obtain heads in named branches.
+
+Receives no arguments.
+
+The response is a map with bytestring keys defining the branch name.
+Values are arrays of bytestring defining raw changeset nodes.
+
 heads
 -----
 

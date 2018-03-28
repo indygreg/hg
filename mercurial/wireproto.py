@@ -828,7 +828,8 @@ def between(repo, proto, pairs):
 
     return wireprototypes.bytesresponse(''.join(r))
 
-@wireprotocommand('branchmap', permission='pull')
+@wireprotocommand('branchmap', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def branchmap(repo, proto):
     branchmap = repo.branchmap()
     heads = []
@@ -1209,6 +1210,14 @@ def unbundle(repo, proto, heads):
             return wireprototypes.streamreslegacy(gen=bundler.getchunks())
 
 # Wire protocol version 2 commands only past this point.
+
+@wireprotocommand('branchmap', permission='pull',
+                  transportpolicy=POLICY_V2_ONLY)
+def branchmapv2(repo, proto):
+    branchmap = {encoding.fromlocal(k): v
+                 for k, v in repo.branchmap().iteritems()}
+
+    return wireprototypes.cborresponse(branchmap)
 
 @wireprotocommand('heads', args='publiconly', permission='pull',
                   transportpolicy=POLICY_V2_ONLY)

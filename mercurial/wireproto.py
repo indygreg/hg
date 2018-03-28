@@ -518,7 +518,15 @@ def dispatch(repo, proto, command):
     func, spec = commandtable[command]
 
     args = proto.getargs(spec)
-    return func(repo, proto, *args)
+
+    # Version 1 protocols define arguments as a list. Version 2 uses a dict.
+    if isinstance(args, list):
+        return func(repo, proto, *args)
+    elif isinstance(args, dict):
+        return func(repo, proto, **args)
+    else:
+        raise error.ProgrammingError('unexpected type returned from '
+                                     'proto.getargs(): %s' % type(args))
 
 def options(cmd, keys, others):
     opts = {}
@@ -996,7 +1004,7 @@ def getbundle(repo, proto, others):
     return wireprototypes.streamres(
         gen=chunks, prefer_uncompressed=not prefercompressed)
 
-@wireprotocommand('heads', permission='pull')
+@wireprotocommand('heads', permission='pull', transportpolicy=POLICY_V1_ONLY)
 def heads(repo, proto):
     h = repo.heads()
     return wireprototypes.bytesresponse(encodelist(h) + '\n')
@@ -1197,3 +1205,13 @@ def unbundle(repo, proto, heads):
                 bundler.newpart('error:pushraced',
                                 [('message', stringutil.forcebytestr(exc))])
             return wireprototypes.streamreslegacy(gen=bundler.getchunks())
+
+# Wire protocol version 2 commands only past this point.
+
+@wireprotocommand('heads', args='publiconly', permission='pull',
+                  transportpolicy=POLICY_V2_ONLY)
+def headsv2(repo, proto, publiconly=False):
+    if publiconly:
+        repo = repo.filtered('immutable')
+
+    return wireprototypes.cborresponse(repo.heads())

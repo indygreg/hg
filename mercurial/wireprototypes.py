@@ -97,6 +97,11 @@ class streamreslegacy(object):
     def __init__(self, gen=None):
         self.gen = gen
 
+class cborresponse(object):
+    """Encode the response value as CBOR."""
+    def __init__(self, v):
+        self.value = v
+
 class baseprotocolhandler(zi.Interface):
     """Abstract base class for wire protocol handlers.
 
@@ -115,7 +120,10 @@ class baseprotocolhandler(zi.Interface):
     def getargs(args):
         """return the value for arguments in <args>
 
-        returns a list of values (same order as <args>)"""
+        For version 1 transports, returns a list of values in the same
+        order they appear in ``args``. For version 2 transports, returns
+        a dict mapping argument name to value.
+        """
 
     def getprotocaps():
         """Returns the list of protocol-level capabilities of client

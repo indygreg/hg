@@ -1649,3 +1649,40 @@ response is zlib compressed.
 
 The server may also respond with a generic error type, which contains a string
 indicating the failure.
+
+Frame-Based Protocol Commands
+=============================
+
+**Experimental and under active development**
+
+This section documents the wire protocol commands exposed to transports
+using the frame-based protocol. The set of commands exposed through
+these transports is distinct from the set of commands exposed to legacy
+transports.
+
+The frame-based protocol uses CBOR to encode command execution requests.
+All command arguments must be mapped to a specific or set of CBOR data
+types.
+
+The response to many commands is also CBOR. There is no common response
+format: each command defines its own response format.
+
+TODO require node type be specified, as N bytes of binary node value
+could be ambiguous once SHA-1 is replaced.
+
+heads
+-----
+
+Obtain DAG heads in the repository.
+
+The command accepts the following arguments:
+
+publiconly (optional)
+   (boolean) If set, operate on the DAG for public phase changesets only.
+   Non-public (i.e. draft) phase DAG heads will not be returned.
+
+The response is a CBOR array of bytestrings defining changeset nodes
+of DAG heads. The array can be empty if the repository is empty or no
+changesets satisfied the request.
+
+TODO consider exposing phase of heads in response

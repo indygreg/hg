@@ -349,7 +349,7 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
             if done:
                 break
 
-def createbytesresponseframesfrombytes(stream, requestid, data,
+def createbytesresponseframesfrombytes(stream, requestid, data, iscbor=False,
                                        maxframesize=DEFAULT_MAX_FRAME_SIZE):
     """Create a raw frame to send a bytes response from static bytes input.
 
@@ -358,9 +358,13 @@ def createbytesresponseframesfrombytes(stream, requestid, data,
 
     # Simple case of a single frame.
     if len(data) <= maxframesize:
+        flags = FLAG_BYTES_RESPONSE_EOS
+        if iscbor:
+            flags |= FLAG_BYTES_RESPONSE_CBOR
+
         yield stream.makeframe(requestid=requestid,
                                typeid=FRAME_TYPE_BYTES_RESPONSE,
-                               flags=FLAG_BYTES_RESPONSE_EOS,
+                               flags=flags,
                                payload=data)
         return
 
@@ -374,6 +378,9 @@ def createbytesresponseframesfrombytes(stream, requestid, data,
             flags = FLAG_BYTES_RESPONSE_EOS
         else:
             flags = FLAG_BYTES_RESPONSE_CONTINUATION
+
+        if iscbor:
+            flags |= FLAG_BYTES_RESPONSE_CBOR
 
         yield stream.makeframe(requestid=requestid,
                                typeid=FRAME_TYPE_BYTES_RESPONSE,
@@ -608,7 +615,7 @@ class serverreactor(object):
 
         return meth(frame)
 
-    def onbytesresponseready(self, stream, requestid, data):
+    def onbytesresponseready(self, stream, requestid, data, iscbor=False):
         """Signal that a bytes response is ready to be sent to the client.
 
         The raw bytes response is passed as an argument.
@@ -617,7 +624,8 @@ class serverreactor(object):
 
         def sendframes():
             for frame in createbytesresponseframesfrombytes(stream, requestid,
-                                                            data):
+                                                            data,
+                                                            iscbor=iscbor):
                 yield frame
 
             self._activecommands.remove(requestid)

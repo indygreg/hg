@@ -12,6 +12,9 @@ import sys
 import threading
 
 from .i18n import _
+from .thirdparty import (
+    cbor,
+)
 from .thirdparty.zope import (
     interface as zi,
 )
@@ -563,6 +566,12 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
         action, meta = reactor.onbytesresponseready(outstream,
                                                     command['requestid'],
                                                     rsp.data)
+    elif isinstance(rsp, wireprototypes.cborresponse):
+        encoded = cbor.dumps(rsp.value, canonical=True)
+        action, meta = reactor.onbytesresponseready(outstream,
+                                                    command['requestid'],
+                                                    encoded,
+                                                    iscbor=True)
     else:
         action, meta = reactor.onapplicationerror(
             _('unhandled response type from wire proto command'))
@@ -600,10 +609,10 @@ class httpv2protocolhandler(object):
         for k in args.split():
             if k == '*':
                 raise NotImplementedError('do not support * args')
-            else:
+            elif k in self._args:
                 data[k] = self._args[k]
 
-        return [data[k] for k in args.split()]
+        return data
 
     def getprotocaps(self):
         # Protocol capabilities are currently not implemented for HTTP V2.

@@ -13,6 +13,8 @@ stringio = util.stringio
 class proto(object):
     def __init__(self, args):
         self.args = args
+        self.name = 'dummyproto'
+
     def getargs(self, spec):
         args = self.args
         args.setdefault(b'*', {})
@@ -21,6 +23,11 @@ class proto(object):
 
     def checkperm(self, perm):
         pass
+
+wireprototypes.TRANSPORTS['dummyproto'] = {
+    'transport': 'dummy',
+    'version': 1,
+}
 
 class clientpeer(wireproto.wirepeer):
     def __init__(self, serverrepo, ui):

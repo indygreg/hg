@@ -175,6 +175,7 @@ def uisetup(ui):
 
     # ... and wrap some existing ones
     wireproto.commands['heads'].func = proto.heads
+    # TODO also wrap wireproto.commandsv2 once heads is implemented there.
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 

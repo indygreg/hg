@@ -335,7 +335,7 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
     # extension.
     extracommands = {'multirequest'}
 
-    if command not in wireproto.commands and command not in extracommands:
+    if command not in wireproto.commandsv2 and command not in extracommands:
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(_('unknown wire protocol command: %s\n') % command)
@@ -346,7 +346,7 @@ def _handlehttpv2request(rctx, req, res, checkperm, urlparts):
 
     proto = httpv2protocolhandler(req, ui)
 
-    if (not wireproto.commands.commandavailable(command, proto)
+    if (not wireproto.commandsv2.commandavailable(command, proto)
         and command not in extracommands):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
@@ -502,7 +502,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     proto = httpv2protocolhandler(req, ui, args=command['args'])
 
     if reqcommand == b'multirequest':
-        if not wireproto.commands.commandavailable(command['command'], proto):
+        if not wireproto.commandsv2.commandavailable(command['command'], proto):
             # TODO proper error mechanism
             res.status = b'200 OK'
             res.headers[b'Content-Type'] = b'text/plain'
@@ -512,7 +512,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 
         # TODO don't use assert here, since it may be elided by -O.
         assert authedperm in (b'ro', b'rw')
-        wirecommand = wireproto.commands[command['command']]
+        wirecommand = wireproto.commandsv2[command['command']]
         assert wirecommand.permission in ('push', 'pull')
 
         if authedperm == b'ro' and wirecommand.permission != 'pull':

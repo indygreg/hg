@@ -502,7 +502,11 @@ def getdispatchrepo(repo, proto, command):
 
 def dispatch(repo, proto, command):
     repo = getdispatchrepo(repo, proto, command)
-    func, spec = commands[command]
+
+    transportversion = wireprototypes.TRANSPORTS[proto.name]['version']
+    commandtable = commandsv2 if transportversion == 2 else commands
+    func, spec = commandtable[command]
+
     args = proto.getargs(spec)
     return func(repo, proto, *args)
 
@@ -679,7 +683,11 @@ POLICY_ALL = 'all'
 POLICY_V1_ONLY = 'v1-only'
 POLICY_V2_ONLY = 'v2-only'
 
+# For version 1 transports.
 commands = commanddict()
+
+# For version 2 transports.
+commandsv2 = commanddict()
 
 def wireprotocommand(name, args='', transportpolicy=POLICY_ALL,
                      permission='push'):
@@ -702,12 +710,15 @@ def wireprotocommand(name, args='', transportpolicy=POLICY_ALL,
     """
     if transportpolicy == POLICY_ALL:
         transports = set(wireprototypes.TRANSPORTS)
+        transportversions = {1, 2}
     elif transportpolicy == POLICY_V1_ONLY:
         transports = {k for k, v in wireprototypes.TRANSPORTS.items()
                       if v['version'] == 1}
+        transportversions = {1}
     elif transportpolicy == POLICY_V2_ONLY:
         transports = {k for k, v in wireprototypes.TRANSPORTS.items()
                       if v['version'] == 2}
+        transportversions = {2}
     else:
         raise error.ProgrammingError('invalid transport policy value: %s' %
                                      transportpolicy)
@@ -724,8 +735,21 @@ def wireprotocommand(name, args='', transportpolicy=POLICY_ALL,
                                      permission)
 
     def register(func):
-        commands[name] = commandentry(func, args=args, transports=transports,
-                                      permission=permission)
+        if 1 in transportversions:
+            if name in commands:
+                raise error.ProgrammingError('%s command already registered '
+                                             'for version 1' % name)
+            commands[name] = commandentry(func, args=args,
+                                          transports=transports,
+                                          permission=permission)
+        if 2 in transportversions:
+            if name in commandsv2:
+                raise error.ProgrammingError('%s command already registered '
+                                             'for version 2' % name)
+            commandsv2[name] = commandentry(func, args=args,
+                                            transports=transports,
+                                            permission=permission)
+
         return func
     return register
 

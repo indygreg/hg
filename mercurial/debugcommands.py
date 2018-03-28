@@ -2793,7 +2793,10 @@ def debugwireproto(ui, repo, path=None, **opts):
     or a flag name for stream flags or frame flags, respectively. Values are
     resolved to integers and then bitwise OR'd together.
 
-    ``payload`` is is evaluated as a Python byte string literal.
+    ``payload`` represents the raw frame payload. If it begins with
+    ``cbor:``, the following string is evaluated as Python code and the
+    resulting object is fed into a CBOR encoder. Otherwise it is interpreted
+    as a Python byte string literal.
     """
     opts = pycompat.byteskwargs(opts)
 

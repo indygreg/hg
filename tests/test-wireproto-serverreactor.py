@@ -35,6 +35,59 @@ def sendcommandframes(reactor, stream, rid, cmd, args, datafh=None):
                       framing.createcommandframes(stream, rid, cmd, args,
                                                   datafh))
 
+class FrameHumanStringTests(unittest.TestCase):
+    def testbasic(self):
+        self.assertEqual(ffs(b'1 1 0 1 0 '),
+                         b'\x00\x00\x00\x01\x00\x01\x00\x10')
+
+        self.assertEqual(ffs(b'2 4 0 1 0 '),
+                         b'\x00\x00\x00\x02\x00\x04\x00\x10')
+
+        self.assertEqual(ffs(b'2 4 0 1 0 foo'),
+                         b'\x03\x00\x00\x02\x00\x04\x00\x10foo')
+
+    def testcborint(self):
+        self.assertEqual(ffs(b'1 1 0 1 0 cbor:15'),
+                         b'\x01\x00\x00\x01\x00\x01\x00\x10\x0f')
+
+        self.assertEqual(ffs(b'1 1 0 1 0 cbor:42'),
+                         b'\x02\x00\x00\x01\x00\x01\x00\x10\x18*')
+
+        self.assertEqual(ffs(b'1 1 0 1 0 cbor:1048576'),
+                         b'\x05\x00\x00\x01\x00\x01\x00\x10\x1a'
+                         b'\x00\x10\x00\x00')
+
+        self.assertEqual(ffs(b'1 1 0 1 0 cbor:0'),
+                         b'\x01\x00\x00\x01\x00\x01\x00\x10\x00')
+
+        self.assertEqual(ffs(b'1 1 0 1 0 cbor:-1'),
+                         b'\x01\x00\x00\x01\x00\x01\x00\x10 ')
+
+        self.assertEqual(ffs(b'1 1 0 1 0 cbor:-342542'),
+                         b'\x05\x00\x00\x01\x00\x01\x00\x10:\x00\x05:\r')
+
+    def testcborstrings(self):
+        # String literals should be unicode.
+        self.assertEqual(ffs(b"1 1 0 1 0 cbor:'foo'"),
+                         b'\x04\x00\x00\x01\x00\x01\x00\x10cfoo')
+
+        self.assertEqual(ffs(b"1 1 0 1 0 cbor:b'foo'"),
+                         b'\x04\x00\x00\x01\x00\x01\x00\x10Cfoo')
+
+        self.assertEqual(ffs(b"1 1 0 1 0 cbor:u'foo'"),
+                         b'\x04\x00\x00\x01\x00\x01\x00\x10cfoo')
+
+    def testcborlists(self):
+        self.assertEqual(ffs(b"1 1 0 1 0 cbor:[None, True, False, 42, b'foo']"),
+                         b'\n\x00\x00\x01\x00\x01\x00\x10\x85\xf6\xf5\xf4'
+                         b'\x18*Cfoo')
+
+    def testcbordicts(self):
+        self.assertEqual(ffs(b"1 1 0 1 0 "
+                             b"cbor:{b'foo': b'val1', b'bar': b'val2'}"),
+                         b'\x13\x00\x00\x01\x00\x01\x00\x10\xa2'
+                         b'CbarDval2CfooDval1')
+
 class FrameTests(unittest.TestCase):
     def testdataexactframesize(self):
         data = util.bytesio(b'x' * framing.DEFAULT_MAX_FRAME_SIZE)

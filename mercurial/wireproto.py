@@ -931,7 +931,7 @@ def changegroupsubset(repo, proto, bases, heads):
     return wireprototypes.streamres(gen=gen)
 
 @wireprotocommand('debugwireargs', 'one two *',
-                  permission='pull')
+                  permission='pull', transportpolicy=POLICY_V1_ONLY)
 def debugwireargs(repo, proto, one, two, others):
     # only accept optional args from the known set
     opts = options('debugwireargs', ['three', 'four'], others)

@@ -168,12 +168,13 @@ def _capabilities(orig, repo, proto):
     caps.append('largefiles=serve')
     return caps
 
-def heads(repo, proto):
+def heads(orig, repo, proto):
     '''Wrap server command - largefile capable clients will know to call
     lheads instead'''
     if lfutil.islfilesrepo(repo):
         return wireprototypes.ooberror(LARGEFILES_REQUIRED_MSG)
-    return wireproto.heads(repo, proto)
+
+    return orig(repo, proto)
 
 def sshrepocallstream(self, cmd, **args):
     if cmd == 'heads' and self.capable('largefiles'):

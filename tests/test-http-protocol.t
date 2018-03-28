@@ -209,7 +209,7 @@ Test listkeys for listing namespaces
   s>     bookmarks	\n
   s>     namespaces	\n
   s>     phases	
-  response: bookmarks	\nnamespaces	\nphases	
+  response: b'bookmarks	\nnamespaces	\nphases	'
 
 Same thing, but with "httprequest" command
 

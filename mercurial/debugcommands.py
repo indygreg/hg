@@ -2969,7 +2969,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                               stringutil.escapedata(output))
             else:
                 res = peer._call(command, **pycompat.strkwargs(args))
-                ui.status(_('response: %s\n') % stringutil.escapedata(res))
+                ui.status(_('response: %s\n') % stringutil.pprint(res))
 
         elif action == 'batchbegin':
             if batchedcommands is not None:

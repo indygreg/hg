@@ -37,6 +37,20 @@ def escapedata(s):
 
     return _DATA_ESCAPE_RE.sub(lambda m: _DATA_ESCAPE_MAP[m.group(0)], s)
 
+def pprint(o):
+    """Pretty print an object."""
+    if isinstance(o, (bytes, bytearray)):
+        return "b'%s'" % escapedata(o)
+    elif isinstance(o, list):
+        return '[%s]' % (b', '.join(pprint(a) for a in o))
+    elif isinstance(o, dict):
+        return '{%s}' % (b', '.join(
+            '%s: %s' % (pprint(k), pprint(v)) for k, v in sorted(o.items())))
+    elif isinstance(o, bool):
+        return b'True' if o else b'False'
+    else:
+        raise error.ProgrammingError('do not know how to format %r' % o)
+
 def binary(s):
     """return true if a string is binary data"""
     return bool(s and '\0' in s)

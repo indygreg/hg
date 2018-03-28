@@ -1,1 +1,10 @@
-from .cbor2 import load, loads, dump, dumps, CBORDecodeError, CBOREncodeError
+from .cbor2 import (
+    CBORDecodeError,
+    CBORDecoder,
+    CBOREncodeError,
+    CBOREncoder,
+    dump,
+    dumps,
+    load,
+    loads,
+)

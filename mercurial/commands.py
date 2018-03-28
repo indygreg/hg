@@ -5314,12 +5314,12 @@ def tag(ui, repo, name1, *names, **opts):
             if not opts.get('force') and bheads and p1 not in bheads:
                 raise error.Abort(_('working directory is not at a branch head '
                                     '(use -f to force)'))
-        r = scmutil.revsingle(repo, rev_).node()
+        node = scmutil.revsingle(repo, rev_).node()
 
         if not message:
             # we don't translate commit messages
             message = ('Added tag %s for changeset %s' %
-                       (', '.join(names), short(r)))
+                       (', '.join(names), short(node)))
 
         date = opts.get('date')
         if date:
@@ -5337,7 +5337,7 @@ def tag(ui, repo, name1, *names, **opts):
             scmutil.revsingle(repo, rev_).rev() == nullrev):
             raise error.Abort(_("cannot tag null revision"))
 
-        tagsmod.tag(repo, names, r, message, opts.get('local'),
+        tagsmod.tag(repo, names, node, message, opts.get('local'),
                     opts.get('user'), date, editor=editor)
     finally:
         release(lock, wlock)

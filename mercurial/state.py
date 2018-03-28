@@ -46,31 +46,12 @@ class cmdstate(object):
         """
         self._repo = repo
         self.fname = fname
-        if not opts:
-            self.opts = {}
-        else:
-            self.opts = opts
 
-    def __nonzero__(self):
-        return self.exists()
+    def read(self):
+        """read the existing state file and return a dict of data stored"""
+        return self._read()
 
-    def __getitem__(self, key):
-        return self.opts[key]
-
-    def __setitem__(self, key, value):
-        updates = {key: value}
-        self.opts.update(updates)
-
-    def load(self):
-        """load the existing state file into the class object"""
-        op = self._read()
-        self.opts.update(op)
-
-    def addopts(self, opts):
-        """add more key-value pairs to the data stored by the object"""
-        self.opts.update(opts)
-
-    def save(self):
+    def save(self, data):
         """write all the state data stored to .hg/<filename> file
 
         we use third-party library cbor to serialize data to write in the file.

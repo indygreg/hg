@@ -349,7 +349,7 @@ class HTTPHandler(KeepAliveHandler, urlreq.httphandler):
 
 class HTTPResponse(httplib.HTTPResponse):
     # we need to subclass HTTPResponse in order to
-    # 1) add readline() and readlines() methods
+    # 1) add readline(), readlines(), and readinto() methods
     # 2) add close_connection() methods
     # 3) add info() and geturl() methods
 
@@ -521,6 +521,14 @@ class HTTPResponse(httplib.HTTPResponse):
             if sizehint and total >= sizehint:
                 break
         return list
+
+    def readinto(self, dest):
+        res = self.read(len(dest))
+        if not res:
+            return 0
+
+        dest[0:len(res)] = res
+        return len(res)
 
 def safesend(self, str):
     """Send `str' to the server.

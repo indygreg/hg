@@ -631,19 +631,21 @@ The following flag values are defined for this type:
    server. The command has been fully issued and no new data for this
    command will be sent. The next frame will belong to a new command.
 
-Bytes Response Data (``0x04``)
-------------------------------
+Response Data (``0x04``)
+------------------------
 
-This frame contains raw bytes response data to an issued command.
+This frame contains raw response data to an issued command.
 
 The following flag values are defined for this type:
 
 0x01
-   Data continuation. When set, an additional frame containing raw
-   response data will follow.
+   Data continuation. When set, an additional frame containing response data
+   will follow.
 0x02
-   End of data. When sent, the response data has been fully sent and
+   End of data. When set, the response data has been fully sent and
    no additional frames for this response will be sent.
+0x04
+   CBOR data. When set, the frame payload consists of CBOR data.
 
 The ``0x01`` flag is mutually exclusive with the ``0x02`` flag.
 

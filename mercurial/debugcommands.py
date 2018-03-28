@@ -2288,11 +2288,11 @@ def debugsetparents(ui, repo, rev1, rev2=None):
     Returns 0 on success.
     """
 
-    r1 = scmutil.revsingle(repo, rev1).node()
-    r2 = scmutil.revsingle(repo, rev2, 'null').node()
+    node1 = scmutil.revsingle(repo, rev1).node()
+    node2 = scmutil.revsingle(repo, rev2, 'null').node()
 
     with repo.wlock():
-        repo.setparents(r1, r2)
+        repo.setparents(node1, node2)
 
 @command('debugssl', [], '[SOURCE]', optionalrepo=True)
 def debugssl(ui, repo, source=None, **opts):

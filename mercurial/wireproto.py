@@ -1041,7 +1041,8 @@ def lookup(repo, proto, key):
         success = 0
     return wireprototypes.bytesresponse('%d %s\n' % (success, r))
 
-@wireprotocommand('known', 'nodes *', permission='pull')
+@wireprotocommand('known', 'nodes *', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def known(repo, proto, nodes, others):
     v = ''.join(b and '1' or '0' for b in repo.known(decodelist(nodes)))
     return wireprototypes.bytesresponse(v)
@@ -1215,3 +1216,10 @@ def headsv2(repo, proto, publiconly=False):
         repo = repo.filtered('immutable')
 
     return wireprototypes.cborresponse(repo.heads())
+
+@wireprotocommand('known', 'nodes', permission='pull',
+                  transportpolicy=POLICY_V2_ONLY)
+def knownv2(repo, proto, nodes=None):
+    nodes = nodes or []
+    result = b''.join(b'1' if n else b'0' for n in repo.known(nodes))
+    return wireprototypes.cborresponse(result)

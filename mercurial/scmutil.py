@@ -437,9 +437,26 @@ def formatrevnode(ui, rev, node):
     return '%d:%s' % (rev, hexfunc(node))
 
 def resolvehexnodeidprefix(repo, prefix):
-    # Uses unfiltered repo because it's faster when prefix is ambiguous/
-    # This matches the shortesthexnodeidprefix() function below.
-    node = repo.unfiltered().changelog._partialmatch(prefix)
+    try:
+        # Uses unfiltered repo because it's faster when prefix is ambiguous/
+        # This matches the shortesthexnodeidprefix() function below.
+        node = repo.unfiltered().changelog._partialmatch(prefix)
+    except error.AmbiguousPrefixLookupError:
+        revset = repo.ui.config('experimental', 'revisions.disambiguatewithin')
+        if revset:
+            # Clear config to avoid infinite recursion
+            configoverrides = {('experimental',
+                                'revisions.disambiguatewithin'): None}
+            with repo.ui.configoverride(configoverrides):
+                revs = repo.anyrevs([revset], user=True)
+                matches = []
+                for rev in revs:
+                    node = repo.changelog.node(rev)
+                    if hex(node).startswith(prefix):
+                        matches.append(node)
+                if len(matches) == 1:
+                    return matches[0]
+        raise
     if node is None:
         return
     repo.changelog.rev(node)  # make sure node isn't filtered

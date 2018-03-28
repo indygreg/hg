@@ -590,6 +590,9 @@ coreconfigitem('experimental', 'removeemptydirs',
 coreconfigitem('experimental', 'revlogv2',
     default=None,
 )
+coreconfigitem('experimental', 'revisions.disambiguatewithin',
+    default=None,
+)
 coreconfigitem('experimental', 'single-head-per-branch',
     default=False,
 )

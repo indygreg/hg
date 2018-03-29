@@ -4166,7 +4166,7 @@ def push(ui, repo, dest=None, **opts):
     repo._subtoppath = dest
     try:
         # push subrepos depth-first for coherent ordering
-        c = repo['']
+        c = repo['.']
         subs = c.substate # only repos that are committed
         for s in sorted(subs):
             result = c.sub(s).push(opts)

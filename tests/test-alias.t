@@ -605,7 +605,8 @@ help for a shell alias
   $ hg help rebate
   hg rebate [MYARGS]
   
-  shell alias for: echo this is $HG_ARGS
+  shell alias for: echo this is %HG_ARGS% (windows !)
+  shell alias for: echo this is $HG_ARGS (no-windows !)
   
   This is my alias which just prints something.
   

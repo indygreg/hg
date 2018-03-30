@@ -66,13 +66,7 @@ class basectx(object):
         if isinstance(changeid, basectx):
             return changeid
 
-        o = super(basectx, cls).__new__(cls)
-
-        o._repo = repo
-        o._rev = nullrev
-        o._node = nullid
-
-        return o
+        return super(basectx, cls).__new__(cls)
 
     def __bytes__(self):
         return short(self.node())

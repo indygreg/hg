@@ -2284,7 +2284,7 @@ class memctx(committablectx):
         self._node = None
         parents = [(p or nullid) for p in parents]
         p1, p2 = parents
-        self._parents = [changectx(self._repo, p) for p in (p1, p2)]
+        self._parents = [self._repo[p] for p in (p1, p2)]
         files = sorted(set(files))
         self._files = files
         if branch is not None:

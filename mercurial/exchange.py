@@ -17,6 +17,9 @@ from .node import (
     hex,
     nullid,
 )
+from .thirdparty import (
+    attr,
+)
 from . import (
     bookmarks as bookmod,
     bundle2,
@@ -52,6 +55,12 @@ _bundlespeccgversions = {'v1': '01',
 # Compression engines allowed in version 1. THIS SHOULD NEVER CHANGE.
 _bundlespecv1compengines = {'gzip', 'bzip2', 'none'}
 
+@attr.s
+class bundlespec(object):
+    compression = attr.ib()
+    version = attr.ib()
+    params = attr.ib()
+
 def parsebundlespec(repo, spec, strict=True, externalnames=False):
     """Parse a bundle string specification into parts.
 
@@ -75,8 +84,9 @@ def parsebundlespec(repo, spec, strict=True, externalnames=False):
     If ``externalnames`` is False (the default), the human-centric names will
     be converted to their internal representation.
 
-    Returns a 3-tuple of (compression, version, parameters). Compression will
-    be ``None`` if not in strict mode and a compression isn't defined.
+    Returns a bundlespec object of (compression, version, parameters).
+    Compression will be ``None`` if not in strict mode and a compression isn't
+    defined.
 
     An ``InvalidBundleSpecification`` is raised when the specification is
     not syntactically well formed.
@@ -172,7 +182,8 @@ def parsebundlespec(repo, spec, strict=True, externalnames=False):
         engine = util.compengines.forbundlename(compression)
         compression = engine.bundletype()[1]
         version = _bundlespeccgversions[version]
-    return compression, version, params
+
+    return bundlespec(compression, version, params)
 
 def readbundle(ui, fh, fname, vfs=None):
     header = changegroup.readexactly(fh, 4)
@@ -2140,10 +2151,10 @@ def parseclonebundlesmanifest(repo, s):
             # component of the BUNDLESPEC.
             if key == 'BUNDLESPEC':
                 try:
-                    comp, version, params = parsebundlespec(repo, value,
-                                                            externalnames=True)
-                    attrs['COMPRESSION'] = comp
-                    attrs['VERSION'] = version
+                    bundlespec = parsebundlespec(repo, value,
+                                                 externalnames=True)
+                    attrs['COMPRESSION'] = bundlespec.compression
+                    attrs['VERSION'] = bundlespec.version
                 except error.InvalidBundleSpecification:
                     pass
                 except error.UnsupportedBundleSpecification:
@@ -2168,10 +2179,12 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
         spec = entry.get('BUNDLESPEC')
         if spec:
             try:
-                comp, version, params = parsebundlespec(repo, spec, strict=True)
+                bundlespec = parsebundlespec(repo, spec, strict=True)
 
                 # If a stream clone was requested, filter out non-streamclone
                 # entries.
+                comp = bundlespec.compression
+                version = bundlespec.version
                 if streamclonerequested and (comp != 'UN' or version != 's1'):
                     repo.ui.debug('filtering %s because not a stream clone\n' %
                                   entry['URL'])

@@ -1199,12 +1199,12 @@ def bundle(ui, repo, fname, dest=None, **opts):
 
     bundletype = opts.get('type', 'bzip2').lower()
     try:
-        bcompression, cgversion, params = exchange.parsebundlespec(
-                repo, bundletype, strict=False)
+        bundlespec = exchange.parsebundlespec(repo, bundletype, strict=False)
     except error.UnsupportedBundleSpecification as e:
         raise error.Abort(pycompat.bytestr(e),
                           hint=_("see 'hg help bundlespec' for supported "
                                  "values for --type"))
+    cgversion = bundlespec.version
 
     # Packed bundles are a pseudo bundle format for now.
     if cgversion == 's1':
@@ -1246,6 +1246,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
         scmutil.nochangesfound(ui, repo, not base and outgoing.excluded)
         return 1
 
+    bcompression = bundlespec.compression
     if cgversion == '01': #bundle1
         if bcompression is None:
             bcompression = 'UN'

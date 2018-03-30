@@ -105,8 +105,8 @@ def extsetup(ui):
     revlog.REVIDX_FLAGS_ORDER.extend(flags)
 
     # Teach exchange to use changegroup 3
-    for k in exchange._bundlespeccgversions.keys():
-        exchange._bundlespeccgversions[k] = b'03'
+    for k in exchange._bundlespeccontentopts.keys():
+        exchange._bundlespeccontentopts[k]["cg.version"] = "03"
 
     # Add wrappers for addrevision, responsible to set flags depending on the
     # revision data contents.

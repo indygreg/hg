@@ -52,6 +52,30 @@ _bundlespeccgversions = {'v1': '01',
                          'bundle2': '02', #legacy
                         }
 
+# Maps bundle version with content opts to choose which part to bundle
+_bundlespeccontentopts = {
+    'v1': {
+        'changegroup': True,
+        'cg.version': '01',
+        'obsolescence': False,
+        'phases': False,
+        'tagsfnodescache': False,
+        'revbranchcache': False
+    },
+    'v2': {
+        'changegroup': True,
+        'cg.version': '02',
+        'obsolescence': False,
+        'phases': False,
+        'tagsfnodescache': True,
+        'revbranchcache': True
+    },
+    'packed1' : {
+        'cg.version': 's1'
+    }
+}
+_bundlespeccontentopts['bundle2'] = _bundlespeccontentopts['v2']
+
 # Compression engines allowed in version 1. THIS SHOULD NEVER CHANGE.
 _bundlespecv1compengines = {'gzip', 'bzip2', 'none'}
 
@@ -60,6 +84,7 @@ class bundlespec(object):
     compression = attr.ib()
     version = attr.ib()
     params = attr.ib()
+    contentopts = attr.ib()
 
 def parsebundlespec(repo, spec, strict=True, externalnames=False):
     """Parse a bundle string specification into parts.
@@ -178,12 +203,15 @@ def parsebundlespec(repo, spec, strict=True, externalnames=False):
                     _('missing support for repository features: %s') %
                       ', '.join(sorted(missingreqs)))
 
+    # Compute contentopts based on the version
+    contentopts = _bundlespeccontentopts.get(version, {}).copy()
+
     if not externalnames:
         engine = util.compengines.forbundlename(compression)
         compression = engine.bundletype()[1]
         version = _bundlespeccgversions[version]
 
-    return bundlespec(compression, version, params)
+    return bundlespec(compression, version, params, contentopts)
 
 def readbundle(ui, fh, fname, vfs=None):
     header = changegroup.readexactly(fh, 4)

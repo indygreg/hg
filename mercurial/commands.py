@@ -1204,7 +1204,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
         raise error.Abort(pycompat.bytestr(e),
                           hint=_("see 'hg help bundlespec' for supported "
                                  "values for --type"))
-    cgversion = bundlespec.version
+    cgversion = bundlespec.contentopts["cg.version"]
 
     # Packed bundles are a pseudo bundle format for now.
     if cgversion == 's1':
@@ -1267,14 +1267,15 @@ def bundle(ui, repo, fname, dest=None, **opts):
     if complevel is not None:
         compopts['level'] = complevel
 
-
-    contentopts = {'cg.version': cgversion, 'changegroup': True}
+    # Allow overriding the bundling of obsmarker in phases through
+    # configuration while we don't have a bundle version that include them
     if repo.ui.configbool('experimental', 'evolution.bundle-obsmarker'):
-        contentopts['obsolescence'] = True
+        bundlespec.contentopts['obsolescence'] = True
     if repo.ui.configbool('experimental', 'bundle-phases'):
-        contentopts['phases'] = True
+        bundlespec.contentopts['phases'] = True
+
     bundle2.writenewbundle(ui, repo, 'bundle', fname, bversion, outgoing,
-                           contentopts, compression=bcompression,
+                           bundlespec.contentopts, compression=bcompression,
                            compopts=compopts)
 
 @command('cat',

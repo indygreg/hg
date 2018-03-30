@@ -395,7 +395,8 @@ def createerrorframe(stream, requestid, msg, protocol=False, application=False):
                            flags=flags,
                            payload=msg)
 
-def createtextoutputframe(stream, requestid, atoms):
+def createtextoutputframe(stream, requestid, atoms,
+                          maxframesize=DEFAULT_MAX_FRAME_SIZE):
     """Create a text output frame to render text to people.
 
     ``atoms`` is a 3-tuple of (formatting string, args, labels).
@@ -405,15 +406,9 @@ def createtextoutputframe(stream, requestid, atoms):
     formatters to be applied at rendering time. In terms of the ``ui``
     class, each atom corresponds to a ``ui.write()``.
     """
-    bytesleft = DEFAULT_MAX_FRAME_SIZE
-    atomchunks = []
+    atomdicts = []
 
     for (formatting, args, labels) in atoms:
-        if len(args) > 255:
-            raise ValueError('cannot use more than 255 formatting arguments')
-        if len(labels) > 255:
-            raise ValueError('cannot use more than 255 labels')
-
         # TODO look for localstr, other types here?
 
         if not isinstance(formatting, bytes):
@@ -425,8 +420,8 @@ def createtextoutputframe(stream, requestid, atoms):
             if not isinstance(label, bytes):
                 raise ValueError('must use bytes for labels')
 
-        # Formatting string must be UTF-8.
-        formatting = formatting.decode(r'utf-8', r'replace').encode(r'utf-8')
+        # Formatting string must be ASCII.
+        formatting = formatting.decode(r'ascii', r'replace').encode(r'ascii')
 
         # Arguments must be UTF-8.
         args = [a.decode(r'utf-8', r'replace').encode(r'utf-8') for a in args]
@@ -435,36 +430,23 @@ def createtextoutputframe(stream, requestid, atoms):
         labels = [l.decode(r'ascii', r'strict').encode(r'ascii')
                   for l in labels]
 
-        if len(formatting) > 65535:
-            raise ValueError('formatting string cannot be longer than 64k')
+        atom = {b'msg': formatting}
+        if args:
+            atom[b'args'] = args
+        if labels:
+            atom[b'labels'] = labels
 
-        if any(len(a) > 65535 for a in args):
-            raise ValueError('argument string cannot be longer than 64k')
+        atomdicts.append(atom)
 
-        if any(len(l) > 255 for l in labels):
-            raise ValueError('label string cannot be longer than 255 bytes')
+    payload = cbor.dumps(atomdicts, canonical=True)
 
-        chunks = [
-            struct.pack(r'<H', len(formatting)),
-            struct.pack(r'<BB', len(labels), len(args)),
-            struct.pack(r'<' + r'B' * len(labels), *map(len, labels)),
-            struct.pack(r'<' + r'H' * len(args), *map(len, args)),
-        ]
-        chunks.append(formatting)
-        chunks.extend(labels)
-        chunks.extend(args)
-
-        atom = b''.join(chunks)
-        atomchunks.append(atom)
-        bytesleft -= len(atom)
-
-    if bytesleft < 0:
+    if len(payload) > maxframesize:
         raise ValueError('cannot encode data in a single frame')
 
     yield stream.makeframe(requestid=requestid,
                            typeid=FRAME_TYPE_TEXT_OUTPUT,
                            flags=0,
-                           payload=b''.join(atomchunks))
+                           payload=payload)
 
 class stream(object):
     """Represents a logical unidirectional series of frames."""

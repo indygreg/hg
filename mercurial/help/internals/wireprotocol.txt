@@ -699,26 +699,16 @@ wire protocol reserve the right to allow clients to opt in to receiving
 formatting strings with additional formatters, hence why ``%%`` is
 required to represent the literal ``%``.
 
-The raw frame consists of a series of data structures representing
-textual atoms to print. Each atom begins with a struct defining the
-size of the data that follows:
+The frame payload consists of a CBOR array of CBOR maps. Each map
+defines an *atom* of text data to print. Each *atom* has the following
+bytestring keys:
 
-* A 16-bit little endian unsigned integer denoting the length of the
-  formatting string.
-* An 8-bit unsigned integer denoting the number of label strings
-  that follow.
-* An 8-bit unsigned integer denoting the number of formatting string
-  arguments strings that follow.
-* An array of 8-bit unsigned integers denoting the lengths of
-  *labels* data.
-* An array of 16-bit unsigned integers denoting the lengths of
-  formatting strings.
-* The formatting string, encoded as UTF-8.
-* 0 or more ASCII strings defining labels to apply to this atom.
-* 0 or more UTF-8 strings that will be used as arguments to the
-  formatting string.
-
-TODO use ASCII for formatting string.
+msg
+   (bytestring) The formatting string. Content MUST be ASCII.
+args (optional)
+   Array of bytestrings defining arguments to the formatting string.
+labels (optional)
+   Array of bytestrings defining labels to apply to this atom.
 
 All data to be printed MUST be encoded into a single frame: this frame
 does not support spanning data across multiple frames.

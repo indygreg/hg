@@ -13,6 +13,11 @@ diff programs are called with a configurable set of options and two
 non-option arguments: paths to directories containing snapshots of
 files to compare.
 
+If there is more than one file being compared and the "child" revision
+is the working directory, any modifications made in the external diff
+program will be copied back to the working directory from the temporary
+directory.
+
 The extdiff extension also allows you to configure new diff commands, so
 you do not need to type :hg:`extdiff -p kdiff3` always. ::
 

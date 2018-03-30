@@ -782,6 +782,8 @@ class localrepository(object):
     def __getitem__(self, changeid):
         if changeid is None:
             return context.workingctx(self)
+        if isinstance(changeid, context.basectx):
+            return changeid
         if isinstance(changeid, slice):
             # wdirrev isn't contiguous so the slice shouldn't include it
             return [context.changectx(self, i)

@@ -62,11 +62,6 @@ class basectx(object):
                 be committed,
     memctx: a context that represents changes in-memory and can also
             be committed."""
-    def __new__(cls, repo, changeid='', *args, **kwargs):
-        if isinstance(changeid, basectx):
-            return changeid
-
-        return super(basectx, cls).__new__(cls)
 
     def __bytes__(self):
         return short(self.node())
@@ -411,11 +406,6 @@ class changectx(basectx):
     the repo."""
     def __init__(self, repo, changeid='.'):
         """changeid is a revision number, node, or tag"""
-
-        # since basectx.__new__ already took care of copying the object, we
-        # don't need to do anything in __init__, so we just exit here
-        if isinstance(changeid, basectx):
-            return
 
         if changeid == '':
             changeid = '.'
@@ -2486,9 +2476,6 @@ class metadataonlyctx(committablectx):
     dateutil.parsedate() and defaults to current date, extra is a dictionary of
     metadata or is left empty.
     """
-    def __new__(cls, repo, originalctx, *args, **kwargs):
-        return super(metadataonlyctx, cls).__new__(cls, repo)
-
     def __init__(self, repo, originalctx, parents=None, text=None, user=None,
                  date=None, extra=None, editor=False):
         if text is None:

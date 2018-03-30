@@ -71,7 +71,7 @@ def uisetup(ui):
 
 def reposetup(ui, repo):
     """Wraps local repositories with narrow repo support."""
-    if not isinstance(repo, localrepo.localrepository):
+    if not repo.local():
         return
 
     narrowrepo.wraprepo(repo)

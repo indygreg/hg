@@ -104,6 +104,7 @@ Help text for fix.
   
   options ([+] can be repeated):
   
+      --all          fix all non-public non-obsolete revisions
       --base REV [+] revisions to diff against (overrides automatic selection,
                      and applies to every revision being fixed)
    -r --rev REV [+]  revisions to fix

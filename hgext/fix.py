@@ -95,7 +95,8 @@ for key in FIXER_ATTRS:
 configitem('fix', 'maxfilesize', default='2MB')
 
 @command('fix',
-    [('', 'base', [], _('revisions to diff against (overrides automatic '
+    [('', 'all', False, _('fix all non-public non-obsolete revisions')),
+     ('', 'base', [], _('revisions to diff against (overrides automatic '
                         'selection, and applies to every revision being '
                         'fixed)'), _('REV')),
      ('r', 'rev', [], _('revisions to fix'), _('REV')),
@@ -125,6 +126,11 @@ def fix(ui, repo, *pats, **opts):
     revisions are not forgotten in later ones. The --base flag can be used to
     override this default behavior, though it is not usually desirable to do so.
     """
+    if opts['all']:
+        if opts['rev']:
+            raise error.Abort(_('cannot specify both "--rev" and "--all"'))
+        opts['rev'] = ['not public() and not obsolete()']
+        opts['working_dir'] = True
     with repo.wlock(), repo.lock():
         revstofix = getrevstofix(ui, repo, opts)
         basectxs = getbasectxs(repo, opts, revstofix)

@@ -266,3 +266,152 @@ Change A was never a baserev because none of its children were to be fixed.
 
   $ cd ..
 
+The --all flag should fix anything that wouldn't cause a problem if you fixed
+it, including the working copy. Obsolete revisions are not fixed because that
+could cause divergence. Public revisions would cause an abort because they are
+immutable. We can fix orphans because their successors are still just orphans
+of the original obsolete parent. When obsolesence is off, we're just fixing and
+replacing anything that isn't public.
+
+  $ hg init fixall
+  $ cd fixall
+
+#if obsstore-on
+  $ printf "one\n" > foo.whole
+  $ hg commit -Aqm "first"
+  $ hg phase --public
+  $ hg tag --local root
+  $ printf "two\n" > foo.whole
+  $ hg commit -m "second"
+  $ printf "three\n" > foo.whole
+  $ hg commit -m "third" --secret
+  $ hg tag --local secret
+  $ hg checkout root
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ printf "four\n" > foo.whole
+  $ hg commit -m "fourth"
+  created new head
+  $ printf "five\n" > foo.whole
+  $ hg commit -m "fifth"
+  $ hg tag --local replaced
+  $ printf "six\n" > foo.whole
+  $ hg commit -m "sixth"
+  $ hg checkout replaced
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ printf "seven\n" > foo.whole
+  $ hg commit --amend
+  1 new orphan changesets
+  $ hg checkout secret
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ printf "uncommitted\n" > foo.whole
+
+  $ hg log --graph --template '{rev} {desc} {phase}\n'
+  o  6 fifth draft
+  |
+  | *  5 sixth draft
+  | |
+  | x  4 fifth draft
+  |/
+  o  3 fourth draft
+  |
+  | @  2 third secret
+  | |
+  | o  1 second draft
+  |/
+  o  0 first public
+  
+
+  $ hg fix --all
+  1 new orphan changesets
+
+  $ hg log --graph --template '{rev} {desc}\n' -r 'sort(all(), topo)' --hidden
+  o  11 fifth
+  |
+  o  9 fourth
+  |
+  | @  8 third
+  | |
+  | o  7 second
+  |/
+  | *  10 sixth
+  | |
+  | | x  5 sixth
+  | |/
+  | x  4 fifth
+  | |
+  | | x  6 fifth
+  | |/
+  | x  3 fourth
+  |/
+  | x  2 third
+  | |
+  | x  1 second
+  |/
+  o  0 first
+  
+
+  $ hg cat -r 7 foo.whole
+  TWO
+  $ hg cat -r 8 foo.whole
+  THREE
+  $ hg cat -r 9 foo.whole
+  FOUR
+  $ hg cat -r 10 foo.whole
+  SIX
+  $ hg cat -r 11 foo.whole
+  SEVEN
+  $ cat foo.whole
+  UNCOMMITTED
+#else
+  $ printf "one\n" > foo.whole
+  $ hg commit -Aqm "first"
+  $ hg phase --public
+  $ hg tag --local root
+  $ printf "two\n" > foo.whole
+  $ hg commit -m "second"
+  $ printf "three\n" > foo.whole
+  $ hg commit -m "third" --secret
+  $ hg tag --local secret
+  $ hg checkout root
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ printf "four\n" > foo.whole
+  $ hg commit -m "fourth"
+  created new head
+  $ printf "uncommitted\n" > foo.whole
+
+  $ hg log --graph --template '{rev} {desc} {phase}\n'
+  @  3 fourth draft
+  |
+  | o  2 third secret
+  | |
+  | o  1 second draft
+  |/
+  o  0 first public
+  
+
+  $ hg fix --all
+  saved backup bundle to * (glob)
+
+  $ hg log --graph --template '{rev} {desc} {phase}\n'
+  @  3 fourth draft
+  |
+  | o  2 third secret
+  | |
+  | o  1 second draft
+  |/
+  o  0 first public
+  
+  $ hg cat -r 0 foo.whole
+  one
+  $ hg cat -r 1 foo.whole
+  TWO
+  $ hg cat -r 2 foo.whole
+  THREE
+  $ hg cat -r 3 foo.whole
+  FOUR
+  $ cat foo.whole
+  UNCOMMITTED
+#endif
+
+  $ cd ..
+

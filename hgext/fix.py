@@ -53,7 +53,6 @@ import itertools
 import os
 import re
 import subprocess
-import sys
 
 from mercurial.i18n import _
 from mercurial.node import nullrev
@@ -64,11 +63,9 @@ from mercurial import (
     context,
     copies,
     error,
-    match,
     mdiff,
     merge,
     obsolete,
-    posix,
     registrar,
     scmutil,
     util,

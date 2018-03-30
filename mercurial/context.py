@@ -63,6 +63,9 @@ class basectx(object):
     memctx: a context that represents changes in-memory and can also
             be committed."""
 
+    def __init__(self, repo):
+        self._repo = repo
+
     def __bytes__(self):
         return short(self.node())
 
@@ -406,10 +409,10 @@ class changectx(basectx):
     the repo."""
     def __init__(self, repo, changeid='.'):
         """changeid is a revision number, node, or tag"""
+        super(changectx, self).__init__(repo)
 
         if changeid == '':
             changeid = '.'
-        self._repo = repo
 
         try:
             if isinstance(changeid, int):
@@ -1134,7 +1137,7 @@ class committablectx(basectx):
     wants the ability to commit, e.g. workingctx or memctx."""
     def __init__(self, repo, text="", user=None, date=None, extra=None,
                  changes=None):
-        self._repo = repo
+        super(committablectx, self).__init__(repo)
         self._rev = None
         self._node = None
         self._text = text
@@ -1818,7 +1821,6 @@ class overlayworkingctx(committablectx):
 
     def __init__(self, repo):
         super(overlayworkingctx, self).__init__(repo)
-        self._repo = repo
         self.clean()
 
     def setbase(self, wrappedctx):

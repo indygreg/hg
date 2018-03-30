@@ -124,7 +124,6 @@ from mercurial import (
 from . import (
     bundleparts,
     common,
-    infinitepushcommands,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -160,9 +159,6 @@ configitem('scratchbranch', 'storepath',
 configitem('infinitepush', 'branchpattern',
     default='',
 )
-configitem('infinitepush', 'metadatafilelimit',
-    default=100,
-)
 configitem('experimental', 'server-bundlestore-bookmark',
     default='',
 )
@@ -179,7 +175,6 @@ configscratchpush = 'infinitepush-scratchpush'
 confignonforwardmove = 'non-forward-move'
 
 scratchbranchparttype = bundleparts.scratchbranchparttype
-cmdtable = infinitepushcommands.cmdtable
 revsetpredicate = registrar.revsetpredicate()
 templatekeyword = registrar.templatekeyword()
 _scratchbranchmatcher = lambda x: False

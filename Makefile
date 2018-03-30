@@ -124,7 +124,7 @@ check-code:
 
 format-c:
 	clang-format --style file -i \
-	  `hg files 'set:(**.c or **.cc or **.h) and not "listfile:contrib/clang-format-blacklist"'`
+	  `hg files 'set:(**.c or **.cc or **.h) and not "listfile:contrib/clang-format-ignorelist"'`
 
 update-pot: i18n/hg.pot
 

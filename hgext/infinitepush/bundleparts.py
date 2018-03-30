@@ -22,8 +22,7 @@ isremotebooksenabled = common.isremotebooksenabled
 
 scratchbranchparttype = 'b2x:infinitepush'
 
-def getscratchbranchparts(repo, peer, outgoing, confignonforwardmove,
-                          ui, bookmark):
+def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
     if not outgoing.missing:
         raise error.Abort(_('no commits to push'))
 
@@ -49,8 +48,6 @@ def getscratchbranchparts(repo, peer, outgoing, confignonforwardmove,
         params['bookprevnode'] = ''
         if bookmark in repo:
             params['bookprevnode'] = repo[bookmark].hex()
-    if confignonforwardmove:
-        params['force'] = '1'
 
     # Do not send pushback bundle2 part with bookmarks if remotenames extension
     # is enabled. It will be handled manually in `_push()`

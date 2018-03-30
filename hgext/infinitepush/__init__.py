@@ -164,14 +164,10 @@ configitem('experimental', 'server-bundlestore-bookmark',
 configitem('experimental', 'infinitepush-scratchpush',
     default=False,
 )
-configitem('experimental', 'non-forward-move',
-    default=False,
-)
 
 experimental = 'experimental'
 configbookmark = 'server-bundlestore-bookmark'
 configscratchpush = 'infinitepush-scratchpush'
-confignonforwardmove = 'non-forward-move'
 
 scratchbranchparttype = bundleparts.scratchbranchparttype
 revsetpredicate = registrar.revsetpredicate()
@@ -300,11 +296,6 @@ def serverextsetup(ui):
 
 def clientextsetup(ui):
     entry = extensions.wrapcommand(commands.table, 'push', _push)
-
-    if not any(a for a in entry[1] if a[1] == 'non-forward-move'):
-        entry[1].append(('', 'non-forward-move', None,
-                         _('allows moving a remote bookmark to an '
-                           'arbitrary place')))
 
     entry[1].append(
         ('', 'bundle-store', None,
@@ -710,8 +701,6 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
             # containing `pushkey` part to update bookmarks)
             ui.setconfig(experimental, 'bundle2.pushback', True)
 
-        ui.setconfig(experimental, confignonforwardmove,
-                     opts.get('non_forward_move'), '--non-forward-move')
         if scratchpush:
             # this is an infinitepush, we don't want the bookmark to be applied
             # rather that should be stored in the bundlestore
@@ -804,12 +793,9 @@ def partgen(pushop, bundler):
     # code path.
     bundler.addparam("infinitepush", "True")
 
-    nonforwardmove = pushop.force or pushop.ui.configbool(experimental,
-                                                          confignonforwardmove)
     scratchparts = bundleparts.getscratchbranchparts(pushop.repo,
                                                      pushop.remote,
                                                      pushop.outgoing,
-                                                     nonforwardmove,
                                                      pushop.ui,
                                                      bookmark)
 
@@ -836,12 +822,7 @@ def _getrevs(bundle, oldnode, force, bookmark):
     if oldnode in bundle and list(bundle.set('bundle() & %s::', oldnode)):
         return revs
 
-    # Forced non-fast forward update
-    if force:
-        return revs
-    else:
-        raise error.Abort(_('non-forward push'),
-                          hint=_('use --non-forward-move to override'))
+    return revs
 
 @contextlib.contextmanager
 def logservicecall(logger, service, **kwargs):

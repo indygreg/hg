@@ -640,12 +640,9 @@ ClassProvidesBase = ClassProvidesBaseFallback
 
 # Try to get C base:
 try:
-    from . import _zope_interface_coptimizations
+    from ._zope_interface_coptimizations import ClassProvidesBase
 except ImportError:
     pass
-else:
-    from ._zope_interface_coptimizations import ClassProvidesBase
-
 
 class ClassProvides(Declaration, ClassProvidesBase):
     """Special descriptor for class __provides__
@@ -917,15 +914,13 @@ def _normalizeargs(sequence, output = None):
 _empty = Declaration()
 
 try:
-    from . import _zope_interface_coptimizations
+    from ._zope_interface_coptimizations import (
+        getObjectSpecification,
+        implementedBy,
+        ObjectSpecificationDescriptor,
+        providedBy,
+    )
 except ImportError:
     pass
-else:
-    from ._zope_interface_coptimizations import implementedBy
-    from ._zope_interface_coptimizations import providedBy
-    from ._zope_interface_coptimizations import (
-        getObjectSpecification)
-    from ._zope_interface_coptimizations import (
-        ObjectSpecificationDescriptor)
 
 objectSpecificationDescriptor = ObjectSpecificationDescriptor()

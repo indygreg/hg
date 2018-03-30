@@ -67,3 +67,4 @@ mercurial/thirdparty/xdiff/xprepare.h
 mercurial/thirdparty/xdiff/xtypes.h
 mercurial/thirdparty/xdiff/xutils.c
 mercurial/thirdparty/xdiff/xutils.h
+mercurial/thirdparty/zope/interface/_zope_interface_coptimizations.c

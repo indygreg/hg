@@ -1086,10 +1086,11 @@ class localrepository(object):
                     if f not in pctx and s not in pctx:
                         self.dirstate.copy(None, f)
 
-    def filectx(self, path, changeid=None, fileid=None):
+    def filectx(self, path, changeid=None, fileid=None, changectx=None):
         """changeid can be a changeset revision, node, or tag.
            fileid can be a file revision or node."""
-        return context.filectx(self, path, changeid, fileid)
+        return context.filectx(self, path, changeid, fileid,
+                               changectx=changectx)
 
     def getcwd(self):
         return self.dirstate.getcwd()

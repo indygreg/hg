@@ -561,7 +561,7 @@ class mergestate(object):
         fcd = self._filectxorabsent(hash, wctx, dfile)
         fco = self._filectxorabsent(onode, octx, ofile)
         # TODO: move this to filectxorabsent
-        fca = self._repo.filectx(afile, fileid=anode, changeid=actx)
+        fca = self._repo.filectx(afile, fileid=anode, changectx=actx)
         # "premerge" x flags
         flo = fco.flags()
         fla = fca.flags()

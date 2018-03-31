@@ -202,9 +202,9 @@ def parsemailmap(mailmapcontent):
         if line.lstrip().startswith('#') or any(c not in line for c in '<>@'):
             continue
 
-        # name, email hold the parsed emails and names for each line
+        # names, emails hold the parsed emails and names for each line
         # name_builder holds the words in a persons name
-        name, email = [], []
+        names, emails = [], []
         namebuilder = []
 
         for element in line.split():
@@ -215,15 +215,15 @@ def parsemailmap(mailmapcontent):
             elif element.startswith('<') and element.endswith('>'):
                 # We have found an email.
                 # Parse it, and finalize any names from earlier
-                email.append(element[1:-1])  # Slice off the "<>"
+                emails.append(element[1:-1])  # Slice off the "<>"
 
                 if namebuilder:
-                    name.append(' '.join(namebuilder))
+                    names.append(' '.join(namebuilder))
                     namebuilder = []
 
                 # Break if we have found a second email, any other
                 # data does not fit the spec for .mailmap
-                if len(email) > 1:
+                if len(emails) > 1:
                     break
 
             else:
@@ -231,13 +231,13 @@ def parsemailmap(mailmapcontent):
                 namebuilder.append(element)
 
         mailmapkey = mailmapping(
-            email=email[-1],
-            name=name[-1] if len(name) == 2 else None,
+            email=emails[-1],
+            name=names[-1] if len(names) == 2 else None,
         )
 
         mailmap[mailmapkey] = mailmapping(
-            email=email[0],
-            name=name[0] if name else None,
+            email=emails[0],
+            name=names[0] if names else None,
         )
 
     return mailmap

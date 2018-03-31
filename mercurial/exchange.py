@@ -1595,7 +1595,8 @@ def _pullbundle2(pullop):
     _pullbundle2extraprepare(pullop, kwargs)
     bundle = pullop.remote.getbundle('pull', **pycompat.strkwargs(kwargs))
     try:
-        op = bundle2.bundleoperation(pullop.repo, pullop.gettransaction)
+        op = bundle2.bundleoperation(pullop.repo, pullop.gettransaction,
+                                     source='pull')
         op.modes['bookmarks'] = 'records'
         bundle2.processbundle(pullop.repo, bundle, op=op)
     except bundle2.AbortFromPart as exc:
@@ -2052,7 +2053,8 @@ def unbundle(repo, cg, heads, source, url):
                     gettransaction()
 
                 op = bundle2.bundleoperation(repo, gettransaction,
-                                             captureoutput=captureoutput)
+                                             captureoutput=captureoutput,
+                                             source='push')
                 try:
                     op = bundle2.processbundle(repo, cg, op=op)
                 finally:

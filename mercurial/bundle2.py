@@ -353,7 +353,7 @@ def applybundle(repo, unbundler, tr, source=None, url=None, **kwargs):
         return processbundle(repo, unbundler, lambda: tr, source=source)
     else:
         # the transactiongetter won't be used, but we might as well set it
-        op = bundleoperation(repo, lambda: tr)
+        op = bundleoperation(repo, lambda: tr, source=source)
         _processchangegroup(op, unbundler, tr, source, url, **kwargs)
         return op
 
@@ -441,7 +441,7 @@ def processbundle(repo, unbundler, transactiongetter=None, op=None, source=''):
     if op is None:
         if transactiongetter is None:
             transactiongetter = _notransaction
-        op = bundleoperation(repo, transactiongetter)
+        op = bundleoperation(repo, transactiongetter, source=source)
     # todo:
     # - replace this is a init function soon.
     # - exception catching

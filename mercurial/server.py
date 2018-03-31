@@ -55,8 +55,8 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
             fd = os.open(postexecargs['unlink'],
                          os.O_WRONLY | os.O_APPEND | os.O_BINARY)
             try:
-                os.dup2(fd, 1)
-                os.dup2(fd, 2)
+                os.dup2(fd, procutil.stdout.fileno())
+                os.dup2(fd, procutil.stderr.fileno())
             finally:
                 os.close(fd)
 
@@ -94,7 +94,7 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                 # If the daemonized process managed to write out an error msg,
                 # report it.
                 if pycompat.iswindows and os.path.exists(lockpath):
-                    with open(lockpath) as log:
+                    with open(lockpath, 'rb') as log:
                         for line in log:
                             procutil.stderr.write(line)
                 raise error.Abort(_('child process failed to start'))
@@ -129,12 +129,14 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
         if logfile:
             logfilefd = os.open(logfile, os.O_RDWR | os.O_CREAT | os.O_APPEND,
                                 0o666)
-        os.dup2(nullfd, 0)
-        os.dup2(logfilefd, 1)
-        os.dup2(logfilefd, 2)
-        if nullfd not in (0, 1, 2):
+        os.dup2(nullfd, procutil.stdin.fileno())
+        os.dup2(logfilefd, procutil.stdout.fileno())
+        os.dup2(logfilefd, procutil.stderr.fileno())
+        stdio = (procutil.stdin.fileno(), procutil.stdout.fileno(),
+                 procutil.stderr.fileno())
+        if nullfd not in stdio:
             os.close(nullfd)
-        if logfile and logfilefd not in (0, 1, 2):
+        if logfile and logfilefd not in stdio:
             os.close(logfilefd)
 
         # Only unlink after redirecting stdout/stderr, so Windows doesn't

@@ -300,7 +300,7 @@ def mapname(mailmap, author):
     if not isauthorwellformed(author) or not mailmap:
         return author
 
-    # Turn the user name into a mailmaptup
+    # Turn the user name into a mailmapping
     commit = mailmapping(name=person(author), email=email(author))
 
     try:

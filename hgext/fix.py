@@ -303,33 +303,34 @@ def difflineranges(content1, content2):
     present in content1. Relies on mdiff's idea of where the line endings are in
     the string.
 
-    >>> lines = lambda s: '\\n'.join([c for c in s])
+    >>> from mercurial import pycompat
+    >>> lines = lambda s: b'\\n'.join([c for c in pycompat.iterbytestr(s)])
     >>> difflineranges2 = lambda a, b: difflineranges(lines(a), lines(b))
-    >>> difflineranges2('', '')
+    >>> difflineranges2(b'', b'')
     []
-    >>> difflineranges2('a', '')
+    >>> difflineranges2(b'a', b'')
     []
-    >>> difflineranges2('', 'A')
+    >>> difflineranges2(b'', b'A')
     [(1, 1)]
-    >>> difflineranges2('a', 'a')
+    >>> difflineranges2(b'a', b'a')
     []
-    >>> difflineranges2('a', 'A')
+    >>> difflineranges2(b'a', b'A')
     [(1, 1)]
-    >>> difflineranges2('ab', '')
+    >>> difflineranges2(b'ab', b'')
     []
-    >>> difflineranges2('', 'AB')
+    >>> difflineranges2(b'', b'AB')
     [(1, 2)]
-    >>> difflineranges2('abc', 'ac')
+    >>> difflineranges2(b'abc', b'ac')
     []
-    >>> difflineranges2('ab', 'aCb')
+    >>> difflineranges2(b'ab', b'aCb')
     [(2, 2)]
-    >>> difflineranges2('abc', 'aBc')
+    >>> difflineranges2(b'abc', b'aBc')
     [(2, 2)]
-    >>> difflineranges2('ab', 'AB')
+    >>> difflineranges2(b'ab', b'AB')
     [(1, 2)]
-    >>> difflineranges2('abcde', 'aBcDe')
+    >>> difflineranges2(b'abcde', b'aBcDe')
     [(2, 2), (4, 4)]
-    >>> difflineranges2('abcde', 'aBCDe')
+    >>> difflineranges2(b'abcde', b'aBCDe')
     [(2, 4)]
     """
     ranges = []

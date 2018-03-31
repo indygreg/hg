@@ -419,8 +419,6 @@ class changectx(basectx):
                 self._node = repo.changelog.node(changeid)
                 self._rev = changeid
                 return
-            if not pycompat.ispy3 and isinstance(changeid, long):
-                changeid = "%d" % changeid
             if changeid == 'null':
                 self._node = nullid
                 self._rev = nullrev

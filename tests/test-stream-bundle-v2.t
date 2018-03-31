@@ -70,6 +70,8 @@ Test that we can apply the bundle as a stream clone bundle
   bundle2-input-part: "stream2" (params: 3 mandatory) supported
   applying stream bundle
   11 files to transfer, 1.65 KB of data
+  starting 4 threads for background file closing (?)
+  starting 4 threads for background file closing (?)
   adding [s] data/A.i (66 bytes)
   adding [s] data/B.i (66 bytes)
   adding [s] data/C.i (66 bytes)
@@ -122,6 +124,8 @@ Test that we can apply the bundle as a stream clone bundle
   bundle2-input-part: "stream2" (params: 3 mandatory) supported
   applying stream bundle
   11 files to transfer, 1.65 KB of data
+  starting 4 threads for background file closing (?)
+  starting 4 threads for background file closing (?)
   adding [s] data/A.i (66 bytes)
   adding [s] data/B.i (66 bytes)
   adding [s] data/C.i (66 bytes)

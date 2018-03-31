@@ -32,11 +32,7 @@ wireprototypes.TRANSPORTS['dummyproto'] = {
 class clientpeer(wireproto.wirepeer):
     def __init__(self, serverrepo, ui):
         self.serverrepo = serverrepo
-        self._ui = ui
-
-    @property
-    def ui(self):
-        return self._ui
+        self.ui = ui
 
     def url(self):
         return b'test'

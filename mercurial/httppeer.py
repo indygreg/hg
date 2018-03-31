@@ -135,7 +135,7 @@ class _multifile(object):
 
 class httppeer(wireproto.wirepeer):
     def __init__(self, ui, path, url, opener):
-        self._ui = ui
+        self.ui = ui
         self._path = path
         self._url = url
         self._caps = None
@@ -150,9 +150,9 @@ class httppeer(wireproto.wirepeer):
             getattr(h, "close_all", lambda: None)()
 
     def _openurl(self, req):
-        if (self._ui.debugflag
-            and self._ui.configbool('devel', 'debug.peer-request')):
-            dbg = self._ui.debug
+        if (self.ui.debugflag
+            and self.ui.configbool('devel', 'debug.peer-request')):
+            dbg = self.ui.debug
             line = 'devel-peer-request: %s\n'
             dbg(line % '%s %s' % (req.get_method(), req.get_full_url()))
             hgargssize = None
@@ -179,16 +179,12 @@ class httppeer(wireproto.wirepeer):
             start = util.timer()
 
         ret = self._urlopener.open(req)
-        if self._ui.configbool('devel', 'debug.peer-request'):
+        if self.ui.configbool('devel', 'debug.peer-request'):
             dbg(line % '  finished in %.4f seconds (%s)'
                 % (util.timer() - start, ret.code))
         return ret
 
     # Begin of ipeerconnection interface.
-
-    @util.propertycache
-    def ui(self):
-        return self._ui
 
     def url(self):
         return self._path

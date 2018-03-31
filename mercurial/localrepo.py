@@ -162,14 +162,10 @@ class localpeer(repository.peer):
         if caps is None:
             caps = moderncaps.copy()
         self._repo = repo.filtered('served')
-        self._ui = repo.ui
+        self.ui = repo.ui
         self._caps = repo._restrictcapabilities(caps)
 
     # Begin of _basepeer interface.
-
-    @util.propertycache
-    def ui(self):
-        return self._ui
 
     def url(self):
         return self._repo.url()

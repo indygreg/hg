@@ -354,7 +354,7 @@ class sshv1peer(wireproto.wirepeer):
         stderr and to forward its output.
         """
         self._url = url
-        self._ui = ui
+        self.ui = ui
         # self._subprocess is unused. Keeping a handle on the process
         # holds a reference and prevents it from being garbage collected.
         self._subprocess = proc
@@ -378,10 +378,6 @@ class sshv1peer(wireproto.wirepeer):
     }
 
     # Begin of ipeerconnection interface.
-
-    @util.propertycache
-    def ui(self):
-        return self._ui
 
     def url(self):
         return self._url

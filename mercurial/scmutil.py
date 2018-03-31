@@ -736,14 +736,12 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
             if tostrip:
                 repair.delayedstrip(repo.ui, repo, tostrip, operation)
 
-def addremove(repo, matcher, prefix, opts=None, dry_run=None, similarity=None):
+def addremove(repo, matcher, prefix, opts=None):
     if opts is None:
         opts = {}
     m = matcher
-    if dry_run is None:
-        dry_run = opts.get('dry_run')
-    if similarity is None:
-        similarity = float(opts.get('similarity') or 0)
+    dry_run = opts.get('dry_run')
+    similarity = float(opts.get('similarity') or 0)
 
     ret = 0
     join = lambda f: os.path.join(prefix, f)
@@ -754,7 +752,7 @@ def addremove(repo, matcher, prefix, opts=None, dry_run=None, similarity=None):
         if opts.get('subrepos') or m.exact(subpath) or any(submatch.files()):
             sub = wctx.sub(subpath)
             try:
-                if sub.addremove(submatch, prefix, opts, dry_run, similarity):
+                if sub.addremove(submatch, prefix, opts):
                     ret = 1
             except error.LookupError:
                 repo.ui.status(_("skipping missing subrepository: %s\n")

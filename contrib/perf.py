@@ -423,7 +423,8 @@ def perfaddremove(ui, repo, **opts):
         oldquiet = repo.ui.quiet
         repo.ui.quiet = True
         matcher = scmutil.match(repo[None])
-        timer(lambda: scmutil.addremove(repo, matcher, "", dry_run=True))
+        opts['dry_run'] = True
+        timer(lambda: scmutil.addremove(repo, matcher, "", opts))
     finally:
         repo.ui.quiet = oldquiet
         fm.end()

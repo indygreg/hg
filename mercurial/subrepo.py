@@ -287,7 +287,7 @@ class abstractsubrepo(object):
     def add(self, ui, match, prefix, explicitonly, **opts):
         return []
 
-    def addremove(self, matcher, prefix, opts, dry_run, similarity):
+    def addremove(self, matcher, prefix, opts):
         self.ui.warn("%s: %s" % (prefix, _("addremove is not supported")))
         return 1
 
@@ -510,15 +510,14 @@ class hgsubrepo(abstractsubrepo):
                            explicitonly, **opts)
 
     @annotatesubrepoerror
-    def addremove(self, m, prefix, opts, dry_run, similarity):
+    def addremove(self, m, prefix, opts):
         # In the same way as sub directories are processed, once in a subrepo,
         # always entry any of its subrepos.  Don't corrupt the options that will
         # be used to process sibling subrepos however.
         opts = copy.copy(opts)
         opts['subrepos'] = True
         return scmutil.addremove(self._repo, m,
-                                 self.wvfs.reljoin(prefix, self._path), opts,
-                                 dry_run, similarity)
+                                 self.wvfs.reljoin(prefix, self._path), opts)
 
     @annotatesubrepoerror
     def cat(self, match, fm, fntemplate, prefix, **opts):

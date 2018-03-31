@@ -253,8 +253,9 @@ def addremove(ui, repo, *pats, **opts):
         raise error.Abort(_('similarity must be a number'))
     if sim < 0 or sim > 100:
         raise error.Abort(_('similarity must be between 0 and 100'))
+    opts['similarity'] = sim / 100.0
     matcher = scmutil.match(repo[None], pats, opts)
-    return scmutil.addremove(repo, matcher, "", opts, similarity=sim / 100.0)
+    return scmutil.addremove(repo, matcher, "", opts)
 
 @command('^annotate|blame',
     [('r', 'rev', '', _('annotate the specified revision'), _('REV')),

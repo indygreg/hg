@@ -31,6 +31,9 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
     if orig(rctx, req, res, checkperm):
         return True
 
+    if not rctx.repo.ui.configbool('experimental', 'lfs.serve'):
+        return False
+
     if not req.dispatchpath:
         return False
 

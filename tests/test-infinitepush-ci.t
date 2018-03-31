@@ -23,6 +23,7 @@ Setup
 
   $ cd ..
   $ hg clone repo client -q
+  $ hg clone repo client2 -q
   $ cd client
 
 Pushing a new commit from the client to the server
@@ -171,6 +172,43 @@ Checking if `hg pull` pulls something or `hg incoming` shows something
   pulling from $TESTTMP/repo
   searching for changes
   no changes found
+
+Pulling from second client to test `hg pull -r <rev>`
+------------------------------------------------------
+
+Pulling the revision which is applied
+
+  $ cd ../client2
+  $ hg pull -r 6cb0989601f1
+  pulling from $TESTTMP/repo
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 6cb0989601f1
+  (run 'hg update' to get a working copy)
+  $ hg glog
+  o  1:6cb0989601f1 added a
+  |  public
+  @  0:67145f466344 initialcommit
+     public
+
+Pulling the revision which is in bundlestore
+XXX: we should support pulling revisions from bundlestore without client side
+wrapping
+
+  $ hg pull -r b4e4bce660512ad3e71189e14588a70ac8e31fef
+  pulling from $TESTTMP/repo
+  abort: unknown revision 'b4e4bce660512ad3e71189e14588a70ac8e31fef'!
+  [255]
+  $ hg glog
+  o  1:6cb0989601f1 added a
+  |  public
+  @  0:67145f466344 initialcommit
+     public
+
+  $ cd ../client
 
 Checking storage of phase information with the bundle on bundlestore
 ---------------------------------------------------------------------

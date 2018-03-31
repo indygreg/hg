@@ -184,7 +184,7 @@ def mailmap(context, mapping, args):
         data = repo.wvfs.tryread('.mailmap')
         cache['mailmap'] = stringutil.parsemailmap(data)
 
-    return stringutil.mapname(cache['mailmap'], author) or author
+    return stringutil.mapname(cache['mailmap'], author)
 
 @templatefunc('pad(text, width[, fillchar=\' \'[, left=False]])',
               argspec='text width fillchar left')

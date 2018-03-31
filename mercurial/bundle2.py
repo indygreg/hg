@@ -342,7 +342,7 @@ def _notransaction():
     to be created"""
     raise TransactionUnavailable()
 
-def applybundle(repo, unbundler, tr, source=None, url=None, **kwargs):
+def applybundle(repo, unbundler, tr, source, url=None, **kwargs):
     # transform me into unbundler.apply() as soon as the freeze is lifted
     if isinstance(unbundler, unbundle20):
         tr.hookargs['bundle2'] = '1'

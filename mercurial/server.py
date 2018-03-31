@@ -30,26 +30,35 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
                runargs=None, appendpid=False):
     '''Run a command as a service.'''
 
+    postexecargs = {}
+
+    if opts['daemon_postexec']:
+        for inst in opts['daemon_postexec']:
+            if inst.startswith('unlink:'):
+                postexecargs['unlink'] = inst[7:]
+            elif inst.startswith('chdir:'):
+                postexecargs['chdir'] = inst[6:]
+            elif inst != 'none':
+                raise error.Abort(_('invalid value for --daemon-postexec: %s')
+                                  % inst)
+
     # When daemonized on Windows, redirect stdout/stderr to the lockfile (which
     # gets cleaned up after the child is up and running), so that the parent can
     # read and print the error if this child dies early.  See 594dd384803c.  On
     # other platforms, the child can write to the parent's stdio directly, until
     # it is redirected prior to runfn().
     if pycompat.iswindows and opts['daemon_postexec']:
-        for inst in opts['daemon_postexec']:
-            if inst.startswith('unlink:'):
-                lockpath = inst[7:]
-                if os.path.exists(lockpath):
-                    procutil.stdout.flush()
-                    procutil.stderr.flush()
+        if 'unlink' in postexecargs and os.path.exists(postexecargs['unlink']):
+            procutil.stdout.flush()
+            procutil.stderr.flush()
 
-                    fd = os.open(lockpath,
-                                 os.O_WRONLY | os.O_APPEND | os.O_BINARY)
-                    try:
-                        os.dup2(fd, 1)
-                        os.dup2(fd, 2)
-                    finally:
-                        os.close(fd)
+            fd = os.open(postexecargs['unlink'],
+                         os.O_WRONLY | os.O_APPEND | os.O_BINARY)
+            try:
+                os.dup2(fd, 1)
+                os.dup2(fd, 2)
+            finally:
+                os.close(fd)
 
     def writepid(pid):
         if opts['pid_file']:
@@ -109,15 +118,8 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
         except AttributeError:
             pass
 
-        lockpath = None
-        for inst in opts['daemon_postexec']:
-            if inst.startswith('unlink:'):
-                lockpath = inst[7:]
-            elif inst.startswith('chdir:'):
-                os.chdir(inst[6:])
-            elif inst != 'none':
-                raise error.Abort(_('invalid value for --daemon-postexec: %s')
-                                  % inst)
+        if 'chdir' in postexecargs:
+            os.chdir(postexecargs['chdir'])
         procutil.hidewindow()
         procutil.stdout.flush()
         procutil.stderr.flush()
@@ -137,8 +139,8 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
 
         # Only unlink after redirecting stdout/stderr, so Windows doesn't
         # complain about a sharing violation.
-        if lockpath:
-            os.unlink(lockpath)
+        if 'unlink' in postexecargs:
+            os.unlink(postexecargs['unlink'])
 
     if runfn:
         return runfn()

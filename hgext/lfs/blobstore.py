@@ -316,8 +316,9 @@ class _gitlfsremote(object):
         request = util.urlreq.request(href)
         if action == 'upload':
             # If uploading blobs, read data from local blobstore.
-            with localstore.open(oid) as fp:
-                _verifyfile(oid, fp)
+            if not localstore.verify(oid):
+                raise error.Abort(_('detected corrupt lfs object: %s') % oid,
+                                  hint=_('run hg verify'))
             request.data = filewithprogress(localstore.open(oid), None)
             request.get_method = lambda: 'PUT'
 
@@ -487,18 +488,6 @@ def _deduplicate(pointers):
 
 def _verify(oid, content):
     realoid = hashlib.sha256(content).hexdigest()
-    if realoid != oid:
-        raise error.Abort(_('detected corrupt lfs object: %s') % oid,
-                          hint=_('run hg verify'))
-
-def _verifyfile(oid, fp):
-    sha256 = hashlib.sha256()
-    while True:
-        data = fp.read(1024 * 1024)
-        if not data:
-            break
-        sha256.update(data)
-    realoid = sha256.hexdigest()
     if realoid != oid:
         raise error.Abort(_('detected corrupt lfs object: %s') % oid,
                           hint=_('run hg verify'))

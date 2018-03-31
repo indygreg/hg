@@ -241,7 +241,7 @@ def _tryhoist(ui, remotebookmark):
 class bundlestore(object):
     def __init__(self, repo):
         self._repo = repo
-        storetype = self._repo.ui.config('infinitepush', 'storetype', '')
+        storetype = self._repo.ui.config('infinitepush', 'storetype')
         if storetype == 'disk':
             from . import store
             self.store = store.filebundlestore(self._repo.ui, self._repo)
@@ -251,7 +251,7 @@ class bundlestore(object):
             raise error.Abort(
                 _('unknown infinitepush store type specified %s') % storetype)
 
-        indextype = self._repo.ui.config('infinitepush', 'indextype', '')
+        indextype = self._repo.ui.config('infinitepush', 'indextype')
         if indextype == 'disk':
             from . import fileindexapi
             self.index = fileindexapi.fileindexapi(self._repo)

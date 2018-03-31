@@ -350,7 +350,7 @@ def applybundle(repo, unbundler, tr, source=None, url=None, **kwargs):
             tr.hookargs['source'] = source
         if url is not None and 'url' not in tr.hookargs:
             tr.hookargs['url'] = url
-        return processbundle(repo, unbundler, lambda: tr)
+        return processbundle(repo, unbundler, lambda: tr, source=source)
     else:
         # the transactiongetter won't be used, but we might as well set it
         op = bundleoperation(repo, lambda: tr)
@@ -425,7 +425,7 @@ class partiterator(object):
         self.repo.ui.debug('bundle2-input-bundle: %i parts total\n' %
                            self.count)
 
-def processbundle(repo, unbundler, transactiongetter=None, op=None):
+def processbundle(repo, unbundler, transactiongetter=None, op=None, source=''):
     """This function process a bundle, apply effect to/from a repo
 
     It iterates over each part then searches for and uses the proper handling

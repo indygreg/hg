@@ -233,7 +233,7 @@ def _tryhoist(ui, remotebookmark):
     '''
 
     if common.isremotebooksenabled(ui):
-        hoist = ui.config('remotenames', 'hoist') + '/'
+        hoist = ui.config('remotenames', 'hoistedpeer') + '/'
         if remotebookmark.startswith(hoist):
             return remotebookmark[len(hoist):]
     return remotebookmark

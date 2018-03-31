@@ -1,3 +1,58 @@
+A script that implements uppercasing of specific lines in a file. This
+approximates the behavior of code formatters well enough for our tests.
+
+  $ UPPERCASEPY="$TESTTMP/uppercase.py"
+  $ cat > $UPPERCASEPY <<EOF
+  > import sys
+  > from mercurial.utils.procutil import setbinary
+  > setbinary(sys.stdin)
+  > setbinary(sys.stdout)
+  > lines = set()
+  > for arg in sys.argv[1:]:
+  >   if arg == 'all':
+  >     sys.stdout.write(sys.stdin.read().upper())
+  >     sys.exit(0)
+  >   else:
+  >     first, last = arg.split('-')
+  >     lines.update(range(int(first), int(last) + 1))
+  > for i, line in enumerate(sys.stdin.readlines()):
+  >   if i + 1 in lines:
+  >     sys.stdout.write(line.upper())
+  >   else:
+  >     sys.stdout.write(line)
+  > EOF
+  $ TESTLINES="foo\nbar\nbaz\nqux\n"
+  $ printf $TESTLINES | $PYTHON $UPPERCASEPY
+  foo
+  bar
+  baz
+  qux
+  $ printf $TESTLINES | $PYTHON $UPPERCASEPY all
+  FOO
+  BAR
+  BAZ
+  QUX
+  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 1-1
+  FOO
+  bar
+  baz
+  qux
+  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 1-2
+  FOO
+  BAR
+  baz
+  qux
+  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 2-3
+  foo
+  BAR
+  BAZ
+  qux
+  $ printf $TESTLINES | $PYTHON $UPPERCASEPY 2-2 4-4
+  foo
+  BAR
+  baz
+  QUX
+
 Set up the config with two simple fixers: one that fixes specific line ranges,
 and one that always fixes the whole file. They both "fix" files by converting
 letters to uppercase. They use different file extensions, so each test case can
@@ -10,10 +65,10 @@ choose which behavior to use by naming files.
   > evolution.createmarkers=True
   > evolution.allowunstable=True
   > [fix]
-  > uppercase-whole-file:command=sed -e 's/.*/\U&/'
+  > uppercase-whole-file:command=$PYTHON $UPPERCASEPY all
   > uppercase-whole-file:fileset=set:**.whole
-  > uppercase-changed-lines:command=sed
-  > uppercase-changed-lines:linerange=-e '{first},{last} s/.*/\U&/'
+  > uppercase-changed-lines:command=$PYTHON $UPPERCASEPY
+  > uppercase-changed-lines:linerange={first}-{last}
   > uppercase-changed-lines:fileset=set:**.changed
   > EOF
 
@@ -878,7 +933,7 @@ useful for anyone trying to set up a new config.
   $ hg commit -Aqm "foo"
   $ printf "Foo\nbar\nBaz\n" > foo.changed
   $ hg --debug fix --working-dir
-  subprocess: sed -e '1,1 s/.*/\U&/' -e '3,3 s/.*/\U&/'
+  subprocess: * $TESTTMP/uppercase.py 1-1 3-3 (glob)
 
   $ cd ..
 

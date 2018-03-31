@@ -1,3 +1,19 @@
+A script that implements uppercasing all letters in a file.
+
+  $ UPPERCASEPY="$TESTTMP/uppercase.py"
+  $ cat > $UPPERCASEPY <<EOF
+  > import sys
+  > from mercurial.utils.procutil import setbinary
+  > setbinary(sys.stdin)
+  > setbinary(sys.stdout)
+  > sys.stdout.write(sys.stdin.read().upper())
+  > EOF
+  $ TESTLINES="foo\nbar\nbaz\n"
+  $ printf $TESTLINES | $PYTHON $UPPERCASEPY
+  FOO
+  BAR
+  BAZ
+
 Tests for the fix extension's behavior around non-trivial history topologies.
 Looks for correct incremental fixing and reproduction of parent/child
 relationships. We indicate fixed file content by uppercasing it.
@@ -6,7 +22,7 @@ relationships. We indicate fixed file content by uppercasing it.
   > [extensions]
   > fix =
   > [fix]
-  > uppercase-whole-file:command=sed -e 's/.*/\U&/'
+  > uppercase-whole-file:command=$PYTHON $UPPERCASEPY
   > uppercase-whole-file:fileset=set:**
   > EOF
 

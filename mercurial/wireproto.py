@@ -192,7 +192,7 @@ class wirepeer(repository.legacypeer):
     See also httppeer.py and sshpeer.py for protocol-specific
     implementations of this interface.
     """
-    # Begin of basewirepeer interface.
+    # Begin of ipeercommands interface.
 
     def iterbatch(self):
         return remoteiterbatcher(self)
@@ -353,9 +353,9 @@ class wirepeer(repository.legacypeer):
             ret = bundle2.getunbundler(self.ui, stream)
         return ret
 
-    # End of basewirepeer interface.
+    # End of ipeercommands interface.
 
-    # Begin of baselegacywirepeer interface.
+    # Begin of ipeerlegacycommands interface.
 
     def branches(self, nodes):
         n = encodelist(nodes)
@@ -391,7 +391,7 @@ class wirepeer(repository.legacypeer):
                                    bases=bases, heads=heads)
         return changegroupmod.cg1unpacker(f, 'UN')
 
-    # End of baselegacywirepeer interface.
+    # End of ipeerlegacycommands interface.
 
     def _submitbatch(self, req):
         """run batch request <req> on the server

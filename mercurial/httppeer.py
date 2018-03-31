@@ -184,7 +184,7 @@ class httppeer(wireproto.wirepeer):
                 % (util.timer() - start, ret.code))
         return ret
 
-    # Begin of _basepeer interface.
+    # Begin of ipeerconnection interface.
 
     @util.propertycache
     def ui(self):
@@ -205,9 +205,9 @@ class httppeer(wireproto.wirepeer):
     def close(self):
         pass
 
-    # End of _basepeer interface.
+    # End of ipeerconnection interface.
 
-    # Begin of _basewirepeer interface.
+    # Begin of ipeercommands interface.
 
     def capabilities(self):
         # self._fetchcaps() should have been called as part of peer
@@ -215,7 +215,7 @@ class httppeer(wireproto.wirepeer):
         assert self._caps is not None
         return self._caps
 
-    # End of _basewirepeer interface.
+    # End of ipeercommands interface.
 
     # look up capabilities only when needed
 

@@ -377,7 +377,7 @@ class sshv1peer(wireproto.wirepeer):
         'batch',
     }
 
-    # Begin of _basepeer interface.
+    # Begin of ipeerconnection interface.
 
     @util.propertycache
     def ui(self):
@@ -398,14 +398,14 @@ class sshv1peer(wireproto.wirepeer):
     def close(self):
         pass
 
-    # End of _basepeer interface.
+    # End of ipeerconnection interface.
 
-    # Begin of _basewirecommands interface.
+    # Begin of ipeercommands interface.
 
     def capabilities(self):
         return self._caps
 
-    # End of _basewirecommands interface.
+    # End of ipeercommands interface.
 
     def _readerr(self):
         _forwardoutput(self.ui, self._pipee)

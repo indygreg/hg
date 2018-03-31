@@ -7,8 +7,6 @@
 
 from __future__ import absolute_import
 
-import abc
-
 from .i18n import _
 from .thirdparty.zope import (
     interface as zi,
@@ -17,7 +15,7 @@ from . import (
     error,
 )
 
-class _basepeer(object):
+class ipeerconnection(zi.Interface):
     """Represents a "connection" to a repository.
 
     This is the base interface for representing a connection to a repository.
@@ -26,14 +24,9 @@ class _basepeer(object):
     This is not a complete interface definition and should not be used
     outside of this module.
     """
-    __metaclass__ = abc.ABCMeta
+    ui = zi.Attribute("""ui.ui instance""")
 
-    @abc.abstractproperty
-    def ui(self):
-        """ui.ui instance."""
-
-    @abc.abstractmethod
-    def url(self):
+    def url():
         """Returns a URL string representing this peer.
 
         Currently, implementations expose the raw URL used to construct the
@@ -45,62 +38,53 @@ class _basepeer(object):
         value.
         """
 
-    @abc.abstractmethod
-    def local(self):
+    def local():
         """Returns a local repository instance.
 
         If the peer represents a local repository, returns an object that
         can be used to interface with it. Otherwise returns ``None``.
         """
 
-    @abc.abstractmethod
-    def peer(self):
+    def peer():
         """Returns an object conforming to this interface.
 
         Most implementations will ``return self``.
         """
 
-    @abc.abstractmethod
-    def canpush(self):
+    def canpush():
         """Returns a boolean indicating if this peer can be pushed to."""
 
-    @abc.abstractmethod
-    def close(self):
+    def close():
         """Close the connection to this peer.
 
         This is called when the peer will no longer be used. Resources
         associated with the peer should be cleaned up.
         """
 
-class _basewirecommands(object):
+class ipeercommands(zi.Interface):
     """Client-side interface for communicating over the wire protocol.
 
     This interface is used as a gateway to the Mercurial wire protocol.
     methods commonly call wire protocol commands of the same name.
     """
-    __metaclass__ = abc.ABCMeta
 
-    @abc.abstractmethod
-    def branchmap(self):
+    def branchmap():
         """Obtain heads in named branches.
 
         Returns a dict mapping branch name to an iterable of nodes that are
         heads on that branch.
         """
 
-    @abc.abstractmethod
-    def capabilities(self):
+    def capabilities():
         """Obtain capabilities of the peer.
 
         Returns a set of string capabilities.
         """
 
-    @abc.abstractmethod
-    def debugwireargs(self, one, two, three=None, four=None, five=None):
+    def debugwireargs(one, two, three=None, four=None, five=None):
         """Used to facilitate debugging of arguments passed over the wire."""
 
-    @abc.abstractmethod
-    def getbundle(self, source, **kwargs):
+    def getbundle(source, **kwargs):
         """Obtain remote repository data as a bundle.
 
         This command is how the bulk of repository data is transferred from
@@ -109,15 +93,13 @@ class _basewirecommands(object):
         Returns a generator of bundle data.
         """
 
-    @abc.abstractmethod
-    def heads(self):
+    def heads():
         """Determine all known head revisions in the peer.
 
         Returns an iterable of binary nodes.
         """
 
-    @abc.abstractmethod
-    def known(self, nodes):
+    def known(nodes):
         """Determine whether multiple nodes are known.
 
         Accepts an iterable of nodes whose presence to check for.
@@ -126,22 +108,19 @@ class _basewirecommands(object):
         at that index is known to the peer.
         """
 
-    @abc.abstractmethod
-    def listkeys(self, namespace):
+    def listkeys(namespace):
         """Obtain all keys in a pushkey namespace.
 
         Returns an iterable of key names.
         """
 
-    @abc.abstractmethod
-    def lookup(self, key):
+    def lookup(key):
         """Resolve a value to a known revision.
 
         Returns a binary node of the resolved revision on success.
         """
 
-    @abc.abstractmethod
-    def pushkey(self, namespace, key, old, new):
+    def pushkey(namespace, key, old, new):
         """Set a value using the ``pushkey`` protocol.
 
         Arguments correspond to the pushkey namespace and key to operate on and
@@ -151,15 +130,13 @@ class _basewirecommands(object):
         namespace.
         """
 
-    @abc.abstractmethod
-    def stream_out(self):
+    def stream_out():
         """Obtain streaming clone data.
 
         Successful result should be a generator of data chunks.
         """
 
-    @abc.abstractmethod
-    def unbundle(self, bundle, heads, url):
+    def unbundle(bundle, heads, url):
         """Transfer repository data to the peer.
 
         This is how the bulk of data during a push is transferred.
@@ -167,17 +144,15 @@ class _basewirecommands(object):
         Returns the integer number of heads added to the peer.
         """
 
-class _baselegacywirecommands(object):
+class ipeerlegacycommands(zi.Interface):
     """Interface for implementing support for legacy wire protocol commands.
 
     Wire protocol commands transition to legacy status when they are no longer
     used by modern clients. To facilitate identifying which commands are
     legacy, the interfaces are split.
     """
-    __metaclass__ = abc.ABCMeta
 
-    @abc.abstractmethod
-    def between(self, pairs):
+    def between(pairs):
         """Obtain nodes between pairs of nodes.
 
         ``pairs`` is an iterable of node pairs.
@@ -186,8 +161,7 @@ class _baselegacywirecommands(object):
         requested pair.
         """
 
-    @abc.abstractmethod
-    def branches(self, nodes):
+    def branches(nodes):
         """Obtain ancestor changesets of specific nodes back to a branch point.
 
         For each requested node, the peer finds the first ancestor node that is
@@ -196,23 +170,18 @@ class _baselegacywirecommands(object):
         Returns an iterable of iterables with the resolved values for each node.
         """
 
-    @abc.abstractmethod
-    def changegroup(self, nodes, kind):
+    def changegroup(nodes, kind):
         """Obtain a changegroup with data for descendants of specified nodes."""
 
-    @abc.abstractmethod
-    def changegroupsubset(self, bases, heads, kind):
+    def changegroupsubset(bases, heads, kind):
         pass
 
-class peer(_basepeer, _basewirecommands):
-    """Unified interface and base class for peer repositories.
+class ipeerbase(ipeerconnection, ipeercommands):
+    """Unified interface for peer repositories.
 
-    All peer instances must inherit from this class and conform to its
-    interface.
+    All peer instances must conform to this interface.
     """
-
-    @abc.abstractmethod
-    def iterbatch(self):
+    def iterbatch():
         """Obtain an object to be used for multiple method calls.
 
         Various operations call several methods on peer instances. If each
@@ -236,7 +205,7 @@ class peer(_basepeer, _basewirecommands):
         calls. However, they must all support this API.
         """
 
-    def capable(self, name):
+    def capable(name):
         """Determine support for a named capability.
 
         Returns ``False`` if capability not supported.
@@ -244,6 +213,21 @@ class peer(_basepeer, _basewirecommands):
         Returns ``True`` if boolean capability is supported. Returns a string
         if capability support is non-boolean.
         """
+
+    def requirecap(name, purpose):
+        """Require a capability to be present.
+
+        Raises a ``CapabilityError`` if the capability isn't present.
+        """
+
+class ipeerbaselegacycommands(ipeerbase, ipeerlegacycommands):
+    """Unified peer interface that supports legacy commands."""
+
+@zi.implementer(ipeerbase)
+class peer(object):
+    """Base class for peer repositories."""
+
+    def capable(self, name):
         caps = self.capabilities()
         if name in caps:
             return True
@@ -256,10 +240,6 @@ class peer(_basepeer, _basewirecommands):
         return False
 
     def requirecap(self, name, purpose):
-        """Require a capability to be present.
-
-        Raises a ``CapabilityError`` if the capability isn't present.
-        """
         if self.capable(name):
             return
 
@@ -267,7 +247,8 @@ class peer(_basepeer, _basewirecommands):
             _('cannot %s; remote repository does not support the %r '
               'capability') % (purpose, name))
 
-class legacypeer(peer, _baselegacywirecommands):
+@zi.implementer(ipeerbaselegacycommands)
+class legacypeer(peer):
     """peer but with support for legacy wire protocol commands."""
 
 class completelocalrepository(zi.Interface):

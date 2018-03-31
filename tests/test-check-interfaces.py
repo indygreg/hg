@@ -25,35 +25,6 @@ from mercurial import (
 
 rootdir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 
-def checkobject(o):
-    """Verify a constructed object conforms to interface rules.
-
-    An object must have __abstractmethods__ defined.
-
-    All "public" attributes of the object (attributes not prefixed with
-    an underscore) must be in __abstractmethods__ or appear on a base class
-    with __abstractmethods__.
-    """
-    name = o.__class__.__name__
-
-    allowed = set()
-    for cls in o.__class__.__mro__:
-        if not getattr(cls, '__abstractmethods__', set()):
-            continue
-
-        allowed |= cls.__abstractmethods__
-        allowed |= {a for a in dir(cls) if not a.startswith('_')}
-
-    if not allowed:
-        print('%s does not have abstract methods' % name)
-        return
-
-    public = {a for a in dir(o) if not a.startswith('_')}
-
-    for attr in sorted(public - allowed):
-        print('public attributes not in abstract interface: %s.%s' % (
-            name, attr))
-
 def checkzobject(o):
     """Verify an object with a zope interface."""
     ifaces = zi.providedBy(o)
@@ -108,16 +79,34 @@ def main():
     # Needed so we can open a local repo with obsstore without a warning.
     ui.setconfig('experimental', 'evolution.createmarkers', True)
 
-    checkobject(badpeer())
-    checkobject(httppeer.httppeer(None, None, None, dummyopener()))
-    checkobject(localrepo.localpeer(dummyrepo()))
-    checkobject(sshpeer.sshv1peer(ui, 'ssh://localhost/foo', None, dummypipe(),
-                                  dummypipe(), None, None))
-    checkobject(sshpeer.sshv2peer(ui, 'ssh://localhost/foo', None, dummypipe(),
-                                  dummypipe(), None, None))
-    checkobject(bundlerepo.bundlepeer(dummyrepo()))
-    checkobject(statichttprepo.statichttppeer(dummyrepo()))
-    checkobject(unionrepo.unionpeer(dummyrepo()))
+    checkzobject(badpeer())
+
+    ziverify.verifyClass(repository.ipeerbaselegacycommands,
+                         httppeer.httppeer)
+    checkzobject(httppeer.httppeer(None, None, None, dummyopener()))
+
+    ziverify.verifyClass(repository.ipeerbase,
+                         localrepo.localpeer)
+    checkzobject(localrepo.localpeer(dummyrepo()))
+
+    ziverify.verifyClass(repository.ipeerbaselegacycommands,
+                         sshpeer.sshv1peer)
+    checkzobject(sshpeer.sshv1peer(ui, 'ssh://localhost/foo', None, dummypipe(),
+                                   dummypipe(), None, None))
+
+    ziverify.verifyClass(repository.ipeerbaselegacycommands,
+                         sshpeer.sshv2peer)
+    checkzobject(sshpeer.sshv2peer(ui, 'ssh://localhost/foo', None, dummypipe(),
+                                   dummypipe(), None, None))
+
+    ziverify.verifyClass(repository.ipeerbase, bundlerepo.bundlepeer)
+    checkzobject(bundlerepo.bundlepeer(dummyrepo()))
+
+    ziverify.verifyClass(repository.ipeerbase, statichttprepo.statichttppeer)
+    checkzobject(statichttprepo.statichttppeer(dummyrepo()))
+
+    ziverify.verifyClass(repository.ipeerbase, unionrepo.unionpeer)
+    checkzobject(unionrepo.unionpeer(dummyrepo()))
 
     ziverify.verifyClass(repository.completelocalrepository,
                          localrepo.localrepository)

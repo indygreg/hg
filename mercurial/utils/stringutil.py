@@ -166,6 +166,30 @@ class mailmapping(object):
     email = attr.ib()
     name = attr.ib(default=None)
 
+def _ismailmaplineinvalid(names, emails):
+    '''Returns True if the parsed names and emails
+    in a mailmap entry are invalid.
+
+    >>> # No names or emails fails
+    >>> names, emails = [], []
+    >>> _ismailmaplineinvalid(names, emails)
+    True
+    >>> # Only one email fails
+    >>> emails = [b'email@email.com']
+    >>> _ismailmaplineinvalid(names, emails)
+    True
+    >>> # One email and one name passes
+    >>> names = [b'Test Name']
+    >>> _ismailmaplineinvalid(names, emails)
+    False
+    >>> # No names but two emails passes
+    >>> names = []
+    >>> emails = [b'proper@email.com', b'commit@email.com']
+    >>> _ismailmaplineinvalid(names, emails)
+    False
+    '''
+    return not emails or not names and len(emails) < 2
+
 def parsemailmap(mailmapcontent):
     """Parses data in the .mailmap format
 
@@ -199,7 +223,7 @@ def parsemailmap(mailmapcontent):
 
         # Don't bother checking the line if it is a comment or
         # is an improperly formed author field
-        if line.lstrip().startswith('#') or any(c not in line for c in '<>@'):
+        if line.lstrip().startswith('#'):
             continue
 
         # names, emails hold the parsed emails and names for each line
@@ -229,6 +253,12 @@ def parsemailmap(mailmapcontent):
             else:
                 # We have found another word in the committers name
                 namebuilder.append(element)
+
+        # Check to see if we have parsed the line into a valid form
+        # We require at least one email, and either at least one
+        # name or a second email
+        if _ismailmaplineinvalid(names, emails):
+            continue
 
         mailmapkey = mailmapping(
             email=emails[-1],

@@ -299,7 +299,7 @@ class bundleoperation(object):
     * a way to construct a bundle response when applicable.
     """
 
-    def __init__(self, repo, transactiongetter, captureoutput=True):
+    def __init__(self, repo, transactiongetter, captureoutput=True, source=''):
         self.repo = repo
         self.ui = repo.ui
         self.records = unbundlerecords()
@@ -309,6 +309,7 @@ class bundleoperation(object):
         self._gettransaction = transactiongetter
         # carries value that can modify part behavior
         self.modes = {}
+        self.source = source
 
     def gettransaction(self):
         transaction = self._gettransaction()

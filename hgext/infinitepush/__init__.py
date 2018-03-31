@@ -927,10 +927,8 @@ def storetobundlestore(orig, repo, op, unbundler):
 def processparts(orig, repo, op, unbundler):
 
     # make sure we don't wrap processparts in case of `hg unbundle`
-    tr = repo.currenttransaction()
-    if tr:
-        if tr.names[0].startswith('unbundle'):
-            return orig(repo, op, unbundler)
+    if op.source == 'unbundle':
+        return orig(repo, op, unbundler)
 
     # this server routes each push to bundle store
     if repo.ui.configbool('infinitepush', 'pushtobundlestore'):

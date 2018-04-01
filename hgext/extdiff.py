@@ -168,14 +168,18 @@ def dodiff(ui, repo, cmdline, pats, opts):
         msg = _('cannot specify --rev and --change at the same time')
         raise error.Abort(msg)
     elif change:
-        node2 = scmutil.revsingle(repo, change, None).node()
-        node1a, node1b = repo.changelog.parents(node2)
+        ctx2 = scmutil.revsingle(repo, change, None)
+        ctx1a, ctx1b = ctx2.p1(), ctx2.p2()
     else:
-        node1a, node2 = scmutil.revpairnodes(repo, revs)
+        ctx1a, ctx2 = scmutil.revpair(repo, revs)
         if not revs:
-            node1b = repo.dirstate.p2()
+            ctx1b = repo[None].p2()
         else:
-            node1b = nullid
+            ctx1b = repo[nullid]
+
+    node1a = ctx1a.node()
+    node1b = ctx1b.node()
+    node2 = ctx2.node()
 
     # Disable 3-way merge if there is only one parent
     if do3way:

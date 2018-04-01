@@ -292,7 +292,7 @@ def branchentries(repo, stripecount, limit=0):
     parity = paritygen(stripecount)
     sortkey = lambda item: (not item[1], item[0].rev())
 
-    def entries(**map):
+    def entries(context):
         count = 0
         if not tips:
             for tag, hs, tip, closed in repo.branchmap().iterbranches():
@@ -315,7 +315,7 @@ def branchentries(repo, stripecount, limit=0):
                 'date': ctx.date()
             }
 
-    return entries
+    return templateutil.mappinggenerator(entries)
 
 def cleanpath(repo, path):
     path = path.lstrip('/')

@@ -125,13 +125,16 @@ class revnav(object):
         :limit: how far shall we link
 
         The return is:
-            - a single element tuple
+            - a single element mappinglist
             - containing a dictionary with a `before` and `after` key
             - values are dictionaries with `label` and `node` keys
         """
         if not self:
             # empty repo
-            return ({'before': (), 'after': ()},)
+            return templateutil.mappinglist([
+                {'before': templateutil.mappinglist([]),
+                 'after': templateutil.mappinglist([])},
+            ])
 
         targets = []
         for f in _navseq(1, pagelen):
@@ -156,7 +159,11 @@ class revnav(object):
 
         navafter.append({'label': 'tip', 'node': 'tip'})
 
-        return ({'before': navbefore, 'after': navafter},)
+        # TODO: maybe this can be a scalar object supporting tomap()
+        return templateutil.mappinglist([
+            {'before': templateutil.mappinglist(navbefore),
+             'after': templateutil.mappinglist(navafter)},
+        ])
 
 class filerevnav(revnav):
 

@@ -181,6 +181,22 @@ class filerevnav(revnav):
     def hex(self, rev):
         return hex(self._changelog.node(self._revlog.linkrev(rev)))
 
+# TODO: maybe this can be a wrapper class for changectx/filectx list, which
+# yields {'ctx': ctx}
+def _ctxsgen(ctxs):
+    for s in ctxs:
+        d = {
+            'node': s.hex(),
+            'rev': s.rev(),
+            'user': s.user(),
+            'date': s.date(),
+            'description': s.description(),
+            'branch': s.branch(),
+        }
+        if util.safehasattr(s, 'path'):
+            d['file'] = s.path()
+        yield d
+
 class _siblings(object):
     def __init__(self, siblings=None, hiderev=None):
         if siblings is None:
@@ -190,18 +206,7 @@ class _siblings(object):
             self.siblings = []
 
     def __iter__(self):
-        for s in self.siblings:
-            d = {
-                'node': s.hex(),
-                'rev': s.rev(),
-                'user': s.user(),
-                'date': s.date(),
-                'description': s.description(),
-                'branch': s.branch(),
-            }
-            if util.safehasattr(s, 'path'):
-                d['file'] = s.path()
-            yield d
+        return _ctxsgen(self.siblings)
 
     def __len__(self):
         return len(self.siblings)

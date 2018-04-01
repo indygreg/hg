@@ -651,7 +651,7 @@ def diffstat(tmpl, ctx, statgen, parity):
             'parity': next(parity),
         })
 
-class sessionvars(object):
+class sessionvars(templateutil.wrapped):
     def __init__(self, vars, start='?'):
         self._start = start
         self._vars = vars
@@ -665,7 +665,7 @@ class sessionvars(object):
     def __copy__(self):
         return sessionvars(copy.copy(self._vars), self._start)
 
-    def __iter__(self):
+    def itermaps(self, context):
         separator = self._start
         for key, value in sorted(self._vars.iteritems()):
             yield {'name': key,
@@ -673,6 +673,16 @@ class sessionvars(object):
                    'separator': separator,
             }
             separator = '&'
+
+    def join(self, context, mapping, sep):
+        # could be '{separator}{name}={value|urlescape}'
+        raise error.ParseError(_('not displayable without template'))
+
+    def show(self, context, mapping):
+        return self.join(context, '')
+
+    def tovalue(self, context, mapping):
+        return self._vars
 
 class wsgiui(uimod.ui):
     # default termwidth breaks under mod_wsgi

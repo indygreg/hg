@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import datetime
 import errno
 import json
-import os
 
 from mercurial.hgweb import (
     common as hgwebcommon,
@@ -242,7 +241,7 @@ def _processbasictransfer(repo, req, res, checkperm):
     """
 
     method = req.method
-    oid = os.path.basename(req.dispatchpath)
+    oid = req.dispatchparts[-1]
     localstore = repo.svfs.lfslocalblobstore
 
     if method == b'PUT':

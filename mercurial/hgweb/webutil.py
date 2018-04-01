@@ -127,8 +127,7 @@ class revnav(object):
         The return is:
             - a single element tuple
             - containing a dictionary with a `before` and `after` key
-            - values are generator functions taking arbitrary number of kwargs
-            - yield items are dictionaries with `label` and `node` keys
+            - values are dictionaries with `label` and `node` keys
         """
         if not self:
             # empty repo
@@ -143,22 +142,21 @@ class revnav(object):
         targets.sort()
 
         first = self._first()
-        navbefore = [("(%i)" % first, self.hex(first))]
+        navbefore = [{'label': '(%i)' % first, 'node': self.hex(first)}]
         navafter = []
         for rev in targets:
             if rev not in self._revlog:
                 continue
             if pos < rev < limit:
-                navafter.append(("+%d" % abs(rev - pos), self.hex(rev)))
+                navafter.append({'label': '+%d' % abs(rev - pos),
+                                 'node': self.hex(rev)})
             if 0 < rev < pos:
-                navbefore.append(("-%d" % abs(rev - pos), self.hex(rev)))
+                navbefore.append({'label': '-%d' % abs(rev - pos),
+                                  'node': self.hex(rev)})
 
+        navafter.append({'label': 'tip', 'node': 'tip'})
 
-        navafter.append(("tip", "tip"))
-
-        data = lambda i: {"label": i[0], "node": i[1]}
-        return ({'before': lambda **map: (data(i) for i in navbefore),
-                 'after':  lambda **map: (data(i) for i in navafter)},)
+        return ({'before': navbefore, 'after': navafter},)
 
 class filerevnav(revnav):
 

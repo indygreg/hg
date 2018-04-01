@@ -655,12 +655,16 @@ class sessionvars(object):
     def __init__(self, vars, start='?'):
         self._start = start
         self._vars = vars
+
     def __getitem__(self, key):
         return self._vars[key]
+
     def __setitem__(self, key, value):
         self._vars[key] = value
+
     def __copy__(self):
         return sessionvars(copy.copy(self._vars), self._start)
+
     def __iter__(self):
         separator = self._start
         for key, value in sorted(self._vars.iteritems()):

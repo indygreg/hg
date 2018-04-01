@@ -105,22 +105,6 @@ def readallowed(ui, req):
 
     return False
 
-def archivelist(ui, nodeid, url):
-    allowed = ui.configlist('web', 'allow_archive', untrusted=True)
-    archives = []
-
-    for typ, spec in webutil.archivespecs.iteritems():
-        if typ in allowed or ui.configbool('web', 'allow' + typ,
-                                           untrusted=True):
-            archives.append({
-                'type': typ,
-                'extension': spec[2],
-                'node': nodeid,
-                'url': url,
-            })
-
-    return archives
-
 def rawindexentries(ui, repos, req, subdir=''):
     descend = ui.configbool('web', 'descend')
     collapse = ui.configbool('web', 'collapse')
@@ -241,7 +225,7 @@ def rawindexentries(ui, repos, req, subdir=''):
                'description_sort': description.upper() or "unknown",
                'lastchange': d,
                'lastchange_sort': d[1] - d[0],
-               'archives': archivelist(u, "tip", url),
+               'archives': webutil.archivelist(u, "tip", url),
                'isdirectory': None,
                'labels': templateutil.hybridlist(labels, name='label'),
                }

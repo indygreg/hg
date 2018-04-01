@@ -49,6 +49,22 @@ archivespecs = util.sortdict((
     ('bz2', ('application/x-bzip2', 'tbz2', '.tar.bz2', None)),
 ))
 
+def archivelist(ui, nodeid, url):
+    allowed = ui.configlist('web', 'allow_archive', untrusted=True)
+    archives = []
+
+    for typ, spec in archivespecs.iteritems():
+        if typ in allowed or ui.configbool('web', 'allow' + typ,
+                                           untrusted=True):
+            archives.append({
+                'type': typ,
+                'extension': spec[2],
+                'node': nodeid,
+                'url': url,
+            })
+
+    return archives
+
 def up(p):
     if p[0:1] != "/":
         p = "/" + p

@@ -35,6 +35,7 @@ from .. import (
     scmutil,
     templatefilters,
     templatekw,
+    templateutil,
     ui as uimod,
     util,
 )
@@ -63,7 +64,7 @@ def archivelist(ui, nodeid, url=None):
                 'url': url,
             })
 
-    return archives
+    return templateutil.mappinglist(archives)
 
 def up(p):
     if p[0:1] != "/":

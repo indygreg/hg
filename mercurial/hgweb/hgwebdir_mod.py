@@ -172,7 +172,7 @@ def rawindexentries(ui, repos, req, subdir=''):
                    'description_sort': "",
                    'lastchange': d,
                    'lastchange_sort': d[1] - d[0],
-                   'archives': [],
+                   'archives': templateutil.mappinglist([]),
                    'isdirectory': True,
                    'labels': templateutil.hybridlist([], name='label'),
                    }

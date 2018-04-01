@@ -271,8 +271,8 @@ def nodebranchnodefault(ctx):
     branches = []
     branch = ctx.branch()
     if branch != 'default':
-        branches.append({"name": branch})
-    return branches
+        branches.append(branch)
+    return templateutil.hybridlist(branches, name='name')
 
 def showtag(repo, tmpl, t1, node=nullid, **args):
     args = pycompat.byteskwargs(args)

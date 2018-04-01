@@ -447,6 +447,7 @@ def _pairspec(revspec):
     return tree and tree[0] in ('range', 'rangepre', 'rangepost', 'rangeall')
 
 def revpairnodes(repo, revs):
+    repo.ui.deprecwarn("revpairnodes is deprecated, please use revpair", "4.6")
     ctx1, ctx2 = revpair(repo, revs)
     return ctx1.node(), ctx2.node()
 

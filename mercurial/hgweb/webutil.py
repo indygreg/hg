@@ -253,8 +253,8 @@ def nodebranchdict(repo, ctx):
     except error.RepoLookupError:
         branchnode = None
     if branchnode == ctx.node():
-        branches.append({"name": branch})
-    return branches
+        branches.append(branch)
+    return templateutil.hybridlist(branches, name='name')
 
 def nodeinbranch(repo, ctx):
     branches = []

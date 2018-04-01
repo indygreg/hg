@@ -238,7 +238,7 @@ def renamelink(fctx):
     return templateutil.mappinglist([])
 
 def nodetagsdict(repo, node):
-    return [{"name": i} for i in repo.nodetags(node)]
+    return templateutil.hybridlist(repo.nodetags(node), name='name')
 
 def nodebookmarksdict(repo, node):
     return [{"name": i} for i in repo.nodebookmarks(node)]

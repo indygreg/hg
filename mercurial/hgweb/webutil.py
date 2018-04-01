@@ -264,8 +264,8 @@ def nodeinbranch(repo, ctx):
     except error.RepoLookupError:
         branchnode = None
     if branch != 'default' and branchnode != ctx.node():
-        branches.append({"name": branch})
-    return branches
+        branches.append(branch)
+    return templateutil.hybridlist(branches, name='name')
 
 def nodebranchnodefault(ctx):
     branches = []

@@ -65,3 +65,8 @@ A commit with improperly formatted user field should not break the filter
   Proper Name 4 <proper@m.c>
   Testuser <newmmentry@m.c>
   Improper user
+
+No TypeError beacause of invalid input
+
+  $ hg log -T '{mailmap(termwidth)}\n' -r0
+  80

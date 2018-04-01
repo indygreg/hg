@@ -175,7 +175,7 @@ def mailmap(context, mapping, args):
     if len(args) != 1:
         raise error.ParseError(_("mailmap expects one argument"))
 
-    author = evalfuncarg(context, mapping, args[0])
+    author = evalstring(context, mapping, args[0])
 
     cache = context.resource(mapping, 'cache')
     repo = context.resource(mapping, 'repo')

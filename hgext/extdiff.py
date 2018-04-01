@@ -171,7 +171,7 @@ def dodiff(ui, repo, cmdline, pats, opts):
         node2 = scmutil.revsingle(repo, change, None).node()
         node1a, node1b = repo.changelog.parents(node2)
     else:
-        node1a, node2 = scmutil.revpair(repo, revs)
+        node1a, node2 = scmutil.revpairnodes(repo, revs)
         if not revs:
             node1b = repo.dirstate.p2()
         else:

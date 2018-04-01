@@ -446,6 +446,9 @@ def _pairspec(revspec):
     tree = revsetlang.parse(revspec)
     return tree and tree[0] in ('range', 'rangepre', 'rangepost', 'rangeall')
 
+def revpairnodes(repo, revs):
+    return revpair(repo, revs)
+
 def revpair(repo, revs):
     if not revs:
         return repo.dirstate.p1(), None

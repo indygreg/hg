@@ -513,7 +513,7 @@ def status(mctx, x):
     revspec = getstring(r, reverr)
     if not revspec:
         raise error.ParseError(reverr)
-    basenode, node = scmutil.revpair(repo, [baserevspec, revspec])
+    basenode, node = scmutil.revpairnodes(repo, [baserevspec, revspec])
     basectx = repo[basenode]
     ctx = repo[node]
     return getset(mctx.switch(ctx, _buildstatus(ctx, x, basectx=basectx)), x)

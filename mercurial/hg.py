@@ -530,13 +530,13 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
 
     if isinstance(source, bytes):
         origsource = ui.expandpath(source)
-        source, branch = parseurl(origsource, branch)
+        source, branches = parseurl(origsource, branch)
         srcpeer = peer(ui, peeropts, source)
     else:
         srcpeer = source.peer() # in case we were called with a localrepo
-        branch = (None, branch or [])
+        branches = (None, branch or [])
         origsource = source = srcpeer.url()
-    rev, checkout = addbranchrevs(srcpeer, srcpeer, branch, rev)
+    rev, checkout = addbranchrevs(srcpeer, srcpeer, branches, rev)
 
     if dest is None:
         dest = defaultdest(source)

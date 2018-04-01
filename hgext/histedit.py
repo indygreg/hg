@@ -899,10 +899,10 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     if opts is None:
         opts = {}
     dest = ui.expandpath(remote or 'default-push', remote or 'default')
-    dest, revs = hg.parseurl(dest, None)[:2]
+    dest, branches = hg.parseurl(dest, None)[:2]
     ui.status(_('comparing with %s\n') % util.hidepassword(dest))
 
-    revs, checkout = hg.addbranchrevs(repo, repo, revs, None)
+    revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
     other = hg.peer(repo, opts, dest)
 
     if revs:

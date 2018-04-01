@@ -274,18 +274,14 @@ def nodebranchnodefault(ctx):
         branches.append(branch)
     return templateutil.hybridlist(branches, name='name')
 
-def showtag(repo, tmpl, t1, node=nullid, **args):
-    args = pycompat.byteskwargs(args)
+def showtag(repo, tmpl, t1, node=nullid):
     for t in repo.nodetags(node):
-        lm = args.copy()
-        lm['tag'] = t
+        lm = {'tag': t}
         yield tmpl.generate(t1, lm)
 
-def showbookmark(repo, tmpl, t1, node=nullid, **args):
-    args = pycompat.byteskwargs(args)
+def showbookmark(repo, tmpl, t1, node=nullid):
     for t in repo.nodebookmarks(node):
-        lm = args.copy()
-        lm['bookmark'] = t
+        lm = {'bookmark': t}
         yield tmpl.generate(t1, lm)
 
 def branchentries(repo, stripecount, limit=0):

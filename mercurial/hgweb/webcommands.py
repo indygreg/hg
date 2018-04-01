@@ -1164,7 +1164,7 @@ def archive(web):
     allowed = web.configlist("web", "allow_archive")
     key = web.req.qsparams['node']
 
-    if type_ not in web.archivespecs:
+    if type_ not in webutil.archivespecs:
         msg = 'Unsupported archive type: %s' % type_
         raise ErrorResponse(HTTP_NOT_FOUND, msg)
 
@@ -1193,7 +1193,7 @@ def archive(web):
                 raise ErrorResponse(HTTP_NOT_FOUND,
                     'file(s) not found: %s' % file)
 
-    mimetype, artype, extension, encoding = web.archivespecs[type_]
+    mimetype, artype, extension, encoding = webutil.archivespecs[type_]
 
     web.res.headers['Content-Type'] = mimetype
     web.res.headers['Content-Disposition'] = 'attachment; filename=%s%s' % (

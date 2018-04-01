@@ -90,8 +90,6 @@ class requestcontext(object):
         self.req = req
         self.res = res
 
-        self.archivespecs = webutil.archivespecs
-
         self.maxchanges = self.configint('web', 'maxchanges')
         self.stripecount = self.configint('web', 'stripes')
         self.maxshortchanges = self.configint('web', 'maxshortchanges')
@@ -131,7 +129,7 @@ class requestcontext(object):
 
     def archivelist(self, nodeid):
         allowed = self.configlist('web', 'allow_archive')
-        for typ, spec in self.archivespecs.iteritems():
+        for typ, spec in webutil.archivespecs.iteritems():
             if typ in allowed or self.configbool('web', 'allow%s' % typ):
                 yield {'type': typ, 'extension': spec[2], 'node': nodeid}
 
@@ -375,7 +373,7 @@ class hgweb(object):
 
             if cmd == 'archive':
                 fn = req.qsparams['node']
-                for type_, spec in rctx.archivespecs.iteritems():
+                for type_, spec in webutil.archivespecs.iteritems():
                     ext = spec[2]
                     if fn.endswith(ext):
                         req.qsparams['node'] = fn[:-len(ext)]

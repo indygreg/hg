@@ -819,7 +819,7 @@ def filediff(web):
         rename = webutil.renamelink(fctx)
         ctx = fctx
     else:
-        rename = []
+        rename = templateutil.mappinglist([])
         ctx = ctx
 
     return web.sendtemplate(
@@ -892,7 +892,7 @@ def comparison(web):
         rename = webutil.renamelink(fctx)
         ctx = fctx
     else:
-        rename = []
+        rename = templateutil.mappinglist([])
         ctx = ctx
 
     return web.sendtemplate(

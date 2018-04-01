@@ -234,8 +234,8 @@ def children(ctx, hide=None):
 def renamelink(fctx):
     r = fctx.renamed()
     if r:
-        return [{'file': r[0], 'node': hex(r[1])}]
-    return []
+        return templateutil.mappinglist([{'file': r[0], 'node': hex(r[1])}])
+    return templateutil.mappinglist([])
 
 def nodetagsdict(repo, node):
     return [{"name": i} for i in repo.nodetags(node)]

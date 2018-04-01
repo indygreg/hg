@@ -241,7 +241,7 @@ def nodetagsdict(repo, node):
     return templateutil.hybridlist(repo.nodetags(node), name='name')
 
 def nodebookmarksdict(repo, node):
-    return [{"name": i} for i in repo.nodebookmarks(node)]
+    return templateutil.hybridlist(repo.nodebookmarks(node), name='name')
 
 def nodebranchdict(repo, ctx):
     branches = []

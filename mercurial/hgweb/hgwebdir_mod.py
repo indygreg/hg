@@ -35,6 +35,7 @@ from .. import (
     pycompat,
     scmutil,
     templater,
+    templateutil,
     ui as uimod,
     util,
 )
@@ -246,9 +247,8 @@ def rawindexentries(ui, repos, req, subdir=''):
 
         yield row
 
-def indexentries(ui, repos, req, stripecount, sortcolumn='',
-                 descending=False, subdir=''):
-
+def _indexentriesgen(context, ui, repos, req, stripecount, sortcolumn,
+                     descending, subdir):
     rows = rawindexentries(ui, repos, req, subdir=subdir)
 
     sortdefault = None, False
@@ -261,6 +261,11 @@ def indexentries(ui, repos, req, stripecount, sortcolumn='',
     for row, parity in zip(rows, paritygen(stripecount)):
         row['parity'] = parity
         yield row
+
+def indexentries(ui, repos, req, stripecount, sortcolumn='',
+                 descending=False, subdir=''):
+    args = (ui, repos, req, stripecount, sortcolumn, descending, subdir)
+    return templateutil.mappinggenerator(_indexentriesgen, args=args)
 
 class hgwebdir(object):
     """HTTP server for multiple repositories.

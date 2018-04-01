@@ -278,11 +278,11 @@ def _nodenamesgen(context, f, node, name):
     for t in f(node):
         yield {name: t}
 
-def showtag(repo, tmpl, t1, node=nullid):
+def showtag(repo, t1, node=nullid):
     args = (repo.nodetags, node, 'tag')
     return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 
-def showbookmark(repo, tmpl, t1, node=nullid):
+def showbookmark(repo, t1, node=nullid):
     args = (repo.nodebookmarks, node, 'bookmark')
     return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 
@@ -437,7 +437,7 @@ def changelistentry(web, ctx):
     repo = web.repo
     rev = ctx.rev()
     n = ctx.node()
-    showtags = showtag(repo, web.tmpl, 'changelogtag', n)
+    showtags = showtag(repo, 'changelogtag', n)
     files = listfilediffs(web.tmpl, ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
@@ -459,9 +459,8 @@ def symrevorshortnode(req, ctx):
 def changesetentry(web, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
-    showtags = showtag(web.repo, web.tmpl, 'changesettag', ctx.node())
-    showbookmarks = showbookmark(web.repo, web.tmpl, 'changesetbookmark',
-                                 ctx.node())
+    showtags = showtag(web.repo, 'changesettag', ctx.node())
+    showbookmarks = showbookmark(web.repo, 'changesetbookmark', ctx.node())
     showbranch = nodebranchnodefault(ctx)
 
     files = []

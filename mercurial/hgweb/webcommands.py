@@ -295,7 +295,7 @@ def _search(web):
         for ctx in searchfunc[0](funcarg):
             count += 1
             n = ctx.node()
-            showtags = webutil.showtag(web.repo, web.tmpl, 'changelogtag', n)
+            showtags = webutil.showtag(web.repo, 'changelogtag', n)
             files = webutil.listfilediffs(web.tmpl, ctx.files(), n,
                                           web.maxfiles)
 

@@ -1878,7 +1878,8 @@ def diff(ui, repo, *pats, **opts):
         node1 = repo[node2].p1().node()
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
-        node1, node2 = scmutil.revpairnodes(repo, revs)
+        ctx1, ctx2 = scmutil.revpair(repo, revs)
+        node1, node2 = ctx1.node(), ctx2.node()
 
     if reverse:
         node1, node2 = node2, node1

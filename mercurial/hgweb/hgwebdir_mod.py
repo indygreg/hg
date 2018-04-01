@@ -190,7 +190,7 @@ def rawindexentries(ui, repos, req, subdir=''):
                    'lastchange_sort': d[1] - d[0],
                    'archives': [],
                    'isdirectory': True,
-                   'labels': [],
+                   'labels': templateutil.hybridlist([], name='label'),
                    }
 
             seendirs.add(name)
@@ -231,6 +231,7 @@ def rawindexentries(ui, repos, req, subdir=''):
         description = get("web", "description")
         seenrepos.add(name)
         name = get("web", "name", name)
+        labels = u.configlist('web', 'labels', untrusted=True)
         row = {'contact': contact or "unknown",
                'contact_sort': contact.upper() or "unknown",
                'name': name,
@@ -242,7 +243,7 @@ def rawindexentries(ui, repos, req, subdir=''):
                'lastchange_sort': d[1] - d[0],
                'archives': archivelist(u, "tip", url),
                'isdirectory': None,
-               'labels': u.configlist('web', 'labels', untrusted=True),
+               'labels': templateutil.hybridlist(labels, name='label'),
                }
 
         yield row

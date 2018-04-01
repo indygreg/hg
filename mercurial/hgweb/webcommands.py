@@ -765,6 +765,7 @@ def summary(web):
     desc = web.config("web", "description")
     if not desc:
         desc = 'unknown'
+    labels = web.configlist('web', 'labels')
 
     return web.sendtemplate(
         'summary',
@@ -779,7 +780,7 @@ def summary(web):
         node=tip.hex(),
         symrev='tip',
         archives=web.archivelist('tip'),
-        labels=web.configlist('web', 'labels'))
+        labels=templateutil.hybridlist(labels, name='label'))
 
 @webcommand('filediff')
 def filediff(web):

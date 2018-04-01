@@ -1874,18 +1874,18 @@ def diff(ui, repo, *pats, **opts):
         raise error.Abort(msg)
     elif change:
         repo = scmutil.unhidehashlikerevs(repo, [change], 'nowarn')
-        node2 = scmutil.revsingle(repo, change, None).node()
-        node1 = repo[node2].p1().node()
+        ctx2 = scmutil.revsingle(repo, change, None)
+        ctx1 = ctx2.p1()
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
         ctx1, ctx2 = scmutil.revpair(repo, revs)
-        node1, node2 = ctx1.node(), ctx2.node()
+    node1, node2 = ctx1.node(), ctx2.node()
 
     if reverse:
         node1, node2 = node2, node1
 
     diffopts = patch.diffallopts(ui, opts)
-    m = scmutil.match(repo[node2], pats, opts)
+    m = scmutil.match(ctx2, pats, opts)
     ui.pager('diff')
     logcmdutil.diffordiffstat(ui, repo, diffopts, node1, node2, m, stat=stat,
                               listsubrepos=opts.get('subrepos'),

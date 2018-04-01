@@ -44,12 +44,6 @@ from . import (
     wsgicgi,
 )
 
-archivespecs = util.sortdict((
-    ('zip', ('application/zip', 'zip', '.zip', None)),
-    ('gz', ('application/x-gzip', 'tgz', '.tar.gz', None)),
-    ('bz2', ('application/x-bzip2', 'tbz2', '.tar.bz2', None)),
-))
-
 def getstyle(req, configfn, templatepath):
     styles = (
         req.qsparams.get('style', None),
@@ -96,7 +90,7 @@ class requestcontext(object):
         self.req = req
         self.res = res
 
-        self.archivespecs = archivespecs
+        self.archivespecs = webutil.archivespecs
 
         self.maxchanges = self.configint('web', 'maxchanges')
         self.stripecount = self.configint('web', 'stripes')

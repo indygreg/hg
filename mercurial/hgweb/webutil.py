@@ -43,6 +43,12 @@ from ..utils import (
     stringutil,
 )
 
+archivespecs = util.sortdict((
+    ('zip', ('application/zip', 'zip', '.zip', None)),
+    ('gz', ('application/x-gzip', 'tgz', '.tar.gz', None)),
+    ('bz2', ('application/x-bzip2', 'tbz2', '.tar.bz2', None)),
+))
+
 def up(p):
     if p[0:1] != "/":
         p = "/" + p

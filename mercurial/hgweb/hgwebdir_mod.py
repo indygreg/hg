@@ -109,7 +109,7 @@ def archivelist(ui, nodeid, url):
     allowed = ui.configlist('web', 'allow_archive', untrusted=True)
     archives = []
 
-    for typ, spec in hgweb_mod.archivespecs.iteritems():
+    for typ, spec in webutil.archivespecs.iteritems():
         if typ in allowed or ui.configbool('web', 'allow' + typ,
                                            untrusted=True):
             archives.append({

@@ -447,11 +447,12 @@ def _pairspec(revspec):
     return tree and tree[0] in ('range', 'rangepre', 'rangepost', 'rangeall')
 
 def revpairnodes(repo, revs):
-    return revpair(repo, revs)
+    ctx1, ctx2 = revpair(repo, revs)
+    return ctx1.node(), ctx2.node()
 
 def revpair(repo, revs):
     if not revs:
-        return repo.dirstate.p1(), None
+        return repo['.'], repo[None]
 
     l = revrange(repo, revs)
 
@@ -475,9 +476,9 @@ def revpair(repo, revs):
 
     # if top-level is range expression, the result must always be a pair
     if first == second and len(revs) == 1 and not _pairspec(revs[0]):
-        return repo.lookup(first), None
+        return repo[first], repo[None]
 
-    return repo.lookup(first), repo.lookup(second)
+    return repo[first], repo[second]
 
 def revrange(repo, specs, localalias=None):
     """Execute 1 to many revsets and return the union.

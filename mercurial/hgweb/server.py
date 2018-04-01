@@ -118,6 +118,14 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         self.sent_headers = False
         path, query = _splitURI(self.path)
 
+        # Ensure the slicing of path below is valid
+        if (path != self.server.prefix
+            and not path.startswith(self.server.prefix + b'/')):
+            self._start_response(common.statusmessage(404), [])
+            self._write("Not Found")
+            self._done()
+            return
+
         env = {}
         env[r'GATEWAY_INTERFACE'] = r'CGI/1.1'
         env[r'REQUEST_METHOD'] = self.command

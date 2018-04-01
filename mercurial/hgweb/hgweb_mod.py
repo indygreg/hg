@@ -31,6 +31,7 @@ from .. import (
     repoview,
     templatefilters,
     templater,
+    templateutil,
     ui as uimod,
     util,
     wireprotoserver,
@@ -80,7 +81,7 @@ def makebreadcrumb(url, prefix=''):
             break
         breadcrumb.append({'url': urlel, 'name': pathel})
         urlel = os.path.dirname(urlel)
-    return reversed(breadcrumb)
+    return templateutil.mappinglist(reversed(breadcrumb))
 
 class requestcontext(object):
     """Holds state/context for an individual request.

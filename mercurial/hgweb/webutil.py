@@ -274,15 +274,17 @@ def nodebranchnodefault(ctx):
         branches.append(branch)
     return templateutil.hybridlist(branches, name='name')
 
+def _nodenamesgen(context, f, node, name):
+    for t in f(node):
+        yield {name: t}
+
 def showtag(repo, tmpl, t1, node=nullid):
-    for t in repo.nodetags(node):
-        lm = {'tag': t}
-        yield tmpl.generate(t1, lm)
+    args = (repo.nodetags, node, 'tag')
+    return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 
 def showbookmark(repo, tmpl, t1, node=nullid):
-    for t in repo.nodebookmarks(node):
-        lm = {'bookmark': t}
-        yield tmpl.generate(t1, lm)
+    args = (repo.nodebookmarks, node, 'bookmark')
+    return templateutil.mappinggenerator(_nodenamesgen, args=args, name=t1)
 
 def branchentries(repo, stripecount, limit=0):
     tips = []

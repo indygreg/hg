@@ -4877,11 +4877,11 @@ def status(ui, repo, *pats, **opts):
         raise error.Abort(msg)
     elif change:
         repo = scmutil.unhidehashlikerevs(repo, [change], 'nowarn')
-        node2 = scmutil.revsingle(repo, change, None).node()
-        node1 = repo[node2].p1().node()
+        ctx2 = scmutil.revsingle(repo, change, None)
+        ctx1 = ctx2.p1()
     else:
         repo = scmutil.unhidehashlikerevs(repo, revs, 'nowarn')
-        node1, node2 = scmutil.revpairnodes(repo, revs)
+        ctx1, ctx2 = scmutil.revpair(repo, revs)
 
     if pats or ui.configbool('commands', 'status.relative'):
         cwd = repo.getcwd()
@@ -4904,16 +4904,16 @@ def status(ui, repo, *pats, **opts):
         else:
             show = states[:5]
 
-    m = scmutil.match(repo[node2], pats, opts)
+    m = scmutil.match(ctx2, pats, opts)
     if terse:
         # we need to compute clean and unknown to terse
-        stat = repo.status(node1, node2, m,
+        stat = repo.status(ctx1.node(), ctx2.node(), m,
                            'ignored' in show or 'i' in terse,
                             True, True, opts.get('subrepos'))
 
         stat = cmdutil.tersedir(stat, terse)
     else:
-        stat = repo.status(node1, node2, m,
+        stat = repo.status(ctx1.node(), ctx2.node(), m,
                            'ignored' in show, 'clean' in show,
                            'unknown' in show, opts.get('subrepos'))
 
@@ -4921,7 +4921,7 @@ def status(ui, repo, *pats, **opts):
 
     if (opts.get('all') or opts.get('copies')
         or ui.configbool('ui', 'statuscopies')) and not opts.get('no_status'):
-        copy = copies.pathcopies(repo[node1], repo[node2], m)
+        copy = copies.pathcopies(ctx1, ctx2, m)
 
     ui.pager('status')
     fm = ui.formatter('status', opts)

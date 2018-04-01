@@ -183,7 +183,7 @@ class filerevnav(revnav):
 
 # TODO: maybe this can be a wrapper class for changectx/filectx list, which
 # yields {'ctx': ctx}
-def _ctxsgen(ctxs):
+def _ctxsgen(context, ctxs):
     for s in ctxs:
         d = {
             'node': s.hex(),
@@ -197,19 +197,13 @@ def _ctxsgen(ctxs):
             d['file'] = s.path()
         yield d
 
-class _siblings(object):
-    def __init__(self, siblings=None, hiderev=None):
-        if siblings is None:
-            siblings = []
-        self.siblings = [s for s in siblings if s.node() != nullid]
-        if len(self.siblings) == 1 and self.siblings[0].rev() == hiderev:
-            self.siblings = []
-
-    def __iter__(self):
-        return _ctxsgen(self.siblings)
-
-    def __len__(self):
-        return len(self.siblings)
+def _siblings(siblings=None, hiderev=None):
+    if siblings is None:
+        siblings = []
+    siblings = [s for s in siblings if s.node() != nullid]
+    if len(siblings) == 1 and siblings[0].rev() == hiderev:
+        siblings = []
+    return templateutil.mappinggenerator(_ctxsgen, args=(siblings,))
 
 def difffeatureopts(req, ui, section):
     diffopts = patch.difffeatureopts(ui, untrusted=True,

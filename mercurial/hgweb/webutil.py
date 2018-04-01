@@ -653,17 +653,17 @@ def diffstat(tmpl, ctx, statgen, parity):
 
 class sessionvars(object):
     def __init__(self, vars, start='?'):
-        self.start = start
-        self.vars = vars
+        self._start = start
+        self._vars = vars
     def __getitem__(self, key):
-        return self.vars[key]
+        return self._vars[key]
     def __setitem__(self, key, value):
-        self.vars[key] = value
+        self._vars[key] = value
     def __copy__(self):
-        return sessionvars(copy.copy(self.vars), self.start)
+        return sessionvars(copy.copy(self._vars), self._start)
     def __iter__(self):
-        separator = self.start
-        for key, value in sorted(self.vars.iteritems()):
+        separator = self._start
+        for key, value in sorted(self._vars.iteritems()):
             yield {'name': key,
                    'value': pycompat.bytestr(value),
                    'separator': separator,

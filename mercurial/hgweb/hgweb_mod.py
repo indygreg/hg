@@ -128,10 +128,7 @@ class requestcontext(object):
                                        untrusted=untrusted)
 
     def archivelist(self, nodeid):
-        allowed = self.configlist('web', 'allow_archive')
-        for typ, spec in webutil.archivespecs.iteritems():
-            if typ in allowed or self.configbool('web', 'allow%s' % typ):
-                yield {'type': typ, 'extension': spec[2], 'node': nodeid}
+        return webutil.archivelist(self.repo.ui, nodeid)
 
     def templater(self, req):
         # determine scheme, port and server name

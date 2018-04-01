@@ -49,7 +49,7 @@ archivespecs = util.sortdict((
     ('bz2', ('application/x-bzip2', 'tbz2', '.tar.bz2', None)),
 ))
 
-def archivelist(ui, nodeid, url):
+def archivelist(ui, nodeid, url=None):
     allowed = ui.configlist('web', 'allow_archive', untrusted=True)
     archives = []
 

@@ -22,6 +22,7 @@ from mercurial import (
 HTTP_OK = hgwebcommon.HTTP_OK
 HTTP_CREATED = hgwebcommon.HTTP_CREATED
 HTTP_BAD_REQUEST = hgwebcommon.HTTP_BAD_REQUEST
+HTTP_NOT_FOUND = hgwebcommon.HTTP_NOT_FOUND
 
 def handlewsgirequest(orig, rctx, req, res, checkperm):
     """Wrap wireprotoserver.handlewsgirequest() to possibly process an LFS
@@ -243,6 +244,10 @@ def _processbasictransfer(repo, req, res, checkperm):
     method = req.method
     oid = req.dispatchparts[-1]
     localstore = repo.svfs.lfslocalblobstore
+
+    if len(req.dispatchparts) != 4:
+        _sethttperror(res, HTTP_NOT_FOUND)
+        return True
 
     if method == b'PUT':
         checkperm('upload')

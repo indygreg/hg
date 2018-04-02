@@ -433,6 +433,19 @@ def formatrevnode(ui, rev, node):
         hexfunc = short
     return '%d:%s' % (rev, hexfunc(node))
 
+def revsymbol(repo, symbol):
+    """Returns a context given a single revision symbol (as string).
+
+    This is similar to revsingle(), but accepts only a single revision symbol,
+    i.e. things like ".", "tip", "1234", "deadbeef", "my-bookmark" work, but
+    not "max(public())".
+    """
+    if not isinstance(symbol, bytes):
+        msg = ("symbol (%s of type %s) was not a string, did you mean "
+               "repo[symbol]?" % (symbol, type(symbol)))
+        raise error.ProgrammingError(msg)
+    return repo[symbol]
+
 def revsingle(repo, revspec, default='.', localalias=None):
     if not revspec and revspec != 0:
         return repo[default]

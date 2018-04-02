@@ -805,7 +805,7 @@ def bisect(ui, repo, rev=None, extra=None, command=None,
     # update state
     if good or bad or skip:
         if rev:
-            nodes = [repo.lookup(i) for i in scmutil.revrange(repo, [rev])]
+            nodes = [repo[i].node() for i in scmutil.revrange(repo, [rev])]
         else:
             nodes = [repo.lookup('.')]
         if good:

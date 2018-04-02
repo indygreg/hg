@@ -139,13 +139,13 @@ Merge creates 2-parent revision of directory revlog
   $ cat dir1/b
   6
   $ hg debugindex --dir dir1
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0      54       1 8b3ffd73f901 000000000000 000000000000
-       1        54      68       2 68e9d057c5a8 8b3ffd73f901 000000000000
-       2       122      12       4 4698198d2624 68e9d057c5a8 000000000000
-       3       134      55       5 44844058ccce 68e9d057c5a8 000000000000
-       4       189      55       6 bf3d9b744927 68e9d057c5a8 000000000000
-       5       244      55       7 dde7c0af2a03 bf3d9b744927 44844058ccce
+     rev linkrev nodeid       p1           p2
+       0       1 8b3ffd73f901 000000000000 000000000000
+       1       2 68e9d057c5a8 8b3ffd73f901 000000000000
+       2       4 4698198d2624 68e9d057c5a8 000000000000
+       3       5 44844058ccce 68e9d057c5a8 000000000000
+       4       6 bf3d9b744927 68e9d057c5a8 000000000000
+       5       7 dde7c0af2a03 bf3d9b744927 44844058ccce
 
 Merge keeping directory from parent 1 does not create revlog entry. (Note that
 dir1's manifest does change, but only because dir1/a's filelog changes.)
@@ -285,13 +285,13 @@ Merge of two trees
 Parent of tree root manifest should be flat manifest, and two for merge
 
   $ hg debugindex -m
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0      80       0 40536115ed9e 000000000000 000000000000
-       1        80      83       1 f3376063c255 40536115ed9e 000000000000
-       2       163      89       2 5d9b9da231a2 40536115ed9e 000000000000
-       3       252      83       3 d17d663cbd8a 5d9b9da231a2 f3376063c255
-       4       335     124       4 51e32a8c60ee f3376063c255 000000000000
-       5       459     126       5 cc5baa78b230 5d9b9da231a2 f3376063c255
+     rev linkrev nodeid       p1           p2
+       0       0 40536115ed9e 000000000000 000000000000
+       1       1 f3376063c255 40536115ed9e 000000000000
+       2       2 5d9b9da231a2 40536115ed9e 000000000000
+       3       3 d17d663cbd8a 5d9b9da231a2 f3376063c255
+       4       4 51e32a8c60ee f3376063c255 000000000000
+       5       5 cc5baa78b230 5d9b9da231a2 f3376063c255
 
 
 Status across flat/tree boundary should work
@@ -305,16 +305,16 @@ Status across flat/tree boundary should work
 Turning off treemanifest config has no effect
 
   $ hg debugindex --dir dir1
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0     127       4 064927a0648a 000000000000 000000000000
-       1       127     111       5 25ecb8cb8618 000000000000 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
   $ echo 2 > dir1/a
   $ hg --config experimental.treemanifest=False ci -qm 'modify dir1/a'
   $ hg debugindex --dir dir1
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0     127       4 064927a0648a 000000000000 000000000000
-       1       127     111       5 25ecb8cb8618 000000000000 000000000000
-       2       238      55       6 5b16163a30c6 25ecb8cb8618 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
+       2       6 5b16163a30c6 25ecb8cb8618 000000000000
 
 Stripping and recovering changes should work
 
@@ -324,9 +324,9 @@ Stripping and recovering changes should work
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/repo-mixed/.hg/strip-backup/51cfd7b1e13b-78a2f3ed-backup.hg
   $ hg debugindex --dir dir1
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0     127       4 064927a0648a 000000000000 000000000000
-       1       127     111       5 25ecb8cb8618 000000000000 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
   $ hg incoming .hg/strip-backup/*
   comparing with .hg/strip-backup/*-backup.hg (glob)
   searching for changes
@@ -349,10 +349,10 @@ Stripping and recovering changes should work
   saved backup bundle to $TESTTMP/repo-mixed/.hg/strip-backup/*-backup.hg (glob)
   $ hg unbundle -q .hg/strip-backup/*
   $ hg debugindex --dir dir1
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0     127       4 064927a0648a 000000000000 000000000000
-       1       127     111       5 25ecb8cb8618 000000000000 000000000000
-       2       238      55       6 5b16163a30c6 25ecb8cb8618 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
+       2       6 5b16163a30c6 25ecb8cb8618 000000000000
   $ hg st --change tip
   M dir1/a
 

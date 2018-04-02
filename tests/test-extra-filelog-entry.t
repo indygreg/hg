@@ -16,6 +16,6 @@ Issue351: mq: qrefresh can create extra revlog entry
   $ hg qrefresh
 
   $ hg debugindex b
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0       3       0 1e88685f5dde 000000000000 000000000000
+     rev linkrev nodeid       p1           p2
+       0       0 1e88685f5dde 000000000000 000000000000
 

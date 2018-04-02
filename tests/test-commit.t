@@ -624,9 +624,9 @@ commit copy
   $ hg debugrename foo
   foo renamed from bar:26d3ca0dfd18e44d796b564e38dd173c9668d3a9
   $ hg debugindex bar
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0       6       0 26d3ca0dfd18 000000000000 000000000000
-       1         6       7       1 d267bddd54f7 26d3ca0dfd18 000000000000
+     rev linkrev nodeid       p1           p2
+       0       0 26d3ca0dfd18 000000000000 000000000000
+       1       1 d267bddd54f7 26d3ca0dfd18 000000000000
 
 Test making empty commits
   $ hg commit --config ui.allowemptycommit=True -m "empty commit"

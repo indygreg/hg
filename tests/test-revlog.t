@@ -40,8 +40,8 @@ Test for CVE-2016-3630
   ... .decode("base64").decode("zlib"))
 
   $ hg debugindex a.i
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0      19       2 99e0332bd498 000000000000 000000000000
-       1        19      12       3 6674f57a23d8 99e0332bd498 000000000000
+     rev linkrev nodeid       p1           p2
+       0       2 99e0332bd498 000000000000 000000000000
+       1       3 6674f57a23d8 99e0332bd498 000000000000
   $ hg debugdata a.i 1 2>&1 | egrep 'Error:.*decoded'
   (mercurial\.\w+\.mpatch\.)?mpatchError: patch cannot be decoded (re)

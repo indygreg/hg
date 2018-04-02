@@ -38,16 +38,27 @@
   full revision size (min/max/avg)     : 44 / 44 / 44
   delta size (min/max/avg)             : 0 / 0 / 0
 
-Test debugindex, with and without the --debug flag
+Test debugindex, with and without the --verbose/--debug flag
   $ hg debugindex a
+     rev linkrev nodeid       p1           p2
+       0       0 b789fdd96dc2 000000000000 000000000000
+
+  $ hg --verbose debugindex a
      rev    offset  length linkrev nodeid       p1           p2
        0         0       3       0 b789fdd96dc2 000000000000 000000000000
+
   $ hg --debug debugindex a
      rev    offset  length linkrev nodeid                                   p1                                       p2
        0         0       3       0 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+
   $ hg debugindex -f 1 a
+     rev flag     size   link     p1     p2       nodeid
+       0 0000        2      0     -1     -1 b789fdd96dc2
+
+  $ hg --verbose debugindex -f 1 a
      rev flag   offset   length     size   link     p1     p2       nodeid
        0 0000        0        3        2      0     -1     -1 b789fdd96dc2
+
   $ hg --debug debugindex -f 1 a
      rev flag   offset   length     size   link     p1     p2                                   nodeid
        0 0000        0        3        2      0     -1     -1 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3

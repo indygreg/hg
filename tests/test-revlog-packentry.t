@@ -16,8 +16,8 @@ this should be stored as a delta against rev 0
   created new head
 
   $ hg debugindex foo
-     rev    offset  length linkrev nodeid       p1           p2
-       0         0       0       0 b80de5d13875 000000000000 000000000000
-       1         0      13       1 0376abec49b8 000000000000 000000000000
+     rev linkrev nodeid       p1           p2
+       0       0 b80de5d13875 000000000000 000000000000
+       1       1 0376abec49b8 000000000000 000000000000
 
   $ cd ..

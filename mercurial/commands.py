@@ -1224,8 +1224,8 @@ def bundle(ui, repo, fname, dest=None, **opts):
         if dest:
             raise error.Abort(_("--base is incompatible with specifying "
                                "a destination"))
-        common = [repo.lookup(rev) for rev in base]
-        heads = [repo.lookup(r) for r in revs] if revs else None
+        common = [repo[rev].node() for rev in base]
+        heads = [repo[r].node() for r in revs] if revs else None
         outgoing = discovery.outgoing(repo, common, heads)
     else:
         dest = ui.expandpath(dest or 'default-push', dest or 'default')

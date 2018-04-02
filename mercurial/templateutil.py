@@ -599,9 +599,7 @@ def runmap(context, mapping, data):
         diter = d.itermaps(context)
     else:
         diter = _checkeditermaps(darg, d)
-    for i, v in enumerate(diter):
-        lm = context.overlaymap(mapping, v)
-        lm['index'] = i
+    for lm in _iteroverlaymaps(context, mapping, diter):
         yield evalrawexp(context, lm, targ)
 
 def runmember(context, mapping, data):

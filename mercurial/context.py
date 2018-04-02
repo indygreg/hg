@@ -411,9 +411,6 @@ class changectx(basectx):
         """changeid is a revision number, node, or tag"""
         super(changectx, self).__init__(repo)
 
-        if changeid == '':
-            changeid = '.'
-
         try:
             if isinstance(changeid, int):
                 self._node = repo.changelog.node(changeid)

@@ -581,7 +581,8 @@ test empty string
   hg: parse error: empty query
   [255]
   $ log 'parents("")'
-  8
+  hg: parse error: empty string is not a valid revision
+  [255]
 
 we can use patterns when searching for tags
 

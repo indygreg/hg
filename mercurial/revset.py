@@ -116,6 +116,8 @@ def _sortedb(xs):
 # operator methods
 
 def stringset(repo, subset, x, order):
+    if not x:
+        raise error.ParseError(_("empty string is not a valid revision"))
     x = scmutil.intrev(repo[x])
     if (x in subset
         or x == node.nullrev and isinstance(subset, fullreposet)):

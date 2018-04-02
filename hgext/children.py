@@ -35,7 +35,7 @@ command = registrar.command(cmdtable)
 testedwith = 'ships-with-hg-core'
 
 @command('children',
-    [('r', 'rev', '',
+    [('r', 'rev', '.',
      _('show children of the specified revision'), _('REV')),
     ] + templateopts,
     _('hg children [-r REV] [FILE]'),

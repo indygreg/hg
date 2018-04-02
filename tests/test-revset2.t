@@ -575,6 +575,14 @@ invalid function call should not be optimized to only()
   hg: parse error: not a symbol
   [255]
 
+test empty string
+
+  $ log ''
+  hg: parse error: empty query
+  [255]
+  $ log 'parents("")'
+  8
+
 we can use patterns when searching for tags
 
   $ log 'tag("1..*")'

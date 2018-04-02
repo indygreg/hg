@@ -456,7 +456,7 @@ and its ancestor by overriding "repo._filecommit".
   > EOF
   $ hg debugsetparents 17 17
   $ hg --config extensions.legacyrepo=../legacyrepo.py  commit -m "baz:2"
-  $ hg debugindexdot .hg/store/data/baz.i
+  $ hg debugindexdot baz
   digraph G {
   	-1 -> 0
   	0 -> 1
@@ -488,7 +488,7 @@ and its ancestor by overriding "repo._filecommit".
   > EOF
   $ hg debugsetparents 19 18
   $ hg --config extensions.legacyrepo=../legacyrepo.py  commit -m "baz:4"
-  $ hg debugindexdot .hg/store/data/baz.i
+  $ hg debugindexdot baz
   digraph G {
   	-1 -> 0
   	0 -> 1

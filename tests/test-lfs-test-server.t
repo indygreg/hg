@@ -823,7 +823,7 @@ Check error message when object does not exist:
   $ hg commit -m 'test'
   $ echo aaaaa > a
   $ hg commit -m 'largefile'
-  $ hg debugdata .hg/store/data/a.i 1 # verify this is no the file content but includes "oid", the LFS "pointer".
+  $ hg debugdata a 1 # verify this is no the file content but includes "oid", the LFS "pointer".
   version https://git-lfs.github.com/spec/v1
   oid sha256:bdc26931acfb734b142a8d675f205becf27560dc461f501822de13274fe6fc8a
   size 6

@@ -1161,16 +1161,16 @@ directory)
   R olddirname/commonfile.py
   R olddirname/newfile.py
   $ hg debugindex newdirname/newfile.py
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      89     -1       3 34a4d536c0c0 000000000000 000000000000
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      89       3 34a4d536c0c0 000000000000 000000000000
 
   $ echo a >> newdirname/commonfile.py
   $ hg ci --amend -m bug
   $ hg debugrename newdirname/newfile.py
   newdirname/newfile.py renamed from olddirname/newfile.py:690b295714aed510803d3020da9c70fca8336def
   $ hg debugindex newdirname/newfile.py
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      89     -1       3 34a4d536c0c0 000000000000 000000000000
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      89       3 34a4d536c0c0 000000000000 000000000000
 
 #if execbit
 

@@ -68,8 +68,8 @@ we should see one log entry for a
 this should show a revision linked to changeset 0
 
   $ hg debugindex a
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0       3  .....       0 b789fdd96dc2 000000000000 000000000000 (re)
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0       3       0 b789fdd96dc2 000000000000 000000000000
 
 we should see one log entry for b
 
@@ -84,8 +84,8 @@ we should see one log entry for b
 this should show a revision linked to changeset 1
 
   $ hg debugindex b
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0      65  .....       1 37d9b5d994ea 000000000000 000000000000 (re)
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      65       1 37d9b5d994ea 000000000000 000000000000
 
 this should show the rename information in the metadata
 
@@ -170,8 +170,8 @@ shouldn't show copy
 
 should match
   $ hg debugindex foo
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0       5  .....       0 2ed2a3912a0b 000000000000 000000000000 (re)
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0       5       0 2ed2a3912a0b 000000000000 000000000000
   $ hg debugrename bar
   bar renamed from foo:2ed2a3912a0b24502043eae84ee4b279c18b90dd
 
@@ -200,15 +200,15 @@ displayed.
 
 should show no parents for tip
   $ hg debugindex bar
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0      69  .....       1 7711d36246cc 000000000000 000000000000 (re)
-       1        69       6  .....       2 bdf70a2b8d03 7711d36246cc 000000000000 (re)
-       2        75      71  .....       3 b2558327ea8d 000000000000 000000000000 (re)
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      69       1 7711d36246cc 000000000000 000000000000
+       1        69       6       2 bdf70a2b8d03 7711d36246cc 000000000000
+       2        75      71       3 b2558327ea8d 000000000000 000000000000
 should match
   $ hg debugindex foo
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0       5  .....       0 2ed2a3912a0b 000000000000 000000000000 (re)
-       1         5       7  .....       2 dd12c926cf16 2ed2a3912a0b 000000000000 (re)
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0       5       0 2ed2a3912a0b 000000000000 000000000000
+       1         5       7       2 dd12c926cf16 2ed2a3912a0b 000000000000
   $ hg debugrename bar
   bar renamed from foo:dd12c926cf165e3eb4cf87b084955cb617221c17
 

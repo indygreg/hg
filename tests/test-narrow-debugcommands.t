@@ -15,20 +15,20 @@
   adding foo/bar/f
   adding foo/f
   $ hg debugindex -m
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      47     -1       0 14a5d056d75a 000000000000 000000000000
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      47       0 14a5d056d75a 000000000000 000000000000
   $ hg debugindex --dir foo
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      77     -1       0 e635c7857aef 000000000000 000000000000
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      77       0 e635c7857aef 000000000000 000000000000
   $ hg debugindex --dir foo/
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      77     -1       0 e635c7857aef 000000000000 000000000000
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      77       0 e635c7857aef 000000000000 000000000000
   $ hg debugindex --dir foo/bar
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      44     -1       0 e091d4224761 000000000000 000000000000
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      44       0 e091d4224761 000000000000 000000000000
   $ hg debugindex --dir foo/bar/
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      44     -1       0 e091d4224761 000000000000 000000000000
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      44       0 e091d4224761 000000000000 000000000000
   $ hg debugdata -m 0
   foo\x00e635c7857aef92ac761ce5741a99da159abbbb24t (esc)
   $ hg debugdata --dir foo 0

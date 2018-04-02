@@ -1059,12 +1059,6 @@ def debugindex(ui, repo, file_=None, **opts):
     if format not in (0, 1):
         raise error.Abort(_("unknown format %d") % format)
 
-    generaldelta = r.version & revlog.FLAG_GENERALDELTA
-    if generaldelta:
-        basehdr = ' delta'
-    else:
-        basehdr = '  base'
-
     if ui.debugflag:
         shortfn = hex
     else:
@@ -1077,32 +1071,27 @@ def debugindex(ui, repo, file_=None, **opts):
         break
 
     if format == 0:
-        ui.write(("   rev    offset  length " + basehdr + " linkrev"
+        ui.write(("   rev    offset  length linkrev"
                  " %s %s p2\n") % ("nodeid".ljust(idlen), "p1".ljust(idlen)))
     elif format == 1:
-        ui.write(("   rev flag   offset   length"
-                 "     size " + basehdr + "   link     p1     p2"
+        ui.write(("   rev flag   offset   length     size   link     p1     p2"
                  " %s\n") % "nodeid".rjust(idlen))
 
     for i in r:
         node = r.node(i)
-        if generaldelta:
-            base = r.deltaparent(i)
-        else:
-            base = r.chainbase(i)
         if format == 0:
             try:
                 pp = r.parents(node)
             except Exception:
                 pp = [nullid, nullid]
-            ui.write("% 6d % 9d % 7d % 6d % 7d %s %s %s\n" % (
-                    i, r.start(i), r.length(i), base, r.linkrev(i),
+            ui.write("% 6d % 9d % 7d % 7d %s %s %s\n" % (
+                    i, r.start(i), r.length(i), r.linkrev(i),
                     shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
         elif format == 1:
             pr = r.parentrevs(i)
-            ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d % 6d %s\n" % (
+            ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n" % (
                     i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
-                    base, r.linkrev(i), pr[0], pr[1], shortfn(node)))
+                    r.linkrev(i), pr[0], pr[1], shortfn(node)))
 
 @command('debugindexdot', cmdutil.debugrevlogopts,
     _('-c|-m|FILE'), optionalrepo=True)

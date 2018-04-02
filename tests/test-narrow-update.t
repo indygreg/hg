@@ -33,11 +33,11 @@ create full repo
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd narrow
   $ hg debugindex -c
-     rev    offset  length   base linkrev nodeid       p1           p2
-       0         0      64      0       0 9958b1af2add 000000000000 000000000000
-       1        64      81      1       1 2db4ce2a3bfe 9958b1af2add 000000000000
-       2       145      75      2       2 0980ee31a742 2db4ce2a3bfe 000000000000
-       3       220      (76|77)      3       3 4410145019b7 0980ee31a742 000000000000 (re)
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0      64       0 9958b1af2add 000000000000 000000000000
+       1        64      81       1 2db4ce2a3bfe 9958b1af2add 000000000000
+       2       145      75       2 0980ee31a742 2db4ce2a3bfe 000000000000
+       3       220      (76|77)       3 4410145019b7 0980ee31a742 000000000000 (re)
 
   $ hg update -q 0
 

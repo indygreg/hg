@@ -448,7 +448,7 @@ def clonewithshare(ui, peeropts, sharepath, source, srcpeer, dest, pull=False,
             # well. Never update because working copies aren't necessary in
             # share mode.
             clone(ui, peeropts, source, dest=sharepath, pull=True,
-                  rev=rev, update=False, stream=stream)
+                  revs=rev, update=False, stream=stream)
 
     # Resolve the value to put in [paths] section for the source.
     if islocal(source):
@@ -483,7 +483,7 @@ def _copycache(srcrepo, dstcachedir, fname):
             os.mkdir(dstcachedir)
         util.copyfile(srcbranchcache, dstbranchcache)
 
-def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
+def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
           update=True, stream=False, branch=None, shareopts=None):
     """Make a copy of an existing repository.
 
@@ -512,7 +512,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
     stream: stream raw data uncompressed from repository (fast over
     LAN, slow over WAN)
 
-    rev: revision to clone up to (implies pull=True)
+    revs: revision to clone up to (implies pull=True)
 
     update: update working directory after clone completes, if
     destination is local repository (True means update to default rev,
@@ -536,7 +536,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
         srcpeer = source.peer() # in case we were called with a localrepo
         branches = (None, branch or [])
         origsource = source = srcpeer.url()
-    rev, checkout = addbranchrevs(srcpeer, srcpeer, branches, rev)
+    revs, checkout = addbranchrevs(srcpeer, srcpeer, branches, revs)
 
     if dest is None:
         dest = defaultdest(source)
@@ -587,7 +587,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
 
         if sharepath:
             return clonewithshare(ui, peeropts, sharepath, source, srcpeer,
-                                  dest, pull=pull, rev=rev, update=update,
+                                  dest, pull=pull, rev=revs, update=update,
                                   stream=stream)
 
     srclock = destlock = cleandir = None
@@ -603,7 +603,7 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
         copy = False
         if (srcrepo and srcrepo.cancopy() and islocal(dest)
             and not phases.hassecret(srcrepo)):
-            copy = not pull and not rev
+            copy = not pull and not revs
 
         if copy:
             try:
@@ -660,14 +660,15 @@ def clone(ui, peeropts, source, dest=None, pull=False, rev=None,
                                      % dest)
                 raise
 
-            revs = None
-            if rev:
+            if revs:
                 if not srcpeer.capable('lookup'):
                     raise error.Abort(_("src repository does not support "
                                        "revision lookup and so doesn't "
                                        "support clone by revision"))
-                revs = [srcpeer.lookup(r) for r in rev]
+                revs = [srcpeer.lookup(r) for r in revs]
                 checkout = revs[0]
+            else:
+                revs = None
             local = destpeer.local()
             if local:
                 u = util.url(abspath)

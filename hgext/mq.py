@@ -2505,7 +2505,7 @@ def clone(ui, source, dest=None, **opts):
     ui.note(_('cloning main repository\n'))
     sr, dr = hg.clone(ui, opts, sr.url(), dest,
                       pull=opts.get('pull'),
-                      rev=destrev,
+                      revs=destrev,
                       update=False,
                       stream=opts.get('uncompressed'))
 

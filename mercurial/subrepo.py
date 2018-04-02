@@ -603,7 +603,7 @@ class hgsubrepo(abstractsubrepo):
 
     @annotatesubrepoerror
     def phase(self, state):
-        return self._repo[state].phase()
+        return self._repo[state or '.'].phase()
 
     @annotatesubrepoerror
     def remove(self):

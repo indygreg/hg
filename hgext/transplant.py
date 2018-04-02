@@ -703,7 +703,7 @@ def _dotransplant(ui, repo, *revs, **opts):
 
         tf = tp.transplantfilter(repo, source, p1)
         if opts.get('prune'):
-            prune = set(source.lookup(r)
+            prune = set(source[r].node()
                         for r in scmutil.revrange(source, opts.get('prune')))
             matchfn = lambda x: tf(x) and x not in prune
         else:
@@ -712,7 +712,7 @@ def _dotransplant(ui, repo, *revs, **opts):
         revmap = {}
         if revs:
             for r in scmutil.revrange(source, revs):
-                revmap[int(r)] = source.lookup(r)
+                revmap[int(r)] = source[r].node()
         elif opts.get('all') or not merges:
             if source != repo:
                 alltransplants = incwalk(source, csets, match=matchfn)

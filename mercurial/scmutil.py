@@ -433,6 +433,13 @@ def formatrevnode(ui, rev, node):
         hexfunc = short
     return '%d:%s' % (rev, hexfunc(node))
 
+def isrevsymbol(repo, symbol):
+    try:
+        revsymbol(repo, symbol)
+        return True
+    except error.RepoLookupError:
+        return False
+
 def revsymbol(repo, symbol):
     """Returns a context given a single revision symbol (as string).
 

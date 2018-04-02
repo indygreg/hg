@@ -2170,6 +2170,9 @@ def posttreebuilthook(tree, repo):
     # hook for extensions to execute code on the optimized tree
     pass
 
+def lookupfn(repo):
+    return lambda symbol: scmutil.isrevsymbol(repo, symbol)
+
 def match(ui, spec, repo=None):
     """Create a matcher for a single revision spec"""
     return matchany(ui, [spec], repo=repo)
@@ -2189,7 +2192,7 @@ def matchany(ui, specs, repo=None, localalias=None):
         raise error.ParseError(_("empty query"))
     lookup = None
     if repo:
-        lookup = repo.__contains__
+        lookup = lookupfn(repo)
     if len(specs) == 1:
         tree = revsetlang.parse(specs[0], lookup)
     else:

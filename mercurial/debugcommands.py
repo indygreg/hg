@@ -2210,7 +2210,7 @@ def debugrevspec(ui, repo, expr, **opts):
 
     treebystage = {}
     printedtree = None
-    tree = revsetlang.parse(expr, lookup=repo.__contains__)
+    tree = revsetlang.parse(expr, lookup=revset.lookupfn(repo))
     for n, f in stages:
         treebystage[n] = tree = f(tree)
         if n in showalways or (n in showchanged and tree != printedtree):

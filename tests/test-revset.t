@@ -54,7 +54,7 @@ these predicates use '\0' as a separator:
   >         args = map(nodemod.bin, args)
   >     expr = revsetlang.formatspec(fmt, list(args))
   >     if ui.verbose:
-  >         tree = revsetlang.parse(expr, lookup=repo.__contains__)
+  >         tree = revsetlang.parse(expr, lookup=revset.lookupfn(repo))
   >         ui.note(revsetlang.prettyformat(tree), b"\n")
   >         if opts["optimize"]:
   >             opttree = revsetlang.optimize(revsetlang.analyze(tree))

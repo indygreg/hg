@@ -916,7 +916,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
         msg = _('there are ambiguous outgoing revisions')
         hint = _("see 'hg help histedit' for more detail")
         raise error.Abort(msg, hint=hint)
-    return repo.lookup(roots[0])
+    return repo[roots[0]].node()
 
 @command('histedit',
     [('', 'commands', '',

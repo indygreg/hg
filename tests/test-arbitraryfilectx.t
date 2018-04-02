@@ -2,13 +2,13 @@ Setup:
   $ cat > eval.py <<EOF
   > from __future__ import absolute_import
   > import filecmp
-  > from mercurial import commands, context, registrar
+  > from mercurial import commands, context, pycompat, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'eval', [], b'hg eval CMD')
   > def eval_(ui, repo, *cmds, **opts):
   >     cmd = b" ".join(cmds)
-  >     res = str(eval(cmd, globals(), locals()))
+  >     res = pycompat.bytestr(eval(cmd, globals(), locals()))
   >     ui.warn(b"%s" % res)
   > EOF
 

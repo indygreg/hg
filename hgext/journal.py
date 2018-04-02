@@ -226,7 +226,7 @@ class journalentry(collections.namedtuple(
 
     def __bytes__(self):
         """bytes representation for storage"""
-        time = ' '.join(map(str, self.timestamp))
+        time = ' '.join(map(pycompat.bytestr, self.timestamp))
         oldhashes = ','.join([node.hex(hash) for hash in self.oldhashes])
         newhashes = ','.join([node.hex(hash) for hash in self.newhashes])
         return '\n'.join((

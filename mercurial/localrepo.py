@@ -1021,7 +1021,7 @@ class localrepository(object):
                 pass
 
     def lookup(self, key):
-        return self[key].node()
+        return scmutil.revsymbol(self, key).node()
 
     def lookupbranch(self, key, remote=None):
         repo = remote or self

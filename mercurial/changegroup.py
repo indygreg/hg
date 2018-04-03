@@ -758,7 +758,8 @@ class cg1packer(object):
         for i, fname in enumerate(sorted(changedfiles)):
             filerevlog = repo.file(fname)
             if not filerevlog:
-                raise error.Abort(_("empty or missing revlog for %s") % fname)
+                raise error.Abort(_("empty or missing file data for %s") %
+                                  fname)
 
             linkrevnodes = linknodes(filerevlog, fname)
             # Lookup for filenodes, we collected the linkrev nodes above in the

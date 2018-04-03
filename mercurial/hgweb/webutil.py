@@ -463,7 +463,7 @@ def symrevorshortnode(req, ctx):
     else:
         return short(ctx.node())
 
-def _listfilesgen(tmpl, ctx, stripecount):
+def _listfilesgen(context, tmpl, ctx, stripecount):
     parity = paritygen(stripecount)
     for blockno, f in enumerate(ctx.files()):
         template = 'filenodelink' if f in ctx else 'filenolink'
@@ -502,7 +502,9 @@ def changesetentry(web, ctx):
         changesettag=showtags,
         changesetbookmark=showbookmarks,
         changesetbranch=showbranch,
-        files=list(_listfilesgen(web.tmpl, ctx, web.stripecount)),
+        files=templateutil.mappedgenerator(_listfilesgen,
+                                           args=(web.tmpl, ctx,
+                                                 web.stripecount)),
         diffsummary=lambda **x: diffsummary(diffstatsgen),
         diffstat=diffstats,
         archives=web.archivelist(ctx.hex()),

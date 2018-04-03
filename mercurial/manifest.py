@@ -1160,8 +1160,6 @@ class manifestrevlog(revlog.revlog):
 
         if dir:
             assert self._treeondisk, 'opts is %r' % opts
-            if not dir.endswith('/'):
-                dir = dir + '/'
 
         if indexfile is None:
             indexfile = '00manifest.i'

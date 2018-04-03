@@ -519,7 +519,7 @@ def listfilediffs(files, node, max):
     return templateutil.mappedgenerator(_listfilediffsgen,
                                         args=(files, node, max))
 
-def _prettyprintdifflines(tmpl, lines, blockno, lineidprefix):
+def _prettyprintdifflines(context, tmpl, lines, blockno, lineidprefix):
     for lineno, l in enumerate(lines, 1):
         difflineno = "%d.%d" % (blockno, lineno)
         if l.startswith('+'):
@@ -562,11 +562,13 @@ def diffs(web, ctx, basectx, files, style, linerange=None,
                     continue
             lines.extend(hunklines)
         if lines:
+            l = templateutil.mappedgenerator(_prettyprintdifflines,
+                                             args=(web.tmpl, lines, blockno,
+                                                   lineidprefix))
             yield web.tmpl.generate('diffblock', {
                 'parity': next(parity),
                 'blockno': blockno,
-                'lines': _prettyprintdifflines(web.tmpl, lines, blockno,
-                                               lineidprefix),
+                'lines': l,
             })
 
 def compare(tmpl, context, leftlines, rightlines):

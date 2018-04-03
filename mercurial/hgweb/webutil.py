@@ -509,15 +509,15 @@ def changesetentry(web, ctx):
         archives=web.archivelist(ctx.hex()),
         **pycompat.strkwargs(commonentry(web.repo, ctx)))
 
-def _listfilediffsgen(context, tmpl, files, node, max):
+def _listfilediffsgen(context, files, node, max):
     for f in files[:max]:
-        yield tmpl.generate('filedifflink', {'node': hex(node), 'file': f})
+        yield context.process('filedifflink', {'node': hex(node), 'file': f})
     if len(files) > max:
-        yield tmpl.generate('fileellipses', {})
+        yield context.process('fileellipses', {})
 
 def listfilediffs(tmpl, files, node, max):
     return templateutil.mappedgenerator(_listfilediffsgen,
-                                        args=(tmpl, files, node, max))
+                                        args=(files, node, max))
 
 def diffs(web, ctx, basectx, files, style, linerange=None,
           lineidprefix=''):

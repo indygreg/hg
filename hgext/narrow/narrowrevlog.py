@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 from mercurial import (
-   manifest,
    revlog,
    util,
 )
@@ -29,14 +28,6 @@ def setup():
     # We just wanted to add the flag processor, which is done at module
     # load time.
     pass
-
-def makenarrowmanifestlog(mfl, repo):
-    class narrowmanifestlog(mfl.__class__):
-        def get(self, dir, node, verify=True):
-            if not repo.narrowmatch().visitdir(dir[:-1] or '.'):
-                return manifest.excludeddirmanifestctx(dir, node)
-            return super(narrowmanifestlog, self).get(dir, node, verify=verify)
-    mfl.__class__ = narrowmanifestlog
 
 def makenarrowfilelog(fl, narrowmatch):
     class narrowfilelog(fl.__class__):

@@ -1303,6 +1303,9 @@ class manifestlog(object):
         if node in self._dirmancache.get(dir, ()):
             return self._dirmancache[dir][node]
 
+        if not self._narrowmatch.always():
+            if not self._narrowmatch.visitdir(dir[:-1] or '.'):
+                return excludeddirmanifestctx(dir, node)
         if dir:
             if self._revlog._treeondisk:
                 if verify:

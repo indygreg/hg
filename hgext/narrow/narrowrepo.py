@@ -50,12 +50,6 @@ def wraprepo(repo):
 
     class narrowrepository(repo.__class__):
 
-        @cacheprop('00manifest.i')
-        def manifestlog(self):
-            mfl = super(narrowrepository, self).manifestlog
-            narrowrevlog.makenarrowmanifestlog(mfl, self)
-            return mfl
-
         def file(self, f):
             fl = super(narrowrepository, self).file(f)
             narrowrevlog.makenarrowfilelog(fl, self.narrowmatch())

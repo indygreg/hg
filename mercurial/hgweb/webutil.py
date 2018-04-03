@@ -670,7 +670,7 @@ def diffsummary(statgen):
     return _(' %d files changed, %d insertions(+), %d deletions(-)\n') % (
              len(stats), addtotal, removetotal)
 
-def _diffstattmplgen(context, tmpl, ctx, statgen, parity):
+def _diffstattmplgen(context, ctx, statgen, parity):
     stats, maxname, maxtotal, addtotal, removetotal, binary = next(statgen)
     files = ctx.files()
 
@@ -684,7 +684,7 @@ def _diffstattmplgen(context, tmpl, ctx, statgen, parity):
         template = 'diffstatlink' if filename in files else 'diffstatnolink'
         total = adds + removes
         fileno += 1
-        yield tmpl.generate(template, {
+        yield context.process(template, {
             'node': ctx.hex(),
             'file': filename,
             'fileno': fileno,
@@ -696,7 +696,7 @@ def _diffstattmplgen(context, tmpl, ctx, statgen, parity):
 
 def diffstat(tmpl, ctx, statgen, parity):
     '''Return a diffstat template for each file in the diff.'''
-    args = (tmpl, ctx, statgen, parity)
+    args = (ctx, statgen, parity)
     return templateutil.mappedgenerator(_diffstattmplgen, args=args)
 
 class sessionvars(templateutil.wrapped):

@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 Testing infinipush extension and the confi options provided by it
 
 Setup

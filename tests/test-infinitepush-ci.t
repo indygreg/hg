@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 Testing the case when there is no infinitepush extension present on the client
 side and the server routes each push to bundlestore. This case is very much
 similar to CI use case.

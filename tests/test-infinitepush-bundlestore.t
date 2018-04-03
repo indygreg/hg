@@ -1,3 +1,4 @@
+#require no-reposimplestore
 
 Create an ondisk bundlestore in .hg/scratchbranches
   $ . "$TESTDIR/library-infinitepush.sh"

@@ -30,24 +30,6 @@ def setup():
     # load time.
     pass
 
-def makenarrowmanifestrevlog(mfrevlog, repo):
-    if util.safehasattr(mfrevlog, '_narrowed'):
-        return
-
-    class narrowmanifestrevlog(mfrevlog.__class__):
-        # This function is called via debug{revlog,index,data}, but also during
-        # at least some push operations. This will be used to wrap/exclude the
-        # child directories when using treemanifests.
-        def dirlog(self, d):
-            if not repo.narrowmatch().visitdir(d[:-1] or '.'):
-                return manifest.excludedmanifestrevlog(d)
-            result = super(narrowmanifestrevlog, self).dirlog(d)
-            makenarrowmanifestrevlog(result, repo)
-            return result
-
-    mfrevlog.__class__ = narrowmanifestrevlog
-    mfrevlog._narrowed = True
-
 def makenarrowmanifestlog(mfl, repo):
     class narrowmanifestlog(mfl.__class__):
         def get(self, dir, node, verify=True):

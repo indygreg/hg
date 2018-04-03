@@ -1279,6 +1279,7 @@ class manifestlog(object):
         self._treeinmem = usetreemanifest
 
         self._revlog = repo._constructmanifest()
+        self._narrowmatch = repo.narrowmatch()
 
         # A cache of the manifestctx or treemanifestctx for each directory
         self._dirmancache = {}
@@ -1477,6 +1478,10 @@ class treemanifestctx(object):
         #self.linkrev = revlog.linkrev(rev)
 
     def _revlog(self):
+        narrowmatch = self._manifestlog._narrowmatch
+        if not narrowmatch.always():
+            if not narrowmatch.visitdir(self._dir[:-1] or '.'):
+                return excludedmanifestrevlog(self._dir)
         return self._manifestlog._revlog.dirlog(self._dir)
 
     def read(self):

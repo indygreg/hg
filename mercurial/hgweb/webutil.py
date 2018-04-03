@@ -519,27 +519,26 @@ def listfilediffs(files, node, max):
     return templateutil.mappedgenerator(_listfilediffsgen,
                                         args=(files, node, max))
 
+def _prettyprintdifflines(tmpl, lines, blockno, lineidprefix):
+    for lineno, l in enumerate(lines, 1):
+        difflineno = "%d.%d" % (blockno, lineno)
+        if l.startswith('+'):
+            ltype = "difflineplus"
+        elif l.startswith('-'):
+            ltype = "difflineminus"
+        elif l.startswith('@'):
+            ltype = "difflineat"
+        else:
+            ltype = "diffline"
+        yield tmpl.generate(ltype, {
+            'line': l,
+            'lineno': lineno,
+            'lineid': lineidprefix + "l%s" % difflineno,
+            'linenumber': "% 8s" % difflineno,
+        })
+
 def diffs(web, ctx, basectx, files, style, linerange=None,
           lineidprefix=''):
-
-    def prettyprintlines(lines, blockno):
-        for lineno, l in enumerate(lines, 1):
-            difflineno = "%d.%d" % (blockno, lineno)
-            if l.startswith('+'):
-                ltype = "difflineplus"
-            elif l.startswith('-'):
-                ltype = "difflineminus"
-            elif l.startswith('@'):
-                ltype = "difflineat"
-            else:
-                ltype = "diffline"
-            yield web.tmpl.generate(ltype, {
-                'line': l,
-                'lineno': lineno,
-                'lineid': lineidprefix + "l%s" % difflineno,
-                'linenumber': "% 8s" % difflineno,
-            })
-
     repo = web.repo
     if files:
         m = match.exact(repo.root, repo.getcwd(), files)
@@ -566,7 +565,8 @@ def diffs(web, ctx, basectx, files, style, linerange=None,
             yield web.tmpl.generate('diffblock', {
                 'parity': next(parity),
                 'blockno': blockno,
-                'lines': prettyprintlines(lines, blockno),
+                'lines': _prettyprintdifflines(web.tmpl, lines, blockno,
+                                               lineidprefix),
             })
 
 def compare(tmpl, context, leftlines, rightlines):

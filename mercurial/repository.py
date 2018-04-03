@@ -493,12 +493,6 @@ class completelocalrepository(zi.Interface):
     def file(f):
         """Obtain a filelog for a tracked path."""
 
-    def changectx(changeid):
-        """Obtains a changectx for a revision.
-
-        Identical to __getitem__.
-        """
-
     def setparents(p1, p2):
         """Set the parent nodes of the working directory."""
 

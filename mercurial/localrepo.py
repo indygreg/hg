@@ -1073,9 +1073,6 @@ class localrepository(object):
             f = f[1:]
         return filelog.filelog(self.svfs, f)
 
-    def changectx(self, changeid):
-        return self[changeid]
-
     def setparents(self, p1, p2=nullid):
         with self.dirstate.parentchange():
             copies = self.dirstate.setparents(p1, p2)

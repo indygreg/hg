@@ -537,9 +537,8 @@ def _prettyprintdifflines(context, lines, blockno, lineidprefix):
             'linenumber': "% 8s" % difflineno,
         })
 
-def diffs(web, ctx, basectx, files, style, linerange=None,
-          lineidprefix=''):
-    repo = web.repo
+def _diffsgen(context, repo, ctx, basectx, files, style, stripecount,
+              linerange, lineidprefix):
     if files:
         m = match.exact(repo.root, repo.getcwd(), files)
     else:
@@ -548,7 +547,7 @@ def diffs(web, ctx, basectx, files, style, linerange=None,
     diffopts = patch.diffopts(repo.ui, untrusted=True)
     node1 = basectx.node()
     node2 = ctx.node()
-    parity = paritygen(web.stripecount)
+    parity = paritygen(stripecount)
 
     diffhunks = patch.diffhunks(repo, node1, node2, m, opts=diffopts)
     for blockno, (fctx1, fctx2, header, hunks) in enumerate(diffhunks, 1):
@@ -565,11 +564,16 @@ def diffs(web, ctx, basectx, files, style, linerange=None,
             l = templateutil.mappedgenerator(_prettyprintdifflines,
                                              args=(lines, blockno,
                                                    lineidprefix))
-            yield web.tmpl.generate('diffblock', {
+            yield {
                 'parity': next(parity),
                 'blockno': blockno,
                 'lines': l,
-            })
+            }
+
+def diffs(web, ctx, basectx, files, style, linerange=None, lineidprefix=''):
+    args = (web.repo, ctx, basectx, files, style, web.stripecount,
+            linerange, lineidprefix)
+    return templateutil.mappinggenerator(_diffsgen, args=args, name='diffblock')
 
 def compare(tmpl, context, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''

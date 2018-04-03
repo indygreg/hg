@@ -575,12 +575,12 @@ def diffs(web, ctx, basectx, files, style, linerange=None, lineidprefix=''):
             linerange, lineidprefix)
     return templateutil.mappinggenerator(_diffsgen, args=args, name='diffblock')
 
-def _compline(tmpl, type, leftlineno, leftline, rightlineno, rightline):
+def _compline(type, leftlineno, leftline, rightlineno, rightline):
     lineid = leftlineno and ("l%d" % leftlineno) or ''
     lineid += rightlineno and ("r%d" % rightlineno) or ''
     llno = '%d' % leftlineno if leftlineno else ''
     rlno = '%d' % rightlineno if rightlineno else ''
-    return tmpl.generate('comparisonline', {
+    return {
         'type': type,
         'lineid': lineid,
         'leftlineno': leftlineno,
@@ -589,46 +589,48 @@ def _compline(tmpl, type, leftlineno, leftline, rightlineno, rightline):
         'rightlineno': rightlineno,
         'rightlinenumber': "% 6s" % rlno,
         'rightline': rightline or '',
-    })
+    }
 
-def _getcompblock(tmpl, leftlines, rightlines, opcodes):
+def _getcompblockgen(context, leftlines, rightlines, opcodes):
     for type, llo, lhi, rlo, rhi in opcodes:
         len1 = lhi - llo
         len2 = rhi - rlo
         count = min(len1, len2)
         for i in xrange(count):
-            yield _compline(tmpl,
-                            type=type,
+            yield _compline(type=type,
                             leftlineno=llo + i + 1,
                             leftline=leftlines[llo + i],
                             rightlineno=rlo + i + 1,
                             rightline=rightlines[rlo + i])
         if len1 > len2:
             for i in xrange(llo + count, lhi):
-                yield _compline(tmpl,
-                                type=type,
+                yield _compline(type=type,
                                 leftlineno=i + 1,
                                 leftline=leftlines[i],
                                 rightlineno=None,
                                 rightline=None)
         elif len2 > len1:
             for i in xrange(rlo + count, rhi):
-                yield _compline(tmpl,
-                                type=type,
+                yield _compline(type=type,
                                 leftlineno=None,
                                 leftline=None,
                                 rightlineno=i + 1,
                                 rightline=rightlines[i])
 
+def _getcompblock(leftlines, rightlines, opcodes):
+    args = (leftlines, rightlines, opcodes)
+    return templateutil.mappinggenerator(_getcompblockgen, args=args,
+                                         name='comparisonline')
+
 def compare(tmpl, context, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''
     s = difflib.SequenceMatcher(None, leftlines, rightlines)
     if context < 0:
-        l = _getcompblock(tmpl, leftlines, rightlines, s.get_opcodes())
+        l = _getcompblock(leftlines, rightlines, s.get_opcodes())
         yield tmpl.generate('comparisonblock', {'lines': l})
     else:
         for oc in s.get_grouped_opcodes(n=context):
-            l = _getcompblock(tmpl, leftlines, rightlines, oc)
+            l = _getcompblock(leftlines, rightlines, oc)
             yield tmpl.generate('comparisonblock', {'lines': l})
 
 def diffstatgen(ctx, basectx):

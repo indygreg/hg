@@ -575,24 +575,24 @@ def diffs(web, ctx, basectx, files, style, linerange=None, lineidprefix=''):
             linerange, lineidprefix)
     return templateutil.mappinggenerator(_diffsgen, args=args, name='diffblock')
 
+def _compline(tmpl, type, leftlineno, leftline, rightlineno, rightline):
+    lineid = leftlineno and ("l%d" % leftlineno) or ''
+    lineid += rightlineno and ("r%d" % rightlineno) or ''
+    llno = '%d' % leftlineno if leftlineno else ''
+    rlno = '%d' % rightlineno if rightlineno else ''
+    return tmpl.generate('comparisonline', {
+        'type': type,
+        'lineid': lineid,
+        'leftlineno': leftlineno,
+        'leftlinenumber': "% 6s" % llno,
+        'leftline': leftline or '',
+        'rightlineno': rightlineno,
+        'rightlinenumber': "% 6s" % rlno,
+        'rightline': rightline or '',
+    })
+
 def compare(tmpl, context, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''
-
-    def compline(type, leftlineno, leftline, rightlineno, rightline):
-        lineid = leftlineno and ("l%d" % leftlineno) or ''
-        lineid += rightlineno and ("r%d" % rightlineno) or ''
-        llno = '%d' % leftlineno if leftlineno else ''
-        rlno = '%d' % rightlineno if rightlineno else ''
-        return tmpl.generate('comparisonline', {
-            'type': type,
-            'lineid': lineid,
-            'leftlineno': leftlineno,
-            'leftlinenumber': "% 6s" % llno,
-            'leftline': leftline or '',
-            'rightlineno': rightlineno,
-            'rightlinenumber': "% 6s" % rlno,
-            'rightline': rightline or '',
-        })
 
     def getblock(opcodes):
         for type, llo, lhi, rlo, rhi in opcodes:
@@ -600,25 +600,28 @@ def compare(tmpl, context, leftlines, rightlines):
             len2 = rhi - rlo
             count = min(len1, len2)
             for i in xrange(count):
-                yield compline(type=type,
-                               leftlineno=llo + i + 1,
-                               leftline=leftlines[llo + i],
-                               rightlineno=rlo + i + 1,
-                               rightline=rightlines[rlo + i])
+                yield _compline(tmpl,
+                                type=type,
+                                leftlineno=llo + i + 1,
+                                leftline=leftlines[llo + i],
+                                rightlineno=rlo + i + 1,
+                                rightline=rightlines[rlo + i])
             if len1 > len2:
                 for i in xrange(llo + count, lhi):
-                    yield compline(type=type,
-                                   leftlineno=i + 1,
-                                   leftline=leftlines[i],
-                                   rightlineno=None,
-                                   rightline=None)
+                    yield _compline(tmpl,
+                                    type=type,
+                                    leftlineno=i + 1,
+                                    leftline=leftlines[i],
+                                    rightlineno=None,
+                                    rightline=None)
             elif len2 > len1:
                 for i in xrange(rlo + count, rhi):
-                    yield compline(type=type,
-                                   leftlineno=None,
-                                   leftline=None,
-                                   rightlineno=i + 1,
-                                   rightline=rightlines[i])
+                    yield _compline(tmpl,
+                                    type=type,
+                                    leftlineno=None,
+                                    leftline=None,
+                                    rightlineno=i + 1,
+                                    rightline=rightlines[i])
 
     s = difflib.SequenceMatcher(None, leftlines, rightlines)
     if context < 0:

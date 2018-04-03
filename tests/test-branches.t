@@ -86,9 +86,7 @@ verify update will accept invalid legacy branch names
 
   $ hg init test-invalid-branch-name
   $ cd test-invalid-branch-name
-  $ hg pull -u "$TESTDIR"/bundles/test-invalid-branch-name.hg
-  pulling from *test-invalid-branch-name.hg (glob)
-  requesting all changes
+  $ hg unbundle -u "$TESTDIR"/bundles/test-invalid-branch-name.hg
   adding changesets
   adding manifests
   adding file changes

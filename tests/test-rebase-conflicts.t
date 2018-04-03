@@ -148,16 +148,17 @@ Bookmark stays active after --continue
 
 Check that the right ancestors is used while rebasing a merge (issue4041)
 
-  $ hg clone "$TESTDIR/bundles/issue4041.hg" issue4041
-  requesting all changes
+  $ hg init issue4041
+  $ cd issue4041
+  $ hg unbundle "$TESTDIR/bundles/issue4041.hg"
   adding changesets
   adding manifests
   adding file changes
   added 11 changesets with 8 changes to 3 files (+1 heads)
   new changesets 24797d4f68de:2f2496ddf49d
-  updating to branch default
+  (run 'hg heads' to see heads)
+  $ hg up default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cd issue4041
   $ hg log -G
   o    changeset:   10:2f2496ddf49d
   |\   branch:      f1

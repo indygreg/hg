@@ -13,9 +13,7 @@ bundle w/o type option
   1 changesets found
 
   $ cd ../t2
-  $ hg pull ../b1
-  pulling from ../b1
-  requesting all changes
+  $ hg unbundle ../b1
   adding changesets
   adding manifests
   adding file changes
@@ -32,7 +30,7 @@ Unknown compression type is rejected
 
   $ hg init t3
   $ cd t3
-  $ hg -q pull ../b1
+  $ hg -q unbundle ../b1
   $ hg bundle -a -t unknown out.hg
   abort: unknown is not a recognized bundle specification
   (see 'hg help bundlespec' for supported values for --type)

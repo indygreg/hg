@@ -334,9 +334,7 @@ Stripping and recovering changes should work
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     modify dir1/a
   
-  $ hg pull .hg/strip-backup/*
-  pulling from .hg/strip-backup/51cfd7b1e13b-78a2f3ed-backup.hg
-  searching for changes
+  $ hg unbundle .hg/strip-backup/*
   adding changesets
   adding manifests
   adding file changes

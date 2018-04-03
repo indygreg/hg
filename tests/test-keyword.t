@@ -118,14 +118,14 @@ A bundle to test this was made with:
  hg ci -m addsym -u mercurial
  hg bundle --base null ../test-keyword.hg
 
-  $ hg pull -u "$TESTDIR"/bundles/test-keyword.hg
-  pulling from *test-keyword.hg (glob)
-  requesting all changes
+  $ hg unbundle "$TESTDIR"/bundles/test-keyword.hg
   adding changesets
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets a2392c293916
+  (run 'hg update' to get a working copy)
+  $ hg up a2392c293916
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
   $ echo 'expand $Id$' > a

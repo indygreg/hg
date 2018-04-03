@@ -215,13 +215,11 @@
   cache:rev-branch-cache -- {}
   phase-heads -- {}
       264128213d290d868c54642d13aeaa3675551a78 draft
-  $ hg pull .hg/strip-backup/*
-  pulling from .hg/strip-backup/264128213d29-0b39d6bf-backup.hg
-  searching for changes
+  $ hg unbundle .hg/strip-backup/*
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 0 changes to 0 files (+1 heads)
+  added 1 changesets with 0 changes to 1 files (+1 heads)
   new changesets 264128213d29
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ rm .hg/strip-backup/*
@@ -1107,9 +1105,7 @@ test stripping a working directory parent doesn't switch named branches
      summary:     commitA
   
 
-  $ hg pull -u $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
-  pulling from $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
-  searching for changes
+  $ hg unbundle -u $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
   adding changesets
   adding manifests
   adding file changes

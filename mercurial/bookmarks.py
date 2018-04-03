@@ -204,7 +204,7 @@ class bmstore(dict):
 
         If divergent bookmark are to be deleted, they will be returned as list.
         """
-        cur = self._repo.changectx('.').node()
+        cur = self._repo['.'].node()
         if mark in self and not force:
             if target:
                 if self[mark] == target and target == cur:
@@ -818,7 +818,7 @@ def addbookmarks(repo, tr, names, rev=None, force=False, inactive=False):
     Raises an abort error if old is not in the bookmark store.
     """
     marks = repo._bookmarks
-    cur = repo.changectx('.').node()
+    cur = repo['.'].node()
     newact = None
     changes = []
     hiddenrev = None

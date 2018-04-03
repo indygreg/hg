@@ -509,7 +509,7 @@ def changesetentry(web, ctx):
 
     parity = paritygen(web.stripecount)
     diffstatsgen = diffstatgen(ctx, basectx)
-    diffstats = diffstat(web.tmpl, ctx, diffstatsgen, parity)
+    diffstats = diffstat(ctx, diffstatsgen, parity)
 
     return dict(
         diff=diff,
@@ -694,7 +694,7 @@ def _diffstattmplgen(context, ctx, statgen, parity):
             'parity': next(parity),
         })
 
-def diffstat(tmpl, ctx, statgen, parity):
+def diffstat(ctx, statgen, parity):
     '''Return a diffstat template for each file in the diff.'''
     args = (ctx, statgen, parity)
     return templateutil.mappedgenerator(_diffstattmplgen, args=args)

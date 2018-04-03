@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 Test unionrepo functionality
 
 Create one repository

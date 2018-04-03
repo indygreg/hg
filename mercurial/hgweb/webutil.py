@@ -591,45 +591,45 @@ def _compline(tmpl, type, leftlineno, leftline, rightlineno, rightline):
         'rightline': rightline or '',
     })
 
-def compare(tmpl, context, leftlines, rightlines):
-    '''Generator function that provides side-by-side comparison data.'''
-
-    def getblock(opcodes):
-        for type, llo, lhi, rlo, rhi in opcodes:
-            len1 = lhi - llo
-            len2 = rhi - rlo
-            count = min(len1, len2)
-            for i in xrange(count):
+def _getcompblock(tmpl, leftlines, rightlines, opcodes):
+    for type, llo, lhi, rlo, rhi in opcodes:
+        len1 = lhi - llo
+        len2 = rhi - rlo
+        count = min(len1, len2)
+        for i in xrange(count):
+            yield _compline(tmpl,
+                            type=type,
+                            leftlineno=llo + i + 1,
+                            leftline=leftlines[llo + i],
+                            rightlineno=rlo + i + 1,
+                            rightline=rightlines[rlo + i])
+        if len1 > len2:
+            for i in xrange(llo + count, lhi):
                 yield _compline(tmpl,
                                 type=type,
-                                leftlineno=llo + i + 1,
-                                leftline=leftlines[llo + i],
-                                rightlineno=rlo + i + 1,
-                                rightline=rightlines[rlo + i])
-            if len1 > len2:
-                for i in xrange(llo + count, lhi):
-                    yield _compline(tmpl,
-                                    type=type,
-                                    leftlineno=i + 1,
-                                    leftline=leftlines[i],
-                                    rightlineno=None,
-                                    rightline=None)
-            elif len2 > len1:
-                for i in xrange(rlo + count, rhi):
-                    yield _compline(tmpl,
-                                    type=type,
-                                    leftlineno=None,
-                                    leftline=None,
-                                    rightlineno=i + 1,
-                                    rightline=rightlines[i])
+                                leftlineno=i + 1,
+                                leftline=leftlines[i],
+                                rightlineno=None,
+                                rightline=None)
+        elif len2 > len1:
+            for i in xrange(rlo + count, rhi):
+                yield _compline(tmpl,
+                                type=type,
+                                leftlineno=None,
+                                leftline=None,
+                                rightlineno=i + 1,
+                                rightline=rightlines[i])
 
+def compare(tmpl, context, leftlines, rightlines):
+    '''Generator function that provides side-by-side comparison data.'''
     s = difflib.SequenceMatcher(None, leftlines, rightlines)
     if context < 0:
-        yield tmpl.generate('comparisonblock',
-                            {'lines': getblock(s.get_opcodes())})
+        l = _getcompblock(tmpl, leftlines, rightlines, s.get_opcodes())
+        yield tmpl.generate('comparisonblock', {'lines': l})
     else:
         for oc in s.get_grouped_opcodes(n=context):
-            yield tmpl.generate('comparisonblock', {'lines': getblock(oc)})
+            l = _getcompblock(tmpl, leftlines, rightlines, oc)
+            yield tmpl.generate('comparisonblock', {'lines': l})
 
 def diffstatgen(ctx, basectx):
     '''Generator function that provides the diffstat data.'''

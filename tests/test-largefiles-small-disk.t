@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 Test how largefiles abort in case the disk runs full
 
   $ cat > criple.py <<EOF

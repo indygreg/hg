@@ -1,4 +1,4 @@
-#require serve
+#require serve no-reposimplestore
 
   $ cat >> $HGRCPATH <<EOF
   > [extensions]

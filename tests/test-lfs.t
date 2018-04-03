@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 # Initial setup
 
   $ cat >> $HGRCPATH << EOF

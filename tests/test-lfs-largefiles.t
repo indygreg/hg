@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 This tests the interaction between the largefiles and lfs extensions, and
 conversion from largefiles -> lfs.
 

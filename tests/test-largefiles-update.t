@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 This file focuses mainly on updating largefiles in the working
 directory (and ".hg/largefiles/dirstate")
 

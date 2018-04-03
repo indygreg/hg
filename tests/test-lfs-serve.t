@@ -1,5 +1,5 @@
 #testcases lfsremote-on lfsremote-off
-#require serve
+#require serve no-reposimplestore
 
 This test splits `hg serve` with and without using the extension into separate
 tests cases.  The tests are broken down as follows, where "LFS"/"No-LFS"

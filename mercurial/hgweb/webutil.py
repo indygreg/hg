@@ -463,23 +463,23 @@ def symrevorshortnode(req, ctx):
     else:
         return short(ctx.node())
 
+def _listfilesgen(tmpl, ctx, stripecount):
+    parity = paritygen(stripecount)
+    for blockno, f in enumerate(ctx.files()):
+        template = 'filenodelink' if f in ctx else 'filenolink'
+        yield tmpl.generate(template, {
+            'node': ctx.hex(),
+            'file': f,
+            'blockno': blockno + 1,
+            'parity': next(parity),
+        })
+
 def changesetentry(web, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
     showtags = showtag(web.repo, 'changesettag', ctx.node())
     showbookmarks = showbookmark(web.repo, 'changesetbookmark', ctx.node())
     showbranch = nodebranchnodefault(ctx)
-
-    files = []
-    parity = paritygen(web.stripecount)
-    for blockno, f in enumerate(ctx.files()):
-        template = 'filenodelink' if f in ctx else 'filenolink'
-        files.append(web.tmpl.generate(template, {
-            'node': ctx.hex(),
-            'file': f,
-            'blockno': blockno + 1,
-            'parity': next(parity),
-        }))
 
     basectx = basechangectx(web.repo, web.req)
     if basectx is None:
@@ -502,7 +502,7 @@ def changesetentry(web, ctx):
         changesettag=showtags,
         changesetbookmark=showbookmarks,
         changesetbranch=showbranch,
-        files=files,
+        files=list(_listfilesgen(web.tmpl, ctx, web.stripecount)),
         diffsummary=lambda **x: diffsummary(diffstatsgen),
         diffstat=diffstats,
         archives=web.archivelist(ctx.hex()),

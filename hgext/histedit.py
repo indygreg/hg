@@ -436,7 +436,7 @@ class histeditaction(object):
                 rulehash = _ctx.hex()
                 rev = node.bin(rulehash)
             except error.RepoLookupError:
-                raise error.ParseError("invalid changeset %s" % ruleid)
+                raise error.ParseError(_("invalid changeset %s") % ruleid)
         return cls(state, rev)
 
     def verify(self, prev, expected, seen):

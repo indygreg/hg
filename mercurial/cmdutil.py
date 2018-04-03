@@ -1839,7 +1839,7 @@ def walkchangerevs(repo, match, opts, prepare):
     wanted = set()
     slowpath = match.anypats() or (not match.always() and opts.get('removed'))
     fncache = {}
-    change = repo.changectx
+    change = repo.__getitem__
 
     # First step is to fill wanted, the set of revisions that we want to yield.
     # When it does not induce extra cost, we also fill fncache for revisions in

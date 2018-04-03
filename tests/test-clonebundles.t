@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 Set up a server
 
   $ hg init server

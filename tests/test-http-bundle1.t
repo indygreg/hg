@@ -35,6 +35,7 @@ Test server address cannot be reused
 
 clone via stream
 
+#if no-reposimplestore
   $ hg clone --stream http://localhost:$HGPORT/ copy 2>&1
   streaming all changes
   6 files to transfer, 606 bytes of data
@@ -49,6 +50,7 @@ clone via stream
   crosschecking files in changesets and manifests
   checking files
   4 files, 1 changesets, 4 total revisions
+#endif
 
 try to clone via stream, should use pull instead
 
@@ -223,6 +225,8 @@ test http authentication
   5fed3813f7f5
   $ hg id http://user@localhost:$HGPORT2/
   5fed3813f7f5
+
+#if no-reposimplestore
   $ hg clone http://user:pass@localhost:$HGPORT2/ dest 2>&1
   streaming all changes
   7 files to transfer, 916 bytes of data
@@ -231,7 +235,10 @@ test http authentication
   no changes found
   updating to branch default
   5 files updated, 0 files merged, 0 files removed, 0 files unresolved
+#endif
+
 --pull should override server's preferuncompressed
+
   $ hg clone --pull http://user:pass@localhost:$HGPORT2/ dest-pull 2>&1
   requesting all changes
   adding changesets
@@ -249,8 +256,8 @@ test http authentication
   abort: HTTP Error 403: no
   [255]
 
-  $ hg -R dest tag -r tip top
-  $ hg -R dest push http://user:pass@localhost:$HGPORT2/
+  $ hg -R dest-pull tag -r tip top
+  $ hg -R dest-pull push http://user:pass@localhost:$HGPORT2/
   pushing to http://user:***@localhost:$HGPORT2/
   searching for changes
   remote: adding changesets
@@ -287,16 +294,16 @@ test http authentication
   "GET /?cmd=lookup HTTP/1.1" 200 - x-hgarg-1:key=tip x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=namespaces x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=stream_out HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=capabilities HTTP/1.1" 401 -
-  "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=capabilities HTTP/1.1" 401 - (no-reposimplestore !)
+  "GET /?cmd=capabilities HTTP/1.1" 200 - (no-reposimplestore !)
+  "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
+  "GET /?cmd=stream_out HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
+  "GET /?cmd=capabilities HTTP/1.1" 401 - (no-reposimplestore !)
+  "GET /?cmd=capabilities HTTP/1.1" 200 - (no-reposimplestore !)
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (no-reposimplestore !)
   "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:common=0000000000000000000000000000000000000000&heads=5fed3813f7f5e1824344fdc9cf8f63bb662c292d x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
   "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$

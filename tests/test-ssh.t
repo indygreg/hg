@@ -56,6 +56,8 @@ non-existent absolute path
 
 clone remote via stream
 
+#if no-reposimplestore
+
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
   4 files to transfer, 602 bytes of data
@@ -91,6 +93,8 @@ clone bookmarks via stream
      mybook                    0:1160648e36ce
   $ cd ..
   $ rm -rf local-stream stream2
+
+#endif
 
 clone remote via pull
 
@@ -530,9 +534,9 @@ debug output
   Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R $TESTTMP/nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
-  Got arguments 1:user@dummy 2:hg -R local-stream serve --stdio
-  Got arguments 1:user@dummy 2:hg -R remote serve --stdio
-  Got arguments 1:user@dummy 2:hg -R remote serve --stdio
+  Got arguments 1:user@dummy 2:hg -R local-stream serve --stdio (no-reposimplestore !)
+  Got arguments 1:user@dummy 2:hg -R remote serve --stdio (no-reposimplestore !)
+  Got arguments 1:user@dummy 2:hg -R remote serve --stdio (no-reposimplestore !)
   Got arguments 1:user@dummy 2:hg -R doesnotexist serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
   Got arguments 1:user@dummy 2:hg -R local serve --stdio

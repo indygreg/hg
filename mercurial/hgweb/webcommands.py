@@ -296,8 +296,7 @@ def _search(web):
             count += 1
             n = ctx.node()
             showtags = webutil.showtag(web.repo, 'changelogtag', n)
-            files = webutil.listfilediffs(web.tmpl, ctx.files(), n,
-                                          web.maxfiles)
+            files = webutil.listfilediffs(ctx.files(), n, web.maxfiles)
 
             lm = webutil.commonentry(web.repo, ctx)
             lm.update({

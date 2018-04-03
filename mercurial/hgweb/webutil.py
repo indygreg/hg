@@ -445,7 +445,7 @@ def changelistentry(web, ctx):
     rev = ctx.rev()
     n = ctx.node()
     showtags = showtag(repo, 'changelogtag', n)
-    files = listfilediffs(web.tmpl, ctx.files(), n, web.maxfiles)
+    files = listfilediffs(ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
     entry.update(
@@ -515,7 +515,7 @@ def _listfilediffsgen(context, files, node, max):
     if len(files) > max:
         yield context.process('fileellipses', {})
 
-def listfilediffs(tmpl, files, node, max):
+def listfilediffs(files, node, max):
     return templateutil.mappedgenerator(_listfilediffsgen,
                                         args=(files, node, max))
 

@@ -52,7 +52,7 @@ def getfilectx(repo, memctx, f):
         data += 'bar\n'
     return context.memfilectx(repo, memctx, f, data, 'l' in flags, 'x' in flags)
 
-ctxa = repo.changectx(0)
+ctxa = repo[0]
 ctxb = context.memctx(repo, [ctxa.node(), None], "test diff", ["foo"],
                       getfilectx, ctxa.user(), ctxa.date())
 

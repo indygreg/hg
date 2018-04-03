@@ -1569,3 +1569,80 @@ class treemanifestctx(object):
 
     def find(self, key):
         return self.read().find(key)
+
+class excludeddir(treemanifest):
+    """Stand-in for a directory that is excluded from the repository.
+
+    With narrowing active on a repository that uses treemanifests,
+    some of the directory revlogs will be excluded from the resulting
+    clone. This is a huge storage win for clients, but means we need
+    some sort of pseudo-manifest to surface to internals so we can
+    detect a merge conflict outside the narrowspec. That's what this
+    class is: it stands in for a directory whose node is known, but
+    whose contents are unknown.
+    """
+    def __init__(self, dir, node):
+        super(excludeddir, self).__init__(dir)
+        self._node = node
+        # Add an empty file, which will be included by iterators and such,
+        # appearing as the directory itself (i.e. something like "dir/")
+        self._files[''] = node
+        self._flags[''] = 't'
+
+    # Manifests outside the narrowspec should never be modified, so avoid
+    # copying. This makes a noticeable difference when there are very many
+    # directories outside the narrowspec. Also, it makes sense for the copy to
+    # be of the same type as the original, which would not happen with the
+    # super type's copy().
+    def copy(self):
+        return self
+
+class excludeddirmanifestctx(treemanifestctx):
+    """context wrapper for excludeddir - see that docstring for rationale"""
+    def __init__(self, dir, node):
+        self._dir = dir
+        self._node = node
+
+    def read(self):
+        return excludeddir(self._dir, self._node)
+
+    def write(self, *args):
+        raise error.ProgrammingError(
+            'attempt to write manifest from excluded dir %s' % self._dir)
+
+class excludedmanifestrevlog(manifestrevlog):
+    """Stand-in for excluded treemanifest revlogs.
+
+    When narrowing is active on a treemanifest repository, we'll have
+    references to directories we can't see due to the revlog being
+    skipped. This class exists to conform to the manifestrevlog
+    interface for those directories and proactively prevent writes to
+    outside the narrowspec.
+    """
+
+    def __init__(self, dir):
+        self._dir = dir
+
+    def __len__(self):
+        raise error.ProgrammingError(
+            'attempt to get length of excluded dir %s' % self._dir)
+
+    def rev(self, node):
+        raise error.ProgrammingError(
+            'attempt to get rev from excluded dir %s' % self._dir)
+
+    def linkrev(self, node):
+        raise error.ProgrammingError(
+            'attempt to get linkrev from excluded dir %s' % self._dir)
+
+    def node(self, rev):
+        raise error.ProgrammingError(
+            'attempt to get node from excluded dir %s' % self._dir)
+
+    def add(self, *args, **kwargs):
+        # We should never write entries in dirlogs outside the narrow clone.
+        # However, the method still gets called from writesubtree() in
+        # _addtree(), so we need to handle it. We should possibly make that
+        # avoid calling add() with a clean manifest (_dirty is always False
+        # in excludeddir instances).
+        pass

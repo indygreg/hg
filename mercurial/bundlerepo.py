@@ -420,7 +420,7 @@ class bundlerepository(localrepo.localrepository):
             linkmapper = self.unfiltered().changelog.rev
             return bundlefilelog(self.svfs, f, self._cgunpacker, linkmapper)
         else:
-            return filelog.filelog(self.svfs, f)
+            return super(bundlerepository, self).file(f)
 
     def close(self):
         """Close assigned bundle file immediately."""

@@ -247,13 +247,8 @@ def addremove(ui, repo, *pats, **opts):
     Returns 0 if all files are successfully added.
     """
     opts = pycompat.byteskwargs(opts)
-    try:
-        sim = float(opts.get('similarity') or 100)
-    except ValueError:
-        raise error.Abort(_('similarity must be a number'))
-    if sim < 0 or sim > 100:
-        raise error.Abort(_('similarity must be between 0 and 100'))
-    opts['similarity'] = sim / 100.0
+    if not opts.get('similarity'):
+        opts['similarity'] = '100'
     matcher = scmutil.match(repo[None], pats, opts)
     return scmutil.addremove(repo, matcher, "", opts)
 

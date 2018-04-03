@@ -754,7 +754,13 @@ def addremove(repo, matcher, prefix, opts=None):
         opts = {}
     m = matcher
     dry_run = opts.get('dry_run')
-    similarity = float(opts.get('similarity') or 0)
+    try:
+        similarity = float(opts.get('similarity') or 0)
+    except ValueError:
+        raise error.Abort(_('similarity must be a number'))
+    if similarity < 0 or similarity > 100:
+        raise error.Abort(_('similarity must be between 0 and 100'))
+    similarity /= 100.0
 
     ret = 0
     join = lambda f: os.path.join(prefix, f)

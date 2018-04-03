@@ -350,8 +350,9 @@ def setup():
             p2 = node.nullrev
         else:
             p1, p2 = sorted(local(p) for p in linkparents)
+        n = revlog.node(rev)
         yield ellipsisdata(
-            self, rev, revlog, p1, p2, revlog.revision(rev), linknode)
+            self, rev, revlog, p1, p2, revlog.revision(n), linknode)
     extensions.wrapfunction(changegroup.cg1packer, 'revchunk', revchunk)
 
     def deltaparent(orig, self, revlog, rev, p1, p2, prev):

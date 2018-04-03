@@ -149,7 +149,7 @@ def _filerevision(web, fctx):
         mt = mimetypes.guess_type(f)[0] or 'application/octet-stream'
         text = '(binary:%s)' % mt
 
-    def lines():
+    def lines(context):
         for lineno, t in enumerate(text.splitlines(True)):
             yield {"line": t,
                    "lineid": "l%d" % (lineno + 1),
@@ -160,7 +160,7 @@ def _filerevision(web, fctx):
         'filerevision',
         file=f,
         path=webutil.up(f),
-        text=lines(),
+        text=templateutil.mappinggenerator(lines),
         symrev=webutil.symrevorshortnode(web.req, fctx),
         rename=webutil.renamelink(fctx),
         permissions=fctx.manifest().flags(f),

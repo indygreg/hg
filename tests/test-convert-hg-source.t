@@ -169,7 +169,12 @@ init broken repository
 
 break it
 
+#if reporevlogstore
   $ rm .hg/store/data/b.*
+#endif
+#if reposimplestore
+  $ rm .hg/store/data/b/*
+#endif
   $ cd ..
   $ hg --config convert.hg.ignoreerrors=True convert broken fixed
   initializing destination fixed repository

@@ -127,8 +127,12 @@ Force deletion of local changes
   The following changeset(s) or their ancestors have local changes not on the remote:
   * (glob)
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
-  deleting data/d0/f.i
+  deleting data/d0/f.i (reporevlogstore !)
+  deleting data/d0/f/362fef284ce2ca02aecc8de6d5e8a1c3af0556fe (reposimplestore !)
+  deleting data/d0/f/4374b5650fc5ae54ac857c0f0381971fdde376f7 (reposimplestore !)
+  deleting data/d0/f/index (reposimplestore !)
   deleting meta/d0/00manifest.i (tree !)
+
   $ hg log -T "{node|short}: {desc} {outsidenarrow}\n"
   *: local change to d3  (glob)
   *: add d10/f outsidenarrow (glob)
@@ -154,8 +158,12 @@ Pruned commits affecting removed paths should not prevent narrowing
   searching for changes
   looking for local changes to affected paths
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
-  deleting data/d0/f.i
+  deleting data/d0/f.i (reporevlogstore !)
+  deleting data/d0/f/362fef284ce2ca02aecc8de6d5e8a1c3af0556fe (reposimplestore !)
+  deleting data/d0/f/4374b5650fc5ae54ac857c0f0381971fdde376f7 (reposimplestore !)
+  deleting data/d0/f/index (reposimplestore !)
   deleting meta/d0/00manifest.i (tree !)
+
 Updates off of stripped commit if necessary
   $ hg co -r 'desc("local change to d3")' -q
   $ echo local change >> d6/f
@@ -169,7 +177,10 @@ Updates off of stripped commit if necessary
   * (glob)
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
-  deleting data/d3/f.i
+  deleting data/d3/f.i (reporevlogstore !)
+  deleting data/d3/f/2661d26c649684b482d10f91960cc3db683c38b4 (reposimplestore !)
+  deleting data/d3/f/99fa7136105a15e2045ce3d9152e4837c5349e4d (reposimplestore !)
+  deleting data/d3/f/index (reposimplestore !)
   deleting meta/d3/00manifest.i (tree !)
   $ hg log -T '{desc}\n' -r .
   add d10/f
@@ -189,7 +200,10 @@ Updates to nullid if necessary
   * (glob)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow-local-changes/.hg/strip-backup/*-narrow.hg (glob)
-  deleting data/d3/f.i
+  deleting data/d3/f.i (reporevlogstore !)
+  deleting data/d3/f/2661d26c649684b482d10f91960cc3db683c38b4 (reposimplestore !)
+  deleting data/d3/f/5ce0767945cbdbca3b924bb9fbf5143f72ab40ac (reposimplestore !)
+  deleting data/d3/f/index (reposimplestore !)
   deleting meta/d3/00manifest.i (tree !)
   $ hg id
   000000000000
@@ -209,7 +223,9 @@ Can remove last include, making repo empty
   comparing with ssh://user@dummy/master
   searching for changes
   looking for local changes to affected paths
-  deleting data/d0/f.i
+  deleting data/d0/f.i (reporevlogstore !)
+  deleting data/d0/f/362fef284ce2ca02aecc8de6d5e8a1c3af0556fe (reposimplestore !)
+  deleting data/d0/f/index (reposimplestore !)
   deleting meta/d0/00manifest.i (tree !)
   $ hg tracked
   $ hg files
@@ -265,7 +281,9 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   comparing with ssh://user@dummy/master
   searching for changes
   looking for local changes to affected paths
-  deleting data/d6/f.i
+  deleting data/d6/f.i (reporevlogstore !)
+  deleting data/d6/f/7339d30678f451ac8c3f38753beeb4cf2e1655c7 (reposimplestore !)
+  deleting data/d6/f/index (reposimplestore !)
   deleting meta/d6/00manifest.i (tree !)
   $ hg tracked
   I path:d0
@@ -285,7 +303,7 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   comparing with ssh://user@dummy/master
   searching for changes
   looking for local changes to affected paths
-  deleting data/d3/f.i
+  deleting data/d3/f.i (reporevlogstore !)
   $ hg tracked
   I path:d0
   I path:d3
@@ -303,7 +321,7 @@ https://bitbucket.org/Google/narrowhg/issues/6 is fixed
   comparing with ssh://user@dummy/master
   searching for changes
   looking for local changes to affected paths
-  deleting data/d0/f.i
+  deleting data/d0/f.i (reporevlogstore !)
   deleting meta/d0/00manifest.i (tree !)
   $ hg tracked
   I path:d3

@@ -94,7 +94,18 @@ No update, with debug option:
   linking: 6
   linking: 7
   linking: 8
-  linked 8 files
+  linked 8 files (reporevlogstore !)
+  linking: 9 (reposimplestore !)
+  linking: 10 (reposimplestore !)
+  linking: 11 (reposimplestore !)
+  linking: 12 (reposimplestore !)
+  linking: 13 (reposimplestore !)
+  linking: 14 (reposimplestore !)
+  linking: 15 (reposimplestore !)
+  linking: 16 (reposimplestore !)
+  linking: 17 (reposimplestore !)
+  linking: 18 (reposimplestore !)
+  linked 18 files (reposimplestore !)
 #else
   $ hg --debug clone -U . ../c --config progress.debug=true
   linking: 1
@@ -105,7 +116,18 @@ No update, with debug option:
   copying: 6
   copying: 7
   copying: 8
-  copied 8 files
+  copied 8 files (reporevlogstore !)
+  copying: 9 (reposimplestore !)
+  copying: 10 (reposimplestore !)
+  copying: 11 (reposimplestore !)
+  copying: 12 (reposimplestore !)
+  copying: 13 (reposimplestore !)
+  copying: 14 (reposimplestore !)
+  copying: 15 (reposimplestore !)
+  copying: 16 (reposimplestore !)
+  copying: 17 (reposimplestore !)
+  copying: 18 (reposimplestore !)
+  copied 18 files (reposimplestore !)
 #endif
   $ cd ../c
 

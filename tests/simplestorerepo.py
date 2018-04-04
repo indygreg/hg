@@ -24,6 +24,7 @@ from mercurial.thirdparty import (
 )
 from mercurial import (
     ancestor,
+    bundlerepo,
     error,
     filelog,
     mdiff,
@@ -586,6 +587,9 @@ class filestorage(object):
 def reposetup(ui, repo):
     if not repo.local():
         return
+
+    if isinstance(repo, bundlerepo.bundlerepository):
+        raise error.Abort(_('cannot use simple store with bundlerepo'))
 
     class simplestorerepo(repo.__class__):
         def file(self, f):

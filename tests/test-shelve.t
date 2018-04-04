@@ -771,10 +771,12 @@ unshelve and conflicts with tracked and untracked files
   $ hg shelve
   shelved as default
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+#if repobundlerepo
   $ hg log -G --template '{rev}  {desc|firstline}  {author}' -R bundle://.hg/shelved/default.hg -r 'bundle()'
   o  4  changes to: commit stuff  shelve@localhost
   |
   ~
+#endif
   $ hg log -G --template '{rev}  {desc|firstline}  {author}'
   @  3  commit stuff  test
   |

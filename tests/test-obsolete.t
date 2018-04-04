@@ -1244,6 +1244,7 @@ Test bundle overlay onto hidden revision
   o  0:4b34ecfb0d56 (draft) [ ] A
   
 
+#if repobundlerepo
   $ hg incoming ../repo-bundleoverlay --bundle ../bundleoverlay.hg
   comparing with ../repo-bundleoverlay
   searching for changes
@@ -1256,6 +1257,7 @@ Test bundle overlay onto hidden revision
   |/
   o  0:4b34ecfb0d56 (draft) [ ] A
   
+#endif
 
 #if serve
 

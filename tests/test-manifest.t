@@ -1,3 +1,5 @@
+#require repobundlerepo
+
 Source bundle was generated with the following script:
 
 # hg init

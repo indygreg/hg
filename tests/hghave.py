@@ -731,12 +731,13 @@ def getrepofeatures():
     """
     # Default list provided by core.
     features = {
+        'bundlerepo',
         'revlogstore',
     }
 
     # Features that imply other features.
     implies = {
-        'simplestore': ['-revlogstore'],
+        'simplestore': ['-revlogstore', '-bundlerepo'],
     }
 
     for override in os.environ.get('HGREPOFEATURES', '').split(' '):
@@ -765,3 +766,7 @@ def has_reporevlogstore():
 @check('reposimplestore', 'repository using simple storage extension')
 def has_reposimplestore():
     return 'simplestore' in getrepofeatures()
+
+@check('repobundlerepo', 'whether we can open bundle files as repos')
+def has_repobundlerepo():
+    return 'bundlerepo' in getrepofeatures()

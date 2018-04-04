@@ -631,7 +631,7 @@ class changectx(basectx):
             # experimental config: merge.preferancestor
             for r in self._repo.ui.configlist('merge', 'preferancestor'):
                 try:
-                    ctx = changectx(self._repo, r)
+                    ctx = scmutil.revsymbol(self._repo, r)
                 except error.RepoLookupError:
                     continue
                 anc = ctx.node()

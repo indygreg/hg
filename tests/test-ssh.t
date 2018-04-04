@@ -10,11 +10,6 @@
 
 This test tries to exercise the ssh functionality with a dummy script
 
-  $ cat <<EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
-
 creating 'remote' repo
 
   $ hg init remote

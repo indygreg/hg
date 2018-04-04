@@ -1,9 +1,3 @@
-
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
-
 Setting up test
 
   $ hg init test

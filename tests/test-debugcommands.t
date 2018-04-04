@@ -1,8 +1,6 @@
   $ cat << EOF >> $HGRCPATH
   > [ui]
   > interactive=yes
-  > [format]
-  > usegeneraldelta=yes
   > EOF
 
   $ hg init debugrevlog

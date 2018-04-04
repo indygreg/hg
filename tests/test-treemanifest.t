@@ -1,8 +1,6 @@
 #require killdaemons
 
   $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
   > [ui]
   > ssh=$PYTHON "$TESTDIR/dummyssh"
   > EOF

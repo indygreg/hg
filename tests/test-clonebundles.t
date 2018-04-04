@@ -1,9 +1,5 @@
 Set up a server
 
-  $ cat >> $HGRCPATH << EOF
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
   $ hg init server
   $ cd server
   $ cat >> .hg/hgrc << EOF

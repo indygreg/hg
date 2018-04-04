@@ -1,10 +1,3 @@
-# enable bundle2 in advance
-
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
-
   $ mkdir part1
   $ cd part1
 

@@ -1,9 +1,3 @@
-
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
-
 bundle w/o type option
 
   $ hg init t1

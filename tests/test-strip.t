@@ -1,5 +1,3 @@
-  $ echo "[format]" >> $HGRCPATH
-  $ echo "usegeneraldelta=yes" >> $HGRCPATH
   $ echo "[extensions]" >> $HGRCPATH
   $ echo "strip=" >> $HGRCPATH
   $ echo "drawdag=$TESTDIR/drawdag.py" >> $HGRCPATH

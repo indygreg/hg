@@ -1,8 +1,3 @@
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
-
   $ hg init
 
 Setup:

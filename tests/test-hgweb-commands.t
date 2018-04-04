@@ -6,11 +6,6 @@ The following things are tested elsewhere and are therefore omitted:
 - unbundle, tested in test-push-http
 - changegroupsubset, tested in test-pull
 
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
-
 Set up the repo
 
   $ hg init test

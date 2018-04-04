@@ -15,8 +15,6 @@ parts that are not bundle1/bundle2 specific.
   > [devel]
   > # This test is dedicated to interaction through old bundle
   > legacy.exchange = bundle1
-  > [format] # temporary settings
-  > usegeneraldelta=yes
   > EOF
 
 

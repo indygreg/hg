@@ -1023,7 +1023,7 @@ class localrepository(object):
         if key in self.branchmap():
             return key
 
-        return self[key].branch()
+        return scmutil.revsymbol(self, key).branch()
 
     def known(self, nodes):
         cl = self.changelog

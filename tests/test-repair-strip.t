@@ -1,4 +1,4 @@
-#require unix-permissions no-root
+#require unix-permissions no-root reporevlogstore
 
   $ cat > $TESTTMP/dumpjournal.py <<EOF
   > import sys

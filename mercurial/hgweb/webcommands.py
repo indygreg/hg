@@ -1323,12 +1323,12 @@ def graph(web):
                         if item[1] == graphmod.CHANGESET)
         return tree
 
-    def jsdata():
-        return [{'node': pycompat.bytestr(ctx),
-                 'graphnode': webutil.getgraphnode(web.repo, ctx),
-                 'vertex': vtx,
-                 'edges': edges}
-                for (id, type, ctx, vtx, edges) in fulltree()]
+    def jsdata(context):
+        for (id, type, ctx, vtx, edges) in fulltree():
+            yield {'node': pycompat.bytestr(ctx),
+                   'graphnode': webutil.getgraphnode(web.repo, ctx),
+                   'vertex': vtx,
+                   'edges': edges}
 
     def nodes():
         parity = paritygen(web.stripecount)
@@ -1366,7 +1366,7 @@ def graph(web):
         bg_height=bg_height,
         changesets=count,
         nextentry=templateutil.mappinglist(nextentry),
-        jsdata=lambda **x: jsdata(),
+        jsdata=templateutil.mappinggenerator(jsdata),
         nodes=lambda **x: nodes(),
         node=ctx.hex(),
         changenav=changenav)

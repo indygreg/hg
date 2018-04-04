@@ -727,7 +727,7 @@ def summary(web):
                 'date': web.repo[n].date(),
             }
 
-    def bookmarks(**map):
+    def bookmarks(context):
         parity = paritygen(web.stripecount)
         marks = [b for b in web.repo._bookmarks.items() if b[1] in web.repo]
         sortkey = lambda b: (web.repo[b[1]].rev(), b[0])
@@ -769,7 +769,7 @@ def summary(web):
         owner=get_contact(web.config) or 'unknown',
         lastchange=tip.date(),
         tags=templateutil.mappinggenerator(tagentries, name='tagentry'),
-        bookmarks=bookmarks,
+        bookmarks=templateutil.mappinggenerator(bookmarks),
         branches=webutil.branchentries(web.repo, web.stripecount, 10),
         shortlog=templateutil.mappinggenerator(changelist,
                                                name='shortlogentry'),

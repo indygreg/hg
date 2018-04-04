@@ -1019,13 +1019,11 @@ class localrepository(object):
     def lookup(self, key):
         return scmutil.revsymbol(self, key).node()
 
-    def lookupbranch(self, key, remote=None):
-        repo = remote or self
-        if key in repo.branchmap():
+    def lookupbranch(self, key):
+        if key in self.branchmap():
             return key
 
-        repo = (remote and remote.local()) and remote or self
-        return repo[key].branch()
+        return self[key].branch()
 
     def known(self, nodes):
         cl = self.changelog

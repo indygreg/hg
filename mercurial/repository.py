@@ -446,7 +446,7 @@ class completelocalrepository(zi.Interface):
     def lookup(key):
         """Resolve the node for a revision."""
 
-    def lookupbranch(key, remote=None):
+    def lookupbranch(key):
         """Look up the branch name of the given revision or branch name."""
 
     def known(nodes):

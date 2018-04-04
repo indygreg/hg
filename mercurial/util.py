@@ -748,10 +748,10 @@ class baseproxyobserver(object):
         # Simple case writes all data on a single line.
         if b'\n' not in data:
             if self.logdataapis:
-                self.fh.write(': %s\n' % stringutil.escapedata(data))
+                self.fh.write(': %s\n' % stringutil.escapestr(data))
             else:
                 self.fh.write('%s>     %s\n'
-                              % (self.name, stringutil.escapedata(data)))
+                              % (self.name, stringutil.escapestr(data)))
             self.fh.flush()
             return
 
@@ -762,7 +762,7 @@ class baseproxyobserver(object):
         lines = data.splitlines(True)
         for line in lines:
             self.fh.write('%s>     %s\n'
-                          % (self.name, stringutil.escapedata(line)))
+                          % (self.name, stringutil.escapestr(line)))
         self.fh.flush()
 
 class fileobjectobserver(baseproxyobserver):
@@ -3845,7 +3845,6 @@ gui = _deprecatedfunc(procutil.gui, '4.6')
 hgcmd = _deprecatedfunc(procutil.hgcmd, '4.6')
 rundetached = _deprecatedfunc(procutil.rundetached, '4.6')
 
-escapedata = _deprecatedfunc(stringutil.escapedata, '4.6')
 binary = _deprecatedfunc(stringutil.binary, '4.6')
 stringmatcher = _deprecatedfunc(stringutil.stringmatcher, '4.6')
 shortuser = _deprecatedfunc(stringutil.shortuser, '4.6')

@@ -206,10 +206,10 @@ Test listkeys for listing namespaces
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: 30\r\n
   s>     \r\n
-  s>     bookmarks	\n
-  s>     namespaces	\n
-  s>     phases	
-  response: b'bookmarks	\nnamespaces	\nphases	'
+  s>     bookmarks\t\n
+  s>     namespaces\t\n
+  s>     phases\t
+  response: b'bookmarks\t\nnamespaces\t\nphases\t'
 
 Same thing, but with "httprequest" command
 
@@ -232,8 +232,8 @@ Same thing, but with "httprequest" command
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: 30\r\n
   s>     \r\n
-  s>     bookmarks	\n
-  s>     namespaces	\n
-  s>     phases	
+  s>     bookmarks\t\n
+  s>     namespaces\t\n
+  s>     phases\t
 
   $ killdaemons.py

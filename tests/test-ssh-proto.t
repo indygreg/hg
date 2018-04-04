@@ -1342,10 +1342,10 @@ Test listkeys for listing namespaces
   o> bufferedreadline() -> 3:
   o>     30\n
   o> bufferedread(30) -> 30:
-  o>     bookmarks	\n
-  o>     namespaces	\n
-  o>     phases	
-  response: b'bookmarks	\nnamespaces	\nphases	'
+  o>     bookmarks\t\n
+  o>     namespaces\t\n
+  o>     phases\t
+  response: b'bookmarks\t\nnamespaces\t\nphases\t'
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1373,10 +1373,10 @@ Test listkeys for listing namespaces
   o> bufferedreadline() -> 3:
   o>     30\n
   o> bufferedread(30) -> 30:
-  o>     bookmarks	\n
-  o>     namespaces	\n
-  o>     phases	
-  response: b'bookmarks	\nnamespaces	\nphases	'
+  o>     bookmarks\t\n
+  o>     namespaces\t\n
+  o>     phases\t
+  response: b'bookmarks\t\nnamespaces\t\nphases\t'
 
   $ cd ..
 
@@ -1482,8 +1482,8 @@ With a single bookmark set
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     46\n
-  o> bufferedread(46) -> 46: bookA	68986213bd4485ea51533535e3fc9e78007a711f
-  response: b'bookA	68986213bd4485ea51533535e3fc9e78007a711f'
+  o> bufferedread(46) -> 46: bookA\t68986213bd4485ea51533535e3fc9e78007a711f
+  response: b'bookA\t68986213bd4485ea51533535e3fc9e78007a711f'
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1510,8 +1510,8 @@ With a single bookmark set
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     46\n
-  o> bufferedread(46) -> 46: bookA	68986213bd4485ea51533535e3fc9e78007a711f
-  response: b'bookA	68986213bd4485ea51533535e3fc9e78007a711f'
+  o> bufferedread(46) -> 46: bookA\t68986213bd4485ea51533535e3fc9e78007a711f
+  response: b'bookA\t68986213bd4485ea51533535e3fc9e78007a711f'
 
 With multiple bookmarks set
 
@@ -1546,9 +1546,9 @@ With multiple bookmarks set
   o> bufferedreadline() -> 3:
   o>     93\n
   o> bufferedread(93) -> 93:
-  o>     bookA	68986213bd4485ea51533535e3fc9e78007a711f\n
-  o>     bookB	1880f3755e2e52e3199e0ee5638128b08642f34d
-  response: b'bookA	68986213bd4485ea51533535e3fc9e78007a711f\nbookB	1880f3755e2e52e3199e0ee5638128b08642f34d'
+  o>     bookA\t68986213bd4485ea51533535e3fc9e78007a711f\n
+  o>     bookB\t1880f3755e2e52e3199e0ee5638128b08642f34d
+  response: b'bookA\t68986213bd4485ea51533535e3fc9e78007a711f\nbookB\t1880f3755e2e52e3199e0ee5638128b08642f34d'
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1576,9 +1576,9 @@ With multiple bookmarks set
   o> bufferedreadline() -> 3:
   o>     93\n
   o> bufferedread(93) -> 93:
-  o>     bookA	68986213bd4485ea51533535e3fc9e78007a711f\n
-  o>     bookB	1880f3755e2e52e3199e0ee5638128b08642f34d
-  response: b'bookA	68986213bd4485ea51533535e3fc9e78007a711f\nbookB	1880f3755e2e52e3199e0ee5638128b08642f34d'
+  o>     bookA\t68986213bd4485ea51533535e3fc9e78007a711f\n
+  o>     bookB\t1880f3755e2e52e3199e0ee5638128b08642f34d
+  response: b'bookA\t68986213bd4485ea51533535e3fc9e78007a711f\nbookB\t1880f3755e2e52e3199e0ee5638128b08642f34d'
 
 Test pushkey for bookmarks
 
@@ -1706,8 +1706,8 @@ Phases on empty repo
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
-  o> bufferedread(15) -> 15: publishing	True
-  response: b'publishing	True'
+  o> bufferedread(15) -> 15: publishing\tTrue
+  response: b'publishing\tTrue'
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1734,8 +1734,8 @@ Phases on empty repo
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
-  o> bufferedread(15) -> 15: publishing	True
-  response: b'publishing	True'
+  o> bufferedread(15) -> 15: publishing\tTrue
+  response: b'publishing\tTrue'
 
 Create some commits
 
@@ -1786,10 +1786,10 @@ Two draft heads
   o> bufferedreadline() -> 4:
   o>     101\n
   o> bufferedread(101) -> 101:
-  o>     20b8a89289d80036e6c4e87c2083e3bea1586637	1\n
-  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
-  o>     publishing	True
-  response: b'20b8a89289d80036e6c4e87c2083e3bea1586637	1\nc4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True'
+  o>     20b8a89289d80036e6c4e87c2083e3bea1586637\t1\n
+  o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
+  o>     publishing\tTrue
+  response: b'20b8a89289d80036e6c4e87c2083e3bea1586637\t1\nc4750011d906c18ea2f0527419cbc1a544435150\t1\npublishing\tTrue'
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1817,10 +1817,10 @@ Two draft heads
   o> bufferedreadline() -> 4:
   o>     101\n
   o> bufferedread(101) -> 101:
-  o>     20b8a89289d80036e6c4e87c2083e3bea1586637	1\n
-  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
-  o>     publishing	True
-  response: b'20b8a89289d80036e6c4e87c2083e3bea1586637	1\nc4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True'
+  o>     20b8a89289d80036e6c4e87c2083e3bea1586637\t1\n
+  o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
+  o>     publishing\tTrue
+  response: b'20b8a89289d80036e6c4e87c2083e3bea1586637\t1\nc4750011d906c18ea2f0527419cbc1a544435150\t1\npublishing\tTrue'
 
 Single draft head
 
@@ -1855,9 +1855,9 @@ Single draft head
   o> bufferedreadline() -> 3:
   o>     58\n
   o> bufferedread(58) -> 58:
-  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
-  o>     publishing	True
-  response: b'c4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True'
+  o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
+  o>     publishing\tTrue
+  response: b'c4750011d906c18ea2f0527419cbc1a544435150\t1\npublishing\tTrue'
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1885,9 +1885,9 @@ Single draft head
   o> bufferedreadline() -> 3:
   o>     58\n
   o> bufferedread(58) -> 58:
-  o>     c4750011d906c18ea2f0527419cbc1a544435150	1\n
-  o>     publishing	True
-  response: b'c4750011d906c18ea2f0527419cbc1a544435150	1\npublishing	True'
+  o>     c4750011d906c18ea2f0527419cbc1a544435150\t1\n
+  o>     publishing\tTrue
+  response: b'c4750011d906c18ea2f0527419cbc1a544435150\t1\npublishing\tTrue'
 
 All public heads
 
@@ -1921,8 +1921,8 @@ All public heads
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
-  o> bufferedread(15) -> 15: publishing	True
-  response: b'publishing	True'
+  o> bufferedread(15) -> 15: publishing\tTrue
+  response: b'publishing\tTrue'
   
   testing ssh2
   creating ssh peer from handshake results
@@ -1949,8 +1949,8 @@ All public heads
   i> flush() -> None
   o> bufferedreadline() -> 3:
   o>     15\n
-  o> bufferedread(15) -> 15: publishing	True
-  response: b'publishing	True'
+  o> bufferedread(15) -> 15: publishing\tTrue
+  response: b'publishing\tTrue'
 
 Setting public phase via pushkey
 
@@ -2099,13 +2099,13 @@ Test batching of requests
   o>     278\n
   o> bufferedread(278) -> 278:
   o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
-  o>     ;bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
-  o>     bookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6;4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\n
-  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6	1\n
-  o>     publishing	True
+  o>     ;bookA\t4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  o>     bookB\tbfebe6bd38eebc6f8202e419c1171268987ea6a6;4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\t1\n
+  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6\t1\n
+  o>     publishing\tTrue
   response #0: bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
-  response #1: bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\nbookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6
-  response #2: 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\nbfebe6bd38eebc6f8202e419c1171268987ea6a6	1\npublishing	True
+  response #1: bookA\t4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\nbookB\tbfebe6bd38eebc6f8202e419c1171268987ea6a6
+  response #2: 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\t1\nbfebe6bd38eebc6f8202e419c1171268987ea6a6\t1\npublishing\tTrue
   
   testing ssh2
   creating ssh peer from handshake results
@@ -2136,10 +2136,10 @@ Test batching of requests
   o>     278\n
   o> bufferedread(278) -> 278:
   o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
-  o>     ;bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
-  o>     bookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6;4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\n
-  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6	1\n
-  o>     publishing	True
+  o>     ;bookA\t4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
+  o>     bookB\tbfebe6bd38eebc6f8202e419c1171268987ea6a6;4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\t1\n
+  o>     bfebe6bd38eebc6f8202e419c1171268987ea6a6\t1\n
+  o>     publishing\tTrue
   response #0: bfebe6bd38eebc6f8202e419c1171268987ea6a6 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\n
-  response #1: bookA	4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\nbookB	bfebe6bd38eebc6f8202e419c1171268987ea6a6
-  response #2: 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab	1\nbfebe6bd38eebc6f8202e419c1171268987ea6a6	1\npublishing	True
+  response #1: bookA\t4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\nbookB\tbfebe6bd38eebc6f8202e419c1171268987ea6a6
+  response #2: 4ee3fcef1c800fa2bf23e20af7c83ff111d9c7ab\t1\nbfebe6bd38eebc6f8202e419c1171268987ea6a6\t1\npublishing\tTrue

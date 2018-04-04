@@ -393,7 +393,7 @@ Command frames can be reflected via debugreflect
   s>     content-length: 47\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     '\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2CfooDval1Dbar1CvalDnameHcommand1
+  s>     \'\x00\x00\x01\x00\x01\x01\x11\xa2Dargs\xa2CfooDval1Dbar1CvalDnameHcommand1
   s> makefile('rb', None)
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
@@ -504,9 +504,9 @@ Interleaved requests to "multirequest" are processed
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     26\r\n
-  s>     \x1e\x00\x00\x03\x00\x02\x01Bbookmarks	\n
-  s>     namespaces	\n
-  s>     phases	
+  s>     \x1e\x00\x00\x03\x00\x02\x01Bbookmarks\t\n
+  s>     namespaces\t\n
+  s>     phases\t
   s>     \r\n
   s>     8\r\n
   s>     \x00\x00\x00\x01\x00\x02\x00B

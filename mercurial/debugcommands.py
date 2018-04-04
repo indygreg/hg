@@ -2964,9 +2964,9 @@ def debugwireproto(ui, repo, path=None, **opts):
                     del args['PUSHFILE']
                     res, output = peer._callpush(command, fh,
                                                  **pycompat.strkwargs(args))
-                    ui.status(_('result: %s\n') % stringutil.escapedata(res))
+                    ui.status(_('result: %s\n') % stringutil.escapestr(res))
                     ui.status(_('remote output: %s\n') %
-                              stringutil.escapedata(output))
+                              stringutil.escapestr(output))
             else:
                 res = peer._call(command, **pycompat.strkwargs(args))
                 ui.status(_('response: %s\n') % stringutil.pprint(res))
@@ -2984,7 +2984,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                       len(batchedcommands))
             for i, chunk in enumerate(peer._submitbatch(batchedcommands)):
                 ui.status(_('response #%d: %s\n') %
-                          (i, stringutil.escapedata(chunk)))
+                          (i, stringutil.escapestr(chunk)))
 
             batchedcommands = None
 

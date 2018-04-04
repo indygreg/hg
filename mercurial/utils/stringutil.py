@@ -23,24 +23,10 @@ from .. import (
     pycompat,
 )
 
-_DATA_ESCAPE_MAP = {pycompat.bytechr(i): br'\x%02x' % i for i in range(256)}
-_DATA_ESCAPE_MAP.update({
-    b'\\': b'\\\\',
-    b'\r': br'\r',
-    b'\n': br'\n',
-})
-_DATA_ESCAPE_RE = remod.compile(br'[\x00-\x08\x0a-\x1f\\\x7f-\xff]')
-
-def escapedata(s):
-    if isinstance(s, bytearray):
-        s = bytes(s)
-
-    return _DATA_ESCAPE_RE.sub(lambda m: _DATA_ESCAPE_MAP[m.group(0)], s)
-
 def pprint(o):
     """Pretty print an object."""
     if isinstance(o, (bytes, bytearray)):
-        return "b'%s'" % escapedata(o)
+        return "b'%s'" % escapestr(o)
     elif isinstance(o, list):
         return '[%s]' % (b', '.join(pprint(a) for a in o))
     elif isinstance(o, dict):

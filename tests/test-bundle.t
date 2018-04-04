@@ -77,6 +77,8 @@ Verify empty
   checking files
   0 files, 0 changesets, 0 total revisions
 
+#if repobundlerepo
+
 Pull full.hg into test (using --cwd)
 
   $ hg --cwd test pull ../full.hg
@@ -257,6 +259,8 @@ Pull full.hg into empty again (using -R; with hook)
   changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=f9ee2f85a263049e9ae6d37a0e67e96194ffb735 HG_NODE_LAST=aa35859c02ea8bd48da5da68cd2740ac71afcbaf HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_URL=bundle:empty+full.hg
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
+#endif
+
 Cannot produce streaming clone bundles with "hg bundle"
 
   $ hg -R test bundle -t packed1 packed.hg
@@ -265,6 +269,8 @@ Cannot produce streaming clone bundles with "hg bundle"
   [255]
 
 packed1 is produced properly
+
+#if reporevlogstore
 
   $ hg -R test debugcreatestreamclonebundle packed.hg
   writing 2664 bytes for 6 files
@@ -377,6 +383,8 @@ Does not work on non-empty repo
   abort: cannot apply stream clone bundle on non-empty repo
   [255]
 
+#endif
+
 Create partial clones
 
   $ rm -r empty
@@ -393,6 +401,8 @@ Create partial clones
   updating to branch default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ cd partial
+
+#if repobundlerepo
 
 Log -R full.hg in partial
 
@@ -528,12 +538,17 @@ Outgoing -R does-not-exist.hg vs partial2 in partial
   $ hg -R bundle://../does-not-exist.hg outgoing ../partial2
   abort: *../does-not-exist.hg* (glob)
   [255]
+
+#endif
+
   $ cd ..
 
 hide outer repo
   $ hg init
 
 Direct clone from bundle (all-history)
+
+#if repobundlerepo
 
   $ hg clone full.hg full-clone
   requesting all changes
@@ -616,7 +631,7 @@ View full contents of the bundle
   
   $ cd ..
 
-test for 540d1059c802
+#endif
 
 test for 540d1059c802
 
@@ -638,7 +653,10 @@ test for 540d1059c802
   searching for changes
   1 changesets found
 
-  $ cd ../orig
+  $ cd ..
+
+#if repobundlerepo
+  $ cd orig
   $ hg incoming ../bundle.hg
   comparing with ../bundle.hg
   searching for changes
@@ -667,6 +685,8 @@ note that percent encoding is not handled:
   [255]
   $ cd ..
 
+#endif
+
 test to bundle revisions on the newly created branch (issue3828):
 
   $ hg -q clone -U test test-clone
@@ -677,8 +697,10 @@ test to bundle revisions on the newly created branch (issue3828):
   $ hg -q outgoing ../test-clone
   9:b4f5acb1ee27
   $ hg -q bundle --branch foo foo.hg ../test-clone
+#if repobundlerepo
   $ hg -R foo.hg -q log -r "bundle()"
   9:b4f5acb1ee27
+#endif
 
   $ cd ..
 
@@ -694,9 +716,11 @@ partial history bundle, fails w/ unknown parent
 
 full history bundle, refuses to verify non-local repo
 
+#if repobundlerepo
   $ hg -R all.hg verify
   abort: cannot verify bundle or remote repos
   [255]
+#endif
 
 but, regular verify must continue to work
 
@@ -707,6 +731,7 @@ but, regular verify must continue to work
   checking files
   2 files, 2 changesets, 2 total revisions
 
+#if repobundlerepo
 diff against bundle
 
   $ hg init b
@@ -721,6 +746,7 @@ diff against bundle
   -2
   -3
   $ cd ..
+#endif
 
 bundle single branch
 
@@ -779,6 +805,7 @@ bundle single branch
   bundling: x 3/3 files (100.00%)
   bundle2-output-part: "cache:rev-branch-cache" streamed payload
 
+#if repobundlerepo
 == Test for issue3441
 
   $ hg clone -q -r0 . part2
@@ -789,6 +816,7 @@ bundle single branch
   crosschecking files in changesets and manifests
   checking files
   4 files, 3 changesets, 5 total revisions
+#endif
 
 == Test bundling no commits
 
@@ -848,6 +876,8 @@ directory does not exist
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     0
   
+
+#if repobundlerepo
   $ hg bundle --base 1 -r 3 ../update2bundled.hg
   1 changesets found
   $ hg strip -r 3
@@ -869,3 +899,4 @@ the warning shouldn't be emitted
 
   $ hg update -R ../update2bundled.hg -r 0
   0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+#endif

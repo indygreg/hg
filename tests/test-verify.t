@@ -116,7 +116,7 @@ Entire changelog and manifest log missing
   $ rm .hg/store/00changelog.*
   $ rm .hg/store/00manifest.*
   $ hg verify -q
-  warning: orphan revlog 'data/file.i'
+  warning: orphan data file 'data/file.i'
   1 warnings encountered!
   $ cp -R .hg/store-full/. .hg/store
 
@@ -296,7 +296,7 @@ test revlog corruption
   crosschecking files in changesets and manifests
   checking files
    a@1: broken revlog! (index data/a.i is corrupted)
-  warning: orphan revlog 'data/a.i'
+  warning: orphan data file 'data/a.i'
   1 files, 2 changesets, 0 total revisions
   1 warnings encountered!
   1 integrity errors encountered!

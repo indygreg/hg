@@ -295,7 +295,7 @@ class verifier(object):
         if not dir and subdirnodes:
             ui.progress(_('checking'), None)
             for f in sorted(storefiles):
-                self.warn(_("warning: orphan revlog '%s'") % f)
+                self.warn(_("warning: orphan data file '%s'") % f)
 
         return filenodes
 
@@ -482,6 +482,6 @@ class verifier(object):
         ui.progress(_('checking'), None)
 
         for f in sorted(storefiles):
-            self.warn(_("warning: orphan revlog '%s'") % f)
+            self.warn(_("warning: orphan data file '%s'") % f)
 
         return len(files), revisions

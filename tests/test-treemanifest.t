@@ -599,12 +599,12 @@ Verify reports missing dirlog
    b/@1: parent-directory manifest refers to unknown revision f065da70369e
    b/@2: parent-directory manifest refers to unknown revision ac0d30948e0b
    b/@3: parent-directory manifest refers to unknown revision 367152e6af28
-  warning: orphan revlog 'meta/b/bar/00manifest.i'
-  warning: orphan revlog 'meta/b/bar/orange/00manifest.i'
-  warning: orphan revlog 'meta/b/bar/orange/fly/00manifest.i'
-  warning: orphan revlog 'meta/b/foo/00manifest.i'
-  warning: orphan revlog 'meta/b/foo/apple/00manifest.i'
-  warning: orphan revlog 'meta/b/foo/apple/bees/00manifest.i'
+  warning: orphan data file 'meta/b/bar/00manifest.i'
+  warning: orphan data file 'meta/b/bar/orange/00manifest.i'
+  warning: orphan data file 'meta/b/bar/orange/fly/00manifest.i'
+  warning: orphan data file 'meta/b/foo/00manifest.i'
+  warning: orphan data file 'meta/b/foo/apple/00manifest.i'
+  warning: orphan data file 'meta/b/foo/apple/bees/00manifest.i'
   crosschecking files in changesets and manifests
    b/bar/fruits.txt@0: in changeset but not in manifest
    b/bar/orange/fly/gnat.py@0: in changeset but not in manifest

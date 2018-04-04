@@ -1344,7 +1344,7 @@ def graph(web):
             entry.update({'col': vtx[0],
                           'color': (vtx[1] - 1) % 6 + 1,
                           'parity': next(parity),
-                          'edges': edgedata,
+                          'edges': templateutil.mappinglist(edgedata),
                           'row': row,
                           'nextrow': row + 1})
 

@@ -480,14 +480,14 @@ class filestorage(object):
 
     def headrevs(self):
         # Assume all revisions are heads by default.
-        ishead = {rev: True for rev in self._indexbyrev}
+        revishead = {rev: True for rev in self._indexbyrev}
 
         for rev, entry in self._indexbyrev.items():
             # Unset head flag for all seen parents.
-            ishead[self.rev(entry[b'p1'])] = False
-            ishead[self.rev(entry[b'p2'])] = False
+            revishead[self.rev(entry[b'p1'])] = False
+            revishead[self.rev(entry[b'p2'])] = False
 
-        return [rev for rev, ishead in sorted(ishead.items())
+        return [rev for rev, ishead in sorted(revishead.items())
                 if ishead]
 
     def heads(self, start=None, stop=None):

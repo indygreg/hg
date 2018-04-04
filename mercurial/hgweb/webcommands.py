@@ -943,7 +943,7 @@ def annotate(web):
         for p in parentscache[rev]:
             yield p
 
-    def annotate(**map):
+    def annotate(context):
         if fctx.isbinary():
             mt = (mimetypes.guess_type(fctx.path())[0]
                   or 'application/octet-stream')
@@ -986,7 +986,7 @@ def annotate(web):
     return web.sendtemplate(
         'fileannotate',
         file=f,
-        annotate=annotate,
+        annotate=templateutil.mappinggenerator(annotate),
         path=webutil.up(f),
         symrev=webutil.symrevorshortnode(web.req, fctx),
         rename=webutil.renamelink(fctx),

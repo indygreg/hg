@@ -633,7 +633,7 @@ def _comparegen(context, contextnum, leftlines, rightlines):
             l = _getcompblock(leftlines, rightlines, oc)
             yield {'lines': l}
 
-def compare(tmpl, contextnum, leftlines, rightlines):
+def compare(contextnum, leftlines, rightlines):
     args = (contextnum, leftlines, rightlines)
     return templateutil.mappinggenerator(_comparegen, args=args,
                                          name='comparisonblock')

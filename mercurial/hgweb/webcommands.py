@@ -886,7 +886,7 @@ def comparison(web):
         pfctx = ctx.parents()[0][path]
         leftlines = filelines(pfctx)
 
-    comparison = webutil.compare(web.tmpl, context, leftlines, rightlines)
+    comparison = webutil.compare(context, leftlines, rightlines)
     if fctx is not None:
         rename = webutil.renamelink(fctx)
         ctx = fctx

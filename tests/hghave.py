@@ -717,3 +717,47 @@ def has_xdiff():
         return bdiff.xdiffblocks(b'', b'') == [(0, 0, 0, 0)]
     except (ImportError, AttributeError):
         return False
+
+def getrepofeatures():
+    """Obtain set of repository features in use.
+
+    HGREPOFEATURES can be used to define or remove features. It contains
+    a space-delimited list of feature strings. Strings beginning with ``-``
+    mean to remove.
+    """
+    # Default list provided by core.
+    features = {
+        'revlogstore',
+    }
+
+    # Features that imply other features.
+    implies = {
+        'simplestore': ['-revlogstore'],
+    }
+
+    for override in os.environ.get('HGREPOFEATURES', '').split(' '):
+        if not override:
+            continue
+
+        if override.startswith('-'):
+            if override[1:] in features:
+                features.remove(override[1:])
+        else:
+            features.add(override)
+
+            for imply in implies.get(override, []):
+                if imply.startswith('-'):
+                    if imply[1:] in features:
+                        features.remove(imply[1:])
+                else:
+                    features.add(imply)
+
+    return features
+
+@check('reporevlogstore', 'repository using the default revlog store')
+def has_reporevlogstore():
+    return 'revlogstore' in getrepofeatures()
+
+@check('reposimplestore', 'repository using simple storage extension')
+def has_reposimplestore():
+    return 'simplestore' in getrepofeatures()

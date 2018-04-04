@@ -1,4 +1,4 @@
-#require hardlink
+#require hardlink reporevlogstore
 
   $ cat > nlinks.py <<EOF
   > from __future__ import print_function

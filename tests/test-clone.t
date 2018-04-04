@@ -28,12 +28,14 @@ Create a non-inlined filelog:
 
 List files in store/data (should show a 'b.d'):
 
+#if reporevlogstore
   $ for i in .hg/store/data/*; do
   >   echo $i
   > done
   .hg/store/data/a.i
   .hg/store/data/b.d
   .hg/store/data/b.i
+#endif
 
 Trigger branchcache creation:
 

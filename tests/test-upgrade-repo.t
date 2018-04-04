@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > share =

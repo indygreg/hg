@@ -5,6 +5,11 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
+# To use this with the test suite:
+#
+#   $ HGREPOFEATURES="simplestore" ./run-tests.py \
+#       --extra-config-opt extensions.simplestore=`pwd`/simplestorerepo.py
+
 from __future__ import absolute_import
 
 from mercurial.i18n import _

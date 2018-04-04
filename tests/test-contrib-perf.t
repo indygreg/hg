@@ -158,7 +158,9 @@ perfstatus
   $ hg perfpathcopies 1 2
   $ hg perfrawfiles 2
   $ hg perfrevlogindex -c
+#if reporevlogstore
   $ hg perfrevlogrevisions .hg/store/data/a.i
+#endif
   $ hg perfrevlogrevision -m 0
   $ hg perfrevlogchunks -c
   $ hg perfrevrange

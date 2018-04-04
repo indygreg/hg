@@ -556,7 +556,7 @@ def manifest(web):
     if mf and not files and not dirs:
         raise ErrorResponse(HTTP_NOT_FOUND, 'path not found: ' + path)
 
-    def filelist(**map):
+    def filelist(context):
         for f in sorted(files):
             full = files[f]
 
@@ -568,7 +568,7 @@ def manifest(web):
                    "size": fctx.size(),
                    "permissions": mf.flags(full)}
 
-    def dirlist(**map):
+    def dirlist(context):
         for d in sorted(dirs):
 
             emptydirs = []
@@ -591,8 +591,8 @@ def manifest(web):
         path=abspath,
         up=webutil.up(abspath),
         upparity=next(parity),
-        fentries=filelist,
-        dentries=dirlist,
+        fentries=templateutil.mappinggenerator(filelist),
+        dentries=templateutil.mappinggenerator(dirlist),
         archives=web.archivelist(hex(node)),
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 

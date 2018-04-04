@@ -992,7 +992,7 @@ def annotate(web):
         rename=webutil.renamelink(fctx),
         permissions=fctx.manifest().flags(f),
         ishead=int(ishead),
-        diffopts=diffopts,
+        diffopts=templateutil.hybriddict(diffopts),
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('filelog')

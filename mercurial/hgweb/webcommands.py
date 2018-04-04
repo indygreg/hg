@@ -1365,7 +1365,7 @@ def graph(web):
         rows=rows,
         bg_height=bg_height,
         changesets=count,
-        nextentry=nextentry,
+        nextentry=templateutil.mappinglist(nextentry),
         jsdata=lambda **x: jsdata(),
         nodes=lambda **x: nodes(),
         node=ctx.hex(),

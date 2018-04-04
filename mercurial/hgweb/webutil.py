@@ -296,13 +296,7 @@ def cleanpath(repo, path):
     return pathutil.canonpath(repo.root, '', path)
 
 def changeidctx(repo, changeid):
-    try:
-        ctx = repo[changeid]
-    except error.RepoError:
-        man = repo.manifestlog._revlog
-        ctx = repo[man.linkrev(man.rev(man.lookup(changeid)))]
-
-    return ctx
+    return repo[changeid]
 
 def changectx(repo, req):
     changeid = "tip"
@@ -311,8 +305,6 @@ def changectx(repo, req):
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[(ipos + 1):]
-    elif 'manifest' in req.qsparams:
-        changeid = req.qsparams['manifest']
 
     return changeidctx(repo, changeid)
 

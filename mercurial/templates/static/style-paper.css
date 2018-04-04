@@ -308,6 +308,11 @@ td.annotate:hover div.annotate-info { display: inline; }
   float: left;
 }
 
+.sourcelines > span:after {
+  content: '';
+  display: inline-block;
+}
+
 .sourcelines > span:target, tr:target td {
   background-color: #bfdfff;
 }

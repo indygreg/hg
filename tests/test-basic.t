@@ -1,5 +1,6 @@
 Create a repository:
 
+#if no-extraextensions
   $ hg config
   devel.all-warnings=true
   devel.default-date=0 0
@@ -13,6 +14,8 @@ Create a repository:
   web.address=localhost
   web\.ipv6=(?:True|False) (re)
   web.server-header=testing stub value
+#endif
+
   $ hg init t
   $ cd t
 

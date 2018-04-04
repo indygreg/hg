@@ -1070,6 +1070,17 @@ class Test(unittest.TestCase):
         env["HGENCODINGMODE"] = "strict"
         env['HGIPV6'] = str(int(self._useipv6))
 
+        extraextensions = []
+        for opt in self._extraconfigopts:
+            section, key = opt.encode('utf-8').split(b'.', 1)
+            if section != 'extensions':
+                continue
+            name = key.split(b'=', 1)[0]
+            extraextensions.append(name)
+
+        if extraextensions:
+            env['HGTESTEXTRAEXTENSIONS'] = b' '.join(extraextensions)
+
         # LOCALIP could be ::1 or 127.0.0.1. Useful for tests that require raw
         # IP addresses.
         env['LOCALIP'] = self._localip()

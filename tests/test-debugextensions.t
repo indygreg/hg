@@ -1,4 +1,6 @@
+#if no-extraextensions
   $ hg debugextensions
+#endif
 
   $ debugpath=`pwd`/extwithoutinfos.py
 
@@ -18,6 +20,10 @@
   > ext1 = $debugpath
   > ext2 = `pwd`/extwithinfos.py
   > EOF
+
+  $ for extension in $HGTESTEXTRAEXTENSIONS; do
+  >     echo "$extension=!" >> $HGRCPATH
+  > done
 
   $ hg debugextensions
   ext1 (untested!)

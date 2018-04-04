@@ -867,9 +867,11 @@ Issue811: Problem loading extensions twice (by site and by user)
 Show extensions:
 (note that mq force load strip, also checking it's not loaded twice)
 
+#if no-extraextensions
   $ hg debugextensions
   mq
   strip
+#endif
 
 For extensions, which name matches one of its commands, help
 message should ask '-v -e' to get list of built-in aliases

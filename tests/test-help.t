@@ -44,6 +44,10 @@ Short help:
    summary       summarize working directory state
    update        update working directory (or switch revisions)
 
+Extra extensions will be printed in help output in a non-reliable order since
+the extension is unknown.
+#if no-extraextensions
+
   $ hg help
   Mercurial Distributed SCM
   
@@ -282,6 +286,8 @@ Test extension help:
        transplant    command to transplant changesets from another branch
        win32mbcs     allow the use of MBCS paths with problematic encodings
        zeroconf      discover and advertise repositories on the local network
+
+#endif
 
 Verify that deprecated extensions are included if --verbose:
 
@@ -816,6 +822,8 @@ Test command with no help text
 
 Test that default list of commands omits extension commands
 
+#if no-extraextensions
+
   $ hg help
   Mercurial Distributed SCM
   
@@ -903,6 +911,7 @@ Test that default list of commands omits extension commands
   
   (use 'hg help -v' to show built-in aliases and global options)
 
+#endif
 
 Test list of internal help commands
 

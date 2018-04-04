@@ -289,6 +289,8 @@ hide outer repo
 
 Testing -h/--help:
 
+#if no-extraextensions
+
   $ hg -h
   Mercurial Distributed SCM
   
@@ -372,8 +374,6 @@ Testing -h/--help:
   
   (use 'hg help -v' to show built-in aliases and global options)
 
-
-
   $ hg --help
   Mercurial Distributed SCM
   
@@ -456,6 +456,8 @@ Testing -h/--help:
    urls          URL Paths
   
   (use 'hg help -v' to show built-in aliases and global options)
+
+#endif
 
 Not tested: --debugger
 

@@ -718,6 +718,10 @@ def has_xdiff():
     except (ImportError, AttributeError):
         return False
 
+@check('extraextensions', 'whether tests are running with extra extensions')
+def has_extraextensions():
+    return 'HGTESTEXTRAEXTENSIONS' in os.environ
+
 def getrepofeatures():
     """Obtain set of repository features in use.
 

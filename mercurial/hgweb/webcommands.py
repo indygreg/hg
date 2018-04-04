@@ -1398,7 +1398,7 @@ def help(web):
 
     topicname = web.req.qsparams.get('node')
     if not topicname:
-        def topics(**map):
+        def topics(context):
             for entries, summary, _doc in helpmod.helptable:
                 yield {'topic': entries[0], 'summary': summary}
 
@@ -1427,7 +1427,7 @@ def help(web):
 
         return web.sendtemplate(
             'helptopics',
-            topics=topics,
+            topics=templateutil.mappinggenerator(topics),
             earlycommands=earlycommands,
             othercommands=othercommands,
             title='Index')
@@ -1444,7 +1444,7 @@ def help(web):
 
         return web.sendtemplate(
             'helptopics',
-            topics=topics,
+            topics=templateutil.mappinglist(topics),
             title=topicname,
             subindex=True)
 

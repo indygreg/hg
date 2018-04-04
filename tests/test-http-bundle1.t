@@ -380,6 +380,7 @@ disable pull-based clones
   server has pull-based clones disabled
   [255]
 
+#if no-reposimplestore
 ... but keep stream clones working
 
   $ hg clone --stream --noupdate http://localhost:$HGPORT1/ test-stream-clone
@@ -388,6 +389,7 @@ disable pull-based clones
   transferred * in * seconds (* KB/sec) (glob)
   searching for changes
   no changes found
+#endif
 
 ... and also keep partial clones and pulls working
   $ hg clone http://localhost:$HGPORT1 --rev 0 test-partial-clone

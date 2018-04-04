@@ -512,8 +512,12 @@ generate new bundles:
   $ hg -R r2 bundle -qa $TESTDIR/bundles/issue4438-r2.hg
 #else
 use existing bundles:
-  $ hg clone -q $TESTDIR/bundles/issue4438-r1.hg r1
-  $ hg clone -q $TESTDIR/bundles/issue4438-r2.hg r2
+  $ hg init r1
+  $ hg -R r1 -q unbundle $TESTDIR/bundles/issue4438-r1.hg
+  $ hg -R r1 -q up
+  $ hg init r2
+  $ hg -R r2 -q unbundle $TESTDIR/bundles/issue4438-r2.hg
+  $ hg -R r2 -q up
 #endif
 
 Set iteration order could cause wrong and unstable results - fixed in 73cfaa348650:

@@ -189,6 +189,8 @@ check that local configs for the cached repo aren't inherited when -R is used:
   > foo = bar
   > EOF
 
+#if no-extraextensions
+
   >>> from hgclient import check, readchannel, runcommand, sep
   >>> @check
   ... def localhgrc(server):
@@ -222,6 +224,7 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ui.interactive=False
   ui.mergemarkers=detailed
   ui.nontty=true
+#endif
 
   $ rm -R foo
 

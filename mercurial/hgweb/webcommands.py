@@ -648,7 +648,7 @@ def bookmarks(web):
     i = sorted(i, key=sortkey, reverse=True)
     parity = paritygen(web.stripecount)
 
-    def entries(latestonly, **map):
+    def entries(context, latestonly):
         t = i
         if latestonly:
             t = i[:1]
@@ -667,8 +667,8 @@ def bookmarks(web):
         'bookmarks',
         node=hex(web.repo.changelog.tip()),
         lastchange=[{'date': web.repo[latestrev].date()}],
-        entries=lambda **x: entries(latestonly=False, **x),
-        latestentry=lambda **x: entries(latestonly=True, **x))
+        entries=templateutil.mappinggenerator(entries, args=(False,)),
+        latestentry=templateutil.mappinggenerator(entries, args=(True,)))
 
 @webcommand('branches')
 def branches(web):

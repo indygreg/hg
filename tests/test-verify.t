@@ -1,3 +1,5 @@
+#require reporevlogstore
+
 prepare repo
 
   $ hg init a

@@ -9,6 +9,8 @@ Setup
 
   $ . "$TESTDIR/library-infinitepush.sh"
   $ cat >> $HGRCPATH <<EOF
+  > [ui]
+  > ssh = python "$TESTDIR/dummyssh"
   > [alias]
   > glog = log -GT "{rev}:{node|short} {desc}\n{phase}"
   > EOF
@@ -26,6 +28,7 @@ Setup
   $ cd ..
   $ hg clone repo client -q
   $ hg clone repo client2 -q
+  $ hg clone ssh://user@dummy/repo client3 -q
   $ cd client
 
 Pushing a new commit from the client to the server
@@ -175,8 +178,8 @@ Checking if `hg pull` pulls something or `hg incoming` shows something
   searching for changes
   no changes found
 
-Pulling from second client to test `hg pull -r <rev>`
-------------------------------------------------------
+Pulling from second client which is a localpeer to test `hg pull -r <rev>`
+--------------------------------------------------------------------------
 
 Pulling the revision which is applied
 
@@ -197,14 +200,70 @@ Pulling the revision which is applied
      public
 
 Pulling the revision which is in bundlestore
-XXX: we should support pulling revisions from bundlestore without client side
-wrapping
+XXX: we should support pulling revisions from a local peers bundlestore without
+client side wrapping
 
   $ hg pull -r b4e4bce660512ad3e71189e14588a70ac8e31fef
   pulling from $TESTTMP/repo
   abort: unknown revision 'b4e4bce660512ad3e71189e14588a70ac8e31fef'!
   [255]
   $ hg glog
+  o  1:6cb0989601f1 added a
+  |  public
+  @  0:67145f466344 initialcommit
+     public
+
+  $ cd ../client
+
+Pulling from third client which is not a localpeer
+---------------------------------------------------
+
+Pulling the revision which is applied
+
+  $ cd ../client3
+  $ hg pull -r 6cb0989601f1
+  pulling from ssh://user@dummy/repo
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 6cb0989601f1
+  (run 'hg update' to get a working copy)
+  $ hg glog
+  o  1:6cb0989601f1 added a
+  |  public
+  @  0:67145f466344 initialcommit
+     public
+
+Pulling the revision which is in bundlestore
+
+Trying to specify short hash
+XXX: we should support this
+  $ hg pull -r b4e4bce660512
+  pulling from ssh://user@dummy/repo
+  abort: unknown revision 'b4e4bce660512'!
+  [255]
+
+XXX: we should show better message when the pull is happening from bundlestore
+  $ hg pull -r b4e4bce660512ad3e71189e14588a70ac8e31fef
+  pulling from ssh://user@dummy/repo
+  searching for changes
+  no changes found
+  adding changesets
+  adding manifests
+  adding file changes
+  added 4 changesets with 4 changes to 4 files
+  new changesets eaba929e866c:b4e4bce66051
+  $ hg glog
+  o  5:b4e4bce66051 added e
+  |  public
+  o  4:1bb96358eda2 added d
+  |  public
+  o  3:bf8a6e3011b3 added c
+  |  public
+  o  2:eaba929e866c added b
+  |  public
   o  1:6cb0989601f1 added a
   |  public
   @  0:67145f466344 initialcommit

@@ -611,7 +611,7 @@ def tags(web):
     i = list(reversed(web.repo.tagslist()))
     parity = paritygen(web.stripecount)
 
-    def entries(notip, latestonly, **map):
+    def entries(context, notip, latestonly):
         t = i
         if notip:
             t = [(k, n) for k, n in i if k != "tip"]
@@ -626,9 +626,10 @@ def tags(web):
     return web.sendtemplate(
         'tags',
         node=hex(web.repo.changelog.tip()),
-        entries=lambda **x: entries(False, False, **x),
-        entriesnotip=lambda **x: entries(True, False, **x),
-        latestentry=lambda **x: entries(True, True, **x))
+        entries=templateutil.mappinggenerator(entries, args=(False, False)),
+        entriesnotip=templateutil.mappinggenerator(entries,
+                                                   args=(True, False)),
+        latestentry=templateutil.mappinggenerator(entries, args=(True, True)))
 
 @webcommand('bookmarks')
 def bookmarks(web):

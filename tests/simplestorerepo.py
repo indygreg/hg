@@ -152,8 +152,10 @@ class filestorage(object):
     def rev(self, node):
         validatenode(node)
 
-        # Will raise KeyError.
-        self._indexbynode[node]
+        try:
+            self._indexbynode[node]
+        except KeyError:
+            raise error.LookupError(node, self._indexpath, _('no node'))
 
         for rev, entry in self._indexbyrev.items():
             if entry[b'node'] == node:
@@ -171,11 +173,8 @@ class filestorage(object):
             return self.node(node)
 
         if len(node) == 20:
-            try:
-                self.rev(node)
-                return node
-            except LookupError:
-                pass
+            self.rev(node)
+            return node
 
         try:
             rev = int(node)
@@ -196,10 +195,10 @@ class filestorage(object):
                 rawnode = bin(node)
                 self.rev(rawnode)
                 return rawnode
-            except (TypeError, LookupError):
+            except TypeError:
                 pass
 
-        raise LookupError(node, self._path, _('invalid lookup input'))
+        raise error.LookupError(node, self._path, _('invalid lookup input'))
 
     def linkrev(self, rev):
         validaterev(rev)
@@ -279,8 +278,6 @@ class filestorage(object):
 
         if node == nullid:
             return b''
-
-        self._indexbynode[node]
 
         rev = self.rev(node)
         flags = self.flags(rev)

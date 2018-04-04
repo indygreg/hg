@@ -1014,8 +1014,8 @@ def listkeys(repo, proto, namespace):
 def lookup(repo, proto, key):
     try:
         k = encoding.tolocal(key)
-        c = repo[k]
-        r = c.hex()
+        n = repo.lookup(k)
+        r = hex(n)
         success = 1
     except Exception as inst:
         r = stringutil.forcebytestr(inst)

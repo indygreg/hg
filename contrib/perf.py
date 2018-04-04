@@ -767,7 +767,7 @@ def perfmanifest(ui, repo, rev, **opts):
 @command('perfchangeset', formatteropts)
 def perfchangeset(ui, repo, rev, **opts):
     timer, fm = gettimer(ui, opts)
-    n = repo[rev].node()
+    n = scmutil.revsingle(repo, rev).node()
     def d():
         repo.changelog.read(n)
         #repo.changelog._cache = None
@@ -853,7 +853,7 @@ def perfnodelookup(ui, repo, rev, **opts):
     timer, fm = gettimer(ui, opts)
     import mercurial.revlog
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
-    n = repo[rev].node()
+    n = scmutil.revsingle(repo, rev).node()
     cl = mercurial.revlog.revlog(getsvfs(repo), "00changelog.i")
     def d():
         cl.rev(n)

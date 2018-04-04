@@ -461,7 +461,8 @@ def evalfuncarg(context, mapping, arg):
 # is fixed. we can't do that right now because join() has to take a generator
 # of byte strings as it is, not a lazy byte string.
 def _unwrapvalue(context, mapping, thing):
-    thing = unwrapvalue(context, mapping, thing)
+    if isinstance(thing, wrapped):
+        return thing.tovalue(context, mapping)
     # evalrawexp() may return string, generator of strings or arbitrary object
     # such as date tuple, but filter does not want generator.
     return _unthunk(context, mapping, thing)
@@ -476,7 +477,8 @@ def evalboolean(context, mapping, arg):
             thing = stringutil.parsebool(data)
     else:
         thing = func(context, mapping, data)
-    thing = unwrapvalue(context, mapping, thing)
+    if isinstance(thing, wrapped):
+        thing = thing.tovalue(context, mapping)
     if isinstance(thing, bool):
         return thing
     # other objects are evaluated as strings, which means 0 is True, but

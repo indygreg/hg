@@ -32,6 +32,7 @@ from .. import (
     patch,
     pathutil,
     pycompat,
+    scmutil,
     templatefilters,
     templatekw,
     ui as uimod,
@@ -303,7 +304,7 @@ def changectx(repo, req):
         if ipos != -1:
             changeid = changeid[(ipos + 1):]
 
-    return repo[changeid]
+    return scmutil.revsymbol(repo, changeid)
 
 def basechangectx(repo, req):
     if 'node' in req.qsparams:
@@ -311,7 +312,7 @@ def basechangectx(repo, req):
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[:ipos]
-            return repo[changeid]
+            return scmutil.revsymbol(repo, changeid)
 
     return None
 
@@ -326,7 +327,7 @@ def filectx(repo, req):
     else:
         raise ErrorResponse(HTTP_NOT_FOUND, 'node or filenode not given')
     try:
-        fctx = repo[changeid][path]
+        fctx = scmutil.revsymbol(repo, changeid)[path]
     except error.RepoError:
         fctx = repo.filectx(path, fileid=changeid)
 

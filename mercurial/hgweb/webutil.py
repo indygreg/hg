@@ -295,9 +295,6 @@ def cleanpath(repo, path):
     path = path.lstrip('/')
     return pathutil.canonpath(repo.root, '', path)
 
-def changeidctx(repo, changeid):
-    return repo[changeid]
-
 def changectx(repo, req):
     changeid = "tip"
     if 'node' in req.qsparams:
@@ -306,7 +303,7 @@ def changectx(repo, req):
         if ipos != -1:
             changeid = changeid[(ipos + 1):]
 
-    return changeidctx(repo, changeid)
+    return repo[changeid]
 
 def basechangectx(repo, req):
     if 'node' in req.qsparams:
@@ -314,7 +311,7 @@ def basechangectx(repo, req):
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[:ipos]
-            return changeidctx(repo, changeid)
+            return repo[changeid]
 
     return None
 

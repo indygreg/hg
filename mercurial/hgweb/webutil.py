@@ -622,14 +622,14 @@ def _getcompblock(leftlines, rightlines, opcodes):
     return templateutil.mappinggenerator(_getcompblockgen, args=args,
                                          name='comparisonline')
 
-def compare(tmpl, context, leftlines, rightlines):
+def compare(tmpl, contextnum, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''
     s = difflib.SequenceMatcher(None, leftlines, rightlines)
-    if context < 0:
+    if contextnum < 0:
         l = _getcompblock(leftlines, rightlines, s.get_opcodes())
         yield tmpl.generate('comparisonblock', {'lines': l})
     else:
-        for oc in s.get_grouped_opcodes(n=context):
+        for oc in s.get_grouped_opcodes(n=contextnum):
             l = _getcompblock(leftlines, rightlines, oc)
             yield tmpl.generate('comparisonblock', {'lines': l})
 

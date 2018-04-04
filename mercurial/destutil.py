@@ -55,10 +55,10 @@ def _destupdateobs(repo, clean):
 def _destupdatebook(repo, clean):
     """decide on an update destination from active bookmark"""
     # we also move the active bookmark, if any
-    activemark = None
-    node, movemark = bookmarks.calculateupdate(repo.ui, repo, None)
-    if node is not None:
-        activemark = node
+    node = None
+    activemark, movemark = bookmarks.calculateupdate(repo.ui, repo, None)
+    if activemark is not None:
+        node = repo.lookup(activemark)
     return node, movemark, activemark
 
 def _destupdatebranch(repo, clean):

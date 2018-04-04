@@ -349,8 +349,8 @@ def headsforactive(repo):
     return heads
 
 def calculateupdate(ui, repo, checkout):
-    '''Return a tuple (targetrev, movemarkfrom) indicating the rev to
-    check out and where to move the active bookmark from, if needed.'''
+    '''Return a tuple (activemark, movemarkfrom) indicating the active bookmark
+    and where to move the active bookmark from, if needed.'''
     movemarkfrom = None
     if checkout is None:
         activemark = repo._activebookmark

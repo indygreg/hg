@@ -742,12 +742,14 @@ Verify bundles don't get overwritten:
   saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-e68910bd-backup.hg
   $ ls .hg/strip-backup
   3903775176ed-e68910bd-backup.hg
+#if repobundlerepo
   $ hg pull -q -r 3903775176ed .hg/strip-backup/3903775176ed-e68910bd-backup.hg
   $ hg strip -r 0
   saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-54390173-backup.hg
   $ ls .hg/strip-backup
   3903775176ed-54390173-backup.hg
   3903775176ed-e68910bd-backup.hg
+#endif
   $ cd ..
 
 Test that we only bundle the stripped changesets (issue4736)
@@ -813,6 +815,7 @@ Check bundle behavior:
 
   $ hg bundle -r 'desc(mergeCD)' --base 'desc(commitC)' ../issue4736.hg
   2 changesets found
+#if repobundlerepo
   $ hg log -r 'bundle()' -R ../issue4736.hg
   changeset:   3:6625a5168474
   parent:      1:eca11cf91c71
@@ -828,6 +831,7 @@ Check bundle behavior:
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     mergeCD
   
+#endif
 
 check strip behavior
 
@@ -872,6 +876,7 @@ check strip behavior
 
 strip backup content
 
+#if repobundlerepo
   $ hg log -r 'bundle()' -R .hg/strip-backup/6625a5168474-*-backup.hg
   changeset:   3:6625a5168474
   parent:      1:eca11cf91c71
@@ -887,6 +892,9 @@ strip backup content
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     mergeCD
   
+
+#endif
+
 Check that the phase cache is properly invalidated after a strip with bookmark.
 
   $ cat > ../stripstalephasecache.py << EOF

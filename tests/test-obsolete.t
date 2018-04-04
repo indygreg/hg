@@ -1449,10 +1449,12 @@ Test ability to pull changeset with locally applying obsolescence markers
   phase-heads -- {}
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8 draft
 
+#if repobundlerepo
   $ hg pull .hg/strip-backup/e008cf283490-*-backup.hg
   pulling from .hg/strip-backup/e008cf283490-ede36964-backup.hg
   searching for changes
   no changes found
+#endif
   $ hg debugobsolete
   e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   $ hg log -G

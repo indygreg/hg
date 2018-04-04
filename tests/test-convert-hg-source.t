@@ -182,7 +182,8 @@ break it
   sorting...
   converting...
   4 init
-  ignoring: data/b.i@1e88685f5dde: no match found
+  ignoring: data/b.i@1e88685f5dde: no match found (reporevlogstore !)
+  ignoring: data/b/index@1e88685f5dde: no node (reposimplestore !)
   3 changeall
   2 changebagain
   1 merge

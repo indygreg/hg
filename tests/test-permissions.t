@@ -1,4 +1,4 @@
-#require unix-permissions no-root
+#require unix-permissions no-root reporevlogstore
 
   $ hg init t
   $ cd t

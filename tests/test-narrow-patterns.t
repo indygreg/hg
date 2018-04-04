@@ -196,7 +196,9 @@ widen narrow spec again, but exclude a file in previously included spec
   comparing with ssh://user@dummy/master
   searching for changes
   looking for local changes to affected paths
-  deleting data/dir1/dirA/bar.i
+  deleting data/dir1/dirA/bar.i (reporevlogstore !)
+  deleting data/dir1/dirA/bar/0eca1d0cbdaea4651d1d04d71976a6d2d9bfaae5 (reposimplestore !)
+  deleting data/dir1/dirA/bar/index (reposimplestore !)
   no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets
@@ -254,7 +256,9 @@ widen narrow spec yet again, excluding a directory in previous spec
   comparing with ssh://user@dummy/master
   searching for changes
   looking for local changes to affected paths
-  deleting data/dir1/dirA/foo.i
+  deleting data/dir1/dirA/foo.i (reporevlogstore !)
+  deleting data/dir1/dirA/foo/162caeb3d55dceb1fee793aa631ac8c73fcb8b5e (reposimplestore !)
+  deleting data/dir1/dirA/foo/index (reposimplestore !)
   no changes found
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-widen.hg (glob)
   adding changesets

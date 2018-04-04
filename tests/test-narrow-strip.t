@@ -116,6 +116,7 @@ Also verify we can apply the bundle with 'hg pull':
   $ hg strip .
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-backup.hg (glob)
+#if repobundlerepo
   $ hg pull .hg/strip-backup/*-backup.hg
   pulling from .hg/strip-backup/*-backup.hg (glob)
   searching for changes
@@ -131,7 +132,6 @@ Also verify we can apply the bundle with 'hg pull':
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/narrow/.hg/strip-backup/*-backup.hg (glob)
 
-#if repobundlerepo
   $ hg incoming .hg/strip-backup/*-backup.hg
   comparing with .hg/strip-backup/*-backup.hg (glob)
   changeset:   0:* (glob)

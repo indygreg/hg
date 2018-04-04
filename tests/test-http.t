@@ -470,6 +470,7 @@ disable pull-based clones
   (remove --pull if specified or upgrade Mercurial)
   [255]
 
+#if no-reposimplestore
 ... but keep stream clones working
 
   $ hg clone --stream --noupdate http://localhost:$HGPORT1/ test-stream-clone
@@ -479,6 +480,7 @@ disable pull-based clones
   searching for changes
   no changes found
   $ cat error.log
+#endif
 
 ... and also keep partial clones and pulls working
   $ hg clone http://localhost:$HGPORT1 --rev 0 test-partial-clone

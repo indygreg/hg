@@ -97,7 +97,8 @@ TODO: this should be successful
   remote: adding file changes
   remote: transaction abort!
   remote: rollback completed
-  remote: abort: data/inside2/f.i@4a1aa07735e6: unknown parent!
+  remote: abort: data/inside2/f.i@4a1aa07735e6: unknown parent! (reporevlogstore !)
+  remote: abort: data/inside2/f/index@4a1aa07735e6: no node! (reposimplestore !)
   abort: stream ended unexpectedly (got 0 bytes, expected 4)
   [255]
 

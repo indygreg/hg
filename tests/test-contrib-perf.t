@@ -142,9 +142,11 @@ perfstatus
   $ hg perfdirstatedirs
   $ hg perfdirstatefoldmap
   $ hg perfdirstatewrite
+#if repofncache
   $ hg perffncacheencode
   $ hg perffncacheload
   $ hg perffncachewrite
+#endif
   $ hg perfheads
   $ hg perfindex
   $ hg perfloadmarkers

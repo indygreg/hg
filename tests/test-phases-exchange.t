@@ -539,6 +539,7 @@ initial setup
 
 Pulling from bundle does not alter phases of changeset not present in the bundle
 
+#if repobundlerepo
   $ hg bundle  --base 1 -r 6 -r 3 ../partial-bundle.hg
   5 changesets found
   $ hg pull ../partial-bundle.hg
@@ -568,6 +569,7 @@ Pulling from bundle does not alter phases of changeset not present in the bundle
   |
   o  0 public a-A - 054250a37db4
   
+#endif
 
 Pushing to Publish=False (unknown changeset)
 

@@ -662,11 +662,12 @@ def bookmarks(web):
         latestrev = i[0][1]
     else:
         latestrev = -1
+    lastdate = web.repo[latestrev].date()
 
     return web.sendtemplate(
         'bookmarks',
         node=hex(web.repo.changelog.tip()),
-        lastchange=[{'date': web.repo[latestrev].date()}],
+        lastchange=templateutil.mappinglist([{'date': lastdate}]),
         entries=templateutil.mappinggenerator(entries, args=(False,)),
         latestentry=templateutil.mappinggenerator(entries, args=(True,)))
 

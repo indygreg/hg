@@ -1417,19 +1417,19 @@ def help(web):
         early.sort()
         other.sort()
 
-        def earlycommands(**map):
+        def earlycommands(context):
             for c, doc in early:
                 yield {'topic': c, 'summary': doc}
 
-        def othercommands(**map):
+        def othercommands(context):
             for c, doc in other:
                 yield {'topic': c, 'summary': doc}
 
         return web.sendtemplate(
             'helptopics',
             topics=templateutil.mappinggenerator(topics),
-            earlycommands=earlycommands,
-            othercommands=othercommands,
+            earlycommands=templateutil.mappinggenerator(earlycommands),
+            othercommands=templateutil.mappinggenerator(othercommands),
             title='Index')
 
     # Render an index of sub-topics.

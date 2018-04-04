@@ -788,7 +788,9 @@ def rebase(ui, repo, **opts):
         try:
             # in-memory merge doesn't support conflicts, so if we hit any, abort
             # and re-run as an on-disk merge.
-            return _origrebase(ui, repo, inmemory=inmemory, **opts)
+            overrides = {('rebase', 'singletransaction'): True}
+            with ui.configoverride(overrides, 'rebase'):
+                return _origrebase(ui, repo, inmemory=inmemory, **opts)
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))

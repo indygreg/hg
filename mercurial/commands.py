@@ -2648,7 +2648,8 @@ def heads(ui, repo, *branchrevs, **opts):
         heads = [repo[h] for h in heads]
 
     if branchrevs:
-        branches = set(repo[br].branch() for br in branchrevs)
+        branches = set(repo[r].branch()
+                       for r in scmutil.revrange(repo, branchrevs))
         heads = [h for h in heads if h.branch() in branches]
 
     if opts.get('active') and branchrevs:

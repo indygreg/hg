@@ -929,7 +929,7 @@ def annotate(web):
     # TODO there are still redundant operations within basefilectx.parents()
     # and from the fctx.annotate() call itself that could be cached.
     parentscache = {}
-    def parents(f):
+    def parents(context, f):
         rev = f.rev()
         if rev not in parentscache:
             parentscache[rev] = []
@@ -967,7 +967,7 @@ def annotate(web):
                    "node": f.hex(),
                    "rev": rev,
                    "author": f.user(),
-                   "parents": parents(f),
+                   "parents": templateutil.mappinggenerator(parents, args=(f,)),
                    "desc": f.description(),
                    "extra": f.extra(),
                    "file": f.path(),

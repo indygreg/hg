@@ -173,6 +173,8 @@ Test server side validation during push
   updating to branch default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
+#if reporevlogstore
+
 Test spurious filelog entries:
 
   $ cd test-validation-clone
@@ -245,6 +247,8 @@ Expected to fail:
   [255]
 
   $ cd ..
+
+#endif
 
 Test push hook locking
 =====================

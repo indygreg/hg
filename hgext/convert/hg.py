@@ -481,7 +481,7 @@ class mercurial_source(common.converter_source):
             else:
                 self.keep = util.always
             if revs:
-                self._heads = [self.repo[r].node() for r in revs]
+                self._heads = [self.repo.lookup(r) for r in revs]
             else:
                 self._heads = self.repo.heads()
         else:

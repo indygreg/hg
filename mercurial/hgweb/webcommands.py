@@ -1090,13 +1090,15 @@ def filelog(web):
                 diffs = diff(c, linerange=lr)
             # follow renames accross filtered (not in range) revisions
             path = c.path()
-            entries.append(dict(
-                parity=next(parity),
-                filerev=c.rev(),
-                file=path,
-                diff=diffs,
-                linerange=webutil.formatlinerange(*lr),
-                **pycompat.strkwargs(webutil.commonentry(repo, c))))
+            lm = webutil.commonentry(repo, c)
+            lm.update({
+                'parity': next(parity),
+                'filerev': c.rev(),
+                'file': path,
+                'diff': diffs,
+                'linerange': webutil.formatlinerange(*lr),
+            })
+            entries.append(lm)
             if i == revcount:
                 break
         lessvars['linerange'] = webutil.formatlinerange(*lrange)
@@ -1107,13 +1109,15 @@ def filelog(web):
             diffs = None
             if patch:
                 diffs = diff(iterfctx)
-            entries.append(dict(
-                parity=next(parity),
-                filerev=i,
-                file=f,
-                diff=diffs,
-                rename=webutil.renamelink(iterfctx),
-                **pycompat.strkwargs(webutil.commonentry(repo, iterfctx))))
+            lm = webutil.commonentry(repo, iterfctx)
+            lm.update({
+                'parity': next(parity),
+                'filerev': i,
+                'file': f,
+                'diff': diffs,
+                'rename': webutil.renamelink(iterfctx),
+            })
+            entries.append(lm)
         entries.reverse()
         revnav = webutil.filerevnav(web.repo, fctx.path())
         nav = revnav.gen(end - 1, revcount, count)

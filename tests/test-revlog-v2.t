@@ -1,3 +1,5 @@
+#require reporevlogstore
+
 A repo with unknown revlogv2 requirement string cannot be opened
 
   $ hg init invalidreq

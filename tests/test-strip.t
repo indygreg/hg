@@ -445,15 +445,19 @@ verify fncache is kept up-to-date
 
   $ touch a
   $ hg ci -qAm a
+#if repofncache
   $ cat .hg/store/fncache | sort
   data/a.i
   data/bar.i
+#endif
 
   $ hg strip tip
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
+#if repofncache
   $ cat .hg/store/fncache
   data/bar.i
+#endif
 
 stripping an empty revset
 

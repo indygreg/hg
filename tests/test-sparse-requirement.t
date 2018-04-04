@@ -22,6 +22,7 @@ Enable sparse profile
   generaldelta
   revlogv1
   store
+  testonly-simplestore (reposimplestore !)
 
   $ hg debugsparse --config extensions.sparse= --enable-profile frontend.sparse
   $ ls
@@ -37,6 +38,7 @@ Requirement for sparse added when sparse is enabled
   generaldelta
   revlogv1
   store
+  testonly-simplestore (reposimplestore !)
 
 Client without sparse enabled reacts properly
 
@@ -54,6 +56,7 @@ Requirement for sparse is removed when sparse is disabled
   generaldelta
   revlogv1
   store
+  testonly-simplestore (reposimplestore !)
 
 And client without sparse can access
 

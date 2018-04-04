@@ -28,6 +28,7 @@ narrow clone a file, f10
   narrowhg-experimental
   revlogv1
   store
+  testonly-simplestore (reposimplestore !)
 
   $ cat .hg/narrowspec
   [includes]

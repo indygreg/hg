@@ -733,11 +733,12 @@ def getrepofeatures():
     features = {
         'bundlerepo',
         'revlogstore',
+        'fncache',
     }
 
     # Features that imply other features.
     implies = {
-        'simplestore': ['-revlogstore', '-bundlerepo'],
+        'simplestore': ['-revlogstore', '-bundlerepo', '-fncache'],
     }
 
     for override in os.environ.get('HGREPOFEATURES', '').split(' '):
@@ -770,3 +771,7 @@ def has_reposimplestore():
 @check('repobundlerepo', 'whether we can open bundle files as repos')
 def has_repobundlerepo():
     return 'bundlerepo' in getrepofeatures()
+
+@check('repofncache', 'repository has an fncache')
+def has_repofncache():
+    return 'fncache' in getrepofeatures()

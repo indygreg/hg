@@ -12,6 +12,8 @@
 
 from __future__ import absolute_import
 
+import stat
+
 from mercurial.i18n import _
 from mercurial.node import (
     bin,
@@ -26,10 +28,13 @@ from mercurial import (
     ancestor,
     bundlerepo,
     error,
+    extensions,
     filelog,
+    localrepo,
     mdiff,
     pycompat,
     revlog,
+    store,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -37,6 +42,8 @@ from mercurial import (
 # be specifying the version(s) of Mercurial they are tested with, or
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
+
+REQUIREMENT = 'testonly-simplestore'
 
 def validatenode(node):
     if isinstance(node, int):
@@ -581,6 +588,36 @@ class filestorage(object):
         self._indexdata[rev:] = []
         self._reflectindexupdate()
 
+def issimplestorefile(f, kind, st):
+    if kind != stat.S_IFREG:
+        return False
+
+    if store.isrevlog(f, kind, st):
+        return False
+
+    # Ignore transaction undo files.
+    if f.startswith('undo.'):
+        return False
+
+    # Otherwise assume it belongs to the simple store.
+    return True
+
+class simplestore(store.encodedstore):
+    def datafiles(self):
+        for x in super(simplestore, self).datafiles():
+            yield x
+
+        # Supplement with non-revlog files.
+        extrafiles = self._walk('data', True, filefilter=issimplestorefile)
+
+        for unencoded, encoded, size in extrafiles:
+            try:
+                unencoded = store.decodefilename(unencoded)
+            except KeyError:
+                unencoded = None
+
+            yield unencoded, encoded, size
+
 def reposetup(ui, repo):
     if not repo.local():
         return
@@ -593,3 +630,35 @@ def reposetup(ui, repo):
             return filestorage(self.svfs, f)
 
     repo.__class__ = simplestorerepo
+
+def featuresetup(ui, supported):
+    supported.add(REQUIREMENT)
+
+def newreporequirements(orig, repo):
+    """Modifies default requirements for new repos to use the simple store."""
+    requirements = orig(repo)
+
+    # These requirements are only used to affect creation of the store
+    # object. We have our own store. So we can remove them.
+    # TODO do this once we feel like taking the test hit.
+    #if 'fncache' in requirements:
+    #    requirements.remove('fncache')
+    #if 'dotencode' in requirements:
+    #    requirements.remove('dotencode')
+
+    requirements.add(REQUIREMENT)
+
+    return requirements
+
+def makestore(orig, requirements, path, vfstype):
+    if REQUIREMENT not in requirements:
+        return orig(requirements, path, vfstype)
+
+    return simplestore(path, vfstype)
+
+def extsetup(ui):
+    localrepo.featuresetupfuncs.add(featuresetup)
+
+    extensions.wrapfunction(localrepo, 'newreporequirements',
+                            newreporequirements)
+    extensions.wrapfunction(store, 'store', makestore)

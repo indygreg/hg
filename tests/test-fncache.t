@@ -1,3 +1,5 @@
+#require repofncache
+
 Init repo1:
 
   $ hg init repo1

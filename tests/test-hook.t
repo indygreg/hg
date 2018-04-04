@@ -190,11 +190,11 @@ more there after
   00changelog.i
   00manifest.i
   data
-  fncache
+  fncache (repofncache !)
   journal.phaseroots
   phaseroots
   undo
-  undo.backup.fncache
+  undo.backup.fncache (repofncache !)
   undo.backupfiles
   undo.phaseroots
 

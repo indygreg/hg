@@ -1330,7 +1330,7 @@ def graph(web):
                    'vertex': vtx,
                    'edges': edges}
 
-    def nodes():
+    def nodes(context):
         parity = paritygen(web.stripecount)
         for row, (id, type, ctx, vtx, edges) in enumerate(tree):
             entry = webutil.commonentry(web.repo, ctx)
@@ -1367,7 +1367,7 @@ def graph(web):
         changesets=count,
         nextentry=templateutil.mappinglist(nextentry),
         jsdata=templateutil.mappinggenerator(jsdata),
-        nodes=lambda **x: nodes(),
+        nodes=templateutil.mappinggenerator(nodes),
         node=ctx.hex(),
         changenav=changenav)
 

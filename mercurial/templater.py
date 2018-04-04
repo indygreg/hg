@@ -26,9 +26,6 @@ generator
     values of any printable types, and  will be folded by ``stringify()``
     or ``flatten()``.
 
-    BUG: hgweb overloads this type for mappings (i.e. some hgweb keywords
-    returns a generator of dicts.)
-
 None
     sometimes represents an empty value, which can be stringified to ''.
 

@@ -285,12 +285,6 @@ def unwraphybrid(context, mapping, thing):
         return thing
     return thing.show(context, mapping)
 
-def unwrapvalue(context, mapping, thing):
-    """Move the inner value object out of the wrapper"""
-    if not isinstance(thing, wrapped):
-        return thing
-    return thing.tovalue(context, mapping)
-
 def wraphybridvalue(container, key, value):
     """Wrap an element of hybrid container to be mappable
 
@@ -455,12 +449,10 @@ def evalrawexp(context, mapping, arg):
 
 def evalfuncarg(context, mapping, arg):
     """Evaluate given argument as value type"""
-    return _unwrapvalue(context, mapping, evalrawexp(context, mapping, arg))
+    return unwrapvalue(context, mapping, evalrawexp(context, mapping, arg))
 
-# TODO: unify this with unwrapvalue() once the bug of templatefunc.join()
-# is fixed. we can't do that right now because join() has to take a generator
-# of byte strings as it is, not a lazy byte string.
-def _unwrapvalue(context, mapping, thing):
+def unwrapvalue(context, mapping, thing):
+    """Move the inner value object out of the wrapper"""
     if isinstance(thing, wrapped):
         return thing.tovalue(context, mapping)
     # evalrawexp() may return string, generator of strings or arbitrary object
@@ -492,7 +484,7 @@ def evaldate(context, mapping, arg, err=None):
     return unwrapdate(context, mapping, thing, err)
 
 def unwrapdate(context, mapping, thing, err=None):
-    thing = _unwrapvalue(context, mapping, thing)
+    thing = unwrapvalue(context, mapping, thing)
     try:
         return dateutil.parsedate(thing)
     except AttributeError:
@@ -507,7 +499,7 @@ def evalinteger(context, mapping, arg, err=None):
     return unwrapinteger(context, mapping, thing, err)
 
 def unwrapinteger(context, mapping, thing, err=None):
-    thing = _unwrapvalue(context, mapping, thing)
+    thing = unwrapvalue(context, mapping, thing)
     try:
         return int(thing)
     except (TypeError, ValueError):
@@ -527,7 +519,7 @@ def evalstringliteral(context, mapping, arg):
     return stringify(context, mapping, thing)
 
 _unwrapfuncbytype = {
-    None: _unwrapvalue,
+    None: unwrapvalue,
     bytes: stringify,
     date: unwrapdate,
     int: unwrapinteger,

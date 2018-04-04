@@ -333,8 +333,9 @@ def join(context, mapping, args):
         joiner = evalstring(context, mapping, args[1])
     if isinstance(joinset, templateutil.wrapped):
         return joinset.join(context, mapping, joiner)
-    # TODO: perhaps a generator should be stringify()-ed here, but we can't
-    # because hgweb abuses it as a keyword that returns a list of dicts.
+    # TODO: rethink about join() of a byte string, which had no defined
+    # behavior since a string may be either a bytes or a generator.
+    # TODO: fix type error on join() of non-iterable
     joinset = templateutil.unwrapvalue(context, mapping, joinset)
     return templateutil.joinitems(pycompat.maybebytestr(joinset), joiner)
 

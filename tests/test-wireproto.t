@@ -114,10 +114,7 @@ HTTP without args-in-POST:
 
 HTTP without the httpheader capability:
 
-  $ HGRCPATH="`pwd`/repo/.hgrc"
-  $ export HGRCPATH
-  $ CAP=httpheader
-  $ . "$TESTDIR/notcapable"
+  $ CAP=httpheader . "$TESTDIR/notcapable"
 
   $ hg serve -R repo -p $HGPORT2 -d --pid-file=hg2.pid -E error2.log -A access2.log
   $ cat hg2.pid >> $DAEMON_PIDS

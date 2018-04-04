@@ -284,7 +284,8 @@ Test templates and style maps in files:
 
  so it can be included in hgrc
 
-  $ cat <<'EOF' > myhgrc
+  $ cat <<EOF > myhgrc
+  > %include $HGRCPATH
   > %include map-simple
   > [templates]
   > foo = "{changeset}"

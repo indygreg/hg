@@ -35,6 +35,7 @@ from mercurial import (
     pycompat,
     revlog,
     store,
+    verify,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -656,9 +657,17 @@ def makestore(orig, requirements, path, vfstype):
 
     return simplestore(path, vfstype)
 
+def verifierinit(orig, self, *args, **kwargs):
+    orig(self, *args, **kwargs)
+
+    # We don't care that files in the store don't align with what is
+    # advertised. So suppress these warnings.
+    self.warnorphanstorefiles = False
+
 def extsetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
 
     extensions.wrapfunction(localrepo, 'newreporequirements',
                             newreporequirements)
     extensions.wrapfunction(store, 'store', makestore)
+    extensions.wrapfunction(verify.verifier, '__init__', verifierinit)

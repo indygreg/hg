@@ -52,6 +52,7 @@ class verifier(object):
         self.fncachewarned = False
         # developer config: verify.skipflags
         self.skipflags = repo.ui.configint('verify', 'skipflags')
+        self.warnorphanstorefiles = True
 
     def warn(self, msg):
         self.ui.warn(msg + "\n")
@@ -294,8 +295,9 @@ class verifier(object):
 
         if not dir and subdirnodes:
             ui.progress(_('checking'), None)
-            for f in sorted(storefiles):
-                self.warn(_("warning: orphan data file '%s'") % f)
+            if self.warnorphanstorefiles:
+                for f in sorted(storefiles):
+                    self.warn(_("warning: orphan data file '%s'") % f)
 
         return filenodes
 
@@ -369,8 +371,10 @@ class verifier(object):
                 try:
                     storefiles.remove(ff)
                 except KeyError:
-                    self.warn(_(" warning: revlog '%s' not in fncache!") % ff)
-                    self.fncachewarned = True
+                    if self.warnorphanstorefiles:
+                        self.warn(_(" warning: revlog '%s' not in fncache!") %
+                                  ff)
+                        self.fncachewarned = True
 
             self.checklog(fl, f, lr)
             seen = {}
@@ -481,7 +485,8 @@ class verifier(object):
                              short(node), f)
         ui.progress(_('checking'), None)
 
-        for f in sorted(storefiles):
-            self.warn(_("warning: orphan data file '%s'") % f)
+        if self.warnorphanstorefiles:
+            for f in sorted(storefiles):
+                self.warn(_("warning: orphan data file '%s'") % f)
 
         return len(files), revisions

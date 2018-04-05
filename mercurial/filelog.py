@@ -7,27 +7,20 @@
 
 from __future__ import absolute_import
 
-import struct
-
 from .thirdparty.zope import (
     interface as zi,
 )
 from . import (
-    error,
-    mdiff,
     repository,
     revlog,
 )
-
-def _censoredtext(text):
-    m, offs = revlog.parsemeta(text)
-    return m and "censored" in m
 
 @zi.implementer(repository.ifilestorage)
 class filelog(revlog.revlog):
     def __init__(self, opener, path):
         super(filelog, self).__init__(opener,
-                        "/".join(("data", path + ".i")))
+                        "/".join(("data", path + ".i")),
+                                      censorable=True)
         # full name of the user visible file, relative to the repository root
         self.filename = path
 
@@ -90,35 +83,3 @@ class filelog(revlog.revlog):
             return t2 != text
 
         return True
-
-    def checkhash(self, text, node, p1=None, p2=None, rev=None):
-        try:
-            super(filelog, self).checkhash(text, node, p1=p1, p2=p2, rev=rev)
-        except error.RevlogError:
-            if _censoredtext(text):
-                raise error.CensoredNodeError(self.indexfile, node, text)
-            raise
-
-    def iscensored(self, rev):
-        """Check if a file revision is censored."""
-        return self.flags(rev) & revlog.REVIDX_ISCENSORED
-
-    def _peek_iscensored(self, baserev, delta, flush):
-        """Quickly check if a delta produces a censored revision."""
-        # Fragile heuristic: unless new file meta keys are added alphabetically
-        # preceding "censored", all censored revisions are prefixed by
-        # "\1\ncensored:". A delta producing such a censored revision must be a
-        # full-replacement delta, so we inspect the first and only patch in the
-        # delta for this prefix.
-        hlen = struct.calcsize(">lll")
-        if len(delta) <= hlen:
-            return False
-
-        oldlen = self.rawsize(baserev)
-        newlen = len(delta) - hlen
-        if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
-            return False
-
-        add = "\1\ncensored:"
-        addlen = len(add)
-        return newlen >= addlen and delta[hlen:hlen + addlen] == add

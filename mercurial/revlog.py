@@ -117,6 +117,10 @@ def packmeta(meta, text):
     metatext = "".join("%s: %s\n" % (k, meta[k]) for k in keys)
     return "\1\n%s\1\n%s" % (metatext, text)
 
+def _censoredtext(text):
+    m, offs = parsemeta(text)
+    return m and "censored" in m
+
 def addflagprocessor(flag, processor):
     """Register a flag processor on a revision data flag.
 
@@ -574,9 +578,11 @@ class revlog(object):
     If mmaplargeindex is True, and an mmapindexthreshold is set, the
     index will be mmapped rather than read if it is larger than the
     configured threshold.
+
+    If censorable is True, the revlog can have censored revisions.
     """
     def __init__(self, opener, indexfile, datafile=None, checkambig=False,
-                 mmaplargeindex=False):
+                 mmaplargeindex=False, censorable=False):
         """
         create a revlog object
 
@@ -589,6 +595,7 @@ class revlog(object):
         #  When True, indexfile is opened with checkambig=True at writing, to
         #  avoid file stat ambiguity.
         self._checkambig = checkambig
+        self._censorable = censorable
         # 3-tuple of (node, rev, text) for a raw revision.
         self._cache = None
         # Maps rev to chain base rev.
@@ -1867,14 +1874,19 @@ class revlog(object):
         Available as a function so that subclasses can extend hash mismatch
         behaviors as needed.
         """
-        if p1 is None and p2 is None:
-            p1, p2 = self.parents(node)
-        if node != self.hash(text, p1, p2):
-            revornode = rev
-            if revornode is None:
-                revornode = templatefilters.short(hex(node))
-            raise RevlogError(_("integrity check failed on %s:%s")
-                % (self.indexfile, pycompat.bytestr(revornode)))
+        try:
+            if p1 is None and p2 is None:
+                p1, p2 = self.parents(node)
+            if node != self.hash(text, p1, p2):
+                revornode = rev
+                if revornode is None:
+                    revornode = templatefilters.short(hex(node))
+                raise RevlogError(_("integrity check failed on %s:%s")
+                    % (self.indexfile, pycompat.bytestr(revornode)))
+        except RevlogError:
+            if self._censorable and _censoredtext(text):
+                raise error.CensoredNodeError(self.indexfile, node, text)
+            raise
 
     def _enforceinlinesize(self, tr, fp=None):
         """Check if the revlog is too big for inline and convert if so.
@@ -2300,11 +2312,33 @@ class revlog(object):
 
     def iscensored(self, rev):
         """Check if a file revision is censored."""
-        return False
+        if not self._censorable:
+            return False
+
+        return self.flags(rev) & REVIDX_ISCENSORED
 
     def _peek_iscensored(self, baserev, delta, flush):
         """Quickly check if a delta produces a censored revision."""
-        return False
+        if not self._censorable:
+            return False
+
+        # Fragile heuristic: unless new file meta keys are added alphabetically
+        # preceding "censored", all censored revisions are prefixed by
+        # "\1\ncensored:". A delta producing such a censored revision must be a
+        # full-replacement delta, so we inspect the first and only patch in the
+        # delta for this prefix.
+        hlen = struct.calcsize(">lll")
+        if len(delta) <= hlen:
+            return False
+
+        oldlen = self.rawsize(baserev)
+        newlen = len(delta) - hlen
+        if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
+            return False
+
+        add = "\1\ncensored:"
+        addlen = len(add)
+        return newlen >= addlen and delta[hlen:hlen + addlen] == add
 
     def getstrippoint(self, minlink):
         """find the minimum rev that must be stripped to strip the linkrev

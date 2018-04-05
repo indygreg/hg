@@ -410,7 +410,7 @@ class changectx(basectx):
                     self._node = changeid
                     self._rev = repo.changelog.rev(changeid)
                     return
-                except error.FilteredRepoLookupError:
+                except error.FilteredLookupError:
                     raise
                 except LookupError:
                     pass

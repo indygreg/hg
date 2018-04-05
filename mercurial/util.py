@@ -2864,7 +2864,7 @@ def removeauth(u):
     '''remove all authentication information from a url string'''
     u = url(u)
     u.user = u.passwd = None
-    return str(u)
+    return bytes(u)
 
 timecount = unitcountfn(
     (1, 1e3, _('%.0f s')),

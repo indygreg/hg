@@ -161,6 +161,12 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None):
         env = {k: v.encode('latin-1') if isinstance(v, str) else v
                for k, v in env.iteritems()}
 
+    # Some hosting solutions are emulating hgwebdir, and dispatching directly
+    # to an hgweb instance using this environment variable.  This was always
+    # checked prior to d7fd203e36cc; keep doing so to avoid breaking them.
+    if not reponame:
+        reponame = env.get('REPO_NAME')
+
     if altbaseurl:
         altbaseurl = util.url(altbaseurl)
 

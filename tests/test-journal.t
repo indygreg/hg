@@ -6,7 +6,7 @@ Tests for the journal extension; records bookmark locations.
   > from mercurial import util, pycompat
   > from mercurial.utils import dateutil, procutil
   > def mockgetuser():
-  >     return 'foobar'
+  >     return b'foobar'
   > 
   > def mockmakedate():
   >     filename = os.path.join(os.environ['TESTTMP'], 'testtime')

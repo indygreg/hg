@@ -6,7 +6,7 @@ Journal extension test: tests the share extension support
   > from mercurial import util
   > from mercurial.utils import procutil
   > def mockgetuser():
-  >     return 'foobar'
+  >     return b'foobar'
   > 
   > def mockmakedate():
   >     filename = os.path.join(os.environ['TESTTMP'], 'testtime')

@@ -21,10 +21,11 @@ u = uimod.ui.load()
 # hide outer repo
 hg.peer(u, {}, '.', create=True)
 
-# clone with symlink support
-hg.clone(u, {}, BUNDLEPATH, 'test0')
+# unbundle with symlink support
+hg.peer(u, {}, 'test0', create=True)
 
 repo = hg.repository(u, 'test0')
+commands.unbundle(u, repo, BUNDLEPATH, update=True)
 
 # wait a bit, or the status call wont update the dirstate
 time.sleep(1)
@@ -52,6 +53,8 @@ u = uimod.ui.load()
 repo = hg.repository(u, 'test0')
 commands.status(u, repo)
 
-# try cloning a repo which contains symlinks
+# try unbundling a repo which contains symlinks
 u = uimod.ui.load()
-hg.clone(u, {}, BUNDLEPATH, 'test1')
+
+repo = hg.repository(u, 'test1', create=True)
+commands.unbundle(u, repo, BUNDLEPATH, update=True)

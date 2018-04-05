@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 Run kwdemo outside a repo
   $ hg -q --config extensions.keyword= --config keywordmaps.Foo="{author|user}" kwdemo
   [extensions]

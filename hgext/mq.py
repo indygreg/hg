@@ -1664,7 +1664,7 @@ class queue(object):
             cparents = repo.changelog.parents(top)
             patchparent = self.qparents(repo, top)
 
-            inclsubs = checksubstate(repo, hex(patchparent))
+            inclsubs = checksubstate(repo, patchparent)
             if inclsubs:
                 substatestate = repo.dirstate['.hgsubstate']
 

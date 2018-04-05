@@ -21,7 +21,6 @@ import os
 
 from mercurial.i18n import _
 from mercurial.node import (
-    nullid,
     nullrev,
     short,
 )
@@ -252,7 +251,7 @@ class rebaseruntime(object):
                     else:
                         destrev = legacydest
                     destmap[oldrev] = destrev
-                    if newrev in (nullid, revtodostr):
+                    if newrev == revtodostr:
                         state[oldrev] = revtodo
                         # Legacy compat special case
                     else:

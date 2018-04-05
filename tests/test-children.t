@@ -63,11 +63,11 @@ hg children at revision 1 (should be 2)
 hg children at revision 2 (other head)
   $ hg children
 
-  $ for i in null 0 1 2 3; do
-  > echo "hg children -r $i"
+  $ for i in null 0 1 2 3 '2^'; do
+  > echo "hg children -r '$i'"
   > hg children -r $i
   > done
-  hg children -r null
+  hg children -r 'null'
   changeset:   0:4df8521a7374
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
@@ -80,20 +80,26 @@ hg children at revision 2 (other head)
   date:        Thu Jan 01 00:00:03 1970 +0000
   summary:     3
   
-  hg children -r 0
+  hg children -r '0'
   changeset:   1:708c093edef0
   user:        test
   date:        Thu Jan 01 00:00:01 1970 +0000
   summary:     1
   
-  hg children -r 1
+  hg children -r '1'
   changeset:   2:8f5eea5023c2
   user:        test
   date:        Thu Jan 01 00:00:02 1970 +0000
   summary:     2
   
-  hg children -r 2
-  hg children -r 3
+  hg children -r '2'
+  hg children -r '3'
+  hg children -r '2^'
+  changeset:   2:8f5eea5023c2
+  user:        test
+  date:        Thu Jan 01 00:00:02 1970 +0000
+  summary:     2
+  
 
 hg children -r 0 file0 (should be 2)
   $ hg children -r 0 file0

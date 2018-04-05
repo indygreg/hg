@@ -350,10 +350,8 @@ def desthistedit(ui, repo):
         revs = scmutil.revrange(repo, [default])
 
     if revs:
-        # The revset supplied by the user may not be in ascending order nor
-        # take the first revision. So do this manually.
-        revs.sort()
-        return revs.first()
+        # Take the first revision of the revset as the root
+        return revs.min()
 
     return None
 

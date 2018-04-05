@@ -243,7 +243,7 @@ class rebaseruntime(object):
                     activebookmark = l
                 else:
                     args = l.split(':')
-                    oldrev = args[0]
+                    oldrev = repo[args[0]].rev()
                     newrev = args[1]
                     if newrev in legacystates:
                         continue
@@ -251,12 +251,12 @@ class rebaseruntime(object):
                         destrev = repo[args[2]].rev()
                     else:
                         destrev = legacydest
-                    destmap[repo[oldrev].rev()] = destrev
+                    destmap[oldrev] = destrev
                     if newrev in (nullid, revtodostr):
-                        state[repo[oldrev].rev()] = revtodo
+                        state[oldrev] = revtodo
                         # Legacy compat special case
                     else:
-                        state[repo[oldrev].rev()] = repo[newrev].rev()
+                        state[oldrev] = repo[newrev].rev()
 
         except IOError as err:
             if err.errno != errno.ENOENT:

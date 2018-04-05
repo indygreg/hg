@@ -405,6 +405,8 @@ class filestorage(object):
         return 0, 0
 
     def add(self, text, meta, transaction, linkrev, p1, p2):
+        transaction.addbackup(self._indexpath)
+
         if meta or text.startswith(b'\1\n'):
             text = filelog.packmeta(meta, text)
 

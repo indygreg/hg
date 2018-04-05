@@ -104,7 +104,8 @@ No update, with debug option:
   linking: 15 (reposimplestore !)
   linking: 16 (reposimplestore !)
   linking: 17 (reposimplestore !)
-  linked 17 files (reposimplestore !)
+  linking: 18 (reposimplestore !)
+  linked 18 files (reposimplestore !)
 #else
   $ hg --debug clone -U . ../c --config progress.debug=true
   linking: 1
@@ -125,7 +126,8 @@ No update, with debug option:
   copying: 15 (reposimplestore !)
   copying: 16 (reposimplestore !)
   copying: 17 (reposimplestore !)
-  copied 17 files (reposimplestore !)
+  copying: 18 (reposimplestore !)
+  copied 18 files (reposimplestore !)
 #endif
   $ cd ../c
 

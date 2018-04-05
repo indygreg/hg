@@ -466,6 +466,7 @@ cloned:
   linking [          <=>                                 ] 10\r (no-eol) (esc) (reposimplestore !)
   linking [           <=>                                ] 11\r (no-eol) (esc) (reposimplestore !)
   linking [            <=>                               ] 12\r (no-eol) (esc) (reposimplestore !)
+  linking [             <=>                              ] 13\r (no-eol) (esc) (reposimplestore !)
                                                               \r (no-eol) (esc)
 #else
   $ hg clone -U . ../empty
@@ -497,6 +498,8 @@ cloned:
   linking [            <=>                               ] 12\r (no-eol) (esc) (reposimplestore !)
   linking [             <=>                              ] 13\r (no-eol) (esc) (reposimplestore !)
   linking [              <=>                             ] 14\r (no-eol) (esc) (reposimplestore !)
+  linking [               <=>                            ] 15\r (no-eol) (esc) (reposimplestore !)
+  linking [                <=>                           ] 16\r (no-eol) (esc) (reposimplestore !)
                                                               \r (no-eol) (esc)
   \r (no-eol) (esc)
   archiving (foo) [                                     ] 0/3\r (no-eol) (esc)
@@ -513,6 +516,7 @@ cloned:
   linking [      <=>                                      ] 6\r (no-eol) (esc)
   linking [       <=>                                     ] 7\r (no-eol) (esc) (reposimplestore !)
   linking [        <=>                                    ] 8\r (no-eol) (esc) (reposimplestore !)
+  linking [         <=>                                   ] 9\r (no-eol) (esc) (reposimplestore !)
                                                               \r (no-eol) (esc)
   \r (no-eol) (esc)
   archiving (foo/bar) [                                 ] 0/1\r (no-eol) (esc)

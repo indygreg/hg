@@ -243,6 +243,10 @@ class filestorage(object):
         if flags == 0:
             return text, True
 
+        if flags & ~revlog.REVIDX_KNOWN_FLAGS:
+            raise error.RevlogError(_("incompatible revision flag '%#x'") %
+                                    (flags & ~revlog.REVIDX_KNOWN_FLAGS))
+
         validatehash = True
         # Depending on the operation (read or write), the order might be
         # reversed due to non-commutative transforms.
@@ -405,15 +409,13 @@ class filestorage(object):
         return 0, 0
 
     def add(self, text, meta, transaction, linkrev, p1, p2):
-        transaction.addbackup(self._indexpath)
-
         if meta or text.startswith(b'\1\n'):
             text = filelog.packmeta(meta, text)
 
         return self.addrevision(text, transaction, linkrev, p1, p2)
 
     def addrevision(self, text, transaction, linkrev, p1, p2, node=None,
-                    flags=0):
+                    flags=revlog.REVIDX_DEFAULT_FLAGS, cachedelta=None):
         validatenode(p1)
         validatenode(p2)
 
@@ -430,15 +432,21 @@ class filestorage(object):
         if validatehash:
             self.checkhash(rawtext, node, p1=p1, p2=p2)
 
+        return self._addrawrevision(node, rawtext, transaction, linkrev, p1, p2,
+                                    flags)
+
+    def _addrawrevision(self, node, rawtext, transaction, link, p1, p2, flags):
+        transaction.addbackup(self._indexpath)
+
         path = b'/'.join([self._storepath, hex(node)])
 
-        self._svfs.write(path, text)
+        self._svfs.write(path, rawtext)
 
         self._indexdata.append({
             b'node': node,
             b'p1': p1,
             b'p2': p2,
-            b'linkrev': linkrev,
+            b'linkrev': link,
             b'flags': flags,
         })
 
@@ -457,6 +465,7 @@ class filestorage(object):
 
         for node, p1, p2, linknode, deltabase, delta, flags in deltas:
             linkrev = linkmapper(linknode)
+            flags = flags or revlog.REVIDX_DEFAULT_FLAGS
 
             nodes.append(node)
 
@@ -469,7 +478,8 @@ class filestorage(object):
             else:
                 text = mdiff.patch(self.revision(deltabase), delta)
 
-            self.addrevision(text, transaction, linkrev, p1, p2, flags)
+            self._addrawrevision(node, text, transaction, linkrev, p1, p2,
+                                 flags)
 
             if addrevisioncb:
                 addrevisioncb(self, node)

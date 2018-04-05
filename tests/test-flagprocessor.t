@@ -88,6 +88,44 @@
   adding file changes
   added 7 changesets with 7 changes to 7 files
 
+Ensure the data got to the server OK
+
+  $ cd ../server
+  $ hg cat -r 6e48f4215d24 noop
+  [NOOP]
+  $ hg debugdata noop 0
+  [NOOP]
+
+  $ hg cat -r 6e48f4215d24 base64
+  [BASE64]
+  $ hg debugdata base64 0
+  W0JBU0U2NF0K (no-eol)
+
+  $ hg cat -r 6e48f4215d24 gzip
+  [GZIP]
+  $ hg debugdata gzip 0
+  x\x9c\x8bv\x8f\xf2\x0c\x88\xe5\x02\x00\x08\xc8\x01\xfd (no-eol) (esc)
+
+  $ hg cat -r 6e48f4215d24 noop-base64
+  [NOOP][BASE64]
+  $ hg debugdata noop-base64 0
+  W05PT1BdW0JBU0U2NF0K (no-eol)
+
+  $ hg cat -r 6e48f4215d24 noop-gzip
+  [NOOP][GZIP]
+  $ hg debugdata noop-gzip 0
+  x\x9c\x8b\xf6\xf3\xf7\x0f\x88\x8dv\x8f\xf2\x0c\x88\xe5\x02\x00\x1dH\x03\xf1 (no-eol) (esc)
+
+  $ hg cat -r 6e48f4215d24 base64-gzip
+  [BASE64][GZIP]
+  $ hg debugdata base64-gzip 0
+  eJyLdnIMdjUziY12j/IMiOUCACLBBDo= (no-eol)
+
+  $ hg cat -r 6e48f4215d24 base64-gzip-noop
+  [BASE64][GZIP][NOOP]
+  $ hg debugdata base64-gzip-noop 0
+  eJyLdnIMdjUziY12j/IMiI328/cPiOUCAESjBi4= (no-eol)
+
 # Initialize new client (not cloning) and setup extension
   $ cd ..
   $ hg init client2
@@ -197,6 +235,7 @@
   $ echo '[BASE64]a-bit-longer-branching' > base64
   $ hg commit -q -m branching
 
+#if repobundlerepo
   $ hg bundle --base 1 bundle.hg
   4 changesets found
   $ hg --config extensions.strip= strip -r 2 --no-backup --force -q
@@ -253,6 +292,7 @@
    1 files changed, 1 insertions(+), 0 deletions(-)
   
   $ rm bundle.hg bundle-again.hg
+#endif
 
 # TEST: hg status
 

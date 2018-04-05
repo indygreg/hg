@@ -9,7 +9,6 @@ from mercurial import (
     changegroup,
     exchange,
     extensions,
-    filelog,
     revlog,
     util,
 )
@@ -55,39 +54,41 @@ def allsupportedversions(orig, ui):
     versions.add(b'03')
     return versions
 
-def noopaddrevision(orig, self, text, transaction, link, p1, p2,
-                    cachedelta=None, node=None,
-                    flags=revlog.REVIDX_DEFAULT_FLAGS):
-    if b'[NOOP]' in text:
-        flags |= REVIDX_NOOP
-    return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
-                node=node, flags=flags)
+def makewrappedfile(obj):
+    class wrappedfile(obj.__class__):
+        def addrevision(self, text, transaction, link, p1, p2,
+                        cachedelta=None, node=None,
+                        flags=revlog.REVIDX_DEFAULT_FLAGS):
+            if b'[NOOP]' in text:
+                flags |= REVIDX_NOOP
 
-def b64addrevision(orig, self, text, transaction, link, p1, p2,
-                   cachedelta=None, node=None,
-                   flags=revlog.REVIDX_DEFAULT_FLAGS):
-    if b'[BASE64]' in text:
-        flags |= REVIDX_BASE64
-    return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
-                node=node, flags=flags)
+            if b'[BASE64]' in text:
+                flags |= REVIDX_BASE64
 
-def gzipaddrevision(orig, self, text, transaction, link, p1, p2,
-                    cachedelta=None, node=None,
-                    flags=revlog.REVIDX_DEFAULT_FLAGS):
-    if b'[GZIP]' in text:
-        flags |= REVIDX_GZIP
-    return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
-                node=node, flags=flags)
+            if b'[GZIP]' in text:
+                flags |= REVIDX_GZIP
 
-def failaddrevision(orig, self, text, transaction, link, p1, p2,
-                    cachedelta=None, node=None,
-                    flags=revlog.REVIDX_DEFAULT_FLAGS):
-    # This addrevision wrapper is meant to add a flag we will not have
-    # transforms registered for, ensuring we handle this error case.
-    if b'[FAIL]' in text:
-        flags |= REVIDX_FAIL
-    return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
-                node=node, flags=flags)
+            # This addrevision wrapper is meant to add a flag we will not have
+            # transforms registered for, ensuring we handle this error case.
+            if b'[FAIL]' in text:
+                flags |= REVIDX_FAIL
+
+            return super(wrappedfile, self).addrevision(text, transaction, link,
+                                                        p1, p2,
+                                                        cachedelta=cachedelta,
+                                                        node=node,
+                                                        flags=flags)
+
+    obj.__class__ = wrappedfile
+
+def reposetup(ui, repo):
+    class wrappingflagprocessorrepo(repo.__class__):
+        def file(self, f):
+            orig = super(wrappingflagprocessorrepo, self).file(f)
+            makewrappedfile(orig)
+            return orig
+
+    repo.__class__ = wrappingflagprocessorrepo
 
 def extsetup(ui):
     # Enable changegroup3 for flags to be sent over the wire
@@ -107,13 +108,6 @@ def extsetup(ui):
     # Teach exchange to use changegroup 3
     for k in exchange._bundlespeccontentopts.keys():
         exchange._bundlespeccontentopts[k]["cg.version"] = "03"
-
-    # Add wrappers for addrevision, responsible to set flags depending on the
-    # revision data contents.
-    wrapfunction(filelog.filelog, 'addrevision', noopaddrevision)
-    wrapfunction(filelog.filelog, 'addrevision', b64addrevision)
-    wrapfunction(filelog.filelog, 'addrevision', gzipaddrevision)
-    wrapfunction(filelog.filelog, 'addrevision', failaddrevision)
 
     # Register flag processors for each extension
     revlog.addflagprocessor(

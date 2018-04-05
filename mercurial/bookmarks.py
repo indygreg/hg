@@ -348,17 +348,16 @@ def headsforactive(repo):
             heads.append(n)
     return heads
 
-def calculateupdate(ui, repo, checkout):
+def calculateupdate(ui, repo):
     '''Return a tuple (activemark, movemarkfrom) indicating the active bookmark
     and where to move the active bookmark from, if needed.'''
-    movemarkfrom = None
-    if checkout is None:
-        activemark = repo._activebookmark
-        if isactivewdirparent(repo):
-            movemarkfrom = repo['.'].node()
-        elif activemark:
-            ui.status(_("updating to active bookmark %s\n") % activemark)
-            checkout = activemark
+    checkout, movemarkfrom = None, None
+    activemark = repo._activebookmark
+    if isactivewdirparent(repo):
+        movemarkfrom = repo['.'].node()
+    elif activemark:
+        ui.status(_("updating to active bookmark %s\n") % activemark)
+        checkout = activemark
     return (checkout, movemarkfrom)
 
 def update(repo, parents, node):

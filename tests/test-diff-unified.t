@@ -394,33 +394,33 @@ be broken up
   $ cd longfunc
 
   >>> with open('a', 'wb') as f:
-  ...     f.write(b'a' * 39 + b'bb' + b'\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b' 0 b\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b'a' * 39 + b'\xc3\xa0' + b'\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b' 0 a with grave (single code point)\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b'a' * 39 + b'a\xcc\x80' + b'\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b' 0 a with grave (composition)\n')
-  ...     f.write(b' .\n' * 3)
+  ...     f.write(b'a' * 39 + b'bb' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 0 b\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'\xc3\xa0' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 0 a with grave (single code point)\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'a\xcc\x80' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 0 a with grave (composition)\n') and None
+  ...     f.write(b' .\n' * 3) and None
   $ hg ci -qAm0
 
   >>> with open('a', 'wb') as f:
-  ...     f.write(b'a' * 39 + b'bb' + b'\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b' 1 b\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b'a' * 39 + b'\xc3\xa0' + b'\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b' 1 a with grave (single code point)\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b'a' * 39 + b'a\xcc\x80' + b'\n')
-  ...     f.write(b' .\n' * 3)
-  ...     f.write(b' 1 a with grave (composition)\n')
-  ...     f.write(b' .\n' * 3)
+  ...     f.write(b'a' * 39 + b'bb' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 1 b\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'\xc3\xa0' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 1 a with grave (single code point)\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'a\xcc\x80' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 1 a with grave (composition)\n') and None
+  ...     f.write(b' .\n' * 3) and None
   $ hg ci -m1
 
   $ hg diff -c1 --nodates --show-function

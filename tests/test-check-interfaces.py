@@ -12,6 +12,7 @@ from mercurial.thirdparty.zope.interface import (
 )
 from mercurial import (
     bundlerepo,
+    filelog,
     httppeer,
     localrepo,
     repository,
@@ -19,13 +20,14 @@ from mercurial import (
     statichttprepo,
     ui as uimod,
     unionrepo,
+    vfs as vfsmod,
     wireprotoserver,
     wireprototypes,
 )
 
 rootdir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
 
-def checkzobject(o):
+def checkzobject(o, allowextra=False):
     """Verify an object with a zope interface."""
     ifaces = zi.providedBy(o)
     if not ifaces:
@@ -36,6 +38,9 @@ def checkzobject(o):
     # everything that is supposed to be present is present.
     for iface in ifaces:
         ziverify.verifyObject(iface, o)
+
+    if allowextra:
+        return
 
     # Now verify that the object provides no extra public attributes that
     # aren't declared as part of interfaces.
@@ -131,5 +136,11 @@ def main():
     checkzobject(httpv1)
     httpv2 = wireprotoserver.httpv2protocolhandler(None, None)
     checkzobject(httpv2)
+
+    ziverify.verifyClass(repository.ifilestorage, filelog.filelog)
+
+    vfs = vfsmod.vfs('.')
+    fl = filelog.filelog(vfs, 'dummy.i')
+    checkzobject(fl, allowextra=True)
 
 main()

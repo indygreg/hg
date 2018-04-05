@@ -24,6 +24,9 @@ from mercurial.node import (
 from mercurial.thirdparty import (
     cbor,
 )
+from mercurial.thirdparty.zope import (
+    interface as zi,
+)
 from mercurial import (
     ancestor,
     bundlerepo,
@@ -33,6 +36,7 @@ from mercurial import (
     localrepo,
     mdiff,
     pycompat,
+    repository,
     revlog,
     store,
     verify,
@@ -57,6 +61,7 @@ def validaterev(rev):
     if not isinstance(rev, int):
         raise ValueError('expected int')
 
+@zi.implementer(repository.ifilestorage)
 class filestorage(object):
     """Implements storage for a tracked path.
 

@@ -10,9 +10,13 @@ from __future__ import absolute_import
 import re
 import struct
 
+from .thirdparty.zope import (
+    interface as zi,
+)
 from . import (
     error,
     mdiff,
+    repository,
     revlog,
 )
 
@@ -39,6 +43,7 @@ def _censoredtext(text):
     m, offs = parsemeta(text)
     return m and "censored" in m
 
+@zi.implementer(repository.ifilestorage)
 class filelog(revlog.revlog):
     def __init__(self, opener, path):
         super(filelog, self).__init__(opener,

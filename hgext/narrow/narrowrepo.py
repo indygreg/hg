@@ -8,10 +8,8 @@
 from __future__ import absolute_import
 
 from mercurial import (
-    bundlerepo,
     changegroup,
     hg,
-    localrepo,
     narrowspec,
     scmutil,
 )
@@ -39,14 +37,6 @@ def unsharenarrowspec(orig, ui, repo, repopath):
 
 def wraprepo(repo):
     """Enables narrow clone functionality on a single local repository."""
-
-    cacheprop = localrepo.storecache
-    if isinstance(repo, bundlerepo.bundlerepository):
-        # We have to use a different caching property decorator for
-        # bundlerepo because storecache blows up in strange ways on a
-        # bundlerepo. Fortunately, there's no risk of data changing in
-        # a bundlerepo.
-        cacheprop = lambda name: localrepo.unfilteredpropertycache
 
     class narrowrepository(repo.__class__):
 

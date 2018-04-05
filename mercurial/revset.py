@@ -28,7 +28,7 @@ from . import (
     revsetlang,
     scmutil,
     smartset,
-    stack,
+    stack as stackmod,
     util,
 )
 from .utils import (
@@ -1539,19 +1539,19 @@ def secret(repo, subset, x):
     return _phase(repo, subset, target)
 
 @predicate('stack([revs])', safe=True)
-def _stack(repo, subset, x):
-    # experimental revset for the stack of changesets or working directory
-    # parent
+def stack(repo, subset, x):
+    """Experimental revset for the stack of changesets or working directory
+    parent. (EXPERIMENTAL)
+    """
     if x is None:
-        stacks = stack.getstack(repo, x)
+        stacks = stackmod.getstack(repo, x)
     else:
         stacks = smartset.baseset([])
         for revision in getset(repo, fullreposet(repo), x):
-            currentstack = stack.getstack(repo, revision)
+            currentstack = stackmod.getstack(repo, revision)
             stacks = stacks + currentstack
 
-    # Force to use the order of the stacks instead of the subset one
-    return stacks & subset
+    return subset & stacks
 
 def parentspec(repo, subset, x, n, order):
     """``set^0``

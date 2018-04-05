@@ -46,8 +46,9 @@ def getscratchbranchparts(repo, peer, outgoing, ui, bookmark):
         params['bookmark'] = bookmark
         # 'prevbooknode' is necessary for pushkey reply part
         params['bookprevnode'] = ''
-        if bookmark in repo:
-            params['bookprevnode'] = repo[bookmark].hex()
+        bookmarks = repo._bookmarks
+        if bookmark in bookmarks:
+            params['bookprevnode'] = bookmarks.changectx(bookmark).hex()
 
     # Do not send pushback bundle2 part with bookmarks if remotenames extension
     # is enabled. It will be handled manually in `_push()`

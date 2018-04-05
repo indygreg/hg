@@ -106,7 +106,7 @@ def activepath(repo, remote):
     rpath = remote
     if local:
         rpath = remote._repo.root
-    elif not isinstance(remote, str):
+    elif not isinstance(remote, bytes):
         rpath = remote._url
 
     # represent the remotepath with user defined path name if exists

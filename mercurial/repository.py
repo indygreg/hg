@@ -251,6 +251,334 @@ class peer(object):
 class legacypeer(peer):
     """peer but with support for legacy wire protocol commands."""
 
+class ifilerevisionssequence(zi.Interface):
+    """Contains index data for all revisions of a file.
+
+    Types implementing this behave like lists of tuples. The index
+    in the list corresponds to the revision number. The values contain
+    index metadata.
+
+    The *null* revision (revision number -1) is always the last item
+    in the index.
+    """
+
+    def __len__():
+        """The total number of revisions."""
+
+    def __getitem__(rev):
+        """Returns the object having a specific revision number.
+
+        Returns an 8-tuple with the following fields:
+
+        offset+flags
+           Contains the offset and flags for the revision. 64-bit unsigned
+           integer where first 6 bytes are the offset and the next 2 bytes
+           are flags. The offset can be 0 if it is not used by the store.
+        compressed size
+            Size of the revision data in the store. It can be 0 if it isn't
+            needed by the store.
+        uncompressed size
+            Fulltext size. It can be 0 if it isn't needed by the store.
+        base revision
+            Revision number of revision the delta for storage is encoded
+            against. -1 indicates not encoded against a base revision.
+        link revision
+            Revision number of changelog revision this entry is related to.
+        p1 revision
+            Revision number of 1st parent. -1 if no 1st parent.
+        p2 revision
+            Revision number of 2nd parent. -1 if no 1st parent.
+        node
+            Binary node value for this revision number.
+
+        Negative values should index off the end of the sequence. ``-1``
+        should return the null revision. ``-2`` should return the most
+        recent revision.
+        """
+
+    def __contains__(rev):
+        """Whether a revision number exists."""
+
+    def insert(self, i, entry):
+        """Add an item to the index at specific revision."""
+
+class ifileindex(zi.Interface):
+    """Storage interface for index data of a single file.
+
+    File storage data is divided into index metadata and data storage.
+    This interface defines the index portion of the interface.
+
+    The index logically consists of:
+
+    * A mapping between revision numbers and nodes.
+    * DAG data (storing and querying the relationship between nodes).
+    * Metadata to facilitate storage.
+    """
+    index = zi.Attribute(
+        """An ``ifilerevisionssequence`` instance.""")
+
+    def __len__():
+        """Obtain the number of revisions stored for this file."""
+
+    def __iter__():
+        """Iterate over revision numbers for this file."""
+
+    def revs(start=0, stop=None):
+        """Iterate over revision numbers for this file, with control."""
+
+    def parents(node):
+        """Returns a 2-tuple of parent nodes for a revision.
+
+        Values will be ``nullid`` if the parent is empty.
+        """
+
+    def parentrevs(rev):
+        """Like parents() but operates on revision numbers."""
+
+    def rev(node):
+        """Obtain the revision number given a node.
+
+        Raises ``error.LookupError`` if the node is not known.
+        """
+
+    def node(rev):
+        """Obtain the node value given a revision number.
+
+        Raises ``IndexError`` if the node is not known.
+        """
+
+    def lookup(node):
+        """Attempt to resolve a value to a node.
+
+        Value can be a binary node, hex node, revision number, or a string
+        that can be converted to an integer.
+
+        Raises ``error.LookupError`` if a node could not be resolved.
+        """
+
+    def linkrev(rev):
+        """Obtain the changeset revision number a revision is linked to."""
+
+    def flags(rev):
+        """Obtain flags used to affect storage of a revision."""
+
+    def iscensored(rev):
+        """Return whether a revision's content has been censored."""
+
+    def commonancestorsheads(node1, node2):
+        """Obtain an iterable of nodes containing heads of common ancestors.
+
+        See ``ancestor.commonancestorsheads()``.
+        """
+
+    def descendants(revs):
+        """Obtain descendant revision numbers for a set of revision numbers.
+
+        If ``nullrev`` is in the set, this is equivalent to ``revs()``.
+        """
+
+    def headrevs():
+        """Obtain a list of revision numbers that are DAG heads.
+
+        The list is sorted oldest to newest.
+
+        TODO determine if sorting is required.
+        """
+
+    def heads(start=None, stop=None):
+        """Obtain a list of nodes that are DAG heads, with control.
+
+        The set of revisions examined can be limited by specifying
+        ``start`` and ``stop``. ``start`` is a node. ``stop`` is an
+        iterable of nodes. DAG traversal starts at earlier revision
+        ``start`` and iterates forward until any node in ``stop`` is
+        encountered.
+        """
+
+    def children(node):
+        """Obtain nodes that are children of a node.
+
+        Returns a list of nodes.
+        """
+
+    def deltaparent(rev):
+        """"Return the revision that is a suitable parent to delta against."""
+
+    def candelta(baserev, rev):
+        """"Whether a delta can be generated between two revisions."""
+
+class ifiledata(zi.Interface):
+    """Storage interface for data storage of a specific file.
+
+    This complements ``ifileindex`` and provides an interface for accessing
+    data for a tracked file.
+    """
+    def rawsize(rev):
+        """The size of the fulltext data for a revision as stored."""
+
+    def size(rev):
+        """Obtain the fulltext size of file data.
+
+        Any metadata is excluded from size measurements. Use ``rawsize()`` if
+        metadata size is important.
+        """
+
+    def checkhash(fulltext, node, p1=None, p2=None, rev=None):
+        """Validate the stored hash of a given fulltext and node.
+
+        Raises ``error.RevlogError`` is hash validation fails.
+        """
+
+    def revision(node, raw=False):
+        """"Obtain fulltext data for a node.
+
+        By default, any storage transformations are applied before the data
+        is returned. If ``raw`` is True, non-raw storage transformations
+        are not applied.
+
+        The fulltext data may contain a header containing metadata. Most
+        consumers should use ``read()`` to obtain the actual file data.
+        """
+
+    def read(node):
+        """Resolve file fulltext data.
+
+        This is similar to ``revision()`` except any metadata in the data
+        headers is stripped.
+        """
+
+    def renamed(node):
+        """Obtain copy metadata for a node.
+
+        Returns ``False`` if no copy metadata is stored or a 2-tuple of
+        (path, node) from which this revision was copied.
+        """
+
+    def cmp(node, fulltext):
+        """Compare fulltext to another revision.
+
+        Returns True if the fulltext is different from what is stored.
+
+        This takes copy metadata into account.
+
+        TODO better document the copy metadata and censoring logic.
+        """
+
+    def revdiff(rev1, rev2):
+        """Obtain a delta between two revision numbers.
+
+        Operates on raw data in the store (``revision(node, raw=True)``).
+
+        The returned data is the result of ``bdiff.bdiff`` on the raw
+        revision data.
+        """
+
+class ifilemutation(zi.Interface):
+    """Storage interface for mutation events of a tracked file."""
+
+    def add(filedata, meta, transaction, linkrev, p1, p2):
+        """Add a new revision to the store.
+
+        Takes file data, dictionary of metadata, a transaction, linkrev,
+        and parent nodes.
+
+        Returns the node that was added.
+
+        May no-op if a revision matching the supplied data is already stored.
+        """
+
+    def addrevision(revisiondata, transaction, linkrev, p1, p2, node=None,
+                    flags=0, cachedelta=None):
+        """Add a new revision to the store.
+
+        This is similar to ``add()`` except it operates at a lower level.
+
+        The data passed in already contains a metadata header, if any.
+
+        ``node`` and ``flags`` can be used to define the expected node and
+        the flags to use with storage.
+
+        ``add()`` is usually called when adding files from e.g. the working
+        directory. ``addrevision()`` is often called by ``add()`` and for
+        scenarios where revision data has already been computed, such as when
+        applying raw data from a peer repo.
+        """
+
+    def addgroup(deltas, linkmapper, transaction, addrevisioncb=None):
+        """Process a series of deltas for storage.
+
+        ``deltas`` is an iterable of 7-tuples of
+        (node, p1, p2, linknode, deltabase, delta, flags) defining revisions
+        to add.
+
+        The ``delta`` field contains ``mpatch`` data to apply to a base
+        revision, identified by ``deltabase``. The base node can be
+        ``nullid``, in which case the header from the delta can be ignored
+        and the delta used as the fulltext.
+
+        ``addrevisioncb`` should be called for each node as it is committed.
+
+        Returns a list of nodes that were processed. A node will be in the list
+        even if it existed in the store previously.
+        """
+
+    def getstrippoint(minlink):
+        """Find the minimum revision that must be stripped to strip a linkrev.
+
+        Returns a 2-tuple containing the minimum revision number and a set
+        of all revisions numbers that would be broken by this strip.
+
+        TODO this is highly revlog centric and should be abstracted into
+        a higher-level deletion API. ``repair.strip()`` relies on this.
+        """
+
+    def strip(minlink, transaction):
+        """Remove storage of items starting at a linkrev.
+
+        This uses ``getstrippoint()`` to determine the first node to remove.
+        Then it effectively truncates storage for all revisions after that.
+
+        TODO this is highly revlog centric and should be abstracted into a
+        higher-level deletion API.
+        """
+
+class ifilestorage(ifileindex, ifiledata, ifilemutation):
+    """Complete storage interface for a single tracked file."""
+
+    version = zi.Attribute(
+        """Version number of storage.
+
+        TODO this feels revlog centric and could likely be removed.
+        """)
+
+    storedeltachains = zi.Attribute(
+        """Whether the store stores deltas.
+
+        TODO deltachains are revlog centric. This can probably removed
+        once there are better abstractions for obtaining/writing
+        data.
+        """)
+
+    _generaldelta = zi.Attribute(
+        """Whether deltas can be against any parent revision.
+
+        TODO this is used by changegroup code and it could probably be
+        folded into another API.
+        """)
+
+    def files():
+        """Obtain paths that are backing storage for this file.
+
+        TODO this is used heavily by verify code and there should probably
+        be a better API for that.
+        """
+
+    def checksize():
+        """Obtain the expected sizes of backing files.
+
+        TODO this is used by verify and it should not be part of the interface.
+        """
+
 class completelocalrepository(zi.Interface):
     """Monolithic interface for local repositories.
 

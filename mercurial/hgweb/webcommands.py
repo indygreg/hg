@@ -1058,7 +1058,9 @@ def filelog(web):
     parity = paritygen(web.stripecount, offset=start - end)
 
     repo = web.repo
-    revs = fctx.filelog().revs(start, end - 1)
+    filelog = fctx.filelog()
+    revs = [filerev for filerev in filelog.revs(start, end - 1)
+            if filelog.linkrev(filerev) in repo]
     entries = []
 
     diffstyle = web.config('web', 'style')

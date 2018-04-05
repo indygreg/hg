@@ -82,10 +82,14 @@ test-diff-binary-file.t
 test-diff-change.t
 test-diff-copy-depth.t
 test-diff-hashes.t
+test-diff-ignore-whitespace.t
+test-diff-indent-heuristic.t
 test-diff-issue2761.t
 test-diff-newlines.t
 test-diff-reverse.t
 test-diff-subdir.t
+test-diff-unified.t
+test-diff-upgrade.t
 test-diffdir.t
 test-directaccess.t
 test-dirstate-backup.t
@@ -94,6 +98,7 @@ test-doctest.py
 test-double-merge.t
 test-drawdag.t
 test-duplicateoptions.py
+test-editor-filename.t
 test-empty-dir.t
 test-empty-file.t
 test-empty-group.t
@@ -184,9 +189,12 @@ test-issue522.t
 test-issue586.t
 test-issue612.t
 test-issue619.t
+test-issue660.t
 test-issue672.t
 test-issue842.t
 test-journal-exists.t
+test-journal-share.t
+test-journal.t
 test-largefiles-cache.t
 test-largefiles-misc.t
 test-largefiles-small-disk.t
@@ -194,10 +202,12 @@ test-largefiles-update.t
 test-lfs-largefiles.t
 test-locate.t
 test-lock-badness.t
+test-log-linerange.t
 test-log.t
 test-logexchange.t
 test-lrucachedict.py
 test-mactext.t
+test-mailmap.t
 test-manifest-merging.t
 test-manifest.py
 test-manifest.t
@@ -327,6 +337,7 @@ test-rebase-brute-force.t
 test-rebase-cache.t
 test-rebase-check-restore.t
 test-rebase-collapse.t
+test-rebase-conflicts.t
 test-rebase-dest.t
 test-rebase-detach.t
 test-rebase-emptycommit.t
@@ -380,6 +391,7 @@ test-sparse-verbose-json.t
 test-ssh-clone-r.t
 test-ssh-proto.t
 test-sshserver.py
+test-stack.t
 test-status-rev.t
 test-status-terse.t
 test-strip-cross.t

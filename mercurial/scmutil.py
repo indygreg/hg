@@ -451,7 +451,36 @@ def revsymbol(repo, symbol):
         msg = ("symbol (%s of type %s) was not a string, did you mean "
                "repo[symbol]?" % (symbol, type(symbol)))
         raise error.ProgrammingError(msg)
-    return repo[symbol]
+    try:
+        return repo[symbol]
+    except (error.FilteredIndexError, error.FilteredLookupError,
+            error.FilteredRepoLookupError):
+        raise _filterederror(repo, symbol)
+
+def _filterederror(repo, changeid):
+    """build an exception to be raised about a filtered changeid
+
+    This is extracted in a function to help extensions (eg: evolve) to
+    experiment with various message variants."""
+    if repo.filtername.startswith('visible'):
+
+        # Check if the changeset is obsolete
+        unfilteredrepo = repo.unfiltered()
+        ctx = revsymbol(unfilteredrepo, changeid)
+
+        # If the changeset is obsolete, enrich the message with the reason
+        # that made this changeset not visible
+        if ctx.obsolete():
+            msg = obsutil._getfilteredreason(repo, changeid, ctx)
+        else:
+            msg = _("hidden revision '%s'") % changeid
+
+        hint = _('use --hidden to access hidden revisions')
+
+        return error.FilteredRepoLookupError(msg, hint=hint)
+    msg = _("filtered revision '%s' (not in '%s' subset)")
+    msg %= (changeid, repo.filtername)
+    return error.FilteredRepoLookupError(msg)
 
 def revsingle(repo, revspec, default='.', localalias=None):
     if not revspec and revspec != 0:

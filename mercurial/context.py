@@ -33,7 +33,6 @@ from . import (
     fileset,
     match as matchmod,
     obsolete as obsmod,
-    obsutil,
     patch,
     pathutil,
     phases,
@@ -378,31 +377,6 @@ class basectx(object):
 
         return r
 
-def _filterederror(repo, changeid):
-    """build an exception to be raised about a filtered changeid
-
-    This is extracted in a function to help extensions (eg: evolve) to
-    experiment with various message variants."""
-    if repo.filtername.startswith('visible'):
-
-        # Check if the changeset is obsolete
-        unfilteredrepo = repo.unfiltered()
-        ctx = unfilteredrepo[changeid]
-
-        # If the changeset is obsolete, enrich the message with the reason
-        # that made this changeset not visible
-        if ctx.obsolete():
-            msg = obsutil._getfilteredreason(repo, changeid, ctx)
-        else:
-            msg = _("hidden revision '%s'") % changeid
-
-        hint = _('use --hidden to access hidden revisions')
-
-        return error.FilteredRepoLookupError(msg, hint=hint)
-    msg = _("filtered revision '%s' (not in '%s' subset)")
-    msg %= (changeid, repo.filtername)
-    return error.FilteredRepoLookupError(msg)
-
 class changectx(basectx):
     """A changecontext object makes access to data related to a particular
     changeset convenient. It represents a read-only context already present in
@@ -501,7 +475,7 @@ class changectx(basectx):
                 pass
         except (error.FilteredIndexError, error.FilteredLookupError,
                 error.FilteredRepoLookupError):
-            raise _filterederror(repo, changeid)
+            raise
         except IndexError:
             pass
         raise error.RepoLookupError(

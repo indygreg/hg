@@ -1,5 +1,3 @@
-#require no-reposimplestore
-
 Create user cache directory
 
   $ USERCACHE=`pwd`/cache; export USERCACHE

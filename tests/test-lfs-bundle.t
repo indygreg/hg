@@ -1,5 +1,3 @@
-#require no-reposimplestore
-
 In this test, we want to test LFS bundle application on both LFS and non-LFS
 repos.
 

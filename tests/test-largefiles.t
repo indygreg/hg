@@ -1,5 +1,3 @@
-#require no-reposimplestore
-
 This file used to contains all largefile tests.
 Do not add any new tests in this file as it his already far too long to run.
 

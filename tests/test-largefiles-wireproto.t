@@ -1,5 +1,3 @@
-#require no-reposimplestore
-
 #testcases sshv1 sshv2
 
 #if sshv2

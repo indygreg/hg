@@ -1,5 +1,3 @@
-#require no-reposimplestore
-
   $ USERCACHE="$TESTTMP/cache"; export USERCACHE
   $ mkdir "${USERCACHE}"
   $ cat >> $HGRCPATH <<EOF

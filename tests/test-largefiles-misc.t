@@ -1,5 +1,3 @@
-#require no-reposimplestore
-
 This file contains testcases that tend to be related to special cases or less
 common commands affecting largefile.
 

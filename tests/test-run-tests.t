@@ -558,7 +558,12 @@ Verify that when a process fails to start we show a useful message
 
 Verify that we can try other ports
 ===================================
-  $ hg init inuse
+
+Extensions aren't inherited by the invoked run-tests.py. An extension
+introducing a repository requirement could cause this to fail. So we force
+HGRCPATH to get a clean environment.
+
+  $ HGRCPATH= hg init inuse
   $ hg serve -R inuse -p $HGPORT -d --pid-file=blocks.pid
   $ cat blocks.pid >> $DAEMON_PIDS
   $ cat > test-serve-inuse.t <<EOF

@@ -878,7 +878,7 @@ skip submodules in the conversion
 
   $ hg convert -q git-repo6 no-submodules --config convert.git.skipsubmodules=True
   $ hg -R no-submodules manifest --all
-  .gitmodules-renamed (no-reposimplestore !)
+  .gitmodules-renamed
 
 convert using a different remote prefix
   $ git init git-repo7

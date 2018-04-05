@@ -3491,19 +3491,13 @@ def manifest(ui, repo, node=None, rev=None, **opts):
         if rev or node:
             raise error.Abort(_("can't specify a revision with --all"))
 
-        res = []
-        # TODO this is a massive layering violation. It assumes the repo is
-        # backed by revlogs with a well-defined naming scheme.
-        prefix = "data/"
-        suffix = ".i"
-        plen = len(prefix)
-        slen = len(suffix)
-        with repo.lock():
-            for fn, b, size in repo.store.datafiles():
-                if size != 0 and fn[-slen:] == suffix and fn[:plen] == prefix:
-                    res.append(fn[plen:-slen])
+        res = set()
+        for rev in repo:
+            ctx = repo[rev]
+            res |= set(ctx.files())
+
         ui.pager('manifest')
-        for f in res:
+        for f in sorted(res):
             fm.startitem()
             fm.write("path", '%s\n', f)
         fm.end()

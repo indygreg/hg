@@ -68,9 +68,9 @@ The next call is expected to return nothing:
   l
 
   $ hg manifest --all
-  a (no-reposimplestore !)
-  b/a (no-reposimplestore !)
-  l (no-reposimplestore !)
+  a
+  b/a
+  l
 
 The next two calls are expected to abort:
 

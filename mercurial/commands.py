@@ -3492,6 +3492,8 @@ def manifest(ui, repo, node=None, rev=None, **opts):
             raise error.Abort(_("can't specify a revision with --all"))
 
         res = []
+        # TODO this is a massive layering violation. It assumes the repo is
+        # backed by revlogs with a well-defined naming scheme.
         prefix = "data/"
         suffix = ".i"
         plen = len(prefix)

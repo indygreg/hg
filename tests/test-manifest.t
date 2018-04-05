@@ -1,5 +1,3 @@
-#require repobundlerepo
-
 Source bundle was generated with the following script:
 
 # hg init
@@ -12,7 +10,13 @@ Source bundle was generated with the following script:
 # hg ci -Amb -d'1 0'
 
   $ hg init
-  $ hg -q pull "$TESTDIR/bundles/test-manifest.hg"
+  $ hg unbundle "$TESTDIR/bundles/test-manifest.hg"
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 3 changes to 3 files
+  new changesets b73562a03cfe:5bdc995175ba
+  (run 'hg update' to get a working copy)
 
 The next call is expected to return nothing:
 
@@ -64,9 +68,9 @@ The next call is expected to return nothing:
   l
 
   $ hg manifest --all
-  a
-  b/a
-  l
+  a (no-reposimplestore !)
+  b/a (no-reposimplestore !)
+  l (no-reposimplestore !)
 
 The next two calls are expected to abort:
 

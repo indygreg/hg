@@ -1,10 +1,10 @@
-hide outer repo
-  $ hg init
-
 Use hgrc within $TESTTMP
 
   $ HGRCPATH=`pwd`/hgrc
   $ export HGRCPATH
+
+hide outer repo
+  $ hg init
 
 Use an alternate var for scribbling on hgrc to keep check-code from
 complaining about the important settings we may be overwriting:

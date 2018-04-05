@@ -364,10 +364,8 @@ class mercurial_sink(common.converter_sink):
 
     def puttags(self, tags):
         try:
-            parentctx = self.repo[self.tagsbranch]
-            tagparent = parentctx.node()
+            tagparent = self.repo[self.tagsbranch].node()
         except error.RepoError:
-            parentctx = None
             tagparent = nodemod.nullid
 
         oldlines = set()

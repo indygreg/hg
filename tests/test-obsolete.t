@@ -894,6 +894,69 @@ check filelog view
   $ get-with-headers.py --headeronly localhost:$HGPORT 'log/'`hg log -r . -T "{node}"`/'babar'
   200 Script output follows
 
+check filelog view for hidden commits (obsolete ones are hidden here)
+
+  $ get-with-headers.py localhost:$HGPORT 'log/'`hg log -r . -T "{node}"`/'babar' | grep obsolete
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+     <span class="phase">draft</span> <span class="obsolete">obsolete</span> 
+
   $ get-with-headers.py --headeronly localhost:$HGPORT 'rev/68'
   200 Script output follows
   $ get-with-headers.py --headeronly localhost:$HGPORT 'rev/67'

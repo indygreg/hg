@@ -698,9 +698,6 @@ def _heuristicscopytracing(repo, c1, c2, base):
             basenametofilename[basename].append(f)
             dirnametofilename[dirname].append(f)
 
-        # in case of a rebase/graft, base may not be a common ancestor
-        anc = c1.ancestor(c2)
-
         for f in missingfiles:
             basename = os.path.basename(f)
             dirname = os.path.dirname(f)
@@ -723,7 +720,7 @@ def _heuristicscopytracing(repo, c1, c2, base):
 
             for candidate in movecandidates:
                 f1 = c1.filectx(candidate)
-                if _related(f1, f2, anc.rev()):
+                if _related(f1, f2):
                     # if there are a few related copies then we'll merge
                     # changes into all of them. This matches the behaviour
                     # of upstream copytracing
@@ -731,7 +728,7 @@ def _heuristicscopytracing(repo, c1, c2, base):
 
     return copies, {}, {}, {}, {}
 
-def _related(f1, f2, limit):
+def _related(f1, f2):
     """return True if f1 and f2 filectx have a common ancestor
 
     Walk back to common ancestor to see if the two files originate
@@ -758,10 +755,8 @@ def _related(f1, f2, limit):
                 f1 = next(g1)
             elif f2r > f1r:
                 f2 = next(g2)
-            elif f1 == f2:
-                return f1 # a match
-            elif f1r == f2r or f1r < limit or f2r < limit:
-                return False # copy no longer relevant
+            else: # f1 and f2 point to files in the same linkrev
+                return f1 == f2 # true if they point to the same file
     except StopIteration:
         return False
 
@@ -829,7 +824,7 @@ def _checkcopies(srcctx, dstctx, f, base, tca, remotebase, limit, data):
         c2 = getdstfctx(of, mdst[of])
         # c2 might be a plain new file on added on destination side that is
         # unrelated to the droids we are looking for.
-        cr = _related(oc, c2, tca.rev())
+        cr = _related(oc, c2)
         if cr and (of == f or of == c2.path()): # non-divergent
             if backwards:
                 data['copy'][of] = f

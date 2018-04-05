@@ -248,10 +248,10 @@ class rebaseruntime(object):
                     if newrev in legacystates:
                         continue
                     if len(args) > 2:
-                        destnode = args[2]
+                        destrev = repo[args[2]].rev()
                     else:
-                        destnode = legacydest
-                    destmap[repo[oldrev].rev()] = repo[destnode].rev()
+                        destrev = legacydest
+                    destmap[repo[oldrev].rev()] = destrev
                     if newrev in (nullid, revtodostr):
                         state[repo[oldrev].rev()] = revtodo
                         # Legacy compat special case

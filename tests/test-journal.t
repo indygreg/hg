@@ -3,7 +3,7 @@ Tests for the journal extension; records bookmark locations.
   $ cat >> testmocks.py << EOF
   > # mock out procutil.getuser() and util.makedate() to supply testable values
   > import os
-  > from mercurial import util
+  > from mercurial import util, pycompat
   > from mercurial.utils import dateutil, procutil
   > def mockgetuser():
   >     return 'foobar'
@@ -16,7 +16,7 @@ Tests for the journal extension; records bookmark locations.
   >     except IOError:
   >         time = 0.0
   >     with open(filename, 'wb') as timef:
-  >         timef.write(str(time))
+  >         timef.write(pycompat.bytestr(time))
   >     return (time, 0)
   > 
   > procutil.getuser = mockgetuser

@@ -1150,7 +1150,8 @@ def pushkey(repo, proto, namespace, key, old, new):
     output = output.getvalue() if output else ''
     return wireprototypes.bytesresponse('%d\n%s' % (int(r), output))
 
-@wireprotocommand('stream_out', permission='pull')
+@wireprotocommand('stream_out', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def stream(repo, proto):
     '''If the server supports streaming clone, it advertises the "stream"
     capability with a value representing the version and flags of the repo

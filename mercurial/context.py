@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import errno
 import filecmp
 import os
-import re
 import stat
 
 from .i18n import _
@@ -50,8 +49,6 @@ from .utils import (
 )
 
 propertycache = util.propertycache
-
-nonascii = re.compile(br'[^\x21-\x7f]').search
 
 class basectx(object):
     """A basectx object represents the common logic for its children:
@@ -420,6 +417,7 @@ class changectx(basectx):
                         and changeid in repo.unfiltered().dirstate.parents()):
                         msg = _("working directory has unknown parent '%s'!")
                         raise error.Abort(msg % short(changeid))
+                    changeid = hex(changeid) # for the error message
 
             elif len(changeid) == 40:
                 try:
@@ -432,11 +430,6 @@ class changectx(basectx):
                     pass
 
             # lookup failed
-            try:
-                if len(changeid) == 20 and nonascii(changeid):
-                    changeid = hex(changeid)
-            except TypeError:
-                pass
         except (error.FilteredIndexError, error.FilteredLookupError):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")
                                                 % changeid)

@@ -297,11 +297,7 @@ class wirepeer(repository.legacypeer):
         kwargs = pycompat.byteskwargs(kwargs)
         self.requirecap('getbundle', _('look up remote changes'))
         opts = {}
-        bundlecaps = kwargs.get('bundlecaps')
-        if bundlecaps is not None:
-            kwargs['bundlecaps'] = sorted(bundlecaps)
-        else:
-            bundlecaps = () # kwargs could have it to None
+        bundlecaps = kwargs.get('bundlecaps') or set()
         for key, value in kwargs.iteritems():
             if value is None:
                 continue
@@ -311,8 +307,10 @@ class wirepeer(repository.legacypeer):
                     'Unexpectedly None keytype for key %s' % key)
             elif keytype == 'nodes':
                 value = encodelist(value)
-            elif keytype in ('csv', 'scsv'):
+            elif keytype == 'csv':
                 value = ','.join(value)
+            elif keytype == 'scsv':
+                value = ','.join(sorted(value))
             elif keytype == 'boolean':
                 value = '%i' % bool(value)
             elif keytype != 'plain':

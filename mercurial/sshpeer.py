@@ -168,10 +168,10 @@ def _clientcapabilities():
 
     Returns a list of capabilities that are supported by this client.
     """
-    protoparams = []
+    protoparams = set()
     comps = [e.wireprotosupport().name for e in
              util.compengines.supportedwireengines(util.CLIENTROLE)]
-    protoparams.append('comp=%s' % ','.join(comps))
+    protoparams.add('comp=%s' % ','.join(comps))
     return protoparams
 
 def _performhandshake(ui, stdin, stdout, stderr):
@@ -626,7 +626,8 @@ def instance(ui, path, create):
     # capabilities.
     if 'protocaps' in peer.capabilities():
         try:
-            peer._call("protocaps", caps=' '.join(_clientcapabilities()))
+            peer._call("protocaps",
+                       caps=' '.join(sorted(_clientcapabilities())))
         except IOError:
             peer._cleanup()
             raise error.RepoError(_('capability exchange failed'))

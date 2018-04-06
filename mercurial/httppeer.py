@@ -282,17 +282,17 @@ class httppeer(wireproto.wirepeer):
         # Tell the server we accept application/mercurial-0.2 and multiple
         # compression formats if the server is capable of emitting those
         # payloads.
-        protoparams = []
+        protoparams = set()
 
         mediatypes = set()
         if self._caps is not None:
             mt = self.capable('httpmediatype')
             if mt:
-                protoparams.append('0.1')
+                protoparams.add('0.1')
                 mediatypes = set(mt.split(','))
 
         if '0.2tx' in mediatypes:
-            protoparams.append('0.2')
+            protoparams.add('0.2')
 
         if '0.2tx' in mediatypes and self.capable('compression'):
             # We /could/ compare supported compression formats and prune
@@ -300,10 +300,10 @@ class httppeer(wireproto.wirepeer):
             # For now, send the full list to the server and have it error.
             comps = [e.wireprotosupport().name for e in
                      util.compengines.supportedwireengines(util.CLIENTROLE)]
-            protoparams.append('comp=%s' % ','.join(comps))
+            protoparams.add('comp=%s' % ','.join(comps))
 
         if protoparams:
-            protoheaders = encodevalueinheaders(' '.join(protoparams),
+            protoheaders = encodevalueinheaders(' '.join(sorted(protoparams)),
                                                 'X-HgProto',
                                                 headersize or 1024)
             for header, value in protoheaders:

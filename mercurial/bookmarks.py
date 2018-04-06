@@ -119,6 +119,9 @@ class bmstore(dict):
     def update(self, *others):
         raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
 
+    def changectx(self, mark):
+        return self._repo[self[mark]]
+
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
         """
@@ -212,8 +215,8 @@ class bmstore(dict):
                     return []
                 rev = self._repo[target].rev()
                 anc = self._repo.changelog.ancestors([rev])
-                bmctx = self._repo[self[mark]]
-                divs = [self._repo[b].node() for b in self
+                bmctx = self.changectx(mark)
+                divs = [self[b] for b in self
                         if b.split('@', 1)[0] == mark.split('@', 1)[0]]
 
                 # allow resolving a single divergent bookmark even if moving
@@ -370,11 +373,11 @@ def update(repo, parents, node):
     bmchanges = []
     if marks[active] in parents:
         new = repo[node]
-        divs = [repo[b] for b in marks
+        divs = [marks.changectx(b) for b in marks
                 if b.split('@', 1)[0] == active.split('@', 1)[0]]
         anc = repo.changelog.ancestors([new.rev()])
         deletefrom = [b.node() for b in divs if b.rev() in anc or b == new]
-        if validdest(repo, repo[marks[active]], new):
+        if validdest(repo, marks.changectx(active), new):
             bmchanges.append((active, new.node()))
 
     for bm in divergent2delete(repo, deletefrom, active):

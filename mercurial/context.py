@@ -449,10 +449,6 @@ class changectx(basectx):
                 return
             except KeyError:
                 pass
-            except error.FilteredRepoLookupError:
-                raise
-            except error.RepoLookupError:
-                pass
 
             self._node = repo.unfiltered().changelog._partialmatch(changeid)
             if self._node is not None:

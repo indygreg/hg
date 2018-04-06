@@ -448,8 +448,7 @@ class histeditaction(object):
         except error.RepoError:
             raise error.ParseError(_('unknown changeset %s listed')
                               % ha[:12])
-        if self.node is not None:
-            self._verifynodeconstraints(prev, expected, seen)
+        self._verifynodeconstraints(prev, expected, seen)
 
     def _verifynodeconstraints(self, prev, expected, seen):
         # by default command need a node in the edited list

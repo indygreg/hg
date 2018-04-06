@@ -389,22 +389,22 @@ class changectx(basectx):
                 self._node = repo.changelog.node(changeid)
                 self._rev = changeid
                 return
-            if changeid == 'null':
+            elif changeid == 'null':
                 self._node = nullid
                 self._rev = nullrev
                 return
-            if changeid == 'tip':
+            elif changeid == 'tip':
                 self._node = repo.changelog.tip()
                 self._rev = repo.changelog.rev(self._node)
                 return
-            if (changeid == '.'
-                or repo.local() and changeid == repo.dirstate.p1()):
+            elif (changeid == '.'
+                  or repo.local() and changeid == repo.dirstate.p1()):
                 # this is a hack to delay/avoid loading obsmarkers
                 # when we know that '.' won't be hidden
                 self._node = repo.dirstate.p1()
                 self._rev = repo.unfiltered().changelog.rev(self._node)
                 return
-            if len(changeid) == 20:
+            elif len(changeid) == 20:
                 try:
                     self._node = changeid
                     self._rev = repo.changelog.rev(changeid)
@@ -421,7 +421,7 @@ class changectx(basectx):
                         msg = _("working directory has unknown parent '%s'!")
                         raise error.Abort(msg % short(changeid))
 
-            if len(changeid) == 40:
+            elif len(changeid) == 40:
                 try:
                     self._node = bin(changeid)
                     self._rev = repo.changelog.rev(self._node)

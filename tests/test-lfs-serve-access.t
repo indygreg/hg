@@ -331,3 +331,105 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$ERRDATE$] HG error:      hint=_('run hg verify')) (glob)
   $LOCALIP - - [$ERRDATE$] HG error:  LfsCorruptionError: detected corrupt lfs object: 276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d (glob)
   $LOCALIP - - [$ERRDATE$] HG error:   (glob)
+
+Basic Authorization headers are returned by the Batch API, and sent back with
+the GET/PUT request.
+
+  $ rm -f $TESTTMP/access.log $TESTTMP/errors.log
+
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > lfs.disableusercache = True
+  > [auth]
+  > l.schemes=http
+  > l.prefix=lo
+  > l.username=user
+  > l.password=pass
+  > EOF
+
+  $ cat << EOF > userpass.py
+  > import base64
+  > from mercurial.hgweb import common
+  > def perform_authentication(hgweb, req, op):
+  >     auth = req.headers.get(b'Authorization')
+  >     if not auth:
+  >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
+  >                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
+  >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user',
+  >                                                             b'pass']:
+  >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
+  > def extsetup():
+  >     common.permhooks.insert(0, perform_authentication)
+  > EOF
+
+  $ hg --config extensions.x=$TESTTMP/userpass.py \
+  >    -R server serve -d -p $HGPORT1 --pid-file=hg.pid \
+  >    -A $TESTTMP/access.log -E $TESTTMP/errors.log
+  $ mv hg.pid $DAEMON_PIDS
+
+  $ hg clone --debug http://localhost:$HGPORT1 auth_clone | egrep '^[{}]|  '
+  {
+    "objects": [
+      {
+        "actions": {
+          "download": {
+            "expires_at": "$ISO_8601_DATE_TIME$"
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+              "Authorization": "Basic dXNlcjpwYXNz"
+            }
+            "href": "http://localhost:$HGPORT1/.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d"
+          }
+        }
+        "oid": "276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d"
+        "size": 14
+      }
+    ]
+    "transfer": "basic"
+  }
+
+  $ echo 'another blob' > auth_clone/lfs.blob
+  $ hg -R auth_clone ci -Aqm 'add blob'
+  $ hg -R auth_clone --debug push | egrep '^[{}]|  '
+  {
+    "objects": [
+      {
+        "actions": {
+          "upload": {
+            "expires_at": "$ISO_8601_DATE_TIME$"
+            "header": {
+              "Accept": "application/vnd.git-lfs"
+              "Authorization": "Basic dXNlcjpwYXNz"
+            }
+            "href": "http://localhost:$HGPORT1/.hg/lfs/objects/df14287d8d75f076a6459e7a3703ca583ca9fb3f4918caed10c77ac8622d49b3"
+          }
+        }
+        "oid": "df14287d8d75f076a6459e7a3703ca583ca9fb3f4918caed10c77ac8622d49b3"
+        "size": 13
+      }
+    ]
+    "transfer": "basic"
+  }
+
+  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+
+  $ cat $TESTTMP/access.log $TESTTMP/errors.log
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 401 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:bookmarks=1&bundlecaps=HG20%2Cbundle2%3DHG20%250Abookmarks%250Achangegroup%253D01%252C02%252C03%250Adigests%253Dmd5%252Csha1%252Csha512%250Aerror%253Dabort%252Cunsupportedcontent%252Cpushraced%252Cpushkey%250Ahgtagsfnodes%250Alistkeys%250Aphases%253Dheads%250Apushkey%250Aremote-changegroup%253Dhttp%252Chttps%250Arev-branch-cache%250Astream%253Dv2&cg=1&common=0000000000000000000000000000000000000000&heads=506bf3d83f78c54b89e81c6411adee19fdf02156+525251863cad618e55d483555f3d00a2ca99597e&listkeys=bookmarks&phases=1 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 401 - (glob)
+  $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 401 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D525251863cad618e55d483555f3d00a2ca99597e+4d9397055dc0c205f3132f331f36353ab1a525a3 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=branchmap HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=bookmarks x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 401 - (glob)
+  $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
+  $LOCALIP - - [$LOGDATE$] "PUT /.hg/lfs/objects/df14287d8d75f076a6459e7a3703ca583ca9fb3f4918caed10c77ac8622d49b3 HTTP/1.1" 201 - (glob)
+  $LOCALIP - - [$LOGDATE$] "POST /?cmd=unbundle HTTP/1.1" 200 - x-hgarg-1:heads=666f726365 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)

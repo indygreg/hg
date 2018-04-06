@@ -238,18 +238,27 @@ def _batchresponseobjects(req, objects, action, store):
 
         expiresat = datetime.datetime.now() + datetime.timedelta(minutes=10)
 
+        def _buildheader():
+            # The spec doesn't mention the Accept header here, but avoid
+            # a gratuitous deviation from lfs-test-server in the test
+            # output.
+            hdr = {
+                'Accept': 'application/vnd.git-lfs'
+            }
+
+            auth = req.headers.get('Authorization', '')
+            if auth.startswith('Basic '):
+                hdr['Authorization'] = auth
+
+            return hdr
+
         rsp['actions'] = {
             '%s' % action: {
                 'href': '%s%s/.hg/lfs/objects/%s'
                     % (req.baseurl, req.apppath, oid),
                 # datetime.isoformat() doesn't include the 'Z' suffix
                 "expires_at": expiresat.strftime('%Y-%m-%dT%H:%M:%SZ'),
-                'header': {
-                    # The spec doesn't mention the Accept header here, but avoid
-                    # a gratuitous deviation from lfs-test-server in the test
-                    # output.
-                    'Accept': 'application/vnd.git-lfs'
-                }
+                'header': _buildheader(),
             }
         }
 

@@ -443,11 +443,9 @@ class histeditaction(object):
         """ Verifies semantic correctness of the rule"""
         repo = self.repo
         ha = node.hex(self.node)
-        try:
-            self.node = repo[ha].node()
-        except error.RepoError:
-            raise error.ParseError(_('unknown changeset %s listed')
-                              % ha[:12])
+        self.node = scmutil.resolvepartialhexnodeid(repo, ha)
+        if self.node is None:
+            raise error.ParseError(_('unknown changeset %s listed') % ha[:12])
         self._verifynodeconstraints(prev, expected, seen)
 
     def _verifynodeconstraints(self, prev, expected, seen):

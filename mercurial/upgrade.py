@@ -480,11 +480,13 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
             mrevcount += len(rl)
             msrcsize += datasize
             mrawsize += rawsize
-        elif isinstance(rl, revlog.revlog):
+        elif isinstance(rl, filelog.filelog):
             fcount += 1
             frevcount += len(rl)
             fsrcsize += datasize
             frawsize += rawsize
+        else:
+            error.ProgrammingError('unknown revlog type')
 
     if not revcount:
         return

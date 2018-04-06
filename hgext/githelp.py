@@ -26,6 +26,7 @@ from mercurial import (
     error,
     fancyopts,
     registrar,
+    scmutil,
 )
 from mercurial.utils import (
     procutil,
@@ -253,7 +254,7 @@ def ispath(repo, string):
     too many ways to spell revisions in git for us to reasonably catch all of
     them, so let's be conservative.
     """
-    if string in repo:
+    if scmutil.isrevsymbol(repo, string):
         # if it's definitely a revision let's not even check if a file of the
         # same name exists.
         return False

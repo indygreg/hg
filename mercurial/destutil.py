@@ -58,7 +58,7 @@ def _destupdatebook(repo, clean):
     node = None
     activemark, movemark = bookmarks.calculateupdate(repo.ui, repo)
     if activemark is not None:
-        node = repo.lookup(activemark)
+        node = repo._bookmarks[activemark]
     return node, movemark, activemark
 
 def _destupdatebranch(repo, clean):
@@ -236,7 +236,7 @@ def _destmergebook(repo, action='merge', sourceset=None, destspace=None):
     """find merge destination in the active bookmark case"""
     node = None
     bmheads = bookmarks.headsforactive(repo)
-    curhead = repo[repo._activebookmark].node()
+    curhead = repo._bookmarks[repo._activebookmark]
     if len(bmheads) == 2:
         if curhead == bmheads[0]:
             node = bmheads[1]
@@ -361,7 +361,7 @@ def stackbase(ui, repo):
 
 def _statusotherbook(ui, repo):
     bmheads = bookmarks.headsforactive(repo)
-    curhead = repo[repo._activebookmark].node()
+    curhead = repo._bookmarks[repo._activebookmark]
     if repo.revs('%n and parents()', curhead):
         # we are on the active bookmark
         bmheads = [b for b in bmheads if curhead != b]

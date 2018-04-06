@@ -297,12 +297,12 @@ def _nowarnheads(pushop):
     for bm in localbookmarks:
         rnode = remotebookmarks.get(bm)
         if rnode and rnode in repo:
-            lctx, rctx = repo[bm], repo[rnode]
+            lctx, rctx = localbookmarks.changectx(bm), repo[rnode]
             if bookmarks.validdest(repo, rctx, lctx):
                 bookmarkedheads.add(lctx.node())
         else:
             if bm in newbookmarks and bm not in remotebookmarks:
-                bookmarkedheads.add(repo[bm].node())
+                bookmarkedheads.add(localbookmarks[bm])
 
     return bookmarkedheads
 

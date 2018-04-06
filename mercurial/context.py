@@ -412,7 +412,14 @@ class changectx(basectx):
                 except error.FilteredLookupError:
                     raise
                 except LookupError:
-                    pass
+                    # check if it might have come from damaged dirstate
+                    #
+                    # XXX we could avoid the unfiltered if we had a recognizable
+                    # exception for filtered changeset access
+                    if (repo.local()
+                        and changeid in repo.unfiltered().dirstate.parents()):
+                        msg = _("working directory has unknown parent '%s'!")
+                        raise error.Abort(msg % short(changeid))
 
             if len(changeid) == 40:
                 try:
@@ -425,14 +432,6 @@ class changectx(basectx):
                     pass
 
             # lookup failed
-            # check if it might have come from damaged dirstate
-            #
-            # XXX we could avoid the unfiltered if we had a recognizable
-            # exception for filtered changeset access
-            if (repo.local()
-                and changeid in repo.unfiltered().dirstate.parents()):
-                msg = _("working directory has unknown parent '%s'!")
-                raise error.Abort(msg % short(changeid))
             try:
                 if len(changeid) == 20 and nonascii(changeid):
                     changeid = hex(changeid)

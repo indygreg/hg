@@ -33,10 +33,10 @@ def addlines(fp, hunk, lena, lenb, a, b):
             if s == "\\ No newline at end of file\n":
                 fixnewline(hunk, a, b)
                 continue
-            if s == "\n":
+            if s == '\n' or s == '\r\n':
                 # Some patches may be missing the control char
                 # on empty lines. Supply a leading space.
-                s = " \n"
+                s = ' ' + s
             hunk.append(s)
             if s.startswith('+'):
                 b.append(s[1:])

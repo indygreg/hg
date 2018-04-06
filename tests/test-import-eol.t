@@ -1,5 +1,6 @@
   $ cat > makepatch.py <<EOF
-  > f = open('eol.diff', 'wb')
+  > import sys
+  > f = open(sys.argv[2], 'wb')
   > w = f.write
   > w(b'test message\n')
   > w(b'diff --git a/a b/a\n')
@@ -10,7 +11,10 @@
   > w(b'-bbb\r\n')
   > w(b'+yyyy\r\n')
   > w(b' cc\r\n')
-  > w(b' \n')
+  > w({'empty:lf': b' \n',
+  >    'empty:crlf': b' \r\n',
+  >    'empty:stripped-lf': b'\n',
+  >    'empty:stripped-crlf': b'\r\n'}[sys.argv[1]])
   > w(b' d\n')
   > w(b'-e\n')
   > w(b'\ No newline at end of file\n')
@@ -29,8 +33,10 @@ Test different --eol values
   $ hg ci -Am adda
   adding .hgignore
   adding a
-  $ $PYTHON ../makepatch.py
-
+  $ $PYTHON ../makepatch.py empty:lf eol.diff
+  $ $PYTHON ../makepatch.py empty:crlf eol-empty-crlf.diff
+  $ $PYTHON ../makepatch.py empty:stripped-lf eol-empty-stripped-lf.diff
+  $ $PYTHON ../makepatch.py empty:stripped-crlf eol-empty-stripped-crlf.diff
 
 invalid eol
 
@@ -45,6 +51,8 @@ force LF
 
   $ hg --traceback --config patch.eol='LF' import eol.diff
   applying eol.diff
+  $ hg id
+  9e4ef7b3d4af tip
   $ cat a
   a
   yyyy
@@ -54,6 +62,25 @@ force LF
   e (no-eol)
   $ hg st
 
+ (test empty-line variants: all of them should generate the same revision)
+
+  $ hg up -qC 0
+  $ hg --config patch.eol='LF' import eol-empty-crlf.diff
+  applying eol-empty-crlf.diff
+  $ hg id
+  9e4ef7b3d4af tip
+
+  $ hg up -qC 0
+  $ hg --config patch.eol='LF' import eol-empty-stripped-lf.diff
+  applying eol-empty-stripped-lf.diff
+  $ hg id
+  9e4ef7b3d4af tip
+
+  $ hg up -qC 0
+  $ hg --config patch.eol='LF' import eol-empty-stripped-crlf.diff
+  applying eol-empty-stripped-crlf.diff
+  $ hg id
+  9e4ef7b3d4af tip
 
 force CRLF
 

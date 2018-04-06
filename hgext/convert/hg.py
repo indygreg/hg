@@ -363,10 +363,8 @@ class mercurial_sink(common.converter_sink):
         return p2
 
     def puttags(self, tags):
-        try:
-            tagparent = self.repo[self.tagsbranch].node()
-        except error.RepoError:
-            tagparent = nodemod.nullid
+        tagparent = self.repo.branchtip(self.tagsbranch, ignoremissing=True)
+        tagparent = tagparent or nodemod.nullid
 
         oldlines = set()
         for branch, heads in self.repo.branchmap().iteritems():

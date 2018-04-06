@@ -2547,7 +2547,7 @@ def debugwalk(ui, repo, *pats, **opts):
 @command('debugwhyunstable', [], _('REV'))
 def debugwhyunstable(ui, repo, rev):
     """explain instabilities of a changeset"""
-    for entry in obsutil.whyunstable(repo, repo[rev]):
+    for entry in obsutil.whyunstable(repo, scmutil.revsingle(repo, rev)):
         dnodes = ''
         if entry.get('divergentnodes'):
             dnodes = ' '.join('%s (%s)' % (ctx.hex(), ctx.phasestr())

@@ -238,7 +238,7 @@ class bmstore(dict):
                 _("a bookmark cannot have the name of an existing branch"))
         if len(mark) > 3 and not force:
             try:
-                shadowhash = (mark in self._repo)
+                shadowhash = scmutil.isrevsymbol(self._repo, mark)
             except error.LookupError:  # ambiguous identifier
                 shadowhash = False
             if shadowhash:

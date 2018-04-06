@@ -14,7 +14,6 @@ from mercurial.node import bin, hex, nullid, short
 
 from mercurial import (
     error,
-    filelog,
     revlog,
     util,
 )
@@ -69,13 +68,13 @@ def readfromstore(self, text):
             name = k[len('x-hg-'):]
             hgmeta[name] = p[k]
     if hgmeta or text.startswith('\1\n'):
-        text = filelog.packmeta(hgmeta, text)
+        text = revlog.packmeta(hgmeta, text)
 
     return (text, True)
 
 def writetostore(self, text):
     # hg filelog metadata (includes rename, etc)
-    hgmeta, offset = filelog.parsemeta(text)
+    hgmeta, offset = revlog.parsemeta(text)
     if offset and offset > 0:
         # lfs blob does not contain hg filelog metadata
         text = text[offset:]
@@ -121,7 +120,7 @@ def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
                        flags=revlog.REVIDX_DEFAULT_FLAGS, **kwds):
     textlen = len(text)
     # exclude hg rename meta from file size
-    meta, offset = filelog.parsemeta(text)
+    meta, offset = revlog.parsemeta(text)
     if offset:
         textlen -= offset
 

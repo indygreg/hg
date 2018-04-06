@@ -19,6 +19,7 @@ import errno
 import hashlib
 import heapq
 import os
+import re
 import struct
 import zlib
 
@@ -96,6 +97,25 @@ ProgrammingError = error.ProgrammingError
 _flagprocessors = {
     REVIDX_ISCENSORED: None,
 }
+
+_mdre = re.compile('\1\n')
+def parsemeta(text):
+    """return (metadatadict, metadatasize)"""
+    # text can be buffer, so we can't use .startswith or .index
+    if text[:2] != '\1\n':
+        return None, None
+    s = _mdre.search(text, 2).start()
+    mtext = text[2:s]
+    meta = {}
+    for l in mtext.splitlines():
+        k, v = l.split(": ", 1)
+        meta[k] = v
+    return meta, (s + 2)
+
+def packmeta(meta, text):
+    keys = sorted(meta)
+    metatext = "".join("%s: %s\n" % (k, meta[k]) for k in keys)
+    return "\1\n%s\1\n%s" % (metatext, text)
 
 def addflagprocessor(flag, processor):
     """Register a flag processor on a revision data flag.

@@ -32,7 +32,6 @@ from mercurial import (
     bundlerepo,
     error,
     extensions,
-    filelog,
     localrepo,
     mdiff,
     pycompat,
@@ -326,7 +325,7 @@ class filestorage(object):
             return False
 
         fulltext = self.revision(node)
-        m = filelog.parsemeta(fulltext)[0]
+        m = revlog.parsemeta(fulltext)[0]
 
         if m and 'copy' in m:
             return m['copy'], bin(m['copyrev'])
@@ -415,7 +414,7 @@ class filestorage(object):
 
     def add(self, text, meta, transaction, linkrev, p1, p2):
         if meta or text.startswith(b'\1\n'):
-            text = filelog.packmeta(meta, text)
+            text = revlog.packmeta(meta, text)
 
         return self.addrevision(text, transaction, linkrev, p1, p2)
 

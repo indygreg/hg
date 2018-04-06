@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import re
 import struct
 
 from .thirdparty.zope import (
@@ -20,27 +19,8 @@ from . import (
     revlog,
 )
 
-_mdre = re.compile('\1\n')
-def parsemeta(text):
-    """return (metadatadict, metadatasize)"""
-    # text can be buffer, so we can't use .startswith or .index
-    if text[:2] != '\1\n':
-        return None, None
-    s = _mdre.search(text, 2).start()
-    mtext = text[2:s]
-    meta = {}
-    for l in mtext.splitlines():
-        k, v = l.split(": ", 1)
-        meta[k] = v
-    return meta, (s + 2)
-
-def packmeta(meta, text):
-    keys = sorted(meta)
-    metatext = "".join("%s: %s\n" % (k, meta[k]) for k in keys)
-    return "\1\n%s\1\n%s" % (metatext, text)
-
 def _censoredtext(text):
-    m, offs = parsemeta(text)
+    m, offs = revlog.parsemeta(text)
     return m and "censored" in m
 
 @zi.implementer(repository.ifilestorage)
@@ -60,14 +40,14 @@ class filelog(revlog.revlog):
 
     def add(self, text, meta, transaction, link, p1=None, p2=None):
         if meta or text.startswith('\1\n'):
-            text = packmeta(meta, text)
+            text = revlog.packmeta(meta, text)
         return self.addrevision(text, transaction, link, p1, p2)
 
     def renamed(self, node):
         if self.parents(node)[0] != revlog.nullid:
             return False
         t = self.revision(node)
-        m = parsemeta(t)[0]
+        m = revlog.parsemeta(t)[0]
         if m and "copy" in m:
             return (m["copy"], revlog.bin(m["copyrev"]))
         return False

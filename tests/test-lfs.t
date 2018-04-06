@@ -630,7 +630,7 @@ enabled adds the lfs requirement
   >         fl = repo.file(name)
   >         if len(fl) == 0:
   >             continue
-  >         sizes = [revlog.revlog.rawsize(fl, i) for i in fl]
+  >         sizes = [fl.rawsize(i) for i in fl]
   >         texts = [fl.revision(i, raw=True) for i in fl]
   >         flags = [int(fl.flags(i)) for i in fl]
   >         hashes = [hash(t) for t in texts]

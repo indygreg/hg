@@ -188,7 +188,7 @@ Test listkeys for listing namespaces
   s>     Content-Type: application/mercurial-0.1\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$
+  s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending listkeys command
   s>     GET /?cmd=listkeys HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n

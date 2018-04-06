@@ -896,7 +896,8 @@ def _capabilities(repo, proto):
 # `_capabilities` instead.
 @wireprotocommand('capabilities', permission='pull')
 def capabilities(repo, proto):
-    return wireprototypes.bytesresponse(' '.join(_capabilities(repo, proto)))
+    caps = _capabilities(repo, proto)
+    return wireprototypes.bytesresponse(' '.join(sorted(caps)))
 
 @wireprotocommand('changegroup', 'roots', transportpolicy=POLICY_V1_ONLY,
                   permission='pull')

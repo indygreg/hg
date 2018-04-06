@@ -1910,7 +1910,7 @@ capabilities
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities'; echo
   200 Script output follows
   
-  lookup branchmap pushkey known getbundle unbundlehash changegroupsubset $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=$BUNDLE2_COMPRESSIONS$
+  batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
 wire protocol command to wrong base URL
 
@@ -2125,7 +2125,7 @@ capabilities
   $ get-with-headers.py $LOCALIP:$HGPORT '?cmd=capabilities' | dd ibs=76 count=1 2> /dev/null; echo
   200 Script output follows
   
-  lookup branchmap pushkey known getbundle unbundle
+  batch branchmap bundle2=HG20%0Abookmarks%0Achange
 
 (spread version to check the content)
 
@@ -2135,21 +2135,21 @@ capabilities
   output
   follows
   
-  lookup
-  branchmap
-  pushkey
-  known
-  getbundle
-  unbundlehash
-  changegroupsubset
-  stream-preferred
-  streamreqs=generaldelta,revlogv1
-  $USUAL_BUNDLE2_CAPS_SERVER$
-  unbundle=HG10GZ,HG10BZ,HG10UN
   batch
+  branchmap
+  $USUAL_BUNDLE2_CAPS_SERVER$
+  changegroupsubset
+  compression=$BUNDLE2_COMPRESSIONS$
+  getbundle
   httpheader=1024
   httpmediatype=0.1rx,0.1tx,0.2tx
-  compression=$BUNDLE2_COMPRESSIONS$
+  known
+  lookup
+  pushkey
+  stream-preferred
+  streamreqs=generaldelta,revlogv1
+  unbundle=HG10GZ,HG10BZ,HG10UN
+  unbundlehash
 
 heads
 

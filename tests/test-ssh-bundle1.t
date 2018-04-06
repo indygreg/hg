@@ -482,7 +482,7 @@ debug output
   sending between command
   remote: 413 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN protocaps batch
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1 (sshv1 !)
   sending protocaps command
   preparing listkeys for "bookmarks"

@@ -120,7 +120,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   write(41) -> Content-Type: application/mercurial-0.1\r\n
   write(21) -> Content-Length: 436\r\n
   write(2) -> \r\n
-  write(436) -> lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436) -> batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(4? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1? from -1) -> (1?) Accept-Encoding* (glob)
   read limit reached; closing socket
@@ -161,7 +161,7 @@ Failure to read getbundle HTTP request
   write(41) -> Content-Type: application/mercurial-0.1\r\n
   write(21) -> Content-Length: 436\r\n
   write(2) -> \r\n
-  write(436) -> lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436) -> batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(13? from 65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n (glob)
   readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
   readline(8? from -1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n (glob)
@@ -218,7 +218,7 @@ Now do a variation using POST to send arguments
   write(41) -> Content-Type: application/mercurial-0.1\r\n
   write(21) -> Content-Length: 449\r\n
   write(2) -> \r\n
-  write(449) -> lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httppostargs httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(449) -> batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline\(14[67] from 65537\) -> \(2[67]\) POST /\?cmd=batch HTTP/1.1\\r\\n (re)
   readline\(1(19|20) from -1\) -> \(27\) Accept-Encoding: identity\\r\\n (re)
   readline(9? from -1) -> (41) content-type: application/mercurial-0.1\r\n (glob)
@@ -294,7 +294,7 @@ Server sends an incomplete capabilities response body
   write(41 from 41) -> (43) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (22) Content-Length: 436\r\n
   write(2 from 2) -> (20) \r\n
-  write(20 from 436) -> (0) lookup branchmap pus
+  write(20 from 436) -> (0) batch branchmap bund
   write limit reached; closing socket
 
   $ rm -f error.log
@@ -329,7 +329,7 @@ TODO this output is horrible
   write(41 from 41) -> (577) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (556) Content-Length: 436\r\n
   write(2 from 2) -> (554) \r\n
-  write(436 from 436) -> (118) lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436 from 436) -> (118) batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -377,7 +377,7 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   write(41 from 41) -> (642) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (621) Content-Length: 436\r\n
   write(2 from 2) -> (619) \r\n
-  write(436 from 436) -> (183) lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436 from 436) -> (183) batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -429,7 +429,7 @@ TODO this output is terrible
   write(41 from 41) -> (789) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (768) Content-Length: 436\r\n
   write(2 from 2) -> (766) \r\n
-  write(436 from 436) -> (330) lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436 from 436) -> (330) batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -490,7 +490,7 @@ Server sends empty HTTP body for getbundle
   write(41 from 41) -> (827) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (806) Content-Length: 436\r\n
   write(2 from 2) -> (804) \r\n
-  write(436 from 436) -> (368) lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436 from 436) -> (368) batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n
@@ -553,7 +553,7 @@ Server sends partial compression string
   write(41 from 41) -> (851) Content-Type: application/mercurial-0.1\r\n
   write(21 from 21) -> (830) Content-Length: 436\r\n
   write(2 from 2) -> (828) \r\n
-  write(436 from 436) -> (392) lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache unbundle=HG10GZ,HG10BZ,HG10UN batch httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx compression=none
+  write(436 from 436) -> (392) batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   readline(65537) -> (26) GET /?cmd=batch HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
   readline(-1) -> (29) vary: X-HgArg-1,X-HgProto-1\r\n

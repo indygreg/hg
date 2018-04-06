@@ -408,7 +408,7 @@ Test debugpeer
   devel-peer-request:   pairs: 81 bytes
   sending between command
   remote: 413
-  remote: capabilities: lookup branchmap pushkey known getbundle unbundlehash changegroupsubset streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN protocaps batch
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   remote: 1
   devel-peer-request: protocaps
   devel-peer-request:   caps: * bytes (glob)

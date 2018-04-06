@@ -103,6 +103,7 @@ from mercurial import (
     match,
     pycompat,
     registrar,
+    scmutil,
     util,
 )
 from mercurial.utils import (
@@ -299,7 +300,8 @@ def checkheadshook(ui, repo, node, hooktype, **kwargs):
 hook = checkheadshook
 
 def preupdate(ui, repo, hooktype, parent1, parent2):
-    repo.loadeol([parent1])
+    p1node = scmutil.resolvepartialhexnodeid(repo, parent1)
+    repo.loadeol([p1node])
     return False
 
 def uisetup(ui):

@@ -490,6 +490,14 @@ def revsymbol(repo, symbol):
             except (TypeError, LookupError):
                 pass
 
+        # look up bookmarks through the name interface
+        try:
+            node = repo.names.singlenode(repo, symbol)
+            rev = repo.changelog.rev(node)
+            return repo[rev]
+        except KeyError:
+            pass
+
         return repo[symbol]
 
     except error.WdirUnsupported:

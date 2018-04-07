@@ -863,7 +863,7 @@ Check abort from mandatory pushkey
   >     enc = pushkey.encode
   >     part = bundler.newpart('pushkey')
   >     part.addparam('namespace', enc('phases'))
-  >     part.addparam('key', enc(pushop.repo['cd010b8cd998'].hex()))
+  >     part.addparam('key', enc('cd010b8cd998f3981a5a8115f94f8da4ab506089'))
   >     part.addparam('old', enc(str(4))) # will fail
   >     part.addparam('new', enc(str(3)))
   >     def fail(pushop, exc):

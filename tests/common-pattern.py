@@ -71,9 +71,13 @@ substitutions = [
      # (replacement patterns)
      br'$USUAL_BUNDLE2_CAPS_SERVER$'
      ),
-    # HTTP log dates
+    # HTTP access log dates
     (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "(GET|PUT|POST)',
      lambda m: br' - - [$LOGDATE$] "' + m.group(1)
+    ),
+    # HTTP error log dates
+    (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] (HG error:|Exception)',
+     lambda m: br' - - [$ERRDATE$] ' + m.group(1)
     ),
     # HTTP header dates- RFC 1123
     (br'([Dd]ate): [A-Za-z]{3}, \d\d [A-Za-z]{3} \d{4} \d\d:\d\d:\d\d GMT',

@@ -128,27 +128,25 @@ def _popenwriter(cmd, bufsize):
                          stdin=subprocess.PIPE)
     return _pfile(p, p.stdin)
 
-def popen2(cmd, env=None, newlines=False):
+def popen2(cmd, env=None):
     # Setting bufsize to -1 lets the system decide the buffer size.
     # The default for bufsize is 0, meaning unbuffered. This leads to
     # poor performance on Mac OS X: http://bugs.python.org/issue4194
     p = subprocess.Popen(cmd, shell=True, bufsize=-1,
                          close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         universal_newlines=newlines,
                          env=env)
     return p.stdin, p.stdout
 
-def popen3(cmd, env=None, newlines=False):
-    stdin, stdout, stderr, p = popen4(cmd, env, newlines)
+def popen3(cmd, env=None):
+    stdin, stdout, stderr, p = popen4(cmd, env)
     return stdin, stdout, stderr
 
-def popen4(cmd, env=None, newlines=False, bufsize=-1):
+def popen4(cmd, env=None, bufsize=-1):
     p = subprocess.Popen(cmd, shell=True, bufsize=bufsize,
                          close_fds=closefds,
                          stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                          stderr=subprocess.PIPE,
-                         universal_newlines=newlines,
                          env=env)
     return p.stdin, p.stdout, p.stderr, p
 

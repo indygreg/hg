@@ -83,7 +83,7 @@ def explainexit(code):
     (codes from kill are negative - not os.system/wait encoding)"""
     if code >= 0:
         return _("exited with status %d") % code, code
-    return _("killed by signal %d") % -code, -code
+    return _("killed by signal %d") % -code, code
 
 class _pfile(object):
     """File-like wrapper for a stream opened by subprocess.Popen()"""

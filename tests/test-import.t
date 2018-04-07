@@ -1839,17 +1839,17 @@ Importing some extra header
   > import mercurial.cmdutil
   > 
   > def processfoo(repo, data, extra, opts):
-  >     if 'foo' in data:
-  >         extra['foo'] = data['foo']
+  >     if b'foo' in data:
+  >         extra[b'foo'] = data[b'foo']
   > def postimport(ctx):
-  >     if 'foo' in ctx.extra():
-  >         ctx.repo().ui.write('imported-foo: %s\n' % ctx.extra()['foo'])
+  >     if b'foo' in ctx.extra():
+  >         ctx.repo().ui.write(b'imported-foo: %s\n' % ctx.extra()[b'foo'])
   > 
-  > mercurial.patch.patchheadermap.append(('Foo', 'foo'))
-  > mercurial.cmdutil.extrapreimport.append('foo')
-  > mercurial.cmdutil.extrapreimportmap['foo'] = processfoo
-  > mercurial.cmdutil.extrapostimport.append('foo')
-  > mercurial.cmdutil.extrapostimportmap['foo'] = postimport
+  > mercurial.patch.patchheadermap.append((b'Foo', b'foo'))
+  > mercurial.cmdutil.extrapreimport.append(b'foo')
+  > mercurial.cmdutil.extrapreimportmap[b'foo'] = processfoo
+  > mercurial.cmdutil.extrapostimport.append(b'foo')
+  > mercurial.cmdutil.extrapostimportmap[b'foo'] = postimport
   > EOF
   $ cat >> $HGRCPATH <<EOF
   > [extensions]

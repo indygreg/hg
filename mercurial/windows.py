@@ -311,9 +311,6 @@ def quotecommand(cmd):
         return '"' + cmd + '"'
     return cmd
 
-def explainexit(code):
-    return _("exited with status %d") % code, code
-
 # if you change this stub into a real check, please try to implement the
 # username and groupname functions above, too.
 def isowner(st):

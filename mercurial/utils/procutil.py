@@ -52,7 +52,6 @@ if pycompat.iswindows:
 else:
     from .. import posix as platform
 
-explainexit = platform.explainexit
 findexe = platform.findexe
 _gethgcmd = platform.gethgcmd
 getuser = platform.getuser
@@ -78,6 +77,13 @@ except AttributeError:
     pass
 
 closefds = pycompat.isposix
+
+def explainexit(code):
+    """return a 2-tuple (desc, code) describing a subprocess status
+    (codes from kill are negative - not os.system/wait encoding)"""
+    if code >= 0:
+        return _("exited with status %d") % code, code
+    return _("killed by signal %d") % -code, -code
 
 class _pfile(object):
     """File-like wrapper for a stream opened by subprocess.Popen()"""

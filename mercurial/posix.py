@@ -479,13 +479,6 @@ def testpid(pid):
     except OSError as inst:
         return inst.errno != errno.ESRCH
 
-def explainexit(code):
-    """return a 2-tuple (desc, code) describing a subprocess status
-    (codes from kill are negative - not os.system/wait encoding)"""
-    if code >= 0:
-        return _("exited with status %d") % code, code
-    return _("killed by signal %d") % -code, -code
-
 def isowner(st):
     """Return True if the stat object st is from the current user."""
     return st.st_uid == os.getuid()

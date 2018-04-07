@@ -144,8 +144,8 @@ def _sendmail(ui, sender, recipients, msg):
     cmdline = '%s -f %s %s' % (program, stringutil.email(sender),
                                ' '.join(map(stringutil.email, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
-    fp = procutil.popen(cmdline, 'w')
-    fp.write(msg)
+    fp = procutil.popen(cmdline, 'wb')
+    fp.write(util.tonativeeol(msg))
     ret = fp.close()
     if ret:
         raise error.Abort('%s %s' % (

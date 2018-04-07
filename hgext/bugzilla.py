@@ -528,8 +528,8 @@ class bzmysql(bzaccess):
             except TypeError:
                 cmd = cmdfmt % {'bzdir': bzdir, 'id': id, 'user': user}
             self.ui.note(_('running notify command %s\n') % cmd)
-            fp = procutil.popen('(%s) 2>&1' % cmd)
-            out = fp.read()
+            fp = procutil.popen('(%s) 2>&1' % cmd, 'rb')
+            out = util.fromnativeeol(fp.read())
             ret = fp.close()
             if ret:
                 self.ui.warn(out)

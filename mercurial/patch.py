@@ -2103,8 +2103,9 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files,
     cwd = repo.root
     if cwd:
         args.append('-d %s' % procutil.shellquote(cwd))
-    fp = procutil.popen('%s %s -p%d < %s' % (patcher, ' '.join(args), strip,
-                                             procutil.shellquote(patchname)))
+    cmd = ('%s %s -p%d < %s'
+           % (patcher, ' '.join(args), strip, procutil.shellquote(patchname)))
+    fp = procutil.popen(cmd, 'rb')
     try:
         for line in util.iterfile(fp):
             line = line.rstrip()

@@ -228,13 +228,13 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     ui.note(_("running %s\n") % (' '.join(cmd)))
     ui.debug("prefix=%r directory=%r root=%r\n" % (prefix, directory, root))
 
-    pfp = procutil.popen(' '.join(cmd))
-    peek = pfp.readline()
+    pfp = procutil.popen(' '.join(cmd), 'rb')
+    peek = util.fromnativeeol(pfp.readline())
     while True:
         line = peek
         if line == '':
             break
-        peek = pfp.readline()
+        peek = util.fromnativeeol(pfp.readline())
         if line.endswith('\n'):
             line = line[:-1]
         #ui.debug('state=%d line=%r\n' % (state, line))

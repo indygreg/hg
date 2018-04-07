@@ -1120,7 +1120,8 @@ def listkeys(repo, proto, namespace):
     d = sorted(repo.listkeys(encoding.tolocal(namespace)).items())
     return wireprototypes.bytesresponse(pushkeymod.encodekeys(d))
 
-@wireprotocommand('lookup', 'key', permission='pull')
+@wireprotocommand('lookup', 'key', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def lookup(repo, proto, key):
     try:
         k = encoding.tolocal(key)
@@ -1377,6 +1378,20 @@ def listkeysv2(repo, proto, namespace=None):
             for k, v in keys.iteritems()}
 
     return wireprototypes.cborresponse(keys)
+
+@wireprotocommand('lookup',
+                  args={
+                      'key': b'foo',
+                  },
+                  permission='pull',
+                  transportpolicy=POLICY_V2_ONLY)
+def lookupv2(repo, proto, key):
+    key = encoding.tolocal(key)
+
+    # TODO handle exception.
+    node = repo.lookup(key)
+
+    return wireprototypes.cborresponse(node)
 
 @wireprotocommand('pushkey',
                   args={

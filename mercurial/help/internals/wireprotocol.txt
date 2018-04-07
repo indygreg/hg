@@ -1778,6 +1778,21 @@ The response is a map with bytestring keys and values.
 
 TODO consider using binary to represent nodes in certain pushkey namespaces.
 
+lookup
+------
+
+Try to resolve a value to a changeset revision.
+
+Unlike ``known`` which operates on changeset nodes, lookup operates on
+node fragments and other names that a user may use.
+
+The command receives the following arguments:
+
+key
+   (bytestring) Value to try to resolve.
+
+On success, returns a bytestring containing the resolved node.
+
 pushkey
 -------
 

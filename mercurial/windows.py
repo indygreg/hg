@@ -311,13 +311,6 @@ def quotecommand(cmd):
         return '"' + cmd + '"'
     return cmd
 
-def popen(command, mode='r'):
-    # Work around "popen spawned process may not write to stdout
-    # under windows"
-    # http://bugs.python.org/issue1366
-    command += " 2> %s" % pycompat.bytestr(os.devnull)
-    return os.popen(quotecommand(command), mode)
-
 def explainexit(code):
     return _("exited with status %d") % code, code
 

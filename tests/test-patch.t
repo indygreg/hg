@@ -89,4 +89,12 @@ Clone and apply patch:
   # User lines looks like this - but it _is_ just a comment
   
   
+
+Error exit (issue4746)
+
+  $ hg import ../c/p --config ui.patch='sh -c "exit 1"'
+  applying ../c/p
+  abort: patch command failed: exited with status 1
+  [255]
+
   $ cd ..

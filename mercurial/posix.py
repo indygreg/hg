@@ -469,9 +469,6 @@ def shellsplit(s):
 def quotecommand(cmd):
     return cmd
 
-def popen(command, mode='r'):
-    return os.popen(command, mode)
-
 def testpid(pid):
     '''return False if pid dead, True if running or not sure'''
     if pycompat.sysplatform == 'OpenVMS':

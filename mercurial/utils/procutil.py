@@ -58,7 +58,6 @@ _gethgcmd = platform.gethgcmd
 getuser = platform.getuser
 getpid = os.getpid
 hidewindow = platform.hidewindow
-popen = platform.popen
 quotecommand = platform.quotecommand
 readpipe = platform.readpipe
 setbinary = platform.setbinary
@@ -79,6 +78,49 @@ except AttributeError:
     pass
 
 closefds = pycompat.isposix
+
+class _pfile(object):
+    """File-like wrapper for a stream opened by subprocess.Popen()"""
+
+    def __init__(self, proc, fp):
+        self._proc = proc
+        self._fp = fp
+
+    def close(self):
+        # unlike os.popen(), this returns an integer in subprocess coding
+        self._fp.close()
+        return self._proc.wait()
+
+    def __iter__(self):
+        return iter(self._fp)
+
+    def __getattr__(self, attr):
+        return getattr(self._fp, attr)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.close()
+
+def popen(cmd, mode='rb', bufsize=-1):
+    if mode == 'rb':
+        return _popenreader(cmd, bufsize)
+    elif mode == 'wb':
+        return _popenwriter(cmd, bufsize)
+    raise error.ProgrammingError('unsupported mode: %r' % mode)
+
+def _popenreader(cmd, bufsize):
+    p = subprocess.Popen(quotecommand(cmd), shell=True, bufsize=bufsize,
+                         close_fds=closefds,
+                         stdout=subprocess.PIPE)
+    return _pfile(p, p.stdout)
+
+def _popenwriter(cmd, bufsize):
+    p = subprocess.Popen(quotecommand(cmd), shell=True, bufsize=bufsize,
+                         close_fds=closefds,
+                         stdin=subprocess.PIPE)
+    return _pfile(p, p.stdin)
 
 def popen2(cmd, env=None, newlines=False):
     # Setting bufsize to -1 lets the system decide the buffer size.

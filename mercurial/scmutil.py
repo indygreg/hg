@@ -18,6 +18,7 @@ import weakref
 
 from .i18n import _
 from .node import (
+    bin,
     hex,
     nullid,
     short,
@@ -479,8 +480,20 @@ def revsymbol(repo, symbol):
         except (ValueError, OverflowError, IndexError):
             pass
 
+        if len(symbol) == 40:
+            try:
+                node = bin(symbol)
+                rev = repo.changelog.rev(node)
+                return repo[rev]
+            except error.FilteredLookupError:
+                raise
+            except (TypeError, LookupError):
+                pass
+
         return repo[symbol]
 
+    except error.WdirUnsupported:
+        return repo[None]
     except (error.FilteredIndexError, error.FilteredLookupError,
             error.FilteredRepoLookupError):
         raise _filterederror(repo, symbol)

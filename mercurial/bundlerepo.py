@@ -217,11 +217,11 @@ class bundlemanifest(bundlerevlog, manifest.manifestrevlog):
                 self._dirlogstarts, dir=d)
         return super(bundlemanifest, self).dirlog(d)
 
-class bundlefilelog(bundlerevlog, filelog.filelog):
+class bundlefilelog(filelog.filelog):
     def __init__(self, opener, path, cgunpacker, linkmapper):
         filelog.filelog.__init__(self, opener, path)
-        bundlerevlog.__init__(self, opener, self.indexfile, cgunpacker,
-                              linkmapper)
+        self._revlog = bundlerevlog(opener, self.indexfile,
+                                    cgunpacker, linkmapper)
 
     def baserevision(self, nodeorrev):
         return filelog.filelog.revision(self, nodeorrev, raw=True)

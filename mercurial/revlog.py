@@ -818,6 +818,8 @@ class revlog(object):
             p = self._nodepos
             if p is None:
                 p = len(i) - 2
+            else:
+                assert p < len(i)
             for r in xrange(p, -1, -1):
                 v = i[r][7]
                 n[v] = r
@@ -2421,6 +2423,7 @@ class revlog(object):
             del self.nodemap[self.node(x)]
 
         del self.index[rev:-1]
+        self._nodepos = None
 
     def checksize(self):
         expected = 0

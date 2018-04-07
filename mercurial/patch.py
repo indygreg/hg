@@ -228,7 +228,8 @@ def extract(ui, fileobj):
         data['user'] = msg['From'] and mail.headdecode(msg['From'])
         if not subject and not data['user']:
             # Not an email, restore parsed headers if any
-            subject = '\n'.join(': '.join(h) for h in msg.items()) + '\n'
+            subject = '\n'.join(': '.join(map(encoding.strtolocal, h))
+                                for h in msg.items()) + '\n'
 
         # should try to parse msg['Date']
         parents = []

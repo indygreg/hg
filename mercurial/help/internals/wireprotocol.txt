@@ -1712,7 +1712,12 @@ commands
    are:
 
       args
-         An array of argument names accepted by this command.
+         A map of argument names and their expected types.
+
+         Types are defined as a representative value for the expected type.
+         e.g. an argument expecting a boolean type will have its value
+         set to true. An integer type will have its value set to 42. The
+         actual values are arbitrary and may not have meaning.
       permissions
          An array of permissions required to execute this command.
 

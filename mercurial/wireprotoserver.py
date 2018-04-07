@@ -606,10 +606,11 @@ class httpv2protocolhandler(object):
 
     def getargs(self, args):
         data = {}
-        for k in args.split():
+        for k, typ in args.items():
             if k == '*':
                 raise NotImplementedError('do not support * args')
             elif k in self._args:
+                # TODO consider validating value types.
                 data[k] = self._args[k]
 
         return data

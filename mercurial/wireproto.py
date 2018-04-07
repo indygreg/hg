@@ -1145,7 +1145,8 @@ def protocaps(repo, proto, caps):
         proto._protocaps = set(caps.split(' '))
     return wireprototypes.bytesresponse('OK')
 
-@wireprotocommand('pushkey', 'namespace key old new', permission='push')
+@wireprotocommand('pushkey', 'namespace key old new', permission='push',
+                  transportpolicy=POLICY_V1_ONLY)
 def pushkey(repo, proto, namespace, key, old, new):
     # compatibility with pre-1.8 clients which were accidentally
     # sending raw binary nodes rather than utf-8-encoded hex
@@ -1376,3 +1377,21 @@ def listkeysv2(repo, proto, namespace=None):
             for k, v in keys.iteritems()}
 
     return wireprototypes.cborresponse(keys)
+
+@wireprotocommand('pushkey',
+                  args={
+                      'namespace': b'ns',
+                      'key': b'key',
+                      'old': b'old',
+                      'new': b'new',
+                  },
+                  permission='push',
+                  transportpolicy=POLICY_V2_ONLY)
+def pushkeyv2(repo, proto, namespace, key, old, new):
+    # TODO handle ui output redirection
+    r = repo.pushkey(encoding.tolocal(namespace),
+                     encoding.tolocal(key),
+                     encoding.tolocal(old),
+                     encoding.tolocal(new))
+
+    return wireprototypes.cborresponse(r)

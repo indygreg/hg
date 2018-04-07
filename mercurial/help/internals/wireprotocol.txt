@@ -1777,3 +1777,22 @@ namespace
 The response is a map with bytestring keys and values.
 
 TODO consider using binary to represent nodes in certain pushkey namespaces.
+
+pushkey
+-------
+
+Set a value using the ``pushkey`` protocol.
+
+The command receives the following arguments:
+
+namespace
+   (bytestring) Pushkey namespace to operate on.
+key
+   (bytestring) The pushkey key to set.
+old
+   (bytestring) Old value for this key.
+new
+   (bytestring) New value for this key.
+
+TODO consider using binary to represent nodes is certain pushkey namespaces.
+TODO better define response type and meaning.

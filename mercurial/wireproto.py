@@ -865,7 +865,8 @@ def branches(repo, proto, nodes):
 
     return wireprototypes.bytesresponse(''.join(r))
 
-@wireprotocommand('clonebundles', '', permission='pull')
+@wireprotocommand('clonebundles', '', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def clonebundles(repo, proto):
     """Server command for returning info for available bundles to seed clones.
 

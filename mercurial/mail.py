@@ -150,7 +150,7 @@ def _sendmail(ui, sender, recipients, msg):
     if ret:
         raise error.Abort('%s %s' % (
             os.path.basename(program.split(None, 1)[0]),
-            procutil.explainexit(ret)[0]))
+            procutil.explainexit(ret)))
 
 def _mbox(mbox, sender, recipients, msg):
     '''write mails to mbox'''

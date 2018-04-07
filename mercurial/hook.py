@@ -154,7 +154,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     ui.log('exthook', 'exthook-%s: %s finished in %0.2f seconds\n',
            name, cmd, duration)
     if r:
-        desc, r = procutil.explainexit(r)
+        desc = procutil.explainexit(r)
         if throw:
             raise error.HookAbort(_('%s hook %s') % (name, desc))
         ui.warn(_('warning: %s hook %s\n') % (name, desc))

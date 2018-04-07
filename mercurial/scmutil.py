@@ -1173,7 +1173,7 @@ def extdatasource(repo, source):
             src.close()
     if proc and proc.returncode != 0:
         raise error.Abort(_("extdata command '%s' failed: %s")
-                          % (cmd, procutil.explainexit(proc.returncode)[0]))
+                          % (cmd, procutil.explainexit(proc.returncode)))
 
     return data
 

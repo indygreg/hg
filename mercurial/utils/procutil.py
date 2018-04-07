@@ -79,11 +79,11 @@ except AttributeError:
 closefds = pycompat.isposix
 
 def explainexit(code):
-    """return a 2-tuple (desc, code) describing a subprocess status
+    """return a message describing a subprocess status
     (codes from kill are negative - not os.system/wait encoding)"""
     if code >= 0:
-        return _("exited with status %d") % code, code
-    return _("killed by signal %d") % -code, code
+        return _("exited with status %d") % code
+    return _("killed by signal %d") % -code
 
 class _pfile(object):
     """File-like wrapper for a stream opened by subprocess.Popen()"""
@@ -179,7 +179,7 @@ def tempfilter(s, cmd):
             code = 0
         if code:
             raise error.Abort(_("command '%s' failed: %s") %
-                              (cmd, explainexit(code)[0]))
+                              (cmd, explainexit(code)))
         with open(outname, 'rb') as fp:
             return fp.read()
     finally:

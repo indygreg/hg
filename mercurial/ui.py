@@ -1501,7 +1501,7 @@ class ui(object):
             rc = self._runsystem(cmd, environ=environ, cwd=cwd, out=out)
         if rc and onerr:
             errmsg = '%s %s' % (os.path.basename(cmd.split(None, 1)[0]),
-                                procutil.explainexit(rc)[0])
+                                procutil.explainexit(rc))
             if errprefix:
                 errmsg = '%s: %s' % (errprefix, errmsg)
             raise onerr(errmsg)

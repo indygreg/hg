@@ -534,7 +534,7 @@ class bzmysql(bzaccess):
             if ret:
                 self.ui.warn(out)
                 raise error.Abort(_('bugzilla notify command %s') %
-                                  procutil.explainexit(ret)[0])
+                                  procutil.explainexit(ret))
         self.ui.status(_('done\n'))
 
     def get_user_id(self, user):

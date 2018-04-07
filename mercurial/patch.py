@@ -2133,7 +2133,7 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files,
     code = fp.close()
     if code:
         raise PatchError(_("patch command failed: %s") %
-                         procutil.explainexit(code)[0])
+                         procutil.explainexit(code))
     return fuzz
 
 def patchbackend(ui, backend, patchobj, strip, prefix, files=None,

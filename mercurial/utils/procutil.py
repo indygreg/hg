@@ -174,12 +174,12 @@ def tempfilter(s, cmd):
         os.close(outfd)
         cmd = cmd.replace('INFILE', inname)
         cmd = cmd.replace('OUTFILE', outname)
-        code = os.system(cmd)
+        code = system(cmd)
         if pycompat.sysplatform == 'OpenVMS' and code & 1:
             code = 0
         if code:
             raise error.Abort(_("command '%s' failed: %s") %
-                              (cmd, explainexit(code)))
+                              (cmd, explainexit(code)[0]))
         with open(outname, 'rb') as fp:
             return fp.read()
     finally:

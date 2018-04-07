@@ -461,7 +461,26 @@ def revsymbol(repo, symbol):
                "repo[symbol]?" % (symbol, type(symbol)))
         raise error.ProgrammingError(msg)
     try:
+        if symbol in ('.', 'tip', 'null'):
+            return repo[symbol]
+
+        try:
+            r = int(symbol)
+            if '%d' % r != symbol:
+                raise ValueError
+            l = len(repo.changelog)
+            if r < 0:
+                r += l
+            if r < 0 or r >= l and r != wdirrev:
+                raise ValueError
+            return repo[r]
+        except error.FilteredIndexError:
+            raise
+        except (ValueError, OverflowError, IndexError):
+            pass
+
         return repo[symbol]
+
     except (error.FilteredIndexError, error.FilteredLookupError,
             error.FilteredRepoLookupError):
         raise _filterederror(repo, symbol)

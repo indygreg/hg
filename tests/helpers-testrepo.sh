@@ -10,7 +10,7 @@
 # system mercurial installation, and may require extensions or settings from
 # the system installation.
 
-if [ -n $HGTESTEXTRAEXTENSIONS ]; then
+if [ -n "$HGTESTEXTRAEXTENSIONS" ]; then
     for extension in $HGTESTEXTRAEXTENSIONS; do
         extraoptions="$extraoptions --config extensions.$extension=!"
     done

@@ -171,6 +171,7 @@ test-http-bundle1.t
 test-http-clone-r.t
 test-identify.t
 test-import-unknown.t
+test-import.t
 test-imports-checker.t
 test-inherit-mode.t
 test-issue1089.t

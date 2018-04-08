@@ -60,10 +60,10 @@ PatchError = error.PatchError
 def split(stream):
     '''return an iterator of individual patches from a stream'''
     def isheader(line, inheader):
-        if inheader and line[0] in (' ', '\t'):
+        if inheader and line.startswith((' ', '\t')):
             # continuation
             return True
-        if line[0] in (' ', '-', '+'):
+        if line.startswith((' ', '-', '+')):
             # diff line - don't check for header pattern in there
             return False
         l = line.split(': ', 1)
@@ -1391,13 +1391,13 @@ class hunk(object):
             hlen = len(self.hunk)
             for x in xrange(hlen - 1):
                 # the hunk starts with the @@ line, so use x+1
-                if self.hunk[x + 1][0] == ' ':
+                if self.hunk[x + 1].startswith(' '):
                     top += 1
                 else:
                     break
             if not toponly:
                 for x in xrange(hlen - 1):
-                    if self.hunk[hlen - bot - 1][0] == ' ':
+                    if self.hunk[hlen - bot - 1].startswith(' '):
                         bot += 1
                     else:
                         break
@@ -1799,10 +1799,12 @@ def scanpatch(fp):
             else:
                 lr.push(fromfile)
             yield 'file', header
-        elif line[0:1] == ' ':
-            yield 'context', scanwhile(line, lambda l: l[0] in ' \\')
-        elif line[0] in '-+':
-            yield 'hunk', scanwhile(line, lambda l: l[0] in '-+\\')
+        elif line.startswith(' '):
+            cs = (' ', '\\')
+            yield 'context', scanwhile(line, lambda l: l.startswith(cs))
+        elif line.startswith(('-', '+')):
+            cs = ('-', '+', '\\')
+            yield 'hunk', scanwhile(line, lambda l: l.startswith(cs))
         else:
             m = lines_re.match(line)
             if m:
@@ -2504,11 +2506,11 @@ def difflabel(func, *args, **kw):
                 if line.startswith('@'):
                     head = False
             else:
-                if line and line[0] not in ' +-@\\':
+                if line and not line.startswith((' ', '+', '-', '@', '\\')):
                     head = True
             stripline = line
             diffline = False
-            if not head and line and line[0] in '+-':
+            if not head and line and line.startswith(('+', '-')):
                 # highlight tabs and trailing whitespace, but only in
                 # changed lines
                 stripline = line.rstrip()
@@ -2548,15 +2550,15 @@ def _findmatches(slist):
     for i, line in enumerate(slist):
         if line == '':
             continue
-        if line[0] == '-':
+        if line.startswith('-'):
             lastmatch = max(lastmatch, i)
             newgroup = False
             for j, newline in enumerate(slist[lastmatch + 1:]):
                 if newline == '':
                     continue
-                if newline[0] == '-' and newgroup: # too far, no match
+                if newline.startswith('-') and newgroup: # too far, no match
                     break
-                if newline[0] == '+': # potential match
+                if newline.startswith('+'): # potential match
                     newgroup = True
                     sim = difflib.SequenceMatcher(None, line, newline).ratio()
                     if sim > 0.7:
@@ -2568,7 +2570,7 @@ def _findmatches(slist):
 
 def _inlinediff(s1, s2, operation):
     '''Perform string diff to highlight specific changes.'''
-    operation_skip = '+?' if operation == 'diff.deleted' else '-?'
+    operation_skip = ('+', '?') if operation == 'diff.deleted' else ('-', '?')
     if operation == 'diff.deleted':
         s2, s1 = s1, s2
 
@@ -2590,10 +2592,10 @@ def _inlinediff(s1, s2, operation):
 
     s = difflib.ndiff(_nonwordre.split(s2), _nonwordre.split(s1))
     for part in s:
-        if part[0] in operation_skip or len(part) == 2:
+        if part.startswith(operation_skip) or len(part) == 2:
             continue
         l = operation + '.highlight'
-        if part[0] in ' ':
+        if part.startswith(' '):
             l = operation
         if part[2:] == '\t':
             l = 'diff.tab'

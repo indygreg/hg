@@ -3587,7 +3587,7 @@ def merge(ui, repo, node=None, **opts):
     if opts.get('preview'):
         # find nodes that are ancestors of p2 but not of p1
         p1 = repo.lookup('.')
-        p2 = repo.lookup(node)
+        p2 = node
         nodes = repo.changelog.findmissing(common=[p1], heads=[p2])
 
         displayer = logcmdutil.changesetdisplayer(ui, repo, opts)

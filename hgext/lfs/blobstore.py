@@ -532,8 +532,29 @@ def _verify(oid, content):
                           hint=_('run hg verify'))
 
 def remote(repo):
-    """remotestore factory. return a store in _storemap depending on config"""
+    """remotestore factory. return a store in _storemap depending on config
+
+    If ``lfs.url`` is specified, use that remote endpoint.  Otherwise, try to
+    infer the endpoint, based on the remote repository using the same path
+    adjustments as git.  As an extension, 'http' is supported as well so that
+    ``hg serve`` works out of the box.
+
+    https://github.com/git-lfs/git-lfs/blob/master/docs/api/server-discovery.md
+    """
     url = util.url(repo.ui.config('lfs', 'url') or '')
+    if url.scheme is None:
+        # TODO: investigate 'paths.remote:lfsurl' style path customization,
+        # and fall back to inferring from 'paths.remote' if unspecified.
+        defaulturl = util.url(repo.ui.config('paths', 'default') or b'')
+
+        # TODO: support local paths as well.
+        # TODO: consider the ssh -> https transformation that git applies
+        if defaulturl.scheme in (b'http', b'https'):
+            defaulturl.path = defaulturl.path or b'' + b'.git/info/lfs'
+
+            url = util.url(bytes(defaulturl))
+            repo.ui.note(_('lfs: assuming remote store: %s\n') % url)
+
     scheme = url.scheme
     if scheme not in _storemap:
         raise error.Abort(_('lfs: unknown url scheme: %s') % scheme)

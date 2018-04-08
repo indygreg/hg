@@ -34,7 +34,6 @@ for flag '0x2000'!" if the extension is only loaded on one side (possibly also
 masked by the Internal Server Error message).
   $ cat >> $HGRCPATH <<EOF
   > [lfs]
-  > url=file:$TESTTMP/dummy-remote/
   > usercache = null://
   > threshold=10
   > [web]

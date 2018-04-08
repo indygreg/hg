@@ -257,7 +257,9 @@ def _prefetchfiles(repo, ctx, files):
             pointers.append(p)
 
     if pointers:
-        repo.svfs.lfsremoteblobstore.readbatch(pointers, localstore)
+        # Recalculating the repo store here allows 'paths.default' that is set
+        # on the repo by a clone command to be used for the update.
+        blobstore.remote(repo).readbatch(pointers, localstore)
 
 def _canskipupload(repo):
     # if remotestore is a null store, upload is a no-op and can be skipped

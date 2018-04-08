@@ -157,6 +157,7 @@ Clear the cache to force a download
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 000000000000, local: 000000000000+, remote: 99a7098854a3
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 311 (git-server !)
   Content-Length: 352 (hg-server !)
@@ -328,6 +329,7 @@ Clear the cache to force a download
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 99a7098854a3, local: 99a7098854a3+, remote: dfca2c9e2ef2
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 608 (git-server !)
   Content-Length: 670 (hg-server !)
@@ -417,6 +419,7 @@ TODO: give the proper error indication from `hg serve`
   resolving manifests
    branchmerge: False, force: True, partial: False
    ancestor: dfca2c9e2ef2+, local: dfca2c9e2ef2+, remote: dfca2c9e2ef2
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 311 (git-server !)
   Content-Length: 183 (hg-server !)
@@ -516,6 +519,7 @@ Archive will prefetch blobs in a group
   $ rm -rf .hg/store/lfs `hg config lfs.usercache`
   $ hg archive --debug -r 1 ../archive
   http auth: user foo, password ***
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 905 (git-server !)
   Content-Length: 988 (hg-server !)
@@ -611,6 +615,7 @@ Cat will prefetch blobs in a group
   $ rm -rf .hg/store/lfs `hg config lfs.usercache`
   $ hg cat --debug -r 1 a b c
   http auth: user foo, password ***
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 608 (git-server !)
   Content-Length: 670 (hg-server !)
@@ -685,6 +690,7 @@ Revert will prefetch blobs in a group
   reverting b
   reverting c
   reverting d
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 905 (git-server !)
   Content-Length: 988 (hg-server !)
@@ -781,6 +787,7 @@ Check error message when the remote missed a blob:
   resolving manifests
    branchmerge: False, force: True, partial: False
    ancestor: 62fdbaf221c6+, local: 62fdbaf221c6+, remote: ef0564edf47e
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 308 (git-server !)
   Content-Length: 186 (hg-server !)
@@ -892,6 +899,7 @@ Check error message when object does not exist:
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 000000000000, local: 000000000000+, remote: d2a338f184a8
+  http auth: user foo, password ***
   Status: 200
   Content-Length: 308 (git-server !)
   Content-Length: 186 (hg-server !)

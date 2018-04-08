@@ -433,6 +433,15 @@ def formatrevnode(ui, rev, node):
         hexfunc = short
     return '%d:%s' % (rev, hexfunc(node))
 
+def resolvepartialhexnodeid(repo, prefix):
+    # Uses unfiltered repo because it's faster when then prefix is ambiguous/
+    # This matches the "shortest" template function.
+    node = repo.unfiltered().changelog._partialmatch(prefix)
+    if node is None:
+        return
+    repo.changelog.rev(node)  # make sure node isn't filtered
+    return node
+
 def isrevsymbol(repo, symbol):
     try:
         revsymbol(repo, symbol)

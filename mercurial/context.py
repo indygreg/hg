@@ -450,7 +450,7 @@ class changectx(basectx):
             except KeyError:
                 pass
 
-            self._node = repo.unfiltered().changelog._partialmatch(changeid)
+            self._node = scmutil.resolvepartialhexnodeid(repo, changeid)
             if self._node is not None:
                 self._rev = repo.changelog.rev(self._node)
                 return

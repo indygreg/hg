@@ -370,8 +370,8 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
             state[name] = boolval
         else:
             def abort(s):
-                raise error.Abort(
-                    _('invalid value %r for option %s, %s') % (val, opt, s))
+                raise error.Abort(_('invalid value %r for option %s, %s')
+                                  % (pycompat.maybebytestr(val), opt, s))
             state[name] = defmap[name].newstate(state[name], val, abort)
 
     # return unparsed args

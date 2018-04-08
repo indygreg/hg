@@ -110,10 +110,13 @@ ARGUMENT_RECORD_HEADER = struct.Struct(r'<HH')
 
 def humanflags(mapping, value):
     """Convert a numeric flags value to a human value, using a mapping table."""
+    namemap = {v: k for k, v in mapping.iteritems()}
     flags = []
-    for val, name in sorted({v: k for k, v in mapping.iteritems()}.iteritems()):
+    val = 1
+    while value >= val:
         if value & val:
-            flags.append(name)
+            flags.append(namemap.get(val, '<unknown 0x%02x>' % val))
+        val <<= 1
 
     return b'|'.join(flags)
 
@@ -140,7 +143,7 @@ class frame(object):
     payload = attr.ib()
 
     def __repr__(self):
-        typename = '<unknown>'
+        typename = '<unknown 0x%02x>' % self.typeid
         for name, value in FRAME_TYPES.iteritems():
             if value == self.typeid:
                 typename = name

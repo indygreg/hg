@@ -1398,7 +1398,7 @@ def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
         else:
             # launch the editor
             message = None
-        ui.debug('message:\n%s\n' % message)
+        ui.debug('message:\n%s\n' % (message or ''))
 
         if len(parents) == 1:
             parents.append(repo[nullid])

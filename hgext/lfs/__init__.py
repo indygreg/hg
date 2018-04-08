@@ -87,9 +87,9 @@ Configs::
     #   git-lfs endpoint
     # - file:///tmp/path
     #   local filesystem, usually for testing
-    # if unset, lfs will assume the repository at ``paths.default`` also handles
-    # blob storage for http(s) URLs.  Otherwise, lfs will prompt to set this
-    # when it must use this value.
+    # if unset, lfs will assume the remote repository also handles blob storage
+    # for http(s) URLs.  Otherwise, lfs will prompt to set this when it must
+    # use this value.
     # (default: unset)
     url = https://example.com/repo.git/info/lfs
 

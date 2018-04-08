@@ -289,7 +289,8 @@ def prepush(pushop):
     return uploadblobsfromrevs(pushop.repo, pushop.outgoing.missing)
 
 def push(orig, repo, remote, *args, **kwargs):
-    """bail on push if the extension isn't enabled on remote when needed"""
+    """bail on push if the extension isn't enabled on remote when needed, and
+    update the remote store based on the destination path."""
     if 'lfs' in repo.requirements:
         # If the remote peer is for a local repo, the requirement tests in the
         # base class method enforce lfs support.  Otherwise, some revisions in
@@ -300,7 +301,18 @@ def push(orig, repo, remote, *args, **kwargs):
             m = _("required features are not supported in the destination: %s")
             raise error.Abort(m % 'lfs',
                               hint=_('enable the lfs extension on the server'))
-    return orig(repo, remote, *args, **kwargs)
+
+        # Repositories where this extension is disabled won't have the field.
+        # But if there's a requirement, then the extension must be loaded AND
+        # there may be blobs to push.
+        remotestore = repo.svfs.lfsremoteblobstore
+        try:
+            repo.svfs.lfsremoteblobstore = blobstore.remote(repo, remote.url())
+            return orig(repo, remote, *args, **kwargs)
+        finally:
+            repo.svfs.lfsremoteblobstore = remotestore
+    else:
+        return orig(repo, remote, *args, **kwargs)
 
 def writenewbundle(orig, ui, repo, source, filename, bundletype, outgoing,
                    *args, **kwargs):

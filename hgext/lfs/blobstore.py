@@ -529,7 +529,7 @@ def _verify(oid, content):
         raise error.Abort(_('detected corrupt lfs object: %s') % oid,
                           hint=_('run hg verify'))
 
-def remote(repo):
+def remote(repo, remote=None):
     """remotestore factory. return a store in _storemap depending on config
 
     If ``lfs.url`` is specified, use that remote endpoint.  Otherwise, try to
@@ -541,7 +541,9 @@ def remote(repo):
     """
     url = util.url(repo.ui.config('lfs', 'url') or '')
     if url.scheme is None:
-        if util.safehasattr(repo, '_subtoppath'):
+        if remote:
+            defaulturl = util.url(remote)
+        elif util.safehasattr(repo, '_subtoppath'):
             # The pull command sets this during the optional update phase, which
             # tells exactly where the pull originated, whether 'paths.default'
             # or explicit.

@@ -242,7 +242,23 @@ lfs content, and the extension enabled.
   $ echo 'this is another lfs file' > lfs2.txt
   $ hg ci -Aqm 'lfs file with lfs client'
 
-  $ hg push -q
+  $ hg --config paths.default= push -v http://localhost:$HGPORT
+  pushing to http://localhost:$HGPORT/
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  searching for changes
+  remote has heads on branch 'default' that are not known locally: 8374dc4052cb
+  lfs: uploading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: uploaded 1 files (25 bytes)
+  1 changesets found
+  uncompressed size of bundle content:
+       206 (changelog)
+       172 (manifests)
+       275  lfs2.txt
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs

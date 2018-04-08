@@ -74,6 +74,7 @@ store.
   http auth: user foo, password ***
   pushing to ../repo2
   http auth: user foo, password ***
+  http auth: user foo, password ***
   query 1; heads
   searching for changes
   1 total queries in *s (glob)
@@ -208,6 +209,7 @@ actions property completely.
   $ hg push ../repo1 --debug
   http auth: user foo, password ***
   pushing to ../repo1
+  http auth: user foo, password ***
   http auth: user foo, password ***
   query 1; heads
   searching for changes
@@ -476,6 +478,7 @@ Test a corrupted file upload
   $ hg push --debug ../repo1
   http auth: user foo, password ***
   pushing to ../repo1
+  http auth: user foo, password ***
   http auth: user foo, password ***
   query 1; heads
   searching for changes

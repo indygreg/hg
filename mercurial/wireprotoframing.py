@@ -150,7 +150,7 @@ class frame(object):
                 'type=%s; flags=%s)' % (
             len(self.payload), self.requestid, self.streamid,
             humanflags(STREAM_FLAGS, self.streamflags), typename,
-            humanflags(FRAME_TYPE_FLAGS[self.typeid], self.flags)))
+            humanflags(FRAME_TYPE_FLAGS.get(self.typeid, {}), self.flags)))
 
 def makeframe(requestid, streamid, streamflags, typeid, flags, payload):
     """Assemble a frame into a byte array."""

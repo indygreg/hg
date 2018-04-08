@@ -498,6 +498,11 @@ def revsymbol(repo, symbol):
         except KeyError:
             pass
 
+        node = repo.unfiltered().changelog._partialmatch(symbol)
+        if node is not None:
+            rev = repo.changelog.rev(node)
+            return repo[rev]
+
         return repo[symbol]
 
     except error.WdirUnsupported:

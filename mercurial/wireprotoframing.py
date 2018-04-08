@@ -19,6 +19,7 @@ from .thirdparty import (
     cbor,
 )
 from . import (
+    encoding,
     error,
     util,
 )
@@ -142,6 +143,7 @@ class frame(object):
     flags = attr.ib()
     payload = attr.ib()
 
+    @encoding.strmethod
     def __repr__(self):
         typename = '<unknown 0x%02x>' % self.typeid
         for name, value in FRAME_TYPES.iteritems():

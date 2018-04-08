@@ -503,7 +503,7 @@ def revsymbol(repo, symbol):
             rev = repo.changelog.rev(node)
             return repo[rev]
 
-        return repo[symbol]
+        raise error.RepoLookupError(_("unknown revision '%s'") % symbol)
 
     except error.WdirUnsupported:
         return repo[None]

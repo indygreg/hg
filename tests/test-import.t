@@ -288,10 +288,10 @@ override commit message
   > import email.message, sys
   > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
-  > msg.set_payload('email commit message\n' + patch)
+  > msg.set_payload(b'email commit message\n' + patch)
   > msg['Subject'] = 'email patch'
   > msg['From'] = 'email patcher'
-  > open(sys.argv[2], 'wb').write(msg.as_string())
+  > open(sys.argv[2], 'wb').write(bytes(msg))
   > EOF
 
 
@@ -386,10 +386,10 @@ The '---' tests the gitsendmail handling without proper mail headers
   > import email.message, sys
   > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
-  > msg.set_payload('email patch\n\nnext line\n---\n' + patch)
+  > msg.set_payload(b'email patch\n\nnext line\n---\n' + patch)
   > msg['Subject'] = '[PATCH] email patch'
   > msg['From'] = 'email patcher'
-  > open(sys.argv[2], 'wb').write(msg.as_string())
+  > open(sys.argv[2], 'wb').write(bytes(msg))
   > EOF
 
 

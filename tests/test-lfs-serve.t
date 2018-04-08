@@ -253,7 +253,26 @@ lfs content, and the extension enabled.
   $TESTTMP/server/.hg/requires:lfs
 
   $ hg init $TESTTMP/client6_pull
-  $ hg -R $TESTTMP/client6_pull pull -q http://localhost:$HGPORT
+  $ hg -R $TESTTMP/client6_pull pull -u -v http://localhost:$HGPORT
+  pulling from http://localhost:$HGPORT/
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 6 changesets with 5 changes to 5 files (+1 heads)
+  calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
+  new changesets d437e1d24fbd:d3b84d50eacb
+  resolving manifests
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  getting lfs2.txt
+  lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
+  getting nonlfs2.txt
+  getting nonlfs3.txt
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "d3b84d50eacb: lfs file with lfs client"
+  1 other heads for branch "default"
   $ grep 'lfs' $TESTTMP/client6_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/client6_pull/.hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs

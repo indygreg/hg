@@ -541,9 +541,15 @@ def remote(repo):
     """
     url = util.url(repo.ui.config('lfs', 'url') or '')
     if url.scheme is None:
-        # TODO: investigate 'paths.remote:lfsurl' style path customization,
-        # and fall back to inferring from 'paths.remote' if unspecified.
-        defaulturl = util.url(repo.ui.config('paths', 'default') or b'')
+        if util.safehasattr(repo, '_subtoppath'):
+            # The pull command sets this during the optional update phase, which
+            # tells exactly where the pull originated, whether 'paths.default'
+            # or explicit.
+            defaulturl = util.url(repo._subtoppath)
+        else:
+            # TODO: investigate 'paths.remote:lfsurl' style path customization,
+            # and fall back to inferring from 'paths.remote' if unspecified.
+            defaulturl = util.url(repo.ui.config('paths', 'default') or b'')
 
         # TODO: support local paths as well.
         # TODO: consider the ssh -> https transformation that git applies

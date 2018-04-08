@@ -711,9 +711,9 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                 uprev = None
                 status = None
                 if checkout is not None:
-                    try:
-                        uprev = destrepo.lookup(checkout)
-                    except error.RepoLookupError:
+                    if checkout in destrepo:
+                        uprev = checkout
+                    else:
                         if update is not True:
                             try:
                                 uprev = destrepo.lookup(update)

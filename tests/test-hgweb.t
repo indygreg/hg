@@ -340,7 +340,7 @@ static file
 
   $ get-with-headers.py --twice localhost:$HGPORT 'static/style-gitweb.css' - date etag server
   200 Script output follows
-  content-length: 9126
+  content-length: 9059
   content-type: text/css
   
   body { font-family: sans-serif; font-size: 12px; border:solid #d9d8d1; border-width:1px; margin:10px; background: white; color: black; }
@@ -577,6 +577,7 @@ static file
   }
   
   .btn-followlines {
+    position: absolute;
     display: none;
     cursor: pointer;
     box-sizing: content-box;
@@ -592,14 +593,6 @@ static file
     font-family: monospace;
     text-align: center;
     line-height: 5px;
-  }
-  
-  tr .btn-followlines {
-    position: absolute;
-  }
-  
-  span .btn-followlines {
-    float: left;
   }
   
   span.followlines-select .btn-followlines {

@@ -70,10 +70,6 @@ class FrameHumanStringTests(unittest.TestCase):
                          b'\x05\x00\x00\x01\x00\x01\x00\x10:\x00\x05:\r')
 
     def testcborstrings(self):
-        # String literals should be unicode.
-        self.assertEqual(ffs(b"1 1 0 1 0 cbor:'foo'"),
-                         b'\x04\x00\x00\x01\x00\x01\x00\x10cfoo')
-
         self.assertEqual(ffs(b"1 1 0 1 0 cbor:b'foo'"),
                          b'\x04\x00\x00\x01\x00\x01\x00\x10Cfoo')
 

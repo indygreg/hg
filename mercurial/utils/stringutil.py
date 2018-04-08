@@ -9,7 +9,7 @@
 
 from __future__ import absolute_import
 
-import __future__
+import ast
 import codecs
 import re as remod
 import textwrap
@@ -499,28 +499,7 @@ def parsebool(s):
     """
     return _booleans.get(s.lower(), None)
 
-def evalpython(s):
-    """Evaluate a string containing a Python expression.
-
-    THIS FUNCTION IS NOT SAFE TO USE ON UNTRUSTED INPUT. IT'S USE SHOULD BE
-    LIMITED TO DEVELOPER-FACING FUNCTIONALITY.
-    """
-    globs = {
-        r'__builtins__': {
-            r'None': None,
-            r'False': False,
-            r'True': True,
-            r'int': int,
-            r'set': set,
-            r'tuple': tuple,
-            # Don't need to expose dict and list because we can use
-            # literals.
-        },
-    }
-
-    # We can't use eval() directly because it inherits compiler
-    # flags from this module and we need unicode literals for Python 3
-    # compatibility.
-    code = compile(s, r'<string>', r'eval',
-                   __future__.unicode_literals.compiler_flag, True)
-    return eval(code, globs, {})
+def evalpythonliteral(s):
+    """Evaluate a string containing a Python literal expression"""
+    # We could backport our tokenizer hack to rewrite '' to u'' if we want
+    return ast.literal_eval(s)

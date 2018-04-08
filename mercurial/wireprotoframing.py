@@ -180,9 +180,6 @@ def makeframe(requestid, streamid, streamflags, typeid, flags, payload):
 def makeframefromhumanstring(s):
     """Create a frame from a human readable string
 
-    DANGER: NOT SAFE TO USE WITH UNTRUSTED INPUT BECAUSE OF POTENTIAL
-    eval() USAGE. DO NOT USE IN CORE.
-
     Strings have the form:
 
         <request-id> <stream-id> <stream-flags> <type> <flags> <payload>
@@ -198,7 +195,7 @@ def makeframefromhumanstring(s):
     Flags can be delimited by `|` to bitwise OR them together.
 
     If the payload begins with ``cbor:``, the following string will be
-    evaluated as Python code and the resulting object will be fed into
+    evaluated as Python literal and the resulting object will be fed into
     a CBOR encoder. Otherwise, the payload is interpreted as a Python
     byte string literal.
     """
@@ -229,7 +226,8 @@ def makeframefromhumanstring(s):
             finalflags |= int(flag)
 
     if payload.startswith(b'cbor:'):
-        payload = cbor.dumps(stringutil.evalpython(payload[5:]), canonical=True)
+        payload = cbor.dumps(stringutil.evalpythonliteral(payload[5:]),
+                             canonical=True)
 
     else:
         payload = stringutil.unescapestr(payload)

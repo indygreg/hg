@@ -332,6 +332,11 @@ def headdecode(s):
                 continue
             except UnicodeDecodeError:
                 pass
+        # On Python 3, decode_header() may return either bytes or unicode
+        # depending on whether the header has =?<charset>? or not
+        if isinstance(part, type(u'')):
+            uparts.append(part)
+            continue
         try:
             uparts.append(part.decode('UTF-8'))
             continue

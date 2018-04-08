@@ -224,8 +224,8 @@ def extract(ui, fileobj):
     try:
         msg = pycompat.emailparser().parse(fileobj)
 
-        subject = msg['Subject'] and mail.headdecode(msg['Subject'])
-        data['user'] = msg['From'] and mail.headdecode(msg['From'])
+        subject = msg[r'Subject'] and mail.headdecode(msg[r'Subject'])
+        data['user'] = msg[r'From'] and mail.headdecode(msg[r'From'])
         if not subject and not data['user']:
             # Not an email, restore parsed headers if any
             subject = '\n'.join(': '.join(map(encoding.strtolocal, h))

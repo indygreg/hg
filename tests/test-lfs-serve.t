@@ -35,6 +35,7 @@ masked by the Internal Server Error message).
   $ cat >> $HGRCPATH <<EOF
   > [lfs]
   > url=file:$TESTTMP/dummy-remote/
+  > usercache = null://
   > threshold=10
   > [web]
   > allow_push=*

@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import hashlib
 import json
 import os
@@ -59,6 +60,26 @@ class lfsvfs(vfsmod.vfs):
 
         yield ('', [], oids)
 
+class nullvfs(lfsvfs):
+    def __init__(self):
+        pass
+
+    def exists(self, oid):
+        return False
+
+    def read(self, oid):
+        # store.read() calls into here if the blob doesn't exist in its
+        # self.vfs.  Raise the same error as a normal vfs when asked to read a
+        # file that doesn't exist.  The only difference is the full file path
+        # isn't available in the error.
+        raise IOError(errno.ENOENT, '%s: No such file or directory' % oid)
+
+    def walk(self, path=None, onerror=None):
+        return ('', [], [])
+
+    def write(self, oid, data):
+        pass
+
 class filewithprogress(object):
     """a file-like object that supports __len__ and read.
 
@@ -97,8 +118,14 @@ class local(object):
     def __init__(self, repo):
         fullpath = repo.svfs.join('lfs/objects')
         self.vfs = lfsvfs(fullpath)
-        usercache = lfutil._usercachedir(repo.ui, 'lfs')
-        self.cachevfs = lfsvfs(usercache)
+        usercache = util.url(lfutil._usercachedir(repo.ui, 'lfs'))
+        if usercache.scheme in (None, 'file'):
+            self.cachevfs = lfsvfs(usercache.localpath())
+        elif usercache.scheme == 'null':
+            self.cachevfs = nullvfs()
+        else:
+            raise error.Abort(_('unknown lfs cache scheme: %s')
+                              % usercache.scheme)
         self.ui = repo.ui
 
     def open(self, oid):
@@ -129,11 +156,7 @@ class local(object):
             if realoid != oid:
                 raise error.Abort(_('corrupt remote lfs object: %s') % oid)
 
-        # XXX: should we verify the content of the cache, and hardlink back to
-        # the local store on success, but truncate, write and link on failure?
-        if not self.cachevfs.exists(oid):
-            self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
-            lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
+        self._linktousercache(oid)
 
     def write(self, oid, data):
         """Write blob to local blobstore.
@@ -144,9 +167,13 @@ class local(object):
         with self.vfs(oid, 'wb', atomictemp=True) as fp:
             fp.write(data)
 
+        self._linktousercache(oid)
+
+    def _linktousercache(self, oid):
         # XXX: should we verify the content of the cache, and hardlink back to
         # the local store on success, but truncate, write and link on failure?
-        if not self.cachevfs.exists(oid):
+        if (not self.cachevfs.exists(oid)
+            and not isinstance(self.cachevfs, nullvfs)):
             self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
             lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
 

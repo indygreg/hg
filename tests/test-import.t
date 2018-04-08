@@ -285,8 +285,8 @@ override commit message
   $ rm -r b
 
   $ cat > mkmsg.py <<EOF
-  > import email.Message, sys
-  > msg = email.Message.Message()
+  > import email.message, sys
+  > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
   > msg.set_payload('email commit message\n' + patch)
   > msg['Subject'] = 'email patch'
@@ -383,8 +383,8 @@ subject: duplicate detection, removal of [PATCH]
 The '---' tests the gitsendmail handling without proper mail headers
 
   $ cat > mkmsg2.py <<EOF
-  > import email.Message, sys
-  > msg = email.Message.Message()
+  > import email.message, sys
+  > msg = email.message.Message()
   > patch = open(sys.argv[1], 'rb').read()
   > msg.set_payload('email patch\n\nnext line\n---\n' + patch)
   > msg['Subject'] = '[PATCH] email patch'

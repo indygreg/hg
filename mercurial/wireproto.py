@@ -697,7 +697,6 @@ class commanddict(dict):
 
 # Constants specifying which transports a wire protocol command should be
 # available on. For use with @wireprotocommand.
-POLICY_ALL = 'all'
 POLICY_V1_ONLY = 'v1-only'
 POLICY_V2_ONLY = 'v2-only'
 
@@ -707,7 +706,7 @@ commands = commanddict()
 # For version 2 transports.
 commandsv2 = commanddict()
 
-def wireprotocommand(name, args='', transportpolicy=POLICY_V1_ONLY,
+def wireprotocommand(name, args=None, transportpolicy=POLICY_V1_ONLY,
                      permission='push'):
     """Decorator to declare a wire protocol command.
 
@@ -729,17 +728,14 @@ def wireprotocommand(name, args='', transportpolicy=POLICY_V1_ONLY,
     because otherwise commands not declaring their permissions could modify
     a repository that is supposed to be read-only.
     """
-    if transportpolicy == POLICY_ALL:
-        transports = set(wireprototypes.TRANSPORTS)
-        transportversions = {1, 2}
-    elif transportpolicy == POLICY_V1_ONLY:
+    if transportpolicy == POLICY_V1_ONLY:
         transports = {k for k, v in wireprototypes.TRANSPORTS.items()
                       if v['version'] == 1}
-        transportversions = {1}
+        transportversion = 1
     elif transportpolicy == POLICY_V2_ONLY:
         transports = {k for k, v in wireprototypes.TRANSPORTS.items()
                       if v['version'] == 2}
-        transportversions = {2}
+        transportversion = 2
     else:
         raise error.ProgrammingError('invalid transport policy value: %s' %
                                      transportpolicy)
@@ -755,33 +751,40 @@ def wireprotocommand(name, args='', transportpolicy=POLICY_V1_ONLY,
                                      'got %s; expected "push" or "pull"' %
                                      permission)
 
-    if 1 in transportversions and not isinstance(args, bytes):
-        raise error.ProgrammingError('arguments for version 1 commands must '
-                                     'be declared as bytes')
+    if transportversion == 1:
+        if args is None:
+            args = ''
 
-    if isinstance(args, bytes):
-        dictargs = {arg: b'legacy' for arg in args.split()}
-    elif isinstance(args, dict):
-        dictargs = args
-    else:
-        raise ValueError('args must be bytes or a dict')
+        if not isinstance(args, bytes):
+            raise error.ProgrammingError('arguments for version 1 commands '
+                                         'must be declared as bytes')
+    elif transportversion == 2:
+        if args is None:
+            args = {}
+
+        if not isinstance(args, dict):
+            raise error.ProgrammingError('arguments for version 2 commands '
+                                         'must be declared as dicts')
 
     def register(func):
-        if 1 in transportversions:
+        if transportversion == 1:
             if name in commands:
                 raise error.ProgrammingError('%s command already registered '
                                              'for version 1' % name)
             commands[name] = commandentry(func, args=args,
                                           transports=transports,
                                           permission=permission)
-        if 2 in transportversions:
+        elif transportversion == 2:
             if name in commandsv2:
                 raise error.ProgrammingError('%s command already registered '
                                              'for version 2' % name)
 
-            commandsv2[name] = commandentry(func, args=dictargs,
+            commandsv2[name] = commandentry(func, args=args,
                                             transports=transports,
                                             permission=permission)
+        else:
+            raise error.ProgrammingError('unhandled transport version: %d' %
+                                         transportversion)
 
         return func
     return register

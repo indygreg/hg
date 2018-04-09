@@ -43,8 +43,10 @@ Process #1..n:
   _ResultItems in "Request Q"
 """
 
+from __future__ import absolute_import
+
 import atexit
-from concurrent.futures import _base
+from . import _base
 import Queue as queue
 import multiprocessing
 import threading

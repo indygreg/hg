@@ -3,8 +3,10 @@
 
 """Implements ThreadPoolExecutor."""
 
+from __future__ import absolute_import
+
 import atexit
-from concurrent.futures import _base
+from . import _base
 import itertools
 import Queue as queue
 import threading

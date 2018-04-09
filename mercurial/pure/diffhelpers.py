@@ -23,7 +23,7 @@ def addlines(fp, hunk, lena, lenb, a, b):
         for i in xrange(num):
             s = fp.readline()
             if s == "\\ No newline at end of file\n":
-                fix_newline(hunk, a, b)
+                fixnewline(hunk, a, b)
                 continue
             if s == "\n":
                 # Some patches may be missing the control char
@@ -39,7 +39,7 @@ def addlines(fp, hunk, lena, lenb, a, b):
                 a.append(s)
     return 0
 
-def fix_newline(hunk, a, b):
+def fixnewline(hunk, a, b):
     """Fix up the last lines of a and b when the patch has no newline at EOF"""
     l = hunk[-1]
     # tolerate CRLF in last line
@@ -54,7 +54,6 @@ def fix_newline(hunk, a, b):
         a[-1] = hline
     hunk[-1] = hline
     return 0
-
 
 def testhunk(a, b, bstart):
     """Compare the lines in a with the lines in b

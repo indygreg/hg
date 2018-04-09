@@ -1372,7 +1372,7 @@ class hunk(object):
     def _fixnewline(self, lr):
         l = lr.readline()
         if l.startswith('\ '):
-            diffhelpers.fix_newline(self.hunk, self.a, self.b)
+            diffhelpers.fixnewline(self.hunk, self.a, self.b)
         else:
             lr.push(l)
 

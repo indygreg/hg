@@ -31,7 +31,6 @@ allowsymbolimports = (
     # for cffi modules to re-export pure functions
     'mercurial.pure.base85',
     'mercurial.pure.bdiff',
-    'mercurial.pure.diffhelpers',
     'mercurial.pure.mpatch',
     'mercurial.pure.osutil',
     'mercurial.pure.parsers',

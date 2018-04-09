@@ -67,7 +67,6 @@ def _importfrom(pkgname, modname):
 _cextversions = {
     (r'cext', r'base85'): 1,
     (r'cext', r'bdiff'): 3,
-    (r'cext', r'diffhelpers'): 1,
     (r'cext', r'mpatch'): 1,
     (r'cext', r'osutil'): 4,
     (r'cext', r'parsers'): 4,
@@ -78,7 +77,6 @@ _modredirects = {
     (r'cext', r'charencode'): (r'cext', r'parsers'),
     (r'cffi', r'base85'): (r'pure', r'base85'),
     (r'cffi', r'charencode'): (r'pure', r'charencode'),
-    (r'cffi', r'diffhelpers'): (r'pure', r'diffhelpers'),
     (r'cffi', r'parsers'): (r'pure', r'parsers'),
 }
 

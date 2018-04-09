@@ -26,7 +26,10 @@ if not ispy3:
     import Queue as _queue
     import SocketServer as socketserver
     import xmlrpclib
+
+    from .thirdparty.concurrent import futures
 else:
+    import concurrent.futures as futures
     import http.cookiejar as cookielib
     import http.client as httplib
     import pickle

@@ -551,18 +551,19 @@ class httpv2peer(object):
 
             self.ui.note(_('received %r\n') % frame)
 
-            if frame.typeid == wireprotoframing.FRAME_TYPE_BYTES_RESPONSE:
-                if frame.flags & wireprotoframing.FLAG_BYTES_RESPONSE_CBOR:
-                    payload = util.bytesio(frame.payload)
+            action, meta = reactor.onframerecv(frame)
+
+            if action == 'responsedata':
+                if meta['cbor']:
+                    payload = util.bytesio(meta['data'])
 
                     decoder = cbor.CBORDecoder(payload)
-                    while payload.tell() + 1 < len(frame.payload):
+                    while payload.tell() + 1 < len(meta['data']):
                         results.append(decoder.decode())
                 else:
-                    results.append(frame.payload)
+                    results.append(meta['data'])
             else:
-                error.ProgrammingError('unhandled frame type: %d' %
-                                       frame.typeid)
+                error.ProgrammingError('unhandled action: %s' % action)
 
         return results
 

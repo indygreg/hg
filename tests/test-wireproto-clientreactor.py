@@ -7,6 +7,21 @@ from mercurial import (
     wireprotoframing as framing,
 )
 
+ffs = framing.makeframefromhumanstring
+
+def sendframe(reactor, frame):
+    """Send a frame bytearray to a reactor."""
+    header = framing.parseheader(frame)
+    payload = frame[framing.FRAME_HEADER_SIZE:]
+    assert len(payload) == header.length
+
+    return reactor.onframerecv(framing.frame(header.requestid,
+                                             header.streamid,
+                                             header.streamflags,
+                                             header.typeid,
+                                             header.flags,
+                                             payload))
+
 class SingleSendTests(unittest.TestCase):
     """A reactor that can only send once rejects subsequent sends."""
     def testbasic(self):
@@ -60,6 +75,35 @@ class NoBufferTests(unittest.TestCase):
             self.assertEqual(request.state, 'sending')
 
         self.assertEqual(request.state, 'sent')
+
+class BadFrameRecvTests(unittest.TestCase):
+    def testoddstream(self):
+        reactor = framing.clientreactor()
+
+        action, meta = sendframe(reactor, ffs(b'1 1 0 1 0 foo'))
+        self.assertEqual(action, 'error')
+        self.assertEqual(meta['message'],
+                         'received frame with odd numbered stream ID: 1')
+
+    def testunknownstream(self):
+        reactor = framing.clientreactor()
+
+        action, meta = sendframe(reactor, ffs(b'1 0 0 1 0 foo'))
+        self.assertEqual(action, 'error')
+        self.assertEqual(meta['message'],
+                         'received frame on unknown stream without beginning '
+                         'of stream flag set')
+
+    def testunhandledframetype(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+        for frame in meta['framegen']:
+            pass
+
+        with self.assertRaisesRegexp(error.ProgrammingError,
+                                     'unhandled frame type'):
+            sendframe(reactor, ffs(b'1 0 stream-begin text-output 0 foo'))
 
 if __name__ == '__main__':
     import silenttestrunner

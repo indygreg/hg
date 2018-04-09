@@ -515,11 +515,16 @@ class httpv2peer(object):
 
         # TODO this should be part of a generic peer for the frame-based
         # protocol.
-        stream = wireprotoframing.stream(1)
-        frames = wireprotoframing.createcommandframes(stream, 1,
-                                                      name, args)
+        reactor = wireprotoframing.clientreactor(hasmultiplesend=False,
+                                                 buffersends=True)
 
-        body = b''.join(map(bytes, frames))
+        request, action, meta = reactor.callcommand(name, args)
+        assert action == 'noop'
+
+        action, meta = reactor.flushcommands()
+        assert action == 'sendframes'
+
+        body = b''.join(map(bytes, meta['framegen']))
         req = self._requestbuilder(pycompat.strurl(url), body, headers)
         req.add_unredirected_header(r'Content-Length', r'%d' % len(body))
 

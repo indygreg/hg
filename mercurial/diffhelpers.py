@@ -37,7 +37,6 @@ def addlines(fp, hunk, lena, lenb, a, b):
             else:
                 b.append(s[1:])
                 a.append(s)
-    return 0
 
 def fixnewline(hunk, a, b):
     """Fix up the last lines of a and b when the patch has no newline at EOF"""
@@ -53,7 +52,6 @@ def fixnewline(hunk, a, b):
     if hline.startswith((' ', '-')):
         a[-1] = hline
     hunk[-1] = hline
-    return 0
 
 def testhunk(a, b, bstart):
     """Compare the lines in a with the lines in b

@@ -28,6 +28,7 @@ from .node import (
 )
 from . import (
     copies,
+    diffhelpers,
     encoding,
     error,
     mail,
@@ -39,7 +40,6 @@ from . import (
     util,
     vfs as vfsmod,
 )
-from .pure import diffhelpers
 from .utils import (
     dateutil,
     procutil,

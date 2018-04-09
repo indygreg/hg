@@ -1,4 +1,4 @@
-# diffhelpers.py - pure Python implementation of diffhelpers.c
+# diffhelpers.py - helper routines for patch
 #
 # Copyright 2009 Matt Mackall <mpm@selenic.com> and others
 #

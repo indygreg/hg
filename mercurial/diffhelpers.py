@@ -70,8 +70,8 @@ def testhunk(a, b, bstart):
     alen = len(a)
     blen = len(b)
     if alen > blen - bstart:
-        return -1
+        return False
     for i in xrange(alen):
         if a[i][1:] != b[i + bstart]:
-            return -1
-    return 0
+            return False
+    return True

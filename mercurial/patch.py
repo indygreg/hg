@@ -795,8 +795,7 @@ class patchfile(object):
         # if there's skew we want to emit the "(offset %d lines)" even
         # when the hunk cleanly applies at start + skew, so skip the
         # fast case code
-        if (self.skew == 0 and
-            diffhelpers.testhunk(old, self.lines, oldstart) == 0):
+        if self.skew == 0 and diffhelpers.testhunk(old, self.lines, oldstart):
             if self.remove:
                 self.backend.unlink(self.fname)
             else:
@@ -823,7 +822,7 @@ class patchfile(object):
                     cand = [oldstart]
 
                 for l in cand:
-                    if not old or diffhelpers.testhunk(old, self.lines, l) == 0:
+                    if not old or diffhelpers.testhunk(old, self.lines, l):
                         self.lines[l : l + len(old)] = new
                         self.offset += len(new) - len(old)
                         self.skew = l - orig_start

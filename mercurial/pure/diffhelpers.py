@@ -8,6 +8,12 @@
 from __future__ import absolute_import
 
 def addlines(fp, hunk, lena, lenb, a, b):
+    """Read lines from fp into the hunk
+
+    The hunk is parsed into two arrays, a and b. a gets the old state of
+    the text, b gets the new state. The control char from the hunk is saved
+    when inserting into a, but not b (for performance while deleting files.)
+    """
     while True:
         todoa = lena - len(a)
         todob = lenb - len(b)
@@ -34,6 +40,7 @@ def addlines(fp, hunk, lena, lenb, a, b):
     return 0
 
 def fix_newline(hunk, a, b):
+    """Fix up the last lines of a and b when the patch has no newline at EOF"""
     l = hunk[-1]
     # tolerate CRLF in last line
     if l.endswith('\r\n'):
@@ -50,6 +57,11 @@ def fix_newline(hunk, a, b):
 
 
 def testhunk(a, b, bstart):
+    """Compare the lines in a with the lines in b
+
+    a is assumed to have a control char at the start of each line, this char
+    is ignored in the compare.
+    """
     alen = len(a)
     blen = len(b)
     if alen > blen - bstart:

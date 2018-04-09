@@ -23,9 +23,13 @@ static void ZstdCompressionObj_dealloc(ZstdCompressionObj* self) {
 	PyObject_Del(self);
 }
 
-static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
+	Py_buffer source;
 	ZSTD_inBuffer input;
 	size_t zresult;
 	PyObject* result = NULL;
@@ -37,38 +41,43 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:compress", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:compress",
 #else
-	if (!PyArg_ParseTuple(args, "s#:compress", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:compress",
 #endif
+		kwlist, &source)) {
 		return NULL;
 	}
 
-	input.src = source;
-	input.size = sourceSize;
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < sourceSize) {
+	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
-				&self->output, &input);
-		}
-		else {
-			zresult = ZSTD_compressStream(self->compressor->cstream, &self->output, &input);
-		}
+			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+				&input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
+			Py_CLEAR(result);
+			goto finally;
 		}
 
 		if (self->output.pos) {
 			if (result) {
 				resultSize = PyBytes_GET_SIZE(result);
-				if (-1 == _PyBytes_Resize(&result, resultSize + self->output.pos)) {
-					return NULL;
+
+				if (safe_pybytes_resize(&result, resultSize + self->output.pos)) {
+					Py_CLEAR(result);
+					goto finally;
 				}
 
 				memcpy(PyBytes_AS_STRING(result) + resultSize,
@@ -77,7 +86,7 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 			else {
 				result = PyBytes_FromStringAndSize(self->output.dst, self->output.pos);
 				if (!result) {
-					return NULL;
+					goto finally;
 				}
 			}
 
@@ -85,21 +94,29 @@ static PyObject* ZstdCompressionObj_compress(ZstdCompressionObj* self, PyObject*
 		}
 	}
 
-	if (result) {
-		return result;
+	if (NULL == result) {
+		result = PyBytes_FromString("");
 	}
-	else {
-		return PyBytes_FromString("");
-	}
+
+finally:
+	PyBuffer_Release(&source);
+
+	return result;
 }
 
-static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* args) {
+static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"flush_mode",
+		NULL
+	};
+
 	int flushMode = compressorobj_flush_finish;
 	size_t zresult;
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
+	ZSTD_inBuffer input;
 
-	if (!PyArg_ParseTuple(args, "|i:flush", &flushMode)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:flush", kwlist, &flushMode)) {
 		return NULL;
 	}
 
@@ -115,16 +132,16 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 
 	assert(self->output.pos == 0);
 
+	input.src = NULL;
+	input.size = 0;
+	input.pos = 0;
+
 	if (flushMode == compressorobj_flush_block) {
 		/* The output buffer is of size ZSTD_CStreamOutSize(), which is 
 		   guaranteed to hold a full block. */
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_flushStream(self->compressor->mtcctx, &self->output);
-		}
-		else {
-			zresult = ZSTD_flushStream(self->compressor->cstream, &self->output);
-		}
+			zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+				&input, ZSTD_e_flush);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -156,12 +173,8 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 	self->finished = 1;
 
 	while (1) {
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_endStream(self->compressor->mtcctx, &self->output);
-		}
-		else {
-			zresult = ZSTD_endStream(self->compressor->cstream, &self->output);
-		}
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+			&input, ZSTD_e_end);
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
 				ZSTD_getErrorName(zresult));
@@ -171,7 +184,9 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 		if (self->output.pos) {
 			if (result) {
 				resultSize = PyBytes_GET_SIZE(result);
-				if (-1 == _PyBytes_Resize(&result, resultSize + self->output.pos)) {
+
+				if (safe_pybytes_resize(&result, resultSize + self->output.pos)) {
+					Py_XDECREF(result);
 					return NULL;
 				}
 
@@ -202,9 +217,9 @@ static PyObject* ZstdCompressionObj_flush(ZstdCompressionObj* self, PyObject* ar
 }
 
 static PyMethodDef ZstdCompressionObj_methods[] = {
-	{ "compress", (PyCFunction)ZstdCompressionObj_compress, METH_VARARGS,
+	{ "compress", (PyCFunction)ZstdCompressionObj_compress, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("compress data") },
-	{ "flush", (PyCFunction)ZstdCompressionObj_flush, METH_VARARGS,
+	{ "flush", (PyCFunction)ZstdCompressionObj_flush, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("finish compression operation") },
 	{ NULL, NULL }
 };

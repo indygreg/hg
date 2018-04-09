@@ -20,18 +20,18 @@ static void DecompressionObj_dealloc(ZstdDecompressionObj* self) {
 	PyObject_Del(self);
 }
 
-static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
+	Py_buffer source;
 	size_t zresult;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
-	size_t outSize = ZSTD_DStreamOutSize();
 	PyObject* result = NULL;
 	Py_ssize_t resultSize = 0;
-
-	/* Constructor should ensure stream is populated. */
-	assert(self->decompressor->dstream);
 
 	if (self->finished) {
 		PyErr_SetString(ZstdError, "cannot use a decompressobj multiple times");
@@ -39,37 +39,42 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 	}
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:decompress",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:decompress",
 #else
-	if (!PyArg_ParseTuple(args, "s#:decompress",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:decompress",
 #endif
-		&source, &sourceSize)) {
+		kwlist, &source)) {
 		return NULL;
 	}
 
-	input.src = source;
-	input.size = sourceSize;
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
+	}
+
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
-	output.dst = PyMem_Malloc(outSize);
+	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
 		PyErr_NoMemory();
-		return NULL;
+		goto except;
 	}
-	output.size = outSize;
+	output.size = self->outSize;
 	output.pos = 0;
 
 	/* Read input until exhausted. */
 	while (input.pos < input.size) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompressStream(self->decompressor->dstream, &output, &input);
+		zresult = ZSTD_decompress_generic(self->decompressor->dctx, &output, &input);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "zstd decompressor error: %s",
 				ZSTD_getErrorName(zresult));
-			result = NULL;
-			goto finally;
+			goto except;
 		}
 
 		if (0 == zresult) {
@@ -79,7 +84,8 @@ static PyObject* DecompressionObj_decompress(ZstdDecompressionObj* self, PyObjec
 		if (output.pos) {
 			if (result) {
 				resultSize = PyBytes_GET_SIZE(result);
-				if (-1 == _PyBytes_Resize(&result, resultSize + output.pos)) {
+				if (-1 == safe_pybytes_resize(&result, resultSize + output.pos)) {
+					Py_XDECREF(result);
 					goto except;
 				}
 
@@ -108,13 +114,14 @@ except:
 
 finally:
 	PyMem_Free(output.dst);
+	PyBuffer_Release(&source);
 
 	return result;
 }
 
 static PyMethodDef DecompressionObj_methods[] = {
 	{ "decompress", (PyCFunction)DecompressionObj_decompress,
-	  METH_VARARGS, PyDoc_STR("decompress data") },
+	  METH_VARARGS | METH_KEYWORDS, PyDoc_STR("decompress data") },
 	{ NULL, NULL }
 };
 

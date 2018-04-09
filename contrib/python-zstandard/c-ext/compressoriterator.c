@@ -21,10 +21,9 @@ static void ZstdCompressorIterator_dealloc(ZstdCompressorIterator* self) {
 	Py_XDECREF(self->compressor);
 	Py_XDECREF(self->reader);
 
-	if (self->buffer) {
-		PyBuffer_Release(self->buffer);
-		PyMem_FREE(self->buffer);
-		self->buffer = NULL;
+	if (self->buffer.buf) {
+		PyBuffer_Release(&self->buffer);
+		memset(&self->buffer, 0, sizeof(self->buffer));
 	}
 
 	if (self->output.dst) {
@@ -58,14 +57,8 @@ feedcompressor:
 	/* If we have data left in the input, consume it. */
 	if (self->input.pos < self->input.size) {
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
-				&self->output, &self->input);
-		}
-		else {
-			zresult = ZSTD_compressStream(self->compressor->cstream, &self->output,
-				&self->input);
-		}
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+			&self->input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
 		/* Release the Python object holding the input buffer. */
@@ -107,14 +100,14 @@ feedcompressor:
 			PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
 		}
 		else {
-			assert(self->buffer && self->buffer->buf);
+			assert(self->buffer.buf);
 
 			/* Only support contiguous C arrays. */
-			assert(self->buffer->strides == NULL && self->buffer->suboffsets == NULL);
-			assert(self->buffer->itemsize == 1);
+			assert(self->buffer.strides == NULL && self->buffer.suboffsets == NULL);
+			assert(self->buffer.itemsize == 1);
 
-			readBuffer = (char*)self->buffer->buf + self->bufferOffset;
-			bufferRemaining = self->buffer->len - self->bufferOffset;
+			readBuffer = (char*)self->buffer.buf + self->bufferOffset;
+			bufferRemaining = self->buffer.len - self->bufferOffset;
 			readSize = min(bufferRemaining, (Py_ssize_t)self->inSize);
 			self->bufferOffset += readSize;
 		}
@@ -130,12 +123,12 @@ feedcompressor:
 
 	/* EOF */
 	if (0 == readSize) {
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_endStream(self->compressor->mtcctx, &self->output);
-		}
-		else {
-			zresult = ZSTD_endStream(self->compressor->cstream, &self->output);
-		}
+		self->input.src = NULL;
+		self->input.size = 0;
+		self->input.pos = 0;
+
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+			&self->input, ZSTD_e_end);
 		if (ZSTD_isError(zresult)) {
 			PyErr_Format(ZstdError, "error ending compression stream: %s",
 				ZSTD_getErrorName(zresult));
@@ -159,13 +152,8 @@ feedcompressor:
 	self->input.pos = 0;
 
 	Py_BEGIN_ALLOW_THREADS
-	if (self->compressor->mtcctx) {
-		zresult = ZSTDMT_compressStream(self->compressor->mtcctx, &self->output,
-			&self->input);
-	}
-	else {
-		zresult = ZSTD_compressStream(self->compressor->cstream, &self->output, &self->input);
-	}
+	zresult = ZSTD_compress_generic(self->compressor->cctx, &self->output,
+		&self->input, ZSTD_e_continue);
 	Py_END_ALLOW_THREADS
 
 	/* The input buffer currently points to memory managed by Python

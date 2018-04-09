@@ -12,12 +12,10 @@
 
 #define ZSTD_STATIC_LINKING_ONLY
 #define ZDICT_STATIC_LINKING_ONLY
-#include "mem.h"
-#include "zstd.h"
-#include "zdict.h"
-#include "zstdmt_compress.h"
+#include <zstd.h>
+#include <zdict.h>
 
-#define PYTHON_ZSTANDARD_VERSION "0.8.1"
+#define PYTHON_ZSTANDARD_VERSION "0.9.0"
 
 typedef enum {
 	compressorobj_flush_finish,
@@ -25,22 +23,38 @@ typedef enum {
 } CompressorObj_Flush;
 
 /*
-   Represents a CompressionParameters type.
+   Represents a ZstdCompressionParameters type.
 
-   This type is basically a wrapper around ZSTD_compressionParameters.
+   This type holds all the low-level compression parameters that can be set.
 */
 typedef struct {
 	PyObject_HEAD
+	ZSTD_CCtx_params* params;
+	unsigned format;
+	int compressionLevel;
 	unsigned windowLog;
-	unsigned chainLog;
 	unsigned hashLog;
+	unsigned chainLog;
 	unsigned searchLog;
-	unsigned searchLength;
+	unsigned minMatch;
 	unsigned targetLength;
-	ZSTD_strategy strategy;
-} CompressionParametersObject;
+	unsigned compressionStrategy;
+	unsigned contentSizeFlag;
+	unsigned checksumFlag;
+	unsigned dictIDFlag;
+	unsigned threads;
+	unsigned jobSize;
+	unsigned overlapSizeLog;
+	unsigned compressLiterals;
+	unsigned forceMaxWindow;
+	unsigned enableLongDistanceMatching;
+	unsigned ldmHashLog;
+	unsigned ldmMinMatch;
+	unsigned ldmBucketSizeLog;
+	unsigned ldmHashEveryLog;
+} ZstdCompressionParametersObject;
 
-extern PyTypeObject CompressionParametersType;
+extern PyTypeObject ZstdCompressionParametersType;
 
 /*
    Represents a FrameParameters type.
@@ -50,7 +64,7 @@ extern PyTypeObject CompressionParametersType;
 typedef struct {
 	PyObject_HEAD
 	unsigned long long frameContentSize;
-	unsigned windowSize;
+	unsigned long long windowSize;
 	unsigned dictID;
 	char checksumFlag;
 } FrameParametersObject;
@@ -69,10 +83,14 @@ typedef struct {
 	void* dictData;
 	/* Size of dictionary data. */
 	size_t dictSize;
+	ZSTD_dictContentType_e dictType;
 	/* k parameter for cover dictionaries. Only populated by train_cover_dict(). */
 	unsigned k;
 	/* d parameter for cover dictionaries. Only populated by train_cover_dict(). */
 	unsigned d;
+	/* Digested dictionary, suitable for reuse. */
+	ZSTD_CDict* cdict;
+	ZSTD_DDict* ddict;
 } ZstdCompressionDict;
 
 extern PyTypeObject ZstdCompressionDictType;
@@ -83,29 +101,15 @@ extern PyTypeObject ZstdCompressionDictType;
 typedef struct {
 	PyObject_HEAD
 
-	/* Configured compression level. Should be always set. */
-	int compressionLevel;
 	/* Number of threads to use for operations. */
 	unsigned int threads;
 	/* Pointer to compression dictionary to use. NULL if not using dictionary
 	   compression. */
 	ZstdCompressionDict* dict;
-	/* Compression context to use. Populated during object construction. NULL
-	   if using multi-threaded compression. */
+	/* Compression context to use. Populated during object construction. */
 	ZSTD_CCtx* cctx;
-	/* Multi-threaded compression context to use. Populated during object
-	   construction. NULL if not using multi-threaded compression. */
-	ZSTDMT_CCtx* mtcctx;
-	/* Digest compression dictionary. NULL initially. Populated on first use. */
-	ZSTD_CDict* cdict;
-	/* Low-level compression parameter control. NULL unless passed to
-	   constructor. Takes precedence over `compressionLevel` if defined. */
-	CompressionParametersObject* cparams;
-	/* Controls zstd frame options. */
-	ZSTD_frameParameters fparams;
-	/* Holds state for streaming compression. Shared across all invocation.
-	   Populated on first use. */
-	ZSTD_CStream* cstream;
+	/* Compression parameters in use. */
+	ZSTD_CCtx_params* params;
 } ZstdCompressor;
 
 extern PyTypeObject ZstdCompressorType;
@@ -125,9 +129,10 @@ typedef struct {
 
 	ZstdCompressor* compressor;
 	PyObject* writer;
-	Py_ssize_t sourceSize;
+	unsigned long long sourceSize;
 	size_t outSize;
 	int entered;
+	unsigned long long bytesCompressed;
 } ZstdCompressionWriter;
 
 extern PyTypeObject ZstdCompressionWriterType;
@@ -137,9 +142,8 @@ typedef struct {
 
 	ZstdCompressor* compressor;
 	PyObject* reader;
-	Py_buffer* buffer;
+	Py_buffer buffer;
 	Py_ssize_t bufferOffset;
-	Py_ssize_t sourceSize;
 	size_t inSize;
 	size_t outSize;
 
@@ -155,11 +159,32 @@ extern PyTypeObject ZstdCompressorIteratorType;
 typedef struct {
 	PyObject_HEAD
 
-	ZSTD_DCtx* dctx;
+	ZstdCompressor* compressor;
+	PyObject* reader;
+	Py_buffer buffer;
+	unsigned long long sourceSize;
+	size_t readSize;
 
+	int entered;
+	int closed;
+	unsigned long long bytesCompressed;
+
+	ZSTD_inBuffer input;
+	ZSTD_outBuffer output;
+	int finishedInput;
+	int finishedOutput;
+	PyObject* readResult;
+} ZstdCompressionReader;
+
+extern PyTypeObject ZstdCompressionReaderType;
+
+typedef struct {
+	PyObject_HEAD
+
+	ZSTD_DCtx* dctx;
 	ZstdCompressionDict* dict;
-	ZSTD_DDict* ddict;
-	ZSTD_DStream* dstream;
+	size_t maxWindowSize;
+	ZSTD_format_e format;
 } ZstdDecompressor;
 
 extern PyTypeObject ZstdDecompressorType;
@@ -168,10 +193,45 @@ typedef struct {
 	PyObject_HEAD
 
 	ZstdDecompressor* decompressor;
+	size_t outSize;
 	int finished;
 } ZstdDecompressionObj;
 
 extern PyTypeObject ZstdDecompressionObjType;
+
+typedef struct {
+	PyObject_HEAD
+
+	/* Parent decompressor to which this object is associated. */
+	ZstdDecompressor* decompressor;
+	/* Object to read() from (if reading from a stream). */
+	PyObject* reader;
+	/* Size for read() operations on reader. */
+	size_t readSize;
+	/* Buffer to read from (if reading from a buffer). */
+	Py_buffer buffer;
+
+	/* Whether the context manager is active. */
+	int entered;
+	/* Whether we've closed the stream. */
+	int closed;
+
+	/* Number of bytes decompressed and returned to user. */
+	unsigned long long bytesDecompressed;
+
+	/* Tracks data going into decompressor. */
+	ZSTD_inBuffer input;
+
+	/* Holds output from read() operation on reader. */
+	PyObject* readResult;
+
+	/* Whether all input has been sent to the decompressor. */
+	int finishedInput;
+	/* Whether all output has been flushed from the decompressor. */
+	int finishedOutput;
+} ZstdDecompressionReader;
+
+extern PyTypeObject ZstdDecompressionReaderType;
 
 typedef struct {
 	PyObject_HEAD
@@ -189,7 +249,7 @@ typedef struct {
 
 	ZstdDecompressor* decompressor;
 	PyObject* reader;
-	Py_buffer* buffer;
+	Py_buffer buffer;
 	Py_ssize_t bufferOffset;
 	size_t inSize;
 	size_t outSize;
@@ -209,6 +269,9 @@ typedef struct {
 } DecompressorIteratorResult;
 
 typedef struct {
+	/* The public API is that these are 64-bit unsigned integers. So these can't
+	 * be size_t, even though values larger than SIZE_MAX or PY_SSIZE_T_MAX may 
+	 * be nonsensical for this platform. */
 	unsigned long long offset;
 	unsigned long long length;
 } BufferSegment;
@@ -270,16 +333,14 @@ typedef struct {
 
 extern PyTypeObject ZstdBufferWithSegmentsCollectionType;
 
-void ztopy_compression_parameters(CompressionParametersObject* params, ZSTD_compressionParameters* zparams);
-CompressionParametersObject* get_compression_parameters(PyObject* self, PyObject* args);
-FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args);
-PyObject* estimate_compression_context_size(PyObject* self, PyObject* args);
-int init_cstream(ZstdCompressor* compressor, unsigned long long sourceSize);
-int init_mtcstream(ZstdCompressor* compressor, Py_ssize_t sourceSize);
-int init_dstream(ZstdDecompressor* decompressor);
+int set_parameter(ZSTD_CCtx_params* params, ZSTD_cParameter param, unsigned value);
+int set_parameters(ZSTD_CCtx_params* params, ZstdCompressionParametersObject* obj);
+FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs);
+int ensure_ddict(ZstdCompressionDict* dict);
+int ensure_dctx(ZstdDecompressor* decompressor, int loadDict);
 ZstdCompressionDict* train_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
-ZstdCompressionDict* train_cover_dictionary(PyObject* self, PyObject* args, PyObject* kwargs);
 ZstdBufferWithSegments* BufferWithSegments_FromMemory(void* data, unsigned long long dataSize, BufferSegment* segments, Py_ssize_t segmentsSize);
 Py_ssize_t BufferWithSegmentsCollection_length(ZstdBufferWithSegmentsCollection*);
 int cpu_count(void);
 size_t roundpow2(size_t);
+int safe_pybytes_resize(PyObject** obj, Py_ssize_t size);

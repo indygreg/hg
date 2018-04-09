@@ -22,20 +22,18 @@ static void ZstdCompressionWriter_dealloc(ZstdCompressionWriter* self) {
 }
 
 static PyObject* ZstdCompressionWriter_enter(ZstdCompressionWriter* self) {
+	size_t zresult;
+
 	if (self->entered) {
 		PyErr_SetString(ZstdError, "cannot __enter__ multiple times");
 		return NULL;
 	}
 
-	if (self->compressor->mtcctx) {
-		if (init_mtcstream(self->compressor, self->sourceSize)) {
-			return NULL;
-		}
-	}
-	else {
-		if (0 != init_cstream(self->compressor, self->sourceSize)) {
-			return NULL;
-		}
+	zresult = ZSTD_CCtx_setPledgedSrcSize(self->compressor->cctx, self->sourceSize);
+	if (ZSTD_isError(zresult)) {
+		PyErr_Format(ZstdError, "error setting source size: %s",
+			ZSTD_getErrorName(zresult));
+		return NULL;
 	}
 
 	self->entered = 1;
@@ -59,8 +57,12 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 
 	self->entered = 0;
 
-	if ((self->compressor->cstream || self->compressor->mtcctx) && exc_type == Py_None
-		&& exc_value == Py_None && exc_tb == Py_None) {
+	if (exc_type == Py_None && exc_value == Py_None && exc_tb == Py_None) {
+		ZSTD_inBuffer inBuffer;
+
+		inBuffer.src = NULL;
+		inBuffer.size = 0;
+		inBuffer.pos = 0;
 
 		output.dst = PyMem_Malloc(self->outSize);
 		if (!output.dst) {
@@ -70,12 +72,7 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 		output.pos = 0;
 
 		while (1) {
-			if (self->compressor->mtcctx) {
-				zresult = ZSTDMT_endStream(self->compressor->mtcctx, &output);
-			}
-			else {
-				zresult = ZSTD_endStream(self->compressor->cstream, &output);
-			}
+			zresult = ZSTD_compress_generic(self->compressor->cctx, &output, &inBuffer, ZSTD_e_end);
 			if (ZSTD_isError(zresult)) {
 				PyErr_Format(ZstdError, "error ending compression stream: %s",
 					ZSTD_getErrorName(zresult));
@@ -107,18 +104,17 @@ static PyObject* ZstdCompressionWriter_exit(ZstdCompressionWriter* self, PyObjec
 }
 
 static PyObject* ZstdCompressionWriter_memory_size(ZstdCompressionWriter* self) {
-	if (!self->compressor->cstream) {
-		PyErr_SetString(ZstdError, "cannot determine size of an inactive compressor; "
-			"call when a context manager is active");
-		return NULL;
-	}
-
-	return PyLong_FromSize_t(ZSTD_sizeof_CStream(self->compressor->cstream));
+	return PyLong_FromSize_t(ZSTD_sizeof_CCtx(self->compressor->cctx));
 }
 
-static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
+	PyObject* result = NULL;
+	Py_buffer source;
 	size_t zresult;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
@@ -126,44 +122,46 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 	Py_ssize_t totalWrite = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:write",
 #else
-	if (!PyArg_ParseTuple(args, "s#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:write",
 #endif
+		kwlist, &source)) {
 		return NULL;
 	}
 
 	if (!self->entered) {
 		PyErr_SetString(ZstdError, "compress must be called from an active context manager");
-		return NULL;
+		goto finally;
+	}
+
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
 	}
 
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
-		return PyErr_NoMemory();
+		PyErr_NoMemory();
+		goto finally;
 	}
 	output.size = self->outSize;
 	output.pos = 0;
 
-	input.src = source;
-	input.size = sourceSize;
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < sourceSize) {
+	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_compressStream(self->compressor->mtcctx,
-				&output, &input);
-		}
-		else {
-			zresult = ZSTD_compressStream(self->compressor->cstream, &output, &input);
-		}
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &output, &input, ZSTD_e_continue);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
 			PyMem_Free(output.dst);
 			PyErr_Format(ZstdError, "zstd compress error: %s", ZSTD_getErrorName(zresult));
-			return NULL;
+			goto finally;
 		}
 
 		/* Copy data from output buffer to writer. */
@@ -176,18 +174,24 @@ static PyObject* ZstdCompressionWriter_write(ZstdCompressionWriter* self, PyObje
 				output.dst, output.pos);
 			Py_XDECREF(res);
 			totalWrite += output.pos;
+			self->bytesCompressed += output.pos;
 		}
 		output.pos = 0;
 	}
 
 	PyMem_Free(output.dst);
 
-	return PyLong_FromSsize_t(totalWrite);
+	result = PyLong_FromSsize_t(totalWrite);
+
+finally:
+	PyBuffer_Release(&source);
+	return result;
 }
 
 static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObject* args) {
 	size_t zresult;
 	ZSTD_outBuffer output;
+	ZSTD_inBuffer input;
 	PyObject* res;
 	Py_ssize_t totalWrite = 0;
 
@@ -195,6 +199,10 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 		PyErr_SetString(ZstdError, "flush must be called from an active context manager");
 		return NULL;
 	}
+
+	input.src = NULL;
+	input.size = 0;
+	input.pos = 0;
 
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
@@ -205,12 +213,7 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 
 	while (1) {
 		Py_BEGIN_ALLOW_THREADS
-		if (self->compressor->mtcctx) {
-			zresult = ZSTDMT_flushStream(self->compressor->mtcctx, &output);
-		}
-		else {
-			zresult = ZSTD_flushStream(self->compressor->cstream, &output);
-		}
+		zresult = ZSTD_compress_generic(self->compressor->cctx, &output, &input, ZSTD_e_flush);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
@@ -233,6 +236,7 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 				output.dst, output.pos);
 			Py_XDECREF(res);
 			totalWrite += output.pos;
+			self->bytesCompressed += output.pos;
 		}
 		output.pos = 0;
 	}
@@ -242,6 +246,10 @@ static PyObject* ZstdCompressionWriter_flush(ZstdCompressionWriter* self, PyObje
 	return PyLong_FromSsize_t(totalWrite);
 }
 
+static PyObject* ZstdCompressionWriter_tell(ZstdCompressionWriter* self) {
+	return PyLong_FromUnsignedLongLong(self->bytesCompressed);
+}
+
 static PyMethodDef ZstdCompressionWriter_methods[] = {
 	{ "__enter__", (PyCFunction)ZstdCompressionWriter_enter, METH_NOARGS,
 	PyDoc_STR("Enter a compression context.") },
@@ -249,10 +257,12 @@ static PyMethodDef ZstdCompressionWriter_methods[] = {
 	PyDoc_STR("Exit a compression context.") },
 	{ "memory_size", (PyCFunction)ZstdCompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size of the underlying compressor") },
-	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS,
+	{ "write", (PyCFunction)ZstdCompressionWriter_write, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Compress data") },
 	{ "flush", (PyCFunction)ZstdCompressionWriter_flush, METH_NOARGS,
 	PyDoc_STR("Flush data and finish a zstd frame") },
+	{ "tell", (PyCFunction)ZstdCompressionWriter_tell, METH_NOARGS,
+	PyDoc_STR("Returns current number of bytes compressed") },
 	{ NULL, NULL }
 };
 

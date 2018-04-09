@@ -27,7 +27,7 @@ static PyObject* ZstdDecompressionWriter_enter(ZstdDecompressionWriter* self) {
 		return NULL;
 	}
 
-	if (0 != init_dstream(self->decompressor)) {
+	if (ensure_dctx(self->decompressor, 1)) {
 		return NULL;
 	}
 
@@ -44,18 +44,17 @@ static PyObject* ZstdDecompressionWriter_exit(ZstdDecompressionWriter* self, PyO
 }
 
 static PyObject* ZstdDecompressionWriter_memory_size(ZstdDecompressionWriter* self) {
-	if (!self->decompressor->dstream) {
-		PyErr_SetString(ZstdError, "cannot determine size of inactive decompressor; "
-			"call when context manager is active");
-		return NULL;
-	}
-
-	return PyLong_FromSize_t(ZSTD_sizeof_DStream(self->decompressor->dstream));
+	return PyLong_FromSize_t(ZSTD_sizeof_DCtx(self->decompressor->dctx));
 }
 
-static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
+static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
+	PyObject* result = NULL;
+	Py_buffer source;
 	size_t zresult = 0;
 	ZSTD_inBuffer input;
 	ZSTD_outBuffer output;
@@ -63,41 +62,47 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 	Py_ssize_t totalWrite = 0;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:write",
 #else
-	if (!PyArg_ParseTuple(args, "s#:write", &source, &sourceSize)) {
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:write",
 #endif
+		kwlist, &source)) {
 		return NULL;
+	}
+
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
 	}
 
 	if (!self->entered) {
 		PyErr_SetString(ZstdError, "write must be called from an active context manager");
-		return NULL;
+		goto finally;
 	}
-
-	assert(self->decompressor->dstream);
 
 	output.dst = PyMem_Malloc(self->outSize);
 	if (!output.dst) {
-		return PyErr_NoMemory();
+		PyErr_NoMemory();
+		goto finally;
 	}
 	output.size = self->outSize;
 	output.pos = 0;
 
-	input.src = source;
-	input.size = sourceSize;
+	input.src = source.buf;
+	input.size = source.len;
 	input.pos = 0;
 
-	while ((ssize_t)input.pos < sourceSize) {
+	while ((ssize_t)input.pos < source.len) {
 		Py_BEGIN_ALLOW_THREADS
-		zresult = ZSTD_decompressStream(self->decompressor->dstream, &output, &input);
+		zresult = ZSTD_decompress_generic(self->decompressor->dctx, &output, &input);
 		Py_END_ALLOW_THREADS
 
 		if (ZSTD_isError(zresult)) {
 			PyMem_Free(output.dst);
 			PyErr_Format(ZstdError, "zstd decompress error: %s",
 				ZSTD_getErrorName(zresult));
-			return NULL;
+			goto finally;
 		}
 
 		if (output.pos) {
@@ -115,7 +120,11 @@ static PyObject* ZstdDecompressionWriter_write(ZstdDecompressionWriter* self, Py
 
 	PyMem_Free(output.dst);
 
-	return PyLong_FromSsize_t(totalWrite);
+	result = PyLong_FromSsize_t(totalWrite);
+
+finally:
+	PyBuffer_Release(&source);
+	return result;
 }
 
 static PyMethodDef ZstdDecompressionWriter_methods[] = {
@@ -125,7 +134,7 @@ static PyMethodDef ZstdDecompressionWriter_methods[] = {
 	PyDoc_STR("Exit a decompression context.") },
 	{ "memory_size", (PyCFunction)ZstdDecompressionWriter_memory_size, METH_NOARGS,
 	PyDoc_STR("Obtain the memory size in bytes of the underlying decompressor.") },
-	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS,
+	{ "write", (PyCFunction)ZstdDecompressionWriter_write, METH_VARARGS | METH_KEYWORDS,
 	PyDoc_STR("Compress data") },
 	{ NULL, NULL }
 };

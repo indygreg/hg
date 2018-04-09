@@ -1,10 +1,7 @@
 import io
 import os
-
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import sys
+import unittest
 
 try:
     import hypothesis
@@ -12,7 +9,7 @@ try:
 except ImportError:
     raise unittest.SkipTest('hypothesis not available')
 
-import zstd
+import zstandard as zstd
 
 from .common import (
     make_cffi,
@@ -28,16 +25,17 @@ s_hashlog = strategies.integers(min_value=zstd.HASHLOG_MIN,
 s_searchlog = strategies.integers(min_value=zstd.SEARCHLOG_MIN,
                                     max_value=zstd.SEARCHLOG_MAX)
 s_searchlength = strategies.integers(min_value=zstd.SEARCHLENGTH_MIN,
-                                        max_value=zstd.SEARCHLENGTH_MAX)
+                                     max_value=zstd.SEARCHLENGTH_MAX)
 s_targetlength = strategies.integers(min_value=zstd.TARGETLENGTH_MIN,
-                                        max_value=zstd.TARGETLENGTH_MAX)
+                                     max_value=2**32)
 s_strategy = strategies.sampled_from((zstd.STRATEGY_FAST,
                                         zstd.STRATEGY_DFAST,
                                         zstd.STRATEGY_GREEDY,
                                         zstd.STRATEGY_LAZY,
                                         zstd.STRATEGY_LAZY2,
                                         zstd.STRATEGY_BTLAZY2,
-                                        zstd.STRATEGY_BTOPT))
+                                        zstd.STRATEGY_BTOPT,
+                                        zstd.STRATEGY_BTULTRA))
 
 
 @make_cffi
@@ -47,24 +45,17 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
                         s_searchlength, s_targetlength, s_strategy)
     def test_valid_init(self, windowlog, chainlog, hashlog, searchlog,
                         searchlength, targetlength, strategy):
-        # ZSTD_checkCParams moves the goal posts on us from what's advertised
-        # in the constants. So move along with them.
-        if searchlength == zstd.SEARCHLENGTH_MIN and strategy in (zstd.STRATEGY_FAST, zstd.STRATEGY_GREEDY):
-            searchlength += 1
-        elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
-            searchlength -= 1
-
-        p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
-                                        searchlog, searchlength,
-                                        targetlength, strategy)
-
-        cctx = zstd.ZstdCompressor(compression_params=p)
-        with cctx.write_to(io.BytesIO()):
-            pass
+        zstd.ZstdCompressionParameters(window_log=windowlog,
+                                       chain_log=chainlog,
+                                       hash_log=hashlog,
+                                       search_log=searchlog,
+                                       min_match=searchlength,
+                                       target_length=targetlength,
+                                       compression_strategy=strategy)
 
     @hypothesis.given(s_windowlog, s_chainlog, s_hashlog, s_searchlog,
                         s_searchlength, s_targetlength, s_strategy)
-    def test_estimate_compression_context_size(self, windowlog, chainlog,
+    def test_estimated_compression_context_size(self, windowlog, chainlog,
                                                 hashlog, searchlog,
                                                 searchlength, targetlength,
                                                 strategy):
@@ -73,7 +64,12 @@ class TestCompressionParametersHypothesis(unittest.TestCase):
         elif searchlength == zstd.SEARCHLENGTH_MAX and strategy != zstd.STRATEGY_FAST:
             searchlength -= 1
 
-        p = zstd.CompressionParameters(windowlog, chainlog, hashlog,
-                            searchlog, searchlength,
-                            targetlength, strategy)
-        size = zstd.estimate_compression_context_size(p)
+        p = zstd.ZstdCompressionParameters(window_log=windowlog,
+                                           chain_log=chainlog,
+                                           hash_log=hashlog,
+                                           search_log=searchlog,
+                                           min_match=searchlength,
+                                           target_length=targetlength,
+                                           compression_strategy=strategy)
+        size = p.estimated_compression_context_size()
+

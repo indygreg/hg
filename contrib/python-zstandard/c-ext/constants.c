@@ -52,6 +52,11 @@ void constants_module_init(PyObject* mod) {
 		PyErr_Format(PyExc_ValueError, "could not create frame header object");
 	}
 
+	PyModule_AddObject(mod, "CONTENTSIZE_UNKNOWN",
+		PyLong_FromUnsignedLongLong(ZSTD_CONTENTSIZE_UNKNOWN));
+	PyModule_AddObject(mod, "CONTENTSIZE_ERROR",
+		PyLong_FromUnsignedLongLong(ZSTD_CONTENTSIZE_ERROR));
+
 	PyModule_AddIntConstant(mod, "MAX_COMPRESSION_LEVEL", ZSTD_maxCLevel());
 	PyModule_AddIntConstant(mod, "COMPRESSION_RECOMMENDED_INPUT_SIZE",
 		(long)ZSTD_CStreamInSize());
@@ -75,7 +80,9 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MIN", ZSTD_SEARCHLENGTH_MIN);
 	PyModule_AddIntConstant(mod, "SEARCHLENGTH_MAX", ZSTD_SEARCHLENGTH_MAX);
 	PyModule_AddIntConstant(mod, "TARGETLENGTH_MIN", ZSTD_TARGETLENGTH_MIN);
-	PyModule_AddIntConstant(mod, "TARGETLENGTH_MAX", ZSTD_TARGETLENGTH_MAX);
+	PyModule_AddIntConstant(mod, "LDM_MINMATCH_MIN", ZSTD_LDM_MINMATCH_MIN);
+	PyModule_AddIntConstant(mod, "LDM_MINMATCH_MAX", ZSTD_LDM_MINMATCH_MAX);
+	PyModule_AddIntConstant(mod, "LDM_BUCKETSIZELOG_MAX", ZSTD_LDM_BUCKETSIZELOG_MAX);
 
 	PyModule_AddIntConstant(mod, "STRATEGY_FAST", ZSTD_fast);
 	PyModule_AddIntConstant(mod, "STRATEGY_DFAST", ZSTD_dfast);
@@ -84,4 +91,12 @@ void constants_module_init(PyObject* mod) {
 	PyModule_AddIntConstant(mod, "STRATEGY_LAZY2", ZSTD_lazy2);
 	PyModule_AddIntConstant(mod, "STRATEGY_BTLAZY2", ZSTD_btlazy2);
 	PyModule_AddIntConstant(mod, "STRATEGY_BTOPT", ZSTD_btopt);
+	PyModule_AddIntConstant(mod, "STRATEGY_BTULTRA", ZSTD_btultra);
+
+	PyModule_AddIntConstant(mod, "DICT_TYPE_AUTO", ZSTD_dct_auto);
+	PyModule_AddIntConstant(mod, "DICT_TYPE_RAWCONTENT", ZSTD_dct_rawContent);
+	PyModule_AddIntConstant(mod, "DICT_TYPE_FULLDICT", ZSTD_dct_fullDict);
+
+	PyModule_AddIntConstant(mod, "FORMAT_ZSTD1", ZSTD_f_zstd1);
+	PyModule_AddIntConstant(mod, "FORMAT_ZSTD1_MAGICLESS", ZSTD_f_zstd1_magicless);
 }

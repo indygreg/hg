@@ -1,11 +1,8 @@
 from __future__ import unicode_literals
 
-try:
-    import unittest2 as unittest
-except ImportError:
-    import unittest
+import unittest
 
-import zstd
+import zstandard as zstd
 
 from . common import (
     make_cffi,
@@ -15,7 +12,7 @@ from . common import (
 @make_cffi
 class TestModuleAttributes(unittest.TestCase):
     def test_version(self):
-        self.assertEqual(zstd.ZSTD_VERSION, (1, 1, 3))
+        self.assertEqual(zstd.ZSTD_VERSION, (1, 3, 4))
 
     def test_constants(self):
         self.assertEqual(zstd.MAX_COMPRESSION_LEVEL, 22)
@@ -23,6 +20,8 @@ class TestModuleAttributes(unittest.TestCase):
 
     def test_hasattr(self):
         attrs = (
+            'CONTENTSIZE_UNKNOWN',
+            'CONTENTSIZE_ERROR',
             'COMPRESSION_RECOMMENDED_INPUT_SIZE',
             'COMPRESSION_RECOMMENDED_OUTPUT_SIZE',
             'DECOMPRESSION_RECOMMENDED_INPUT_SIZE',
@@ -40,7 +39,9 @@ class TestModuleAttributes(unittest.TestCase):
             'SEARCHLENGTH_MIN',
             'SEARCHLENGTH_MAX',
             'TARGETLENGTH_MIN',
-            'TARGETLENGTH_MAX',
+            'LDM_MINMATCH_MIN',
+            'LDM_MINMATCH_MAX',
+            'LDM_BUCKETSIZELOG_MAX',
             'STRATEGY_FAST',
             'STRATEGY_DFAST',
             'STRATEGY_GREEDY',
@@ -48,6 +49,10 @@ class TestModuleAttributes(unittest.TestCase):
             'STRATEGY_LAZY2',
             'STRATEGY_BTLAZY2',
             'STRATEGY_BTOPT',
+            'STRATEGY_BTULTRA',
+            'DICT_TYPE_AUTO',
+            'DICT_TYPE_RAWCONTENT',
+            'DICT_TYPE_FULLDICT',
         )
 
         for a in attrs:

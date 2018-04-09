@@ -83,7 +83,7 @@ static int BufferWithSegments_init(ZstdBufferWithSegments* self, PyObject* args,
 	}
 
 	if (segments.len % sizeof(BufferSegment)) {
-		PyErr_Format(PyExc_ValueError, "segments array size is not a multiple of %lu",
+		PyErr_Format(PyExc_ValueError, "segments array size is not a multiple of %zu",
 			sizeof(BufferSegment));
 		goto except;
 	}
@@ -123,7 +123,7 @@ except:
 	PyBuffer_Release(&self->parent);
 	PyBuffer_Release(&segments);
 	return -1;
-};
+}
 
 /**
  * Construct a BufferWithSegments from existing memory and offsets.
@@ -188,6 +188,12 @@ static ZstdBufferSegment* BufferWithSegments_item(ZstdBufferWithSegments* self, 
 		return NULL;
 	}
 
+	if (self->segments[i].length > PY_SSIZE_T_MAX) {
+		PyErr_Format(PyExc_ValueError,
+			"item at offset %zd is too large for this platform", i);
+		return NULL;
+	}
+
 	result = (ZstdBufferSegment*)PyObject_CallObject((PyObject*)&ZstdBufferSegmentType, NULL);
 	if (NULL == result) {
 		return NULL;
@@ -197,7 +203,7 @@ static ZstdBufferSegment* BufferWithSegments_item(ZstdBufferWithSegments* self, 
 	Py_INCREF(self);
 
 	result->data = (char*)self->data + self->segments[i].offset;
-	result->dataSize = self->segments[i].length;
+	result->dataSize = (Py_ssize_t)self->segments[i].length;
 	result->offset = self->segments[i].offset;
 
 	return result;
@@ -205,7 +211,13 @@ static ZstdBufferSegment* BufferWithSegments_item(ZstdBufferWithSegments* self, 
 
 #if PY_MAJOR_VERSION >= 3
 static int BufferWithSegments_getbuffer(ZstdBufferWithSegments* self, Py_buffer* view, int flags) {
-	return PyBuffer_FillInfo(view, (PyObject*)self, self->data, self->dataSize, 1, flags);
+	if (self->dataSize > PY_SSIZE_T_MAX) {
+		view->obj = NULL;
+		PyErr_SetString(PyExc_BufferError, "buffer is too large for this platform");
+		return -1;
+	}
+
+	return PyBuffer_FillInfo(view, (PyObject*)self, self->data, (Py_ssize_t)self->dataSize, 1, flags);
 }
 #else
 static Py_ssize_t BufferWithSegments_getreadbuffer(ZstdBufferWithSegments* self, Py_ssize_t segment, void **ptrptr) {
@@ -214,8 +226,13 @@ static Py_ssize_t BufferWithSegments_getreadbuffer(ZstdBufferWithSegments* self,
 		return -1;
 	}
 
+	if (self->dataSize > PY_SSIZE_T_MAX) {
+		PyErr_SetString(PyExc_ValueError, "buffer is too large for this platform");
+		return -1;
+	}
+
 	*ptrptr = self->data;
-	return self->dataSize;
+	return (Py_ssize_t)self->dataSize;
 }
 
 static Py_ssize_t BufferWithSegments_getsegcount(ZstdBufferWithSegments* self, Py_ssize_t* len) {
@@ -232,7 +249,12 @@ PyDoc_STRVAR(BufferWithSegments_tobytes__doc__,
 );
 
 static PyObject* BufferWithSegments_tobytes(ZstdBufferWithSegments* self) {
-	return PyBytes_FromStringAndSize(self->data, self->dataSize);
+	if (self->dataSize > PY_SSIZE_T_MAX) {
+		PyErr_SetString(PyExc_ValueError, "buffer is too large for this platform");
+		return NULL;
+	}
+
+	return PyBytes_FromStringAndSize(self->data, (Py_ssize_t)self->dataSize);
 }
 
 PyDoc_STRVAR(BufferWithSegments_segments__doc__,

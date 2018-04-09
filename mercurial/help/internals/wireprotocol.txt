@@ -1690,6 +1690,42 @@ Receives no arguments.
 The response is a map with bytestring keys defining the branch name.
 Values are arrays of bytestring defining raw changeset nodes.
 
+capabilities
+------------
+
+Obtain the server's capabilities.
+
+Receives no arguments.
+
+This command is typically called only as part of the handshake during
+initial connection establishment.
+
+The response is a map with bytestring keys defining server information.
+
+The defined keys are:
+
+commands
+   A map defining available wire protocol commands on this server.
+
+   Keys in the map are the names of commands that can be invoked. Values
+   are maps defining information about that command. The bytestring keys
+   are:
+
+      args
+         An array of argument names accepted by this command.
+      permissions
+         An array of permissions required to execute this command.
+
+compression
+   An array of maps defining available compression format support.
+
+   The array is sorted from most preferred to least preferred.
+
+   Each entry has the following bytestring keys:
+
+      name
+         Name of the compression engine. e.g. ``zstd`` or ``zlib``.
+
 heads
 -----
 

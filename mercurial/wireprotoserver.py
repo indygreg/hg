@@ -831,6 +831,9 @@ class sshv2protocolhandler(sshv1protocolhandler):
     def name(self):
         return wireprototypes.SSHV2
 
+    def addcapabilities(self, repo, caps):
+        return caps
+
 def _runsshserver(ui, repo, fin, fout, ev):
     # This function operates like a state machine of sorts. The following
     # states are defined:

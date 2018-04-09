@@ -903,7 +903,8 @@ def _capabilities(repo, proto):
 
 # If you are writing an extension and consider wrapping this function. Wrap
 # `_capabilities` instead.
-@wireprotocommand('capabilities', permission='pull')
+@wireprotocommand('capabilities', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def capabilities(repo, proto):
     caps = _capabilities(repo, proto)
     return wireprototypes.bytesresponse(' '.join(sorted(caps)))
@@ -1283,6 +1284,31 @@ def unbundle(repo, proto, heads):
 
 # Wire protocol version 2 commands only past this point.
 
+def _capabilitiesv2(repo, proto):
+    """Obtain the set of capabilities for version 2 transports.
+
+    These capabilities are distinct from the capabilities for version 1
+    transports.
+    """
+    compression = []
+    for engine in supportedcompengines(repo.ui, util.SERVERROLE):
+        compression.append({
+            b'name': engine.wireprotosupport().name,
+        })
+
+    caps = {
+        'commands': {},
+        'compression': compression,
+    }
+
+    for command, entry in commandsv2.items():
+        caps['commands'][command] = {
+            'args': sorted(entry.args.split()) if entry.args else [],
+            'permissions': [entry.permission],
+        }
+
+    return proto.addcapabilities(repo, caps)
+
 @wireprotocommand('branchmap', permission='pull',
                   transportpolicy=POLICY_V2_ONLY)
 def branchmapv2(repo, proto):
@@ -1290,6 +1316,13 @@ def branchmapv2(repo, proto):
                  for k, v in repo.branchmap().iteritems()}
 
     return wireprototypes.cborresponse(branchmap)
+
+@wireprotocommand('capabilities', permission='pull',
+                  transportpolicy=POLICY_V2_ONLY)
+def capabilitiesv2(repo, proto):
+    caps = _capabilitiesv2(repo, proto)
+
+    return wireprototypes.cborresponse(caps)
 
 @wireprotocommand('heads', args='publiconly', permission='pull',
                   transportpolicy=POLICY_V2_ONLY)

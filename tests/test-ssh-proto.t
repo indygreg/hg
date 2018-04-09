@@ -1120,9 +1120,9 @@ Command after upgrade to version 2 is processed
   i> write(6) -> 6:
   i>     hello\n
   o> readline() -> 4:
-  o>     403\n
-  o> readline() -> 403:
-  o>     capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
+  o>     397\n
+  o> readline() -> 397:
+  o>     capabilities: branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash\n
 
 Multiple upgrades is not allowed
 

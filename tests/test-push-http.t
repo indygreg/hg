@@ -79,7 +79,7 @@ expect success
   > txnclose-phase.test = sh $TESTTMP/hook.sh 
   > EOF
   $ req "--debug --config extensions.blackbox="
-  listening at http://localhost:$HGPORT/ (bound to $LOCALIP:$HGPORT)
+  listening at http://localhost:$HGPORT/ (bound to $LOCALIP:$HGPORT) (?)
   pushing to http://localhost:$HGPORT/
   searching for changes
   remote: redirecting incoming bundle to */hg-unbundle-* (glob)
@@ -100,7 +100,7 @@ expect success
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
   $ req "--debug --config server.streamunbundle=True --config extensions.blackbox="
-  listening at http://localhost:$HGPORT/ (bound to $LOCALIP:$HGPORT)
+  listening at http://localhost:$HGPORT/ (bound to $LOCALIP:$HGPORT) (?)
   pushing to http://localhost:$HGPORT/
   searching for changes
   remote: adding changesets

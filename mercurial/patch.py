@@ -33,20 +33,19 @@ from . import (
     mail,
     mdiff,
     pathutil,
-    policy,
     pycompat,
     scmutil,
     similar,
     util,
     vfs as vfsmod,
 )
+from .pure import diffhelpers
 from .utils import (
     dateutil,
     procutil,
     stringutil,
 )
 
-diffhelpers = policy.importmod(r'diffhelpers')
 stringio = util.stringio
 
 gitre = re.compile(br'diff --git a/(.*) b/(.*)')

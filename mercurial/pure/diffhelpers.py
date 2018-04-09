@@ -16,18 +16,17 @@ def addlines(fp, hunk, lena, lenb, a, b):
             break
         for i in xrange(num):
             s = fp.readline()
-            c = s[0]
             if s == "\\ No newline at end of file\n":
                 fix_newline(hunk, a, b)
                 continue
-            if c == "\n":
+            if s == "\n":
                 # Some patches may be missing the control char
                 # on empty lines. Supply a leading space.
                 s = " \n"
             hunk.append(s)
-            if c == "+":
+            if s.startswith('+'):
                 b.append(s[1:])
-            elif c == "-":
+            elif s.startswith('-'):
                 a.append(s)
             else:
                 b.append(s[1:])
@@ -41,11 +40,10 @@ def fix_newline(hunk, a, b):
         hline = l[:-2]
     else:
         hline = l[:-1]
-    c = hline[0]
 
-    if c in " +":
+    if hline.startswith((' ', '+')):
         b[-1] = hline[1:]
-    if c in " -":
+    if hline.startswith((' ', '-')):
         a[-1] = hline
     hunk[-1] = hline
     return 0

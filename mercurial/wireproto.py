@@ -707,7 +707,7 @@ commands = commanddict()
 # For version 2 transports.
 commandsv2 = commanddict()
 
-def wireprotocommand(name, args='', transportpolicy=POLICY_ALL,
+def wireprotocommand(name, args='', transportpolicy=POLICY_V1_ONLY,
                      permission='push'):
     """Decorator to declare a wire protocol command.
 

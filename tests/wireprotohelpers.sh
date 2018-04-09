@@ -16,11 +16,21 @@ from mercurial import (
 )
 
 @wireproto.wireprotocommand('customreadonly', permission='pull')
-def customreadonly(repo, proto):
+def customreadonlyv1(repo, proto):
+    return wireprototypes.bytesresponse(b'customreadonly bytes response')
+
+@wireproto.wireprotocommand('customreadonly', permission='pull',
+                            transportpolicy=wireproto.POLICY_V2_ONLY)
+def customreadonlyv2(repo, proto):
     return wireprototypes.bytesresponse(b'customreadonly bytes response')
 
 @wireproto.wireprotocommand('customreadwrite', permission='push')
 def customreadwrite(repo, proto):
+    return wireprototypes.bytesresponse(b'customreadwrite bytes response')
+
+@wireproto.wireprotocommand('customreadwrite', permission='push',
+                            transportpolicy=wireproto.POLICY_V2_ONLY)
+def customreadwritev2(repo, proto):
     return wireprototypes.bytesresponse(b'customreadwrite bytes response')
 EOF
 

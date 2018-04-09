@@ -3566,11 +3566,11 @@ class _zstdengine(compressionengine):
 
     class zstdrevlogcompressor(object):
         def __init__(self, zstd, level=3):
-            # Writing the content size adds a few bytes to the output. However,
-            # it allows decompression to be more optimal since we can
-            # pre-allocate a buffer to hold the result.
-            self._cctx = zstd.ZstdCompressor(level=level,
-                                             write_content_size=True)
+            # TODO consider omitting frame magic to save 4 bytes.
+            # This writes content sizes into the frame header. That is
+            # extra storage. But it allows a correct size memory allocation
+            # to hold the result.
+            self._cctx = zstd.ZstdCompressor(level=level)
             self._dctx = zstd.ZstdDecompressor()
             self._compinsize = zstd.COMPRESSION_RECOMMENDED_INPUT_SIZE
             self._decompinsize = zstd.DECOMPRESSION_RECOMMENDED_INPUT_SIZE

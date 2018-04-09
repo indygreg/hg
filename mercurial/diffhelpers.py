@@ -7,6 +7,12 @@
 
 from __future__ import absolute_import
 
+from .i18n import _
+
+from . import (
+    error,
+)
+
 def addlines(fp, hunk, lena, lenb, a, b):
     """Read lines from fp into the hunk
 
@@ -22,6 +28,8 @@ def addlines(fp, hunk, lena, lenb, a, b):
             break
         for i in xrange(num):
             s = fp.readline()
+            if not s:
+                raise error.ParseError(_('incomplete hunk'))
             if s == "\\ No newline at end of file\n":
                 fixnewline(hunk, a, b)
                 continue

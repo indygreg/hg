@@ -1917,3 +1917,26 @@ test import crash (issue5375)
   a not tracked!
   abort: source file 'a' does not exist
   [255]
+
+test immature end of hunk
+
+  $ hg import - <<'EOF'
+  > diff --git a/foo b/foo
+  > --- a/foo
+  > --- b/foo
+  > @@ -0,0 +1,1 @@
+  > EOF
+  applying patch from stdin
+  abort: bad hunk #1: incomplete hunk
+  [255]
+
+  $ hg import - <<'EOF'
+  > diff --git a/foo b/foo
+  > --- a/foo
+  > --- b/foo
+  > @@ -0,0 +1,1 @@
+  > \ No newline at end of file
+  > EOF
+  applying patch from stdin
+  abort: bad hunk #1: incomplete hunk
+  [255]

@@ -1254,8 +1254,11 @@ class hunk(object):
             self.lenb = int(self.lenb)
         self.starta = int(self.starta)
         self.startb = int(self.startb)
-        diffhelpers.addlines(lr, self.hunk, self.lena, self.lenb, self.a,
-                             self.b)
+        try:
+            diffhelpers.addlines(lr, self.hunk, self.lena, self.lenb,
+                                 self.a, self.b)
+        except error.ParseError as e:
+            raise PatchError(_("bad hunk #%d: %s") % (self.number, e))
         # if we hit eof before finishing out the hunk, the last line will
         # be zero length.  Lets try to fix it up.
         while len(self.hunk[-1]) == 0:

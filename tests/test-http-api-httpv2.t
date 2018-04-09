@@ -540,7 +540,7 @@ Attempting to run a read-write command via multirequest on read-only URL is not 
   >     accept: $MEDIATYPE
   >     content-type: $MEDIATYPE
   >     user-agent: test
-  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'unbundle'}
+  >     frame 1 1 stream-begin command-request new cbor:{b'name': b'pushkey'}
   > EOF
   using raw connection to peer
   s>     POST /api/exp-http-v2-0001/ro/multirequest HTTP/1.1\r\n
@@ -548,17 +548,17 @@ Attempting to run a read-write command via multirequest on read-only URL is not 
   s>     accept: application/mercurial-exp-framing-0003\r\n
   s>     content-type: application/mercurial-exp-framing-0003\r\n
   s>     user-agent: test\r\n
-  s>     content-length: 23\r\n
+  s>     content-length: 22\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     \r\n
-  s>     \x0f\x00\x00\x01\x00\x01\x01\x11\xa1DnameHunbundle
+  s>     \x0e\x00\x00\x01\x00\x01\x01\x11\xa1DnameGpushkey
   s> makefile('rb', None)
   s>     HTTP/1.1 403 Forbidden\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: text/plain\r\n
-  s>     Content-Length: 53\r\n
+  s>     Content-Length: 52\r\n
   s>     \r\n
-  s>     insufficient permissions to execute command: unbundle
+  s>     insufficient permissions to execute command: pushkey
 
   $ cat error.log

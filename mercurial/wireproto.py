@@ -1019,7 +1019,8 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
             continue
     return None
 
-@wireprotocommand('getbundle', '*', permission='pull')
+@wireprotocommand('getbundle', '*', permission='pull',
+                  transportpolicy=POLICY_V1_ONLY)
 def getbundle(repo, proto, others):
     opts = options('getbundle', gboptsmap.keys(), others)
     for k, v in opts.iteritems():
@@ -1178,7 +1179,8 @@ def stream(repo, proto):
     return wireprototypes.streamreslegacy(
         streamclone.generatev1wireproto(repo))
 
-@wireprotocommand('unbundle', 'heads', permission='push')
+@wireprotocommand('unbundle', 'heads', permission='push',
+                  transportpolicy=POLICY_V1_ONLY)
 def unbundle(repo, proto, heads):
     their_heads = decodelist(heads)
 

@@ -200,7 +200,7 @@ Failure to read getbundle HTTP request
 
 Now do a variation using POST to send arguments
 
-  $ hg serve --config experimental.httppostargs=true --config badserver.closeafterrecvbytes=361,330 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config experimental.httppostargs=true --config badserver.closeafterrecvbytes=375,344 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -210,12 +210,12 @@ Now do a variation using POST to send arguments
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(361 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(328 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(301 from -1) -> (19) vary: X-HgProto-1\r\n
-  readline(282 from -1) -> (27) x-hgproto-1: partial-pull\r\n
-  readline(255 from -1) -> (35) accept: application/mercurial-0.1\r\n
-  readline(220 from -1) -> (2?) host: localhost:$HGPORT\r\n (glob)
+  readline(375 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(342 from -1) -> (27) Accept-Encoding: identity\r\n
+  readline(315 from -1) -> (19) vary: X-HgProto-1\r\n
+  readline(296 from -1) -> (27) x-hgproto-1: partial-pull\r\n
+  readline(269 from -1) -> (35) accept: application/mercurial-0.1\r\n
+  readline(234 from -1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
   readline(* from -1) -> (2) \r\n (glob)
   write(36) -> HTTP/1.1 200 Script output follows\r\n
@@ -225,17 +225,17 @@ Now do a variation using POST to send arguments
   write(21) -> Content-Length: 449\r\n
   write(2) -> \r\n
   write(449) -> batch branchmap bundle2=HG20%0Abookmarks%0Achangegroup%3D01%2C02%0Adigests%3Dmd5%2Csha1%2Csha512%0Aerror%3Dabort%2Cunsupportedcontent%2Cpushraced%2Cpushkey%0Ahgtagsfnodes%0Alistkeys%0Apushkey%0Aremote-changegroup%3Dhttp%2Chttps%0Arev-branch-cache changegroupsubset compression=none getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx httppostargs known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
-  readline\(14[67] from 65537\) -> \(2[67]\) POST /\?cmd=batch HTTP/1.1\\r\\n (re)
-  readline\(1(19|20) from -1\) -> \(27\) Accept-Encoding: identity\\r\\n (re)
-  readline(9? from -1) -> (41) content-type: application/mercurial-0.1\r\n (glob)
-  readline(5? from -1) -> (19) vary: X-HgProto-1\r\n (glob)
+  readline(1?? from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n (glob)
+  readline(1?? from -1) -> (27) Accept-Encoding: identity\r\n (glob)
+  readline(1?? from -1) -> (41) content-type: application/mercurial-0.1\r\n (glob)
+  readline(6? from -1) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n (glob)
   readline(3? from -1) -> (19) x-hgargs-post: 28\r\n (glob)
   readline(1? from -1) -> (1?) x-hgproto-1: * (glob)
   read limit reached; closing socket
-  readline(330 from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n
-  readline(303 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(276 from -1) -> (41) content-type: application/mercurial-0.1\r\n
-  readline(235 from -1) -> (19) vary: X-HgProto-1\r\n
+  readline(344 from 65537) -> (27) POST /?cmd=batch HTTP/1.1\r\n
+  readline(317 from -1) -> (27) Accept-Encoding: identity\r\n
+  readline(290 from -1) -> (41) content-type: application/mercurial-0.1\r\n
+  readline(249 from -1) -> (33) vary: X-HgArgs-Post,X-HgProto-1\r\n
   readline(216 from -1) -> (19) x-hgargs-post: 28\r\n
   readline(197 from -1) -> (61) x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
   readline(136 from -1) -> (35) accept: application/mercurial-0.1\r\n

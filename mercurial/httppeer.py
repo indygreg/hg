@@ -158,7 +158,6 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
     ui.debug("sending %s command\n" % cmd)
     q = [('cmd', cmd)]
     headersize = 0
-    varyheaders = []
     # Important: don't use self.capable() here or else you end up
     # with infinite recursion when trying to look up capabilities
     # for the first time.
@@ -194,7 +193,6 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
             for header, value in encodevalueinheaders(encargs, 'X-HgArg',
                                                       headersize):
                 headers[header] = value
-                varyheaders.append(header)
         # Send arguments via query string (Mercurial <1.9).
         else:
             q += sorted(args.items())
@@ -238,10 +236,14 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
                                             headersize or 1024)
         for header, value in protoheaders:
             headers[header] = value
+
+    varyheaders = []
+    for header in headers:
+        if header.lower().startswith(r'x-hg'):
             varyheaders.append(header)
 
     if varyheaders:
-        headers[r'Vary'] = r','.join(varyheaders)
+        headers[r'Vary'] = r','.join(sorted(varyheaders))
 
     req = requestbuilder(pycompat.strurl(cu), data, headers)
 

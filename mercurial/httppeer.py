@@ -366,11 +366,11 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible):
     return respurl, resp
 
 class httppeer(wireproto.wirepeer):
-    def __init__(self, ui, path, url, opener, requestbuilder):
+    def __init__(self, ui, path, url, opener, requestbuilder, caps):
         self.ui = ui
         self._path = path
         self._url = url
-        self._caps = None
+        self._caps = caps
         self._urlopener = opener
         self._requestbuilder = requestbuilder
 
@@ -401,17 +401,11 @@ class httppeer(wireproto.wirepeer):
     # Begin of ipeercommands interface.
 
     def capabilities(self):
-        # self._fetchcaps() should have been called as part of peer
-        # handshake. So self._caps should always be set.
-        assert self._caps is not None
         return self._caps
 
     # End of ipeercommands interface.
 
     # look up capabilities only when needed
-
-    def _fetchcaps(self):
-        self._caps = set(self._call('capabilities').split())
 
     def _callstream(self, cmd, _compressible=False, **args):
         args = pycompat.byteskwargs(args)
@@ -603,6 +597,29 @@ class httpv2peer(object):
 
         return results
 
+def performhandshake(ui, url, opener, requestbuilder):
+    # The handshake is a request to the capabilities command.
+
+    caps = None
+    def capable(x):
+        raise error.ProgrammingError('should not be called')
+
+    req, requrl, qs = makev1commandrequest(ui, requestbuilder, caps,
+                                           capable, url, 'capabilities',
+                                           {})
+
+    resp = sendrequest(ui, opener, req)
+
+    respurl, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
+                                           compressible=False)
+
+    try:
+        rawcaps = resp.read()
+    finally:
+        resp.close()
+
+    return respurl, set(rawcaps.split())
+
 def makepeer(ui, path, requestbuilder=urlreq.request):
     """Construct an appropriate HTTP peer instance.
 
@@ -620,7 +637,9 @@ def makepeer(ui, path, requestbuilder=urlreq.request):
 
     opener = urlmod.opener(ui, authinfo)
 
-    return httppeer(ui, path, url, opener, requestbuilder)
+    respurl, caps = performhandshake(ui, url, opener, requestbuilder)
+
+    return httppeer(ui, path, respurl, opener, requestbuilder, caps)
 
 def instance(ui, path, create):
     if create:
@@ -631,7 +650,6 @@ def instance(ui, path, create):
                                 'is not installed'))
 
         inst = makepeer(ui, path)
-        inst._fetchcaps()
 
         return inst
     except error.RepoError as httpexception:

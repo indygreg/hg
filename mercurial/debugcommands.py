@@ -2915,9 +2915,12 @@ def debugwireproto(ui, repo, path=None, **opts):
             raise error.Abort(_('--peer %s not supported with HTTP peers') %
                               opts['peer'])
         else:
+            url, caps = httppeer.performhandshake(ui, url, opener,
+                                                  httppeer.urlreq.request)
+
             peer = httppeer.httppeer(ui, path, url, opener,
-                                     requestbuilder=httppeer.urlreq.request)
-            peer._fetchcaps()
+                                     httppeer.urlreq.request,
+                                     caps)
 
         # We /could/ populate stdin/stdout with sock.makefile()...
     else:

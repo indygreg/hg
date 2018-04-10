@@ -29,7 +29,7 @@ from . import (
     util,
     wireproto,
     wireprotoframing,
-    wireprotoserver,
+    wireprotov2server,
 )
 
 httplib = util.httplib
@@ -504,13 +504,13 @@ class httpv2peer(object):
             'pull': 'ro',
         }[permission]
 
-        url = '%s/api/%s/%s/%s' % (self.url, wireprotoserver.HTTPV2, permission,
-                                   name)
+        url = '%s/api/%s/%s/%s' % (self.url, wireprotov2server.HTTPV2,
+                                   permission, name)
 
         # TODO modify user-agent to reflect v2.
         headers = {
-            r'Accept': wireprotoserver.FRAMINGTYPE,
-            r'Content-Type': wireprotoserver.FRAMINGTYPE,
+            r'Accept': wireprotov2server.FRAMINGTYPE,
+            r'Content-Type': wireprotov2server.FRAMINGTYPE,
         }
 
         # TODO this should be part of a generic peer for the frame-based

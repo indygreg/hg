@@ -23,6 +23,7 @@ from mercurial import (
     vfs as vfsmod,
     wireprotoserver,
     wireprototypes,
+    wireprotov2server,
 )
 
 rootdir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
@@ -125,7 +126,7 @@ def main():
     ziverify.verifyClass(wireprototypes.baseprotocolhandler,
                          wireprotoserver.httpv1protocolhandler)
     ziverify.verifyClass(wireprototypes.baseprotocolhandler,
-                         wireprotoserver.httpv2protocolhandler)
+                         wireprotov2server.httpv2protocolhandler)
 
     sshv1 = wireprotoserver.sshv1protocolhandler(None, None, None)
     checkzobject(sshv1)
@@ -134,7 +135,7 @@ def main():
 
     httpv1 = wireprotoserver.httpv1protocolhandler(None, None, None)
     checkzobject(httpv1)
-    httpv2 = wireprotoserver.httpv2protocolhandler(None, None)
+    httpv2 = wireprotov2server.httpv2protocolhandler(None, None)
     checkzobject(httpv2)
 
     ziverify.verifyClass(repository.ifilestorage, filelog.filelog)

@@ -138,6 +138,119 @@ class _multifile(object):
             f.seek(0)
         self._index = 0
 
+def makev1commandrequest(ui, requestbuilder, caps, capablefn,
+                         repobaseurl, cmd, args):
+    """Make an HTTP request to run a command for a version 1 client.
+
+    ``caps`` is a set of known server capabilities. The value may be
+    None if capabilities are not yet known.
+
+    ``capablefn`` is a function to evaluate a capability.
+
+    ``cmd``, ``args``, and ``data`` define the command, its arguments, and
+    raw data to pass to it.
+    """
+    if cmd == 'pushkey':
+        args['data'] = ''
+    data = args.pop('data', None)
+    headers = args.pop('headers', {})
+
+    ui.debug("sending %s command\n" % cmd)
+    q = [('cmd', cmd)]
+    headersize = 0
+    varyheaders = []
+    # Important: don't use self.capable() here or else you end up
+    # with infinite recursion when trying to look up capabilities
+    # for the first time.
+    postargsok = caps is not None and 'httppostargs' in caps
+
+    # Send arguments via POST.
+    if postargsok and args:
+        strargs = urlreq.urlencode(sorted(args.items()))
+        if not data:
+            data = strargs
+        else:
+            if isinstance(data, bytes):
+                i = io.BytesIO(data)
+                i.length = len(data)
+                data = i
+            argsio = io.BytesIO(strargs)
+            argsio.length = len(strargs)
+            data = _multifile(argsio, data)
+        headers[r'X-HgArgs-Post'] = len(strargs)
+    elif args:
+        # Calling self.capable() can infinite loop if we are calling
+        # "capabilities". But that command should never accept wire
+        # protocol arguments. So this should never happen.
+        assert cmd != 'capabilities'
+        httpheader = capablefn('httpheader')
+        if httpheader:
+            headersize = int(httpheader.split(',', 1)[0])
+
+        # Send arguments via HTTP headers.
+        if headersize > 0:
+            # The headers can typically carry more data than the URL.
+            encargs = urlreq.urlencode(sorted(args.items()))
+            for header, value in encodevalueinheaders(encargs, 'X-HgArg',
+                                                      headersize):
+                headers[header] = value
+                varyheaders.append(header)
+        # Send arguments via query string (Mercurial <1.9).
+        else:
+            q += sorted(args.items())
+
+    qs = '?%s' % urlreq.urlencode(q)
+    cu = "%s%s" % (repobaseurl, qs)
+    size = 0
+    if util.safehasattr(data, 'length'):
+        size = data.length
+    elif data is not None:
+        size = len(data)
+    if data is not None and r'Content-Type' not in headers:
+        headers[r'Content-Type'] = r'application/mercurial-0.1'
+
+    # Tell the server we accept application/mercurial-0.2 and multiple
+    # compression formats if the server is capable of emitting those
+    # payloads.
+    protoparams = {'partial-pull'}
+
+    mediatypes = set()
+    if caps is not None:
+        mt = capablefn('httpmediatype')
+        if mt:
+            protoparams.add('0.1')
+            mediatypes = set(mt.split(','))
+
+    if '0.2tx' in mediatypes:
+        protoparams.add('0.2')
+
+    if '0.2tx' in mediatypes and capablefn('compression'):
+        # We /could/ compare supported compression formats and prune
+        # non-mutually supported or error if nothing is mutually supported.
+        # For now, send the full list to the server and have it error.
+        comps = [e.wireprotosupport().name for e in
+                 util.compengines.supportedwireengines(util.CLIENTROLE)]
+        protoparams.add('comp=%s' % ','.join(comps))
+
+    if protoparams:
+        protoheaders = encodevalueinheaders(' '.join(sorted(protoparams)),
+                                            'X-HgProto',
+                                            headersize or 1024)
+        for header, value in protoheaders:
+            headers[header] = value
+            varyheaders.append(header)
+
+    if varyheaders:
+        headers[r'Vary'] = r','.join(varyheaders)
+
+    req = requestbuilder(pycompat.strurl(cu), data, headers)
+
+    if data is not None:
+        ui.debug("sending %d bytes\n" % size)
+        req.add_unredirected_header(r'Content-Length', r'%d' % size)
+
+    return req, cu, qs
+
 def sendrequest(ui, opener, req):
     """Send a prepared HTTP request.
 
@@ -228,104 +341,11 @@ class httppeer(wireproto.wirepeer):
 
     def _callstream(self, cmd, _compressible=False, **args):
         args = pycompat.byteskwargs(args)
-        if cmd == 'pushkey':
-            args['data'] = ''
-        data = args.pop('data', None)
-        headers = args.pop('headers', {})
 
-        self.ui.debug("sending %s command\n" % cmd)
-        q = [('cmd', cmd)]
-        headersize = 0
-        varyheaders = []
-        # Important: don't use self.capable() here or else you end up
-        # with infinite recursion when trying to look up capabilities
-        # for the first time.
-        postargsok = self._caps is not None and 'httppostargs' in self._caps
+        req, cu, qs = makev1commandrequest(self.ui, self._requestbuilder,
+                                           self._caps, self.capable,
+                                           self._url, cmd, args)
 
-        # Send arguments via POST.
-        if postargsok and args:
-            strargs = urlreq.urlencode(sorted(args.items()))
-            if not data:
-                data = strargs
-            else:
-                if isinstance(data, bytes):
-                    i = io.BytesIO(data)
-                    i.length = len(data)
-                    data = i
-                argsio = io.BytesIO(strargs)
-                argsio.length = len(strargs)
-                data = _multifile(argsio, data)
-            headers[r'X-HgArgs-Post'] = len(strargs)
-        elif args:
-            # Calling self.capable() can infinite loop if we are calling
-            # "capabilities". But that command should never accept wire
-            # protocol arguments. So this should never happen.
-            assert cmd != 'capabilities'
-            httpheader = self.capable('httpheader')
-            if httpheader:
-                headersize = int(httpheader.split(',', 1)[0])
-
-            # Send arguments via HTTP headers.
-            if headersize > 0:
-                # The headers can typically carry more data than the URL.
-                encargs = urlreq.urlencode(sorted(args.items()))
-                for header, value in encodevalueinheaders(encargs, 'X-HgArg',
-                                                          headersize):
-                    headers[header] = value
-                    varyheaders.append(header)
-            # Send arguments via query string (Mercurial <1.9).
-            else:
-                q += sorted(args.items())
-
-        qs = '?%s' % urlreq.urlencode(q)
-        cu = "%s%s" % (self._url, qs)
-        size = 0
-        if util.safehasattr(data, 'length'):
-            size = data.length
-        elif data is not None:
-            size = len(data)
-        if data is not None and r'Content-Type' not in headers:
-            headers[r'Content-Type'] = r'application/mercurial-0.1'
-
-        # Tell the server we accept application/mercurial-0.2 and multiple
-        # compression formats if the server is capable of emitting those
-        # payloads.
-        protoparams = {'partial-pull'}
-
-        mediatypes = set()
-        if self._caps is not None:
-            mt = self.capable('httpmediatype')
-            if mt:
-                protoparams.add('0.1')
-                mediatypes = set(mt.split(','))
-
-        if '0.2tx' in mediatypes:
-            protoparams.add('0.2')
-
-        if '0.2tx' in mediatypes and self.capable('compression'):
-            # We /could/ compare supported compression formats and prune
-            # non-mutually supported or error if nothing is mutually supported.
-            # For now, send the full list to the server and have it error.
-            comps = [e.wireprotosupport().name for e in
-                     util.compengines.supportedwireengines(util.CLIENTROLE)]
-            protoparams.add('comp=%s' % ','.join(comps))
-
-        if protoparams:
-            protoheaders = encodevalueinheaders(' '.join(sorted(protoparams)),
-                                                'X-HgProto',
-                                                headersize or 1024)
-            for header, value in protoheaders:
-                headers[header] = value
-                varyheaders.append(header)
-
-        if varyheaders:
-            headers[r'Vary'] = r','.join(varyheaders)
-
-        req = self._requestbuilder(pycompat.strurl(cu), data, headers)
-
-        if data is not None:
-            self.ui.debug("sending %d bytes\n" % size)
-            req.add_unredirected_header(r'Content-Length', r'%d' % size)
         try:
             resp = sendrequest(self.ui, self._urlopener, req)
         except urlerr.httperror as inst:

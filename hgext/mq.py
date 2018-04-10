@@ -1022,9 +1022,17 @@ class queue(object):
 
         unknown = []
 
-        for (i, p) in sorted([(self.findseries(p), p) for p in patches],
-                             reverse=True):
-            if i is not None:
+        sortedseries = []
+        for p in patches:
+            idx = self.findseries(p)
+            if idx is None:
+                sortedseries.append((-1, p))
+            else:
+                sortedseries.append((idx, p))
+
+        sortedseries.sort(reverse=True)
+        for (i, p) in sortedseries:
+            if i != -1:
                 del self.fullseries[i]
             else:
                 unknown.append(p)

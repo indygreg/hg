@@ -658,10 +658,11 @@ class queue(object):
         if not patchguards:
             return True, None
         guards = self.active()
-        exactneg = [g for g in patchguards if g[0] == '-' and g[1:] in guards]
+        exactneg = [g for g in patchguards
+                    if g.startswith('-') and g[1:] in guards]
         if exactneg:
             return False, repr(exactneg[0])
-        pos = [g for g in patchguards if g[0] == '+']
+        pos = [g for g in patchguards if g.startswith('+')]
         exactpos = [g for g in pos if g[1:] in guards]
         if pos:
             if exactpos:

@@ -352,6 +352,9 @@ def _analyze(x):
     elif op == 'keyvalue':
         return (op, x[1], _analyze(x[2]))
     elif op == 'func':
+        f = getsymbol(x[1])
+        if f == 'revset':
+            return _analyze(x[2])
         return (op, x[1], _analyze(x[2]))
     raise ValueError('invalid operator %r' % op)
 
@@ -482,6 +485,8 @@ def _parsewith(spec, lookup=None, syminitletters=None):
       ...
     ParseError: ('invalid token', 4)
     """
+    if lookup and spec.startswith('revset(') and spec.endswith(')'):
+        lookup = None
     p = parser.parser(elements)
     tree, pos = p.parse(tokenize(spec, lookup=lookup,
                                  syminitletters=syminitletters))

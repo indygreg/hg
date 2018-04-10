@@ -62,6 +62,12 @@ within a more advances revset
   $ hg log -r 'rev(0) and branch(default)'
   0:a87874c6ec31 first []
 
+with explicit revset resolution
+(still resolved as the label)
+
+  $ hg log -r 'revset(rev(0))'
+  0:a87874c6ec31 first []
+
 some of the above with quote to force its resolution as a label
 
   $ hg log -r ':"rev(0)"'
@@ -91,7 +97,12 @@ Test label with quote in them.
   $ hg log -r '("foo")'
   abort: unknown revision 'foo'!
   [255]
+  $ hg log -r 'revset("foo")'
+  abort: unknown revision 'foo'!
+  [255]
   $ hg log -r '("\"foo\"")'
+  2:fb616635b18f Added tag rev(0) for changeset 43114e71eddd ["foo"]
+  $ hg log -r 'revset("\"foo\"")'
   2:fb616635b18f Added tag rev(0) for changeset 43114e71eddd ["foo"]
 
 Test label with dash in them.
@@ -116,6 +127,9 @@ Test label with + in them.
   $ hg log -r '(foo+bar)'
   abort: unknown revision 'foo'!
   [255]
+  $ hg log -r 'revset(foo+bar)'
+  abort: unknown revision 'foo'!
+  [255]
   $ hg log -r '"foo+bar"'
   4:bbf52b87b370 Added tag foo-bar for changeset a50aae922707 [foo+bar]
   $ hg log -r '("foo+bar")'
@@ -128,6 +142,8 @@ Test tag with numeric version number.
   $ hg log -r '1.2'
   5:ff42fde8edbb Added tag foo+bar for changeset bbf52b87b370 [1.2]
   $ hg log -r '(1.2)'
+  5:ff42fde8edbb Added tag foo+bar for changeset bbf52b87b370 [1.2]
+  $ hg log -r 'revset(1.2)'
   5:ff42fde8edbb Added tag foo+bar for changeset bbf52b87b370 [1.2]
   $ hg log -r '"1.2"'
   5:ff42fde8edbb Added tag foo+bar for changeset bbf52b87b370 [1.2]
@@ -157,6 +173,9 @@ Test tag with parenthesis (but not a valid revset)
   $ hg log -r '(release_4.1(candidate1))'
   hg: parse error: unknown identifier: release_4.1
   [255]
+  $ hg log -r 'revset(release_4.1(candidate1))'
+  hg: parse error: unknown identifier: release_4.1
+  [255]
   $ hg log -r '"release_4.1(candidate1)"'
   6:db72e24fe069 Added tag 1.2 for changeset ff42fde8edbb [release_4.1(candidate1)]
   $ hg log -r '("release_4.1(candidate1)")'
@@ -180,6 +199,9 @@ Test tag with parenthesis and other function like char
   $ hg log -r 'release_4.1(arch=x86,arm)'
   7:b29b25d7d687 Added tag release_4.1(candidate1) for changeset db72e24fe069 [release_4.1(arch=x86,arm)]
   $ hg log -r '(release_4.1(arch=x86,arm))'
+  hg: parse error: unknown identifier: release_4.1
+  [255]
+  $ hg log -r 'revset(release_4.1(arch=x86,arm))'
   hg: parse error: unknown identifier: release_4.1
   [255]
   $ hg log -r '"release_4.1(arch=x86,arm)"'
@@ -206,6 +228,9 @@ Test tag conflicting with revset function
   $ hg log -r 'secret(team=foo,project=bar)'
   8:6b2e2d4ea455 Added tag release_4.1(arch=x86,arm) for changeset b29b25d7d687 [secret(team=foo,project=bar)]
   $ hg log -r '(secret(team=foo,project=bar))'
+  hg: parse error: secret takes no arguments
+  [255]
+  $ hg log -r 'revset(secret(team=foo,project=bar))'
   hg: parse error: secret takes no arguments
   [255]
   $ hg log -r '"secret(team=foo,project=bar)"'
@@ -236,6 +261,11 @@ Test tag with space
   hg: parse error at 4: unexpected token: symbol
   ((my little version)
        ^ here)
+  [255]
+  $ hg log -r 'revset(my little version)'
+  hg: parse error at 10: unexpected token: symbol
+  (revset(my little version)
+             ^ here)
   [255]
   $ hg log -r '"my little version"'
   9:269192bf8fc3 Added tag secret(team=foo,project=bar) for changeset 6b2e2d4ea455 [my little version]

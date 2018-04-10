@@ -2801,3 +2801,43 @@ test multiline revset with errors
   ( . + .^ +
             ^ here)
   [255]
+  $ hg debugrevspec -v 'revset(first(rev(0)))' -p all
+  * parsed:
+  (func
+    (symbol 'revset')
+    (func
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
+  * expanded:
+  (func
+    (symbol 'revset')
+    (func
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
+  * concatenated:
+  (func
+    (symbol 'revset')
+    (func
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
+  * analyzed:
+  (func
+    (symbol 'first')
+    (func
+      (symbol 'rev')
+      (symbol '0')))
+  * optimized:
+  (func
+    (symbol 'first')
+    (func
+      (symbol 'rev')
+      (symbol '0')))
+  * set:
+  <baseset+ [0]>
+  0

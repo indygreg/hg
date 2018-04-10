@@ -138,6 +138,46 @@ class _multifile(object):
             f.seek(0)
         self._index = 0
 
+def sendrequest(ui, opener, req):
+    """Send a prepared HTTP request.
+
+    Returns the response object.
+    """
+    if (ui.debugflag
+        and ui.configbool('devel', 'debug.peer-request')):
+        dbg = ui.debug
+        line = 'devel-peer-request: %s\n'
+        dbg(line % '%s %s' % (req.get_method(), req.get_full_url()))
+        hgargssize = None
+
+        for header, value in sorted(req.header_items()):
+            if header.startswith('X-hgarg-'):
+                if hgargssize is None:
+                    hgargssize = 0
+                hgargssize += len(value)
+            else:
+                dbg(line % '  %s %s' % (header, value))
+
+        if hgargssize is not None:
+            dbg(line % '  %d bytes of commands arguments in headers'
+                % hgargssize)
+
+        if req.has_data():
+            data = req.get_data()
+            length = getattr(data, 'length', None)
+            if length is None:
+                length = len(data)
+            dbg(line % '  %d bytes of data' % length)
+
+        start = util.timer()
+
+    res = opener.open(req)
+    if ui.configbool('devel', 'debug.peer-request'):
+        dbg(line % '  finished in %.4f seconds (%s)'
+            % (util.timer() - start, res.code))
+
+    return res
+
 class httppeer(wireproto.wirepeer):
     def __init__(self, ui, path, url, opener, requestbuilder):
         self.ui = ui
@@ -151,41 +191,6 @@ class httppeer(wireproto.wirepeer):
         for h in self._urlopener.handlers:
             h.close()
             getattr(h, "close_all", lambda: None)()
-
-    def _openurl(self, req):
-        if (self.ui.debugflag
-            and self.ui.configbool('devel', 'debug.peer-request')):
-            dbg = self.ui.debug
-            line = 'devel-peer-request: %s\n'
-            dbg(line % '%s %s' % (req.get_method(), req.get_full_url()))
-            hgargssize = None
-
-            for header, value in sorted(req.header_items()):
-                if header.startswith('X-hgarg-'):
-                    if hgargssize is None:
-                        hgargssize = 0
-                    hgargssize += len(value)
-                else:
-                    dbg(line % '  %s %s' % (header, value))
-
-            if hgargssize is not None:
-                dbg(line % '  %d bytes of commands arguments in headers'
-                    % hgargssize)
-
-            if req.has_data():
-                data = req.get_data()
-                length = getattr(data, 'length', None)
-                if length is None:
-                    length = len(data)
-                dbg(line % '  %d bytes of data' % length)
-
-            start = util.timer()
-
-        ret = self._urlopener.open(req)
-        if self.ui.configbool('devel', 'debug.peer-request'):
-            dbg(line % '  finished in %.4f seconds (%s)'
-                % (util.timer() - start, ret.code))
-        return ret
 
     # Begin of ipeerconnection interface.
 
@@ -322,7 +327,7 @@ class httppeer(wireproto.wirepeer):
             self.ui.debug("sending %d bytes\n" % size)
             req.add_unredirected_header(r'Content-Length', r'%d' % size)
         try:
-            resp = self._openurl(req)
+            resp = sendrequest(self.ui, self._urlopener, req)
         except urlerr.httperror as inst:
             if inst.code == 401:
                 raise error.Abort(_('authorization failed'))

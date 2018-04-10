@@ -284,10 +284,24 @@ def sendrequest(ui, opener, req):
 
         start = util.timer()
 
-    res = opener.open(req)
-    if ui.configbool('devel', 'debug.peer-request'):
-        dbg(line % '  finished in %.4f seconds (%s)'
-            % (util.timer() - start, res.code))
+    try:
+        res = opener.open(req)
+    except urlerr.httperror as inst:
+        if inst.code == 401:
+            raise error.Abort(_('authorization failed'))
+        raise
+    except httplib.HTTPException as inst:
+        ui.debug('http error requesting %s\n' %
+                 util.hidepassword(req.get_full_url()))
+        ui.traceback()
+        raise IOError(None, inst)
+    finally:
+        if ui.configbool('devel', 'debug.peer-request'):
+            dbg(line % '  finished in %.4f seconds (%s)'
+                % (util.timer() - start, res.code))
+
+    # Insert error handlers for common I/O failures.
+    _wraphttpresponse(res)
 
     return res
 
@@ -346,19 +360,7 @@ class httppeer(wireproto.wirepeer):
                                            self._caps, self.capable,
                                            self._url, cmd, args)
 
-        try:
-            resp = sendrequest(self.ui, self._urlopener, req)
-        except urlerr.httperror as inst:
-            if inst.code == 401:
-                raise error.Abort(_('authorization failed'))
-            raise
-        except httplib.HTTPException as inst:
-            self.ui.debug('http error while sending %s command\n' % cmd)
-            self.ui.traceback()
-            raise IOError(None, inst)
-
-        # Insert error handlers for common I/O failures.
-        _wraphttpresponse(resp)
+        resp = sendrequest(self.ui, self._urlopener, req)
 
         # record the url we got redirected to
         resp_url = pycompat.bytesurl(resp.geturl())

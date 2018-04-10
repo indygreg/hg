@@ -42,8 +42,44 @@ Handshake
 The client sends a ``capabilities`` command request (``?cmd=capabilities``)
 as soon as HTTP requests may be issued.
 
-The server responds with a capabilities string, which the client parses to
-learn about the server's abilities.
+By default, the server responds with a version 1 capabilities string, which
+the client parses to learn about the server's abilities. The ``Content-Type``
+for this response is ``application/mercurial-0.1`` or
+``application/mercurial-0.2`` depending on whether the client advertised
+support for version ``0.2`` in its request. (Clients aren't supposed to
+advertise support for ``0.2`` until the capabilities response indicates
+the server's support for that media type. However, a client could
+conceivably cache this metadata and issue the capabilities request in such
+a way to elicit an ``application/mercurial-0.2`` response.)
+
+Clients wishing to switch to a newer API service may send an
+``X-HgUpgrade-<X>`` header containing a space-delimited list of API service
+names the client is capable of speaking. The request MUST also include an
+``X-HgProto-<X>`` header advertising a known serialization format for the
+response. ``cbor`` is currently the only defined serialization format.
+
+If the request contains these headers, the response ``Content-Type`` MAY
+be for a different media type. e.g. ``application/mercurial-cbor`` if the
+client advertises support for CBOR.
+
+The response MUST be deserializable to a map with the following keys:
+
+apibase
+   URL path to API services, relative to the repository root. e.g. ``api/``.
+
+apis
+   A map of API service names to API descriptors. An API descriptor contains
+   more details about that API. In the case of the HTTP Version 2 Transport,
+   it will be the normal response to a ``capabilities`` command.
+
+   Only the services advertised by the client that are also available on
+   the server are advertised.
+
+v1capabilities
+   The capabilities string that would be returned by a version 1 response.
+
+The client can then inspect the server-advertised APIs and decide which
+API to use, including continuing to use the HTTP Version 1 Transport.
 
 HTTP Version 1 Transport
 ------------------------
@@ -122,6 +158,9 @@ compression format. The decompressed data behaves the same as with
 The ``application/hg-error`` media type indicates a generic error occurred.
 The content of the HTTP response body typically holds text describing the
 error.
+
+The ``application/mercurial-cbor`` media type indicates a CBOR payload
+and should be interpreted as identical to ``application/cbor``.
 
 Behavior of media types is further described in the ``Content Negotiation``
 section below.
@@ -1251,6 +1290,12 @@ The following parameters are defined:
 0.2
    Indicates the client supports receiving ``application/mercurial-0.2``
    responses.
+
+cbor
+   Indicates the client supports receiving ``application/mercurial-cbor``
+   responses.
+
+   (Only intended to be used with version 2 transports.)
 
 comp
    Indicates compression formats the client can decode. Value is a list of

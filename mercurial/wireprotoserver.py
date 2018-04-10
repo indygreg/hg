@@ -12,6 +12,9 @@ import sys
 import threading
 
 from .i18n import _
+from .thirdparty import (
+    cbor,
+)
 from .thirdparty.zope import (
     interface as zi,
 )
@@ -230,6 +233,18 @@ def handlewsgirequest(rctx, req, res, checkperm):
 
     return True
 
+def _availableapis(repo):
+    apis = set()
+
+    # Registered APIs are made available via config options of the name of
+    # the protocol.
+    for k, v in API_HANDLERS.items():
+        section, option = v['config']
+        if repo.ui.configbool(section, option):
+            apis.add(k)
+
+    return apis
+
 def handlewsgiapirequest(rctx, req, res, checkperm):
     """Handle requests to /api/*."""
     assert req.dispatchparts[0] == b'api'
@@ -247,13 +262,7 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
     # The URL space is /api/<protocol>/*. The structure of URLs under varies
     # by <protocol>.
 
-    # Registered APIs are made available via config options of the name of
-    # the protocol.
-    availableapis = set()
-    for k, v in API_HANDLERS.items():
-        section, option = v['config']
-        if repo.ui.configbool(section, option):
-            availableapis.add(k)
+    availableapis = _availableapis(repo)
 
     # Requests to /api/ list available APIs.
     if req.dispatchparts == [b'api']:
@@ -287,10 +296,21 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
                                    req.dispatchparts[2:])
 
 # Maps API name to metadata so custom API can be registered.
+# Keys are:
+#
+# config
+#    Config option that controls whether service is enabled.
+# handler
+#    Callable receiving (rctx, req, res, checkperm, urlparts) that is called
+#    when a request to this API is received.
+# apidescriptor
+#    Callable receiving (req, repo) that is called to obtain an API
+#    descriptor for this service. The response must be serializable to CBOR.
 API_HANDLERS = {
     wireprotov2server.HTTPV2: {
         'config': ('experimental', 'web.api.http-v2'),
         'handler': wireprotov2server.handlehttpv2request,
+        'apidescriptor': wireprotov2server.httpv2apidescriptor,
     },
 }
 
@@ -327,6 +347,54 @@ def _httpresponsetype(ui, proto, prefer_uncompressed):
     opts = {'level': ui.configint('server', 'zliblevel')}
     return HGTYPE, util.compengines['zlib'], opts
 
+def processcapabilitieshandshake(repo, req, res, proto):
+    """Called during a ?cmd=capabilities request.
+
+    If the client is advertising support for a newer protocol, we send
+    a CBOR response with information about available services. If no
+    advertised services are available, we don't handle the request.
+    """
+    # Fall back to old behavior unless the API server is enabled.
+    if not repo.ui.configbool('experimental', 'web.apiserver'):
+        return False
+
+    clientapis = decodevaluefromheaders(req, b'X-HgUpgrade')
+    protocaps = decodevaluefromheaders(req, b'X-HgProto')
+    if not clientapis or not protocaps:
+        return False
+
+    # We currently only support CBOR responses.
+    protocaps = set(protocaps.split(' '))
+    if b'cbor' not in protocaps:
+        return False
+
+    descriptors = {}
+
+    for api in sorted(set(clientapis.split()) & _availableapis(repo)):
+        handler = API_HANDLERS[api]
+
+        descriptorfn = handler.get('apidescriptor')
+        if not descriptorfn:
+            continue
+
+        descriptors[api] = descriptorfn(req, repo)
+
+    v1caps = wireproto.dispatch(repo, proto, 'capabilities')
+    assert isinstance(v1caps, wireprototypes.bytesresponse)
+
+    m = {
+        # TODO allow this to be configurable.
+        'apibase': 'api/',
+        'apis': descriptors,
+        'v1capabilities': v1caps.data,
+    }
+
+    res.status = b'200 OK'
+    res.headers[b'Content-Type'] = b'application/mercurial-cbor'
+    res.setbodybytes(cbor.dumps(m, canonical=True))
+
+    return True
+
 def _callhttp(repo, req, res, proto, cmd):
     # Avoid cycle involving hg module.
     from .hgweb import common as hgwebcommon
@@ -362,6 +430,12 @@ def _callhttp(repo, req, res, proto, cmd):
         return
 
     proto.checkperm(wireproto.commands[cmd].permission)
+
+    # Possibly handle a modern client wanting to switch protocols.
+    if (cmd == 'capabilities' and
+        processcapabilitieshandshake(repo, req, res, proto)):
+
+        return
 
     rsp = wireproto.dispatch(repo, proto, cmd)
 

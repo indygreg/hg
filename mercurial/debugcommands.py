@@ -33,6 +33,9 @@ from .node import (
     nullrev,
     short,
 )
+from .thirdparty import (
+    cbor,
+)
 from . import (
     bundle2,
     changegroup,
@@ -3045,9 +3048,14 @@ def debugwireproto(ui, repo, path=None, **opts):
             req.get_method = lambda: method
 
             try:
-                opener.open(req).read()
+                res = opener.open(req)
+                body = res.read()
             except util.urlerr.urlerror as e:
                 e.read()
+                continue
+
+            if res.headers.get('Content-Type') == 'application/mercurial-cbor':
+                ui.write(_('cbor> %s\n') % stringutil.pprint(cbor.loads(body)))
 
         elif action == 'close':
             peer.close()

@@ -365,6 +365,11 @@ class httpv2protocolhandler(object):
     def checkperm(self, perm):
         raise NotImplementedError
 
+def httpv2apidescriptor(req, repo):
+    proto = httpv2protocolhandler(req, repo.ui)
+
+    return _capabilitiesv2(repo, proto)
+
 def _capabilitiesv2(repo, proto):
     """Obtain the set of capabilities for version 2 transports.
 

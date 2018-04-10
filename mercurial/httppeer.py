@@ -305,6 +305,66 @@ def sendrequest(ui, opener, req):
 
     return res
 
+def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible):
+    # record the url we got redirected to
+    respurl = pycompat.bytesurl(resp.geturl())
+    if respurl.endswith(qs):
+        respurl = respurl[:-len(qs)]
+    if baseurl.rstrip('/') != respurl.rstrip('/'):
+        if not ui.quiet:
+            ui.warn(_('real URL is %s\n') % respurl)
+
+    try:
+        proto = pycompat.bytesurl(resp.getheader(r'content-type', r''))
+    except AttributeError:
+        proto = pycompat.bytesurl(resp.headers.get(r'content-type', r''))
+
+    safeurl = util.hidepassword(baseurl)
+    if proto.startswith('application/hg-error'):
+        raise error.OutOfBandError(resp.read())
+    # accept old "text/plain" and "application/hg-changegroup" for now
+    if not (proto.startswith('application/mercurial-') or
+            (proto.startswith('text/plain')
+             and not resp.headers.get('content-length')) or
+            proto.startswith('application/hg-changegroup')):
+        ui.debug("requested URL: '%s'\n" % util.hidepassword(requrl))
+        raise error.RepoError(
+            _("'%s' does not appear to be an hg repository:\n"
+              "---%%<--- (%s)\n%s\n---%%<---\n")
+            % (safeurl, proto or 'no content-type', resp.read(1024)))
+
+    if proto.startswith('application/mercurial-'):
+        try:
+            version = proto.split('-', 1)[1]
+            version_info = tuple([int(n) for n in version.split('.')])
+        except ValueError:
+            raise error.RepoError(_("'%s' sent a broken Content-Type "
+                                    "header (%s)") % (safeurl, proto))
+
+        # TODO consider switching to a decompression reader that uses
+        # generators.
+        if version_info == (0, 1):
+            if compressible:
+                resp = util.compengines['zlib'].decompressorreader(resp)
+
+            return respurl, resp
+
+        elif version_info == (0, 2):
+            # application/mercurial-0.2 always identifies the compression
+            # engine in the payload header.
+            elen = struct.unpack('B', resp.read(1))[0]
+            ename = resp.read(elen)
+            engine = util.compengines.forwiretype(ename)
+            return respurl, engine.decompressorreader(resp)
+        else:
+            raise error.RepoError(_("'%s' uses newer protocol %s") %
+                                  (safeurl, version))
+
+    if compressible:
+        resp = util.compengines['zlib'].decompressorreader(resp)
+
+    return respurl, resp
+
 class httppeer(wireproto.wirepeer):
     def __init__(self, ui, path, url, opener, requestbuilder):
         self.ui = ui
@@ -362,60 +422,8 @@ class httppeer(wireproto.wirepeer):
 
         resp = sendrequest(self.ui, self._urlopener, req)
 
-        # record the url we got redirected to
-        resp_url = pycompat.bytesurl(resp.geturl())
-        if resp_url.endswith(qs):
-            resp_url = resp_url[:-len(qs)]
-        if self._url.rstrip('/') != resp_url.rstrip('/'):
-            if not self.ui.quiet:
-                self.ui.warn(_('real URL is %s\n') % resp_url)
-        self._url = resp_url
-        try:
-            proto = pycompat.bytesurl(resp.getheader(r'content-type', r''))
-        except AttributeError:
-            proto = pycompat.bytesurl(resp.headers.get(r'content-type', r''))
-
-        safeurl = util.hidepassword(self._url)
-        if proto.startswith('application/hg-error'):
-            raise error.OutOfBandError(resp.read())
-        # accept old "text/plain" and "application/hg-changegroup" for now
-        if not (proto.startswith('application/mercurial-') or
-                (proto.startswith('text/plain')
-                 and not resp.headers.get('content-length')) or
-                proto.startswith('application/hg-changegroup')):
-            self.ui.debug("requested URL: '%s'\n" % util.hidepassword(cu))
-            raise error.RepoError(
-                _("'%s' does not appear to be an hg repository:\n"
-                  "---%%<--- (%s)\n%s\n---%%<---\n")
-                % (safeurl, proto or 'no content-type', resp.read(1024)))
-
-        if proto.startswith('application/mercurial-'):
-            try:
-                version = proto.split('-', 1)[1]
-                version_info = tuple([int(n) for n in version.split('.')])
-            except ValueError:
-                raise error.RepoError(_("'%s' sent a broken Content-Type "
-                                        "header (%s)") % (safeurl, proto))
-
-            # TODO consider switching to a decompression reader that uses
-            # generators.
-            if version_info == (0, 1):
-                if _compressible:
-                    return util.compengines['zlib'].decompressorreader(resp)
-                return resp
-            elif version_info == (0, 2):
-                # application/mercurial-0.2 always identifies the compression
-                # engine in the payload header.
-                elen = struct.unpack('B', resp.read(1))[0]
-                ename = resp.read(elen)
-                engine = util.compengines.forwiretype(ename)
-                return engine.decompressorreader(resp)
-            else:
-                raise error.RepoError(_("'%s' uses newer protocol %s") %
-                                      (safeurl, version))
-
-        if _compressible:
-            return util.compengines['zlib'].decompressorreader(resp)
+        self._url, resp = parsev1commandresponse(self.ui, self._url, cu, qs,
+                                                 resp, _compressible)
 
         return resp
 

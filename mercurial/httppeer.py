@@ -493,6 +493,15 @@ class httpv2peer(object):
     def _call(self, name, **args):
         """Call a wire protocol command with arguments."""
 
+        # Having this early has a side-effect of importing wireprotov2server,
+        # which has the side-effect of ensuring commands are registered.
+
+        # TODO modify user-agent to reflect v2.
+        headers = {
+            r'Accept': wireprotov2server.FRAMINGTYPE,
+            r'Content-Type': wireprotov2server.FRAMINGTYPE,
+        }
+
         # TODO permissions should come from capabilities results.
         permission = wireproto.commandsv2[name].permission
         if permission not in ('push', 'pull'):
@@ -506,12 +515,6 @@ class httpv2peer(object):
 
         url = '%s/api/%s/%s/%s' % (self.url, wireprotov2server.HTTPV2,
                                    permission, name)
-
-        # TODO modify user-agent to reflect v2.
-        headers = {
-            r'Accept': wireprotov2server.FRAMINGTYPE,
-            r'Content-Type': wireprotov2server.FRAMINGTYPE,
-        }
 
         # TODO this should be part of a generic peer for the frame-based
         # protocol.

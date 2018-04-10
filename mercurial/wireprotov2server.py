@@ -16,8 +16,10 @@ from .thirdparty.zope import (
     interface as zi,
 )
 from . import (
+    encoding,
     error,
     pycompat,
+    util,
     wireproto,
     wireprotoframing,
     wireprototypes,
@@ -362,3 +364,111 @@ class httpv2protocolhandler(object):
 
     def checkperm(self, perm):
         raise NotImplementedError
+
+def _capabilitiesv2(repo, proto):
+    """Obtain the set of capabilities for version 2 transports.
+
+    These capabilities are distinct from the capabilities for version 1
+    transports.
+    """
+    compression = []
+    for engine in wireproto.supportedcompengines(repo.ui, util.SERVERROLE):
+        compression.append({
+            b'name': engine.wireprotosupport().name,
+        })
+
+    caps = {
+        'commands': {},
+        'compression': compression,
+    }
+
+    for command, entry in wireproto.commandsv2.items():
+        caps['commands'][command] = {
+            'args': entry.args,
+            'permissions': [entry.permission],
+        }
+
+    return proto.addcapabilities(repo, caps)
+
+def wireprotocommand(*args, **kwargs):
+    def register(func):
+        return wireproto.wireprotocommand(
+            *args, transportpolicy=wireproto.POLICY_V2_ONLY, **kwargs)(func)
+
+    return register
+
+@wireprotocommand('branchmap', permission='pull')
+def branchmapv2(repo, proto):
+    branchmap = {encoding.fromlocal(k): v
+                 for k, v in repo.branchmap().iteritems()}
+
+    return wireprototypes.cborresponse(branchmap)
+
+@wireprotocommand('capabilities', permission='pull')
+def capabilitiesv2(repo, proto):
+    caps = _capabilitiesv2(repo, proto)
+
+    return wireprototypes.cborresponse(caps)
+
+@wireprotocommand('heads',
+                  args={
+                      'publiconly': False,
+                  },
+                  permission='pull')
+def headsv2(repo, proto, publiconly=False):
+    if publiconly:
+        repo = repo.filtered('immutable')
+
+    return wireprototypes.cborresponse(repo.heads())
+
+@wireprotocommand('known',
+                  args={
+                      'nodes': [b'deadbeef'],
+                  },
+                  permission='pull')
+def knownv2(repo, proto, nodes=None):
+    nodes = nodes or []
+    result = b''.join(b'1' if n else b'0' for n in repo.known(nodes))
+    return wireprototypes.cborresponse(result)
+
+@wireprotocommand('listkeys',
+                  args={
+                      'namespace': b'ns',
+                  },
+                  permission='pull')
+def listkeysv2(repo, proto, namespace=None):
+    keys = repo.listkeys(encoding.tolocal(namespace))
+    keys = {encoding.fromlocal(k): encoding.fromlocal(v)
+            for k, v in keys.iteritems()}
+
+    return wireprototypes.cborresponse(keys)
+
+@wireprotocommand('lookup',
+                  args={
+                      'key': b'foo',
+                  },
+                  permission='pull')
+def lookupv2(repo, proto, key):
+    key = encoding.tolocal(key)
+
+    # TODO handle exception.
+    node = repo.lookup(key)
+
+    return wireprototypes.cborresponse(node)
+
+@wireprotocommand('pushkey',
+                  args={
+                      'namespace': b'ns',
+                      'key': b'key',
+                      'old': b'old',
+                      'new': b'new',
+                  },
+                  permission='push')
+def pushkeyv2(repo, proto, namespace, key, old, new):
+    # TODO handle ui output redirection
+    r = repo.pushkey(encoding.tolocal(namespace),
+                     encoding.tolocal(key),
+                     encoding.tolocal(old),
+                     encoding.tolocal(new))
+
+    return wireprototypes.cborresponse(r)

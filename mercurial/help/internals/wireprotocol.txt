@@ -123,12 +123,6 @@ The ``application/hg-error`` media type indicates a generic error occurred.
 The content of the HTTP response body typically holds text describing the
 error.
 
-The ``application/hg-changegroup`` media type indicates a changegroup response
-type.
-
-Clients also accept the ``text/plain`` media type. All other media
-types should cause the client to error.
-
 Behavior of media types is further described in the ``Content Negotiation``
 section below.
 

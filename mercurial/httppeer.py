@@ -322,46 +322,40 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible):
     safeurl = util.hidepassword(baseurl)
     if proto.startswith('application/hg-error'):
         raise error.OutOfBandError(resp.read())
-    # accept old "text/plain" and "application/hg-changegroup" for now
-    if not (proto.startswith('application/mercurial-') or
-            (proto.startswith('text/plain')
-             and not resp.headers.get('content-length')) or
-            proto.startswith('application/hg-changegroup')):
+
+    # Pre 1.0 versions of Mercurial used text/plain and
+    # application/hg-changegroup. We don't support such old servers.
+    if not proto.startswith('application/mercurial-'):
         ui.debug("requested URL: '%s'\n" % util.hidepassword(requrl))
         raise error.RepoError(
             _("'%s' does not appear to be an hg repository:\n"
               "---%%<--- (%s)\n%s\n---%%<---\n")
             % (safeurl, proto or 'no content-type', resp.read(1024)))
 
-    if proto.startswith('application/mercurial-'):
-        try:
-            version = proto.split('-', 1)[1]
-            version_info = tuple([int(n) for n in version.split('.')])
-        except ValueError:
-            raise error.RepoError(_("'%s' sent a broken Content-Type "
-                                    "header (%s)") % (safeurl, proto))
+    try:
+        version = proto.split('-', 1)[1]
+        version_info = tuple([int(n) for n in version.split('.')])
+    except ValueError:
+        raise error.RepoError(_("'%s' sent a broken Content-Type "
+                                "header (%s)") % (safeurl, proto))
 
-        # TODO consider switching to a decompression reader that uses
-        # generators.
-        if version_info == (0, 1):
-            if compressible:
-                resp = util.compengines['zlib'].decompressorreader(resp)
+    # TODO consider switching to a decompression reader that uses
+    # generators.
+    if version_info == (0, 1):
+        if compressible:
+            resp = util.compengines['zlib'].decompressorreader(resp)
 
-            return respurl, resp
+    elif version_info == (0, 2):
+        # application/mercurial-0.2 always identifies the compression
+        # engine in the payload header.
+        elen = struct.unpack('B', resp.read(1))[0]
+        ename = resp.read(elen)
+        engine = util.compengines.forwiretype(ename)
 
-        elif version_info == (0, 2):
-            # application/mercurial-0.2 always identifies the compression
-            # engine in the payload header.
-            elen = struct.unpack('B', resp.read(1))[0]
-            ename = resp.read(elen)
-            engine = util.compengines.forwiretype(ename)
-            return respurl, engine.decompressorreader(resp)
-        else:
-            raise error.RepoError(_("'%s' uses newer protocol %s") %
-                                  (safeurl, version))
-
-    if compressible:
-        resp = util.compengines['zlib'].decompressorreader(resp)
+        resp = engine.decompressorreader(resp)
+    else:
+        raise error.RepoError(_("'%s' uses newer protocol %s") %
+                              (safeurl, version))
 
     return respurl, resp
 

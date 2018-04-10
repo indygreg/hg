@@ -70,7 +70,7 @@ class dummyopener(object):
 # Facilitates testing sshpeer without requiring an SSH server.
 class badpeer(httppeer.httppeer):
     def __init__(self):
-        super(badpeer, self).__init__(None, None, None, dummyopener())
+        super(badpeer, self).__init__(None, None, None, dummyopener(), None)
         self.badattribute = True
 
     def badmethod(self):
@@ -89,7 +89,7 @@ def main():
 
     ziverify.verifyClass(repository.ipeerbaselegacycommands,
                          httppeer.httppeer)
-    checkzobject(httppeer.httppeer(None, None, None, dummyopener()))
+    checkzobject(httppeer.httppeer(None, None, None, dummyopener(), None))
 
     ziverify.verifyClass(repository.ipeerbase,
                          localrepo.localpeer)

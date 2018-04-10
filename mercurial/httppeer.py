@@ -139,15 +139,13 @@ class _multifile(object):
         self._index = 0
 
 class httppeer(wireproto.wirepeer):
-    def __init__(self, ui, path, url, opener):
+    def __init__(self, ui, path, url, opener, requestbuilder):
         self.ui = ui
         self._path = path
         self._url = url
         self._caps = None
         self._urlopener = opener
-        # This is an its own attribute to facilitate extensions overriding
-        # the default type.
-        self._requestbuilder = urlreq.request
+        self._requestbuilder = requestbuilder
 
     def __del__(self):
         for h in self._urlopener.handlers:
@@ -570,7 +568,12 @@ class httpv2peer(object):
 
         return results
 
-def makepeer(ui, path):
+def makepeer(ui, path, requestbuilder=urlreq.request):
+    """Construct an appropriate HTTP peer instance.
+
+    ``requestbuilder`` is the type used for constructing HTTP requests.
+    It exists as an argument so extensions can override the default.
+    """
     u = util.url(path)
     if u.query or u.fragment:
         raise error.Abort(_('unsupported URL component: "%s"') %
@@ -582,7 +585,7 @@ def makepeer(ui, path):
 
     opener = urlmod.opener(ui, authinfo)
 
-    return httppeer(ui, path, url, opener)
+    return httppeer(ui, path, url, opener, requestbuilder)
 
 def instance(ui, path, create):
     if create:

@@ -1126,7 +1126,7 @@ create a git binary patch
   $ cat > writebin.py <<EOF
   > import sys
   > path = sys.argv[1]
-  > open(path, 'wb').write('BIN\x00ARY')
+  > open(path, 'wb').write(b'BIN\x00ARY')
   > EOF
   $ $PYTHON writebin.py bucephalus
 

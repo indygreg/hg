@@ -620,8 +620,11 @@ def performhandshake(ui, url, opener, requestbuilder):
 
     return respurl, set(rawcaps.split())
 
-def makepeer(ui, path, requestbuilder=urlreq.request):
+def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     """Construct an appropriate HTTP peer instance.
+
+    ``opener`` is an ``url.opener`` that should be used to establish
+    connections, perform HTTP requests.
 
     ``requestbuilder`` is the type used for constructing HTTP requests.
     It exists as an argument so extensions can override the default.
@@ -635,7 +638,7 @@ def makepeer(ui, path, requestbuilder=urlreq.request):
     url, authinfo = u.authinfo()
     ui.debug('using %s\n' % url)
 
-    opener = urlmod.opener(ui, authinfo)
+    opener = opener or urlmod.opener(ui, authinfo)
 
     respurl, caps = performhandshake(ui, url, opener, requestbuilder)
 

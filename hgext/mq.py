@@ -677,7 +677,7 @@ class queue(object):
             write = self.ui.warn
 
         if all_patches or self.ui.verbose:
-            if isinstance(idx, str):
+            if isinstance(idx, bytes):
                 idx = self.series.index(idx)
             pushable, why = self.pushable(idx)
             if all_patches and pushable:

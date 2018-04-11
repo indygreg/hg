@@ -8,7 +8,6 @@
 
 from __future__ import absolute_import
 
-import wsgiref.headers as wsgiheaders
 #import wsgiref.validate
 
 from ..thirdparty import (
@@ -289,6 +288,7 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None):
         if k.startswith('HTTP_'):
             headers.append((k[len('HTTP_'):].replace('_', '-'), v))
 
+    from . import wsgiheaders # avoid cycle
     headers = wsgiheaders.Headers(headers)
 
     # This is kind of a lie because the HTTP header wasn't explicitly
@@ -378,6 +378,7 @@ class wsgiresponse(object):
         self._startresponse = startresponse
 
         self.status = None
+        from . import wsgiheaders # avoid cycle
         self.headers = wsgiheaders.Headers([])
 
         self._bodybytes = None

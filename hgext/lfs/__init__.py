@@ -174,6 +174,9 @@ configitem('experimental', 'lfs.serve',
 configitem('experimental', 'lfs.user-agent',
     default=None,
 )
+configitem('experimental', 'lfs.disableusercache',
+    default=False,
+)
 configitem('experimental', 'lfs.worker-enable',
     default=False,
 )

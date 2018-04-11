@@ -118,14 +118,12 @@ class local(object):
     def __init__(self, repo):
         fullpath = repo.svfs.join('lfs/objects')
         self.vfs = lfsvfs(fullpath)
-        usercache = util.url(lfutil._usercachedir(repo.ui, 'lfs'))
-        if usercache.scheme in (None, 'file'):
-            self.cachevfs = lfsvfs(usercache.localpath())
-        elif usercache.scheme == 'null':
+
+        if repo.ui.configbool('experimental', 'lfs.disableusercache'):
             self.cachevfs = nullvfs()
         else:
-            raise error.Abort(_('unknown lfs cache scheme: %s')
-                              % usercache.scheme)
+            usercache = lfutil._usercachedir(repo.ui, 'lfs')
+            self.cachevfs = lfsvfs(usercache)
         self.ui = repo.ui
 
     def open(self, oid):

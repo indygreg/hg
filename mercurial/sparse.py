@@ -579,7 +579,7 @@ def importfromfiles(repo, opts, paths, force=False):
         # part of the active rules.
         changed = False
         for p in paths:
-            with util.posixfile(util.expandpath(p)) as fh:
+            with util.posixfile(util.expandpath(p), mode='rb') as fh:
                 raw = fh.read()
 
             iincludes, iexcludes, iprofiles = parseconfig(repo.ui, raw)

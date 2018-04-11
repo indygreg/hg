@@ -518,8 +518,10 @@ class wsgiresponse(object):
                 if not chunk:
                     break
 
+        strheaders = [(pycompat.strurl(k), pycompat.strurl(v)) for
+                      k, v in self.headers.items()]
         write = self._startresponse(pycompat.sysstr(self.status),
-                                    self.headers.items())
+                                    strheaders)
 
         if self._bodybytes:
             yield self._bodybytes

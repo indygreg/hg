@@ -61,6 +61,26 @@ class ipeerconnection(zi.Interface):
         associated with the peer should be cleaned up.
         """
 
+class ipeercapabilities(zi.Interface):
+    """Peer sub-interface related to capabilities."""
+
+    def capable(name):
+        """Determine support for a named capability.
+
+        Returns ``False`` if capability not supported.
+
+        Returns ``True`` if boolean capability is supported. Returns a string
+        if capability support is non-boolean.
+
+        Capability strings may or may not map to wire protocol capabilities.
+        """
+
+    def requirecap(name, purpose):
+        """Require a capability to be present.
+
+        Raises a ``CapabilityError`` if the capability isn't present.
+        """
+
 class ipeercommands(zi.Interface):
     """Client-side interface for communicating over the wire protocol.
 
@@ -176,7 +196,7 @@ class ipeerlegacycommands(zi.Interface):
     def changegroupsubset(bases, heads, kind):
         pass
 
-class ipeerbase(ipeerconnection, ipeercommands):
+class ipeerbase(ipeerconnection, ipeercapabilities, ipeercommands):
     """Unified interface for peer repositories.
 
     All peer instances must conform to this interface.
@@ -203,21 +223,6 @@ class ipeerbase(ipeerconnection, ipeercommands):
 
         Not all peers or wire protocol implementations may actually batch method
         calls. However, they must all support this API.
-        """
-
-    def capable(name):
-        """Determine support for a named capability.
-
-        Returns ``False`` if capability not supported.
-
-        Returns ``True`` if boolean capability is supported. Returns a string
-        if capability support is non-boolean.
-        """
-
-    def requirecap(name, purpose):
-        """Require a capability to be present.
-
-        Raises a ``CapabilityError`` if the capability isn't present.
         """
 
 class ipeerbaselegacycommands(ipeerbase, ipeerlegacycommands):

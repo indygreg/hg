@@ -19,11 +19,15 @@ from .i18n import _
 from .thirdparty import (
     cbor,
 )
+from .thirdparty.zope import (
+    interface as zi,
+)
 from . import (
     bundle2,
     error,
     httpconnection,
     pycompat,
+    repository,
     statichttprepo,
     url as urlmod,
     util,
@@ -513,6 +517,7 @@ class httppeer(wireproto.wirepeer):
         raise exception
 
 # TODO implement interface for version 2 peers
+@zi.implementer(repository.ipeerconnection)
 class httpv2peer(object):
     def __init__(self, ui, repourl, apipath, opener, requestbuilder,
                  apidescriptor):
@@ -521,14 +526,31 @@ class httpv2peer(object):
         if repourl.endswith('/'):
             repourl = repourl[:-1]
 
-        self.url = repourl
+        self._url = repourl
         self._apipath = apipath
         self._opener = opener
         self._requestbuilder = requestbuilder
         self._descriptor = apidescriptor
 
+    # Start of ipeerconnection.
+
+    def url(self):
+        return self._url
+
+    def local(self):
+        return None
+
+    def peer(self):
+        return self
+
+    def canpush(self):
+        # TODO change once implemented.
+        return False
+
     def close(self):
         pass
+
+    # End of ipeerconnection.
 
     # TODO require to be part of a batched primitive, use futures.
     def _call(self, name, **args):
@@ -554,7 +576,7 @@ class httpv2peer(object):
             'pull': 'ro',
         }[permission]
 
-        url = '%s/%s/%s/%s' % (self.url, self._apipath, permission, name)
+        url = '%s/%s/%s/%s' % (self._url, self._apipath, permission, name)
 
         # TODO this should be part of a generic peer for the frame-based
         # protocol.

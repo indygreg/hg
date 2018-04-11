@@ -92,6 +92,10 @@ def main():
                          httppeer.httppeer)
     checkzobject(httppeer.httppeer(None, None, None, dummyopener(), None, None))
 
+    ziverify.verifyClass(repository.ipeerconnection,
+                         httppeer.httpv2peer)
+    checkzobject(httppeer.httpv2peer(None, '', None, None, None, None))
+
     ziverify.verifyClass(repository.ipeerbase,
                          localrepo.localpeer)
     checkzobject(localrepo.localpeer(dummyrepo()))

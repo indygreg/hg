@@ -49,7 +49,7 @@ Test pullbundle functionality
   > 0.hg heads=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
   > EOF
   $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid
-  listening at http://localhost:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (?)
+  listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)
   $ cat ../repo.pid >> $DAEMON_PIDS
   $ cd ..
   $ hg clone -r 0 http://localhost:$HGPORT2/ repo.pullbundle
@@ -91,7 +91,7 @@ Test pullbundle functionality for incremental pulls
 
   $ cd repo
   $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid
-  listening at http://localhost:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (?)
+  listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)
   $ cat ../repo.pid >> $DAEMON_PIDS
   $ cd ..
   $ hg clone http://localhost:$HGPORT2/ repo.pullbundle2
@@ -126,7 +126,7 @@ Test recovery from misconfigured server sending no new data
   > 0.hg heads=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
   > EOF
   $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid
-  listening at http://localhost:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (?)
+  listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)
   $ cat ../repo.pid >> $DAEMON_PIDS
   $ cd ..
   $ hg clone -r 0 http://localhost:$HGPORT2/ repo.pullbundle3

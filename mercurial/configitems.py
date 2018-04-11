@@ -538,6 +538,9 @@ coreconfigitem('experimental', 'graphstyle.grandparent',
 coreconfigitem('experimental', 'hook-track-tags',
     default=False,
 )
+coreconfigitem('experimental', 'httppeer.advertise-v2',
+    default=False,
+)
 coreconfigitem('experimental', 'httppostargs',
     default=False,
 )

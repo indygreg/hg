@@ -83,6 +83,7 @@ from . import (
     vfs as vfsmod,
     wireprotoframing,
     wireprotoserver,
+    wireprototypes,
 )
 from .utils import (
     dateutil,
@@ -2910,7 +2911,9 @@ def debugwireproto(ui, repo, path=None, **opts):
 
         if opts['peer'] == 'http2':
             ui.write(_('creating http peer for wire protocol version 2\n'))
-            peer = httppeer.httpv2peer(ui, path, opener)
+            peer = httppeer.httpv2peer(
+                ui, path, 'api/%s' % wireprototypes.HTTPV2,
+                opener, httppeer.urlreq.request, {})
         elif opts['peer'] == 'raw':
             ui.write(_('using raw connection to peer\n'))
             peer = None

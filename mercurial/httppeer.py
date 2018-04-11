@@ -29,6 +29,7 @@ from . import (
     util,
     wireproto,
     wireprotoframing,
+    wireprototypes,
     wireprotov2server,
 )
 
@@ -311,7 +312,8 @@ def sendrequest(ui, opener, req):
 
     return res
 
-def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible):
+def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
+                           allowcbor=False):
     # record the url we got redirected to
     respurl = pycompat.bytesurl(resp.geturl())
     if respurl.endswith(qs):
@@ -339,8 +341,19 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible):
             % (safeurl, proto or 'no content-type', resp.read(1024)))
 
     try:
-        version = proto.split('-', 1)[1]
-        version_info = tuple([int(n) for n in version.split('.')])
+        subtype = proto.split('-', 1)[1]
+
+        # Unless we end up supporting CBOR in the legacy wire protocol,
+        # this should ONLY be encountered for the initial capabilities
+        # request during handshake.
+        if subtype == 'cbor':
+            if allowcbor:
+                return respurl, proto, resp
+            else:
+                raise error.RepoError(_('unexpected CBOR response from '
+                                        'server'))
+
+        version_info = tuple([int(n) for n in subtype.split('.')])
     except ValueError:
         raise error.RepoError(_("'%s' sent a broken Content-Type "
                                 "header (%s)") % (safeurl, proto))
@@ -361,9 +374,9 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible):
         resp = engine.decompressorreader(resp)
     else:
         raise error.RepoError(_("'%s' uses newer protocol %s") %
-                              (safeurl, version))
+                              (safeurl, subtype))
 
-    return respurl, resp
+    return respurl, proto, resp
 
 class httppeer(wireproto.wirepeer):
     def __init__(self, ui, path, url, opener, requestbuilder, caps):
@@ -416,8 +429,8 @@ class httppeer(wireproto.wirepeer):
 
         resp = sendrequest(self.ui, self._urlopener, req)
 
-        self._url, resp = parsev1commandresponse(self.ui, self._url, cu, qs,
-                                                 resp, _compressible)
+        self._url, ct, resp = parsev1commandresponse(self.ui, self._url, cu, qs,
+                                                     resp, _compressible)
 
         return resp
 
@@ -501,17 +514,18 @@ class httppeer(wireproto.wirepeer):
 
 # TODO implement interface for version 2 peers
 class httpv2peer(object):
-    def __init__(self, ui, repourl, opener):
+    def __init__(self, ui, repourl, apipath, opener, requestbuilder,
+                 apidescriptor):
         self.ui = ui
 
         if repourl.endswith('/'):
             repourl = repourl[:-1]
 
         self.url = repourl
+        self._apipath = apipath
         self._opener = opener
-        # This is an its own attribute to facilitate extensions overriding
-        # the default type.
-        self._requestbuilder = urlreq.request
+        self._requestbuilder = requestbuilder
+        self._descriptor = apidescriptor
 
     def close(self):
         pass
@@ -540,8 +554,7 @@ class httpv2peer(object):
             'pull': 'ro',
         }[permission]
 
-        url = '%s/api/%s/%s/%s' % (self.url, wireprotov2server.HTTPV2,
-                                   permission, name)
+        url = '%s/%s/%s/%s' % (self.url, self._apipath, permission, name)
 
         # TODO this should be part of a generic peer for the frame-based
         # protocol.
@@ -597,6 +610,24 @@ class httpv2peer(object):
 
         return results
 
+# Registry of API service names to metadata about peers that handle it.
+#
+# The following keys are meaningful:
+#
+# init
+#    Callable receiving (ui, repourl, servicepath, opener, requestbuilder,
+#                        apidescriptor) to create a peer.
+#
+# priority
+#    Integer priority for the service. If we could choose from multiple
+#    services, we choose the one with the highest priority.
+API_PEERS = {
+    wireprototypes.HTTPV2: {
+        'init': httpv2peer,
+        'priority': 50,
+    },
+}
+
 def performhandshake(ui, url, opener, requestbuilder):
     # The handshake is a request to the capabilities command.
 
@@ -604,21 +635,69 @@ def performhandshake(ui, url, opener, requestbuilder):
     def capable(x):
         raise error.ProgrammingError('should not be called')
 
+    args = {}
+
+    # The client advertises support for newer protocols by adding an
+    # X-HgUpgrade-* header with a list of supported APIs and an
+    # X-HgProto-* header advertising which serializing formats it supports.
+    # We only support the HTTP version 2 transport and CBOR responses for
+    # now.
+    advertisev2 = ui.configbool('experimental', 'httppeer.advertise-v2')
+
+    if advertisev2:
+        args['headers'] = {
+            r'X-HgProto-1': r'cbor',
+        }
+
+        args['headers'].update(
+            encodevalueinheaders(' '.join(sorted(API_PEERS)),
+                                 'X-HgUpgrade',
+                                 # We don't know the header limit this early.
+                                 # So make it small.
+                                 1024))
+
     req, requrl, qs = makev1commandrequest(ui, requestbuilder, caps,
                                            capable, url, 'capabilities',
-                                           {})
+                                           args)
 
     resp = sendrequest(ui, opener, req)
 
-    respurl, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
-                                           compressible=False)
+    respurl, ct, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
+                                               compressible=False,
+                                               allowcbor=advertisev2)
 
     try:
-        rawcaps = resp.read()
+        rawdata = resp.read()
     finally:
         resp.close()
 
-    return respurl, set(rawcaps.split())
+    if not ct.startswith('application/mercurial-'):
+        raise error.ProgrammingError('unexpected content-type: %s' % ct)
+
+    if advertisev2:
+        if ct == 'application/mercurial-cbor':
+            try:
+                info = cbor.loads(rawdata)
+            except cbor.CBORDecodeError:
+                raise error.Abort(_('error decoding CBOR from remote server'),
+                                  hint=_('try again and consider contacting '
+                                         'the server operator'))
+
+        # We got a legacy response. That's fine.
+        elif ct in ('application/mercurial-0.1', 'application/mercurial-0.2'):
+            info = {
+                'v1capabilities': set(rawdata.split())
+            }
+
+        else:
+            raise error.RepoError(
+                _('unexpected response type from server: %s') % ct)
+    else:
+        info = {
+            'v1capabilities': set(rawdata.split())
+        }
+
+    return respurl, info
 
 def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     """Construct an appropriate HTTP peer instance.
@@ -640,9 +719,33 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
 
     opener = opener or urlmod.opener(ui, authinfo)
 
-    respurl, caps = performhandshake(ui, url, opener, requestbuilder)
+    respurl, info = performhandshake(ui, url, opener, requestbuilder)
 
-    return httppeer(ui, path, respurl, opener, requestbuilder, caps)
+    # Given the intersection of APIs that both we and the server support,
+    # sort by their advertised priority and pick the first one.
+    #
+    # TODO consider making this request-based and interface driven. For
+    # example, the caller could say "I want a peer that does X." It's quite
+    # possible that not all peers would do that. Since we know the service
+    # capabilities, we could filter out services not meeting the
+    # requirements. Possibly by consulting the interfaces defined by the
+    # peer type.
+    apipeerchoices = set(info.get('apis', {}).keys()) & set(API_PEERS.keys())
+
+    preferredchoices = sorted(apipeerchoices,
+                              key=lambda x: API_PEERS[x]['priority'],
+                              reverse=True)
+
+    for service in preferredchoices:
+        apipath = '%s/%s' % (info['apibase'].rstrip('/'), service)
+
+        return API_PEERS[service]['init'](ui, respurl, apipath, opener,
+                                          requestbuilder,
+                                          info['apis'][service])
+
+    # Failed to construct an API peer. Fall back to legacy.
+    return httppeer(ui, path, respurl, opener, requestbuilder,
+                    info['v1capabilities'])
 
 def instance(ui, path, create):
     if create:

@@ -284,29 +284,6 @@ class ipeerbase(ipeerconnection, ipeercapabilities, ipeercommands,
 
     All peer instances must conform to this interface.
     """
-    def iterbatch():
-        """Obtain an object to be used for multiple method calls.
-
-        Various operations call several methods on peer instances. If each
-        method call were performed immediately and serially, this would
-        require round trips to remote peers and/or would slow down execution.
-
-        Some peers have the ability to "batch" method calls to avoid costly
-        round trips or to facilitate concurrent execution.
-
-        This method returns an object that can be used to indicate intent to
-        perform batched method calls.
-
-        The returned object is a proxy of this peer. It intercepts calls to
-        batchable methods and queues them instead of performing them
-        immediately. This proxy object has a ``submit`` method that will
-        perform all queued batchable method calls. A ``results()`` method
-        exposes the results of queued/batched method calls. It is a generator
-        of results in the order they were called.
-
-        Not all peers or wire protocol implementations may actually batch method
-        calls. However, they must all support this API.
-        """
 
 class ipeerbaselegacycommands(ipeerbase, ipeerlegacycommands):
     """Unified peer interface that supports legacy commands."""

@@ -93,7 +93,9 @@ srv = serverrepo()
 clt = clientpeer(srv, uimod.ui())
 
 print(clt.greet(b"Foobar"))
-b = clt.iterbatch()
-list(map(b.greet, (b'Fo, =;:<o', b'Bar')))
-b.submit()
-print([r for r in b.results()])
+
+with clt.commandexecutor() as e:
+    fgreet1 = e.callcommand(b'greet', {b'name': b'Fo, =;:<o'})
+    fgreet2 = e.callcommand(b'greet', {b'name': b'Bar'})
+
+print([f.result() for f in (fgreet1, fgreet2)])

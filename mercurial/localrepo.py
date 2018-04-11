@@ -66,7 +66,6 @@ from . import (
     txnutil,
     util,
     vfs as vfsmod,
-    wireprotov1peer,
 )
 from .utils import (
     procutil,
@@ -153,20 +152,6 @@ def unfilteredmethod(orig):
 moderncaps = {'lookup', 'branchmap', 'pushkey', 'known', 'getbundle',
               'unbundle'}
 legacycaps = moderncaps.union({'changegroupsubset'})
-
-class localiterbatcher(wireprotov1peer.iterbatcher):
-    def __init__(self, local):
-        super(localiterbatcher, self).__init__()
-        self.local = local
-
-    def submit(self):
-        # submit for a local iter batcher is a noop
-        pass
-
-    def results(self):
-        for name, args, opts, resref in self.calls:
-            resref.set(getattr(self.local, name)(*args, **opts))
-            yield resref.value
 
 @zi.implementer(repository.ipeercommandexecutor)
 class localcommandexecutor(object):
@@ -332,9 +317,6 @@ class localpeer(repository.peer):
 
     def commandexecutor(self):
         return localcommandexecutor(self)
-
-    def iterbatch(self):
-        return localiterbatcher(self)
 
     # End of peer interface.
 

@@ -6,7 +6,6 @@ Eins und Zwei
 One and Two
 Eins und Zwei
 Uno und Due
-proper end of results generator
 
 == Remote
 Ready.
@@ -21,6 +20,3 @@ REQ: batch?cmds=foo:one=Pof,two=Uxp;bar:b=Fjot,a=[xfj;bar:b=Vop,a=Evf
 One and Two
 Eins und Zwei
 Uno und Due
-proper end of results generator
-Attempted to batch a non-batchable call to 'greet'
-Attempted to batch a non-batchable call to 'hello'

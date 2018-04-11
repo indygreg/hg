@@ -73,97 +73,6 @@ class future(object):
             raise error.RepoError("future is already set")
         self.value = value
 
-class batcher(object):
-    '''base class for batches of commands submittable in a single request
-
-    All methods invoked on instances of this class are simply queued and
-    return a a future for the result. Once you call submit(), all the queued
-    calls are performed and the results set in their respective futures.
-    '''
-    def __init__(self):
-        self.calls = []
-    def __getattr__(self, name):
-        def call(*args, **opts):
-            resref = future()
-            # Please don't invent non-ascii method names, or you will
-            # give core hg a very sad time.
-            self.calls.append((name.encode('ascii'), args, opts, resref,))
-            return resref
-        return call
-    def submit(self):
-        raise NotImplementedError()
-
-class iterbatcher(batcher):
-
-    def submit(self):
-        raise NotImplementedError()
-
-    def results(self):
-        raise NotImplementedError()
-
-class remoteiterbatcher(iterbatcher):
-    def __init__(self, remote):
-        super(remoteiterbatcher, self).__init__()
-        self._remote = remote
-
-    def __getattr__(self, name):
-        # Validate this method is batchable, since submit() only supports
-        # batchable methods.
-        fn = getattr(self._remote, name)
-        if not getattr(fn, 'batchable', None):
-            raise error.ProgrammingError('Attempted to batch a non-batchable '
-                                         'call to %r' % name)
-
-        return super(remoteiterbatcher, self).__getattr__(name)
-
-    def submit(self):
-        """Break the batch request into many patch calls and pipeline them.
-
-        This is mostly valuable over http where request sizes can be
-        limited, but can be used in other places as well.
-        """
-        # 2-tuple of (command, arguments) that represents what will be
-        # sent over the wire.
-        requests = []
-
-        # 4-tuple of (command, final future, @batchable generator, remote
-        # future).
-        results = []
-
-        for command, args, opts, finalfuture in self.calls:
-            mtd = getattr(self._remote, command)
-            batchable = mtd.batchable(mtd.__self__, *args, **opts)
-
-            commandargs, fremote = next(batchable)
-            assert fremote
-            requests.append((command, commandargs))
-            results.append((command, finalfuture, batchable, fremote))
-
-        if requests:
-            self._resultiter = self._remote._submitbatch(requests)
-
-        self._results = results
-
-    def results(self):
-        for command, finalfuture, batchable, remotefuture in self._results:
-            # Get the raw result, set it in the remote future, feed it
-            # back into the @batchable generator so it can be decoded, and
-            # set the result on the final future to this value.
-            remoteresult = next(self._resultiter)
-            remotefuture.set(remoteresult)
-            finalfuture.set(next(batchable))
-
-            # Verify our @batchable generators only emit 2 values.
-            try:
-                next(batchable)
-            except StopIteration:
-                pass
-            else:
-                raise error.ProgrammingError('%s @batchable generator emitted '
-                                             'unexpected value count' % command)
-
-            yield finalfuture.value
-
 def encodebatchcmds(req):
     """Return a ``cmds`` argument value for the ``batch`` command."""
     escapearg = wireprototypes.escapebatcharg
@@ -411,9 +320,6 @@ class wirepeer(repository.legacypeer):
         return peerexecutor(self)
 
     # Begin of ipeercommands interface.
-
-    def iterbatch(self):
-        return remoteiterbatcher(self)
 
     @batchable
     def lookup(self, key):

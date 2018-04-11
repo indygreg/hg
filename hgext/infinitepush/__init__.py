@@ -128,6 +128,7 @@ from mercurial import (
     util,
     wireproto,
     wireprototypes,
+    wireprotov1peer,
 )
 
 from . import (
@@ -319,7 +320,7 @@ def clientextsetup(ui):
 
     extensions.wrapfunction(discovery, 'checkheads', _checkheads)
 
-    wireproto.wirepeer.listkeyspatterns = listkeyspatterns
+    wireprotov1peer.wirepeer.listkeyspatterns = listkeyspatterns
 
     partorder = exchange.b2partsgenorder
     index = partorder.index('changeset')

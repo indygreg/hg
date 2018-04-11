@@ -11,7 +11,7 @@ from mercurial import (
     error,
     peer,
     util,
-    wireproto,
+    wireprotov1peer,
 )
 
 # equivalent of repo.repository
@@ -177,7 +177,7 @@ class remotething(thing):
             yield r
 
     def batchiter(self):
-        return wireproto.remoteiterbatcher(self)
+        return wireprotov1peer.remoteiterbatcher(self)
 
     @peer.batchable
     def foo(self, one, two=None):

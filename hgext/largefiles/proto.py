@@ -13,8 +13,8 @@ from mercurial import (
     error,
     httppeer,
     util,
-    wireproto,
     wireprototypes,
+    wireprotov1peer,
 )
 
 from . import (
@@ -145,9 +145,9 @@ def wirereposetup(ui, repo):
                     self._abort(error.ResponseError(_("unexpected response:"),
                                                     chunk))
 
-        @wireproto.batchable
+        @wireprotov1peer.batchable
         def statlfile(self, sha):
-            f = wireproto.future()
+            f = wireprotov1peer.future()
             result = {'sha': sha}
             yield result, f
             try:

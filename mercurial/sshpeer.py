@@ -18,6 +18,7 @@ from . import (
     wireproto,
     wireprotoserver,
     wireprototypes,
+    wireprotov1peer,
 )
 from .utils import (
     procutil,
@@ -352,7 +353,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     return protoname, caps
 
-class sshv1peer(wireproto.wirepeer):
+class sshv1peer(wireprotov1peer.wirepeer):
     def __init__(self, ui, url, proc, stdin, stdout, stderr, caps,
                  autoreadstderr=True):
         """Create a peer from an existing SSH connection.
@@ -589,7 +590,7 @@ def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
 def instance(ui, path, create):
     """Create an SSH peer.
 
-    The returned object conforms to the ``wireproto.wirepeer`` interface.
+    The returned object conforms to the ``wireprotov1peer.wirepeer`` interface.
     """
     u = util.url(path, parsequery=False, parsefragment=False)
     if u.scheme != 'ssh' or not u.host or u.path is None:

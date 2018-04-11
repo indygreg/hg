@@ -7,6 +7,7 @@ from mercurial import (
     util,
     wireproto,
     wireprototypes,
+    wireprotov1peer,
 )
 stringio = util.stringio
 
@@ -29,7 +30,7 @@ wireprototypes.TRANSPORTS['dummyproto'] = {
     'version': 1,
 }
 
-class clientpeer(wireproto.wirepeer):
+class clientpeer(wireprotov1peer.wirepeer):
     def __init__(self, serverrepo, ui):
         self.serverrepo = serverrepo
         self.ui = ui
@@ -65,9 +66,9 @@ class clientpeer(wireproto.wirepeer):
     def _callstream(self, cmd, **args):
         return stringio(self._call(cmd, **args))
 
-    @wireproto.batchable
+    @wireprotov1peer.batchable
     def greet(self, name):
-        f = wireproto.future()
+        f = wireprotov1peer.future()
         yield {b'name': mangle(name)}, f
         yield unmangle(f.value)
 

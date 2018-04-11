@@ -34,6 +34,7 @@ from . import (
     wireproto,
     wireprotoframing,
     wireprototypes,
+    wireprotov1peer,
     wireprotov2server,
 )
 
@@ -382,7 +383,7 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
 
     return respurl, proto, resp
 
-class httppeer(wireproto.wirepeer):
+class httppeer(wireprotov1peer.wirepeer):
     def __init__(self, ui, path, url, opener, requestbuilder, caps):
         self.ui = ui
         self._path = path

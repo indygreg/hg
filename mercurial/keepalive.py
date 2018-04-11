@@ -384,6 +384,7 @@ class HTTPResponse(httplib.HTTPResponse):
         self._connection = None # (same)
 
     _raw_read = httplib.HTTPResponse.read
+    _raw_readinto = getattr(httplib.HTTPResponse, 'readinto', None)
 
     def close(self):
         if self.fp:
@@ -523,12 +524,24 @@ class HTTPResponse(httplib.HTTPResponse):
         return list
 
     def readinto(self, dest):
-        res = self.read(len(dest))
-        if not res:
-            return 0
-
-        dest[0:len(res)] = res
-        return len(res)
+        if self._raw_readinto is None:
+            res = self.read(len(dest))
+            if not res:
+                return 0
+            dest[0:len(res)] = res
+            return len(res)
+        total = len(dest)
+        have = len(self._rbuf)
+        if have >= total:
+            dest[0:total] = self._rbuf[:total]
+            self._rbuf = self._rbuf[total:]
+            return total
+        mv = memoryview(dest)
+        got = self._raw_readinto(mv[have:total])
+        dest[0:have] = self._rbuf
+        got += len(self._rbuf)
+        self._rbuf = ''
+        return got
 
 def safesend(self, str):
     """Send `str' to the server.

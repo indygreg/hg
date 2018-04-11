@@ -91,9 +91,11 @@ test-diff-subdir.t
 test-diff-unified.t
 test-diff-upgrade.t
 test-diffdir.t
+test-diffstat.t
 test-directaccess.t
 test-dirstate-backup.t
 test-dirstate-nonnormalset.t
+test-dirstate.t
 test-doctest.py
 test-double-merge.t
 test-drawdag.t
@@ -151,6 +153,7 @@ test-hgignore.t
 test-hgk.t
 test-hgweb-bundle.t
 test-hgweb-descend-empties.t
+test-hgweb-empty.t
 test-hgweb-removed.t
 test-histedit-arguments.t
 test-histedit-base.t
@@ -173,6 +176,7 @@ test-identify.t
 test-import-unknown.t
 test-import.t
 test-imports-checker.t
+test-incoming-outgoing.t
 test-inherit-mode.t
 test-issue1089.t
 test-issue1102.t
@@ -242,11 +246,14 @@ test-merge9.t
 test-mq-git.t
 test-mq-header-date.t
 test-mq-header-from.t
+test-mq-merge.t
 test-mq-pull-from-bundle.t
+test-mq-qdelete.t
 test-mq-qdiff.t
 test-mq-qfold.t
 test-mq-qgoto.t
 test-mq-qimport-fail-cleanup.t
+test-mq-qnew.t
 test-mq-qpush-exact.t
 test-mq-qqueue.t
 test-mq-qrefresh-interactive.t
@@ -347,6 +354,7 @@ test-rebase-interruptions.t
 test-rebase-issue-noparam-single-rev.t
 test-rebase-legacy.t
 test-rebase-mq-skip.t
+test-rebase-mq.t
 test-rebase-named-branches.t
 test-rebase-newancestor.t
 test-rebase-obsolete.t
@@ -379,6 +387,7 @@ test-rollback.t
 test-run-tests.py
 test-schemes.t
 test-serve.t
+test-setdiscovery.t
 test-share.t
 test-show-stack.t
 test-show-work.t

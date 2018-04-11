@@ -134,6 +134,30 @@ def unescapebatcharg(escaped):
             .replace(':o', ',')
             .replace(':c', ':'))
 
+# mapping of options accepted by getbundle and their types
+#
+# Meant to be extended by extensions. It is extensions responsibility to ensure
+# such options are properly processed in exchange.getbundle.
+#
+# supported types are:
+#
+# :nodes: list of binary nodes
+# :csv:   list of comma-separated values
+# :scsv:  list of comma-separated values return as set
+# :plain: string with no transformation needed.
+GETBUNDLE_ARGUMENTS = {
+    'heads':  'nodes',
+    'bookmarks': 'boolean',
+    'common': 'nodes',
+    'obsmarkers': 'boolean',
+    'phases': 'boolean',
+    'bundlecaps': 'scsv',
+    'listkeys': 'csv',
+    'cg': 'boolean',
+    'cbattempted': 'boolean',
+    'stream': 'boolean',
+}
+
 class baseprotocolhandler(zi.Interface):
     """Abstract base class for wire protocol handlers.
 

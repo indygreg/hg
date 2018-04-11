@@ -145,29 +145,6 @@ def clientcompressionsupport(proto):
             return cap[5:].split(',')
     return ['zlib', 'none']
 
-# mapping of options accepted by getbundle and their types
-#
-# Meant to be extended by extensions. It is extensions responsibility to ensure
-# such options are properly processed in exchange.getbundle.
-#
-# supported types are:
-#
-# :nodes: list of binary nodes
-# :csv:   list of comma-separated values
-# :scsv:  list of comma-separated values return as set
-# :plain: string with no transformation needed.
-gboptsmap = {'heads':  'nodes',
-             'bookmarks': 'boolean',
-             'common': 'nodes',
-             'obsmarkers': 'boolean',
-             'phases': 'boolean',
-             'bundlecaps': 'scsv',
-             'listkeys': 'csv',
-             'cg': 'boolean',
-             'cbattempted': 'boolean',
-             'stream': 'boolean',
-}
-
 # client side
 
 class wirepeer(repository.legacypeer):
@@ -275,7 +252,7 @@ class wirepeer(repository.legacypeer):
         for key, value in kwargs.iteritems():
             if value is None:
                 continue
-            keytype = gboptsmap.get(key)
+            keytype = wireprototypes.GETBUNDLE_ARGUMENTS.get(key)
             if keytype is None:
                 raise error.ProgrammingError(
                     'Unexpectedly None keytype for key %s' % key)
@@ -1004,9 +981,10 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
 @wireprotocommand('getbundle', '*', permission='pull',
                   transportpolicy=POLICY_V1_ONLY)
 def getbundle(repo, proto, others):
-    opts = options('getbundle', gboptsmap.keys(), others)
+    opts = options('getbundle', wireprototypes.GETBUNDLE_ARGUMENTS.keys(),
+                   others)
     for k, v in opts.iteritems():
-        keytype = gboptsmap[k]
+        keytype = wireprototypes.GETBUNDLE_ARGUMENTS[k]
         if keytype == 'nodes':
             opts[k] = wireprototypes.decodelist(v)
         elif keytype == 'csv':

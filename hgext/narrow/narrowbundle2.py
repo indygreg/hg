@@ -27,7 +27,7 @@ from mercurial import (
     narrowspec,
     repair,
     util,
-    wireproto,
+    wireprototypes,
 )
 from mercurial.utils import (
     stringutil,
@@ -461,13 +461,15 @@ def setup():
     """Enable narrow repo support in bundle2-related extension points."""
     extensions.wrapfunction(bundle2, 'getrepocaps', getrepocaps_narrow)
 
-    wireproto.gboptsmap['narrow'] = 'boolean'
-    wireproto.gboptsmap['depth'] = 'plain'
-    wireproto.gboptsmap['oldincludepats'] = 'csv'
-    wireproto.gboptsmap['oldexcludepats'] = 'csv'
-    wireproto.gboptsmap['includepats'] = 'csv'
-    wireproto.gboptsmap['excludepats'] = 'csv'
-    wireproto.gboptsmap['known'] = 'csv'
+    getbundleargs = wireprototypes.GETBUNDLE_ARGUMENTS
+
+    getbundleargs['narrow'] = 'boolean'
+    getbundleargs['depth'] = 'plain'
+    getbundleargs['oldincludepats'] = 'csv'
+    getbundleargs['oldexcludepats'] = 'csv'
+    getbundleargs['includepats'] = 'csv'
+    getbundleargs['excludepats'] = 'csv'
+    getbundleargs['known'] = 'csv'
 
     # Extend changegroup serving to handle requests from narrow clients.
     origcgfn = exchange.getbundle2partsmapping['changegroup']

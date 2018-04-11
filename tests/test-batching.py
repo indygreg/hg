@@ -9,9 +9,10 @@ from __future__ import absolute_import, print_function
 
 from mercurial import (
     error,
-    peer,
+    localrepo,
     util,
     wireprotov1peer,
+
 )
 
 # equivalent of repo.repository
@@ -31,7 +32,7 @@ class localthing(thing):
         return "Hello, %s" % name
     def batchiter(self):
         '''Support for local batching.'''
-        return peer.localiterbatcher(self)
+        return localrepo.localiterbatcher(self)
 
 # usage of "thing" interface
 def use(it):
@@ -51,7 +52,7 @@ def use(it):
     bar2 = batch.bar(b="Uno", a="Due")
 
     # Future shouldn't be set until we submit().
-    assert isinstance(foo, peer.future)
+    assert isinstance(foo, wireprotov1peer.future)
     assert not util.safehasattr(foo, 'value')
     assert not util.safehasattr(bar, 'value')
     batch.submit()
@@ -179,16 +180,16 @@ class remotething(thing):
     def batchiter(self):
         return wireprotov1peer.remoteiterbatcher(self)
 
-    @peer.batchable
+    @wireprotov1peer.batchable
     def foo(self, one, two=None):
         encargs = [('one', mangle(one),), ('two', mangle(two),)]
-        encresref = peer.future()
+        encresref = wireprotov1peer.future()
         yield encargs, encresref
         yield unmangle(encresref.value)
 
-    @peer.batchable
+    @wireprotov1peer.batchable
     def bar(self, b, a):
-        encresref = peer.future()
+        encresref = wireprotov1peer.future()
         yield [('b', mangle(b),), ('a', mangle(a),)], encresref
         yield unmangle(encresref.value)
 

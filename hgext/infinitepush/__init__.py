@@ -120,7 +120,6 @@ from mercurial import (
     extensions,
     hg,
     localrepo,
-    peer,
     phases,
     pushkey,
     pycompat,
@@ -354,11 +353,11 @@ def localrepolistkeys(orig, self, namespace, patterns=None):
     else:
         return orig(self, namespace)
 
-@peer.batchable
+@wireprotov1peer.batchable
 def listkeyspatterns(self, namespace, patterns):
     if not self.capable('pushkey'):
         yield {}, None
-    f = peer.future()
+    f = wireprotov1peer.future()
     self.ui.debug('preparing listkeys for "%s" with pattern "%s"\n' %
                   (namespace, patterns))
     yield {

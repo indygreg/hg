@@ -661,13 +661,13 @@ class queue(object):
         exactneg = [g for g in patchguards
                     if g.startswith('-') and g[1:] in guards]
         if exactneg:
-            return False, repr(exactneg[0])
+            return False, pycompat.byterepr(exactneg[0])
         pos = [g for g in patchguards if g.startswith('+')]
         exactpos = [g for g in pos if g[1:] in guards]
         if pos:
             if exactpos:
-                return True, repr(exactpos[0])
-            return False, ' '.join(map(repr, pos))
+                return True, pycompat.byterepr(exactpos[0])
+            return False, ' '.join([pycompat.byterepr(p) for p in pos])
         return True, ''
 
     def explainpushable(self, idx, all_patches=False):

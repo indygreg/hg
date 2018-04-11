@@ -94,6 +94,8 @@ def main():
 
     ziverify.verifyClass(repository.ipeerconnection,
                          httppeer.httpv2peer)
+    ziverify.verifyClass(repository.ipeercapabilities,
+                         httppeer.httpv2peer)
     checkzobject(httppeer.httpv2peer(None, '', None, None, None, None))
 
     ziverify.verifyClass(repository.ipeerbase,

@@ -517,7 +517,7 @@ class httppeer(wireproto.wirepeer):
         raise exception
 
 # TODO implement interface for version 2 peers
-@zi.implementer(repository.ipeerconnection)
+@zi.implementer(repository.ipeerconnection, repository.ipeercapabilities)
 class httpv2peer(object):
     def __init__(self, ui, repourl, apipath, opener, requestbuilder,
                  apidescriptor):
@@ -551,6 +551,33 @@ class httpv2peer(object):
         pass
 
     # End of ipeerconnection.
+
+    # Start of ipeercapabilities.
+
+    def capable(self, name):
+        # The capabilities used internally historically map to capabilities
+        # advertised from the "capabilities" wire protocol command. However,
+        # version 2 of that command works differently.
+
+        # Maps to commands that are available.
+        if name in ('branchmap', 'getbundle', 'known', 'lookup', 'pushkey'):
+            return True
+
+        # Other concepts.
+        if name in ('bundle2',):
+            return True
+
+        return False
+
+    def requirecap(self, name, purpose):
+        if self.capable(name):
+            return
+
+        raise error.CapabilityError(
+            _('cannot %s; client or remote repository does not support the %r '
+              'capability') % (purpose, name))
+
+    # End of ipeercapabilities.
 
     # TODO require to be part of a batched primitive, use futures.
     def _call(self, name, **args):

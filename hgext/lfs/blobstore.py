@@ -539,23 +539,28 @@ def remote(repo, remote=None):
 
     https://github.com/git-lfs/git-lfs/blob/master/docs/api/server-discovery.md
     """
-    url = util.url(repo.ui.config('lfs', 'url') or '')
-    if url.scheme is None:
+    lfsurl = repo.ui.config('lfs', 'url')
+    url = util.url(lfsurl or '')
+    if lfsurl is None:
         if remote:
-            defaulturl = util.url(remote)
+            path = remote
         elif util.safehasattr(repo, '_subtoppath'):
             # The pull command sets this during the optional update phase, which
             # tells exactly where the pull originated, whether 'paths.default'
             # or explicit.
-            defaulturl = util.url(repo._subtoppath)
+            path = repo._subtoppath
         else:
             # TODO: investigate 'paths.remote:lfsurl' style path customization,
             # and fall back to inferring from 'paths.remote' if unspecified.
-            defaulturl = util.url(repo.ui.config('paths', 'default') or b'')
+            path = repo.ui.config('paths', 'default') or ''
+
+        defaulturl = util.url(path)
 
         # TODO: support local paths as well.
         # TODO: consider the ssh -> https transformation that git applies
         if defaulturl.scheme in (b'http', b'https'):
+            if defaulturl.path and defaulturl.path[:-1] != b'/':
+                defaulturl.path += b'/'
             defaulturl.path = defaulturl.path or b'' + b'.git/info/lfs'
 
             url = util.url(bytes(defaulturl))

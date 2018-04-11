@@ -127,6 +127,7 @@ from mercurial import (
     registrar,
     util,
     wireproto,
+    wireprototypes,
 )
 
 from . import (
@@ -331,7 +332,7 @@ def _checkheads(orig, pushop):
     return orig(pushop)
 
 def wireprotolistkeyspatterns(repo, proto, namespace, patterns):
-    patterns = wireproto.decodelist(patterns)
+    patterns = wireprototypes.decodelist(patterns)
     d = repo.listkeys(encoding.tolocal(namespace), patterns).iteritems()
     return pushkey.encodekeys(d)
 
@@ -361,7 +362,7 @@ def listkeyspatterns(self, namespace, patterns):
                   (namespace, patterns))
     yield {
         'namespace': encoding.fromlocal(namespace),
-        'patterns': wireproto.encodelist(patterns)
+        'patterns': wireprototypes.encodelist(patterns)
     }, f
     d = f.value
     self.ui.debug('received listkey for "%s": %i bytes\n'

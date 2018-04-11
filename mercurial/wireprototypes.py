@@ -5,6 +5,10 @@
 
 from __future__ import absolute_import
 
+from .node import (
+    bin,
+    hex,
+)
 from .thirdparty.zope import (
     interface as zi,
 )
@@ -101,6 +105,34 @@ class cborresponse(object):
     """Encode the response value as CBOR."""
     def __init__(self, v):
         self.value = v
+
+# list of nodes encoding / decoding
+def decodelist(l, sep=' '):
+    if l:
+        return [bin(v) for v in  l.split(sep)]
+    return []
+
+def encodelist(l, sep=' '):
+    try:
+        return sep.join(map(hex, l))
+    except TypeError:
+        raise
+
+# batched call argument encoding
+
+def escapebatcharg(plain):
+    return (plain
+            .replace(':', ':c')
+            .replace(',', ':o')
+            .replace(';', ':s')
+            .replace('=', ':e'))
+
+def unescapebatcharg(escaped):
+    return (escaped
+            .replace(':e', '=')
+            .replace(':s', ';')
+            .replace(':o', ',')
+            .replace(':c', ':'))
 
 class baseprotocolhandler(zi.Interface):
     """Abstract base class for wire protocol handlers.

@@ -115,37 +115,11 @@ class remoteiterbatcher(peer.iterbatcher):
 batchable = peer.batchable
 future = peer.future
 
-# list of nodes encoding / decoding
-
-def decodelist(l, sep=' '):
-    if l:
-        return [bin(v) for v in  l.split(sep)]
-    return []
-
-def encodelist(l, sep=' '):
-    try:
-        return sep.join(map(hex, l))
-    except TypeError:
-        raise
-
-# batched call argument encoding
-
-def escapearg(plain):
-    return (plain
-            .replace(':', ':c')
-            .replace(',', ':o')
-            .replace(';', ':s')
-            .replace('=', ':e'))
-
-def unescapearg(escaped):
-    return (escaped
-            .replace(':e', '=')
-            .replace(':s', ';')
-            .replace(':o', ',')
-            .replace(':c', ':'))
 
 def encodebatchcmds(req):
     """Return a ``cmds`` argument value for the ``batch`` command."""
+    escapearg = wireprototypes.escapebatcharg
+
     cmds = []
     for op, argsdict in req:
         # Old servers didn't properly unescape argument names. So prevent
@@ -227,14 +201,14 @@ class wirepeer(repository.legacypeer):
         yield {}, f
         d = f.value
         try:
-            yield decodelist(d[:-1])
+            yield wireprototypes.decodelist(d[:-1])
         except ValueError:
             self._abort(error.ResponseError(_("unexpected response:"), d))
 
     @batchable
     def known(self, nodes):
         f = future()
-        yield {'nodes': encodelist(nodes)}, f
+        yield {'nodes': wireprototypes.encodelist(nodes)}, f
         d = f.value
         try:
             yield [bool(int(b)) for b in d]
@@ -251,7 +225,7 @@ class wirepeer(repository.legacypeer):
             for branchpart in d.splitlines():
                 branchname, branchheads = branchpart.split(' ', 1)
                 branchname = encoding.tolocal(urlreq.unquote(branchname))
-                branchheads = decodelist(branchheads)
+                branchheads = wireprototypes.decodelist(branchheads)
                 branchmap[branchname] = branchheads
             yield branchmap
         except TypeError:
@@ -306,7 +280,7 @@ class wirepeer(repository.legacypeer):
                 raise error.ProgrammingError(
                     'Unexpectedly None keytype for key %s' % key)
             elif keytype == 'nodes':
-                value = encodelist(value)
+                value = wireprototypes.encodelist(value)
             elif keytype == 'csv':
                 value = ','.join(value)
             elif keytype == 'scsv':
@@ -338,10 +312,10 @@ class wirepeer(repository.legacypeer):
         '''
 
         if heads != ['force'] and self.capable('unbundlehash'):
-            heads = encodelist(['hashed',
-                                hashlib.sha1(''.join(sorted(heads))).digest()])
+            heads = wireprototypes.encodelist(
+                ['hashed', hashlib.sha1(''.join(sorted(heads))).digest()])
         else:
-            heads = encodelist(heads)
+            heads = wireprototypes.encodelist(heads)
 
         if util.safehasattr(cg, 'deltaheader'):
             # this a bundle10, do the old style call sequence
@@ -368,10 +342,10 @@ class wirepeer(repository.legacypeer):
     # Begin of ipeerlegacycommands interface.
 
     def branches(self, nodes):
-        n = encodelist(nodes)
+        n = wireprototypes.encodelist(nodes)
         d = self._call("branches", nodes=n)
         try:
-            br = [tuple(decodelist(b)) for b in d.splitlines()]
+            br = [tuple(wireprototypes.decodelist(b)) for b in d.splitlines()]
             return br
         except ValueError:
             self._abort(error.ResponseError(_("unexpected response:"), d))
@@ -380,23 +354,25 @@ class wirepeer(repository.legacypeer):
         batch = 8 # avoid giant requests
         r = []
         for i in xrange(0, len(pairs), batch):
-            n = " ".join([encodelist(p, '-') for p in pairs[i:i + batch]])
+            n = " ".join([wireprototypes.encodelist(p, '-')
+                          for p in pairs[i:i + batch]])
             d = self._call("between", pairs=n)
             try:
-                r.extend(l and decodelist(l) or [] for l in d.splitlines())
+                r.extend(l and wireprototypes.decodelist(l) or []
+                         for l in d.splitlines())
             except ValueError:
                 self._abort(error.ResponseError(_("unexpected response:"), d))
         return r
 
     def changegroup(self, nodes, kind):
-        n = encodelist(nodes)
+        n = wireprototypes.encodelist(nodes)
         f = self._callcompressable("changegroup", roots=n)
         return changegroupmod.cg1unpacker(f, 'UN')
 
     def changegroupsubset(self, bases, heads, kind):
         self.requirecap('changegroupsubset', _('look up remote changes'))
-        bases = encodelist(bases)
-        heads = encodelist(heads)
+        bases = wireprototypes.encodelist(bases)
+        heads = wireprototypes.encodelist(heads)
         f = self._callcompressable("changegroupsubset",
                                    bases=bases, heads=heads)
         return changegroupmod.cg1unpacker(f, 'UN')
@@ -414,6 +390,8 @@ class wirepeer(repository.legacypeer):
             for op, args in req:
                 msg = 'devel-peer-request:    - %s (%d arguments)\n'
                 ui.debug(msg % (op, len(args)))
+
+        unescapearg = wireprototypes.unescapebatcharg
 
         rsp = self._callstream("batch", cmds=encodebatchcmds(req))
         chunk = rsp.read(1024)
@@ -793,6 +771,7 @@ def wireprotocommand(name, args=None, transportpolicy=POLICY_V1_ONLY,
 @wireprotocommand('batch', 'cmds *', permission='pull',
                   transportpolicy=POLICY_V1_ONLY)
 def batch(repo, proto, cmds, others):
+    unescapearg = wireprototypes.unescapebatcharg
     repo = repo.filtered("served")
     res = []
     for pair in cmds.split(';'):
@@ -832,17 +811,17 @@ def batch(repo, proto, cmds, others):
         assert isinstance(result, (wireprototypes.bytesresponse, bytes))
         if isinstance(result, wireprototypes.bytesresponse):
             result = result.data
-        res.append(escapearg(result))
+        res.append(wireprototypes.escapebatcharg(result))
 
     return wireprototypes.bytesresponse(';'.join(res))
 
 @wireprotocommand('between', 'pairs', transportpolicy=POLICY_V1_ONLY,
                   permission='pull')
 def between(repo, proto, pairs):
-    pairs = [decodelist(p, '-') for p in pairs.split(" ")]
+    pairs = [wireprototypes.decodelist(p, '-') for p in pairs.split(" ")]
     r = []
     for b in repo.between(pairs):
-        r.append(encodelist(b) + "\n")
+        r.append(wireprototypes.encodelist(b) + "\n")
 
     return wireprototypes.bytesresponse(''.join(r))
 
@@ -853,7 +832,7 @@ def branchmap(repo, proto):
     heads = []
     for branch, nodes in branchmap.iteritems():
         branchname = urlreq.quote(encoding.fromlocal(branch))
-        branchnodes = encodelist(nodes)
+        branchnodes = wireprototypes.encodelist(nodes)
         heads.append('%s %s' % (branchname, branchnodes))
 
     return wireprototypes.bytesresponse('\n'.join(heads))
@@ -861,10 +840,10 @@ def branchmap(repo, proto):
 @wireprotocommand('branches', 'nodes', transportpolicy=POLICY_V1_ONLY,
                   permission='pull')
 def branches(repo, proto, nodes):
-    nodes = decodelist(nodes)
+    nodes = wireprototypes.decodelist(nodes)
     r = []
     for b in repo.branches(nodes):
-        r.append(encodelist(b) + "\n")
+        r.append(wireprototypes.encodelist(b) + "\n")
 
     return wireprototypes.bytesresponse(''.join(r))
 
@@ -931,7 +910,7 @@ def capabilities(repo, proto):
 @wireprotocommand('changegroup', 'roots', transportpolicy=POLICY_V1_ONLY,
                   permission='pull')
 def changegroup(repo, proto, roots):
-    nodes = decodelist(roots)
+    nodes = wireprototypes.decodelist(roots)
     outgoing = discovery.outgoing(repo, missingroots=nodes,
                                   missingheads=repo.heads())
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
@@ -942,8 +921,8 @@ def changegroup(repo, proto, roots):
                   transportpolicy=POLICY_V1_ONLY,
                   permission='pull')
 def changegroupsubset(repo, proto, bases, heads):
-    bases = decodelist(bases)
-    heads = decodelist(heads)
+    bases = wireprototypes.decodelist(bases)
+    heads = wireprototypes.decodelist(heads)
     outgoing = discovery.outgoing(repo, missingroots=bases,
                                   missingheads=heads)
     cg = changegroupmod.makechangegroup(repo, outgoing, '01', 'serve')
@@ -1029,7 +1008,7 @@ def getbundle(repo, proto, others):
     for k, v in opts.iteritems():
         keytype = gboptsmap[k]
         if keytype == 'nodes':
-            opts[k] = decodelist(v)
+            opts[k] = wireprototypes.decodelist(v)
         elif keytype == 'csv':
             opts[k] = list(v.split(','))
         elif keytype == 'scsv':
@@ -1101,7 +1080,7 @@ def getbundle(repo, proto, others):
 @wireprotocommand('heads', permission='pull', transportpolicy=POLICY_V1_ONLY)
 def heads(repo, proto):
     h = repo.heads()
-    return wireprototypes.bytesresponse(encodelist(h) + '\n')
+    return wireprototypes.bytesresponse(wireprototypes.encodelist(h) + '\n')
 
 @wireprotocommand('hello', permission='pull', transportpolicy=POLICY_V1_ONLY)
 def hello(repo, proto):
@@ -1140,7 +1119,8 @@ def lookup(repo, proto, key):
 @wireprotocommand('known', 'nodes *', permission='pull',
                   transportpolicy=POLICY_V1_ONLY)
 def known(repo, proto, nodes, others):
-    v = ''.join(b and '1' or '0' for b in repo.known(decodelist(nodes)))
+    v = ''.join(b and '1' or '0'
+                for b in repo.known(wireprototypes.decodelist(nodes)))
     return wireprototypes.bytesresponse(v)
 
 @wireprotocommand('protocaps', 'caps', permission='pull',
@@ -1185,7 +1165,7 @@ def stream(repo, proto):
 @wireprotocommand('unbundle', 'heads', permission='push',
                   transportpolicy=POLICY_V1_ONLY)
 def unbundle(repo, proto, heads):
-    their_heads = decodelist(heads)
+    their_heads = wireprototypes.decodelist(heads)
 
     with proto.mayberedirectstdio() as output:
         try:

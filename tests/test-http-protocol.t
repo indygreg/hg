@@ -177,8 +177,6 @@ Test listkeys for listing namespaces
   > EOF
   s>     GET /?cmd=capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     vary: X-HgProto-1\r\n
-  s>     x-hgproto-1: partial-pull\r\n
   s>     accept: application/mercurial-0.1\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n

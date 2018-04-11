@@ -99,7 +99,7 @@ Same failure, but server reads full HTTP request line
 
 Failure on subsequent HTTP request on the same socket (cmd?batch)
 
-  $ hg serve --config badserver.closeafterrecvbytes=256,223 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeafterrecvbytes=210,223 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   abort: error: bad HTTP status line: ''
@@ -108,10 +108,8 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(256 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(223 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(196 from -1) -> (19) vary: X-HgProto-1\r\n
-  readline(177 from -1) -> (27) x-hgproto-1: partial-pull\r\n
+  readline(210 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(177 from -1) -> (27) Accept-Encoding: identity\r\n
   readline(150 from -1) -> (35) accept: application/mercurial-0.1\r\n
   readline(115 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
   readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
@@ -139,7 +137,7 @@ Failure on subsequent HTTP request on the same socket (cmd?batch)
 
 Failure to read getbundle HTTP request
 
-  $ hg serve --config badserver.closeafterrecvbytes=354,317,304 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config badserver.closeafterrecvbytes=308,317,304 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
   $ hg clone http://localhost:$HGPORT/ clone
   requesting all changes
@@ -151,10 +149,8 @@ Failure to read getbundle HTTP request
   $ cat error.log
   readline(1 from -1) -> (1) x (?)
   readline(1 from -1) -> (1) x (?)
-  readline(354 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(321 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(294 from -1) -> (19) vary: X-HgProto-1\r\n
-  readline(275 from -1) -> (27) x-hgproto-1: partial-pull\r\n
+  readline(308 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(275 from -1) -> (27) Accept-Encoding: identity\r\n
   readline(248 from -1) -> (35) accept: application/mercurial-0.1\r\n
   readline(213 from -1) -> (*) host: localhost:$HGPORT\r\n (glob)
   readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
@@ -200,7 +196,7 @@ Failure to read getbundle HTTP request
 
 Now do a variation using POST to send arguments
 
-  $ hg serve --config experimental.httppostargs=true --config badserver.closeafterrecvbytes=375,344 -p $HGPORT -d --pid-file=hg.pid -E error.log
+  $ hg serve --config experimental.httppostargs=true --config badserver.closeafterrecvbytes=329,344 -p $HGPORT -d --pid-file=hg.pid -E error.log
   $ cat hg.pid > $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/ clone
@@ -210,10 +206,8 @@ Now do a variation using POST to send arguments
   $ killdaemons.py $DAEMON_PIDS
 
   $ cat error.log
-  readline(375 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
-  readline(342 from -1) -> (27) Accept-Encoding: identity\r\n
-  readline(315 from -1) -> (19) vary: X-HgProto-1\r\n
-  readline(296 from -1) -> (27) x-hgproto-1: partial-pull\r\n
+  readline(329 from 65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
+  readline(296 from -1) -> (27) Accept-Encoding: identity\r\n
   readline(269 from -1) -> (35) accept: application/mercurial-0.1\r\n
   readline(234 from -1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(* from -1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n (glob)
@@ -265,8 +259,6 @@ Server sends a single character from the HTTP response line
   $ cat error.log
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (19) vary: X-HgProto-1\r\n
-  readline(-1) -> (27) x-hgproto-1: partial-pull\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
@@ -292,8 +284,6 @@ Server sends an incomplete capabilities response body
   $ cat error.log
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (19) vary: X-HgProto-1\r\n
-  readline(-1) -> (27) x-hgproto-1: partial-pull\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
@@ -329,8 +319,6 @@ TODO this output is horrible
   $ cat error.log
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (19) vary: X-HgProto-1\r\n
-  readline(-1) -> (27) x-hgproto-1: partial-pull\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
@@ -379,8 +367,6 @@ TODO client spews a stack due to uncaught ValueError in batch.results()
   $ cat error.log
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (19) vary: X-HgProto-1\r\n
-  readline(-1) -> (27) x-hgproto-1: partial-pull\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
@@ -433,8 +419,6 @@ TODO this output is terrible
   $ cat error.log
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (19) vary: X-HgProto-1\r\n
-  readline(-1) -> (27) x-hgproto-1: partial-pull\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
@@ -496,8 +480,6 @@ Server sends empty HTTP body for getbundle
   $ cat error.log
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (19) vary: X-HgProto-1\r\n
-  readline(-1) -> (27) x-hgproto-1: partial-pull\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n
@@ -561,8 +543,6 @@ Server sends partial compression string
   $ cat error.log
   readline(65537) -> (33) GET /?cmd=capabilities HTTP/1.1\r\n
   readline(-1) -> (27) Accept-Encoding: identity\r\n
-  readline(-1) -> (19) vary: X-HgProto-1\r\n
-  readline(-1) -> (27) x-hgproto-1: partial-pull\r\n
   readline(-1) -> (35) accept: application/mercurial-0.1\r\n
   readline(-1) -> (2?) host: localhost:$HGPORT\r\n (glob)
   readline(-1) -> (49) user-agent: mercurial/proto-1.0 (Mercurial 4.2)\r\n

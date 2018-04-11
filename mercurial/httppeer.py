@@ -210,7 +210,9 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
     # Tell the server we accept application/mercurial-0.2 and multiple
     # compression formats if the server is capable of emitting those
     # payloads.
-    protoparams = {'partial-pull'}
+    # Note: Keep this set empty by default, as client advertisement of
+    # protocol parameters should only occur after the handshake.
+    protoparams = set()
 
     mediatypes = set()
     if caps is not None:
@@ -218,6 +220,8 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
         if mt:
             protoparams.add('0.1')
             mediatypes = set(mt.split(','))
+
+        protoparams.add('partial-pull')
 
     if '0.2tx' in mediatypes:
         protoparams.add('0.2')

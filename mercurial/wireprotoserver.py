@@ -103,7 +103,7 @@ class httpv1protocolhandler(object):
 
     def getprotocaps(self):
         if self._protocaps is None:
-            value = decodevaluefromheaders(self._req, r'X-HgProto')
+            value = decodevaluefromheaders(self._req, b'X-HgProto')
             self._protocaps = set(value.split(' '))
         return self._protocaps
 

@@ -1164,7 +1164,7 @@ class queue(object):
         for c in ('#', ':', '\r', '\n'):
             if c in name:
                 raise error.Abort(_('%r cannot be used in the name of a patch')
-                                 % c)
+                                 % pycompat.bytestr(c))
 
     def checkpatchname(self, name, force=False):
         self.checkreservedname(name)

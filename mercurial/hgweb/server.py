@@ -139,17 +139,17 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
                 env[r'CONTENT_TYPE'] = self.headers.get_default_type()
             else:
                 env[r'CONTENT_TYPE'] = self.headers.get_content_type()
-            length = self.headers.get('content-length')
+            length = self.headers.get(r'content-length')
         else:
             if self.headers.typeheader is None:
                 env[r'CONTENT_TYPE'] = self.headers.type
             else:
                 env[r'CONTENT_TYPE'] = self.headers.typeheader
-            length = self.headers.getheader('content-length')
+            length = self.headers.getheader(r'content-length')
         if length:
             env[r'CONTENT_LENGTH'] = length
         for header in [h for h in self.headers.keys()
-                       if h not in ('content-type', 'content-length')]:
+                       if h not in (r'content-type', r'content-length')]:
             hkey = r'HTTP_' + header.replace(r'-', r'_').upper()
             hval = self.headers.get(header)
             hval = hval.replace(r'\n', r'').strip()

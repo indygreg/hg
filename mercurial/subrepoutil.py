@@ -106,7 +106,7 @@ def state(ctx, ui):
                 parent = util.url(parent)
                 parent.path = posixpath.join(parent.path or '', src)
                 parent.path = posixpath.normpath(parent.path)
-                joined = str(parent)
+                joined = bytes(parent)
                 # Remap the full joined path and use it if it changes,
                 # else remap the original source.
                 remapped = remap(joined)

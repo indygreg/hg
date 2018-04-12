@@ -123,6 +123,7 @@ from mercurial import (
     peer,
     phases,
     pushkey,
+    pycompat,
     registrar,
     util,
     wireproto,
@@ -579,6 +580,7 @@ def _lookupwrap(orig):
     return _lookup
 
 def _pull(orig, ui, repo, source="default", **opts):
+    opts = pycompat.byteskwargs(opts)
     # Copy paste from `pull` command
     source, branches = hg.parseurl(ui.expandpath(source), opts.get('branch'))
 
@@ -620,7 +622,7 @@ def _pull(orig, ui, repo, source="default", **opts):
         # Remote scratch bookmarks will be deleted because remotenames doesn't
         # know about them. Let's save it before pull and restore after
         remotescratchbookmarks = _readscratchremotebookmarks(ui, repo, source)
-        result = orig(ui, repo, source, **opts)
+        result = orig(ui, repo, source, **pycompat.strkwargs(opts))
         # TODO(stash): race condition is possible
         # if scratch bookmarks was updated right after orig.
         # But that's unlikely and shouldn't be harmful.

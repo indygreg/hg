@@ -1637,7 +1637,7 @@ class gitsubrepo(abstractsubrepo):
         # This should be much faster than manually traversing the trees
         # and objects with many subprocess calls.
         tarstream = self._gitcommand(['archive', revision], stream=True)
-        tar = tarfile.open(fileobj=tarstream, mode='r|')
+        tar = tarfile.open(fileobj=tarstream, mode=r'r|')
         relpath = subrelpath(self)
         self.ui.progress(_('archiving (%s)') % relpath, 0, unit=_('files'))
         for i, info in enumerate(tar):

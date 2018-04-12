@@ -697,7 +697,7 @@ def _findcommonincoming(orig, *args, **kwargs):
 
 def _push(orig, ui, repo, dest=None, *args, **opts):
 
-    bookmark = opts.get('bookmark')
+    bookmark = opts.get(r'bookmark')
     # we only support pushing one infinitepush bookmark at once
     if len(bookmark) == 1:
         bookmark = bookmark[0]
@@ -718,7 +718,7 @@ def _push(orig, ui, repo, dest=None, *args, **opts):
         if scratchpush:
             # this is an infinitepush, we don't want the bookmark to be applied
             # rather that should be stored in the bundlestore
-            opts['bookmark'] = []
+            opts[r'bookmark'] = []
             ui.setconfig(experimental, configscratchpush, True)
             oldphasemove = extensions.wrapfunction(exchange,
                                                    '_localphasemove',
@@ -914,7 +914,7 @@ def storetobundlestore(orig, repo, op, unbundler):
     fd, bundlefile = tempfile.mkstemp()
     try:
         try:
-            fp = os.fdopen(fd, 'wb')
+            fp = os.fdopen(fd, r'wb')
             fp.write(buf.read())
         finally:
             fp.close()
@@ -1000,7 +1000,7 @@ def processparts(orig, repo, op, unbundler):
         fd, bundlefile = tempfile.mkstemp()
         try:
             try:
-                fp = os.fdopen(fd, 'wb')
+                fp = os.fdopen(fd, r'wb')
                 fp.write(buf.read())
             finally:
                 fp.close()
@@ -1112,7 +1112,7 @@ def bundle2scratchbranch(op, part):
     fd, bundlefile = tempfile.mkstemp()
     try:
         try:
-            fp = os.fdopen(fd, 'wb')
+            fp = os.fdopen(fd, r'wb')
             fp.write(buf.read())
         finally:
             fp.close()

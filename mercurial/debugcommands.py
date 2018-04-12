@@ -83,7 +83,6 @@ from . import (
     vfs as vfsmod,
     wireprotoframing,
     wireprotoserver,
-    wireprototypes,
 )
 from .utils import (
     dateutil,
@@ -2911,9 +2910,19 @@ def debugwireproto(ui, repo, path=None, **opts):
 
         if opts['peer'] == 'http2':
             ui.write(_('creating http peer for wire protocol version 2\n'))
-            peer = httppeer.httpv2peer(
-                ui, path, 'api/%s' % wireprototypes.HTTP_WIREPROTO_V2,
-                opener, httppeer.urlreq.request, {})
+            # We go through makepeer() because we need an API descriptor for
+            # the peer instance to be useful.
+            with ui.configoverride({
+                ('experimental', 'httppeer.advertise-v2'): True}):
+                peer = httppeer.makepeer(ui, path, opener=opener)
+
+            if not isinstance(peer, httppeer.httpv2peer):
+                raise error.Abort(_('could not instantiate HTTP peer for '
+                                    'wire protocol version 2'),
+                                  hint=_('the server may not have the feature '
+                                         'enabled or is not allowing this '
+                                         'client version'))
+
         elif opts['peer'] == 'raw':
             ui.write(_('using raw connection to peer\n'))
             peer = None

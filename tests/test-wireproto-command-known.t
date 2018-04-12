@@ -26,6 +26,23 @@ No arguments returns something reasonable
   > command known
   > EOF
   creating http peer for wire protocol version 2
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
+  s>     x-hgproto-1: cbor\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0001\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-cbor\r\n
+  s>     Content-Length: *\r\n (glob)
+  s>     \r\n
+  s>     \xa3Dapis\xa1Pexp-http-v2-0001\xa2Hcommands\xa7Eheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyCnewCnewColdColdInamespaceBnsKpermissions\x81DpushHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullKcompression\x82\xa1DnameDzstd\xa1DnameDzlibGapibaseDapi/Nv1capabilitiesY\x01\xcabatch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending known command
   s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
@@ -59,6 +76,23 @@ Single known node works
   >     nodes eval:[b'\x42\x6b\xad\xa5\xc6\x75\x98\xca\x65\x03\x6d\x57\xd9\xe4\xb6\x4b\x0c\x1c\xe7\xa0']
   > EOF
   creating http peer for wire protocol version 2
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
+  s>     x-hgproto-1: cbor\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0001\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-cbor\r\n
+  s>     Content-Length: *\r\n (glob)
+  s>     \r\n
+  s>     \xa3Dapis\xa1Pexp-http-v2-0001\xa2Hcommands\xa7Eheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyCnewCnewColdColdInamespaceBnsKpermissions\x81DpushHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullKcompression\x82\xa1DnameDzstd\xa1DnameDzlibGapibaseDapi/Nv1capabilitiesY\x01\xcabatch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending known command
   s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
@@ -92,6 +126,23 @@ Multiple nodes works
   >     nodes eval:[b'\x42\x6b\xad\xa5\xc6\x75\x98\xca\x65\x03\x6d\x57\xd9\xe4\xb6\x4b\x0c\x1c\xe7\xa0', b'00000000000000000000', b'\x11\x24\x78\x96\x29\x61\x14\x71\x24\xed\xd4\x35\x49\xae\xdd\x1a\x33\x5e\x44\xbf']
   > EOF
   creating http peer for wire protocol version 2
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
+  s>     x-hgproto-1: cbor\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0001\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-cbor\r\n
+  s>     Content-Length: *\r\n (glob)
+  s>     \r\n
+  s>     \xa3Dapis\xa1Pexp-http-v2-0001\xa2Hcommands\xa7Eheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyCnewCnewColdColdInamespaceBnsKpermissions\x81DpushHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullKcompression\x82\xa1DnameDzstd\xa1DnameDzlibGapibaseDapi/Nv1capabilitiesY\x01\xcabatch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending known command
   s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n

@@ -209,7 +209,7 @@ def _headssummary(pushop):
 
     # A. register remote heads
     remotebranches = set()
-    for branch, heads in remote.branchmap().iteritems():
+    for branch, heads in remotemap.iteritems():
         remotebranches.add(branch)
         known = []
         unsynced = []

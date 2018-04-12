@@ -401,7 +401,7 @@ class mercurial_sink(common.converter_sink):
             return context.memfilectx(repo, memctx, f, data, False, False, None)
 
         self.ui.status(_("updating tags\n"))
-        date = "%s 0" % int(time.mktime(time.gmtime()))
+        date = "%d 0" % int(time.mktime(time.gmtime()))
         extra = {'branch': self.tagsbranch}
         ctx = context.memctx(self.repo, (tagparent, None), "update tags",
                              [".hgtags"], getfilectx, "convert-repo", date,

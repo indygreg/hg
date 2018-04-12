@@ -1603,7 +1603,7 @@ def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
                 _exportsingle(repo, ctx, fm, match, switch_parent, seqno,
                               diffopts)
 
-def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
+def export(repo, revs, fntemplate='hg-%h.patch', switch_parent=False,
            opts=None, match=None):
     '''export changesets as hg patches
 
@@ -1611,7 +1611,6 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
       repo: The repository from which we're exporting revisions.
       revs: A list of revisions to export as revision numbers.
       fntemplate: An optional string to use for generating patch file names.
-      fp: An optional file-like object to which patches should be written.
       switch_parent: If True, show diffs against second parent when not nullid.
                      Default is false, which always shows diff against p1.
       opts: diff options to use for generating the patch.
@@ -1623,16 +1622,18 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
     Side Effect:
       "HG Changeset Patch" data is emitted to one of the following
       destinations:
-        fp is specified: All revs are written to the specified
-                         file-like object.
         fntemplate specified: Each rev is written to a unique file named using
                             the given template.
-        Neither fp nor template specified: All revs written to repo.ui.write()
+        Otherwise: All revs written to repo.ui.write()
     '''
-    if fp or not fntemplate:
-        _exportfile(repo, revs, fp, switch_parent, opts, match)
+    if not fntemplate:
+        _exportfile(repo, revs, None, switch_parent, opts, match)
     else:
         _exportfntemplate(repo, revs, fntemplate, switch_parent, opts, match)
+
+def exportfile(repo, revs, fp, switch_parent=False, opts=None, match=None):
+    """Export changesets to the given file stream"""
+    _exportfile(repo, revs, fp, switch_parent, opts, match)
 
 def showmarker(fm, marker, index=None):
     """utility function to display obsolescence marker in a readable way

@@ -306,8 +306,8 @@ def _getpatches(repo, revs, **opts):
             ui.warn(_('warning: working directory has '
                       'uncommitted changes\n'))
         output = stringio()
-        cmdutil.export(repo, [r], fp=output,
-                     opts=patch.difffeatureopts(ui, opts, git=True))
+        cmdutil.exportfile(repo, [r], output,
+                           opts=patch.difffeatureopts(ui, opts, git=True))
         yield output.getvalue().split('\n')
 def _getbundle(repo, dest, **opts):
     """return a bundle containing changesets missing in "dest"

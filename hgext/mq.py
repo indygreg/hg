@@ -2182,9 +2182,8 @@ class queue(object):
                     self.checkpatchname(patchname, force)
                     self.fullseries.insert(0, patchname)
 
-                    patchf = self.opener(patchname, "w")
-                    cmdutil.export(repo, [n], fp=patchf, opts=diffopts)
-                    patchf.close()
+                    with self.opener(patchname, "w") as fp:
+                        cmdutil.exportfile(repo, [n], fp, opts=diffopts)
 
                     se = statusentry(n, patchname)
                     self.applied.insert(0, se)

@@ -413,9 +413,8 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
 def _shelvecreatedcommit(repo, node, name):
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, 'hg').writebundle(bases, node)
-    cmdutil.export(repo, [node],
-                   fp=shelvedfile(repo, name, patchextension).opener('wb'),
-                   opts=mdiff.diffopts(git=True))
+    with shelvedfile(repo, name, patchextension).opener('wb') as fp:
+        cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True))
 
 def _includeunknownfiles(repo, pats, opts, extra):
     s = repo.status(match=scmutil.match(repo[None], pats, opts),

@@ -1014,7 +1014,7 @@ class _unclosablefile(object):
     def __exit__(self, exc_type, exc_value, exc_tb):
         pass
 
-def makefileobj(ctx, pat, mode='wb', modemap=None, **props):
+def makefileobj(ctx, pat, mode='wb', **props):
     writable = mode not in ('r', 'rb')
 
     if isstdiofilename(pat):
@@ -1025,10 +1025,6 @@ def makefileobj(ctx, pat, mode='wb', modemap=None, **props):
             fp = repo.ui.fin
         return _unclosablefile(fp)
     fn = makefilename(ctx, pat, **props)
-    if modemap is not None:
-        mode = modemap.get(fn, mode)
-        if mode == 'wb':
-            modemap[fn] = 'ab'
     return open(fn, mode)
 
 def openrevlog(repo, cmd, file_, opts):
@@ -1579,18 +1575,23 @@ def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
     """Export changesets to possibly multiple files"""
     total = len(revs)
     revwidth = max(len(str(rev)) for rev in revs)
-    filemode = {}
+    filemap = util.sortdict()  # filename: [(seqno, rev), ...]
 
     for seqno, rev in enumerate(revs, 1):
         ctx = repo[rev]
-        fo = makefileobj(ctx, fntemplate, mode='wb', modemap=filemode,
-                         total=total, seqno=seqno, revwidth=revwidth)
-        dest = fo.name
-        def write(s, **kw):
-            fo.write(s)
-        repo.ui.note("%s\n" % dest)
-        _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts)
-        fo.close()
+        dest = makefilename(ctx, fntemplate,
+                            total=total, seqno=seqno, revwidth=revwidth)
+        filemap.setdefault(dest, []).append((seqno, rev))
+
+    for dest in filemap:
+        with open(dest, 'wb') as fo:
+            repo.ui.note("%s\n" % dest)
+            def write(s, **kw):
+                fo.write(s)
+            for seqno, rev in filemap[dest]:
+                ctx = repo[rev]
+                _exportsingle(repo, ctx, match, switch_parent, seqno, write,
+                              diffopts)
 
 def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
            opts=None, match=None):

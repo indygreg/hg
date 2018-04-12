@@ -763,6 +763,14 @@ class httpv2executor(object):
                     f.set_result(result)
                     del results[request.requestid]
 
+            elif action == 'error':
+                e = error.RepoError(meta['message'])
+
+                if f:
+                    f.set_exception(e)
+                else:
+                    raise e
+
             else:
                 e = error.ProgrammingError('unhandled action: %s' % action)
 

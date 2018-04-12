@@ -1559,6 +1559,39 @@ def _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts):
     for chunk, label in patch.diffui(repo, prev, node, match, opts=diffopts):
         write(chunk, label=label)
 
+def _exportfile(repo, revs, fp, switch_parent, diffopts, match):
+    """Export changesets to stdout or a single file"""
+    dest = '<unnamed>'
+    if fp:
+        dest = getattr(fp, 'name', dest)
+        def write(s, **kw):
+            fp.write(s)
+    else:
+        write = repo.ui.write
+
+    for seqno, rev in enumerate(revs, 1):
+        ctx = repo[rev]
+        if not dest.startswith('<'):
+            repo.ui.note("%s\n" % dest)
+        _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts)
+
+def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
+    """Export changesets to possibly multiple files"""
+    total = len(revs)
+    revwidth = max(len(str(rev)) for rev in revs)
+    filemode = {}
+
+    for seqno, rev in enumerate(revs, 1):
+        ctx = repo[rev]
+        fo = makefileobj(ctx, fntemplate, mode='wb', modemap=filemode,
+                         total=total, seqno=seqno, revwidth=revwidth)
+        dest = fo.name
+        def write(s, **kw):
+            fo.write(s)
+        repo.ui.note("%s\n" % dest)
+        _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts)
+        fo.close()
+
 def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
            opts=None, match=None):
     '''export changesets as hg patches
@@ -1585,35 +1618,10 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
                             the given template.
         Neither fp nor template specified: All revs written to repo.ui.write()
     '''
-
-    total = len(revs)
-    revwidth = max(len(str(rev)) for rev in revs)
-    filemode = {}
-
-    write = None
-    dest = '<unnamed>'
-    if fp:
-        dest = getattr(fp, 'name', dest)
-        def write(s, **kw):
-            fp.write(s)
-    elif not fntemplate:
-        write = repo.ui.write
-
-    for seqno, rev in enumerate(revs, 1):
-        ctx = repo[rev]
-        fo = None
-        if not fp and fntemplate:
-            fo = makefileobj(ctx, fntemplate, mode='wb', modemap=filemode,
-                             total=total, seqno=seqno, revwidth=revwidth)
-            dest = fo.name
-            def write(s, **kw):
-                fo.write(s)
-        if not dest.startswith('<'):
-            repo.ui.note("%s\n" % dest)
-        _exportsingle(
-            repo, ctx, match, switch_parent, seqno, write, opts)
-        if fo is not None:
-            fo.close()
+    if fp or not fntemplate:
+        _exportfile(repo, revs, fp, switch_parent, opts, match)
+    else:
+        _exportfntemplate(repo, revs, fntemplate, switch_parent, opts, match)
 
 def showmarker(fm, marker, index=None):
     """utility function to display obsolescence marker in a readable way

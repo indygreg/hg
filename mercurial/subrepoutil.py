@@ -86,7 +86,8 @@ def state(ctx, ui):
                 src = re.sub(pattern, repl, src, 1)
             except re.error as e:
                 raise error.Abort(_("bad subrepository pattern in %s: %s")
-                                 % (p.source('subpaths', pattern), e))
+                                 % (p.source('subpaths', pattern),
+                                    stringutil.forcebytestr(e)))
         return src
 
     state = {}

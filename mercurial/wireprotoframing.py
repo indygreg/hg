@@ -464,7 +464,7 @@ class stream(object):
 
     def __init__(self, streamid, active=False):
         self.streamid = streamid
-        self._active = False
+        self._active = active
 
     def makeframe(self, requestid, typeid, flags, payload):
         """Create a frame to be sent out over this stream.

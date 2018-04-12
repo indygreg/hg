@@ -307,7 +307,7 @@ def handlewsgiapirequest(rctx, req, res, checkperm):
 #    Callable receiving (req, repo) that is called to obtain an API
 #    descriptor for this service. The response must be serializable to CBOR.
 API_HANDLERS = {
-    wireprotov2server.HTTPV2: {
+    wireprotov2server.HTTP_WIREPROTO_V2: {
         'config': ('experimental', 'web.api.http-v2'),
         'handler': wireprotov2server.handlehttpv2request,
         'apidescriptor': wireprotov2server.httpv2apidescriptor,

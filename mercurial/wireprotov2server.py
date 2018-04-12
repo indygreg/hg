@@ -27,7 +27,7 @@ from . import (
 
 FRAMINGTYPE = b'application/mercurial-exp-framing-0003'
 
-HTTPV2 = wireprototypes.HTTPV2
+HTTP_WIREPROTO_V2 = wireprototypes.HTTP_WIREPROTO_V2
 
 def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     from .hgweb import common as hgwebcommon
@@ -332,7 +332,7 @@ class httpv2protocolhandler(object):
 
     @property
     def name(self):
-        return HTTPV2
+        return HTTP_WIREPROTO_V2
 
     def getargs(self, args):
         data = {}

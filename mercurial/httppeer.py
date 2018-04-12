@@ -672,7 +672,7 @@ class httpv2peer(object):
 #    Integer priority for the service. If we could choose from multiple
 #    services, we choose the one with the highest priority.
 API_PEERS = {
-    wireprototypes.HTTPV2: {
+    wireprototypes.HTTP_WIREPROTO_V2: {
         'init': httpv2peer,
         'priority': 50,
     },

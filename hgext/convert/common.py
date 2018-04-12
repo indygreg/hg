@@ -144,7 +144,7 @@ class converter_source(object):
         """ fails if revstr is not a 40 byte hex. mercurial and git both uses
             such format for their revision numbering
         """
-        if not re.match(r'[0-9a-fA-F]{40,40}$', revstr):
+        if not re.match(br'[0-9a-fA-F]{40,40}$', revstr):
             raise error.Abort(_('%s entry %s is not a valid revision'
                                ' identifier') % (mapname, revstr))
 

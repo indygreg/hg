@@ -437,7 +437,7 @@ convert binary file
   $ cd git-repo3-hg
   $ hg up -C
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ $PYTHON -c 'print len(open("b", "rb").read())'
+  $ $PYTHON -c 'from __future__ import print_function; print(len(open("b", "rb").read()))'
   4096
   $ cd ..
 

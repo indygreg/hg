@@ -160,8 +160,6 @@ class baseformatter(object):
     def __init__(self, ui, topic, opts, converter):
         self._ui = ui
         self._topic = topic
-        self._style = opts.get("style")
-        self._template = opts.get("template")
         self._converter = converter
         self._item = None
         # function to convert node to string suitable for this output

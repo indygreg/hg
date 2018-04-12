@@ -1971,8 +1971,14 @@ def export(ui, repo, *changesets, **opts):
         ui.note(_('exporting patches:\n'))
     else:
         ui.note(_('exporting patch:\n'))
-    ui.pager('export')
-    cmdutil.export(repo, revs, fntemplate=opts.get('output'),
+
+    fntemplate = opts.get('output')
+    if cmdutil.isstdiofilename(fntemplate):
+        fntemplate = ''
+
+    if not fntemplate:
+        ui.pager('export')
+    cmdutil.export(repo, revs, fntemplate=fntemplate,
                  switch_parent=opts.get('switch_parent'),
                  opts=patch.diffallopts(ui, opts))
 

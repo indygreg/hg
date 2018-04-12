@@ -66,6 +66,7 @@ from mercurial import (
     mdiff,
     merge,
     obsolete,
+    pycompat,
     registrar,
     scmutil,
     util,
@@ -126,6 +127,7 @@ def fix(ui, repo, *pats, **opts):
     revisions are not forgotten in later ones. The --base flag can be used to
     override this default behavior, though it is not usually desirable to do so.
     """
+    opts = pycompat.byteskwargs(opts)
     if opts['all']:
         if opts['rev']:
             raise error.Abort(_('cannot specify both "--rev" and "--all"'))
@@ -513,7 +515,8 @@ def getfixers(ui):
         result[name] = Fixer()
         attrs = ui.configsuboptions('fix', name)[1]
         for key in FIXER_ATTRS:
-            setattr(result[name], '_' + key, attrs.get(key, ''))
+            setattr(result[name], pycompat.sysstr('_' + key),
+                    attrs.get(key, ''))
     return result
 
 def fixernames(ui):

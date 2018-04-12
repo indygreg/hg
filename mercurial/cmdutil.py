@@ -1522,7 +1522,7 @@ extraexport = []
 # it is given two arguments (sequencenumber, changectx)
 extraexportmap = {}
 
-def _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts):
+def _exportsingle(repo, ctx, fm, match, switch_parent, seqno, diffopts):
     node = scmutil.binnode(ctx)
     parents = [p.node() for p in ctx.parents() if p]
     branch = ctx.branch()
@@ -1534,42 +1534,53 @@ def _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts):
     else:
         prev = nullid
 
-    write("# HG changeset patch\n")
-    write("# User %s\n" % ctx.user())
-    write("# Date %d %d\n" % ctx.date())
-    write("#      %s\n" % dateutil.datestr(ctx.date()))
-    if branch and branch != 'default':
-        write("# Branch %s\n" % branch)
-    write("# Node ID %s\n" % hex(node))
-    write("# Parent  %s\n" % hex(prev))
+    fm.context(ctx=ctx)
+    fm.plain('# HG changeset patch\n')
+    fm.write('user', '# User %s\n', ctx.user())
+    fm.plain('# Date %d %d\n' % ctx.date())
+    fm.write('date', '#      %s\n', fm.formatdate(ctx.date()))
+    fm.condwrite(branch and branch != 'default',
+                 'branch', '# Branch %s\n', branch)
+    fm.write('node', '# Node ID %s\n', hex(node))
+    fm.plain('# Parent  %s\n' % hex(prev))
     if len(parents) > 1:
-        write("# Parent  %s\n" % hex(parents[1]))
+        fm.plain('# Parent  %s\n' % hex(parents[1]))
+    fm.data(parents=fm.formatlist(pycompat.maplist(hex, parents), name='node'))
 
+    # TODO: redesign extraexportmap function to support formatter
     for headerid in extraexport:
         header = extraexportmap[headerid](seqno, ctx)
         if header is not None:
-            write('# %s\n' % header)
-    write(ctx.description().rstrip())
-    write("\n\n")
+            fm.plain('# %s\n' % header)
 
-    for chunk, label in patch.diffui(repo, prev, node, match, opts=diffopts):
-        write(chunk, label=label)
+    fm.write('desc', '%s\n', ctx.description().rstrip())
+    fm.plain('\n')
+
+    if fm.isplain():
+        chunkiter = patch.diffui(repo, prev, node, match, opts=diffopts)
+        for chunk, label in chunkiter:
+            fm.plain(chunk, label=label)
+    else:
+        chunkiter = patch.diff(repo, prev, node, match, opts=diffopts)
+        # TODO: make it structured?
+        fm.data(diff=b''.join(chunkiter))
 
 def _exportfile(repo, revs, fp, switch_parent, diffopts, match):
     """Export changesets to stdout or a single file"""
     dest = '<unnamed>'
     if fp:
         dest = getattr(fp, 'name', dest)
-        def write(s, **kw):
-            fp.write(s)
+        fm = formatter.formatter(repo.ui, fp, 'export', {})
     else:
-        write = repo.ui.write
+        fm = repo.ui.formatter('export', {})
 
     for seqno, rev in enumerate(revs, 1):
         ctx = repo[rev]
         if not dest.startswith('<'):
             repo.ui.note("%s\n" % dest)
-        _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts)
+        fm.startitem()
+        _exportsingle(repo, ctx, fm, match, switch_parent, seqno, diffopts)
+    fm.end()
 
 def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
     """Export changesets to possibly multiple files"""
@@ -1584,13 +1595,12 @@ def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
         filemap.setdefault(dest, []).append((seqno, rev))
 
     for dest in filemap:
-        with open(dest, 'wb') as fo:
+        with formatter.openformatter(repo.ui, dest, 'export', {}) as fm:
             repo.ui.note("%s\n" % dest)
-            def write(s, **kw):
-                fo.write(s)
             for seqno, rev in filemap[dest]:
+                fm.startitem()
                 ctx = repo[rev]
-                _exportsingle(repo, ctx, match, switch_parent, seqno, write,
+                _exportsingle(repo, ctx, fm, match, switch_parent, seqno,
                               diffopts)
 
 def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,

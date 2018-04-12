@@ -217,12 +217,13 @@ class converter_source(object):
         if isinstance(s, unicode):
             return s.encode("utf-8")
         try:
-            return s.decode(encoding).encode("utf-8")
+            return s.decode(pycompat.sysstr(encoding)).encode("utf-8")
         except UnicodeError:
             try:
                 return s.decode("latin-1").encode("utf-8")
             except UnicodeError:
-                return s.decode(encoding, "replace").encode("utf-8")
+                return s.decode(pycompat.sysstr(encoding),
+                                "replace").encode("utf-8")
 
     def getchangedfiles(self, rev, i):
         """Return the files changed by rev compared to parent[i].

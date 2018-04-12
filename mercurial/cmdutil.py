@@ -1526,7 +1526,7 @@ extraexport = []
 # it is given two arguments (sequencenumber, changectx)
 extraexportmap = {}
 
-def _exportsingle(repo, ctx, match, switch_parent, rev, seqno, write, diffopts):
+def _exportsingle(repo, ctx, match, switch_parent, seqno, write, diffopts):
     node = scmutil.binnode(ctx)
     parents = [p.node() for p in ctx.parents() if p]
     branch = ctx.branch()
@@ -1611,7 +1611,7 @@ def export(repo, revs, fntemplate='hg-%h.patch', fp=None, switch_parent=False,
         if not dest.startswith('<'):
             repo.ui.note("%s\n" % dest)
         _exportsingle(
-            repo, ctx, match, switch_parent, rev, seqno, write, opts)
+            repo, ctx, match, switch_parent, seqno, write, opts)
         if fo is not None:
             fo.close()
 

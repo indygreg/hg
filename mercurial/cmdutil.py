@@ -1565,24 +1565,17 @@ def _exportsingle(repo, ctx, fm, match, switch_parent, seqno, diffopts):
         # TODO: make it structured?
         fm.data(diff=b''.join(chunkiter))
 
-def _exportfile(repo, revs, fp, switch_parent, diffopts, match):
+def _exportfile(repo, revs, fm, dest, switch_parent, diffopts, match):
     """Export changesets to stdout or a single file"""
-    dest = '<unnamed>'
-    if fp:
-        dest = getattr(fp, 'name', dest)
-        fm = formatter.formatter(repo.ui, fp, 'export', {})
-    else:
-        fm = repo.ui.formatter('export', {})
-
     for seqno, rev in enumerate(revs, 1):
         ctx = repo[rev]
         if not dest.startswith('<'):
             repo.ui.note("%s\n" % dest)
         fm.startitem()
         _exportsingle(repo, ctx, fm, match, switch_parent, seqno, diffopts)
-    fm.end()
 
-def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
+def _exportfntemplate(repo, revs, basefm, fntemplate, switch_parent, diffopts,
+                      match):
     """Export changesets to possibly multiple files"""
     total = len(revs)
     revwidth = max(len(str(rev)) for rev in revs)
@@ -1595,7 +1588,7 @@ def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
         filemap.setdefault(dest, []).append((seqno, rev))
 
     for dest in filemap:
-        with formatter.openformatter(repo.ui, dest, 'export', {}) as fm:
+        with formatter.maybereopen(basefm, dest) as fm:
             repo.ui.note("%s\n" % dest)
             for seqno, rev in filemap[dest]:
                 fm.startitem()
@@ -1603,13 +1596,14 @@ def _exportfntemplate(repo, revs, fntemplate, switch_parent, diffopts, match):
                 _exportsingle(repo, ctx, fm, match, switch_parent, seqno,
                               diffopts)
 
-def export(repo, revs, fntemplate='hg-%h.patch', switch_parent=False,
+def export(repo, revs, basefm, fntemplate='hg-%h.patch', switch_parent=False,
            opts=None, match=None):
     '''export changesets as hg patches
 
     Args:
       repo: The repository from which we're exporting revisions.
       revs: A list of revisions to export as revision numbers.
+      basefm: A formatter to which patches should be written.
       fntemplate: An optional string to use for generating patch file names.
       switch_parent: If True, show diffs against second parent when not nullid.
                      Default is false, which always shows diff against p1.
@@ -1624,16 +1618,19 @@ def export(repo, revs, fntemplate='hg-%h.patch', switch_parent=False,
       destinations:
         fntemplate specified: Each rev is written to a unique file named using
                             the given template.
-        Otherwise: All revs written to repo.ui.write()
+        Otherwise: All revs will be written to basefm.
     '''
     if not fntemplate:
-        _exportfile(repo, revs, None, switch_parent, opts, match)
+        _exportfile(repo, revs, basefm, '<unnamed>', switch_parent, opts, match)
     else:
-        _exportfntemplate(repo, revs, fntemplate, switch_parent, opts, match)
+        _exportfntemplate(repo, revs, basefm, fntemplate, switch_parent, opts,
+                          match)
 
 def exportfile(repo, revs, fp, switch_parent=False, opts=None, match=None):
     """Export changesets to the given file stream"""
-    _exportfile(repo, revs, fp, switch_parent, opts, match)
+    dest = getattr(fp, 'name', '<unnamed>')
+    with formatter.formatter(repo.ui, fp, 'export', {}) as fm:
+        _exportfile(repo, revs, fm, dest, switch_parent, opts, match)
 
 def showmarker(fm, marker, index=None):
     """utility function to display obsolescence marker in a readable way

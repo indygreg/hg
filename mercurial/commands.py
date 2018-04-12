@@ -1894,7 +1894,7 @@ def diff(ui, repo, *pats, **opts):
      _('print output to file with formatted name'), _('FORMAT')),
     ('', 'switch-parent', None, _('diff against the second parent')),
     ('r', 'rev', [], _('revisions to export'), _('REV')),
-    ] + diffopts,
+    ] + diffopts + formatteropts,
     _('[OPTION]... [-o OUTFILESPEC] [-r] [REV]...'), cmdtype=readonly)
 def export(ui, repo, *changesets, **opts):
     """dump the header and diffs for one or more changesets
@@ -1976,11 +1976,15 @@ def export(ui, repo, *changesets, **opts):
     if cmdutil.isstdiofilename(fntemplate):
         fntemplate = ''
 
-    if not fntemplate:
+    if fntemplate:
+        fm = formatter.nullformatter(ui, 'export', opts)
+    else:
         ui.pager('export')
-    cmdutil.export(repo, revs, fntemplate=fntemplate,
-                 switch_parent=opts.get('switch_parent'),
-                 opts=patch.diffallopts(ui, opts))
+        fm = ui.formatter('export', opts)
+    with fm:
+        cmdutil.export(repo, revs, fm, fntemplate=fntemplate,
+                       switch_parent=opts.get('switch_parent'),
+                       opts=patch.diffallopts(ui, opts))
 
 @command('files',
     [('r', 'rev', '', _('search the repository as it is in REV'), _('REV')),

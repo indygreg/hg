@@ -82,6 +82,7 @@ from mercurial import (
     cmdutil,
     error,
     filemerge,
+    formatter,
     pycompat,
     registrar,
     scmutil,
@@ -267,9 +268,11 @@ def dodiff(ui, repo, cmdline, pats, opts):
                 label2 = common_file + rev2
         else:
             template = 'hg-%h.patch'
-            cmdutil.export(repo, [repo[node1a].rev(), repo[node2].rev()],
-                           fntemplate=repo.vfs.reljoin(tmproot, template),
-                           match=matcher)
+            with formatter.nullformatter(ui, 'extdiff', {}) as fm:
+                cmdutil.export(repo, [repo[node1a].rev(), repo[node2].rev()],
+                               fm,
+                               fntemplate=repo.vfs.reljoin(tmproot, template),
+                               match=matcher)
             label1a = cmdutil.makefilename(repo[node1a], template)
             label2 = cmdutil.makefilename(repo[node2], template)
             dir1a = repo.vfs.reljoin(tmproot, label1a)

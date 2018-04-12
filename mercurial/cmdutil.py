@@ -2231,7 +2231,7 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
                 os.makedirs(os.path.dirname(filename))
             except OSError:
                 pass
-        with formatter.maybereopen(basefm, filename, opts) as fm:
+        with formatter.maybereopen(basefm, filename) as fm:
             _updatecatformatter(fm, ctx, matcher, path, opts.get('decode'))
 
     # Automation often uses hg cat on single files, so special case it

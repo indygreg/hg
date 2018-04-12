@@ -160,6 +160,7 @@ class baseformatter(object):
     def __init__(self, ui, topic, opts, converter):
         self._ui = ui
         self._topic = topic
+        self._opts = opts
         self._converter = converter
         self._item = None
         # function to convert node to string suitable for this output
@@ -222,9 +223,9 @@ class baseformatter(object):
         if self._item is not None:
             self._showitem()
 
-def nullformatter(ui, topic):
+def nullformatter(ui, topic, opts):
     '''formatter that prints nothing'''
-    return baseformatter(ui, topic, opts={}, converter=_nullconverter)
+    return baseformatter(ui, topic, opts, converter=_nullconverter)
 
 class _nestedformatter(baseformatter):
     '''build sub items and store them in the parent formatter'''
@@ -595,7 +596,7 @@ def openformatter(ui, filename, topic, opts):
 def _neverending(fm):
     yield fm
 
-def maybereopen(fm, filename, opts):
+def maybereopen(fm, filename):
     """Create a formatter backed by file if filename specified, else return
     the given formatter
 
@@ -603,6 +604,6 @@ def maybereopen(fm, filename, opts):
     of the given formatter.
     """
     if filename:
-        return openformatter(fm._ui, filename, fm._topic, opts)
+        return openformatter(fm._ui, filename, fm._topic, fm._opts)
     else:
         return _neverending(fm)

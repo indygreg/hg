@@ -1318,7 +1318,7 @@ def cat(ui, repo, file1, *pats, **opts):
         fntemplate = ''
 
     if fntemplate:
-        fm = formatter.nullformatter(ui, 'cat')
+        fm = formatter.nullformatter(ui, 'cat', opts)
     else:
         ui.pager('cat')
         fm = ui.formatter('cat', opts)

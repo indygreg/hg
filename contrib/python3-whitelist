@@ -69,6 +69,7 @@ test-convert-filemap.t
 test-convert-hg-sink.t
 test-convert-hg-source.t
 test-convert-hg-startrev.t
+test-convert-splicemap.t
 test-copy-move-merge.t
 test-copy.t
 test-copytrace-heuristics.t
@@ -137,6 +138,7 @@ test-exchange-obsmarkers-case-D2.t
 test-exchange-obsmarkers-case-D3.t
 test-exchange-obsmarkers-case-D4.t
 test-execute-bit.t
+test-export.t
 test-extdiff.t
 test-extra-filelog-entry.t
 test-filebranch.t
@@ -205,6 +207,7 @@ test-largefiles-misc.t
 test-largefiles-small-disk.t
 test-largefiles-update.t
 test-lfs-largefiles.t
+test-linerange.py
 test-locate.t
 test-lock-badness.t
 test-log-linerange.t
@@ -395,7 +398,9 @@ test-show.t
 test-simple-update.t
 test-single-head.t
 test-sparse-clear.t
+test-sparse-import.t
 test-sparse-merges.t
+test-sparse-profiles.t
 test-sparse-requirement.t
 test-sparse-verbose-json.t
 test-ssh-clone-r.t
@@ -407,6 +412,7 @@ test-status-terse.t
 test-strip-cross.t
 test-strip.t
 test-subrepo-deep-nested-change.t
+test-subrepo-missing.t
 test-subrepo.t
 test-symlinks.t
 test-tag.t

@@ -26,6 +26,9 @@ HTTP_OK = hgwebcommon.HTTP_OK
 HTTP_CREATED = hgwebcommon.HTTP_CREATED
 HTTP_BAD_REQUEST = hgwebcommon.HTTP_BAD_REQUEST
 HTTP_NOT_FOUND = hgwebcommon.HTTP_NOT_FOUND
+HTTP_METHOD_NOT_ALLOWED = hgwebcommon.HTTP_METHOD_NOT_ALLOWED
+HTTP_NOT_ACCEPTABLE = hgwebcommon.HTTP_NOT_ACCEPTABLE
+HTTP_UNSUPPORTED_MEDIA_TYPE = hgwebcommon.HTTP_UNSUPPORTED_MEDIA_TYPE
 
 def handlewsgirequest(orig, rctx, req, res, checkperm):
     """Wrap wireprotoserver.handlewsgirequest() to possibly process an LFS
@@ -105,12 +108,16 @@ def _processbatchrequest(repo, req, res):
     #     "operation": "upload"
     #  }
 
-    if (req.method != b'POST'
-        or req.headers[b'Content-Type'] != b'application/vnd.git-lfs+json'
-        or req.headers[b'Accept'] != b'application/vnd.git-lfs+json'):
-        # TODO: figure out what the proper handling for a bad request to the
-        #       Batch API is.
-        _sethttperror(res, HTTP_BAD_REQUEST, b'Invalid Batch API request')
+    if req.method != b'POST':
+        _sethttperror(res, HTTP_METHOD_NOT_ALLOWED)
+        return True
+
+    if req.headers[b'Content-Type'] != b'application/vnd.git-lfs+json':
+        _sethttperror(res, HTTP_UNSUPPORTED_MEDIA_TYPE)
+        return True
+
+    if req.headers[b'Accept'] != b'application/vnd.git-lfs+json':
+        _sethttperror(res, HTTP_NOT_ACCEPTABLE)
         return True
 
     # XXX: specify an encoding?
@@ -315,6 +322,6 @@ def _processbasictransfer(repo, req, res, checkperm):
 
         return True
     else:
-        _sethttperror(res, HTTP_BAD_REQUEST,
+        _sethttperror(res, HTTP_METHOD_NOT_ALLOWED,
                       message=b'Unsupported LFS transfer method: %s' % method)
         return True

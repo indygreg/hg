@@ -101,6 +101,12 @@ class ipeercommands(zi.Interface):
         Returns a set of string capabilities.
         """
 
+    def clonebundles():
+        """Obtains the clone bundles manifest for the repo.
+
+        Returns the manifest as unparsed bytes.
+        """
+
     def debugwireargs(one, two, three=None, four=None, five=None):
         """Used to facilitate debugging of arguments passed over the wire."""
 

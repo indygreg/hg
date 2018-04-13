@@ -235,6 +235,9 @@ class localpeer(repository.peer):
     def capabilities(self):
         return self._caps
 
+    def clonebundles(self):
+        return self._repo.tryread('clonebundles.manifest')
+
     def debugwireargs(self, one, two, three=None, four=None, five=None):
         """Used to test argument passing over the wire"""
         return "%s %s %s %s %s" % (one, two, pycompat.bytestr(three),

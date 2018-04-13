@@ -322,6 +322,10 @@ class wirepeer(repository.peer):
 
     # Begin of ipeercommands interface.
 
+    def clonebundles(self):
+        self.requirecap('clonebundles', _('clone bundles'))
+        return self._call('clonebundles')
+
     @batchable
     def lookup(self, key):
         self.requirecap('lookup', _('look up remote revision'))

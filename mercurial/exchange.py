@@ -2170,7 +2170,8 @@ def _maybeapplyclonebundle(pullop):
     if not remote.capable('clonebundles'):
         return
 
-    res = remote._call('clonebundles')
+    with remote.commandexecutor() as e:
+        res = e.callcommand('clonebundles', {}).result()
 
     # If we call the wire protocol command, that's good enough to record the
     # attempt.

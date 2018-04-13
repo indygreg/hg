@@ -540,17 +540,26 @@ def getremotechanges(ui, repo, peer, onlyheads=None, bundlename=None,
                       and peer.capable('getbundle')
                       and peer.capable('bundle2'))
         if canbundle2:
-            kwargs = {}
-            kwargs[r'common'] = common
-            kwargs[r'heads'] = rheads
-            kwargs[r'bundlecaps'] = exchange.caps20to10(repo, role='client')
-            kwargs[r'cg'] = True
-            b2 = peer.getbundle('incoming', **kwargs)
-            fname = bundle = changegroup.writechunks(ui, b2._forwardchunks(),
-                                                     bundlename)
+            with peer.commandexecutor() as e:
+                b2 = e.callcommand('getbundle', {
+                    'source': 'incoming',
+                    'common': common,
+                    'heads': rheads,
+                    'bundlecaps': exchange.caps20to10(repo, role='client'),
+                    'cg': True,
+                }).result()
+
+                fname = bundle = changegroup.writechunks(ui,
+                                                         b2._forwardchunks(),
+                                                         bundlename)
         else:
             if peer.capable('getbundle'):
-                cg = peer.getbundle('incoming', common=common, heads=rheads)
+                with peer.commandexecutor() as e:
+                    cg = e.callcommand('getbundle', {
+                        'source': 'incoming',
+                        'common': common,
+                        'heads': rheads,
+                    }).result()
             elif onlyheads is None and not peer.capable('changegroupsubset'):
                 # compat with older servers when pulling all remote heads
 
@@ -594,7 +603,11 @@ def getremotechanges(ui, repo, peer, onlyheads=None, bundlename=None,
 
     if bundlerepo:
         reponodes = [ctx.node() for ctx in bundlerepo[bundlerepo.firstnewrev:]]
-        remotephases = peer.listkeys('phases')
+
+        with peer.commandexecutor() as e:
+            remotephases = e.callcommand('listkeys', {
+                'namespace': 'phases',
+            }).result()
 
         pullop = exchange.pulloperation(bundlerepo, peer, heads=reponodes)
         pullop.trmanager = bundletransactionmanager()

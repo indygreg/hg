@@ -175,11 +175,11 @@ class lock(object):
 
     _host = None
 
-    def __init__(self, vfs, file, timeout=-1, releasefn=None, acquirefn=None,
+    def __init__(self, vfs, fname, timeout=-1, releasefn=None, acquirefn=None,
                  desc=None, inheritchecker=None, parentlock=None,
                  dolock=True):
         self.vfs = vfs
-        self.f = file
+        self.f = fname
         self.held = 0
         self.timeout = timeout
         self.releasefn = releasefn

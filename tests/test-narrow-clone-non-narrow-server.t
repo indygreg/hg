@@ -18,8 +18,20 @@ Test attempting a narrow clone against a server that doesn't support narrowhg.
   $ cat hg.pid >> "$DAEMON_PIDS"
 
 Verify that narrow is advertised in the bundle2 capabilities:
+
+  $ cat >> unquote.py <<EOF
+  > from __future__ import print_function
+  > import sys
+  > if sys.version[0] == '3':
+  >     import urllib.parse as up
+  >     unquote = up.unquote_plus
+  > else:
+  >     import urllib
+  >     unquote = urllib.unquote_plus
+  > print(unquote(list(sys.stdin)[1]))
+  > EOF
   $ echo hello | hg -R . serve --stdio | \
-  >   $PYTHON -c "from __future__ import print_function; import sys, urllib; print(urllib.unquote_plus(list(sys.stdin)[1]))" | grep narrow
+  >   $PYTHON unquote.py | grep narrow
   narrow=v0
 
   $ cd ..

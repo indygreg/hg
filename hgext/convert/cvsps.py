@@ -919,7 +919,7 @@ def debugcvsps(ui, *args, **opts):
             if opts["parents"] and cs.parents:
                 if len(cs.parents) > 1:
                     ui.write(('Parents: %s\n' %
-                             (','.join([str(p.id) for p in cs.parents]))))
+                             (','.join([(b"%d" % p.id) for p in cs.parents]))))
                 else:
                     ui.write(('Parent: %d\n' % cs.parents[0].id))
 
@@ -941,18 +941,18 @@ def debugcvsps(ui, *args, **opts):
                     fn = fn[len(opts["prefix"]):]
                 ui.write('\t%s:%s->%s%s \n' % (
                         fn, '.'.join([str(x) for x in f.parent]) or 'INITIAL',
-                        '.'.join([str(x) for x in f.revision]),
+                        '.'.join([(b"%d" % x) for x in f.revision]),
                         ['', '(DEAD)'][f.dead]))
             ui.write('\n')
 
         # have we seen the start tag?
         if revisions and off:
-            if revisions[0] == str(cs.id) or \
+            if revisions[0] == (b"%d" % cs.id) or \
                 revisions[0] in cs.tags:
                 off = False
 
         # see if we reached the end tag
         if len(revisions) > 1 and not off:
-            if revisions[1] == str(cs.id) or \
+            if revisions[1] == (b"%d" % cs.id) or \
                 revisions[1] in cs.tags:
                 break

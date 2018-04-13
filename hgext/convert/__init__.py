@@ -482,7 +482,7 @@ def kwconverted(context, mapping, name):
     rev = ctx.extra().get('convert_revision', '')
     if rev.startswith('svn:'):
         if name == 'svnrev':
-            return str(subversion.revsplit(rev)[2])
+            return (b"%d" % subversion.revsplit(rev)[2])
         elif name == 'svnpath':
             return subversion.revsplit(rev)[1]
         elif name == 'svnuuid':

@@ -91,7 +91,7 @@ class convert_cvs(converter_source):
             for cs in db:
                 if maxrev and cs.id > maxrev:
                     break
-                id = str(cs.id)
+                id = (b"%d" % cs.id)
                 cs.author = self.recode(cs.author)
                 self.lastbranch[cs.branch] = id
                 cs.comment = self.recode(cs.comment)
@@ -102,13 +102,13 @@ class convert_cvs(converter_source):
 
                 files = {}
                 for f in cs.entries:
-                    files[f.file] = "%s%s" % ('.'.join([str(x)
+                    files[f.file] = "%s%s" % ('.'.join([(b"%d" % x)
                                                         for x in f.revision]),
                                               ['', '(DEAD)'][f.dead])
 
                 # add current commit to set
                 c = commit(author=cs.author, date=date,
-                           parents=[str(p.id) for p in cs.parents],
+                           parents=[(b"%d" % p.id) for p in cs.parents],
                            desc=cs.comment, branch=cs.branch or '')
                 self.changeset[id] = c
                 self.files[id] = files

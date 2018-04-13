@@ -348,7 +348,7 @@ class lock(object):
         if self._parentheld:
             lockname = self.parentlock
         else:
-            lockname = '%s:%s' % (lock._host, self.pid)
+            lockname = b'%s:%d' % (lock._host, self.pid)
         self._inherited = True
         try:
             yield lockname

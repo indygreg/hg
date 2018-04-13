@@ -621,13 +621,13 @@ def _dnsnamematch(dn, hostname, maxwildcards=1):
         pats.append(re.escape(leftmost))
     else:
         # Otherwise, '*' matches any dotless string, e.g. www*
-        pats.append(re.escape(leftmost).replace(r'\*', '[^.]*'))
+        pats.append(re.escape(leftmost).replace(br'\*', '[^.]*'))
 
     # add the remaining fragments, ignore any wildcards
     for frag in remainder:
         pats.append(re.escape(frag))
 
-    pat = re.compile(r'\A' + r'\.'.join(pats) + r'\Z', re.IGNORECASE)
+    pat = re.compile(br'\A' + br'\.'.join(pats) + br'\Z', re.IGNORECASE)
     return pat.match(hostname) is not None
 
 def _verifycert(cert, hostname):

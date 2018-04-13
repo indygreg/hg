@@ -1832,7 +1832,14 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
     target = hg.peer(ui, {}, repopath)
     if keyinfo:
         key, old, new = keyinfo
-        r = target.pushkey(namespace, key, old, new)
+        with target.commandexecutor() as e:
+            r = e.callcommand('pushkey', {
+                'namespace': namespace,
+                'key': key,
+                'old': old,
+                'new': new,
+            }).result()
+
         ui.status(pycompat.bytestr(r) + '\n')
         return not r
     else:

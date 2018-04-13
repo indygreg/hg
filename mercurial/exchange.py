@@ -1212,10 +1212,14 @@ def _pushsyncphase(pushop):
         outdated = [c for c in outdated if c.node() not in pheads]
         # fallback to independent pushkey command
         for newremotehead in outdated:
-            r = pushop.remote.pushkey('phases',
-                                      newremotehead.hex(),
-                                      ('%d' % phases.draft),
-                                      ('%d' % phases.public))
+            with pushop.remote.commandexecutor() as e:
+                r = e.callcommand('pushkey', {
+                    'namespace': 'phases',
+                    'key': newremotehead.hex(),
+                    'old': '%d' % phases.draft,
+                    'new': '%d' % phases.public
+                }).result()
+
             if not r:
                 pushop.ui.warn(_('updating %s to public failed!\n')
                                % newremotehead)
@@ -1270,7 +1274,16 @@ def _pushbookmark(pushop):
             action = 'export'
         elif not new:
             action = 'delete'
-        if remote.pushkey('bookmarks', b, old, new):
+
+        with remote.commandexecutor() as e:
+            r = e.callcommand('pushkey', {
+                'namespace': 'bookmarks',
+                'key': b,
+                'old': old,
+                'new': new,
+            }).result()
+
+        if r:
             ui.status(bookmsgmap[action][0] % b)
         else:
             ui.warn(bookmsgmap[action][1] % b)

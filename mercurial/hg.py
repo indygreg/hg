@@ -81,7 +81,9 @@ def addbranchrevs(lrepo, other, branches, revs):
             raise error.Abort(_("remote branch lookup not supported"))
         revs.append(hashbranch)
         return revs, revs[0]
-    branchmap = peer.branchmap()
+
+    with peer.commandexecutor() as e:
+        branchmap = e.callcommand('branchmap', {}).result()
 
     def primary(branch):
         if branch == '.':
@@ -421,7 +423,15 @@ def clonewithshare(ui, peeropts, sharepath, source, srcpeer, dest, pull=False,
             raise error.Abort(_("src repository does not support "
                                "revision lookup and so doesn't "
                                "support clone by revision"))
-        revs = [srcpeer.lookup(r) for r in rev]
+
+        # TODO this is batchable.
+        remoterevs = []
+        for r in rev:
+            with srcpeer.commandexecutor() as e:
+                remoterevs.append(e.callcommand('lookup', {
+                    'key': r,
+                }).result())
+        revs = remoterevs
 
     # Obtain a lock before checking for or cloning the pooled repo otherwise
     # 2 clients may race creating or populating it.
@@ -567,7 +577,11 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
             # raises RepoLookupError if revision 0 is filtered or otherwise
             # not available. If we fail to resolve, sharing is not enabled.
             try:
-                rootnode = srcpeer.lookup('0')
+                with srcpeer.commandexecutor() as e:
+                    rootnode = e.callcommand('lookup', {
+                        'key': '0',
+                    }).result()
+
                 if rootnode != node.nullid:
                     sharepath = os.path.join(sharepool, node.hex(rootnode))
                 else:
@@ -663,7 +677,16 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
                     raise error.Abort(_("src repository does not support "
                                        "revision lookup and so doesn't "
                                        "support clone by revision"))
-                revs = [srcpeer.lookup(r) for r in revs]
+
+                # TODO this is batchable.
+                remoterevs = []
+                for rev in revs:
+                    with srcpeer.commandexecutor() as e:
+                        remoterevs.append(e.callcommand('lookup', {
+                            'key': rev,
+                        }).result())
+                revs = remoterevs
+
                 checkout = revs[0]
             else:
                 revs = None
@@ -705,7 +728,11 @@ def clone(ui, peeropts, source, dest=None, pull=False, revs=None,
 
             if update:
                 if update is not True:
-                    checkout = srcpeer.lookup(update)
+                    with srcpeer.commandexecutor() as e:
+                        checkout = e.callcommand('lookup', {
+                            'key': update,
+                        }).result()
+
                 uprev = None
                 status = None
                 if checkout is not None:

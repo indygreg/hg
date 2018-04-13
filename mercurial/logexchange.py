@@ -127,14 +127,23 @@ def pullremotenames(localrepo, remoterepo):
     remoterepo is the peer instance
     """
     remotepath = activepath(localrepo, remoterepo)
-    bookmarks = remoterepo.listkeys('bookmarks')
+
+    with remoterepo.commandexecutor() as e:
+        bookmarks = e.callcommand('listkeys', {
+            'namespace': 'bookmarks',
+        }).result()
+
     # on a push, we don't want to keep obsolete heads since
     # they won't show up as heads on the next pull, so we
     # remove them here otherwise we would require the user
     # to issue a pull to refresh the storage
     bmap = {}
     repo = localrepo.unfiltered()
-    for branch, nodes in remoterepo.branchmap().iteritems():
+
+    with remoterepo.commandexecutor() as e:
+        branchmap = e.callcommand('branchmap', {}).result()
+
+    for branch, nodes in branchmap.iteritems():
         bmap[branch] = []
         for node in nodes:
             if node in repo and not repo[node].obsolete():

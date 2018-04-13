@@ -1343,7 +1343,7 @@ extrapreimportmap = {}
 # - ctx: the changectx created by import.
 extrapostimportmap = {}
 
-def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
+def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
     """Utility function used by commands.import to import a single patch
 
     This function is explicitly defined here to help the evolve extension to
@@ -1352,7 +1352,8 @@ def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
     The API is currently a bit ugly because it a simple code translation from
     the import command. Feel free to make it better.
 
-    :hunk: a patch (as a binary string)
+    :patchdata: a dictionary containing parsed patch data (such as from
+                ``patch.extract()``)
     :parents: nodes that will be parent of the created commit
     :opts: the full dict of option passed to the import command
     :msgs: list to save commit message to.
@@ -1362,15 +1363,15 @@ def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
     """
     # avoid cycle context -> subrepo -> cmdutil
     from . import context
-    extractdata = patch.extract(ui, hunk)
-    tmpname = extractdata.get('filename')
-    message = extractdata.get('message')
-    user = opts.get('user') or extractdata.get('user')
-    date = opts.get('date') or extractdata.get('date')
-    branch = extractdata.get('branch')
-    nodeid = extractdata.get('nodeid')
-    p1 = extractdata.get('p1')
-    p2 = extractdata.get('p2')
+
+    tmpname = patchdata.get('filename')
+    message = patchdata.get('message')
+    user = opts.get('user') or patchdata.get('user')
+    date = opts.get('date') or patchdata.get('date')
+    branch = patchdata.get('branch')
+    nodeid = patchdata.get('nodeid')
+    p1 = patchdata.get('p1')
+    p2 = patchdata.get('p2')
 
     nocommit = opts.get('no_commit')
     importbranch = opts.get('import_branch')
@@ -1462,7 +1463,7 @@ def tryimportone(ui, repo, hunk, parents, opts, msgs, updatefunc):
                                              **pycompat.strkwargs(opts))
                 extra = {}
                 for idfunc in extrapreimport:
-                    extrapreimportmap[idfunc](repo, extractdata, extra, opts)
+                    extrapreimportmap[idfunc](repo, patchdata, extra, opts)
                 overrides = {}
                 if partial:
                     overrides[('ui', 'allowemptycommit')] = True

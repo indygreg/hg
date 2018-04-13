@@ -3781,7 +3781,7 @@ def _deprecatedfunc(func, version, modname=None):
         fn = pycompat.sysbytes(func.__name__)
         mn = modname or pycompat.sysbytes(func.__module__)[len('mercurial.'):]
         msg = "'util.%s' is deprecated, use '%s.%s'" % (fn, mn, fn)
-        nouideprecwarn(msg, version)
+        nouideprecwarn(msg, version, stacklevel=2)
         return func(*args, **kwargs)
     wrapped.__name__ = func.__name__
     return wrapped

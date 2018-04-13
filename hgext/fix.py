@@ -387,7 +387,7 @@ def fixfile(ui, opts, fixers, fixctx, path, basectxs):
     for fixername, fixer in fixers.iteritems():
         if fixer.affects(opts, fixctx, path):
             ranges = lineranges(opts, path, basectxs, fixctx, newdata)
-            command = fixer.command(path, ranges)
+            command = fixer.command(ui, path, ranges)
             if command is None:
                 continue
             ui.debug('subprocess: %s\n' % (command,))
@@ -534,18 +534,20 @@ class Fixer(object):
         """Should this fixer run on the file at the given path and context?"""
         return scmutil.match(fixctx, [self._fileset], opts)(path)
 
-    def command(self, path, ranges):
+    def command(self, ui, path, ranges):
         """A shell command to use to invoke this fixer on the given file/lines
 
         May return None if there is no appropriate command to run for the given
         parameters.
         """
-        parts = [self._command.format(rootpath=path,
-                                      basename=os.path.basename(path))]
+        expand = cmdutil.rendercommandtemplate
+        parts = [expand(ui, self._command,
+                        {'rootpath': path, 'basename': os.path.basename(path)})]
         if self._linerange:
             if not ranges:
                 # No line ranges to fix, so don't run the fixer.
                 return None
             for first, last in ranges:
-                parts.append(self._linerange.format(first=first, last=last))
+                parts.append(expand(ui, self._linerange,
+                                    {'first': first, 'last': last}))
         return ' '.join(parts)

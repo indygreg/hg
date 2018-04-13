@@ -904,6 +904,33 @@ def getcommiteditor(edit=False, finishdesc=None, extramsg=None,
     else:
         return commiteditor
 
+def _escapecommandtemplate(tmpl):
+    parts = []
+    for typ, start, end in templater.scantemplate(tmpl, raw=True):
+        if typ == b'string':
+            parts.append(stringutil.escapestr(tmpl[start:end]))
+        else:
+            parts.append(tmpl[start:end])
+    return b''.join(parts)
+
+def rendercommandtemplate(ui, tmpl, props):
+    r"""Expand a literal template 'tmpl' in a way suitable for command line
+
+    '\' in outermost string is not taken as an escape character because it
+    is a directory separator on Windows.
+
+    >>> from . import ui as uimod
+    >>> ui = uimod.ui()
+    >>> rendercommandtemplate(ui, b'c:\\{path}', {b'path': b'foo'})
+    'c:\\foo'
+    >>> rendercommandtemplate(ui, b'{"c:\\{path}"}', {'path': b'foo'})
+    'c:{path}'
+    """
+    if not tmpl:
+        return tmpl
+    t = formatter.maketemplater(ui, _escapecommandtemplate(tmpl))
+    return t.renderdefault(props)
+
 def rendertemplate(ctx, tmpl, props=None):
     """Expand a literal template 'tmpl' byte-string against one changeset
 

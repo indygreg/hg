@@ -3477,8 +3477,8 @@ def log(ui, repo, *pats, **opts):
     getrenamed = None
     if opts.get('copies'):
         endrev = None
-        if opts.get('rev'):
-            endrev = scmutil.revrange(repo, opts.get('rev')).max() + 1
+        if revs:
+            endrev = revs.max() + 1
         getrenamed = templatekw.getrenamedfn(repo, endrev=endrev)
 
     ui.pager('log')

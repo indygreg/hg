@@ -656,6 +656,9 @@ log copies, execute bit set
   6 
 #endif
 
+log copies, empty set
+
+  $ hg log --copies -r '0 and not 0'
 
 log -p d
 

@@ -11,6 +11,7 @@ import errno
 import hashlib
 import os
 import random
+import sys
 import time
 import weakref
 
@@ -167,6 +168,49 @@ class localiterbatcher(wireprotov1peer.iterbatcher):
             resref.set(getattr(self.local, name)(*args, **opts))
             yield resref.value
 
+@zi.implementer(repository.ipeercommandexecutor)
+class localcommandexecutor(object):
+    def __init__(self, peer):
+        self._peer = peer
+        self._sent = False
+        self._closed = False
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exctype, excvalue, exctb):
+        self.close()
+
+    def callcommand(self, command, args):
+        if self._sent:
+            raise error.ProgrammingError('callcommand() cannot be used after '
+                                         'sendcommands()')
+
+        if self._closed:
+            raise error.ProgrammingError('callcommand() cannot be used after '
+                                         'close()')
+
+        # We don't need to support anything fancy. Just call the named
+        # method on the peer and return a resolved future.
+        fn = getattr(self._peer, pycompat.sysstr(command))
+
+        f = pycompat.futures.Future()
+
+        try:
+            result = fn(**args)
+        except Exception:
+            f.set_exception_info(*sys.exc_info()[1:])
+        else:
+            f.set_result(result)
+
+        return f
+
+    def sendcommands(self):
+        self._sent = True
+
+    def close(self):
+        self._closed = True
+
 class localpeer(repository.peer):
     '''peer for a local repo; reflects only the most recent API'''
 
@@ -285,6 +329,9 @@ class localpeer(repository.peer):
     # End of _basewirecommands interface.
 
     # Begin of peer interface.
+
+    def commandexecutor(self):
+        return localcommandexecutor(self)
 
     def iterbatch(self):
         return localiterbatcher(self)

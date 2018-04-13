@@ -228,7 +228,12 @@ def findcommonheads(ui, local, remote,
                  % (roundtrips, len(undecided), len(sample)))
         # indices between sample and externalized version must match
         sample = list(sample)
-        yesno = remote.known(dag.externalizeall(sample))
+
+        with remote.commandexecutor() as e:
+            yesno = e.callcommand('known', {
+                'nodes': dag.externalizeall(sample),
+            }).result()
+
         full = True
 
         if sample:

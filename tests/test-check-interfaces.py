@@ -23,6 +23,7 @@ from mercurial import (
     vfs as vfsmod,
     wireprotoserver,
     wireprototypes,
+    wireprotov1peer,
     wireprotov2server,
 )
 
@@ -101,6 +102,14 @@ def main():
     ziverify.verifyClass(repository.ipeerbase,
                          localrepo.localpeer)
     checkzobject(localrepo.localpeer(dummyrepo()))
+
+    ziverify.verifyClass(repository.ipeercommandexecutor,
+                         localrepo.localcommandexecutor)
+    checkzobject(localrepo.localcommandexecutor(None))
+
+    ziverify.verifyClass(repository.ipeercommandexecutor,
+                         wireprotov1peer.peerexecutor)
+    checkzobject(wireprotov1peer.peerexecutor(None))
 
     ziverify.verifyClass(repository.ipeerbaselegacycommands,
                          sshpeer.sshv1peer)

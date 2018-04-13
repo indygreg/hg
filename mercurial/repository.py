@@ -278,7 +278,8 @@ class ipeerrequests(zi.Interface):
         being issued.
         """
 
-class ipeerbase(ipeerconnection, ipeercapabilities, ipeercommands):
+class ipeerbase(ipeerconnection, ipeercapabilities, ipeercommands,
+                ipeerrequests):
     """Unified interface for peer repositories.
 
     All peer instances must conform to this interface.

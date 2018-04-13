@@ -19,6 +19,7 @@ from . import (
     encoding,
     error,
     pycompat,
+    streamclone,
     util,
     wireproto,
     wireprotoframing,
@@ -393,6 +394,10 @@ def _capabilitiesv2(repo, proto):
             'args': entry.args,
             'permissions': [entry.permission],
         }
+
+    if streamclone.allowservergeneration(repo):
+        caps['rawrepoformats'] = sorted(repo.requirements &
+                                        repo.supportedformats)
 
     return proto.addcapabilities(repo, caps)
 

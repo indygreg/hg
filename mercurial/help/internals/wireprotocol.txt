@@ -1774,6 +1774,11 @@ framingmediatypes
    An array of bytestrings defining the supported framing protocol
    media types. Servers will not accept media types not in this list.
 
+rawrepoformats
+   An array of storage formats the repository is using. This set of
+   requirements can be used to determine whether a client can read a
+   *raw* copy of file data available.
+
 heads
 -----
 

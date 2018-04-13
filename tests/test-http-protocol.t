@@ -211,7 +211,7 @@ Test listkeys for listing namespaces
   s>     bookmarks\t\n
   s>     namespaces\t\n
   s>     phases\t
-  response: b'bookmarks\t\nnamespaces\t\nphases\t'
+  response: {b'bookmarks': b'', b'namespaces': b'', b'phases': b''}
 
 Same thing, but with "httprequest" command
 
@@ -277,7 +277,7 @@ Client with HTTPv2 enabled advertises that and gets old capabilities response fr
   s>     Content-Length: 41\r\n
   s>     \r\n
   s>     0000000000000000000000000000000000000000\n
-  response: b'0000000000000000000000000000000000000000\n'
+  response: [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00']
 
   $ killdaemons.py
   $ enablehttpv2 empty

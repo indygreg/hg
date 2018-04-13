@@ -3001,7 +3001,9 @@ def debugwireproto(ui, repo, path=None, **opts):
                     ui.status(_('remote output: %s\n') %
                               stringutil.escapestr(output))
             else:
-                res = peer._call(command, **pycompat.strkwargs(args))
+                with peer.commandexecutor() as e:
+                    res = e.callcommand(command, args).result()
+
                 ui.status(_('response: %s\n') % stringutil.pprint(res))
 
         elif action == 'batchbegin':

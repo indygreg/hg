@@ -447,10 +447,8 @@ def longestshortest(repo, revs, minlen=4):
     """
     if not revs:
         return minlen
-    # don't use filtered repo because it's slow. see templater.shortest().
     cl = repo.changelog
-    return max(len(scmutil.shortesthexnodeidprefix(repo.unfiltered(),
-                                                   hex(cl.node(r)),
+    return max(len(scmutil.shortesthexnodeidprefix(repo, hex(cl.node(r)),
                                                    minlen)) for r in revs)
 
 # Adjust the docstring of the show command so it shows all registered views.

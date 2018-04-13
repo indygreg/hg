@@ -587,11 +587,8 @@ def shortest(context, mapping, args):
                                 # i18n: "shortest" is a keyword
                                 _("shortest() expects an integer minlength"))
 
-    # _partialmatch() of filtered changelog could take O(len(repo)) time,
-    # which would be unacceptably slow. so we look for hash collision in
-    # unfiltered space, which means some hashes may be slightly longer.
     repo = context.resource(mapping, 'ctx')._repo
-    return scmutil.shortesthexnodeidprefix(repo.unfiltered(), node, minlength)
+    return scmutil.shortesthexnodeidprefix(repo, node, minlength)
 
 @templatefunc('strip(text[, chars])')
 def strip(context, mapping, args):

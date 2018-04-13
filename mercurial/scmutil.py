@@ -444,6 +444,11 @@ def resolvepartialhexnodeid(repo, prefix):
     return node
 
 def isrevsymbol(repo, symbol):
+    """Checks if a symbol exists in the repo.
+
+    See revsymbol() for details. Raises error.LookupError if the symbol is an
+    ambiguous nodeid prefix.
+    """
     try:
         revsymbol(repo, symbol)
         return True

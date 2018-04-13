@@ -215,8 +215,8 @@ def _batchresponseobjects(req, objects, action, store):
 
         rsp['actions'] = {
             '%s' % action: {
-                # TODO: Account for the --prefix, if any.
-                'href': '%s/.hg/lfs/objects/%s' % (req.baseurl, oid),
+                'href': '%s%s/.hg/lfs/objects/%s'
+                    % (req.baseurl, req.apppath, oid),
                 # datetime.isoformat() doesn't include the 'Z' suffix
                 "expires_at": expiresat.strftime('%Y-%m-%dT%H:%M:%SZ'),
                 'header': {

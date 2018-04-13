@@ -203,7 +203,10 @@ def _headssummary(pushop):
     headssum = {}
     # A. Create set of branches involved in the push.
     branches = set(repo[n].branch() for n in outgoing.missing)
-    remotemap = remote.branchmap()
+
+    with remote.commandexecutor() as e:
+        remotemap = e.callcommand('branchmap', {}).result()
+
     newbranches = branches - set(remotemap)
     branches.difference_update(newbranches)
 
@@ -287,7 +290,12 @@ def _nowarnheads(pushop):
     repo = pushop.repo.unfiltered()
     remote = pushop.remote
     localbookmarks = repo._bookmarks
-    remotebookmarks = remote.listkeys('bookmarks')
+
+    with remote.commandexecutor() as e:
+        remotebookmarks = e.callcommand('listkeys', {
+            'namespace': 'bookmarks',
+        }).result()
+
     bookmarkedheads = set()
 
     # internal config: bookmarks.pushing

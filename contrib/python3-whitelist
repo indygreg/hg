@@ -70,6 +70,7 @@ test-convert-hg-sink.t
 test-convert-hg-source.t
 test-convert-hg-startrev.t
 test-convert-splicemap.t
+test-convert-tagsbranch-topology.t
 test-copy-move-merge.t
 test-copy.t
 test-copytrace-heuristics.t
@@ -270,6 +271,7 @@ test-mq-symlinks.t
 test-mv-cp-st-diff.t
 test-narrow-archive.t
 test-narrow-clone-no-ellipsis.t
+test-narrow-clone-non-narrow-server.t
 test-narrow-clone-nonlinear.t
 test-narrow-clone.t
 test-narrow-commit.t

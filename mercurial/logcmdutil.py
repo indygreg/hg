@@ -310,12 +310,13 @@ class changesetprinter(object):
         if stat or diff:
             self.ui.write("\n")
 
-class jsonchangeset(changesetprinter):
-    '''format changeset information.'''
+class changesetformatter(changesetprinter):
+    """Format changeset information by generic formatter"""
 
-    def __init__(self, ui, repo, differ=None, diffopts=None, buffered=False):
+    def __init__(self, ui, repo, fm, differ=None, diffopts=None,
+                 buffered=False):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
-        self._fm = formatter.jsonformatter(ui, ui, 'log', {})
+        self._fm = fm
 
     def close(self):
         self._fm.end()
@@ -519,7 +520,8 @@ def changesetdisplayer(ui, repo, opts, differ=None, buffered=False):
     """
     postargs = (differ, opts, buffered)
     if opts.get('template') == 'json':
-        return jsonchangeset(ui, repo, *postargs)
+        fm = ui.formatter('log', opts)
+        return changesetformatter(ui, repo, fm, *postargs)
 
     spec = _lookuptemplate(ui, opts.get('template'), opts.get('style'))
 

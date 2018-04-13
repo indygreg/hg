@@ -3089,11 +3089,10 @@ def import_(ui, repo, patch1=None, *patches, **opts):
 
             haspatch = False
             for hunk in patch.split(patchfile):
-                patchdata = patch.extract(ui, hunk)
-
-                msg, node, rej = cmdutil.tryimportone(ui, repo, patchdata,
-                                                      parents, opts,
-                                                      msgs, hg.clean)
+                with patch.extract(ui, hunk) as patchdata:
+                    msg, node, rej = cmdutil.tryimportone(ui, repo, patchdata,
+                                                          parents, opts,
+                                                          msgs, hg.clean)
                 if msg:
                     haspatch = True
                     ui.note(msg + '\n')

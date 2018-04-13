@@ -1379,141 +1379,139 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
     strip = opts["strip"]
     prefix = opts["prefix"]
     sim = float(opts.get('similarity') or 0)
+
     if not tmpname:
-        return (None, None, False)
+        return None, None, False
 
     rejects = False
 
-    try:
-        cmdline_message = logmessage(ui, opts)
-        if cmdline_message:
-            # pickup the cmdline msg
-            message = cmdline_message
-        elif message:
-            # pickup the patch msg
-            message = message.strip()
-        else:
-            # launch the editor
-            message = None
-        ui.debug('message:\n%s\n' % (message or ''))
+    cmdline_message = logmessage(ui, opts)
+    if cmdline_message:
+        # pickup the cmdline msg
+        message = cmdline_message
+    elif message:
+        # pickup the patch msg
+        message = message.strip()
+    else:
+        # launch the editor
+        message = None
+    ui.debug('message:\n%s\n' % (message or ''))
 
-        if len(parents) == 1:
-            parents.append(repo[nullid])
-        if opts.get('exact'):
-            if not nodeid or not p1:
-                raise error.Abort(_('not a Mercurial patch'))
+    if len(parents) == 1:
+        parents.append(repo[nullid])
+    if opts.get('exact'):
+        if not nodeid or not p1:
+            raise error.Abort(_('not a Mercurial patch'))
+        p1 = repo[p1]
+        p2 = repo[p2 or nullid]
+    elif p2:
+        try:
             p1 = repo[p1]
-            p2 = repo[p2 or nullid]
-        elif p2:
-            try:
-                p1 = repo[p1]
-                p2 = repo[p2]
-                # Without any options, consider p2 only if the
-                # patch is being applied on top of the recorded
-                # first parent.
-                if p1 != parents[0]:
-                    p1 = parents[0]
-                    p2 = repo[nullid]
-            except error.RepoError:
-                p1, p2 = parents
-            if p2.node() == nullid:
-                ui.warn(_("warning: import the patch as a normal revision\n"
-                          "(use --exact to import the patch as a merge)\n"))
-        else:
-            p1, p2 = parents
-
-        n = None
-        if update:
+            p2 = repo[p2]
+            # Without any options, consider p2 only if the
+            # patch is being applied on top of the recorded
+            # first parent.
             if p1 != parents[0]:
-                updatefunc(repo, p1.node())
-            if p2 != parents[1]:
-                repo.setparents(p1.node(), p2.node())
+                p1 = parents[0]
+                p2 = repo[nullid]
+        except error.RepoError:
+            p1, p2 = parents
+        if p2.node() == nullid:
+            ui.warn(_("warning: import the patch as a normal revision\n"
+                      "(use --exact to import the patch as a merge)\n"))
+    else:
+        p1, p2 = parents
 
-            if opts.get('exact') or importbranch:
-                repo.dirstate.setbranch(branch or 'default')
+    n = None
+    if update:
+        if p1 != parents[0]:
+            updatefunc(repo, p1.node())
+        if p2 != parents[1]:
+            repo.setparents(p1.node(), p2.node())
 
-            partial = opts.get('partial', False)
+        if opts.get('exact') or importbranch:
+            repo.dirstate.setbranch(branch or 'default')
+
+        partial = opts.get('partial', False)
+        files = set()
+        try:
+            patch.patch(ui, repo, tmpname, strip=strip, prefix=prefix,
+                        files=files, eolmode=None, similarity=sim / 100.0)
+        except error.PatchError as e:
+            if not partial:
+                raise error.Abort(pycompat.bytestr(e))
+            if partial:
+                rejects = True
+
+        files = list(files)
+        if nocommit:
+            if message:
+                msgs.append(message)
+        else:
+            if opts.get('exact') or p2:
+                # If you got here, you either use --force and know what
+                # you are doing or used --exact or a merge patch while
+                # being updated to its first parent.
+                m = None
+            else:
+                m = scmutil.matchfiles(repo, files or [])
+            editform = mergeeditform(repo[None], 'import.normal')
+            if opts.get('exact'):
+                editor = None
+            else:
+                editor = getcommiteditor(editform=editform,
+                                         **pycompat.strkwargs(opts))
+            extra = {}
+            for idfunc in extrapreimport:
+                extrapreimportmap[idfunc](repo, patchdata, extra, opts)
+            overrides = {}
+            if partial:
+                overrides[('ui', 'allowemptycommit')] = True
+            with repo.ui.configoverride(overrides, 'import'):
+                n = repo.commit(message, user,
+                                date, match=m,
+                                editor=editor, extra=extra)
+                for idfunc in extrapostimport:
+                    extrapostimportmap[idfunc](repo[n])
+    else:
+        if opts.get('exact') or importbranch:
+            branch = branch or 'default'
+        else:
+            branch = p1.branch()
+        store = patch.filestore()
+        try:
             files = set()
             try:
-                patch.patch(ui, repo, tmpname, strip=strip, prefix=prefix,
-                            files=files, eolmode=None, similarity=sim / 100.0)
+                patch.patchrepo(ui, repo, p1, store, tmpname, strip, prefix,
+                                files, eolmode=None)
             except error.PatchError as e:
-                if not partial:
-                    raise error.Abort(pycompat.bytestr(e))
-                if partial:
-                    rejects = True
-
-            files = list(files)
-            if nocommit:
-                if message:
-                    msgs.append(message)
+                raise error.Abort(stringutil.forcebytestr(e))
+            if opts.get('exact'):
+                editor = None
             else:
-                if opts.get('exact') or p2:
-                    # If you got here, you either use --force and know what
-                    # you are doing or used --exact or a merge patch while
-                    # being updated to its first parent.
-                    m = None
-                else:
-                    m = scmutil.matchfiles(repo, files or [])
-                editform = mergeeditform(repo[None], 'import.normal')
-                if opts.get('exact'):
-                    editor = None
-                else:
-                    editor = getcommiteditor(editform=editform,
-                                             **pycompat.strkwargs(opts))
-                extra = {}
-                for idfunc in extrapreimport:
-                    extrapreimportmap[idfunc](repo, patchdata, extra, opts)
-                overrides = {}
-                if partial:
-                    overrides[('ui', 'allowemptycommit')] = True
-                with repo.ui.configoverride(overrides, 'import'):
-                    n = repo.commit(message, user,
-                                    date, match=m,
-                                    editor=editor, extra=extra)
-                    for idfunc in extrapostimport:
-                        extrapostimportmap[idfunc](repo[n])
-        else:
-            if opts.get('exact') or importbranch:
-                branch = branch or 'default'
-            else:
-                branch = p1.branch()
-            store = patch.filestore()
-            try:
-                files = set()
-                try:
-                    patch.patchrepo(ui, repo, p1, store, tmpname, strip, prefix,
-                                    files, eolmode=None)
-                except error.PatchError as e:
-                    raise error.Abort(stringutil.forcebytestr(e))
-                if opts.get('exact'):
-                    editor = None
-                else:
-                    editor = getcommiteditor(editform='import.bypass')
-                memctx = context.memctx(repo, (p1.node(), p2.node()),
-                                            message,
-                                            files=files,
-                                            filectxfn=store,
-                                            user=user,
-                                            date=date,
-                                            branch=branch,
-                                            editor=editor)
-                n = memctx.commit()
-            finally:
-                store.close()
-        if opts.get('exact') and nocommit:
-            # --exact with --no-commit is still useful in that it does merge
-            # and branch bits
-            ui.warn(_("warning: can't check exact import with --no-commit\n"))
-        elif opts.get('exact') and hex(n) != nodeid:
-            raise error.Abort(_('patch is damaged or loses information'))
-        msg = _('applied to working directory')
-        if n:
-            # i18n: refers to a short changeset id
-            msg = _('created %s') % short(n)
-        return (msg, n, rejects)
-    finally:
-        os.unlink(tmpname)
+                editor = getcommiteditor(editform='import.bypass')
+            memctx = context.memctx(repo, (p1.node(), p2.node()),
+                                    message,
+                                    files=files,
+                                    filectxfn=store,
+                                    user=user,
+                                    date=date,
+                                    branch=branch,
+                                    editor=editor)
+            n = memctx.commit()
+        finally:
+            store.close()
+    if opts.get('exact') and nocommit:
+        # --exact with --no-commit is still useful in that it does merge
+        # and branch bits
+        ui.warn(_("warning: can't check exact import with --no-commit\n"))
+    elif opts.get('exact') and hex(n) != nodeid:
+        raise error.Abort(_('patch is damaged or loses information'))
+    msg = _('applied to working directory')
+    if n:
+        # i18n: refers to a short changeset id
+        msg = _('created %s') % short(n)
+    return msg, n, rejects
 
 # facility to let extensions include additional data in an exported patch
 # list of identifiers to be executed in order

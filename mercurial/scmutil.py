@@ -503,7 +503,7 @@ def revsymbol(repo, symbol):
         except KeyError:
             pass
 
-        node = repo.unfiltered().changelog._partialmatch(symbol)
+        node = resolvehexnodeidprefix(repo, symbol)
         if node is not None:
             rev = repo.changelog.rev(node)
             return repo[rev]

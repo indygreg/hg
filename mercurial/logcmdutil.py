@@ -317,7 +317,6 @@ class jsonchangeset(changesetprinter):
 
     def __init__(self, ui, repo, differ=None, diffopts=None, buffered=False):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
-        self.cache = {}
         self._first = True
 
     def close(self):

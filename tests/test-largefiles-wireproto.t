@@ -312,7 +312,7 @@ largefiles pulled on update - no server side problems:
   getting changed largefiles
   using http://localhost:$HGPORT2/
   sending capabilities command
-  sending batch command
+  sending statlfile command
   getting largefiles: 0/1 files (0.00%)
   getting f1:02a439e5c31c526465ab1a0ca1f431f76b827b90
   sending getlfile command
@@ -400,7 +400,7 @@ available locally.
   searching 3 changesets for largefiles
   verified existence of 3 revisions of 3 largefiles
   $ tail -1 access.log
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=statlfile+sha%3Dc8559c3c9cfb42131794b7d8009230403b9b454c x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=statlfile HTTP/1.1" 200 - x-hgarg-1:sha=c8559c3c9cfb42131794b7d8009230403b9b454c x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
 
   $ killdaemons.py
 

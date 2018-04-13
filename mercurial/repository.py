@@ -196,6 +196,88 @@ class ipeerlegacycommands(zi.Interface):
     def changegroupsubset(bases, heads, kind):
         pass
 
+class ipeercommandexecutor(zi.Interface):
+    """Represents a mechanism to execute remote commands.
+
+    This is the primary interface for requesting that wire protocol commands
+    be executed. Instances of this interface are active in a context manager
+    and have a well-defined lifetime. When the context manager exits, all
+    outstanding requests are waited on.
+    """
+
+    def callcommand(name, args):
+        """Request that a named command be executed.
+
+        Receives the command name and a dictionary of command arguments.
+
+        Returns a ``concurrent.futures.Future`` that will resolve to the
+        result of that command request. That exact value is left up to
+        the implementation and possibly varies by command.
+
+        Not all commands can coexist with other commands in an executor
+        instance: it depends on the underlying wire protocol transport being
+        used and the command itself.
+
+        Implementations MAY call ``sendcommands()`` automatically if the
+        requested command can not coexist with other commands in this executor.
+
+        Implementations MAY call ``sendcommands()`` automatically when the
+        future's ``result()`` is called. So, consumers using multiple
+        commands with an executor MUST ensure that ``result()`` is not called
+        until all command requests have been issued.
+        """
+
+    def sendcommands():
+        """Trigger submission of queued command requests.
+
+        Not all transports submit commands as soon as they are requested to
+        run. When called, this method forces queued command requests to be
+        issued. It will no-op if all commands have already been sent.
+
+        When called, no more new commands may be issued with this executor.
+        """
+
+    def close():
+        """Signal that this command request is finished.
+
+        When called, no more new commands may be issued. All outstanding
+        commands that have previously been issued are waited on before
+        returning. This not only includes waiting for the futures to resolve,
+        but also waiting for all response data to arrive. In other words,
+        calling this waits for all on-wire state for issued command requests
+        to finish.
+
+        When used as a context manager, this method is called when exiting the
+        context manager.
+
+        This method may call ``sendcommands()`` if there are buffered commands.
+        """
+
+class ipeerrequests(zi.Interface):
+    """Interface for executing commands on a peer."""
+
+    def commandexecutor():
+        """A context manager that resolves to an ipeercommandexecutor.
+
+        The object this resolves to can be used to issue command requests
+        to the peer.
+
+        Callers should call its ``callcommand`` method to issue command
+        requests.
+
+        A new executor should be obtained for each distinct set of commands
+        (possibly just a single command) that the consumer wants to execute
+        as part of a single operation or round trip. This is because some
+        peers are half-duplex and/or don't support persistent connections.
+        e.g. in the case of HTTP peers, commands sent to an executor represent
+        a single HTTP request. While some peers may support multiple command
+        sends over the wire per executor, consumers need to code to the least
+        capable peer. So it should be assumed that command executors buffer
+        called commands until they are told to send them and that each
+        command executor could result in a new connection or wire-level request
+        being issued.
+        """
+
 class ipeerbase(ipeerconnection, ipeercapabilities, ipeercommands):
     """Unified interface for peer repositories.
 

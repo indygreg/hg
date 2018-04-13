@@ -105,6 +105,26 @@ class BadFrameRecvTests(unittest.TestCase):
                                      'unhandled frame type'):
             sendframe(reactor, ffs(b'1 0 stream-begin text-output 0 foo'))
 
+class StreamTests(unittest.TestCase):
+    def testmultipleresponseframes(self):
+        reactor = framing.clientreactor(buffersends=False)
+
+        request, action, meta = reactor.callcommand(b'foo', {})
+
+        self.assertEqual(action, 'sendframes')
+        for f in meta['framegen']:
+            pass
+
+        action, meta = sendframe(
+            reactor,
+            ffs(b'%d 0 stream-begin 4 0 foo' % request.requestid))
+        self.assertEqual(action, 'responsedata')
+
+        action, meta = sendframe(
+            reactor,
+            ffs(b'%d 0 0 4 eos bar' % request.requestid))
+        self.assertEqual(action, 'responsedata')
+
 if __name__ == '__main__':
     import silenttestrunner
     silenttestrunner.main(__name__)

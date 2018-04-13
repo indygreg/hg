@@ -1029,6 +1029,8 @@ class clientreactor(object):
                                  'without beginning of stream flag set'),
                 }
 
+            self._incomingstreams[frame.streamid] = stream(frame.streamid)
+
         if frame.streamflags & STREAM_FLAG_ENCODING_APPLIED:
             raise error.ProgrammingError('support for decoding stream '
                                          'payloads not yet implemneted')

@@ -853,32 +853,33 @@ Test xml styles:
 Test JSON style:
 
   $ hg log -k nosuch -Tjson
-  []
+  [
+  ]
 
   $ hg log -qr . -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a"
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "rev": 8
    }
   ]
 
   $ hg log -vpr . -Tjson --stat
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
-    "files": ["fourth", "second", "third"],
+    "diff": "diff -r 29114dbae42b -r 95c24699272e fourth\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/fourth\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+second\ndiff -r 29114dbae42b -r 95c24699272e second\n--- a/second\tMon Jan 12 13:46:40 1970 +0000\n+++ /dev/null\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +0,0 @@\n-second\ndiff -r 29114dbae42b -r 95c24699272e third\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/third\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+third\n",
     "diffstat": " fourth |  1 +\n second |  1 -\n third  |  1 +\n 3 files changed, 2 insertions(+), 1 deletions(-)\n",
-    "diff": "diff -r 29114dbae42b -r 95c24699272e fourth\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/fourth\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+second\ndiff -r 29114dbae42b -r 95c24699272e second\n--- a/second\tMon Jan 12 13:46:40 1970 +0000\n+++ /dev/null\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +0,0 @@\n-second\ndiff -r 29114dbae42b -r 95c24699272e third\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/third\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+third\n"
+    "files": ["fourth", "second", "third"],
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    }
   ]
 
@@ -886,330 +887,330 @@ honor --git but not format-breaking diffopts
   $ hg --config diff.noprefix=True log --git -vpr . -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "diff": "diff --git a/second b/fourth\nrename from second\nrename to fourth\ndiff --git a/third b/third\nnew file mode 100644\n--- /dev/null\n+++ b/third\n@@ -0,0 +1,1 @@\n+third\n",
     "files": ["fourth", "second", "third"],
-    "diff": "diff --git a/second b/fourth\nrename from second\nrename to fourth\ndiff --git a/third b/third\nnew file mode 100644\n--- /dev/null\n+++ b/third\n@@ -0,0 +1,1 @@\n+third\n"
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    }
   ]
 
   $ hg log -T json
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "rev": 8,
     "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"]
+    "user": "test"
    },
    {
-    "rev": 7,
-    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "second",
-    "bookmarks": [],
+    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 7,
     "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"]
+    "user": "User Name <user@hostname>"
    },
    {
-    "rev": 6,
-    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500001, 0],
     "desc": "merge",
-    "bookmarks": [],
+    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
+    "phase": "draft",
+    "rev": 6,
     "tags": [],
-    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"]
+    "user": "person"
    },
    {
-    "rev": 5,
-    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500000, 0],
     "desc": "new head",
-    "bookmarks": [],
+    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "rev": 5,
     "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"]
+    "user": "person"
    },
    {
-    "rev": 4,
-    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "bookmarks": [],
     "branch": "foo",
-    "phase": "draft",
-    "user": "person",
     "date": [1400000, 0],
     "desc": "new branch",
-    "bookmarks": [],
+    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "rev": 4,
     "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"]
+    "user": "person"
    },
    {
-    "rev": 3,
-    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1300000, 0],
     "desc": "no user, no domain",
-    "bookmarks": [],
+    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "parents": ["97054abb4ab824450e9164180baf491ae0078465"],
+    "phase": "draft",
+    "rev": 3,
     "tags": [],
-    "parents": ["97054abb4ab824450e9164180baf491ae0078465"]
+    "user": "person"
    },
    {
-    "rev": 2,
-    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "other@place",
     "date": [1200000, 0],
     "desc": "no person",
-    "bookmarks": [],
+    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"],
+    "phase": "draft",
+    "rev": 2,
     "tags": [],
-    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"]
+    "user": "other@place"
    },
    {
-    "rev": 1,
-    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "A. N. Other <other@place>",
     "date": [1100000, 0],
     "desc": "other 1\nother 2\n\nother 3",
-    "bookmarks": [],
+    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"],
+    "phase": "draft",
+    "rev": 1,
     "tags": [],
-    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"]
+    "user": "A. N. Other <other@place>"
    },
    {
-    "rev": 0,
-    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "line 1\nline 2",
-    "bookmarks": [],
+    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
     "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"]
+    "user": "User Name <user@hostname>"
    }
   ]
 
   $ hg heads -v -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
+    "files": ["fourth", "second", "third"],
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
     "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
-    "files": ["fourth", "second", "third"]
+    "phase": "draft",
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    },
    {
-    "rev": 6,
-    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500001, 0],
     "desc": "merge",
-    "bookmarks": [],
-    "tags": [],
+    "files": [],
+    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
     "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
-    "files": []
+    "phase": "draft",
+    "rev": 6,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 4,
-    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "bookmarks": [],
     "branch": "foo",
-    "phase": "draft",
-    "user": "person",
     "date": [1400000, 0],
     "desc": "new branch",
-    "bookmarks": [],
-    "tags": [],
+    "files": [],
+    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
     "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
-    "files": []
+    "phase": "draft",
+    "rev": 4,
+    "tags": [],
+    "user": "person"
    }
   ]
 
   $ hg log --debug -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "added": ["fourth", "third"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
-    "manifest": "94961b75a2da554b4df6fb599e5bfc7d48de0c64",
     "extra": {"branch": "default"},
+    "manifest": "94961b75a2da554b4df6fb599e5bfc7d48de0c64",
     "modified": [],
-    "added": ["fourth", "third"],
-    "removed": ["second"]
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "removed": ["second"],
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    },
    {
-    "rev": 7,
-    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "added": ["second"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "second",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"],
-    "manifest": "f2dbc354b94e5ec0b4f10680ee0cee816101d0bf",
     "extra": {"branch": "default"},
+    "manifest": "f2dbc354b94e5ec0b4f10680ee0cee816101d0bf",
     "modified": [],
-    "added": ["second"],
-    "removed": []
+    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 7,
+    "tags": [],
+    "user": "User Name <user@hostname>"
    },
    {
-    "rev": 6,
-    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "added": [],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500001, 0],
     "desc": "merge",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
-    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "extra": {"branch": "default"},
+    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "modified": [],
-    "added": [],
-    "removed": []
+    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 6,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 5,
-    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "added": ["d"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500000, 0],
     "desc": "new head",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
-    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "extra": {"branch": "default"},
+    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "modified": [],
-    "added": ["d"],
-    "removed": []
+    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 5,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 4,
-    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "added": [],
+    "bookmarks": [],
     "branch": "foo",
-    "phase": "draft",
-    "user": "person",
     "date": [1400000, 0],
     "desc": "new branch",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
-    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "extra": {"branch": "foo"},
+    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "modified": [],
-    "added": [],
-    "removed": []
+    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 4,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 3,
-    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "added": [],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1300000, 0],
     "desc": "no user, no domain",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["97054abb4ab824450e9164180baf491ae0078465"],
-    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "extra": {"branch": "default"},
+    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "modified": ["c"],
-    "added": [],
-    "removed": []
+    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "parents": ["97054abb4ab824450e9164180baf491ae0078465"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 3,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 2,
-    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "added": ["c"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "other@place",
     "date": [1200000, 0],
     "desc": "no person",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"],
-    "manifest": "6e0e82995c35d0d57a52aca8da4e56139e06b4b1",
     "extra": {"branch": "default"},
+    "manifest": "6e0e82995c35d0d57a52aca8da4e56139e06b4b1",
     "modified": [],
-    "added": ["c"],
-    "removed": []
+    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 2,
+    "tags": [],
+    "user": "other@place"
    },
    {
-    "rev": 1,
-    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "added": ["b"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "A. N. Other <other@place>",
     "date": [1100000, 0],
     "desc": "other 1\nother 2\n\nother 3",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"],
-    "manifest": "4e8d705b1e53e3f9375e0e60dc7b525d8211fe55",
     "extra": {"branch": "default"},
+    "manifest": "4e8d705b1e53e3f9375e0e60dc7b525d8211fe55",
     "modified": [],
-    "added": ["b"],
-    "removed": []
+    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 1,
+    "tags": [],
+    "user": "A. N. Other <other@place>"
    },
    {
-    "rev": 0,
-    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "added": ["a"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "line 1\nline 2",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"],
-    "manifest": "a0c8bcbbb45c63b90b70ad007bf38961f64f2af0",
     "extra": {"branch": "default"},
+    "manifest": "a0c8bcbbb45c63b90b70ad007bf38961f64f2af0",
     "modified": [],
-    "added": ["a"],
-    "removed": []
+    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 0,
+    "tags": [],
+    "user": "User Name <user@hostname>"
    }
   ]
 

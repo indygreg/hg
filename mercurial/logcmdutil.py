@@ -12,13 +12,11 @@ import os
 
 from .i18n import _
 from .node import (
-    hex,
     nullid,
 )
 
 from . import (
     dagop,
-    encoding,
     error,
     formatter,
     graphmod,
@@ -317,78 +315,56 @@ class jsonchangeset(changesetprinter):
 
     def __init__(self, ui, repo, differ=None, diffopts=None, buffered=False):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
-        self._first = True
+        self._fm = formatter.jsonformatter(ui, ui, 'log', {})
 
     def close(self):
-        if not self._first:
-            self.ui.write("\n]\n")
-        else:
-            self.ui.write("[]\n")
+        self._fm.end()
 
     def _show(self, ctx, copies, props):
         '''show a single changeset or file revision'''
+        fm = self._fm
+        fm.startitem()
+
+        # TODO: maybe this should be wdirrev/wdirnode?
         rev = ctx.rev()
         if rev is None:
-            jrev = jnode = 'null'
+            hexnode = None
         else:
-            jrev = '%d' % rev
-            jnode = '"%s"' % hex(ctx.node())
-        j = encoding.jsonescape
-
-        if self._first:
-            self.ui.write("[\n {")
-            self._first = False
-        else:
-            self.ui.write(",\n {")
+            hexnode = fm.hexfunc(ctx.node())
+        fm.data(rev=rev,
+                node=hexnode)
 
         if self.ui.quiet:
-            self.ui.write(('\n  "rev": %s') % jrev)
-            self.ui.write((',\n  "node": %s') % jnode)
-            self.ui.write('\n }')
             return
 
-        self.ui.write(('\n  "rev": %s') % jrev)
-        self.ui.write((',\n  "node": %s') % jnode)
-        self.ui.write((',\n  "branch": "%s"') % j(ctx.branch()))
-        self.ui.write((',\n  "phase": "%s"') % ctx.phasestr())
-        self.ui.write((',\n  "user": "%s"') % j(ctx.user()))
-        self.ui.write((',\n  "date": [%d, %d]') % ctx.date())
-        self.ui.write((',\n  "desc": "%s"') % j(ctx.description()))
-
-        self.ui.write((',\n  "bookmarks": [%s]') %
-                      ", ".join('"%s"' % j(b) for b in ctx.bookmarks()))
-        self.ui.write((',\n  "tags": [%s]') %
-                      ", ".join('"%s"' % j(t) for t in ctx.tags()))
-        self.ui.write((',\n  "parents": [%s]') %
-                      ", ".join('"%s"' % c.hex() for c in ctx.parents()))
+        fm.data(branch=ctx.branch(),
+                phase=ctx.phasestr(),
+                user=ctx.user(),
+                date=fm.formatdate(ctx.date()),
+                desc=ctx.description(),
+                bookmarks=fm.formatlist(ctx.bookmarks(), name='bookmark'),
+                tags=fm.formatlist(ctx.tags(), name='tag'),
+                parents=fm.formatlist([fm.hexfunc(c.node())
+                                       for c in ctx.parents()], name='node'))
 
         if self.ui.debugflag:
             if rev is None:
-                jmanifestnode = 'null'
+                hexnode = None
             else:
-                jmanifestnode = '"%s"' % hex(ctx.manifestnode())
-            self.ui.write((',\n  "manifest": %s') % jmanifestnode)
-
-            self.ui.write((',\n  "extra": {%s}') %
-                          ", ".join('"%s": "%s"' % (j(k), j(v))
-                                    for k, v in ctx.extra().items()))
+                hexnode = fm.hexfunc(ctx.manifestnode())
+            fm.data(manifest=hexnode,
+                    extra=fm.formatdict(ctx.extra()))
 
             files = ctx.p1().status(ctx)
-            self.ui.write((',\n  "modified": [%s]') %
-                          ", ".join('"%s"' % j(f) for f in files[0]))
-            self.ui.write((',\n  "added": [%s]') %
-                          ", ".join('"%s"' % j(f) for f in files[1]))
-            self.ui.write((',\n  "removed": [%s]') %
-                          ", ".join('"%s"' % j(f) for f in files[2]))
+            fm.data(modified=fm.formatlist(files[0], name='file'),
+                    added=fm.formatlist(files[1], name='file'),
+                    removed=fm.formatlist(files[2], name='file'))
 
         elif self.ui.verbose:
-            self.ui.write((',\n  "files": [%s]') %
-                          ", ".join('"%s"' % j(f) for f in ctx.files()))
-
+            fm.data(files=fm.formatlist(ctx.files(), name='file'))
             if copies:
-                self.ui.write((',\n  "copies": {%s}') %
-                              ", ".join('"%s": "%s"' % (j(k), j(v))
-                                                        for k, v in copies))
+                fm.data(copies=fm.formatdict(copies,
+                                             key='name', value='source'))
 
         stat = self.diffopts.get('stat')
         diff = self.diffopts.get('patch')
@@ -396,14 +372,11 @@ class jsonchangeset(changesetprinter):
         if stat:
             self.ui.pushbuffer()
             self._differ.showdiff(self.ui, ctx, diffopts, stat=True)
-            self.ui.write((',\n  "diffstat": "%s"')
-                          % j(self.ui.popbuffer()))
+            fm.data(diffstat=self.ui.popbuffer())
         if diff:
             self.ui.pushbuffer()
             self._differ.showdiff(self.ui, ctx, diffopts, stat=False)
-            self.ui.write((',\n  "diff": "%s"') % j(self.ui.popbuffer()))
-
-        self.ui.write("\n }")
+            fm.data(diff=self.ui.popbuffer())
 
 class changesettemplater(changesetprinter):
     '''format changeset information.

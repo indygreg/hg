@@ -254,52 +254,52 @@ With --template.
   $ hg log -f -L foo,5:7 -T json
   [
    {
-    "rev": 5,
-    "node": "cfdf972b3971a2a59638bf9583c0debbffee5404",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "foo: 3 -> 3+ and 11+ -> 11-; bar: a -> a+",
-    "bookmarks": [],
+    "node": "cfdf972b3971a2a59638bf9583c0debbffee5404",
+    "parents": ["eaec41c1a0c9ad0a5e999611d0149d171beffb8c"],
+    "phase": "draft",
+    "rev": 5,
     "tags": ["tip"],
-    "parents": ["eaec41c1a0c9ad0a5e999611d0149d171beffb8c"]
+    "user": "test"
    },
    {
-    "rev": 4,
-    "node": "eaec41c1a0c9ad0a5e999611d0149d171beffb8c",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "11 -> 11+; leading space before \"1\"",
-    "bookmarks": [],
+    "node": "eaec41c1a0c9ad0a5e999611d0149d171beffb8c",
+    "parents": ["730a61fbaecf426c17c2c66bc42d195b5d5b0ba8"],
+    "phase": "draft",
+    "rev": 4,
     "tags": [],
-    "parents": ["730a61fbaecf426c17c2c66bc42d195b5d5b0ba8"]
+    "user": "test"
    },
    {
-    "rev": 2,
-    "node": "63a884426fd0b277fcd55895bbb2f230434576eb",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "2 -> 2+; added bar",
-    "bookmarks": [],
+    "node": "63a884426fd0b277fcd55895bbb2f230434576eb",
+    "parents": ["29a1e7c6b80024f63f310a2d71de979e9d2996d7"],
+    "phase": "draft",
+    "rev": 2,
     "tags": [],
-    "parents": ["29a1e7c6b80024f63f310a2d71de979e9d2996d7"]
+    "user": "test"
    },
    {
-    "rev": 0,
-    "node": "5ae1f82b9a000ff1e0967d0dac1c58b9d796e1b4",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "init",
-    "bookmarks": [],
+    "node": "5ae1f82b9a000ff1e0967d0dac1c58b9d796e1b4",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
     "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"]
+    "user": "test"
    }
   ]
 

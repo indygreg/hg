@@ -619,18 +619,18 @@ log copies with hardcoded style and with --style=default
   $ hg log -vC -r4 -Tjson
   [
    {
-    "rev": 4,
-    "node": "7e4639b4691b9f84b81036a8d4fb218ce3c5e3a3",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
+    "copies": {"e": "dir/b"},
     "date": [5, 0],
     "desc": "e",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["2ca5ba7019804f1f597249caddf22a64d34df0ba"],
     "files": ["dir/b", "e"],
-    "copies": {"e": "dir/b"}
+    "node": "7e4639b4691b9f84b81036a8d4fb218ce3c5e3a3",
+    "parents": ["2ca5ba7019804f1f597249caddf22a64d34df0ba"],
+    "phase": "draft",
+    "rev": 4,
+    "tags": ["tip"],
+    "user": "test"
    }
   ]
 
@@ -2201,45 +2201,45 @@ dirty:
   $ hg log -r 'wdir()' -Tjson
   [
    {
-    "rev": null,
-    "node": null,
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [*, 0], (glob)
     "desc": "",
-    "bookmarks": [],
+    "node": null,
+    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
+    "phase": "draft",
+    "rev": null,
     "tags": [],
-    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"]
+    "user": "test"
    }
   ]
 
   $ hg log -r 'wdir()' -Tjson -q
   [
    {
-    "rev": null,
-    "node": null
+    "node": null,
+    "rev": null
    }
   ]
 
   $ hg log -r 'wdir()' -Tjson --debug
   [
    {
-    "rev": null,
-    "node": null,
+    "added": ["d1/f2"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [*, 0], (glob)
     "desc": "",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
-    "manifest": null,
     "extra": {"branch": "default"},
+    "manifest": null,
     "modified": ["d1/f1"],
-    "added": ["d1/f2"],
-    "removed": [".d6/f1"]
+    "node": null,
+    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
+    "phase": "draft",
+    "removed": [".d6/f1"],
+    "rev": null,
+    "tags": [],
+    "user": "test"
    }
   ]
 

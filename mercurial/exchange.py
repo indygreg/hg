@@ -2291,7 +2291,7 @@ def filterclonebundleentries(repo, entries, streamclonerequested=False):
                     continue
 
             except error.InvalidBundleSpecification as e:
-                repo.ui.debug(str(e) + '\n')
+                repo.ui.debug(stringutil.forcebytestr(e) + '\n')
                 continue
             except error.UnsupportedBundleSpecification as e:
                 repo.ui.debug('filtering %s because unsupported bundle '

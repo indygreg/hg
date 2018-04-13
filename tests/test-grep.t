@@ -58,7 +58,7 @@ simple JSON (no "change" field)
   $ hg grep -Tjson port
   [
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -67,7 +67,7 @@ simple JSON (no "change" field)
     "user": "spam"
    },
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 2,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -76,7 +76,7 @@ simple JSON (no "change" field)
     "user": "spam"
    },
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 3,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -91,7 +91,7 @@ simple JSON without matching lines
   $ hg grep -Tjson -l port
   [
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -119,7 +119,7 @@ all JSON
   [
    {
     "change": "-",
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 4,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -129,7 +129,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [3.0, 0],
+    "date": [3, 0],
     "file": "port",
     "line_number": 4,
     "node": "95040cfd017d658c536071c6290230a613c4c2a6",
@@ -139,7 +139,7 @@ all JSON
    },
    {
     "change": "-",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -149,7 +149,7 @@ all JSON
    },
    {
     "change": "-",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -159,7 +159,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -169,7 +169,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -179,7 +179,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 3,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -189,7 +189,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [1.0, 0],
+    "date": [1, 0],
     "file": "port",
     "line_number": 2,
     "node": "8b20f75c158513ff5ac80bd0e5219bfb6f0eb587",
@@ -199,7 +199,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "file": "port",
     "line_number": 1,
     "node": "f31323c9217050ba245ee8b537c713ec2e8ab226",

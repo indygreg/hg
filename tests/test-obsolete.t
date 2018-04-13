@@ -715,49 +715,49 @@ List of all markers in JSON
   $ hg debugobsolete -Tjson
   [
    {
-    "date": [1339.0, 0],
+    "date": [1339, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "1339133913391339133913391339133913391339",
     "succnodes": ["ca819180edb99ed25ceafb3e9584ac287e240b00"]
    },
    {
-    "date": [1339.0, 0],
+    "date": [1339, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "1337133713371337133713371337133713371337",
     "succnodes": ["5601fb93a350734d935195fee37f4054c529ff39"]
    },
    {
-    "date": [121.0, 120],
+    "date": [121, 120],
     "flag": 12,
     "metadata": {"user": "test"},
     "prednode": "245bde4270cd1072a27757984f9cda8ba26f08ca",
     "succnodes": ["cdbce2fbb16313928851e97e0d85413f3f7eb77f"]
    },
    {
-    "date": [1338.0, 0],
+    "date": [1338, 0],
     "flag": 1,
     "metadata": {"user": "test"},
     "prednode": "5601fb93a350734d935195fee37f4054c529ff39",
     "succnodes": ["6f96419950729f3671185b847352890f074f7557"]
    },
    {
-    "date": [1338.0, 0],
+    "date": [1338, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "ca819180edb99ed25ceafb3e9584ac287e240b00",
     "succnodes": ["1337133713371337133713371337133713371337"]
    },
    {
-    "date": [1337.0, 0],
+    "date": [1337, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "cdbce2fbb16313928851e97e0d85413f3f7eb77f",
     "succnodes": ["ca819180edb99ed25ceafb3e9584ac287e240b00"]
    },
    {
-    "date": [0.0, 0],
+    "date": [0, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "parentnodes": ["6f96419950729f3671185b847352890f074f7557"],
@@ -1555,7 +1555,7 @@ only a subset of those are displayed (because of --rev option)
   $ hg debugobsolete --index --rev "3+7" -Tjson
   [
    {
-    "date": [0.0, 0],
+    "date": [0, 0],
     "flag": 0,
     "index": 1,
     "metadata": {"ef1": "1", "operation": "amend", "user": "test"},
@@ -1563,7 +1563,7 @@ only a subset of those are displayed (because of --rev option)
     "succnodes": ["d27fb9b066076fd921277a4b9e8b9cb48c95bc6a"]
    },
    {
-    "date": [0.0, 0],
+    "date": [0, 0],
     "flag": 0,
     "index": 3,
     "metadata": {"ef1": "1", "operation": "amend", "user": "test"},

@@ -165,7 +165,7 @@ Templated output to stdout:
   [
    {
     "branch": "default",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "desc": "foo-0",
     "diff": "diff -r 000000000000 -r 871558de6af2 foo\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -0,0 +1,1 @@\n+foo-0\n",
     "node": "871558de6af2e8c244222f8eea69b782c94ce3df",
@@ -181,7 +181,7 @@ Templated output to single file:
   [
    {
     "branch": "default",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "desc": "foo-0",
     "diff": "diff -r 000000000000 -r 871558de6af2 foo\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -0,0 +1,1 @@\n+foo-0\n",
     "node": "871558de6af2e8c244222f8eea69b782c94ce3df",
@@ -190,7 +190,7 @@ Templated output to single file:
    },
    {
     "branch": "default",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "desc": "foo-1",
     "diff": "diff -r 871558de6af2 -r d1c9656e973c foo\n--- a/foo\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +1,2 @@\n foo-0\n+foo-1\n",
     "node": "d1c9656e973cfb5aebd5499bbd2cb350e3b12266",
@@ -206,7 +206,7 @@ Templated output to multiple files:
   [
    {
     "branch": "default",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "desc": "foo-0",
     "diff": "diff -r 000000000000 -r 871558de6af2 foo\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -0,0 +1,1 @@\n+foo-0\n",
     "node": "871558de6af2e8c244222f8eea69b782c94ce3df",
@@ -218,7 +218,7 @@ Templated output to multiple files:
   [
    {
     "branch": "default",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "desc": "foo-1",
     "diff": "diff -r 871558de6af2 -r d1c9656e973c foo\n--- a/foo\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +1,2 @@\n foo-0\n+foo-1\n",
     "node": "d1c9656e973cfb5aebd5499bbd2cb350e3b12266",

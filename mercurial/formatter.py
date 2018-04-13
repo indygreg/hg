@@ -144,7 +144,9 @@ class _nullconverter(object):
     @staticmethod
     def formatdate(date, fmt):
         '''convert date tuple to appropriate format'''
-        return date
+        # timestamp can be float, but the canonical form should be int
+        ts, tz = date
+        return (int(ts), tz)
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''convert dict or key-value pairs to appropriate dict format'''

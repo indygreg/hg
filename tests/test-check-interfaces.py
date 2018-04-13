@@ -89,8 +89,7 @@ def main():
 
     checkzobject(badpeer())
 
-    ziverify.verifyClass(repository.ipeerbaselegacycommands,
-                         httppeer.httppeer)
+    ziverify.verifyClass(repository.ipeerbase, httppeer.httppeer)
     checkzobject(httppeer.httppeer(None, None, None, dummyopener(), None, None))
 
     ziverify.verifyClass(repository.ipeerconnection,
@@ -111,13 +110,11 @@ def main():
                          wireprotov1peer.peerexecutor)
     checkzobject(wireprotov1peer.peerexecutor(None))
 
-    ziverify.verifyClass(repository.ipeerbaselegacycommands,
-                         sshpeer.sshv1peer)
+    ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv1peer)
     checkzobject(sshpeer.sshv1peer(ui, 'ssh://localhost/foo', None, dummypipe(),
                                    dummypipe(), None, None))
 
-    ziverify.verifyClass(repository.ipeerbaselegacycommands,
-                         sshpeer.sshv2peer)
+    ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv2peer)
     checkzobject(sshpeer.sshv2peer(ui, 'ssh://localhost/foo', None, dummypipe(),
                                    dummypipe(), None, None))
 

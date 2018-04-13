@@ -320,7 +320,8 @@ class localpeer(repository.peer):
 
     # End of peer interface.
 
-class locallegacypeer(repository.legacypeer, localpeer):
+@zi.implementer(repository.ipeerlegacycommands)
+class locallegacypeer(localpeer):
     '''peer extension which implements legacy methods too; used for tests with
     restricted capabilities'''
 
@@ -335,8 +336,8 @@ class locallegacypeer(repository.legacypeer, localpeer):
     def branches(self, nodes):
         return self._repo.branches(nodes)
 
-    def changegroup(self, basenodes, source):
-        outgoing = discovery.outgoing(self._repo, missingroots=basenodes,
+    def changegroup(self, nodes, source):
+        outgoing = discovery.outgoing(self._repo, missingroots=nodes,
                                       missingheads=self._repo.heads())
         return changegroup.makechangegroup(self._repo, outgoing, '01', source)
 

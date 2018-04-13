@@ -553,10 +553,22 @@ def getremotechanges(ui, repo, other, onlyheads=None, bundlename=None,
                 cg = other.getbundle('incoming', common=common, heads=rheads)
             elif onlyheads is None and not other.capable('changegroupsubset'):
                 # compat with older servers when pulling all remote heads
-                cg = other.changegroup(incoming, "incoming")
+
+                with other.commandexecutor() as e:
+                    cg = e.callcommand('changegroup', {
+                        'nodes': incoming,
+                        'source': 'incoming',
+                    }).result()
+
                 rheads = None
             else:
-                cg = other.changegroupsubset(incoming, rheads, 'incoming')
+                with other.commandexecutor() as e:
+                    cg = e.callcommand('changegroupsubset', {
+                        'bases': incoming,
+                        'heads': rheads,
+                        'source': 'incoming',
+                    }).result()
+
             if localrepo:
                 bundletype = "HG10BZ"
             else:

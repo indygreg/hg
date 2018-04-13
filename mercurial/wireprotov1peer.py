@@ -308,7 +308,8 @@ class peerexecutor(object):
             else:
                 f.set_result(result)
 
-class wirepeer(repository.legacypeer):
+@zi.implementer(repository.ipeerlegacycommands)
+class wirepeer(repository.peer):
     """Client-side interface for communicating with a peer repository.
 
     Methods commonly call wire protocol commands of the same name.
@@ -502,12 +503,12 @@ class wirepeer(repository.legacypeer):
                 self._abort(error.ResponseError(_("unexpected response:"), d))
         return r
 
-    def changegroup(self, nodes, kind):
+    def changegroup(self, nodes, source):
         n = wireprototypes.encodelist(nodes)
         f = self._callcompressable("changegroup", roots=n)
         return changegroupmod.cg1unpacker(f, 'UN')
 
-    def changegroupsubset(self, bases, heads, kind):
+    def changegroupsubset(self, bases, heads, source):
         self.requirecap('changegroupsubset', _('look up remote changes'))
         bases = wireprototypes.encodelist(bases)
         heads = wireprototypes.encodelist(heads)

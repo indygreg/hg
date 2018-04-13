@@ -190,10 +190,10 @@ class ipeerlegacycommands(zi.Interface):
         Returns an iterable of iterables with the resolved values for each node.
         """
 
-    def changegroup(nodes, kind):
+    def changegroup(nodes, source):
         """Obtain a changegroup with data for descendants of specified nodes."""
 
-    def changegroupsubset(bases, heads, kind):
+    def changegroupsubset(bases, heads, source):
         pass
 
 class ipeercommandexecutor(zi.Interface):
@@ -285,9 +285,6 @@ class ipeerbase(ipeerconnection, ipeercapabilities, ipeercommands,
     All peer instances must conform to this interface.
     """
 
-class ipeerbaselegacycommands(ipeerbase, ipeerlegacycommands):
-    """Unified peer interface that supports legacy commands."""
-
 @zi.implementer(ipeerbase)
 class peer(object):
     """Base class for peer repositories."""
@@ -311,10 +308,6 @@ class peer(object):
         raise error.CapabilityError(
             _('cannot %s; remote repository does not support the %r '
               'capability') % (purpose, name))
-
-@zi.implementer(ipeerbaselegacycommands)
-class legacypeer(peer):
-    """peer but with support for legacy wire protocol commands."""
 
 class ifilerevisionssequence(zi.Interface):
     """Contains index data for all revisions of a file.

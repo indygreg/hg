@@ -1693,13 +1693,24 @@ def _pullchangeset(pullop):
         cg = pullop.remote.getbundle('pull', common=pullop.common,
                                      heads=pullop.heads or pullop.rheads)
     elif pullop.heads is None:
-        cg = pullop.remote.changegroup(pullop.fetch, 'pull')
+        with pullop.remote.commandexecutor() as e:
+            cg = e.callcommand('changegroup', {
+                'nodes': pullop.fetch,
+                'source': 'pull',
+            }).result()
+
     elif not pullop.remote.capable('changegroupsubset'):
         raise error.Abort(_("partial pull cannot be done because "
                            "other repository doesn't support "
                            "changegroupsubset."))
     else:
-        cg = pullop.remote.changegroupsubset(pullop.fetch, pullop.heads, 'pull')
+        with pullop.remote.commandexecutor() as e:
+            cg = e.callcommand('changegroupsubset', {
+                'bases': pullop.fetch,
+                'heads': pullop.heads,
+                'source': 'pull',
+            }).result()
+
     bundleop = bundle2.applybundle(pullop.repo, cg, tr, 'pull',
                                    pullop.remote.url())
     pullop.cgresult = bundle2.combinechangegroupresults(bundleop)

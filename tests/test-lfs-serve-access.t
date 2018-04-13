@@ -73,8 +73,7 @@ Blob URIs are correct when --prefix is used
   >    -A $TESTTMP/access.log -E $TESTTMP/errors.log
   $ cat hg.pid >> $DAEMON_PIDS
 
-  $ hg --config lfs.url=http://localhost:$HGPORT/subdir/mount/point/.git/info/lfs \
-  >    clone --debug http://localhost:$HGPORT/subdir/mount/point cloned2
+  $ hg clone --debug http://localhost:$HGPORT/subdir/mount/point cloned2
   using http://localhost:$HGPORT/subdir/mount/point
   sending capabilities command
   query 1; heads
@@ -104,6 +103,7 @@ Blob URIs are correct when --prefix is used
   resolving manifests
    branchmerge: False, force: False, partial: False
    ancestor: 000000000000, local: 000000000000+, remote: 525251863cad
+  lfs: assuming remote store: http://localhost:$HGPORT/subdir/mount/point/.git/info/lfs
   Status: 200
   Content-Length: 371
   Content-Type: application/vnd.git-lfs+json

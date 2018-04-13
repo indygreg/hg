@@ -561,7 +561,7 @@ def remote(repo, remote=None):
         if defaulturl.scheme in (b'http', b'https'):
             if defaulturl.path and defaulturl.path[:-1] != b'/':
                 defaulturl.path += b'/'
-            defaulturl.path = defaulturl.path or b'' + b'.git/info/lfs'
+            defaulturl.path = (defaulturl.path or b'') + b'.git/info/lfs'
 
             url = util.url(bytes(defaulturl))
             repo.ui.note(_('lfs: assuming remote store: %s\n') % url)

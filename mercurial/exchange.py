@@ -1648,17 +1648,22 @@ def _pullbundle2(pullop):
             kwargs['obsmarkers'] = True
             pullop.stepsdone.add('obsmarkers')
     _pullbundle2extraprepare(pullop, kwargs)
-    bundle = pullop.remote.getbundle('pull', **pycompat.strkwargs(kwargs))
-    try:
-        op = bundle2.bundleoperation(pullop.repo, pullop.gettransaction,
-                                     source='pull')
-        op.modes['bookmarks'] = 'records'
-        bundle2.processbundle(pullop.repo, bundle, op=op)
-    except bundle2.AbortFromPart as exc:
-        pullop.repo.ui.status(_('remote: abort: %s\n') % exc)
-        raise error.Abort(_('pull failed on remote'), hint=exc.hint)
-    except error.BundleValueError as exc:
-        raise error.Abort(_('missing support for %s') % exc)
+
+    with pullop.remote.commandexecutor() as e:
+        args = dict(kwargs)
+        args['source'] = 'pull'
+        bundle = e.callcommand('getbundle', args).result()
+
+        try:
+            op = bundle2.bundleoperation(pullop.repo, pullop.gettransaction,
+                                         source='pull')
+            op.modes['bookmarks'] = 'records'
+            bundle2.processbundle(pullop.repo, bundle, op=op)
+        except bundle2.AbortFromPart as exc:
+            pullop.repo.ui.status(_('remote: abort: %s\n') % exc)
+            raise error.Abort(_('pull failed on remote'), hint=exc.hint)
+        except error.BundleValueError as exc:
+            raise error.Abort(_('missing support for %s') % exc)
 
     if pullop.fetch:
         pullop.cgresult = bundle2.combinechangegroupresults(op)

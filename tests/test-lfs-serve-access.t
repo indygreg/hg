@@ -289,6 +289,18 @@ Test a checksum failure during the processing of the GET request
   $LOCALIP - - [$LOGDATE$] "GET /.hg/lfs/objects/276f73cfd75f9fb519810df5f5d96d6594ca2521abd86cbcd92122f7d51a1f3d HTTP/1.1" 500 - (glob)
 
   $ grep -v '  File "' $TESTTMP/errors.log
+  $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.git/info/lfs/objects/batch': (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      verifies = store.verify(oid) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, '%s: I/O error' % oid) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  IOError: [Errno 5] f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e: I/O error (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:   (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  Exception happened while processing request '/.git/info/lfs/objects/batch': (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  Traceback (most recent call last): (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      verifies = store.verify(oid) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:      raise IOError(errno.EIO, '%s: I/O error' % oid) (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:  IOError: [Errno 5] b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c: I/O error (glob)
+  $LOCALIP - - [$ERRDATE$] HG error:   (glob)
   $LOCALIP - - [$ERRDATE$] Exception happened during processing request '/.hg/lfs/objects/b5bb9d8014a0f9b1d61e21e796d78dccdf1352f23cd32812f4850b878ae4944c': (glob)
   Traceback (most recent call last):
       self.do_write()

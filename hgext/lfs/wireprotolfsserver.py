@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import datetime
 import errno
 import json
+import traceback
 
 from mercurial.hgweb import (
     common as hgwebcommon,
@@ -62,6 +63,19 @@ def _sethttperror(res, code, message=None):
     res.status = hgwebcommon.statusmessage(code, message=message)
     res.headers[b'Content-Type'] = b'text/plain; charset=utf-8'
     res.setbodybytes(b'')
+
+def _logexception(req):
+    """Write information about the current exception to wsgi.errors."""
+    tb = pycompat.sysbytes(traceback.format_exc())
+    errorlog = req.rawenv[r'wsgi.errors']
+
+    uri = b''
+    if req.apppath:
+        uri += req.apppath
+    uri += b'/' + req.dispatchpath
+
+    errorlog.write(b"Exception happened while processing request '%s':\n%s" %
+                   (uri, tb))
 
 def _processbatchrequest(repo, req, res):
     """Handle a request for the Batch API, which is the gateway to granting file
@@ -179,6 +193,8 @@ def _batchresponseobjects(req, objects, action, store):
             verifies = store.verify(oid)
         except IOError as inst:
             if inst.errno != errno.ENOENT:
+                _logexception(req)
+
                 rsp['error'] = {
                     'code': 500,
                     'message': inst.strerror or 'Internal Server Server'

@@ -182,7 +182,7 @@ class localcommandexecutor(object):
         f = pycompat.futures.Future()
 
         try:
-            result = fn(**args)
+            result = fn(**pycompat.strkwargs(args))
         except Exception:
             pycompat.future_set_exception_info(f, sys.exc_info()[1:])
         else:

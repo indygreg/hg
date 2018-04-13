@@ -318,15 +318,15 @@ class KeepAliveHandler(object):
         headers.update(sorted(req.unredirected_hdrs.items()))
         headers = util.sortdict((n.lower(), v) for n, v in headers.items())
         skipheaders = {}
-        for n in ('host', 'accept-encoding'):
+        for n in (r'host', r'accept-encoding'):
             if n in headers:
-                skipheaders['skip_' + n.replace('-', '_')] = 1
+                skipheaders[r'skip_' + n.replace(r'-', r'_')] = 1
         try:
             if urllibcompat.hasdata(req):
                 data = urllibcompat.getdata(req)
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    **pycompat.strkwargs(skipheaders))
+                    skipheaders)
                 if r'content-type' not in headers:
                     h.putheader(r'Content-type',
                                 r'application/x-www-form-urlencoded')
@@ -335,7 +335,7 @@ class KeepAliveHandler(object):
             else:
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    **pycompat.strkwargs(skipheaders))
+                    skipheaders)
         except socket.error as err:
             raise urlerr.urlerror(err)
         for k, v in headers.items():

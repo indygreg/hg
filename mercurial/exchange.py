@@ -1096,8 +1096,12 @@ def _pushbundle2(pushop):
     stream = util.chunkbuffer(bundler.getchunks())
     try:
         try:
-            reply = pushop.remote.unbundle(
-                stream, ['force'], pushop.remote.url())
+            with pushop.remote.commandexecutor() as e:
+                reply = e.callcommand('unbundle', {
+                    'bundle': stream,
+                    'heads': ['force'],
+                    'url': pushop.remote.url(),
+                }).result()
         except error.BundleValueError as exc:
             raise error.Abort(_('missing support for %s') % exc)
         try:

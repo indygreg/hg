@@ -275,14 +275,14 @@ class localpeer(repository.peer):
         raise error.Abort(_('cannot perform stream clone against local '
                             'peer'))
 
-    def unbundle(self, cg, heads, url):
+    def unbundle(self, bundle, heads, url):
         """apply a bundle on a repo
 
         This function handles the repo locking itself."""
         try:
             try:
-                cg = exchange.readbundle(self.ui, cg, None)
-                ret = exchange.unbundle(self._repo, cg, heads, 'push', url)
+                bundle = exchange.readbundle(self.ui, bundle, None)
+                ret = exchange.unbundle(self._repo, bundle, heads, 'push', url)
                 if util.safehasattr(ret, 'getchunks'):
                     # This is a bundle20 object, turn it into an unbundler.
                     # This little dance should be dropped eventually when the

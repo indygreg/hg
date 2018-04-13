@@ -436,7 +436,7 @@ class wirepeer(repository.peer):
         else:
             return changegroupmod.cg1unpacker(f, 'UN')
 
-    def unbundle(self, cg, heads, url):
+    def unbundle(self, bundle, heads, url):
         '''Send cg (a readable file-like object representing the
         changegroup to push, typically a chunkbuffer object) to the
         remote server as a bundle.
@@ -456,9 +456,9 @@ class wirepeer(repository.peer):
         else:
             heads = wireprototypes.encodelist(heads)
 
-        if util.safehasattr(cg, 'deltaheader'):
+        if util.safehasattr(bundle, 'deltaheader'):
             # this a bundle10, do the old style call sequence
-            ret, output = self._callpush("unbundle", cg, heads=heads)
+            ret, output = self._callpush("unbundle", bundle, heads=heads)
             if ret == "":
                 raise error.ResponseError(
                     _('push failed:'), output)
@@ -472,7 +472,7 @@ class wirepeer(repository.peer):
                 self.ui.status(_('remote: '), l)
         else:
             # bundle2 push. Send a stream, fetch a stream.
-            stream = self._calltwowaystream('unbundle', cg, heads=heads)
+            stream = self._calltwowaystream('unbundle', bundle, heads=heads)
             ret = bundle2.getunbundler(self.ui, stream)
         return ret
 

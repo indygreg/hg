@@ -385,6 +385,7 @@ def _capabilitiesv2(repo, proto):
     caps = {
         'commands': {},
         'compression': compression,
+        'framingmediatypes': [FRAMINGTYPE],
     }
 
     for command, entry in wireproto.commandsv2.items():

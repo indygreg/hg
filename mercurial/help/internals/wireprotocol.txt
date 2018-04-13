@@ -1770,6 +1770,10 @@ compression
       name
          Name of the compression engine. e.g. ``zstd`` or ``zlib``.
 
+framingmediatypes
+   An array of bytestrings defining the supported framing protocol
+   media types. Servers will not accept media types not in this list.
+
 heads
 -----
 

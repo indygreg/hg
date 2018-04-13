@@ -196,6 +196,7 @@ class localcommandexecutor(object):
     def close(self):
         self._closed = True
 
+@zi.implementer(repository.ipeercommands)
 class localpeer(repository.peer):
     '''peer for a local repo; reflects only the most recent API'''
 

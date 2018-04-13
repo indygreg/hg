@@ -308,7 +308,7 @@ class peerexecutor(object):
             else:
                 f.set_result(result)
 
-@zi.implementer(repository.ipeerlegacycommands)
+@zi.implementer(repository.ipeercommands, repository.ipeerlegacycommands)
 class wirepeer(repository.peer):
     """Client-side interface for communicating with a peer repository.
 

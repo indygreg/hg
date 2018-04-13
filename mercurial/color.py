@@ -168,7 +168,7 @@ def _terminfosetup(ui, mode, formatted):
         ui._terminfoparams.clear()
         return
 
-    for key, (b, e, c) in ui._terminfoparams.items():
+    for key, (b, e, c) in ui._terminfoparams.copy().items():
         if not b:
             continue
         if not c and not curses.tigetstr(e):

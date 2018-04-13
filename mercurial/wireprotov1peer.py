@@ -209,7 +209,7 @@ class peerexecutor(object):
             try:
                 result = fn(**pycompat.strkwargs(args))
             except Exception:
-                f.set_exception_info(*sys.exc_info()[1:])
+                pycompat.future_set_exception_info(f, sys.exc_info()[1:])
             else:
                 f.set_result(result)
 
@@ -234,14 +234,14 @@ class peerexecutor(object):
                 batchable = fn.batchable(fn.__self__,
                                          **pycompat.strkwargs(args))
             except Exception:
-                f.set_exception_info(*sys.exc_info()[1:])
+                pycompat.future_set_exception_info(f, sys.exc_info()[1:])
                 return
 
             # Encoded arguments and future holding remote result.
             try:
                 encodedargs, fremote = next(batchable)
             except Exception:
-                f.set_exception_info(*sys.exc_info()[1:])
+                pycompat.future_set_exception_info(f, sys.exc_info()[1:])
                 return
 
             requests.append((command, encodedargs))
@@ -304,7 +304,7 @@ class peerexecutor(object):
             try:
                 result = next(batchable)
             except Exception:
-                f.set_exception_info(*sys.exc_info()[1:])
+                pycompat.future_set_exception_info(f, sys.exc_info()[1:])
             else:
                 f.set_result(result)
 

@@ -754,7 +754,8 @@ class httpv2executor(object):
                         try:
                             result.append(decoder.decode())
                         except Exception:
-                            f.set_exception_info(*sys.exc_info()[1:])
+                            pycompat.future_set_exception_info(
+                                f, sys.exc_info()[1:])
                             continue
                 else:
                     result.append(meta['data'])

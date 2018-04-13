@@ -184,7 +184,7 @@ class localcommandexecutor(object):
         try:
             result = fn(**args)
         except Exception:
-            f.set_exception_info(*sys.exc_info()[1:])
+            pycompat.future_set_exception_info(f, sys.exc_info()[1:])
         else:
             f.set_result(result)
 

@@ -10,7 +10,7 @@ from mercurial import (
 u = uimod.ui.load()
 
 print('% creating repo')
-repo = localrepo.localrepository(u, '.', create=True)
+repo = localrepo.localrepository(u, b'.', create=True)
 
 f = open('test.py', 'w')
 try:
@@ -19,8 +19,8 @@ finally:
     f.close
 
 print('% add and commit')
-commands.add(u, repo, 'test.py')
-commands.commit(u, repo, message='*')
+commands.add(u, repo, b'test.py')
+commands.commit(u, repo, message=b'*')
 commands.status(u, repo, clean=True)
 
 

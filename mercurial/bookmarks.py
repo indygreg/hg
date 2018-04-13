@@ -646,12 +646,16 @@ def updatefromremote(ui, repo, remotemarks, path, trfunc, explicit=()):
             writer(msg)
         localmarks.applychanges(repo, tr, changes)
 
-def incoming(ui, repo, other):
+def incoming(ui, repo, peer):
     '''Show bookmarks incoming from other to repo
     '''
     ui.status(_("searching for changed bookmarks\n"))
 
-    remotemarks = unhexlifybookmarks(other.listkeys('bookmarks'))
+    with peer.commandexecutor() as e:
+        remotemarks = unhexlifybookmarks(e.callcommand('listkeys', {
+            'namespace': 'bookmarks',
+        }).result())
+
     r = comparebookmarks(repo, remotemarks, repo._bookmarks)
     addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = r
 
@@ -733,12 +737,16 @@ def outgoing(ui, repo, other):
 
     return 0
 
-def summary(repo, other):
+def summary(repo, peer):
     '''Compare bookmarks between repo and other for "hg summary" output
 
     This returns "(# of incoming, # of outgoing)" tuple.
     '''
-    remotemarks = unhexlifybookmarks(other.listkeys('bookmarks'))
+    with peer.commandexecutor() as e:
+        remotemarks = unhexlifybookmarks(e.callcommand('listkeys', {
+            'namespace': 'bookmarks',
+        }).result())
+
     r = comparebookmarks(repo, remotemarks, repo._bookmarks)
     addsrc, adddst, advsrc, advdst, diverge, differ, invalid, same = r
     return (len(addsrc), len(adddst))

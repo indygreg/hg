@@ -373,16 +373,18 @@ class ServerReactorTests(unittest.TestCase):
             b'1 2 0 command-response eos %s' % second,
         ])
 
-    def testapplicationerror(self):
+    def testservererror(self):
         reactor = makereactor()
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'mycommand', {}))
 
         outstream = reactor.makeoutputstream()
-        result = reactor.onapplicationerror(outstream, 1, b'some message')
+        result = reactor.onservererror(outstream, 1, b'some message')
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin error-response application some message',
+            b"1 2 stream-begin error-response 0 "
+            b"cbor:{b'type': b'server', "
+            b"b'message': [{b'msg': b'some message'}]}",
         ])
 
     def test1commanddeferresponse(self):

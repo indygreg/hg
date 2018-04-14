@@ -311,7 +311,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
                                                       command['requestid'],
                                                       encoded)
     else:
-        action, meta = reactor.onapplicationerror(
+        action, meta = reactor.onservererror(
             _('unhandled response type from wire proto command'))
 
     if action == 'sendframes':

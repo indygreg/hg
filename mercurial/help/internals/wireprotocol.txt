@@ -688,23 +688,44 @@ The following flag values are defined for this type:
 
 The ``0x01`` flag is mutually exclusive with the ``0x02`` flag.
 
-Error Response (``0x05``)
+Error Occurred (``0x05``)
 -------------------------
 
-An error occurred when processing a request. This could indicate
-a protocol-level failure or an application level failure depending
-on the flags for this message type.
+Some kind of error occurred.
 
-The payload for this type is an error message that should be
-displayed to the user.
+There are 3 general kinds of failures that can occur:
 
-The following flag values are defined for this type:
+* Command error encountered before any response issued
+* Command error encountered after a response was issued
+* Protocol or stream level error
 
-0x01
-   The error occurred at the transport/protocol level. If set, the
-   connection should be closed.
-0x02
-   The error occurred at the application level. e.g. invalid command.
+This frame type is used to capture the latter cases. (The general
+command error case is handled by the leading CBOR map in
+``Command Response`` frames.)
+
+The payload of this frame contains a CBOR map detailing the error. That
+map has the following bytestring keys:
+
+type
+   (bytestring) The overall type of error encountered. Can be one of the
+   following values:
+
+   protocol
+      A protocol-level error occurred. This typically means someone
+      is violating the framing protocol semantics and the server is
+      refusing to proceed.
+
+   server
+      A server-level error occurred. This typically indicates some kind of
+      logic error on the server, likely the fault of the server.
+
+   command
+      A command-level error, likely the fault of the client.
+
+message
+   (array of maps) A richly formatted message that is intended for
+   human consumption. See the ``Human Output Side-Channel`` frame
+   section for a description of the format of this data structure.
 
 Human Output Side-Channel (``0x06``)
 ------------------------------------

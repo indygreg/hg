@@ -87,20 +87,12 @@ FLAGS_COMMAND_RESPONSE = {
     b'eos': FLAG_COMMAND_RESPONSE_EOS,
 }
 
-FLAG_ERROR_RESPONSE_PROTOCOL = 0x01
-FLAG_ERROR_RESPONSE_APPLICATION = 0x02
-
-FLAGS_ERROR_RESPONSE = {
-    b'protocol': FLAG_ERROR_RESPONSE_PROTOCOL,
-    b'application': FLAG_ERROR_RESPONSE_APPLICATION,
-}
-
 # Maps frame types to their available flags.
 FRAME_TYPE_FLAGS = {
     FRAME_TYPE_COMMAND_REQUEST: FLAGS_COMMAND_REQUEST,
     FRAME_TYPE_COMMAND_DATA: FLAGS_COMMAND_DATA,
     FRAME_TYPE_COMMAND_RESPONSE: FLAGS_COMMAND_RESPONSE,
-    FRAME_TYPE_ERROR_RESPONSE: FLAGS_ERROR_RESPONSE,
+    FRAME_TYPE_ERROR_RESPONSE: {},
     FRAME_TYPE_TEXT_OUTPUT: {},
     FRAME_TYPE_PROGRESS: {},
     FRAME_TYPE_STREAM_SETTINGS: {},
@@ -394,20 +386,19 @@ def createcommandresponseframesfrombytes(stream, requestid, data,
         if done:
             break
 
-def createerrorframe(stream, requestid, msg, protocol=False, application=False):
+def createerrorframe(stream, requestid, msg, errtype):
     # TODO properly handle frame size limits.
     assert len(msg) <= DEFAULT_MAX_FRAME_SIZE
 
-    flags = 0
-    if protocol:
-        flags |= FLAG_ERROR_RESPONSE_PROTOCOL
-    if application:
-        flags |= FLAG_ERROR_RESPONSE_APPLICATION
+    payload = cbor.dumps({
+        b'type': errtype,
+        b'message': [{b'msg': msg}],
+    }, canonical=True)
 
     yield stream.makeframe(requestid=requestid,
                            typeid=FRAME_TYPE_ERROR_RESPONSE,
-                           flags=flags,
-                           payload=msg)
+                           flags=0,
+                           payload=payload)
 
 def createtextoutputframe(stream, requestid, atoms,
                           maxframesize=DEFAULT_MAX_FRAME_SIZE):
@@ -664,12 +655,12 @@ class serverreactor(object):
             'framegen': makegen(),
         }
 
-    def onapplicationerror(self, stream, requestid, msg):
+    def onservererror(self, stream, requestid, msg):
         ensureserverstream(stream)
 
         return 'sendframes', {
             'framegen': createerrorframe(stream, requestid, msg,
-                                         application=True),
+                                         errtype='server'),
         }
 
     def makeoutputstream(self):
@@ -1051,6 +1042,7 @@ class clientreactor(object):
 
         handlers = {
             FRAME_TYPE_COMMAND_RESPONSE: self._oncommandresponseframe,
+            FRAME_TYPE_ERROR_RESPONSE: self._onerrorresponseframe,
         }
 
         meth = handlers.get(frame.typeid)
@@ -1070,4 +1062,17 @@ class clientreactor(object):
             'expectmore': frame.flags & FLAG_COMMAND_RESPONSE_CONTINUATION,
             'eos': frame.flags & FLAG_COMMAND_RESPONSE_EOS,
             'data': frame.payload,
+        }
+
+    def _onerrorresponseframe(self, request, frame):
+        request.state = 'errored'
+        del self._activerequests[request.requestid]
+
+        # The payload should be a CBOR map.
+        m = cbor.loads(frame.payload)
+
+        return 'error', {
+            'request': request,
+            'type': m['type'],
+            'message': m['message'],
         }

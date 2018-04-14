@@ -422,8 +422,12 @@ class hgwebdir(object):
                 if real:
                     # Re-parse the WSGI environment to take into account our
                     # repository path component.
+                    uenv = req.rawenv
+                    if pycompat.ispy3:
+                        uenv = {k.decode('latin1'): v for k, v in
+                                uenv.iteritems()}
                     req = requestmod.parserequestfromenv(
-                        req.rawenv, reponame=virtualrepo,
+                        uenv, reponame=virtualrepo,
                         altbaseurl=self.ui.config('web', 'baseurl'))
                     try:
                         # ensure caller gets private copy of ui

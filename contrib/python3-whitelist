@@ -151,6 +151,7 @@ test-git-export.t
 test-glog-topological.t
 test-gpg.t
 test-graft.t
+test-hg-parseurl.py
 test-hghave.t
 test-hgignore.t
 test-hgk.t

@@ -273,7 +273,8 @@ def sendrequest(ui, opener, req):
         and ui.configbool('devel', 'debug.peer-request')):
         dbg = ui.debug
         line = 'devel-peer-request: %s\n'
-        dbg(line % '%s %s' % (req.get_method(), req.get_full_url()))
+        dbg(line % '%s %s' % (pycompat.bytesurl(req.get_method()),
+                              pycompat.bytesurl(req.get_full_url())))
         hgargssize = None
 
         for header, value in sorted(req.header_items()):
@@ -310,7 +311,7 @@ def sendrequest(ui, opener, req):
         raise IOError(None, inst)
     finally:
         if ui.configbool('devel', 'debug.peer-request'):
-            dbg(line % '  finished in %.4f seconds (%s)'
+            dbg(line % '  finished in %.4f seconds (%d)'
                 % (util.timer() - start, res.code))
 
     # Insert error handlers for common I/O failures.

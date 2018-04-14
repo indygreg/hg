@@ -264,6 +264,14 @@ def makev1commandrequest(ui, requestbuilder, caps, capablefn,
 
     return req, cu, qs
 
+def _reqdata(req):
+    """Get request data, if any. If no data, returns None."""
+    if pycompat.ispy3:
+        return req.data
+    if not req.has_data():
+        return None
+    return req.get_data()
+
 def sendrequest(ui, opener, req):
     """Send a prepared HTTP request.
 
@@ -290,9 +298,8 @@ def sendrequest(ui, opener, req):
         if hgargssize is not None:
             dbg(line % '  %d bytes of commands arguments in headers'
                 % hgargssize)
-
-        if req.has_data():
-            data = req.get_data()
+        data = _reqdata(req)
+        if data is not None:
             length = getattr(data, 'length', None)
             if length is None:
                 length = len(data)

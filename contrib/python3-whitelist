@@ -437,4 +437,5 @@ test-username-newline.t
 test-verify.t
 test-websub.t
 test-win32text.t
+test-wireproto-framing.py
 test-xdg.t

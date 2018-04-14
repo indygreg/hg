@@ -510,4 +510,6 @@ def parsebool(s):
 def evalpythonliteral(s):
     """Evaluate a string containing a Python literal expression"""
     # We could backport our tokenizer hack to rewrite '' to u'' if we want
+    if pycompat.ispy3:
+        return ast.literal_eval(s.decode('latin1'))
     return ast.literal_eval(s)

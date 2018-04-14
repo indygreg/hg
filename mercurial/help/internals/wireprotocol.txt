@@ -668,8 +668,8 @@ The following flag values are defined for this type:
    server. The command has been fully issued and no new data for this
    command will be sent. The next frame will belong to a new command.
 
-Response Data (``0x04``)
-------------------------
+Command Response Data (``0x03``)
+--------------------------------
 
 This frame contains response data to an issued command.
 

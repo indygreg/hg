@@ -44,10 +44,10 @@ lookup for known node works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     1d\r\n
-  s>     \x15\x00\x00\x01\x00\x02\x01B
+  s>     \x15\x00\x00\x01\x00\x02\x012
   s>     TBk\xad\xa5\xc6u\x98\xcae\x03mW\xd9\xe4\xb6K\x0c\x1c\xe7\xa0
   s>     \r\n
-  received frame(size=21; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=21; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: b'Bk\xad\xa5\xc6u\x98\xcae\x03mW\xd9\xe4\xb6K\x0c\x1c\xe7\xa0'

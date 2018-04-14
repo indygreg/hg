@@ -324,10 +324,10 @@ Client with HTTPv2 enabled automatically upgrades if the server supports it
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     1e\r\n
-  s>     \x16\x00\x00\x01\x00\x02\x01B
+  s>     \x16\x00\x00\x01\x00\x02\x012
   s>     \x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
   s>     \r\n
-  received frame(size=22; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=22; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00']

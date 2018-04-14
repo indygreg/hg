@@ -44,10 +44,10 @@ No arguments returns something reasonable
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     9\r\n
-  s>     \x01\x00\x00\x01\x00\x02\x01B
+  s>     \x01\x00\x00\x01\x00\x02\x012
   s>     @
   s>     \r\n
-  received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: []
@@ -77,10 +77,10 @@ Single known node works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     a\r\n
-  s>     \x02\x00\x00\x01\x00\x02\x01B
+  s>     \x02\x00\x00\x01\x00\x02\x012
   s>     A1
   s>     \r\n
-  received frame(size=2; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=2; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [True]
@@ -110,10 +110,10 @@ Multiple nodes works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     c\r\n
-  s>     \x04\x00\x00\x01\x00\x02\x01B
+  s>     \x04\x00\x00\x01\x00\x02\x012
   s>     C101
   s>     \r\n
-  received frame(size=4; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=4; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [True, False, True]

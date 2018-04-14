@@ -175,7 +175,7 @@ Request to read-only command works out of the box
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x01BX\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x012X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     0\r\n
   s>     \r\n
@@ -202,10 +202,10 @@ Request to read-only command works out of the box
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x01B
+  s>     \x1f\x00\x00\x01\x00\x02\x012
   s>     X\x1dcustomreadonly bytes response
   s>     \r\n
-  received frame(size=31; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=31; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [b'customreadonly bytes response']
@@ -316,7 +316,7 @@ Authorized request for valid read-write command works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x01BX\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x012X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     0\r\n
   s>     \r\n
@@ -439,7 +439,7 @@ Multiple requests to regular command URL are not allowed
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x01BX\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x012X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     0\r\n
   s>     \r\n
@@ -472,10 +472,10 @@ Multiple requests to "multirequest" URL are allowed
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x01\x00\x02\x01BX\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x01\x00\x02\x012X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     27\r\n
-  s>     \x1f\x00\x00\x03\x00\x02\x00BX\x1dcustomreadonly bytes response
+  s>     \x1f\x00\x00\x03\x00\x02\x002X\x1dcustomreadonly bytes response
   s>     \r\n
   s>     0\r\n
   s>     \r\n
@@ -510,10 +510,10 @@ Interleaved requests to "multirequest" are processed
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     28\r\n
-  s>      \x00\x00\x03\x00\x02\x01B\xa3Fphases@Ibookmarks@Jnamespaces@
+  s>      \x00\x00\x03\x00\x02\x012\xa3Fphases@Ibookmarks@Jnamespaces@
   s>     \r\n
   s>     9\r\n
-  s>     \x01\x00\x00\x01\x00\x02\x00B\xa0
+  s>     \x01\x00\x00\x01\x00\x02\x002\xa0
   s>     \r\n
   s>     0\r\n
   s>     \r\n

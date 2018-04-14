@@ -43,7 +43,7 @@ STREAM_FLAGS = {
 
 FRAME_TYPE_COMMAND_REQUEST = 0x01
 FRAME_TYPE_COMMAND_DATA = 0x02
-FRAME_TYPE_BYTES_RESPONSE = 0x04
+FRAME_TYPE_COMMAND_RESPONSE = 0x03
 FRAME_TYPE_ERROR_RESPONSE = 0x05
 FRAME_TYPE_TEXT_OUTPUT = 0x06
 FRAME_TYPE_PROGRESS = 0x07
@@ -52,7 +52,7 @@ FRAME_TYPE_STREAM_SETTINGS = 0x08
 FRAME_TYPES = {
     b'command-request': FRAME_TYPE_COMMAND_REQUEST,
     b'command-data': FRAME_TYPE_COMMAND_DATA,
-    b'bytes-response': FRAME_TYPE_BYTES_RESPONSE,
+    b'command-response': FRAME_TYPE_COMMAND_RESPONSE,
     b'error-response': FRAME_TYPE_ERROR_RESPONSE,
     b'text-output': FRAME_TYPE_TEXT_OUTPUT,
     b'progress': FRAME_TYPE_PROGRESS,
@@ -79,12 +79,12 @@ FLAGS_COMMAND_DATA = {
     b'eos': FLAG_COMMAND_DATA_EOS,
 }
 
-FLAG_BYTES_RESPONSE_CONTINUATION = 0x01
-FLAG_BYTES_RESPONSE_EOS = 0x02
+FLAG_COMMAND_RESPONSE_CONTINUATION = 0x01
+FLAG_COMMAND_RESPONSE_EOS = 0x02
 
-FLAGS_BYTES_RESPONSE = {
-    b'continuation': FLAG_BYTES_RESPONSE_CONTINUATION,
-    b'eos': FLAG_BYTES_RESPONSE_EOS,
+FLAGS_COMMAND_RESPONSE = {
+    b'continuation': FLAG_COMMAND_RESPONSE_CONTINUATION,
+    b'eos': FLAG_COMMAND_RESPONSE_EOS,
 }
 
 FLAG_ERROR_RESPONSE_PROTOCOL = 0x01
@@ -99,7 +99,7 @@ FLAGS_ERROR_RESPONSE = {
 FRAME_TYPE_FLAGS = {
     FRAME_TYPE_COMMAND_REQUEST: FLAGS_COMMAND_REQUEST,
     FRAME_TYPE_COMMAND_DATA: FLAGS_COMMAND_DATA,
-    FRAME_TYPE_BYTES_RESPONSE: FLAGS_BYTES_RESPONSE,
+    FRAME_TYPE_COMMAND_RESPONSE: FLAGS_COMMAND_RESPONSE,
     FRAME_TYPE_ERROR_RESPONSE: FLAGS_ERROR_RESPONSE,
     FRAME_TYPE_TEXT_OUTPUT: {},
     FRAME_TYPE_PROGRESS: {},
@@ -348,8 +348,8 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
             if done:
                 break
 
-def createbytesresponseframesfrombytes(stream, requestid, data,
-                                       maxframesize=DEFAULT_MAX_FRAME_SIZE):
+def createcommandresponseframesfrombytes(stream, requestid, data,
+                                         maxframesize=DEFAULT_MAX_FRAME_SIZE):
     """Create a raw frame to send a bytes response from static bytes input.
 
     Returns a generator of bytearrays.
@@ -357,9 +357,9 @@ def createbytesresponseframesfrombytes(stream, requestid, data,
 
     # Simple case of a single frame.
     if len(data) <= maxframesize:
-        flags = FLAG_BYTES_RESPONSE_EOS
+        flags = FLAG_COMMAND_RESPONSE_EOS
         yield stream.makeframe(requestid=requestid,
-                               typeid=FRAME_TYPE_BYTES_RESPONSE,
+                               typeid=FRAME_TYPE_COMMAND_RESPONSE,
                                flags=flags,
                                payload=data)
         return
@@ -371,12 +371,12 @@ def createbytesresponseframesfrombytes(stream, requestid, data,
         done = offset == len(data)
 
         if done:
-            flags = FLAG_BYTES_RESPONSE_EOS
+            flags = FLAG_COMMAND_RESPONSE_EOS
         else:
-            flags = FLAG_BYTES_RESPONSE_CONTINUATION
+            flags = FLAG_COMMAND_RESPONSE_CONTINUATION
 
         yield stream.makeframe(requestid=requestid,
-                               typeid=FRAME_TYPE_BYTES_RESPONSE,
+                               typeid=FRAME_TYPE_COMMAND_RESPONSE,
                                flags=flags,
                                payload=chunk)
 
@@ -608,7 +608,7 @@ class serverreactor(object):
 
         return meth(frame)
 
-    def onbytesresponseready(self, stream, requestid, data):
+    def oncommandresponseready(self, stream, requestid, data):
         """Signal that a bytes response is ready to be sent to the client.
 
         The raw bytes response is passed as an argument.
@@ -616,8 +616,8 @@ class serverreactor(object):
         ensureserverstream(stream)
 
         def sendframes():
-            for frame in createbytesresponseframesfrombytes(stream, requestid,
-                                                            data):
+            for frame in createcommandresponseframesfrombytes(stream, requestid,
+                                                              data):
                 yield frame
 
             self._activecommands.remove(requestid)
@@ -1039,7 +1039,7 @@ class clientreactor(object):
         request.state = 'receiving'
 
         handlers = {
-            FRAME_TYPE_BYTES_RESPONSE: self._onbytesresponseframe,
+            FRAME_TYPE_COMMAND_RESPONSE: self._oncommandresponseframe,
         }
 
         meth = handlers.get(frame.typeid)
@@ -1049,14 +1049,14 @@ class clientreactor(object):
 
         return meth(request, frame)
 
-    def _onbytesresponseframe(self, request, frame):
-        if frame.flags & FLAG_BYTES_RESPONSE_EOS:
+    def _oncommandresponseframe(self, request, frame):
+        if frame.flags & FLAG_COMMAND_RESPONSE_EOS:
             request.state = 'received'
             del self._activerequests[request.requestid]
 
         return 'responsedata', {
             'request': request,
-            'expectmore': frame.flags & FLAG_BYTES_RESPONSE_CONTINUATION,
-            'eos': frame.flags & FLAG_BYTES_RESPONSE_EOS,
+            'expectmore': frame.flags & FLAG_COMMAND_RESPONSE_CONTINUATION,
+            'eos': frame.flags & FLAG_COMMAND_RESPONSE_EOS,
             'data': frame.payload,
         }

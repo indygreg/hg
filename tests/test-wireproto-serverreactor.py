@@ -211,19 +211,19 @@ class ServerReactorTests(unittest.TestCase):
         results.append(self._sendsingleframe(
             reactor, ffs(b'1 1 stream-begin command-request new '
                          b"cbor:{b'name': b'command'}")))
-        result = reactor.onbytesresponseready(outstream, 1, b'response1')
+        result = reactor.oncommandresponseready(outstream, 1, b'response1')
         self.assertaction(result, b'sendframes')
         list(result[1][b'framegen'])
         results.append(self._sendsingleframe(
             reactor, ffs(b'1 1 stream-begin command-request new '
                          b"cbor:{b'name': b'command'}")))
-        result = reactor.onbytesresponseready(outstream, 1, b'response2')
+        result = reactor.oncommandresponseready(outstream, 1, b'response2')
         self.assertaction(result, b'sendframes')
         list(result[1][b'framegen'])
         results.append(self._sendsingleframe(
             reactor, ffs(b'1 1 stream-begin command-request new '
                          b"cbor:{b'name': b'command'}")))
-        result = reactor.onbytesresponseready(outstream, 1, b'response3')
+        result = reactor.oncommandresponseready(outstream, 1, b'response3')
         self.assertaction(result, b'sendframes')
         list(result[1][b'framegen'])
 
@@ -347,10 +347,10 @@ class ServerReactorTests(unittest.TestCase):
         list(sendcommandframes(reactor, instream, 1, b'mycommand', {}))
 
         outstream = reactor.makeoutputstream()
-        result = reactor.onbytesresponseready(outstream, 1, b'response')
+        result = reactor.oncommandresponseready(outstream, 1, b'response')
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin bytes-response eos response',
+            b'1 2 stream-begin command-response eos response',
         ])
 
     def testmultiframeresponse(self):
@@ -363,11 +363,11 @@ class ServerReactorTests(unittest.TestCase):
         list(sendcommandframes(reactor, instream, 1, b'mycommand', {}))
 
         outstream = reactor.makeoutputstream()
-        result = reactor.onbytesresponseready(outstream, 1, first + second)
+        result = reactor.oncommandresponseready(outstream, 1, first + second)
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin bytes-response continuation %s' % first,
-            b'1 2 0 bytes-response eos %s' % second,
+            b'1 2 stream-begin command-response continuation %s' % first,
+            b'1 2 0 command-response eos %s' % second,
         ])
 
     def testapplicationerror(self):
@@ -392,12 +392,12 @@ class ServerReactorTests(unittest.TestCase):
         self.assertaction(results[0], b'runcommand')
 
         outstream = reactor.makeoutputstream()
-        result = reactor.onbytesresponseready(outstream, 1, b'response')
+        result = reactor.oncommandresponseready(outstream, 1, b'response')
         self.assertaction(result, b'noop')
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin bytes-response eos response',
+            b'1 2 stream-begin command-response eos response',
         ])
 
     def testmultiplecommanddeferresponse(self):
@@ -407,15 +407,15 @@ class ServerReactorTests(unittest.TestCase):
         list(sendcommandframes(reactor, instream, 3, b'command2', {}))
 
         outstream = reactor.makeoutputstream()
-        result = reactor.onbytesresponseready(outstream, 1, b'response1')
+        result = reactor.oncommandresponseready(outstream, 1, b'response1')
         self.assertaction(result, b'noop')
-        result = reactor.onbytesresponseready(outstream, 3, b'response2')
+        result = reactor.oncommandresponseready(outstream, 3, b'response2')
         self.assertaction(result, b'noop')
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin bytes-response eos response1',
-            b'3 2 0 bytes-response eos response2'
+            b'1 2 stream-begin command-response eos response1',
+            b'3 2 0 command-response eos response2'
         ])
 
     def testrequestidtracking(self):
@@ -427,16 +427,16 @@ class ServerReactorTests(unittest.TestCase):
 
         # Register results for commands out of order.
         outstream = reactor.makeoutputstream()
-        reactor.onbytesresponseready(outstream, 3, b'response3')
-        reactor.onbytesresponseready(outstream, 1, b'response1')
-        reactor.onbytesresponseready(outstream, 5, b'response5')
+        reactor.oncommandresponseready(outstream, 3, b'response3')
+        reactor.oncommandresponseready(outstream, 1, b'response1')
+        reactor.oncommandresponseready(outstream, 5, b'response5')
 
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'3 2 stream-begin bytes-response eos response3',
-            b'1 2 0 bytes-response eos response1',
-            b'5 2 0 bytes-response eos response5',
+            b'3 2 stream-begin command-response eos response3',
+            b'1 2 0 command-response eos response1',
+            b'5 2 0 command-response eos response5',
         ])
 
     def testduplicaterequestonactivecommand(self):
@@ -457,7 +457,7 @@ class ServerReactorTests(unittest.TestCase):
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'command1', {}))
         outstream = reactor.makeoutputstream()
-        reactor.onbytesresponseready(outstream, 1, b'response')
+        reactor.oncommandresponseready(outstream, 1, b'response')
 
         # We've registered the response but haven't sent it. From the
         # perspective of the reactor, the command is still active.
@@ -474,7 +474,7 @@ class ServerReactorTests(unittest.TestCase):
         instream = framing.stream(1)
         list(sendcommandframes(reactor, instream, 1, b'command1', {}))
         outstream = reactor.makeoutputstream()
-        res = reactor.onbytesresponseready(outstream, 1, b'response')
+        res = reactor.oncommandresponseready(outstream, 1, b'response')
         list(res[1][b'framegen'])
 
         results = list(sendcommandframes(reactor, instream, 1, b'command1', {}))

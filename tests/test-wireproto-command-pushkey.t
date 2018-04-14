@@ -47,10 +47,10 @@ pushkey for a bookmark works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     9\r\n
-  s>     \x01\x00\x00\x01\x00\x02\x01B
+  s>     \x01\x00\x00\x01\x00\x02\x012
   s>     \xf5
   s>     \r\n
-  received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: True
@@ -78,10 +78,10 @@ pushkey for a bookmark works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     35\r\n
-  s>     -\x00\x00\x01\x00\x02\x01B
+  s>     -\x00\x00\x01\x00\x02\x012
   s>     \xa1A@X(426bada5c67598ca65036d57d9e4b64b0c1ce7a0
   s>     \r\n
-  received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: {b'@': b'426bada5c67598ca65036d57d9e4b64b0c1ce7a0'}

@@ -130,12 +130,13 @@ class StreamTests(unittest.TestCase):
 
         action, meta = sendframe(
             reactor,
-            ffs(b'%d 0 stream-begin 4 0 foo' % request.requestid))
+            ffs(b'%d 0 stream-begin command-response 0 foo' %
+                request.requestid))
         self.assertEqual(action, b'responsedata')
 
         action, meta = sendframe(
             reactor,
-            ffs(b'%d 0 0 4 eos bar' % request.requestid))
+            ffs(b'%d 0 0 command-response eos bar' % request.requestid))
         self.assertEqual(action, b'responsedata')
 
 if __name__ == '__main__':

@@ -48,10 +48,10 @@ Request for namespaces works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     28\r\n
-  s>      \x00\x00\x01\x00\x02\x01B
+  s>      \x00\x00\x01\x00\x02\x012
   s>     \xa3Fphases@Ibookmarks@Jnamespaces@
   s>     \r\n
-  received frame(size=32; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=32; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: {b'bookmarks': b'', b'namespaces': b'', b'phases': b''}
@@ -81,10 +81,10 @@ Request for phases works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     45\r\n
-  s>     =\x00\x00\x01\x00\x02\x01B
+  s>     =\x00\x00\x01\x00\x02\x012
   s>     \xa2JpublishingDTrueX(be0ef73c17ade3fc89dc41701eb9fc3a91b58282A1
   s>     \r\n
-  received frame(size=61; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=61; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: {b'be0ef73c17ade3fc89dc41701eb9fc3a91b58282': b'1', b'publishing': b'True'}
@@ -114,10 +114,10 @@ Request for bookmarks works
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     35\r\n
-  s>     -\x00\x00\x01\x00\x02\x01B
+  s>     -\x00\x00\x01\x00\x02\x012
   s>     \xa1A@X(26805aba1e600a82e93661149f2313866a221a7b
   s>     \r\n
-  received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: {b'@': b'26805aba1e600a82e93661149f2313866a221a7b'}

@@ -236,10 +236,10 @@ capabilities command returns expected info
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     1d7\r\n
-  s>     \xcf\x01\x00\x01\x00\x02\x01B
+  s>     \xcf\x01\x00\x01\x00\x02\x012
   s>     \xa4Hcommands\xa7Eheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyCnewCnewColdColdInamespaceBnsKpermissions\x81DpushHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullKcompression\x82\xa1DnameDzstd\xa1DnameDzlibNrawrepoformats\x82LgeneraldeltaHrevlogv1Qframingmediatypes\x81X&application/mercurial-exp-framing-0004
   s>     \r\n
-  received frame(size=463; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
+  received frame(size=463; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [{b'commands': {b'branchmap': {b'args': {}, b'permissions': [b'pull']}, b'capabilities': {b'args': {}, b'permissions': [b'pull']}, b'heads': {b'args': {b'publiconly': False}, b'permissions': [b'pull']}, b'known': {b'args': {b'nodes': [b'deadbeef']}, b'permissions': [b'pull']}, b'listkeys': {b'args': {b'namespace': b'ns'}, b'permissions': [b'pull']}, b'lookup': {b'args': {b'key': b'foo'}, b'permissions': [b'pull']}, b'pushkey': {b'args': {b'key': b'key', b'namespace': b'ns', b'new': b'new', b'old': b'old'}, b'permissions': [b'push']}}, b'compression': [{b'name': b'zstd'}, {b'name': b'zlib'}], b'framingmediatypes': [b'application/mercurial-exp-framing-0004'], b'rawrepoformats': [b'generaldelta', b'revlogv1']}]

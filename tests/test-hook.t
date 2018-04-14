@@ -3,8 +3,11 @@ commit hooks can see env vars
 
 
   $ cat > $TESTTMP/txnabort.checkargs.py <<EOF
+  > from mercurial import pycompat
   > def showargs(ui, repo, hooktype, **kwargs):
-  >     ui.write('%s Python hook: %s\n' % (hooktype, ','.join(sorted(kwargs))))
+  >     kwargs = pycompat.byteskwargs(kwargs)
+  >     ui.write(b'%s Python hook: %s\n' % (hooktype,
+  >                                         b','.join(sorted(kwargs))))
   > EOF
 
   $ hg init a
@@ -410,12 +413,15 @@ preoutgoing hook can prevent outgoing changes for local clones
 
   $ cat > hooktests.py <<EOF
   > from __future__ import print_function
-  > from mercurial import error
+  > from mercurial import (
+  >     error,
+  >     pycompat,
+  > )
   > 
   > uncallable = 0
   > 
   > def printargs(ui, args):
-  >     a = list(args.items())
+  >     a = list(pycompat.byteskwargs(args).items())
   >     a.sort()
   >     ui.write(b'hook args:\n')
   >     for k, v in a:
@@ -432,7 +438,7 @@ preoutgoing hook can prevent outgoing changes for local clones
   >     pass
   > 
   > def raisehook(**args):
-  >     raise LocalException(b'exception from hook')
+  >     raise LocalException('exception from hook')
   > 
   > def aborthook(**args):
   >     raise error.Abort(b'raise abort from hook')
@@ -630,10 +636,10 @@ make sure --traceback works
 
   $ cat > hookext.py <<EOF
   > def autohook(ui, **args):
-  >     ui.write('Automatically installed hook\n')
+  >     ui.write(b'Automatically installed hook\n')
   > 
   > def reposetup(ui, repo):
-  >     repo.ui.setconfig("hooks", "commit.auto", autohook)
+  >     repo.ui.setconfig(b"hooks", b"commit.auto", autohook)
   > EOF
   $ echo '[extensions]' >> .hg/hgrc
   $ echo 'hookext = hookext.py' >> .hg/hgrc

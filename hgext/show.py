@@ -45,6 +45,7 @@ from mercurial import (
     registrar,
     revset,
     revsetlang,
+    scmutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -447,8 +448,10 @@ def longestshortest(repo, revs, minlen=4):
     if not revs:
         return minlen
     # don't use filtered repo because it's slow. see templater.shortest().
-    cl = repo.unfiltered().changelog
-    return max(len(cl.shortest(hex(cl.node(r)), minlen)) for r in revs)
+    cl = repo.changelog
+    return max(len(scmutil.shortesthexnodeidprefix(repo.unfiltered(),
+                                                   hex(cl.node(r)),
+                                                   minlen)) for r in revs)
 
 # Adjust the docstring of the show command so it shows all registered views.
 # This is a bit hacky because it runs at the end of module load. When moved

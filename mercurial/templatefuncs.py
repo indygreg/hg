@@ -590,8 +590,8 @@ def shortest(context, mapping, args):
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    cl = context.resource(mapping, 'ctx')._repo.unfiltered().changelog
-    return cl.shortest(node, minlength)
+    repo = context.resource(mapping, 'ctx')._repo
+    return scmutil.shortesthexnodeidprefix(repo.unfiltered(), node, minlength)
 
 @templatefunc('strip(text[, chars])')
 def strip(context, mapping, args):

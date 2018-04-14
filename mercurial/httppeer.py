@@ -990,7 +990,7 @@ def makepeer(ui, path, opener=None, requestbuilder=urlreq.request):
     return httppeer(ui, path, respurl, opener, requestbuilder,
                     info['v1capabilities'])
 
-def instance(ui, path, create):
+def instance(ui, path, create, intents=None):
     if create:
         raise error.Abort(_('cannot create new http repository'))
     try:

@@ -587,7 +587,7 @@ def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
         raise error.RepoError(_('unknown version of SSH protocol: %s') %
                               protoname)
 
-def instance(ui, path, create):
+def instance(ui, path, create, intents=None):
     """Create an SSH peer.
 
     The returned object conforms to the ``wireprotov1peer.wirepeer`` interface.

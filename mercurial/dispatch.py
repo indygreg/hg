@@ -928,7 +928,8 @@ def _dispatch(req):
             else:
                 try:
                     repo = hg.repository(ui, path=path,
-                                         presetupfuncs=req.prereposetups)
+                                         presetupfuncs=req.prereposetups,
+                                         intents=func.intents)
                     if not repo.local():
                         raise error.Abort(_("repository '%s' is not local")
                                           % path)

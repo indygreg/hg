@@ -450,7 +450,7 @@ class bundlerepository(localrepo.localrepository):
             self.ui.warn(msg % nodemod.hex(p2))
         return super(bundlerepository, self).setparents(p1, p2)
 
-def instance(ui, path, create):
+def instance(ui, path, create, intents=None):
     if create:
         raise error.Abort(_('cannot create new bundle repository'))
     # internal config: bundle.mainreporoot

@@ -413,7 +413,7 @@ class localrepository(object):
         'bisect.state',
     }
 
-    def __init__(self, baseui, path, create=False):
+    def __init__(self, baseui, path, create=False, intents=None):
         self.requirements = set()
         self.filtername = None
         # wvfs: rooted at the repository root, used to access the working copy
@@ -2332,8 +2332,9 @@ def undoname(fn):
     assert name.startswith('journal')
     return os.path.join(base, name.replace('journal', 'undo', 1))
 
-def instance(ui, path, create):
-    return localrepository(ui, util.urllocalpath(path), create)
+def instance(ui, path, create, intents=None):
+    return localrepository(ui, util.urllocalpath(path), create,
+                           intents=intents)
 
 def islocal(path):
     return True

@@ -231,7 +231,7 @@ class unionrepository(localrepo.localrepository):
     def getcwd(self):
         return pycompat.getcwd() # always outside the repo
 
-def instance(ui, path, create):
+def instance(ui, path, create, intents=None):
     if create:
         raise error.Abort(_('cannot create new union repository'))
     parentpath = ui.config("bundle", "mainreporoot")

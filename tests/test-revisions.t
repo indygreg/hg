@@ -23,6 +23,12 @@
   > [experimental]
   > revisions.disambiguatewithin=:3
   > EOF
+  $ hg l
+  4:7ba5d
+  3:7b
+  2:72
+  1:9
+  0:b
 9 was unambiguous and still is
   $ hg l -r 9
   1:9
@@ -32,6 +38,6 @@
   [255]
 7b is no longer ambiguous
   $ hg l -r 7b
-  3:7ba57
+  3:7b
 
   $ cd ..

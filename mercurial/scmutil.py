@@ -489,6 +489,21 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
             if not isrev(prefix):
                 return prefix
 
+    revset = repo.ui.config('experimental', 'revisions.disambiguatewithin')
+    if revset:
+        revs = repo.anyrevs([revset], user=True)
+        if cl.rev(node) in revs:
+            hexnode = hex(node)
+            for length in range(minlength, len(hexnode) + 1):
+                matches = []
+                prefix = hexnode[:length]
+                for rev in revs:
+                    otherhexnode = repo[rev].hex()
+                    if prefix == otherhexnode[:length]:
+                        matches.append(otherhexnode)
+                if len(matches) == 1:
+                    return disambiguate(prefix)
+
     try:
         return disambiguate(cl.shortest(node, minlength))
     except error.LookupError:

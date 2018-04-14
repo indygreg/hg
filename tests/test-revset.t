@@ -60,7 +60,7 @@ these predicates use '\0' as a separator:
   >             opttree = revsetlang.optimize(revsetlang.analyze(tree))
   >             ui.note(b"* optimized:\n", revsetlang.prettyformat(opttree),
   >                     b"\n")
-  >     func = revset.match(ui, expr, repo)
+  >     func = revset.match(ui, expr, lookup=revset.lookupfn(repo))
   >     revs = func(repo)
   >     if ui.verbose:
   >         ui.note(b"* set:\n", smartset.prettyformat(revs), b"\n")

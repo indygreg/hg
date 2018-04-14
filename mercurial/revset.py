@@ -2169,13 +2169,16 @@ methods = {
 def lookupfn(repo):
     return lambda symbol: scmutil.isrevsymbol(repo, symbol)
 
-def match(ui, spec, repo=None):
+def match(ui, spec, lookup=None):
     """Create a matcher for a single revision spec"""
-    return matchany(ui, [spec], repo=repo)
+    return matchany(ui, [spec], lookup=None)
 
-def matchany(ui, specs, repo=None, localalias=None):
+def matchany(ui, specs, lookup=None, localalias=None):
     """Create a matcher that will include any revisions matching one of the
     given specs
+
+    If lookup function is not None, the parser will first attempt to handle
+    old-style ranges, which may contain operator characters.
 
     If localalias is not None, it is a dict {name: definitionstring}. It takes
     precedence over [revsetalias] config section.
@@ -2186,9 +2189,6 @@ def matchany(ui, specs, repo=None, localalias=None):
         return mfunc
     if not all(specs):
         raise error.ParseError(_("empty query"))
-    lookup = None
-    if repo:
-        lookup = lookupfn(repo)
     if len(specs) == 1:
         tree = revsetlang.parse(specs[0], lookup)
     else:

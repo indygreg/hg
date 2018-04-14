@@ -905,7 +905,8 @@ class localrepository(object):
         ``{name: definitionstring}``.
         '''
         if user:
-            m = revset.matchany(self.ui, specs, repo=self,
+            m = revset.matchany(self.ui, specs,
+                                lookup=revset.lookupfn(self),
                                 localalias=localalias)
         else:
             m = revset.matchany(None, specs, localalias=localalias)

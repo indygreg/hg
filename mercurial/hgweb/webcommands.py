@@ -276,7 +276,8 @@ def _search(web):
         if not funcsused.issubset(revset.safesymbols):
             return MODE_KEYWORD, query
 
-        mfunc = revset.match(web.repo.ui, revdef, repo=web.repo)
+        mfunc = revset.match(web.repo.ui, revdef,
+                             lookup=revset.lookupfn(web.repo))
         try:
             revs = mfunc(web.repo)
             return MODE_REVSET, revs

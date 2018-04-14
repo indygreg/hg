@@ -185,7 +185,7 @@ class ServerReactorTests(unittest.TestCase):
             ffs(b'1 1 stream-begin command-data 0 ignored'))
         self.assertaction(result, b'error')
         self.assertEqual(result[1], {
-            b'message': b'expected command request frame; got 3',
+            b'message': b'expected command request frame; got 2',
         })
 
     def testunexpectedcommanddatareceiving(self):

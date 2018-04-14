@@ -638,10 +638,10 @@ The following flag values are defined for this type:
 ``0x01`` or ``0x02`` MUST be set to indicate this frame's role in
 a series of command request frames.
 
-If command data frames are to be sent, ``0x10`` MUST be set on ALL
+If command data frames are to be sent, ``0x08`` MUST be set on ALL
 command request frames.
 
-Command Data (``0x03``)
+Command Data (``0x02``)
 -----------------------
 
 This frame contains raw data for a command.

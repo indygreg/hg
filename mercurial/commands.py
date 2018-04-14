@@ -2090,7 +2090,7 @@ def forget(ui, repo, *pats, **opts):
         raise error.Abort(_('no files specified'))
 
     m = scmutil.match(repo[None], pats, opts)
-    dryrun = opts.get(r'dry_run')
+    dryrun = opts.get('dry_run')
     rejected = cmdutil.forget(ui, repo, m, prefix="",
                               explicitonly=False, dryrun=dryrun)[0]
     return rejected and 1 or 0

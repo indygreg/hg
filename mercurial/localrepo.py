@@ -860,7 +860,8 @@ class localrepository(object):
     def __contains__(self, changeid):
         """True if the given changeid exists
 
-        error.LookupError is raised if an ambiguous node specified.
+        error.AmbiguousPrefixLookupError is raised if an ambiguous node
+        specified.
         """
         try:
             self[changeid]

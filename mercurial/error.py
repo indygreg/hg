@@ -58,6 +58,9 @@ class LookupError(RevlogError, KeyError):
     def __str__(self):
         return RevlogError.__str__(self)
 
+class AmbiguousPrefixLookupError(LookupError):
+    pass
+
 class FilteredLookupError(LookupError):
     pass
 

@@ -91,6 +91,7 @@ _chunksize = 1048576
 
 RevlogError = error.RevlogError
 LookupError = error.LookupError
+AmbiguousPrefixLookupError = error.AmbiguousPrefixLookupError
 CensoredNodeError = error.CensoredNodeError
 ProgrammingError = error.ProgrammingError
 
@@ -1788,8 +1789,8 @@ class revlog(object):
             # parsers.c radix tree lookup gave multiple matches
             # fast path: for unfiltered changelog, radix tree is accurate
             if not getattr(self, 'filteredrevs', None):
-                raise LookupError(id, self.indexfile,
-                                  _('ambiguous identifier'))
+                raise AmbiguousPrefixLookupError(id, self.indexfile,
+                                                 _('ambiguous identifier'))
             # fall through to slow path that filters hidden revisions
         except (AttributeError, ValueError):
             # we are pure python, or key was too short to search radix tree
@@ -1810,8 +1811,8 @@ class revlog(object):
                     if len(nl) == 1 and not maybewdir:
                         self._pcache[id] = nl[0]
                         return nl[0]
-                    raise LookupError(id, self.indexfile,
-                                      _('ambiguous identifier'))
+                    raise AmbiguousPrefixLookupError(id, self.indexfile,
+                                                     _('ambiguous identifier'))
                 if maybewdir:
                     raise error.WdirUnsupported
                 return None

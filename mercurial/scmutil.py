@@ -480,8 +480,8 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
 def isrevsymbol(repo, symbol):
     """Checks if a symbol exists in the repo.
 
-    See revsymbol() for details. Raises error.LookupError if the symbol is an
-    ambiguous nodeid prefix.
+    See revsymbol() for details. Raises error.AmbiguousPrefixLookupError if the
+    symbol is an ambiguous nodeid prefix.
     """
     try:
         revsymbol(repo, symbol)

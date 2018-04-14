@@ -239,6 +239,12 @@ docker-ubuntu-artful: contrib/docker/ubuntu-artful
 docker-ubuntu-artful-ppa: contrib/docker/ubuntu-artful
 	contrib/dockerdeb ubuntu artful --source-only
 
+docker-ubuntu-bionic: contrib/docker/ubuntu-bionic
+	contrib/dockerdeb ubuntu bionic
+
+docker-ubuntu-bionic-ppa: contrib/docker/ubuntu-bionic
+	contrib/dockerdeb ubuntu bionic --source-only
+
 fedora20:
 	mkdir -p packages/fedora20
 	contrib/buildrpm
@@ -308,6 +314,7 @@ linux-wheels-i686:
 	docker-ubuntu-trusty docker-ubuntu-trusty-ppa \
 	docker-ubuntu-xenial docker-ubuntu-xenial-ppa \
 	docker-ubuntu-artful docker-ubuntu-artful-ppa \
+	docker-ubuntu-bionic docker-ubuntu-bionic-ppa \
 	fedora20 docker-fedora20 \
 	fedora21 docker-fedora21 \
 	centos5 docker-centos5 \

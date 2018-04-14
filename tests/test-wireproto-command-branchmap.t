@@ -45,8 +45,8 @@ No arguments returns something reasonable
   sending branchmap command
   s>     POST /api/exp-http-v2-0001/ro/branchmap HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0003\r\n
-  s>     content-type: application/mercurial-exp-framing-0003\r\n
+  s>     accept: application/mercurial-exp-framing-0004\r\n
+  s>     content-type: application/mercurial-exp-framing-0004\r\n
   s>     content-length: 24\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -56,15 +56,15 @@ No arguments returns something reasonable
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     78\r\n
-  s>     p\x00\x00\x01\x00\x02\x01F
+  s>     p\x00\x00\x01\x00\x02\x01B
   s>     \xa3Gbranch1\x81T\xb5\xfa\xac\xdf\xd2c7h\xcb1R3l\xc0\x953\x81&f\x88Gbranch2\x81T"Aa\xc7X\x9a\xa4\x8f\xa8:H\xfe\xff^\x95\xb5j\xe3\'\xfcGdefault\x82T&\x80Z\xba\x1e`\n
   s>     \x82\xe96a\x14\x9f#\x13\x86j"\x1a{T\xbe\x0e\xf7<\x17\xad\xe3\xfc\x89\xdcAp\x1e\xb9\xfc:\x91\xb5\x82\x82
   s>     \r\n
-  received frame(size=112; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
+  received frame(size=112; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: {b'branch1': [b'\xb5\xfa\xac\xdf\xd2c7h\xcb1R3l\xc0\x953\x81&f\x88'], b'branch2': [b'"Aa\xc7X\x9a\xa4\x8f\xa8:H\xfe\xff^\x95\xb5j\xe3\'\xfc'], b'default': [b'&\x80Z\xba\x1e`\n\x82\xe96a\x14\x9f#\x13\x86j"\x1a{', b'\xbe\x0e\xf7<\x17\xad\xe3\xfc\x89\xdcAp\x1e\xb9\xfc:\x91\xb5\x82\x82']}

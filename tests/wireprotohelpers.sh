@@ -1,5 +1,5 @@
 HTTPV2=exp-http-v2-0001
-MEDIATYPE=application/mercurial-exp-framing-0003
+MEDIATYPE=application/mercurial-exp-framing-0004
 
 sendhttpraw() {
   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
@@ -26,7 +26,7 @@ def customreadonlyv1(repo, proto):
 @wireproto.wireprotocommand('customreadonly', permission='pull',
                             transportpolicy=wireproto.POLICY_V2_ONLY)
 def customreadonlyv2(repo, proto):
-    return wireprototypes.bytesresponse(b'customreadonly bytes response')
+    return wireprototypes.cborresponse(b'customreadonly bytes response')
 
 @wireproto.wireprotocommand('customreadwrite', permission='push')
 def customreadwrite(repo, proto):
@@ -35,7 +35,7 @@ def customreadwrite(repo, proto):
 @wireproto.wireprotocommand('customreadwrite', permission='push',
                             transportpolicy=wireproto.POLICY_V2_ONLY)
 def customreadwritev2(repo, proto):
-    return wireprototypes.bytesresponse(b'customreadwrite bytes response')
+    return wireprototypes.cborresponse(b'customreadwrite bytes response')
 EOF
 
 cat >> $HGRCPATH << EOF

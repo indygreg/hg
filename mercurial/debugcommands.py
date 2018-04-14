@@ -3014,11 +3014,7 @@ def debugwireproto(ui, repo, path=None, **opts):
                     res = e.callcommand(command, args).result()
 
                 if isinstance(res, wireprotov2peer.commandresponse):
-                    if res.cbor:
-                        val = list(res.cborobjects())
-                    else:
-                        val = [res.b.getvalue()]
-
+                    val = list(res.cborobjects())
                     ui.status(_('response: %s\n') % stringutil.pprint(val))
 
                 else:

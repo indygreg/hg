@@ -81,12 +81,10 @@ FLAGS_COMMAND_DATA = {
 
 FLAG_BYTES_RESPONSE_CONTINUATION = 0x01
 FLAG_BYTES_RESPONSE_EOS = 0x02
-FLAG_BYTES_RESPONSE_CBOR = 0x04
 
 FLAGS_BYTES_RESPONSE = {
     b'continuation': FLAG_BYTES_RESPONSE_CONTINUATION,
     b'eos': FLAG_BYTES_RESPONSE_EOS,
-    b'cbor': FLAG_BYTES_RESPONSE_CBOR,
 }
 
 FLAG_ERROR_RESPONSE_PROTOCOL = 0x01
@@ -350,7 +348,7 @@ def createcommandframes(stream, requestid, cmd, args, datafh=None,
             if done:
                 break
 
-def createbytesresponseframesfrombytes(stream, requestid, data, iscbor=False,
+def createbytesresponseframesfrombytes(stream, requestid, data,
                                        maxframesize=DEFAULT_MAX_FRAME_SIZE):
     """Create a raw frame to send a bytes response from static bytes input.
 
@@ -360,9 +358,6 @@ def createbytesresponseframesfrombytes(stream, requestid, data, iscbor=False,
     # Simple case of a single frame.
     if len(data) <= maxframesize:
         flags = FLAG_BYTES_RESPONSE_EOS
-        if iscbor:
-            flags |= FLAG_BYTES_RESPONSE_CBOR
-
         yield stream.makeframe(requestid=requestid,
                                typeid=FRAME_TYPE_BYTES_RESPONSE,
                                flags=flags,
@@ -379,9 +374,6 @@ def createbytesresponseframesfrombytes(stream, requestid, data, iscbor=False,
             flags = FLAG_BYTES_RESPONSE_EOS
         else:
             flags = FLAG_BYTES_RESPONSE_CONTINUATION
-
-        if iscbor:
-            flags |= FLAG_BYTES_RESPONSE_CBOR
 
         yield stream.makeframe(requestid=requestid,
                                typeid=FRAME_TYPE_BYTES_RESPONSE,
@@ -616,7 +608,7 @@ class serverreactor(object):
 
         return meth(frame)
 
-    def onbytesresponseready(self, stream, requestid, data, iscbor=False):
+    def onbytesresponseready(self, stream, requestid, data):
         """Signal that a bytes response is ready to be sent to the client.
 
         The raw bytes response is passed as an argument.
@@ -625,8 +617,7 @@ class serverreactor(object):
 
         def sendframes():
             for frame in createbytesresponseframesfrombytes(stream, requestid,
-                                                            data,
-                                                            iscbor=iscbor):
+                                                            data):
                 yield frame
 
             self._activecommands.remove(requestid)
@@ -1067,6 +1058,5 @@ class clientreactor(object):
             'request': request,
             'expectmore': frame.flags & FLAG_BYTES_RESPONSE_CONTINUATION,
             'eos': frame.flags & FLAG_BYTES_RESPONSE_EOS,
-            'cbor': frame.flags & FLAG_BYTES_RESPONSE_CBOR,
             'data': frame.payload,
         }

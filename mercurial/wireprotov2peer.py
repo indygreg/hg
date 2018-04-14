@@ -25,7 +25,6 @@ class commandresponse(object):
         self.requestid = requestid
         self.command = command
 
-        self.cbor = False
         self.b = util.bytesio()
 
     def cborobjects(self):
@@ -123,9 +122,6 @@ class clienthandler(object):
 
         if action == 'responsedata':
             response.b.write(meta['data'])
-
-            if meta['cbor']:
-                response.cbor = True
 
             if meta['eos']:
                 # If the command has a decoder, resolve the future to the

@@ -29,8 +29,8 @@ lookup for known node works
   sending lookup command
   s>     *\r\n (glob)
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0003\r\n
-  s>     content-type: application/mercurial-exp-framing-0003\r\n
+  s>     accept: application/mercurial-exp-framing-0004\r\n
+  s>     content-type: application/mercurial-exp-framing-0004\r\n
   s>     content-length: 73\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -40,14 +40,14 @@ lookup for known node works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     1d\r\n
-  s>     *\x00\x01\x00\x02\x01F (glob)
+  s>     \x15\x00\x00\x01\x00\x02\x01B
   s>     TBk\xad\xa5\xc6u\x98\xcae\x03mW\xd9\xe4\xb6K\x0c\x1c\xe7\xa0
   s>     \r\n
-  received frame(size=*; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor) (glob)
+  received frame(size=21; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: b'Bk\xad\xa5\xc6u\x98\xcae\x03mW\xd9\xe4\xb6K\x0c\x1c\xe7\xa0'

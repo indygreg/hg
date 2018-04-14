@@ -26,7 +26,7 @@ from . import (
     wireprototypes,
 )
 
-FRAMINGTYPE = b'application/mercurial-exp-framing-0003'
+FRAMINGTYPE = b'application/mercurial-exp-framing-0004'
 
 HTTP_WIREPROTO_V2 = wireprototypes.HTTP_WIREPROTO_V2
 
@@ -309,8 +309,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
         encoded = cbor.dumps(rsp.value, canonical=True)
         action, meta = reactor.onbytesresponseready(outstream,
                                                     command['requestid'],
-                                                    encoded,
-                                                    iscbor=True)
+                                                    encoded)
     else:
         action, meta = reactor.onapplicationerror(
             _('unhandled response type from wire proto command'))

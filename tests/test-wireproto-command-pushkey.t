@@ -32,8 +32,8 @@ pushkey for a bookmark works
   sending pushkey command
   s>     *\r\n (glob)
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0003\r\n
-  s>     content-type: application/mercurial-exp-framing-0003\r\n
+  s>     accept: application/mercurial-exp-framing-0004\r\n
+  s>     content-type: application/mercurial-exp-framing-0004\r\n
   s>     content-length: 105\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -43,14 +43,14 @@ pushkey for a bookmark works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     9\r\n
-  s>     *\x00\x01\x00\x02\x01F (glob)
+  s>     \x01\x00\x00\x01\x00\x02\x01B
   s>     \xf5
   s>     \r\n
-  received frame(size=*; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor) (glob)
+  received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: True
@@ -63,8 +63,8 @@ pushkey for a bookmark works
   sending listkeys command
   s>     POST /api/exp-http-v2-0001/ro/listkeys HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0003\r\n
-  s>     content-type: application/mercurial-exp-framing-0003\r\n
+  s>     accept: application/mercurial-exp-framing-0004\r\n
+  s>     content-type: application/mercurial-exp-framing-0004\r\n
   s>     content-length: 49\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -74,14 +74,14 @@ pushkey for a bookmark works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0003\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
   s>     35\r\n
-  s>     -\x00\x00\x01\x00\x02\x01F
+  s>     -\x00\x00\x01\x00\x02\x01B
   s>     \xa1A@X(426bada5c67598ca65036d57d9e4b64b0c1ce7a0
   s>     \r\n
-  received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
+  received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: {b'@': b'426bada5c67598ca65036d57d9e4b64b0c1ce7a0'}

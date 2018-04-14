@@ -671,7 +671,11 @@ The following flag values are defined for this type:
 Response Data (``0x04``)
 ------------------------
 
-This frame contains raw response data to an issued command.
+This frame contains response data to an issued command.
+
+Response data ALWAYS consists of a series of 0 or more CBOR encoded
+values. A CBOR value may be using indefinite length encoding. And the
+bytes constituting the value may span several frames.
 
 The following flag values are defined for this type:
 
@@ -681,8 +685,6 @@ The following flag values are defined for this type:
 0x02
    End of data. When set, the response data has been fully sent and
    no additional frames for this response will be sent.
-0x04
-   CBOR data. When set, the frame payload consists of CBOR data.
 
 The ``0x01`` flag is mutually exclusive with the ``0x02`` flag.
 

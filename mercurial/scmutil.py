@@ -1357,9 +1357,20 @@ _reportnewcssource = [
     'unbundle',
 ]
 
-# a list of (repo, ctx, files) functions called by various commands to allow
-# extensions to ensure the corresponding files are available locally, before the
-# command uses them.
+def prefetchfiles(repo, revs, match):
+    """Invokes the registered file prefetch functions, allowing extensions to
+    ensure the corresponding files are available locally, before the command
+    uses them."""
+    if match:
+        # The command itself will complain about files that don't exist, so
+        # don't duplicate the message.
+        match = matchmod.badmatch(match, lambda fn, msg: None)
+    else:
+        match = matchall(repo)
+
+    fileprefetchhooks(repo, revs, match)
+
+# a list of (repo, revs, match) prefetch functions
 fileprefetchhooks = util.hooks()
 
 # A marker that tells the evolve extension to suppress its own reporting

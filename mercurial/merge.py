@@ -1465,7 +1465,7 @@ def batchget(repo, mctx, wctx, actions):
         yield i, f
 
 def _prefetchfiles(repo, ctx, actions):
-    """Invoke ``scmutil.fileprefetchhooks()`` for the files relevant to the dict
+    """Invoke ``scmutil.prefetchfiles()`` for the files relevant to the dict
     of merge actions.  ``ctx`` is the context being merged in."""
 
     # Skipping 'a', 'am', 'f', 'r', 'dm', 'e', 'k', 'p' and 'pr', because they
@@ -1473,8 +1473,11 @@ def _prefetchfiles(repo, ctx, actions):
     # changed/deleted never resolves to something from the remote side.
     oplist = [actions[a] for a in (ACTION_GET, ACTION_DELETED_CHANGED,
                                    ACTION_LOCAL_DIR_RENAME_GET, ACTION_MERGE)]
-    prefetch = scmutil.fileprefetchhooks
-    prefetch(repo, ctx, [f for sublist in oplist for f, args, msg in sublist])
+    prefetch = scmutil.prefetchfiles
+    matchfiles = scmutil.matchfiles
+    prefetch(repo, [ctx.rev()],
+             matchfiles(repo,
+                        [f for sublist in oplist for f, args, msg in sublist]))
 
 @attr.s(frozen=True)
 class updateresult(object):

@@ -244,17 +244,21 @@ def hgpostshare(orig, sourcerepo, destrepo, bookmarks=True, defaultpath=None):
     if 'lfs' in destrepo.requirements:
         destrepo.vfs.append('hgrc', util.tonativeeol('\n[extensions]\nlfs=\n'))
 
-def _prefetchfiles(repo, ctx, files):
+def _prefetchfiles(repo, revs, match):
     """Ensure that required LFS blobs are present, fetching them as a group if
     needed."""
     pointers = []
+    oids = set()
     localstore = repo.svfs.lfslocalblobstore
 
-    for f in files:
-        p = pointerfromctx(ctx, f)
-        if p and not localstore.has(p.oid()):
-            p.filename = f
-            pointers.append(p)
+    for rev in revs:
+        ctx = repo[rev]
+        for f in ctx.walk(match):
+            p = pointerfromctx(ctx, f)
+            if p and p.oid() not in oids and not localstore.has(p.oid()):
+                p.filename = f
+                pointers.append(p)
+                oids.add(p.oid())
 
     if pointers:
         # Recalculating the repo store here allows 'paths.default' that is set

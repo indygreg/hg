@@ -562,7 +562,8 @@ class hgsubrepo(abstractsubrepo):
             files = [f for f in files if match(f)]
         rev = self._state[1]
         ctx = self._repo[rev]
-        scmutil.fileprefetchhooks(self._repo, ctx, files)
+        scmutil.prefetchfiles(self._repo, [ctx.rev()],
+                              scmutil.matchfiles(self._repo, files))
         total = abstractsubrepo.archive(self, archiver, prefix, match)
         for subpath in ctx.substate:
             s = subrepo(ctx, subpath, True)

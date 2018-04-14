@@ -2292,16 +2292,15 @@ def cat(ui, repo, ctx, matcher, basefm, fntemplate, prefix, **opts):
         mfnode = ctx.manifestnode()
         try:
             if mfnode and mfl[mfnode].find(file)[0]:
-                scmutil.fileprefetchhooks(repo, ctx, [file])
+                scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
                 write(file)
                 return 0
         except KeyError:
             pass
 
-    files = [f for f in ctx.walk(matcher)]
-    scmutil.fileprefetchhooks(repo, ctx, files)
+    scmutil.prefetchfiles(repo, [ctx.rev()], matcher)
 
-    for abs in files:
+    for abs in ctx.walk(matcher):
         write(abs)
         err = 0
 
@@ -2979,8 +2978,11 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                 _revertprefetch(repo, ctx,
                                 *[actions[name][0] for name in needdata])
             oplist = [actions[name][0] for name in needdata]
-            prefetch = scmutil.fileprefetchhooks
-            prefetch(repo, ctx, [f for sublist in oplist for f in sublist])
+            prefetch = scmutil.prefetchfiles
+            matchfiles = scmutil.matchfiles
+            prefetch(repo, [ctx.rev()],
+                     matchfiles(repo,
+                                [f for sublist in oplist for f in sublist]))
             _performrevert(repo, parents, ctx, actions, interactive, tobackup)
 
         if targetsubs:

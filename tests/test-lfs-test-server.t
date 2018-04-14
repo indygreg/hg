@@ -616,7 +616,7 @@ Archive will prefetch blobs in a group
 Cat will prefetch blobs in a group
 
   $ rm -rf .hg/store/lfs `hg config lfs.usercache`
-  $ hg cat --debug -r 1 a b c
+  $ hg cat --debug -r 1 a b c nonexistent
   http auth: user foo, password ***
   http auth: user foo, password ***
   Status: 200
@@ -681,6 +681,7 @@ Cat will prefetch blobs in a group
   THIS-IS-LFS
   lfs: found d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 in the local lfs store
   ANOTHER-LARGE-FILE
+  nonexistent: no such file in rev dfca2c9e2ef2
 
 Revert will prefetch blobs in a group
 

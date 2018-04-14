@@ -38,7 +38,7 @@ def hgweb(config, name=None, baseui=None):
     - list of virtual:real tuples (multi-repo view)
     '''
 
-    if ((isinstance(config, str) and not os.path.isdir(config)) or
+    if ((isinstance(config, bytes) and not os.path.isdir(config)) or
         isinstance(config, dict) or isinstance(config, list)):
         # create a multi-dir interface
         return hgwebdir_mod.hgwebdir(config, baseui=baseui)

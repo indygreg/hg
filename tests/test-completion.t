@@ -309,7 +309,7 @@ Show all commands + options
   debugwalk: include, exclude
   debugwhyunstable: 
   debugwireargs: three, four, five, ssh, remotecmd, insecure
-  debugwireproto: localssh, peer, noreadstderr, ssh, remotecmd, insecure
+  debugwireproto: localssh, peer, noreadstderr, nologhandshake, ssh, remotecmd, insecure
   files: rev, print0, include, exclude, template, subrepos
   graft: rev, continue, edit, log, force, currentdate, currentuser, date, user, tool, dry-run
   grep: print0, all, text, follow, ignore-case, files-with-matches, line-number, rev, user, date, template, include, exclude

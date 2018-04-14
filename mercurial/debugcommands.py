@@ -2626,6 +2626,8 @@ def _parsewirelangblocks(fh):
         ('', 'localssh', False, _('start an SSH server for this repo')),
         ('', 'peer', '', _('construct a specific version of the peer')),
         ('', 'noreadstderr', False, _('do not read from stderr of the remote')),
+        ('', 'nologhandshake', False,
+         _('do not log I/O related to the peer handshake')),
     ] + cmdutil.remoteopts,
     _('[PATH]'),
     optionalrepo=True)
@@ -2921,7 +2923,13 @@ def debugwireproto(ui, repo, path=None, **opts):
             # the peer instance to be useful.
             with ui.configoverride({
                 ('experimental', 'httppeer.advertise-v2'): True}):
+                if opts['nologhandshake']:
+                    ui.pushbuffer()
+
                 peer = httppeer.makepeer(ui, path, opener=opener)
+
+                if opts['nologhandshake']:
+                    ui.popbuffer()
 
             if not isinstance(peer, httppeer.httpv2peer):
                 raise error.Abort(_('could not instantiate HTTP peer for '

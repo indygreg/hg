@@ -6,6 +6,10 @@ sendhttpraw() {
 }
 
 sendhttpv2peer() {
+  hg --verbose debugwireproto --nologhandshake --peer http2 http://$LOCALIP:$HGPORT/
+}
+
+sendhttpv2peerhandshake() {
   hg --verbose debugwireproto --peer http2 http://$LOCALIP:$HGPORT/
 }
 

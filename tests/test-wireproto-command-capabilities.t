@@ -197,11 +197,11 @@ Request for HTTPv2 service returns information about it
 
 capabilities command returns expected info
 
-  $ sendhttpv2peer << EOF
+  $ sendhttpv2peerhandshake << EOF
   > command capabilities
   > EOF
   creating http peer for wire protocol version 2
-  s>     *\r\n (glob)
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
   s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
   s>     x-hgproto-1: cbor\r\n

@@ -278,6 +278,8 @@ def sendrequest(ui, opener, req):
         hgargssize = None
 
         for header, value in sorted(req.header_items()):
+            header = pycompat.bytesurl(header)
+            value = pycompat.bytesurl(value)
             if header.startswith('X-hgarg-'):
                 if hgargssize is None:
                     hgargssize = 0

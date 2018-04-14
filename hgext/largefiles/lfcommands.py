@@ -589,7 +589,7 @@ def lfpull(ui, repo, source="default", **opts):
 
     numcached = 0
     for rev in revs:
-        ui.note(_('pulling largefiles for revision %s\n') % rev)
+        ui.note(_('pulling largefiles for revision %d\n') % rev)
         (cached, missing) = cachelfiles(ui, repo, rev)
         numcached += len(cached)
     ui.status(_("%d largefiles cached\n") % numcached)

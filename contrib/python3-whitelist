@@ -393,6 +393,7 @@ test-revset-dirstate-parents.t
 test-revset-outgoing.t
 test-rollback.t
 test-run-tests.py
+test-run-tests.t
 test-schemes.t
 test-serve.t
 test-setdiscovery.t

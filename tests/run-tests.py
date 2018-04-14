@@ -2215,10 +2215,11 @@ class TextTestRunner(unittest.TextTestRunner):
                     'Failed to identify failure point for %s' % test)
                 continue
             dat = m.groupdict()
-            verb = 'broken' if dat['goodbad'] == 'bad' else 'fixed'
+            verb = 'broken' if dat['goodbad'] == b'bad' else 'fixed'
             self.stream.writeln(
                 '%s %s by %s (%s)' % (
-                    test, verb, dat['node'], dat['summary']))
+                    test, verb, dat['node'].decode('ascii'),
+                    dat['summary'].decode('utf8', 'ignore')))
 
     def printtimes(self, times):
         # iolock held by run

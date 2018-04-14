@@ -9,25 +9,25 @@ from mercurial import (
 class ParseRequestTests(unittest.TestCase):
     def testparse(self):
 
-        self.assertEqual(hg.parseurl('http://example.com/no/anchor'),
-                         ('http://example.com/no/anchor', (None, [])))
-        self.assertEqual(hg.parseurl('http://example.com/an/anchor#foo'),
-                         ('http://example.com/an/anchor', ('foo', [])))
+        self.assertEqual(hg.parseurl(b'http://example.com/no/anchor'),
+                         (b'http://example.com/no/anchor', (None, [])))
+        self.assertEqual(hg.parseurl(b'http://example.com/an/anchor#foo'),
+                         (b'http://example.com/an/anchor', (b'foo', [])))
         self.assertEqual(
-            hg.parseurl('http://example.com/no/anchor/branches', ['foo']),
-            ('http://example.com/no/anchor/branches', (None, ['foo'])))
+            hg.parseurl(b'http://example.com/no/anchor/branches', [b'foo']),
+            (b'http://example.com/no/anchor/branches', (None, [b'foo'])))
         self.assertEqual(
-            hg.parseurl('http://example.com/an/anchor/branches#bar', ['foo']),
-            ('http://example.com/an/anchor/branches', ('bar', ['foo'])))
+            hg.parseurl(b'http://example.com/an/anchor/branches#bar', [b'foo']),
+            (b'http://example.com/an/anchor/branches', (b'bar', [b'foo'])))
         self.assertEqual(hg.parseurl(
-            'http://example.com/an/anchor/branches-None#foo', None),
-            ('http://example.com/an/anchor/branches-None', ('foo', [])))
-        self.assertEqual(hg.parseurl('http://example.com/'),
-                         ('http://example.com/', (None, [])))
-        self.assertEqual(hg.parseurl('http://example.com'),
-                         ('http://example.com/', (None, [])))
-        self.assertEqual(hg.parseurl('http://example.com#foo'),
-                         ('http://example.com/', ('foo', [])))
+            b'http://example.com/an/anchor/branches-None#foo', None),
+            (b'http://example.com/an/anchor/branches-None', (b'foo', [])))
+        self.assertEqual(hg.parseurl(b'http://example.com/'),
+                         (b'http://example.com/', (None, [])))
+        self.assertEqual(hg.parseurl(b'http://example.com'),
+                         (b'http://example.com/', (None, [])))
+        self.assertEqual(hg.parseurl(b'http://example.com#foo'),
+                         (b'http://example.com/', (b'foo', [])))
 
 if __name__ == '__main__':
     import silenttestrunner

@@ -213,11 +213,9 @@ contrib/docker/debian-%: contrib/docker/debian.template
 	sed "s/__CODENAME__/$*/" $< > $@
 
 docker-debian-jessie: contrib/docker/debian-jessie
-	mkdir -p packages/debian-jessie
 	contrib/dockerdeb debian jessie
 
 docker-debian-stretch: contrib/docker/debian-stretch
-	mkdir -p packages/debian-stretch
 	contrib/dockerdeb debian stretch
 
 contrib/docker/ubuntu-%: contrib/docker/ubuntu.template

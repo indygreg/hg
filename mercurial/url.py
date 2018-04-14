@@ -486,7 +486,8 @@ class cookiehandler(urlreq.basehandler):
 
         cookiefile = util.expandpath(cookiefile)
         try:
-            cookiejar = util.cookielib.MozillaCookieJar(cookiefile)
+            cookiejar = util.cookielib.MozillaCookieJar(
+                pycompat.fsdecode(cookiefile))
             cookiejar.load()
             self.cookiejar = cookiejar
         except util.cookielib.LoadError as e:
@@ -591,6 +592,6 @@ def open(ui, url_, data=None):
         url_, authinfo = u.authinfo()
     else:
         path = util.normpath(os.path.abspath(url_))
-        url_ = 'file://' + urlreq.pathname2url(path)
+        url_ = 'file://' + pycompat.bytesurl(urlreq.pathname2url(path))
         authinfo = None
     return opener(ui, authinfo).open(pycompat.strurl(url_), data)

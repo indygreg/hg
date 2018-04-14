@@ -133,7 +133,8 @@ class continuereader(object):
 
 def _statusmessage(code):
     responses = httpserver.basehttprequesthandler.responses
-    return responses.get(code, ('Error', 'Unknown error'))[0]
+    return pycompat.bytesurl(
+        responses.get(code, (r'Error', r'Unknown error'))[0])
 
 def statusmessage(code, message=None):
     return '%d %s' % (code, message or _statusmessage(code))

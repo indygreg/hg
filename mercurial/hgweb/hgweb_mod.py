@@ -208,7 +208,7 @@ class hgweb(object):
     be multiple active threads inside __call__.
     """
     def __init__(self, repo, name=None, baseui=None):
-        if isinstance(repo, str):
+        if isinstance(repo, bytes):
             if baseui:
                 u = baseui.copy()
             else:

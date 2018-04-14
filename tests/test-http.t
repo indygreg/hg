@@ -61,7 +61,7 @@ try to clone via stream but missing requirements, so should use pull instead
   $ cat > $TESTTMP/removesupportedformat.py << EOF
   > from mercurial import localrepo
   > def extsetup(ui):
-  >     localrepo.localrepository.supportedformats.remove('generaldelta')
+  >     localrepo.localrepository.supportedformats.remove(b'generaldelta')
   > EOF
 
   $ hg clone --config extensions.rsf=$TESTTMP/removesupportedformat.py --stream http://localhost:$HGPORT/ copy3
@@ -170,12 +170,12 @@ test http authentication
   > import base64
   > from mercurial.hgweb import common
   > def perform_authentication(hgweb, req, op):
-  >     auth = req.headers.get('Authorization')
+  >     auth = req.headers.get(b'Authorization')
   >     if not auth:
-  >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, 'who',
-  >                 [('WWW-Authenticate', 'Basic Realm="mercurial"')])
-  >     if base64.b64decode(auth.split()[1]).split(':', 1) != ['user', 'pass']:
-  >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, 'no')
+  >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, b'who',
+  >                 [(b'WWW-Authenticate', b'Basic Realm="mercurial"')])
+  >     if base64.b64decode(auth.split()[1]).split(b':', 1) != [b'user', b'pass']:
+  >         raise common.ErrorResponse(common.HTTP_FORBIDDEN, b'no')
   > def extsetup():
   >     common.permhooks.insert(0, perform_authentication)
   > EOT
@@ -514,10 +514,10 @@ We raise HTTP 500 because its message is printed in the abort message.
   > from mercurial import util
   > from mercurial.hgweb import common
   > def perform_authentication(hgweb, req, op):
-  >     cookie = req.headers.get('Cookie')
+  >     cookie = req.headers.get(b'Cookie')
   >     if not cookie:
-  >         raise common.ErrorResponse(common.HTTP_SERVER_ERROR, 'no-cookie')
-  >     raise common.ErrorResponse(common.HTTP_SERVER_ERROR, 'Cookie: %s' % cookie)
+  >         raise common.ErrorResponse(common.HTTP_SERVER_ERROR, b'no-cookie')
+  >     raise common.ErrorResponse(common.HTTP_SERVER_ERROR, b'Cookie: %s' % cookie)
   > def extsetup():
   >     common.permhooks.insert(0, perform_authentication)
   > EOF

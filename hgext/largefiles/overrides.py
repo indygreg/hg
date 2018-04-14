@@ -897,7 +897,7 @@ def hgclone(orig, ui, opts, *args, **kwargs):
         # Caching is implicitly limited to 'rev' option, since the dest repo was
         # truncated at that point.  The user may expect a download count with
         # this option, so attempt whether or not this is a largefile repo.
-        if opts.get(r'all_largefiles'):
+        if opts.get('all_largefiles'):
             success, missing = lfcommands.downloadlfiles(ui, repo, None)
 
             if missing != 0:

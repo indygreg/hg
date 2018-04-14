@@ -21,6 +21,7 @@ from . import (
 )
 from .utils import (
     procutil,
+    stringutil,
 )
 
 def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
@@ -137,11 +138,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
         if callable(v):
             v = v()
         if isinstance(v, dict):
-            # make the dictionary element order stable across Python
-            # implementations
-            v = ('{' +
-                 ', '.join('%r: %r' % i for i in sorted(v.iteritems())) +
-                 '}')
+            v = stringutil.pprint(v, bprefix=False)
         env['HG_' + k.upper()] = v
 
     if repo:

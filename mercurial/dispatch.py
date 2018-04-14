@@ -35,7 +35,6 @@ from . import (
     hook,
     profiling,
     pycompat,
-    registrar,
     scmutil,
     ui as uimod,
     util,
@@ -45,8 +44,6 @@ from .utils import (
     procutil,
     stringutil,
 )
-
-unrecoverablewrite = registrar.command.unrecoverablewrite
 
 class request(object):
     def __init__(self, args, ui=None, repo=None, fin=None, fout=None,
@@ -562,7 +559,7 @@ class cmdalias(object):
         return aliasargs(self.fn, args)
 
     def __getattr__(self, name):
-        adefaults = {r'norepo': True, r'cmdtype': unrecoverablewrite,
+        adefaults = {r'norepo': True, r'intents': set(),
                      r'optionalrepo': False, r'inferrepo': False}
         if name not in adefaults:
             raise AttributeError(name)

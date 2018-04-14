@@ -138,15 +138,18 @@ class command(_funcregistrarbase):
     potential repository locations. See ``findrepo()``. If a repository is
     found, it will be used and passed to the decorated function.
 
-    There are three constants in the class which tells what type of the command
-    that is. That information will be helpful at various places. It will be also
-    be used to decide what level of access the command has on hidden commits.
-    The constants are:
+    The `intents` argument defines a set of intended actions or capabilities
+    the command is taking. These intents can be used to affect the construction
+    of the repository object passed to the command. For example, commands
+    declaring that they are read-only could receive a repository that doesn't
+    have any methods allowing repository mutation. Other intents could be used
+    to prevent the command from running if the requested intent could not be
+    fulfilled.
 
-    `unrecoverablewrite` is for those write commands which can't be recovered
-    like push.
-    `recoverablewrite` is for write commands which can be recovered like commit.
-    `readonly` is for commands which are read only.
+    The following intents are defined:
+
+    readonly
+       The command is read-only
 
     The signature of the decorated function looks like this:
         def cmd(ui[, repo] [, <args>] [, <options>])
@@ -161,28 +164,21 @@ class command(_funcregistrarbase):
     descriptions and examples.
     """
 
-    unrecoverablewrite = "unrecoverable"
-    recoverablewrite = "recoverable"
-    readonly = "readonly"
-
-    possiblecmdtypes = {unrecoverablewrite, recoverablewrite, readonly}
-
     def _doregister(self, func, name, options=(), synopsis=None,
                     norepo=False, optionalrepo=False, inferrepo=False,
-                    cmdtype=unrecoverablewrite):
+                    intents=None):
 
-        if cmdtype not in self.possiblecmdtypes:
-            raise error.ProgrammingError("unknown cmdtype value '%s' for "
-                                         "'%s' command" % (cmdtype, name))
         func.norepo = norepo
         func.optionalrepo = optionalrepo
         func.inferrepo = inferrepo
-        func.cmdtype = cmdtype
+        func.intents = intents or set()
         if synopsis:
             self._table[name] = func, list(options), synopsis
         else:
             self._table[name] = func, list(options)
         return func
+
+INTENT_READONLY = b'readonly'
 
 class revsetpredicate(_funcregistrarbase):
     """Decorator to register revset predicate

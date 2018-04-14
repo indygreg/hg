@@ -192,7 +192,7 @@ Test special hash/rev
   $ hg log -qr 'null:wdir() & 2147483647'
   2147483647:ffffffffffff
 
-Commands with undefined cmdtype should not work right now
+Commands with undefined intent should not work right now
 
   $ hg phase -r 28ad74
   abort: hidden revision '28ad74' was rewritten as: 2443a0e66469!

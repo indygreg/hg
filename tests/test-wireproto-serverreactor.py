@@ -62,16 +62,16 @@ class ServerReactorTests(unittest.TestCase):
         stream = framing.stream(1)
         results = list(sendcommandframes(reactor, stream, 1, b'mycommand', {}))
         self.assertEqual(len(results), 1)
-        self.assertaction(results[0], 'runcommand')
+        self.assertaction(results[0], b'runcommand')
         self.assertEqual(results[0][1], {
-            'requestid': 1,
-            'command': b'mycommand',
-            'args': {},
-            'data': None,
+            b'requestid': 1,
+            b'command': b'mycommand',
+            b'args': {},
+            b'data': None,
         })
 
         result = reactor.oninputeof()
-        self.assertaction(result, 'noop')
+        self.assertaction(result, b'noop')
 
     def test1argument(self):
         reactor = makereactor()
@@ -79,12 +79,12 @@ class ServerReactorTests(unittest.TestCase):
         results = list(sendcommandframes(reactor, stream, 41, b'mycommand',
                                          {b'foo': b'bar'}))
         self.assertEqual(len(results), 1)
-        self.assertaction(results[0], 'runcommand')
+        self.assertaction(results[0], b'runcommand')
         self.assertEqual(results[0][1], {
-            'requestid': 41,
-            'command': b'mycommand',
-            'args': {b'foo': b'bar'},
-            'data': None,
+            b'requestid': 41,
+            b'command': b'mycommand',
+            b'args': {b'foo': b'bar'},
+            b'data': None,
         })
 
     def testmultiarguments(self):
@@ -93,12 +93,12 @@ class ServerReactorTests(unittest.TestCase):
         results = list(sendcommandframes(reactor, stream, 1, b'mycommand',
                                          {b'foo': b'bar', b'biz': b'baz'}))
         self.assertEqual(len(results), 1)
-        self.assertaction(results[0], 'runcommand')
+        self.assertaction(results[0], b'runcommand')
         self.assertEqual(results[0][1], {
-            'requestid': 1,
-            'command': b'mycommand',
-            'args': {b'foo': b'bar', b'biz': b'baz'},
-            'data': None,
+            b'requestid': 1,
+            b'command': b'mycommand',
+            b'args': {b'foo': b'bar', b'biz': b'baz'},
+            b'data': None,
         })
 
     def testsimplecommanddata(self):
@@ -107,13 +107,13 @@ class ServerReactorTests(unittest.TestCase):
         results = list(sendcommandframes(reactor, stream, 1, b'mycommand', {},
                                          util.bytesio(b'data!')))
         self.assertEqual(len(results), 2)
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'runcommand')
+        self.assertaction(results[0], b'wantframe')
+        self.assertaction(results[1], b'runcommand')
         self.assertEqual(results[1][1], {
-            'requestid': 1,
-            'command': b'mycommand',
-            'args': {},
-            'data': b'data!',
+            b'requestid': 1,
+            b'command': b'mycommand',
+            b'args': {},
+            b'data': b'data!',
         })
 
     def testmultipledataframes(self):
@@ -129,13 +129,13 @@ class ServerReactorTests(unittest.TestCase):
         results = list(sendframes(reactor, frames))
         self.assertEqual(len(results), 4)
         for i in range(3):
-            self.assertaction(results[i], 'wantframe')
-        self.assertaction(results[3], 'runcommand')
+            self.assertaction(results[i], b'wantframe')
+        self.assertaction(results[3], b'runcommand')
         self.assertEqual(results[3][1], {
-            'requestid': 1,
-            'command': b'mycommand',
-            'args': {},
-            'data': b'data1data2data3',
+            b'requestid': 1,
+            b'command': b'mycommand',
+            b'args': {},
+            b'data': b'data1data2data3',
         })
 
     def testargumentanddata(self):
@@ -150,42 +150,42 @@ class ServerReactorTests(unittest.TestCase):
         reactor = makereactor()
         results = list(sendframes(reactor, frames))
 
-        self.assertaction(results[-1], 'runcommand')
+        self.assertaction(results[-1], b'runcommand')
         self.assertEqual(results[-1][1], {
-            'requestid': 1,
-            'command': b'command',
-            'args': {
+            b'requestid': 1,
+            b'command': b'command',
+            b'args': {
                 b'key': b'val',
                 b'foo': b'bar',
             },
-            'data': b'value1value2',
+            b'data': b'value1value2',
         })
 
     def testnewandcontinuation(self):
         result = self._sendsingleframe(makereactor(),
             ffs(b'1 1 stream-begin command-request new|continuation '))
-        self.assertaction(result, 'error')
+        self.assertaction(result, b'error')
         self.assertEqual(result[1], {
-            'message': b'received command request frame with both new and '
-                       b'continuation flags set',
+            b'message': b'received command request frame with both new and '
+                        b'continuation flags set',
         })
 
     def testneithernewnorcontinuation(self):
         result = self._sendsingleframe(makereactor(),
             ffs(b'1 1 stream-begin command-request 0 '))
-        self.assertaction(result, 'error')
+        self.assertaction(result, b'error')
         self.assertEqual(result[1], {
-            'message': b'received command request frame with neither new nor '
-                       b'continuation flags set',
+            b'message': b'received command request frame with neither new nor '
+                        b'continuation flags set',
         })
 
     def testunexpectedcommanddata(self):
         """Command data frame when not running a command is an error."""
         result = self._sendsingleframe(makereactor(),
             ffs(b'1 1 stream-begin command-data 0 ignored'))
-        self.assertaction(result, 'error')
+        self.assertaction(result, b'error')
         self.assertEqual(result[1], {
-            'message': b'expected command request frame; got 3',
+            b'message': b'expected command request frame; got 3',
         })
 
     def testunexpectedcommanddatareceiving(self):
@@ -196,11 +196,11 @@ class ServerReactorTests(unittest.TestCase):
             ffs(b'1 1 0 command-data eos ignored'),
         ]))
 
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'error')
+        self.assertaction(results[0], b'wantframe')
+        self.assertaction(results[1], b'error')
         self.assertEqual(results[1][1], {
-            'message': b'received command data frame for request that is not '
-                       b'expecting data: 1',
+            b'message': b'received command data frame for request that is not '
+                        b'expecting data: 1',
         })
 
     def testconflictingrequestidallowed(self):
@@ -212,28 +212,28 @@ class ServerReactorTests(unittest.TestCase):
             reactor, ffs(b'1 1 stream-begin command-request new '
                          b"cbor:{b'name': b'command'}")))
         result = reactor.onbytesresponseready(outstream, 1, b'response1')
-        self.assertaction(result, 'sendframes')
-        list(result[1]['framegen'])
+        self.assertaction(result, b'sendframes')
+        list(result[1][b'framegen'])
         results.append(self._sendsingleframe(
             reactor, ffs(b'1 1 stream-begin command-request new '
                          b"cbor:{b'name': b'command'}")))
         result = reactor.onbytesresponseready(outstream, 1, b'response2')
-        self.assertaction(result, 'sendframes')
-        list(result[1]['framegen'])
+        self.assertaction(result, b'sendframes')
+        list(result[1][b'framegen'])
         results.append(self._sendsingleframe(
             reactor, ffs(b'1 1 stream-begin command-request new '
                          b"cbor:{b'name': b'command'}")))
         result = reactor.onbytesresponseready(outstream, 1, b'response3')
-        self.assertaction(result, 'sendframes')
-        list(result[1]['framegen'])
+        self.assertaction(result, b'sendframes')
+        list(result[1][b'framegen'])
 
         for i in range(3):
-            self.assertaction(results[i], 'runcommand')
+            self.assertaction(results[i], b'runcommand')
             self.assertEqual(results[i][1], {
-                'requestid': 1,
-                'command': b'command',
-                'args': {},
-                'data': None,
+                b'requestid': 1,
+                b'command': b'command',
+                b'args': {},
+                b'data': None,
             })
 
     def testconflictingrequestid(self):
@@ -245,10 +245,10 @@ class ServerReactorTests(unittest.TestCase):
                 b"cbor:{b'name': b'command1'}"),
         ]))
 
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'error')
+        self.assertaction(results[0], b'wantframe')
+        self.assertaction(results[1], b'error')
         self.assertEqual(results[1][1], {
-            'message': b'request with ID 1 already received',
+            b'message': b'request with ID 1 already received',
         })
 
     def testinterleavedcommands(self):
@@ -277,25 +277,25 @@ class ServerReactorTests(unittest.TestCase):
         ]))
 
         self.assertEqual([t[0] for t in results], [
-            'wantframe',
-            'wantframe',
-            'wantframe',
-            'wantframe',
-            'runcommand',
-            'runcommand',
+            b'wantframe',
+            b'wantframe',
+            b'wantframe',
+            b'wantframe',
+            b'runcommand',
+            b'runcommand',
         ])
 
         self.assertEqual(results[4][1], {
-            'requestid': 3,
-            'command': 'command3',
-            'args': {b'biz': b'baz', b'key': b'val'},
-            'data': None,
+            b'requestid': 3,
+            b'command': b'command3',
+            b'args': {b'biz': b'baz', b'key': b'val'},
+            b'data': None,
         })
         self.assertEqual(results[5][1], {
-            'requestid': 1,
-            'command': 'command1',
-            'args': {b'foo': b'bar', b'key1': b'val'},
-            'data': None,
+            b'requestid': 1,
+            b'command': b'command1',
+            b'args': {b'foo': b'bar', b'key1': b'val'},
+            b'data': None,
         })
 
     def testmissingcommanddataframe(self):
@@ -309,8 +309,8 @@ class ServerReactorTests(unittest.TestCase):
         ]
         results = list(sendframes(makereactor(), frames))
         self.assertEqual(len(results), 2)
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'runcommand')
+        self.assertaction(results[0], b'wantframe')
+        self.assertaction(results[1], b'runcommand')
 
     def testmissingcommanddataframeflags(self):
         frames = [
@@ -320,10 +320,10 @@ class ServerReactorTests(unittest.TestCase):
         ]
         results = list(sendframes(makereactor(), frames))
         self.assertEqual(len(results), 2)
-        self.assertaction(results[0], 'wantframe')
-        self.assertaction(results[1], 'error')
+        self.assertaction(results[0], b'wantframe')
+        self.assertaction(results[1], b'error')
         self.assertEqual(results[1][1], {
-            'message': b'command data frame without flags',
+            b'message': b'command data frame without flags',
         })
 
     def testframefornonreceivingrequest(self):
@@ -335,9 +335,9 @@ class ServerReactorTests(unittest.TestCase):
                 b"cbor:{b'name': b'command3'}"),
             ffs(b'5 1 0 command-data eos ignored'),
         ]))
-        self.assertaction(results[2], 'error')
+        self.assertaction(results[2], b'error')
         self.assertEqual(results[2][1], {
-            'message': b'received frame for request that is not receiving: 5',
+            b'message': b'received frame for request that is not receiving: 5',
         })
 
     def testsimpleresponse(self):
@@ -348,8 +348,8 @@ class ServerReactorTests(unittest.TestCase):
 
         outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, b'response')
-        self.assertaction(result, 'sendframes')
-        self.assertframesequal(result[1]['framegen'], [
+        self.assertaction(result, b'sendframes')
+        self.assertframesequal(result[1][b'framegen'], [
             b'1 2 stream-begin bytes-response eos response',
         ])
 
@@ -364,8 +364,8 @@ class ServerReactorTests(unittest.TestCase):
 
         outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, first + second)
-        self.assertaction(result, 'sendframes')
-        self.assertframesequal(result[1]['framegen'], [
+        self.assertaction(result, b'sendframes')
+        self.assertframesequal(result[1][b'framegen'], [
             b'1 2 stream-begin bytes-response continuation %s' % first,
             b'1 2 0 bytes-response eos %s' % second,
         ])
@@ -377,8 +377,8 @@ class ServerReactorTests(unittest.TestCase):
 
         outstream = reactor.makeoutputstream()
         result = reactor.onapplicationerror(outstream, 1, b'some message')
-        self.assertaction(result, 'sendframes')
-        self.assertframesequal(result[1]['framegen'], [
+        self.assertaction(result, b'sendframes')
+        self.assertframesequal(result[1][b'framegen'], [
             b'1 2 stream-begin error-response application some message',
         ])
 
@@ -389,14 +389,14 @@ class ServerReactorTests(unittest.TestCase):
         results = list(sendcommandframes(reactor, instream, 1, b'mycommand',
                                          {}))
         self.assertEqual(len(results), 1)
-        self.assertaction(results[0], 'runcommand')
+        self.assertaction(results[0], b'runcommand')
 
         outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, b'response')
-        self.assertaction(result, 'noop')
+        self.assertaction(result, b'noop')
         result = reactor.oninputeof()
-        self.assertaction(result, 'sendframes')
-        self.assertframesequal(result[1]['framegen'], [
+        self.assertaction(result, b'sendframes')
+        self.assertframesequal(result[1][b'framegen'], [
             b'1 2 stream-begin bytes-response eos response',
         ])
 
@@ -408,12 +408,12 @@ class ServerReactorTests(unittest.TestCase):
 
         outstream = reactor.makeoutputstream()
         result = reactor.onbytesresponseready(outstream, 1, b'response1')
-        self.assertaction(result, 'noop')
+        self.assertaction(result, b'noop')
         result = reactor.onbytesresponseready(outstream, 3, b'response2')
-        self.assertaction(result, 'noop')
+        self.assertaction(result, b'noop')
         result = reactor.oninputeof()
-        self.assertaction(result, 'sendframes')
-        self.assertframesequal(result[1]['framegen'], [
+        self.assertaction(result, b'sendframes')
+        self.assertframesequal(result[1][b'framegen'], [
             b'1 2 stream-begin bytes-response eos response1',
             b'3 2 0 bytes-response eos response2'
         ])
@@ -432,8 +432,8 @@ class ServerReactorTests(unittest.TestCase):
         reactor.onbytesresponseready(outstream, 5, b'response5')
 
         result = reactor.oninputeof()
-        self.assertaction(result, 'sendframes')
-        self.assertframesequal(result[1]['framegen'], [
+        self.assertaction(result, b'sendframes')
+        self.assertframesequal(result[1][b'framegen'], [
             b'3 2 stream-begin bytes-response eos response3',
             b'1 2 0 bytes-response eos response1',
             b'5 2 0 bytes-response eos response5',
@@ -446,9 +446,9 @@ class ServerReactorTests(unittest.TestCase):
         list(sendcommandframes(reactor, stream, 1, b'command1', {}))
         results = list(sendcommandframes(reactor, stream, 1, b'command1', {}))
 
-        self.assertaction(results[0], 'error')
+        self.assertaction(results[0], b'error')
         self.assertEqual(results[0][1], {
-            'message': b'request with ID 1 is already active',
+            b'message': b'request with ID 1 is already active',
         })
 
     def testduplicaterequestonactivecommandnosend(self):
@@ -463,9 +463,9 @@ class ServerReactorTests(unittest.TestCase):
         # perspective of the reactor, the command is still active.
 
         results = list(sendcommandframes(reactor, instream, 1, b'command1', {}))
-        self.assertaction(results[0], 'error')
+        self.assertaction(results[0], b'error')
         self.assertEqual(results[0][1], {
-            'message': b'request with ID 1 is already active',
+            b'message': b'request with ID 1 is already active',
         })
 
     def testduplicaterequestaftersend(self):
@@ -475,10 +475,10 @@ class ServerReactorTests(unittest.TestCase):
         list(sendcommandframes(reactor, instream, 1, b'command1', {}))
         outstream = reactor.makeoutputstream()
         res = reactor.onbytesresponseready(outstream, 1, b'response')
-        list(res[1]['framegen'])
+        list(res[1][b'framegen'])
 
         results = list(sendcommandframes(reactor, instream, 1, b'command1', {}))
-        self.assertaction(results[0], 'runcommand')
+        self.assertaction(results[0], b'runcommand')
 
 if __name__ == '__main__':
     import silenttestrunner

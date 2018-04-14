@@ -28,16 +28,16 @@ class SingleSendTests(unittest.TestCase):
         reactor = framing.clientreactor(hasmultiplesend=False, buffersends=True)
 
         request, action, meta = reactor.callcommand(b'foo', {})
-        self.assertEqual(request.state, 'pending')
-        self.assertEqual(action, 'noop')
+        self.assertEqual(request.state, b'pending')
+        self.assertEqual(action, b'noop')
 
         action, meta = reactor.flushcommands()
-        self.assertEqual(action, 'sendframes')
+        self.assertEqual(action, b'sendframes')
 
-        for frame in meta['framegen']:
-            self.assertEqual(request.state, 'sending')
+        for frame in meta[b'framegen']:
+            self.assertEqual(request.state, b'sending')
 
-        self.assertEqual(request.state, 'sent')
+        self.assertEqual(request.state, b'sent')
 
         with self.assertRaisesRegexp(error.ProgrammingError,
                                      'cannot issue new commands'):
@@ -54,51 +54,51 @@ class NoBufferTests(unittest.TestCase):
 
         request, action, meta = reactor.callcommand(b'command1', {})
         self.assertEqual(request.requestid, 1)
-        self.assertEqual(action, 'sendframes')
+        self.assertEqual(action, b'sendframes')
 
-        self.assertEqual(request.state, 'pending')
+        self.assertEqual(request.state, b'pending')
 
-        for frame in meta['framegen']:
-            self.assertEqual(request.state, 'sending')
+        for frame in meta[b'framegen']:
+            self.assertEqual(request.state, b'sending')
 
-        self.assertEqual(request.state, 'sent')
+        self.assertEqual(request.state, b'sent')
 
         action, meta = reactor.flushcommands()
-        self.assertEqual(action, 'noop')
+        self.assertEqual(action, b'noop')
 
         # And we can send another command.
         request, action, meta = reactor.callcommand(b'command2', {})
         self.assertEqual(request.requestid, 3)
-        self.assertEqual(action, 'sendframes')
+        self.assertEqual(action, b'sendframes')
 
-        for frame in meta['framegen']:
-            self.assertEqual(request.state, 'sending')
+        for frame in meta[b'framegen']:
+            self.assertEqual(request.state, b'sending')
 
-        self.assertEqual(request.state, 'sent')
+        self.assertEqual(request.state, b'sent')
 
 class BadFrameRecvTests(unittest.TestCase):
     def testoddstream(self):
         reactor = framing.clientreactor()
 
         action, meta = sendframe(reactor, ffs(b'1 1 0 1 0 foo'))
-        self.assertEqual(action, 'error')
-        self.assertEqual(meta['message'],
-                         'received frame with odd numbered stream ID: 1')
+        self.assertEqual(action, b'error')
+        self.assertEqual(meta[b'message'],
+                         b'received frame with odd numbered stream ID: 1')
 
     def testunknownstream(self):
         reactor = framing.clientreactor()
 
         action, meta = sendframe(reactor, ffs(b'1 0 0 1 0 foo'))
-        self.assertEqual(action, 'error')
-        self.assertEqual(meta['message'],
-                         'received frame on unknown stream without beginning '
-                         'of stream flag set')
+        self.assertEqual(action, b'error')
+        self.assertEqual(meta[b'message'],
+                         b'received frame on unknown stream without beginning '
+                         b'of stream flag set')
 
     def testunhandledframetype(self):
         reactor = framing.clientreactor(buffersends=False)
 
         request, action, meta = reactor.callcommand(b'foo', {})
-        for frame in meta['framegen']:
+        for frame in meta[b'framegen']:
             pass
 
         with self.assertRaisesRegexp(error.ProgrammingError,
@@ -111,19 +111,19 @@ class StreamTests(unittest.TestCase):
 
         request, action, meta = reactor.callcommand(b'foo', {})
 
-        self.assertEqual(action, 'sendframes')
-        for f in meta['framegen']:
+        self.assertEqual(action, b'sendframes')
+        for f in meta[b'framegen']:
             pass
 
         action, meta = sendframe(
             reactor,
             ffs(b'%d 0 stream-begin 4 0 foo' % request.requestid))
-        self.assertEqual(action, 'responsedata')
+        self.assertEqual(action, b'responsedata')
 
         action, meta = sendframe(
             reactor,
             ffs(b'%d 0 0 4 eos bar' % request.requestid))
-        self.assertEqual(action, 'responsedata')
+        self.assertEqual(action, b'responsedata')
 
 if __name__ == '__main__':
     import silenttestrunner

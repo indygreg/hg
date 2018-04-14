@@ -300,7 +300,7 @@ def checkheadshook(ui, repo, node, hooktype, **kwargs):
 hook = checkheadshook
 
 def preupdate(ui, repo, hooktype, parent1, parent2):
-    p1node = scmutil.resolvepartialhexnodeid(repo, parent1)
+    p1node = scmutil.resolvehexnodeidprefix(repo, parent1)
     repo.loadeol([p1node])
     return False
 

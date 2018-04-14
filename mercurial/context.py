@@ -392,7 +392,7 @@ def changectxdeprecwarn(repo):
     #  * If you know that "x" is a branch or in some other namespace,
     #    use the appropriate mechanism for that namespace
     #  * If you know that "x" is a hex nodeid prefix, use
-    #    repo[scmutil.resolvepartialhexnodeid(repo, x)]
+    #    repo[scmutil.resolvehexnodeidprefix(repo, x)]
     #  * If "x" is a string that can be any of the above, but you don't want
     #    to allow general revsets (perhaps because "x" may come from a remote
     #    user and the revset may be too costly), use scmutil.revsymbol(repo, x)
@@ -476,7 +476,7 @@ class changectx(basectx):
             except KeyError:
                 pass
 
-            self._node = scmutil.resolvepartialhexnodeid(repo, changeid)
+            self._node = scmutil.resolvehexnodeidprefix(repo, changeid)
             if self._node is not None:
                 self._rev = repo.changelog.rev(self._node)
                 changectxdeprecwarn(repo)

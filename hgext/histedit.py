@@ -443,7 +443,7 @@ class histeditaction(object):
         """ Verifies semantic correctness of the rule"""
         repo = self.repo
         ha = node.hex(self.node)
-        self.node = scmutil.resolvepartialhexnodeid(repo, ha)
+        self.node = scmutil.resolvehexnodeidprefix(repo, ha)
         if self.node is None:
             raise error.ParseError(_('unknown changeset %s listed') % ha[:12])
         self._verifynodeconstraints(prev, expected, seen)

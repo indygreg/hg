@@ -304,6 +304,67 @@ Misc: process dies early if a requirement exists and the extension is disabled
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
 
+  $ echo 'this is an lfs file' > $TESTTMP/client6_clone/lfspair1.bin
+  $ echo 'this is an lfs file too' > $TESTTMP/client6_clone/lfspair2.bin
+  $ hg -R $TESTTMP/client6_clone ci -Aqm 'add lfs pair'
+  $ hg -R $TESTTMP/client6_clone push -q
+
+  $ hg clone -qU http://localhost:$HGPORT $TESTTMP/bulkfetch
+
+Export will prefetch all needed files across all needed revisions
+
+  $ hg -R $TESTTMP/bulkfetch -v export -r 0:tip -o all.export
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  exporting patches:
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: need to transfer 4 objects (92 bytes)
+  lfs: downloading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: downloading bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc (23 bytes)
+  lfs: processed: bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc
+  lfs: downloading cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 (20 bytes)
+  lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
+  lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
+  lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  all.export
+  lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
+  lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
+  lfs: found cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 in the local lfs store
+  lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
+
+Export with selected files is used with `extdiff --patch`
+
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
+  $ hg --config extensions.extdiff= \
+  >    -R $TESTTMP/bulkfetch -v extdiff -r 2:tip --patch $TESTTMP/bulkfetch/lfs.bin
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc (23 bytes)
+  lfs: processed: bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc
+  */hg-8374dc4052cb.patch (glob)
+  lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
+  */hg-9640b57e77b1.patch (glob)
+  --- */hg-8374dc4052cb.patch	* (glob)
+  +++ */hg-9640b57e77b1.patch	* (glob)
+  @@ -2,12 +2,7 @@
+   # User test
+   # Date 0 0
+   #      Thu Jan 01 00:00:00 1970 +0000
+  -# Node ID 8374dc4052cbd388e79d9dc4ddb29784097aa354
+  -# Parent  1477875038c60152e391238920a16381c627b487
+  -lfs
+  +# Node ID 9640b57e77b14c3a0144fb4478b6cc13e13ea0d1
+  +# Parent  d3b84d50eacbd56638e11abce6b8616aaba54420
+  +add lfs pair
+   
+  -diff -r 1477875038c6 -r 8374dc4052cb lfs.bin
+  ---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  -+++ b/lfs.bin	Thu Jan 01 00:00:00 1970 +0000
+  -@@ -0,0 +1,1 @@
+  -+this is a big lfs file
+  cleaning up temp directory
+  [1]
+
 #endif
 
   $ $PYTHON $TESTDIR/killdaemons.py $DAEMON_PIDS

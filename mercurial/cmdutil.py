@@ -1624,6 +1624,8 @@ def export(repo, revs, basefm, fntemplate='hg-%h.patch', switch_parent=False,
                             the given template.
         Otherwise: All revs will be written to basefm.
     '''
+    scmutil.prefetchfiles(repo, revs, match)
+
     if not fntemplate:
         _exportfile(repo, revs, basefm, '<unnamed>', switch_parent, opts, match)
     else:
@@ -1632,6 +1634,8 @@ def export(repo, revs, basefm, fntemplate='hg-%h.patch', switch_parent=False,
 
 def exportfile(repo, revs, fp, switch_parent=False, opts=None, match=None):
     """Export changesets to the given file stream"""
+    scmutil.prefetchfiles(repo, revs, match)
+
     dest = getattr(fp, 'name', '<unnamed>')
     with formatter.formatter(repo.ui, fp, 'export', {}) as fm:
         _exportfile(repo, revs, fm, dest, switch_parent, opts, match)

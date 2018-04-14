@@ -219,7 +219,7 @@ Test largefiles can be loaded in hgweb (wrapcommand() shouldn't fail)
   > from mercurial import demandimport; demandimport.enable()
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
-  > application = hgweb('.', 'test repo')
+  > application = hgweb(b'.', b'test repo')
   > wsgicgi.launch(application)
   > EOF
   $ . "$TESTDIR/cgienv"

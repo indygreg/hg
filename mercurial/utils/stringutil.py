@@ -42,6 +42,8 @@ def pprint(o):
         return '%d' % o
     elif isinstance(o, float):
         return '%f' % o
+    elif o is None:
+        return b'None'
     else:
         raise error.ProgrammingError('do not know how to format %r' % o)
 

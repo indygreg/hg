@@ -17,6 +17,26 @@ from . import (
     wireprotoframing,
 )
 
+class commandresponse(object):
+    """Represents the response to a command request."""
+
+    def __init__(self, requestid, command):
+        self.requestid = requestid
+        self.command = command
+
+        self.cbor = False
+        self.b = util.bytesio()
+
+    def cborobjects(self):
+        """Obtain decoded CBOR objects from this response."""
+        size = self.b.tell()
+        self.b.seek(0)
+
+        decoder = cbor.CBORDecoder(self.b)
+
+        while self.b.tell() < size:
+            yield decoder.decode()
+
 class clienthandler(object):
     """Object to handle higher-level client activities.
 
@@ -48,10 +68,7 @@ class clienthandler(object):
         rid = request.requestid
         self._requests[rid] = request
         self._futures[rid] = f
-        self._responses[rid] = {
-            'cbor': False,
-            'b': util.bytesio(),
-        }
+        self._responses[rid] = commandresponse(rid, command)
 
         return iter(())
 
@@ -104,28 +121,13 @@ class clienthandler(object):
         response = self._responses[frame.requestid]
 
         if action == 'responsedata':
-            response['b'].write(meta['data'])
+            response.b.write(meta['data'])
 
             if meta['cbor']:
-                response['cbor'] = True
+                response.cbor = True
 
             if meta['eos']:
-                if meta['cbor']:
-                    # If CBOR, decode every object.
-                    b = response['b']
-
-                    size = b.tell()
-                    b.seek(0)
-
-                    decoder = cbor.CBORDecoder(b)
-
-                    result = []
-                    while b.tell() < size:
-                        result.append(decoder.decode())
-                else:
-                    result = [response['b'].getvalue()]
-
-                self._futures[frame.requestid].set_result(result)
+                self._futures[frame.requestid].set_result(response)
 
                 del self._requests[frame.requestid]
                 del self._futures[frame.requestid]

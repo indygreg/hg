@@ -83,6 +83,7 @@ from . import (
     vfs as vfsmod,
     wireprotoframing,
     wireprotoserver,
+    wireprotov2peer,
 )
 from .utils import (
     dateutil,
@@ -3012,7 +3013,16 @@ def debugwireproto(ui, repo, path=None, **opts):
                 with peer.commandexecutor() as e:
                     res = e.callcommand(command, args).result()
 
-                ui.status(_('response: %s\n') % stringutil.pprint(res))
+                if isinstance(res, wireprotov2peer.commandresponse):
+                    if res.cbor:
+                        val = list(res.cborobjects())
+                    else:
+                        val = [res.b.getvalue()]
+
+                    ui.status(_('response: %s\n') % stringutil.pprint(val))
+
+                else:
+                    ui.status(_('response: %s\n') % stringutil.pprint(res))
 
         elif action == 'batchbegin':
             if batchedcommands is not None:

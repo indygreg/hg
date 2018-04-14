@@ -29,7 +29,6 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial.node import (
-    hex,
     nullrev,
 )
 from mercurial import (
@@ -448,8 +447,8 @@ def longestshortest(repo, revs, minlen=4):
     if not revs:
         return minlen
     cl = repo.changelog
-    return max(len(scmutil.shortesthexnodeidprefix(repo, hex(cl.node(r)),
-                                                   minlen)) for r in revs)
+    return max(len(scmutil.shortesthexnodeidprefix(repo, cl.node(r), minlen))
+               for r in revs)
 
 # Adjust the docstring of the show command so it shows all registered views.
 # This is a bit hacky because it runs at the end of module load. When moved

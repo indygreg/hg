@@ -3900,6 +3900,21 @@ Test shortest(node) function:
   $ hg log -r 'wdir()' -T '{node|shortest}\n'
   ffff
 
+  $ hg log --template '{shortest("f")}\n' -l1
+  f
+
+  $ hg log --template '{shortest("0123456789012345678901234567890123456789")}\n' -l1
+  0123456789012345678901234567890123456789
+
+  $ hg log --template '{shortest("01234567890123456789012345678901234567890123456789")}\n' -l1
+  01234567890123456789012345678901234567890123456789
+
+  $ hg log --template '{shortest("not a hex string")}\n' -l1
+  not a hex string
+
+  $ hg log --template '{shortest("not a hex string, but it'\''s 40 bytes long")}\n' -l1
+  not a hex string, but it's 40 bytes long
+
   $ cd ..
 
 Test shortest(node) with the repo having short hash collision:

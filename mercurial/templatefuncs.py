@@ -10,6 +10,9 @@ from __future__ import absolute_import
 import re
 
 from .i18n import _
+from .node import (
+    bin,
+)
 from . import (
     color,
     encoding,
@@ -579,7 +582,7 @@ def shortest(context, mapping, args):
         # i18n: "shortest" is a keyword
         raise error.ParseError(_("shortest() expects one or two arguments"))
 
-    node = evalstring(context, mapping, args[0])
+    hexnode = evalstring(context, mapping, args[0])
 
     minlength = 4
     if len(args) > 1:
@@ -588,6 +591,20 @@ def shortest(context, mapping, args):
                                 _("shortest() expects an integer minlength"))
 
     repo = context.resource(mapping, 'ctx')._repo
+    if len(hexnode) > 40:
+        return hexnode
+    elif len(hexnode) == 40:
+        try:
+            node = bin(hexnode)
+        except TypeError:
+            return hexnode
+    else:
+        try:
+            node = scmutil.resolvehexnodeidprefix(repo, hexnode)
+        except (error.LookupError, error.WdirUnsupported):
+            return hexnode
+        if not node:
+            return hexnode
     return scmutil.shortesthexnodeidprefix(repo, node, minlength)
 
 @templatefunc('strip(text[, chars])')

@@ -443,12 +443,12 @@ def resolvehexnodeidprefix(repo, prefix):
     repo.changelog.rev(node)  # make sure node isn't filtered
     return node
 
-def shortesthexnodeidprefix(repo, hexnode, minlength=1):
+def shortesthexnodeidprefix(repo, node, minlength=1):
     """Find the shortest unambiguous prefix that matches hexnode."""
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    return repo.unfiltered().changelog.shortest(hexnode, minlength)
+    return repo.unfiltered().changelog.shortest(hex(node), minlength)
 
 def isrevsymbol(repo, symbol):
     """Checks if a symbol exists in the repo.

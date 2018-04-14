@@ -326,7 +326,7 @@ class KeepAliveHandler(object):
                 data = urllibcompat.getdata(req)
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    skipheaders)
+                    **skipheaders)
                 if r'content-type' not in headers:
                     h.putheader(r'Content-type',
                                 r'application/x-www-form-urlencoded')
@@ -335,7 +335,7 @@ class KeepAliveHandler(object):
             else:
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    skipheaders)
+                    **skipheaders)
         except socket.error as err:
             raise urlerr.urlerror(err)
         for k, v in headers.items():

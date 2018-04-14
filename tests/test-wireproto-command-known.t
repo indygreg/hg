@@ -50,7 +50,7 @@ No arguments returns something reasonable
   received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: []
+  response: [b'']
 
 Single known node works
 

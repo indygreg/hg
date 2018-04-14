@@ -53,7 +53,7 @@ pushkey for a bookmark works
   received frame(size=*; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor) (glob)
   s>     0\r\n
   s>     \r\n
-  response: []
+  response: [True]
 
   $ sendhttpv2peer << EOF
   > command listkeys

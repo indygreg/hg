@@ -301,11 +301,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = FRAMINGTYPE
 
-    if isinstance(rsp, wireprototypes.bytesresponse):
-        action, meta = reactor.oncommandresponseready(outstream,
-                                                     command['requestid'],
-                                                     rsp.data)
-    elif isinstance(rsp, wireprototypes.cborresponse):
+    if isinstance(rsp, wireprototypes.cborresponse):
         encoded = cbor.dumps(rsp.value, canonical=True)
         action, meta = reactor.oncommandresponseready(outstream,
                                                       command['requestid'],

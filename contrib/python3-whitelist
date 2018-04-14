@@ -140,6 +140,7 @@ test-exchange-obsmarkers-case-D3.t
 test-exchange-obsmarkers-case-D4.t
 test-execute-bit.t
 test-export.t
+test-extdata.t
 test-extdiff.t
 test-extra-filelog-entry.t
 test-filebranch.t
@@ -176,6 +177,7 @@ test-histedit-templates.t
 test-http-branchmap.t
 test-http-bundle1.t
 test-http-clone-r.t
+test-http.t
 test-identify.t
 test-import-unknown.t
 test-import.t
@@ -433,6 +435,7 @@ test-update-issue1456.t
 test-update-names.t
 test-update-reverse.t
 test-upgrade-repo.t
+test-url-download.t
 test-url-rev.t
 test-username-newline.t
 test-verify.t

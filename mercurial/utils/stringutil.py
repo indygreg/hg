@@ -23,19 +23,23 @@ from .. import (
     pycompat,
 )
 
-def pprint(o):
+def pprint(o, bprefix=True):
     """Pretty print an object."""
     if isinstance(o, bytes):
-        return "b'%s'" % escapestr(o)
+        if bprefix:
+            return "b'%s'" % escapestr(o)
+        return "'%s'" % escapestr(o)
     elif isinstance(o, bytearray):
         # codecs.escape_encode() can't handle bytearray, so escapestr fails
         # without coercion.
         return "bytearray['%s']" % escapestr(bytes(o))
     elif isinstance(o, list):
-        return '[%s]' % (b', '.join(pprint(a) for a in o))
+        return '[%s]' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     elif isinstance(o, dict):
         return '{%s}' % (b', '.join(
-            '%s: %s' % (pprint(k), pprint(v)) for k, v in sorted(o.items())))
+            '%s: %s' % (pprint(k, bprefix=bprefix),
+                        pprint(v, bprefix=bprefix))
+            for k, v in sorted(o.items())))
     elif isinstance(o, bool):
         return b'True' if o else b'False'
     elif isinstance(o, int):

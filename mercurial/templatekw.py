@@ -809,8 +809,10 @@ def showwhyunstable(context, mapping):
     for entry in entries:
         if entry.get('divergentnodes'):
             dnodes = entry['divergentnodes']
-            entry['divergentnodes'] = ''.join(formatnode(dnode)
-                                              for dnode in dnodes)
+            dnhybrid = _hybrid(None, [dnode.hex() for dnode in dnodes],
+                               lambda x: {'ctx': repo[x]},
+                               lambda x: formatnode(repo[x]))
+            entry['divergentnodes'] = dnhybrid
 
     tmpl = '{instability}:{divergentnodes} {reason} {node|short}'
     return templateutil.mappinglist(entries, tmpl=tmpl, sep='\n')

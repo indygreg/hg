@@ -673,7 +673,7 @@ Command Response Data (``0x03``)
 
 This frame contains response data to an issued command.
 
-Response data ALWAYS consists of a series of 0 or more CBOR encoded
+Response data ALWAYS consists of a series of 1 or more CBOR encoded
 values. A CBOR value may be using indefinite length encoding. And the
 bytes constituting the value may span several frames.
 
@@ -914,7 +914,7 @@ The following profiles are defined:
 
 TBD
 
-Issuing Commands
+Command Protocol
 ----------------
 
 A client can request that a remote run a command by sending it
@@ -959,6 +959,35 @@ TODO define failure mechanism.
 
 Servers MAY dispatch to commands immediately once argument data
 is available or delay until command data is received in full.
+
+Once a ``Command Request`` frame is sent, a client must be prepared to
+receive any of the following frames associated with that request:
+``Command Response``, ``Error Response``, ``Human Output Side-Channel``,
+``Progress Update``.
+
+The *main* response for a command will be in ``Command Response`` frames.
+The payloads of these frames consist of 1 or more CBOR encoded values.
+The first CBOR value on the first ``Command Response`` frame is special
+and denotes the overall status of the command. This CBOR map contains
+the following bytestring keys:
+
+status
+   (bytestring) A well-defined message containing the overall status of
+   this command request. The following values are defined:
+
+   ok
+      The command was received successfully and its response follows.
+   error
+      There was an error processing the command. More details about the
+      error are encoded in the ``error`` key.
+
+error (optional)
+   A map containing information about an encountered error. The map has the
+   following keys:
+
+   message
+      (array of maps) A message describing the error. The message uses the
+      same format as those in the ``Human Output Side-Channel`` frame.
 
 Capabilities
 ============

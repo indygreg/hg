@@ -26,7 +26,7 @@ from . import (
     wireprototypes,
 )
 
-FRAMINGTYPE = b'application/mercurial-exp-framing-0004'
+FRAMINGTYPE = b'application/mercurial-exp-framing-0005'
 
 HTTP_WIREPROTO_V2 = wireprototypes.HTTP_WIREPROTO_V2
 

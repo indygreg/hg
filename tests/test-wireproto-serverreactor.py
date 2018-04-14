@@ -12,6 +12,8 @@ from mercurial import (
 
 ffs = framing.makeframefromhumanstring
 
+OK = cbor.dumps({b'status': b'ok'})
+
 def makereactor(deferoutput=False):
     return framing.serverreactor(deferoutput=deferoutput)
 
@@ -350,7 +352,7 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oncommandresponseready(outstream, 1, b'response')
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response eos response',
+            b'1 2 stream-begin command-response eos %sresponse' % OK,
         ])
 
     def testmultiframeresponse(self):
@@ -366,7 +368,8 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oncommandresponseready(outstream, 1, first + second)
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response continuation %s' % first,
+            b'1 2 stream-begin command-response continuation %s' % OK,
+            b'1 2 0 command-response continuation %s' % first,
             b'1 2 0 command-response eos %s' % second,
         ])
 
@@ -397,7 +400,7 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response eos response',
+            b'1 2 stream-begin command-response eos %sresponse' % OK,
         ])
 
     def testmultiplecommanddeferresponse(self):
@@ -414,8 +417,8 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'1 2 stream-begin command-response eos response1',
-            b'3 2 0 command-response eos response2'
+            b'1 2 stream-begin command-response eos %sresponse1' % OK,
+            b'3 2 0 command-response eos %sresponse2' % OK,
         ])
 
     def testrequestidtracking(self):
@@ -434,9 +437,9 @@ class ServerReactorTests(unittest.TestCase):
         result = reactor.oninputeof()
         self.assertaction(result, b'sendframes')
         self.assertframesequal(result[1][b'framegen'], [
-            b'3 2 stream-begin command-response eos response3',
-            b'1 2 0 command-response eos response1',
-            b'5 2 0 command-response eos response5',
+            b'3 2 stream-begin command-response eos %sresponse3' % OK,
+            b'1 2 0 command-response eos %sresponse1' % OK,
+            b'5 2 0 command-response eos %sresponse5' % OK,
         ])
 
     def testduplicaterequestonactivecommand(self):

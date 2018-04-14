@@ -37,8 +37,8 @@ All non-secret heads returned by default
   sending heads command
   s>     POST /api/exp-http-v2-0001/ro/heads HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0004\r\n
-  s>     content-type: application/mercurial-exp-framing-0004\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
   s>     content-length: 20\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -48,14 +48,14 @@ All non-secret heads returned by default
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     48\r\n
-  s>     @\x00\x00\x01\x00\x02\x012
-  s>     \x83T\x1dok\x91\xd4J\xab\xa6\xd5\xe5\x80\xbc0\xa9\x94\x850\xdb\xe0\x0bT\xaeI.6\xb0\xc83\x9f\xfa\xf3(\xd0\x0b\x85\xb4R]\xe1\x16^T)Dm-\xc5A\x9c_\x97Dz\x8b\xc0b\xe4\xcc2\x8b\xf2A
+  s>     53\r\n
+  s>     K\x00\x00\x01\x00\x02\x012
+  s>     \xa1FstatusBok\x83T\x1dok\x91\xd4J\xab\xa6\xd5\xe5\x80\xbc0\xa9\x94\x850\xdb\xe0\x0bT\xaeI.6\xb0\xc83\x9f\xfa\xf3(\xd0\x0b\x85\xb4R]\xe1\x16^T)Dm-\xc5A\x9c_\x97Dz\x8b\xc0b\xe4\xcc2\x8b\xf2A
   s>     \r\n
-  received frame(size=64; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=75; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [b'\x1dok\x91\xd4J\xab\xa6\xd5\xe5\x80\xbc0\xa9\x94\x850\xdb\xe0\x0b', b'\xaeI.6\xb0\xc83\x9f\xfa\xf3(\xd0\x0b\x85\xb4R]\xe1\x16^', b')Dm-\xc5A\x9c_\x97Dz\x8b\xc0b\xe4\xcc2\x8b\xf2A']
@@ -70,8 +70,8 @@ Requesting just the public heads works
   sending heads command
   s>     POST /api/exp-http-v2-0001/ro/heads HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0004\r\n
-  s>     content-type: application/mercurial-exp-framing-0004\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
   s>     content-length: 39\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -81,14 +81,14 @@ Requesting just the public heads works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     1e\r\n
-  s>     \x16\x00\x00\x01\x00\x02\x012
-  s>     \x81Tx\xd2\xdc\xa46\xb2\xf5\xb1\x88\xac&~)\xb8\x1e\x07&m8\xfc
+  s>     29\r\n
+  s>     !\x00\x00\x01\x00\x02\x012
+  s>     \xa1FstatusBok\x81Tx\xd2\xdc\xa46\xb2\xf5\xb1\x88\xac&~)\xb8\x1e\x07&m8\xfc
   s>     \r\n
-  received frame(size=22; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=33; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [b'x\xd2\xdc\xa46\xb2\xf5\xb1\x88\xac&~)\xb8\x1e\x07&m8\xfc']

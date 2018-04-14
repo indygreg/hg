@@ -18,6 +18,21 @@ from . import (
     wireprotoframing,
 )
 
+def formatrichmessage(atoms):
+    """Format an encoded message from the framing protocol."""
+
+    chunks = []
+
+    for atom in atoms:
+        msg = _(atom[b'msg'])
+
+        if b'args' in atom:
+            msg = msg % atom[b'args']
+
+        chunks.append(msg)
+
+    return b''.join(chunks)
+
 class commandresponse(object):
     """Represents the response to a command request."""
 
@@ -128,9 +143,20 @@ class clienthandler(object):
                 # decoded value. Otherwise resolve to the rich response object.
                 decoder = COMMAND_DECODERS.get(response.command)
 
-                result = decoder(response) if decoder else response
+                # TODO consider always resolving the overall status map.
+                if decoder:
+                    objs = response.cborobjects()
 
-                self._futures[frame.requestid].set_result(result)
+                    overall = next(objs)
+
+                    if overall['status'] == 'ok':
+                        self._futures[frame.requestid].set_result(decoder(objs))
+                    else:
+                        e = error.RepoError(
+                            formatrichmessage(overall['error']['message']))
+                        self._futures[frame.requestid].set_exception(e)
+                else:
+                    self._futures[frame.requestid].set_result(response)
 
                 del self._requests[frame.requestid]
                 del self._futures[frame.requestid]
@@ -139,31 +165,31 @@ class clienthandler(object):
             raise error.ProgrammingError(
                 'unhandled action from clientreactor: %s' % action)
 
-def decodebranchmap(resp):
+def decodebranchmap(objs):
     # Response should be a single CBOR map of branch name to array of nodes.
-    bm = next(resp.cborobjects())
+    bm = next(objs)
 
     return {encoding.tolocal(k): v for k, v in bm.items()}
 
-def decodeheads(resp):
+def decodeheads(objs):
     # Array of node bytestrings.
-    return next(resp.cborobjects())
+    return next(objs)
 
-def decodeknown(resp):
+def decodeknown(objs):
     # Bytestring where each byte is a 0 or 1.
-    raw = next(resp.cborobjects())
+    raw = next(objs)
 
     return [True if c == '1' else False for c in raw]
 
-def decodelistkeys(resp):
+def decodelistkeys(objs):
     # Map with bytestring keys and values.
-    return next(resp.cborobjects())
+    return next(objs)
 
-def decodelookup(resp):
-    return next(resp.cborobjects())
+def decodelookup(objs):
+    return next(objs)
 
-def decodepushkey(resp):
-    return next(resp.cborobjects())
+def decodepushkey(objs):
+    return next(objs)
 
 COMMAND_DECODERS = {
     'branchmap': decodebranchmap,

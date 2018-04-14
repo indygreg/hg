@@ -1,5 +1,5 @@
 HTTPV2=exp-http-v2-0001
-MEDIATYPE=application/mercurial-exp-framing-0004
+MEDIATYPE=application/mercurial-exp-framing-0005
 
 sendhttpraw() {
   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/

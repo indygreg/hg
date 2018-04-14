@@ -354,15 +354,26 @@ def createcommandresponseframesfrombytes(stream, requestid, data,
 
     Returns a generator of bytearrays.
     """
+    # Automatically send the overall CBOR response map.
+    overall = cbor.dumps({b'status': b'ok'}, canonical=True)
+    if len(overall) > maxframesize:
+        raise error.ProgrammingError('not yet implemented')
 
-    # Simple case of a single frame.
-    if len(data) <= maxframesize:
+    # Simple case where we can fit the full response in a single frame.
+    if len(overall) + len(data) <= maxframesize:
         flags = FLAG_COMMAND_RESPONSE_EOS
         yield stream.makeframe(requestid=requestid,
                                typeid=FRAME_TYPE_COMMAND_RESPONSE,
                                flags=flags,
-                               payload=data)
+                               payload=overall + data)
         return
+
+    # It's easier to send the overall CBOR map in its own frame than to track
+    # offsets.
+    yield stream.makeframe(requestid=requestid,
+                           typeid=FRAME_TYPE_COMMAND_RESPONSE,
+                           flags=FLAG_COMMAND_RESPONSE_CONTINUATION,
+                           payload=overall)
 
     offset = 0
     while True:

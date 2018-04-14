@@ -29,8 +29,8 @@ No arguments returns something reasonable
   sending known command
   s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0004\r\n
-  s>     content-type: application/mercurial-exp-framing-0004\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
   s>     content-length: 20\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -40,14 +40,14 @@ No arguments returns something reasonable
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     9\r\n
-  s>     \x01\x00\x00\x01\x00\x02\x012
-  s>     @
+  s>     14\r\n
+  s>     \x0c\x00\x00\x01\x00\x02\x012
+  s>     \xa1FstatusBok@
   s>     \r\n
-  received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=12; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: []
@@ -62,8 +62,8 @@ Single known node works
   sending known command
   s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0004\r\n
-  s>     content-type: application/mercurial-exp-framing-0004\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
   s>     content-length: 54\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -73,14 +73,14 @@ Single known node works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     a\r\n
-  s>     \x02\x00\x00\x01\x00\x02\x012
-  s>     A1
+  s>     15\r\n
+  s>     \r\x00\x00\x01\x00\x02\x012
+  s>     \xa1FstatusBokA1
   s>     \r\n
-  received frame(size=2; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=13; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [True]
@@ -95,8 +95,8 @@ Multiple nodes works
   sending known command
   s>     POST /api/exp-http-v2-0001/ro/known HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n
-  s>     accept: application/mercurial-exp-framing-0004\r\n
-  s>     content-type: application/mercurial-exp-framing-0004\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
   s>     content-length: 96\r\n
   s>     host: $LOCALIP:$HGPORT\r\n (glob)
   s>     user-agent: Mercurial debugwireproto\r\n
@@ -106,14 +106,14 @@ Multiple nodes works
   s>     HTTP/1.1 200 OK\r\n
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
-  s>     Content-Type: application/mercurial-exp-framing-0004\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
   s>     Transfer-Encoding: chunked\r\n
   s>     \r\n
-  s>     c\r\n
-  s>     \x04\x00\x00\x01\x00\x02\x012
-  s>     C101
+  s>     17\r\n
+  s>     \x0f\x00\x00\x01\x00\x02\x012
+  s>     \xa1FstatusBokC101
   s>     \r\n
-  received frame(size=4; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  received frame(size=15; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
   s>     0\r\n
   s>     \r\n
   response: [True, False, True]

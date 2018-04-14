@@ -2166,10 +2166,6 @@ methods = {
     "parentpost": parentpost,
 }
 
-def posttreebuilthook(tree, repo):
-    # hook for extensions to execute code on the optimized tree
-    pass
-
 def lookupfn(repo):
     return lambda symbol: scmutil.isrevsymbol(repo, symbol)
 
@@ -2211,7 +2207,6 @@ def matchany(ui, specs, repo=None, localalias=None):
     tree = revsetlang.foldconcat(tree)
     tree = revsetlang.analyze(tree)
     tree = revsetlang.optimize(tree)
-    posttreebuilthook(tree, repo)
     return makematcher(tree)
 
 def makematcher(tree):

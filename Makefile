@@ -302,10 +302,15 @@ linux-wheels-i686:
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
 	install-doc install-home install-home-bin install-home-doc \
 	dist dist-notests check tests check-code format-c update-pot \
-	osx deb ppa docker-debian-jessie docker-debian-stretch \
+	osx deb ppa \
+	docker-debian-jessie \
+	docker-debian-stretch \
 	docker-ubuntu-trusty docker-ubuntu-trusty-ppa \
 	docker-ubuntu-xenial docker-ubuntu-xenial-ppa \
 	docker-ubuntu-artful docker-ubuntu-artful-ppa \
-	fedora20 docker-fedora20 fedora21 docker-fedora21 \
-	centos5 docker-centos5 centos6 docker-centos6 centos7 docker-centos7 \
+	fedora20 docker-fedora20 \
+	fedora21 docker-fedora21 \
+	centos5 docker-centos5 \
+	centos6 docker-centos6 \
+	centos7 docker-centos7 \
 	linux-wheels

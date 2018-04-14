@@ -196,21 +196,27 @@ class ParseRequestTests(unittest.TestCase):
         self.assertEqual(r.dispatchparts, [b'pathinfo'])
         self.assertEqual(r.dispatchpath, b'pathinfo')
 
+    if not getattr(unittest.TestCase, 'assertRaisesRegex', False):
+        # Python 3.7 deprecates the regex*p* version, but 2.7 lacks
+        # the regex version.
+        assertRaisesRegex = (# camelcase-required
+            unittest.TestCase.assertRaisesRegexp)
+
     def testreponame(self):
         """repository path components get stripped from URL."""
 
-        with self.assertRaisesRegexp(error.ProgrammingError,
+        with self.assertRaisesRegex(error.ProgrammingError,
                                      b'reponame requires PATH_INFO'):
             parse(DEFAULT_ENV, reponame=b'repo')
 
-        with self.assertRaisesRegexp(error.ProgrammingError,
+        with self.assertRaisesRegex(error.ProgrammingError,
                                      b'PATH_INFO does not begin with repo '
                                      b'name'):
             parse(DEFAULT_ENV, reponame=b'repo', extra={
                 r'PATH_INFO': r'/pathinfo',
             })
 
-        with self.assertRaisesRegexp(error.ProgrammingError,
+        with self.assertRaisesRegex(error.ProgrammingError,
                                      b'reponame prefix of PATH_INFO'):
             parse(DEFAULT_ENV, reponame=b'repo', extra={
                 r'PATH_INFO': r'/repoextra/path',

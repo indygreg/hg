@@ -103,19 +103,25 @@ class FrameTests(unittest.TestCase):
             ffs(b'1 1 0 command-data eos %s' % data.getvalue()),
         ])
 
+    if not getattr(unittest.TestCase, 'assertRaisesRegex', False):
+        # Python 3.7 deprecates the regex*p* version, but 2.7 lacks
+        # the regex version.
+        assertRaisesRegex = (# camelcase-required
+            unittest.TestCase.assertRaisesRegexp)
+
     def testtextoutputformattingstringtype(self):
         """Formatting string must be bytes."""
-        with self.assertRaisesRegexp(ValueError, 'must use bytes formatting '):
+        with self.assertRaisesRegex(ValueError, 'must use bytes formatting '):
             list(framing.createtextoutputframe(None, 1, [
                 (b'foo'.decode('ascii'), [], [])]))
 
     def testtextoutputargumentbytes(self):
-        with self.assertRaisesRegexp(ValueError, 'must use bytes for argument'):
+        with self.assertRaisesRegex(ValueError, 'must use bytes for argument'):
             list(framing.createtextoutputframe(None, 1, [
                 (b'foo', [b'foo'.decode('ascii')], [])]))
 
     def testtextoutputlabelbytes(self):
-        with self.assertRaisesRegexp(ValueError, 'must use bytes for labels'):
+        with self.assertRaisesRegex(ValueError, 'must use bytes for labels'):
             list(framing.createtextoutputframe(None, 1, [
                 (b'foo', [], [b'foo'.decode('ascii')])]))
 

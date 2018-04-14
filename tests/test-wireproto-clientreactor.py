@@ -24,6 +24,13 @@ def sendframe(reactor, frame):
 
 class SingleSendTests(unittest.TestCase):
     """A reactor that can only send once rejects subsequent sends."""
+
+    if not getattr(unittest.TestCase, 'assertRaisesRegex', False):
+        # Python 3.7 deprecates the regex*p* version, but 2.7 lacks
+        # the regex version.
+        assertRaisesRegex = (# camelcase-required
+            unittest.TestCase.assertRaisesRegexp)
+
     def testbasic(self):
         reactor = framing.clientreactor(hasmultiplesend=False, buffersends=True)
 
@@ -39,11 +46,11 @@ class SingleSendTests(unittest.TestCase):
 
         self.assertEqual(request.state, b'sent')
 
-        with self.assertRaisesRegexp(error.ProgrammingError,
+        with self.assertRaisesRegex(error.ProgrammingError,
                                      'cannot issue new commands'):
             reactor.callcommand(b'foo', {})
 
-        with self.assertRaisesRegexp(error.ProgrammingError,
+        with self.assertRaisesRegex(error.ProgrammingError,
                                      'cannot issue new commands'):
             reactor.callcommand(b'foo', {})
 
@@ -77,6 +84,12 @@ class NoBufferTests(unittest.TestCase):
         self.assertEqual(request.state, b'sent')
 
 class BadFrameRecvTests(unittest.TestCase):
+    if not getattr(unittest.TestCase, 'assertRaisesRegex', False):
+        # Python 3.7 deprecates the regex*p* version, but 2.7 lacks
+        # the regex version.
+        assertRaisesRegex = (# camelcase-required
+            unittest.TestCase.assertRaisesRegexp)
+
     def testoddstream(self):
         reactor = framing.clientreactor()
 
@@ -101,7 +114,7 @@ class BadFrameRecvTests(unittest.TestCase):
         for frame in meta[b'framegen']:
             pass
 
-        with self.assertRaisesRegexp(error.ProgrammingError,
+        with self.assertRaisesRegex(error.ProgrammingError,
                                      'unhandled frame type'):
             sendframe(reactor, ffs(b'1 0 stream-begin text-output 0 foo'))
 

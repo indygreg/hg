@@ -45,6 +45,7 @@ test-check-pyflakes.t
 test-check-pylint.t
 test-check-shbang.t
 test-children.t
+test-clone-cgi.t
 test-clone-pull-corruption.t
 test-clone-r.t
 test-clone-update-order.t

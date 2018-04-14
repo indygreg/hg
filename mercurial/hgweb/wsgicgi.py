@@ -10,8 +10,10 @@
 
 from __future__ import absolute_import
 
+import os
+
 from .. import (
-    encoding,
+    pycompat,
 )
 
 from ..utils import (
@@ -26,7 +28,7 @@ def launch(application):
     procutil.setbinary(procutil.stdin)
     procutil.setbinary(procutil.stdout)
 
-    environ = dict(encoding.environ.iteritems())
+    environ = dict(os.environ.iteritems()) # re-exports
     environ.setdefault(r'PATH_INFO', '')
     if environ.get(r'SERVER_SOFTWARE', r'').startswith(r'Microsoft-IIS'):
         # IIS includes script_name in PATH_INFO
@@ -61,9 +63,10 @@ def launch(application):
         elif not headers_sent:
             # Before the first output, send the stored headers
             status, response_headers = headers_sent[:] = headers_set
-            out.write('Status: %s\r\n' % status)
-            for header in response_headers:
-                out.write('%s: %s\r\n' % header)
+            out.write('Status: %s\r\n' % pycompat.bytesurl(status))
+            for hk, hv in response_headers:
+                out.write('%s: %s\r\n' % (pycompat.bytesurl(hk),
+                                          pycompat.bytesurl(hv)))
             out.write('\r\n')
 
         out.write(data)

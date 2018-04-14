@@ -53,7 +53,7 @@ pushkey for a bookmark works
   received frame(size=*; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor) (glob)
   s>     0\r\n
   s>     \r\n
-  response: [True]
+  response: True
 
   $ sendhttpv2peer << EOF
   > command listkeys
@@ -84,6 +84,6 @@ pushkey for a bookmark works
   received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [{b'@': b'426bada5c67598ca65036d57d9e4b64b0c1ce7a0'}]
+  response: {b'@': b'426bada5c67598ca65036d57d9e4b64b0c1ce7a0'}
 
   $ cat error.log

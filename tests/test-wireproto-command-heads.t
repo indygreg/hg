@@ -58,7 +58,7 @@ All non-secret heads returned by default
   received frame(size=64; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [[b'\x1dok\x91\xd4J\xab\xa6\xd5\xe5\x80\xbc0\xa9\x94\x850\xdb\xe0\x0b', b'\xaeI.6\xb0\xc83\x9f\xfa\xf3(\xd0\x0b\x85\xb4R]\xe1\x16^', b')Dm-\xc5A\x9c_\x97Dz\x8b\xc0b\xe4\xcc2\x8b\xf2A']]
+  response: [b'\x1dok\x91\xd4J\xab\xa6\xd5\xe5\x80\xbc0\xa9\x94\x850\xdb\xe0\x0b', b'\xaeI.6\xb0\xc83\x9f\xfa\xf3(\xd0\x0b\x85\xb4R]\xe1\x16^', b')Dm-\xc5A\x9c_\x97Dz\x8b\xc0b\xe4\xcc2\x8b\xf2A']
 
 Requesting just the public heads works
 
@@ -91,6 +91,6 @@ Requesting just the public heads works
   received frame(size=22; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [[b'x\xd2\xdc\xa46\xb2\xf5\xb1\x88\xac&~)\xb8\x1e\x07&m8\xfc']]
+  response: [b'x\xd2\xdc\xa46\xb2\xf5\xb1\x88\xac&~)\xb8\x1e\x07&m8\xfc']
 
   $ cat error.log

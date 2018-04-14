@@ -50,7 +50,7 @@ No arguments returns something reasonable
   received frame(size=1; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [b'']
+  response: []
 
 Single known node works
 
@@ -83,7 +83,7 @@ Single known node works
   received frame(size=2; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [b'1']
+  response: [True]
 
 Multiple nodes works
 
@@ -116,6 +116,6 @@ Multiple nodes works
   received frame(size=4; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [b'101']
+  response: [True, False, True]
 
   $ cat error.log

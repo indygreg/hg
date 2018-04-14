@@ -12,6 +12,7 @@ from .thirdparty import (
     cbor,
 )
 from . import (
+    encoding,
     error,
     util,
     wireprotoframing,
@@ -127,7 +128,13 @@ class clienthandler(object):
                 response.cbor = True
 
             if meta['eos']:
-                self._futures[frame.requestid].set_result(response)
+                # If the command has a decoder, resolve the future to the
+                # decoded value. Otherwise resolve to the rich response object.
+                decoder = COMMAND_DECODERS.get(response.command)
+
+                result = decoder(response) if decoder else response
+
+                self._futures[frame.requestid].set_result(result)
 
                 del self._requests[frame.requestid]
                 del self._futures[frame.requestid]
@@ -135,3 +142,38 @@ class clienthandler(object):
         else:
             raise error.ProgrammingError(
                 'unhandled action from clientreactor: %s' % action)
+
+def decodebranchmap(resp):
+    # Response should be a single CBOR map of branch name to array of nodes.
+    bm = next(resp.cborobjects())
+
+    return {encoding.tolocal(k): v for k, v in bm.items()}
+
+def decodeheads(resp):
+    # Array of node bytestrings.
+    return next(resp.cborobjects())
+
+def decodeknown(resp):
+    # Bytestring where each byte is a 0 or 1.
+    raw = next(resp.cborobjects())
+
+    return [True if c == '1' else False for c in raw]
+
+def decodelistkeys(resp):
+    # Map with bytestring keys and values.
+    return next(resp.cborobjects())
+
+def decodelookup(resp):
+    return next(resp.cborobjects())
+
+def decodepushkey(resp):
+    return next(resp.cborobjects())
+
+COMMAND_DECODERS = {
+    'branchmap': decodebranchmap,
+    'heads': decodeheads,
+    'known': decodeknown,
+    'listkeys': decodelistkeys,
+    'lookup': decodelookup,
+    'pushkey': decodepushkey,
+}

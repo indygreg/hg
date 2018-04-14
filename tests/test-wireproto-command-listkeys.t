@@ -54,7 +54,7 @@ Request for namespaces works
   received frame(size=32; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [{b'bookmarks': b'', b'namespaces': b'', b'phases': b''}]
+  response: {b'bookmarks': b'', b'namespaces': b'', b'phases': b''}
 
 Request for phases works
 
@@ -87,7 +87,7 @@ Request for phases works
   received frame(size=61; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [{b'be0ef73c17ade3fc89dc41701eb9fc3a91b58282': b'1', b'publishing': b'True'}]
+  response: {b'be0ef73c17ade3fc89dc41701eb9fc3a91b58282': b'1', b'publishing': b'True'}
 
 Request for bookmarks works
 
@@ -120,6 +120,6 @@ Request for bookmarks works
   received frame(size=45; request=1; stream=2; streamflags=stream-begin; type=bytes-response; flags=eos|cbor)
   s>     0\r\n
   s>     \r\n
-  response: [{b'@': b'26805aba1e600a82e93661149f2313866a221a7b'}]
+  response: {b'@': b'26805aba1e600a82e93661149f2313866a221a7b'}
 
   $ cat error.log

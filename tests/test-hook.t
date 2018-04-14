@@ -444,7 +444,7 @@ preoutgoing hook can prevent outgoing changes for local clones
   >     ui.note(b'verbose output from hook\n')
   > 
   > def printtags(ui, repo, **args):
-  >     ui.write(b'%s\n' % sorted(repo.tags()))
+  >     ui.write(b'[%s]\n' % b', '.join(sorted(repo.tags())))
   > 
   > class container:
   >     unreachable = 1
@@ -766,7 +766,7 @@ new tags must be visible in pretxncommit (issue3210)
 
   $ echo 'pretxncommit.printtags = python:hooktests.printtags' >> .hg/hgrc
   $ hg tag -f foo
-  ['a', 'foo', 'tip']
+  [a, foo, tip]
 
 post-init hooks must not crash (issue4983)
 This also creates the `to` repo for the next test block.

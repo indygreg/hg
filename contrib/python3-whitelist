@@ -398,6 +398,7 @@ test-schemes.t
 test-serve.t
 test-setdiscovery.t
 test-share.t
+test-shelve.t
 test-show-stack.t
 test-show-work.t
 test-show.t

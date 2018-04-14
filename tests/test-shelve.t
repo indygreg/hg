@@ -1273,7 +1273,7 @@ Wreak havoc on the unshelve process
   $ rm .hg/unshelverebasestate
   $ hg unshelve --abort
   unshelve of 'default' aborted
-  abort: $ENOENT$
+  abort: $ENOENT$* (glob)
   [255]
 Can the user leave the current state?
   $ hg up -C .

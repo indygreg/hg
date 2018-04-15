@@ -591,7 +591,8 @@ def _pushdiscoveryphase(pushop):
     (computed for both success and failure case for changesets push)"""
     outgoing = pushop.outgoing
     unfi = pushop.repo.unfiltered()
-    remotephases = pushop.remote.listkeys('phases')
+    remotephases = listkeys(pushop.remote, 'phases')
+
     if (pushop.ui.configbool('ui', '_usedassubrepo')
         and remotephases    # server supports phases
         and not pushop.outgoing.missing # no changesets to be pushed
@@ -638,14 +639,20 @@ def _pushdiscoveryphase(pushop):
 
 @pushdiscovery('obsmarker')
 def _pushdiscoveryobsmarkers(pushop):
-    if (obsolete.isenabled(pushop.repo, obsolete.exchangeopt)
-        and pushop.repo.obsstore
-        and 'obsolete' in pushop.remote.listkeys('namespaces')):
-        repo = pushop.repo
-        # very naive computation, that can be quite expensive on big repo.
-        # However: evolution is currently slow on them anyway.
-        nodes = (c.node() for c in repo.set('::%ln', pushop.futureheads))
-        pushop.outobsmarkers = pushop.repo.obsstore.relevantmarkers(nodes)
+    if not obsolete.isenabled(pushop.repo, obsolete.exchangeopt):
+        return
+
+    if not pushop.repo.obsstore:
+        return
+
+    if 'obsolete' not in listkeys(pushop.remote, 'namespaces'):
+        return
+
+    repo = pushop.repo
+    # very naive computation, that can be quite expensive on big repo.
+    # However: evolution is currently slow on them anyway.
+    nodes = (c.node() for c in repo.set('::%ln', pushop.futureheads))
+    pushop.outobsmarkers = pushop.repo.obsstore.relevantmarkers(nodes)
 
 @pushdiscovery('bookmarks')
 def _pushdiscoverybookmarks(pushop):
@@ -657,7 +664,8 @@ def _pushdiscoverybookmarks(pushop):
     if pushop.revs:
         revnums = map(repo.changelog.rev, pushop.revs)
         ancestors = repo.changelog.ancestors(revnums, inclusive=True)
-    remotebookmark = remote.listkeys('bookmarks')
+
+    remotebookmark = listkeys(remote, 'bookmarks')
 
     explicit = set([repo._bookmarks.expandname(bookmark)
                     for bookmark in pushop.bookmarks])
@@ -1168,7 +1176,7 @@ def _pushsyncphase(pushop):
     """synchronise phase information locally and remotely"""
     cheads = pushop.commonheads
     # even when we don't push, exchanging phase data is useful
-    remotephases = pushop.remote.listkeys('phases')
+    remotephases = listkeys(pushop.remote, 'phases')
     if (pushop.ui.configbool('ui', '_usedassubrepo')
         and remotephases    # server supports phases
         and pushop.cgresult is None # nothing was pushed
@@ -1392,6 +1400,10 @@ class transactionmanager(util.transactional):
         if self._tr is not None:
             self._tr.release()
 
+def listkeys(remote, namespace):
+    with remote.commandexecutor() as e:
+        return e.callcommand('listkeys', {'namespace': namespace}).result()
+
 def _fullpullbundle2(repo, pullop):
     # The server may send a partial reply, i.e. when inlining
     # pre-computed bundles. In that case, update the common
@@ -1529,7 +1541,7 @@ def _pullbookmarkbundle1(pullop):
         # all known bundle2 servers now support listkeys, but lets be nice with
         # new implementation.
         return
-    books = pullop.remote.listkeys('bookmarks')
+    books = listkeys(pullop.remote, 'bookmarks')
     pullop.remotebookmarks = bookmod.unhexlifybookmarks(books)
 
 
@@ -1741,7 +1753,7 @@ def _pullphase(pullop):
     # Get remote phases data from remote
     if 'phases' in pullop.stepsdone:
         return
-    remotephases = pullop.remote.listkeys('phases')
+    remotephases = listkeys(pullop.remote, 'phases')
     _pullapplyphases(pullop, remotephases)
 
 def _pullapplyphases(pullop, remotephases):
@@ -1805,7 +1817,7 @@ def _pullobsolete(pullop):
     tr = None
     if obsolete.isenabled(pullop.repo, obsolete.exchangeopt):
         pullop.repo.ui.debug('fetching remote obsolete markers\n')
-        remoteobs = pullop.remote.listkeys('obsolete')
+        remoteobs = listkeys(pullop.remote, 'obsolete')
         if 'dump0' in remoteobs:
             tr = pullop.gettransaction()
             markers = []

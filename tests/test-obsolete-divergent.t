@@ -16,6 +16,11 @@ Enable obsolete
   > debugobsolete = debugobsolete -d '0 0'
   > [phases]
   > publish=False
+  > [templates]
+  > wuentryshort = '{instability}:{divergentnodes} {reason} {node|shortest}\n'
+  > whyunstableshort = '{whyunstable % wuentryshort}'
+  > wuentryshorter = '{instability}:{divergentnodes % " {node|shortest} ({phase})"} {reason} {node|shortest}\n'
+  > whyunstableshorter = '{whyunstable % wuentryshorter}'
   > EOF
 
 
@@ -723,9 +728,9 @@ Use scmutil.cleanupnodes API to create divergence
 
   $ hg log -r 1a2a9b5b0030 -T '{whyunstable}\n'
   content-divergent: 4:70d5a63ca112 (draft) predecessor a178212c3433
-  $ hg log -r 1a2a9b5b0030 -T '{whyunstable % "{instability}:{divergentnodes} {reason} {node|shortest}\n"}'
+  $ hg log -r 1a2a9b5b0030 -T whyunstableshort
   content-divergent: 4:70d5a63ca112 (draft) predecessor a178
-  $ hg log -r 1a2a9b5b0030 -T '{whyunstable % "{instability}:{divergentnodes % " {node|shortest} ({phase})"} {reason} {node|shortest}\n"}'
+  $ hg log -r 1a2a9b5b0030 -T whyunstableshorter
   content-divergent: 70d5 (draft) predecessor a178
 
 #if serve

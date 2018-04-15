@@ -1049,9 +1049,9 @@ test whyunstable template keyword
   $ hg log -r 50c51b361e60 -T '{whyunstable}\n'
   orphan: obsolete parent 3de5eca88c00
   phase-divergent: immutable predecessor 245bde4270cd
-  $ hg log -r 50c51b361e60 -T '{whyunstable%"{instability}: {reason} {node}\n"}'
-  orphan: obsolete parent 3de5eca88c00aa039da7399a220f4a5221faa585
-  phase-divergent: immutable predecessor 245bde4270cd1072a27757984f9cda8ba26f08ca
+  $ hg log -r 50c51b361e60 -T '{whyunstable % "{instability}: {reason} {node|shortest}\n"}'
+  orphan: obsolete parent 3de5
+  phase-divergent: immutable predecessor 245b
 
 #if serve
 

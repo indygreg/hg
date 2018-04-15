@@ -306,6 +306,15 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
         action, meta = reactor.oncommandresponseready(outstream,
                                                       command['requestid'],
                                                       encoded)
+    elif isinstance(rsp, wireprototypes.v2streamingresponse):
+        action, meta = reactor.oncommandresponsereadygen(outstream,
+                                                         command['requestid'],
+                                                         rsp.gen)
+    elif isinstance(rsp, wireprototypes.v2errorresponse):
+        action, meta = reactor.oncommanderror(outstream,
+                                              command['requestid'],
+                                              rsp.message,
+                                              rsp.args)
     else:
         action, meta = reactor.onservererror(
             _('unhandled response type from wire proto command'))

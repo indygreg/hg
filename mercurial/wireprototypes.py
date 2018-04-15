@@ -106,6 +106,22 @@ class cborresponse(object):
     def __init__(self, v):
         self.value = v
 
+class v2errorresponse(object):
+    """Represents a command error for version 2 transports."""
+    def __init__(self, message, args=None):
+        self.message = message
+        self.args = args
+
+class v2streamingresponse(object):
+    """A response whose data is supplied by a generator.
+
+    The generator can either consist of data structures to CBOR
+    encode or a stream of already-encoded bytes.
+    """
+    def __init__(self, gen, compressible=True):
+        self.gen = gen
+        self.compressible = compressible
+
 # list of nodes encoding / decoding
 def decodelist(l, sep=' '):
     if l:

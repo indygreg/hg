@@ -451,10 +451,9 @@ class _gitlfsremote(object):
             if action == 'upload':
                 self.ui.status(_('lfs: uploaded %d files (%s)\n')
                                % (blobs, util.bytecount(processed)))
-            # TODO: coalesce the download requests, and comment this in
-            #elif action == 'download':
-            #    self.ui.status(_('lfs: downloaded %d files (%s)\n')
-            #                   % (blobs, util.bytecount(processed)))
+            elif action == 'download':
+                self.ui.status(_('lfs: downloaded %d files (%s)\n')
+                               % (blobs, util.bytecount(processed)))
 
     def __del__(self):
         # copied from mercurial/httppeer.py

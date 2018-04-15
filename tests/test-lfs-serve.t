@@ -282,6 +282,7 @@ lfs content, and the extension enabled.
   lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
   lfs: downloading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
   lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: downloaded 1 files (25 bytes)
   getting lfs2.txt
   lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
   getting nonlfs2.txt
@@ -326,6 +327,7 @@ Export will prefetch all needed files across all needed revisions
   lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
   lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
   lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: downloaded 4 files (92 bytes)
   all.export
   lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
   lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
@@ -341,6 +343,7 @@ Export with selected files is used with `extdiff --patch`
   lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
   lfs: downloading bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc (23 bytes)
   lfs: processed: bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc
+  lfs: downloaded 1 files (23 bytes)
   */hg-8374dc4052cb.patch (glob)
   lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
   */hg-9640b57e77b1.patch (glob)
@@ -380,6 +383,7 @@ Diff will prefetch files
   lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
   lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
   lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: downloaded 4 files (92 bytes)
   lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
   lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
   lfs: found cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 in the local lfs store
@@ -423,6 +427,7 @@ Only the files required by diff are prefetched
   lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
   lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
   lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: downloaded 1 files (24 bytes)
   lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
   diff -r 8374dc4052cb -r 9640b57e77b1 lfspair2.bin
   --- /dev/null	Thu Jan 01 00:00:00 1970 +0000

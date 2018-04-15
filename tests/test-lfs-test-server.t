@@ -192,6 +192,7 @@ Clear the cache to force a download
   Server: testing stub value (hg-server !)
   lfs: adding 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b to the usercache
   lfs: processed: 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b
+  lfs: downloaded 1 files (12 bytes)
    a: remote created -> g
   getting a
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
@@ -388,6 +389,7 @@ Clear the cache to force a download
   Server: testing stub value (hg-server !)
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  lfs: downloaded 2 files (39 bytes)
    b: remote created -> g
   getting b
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
@@ -601,6 +603,7 @@ Archive will prefetch blobs in a group
   Server: testing stub value (hg-server !)
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  lfs: downloaded 3 files (51 bytes)
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
   lfs: found d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 in the local lfs store
@@ -675,6 +678,7 @@ Cat will prefetch blobs in a group
   Server: testing stub value (hg-server !)
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  lfs: downloaded 2 files (31 bytes)
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
   THIS-IS-LFS
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
@@ -773,6 +777,7 @@ Revert will prefetch blobs in a group
   Server: testing stub value (hg-server !)
   lfs: adding d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 to the usercache
   lfs: processed: d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998
+  lfs: downloaded 3 files (51 bytes)
   lfs: found 31cf46fbc4ecd458a0943c5b4881f1f5a6dd36c53d6167d5b69ac45149b38e5b in the local lfs store
   lfs: found d11e1a642b60813aee592094109b406089b8dff4cb157157f753418ec7857998 in the local lfs store
   lfs: found 37a65ab78d5ecda767e8622c248b5dbff1e68b1678ab0e730d5eb8601ec8ad19 in the local lfs store

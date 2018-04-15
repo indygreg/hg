@@ -135,6 +135,7 @@ Blob URIs are correct when --prefix is used
   Server: testing stub value
   lfs: adding f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e to the usercache
   lfs: processed: f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e
+  lfs: downloaded 1 files (20 bytes)
    lfs.bin: remote created -> g
   getting lfs.bin
   lfs: found f03217a32529a28a42d03b1244fe09b6e0f9fd06d7b966d4d50567be2abe6c0e in the local lfs store

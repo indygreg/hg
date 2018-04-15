@@ -17,7 +17,7 @@ Enable obsolete
   > [phases]
   > publish=False
   > [templates]
-  > wuentryshort = '{instability}:{divergentnodes} {reason} {node|shortest}\n'
+  > wuentryshort = '{instability}:{if(divergentnodes, " ")}{divergentnodes} {reason} {node|shortest}\n'
   > whyunstableshort = '{whyunstable % wuentryshort}'
   > wuentryshorter = '{instability}:{divergentnodes % " {node|shortest} ({phase})"} {reason} {node|shortest}\n'
   > whyunstableshorter = '{whyunstable % wuentryshorter}'
@@ -530,6 +530,16 @@ Check more complex obsolescence graft (with divergence)
   8:7ae126973a96 A_7
   9:14608b260df8 A_8
   10:bed64f5d2f5a A_9
+
+  $ hg log -r bed64f5d2f5a -T '{whyunstable}\n' | sort
+  content-divergent: 4:01f36c5a8fda (draft) 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor 007dc284c1f8
+  content-divergent: 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor e442cfc57690
+  $ hg log -r bed64f5d2f5a -T whyunstableshort | sort
+  content-divergent: 4:01f36c5a8fda (draft) 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor 007d
+  content-divergent: 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor e442
+  $ hg log -r bed64f5d2f5a -T whyunstableshorter | sort
+  content-divergent: 01f3 (draft) 7ae1 (draft) 1460 (draft) predecessor 007d
+  content-divergent: 7ae1 (draft) 1460 (draft) predecessor e442
 
 fix the divergence
 

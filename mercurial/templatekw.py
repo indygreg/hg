@@ -802,7 +802,7 @@ def showwhyunstable(context, mapping):
     ctx = context.resource(mapping, 'ctx')
 
     def formatnode(ctx):
-        return ' %s (%s)' % (scmutil.formatchangeid(ctx), ctx.phasestr())
+        return '%s (%s)' % (scmutil.formatchangeid(ctx), ctx.phasestr())
 
     entries = obsutil.whyunstable(repo, ctx)
 
@@ -814,7 +814,8 @@ def showwhyunstable(context, mapping):
                                lambda x: formatnode(repo[x]))
             entry['divergentnodes'] = dnhybrid
 
-    tmpl = '{instability}:{divergentnodes} {reason} {node|short}'
+    tmpl = ('{instability}:{if(divergentnodes, " ")}{divergentnodes} '
+            '{reason} {node|short}')
     return templateutil.mappinglist(entries, tmpl=tmpl, sep='\n')
 
 def loadkeyword(ui, extname, registrarobj):

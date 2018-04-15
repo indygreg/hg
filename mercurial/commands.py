@@ -4037,7 +4037,9 @@ def pull(ui, repo, source="default", **opts):
                 oldrevs = revs
                 revs = [] # actually, nodes
                 for r in oldrevs:
-                    node = other.lookup(r)
+                    with other.commandexecutor() as e:
+                        node = e.callcommand('lookup', {'key': r}).result()
+
                     revs.append(node)
                     if r == checkout:
                         checkout = node

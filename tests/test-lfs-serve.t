@@ -365,6 +365,71 @@ Export with selected files is used with `extdiff --patch`
   cleaning up temp directory
   [1]
 
+Diff will prefetch files
+
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
+  $ hg -R $TESTTMP/bulkfetch -v diff -r 2:tip
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: need to transfer 4 objects (92 bytes)
+  lfs: downloading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: downloading bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc (23 bytes)
+  lfs: processed: bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc
+  lfs: downloading cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 (20 bytes)
+  lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
+  lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
+  lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
+  lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
+  lfs: found cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 in the local lfs store
+  lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfs.bin
+  --- a/lfs.bin	Thu Jan 01 00:00:00 1970 +0000
+  +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +0,0 @@
+  -this is a big lfs file
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfs2.txt
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfs2.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is another lfs file
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfspair1.bin
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfspair1.bin	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is an lfs file
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfspair2.bin
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfspair2.bin	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is an lfs file too
+  diff -r 8374dc4052cb -r 9640b57e77b1 nonlfs.txt
+  --- a/nonlfs.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +0,0 @@
+  -non-lfs
+  diff -r 8374dc4052cb -r 9640b57e77b1 nonlfs3.txt
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/nonlfs3.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +non-lfs
+
+Only the files required by diff are prefetched
+
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
+  $ hg -R $TESTTMP/bulkfetch -v diff -r 2:tip $TESTTMP/bulkfetch/lfspair2.bin
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
+  lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfspair2.bin
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfspair2.bin	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is an lfs file too
+
 #endif
 
   $ $PYTHON $TESTDIR/killdaemons.py $DAEMON_PIDS

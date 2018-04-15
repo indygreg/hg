@@ -2466,6 +2466,10 @@ def diffhunks(repo, node1=None, node2=None, match=None, changes=None,
             # reported as copies. We want to show them in the diff as additions.
             del copy[dst]
 
+    prefetchmatch = scmutil.matchfiles(
+        repo, list(modifiedset | addedset | removedset))
+    scmutil.prefetchfiles(repo, [ctx1.rev(), ctx2.rev()], prefetchmatch)
+
     def difffn(opts, losedata):
         return trydiff(repo, revs, ctx1, ctx2, modified, added, removed,
                        copy, getfilectx, opts, losedata, prefix, relroot)

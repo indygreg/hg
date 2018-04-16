@@ -944,6 +944,9 @@ coreconfigitem('server', 'validate',
 coreconfigitem('server', 'zliblevel',
     default=-1,
 )
+coreconfigitem('server', 'zstdlevel',
+    default=3,
+)
 coreconfigitem('share', 'pool',
     default=None,
 )

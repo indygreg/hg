@@ -398,8 +398,9 @@ def changectxdeprecwarn(repo):
     #    user and the revset may be too costly), use scmutil.revsymbol(repo, x)
     #  * If "x" can be a mix of the above, you'll have to figure it out
     #    yourself
-    repo.ui.deprecwarn("changectx.__init__ is getting more limited, see source "
-                       "for details", "4.6", stacklevel=4)
+    repo.ui.deprecwarn("changectx.__init__ is getting more limited, see "
+                       "context.changectxdeprecwarn() for details", "4.6",
+                       stacklevel=4)
 
 class changectx(basectx):
     """A changecontext object makes access to data related to a particular

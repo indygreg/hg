@@ -16,6 +16,7 @@ sendhttpv2peerhandshake() {
 cat > dummycommands.py << EOF
 from mercurial import (
     wireprototypes,
+    wireprotov2server,
     wireproto,
 )
 
@@ -23,8 +24,7 @@ from mercurial import (
 def customreadonlyv1(repo, proto):
     return wireprototypes.bytesresponse(b'customreadonly bytes response')
 
-@wireproto.wireprotocommand('customreadonly', permission='pull',
-                            transportpolicy=wireproto.POLICY_V2_ONLY)
+@wireprotov2server.wireprotocommand('customreadonly', permission='pull')
 def customreadonlyv2(repo, proto):
     return wireprototypes.cborresponse(b'customreadonly bytes response')
 
@@ -32,8 +32,7 @@ def customreadonlyv2(repo, proto):
 def customreadwrite(repo, proto):
     return wireprototypes.bytesresponse(b'customreadwrite bytes response')
 
-@wireproto.wireprotocommand('customreadwrite', permission='push',
-                            transportpolicy=wireproto.POLICY_V2_ONLY)
+@wireprotov2server.wireprotocommand('customreadwrite', permission='push')
 def customreadwritev2(repo, proto):
     return wireprototypes.cborresponse(b'customreadwrite bytes response')
 EOF

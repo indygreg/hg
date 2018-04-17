@@ -405,10 +405,43 @@ def _capabilitiesv2(repo, proto):
 
     return proto.addcapabilities(repo, caps)
 
-def wireprotocommand(*args, **kwargs):
+def wireprotocommand(name, args=None, permission='push'):
+    """Decorator to declare a wire protocol command.
+
+    ``name`` is the name of the wire protocol command being provided.
+
+    ``args`` is a dict of argument names to example values.
+
+    ``permission`` defines the permission type needed to run this command.
+    Can be ``push`` or ``pull``. These roughly map to read-write and read-only,
+    respectively. Default is to assume command requires ``push`` permissions
+    because otherwise commands not declaring their permissions could modify
+    a repository that is supposed to be read-only.
+    """
+    transports = {k for k, v in wireprototypes.TRANSPORTS.items()
+                  if v['version'] == 2}
+
+    if permission not in ('push', 'pull'):
+        raise error.ProgrammingError('invalid wire protocol permission; '
+                                     'got %s; expected "push" or "pull"' %
+                                     permission)
+
+    if args is None:
+        args = {}
+
+    if not isinstance(args, dict):
+        raise error.ProgrammingError('arguments for version 2 commands '
+                                     'must be declared as dicts')
+
     def register(func):
-        return wireproto.wireprotocommand(
-            *args, transportpolicy=wireproto.POLICY_V2_ONLY, **kwargs)(func)
+        if name in wireproto.commandsv2:
+            raise error.ProgrammingError('%s command already registered '
+                                         'for version 2' % name)
+
+        wireproto.commandsv2[name] = wireproto.commandentry(
+            func, args=args, transports=transports, permission=permission)
+
+        return func
 
     return register
 

@@ -346,8 +346,7 @@ def wireprotocommand(name, args=None, transportpolicy=POLICY_V1_ONLY,
     return register
 
 # TODO define a more appropriate permissions type to use for this.
-@wireprotocommand('batch', 'cmds *', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('batch', 'cmds *', permission='pull')
 def batch(repo, proto, cmds, others):
     unescapearg = wireprototypes.unescapebatcharg
     repo = repo.filtered("served")
@@ -393,8 +392,7 @@ def batch(repo, proto, cmds, others):
 
     return wireprototypes.bytesresponse(';'.join(res))
 
-@wireprotocommand('between', 'pairs', transportpolicy=POLICY_V1_ONLY,
-                  permission='pull')
+@wireprotocommand('between', 'pairs', permission='pull')
 def between(repo, proto, pairs):
     pairs = [wireprototypes.decodelist(p, '-') for p in pairs.split(" ")]
     r = []
@@ -403,8 +401,7 @@ def between(repo, proto, pairs):
 
     return wireprototypes.bytesresponse(''.join(r))
 
-@wireprotocommand('branchmap', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('branchmap', permission='pull')
 def branchmap(repo, proto):
     branchmap = repo.branchmap()
     heads = []
@@ -415,8 +412,7 @@ def branchmap(repo, proto):
 
     return wireprototypes.bytesresponse('\n'.join(heads))
 
-@wireprotocommand('branches', 'nodes', transportpolicy=POLICY_V1_ONLY,
-                  permission='pull')
+@wireprotocommand('branches', 'nodes', permission='pull')
 def branches(repo, proto, nodes):
     nodes = wireprototypes.decodelist(nodes)
     r = []
@@ -425,8 +421,7 @@ def branches(repo, proto, nodes):
 
     return wireprototypes.bytesresponse(''.join(r))
 
-@wireprotocommand('clonebundles', '', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('clonebundles', '', permission='pull')
 def clonebundles(repo, proto):
     """Server command for returning info for available bundles to seed clones.
 
@@ -479,14 +474,12 @@ def _capabilities(repo, proto):
 
 # If you are writing an extension and consider wrapping this function. Wrap
 # `_capabilities` instead.
-@wireprotocommand('capabilities', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('capabilities', permission='pull')
 def capabilities(repo, proto):
     caps = _capabilities(repo, proto)
     return wireprototypes.bytesresponse(' '.join(sorted(caps)))
 
-@wireprotocommand('changegroup', 'roots', transportpolicy=POLICY_V1_ONLY,
-                  permission='pull')
+@wireprotocommand('changegroup', 'roots', permission='pull')
 def changegroup(repo, proto, roots):
     nodes = wireprototypes.decodelist(roots)
     outgoing = discovery.outgoing(repo, missingroots=nodes,
@@ -496,7 +489,6 @@ def changegroup(repo, proto, roots):
     return wireprototypes.streamres(gen=gen)
 
 @wireprotocommand('changegroupsubset', 'bases heads',
-                  transportpolicy=POLICY_V1_ONLY,
                   permission='pull')
 def changegroupsubset(repo, proto, bases, heads):
     bases = wireprototypes.decodelist(bases)
@@ -508,7 +500,7 @@ def changegroupsubset(repo, proto, bases, heads):
     return wireprototypes.streamres(gen=gen)
 
 @wireprotocommand('debugwireargs', 'one two *',
-                  permission='pull', transportpolicy=POLICY_V1_ONLY)
+                  permission='pull')
 def debugwireargs(repo, proto, one, two, others):
     # only accept optional args from the known set
     opts = options('debugwireargs', ['three', 'four'], others)
@@ -579,8 +571,7 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
             continue
     return None
 
-@wireprotocommand('getbundle', '*', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('getbundle', '*', permission='pull')
 def getbundle(repo, proto, others):
     opts = options('getbundle', wireprototypes.GETBUNDLE_ARGUMENTS.keys(),
                    others)
@@ -656,12 +647,12 @@ def getbundle(repo, proto, others):
     return wireprototypes.streamres(
         gen=chunks, prefer_uncompressed=not prefercompressed)
 
-@wireprotocommand('heads', permission='pull', transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('heads', permission='pull')
 def heads(repo, proto):
     h = repo.heads()
     return wireprototypes.bytesresponse(wireprototypes.encodelist(h) + '\n')
 
-@wireprotocommand('hello', permission='pull', transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('hello', permission='pull')
 def hello(repo, proto):
     """Called as part of SSH handshake to obtain server info.
 
@@ -676,14 +667,12 @@ def hello(repo, proto):
     caps = capabilities(repo, proto).data
     return wireprototypes.bytesresponse('capabilities: %s\n' % caps)
 
-@wireprotocommand('listkeys', 'namespace', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('listkeys', 'namespace', permission='pull')
 def listkeys(repo, proto, namespace):
     d = sorted(repo.listkeys(encoding.tolocal(namespace)).items())
     return wireprototypes.bytesresponse(pushkeymod.encodekeys(d))
 
-@wireprotocommand('lookup', 'key', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('lookup', 'key', permission='pull')
 def lookup(repo, proto, key):
     try:
         k = encoding.tolocal(key)
@@ -695,22 +684,19 @@ def lookup(repo, proto, key):
         success = 0
     return wireprototypes.bytesresponse('%d %s\n' % (success, r))
 
-@wireprotocommand('known', 'nodes *', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('known', 'nodes *', permission='pull')
 def known(repo, proto, nodes, others):
     v = ''.join(b and '1' or '0'
                 for b in repo.known(wireprototypes.decodelist(nodes)))
     return wireprototypes.bytesresponse(v)
 
-@wireprotocommand('protocaps', 'caps', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('protocaps', 'caps', permission='pull')
 def protocaps(repo, proto, caps):
     if proto.name == wireprototypes.SSHV1:
         proto._protocaps = set(caps.split(' '))
     return wireprototypes.bytesresponse('OK')
 
-@wireprotocommand('pushkey', 'namespace key old new', permission='push',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('pushkey', 'namespace key old new', permission='push')
 def pushkey(repo, proto, namespace, key, old, new):
     # compatibility with pre-1.8 clients which were accidentally
     # sending raw binary nodes rather than utf-8-encoded hex
@@ -731,8 +717,7 @@ def pushkey(repo, proto, namespace, key, old, new):
     output = output.getvalue() if output else ''
     return wireprototypes.bytesresponse('%d\n%s' % (int(r), output))
 
-@wireprotocommand('stream_out', permission='pull',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('stream_out', permission='pull')
 def stream(repo, proto):
     '''If the server supports streaming clone, it advertises the "stream"
     capability with a value representing the version and flags of the repo
@@ -741,8 +726,7 @@ def stream(repo, proto):
     return wireprototypes.streamreslegacy(
         streamclone.generatev1wireproto(repo))
 
-@wireprotocommand('unbundle', 'heads', permission='push',
-                  transportpolicy=POLICY_V1_ONLY)
+@wireprotocommand('unbundle', 'heads', permission='push')
 def unbundle(repo, proto, heads):
     their_heads = wireprototypes.decodelist(heads)
 

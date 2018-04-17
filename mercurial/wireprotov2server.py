@@ -296,7 +296,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
             res.setbodybytes(_('command in frame must match command in URL'))
             return True
 
-    rsp = wireproto.dispatch(repo, proto, command['command'])
+    rsp = dispatch(repo, proto, command['command'])
 
     res.status = b'200 OK'
     res.headers[b'Content-Type'] = FRAMINGTYPE
@@ -327,6 +327,17 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     else:
         raise error.ProgrammingError('unhandled event from reactor: %s' %
                                      action)
+
+def getdispatchrepo(repo, proto, command):
+    return repo.filtered('served')
+
+def dispatch(repo, proto, command):
+    repo = getdispatchrepo(repo, proto, command)
+
+    func, spec = wireproto.commandsv2[command]
+    args = proto.getargs(spec)
+
+    return func(repo, proto, **args)
 
 @zi.implementer(wireprototypes.baseprotocolhandler)
 class httpv2protocolhandler(object):

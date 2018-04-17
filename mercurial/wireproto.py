@@ -69,20 +69,10 @@ def getdispatchrepo(repo, proto, command):
 def dispatch(repo, proto, command):
     repo = getdispatchrepo(repo, proto, command)
 
-    transportversion = wireprototypes.TRANSPORTS[proto.name]['version']
-    commandtable = commandsv2 if transportversion == 2 else commands
-    func, spec = commandtable[command]
-
+    func, spec = commands[command]
     args = proto.getargs(spec)
 
-    # Version 1 protocols define arguments as a list. Version 2 uses a dict.
-    if isinstance(args, list):
-        return func(repo, proto, *args)
-    elif isinstance(args, dict):
-        return func(repo, proto, **args)
-    else:
-        raise error.ProgrammingError('unexpected type returned from '
-                                     'proto.getargs(): %s' % type(args))
+    return func(repo, proto, *args)
 
 def options(cmd, keys, others):
     opts = {}

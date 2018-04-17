@@ -438,7 +438,7 @@ def wireprotocommand(name, args=None, permission='push'):
             raise error.ProgrammingError('%s command already registered '
                                          'for version 2' % name)
 
-        wireproto.commandsv2[name] = wireproto.commandentry(
+        wireproto.commandsv2[name] = wireprototypes.commandentry(
             func, args=args, transports=transports, permission=permission)
 
         return func

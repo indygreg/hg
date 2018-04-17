@@ -31,7 +31,7 @@ from mercurial import (
     subrepo,
     upgrade,
     url,
-    wireproto,
+    wireprotov1server,
 )
 
 from . import (
@@ -164,22 +164,24 @@ def uisetup(ui):
                             overrides.openlargefile)
 
     # create the new wireproto commands ...
-    wireproto.wireprotocommand('putlfile', 'sha', permission='push')(
+    wireprotov1server.wireprotocommand('putlfile', 'sha', permission='push')(
         proto.putlfile)
-    wireproto.wireprotocommand('getlfile', 'sha', permission='pull')(
+    wireprotov1server.wireprotocommand('getlfile', 'sha', permission='pull')(
         proto.getlfile)
-    wireproto.wireprotocommand('statlfile', 'sha', permission='pull')(
+    wireprotov1server.wireprotocommand('statlfile', 'sha', permission='pull')(
         proto.statlfile)
-    wireproto.wireprotocommand('lheads', '', permission='pull')(
-        wireproto.heads)
+    wireprotov1server.wireprotocommand('lheads', '', permission='pull')(
+        wireprotov1server.heads)
 
     # ... and wrap some existing ones
-    extensions.wrapfunction(wireproto.commands['heads'], 'func', proto.heads)
+    extensions.wrapfunction(wireprotov1server.commands['heads'], 'func',
+                            proto.heads)
     # TODO also wrap wireproto.commandsv2 once heads is implemented there.
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 
-    extensions.wrapfunction(wireproto, '_capabilities', proto._capabilities)
+    extensions.wrapfunction(wireprotov1server, '_capabilities',
+                            proto._capabilities)
 
     # can't do this in reposetup because it needs to have happened before
     # wirerepo.__init__ is called

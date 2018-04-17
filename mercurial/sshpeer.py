@@ -15,10 +15,10 @@ from . import (
     error,
     pycompat,
     util,
-    wireproto,
     wireprotoserver,
     wireprototypes,
     wireprotov1peer,
+    wireprotov1server,
 )
 from .utils import (
     procutil,
@@ -441,7 +441,7 @@ class sshv1peer(wireprotov1peer.wirepeer):
                         dbg(line % '  %s-%s: %d' % (key, dk, len(dv)))
         self.ui.debug("sending %s command\n" % cmd)
         self._pipeo.write("%s\n" % cmd)
-        _func, names = wireproto.commands[cmd]
+        _func, names = wireprotov1server.commands[cmd]
         keys = names.split()
         wireargs = {}
         for k in keys:

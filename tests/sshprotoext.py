@@ -15,8 +15,8 @@ from mercurial import (
     extensions,
     registrar,
     sshpeer,
-    wireproto,
     wireprotoserver,
+    wireprotov1server,
 )
 
 configtable = {}
@@ -50,7 +50,7 @@ class prehelloserver(wireprotoserver.sshserver):
         assert l == b'between\n'
         proto = wireprotoserver.sshv1protocolhandler(self._ui, self._fin,
                                                      self._fout)
-        rsp = wireproto.dispatch(self._repo, proto, b'between')
+        rsp = wireprotov1server.dispatch(self._repo, proto, b'between')
         wireprotoserver._sshv1respondbytes(self._fout, rsp.data)
 
         super(prehelloserver, self).serve_forever()

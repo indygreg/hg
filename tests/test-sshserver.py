@@ -6,8 +6,8 @@ import unittest
 import silenttestrunner
 
 from mercurial import (
-    wireproto,
     wireprotoserver,
+    wireprotov1server,
 )
 
 from mercurial.utils import (
@@ -29,7 +29,7 @@ class SSHServerGetArgsTests(unittest.TestCase):
         proto = wireprotoserver.sshv1protocolhandler(server._ui,
                                                      server._fin,
                                                      server._fout)
-        _func, spec = wireproto.commands[cmd]
+        _func, spec = wireprotov1server.commands[cmd]
         self.assertEqual(proto.getargs(spec), expected)
 
 def mockserver(inbytes):

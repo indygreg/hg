@@ -149,8 +149,8 @@ from mercurial import (
     upgrade,
     util,
     vfs as vfsmod,
-    wireproto,
     wireprotoserver,
+    wireprotov1server,
 )
 
 from . import (
@@ -323,7 +323,7 @@ def extsetup(ui):
                  wrapper.allsupportedversions)
 
     wrapfunction(exchange, 'push', wrapper.push)
-    wrapfunction(wireproto, '_capabilities', wrapper._capabilities)
+    wrapfunction(wireprotov1server, '_capabilities', wrapper._capabilities)
     wrapfunction(wireprotoserver, 'handlewsgirequest',
                  wireprotolfsserver.handlewsgirequest)
 

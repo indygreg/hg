@@ -24,8 +24,8 @@ from . import (
     hook,
     pycompat,
     util,
-    wireproto,
     wireprototypes,
+    wireprotov1server,
     wireprotov2server,
 )
 from .utils import (
@@ -166,7 +166,7 @@ class httpv1protocolhandler(object):
 # there are no other known users, so with any luck we can discard this
 # hook if remotefilelog becomes a first-party extension.
 def iscmd(cmd):
-    return cmd in wireproto.commands
+    return cmd in wireprotov1server.commands
 
 def handlewsgirequest(rctx, req, res, checkperm):
     """Possibly process a wire protocol request.
@@ -329,7 +329,7 @@ def _httpresponsetype(ui, proto, prefer_uncompressed):
             return HGTYPE2, util._noopengine(), {}
 
         # Now find an agreed upon compression format.
-        compformats = wireproto.clientcompressionsupport(proto)
+        compformats = wireprotov1server.clientcompressionsupport(proto)
         for engine in wireprototypes.supportedcompengines(ui, util.SERVERROLE):
             if engine.wireprotosupport().name in compformats:
                 opts = {}
@@ -380,7 +380,7 @@ def processcapabilitieshandshake(repo, req, res, proto):
 
         descriptors[api] = descriptorfn(req, repo)
 
-    v1caps = wireproto.dispatch(repo, proto, 'capabilities')
+    v1caps = wireprotov1server.dispatch(repo, proto, 'capabilities')
     assert isinstance(v1caps, wireprototypes.bytesresponse)
 
     m = {
@@ -424,13 +424,13 @@ def _callhttp(repo, req, res, proto, cmd):
         if bodygen is not None:
             res.setbodygen(bodygen)
 
-    if not wireproto.commands.commandavailable(cmd, proto):
+    if not wireprotov1server.commands.commandavailable(cmd, proto):
         setresponse(HTTP_OK, HGERRTYPE,
                     _('requested wire protocol command is not available over '
                       'HTTP'))
         return
 
-    proto.checkperm(wireproto.commands[cmd].permission)
+    proto.checkperm(wireprotov1server.commands[cmd].permission)
 
     # Possibly handle a modern client wanting to switch protocols.
     if (cmd == 'capabilities' and
@@ -438,7 +438,7 @@ def _callhttp(repo, req, res, proto, cmd):
 
         return
 
-    rsp = wireproto.dispatch(repo, proto, cmd)
+    rsp = wireprotov1server.dispatch(repo, proto, cmd)
 
     if isinstance(rsp, bytes):
         setresponse(HTTP_OK, HGTYPE, bodybytes=rsp)
@@ -649,7 +649,8 @@ def _runsshserver(ui, repo, fin, fout, ev):
                 state = 'upgrade-initial'
                 continue
 
-            available = wireproto.commands.commandavailable(request, proto)
+            available = wireprotov1server.commands.commandavailable(
+                request, proto)
 
             # This command isn't available. Send an empty response and go
             # back to waiting for a new command.
@@ -657,7 +658,7 @@ def _runsshserver(ui, repo, fin, fout, ev):
                 _sshv1respondbytes(fout, b'')
                 continue
 
-            rsp = wireproto.dispatch(repo, proto, request)
+            rsp = wireprotov1server.dispatch(repo, proto, request)
 
             if isinstance(rsp, bytes):
                 _sshv1respondbytes(fout, rsp)
@@ -764,7 +765,7 @@ def _runsshserver(ui, repo, fin, fout, ev):
         elif state == 'upgrade-v2-finish':
             # Send the upgrade response.
             fout.write(b'upgraded %s %s\n' % (token, SSHV2))
-            servercaps = wireproto.capabilities(repo, proto)
+            servercaps = wireprotov1server.capabilities(repo, proto)
             rsp = b'capabilities: %s' % servercaps.data
             fout.write(b'%d\n%s\n' % (len(rsp), rsp))
             fout.flush()

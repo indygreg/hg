@@ -5,9 +5,9 @@ from mercurial import (
     pycompat,
     ui as uimod,
     util,
-    wireproto,
     wireprototypes,
     wireprotov1peer,
+    wireprotov1server,
 )
 stringio = util.stringio
 
@@ -55,7 +55,7 @@ class clientpeer(wireprotov1peer.wirepeer):
 
     def _call(self, cmd, **args):
         args = pycompat.byteskwargs(args)
-        res = wireproto.dispatch(self.serverrepo, proto(args), cmd)
+        res = wireprotov1server.dispatch(self.serverrepo, proto(args), cmd)
         if isinstance(res, wireprototypes.bytesresponse):
             return res.data
         elif isinstance(res, bytes):
@@ -87,7 +87,7 @@ def unmangle(s):
 def greet(repo, proto, name):
     return mangle(repo.greet(unmangle(name)))
 
-wireproto.commands[b'greet'] = (greet, b'name',)
+wireprotov1server.commands[b'greet'] = (greet, b'name')
 
 srv = serverrepo()
 clt = clientpeer(srv, uimod.ui())

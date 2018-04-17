@@ -1,4 +1,4 @@
-# wireproto.py - generic wire protocol support functions
+# wireprotov1server.py - Wire protocol version 1 server functionality
 #
 # Copyright 2005-2010 Matt Mackall <mpm@selenic.com>
 #

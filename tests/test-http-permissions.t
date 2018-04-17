@@ -3,7 +3,7 @@
   $ cat > fakeremoteuser.py << EOF
   > import os
   > from mercurial.hgweb import hgweb_mod
-  > from mercurial import wireproto
+  > from mercurial import wireprotov1server
   > class testenvhgweb(hgweb_mod.hgweb):
   >     def __call__(self, env, respond):
   >         # Allow REMOTE_USER to define authenticated user.
@@ -15,16 +15,16 @@
   >         return super(testenvhgweb, self).__call__(env, respond)
   > hgweb_mod.hgweb = testenvhgweb
   > 
-  > @wireproto.wireprotocommand('customreadnoperm')
+  > @wireprotov1server.wireprotocommand('customreadnoperm')
   > def customread(repo, proto):
   >     return b'read-only command no defined permissions\n'
-  > @wireproto.wireprotocommand('customwritenoperm')
+  > @wireprotov1server.wireprotocommand('customwritenoperm')
   > def customwritenoperm(repo, proto):
   >     return b'write command no defined permissions\n'
-  > @wireproto.wireprotocommand('customreadwithperm', permission='pull')
+  > @wireprotov1server.wireprotocommand('customreadwithperm', permission='pull')
   > def customreadwithperm(repo, proto):
   >     return b'read-only command w/ defined permissions\n'
-  > @wireproto.wireprotocommand('customwritewithperm', permission='push')
+  > @wireprotov1server.wireprotocommand('customwritewithperm', permission='push')
   > def customwritewithperm(repo, proto):
   >     return b'write command w/ defined permissions\n'
   > EOF

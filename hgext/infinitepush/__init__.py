@@ -125,9 +125,9 @@ from mercurial import (
     pycompat,
     registrar,
     util,
-    wireproto,
     wireprototypes,
     wireprotov1peer,
+    wireprotov1server,
 )
 
 from . import (
@@ -278,7 +278,7 @@ def extsetup(ui):
         clientextsetup(ui)
 
 def commonsetup(ui):
-    wireproto.commands['listkeyspatterns'] = (
+    wireprotov1server.commands['listkeyspatterns'] = (
         wireprotolistkeyspatterns, 'namespace patterns')
     scratchbranchpat = ui.config('infinitepush', 'branchpattern')
     if scratchbranchpat:
@@ -302,8 +302,8 @@ def serverextsetup(ui):
 
     extensions.wrapfunction(localrepo.localrepository, 'listkeys',
                             localrepolistkeys)
-    wireproto.commands['lookup'] = (
-        _lookupwrap(wireproto.commands['lookup'][0]), 'key')
+    wireprotov1server.commands['lookup'] = (
+        _lookupwrap(wireprotov1server.commands['lookup'][0]), 'key')
     extensions.wrapfunction(exchange, 'getbundlechunks', getbundlechunks)
 
     extensions.wrapfunction(bundle2, 'processparts', processparts)

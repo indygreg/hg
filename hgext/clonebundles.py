@@ -198,7 +198,7 @@ from __future__ import absolute_import
 
 from mercurial import (
     extensions,
-    wireproto,
+    wireprotov1server,
 )
 
 testedwith = 'ships-with-hg-core'
@@ -215,4 +215,4 @@ def capabilities(orig, repo, proto):
     return caps
 
 def extsetup(ui):
-    extensions.wrapfunction(wireproto, '_capabilities', capabilities)
+    extensions.wrapfunction(wireprotov1server, '_capabilities', capabilities)

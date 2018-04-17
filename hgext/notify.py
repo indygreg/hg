@@ -103,6 +103,10 @@ notify.maxdiff
   Maximum number of diff lines to include in notification email. Set to 0
   to disable the diff, or -1 to include all of it. Default: 300.
 
+notify.maxdiffstat
+  Maximum number of diffstat lines to include in notification email. Set to -1
+  to include all of it. Default: -1.
+
 notify.maxsubject
   Maximum number of characters in email's subject line. Default: 67.
 
@@ -183,6 +187,9 @@ configitem('notify', 'incoming',
 )
 configitem('notify', 'maxdiff',
     default=300,
+)
+configitem('notify', 'maxdiffstat',
+    default=-1,
 )
 configitem('notify', 'maxsubject',
     default=67,
@@ -418,10 +425,17 @@ class notifier(object):
         difflines = ''.join(chunks).splitlines()
 
         if self.ui.configbool('notify', 'diffstat'):
+            maxdiffstat = int(self.ui.config('notify', 'maxdiffstat'))
             s = patch.diffstat(difflines)
             # s may be nil, don't include the header if it is
             if s:
-                self.ui.write(_('\ndiffstat:\n\n%s') % s)
+                if maxdiffstat >= 0 and s.count("\n") > maxdiffstat + 1:
+                    s = s.split("\n")
+                    msg = _('\ndiffstat (truncated from %d to %d lines):\n\n')
+                    self.ui.write(msg % (len(s) - 2, maxdiffstat))
+                    self.ui.write("\n".join(s[:maxdiffstat] + s[-2:]))
+                else:
+                    self.ui.write(_('\ndiffstat:\n\n%s') % s)
 
         if maxdiff == 0:
             return

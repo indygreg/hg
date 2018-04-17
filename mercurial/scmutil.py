@@ -462,8 +462,12 @@ def resolvehexnodeidprefix(repo, prefix):
     repo.changelog.rev(node)  # make sure node isn't filtered
     return node
 
-def shortesthexnodeidprefix(repo, node, minlength=1):
-    """Find the shortest unambiguous prefix that matches hexnode."""
+def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
+    """Find the shortest unambiguous prefix that matches hexnode.
+
+    If "cache" is not None, it must be a dictionary that can be used for
+    caching between calls to this method.
+    """
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
@@ -491,7 +495,13 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
 
     revset = repo.ui.config('experimental', 'revisions.disambiguatewithin')
     if revset:
-        revs = repo.anyrevs([revset], user=True)
+        revs = None
+        if cache is not None:
+            revs = cache.get('disambiguationrevset')
+        if revs is None:
+            revs = repo.anyrevs([revset], user=True)
+            if cache is not None:
+                cache['disambiguationrevset'] = revs
         if cl.rev(node) in revs:
             hexnode = hex(node)
             for length in range(minlength, len(hexnode) + 1):

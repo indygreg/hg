@@ -596,7 +596,7 @@ def separate(context, mapping, args):
             yield sep
         yield argstr
 
-@templatefunc('shortest(node, minlength=4)', requires={'repo'})
+@templatefunc('shortest(node, minlength=4)', requires={'repo', 'cache'})
 def shortest(context, mapping, args):
     """Obtain the shortest representation of
     a node."""
@@ -629,8 +629,9 @@ def shortest(context, mapping, args):
             return hexnode
         if not node:
             return hexnode
+    cache = context.resource(mapping, 'cache')
     try:
-        return scmutil.shortesthexnodeidprefix(repo, node, minlength)
+        return scmutil.shortesthexnodeidprefix(repo, node, minlength, cache)
     except error.RepoLookupError:
         return hexnode
 

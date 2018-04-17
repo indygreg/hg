@@ -1245,14 +1245,12 @@ def bundle(ui, repo, fname, dest=None, **opts):
         scmutil.nochangesfound(ui, repo, not base and outgoing.excluded)
         return 1
 
-    bcompression = bundlespec.compression
     if cgversion == '01': #bundle1
-        if bcompression is None:
-            bcompression = 'UN'
-        bversion = 'HG10' + bcompression
+        bversion = 'HG10' + bundlespec.wirecompression
         bcompression = None
     elif cgversion in ('02', '03'):
         bversion = 'HG20'
+        bcompression = bundlespec.wirecompression
     else:
         raise error.ProgrammingError(
             'bundle: unexpected changegroup version %s' % cgversion)

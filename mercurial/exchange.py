@@ -86,11 +86,13 @@ _bundlespecv1compengines = {'gzip', 'bzip2', 'none'}
 @attr.s
 class bundlespec(object):
     compression = attr.ib()
+    wirecompression = attr.ib()
     version = attr.ib()
+    wireversion = attr.ib()
     params = attr.ib()
     contentopts = attr.ib()
 
-def parsebundlespec(repo, spec, strict=True, externalnames=False):
+def parsebundlespec(repo, spec, strict=True):
     """Parse a bundle string specification into parts.
 
     Bundle specifications denote a well-defined bundle/exchange format.
@@ -109,9 +111,6 @@ def parsebundlespec(repo, spec, strict=True, externalnames=False):
 
     If ``strict`` is True (the default) <compression> is required. Otherwise,
     it is optional.
-
-    If ``externalnames`` is False (the default), the human-centric names will
-    be converted to their internal representation.
 
     Returns a bundlespec object of (compression, version, parameters).
     Compression will be ``None`` if not in strict mode and a compression isn't
@@ -215,12 +214,12 @@ def parsebundlespec(repo, spec, strict=True, externalnames=False):
         variant = _bundlespecvariants["streamv2"]
         contentopts.update(variant)
 
-    if not externalnames:
-        engine = util.compengines.forbundlename(compression)
-        compression = engine.bundletype()[1]
-        version = _bundlespeccgversions[version]
+    engine = util.compengines.forbundlename(compression)
+    compression, wirecompression = engine.bundletype()
+    wireversion = _bundlespeccgversions[version]
 
-    return bundlespec(compression, version, params, contentopts)
+    return bundlespec(compression, wirecompression, version, wireversion,
+                      params, contentopts)
 
 def readbundle(ui, fh, fname, vfs=None):
     header = changegroup.readexactly(fh, 4)
@@ -2253,8 +2252,7 @@ def parseclonebundlesmanifest(repo, s):
             # component of the BUNDLESPEC.
             if key == 'BUNDLESPEC':
                 try:
-                    bundlespec = parsebundlespec(repo, value,
-                                                 externalnames=True)
+                    bundlespec = parsebundlespec(repo, value)
                     attrs['COMPRESSION'] = bundlespec.compression
                     attrs['VERSION'] = bundlespec.version
                 except error.InvalidBundleSpecification:
@@ -2268,11 +2266,12 @@ def parseclonebundlesmanifest(repo, s):
 
 def isstreamclonespec(bundlespec):
     # Stream clone v1
-    if (bundlespec.compression == 'UN' and bundlespec.version == 's1'):
+    if (bundlespec.wirecompression == 'UN' and bundlespec.wireversion == 's1'):
         return True
 
     # Stream clone v2
-    if (bundlespec.compression == 'UN' and bundlespec.version == '02' and \
+    if (bundlespec.wirecompression == 'UN' and \
+        bundlespec.wireversion == '02' and \
         bundlespec.contentopts.get('streamv2')):
         return True
 

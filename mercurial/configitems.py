@@ -440,6 +440,18 @@ coreconfigitem('experimental', 'bundle2lazylocking',
 coreconfigitem('experimental', 'bundlecomplevel',
     default=None,
 )
+coreconfigitem('experimental', 'bundlecomplevel.bzip2',
+    default=None,
+)
+coreconfigitem('experimental', 'bundlecomplevel.gzip',
+    default=None,
+)
+coreconfigitem('experimental', 'bundlecomplevel.none',
+    default=None,
+)
+coreconfigitem('experimental', 'bundlecomplevel.zstd',
+    default=None,
+)
 coreconfigitem('experimental', 'changegroup3',
     default=False,
 )

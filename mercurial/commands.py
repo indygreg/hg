@@ -1260,7 +1260,10 @@ def bundle(ui, repo, fname, dest=None, **opts):
     # level without a) formalizing the bundlespec changes to declare it
     # b) introducing a command flag.
     compopts = {}
-    complevel = ui.configint('experimental', 'bundlecomplevel')
+    complevel = ui.configint('experimental',
+                             'bundlecomplevel.' + bundlespec.compression)
+    if complevel is None:
+        complevel = ui.configint('experimental', 'bundlecomplevel')
     if complevel is not None:
         compopts['level'] = complevel
 

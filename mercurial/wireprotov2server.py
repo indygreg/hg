@@ -393,7 +393,7 @@ def _capabilitiesv2(repo, proto):
     transports.
     """
     compression = []
-    for engine in wireproto.supportedcompengines(repo.ui, util.SERVERROLE):
+    for engine in wireprototypes.supportedcompengines(repo.ui, util.SERVERROLE):
         compression.append({
             b'name': engine.wireprotosupport().name,
         })

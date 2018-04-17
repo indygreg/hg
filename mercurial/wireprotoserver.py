@@ -149,7 +149,8 @@ class httpv1protocolhandler(object):
         # FUTURE advertise minrx and mintx after consulting config option
         caps.append('httpmediatype=0.1rx,0.1tx,0.2tx')
 
-        compengines = wireproto.supportedcompengines(repo.ui, util.SERVERROLE)
+        compengines = wireprototypes.supportedcompengines(repo.ui,
+                                                          util.SERVERROLE)
         if compengines:
             comptypes = ','.join(urlreq.quote(e.wireprotosupport().name)
                                  for e in compengines)
@@ -329,7 +330,7 @@ def _httpresponsetype(ui, proto, prefer_uncompressed):
 
         # Now find an agreed upon compression format.
         compformats = wireproto.clientcompressionsupport(proto)
-        for engine in wireproto.supportedcompengines(ui, util.SERVERROLE):
+        for engine in wireprototypes.supportedcompengines(ui, util.SERVERROLE):
             if engine.wireprotosupport().name in compformats:
                 opts = {}
                 level = ui.configint('server', '%slevel' % engine.name())

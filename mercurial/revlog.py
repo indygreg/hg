@@ -1500,8 +1500,8 @@ class revlog(object):
 
         raise LookupError(id, self.indexfile, _('no match found'))
 
-    def shortest(self, hexnode, minlength=1):
-        """Find the shortest unambiguous prefix that matches hexnode."""
+    def shortest(self, node, minlength=1):
+        """Find the shortest unambiguous prefix that matches node."""
         def isvalid(test):
             try:
                 if self._partialmatch(test) is None:
@@ -1523,6 +1523,7 @@ class revlog(object):
                 # single 'ff...' match
                 return True
 
+        hexnode = hex(node)
         shortest = hexnode
         startlength = max(6, minlength)
         length = startlength

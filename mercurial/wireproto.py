@@ -114,11 +114,7 @@ def bundle1allowed(repo, action):
 
     return ui.configbool('server', 'bundle1')
 
-# For version 1 transports.
 commands = wireprototypes.commanddict()
-
-# For version 2 transports.
-commandsv2 = wireprototypes.commanddict()
 
 def wireprotocommand(name, args=None, permission='push'):
     """Decorator to declare a wire protocol command.

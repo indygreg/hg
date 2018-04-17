@@ -21,7 +21,6 @@ from . import (
     pycompat,
     streamclone,
     util,
-    wireproto,
     wireprotoframing,
     wireprototypes,
 )
@@ -29,6 +28,8 @@ from . import (
 FRAMINGTYPE = b'application/mercurial-exp-framing-0005'
 
 HTTP_WIREPROTO_V2 = wireprototypes.HTTP_WIREPROTO_V2
+
+COMMANDS = wireprototypes.commanddict()
 
 def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     from .hgweb import common as hgwebcommon
@@ -87,7 +88,7 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
     # extension.
     extracommands = {'multirequest'}
 
-    if command not in wireproto.commandsv2 and command not in extracommands:
+    if command not in COMMANDS and command not in extracommands:
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
         res.setbodybytes(_('unknown wire protocol command: %s\n') % command)
@@ -98,7 +99,7 @@ def handlehttpv2request(rctx, req, res, checkperm, urlparts):
 
     proto = httpv2protocolhandler(req, ui)
 
-    if (not wireproto.commandsv2.commandavailable(command, proto)
+    if (not COMMANDS.commandavailable(command, proto)
         and command not in extracommands):
         res.status = b'404 Not Found'
         res.headers[b'Content-Type'] = b'text/plain'
@@ -254,7 +255,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
     proto = httpv2protocolhandler(req, ui, args=command['args'])
 
     if reqcommand == b'multirequest':
-        if not wireproto.commandsv2.commandavailable(command['command'], proto):
+        if not COMMANDS.commandavailable(command['command'], proto):
             # TODO proper error mechanism
             res.status = b'200 OK'
             res.headers[b'Content-Type'] = b'text/plain'
@@ -264,7 +265,7 @@ def _httpv2runcommand(ui, repo, req, res, authedperm, reqcommand, reactor,
 
         # TODO don't use assert here, since it may be elided by -O.
         assert authedperm in (b'ro', b'rw')
-        wirecommand = wireproto.commandsv2[command['command']]
+        wirecommand = COMMANDS[command['command']]
         assert wirecommand.permission in ('push', 'pull')
 
         if authedperm == b'ro' and wirecommand.permission != 'pull':
@@ -334,7 +335,7 @@ def getdispatchrepo(repo, proto, command):
 def dispatch(repo, proto, command):
     repo = getdispatchrepo(repo, proto, command)
 
-    func, spec = wireproto.commandsv2[command]
+    func, spec = COMMANDS[command]
     args = proto.getargs(spec)
 
     return func(repo, proto, **args)
@@ -404,7 +405,7 @@ def _capabilitiesv2(repo, proto):
         'framingmediatypes': [FRAMINGTYPE],
     }
 
-    for command, entry in wireproto.commandsv2.items():
+    for command, entry in COMMANDS.items():
         caps['commands'][command] = {
             'args': entry.args,
             'permissions': [entry.permission],
@@ -445,11 +446,11 @@ def wireprotocommand(name, args=None, permission='push'):
                                      'must be declared as dicts')
 
     def register(func):
-        if name in wireproto.commandsv2:
+        if name in COMMANDS:
             raise error.ProgrammingError('%s command already registered '
                                          'for version 2' % name)
 
-        wireproto.commandsv2[name] = wireprototypes.commandentry(
+        COMMANDS[name] = wireprototypes.commandentry(
             func, args=args, transports=transports, permission=permission)
 
         return func

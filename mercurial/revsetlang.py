@@ -89,6 +89,9 @@ def tokenize(program, lookup=None, syminitletters=None, symletters=None):
     [('symbol', '@', 0), ('::', None, 1), ('end', None, 3)]
 
     '''
+    if not isinstance(program, bytes):
+        raise error.ProgrammingError('revset statement must be bytes, got %r'
+                                     % program)
     program = pycompat.bytestr(program)
     if syminitletters is None:
         syminitletters = _syminitletters
@@ -581,6 +584,8 @@ def _formatargtype(c, arg):
     elif c == 's':
         return _quote(arg)
     elif c == 'r':
+        if not isinstance(arg, bytes):
+            raise TypeError
         parse(arg) # make sure syntax errors are confined
         return '(%s)' % arg
     elif c == 'n':

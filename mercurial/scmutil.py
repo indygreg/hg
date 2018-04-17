@@ -490,6 +490,12 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
 
     def disambiguate(prefix):
         """Disambiguate against revnums."""
+        if repo.ui.configbool('experimental', 'revisions.prefixhexnode'):
+            if mayberevnum(repo, prefix):
+                return 'x' + prefix
+            else:
+                return prefix
+
         hexnode = hex(node)
         for length in range(len(prefix), len(hexnode) + 1):
             prefix = hexnode[:length]

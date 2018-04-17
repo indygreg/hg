@@ -892,6 +892,11 @@ Test shortest(node) with the repo having short hash collision:
   $ hg log -r 4 -T '{rev}:{shortest(node, 0)}\n' --hidden
   4:107
 
+  $ hg --config experimental.revisions.prefixhexnode=yes log -r 4 -T '{rev}:{shortest(node, 0)}\n'
+  4:x10
+  $ hg --config experimental.revisions.prefixhexnode=yes log -r 4 -T '{rev}:{shortest(node, 0)}\n' --hidden
+  4:x10
+
  node 'c562' should be unique if the other 'c562' nodes are hidden
  (but we don't try the slow path to filter out hidden nodes for now)
 

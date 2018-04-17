@@ -142,6 +142,7 @@ Restart server to enable HTTPv2
   $ killdaemons.py
   $ enablehttpv2 server
   $ hg -R server serve -p $HGPORT -d --pid-file hg.pid -E error.log
+  $ cat hg.pid > $DAEMON_PIDS
 
 Only requested API services are returned
 

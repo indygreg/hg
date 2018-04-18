@@ -469,8 +469,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
     count = 0
     author = ''
     if hooktype == 'changegroup' or hooktype == 'outgoing':
-        start, end = ctx.rev(), len(repo)
-        for rev in xrange(start, end):
+        for rev in repo.changelog.revs(start=ctx.rev()):
             if n.node(repo[rev]):
                 count += 1
                 if not author:

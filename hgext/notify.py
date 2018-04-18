@@ -455,7 +455,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
     changegroup. else send one email per changeset.'''
 
     n = notifier(ui, repo, hooktype)
-    ctx = repo[node]
+    ctx = repo.unfiltered()[node]
 
     if not n.subs:
         ui.debug('notify: no subscribers to repository %s\n' % n.root)

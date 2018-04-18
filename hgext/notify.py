@@ -481,7 +481,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
                 ui.pushbuffer()
         if count:
             n.diff(ctx, repo['tip'])
-    else:
+    elif ctx.rev() in repo:
         if not n.node(ctx):
             ui.popbuffer()
             ui.note(_('notify: suppressing notification for merge %d:%s\n') %

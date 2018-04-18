@@ -1,10 +1,14 @@
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
 
 This test tries to exercise the ssh functionality with a dummy script
-
-  $ cat <<EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
 
 creating 'remote' repo
 
@@ -52,6 +56,8 @@ non-existent absolute path
 
 clone remote via stream
 
+#if no-reposimplestore
+
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
   4 files to transfer, 602 bytes of data
@@ -87,6 +93,8 @@ clone bookmarks via stream
      mybook                    0:1160648e36ce
   $ cd ..
   $ rm -rf local-stream stream2
+
+#endif
 
 clone remote via pull
 
@@ -481,15 +489,23 @@ debug output
   $ hg pull --debug ssh://user@dummy/remote --config devel.debug.peer-request=yes
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   devel-peer-request: hello
   sending hello command
   devel-peer-request: between
   devel-peer-request:   pairs: 81 bytes
   sending between command
-  remote: 384
-  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
-  remote: 1
+  remote: 413 (sshv1 !)
+  protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 1 (sshv1 !)
+  devel-peer-request: protocaps
+  devel-peer-request:   caps: * bytes (glob)
+  sending protocaps command
   query 1; heads
+  devel-peer-request: batched-content
+  devel-peer-request:    - heads (0 arguments)
+  devel-peer-request:    - known (1 arguments)
   devel-peer-request: batch
   devel-peer-request:   cmds: 141 bytes
   sending batch command
@@ -498,7 +514,7 @@ debug output
   no changes found
   devel-peer-request: getbundle
   devel-peer-request:   bookmarks: 1 bytes
-  devel-peer-request:   bundlecaps: 247 bytes
+  devel-peer-request:   bundlecaps: 266 bytes
   devel-peer-request:   cg: 1 bytes
   devel-peer-request:   common: 122 bytes
   devel-peer-request:   heads: 122 bytes
@@ -521,9 +537,9 @@ debug output
   Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R $TESTTMP/nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
-  Got arguments 1:user@dummy 2:hg -R local-stream serve --stdio
-  Got arguments 1:user@dummy 2:hg -R remote serve --stdio
-  Got arguments 1:user@dummy 2:hg -R remote serve --stdio
+  Got arguments 1:user@dummy 2:hg -R local-stream serve --stdio (no-reposimplestore !)
+  Got arguments 1:user@dummy 2:hg -R remote serve --stdio (no-reposimplestore !)
+  Got arguments 1:user@dummy 2:hg -R remote serve --stdio (no-reposimplestore !)
   Got arguments 1:user@dummy 2:hg -R doesnotexist serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
   Got arguments 1:user@dummy 2:hg -R local serve --stdio

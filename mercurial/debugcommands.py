@@ -14,9 +14,12 @@ import errno
 import operator
 import os
 import random
+import re
 import socket
 import ssl
+import stat
 import string
+import subprocess
 import sys
 import tempfile
 import time
@@ -29,6 +32,9 @@ from .node import (
     nullid,
     nullrev,
     short,
+)
+from .thirdparty import (
+    cbor,
 )
 from . import (
     bundle2,
@@ -46,8 +52,10 @@ from . import (
     fileset,
     formatter,
     hg,
+    httppeer,
     localrepo,
     lock as lockmod,
+    logcmdutil,
     merge as mergemod,
     obsolete,
     obsutil,
@@ -64,6 +72,7 @@ from . import (
     setdiscovery,
     simplemerge,
     smartset,
+    sshpeer,
     sslutil,
     streamclone,
     templater,
@@ -72,6 +81,14 @@ from . import (
     url as urlmod,
     util,
     vfs as vfsmod,
+    wireprotoframing,
+    wireprotoserver,
+    wireprotov2peer,
+)
+from .utils import (
+    dateutil,
+    procutil,
+    stringutil,
 )
 
 release = lockmod.release
@@ -162,7 +179,7 @@ def debugbuilddag(ui, repo, text=None,
     if mergeable_file:
         linesperrev = 2
         # make a file with k lines per rev
-        initialmergedlines = [str(i) for i in xrange(0, total * linesperrev)]
+        initialmergedlines = ['%d' % i for i in xrange(0, total * linesperrev)]
         initialmergedlines.append("")
 
     tags = []
@@ -269,7 +286,7 @@ def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
             ui.write("\n%s%s\n" % (indent_string, named))
             for deltadata in gen.deltaiter():
                 node, p1, p2, cs, deltabase, delta, flags = deltadata
-                ui.write("%s%s %s %s %s %s %s\n" %
+                ui.write("%s%s %s %s %s %s %d\n" %
                          (indent_string, hex(node), hex(p1), hex(p2),
                           hex(cs), hex(deltabase), len(delta)))
 
@@ -339,11 +356,14 @@ def _debugbundle2(ui, gen, all=None, **opts):
         if part.type == 'changegroup':
             version = part.params.get('version', '01')
             cg = changegroup.getunbundler(version, part, 'UN')
-            _debugchangegroup(ui, cg, all=all, indent=4, **opts)
+            if not ui.quiet:
+                _debugchangegroup(ui, cg, all=all, indent=4, **opts)
         if part.type == 'obsmarkers':
-            _debugobsmarkers(ui, part, indent=4, **opts)
+            if not ui.quiet:
+                _debugobsmarkers(ui, part, indent=4, **opts)
         if part.type == 'phase-heads':
-            _debugphaseheads(ui, part, indent=4)
+            if not ui.quiet:
+                _debugphaseheads(ui, part, indent=4)
 
 @command('debugbundle',
         [('a', 'all', None, _('show all details')),
@@ -556,13 +576,13 @@ def debugdata(ui, repo, file_, rev=None, **opts):
 def debugdate(ui, date, range=None, **opts):
     """parse and display a date"""
     if opts[r"extended"]:
-        d = util.parsedate(date, util.extendeddateformats)
+        d = dateutil.parsedate(date, util.extendeddateformats)
     else:
-        d = util.parsedate(date)
-    ui.write(("internal: %s %s\n") % d)
-    ui.write(("standard: %s\n") % util.datestr(d))
+        d = dateutil.parsedate(date)
+    ui.write(("internal: %d %d\n") % d)
+    ui.write(("standard: %s\n") % dateutil.datestr(d))
     if range:
-        m = util.matchdate(range)
+        m = dateutil.matchdate(range)
         ui.write(("match: %s\n") % m(d[0]))
 
 @command('debugdeltachain',
@@ -1001,7 +1021,7 @@ def debugignore(ui, repo, *files, **opts):
     ignore = repo.dirstate._ignore
     if not files:
         # Show all the patterns
-        ui.write("%s\n" % repr(ignore))
+        ui.write("%s\n" % pycompat.byterepr(ignore))
     else:
         m = scmutil.match(repo[None], pats=files)
         for f in m.files():
@@ -1043,12 +1063,6 @@ def debugindex(ui, repo, file_=None, **opts):
     if format not in (0, 1):
         raise error.Abort(_("unknown format %d") % format)
 
-    generaldelta = r.version & revlog.FLAG_GENERALDELTA
-    if generaldelta:
-        basehdr = ' delta'
-    else:
-        basehdr = '  base'
-
     if ui.debugflag:
         shortfn = hex
     else:
@@ -1061,32 +1075,46 @@ def debugindex(ui, repo, file_=None, **opts):
         break
 
     if format == 0:
-        ui.write(("   rev    offset  length " + basehdr + " linkrev"
-                 " %s %s p2\n") % ("nodeid".ljust(idlen), "p1".ljust(idlen)))
+        if ui.verbose:
+            ui.write(("   rev    offset  length linkrev"
+                     " %s %s p2\n") % ("nodeid".ljust(idlen),
+                                       "p1".ljust(idlen)))
+        else:
+            ui.write(("   rev linkrev %s %s p2\n") % (
+                "nodeid".ljust(idlen), "p1".ljust(idlen)))
     elif format == 1:
-        ui.write(("   rev flag   offset   length"
-                 "     size " + basehdr + "   link     p1     p2"
-                 " %s\n") % "nodeid".rjust(idlen))
+        if ui.verbose:
+            ui.write(("   rev flag   offset   length     size   link     p1"
+                      "     p2 %s\n") % "nodeid".rjust(idlen))
+        else:
+            ui.write(("   rev flag     size   link     p1     p2 %s\n") %
+                     "nodeid".rjust(idlen))
 
     for i in r:
         node = r.node(i)
-        if generaldelta:
-            base = r.deltaparent(i)
-        else:
-            base = r.chainbase(i)
         if format == 0:
             try:
                 pp = r.parents(node)
             except Exception:
                 pp = [nullid, nullid]
-            ui.write("% 6d % 9d % 7d % 6d % 7d %s %s %s\n" % (
-                    i, r.start(i), r.length(i), base, r.linkrev(i),
-                    shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
+            if ui.verbose:
+                ui.write("% 6d % 9d % 7d % 7d %s %s %s\n" % (
+                        i, r.start(i), r.length(i), r.linkrev(i),
+                        shortfn(node), shortfn(pp[0]), shortfn(pp[1])))
+            else:
+                ui.write("% 6d % 7d %s %s %s\n" % (
+                    i, r.linkrev(i), shortfn(node), shortfn(pp[0]),
+                    shortfn(pp[1])))
         elif format == 1:
             pr = r.parentrevs(i)
-            ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d % 6d %s\n" % (
-                    i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
-                    base, r.linkrev(i), pr[0], pr[1], shortfn(node)))
+            if ui.verbose:
+                ui.write("% 6d %04x % 8d % 8d % 8d % 6d % 6d % 6d %s\n" % (
+                        i, r.flags(i), r.start(i), r.length(i), r.rawsize(i),
+                        r.linkrev(i), pr[0], pr[1], shortfn(node)))
+            else:
+                ui.write("% 6d %04x % 8d % 6d % 6d % 6d %s\n" % (
+                    i, r.flags(i), r.rawsize(i), r.linkrev(i), pr[0], pr[1],
+                    shortfn(node)))
 
 @command('debugindexdot', cmdutil.debugrevlogopts,
     _('-c|-m|FILE'), optionalrepo=True)
@@ -1113,7 +1141,7 @@ def debuginstall(ui, **opts):
 
     def writetemp(contents):
         (fd, name) = tempfile.mkstemp(prefix="hg-debuginstall-")
-        f = os.fdopen(fd, pycompat.sysstr("wb"))
+        f = os.fdopen(fd, r"wb")
         f.write(contents)
         f.close()
         return name
@@ -1129,7 +1157,7 @@ def debuginstall(ui, **opts):
     try:
         codecs.lookup(pycompat.sysstr(encoding.encoding))
     except LookupError as inst:
-        err = util.forcebytestr(inst)
+        err = stringutil.forcebytestr(inst)
         problems += 1
     fm.condwrite(err, 'encodingerror', _(" %s\n"
                  " (check that your locale is properly set)\n"), err)
@@ -1185,7 +1213,7 @@ def debuginstall(ui, **opts):
             )
             dir(bdiff), dir(mpatch), dir(base85), dir(osutil) # quiet pyflakes
         except Exception as inst:
-            err = util.forcebytestr(inst)
+            err = stringutil.forcebytestr(inst)
             problems += 1
         fm.condwrite(err, 'extensionserror', " %s\n", err)
 
@@ -1222,7 +1250,7 @@ def debuginstall(ui, **opts):
             try:
                 templater.templater.frommapfile(m)
             except Exception as inst:
-                err = util.forcebytestr(inst)
+                err = stringutil.forcebytestr(inst)
                 p = None
             fm.condwrite(err, 'defaulttemplateerror', " %s\n", err)
         else:
@@ -1239,16 +1267,17 @@ def debuginstall(ui, **opts):
     # editor
     editor = ui.geteditor()
     editor = util.expandpath(editor)
-    fm.write('editor', _("checking commit editor... (%s)\n"), editor)
-    cmdpath = util.findexe(pycompat.shlexsplit(editor)[0])
+    editorbin = procutil.shellsplit(editor)[0]
+    fm.write('editor', _("checking commit editor... (%s)\n"), editorbin)
+    cmdpath = procutil.findexe(editorbin)
     fm.condwrite(not cmdpath and editor == 'vi', 'vinotfound',
                  _(" No commit editor set and can't find %s in PATH\n"
                    " (specify a commit editor in your configuration"
-                   " file)\n"), not cmdpath and editor == 'vi' and editor)
+                   " file)\n"), not cmdpath and editor == 'vi' and editorbin)
     fm.condwrite(not cmdpath and editor != 'vi', 'editornotfound',
                  _(" Can't find editor '%s' in PATH\n"
                    " (specify a commit editor in your configuration"
-                   " file)\n"), not cmdpath and editor)
+                   " file)\n"), not cmdpath and editorbin)
     if not cmdpath and editor != 'vi':
         problems += 1
 
@@ -1258,7 +1287,7 @@ def debuginstall(ui, **opts):
     try:
         username = ui.username()
     except error.Abort as e:
-        err = util.forcebytestr(e)
+        err = stringutil.forcebytestr(e)
         problems += 1
 
     fm.condwrite(username, 'username',  _("checking username (%s)\n"), username)
@@ -1367,9 +1396,9 @@ def debuglocks(ui, repo, **opts):
             l.release()
         else:
             try:
-                stat = vfs.lstat(name)
-                age = now - stat.st_mtime
-                user = util.username(stat.st_uid)
+                st = vfs.lstat(name)
+                age = now - st[stat.ST_MTIME]
+                user = util.username(st.st_uid)
                 locker = vfs.readlock(name)
                 if ":" in locker:
                     host, pid = locker.split(':')
@@ -1405,7 +1434,7 @@ def debugmergestate(ui, repo, *args):
             return h
 
     def printrecords(version):
-        ui.write(('* version %s records\n') % version)
+        ui.write(('* version %d records\n') % version)
         if version == 1:
             records = v1records
         else:
@@ -1573,7 +1602,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
             try:
                 date = opts.get('date')
                 if date:
-                    date = util.parsedate(date)
+                    date = dateutil.parsedate(date)
                 else:
                     date = None
                 prec = parsenodeid(precursor)
@@ -1589,7 +1618,8 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
                                      metadata=metadata, ui=ui)
                 tr.close()
             except ValueError as exc:
-                raise error.Abort(_('bad obsmarker input: %s') % exc)
+                raise error.Abort(_('bad obsmarker input: %s') %
+                                  pycompat.bytestr(exc))
             finally:
                 tr.release()
         finally:
@@ -1692,6 +1722,25 @@ def debugpathcomplete(ui, repo, *specs, **opts):
     ui.write('\n'.join(repo.pathto(p, cwd) for p in sorted(files)))
     ui.write('\n')
 
+@command('debugpeer', [], _('PATH'), norepo=True)
+def debugpeer(ui, path):
+    """establish a connection to a peer repository"""
+    # Always enable peer request logging. Requires --debug to display
+    # though.
+    overrides = {
+        ('devel', 'debug.peer-request'): True,
+    }
+
+    with ui.configoverride(overrides):
+        peer = hg.peer(ui, {}, path)
+
+        local = peer.local() is not None
+        canpush = peer.canpush()
+
+        ui.write(_('url: %s\n') % peer.url())
+        ui.write(_('local: %s\n') % (_('yes') if local else _('no')))
+        ui.write(_('pushable: %s\n') % (_('yes') if canpush else _('no')))
+
 @command('debugpickmergetool',
         [('r', 'rev', '', _('check for files in this revision'), _('REV')),
          ('', 'changedelete', None, _('emulate merging change and delete')),
@@ -1744,15 +1793,15 @@ def debugpickmergetool(ui, repo, *pats, **opts):
     overrides = {}
     if opts['tool']:
         overrides[('ui', 'forcemerge')] = opts['tool']
-        ui.note(('with --tool %r\n') % (opts['tool']))
+        ui.note(('with --tool %r\n') % (pycompat.bytestr(opts['tool'])))
 
     with ui.configoverride(overrides, 'debugmergepatterns'):
         hgmerge = encoding.environ.get("HGMERGE")
         if hgmerge is not None:
-            ui.note(('with HGMERGE=%r\n') % (hgmerge))
+            ui.note(('with HGMERGE=%r\n') % (pycompat.bytestr(hgmerge)))
         uimerge = ui.config("ui", "merge")
         if uimerge:
-            ui.note(('with ui.merge=%r\n') % (uimerge))
+            ui.note(('with ui.merge=%r\n') % (pycompat.bytestr(uimerge)))
 
         ctx = scmutil.revsingle(repo, opts.get('rev'))
         m = scmutil.match(ctx, pats, opts)
@@ -1784,13 +1833,20 @@ def debugpushkey(ui, repopath, namespace, *keyinfo, **opts):
     target = hg.peer(ui, {}, repopath)
     if keyinfo:
         key, old, new = keyinfo
-        r = target.pushkey(namespace, key, old, new)
-        ui.status(str(r) + '\n')
+        with target.commandexecutor() as e:
+            r = e.callcommand('pushkey', {
+                'namespace': namespace,
+                'key': key,
+                'old': old,
+                'new': new,
+            }).result()
+
+        ui.status(pycompat.bytestr(r) + '\n')
         return not r
     else:
         for k, v in sorted(target.listkeys(namespace).iteritems()):
-            ui.write("%s\t%s\n" % (util.escapestr(k),
-                                   util.escapestr(v)))
+            ui.write("%s\t%s\n" % (stringutil.escapestr(k),
+                                   stringutil.escapestr(v)))
 
 @command('debugpvec', [], _('A B'))
 def debugpvec(ui, repo, a, b=None):
@@ -2165,7 +2221,7 @@ def debugrevspec(ui, repo, expr, **opts):
 
     treebystage = {}
     printedtree = None
-    tree = revsetlang.parse(expr, lookup=repo.__contains__)
+    tree = revsetlang.parse(expr, lookup=revset.lookupfn(repo))
     for n, f in stages:
         treebystage[n] = tree = f(tree)
         if n in showalways or (n in showchanged and tree != printedtree):
@@ -2206,7 +2262,38 @@ def debugrevspec(ui, repo, expr, **opts):
     if not opts['show_revs']:
         return
     for c in revs:
-        ui.write("%s\n" % c)
+        ui.write("%d\n" % c)
+
+@command('debugserve', [
+    ('', 'sshstdio', False, _('run an SSH server bound to process handles')),
+    ('', 'logiofd', '', _('file descriptor to log server I/O to')),
+    ('', 'logiofile', '', _('file to log server I/O to')),
+], '')
+def debugserve(ui, repo, **opts):
+    """run a server with advanced settings
+
+    This command is similar to :hg:`serve`. It exists partially as a
+    workaround to the fact that ``hg serve --stdio`` must have specific
+    arguments for security reasons.
+    """
+    opts = pycompat.byteskwargs(opts)
+
+    if not opts['sshstdio']:
+        raise error.Abort(_('only --sshstdio is currently supported'))
+
+    logfh = None
+
+    if opts['logiofd'] and opts['logiofile']:
+        raise error.Abort(_('cannot use both --logiofd and --logiofile'))
+
+    if opts['logiofd']:
+        # Line buffered because output is line based.
+        logfh = os.fdopen(int(opts['logiofd']), r'ab', 1)
+    elif opts['logiofile']:
+        logfh = open(opts['logiofile'], 'ab', 1)
+
+    s = wireprotoserver.sshserver(ui, repo, logfh=logfh)
+    s.serve_forever()
 
 @command('debugsetparents', [], _('REV1 [REV2]'))
 def debugsetparents(ui, repo, rev1, rev2=None):
@@ -2220,11 +2307,11 @@ def debugsetparents(ui, repo, rev1, rev2=None):
     Returns 0 on success.
     """
 
-    r1 = scmutil.revsingle(repo, rev1).node()
-    r2 = scmutil.revsingle(repo, rev2, 'null').node()
+    node1 = scmutil.revsingle(repo, rev1).node()
+    node2 = scmutil.revsingle(repo, rev2, 'null').node()
 
     with repo.wlock():
-        repo.setparents(r1, r2)
+        repo.setparents(node1, node2)
 
 @command('debugssl', [], '[SOURCE]', optionalrepo=True)
 def debugssl(ui, repo, source=None, **opts):
@@ -2336,7 +2423,7 @@ def debugsuccessorssets(ui, repo, *revs, **opts):
     """
     # passed to successorssets caching computation from one call to another
     cache = {}
-    ctx2str = str
+    ctx2str = bytes
     node2str = short
     for rev in scmutil.revrange(repo, revs):
         ctx = repo[rev]
@@ -2394,18 +2481,34 @@ def debugtemplate(ui, repo, tmpl, **opts):
     if revs is None:
         tres = formatter.templateresources(ui, repo)
         t = formatter.maketemplater(ui, tmpl, resources=tres)
-        ui.write(t.render(props))
+        ui.write(t.renderdefault(props))
     else:
-        displayer = cmdutil.makelogtemplater(ui, repo, tmpl)
+        displayer = logcmdutil.maketemplater(ui, repo, tmpl)
         for r in revs:
             displayer.show(repo[r], **pycompat.strkwargs(props))
         displayer.close()
+
+@command('debuguigetpass', [
+    ('p', 'prompt', '', _('prompt text'), _('TEXT')),
+], _('[-p TEXT]'), norepo=True)
+def debuguigetpass(ui, prompt=''):
+    """show prompt to type password"""
+    r = ui.getpass(prompt)
+    ui.write(('respose: %s\n') % r)
+
+@command('debuguiprompt', [
+    ('p', 'prompt', '', _('prompt text'), _('TEXT')),
+], _('[-p TEXT]'), norepo=True)
+def debuguiprompt(ui, prompt=''):
+    """show plain prompt"""
+    r = ui.prompt(prompt)
+    ui.write(('response: %s\n') % r)
 
 @command('debugupdatecaches', [])
 def debugupdatecaches(ui, repo, *pats, **opts):
     """warm all known caches in the repository"""
     with repo.wlock(), repo.lock():
-        repo.updatecaches()
+        repo.updatecaches(full=True)
 
 @command('debugupgraderepo', [
     ('o', 'optimize', [], _('extra optimization to perform'), _('NAME')),
@@ -2452,6 +2555,17 @@ def debugwalk(ui, repo, *pats, **opts):
         line = fmt % (abs, f(m.rel(abs)), m.exact(abs) and 'exact' or '')
         ui.write("%s\n" % line.rstrip())
 
+@command('debugwhyunstable', [], _('REV'))
+def debugwhyunstable(ui, repo, rev):
+    """explain instabilities of a changeset"""
+    for entry in obsutil.whyunstable(repo, scmutil.revsingle(repo, rev)):
+        dnodes = ''
+        if entry.get('divergentnodes'):
+            dnodes = ' '.join('%s (%s)' % (ctx.hex(), ctx.phasestr())
+                              for ctx in entry['divergentnodes']) + ' '
+        ui.write('%s: %s%s %s\n' % (entry['instability'], dnodes,
+                                    entry['reason'], entry['node']))
+
 @command('debugwireargs',
     [('', 'three', '', 'three'),
     ('', 'four', '', 'four'),
@@ -2475,3 +2589,545 @@ def debugwireargs(ui, repopath, *vals, **opts):
     ui.write("%s\n" % res1)
     if res1 != res2:
         ui.warn("%s\n" % res2)
+
+def _parsewirelangblocks(fh):
+    activeaction = None
+    blocklines = []
+
+    for line in fh:
+        line = line.rstrip()
+        if not line:
+            continue
+
+        if line.startswith(b'#'):
+            continue
+
+        if not line.startswith(' '):
+            # New block. Flush previous one.
+            if activeaction:
+                yield activeaction, blocklines
+
+            activeaction = line
+            blocklines = []
+            continue
+
+        # Else we start with an indent.
+
+        if not activeaction:
+            raise error.Abort(_('indented line outside of block'))
+
+        blocklines.append(line)
+
+    # Flush last block.
+    if activeaction:
+        yield activeaction, blocklines
+
+@command('debugwireproto',
+    [
+        ('', 'localssh', False, _('start an SSH server for this repo')),
+        ('', 'peer', '', _('construct a specific version of the peer')),
+        ('', 'noreadstderr', False, _('do not read from stderr of the remote')),
+        ('', 'nologhandshake', False,
+         _('do not log I/O related to the peer handshake')),
+    ] + cmdutil.remoteopts,
+    _('[PATH]'),
+    optionalrepo=True)
+def debugwireproto(ui, repo, path=None, **opts):
+    """send wire protocol commands to a server
+
+    This command can be used to issue wire protocol commands to remote
+    peers and to debug the raw data being exchanged.
+
+    ``--localssh`` will start an SSH server against the current repository
+    and connect to that. By default, the connection will perform a handshake
+    and establish an appropriate peer instance.
+
+    ``--peer`` can be used to bypass the handshake protocol and construct a
+    peer instance using the specified class type. Valid values are ``raw``,
+    ``http2``, ``ssh1``, and ``ssh2``. ``raw`` instances only allow sending
+    raw data payloads and don't support higher-level command actions.
+
+    ``--noreadstderr`` can be used to disable automatic reading from stderr
+    of the peer (for SSH connections only). Disabling automatic reading of
+    stderr is useful for making output more deterministic.
+
+    Commands are issued via a mini language which is specified via stdin.
+    The language consists of individual actions to perform. An action is
+    defined by a block. A block is defined as a line with no leading
+    space followed by 0 or more lines with leading space. Blocks are
+    effectively a high-level command with additional metadata.
+
+    Lines beginning with ``#`` are ignored.
+
+    The following sections denote available actions.
+
+    raw
+    ---
+
+    Send raw data to the server.
+
+    The block payload contains the raw data to send as one atomic send
+    operation. The data may not actually be delivered in a single system
+    call: it depends on the abilities of the transport being used.
+
+    Each line in the block is de-indented and concatenated. Then, that
+    value is evaluated as a Python b'' literal. This allows the use of
+    backslash escaping, etc.
+
+    raw+
+    ----
+
+    Behaves like ``raw`` except flushes output afterwards.
+
+    command <X>
+    -----------
+
+    Send a request to run a named command, whose name follows the ``command``
+    string.
+
+    Arguments to the command are defined as lines in this block. The format of
+    each line is ``<key> <value>``. e.g.::
+
+       command listkeys
+           namespace bookmarks
+
+    If the value begins with ``eval:``, it will be interpreted as a Python
+    literal expression. Otherwise values are interpreted as Python b'' literals.
+    This allows sending complex types and encoding special byte sequences via
+    backslash escaping.
+
+    The following arguments have special meaning:
+
+    ``PUSHFILE``
+        When defined, the *push* mechanism of the peer will be used instead
+        of the static request-response mechanism and the content of the
+        file specified in the value of this argument will be sent as the
+        command payload.
+
+        This can be used to submit a local bundle file to the remote.
+
+    batchbegin
+    ----------
+
+    Instruct the peer to begin a batched send.
+
+    All ``command`` blocks are queued for execution until the next
+    ``batchsubmit`` block.
+
+    batchsubmit
+    -----------
+
+    Submit previously queued ``command`` blocks as a batch request.
+
+    This action MUST be paired with a ``batchbegin`` action.
+
+    httprequest <method> <path>
+    ---------------------------
+
+    (HTTP peer only)
+
+    Send an HTTP request to the peer.
+
+    The HTTP request line follows the ``httprequest`` action. e.g. ``GET /foo``.
+
+    Arguments of the form ``<key>: <value>`` are interpreted as HTTP request
+    headers to add to the request. e.g. ``Accept: foo``.
+
+    The following arguments are special:
+
+    ``BODYFILE``
+        The content of the file defined as the value to this argument will be
+        transferred verbatim as the HTTP request body.
+
+    ``frame <type> <flags> <payload>``
+        Send a unified protocol frame as part of the request body.
+
+        All frames will be collected and sent as the body to the HTTP
+        request.
+
+    close
+    -----
+
+    Close the connection to the server.
+
+    flush
+    -----
+
+    Flush data written to the server.
+
+    readavailable
+    -------------
+
+    Close the write end of the connection and read all available data from
+    the server.
+
+    If the connection to the server encompasses multiple pipes, we poll both
+    pipes and read available data.
+
+    readline
+    --------
+
+    Read a line of output from the server. If there are multiple output
+    pipes, reads only the main pipe.
+
+    ereadline
+    ---------
+
+    Like ``readline``, but read from the stderr pipe, if available.
+
+    read <X>
+    --------
+
+    ``read()`` N bytes from the server's main output pipe.
+
+    eread <X>
+    ---------
+
+    ``read()`` N bytes from the server's stderr pipe, if available.
+
+    Specifying Unified Frame-Based Protocol Frames
+    ----------------------------------------------
+
+    It is possible to emit a *Unified Frame-Based Protocol* by using special
+    syntax.
+
+    A frame is composed as a type, flags, and payload. These can be parsed
+    from a string of the form:
+
+       <request-id> <stream-id> <stream-flags> <type> <flags> <payload>
+
+    ``request-id`` and ``stream-id`` are integers defining the request and
+    stream identifiers.
+
+    ``type`` can be an integer value for the frame type or the string name
+    of the type. The strings are defined in ``wireprotoframing.py``. e.g.
+    ``command-name``.
+
+    ``stream-flags`` and ``flags`` are a ``|`` delimited list of flag
+    components. Each component (and there can be just one) can be an integer
+    or a flag name for stream flags or frame flags, respectively. Values are
+    resolved to integers and then bitwise OR'd together.
+
+    ``payload`` represents the raw frame payload. If it begins with
+    ``cbor:``, the following string is evaluated as Python code and the
+    resulting object is fed into a CBOR encoder. Otherwise it is interpreted
+    as a Python byte string literal.
+    """
+    opts = pycompat.byteskwargs(opts)
+
+    if opts['localssh'] and not repo:
+        raise error.Abort(_('--localssh requires a repository'))
+
+    if opts['peer'] and opts['peer'] not in ('raw', 'http2', 'ssh1', 'ssh2'):
+        raise error.Abort(_('invalid value for --peer'),
+                          hint=_('valid values are "raw", "ssh1", and "ssh2"'))
+
+    if path and opts['localssh']:
+        raise error.Abort(_('cannot specify --localssh with an explicit '
+                            'path'))
+
+    if ui.interactive():
+        ui.write(_('(waiting for commands on stdin)\n'))
+
+    blocks = list(_parsewirelangblocks(ui.fin))
+
+    proc = None
+    stdin = None
+    stdout = None
+    stderr = None
+    opener = None
+
+    if opts['localssh']:
+        # We start the SSH server in its own process so there is process
+        # separation. This prevents a whole class of potential bugs around
+        # shared state from interfering with server operation.
+        args = procutil.hgcmd() + [
+            '-R', repo.root,
+            'debugserve', '--sshstdio',
+        ]
+        proc = subprocess.Popen(args, stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                bufsize=0)
+
+        stdin = proc.stdin
+        stdout = proc.stdout
+        stderr = proc.stderr
+
+        # We turn the pipes into observers so we can log I/O.
+        if ui.verbose or opts['peer'] == 'raw':
+            stdin = util.makeloggingfileobject(ui, proc.stdin, b'i',
+                                               logdata=True)
+            stdout = util.makeloggingfileobject(ui, proc.stdout, b'o',
+                                                logdata=True)
+            stderr = util.makeloggingfileobject(ui, proc.stderr, b'e',
+                                                logdata=True)
+
+        # --localssh also implies the peer connection settings.
+
+        url = 'ssh://localserver'
+        autoreadstderr = not opts['noreadstderr']
+
+        if opts['peer'] == 'ssh1':
+            ui.write(_('creating ssh peer for wire protocol version 1\n'))
+            peer = sshpeer.sshv1peer(ui, url, proc, stdin, stdout, stderr,
+                                     None, autoreadstderr=autoreadstderr)
+        elif opts['peer'] == 'ssh2':
+            ui.write(_('creating ssh peer for wire protocol version 2\n'))
+            peer = sshpeer.sshv2peer(ui, url, proc, stdin, stdout, stderr,
+                                     None, autoreadstderr=autoreadstderr)
+        elif opts['peer'] == 'raw':
+            ui.write(_('using raw connection to peer\n'))
+            peer = None
+        else:
+            ui.write(_('creating ssh peer from handshake results\n'))
+            peer = sshpeer.makepeer(ui, url, proc, stdin, stdout, stderr,
+                                    autoreadstderr=autoreadstderr)
+
+    elif path:
+        # We bypass hg.peer() so we can proxy the sockets.
+        # TODO consider not doing this because we skip
+        # ``hg.wirepeersetupfuncs`` and potentially other useful functionality.
+        u = util.url(path)
+        if u.scheme != 'http':
+            raise error.Abort(_('only http:// paths are currently supported'))
+
+        url, authinfo = u.authinfo()
+        openerargs = {
+            r'useragent': b'Mercurial debugwireproto',
+        }
+
+        # Turn pipes/sockets into observers so we can log I/O.
+        if ui.verbose:
+            openerargs.update({
+                r'loggingfh': ui,
+                r'loggingname': b's',
+                r'loggingopts': {
+                    r'logdata': True,
+                    r'logdataapis': False,
+                },
+            })
+
+        if ui.debugflag:
+            openerargs[r'loggingopts'][r'logdataapis'] = True
+
+        # Don't send default headers when in raw mode. This allows us to
+        # bypass most of the behavior of our URL handling code so we can
+        # have near complete control over what's sent on the wire.
+        if opts['peer'] == 'raw':
+            openerargs[r'sendaccept'] = False
+
+        opener = urlmod.opener(ui, authinfo, **openerargs)
+
+        if opts['peer'] == 'http2':
+            ui.write(_('creating http peer for wire protocol version 2\n'))
+            # We go through makepeer() because we need an API descriptor for
+            # the peer instance to be useful.
+            with ui.configoverride({
+                ('experimental', 'httppeer.advertise-v2'): True}):
+                if opts['nologhandshake']:
+                    ui.pushbuffer()
+
+                peer = httppeer.makepeer(ui, path, opener=opener)
+
+                if opts['nologhandshake']:
+                    ui.popbuffer()
+
+            if not isinstance(peer, httppeer.httpv2peer):
+                raise error.Abort(_('could not instantiate HTTP peer for '
+                                    'wire protocol version 2'),
+                                  hint=_('the server may not have the feature '
+                                         'enabled or is not allowing this '
+                                         'client version'))
+
+        elif opts['peer'] == 'raw':
+            ui.write(_('using raw connection to peer\n'))
+            peer = None
+        elif opts['peer']:
+            raise error.Abort(_('--peer %s not supported with HTTP peers') %
+                              opts['peer'])
+        else:
+            peer = httppeer.makepeer(ui, path, opener=opener)
+
+        # We /could/ populate stdin/stdout with sock.makefile()...
+    else:
+        raise error.Abort(_('unsupported connection configuration'))
+
+    batchedcommands = None
+
+    # Now perform actions based on the parsed wire language instructions.
+    for action, lines in blocks:
+        if action in ('raw', 'raw+'):
+            if not stdin:
+                raise error.Abort(_('cannot call raw/raw+ on this peer'))
+
+            # Concatenate the data together.
+            data = ''.join(l.lstrip() for l in lines)
+            data = stringutil.unescapestr(data)
+            stdin.write(data)
+
+            if action == 'raw+':
+                stdin.flush()
+        elif action == 'flush':
+            if not stdin:
+                raise error.Abort(_('cannot call flush on this peer'))
+            stdin.flush()
+        elif action.startswith('command'):
+            if not peer:
+                raise error.Abort(_('cannot send commands unless peer instance '
+                                    'is available'))
+
+            command = action.split(' ', 1)[1]
+
+            args = {}
+            for line in lines:
+                # We need to allow empty values.
+                fields = line.lstrip().split(' ', 1)
+                if len(fields) == 1:
+                    key = fields[0]
+                    value = ''
+                else:
+                    key, value = fields
+
+                if value.startswith('eval:'):
+                    value = stringutil.evalpythonliteral(value[5:])
+                else:
+                    value = stringutil.unescapestr(value)
+
+                args[key] = value
+
+            if batchedcommands is not None:
+                batchedcommands.append((command, args))
+                continue
+
+            ui.status(_('sending %s command\n') % command)
+
+            if 'PUSHFILE' in args:
+                with open(args['PUSHFILE'], r'rb') as fh:
+                    del args['PUSHFILE']
+                    res, output = peer._callpush(command, fh,
+                                                 **pycompat.strkwargs(args))
+                    ui.status(_('result: %s\n') % stringutil.escapestr(res))
+                    ui.status(_('remote output: %s\n') %
+                              stringutil.escapestr(output))
+            else:
+                with peer.commandexecutor() as e:
+                    res = e.callcommand(command, args).result()
+
+                if isinstance(res, wireprotov2peer.commandresponse):
+                    val = list(res.cborobjects())
+                    ui.status(_('response: %s\n') % stringutil.pprint(val))
+
+                else:
+                    ui.status(_('response: %s\n') % stringutil.pprint(res))
+
+        elif action == 'batchbegin':
+            if batchedcommands is not None:
+                raise error.Abort(_('nested batchbegin not allowed'))
+
+            batchedcommands = []
+        elif action == 'batchsubmit':
+            # There is a batching API we could go through. But it would be
+            # difficult to normalize requests into function calls. It is easier
+            # to bypass this layer and normalize to commands + args.
+            ui.status(_('sending batch with %d sub-commands\n') %
+                      len(batchedcommands))
+            for i, chunk in enumerate(peer._submitbatch(batchedcommands)):
+                ui.status(_('response #%d: %s\n') %
+                          (i, stringutil.escapestr(chunk)))
+
+            batchedcommands = None
+
+        elif action.startswith('httprequest '):
+            if not opener:
+                raise error.Abort(_('cannot use httprequest without an HTTP '
+                                    'peer'))
+
+            request = action.split(' ', 2)
+            if len(request) != 3:
+                raise error.Abort(_('invalid httprequest: expected format is '
+                                    '"httprequest <method> <path>'))
+
+            method, httppath = request[1:]
+            headers = {}
+            body = None
+            frames = []
+            for line in lines:
+                line = line.lstrip()
+                m = re.match(b'^([a-zA-Z0-9_-]+): (.*)$', line)
+                if m:
+                    headers[m.group(1)] = m.group(2)
+                    continue
+
+                if line.startswith(b'BODYFILE '):
+                    with open(line.split(b' ', 1), 'rb') as fh:
+                        body = fh.read()
+                elif line.startswith(b'frame '):
+                    frame = wireprotoframing.makeframefromhumanstring(
+                        line[len(b'frame '):])
+
+                    frames.append(frame)
+                else:
+                    raise error.Abort(_('unknown argument to httprequest: %s') %
+                                      line)
+
+            url = path + httppath
+
+            if frames:
+                body = b''.join(bytes(f) for f in frames)
+
+            req = urlmod.urlreq.request(pycompat.strurl(url), body, headers)
+
+            # urllib.Request insists on using has_data() as a proxy for
+            # determining the request method. Override that to use our
+            # explicitly requested method.
+            req.get_method = lambda: method
+
+            try:
+                res = opener.open(req)
+                body = res.read()
+            except util.urlerr.urlerror as e:
+                e.read()
+                continue
+
+            if res.headers.get('Content-Type') == 'application/mercurial-cbor':
+                ui.write(_('cbor> %s\n') % stringutil.pprint(cbor.loads(body)))
+
+        elif action == 'close':
+            peer.close()
+        elif action == 'readavailable':
+            if not stdout or not stderr:
+                raise error.Abort(_('readavailable not available on this peer'))
+
+            stdin.close()
+            stdout.read()
+            stderr.read()
+
+        elif action == 'readline':
+            if not stdout:
+                raise error.Abort(_('readline not available on this peer'))
+            stdout.readline()
+        elif action == 'ereadline':
+            if not stderr:
+                raise error.Abort(_('ereadline not available on this peer'))
+            stderr.readline()
+        elif action.startswith('read '):
+            count = int(action.split(' ', 1)[1])
+            if not stdout:
+                raise error.Abort(_('read not available on this peer'))
+            stdout.read(count)
+        elif action.startswith('eread '):
+            count = int(action.split(' ', 1)[1])
+            if not stderr:
+                raise error.Abort(_('eread not available on this peer'))
+            stderr.read(count)
+        else:
+            raise error.Abort(_('unknown action: %s') % action)
+
+    if batchedcommands is not None:
+        raise error.Abort(_('unclosed "batchbegin" request'))
+
+    if peer:
+        peer.close()
+
+    if proc:
+        proc.kill()

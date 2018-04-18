@@ -13,6 +13,7 @@ import socket
 import sys
 
 from mercurial import (
+    pycompat,
     server,
     util,
 )
@@ -63,10 +64,12 @@ if __name__ == '__main__':
     if options.foreground and options.pid:
         parser.error("options --pid and --foreground are mutually exclusive")
 
-    opts = {'pid_file': options.pid,
-            'daemon': not options.foreground,
-            'daemon_postexec': options.daemon_postexec}
+    opts = {b'pid_file': options.pid,
+            b'daemon': not options.foreground,
+            b'daemon_postexec': options.daemon_postexec}
     service = simplehttpservice(options.host, options.port)
+    runargs = [sys.executable, __file__] + sys.argv[1:]
+    runargs = [pycompat.fsencode(a) for a in runargs]
     server.runservice(opts, initfn=service.init, runfn=service.run,
                       logfile=options.logfile,
-                      runargs=[sys.executable, __file__] + sys.argv[1:])
+                      runargs=runargs)

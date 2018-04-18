@@ -1,9 +1,3 @@
-
-  $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
-  > EOF
-
 bundle w/o type option
 
   $ hg init t1
@@ -19,9 +13,7 @@ bundle w/o type option
   1 changesets found
 
   $ cd ../t2
-  $ hg pull ../b1
-  pulling from ../b1
-  requesting all changes
+  $ hg unbundle ../b1
   adding changesets
   adding manifests
   adding file changes
@@ -38,7 +30,7 @@ Unknown compression type is rejected
 
   $ hg init t3
   $ cd t3
-  $ hg -q pull ../b1
+  $ hg -q unbundle ../b1
   $ hg bundle -a -t unknown out.hg
   abort: unknown is not a recognized bundle specification
   (see 'hg help bundlespec' for supported values for --type)
@@ -76,6 +68,7 @@ test bundle types
   Stream params: {}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   none-v2
   
   % test bundle type bzip2
@@ -85,6 +78,7 @@ test bundle types
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   bzip2-v2
   
   % test bundle type gzip
@@ -94,6 +88,7 @@ test bundle types
   Stream params: {Compression: GZ}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   gzip-v2
   
   % test bundle type none-v2
@@ -103,6 +98,7 @@ test bundle types
   Stream params: {}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   none-v2
   
   % test bundle type v2
@@ -112,6 +108,7 @@ test bundle types
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   bzip2-v2
   
   % test bundle type v1
@@ -150,12 +147,17 @@ Compression level can be adjusted for bundle2 bundles
   $ hg bundle -a -t gzip-v2 gzip-v2.hg
   1 changesets found
   $ f --size gzip-v2.hg
-  gzip-v2.hg: size=427
+  gzip-v2.hg: size=468
 
   $ hg --config experimental.bundlecomplevel=1 bundle -a -t gzip-v2 gzip-v2-level1.hg
   1 changesets found
   $ f --size gzip-v2-level1.hg
-  gzip-v2-level1.hg: size=435
+  gzip-v2-level1.hg: size=475
+
+  $ hg --config experimental.bundlecomplevel.gzip=1 --config experimental.bundlelevel=9 bundle -a -t gzip-v2 gzip-v2-level1.hg
+  1 changesets found
+  $ f --size gzip-v2-level1.hg
+  gzip-v2-level1.hg: size=475
 
   $ cd ..
 
@@ -171,6 +173,7 @@ Compression level can be adjusted for bundle2 bundles
   Stream params: {Compression: ZS}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   zstd-v2
   
   % test bundle type zstd-v2
@@ -180,6 +183,7 @@ Compression level can be adjusted for bundle2 bundles
   Stream params: {Compression: ZS}
   changegroup -- {nbchanges: 1, version: 02}
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
+  cache:rev-branch-cache -- {}
   zstd-v2
   
 

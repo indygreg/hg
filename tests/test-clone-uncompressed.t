@@ -1,4 +1,4 @@
-#require serve
+#require serve no-reposimplestore
 
 #testcases stream-legacy stream-bundle2
 
@@ -18,7 +18,7 @@ the status call is to check for issue5130
   $ hg -q commit -A -m initial
   >>> for i in range(1024):
   ...     with open(str(i), 'wb') as fh:
-  ...         fh.write(str(i))
+  ...         fh.write(b"%d" % i) and None
   $ hg -q commit -A -m 'add a lot of files'
   $ hg st
   $ hg --config server.uncompressed=false serve -p $HGPORT -d --pid-file=hg.pid
@@ -71,6 +71,7 @@ Cannot stream clone when server.uncompressed is set
     remote-changegroup
       http
       https
+    rev-branch-cache
 
   $ hg clone --stream -U http://localhost:$HGPORT server-disabled
   warning: stream clone requested but server has them disabled
@@ -136,6 +137,7 @@ Cannot stream clone when server.uncompressed is set
     remote-changegroup
       http
       https
+    rev-branch-cache
 
   $ hg clone --stream -U http://localhost:$HGPORT server-disabled
   warning: stream clone requested but server has them disabled

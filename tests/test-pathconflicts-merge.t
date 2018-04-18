@@ -1,5 +1,3 @@
-#require symlink
-
 Path conflict checking is currently disabled by default because of issue5716.
 Turn it on for this test.
 
@@ -24,11 +22,29 @@ Turn it on for this test.
   $ hg bookmark -i file2
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+#if symlink
   $ mkdir a
   $ ln -s c a/b
   $ hg add a/b
   $ hg commit -m "link"
   created new head
+#else
+  $ hg import -q --bypass - <<EOF
+  > # HG changeset patch
+  > link
+  > 
+  > diff --git a/a/b b/a/b
+  > new file mode 120000
+  > --- /dev/null
+  > +++ b/a/b
+  > @@ -0,0 +1,1 @@
+  > +c
+  > \ No newline at end of file
+  > EOF
+  $ hg up -q
+#endif
+
   $ hg bookmark -i link
   $ hg up 0
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
@@ -131,8 +147,15 @@ Merge - local directory conflicts with remote file or link
   use 'hg resolve' to retry unresolved file merges or 'hg merge --abort' to abandon
   [1]
   $ hg mv a/b~2ea68033e3be a/b.old
+
+#if symlink
   $ readlink.py a/b.old
   a/b.old -> c
+#else
+  $ cat a/b.old
+  c (no-eol)
+#endif
+
   $ hg resolve --mark a/b
   (no more unresolved files)
   $ hg commit -m "merge link (rename link)"

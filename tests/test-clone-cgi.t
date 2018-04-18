@@ -17,7 +17,7 @@ initialize repository
   > from mercurial import demandimport; demandimport.enable()
   > from mercurial.hgweb import hgweb
   > from mercurial.hgweb import wsgicgi
-  > application = hgweb("test", "Empty test repository")
+  > application = hgweb(b"test", b"Empty test repository")
   > wsgicgi.launch(application)
   > HGWEB
   $ chmod 755 hgweb.cgi

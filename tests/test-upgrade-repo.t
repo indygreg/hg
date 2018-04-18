@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > share =
@@ -31,23 +33,18 @@ Cannot upgrade shared repositories
   abort: cannot upgrade repository; unsupported source requirement: shared
   [255]
 
-Do not yet support upgrading manifestv2 and treemanifest repos
-
-  $ hg --config experimental.manifestv2=true init manifestv2
-  $ hg -R manifestv2 debugupgraderepo
-  abort: cannot upgrade repository; unsupported source requirement: manifestv2
-  [255]
+Do not yet support upgrading treemanifest repos
 
   $ hg --config experimental.treemanifest=true init treemanifest
   $ hg -R treemanifest debugupgraderepo
   abort: cannot upgrade repository; unsupported source requirement: treemanifest
   [255]
 
-Cannot add manifestv2 or treemanifest requirement during upgrade
+Cannot add treemanifest requirement during upgrade
 
   $ hg init disallowaddedreq
-  $ hg -R disallowaddedreq --config experimental.manifestv2=true --config experimental.treemanifest=true debugupgraderepo
-  abort: cannot upgrade repository; do not support adding requirement: manifestv2, treemanifest
+  $ hg -R disallowaddedreq --config experimental.treemanifest=true debugupgraderepo
+  abort: cannot upgrade repository; do not support adding requirement: treemanifest
   [255]
 
 An upgrade of a repository created with recommended settings only suggests optimizations
@@ -650,11 +647,11 @@ repository config is taken in account
   > EOF
   $ hg config format
   format.maxchainlen=9001
-  $ hg debugindex file
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      77     -1       0 bcc1d3df78b2 000000000000 000000000000
-       1        77      21      0       1 af3e29f7a72e bcc1d3df78b2 000000000000
-       2        98      84     -1       2 8daf79c5522b af3e29f7a72e 000000000000
+  $ hg debugdeltachain file
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
+        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000
+        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000
+        2       2        1       -1    base         84        200         84   0.42000        84         0    0.00000
 
   $ hg debugupgraderepo --run --optimize redeltaall
   upgrade will perform the following actions:
@@ -689,11 +686,11 @@ repository config is taken in account
   removing temporary repository $TESTTMP/localconfig/.hg/upgrade.* (glob)
   copy of old repository backed up at $TESTTMP/localconfig/.hg/upgradebackup.* (glob)
   the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
-  $ hg debugindex file
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      77     -1       0 bcc1d3df78b2 000000000000 000000000000
-       1        77      21      0       1 af3e29f7a72e bcc1d3df78b2 000000000000
-       2        98      21      1       2 8daf79c5522b af3e29f7a72e 000000000000
+  $ hg debugdeltachain file
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
+        0       1        1       -1    base         77        182         77   0.42308        77         0    0.00000
+        1       1        2        0      p1         21        191         98   0.51309        98         0    0.00000
+        2       1        3        1      p1         21        200        119   0.59500       119         0    0.00000
   $ cd ..
 
   $ cat << EOF >> $HGRCPATH

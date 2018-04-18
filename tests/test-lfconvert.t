@@ -1,8 +1,6 @@
   $ USERCACHE="$TESTTMP/cache"; export USERCACHE
   $ mkdir "${USERCACHE}"
   $ cat >> $HGRCPATH <<EOF
-  > [format]
-  > usegeneraldelta=yes
   > [extensions]
   > largefiles =
   > share =

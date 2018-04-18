@@ -111,7 +111,7 @@ testpats = [
     (r'head -c', "don't use 'head -c', use 'dd'"),
     (r'tail -n', "don't use the '-n' option to tail, just use '-<num>'"),
     (r'sha1sum', "don't use sha1sum, use $TESTDIR/md5sum.py"),
-    (r'ls.*-\w*R', "don't use 'ls -R', use 'find'"),
+    (r'\bls\b.*-\w*R', "don't use 'ls -R', use 'find'"),
     (r'printf.*[^\\]\\([1-9]|0\d)', r"don't use 'printf \NNN', use Python"),
     (r'printf.*[^\\]\\x', "don't use printf \\x, use Python"),
     (r'\$\(.*\)', "don't use $(expr), use `expr`"),
@@ -150,6 +150,7 @@ testpats = [
     (r'grep.* -[ABC]', "don't use grep's context flags"),
     (r'find.*-printf',
      "don't use 'find -printf', it doesn't exist on BSD find(1)"),
+    (r'\$RANDOM ', "don't use bash-only $RANDOM to generate random values"),
   ],
   # warnings
   [
@@ -318,9 +319,9 @@ pypats = [
      "use util.readfile() instead"),
     (r'[\s\(](open|file)\([^)]*\)\.write\(',
      "use util.writefile() instead"),
-    (r'^[\s\(]*(open(er)?|file)\([^)]*\)',
+    (r'^[\s\(]*(open(er)?|file)\([^)]*\)(?!\.close\(\))',
      "always assign an opened file to a variable, and close it afterwards"),
-    (r'[\s\(](open|file)\([^)]*\)\.',
+    (r'[\s\(](open|file)\([^)]*\)\.(?!close\(\))',
      "always assign an opened file to a variable, and close it afterwards"),
     (r'(?i)descend[e]nt', "the proper spelling is descendAnt"),
     (r'\.debug\(\_', "don't mark debug messages for translation"),
@@ -541,8 +542,11 @@ def _preparepats():
             for i, pseq in enumerate(pats):
                 # fix-up regexes for multi-line searches
                 p = pseq[0]
-                # \s doesn't match \n
-                p = re.sub(r'(?<!\\)\\s', r'[ \\t]', p)
+                # \s doesn't match \n (done in two steps)
+                # first, we replace \s that appears in a set already
+                p = re.sub(r'\[\\s', r'[ \\t', p)
+                # now we replace other \s instances.
+                p = re.sub(r'(?<!(\\|\[))\\s', r'[ \\t]', p)
                 # [^...] doesn't match newline
                 p = re.sub(r'(?<!\\)\[\^', r'[^\\n', p)
 

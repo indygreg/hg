@@ -102,6 +102,7 @@ Show debug commands if there are no other candidates
   debugnamecomplete
   debugobsolete
   debugpathcomplete
+  debugpeer
   debugpickmergetool
   debugpushkey
   debugpvec
@@ -110,15 +111,20 @@ Show debug commands if there are no other candidates
   debugrename
   debugrevlog
   debugrevspec
+  debugserve
   debugsetparents
   debugssl
   debugsub
   debugsuccessorssets
   debugtemplate
+  debuguigetpass
+  debuguiprompt
   debugupdatecaches
   debugupgraderepo
   debugwalk
+  debugwhyunstable
   debugwireargs
+  debugwireproto
 
 Do not show the alias of a debug command if there are other candidates
 (this should hide rawcommit)
@@ -225,14 +231,14 @@ Show all commands + options
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, stream, ssh, remotecmd, insecure
   commit: addremove, close-branch, amend, secret, edit, interactive, include, exclude, message, logfile, date, user, subrepos
   diff: rev, change, text, git, binary, nodates, noprefix, show-function, reverse, ignore-all-space, ignore-space-change, ignore-blank-lines, ignore-space-at-eol, unified, stat, root, include, exclude, subrepos
-  export: output, switch-parent, rev, text, git, binary, nodates
-  forget: include, exclude
+  export: output, switch-parent, rev, text, git, binary, nodates, template
+  forget: interactive, include, exclude, dry-run
   init: ssh, remotecmd, insecure
   log: follow, follow-first, date, copies, keyword, rev, line-range, removed, only-merges, user, only-branch, branch, prune, patch, git, limit, no-merges, stat, graph, style, template, include, exclude
   merge: force, rev, preview, abort, tool
   pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
   push: force, rev, bookmark, branch, new-branch, pushvars, ssh, remotecmd, insecure
-  remove: after, force, subrepos, include, exclude
+  remove: after, force, subrepos, include, exclude, dry-run
   serve: accesslog, daemon, daemon-postexec, errorlog, port, address, prefix, name, web-conf, webdir-conf, pid-file, stdio, cmdserver, templates, style, ipv6, certificate, subrepos
   status: all, modified, added, removed, deleted, clean, unknown, ignored, no-status, terse, copies, print0, rev, change, include, exclude, subrepos, template
   summary: remote
@@ -281,6 +287,7 @@ Show all commands + options
   debugnamecomplete: 
   debugobsolete: flags, record-parents, rev, exclusive, index, delete, date, user, template
   debugpathcomplete: full, normal, added, removed
+  debugpeer: 
   debugpickmergetool: rev, changedelete, include, exclude, tool
   debugpushkey: 
   debugpvec: 
@@ -289,15 +296,20 @@ Show all commands + options
   debugrename: rev
   debugrevlog: changelog, manifest, dir, dump
   debugrevspec: optimize, show-revs, show-set, show-stage, no-optimized, verify-optimized
+  debugserve: sshstdio, logiofd, logiofile
   debugsetparents: 
   debugssl: 
   debugsub: rev
   debugsuccessorssets: closest
   debugtemplate: rev, define
+  debuguigetpass: prompt
+  debuguiprompt: prompt
   debugupdatecaches: 
   debugupgraderepo: optimize, run
   debugwalk: include, exclude
+  debugwhyunstable: 
   debugwireargs: three, four, five, ssh, remotecmd, insecure
+  debugwireproto: localssh, peer, noreadstderr, nologhandshake, ssh, remotecmd, insecure
   files: rev, print0, include, exclude, template, subrepos
   graft: rev, continue, edit, log, force, currentdate, currentuser, date, user, tool, dry-run
   grep: print0, all, text, follow, ignore-case, files-with-matches, line-number, rev, user, date, template, include, exclude

@@ -1,10 +1,10 @@
-hide outer repo
-  $ hg init
-
 Use hgrc within $TESTTMP
 
   $ HGRCPATH=`pwd`/hgrc
   $ export HGRCPATH
+
+hide outer repo
+  $ hg init
 
 Use an alternate var for scribbling on hgrc to keep check-code from
 complaining about the important settings we may be overwriting:
@@ -58,7 +58,7 @@ issue1829: wrong indentation
   unexpected leading whitespace
   [255]
 
-  $ $PYTHON -c "print '[foo]\nbar = a\n b\n c \n  de\n fg \nbaz = bif cb \n'" \
+  $ $PYTHON -c "from __future__ import print_function; print('[foo]\nbar = a\n b\n c \n  de\n fg \nbaz = bif cb \n')" \
   > > $HGRC
   $ hg showconfig foo
   foo.bar=a\nb\nc\nde\nfg
@@ -126,12 +126,16 @@ showconfig with multiple arguments
   $ hg showconfig alias defaults
   alias.log=log -g
   defaults.identify=-n
+  $ hg showconfig alias alias
+  alias.log=log -g
+  $ hg showconfig alias.log alias.log
+  alias.log=log -g
   $ hg showconfig alias defaults.identify
-  abort: only one config item permitted
-  [255]
+  alias.log=log -g
+  defaults.identify=-n
   $ hg showconfig alias.log defaults.identify
-  abort: only one config item permitted
-  [255]
+  alias.log=log -g
+  defaults.identify=-n
 
 HGPLAIN
 

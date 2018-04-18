@@ -22,7 +22,11 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    pycompat,
     util,
+)
+from .utils import (
+    stringutil,
 )
 
 class parser(object):
@@ -189,14 +193,14 @@ def buildargsdict(trees, funcname, argspec, keyvaluenode, keynode):
 
 def unescapestr(s):
     try:
-        return util.unescapestr(s)
+        return stringutil.unescapestr(s)
     except ValueError as e:
         # mangle Python's exception into our format
-        raise error.ParseError(str(e).lower())
+        raise error.ParseError(pycompat.bytestr(e).lower())
 
 def _brepr(obj):
     if isinstance(obj, bytes):
-        return b"'%s'" % util.escapestr(obj)
+        return b"'%s'" % stringutil.escapestr(obj)
     return encoding.strtolocal(repr(obj))
 
 def _prettyformat(tree, leafnodes, level, lines):

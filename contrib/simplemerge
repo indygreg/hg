@@ -14,7 +14,9 @@ from mercurial import (
     fancyopts,
     simplemerge,
     ui as uimod,
-    util,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 options = [('L', 'label', [], _('labels to use on conflict markers')),
@@ -52,7 +54,7 @@ def showhelp():
 
 try:
     for fp in (sys.stdin, sys.stdout, sys.stderr):
-        util.setbinary(fp)
+        procutil.setbinary(fp)
 
     opts = {}
     try:

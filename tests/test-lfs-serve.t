@@ -1,5 +1,5 @@
 #testcases lfsremote-on lfsremote-off
-#require serve
+#require serve no-reposimplestore
 
 This test splits `hg serve` with and without using the extension into separate
 tests cases.  The tests are broken down as follows, where "LFS"/"No-LFS"
@@ -33,8 +33,9 @@ side.  If that *is* enabled, the subsequent failure is "abort: missing processor
 for flag '0x2000'!" if the extension is only loaded on one side (possibly also
 masked by the Internal Server Error message).
   $ cat >> $HGRCPATH <<EOF
+  > [experimental]
+  > lfs.disableusercache = True
   > [lfs]
-  > url=file:$TESTTMP/dummy-remote/
   > threshold=10
   > [web]
   > allow_push=*
@@ -241,7 +242,23 @@ lfs content, and the extension enabled.
   $ echo 'this is another lfs file' > lfs2.txt
   $ hg ci -Aqm 'lfs file with lfs client'
 
-  $ hg push -q
+  $ hg --config paths.default= push -v http://localhost:$HGPORT
+  pushing to http://localhost:$HGPORT/
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  searching for changes
+  remote has heads on branch 'default' that are not known locally: 8374dc4052cb
+  lfs: uploading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: uploaded 1 files (25 bytes)
+  1 changesets found
+  uncompressed size of bundle content:
+       206 (changelog)
+       172 (manifests)
+       275  lfs2.txt
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   .hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs
@@ -252,7 +269,27 @@ lfs content, and the extension enabled.
   $TESTTMP/server/.hg/requires:lfs
 
   $ hg init $TESTTMP/client6_pull
-  $ hg -R $TESTTMP/client6_pull pull -q http://localhost:$HGPORT
+  $ hg -R $TESTTMP/client6_pull pull -u -v http://localhost:$HGPORT
+  pulling from http://localhost:$HGPORT/
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 6 changesets with 5 changes to 5 files (+1 heads)
+  calling hook pretxnchangegroup.lfs: hgext.lfs.checkrequireslfs
+  new changesets d437e1d24fbd:d3b84d50eacb
+  resolving manifests
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: downloaded 1 files (25 bytes)
+  getting lfs2.txt
+  lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
+  getting nonlfs2.txt
+  getting nonlfs3.txt
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to "d3b84d50eacb: lfs file with lfs client"
+  1 other heads for branch "default"
   $ grep 'lfs' $TESTTMP/client6_pull/.hg/requires $SERVER_REQUIRES
   $TESTTMP/client6_pull/.hg/requires:lfs
   $TESTTMP/server/.hg/requires:lfs
@@ -267,6 +304,136 @@ Misc: process dies early if a requirement exists and the extension is disabled
   abort: repository requires features unknown to this Mercurial: lfs!
   (see https://mercurial-scm.org/wiki/MissingRequirement for more information)
   [255]
+
+  $ echo 'this is an lfs file' > $TESTTMP/client6_clone/lfspair1.bin
+  $ echo 'this is an lfs file too' > $TESTTMP/client6_clone/lfspair2.bin
+  $ hg -R $TESTTMP/client6_clone ci -Aqm 'add lfs pair'
+  $ hg -R $TESTTMP/client6_clone push -q
+
+  $ hg clone -qU http://localhost:$HGPORT $TESTTMP/bulkfetch
+
+Export will prefetch all needed files across all needed revisions
+
+  $ hg -R $TESTTMP/bulkfetch -v export -r 0:tip -o all.export
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  exporting patches:
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: need to transfer 4 objects (92 bytes)
+  lfs: downloading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: downloading bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc (23 bytes)
+  lfs: processed: bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc
+  lfs: downloading cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 (20 bytes)
+  lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
+  lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
+  lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: downloaded 4 files (92 bytes)
+  all.export
+  lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
+  lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
+  lfs: found cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 in the local lfs store
+  lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
+
+Export with selected files is used with `extdiff --patch`
+
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
+  $ hg --config extensions.extdiff= \
+  >    -R $TESTTMP/bulkfetch -v extdiff -r 2:tip --patch $TESTTMP/bulkfetch/lfs.bin
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc (23 bytes)
+  lfs: processed: bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc
+  lfs: downloaded 1 files (23 bytes)
+  */hg-8374dc4052cb.patch (glob)
+  lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
+  */hg-9640b57e77b1.patch (glob)
+  --- */hg-8374dc4052cb.patch	* (glob)
+  +++ */hg-9640b57e77b1.patch	* (glob)
+  @@ -2,12 +2,7 @@
+   # User test
+   # Date 0 0
+   #      Thu Jan 01 00:00:00 1970 +0000
+  -# Node ID 8374dc4052cbd388e79d9dc4ddb29784097aa354
+  -# Parent  1477875038c60152e391238920a16381c627b487
+  -lfs
+  +# Node ID 9640b57e77b14c3a0144fb4478b6cc13e13ea0d1
+  +# Parent  d3b84d50eacbd56638e11abce6b8616aaba54420
+  +add lfs pair
+   
+  -diff -r 1477875038c6 -r 8374dc4052cb lfs.bin
+  ---- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  -+++ b/lfs.bin	Thu Jan 01 00:00:00 1970 +0000
+  -@@ -0,0 +1,1 @@
+  -+this is a big lfs file
+  cleaning up temp directory
+  [1]
+
+Diff will prefetch files
+
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
+  $ hg -R $TESTTMP/bulkfetch -v diff -r 2:tip
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: need to transfer 4 objects (92 bytes)
+  lfs: downloading a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de (25 bytes)
+  lfs: processed: a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de
+  lfs: downloading bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc (23 bytes)
+  lfs: processed: bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc
+  lfs: downloading cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 (20 bytes)
+  lfs: processed: cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782
+  lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
+  lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: downloaded 4 files (92 bytes)
+  lfs: found bed80f00180ac404b843628ab56a1c1984d6145c391cd1628a7dd7d2598d71fc in the local lfs store
+  lfs: found a82f1c5cea0d40e3bb3a849686bb4e6ae47ca27e614de55c1ed0325698ef68de in the local lfs store
+  lfs: found cf1b2787b74e66547d931b6ebe28ff63303e803cb2baa14a8f57c4383d875782 in the local lfs store
+  lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfs.bin
+  --- a/lfs.bin	Thu Jan 01 00:00:00 1970 +0000
+  +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +0,0 @@
+  -this is a big lfs file
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfs2.txt
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfs2.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is another lfs file
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfspair1.bin
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfspair1.bin	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is an lfs file
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfspair2.bin
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfspair2.bin	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is an lfs file too
+  diff -r 8374dc4052cb -r 9640b57e77b1 nonlfs.txt
+  --- a/nonlfs.txt	Thu Jan 01 00:00:00 1970 +0000
+  +++ /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +0,0 @@
+  -non-lfs
+  diff -r 8374dc4052cb -r 9640b57e77b1 nonlfs3.txt
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/nonlfs3.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +non-lfs
+
+Only the files required by diff are prefetched
+
+  $ rm -r $TESTTMP/bulkfetch/.hg/store/lfs
+  $ hg -R $TESTTMP/bulkfetch -v diff -r 2:tip $TESTTMP/bulkfetch/lfspair2.bin
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: assuming remote store: http://localhost:$HGPORT/.git/info/lfs
+  lfs: downloading d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e (24 bytes)
+  lfs: processed: d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e
+  lfs: downloaded 1 files (24 bytes)
+  lfs: found d96eda2c74b56e95cfb5ffb66b6503e198cc6fc4a09dc877de925feebc65786e in the local lfs store
+  diff -r 8374dc4052cb -r 9640b57e77b1 lfspair2.bin
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/lfspair2.bin	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +this is an lfs file too
 
 #endif
 

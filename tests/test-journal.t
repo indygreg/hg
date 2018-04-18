@@ -1,11 +1,12 @@
 Tests for the journal extension; records bookmark locations.
 
   $ cat >> testmocks.py << EOF
-  > # mock out util.getuser() and util.makedate() to supply testable values
+  > # mock out procutil.getuser() and util.makedate() to supply testable values
   > import os
-  > from mercurial import util
+  > from mercurial import util, pycompat
+  > from mercurial.utils import dateutil, procutil
   > def mockgetuser():
-  >     return 'foobar'
+  >     return b'foobar'
   > 
   > def mockmakedate():
   >     filename = os.path.join(os.environ['TESTTMP'], 'testtime')
@@ -15,11 +16,11 @@ Tests for the journal extension; records bookmark locations.
   >     except IOError:
   >         time = 0.0
   >     with open(filename, 'wb') as timef:
-  >         timef.write(str(time))
+  >         timef.write(pycompat.bytestr(time))
   >     return (time, 0)
   > 
-  > util.getuser = mockgetuser
-  > util.makedate = mockmakedate
+  > procutil.getuser = mockgetuser
+  > dateutil.makedate = mockmakedate
   > EOF
 
   $ cat >> $HGRCPATH << EOF
@@ -146,7 +147,7 @@ Test that verbose, JSON, template and commit output work
   [
    {
     "command": "up",
-    "date": [5.0, 0],
+    "date": [5, 0],
     "name": ".",
     "newhashes": ["1e6c11564562b4ed919baca798bc4338bd299d6a"],
     "oldhashes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
@@ -154,7 +155,7 @@ Test that verbose, JSON, template and commit output work
    },
    {
     "command": "up 0",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "name": ".",
     "newhashes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
     "oldhashes": ["1e6c11564562b4ed919baca798bc4338bd299d6a"],
@@ -162,7 +163,7 @@ Test that verbose, JSON, template and commit output work
    },
    {
     "command": "commit -Aqm b",
-    "date": [1.0, 0],
+    "date": [1, 0],
     "name": ".",
     "newhashes": ["1e6c11564562b4ed919baca798bc4338bd299d6a"],
     "oldhashes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
@@ -170,7 +171,7 @@ Test that verbose, JSON, template and commit output work
    },
    {
     "command": "commit -Aqm a",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "name": ".",
     "newhashes": ["cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b"],
     "oldhashes": ["0000000000000000000000000000000000000000"],

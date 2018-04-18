@@ -28,9 +28,19 @@ from . import (
     util,
 )
 
+from .utils import (
+    stringutil,
+)
+
 _CHANGEGROUPV1_DELTA_HEADER = "20s20s20s20s"
 _CHANGEGROUPV2_DELTA_HEADER = "20s20s20s20s20s"
 _CHANGEGROUPV3_DELTA_HEADER = ">20s20s20s20s20sH"
+
+LFS_REQUIREMENT = 'lfs'
+
+# When narrowing is finalized and no longer subject to format changes,
+# we should move this to just "narrow" or similar.
+NARROW_REQUIREMENT = 'narrowhg-experimental'
 
 readexactly = util.readexactly
 
@@ -71,7 +81,7 @@ def writechunks(ui, chunks, filename, vfs=None):
                 fh = open(filename, "wb", 131072)
         else:
             fd, filename = tempfile.mkstemp(prefix="hg-bundle-", suffix=".hg")
-            fh = os.fdopen(fd, pycompat.sysstr("wb"))
+            fh = os.fdopen(fd, r"wb")
         cleanup = filename
         for c in chunks:
             fh.write(c)
@@ -407,7 +417,7 @@ class cg1unpacker(object):
                     newheads = [h for h in repo.heads()
                                 if h not in oldheads]
                     repo.ui.log("incoming",
-                                "%s incoming changes - new heads: %s\n",
+                                "%d incoming changes - new heads: %s\n",
                                 len(added),
                                 ', '.join([hex(c[:6]) for c in newheads]))
 
@@ -510,7 +520,7 @@ class cg1packer(object):
         if reorder == 'auto':
             reorder = None
         else:
-            reorder = util.parsebool(reorder)
+            reorder = stringutil.parsebool(reorder)
         self._repo = repo
         self._reorder = reorder
         self._progress = repo.ui.progress
@@ -748,7 +758,8 @@ class cg1packer(object):
         for i, fname in enumerate(sorted(changedfiles)):
             filerevlog = repo.file(fname)
             if not filerevlog:
-                raise error.Abort(_("empty or missing revlog for %s") % fname)
+                raise error.Abort(_("empty or missing file data for %s") %
+                                  fname)
 
             linkrevnodes = linknodes(filerevlog, fname)
             # Lookup for filenodes, we collected the linkrev nodes above in the
@@ -899,6 +910,17 @@ def supportedoutgoingversions(repo):
         # support versions 01 and 02.
         versions.discard('01')
         versions.discard('02')
+    if NARROW_REQUIREMENT in repo.requirements:
+        # Versions 01 and 02 don't support revlog flags, and we need to
+        # support that for stripping and unbundling to work.
+        versions.discard('01')
+        versions.discard('02')
+    if LFS_REQUIREMENT in repo.requirements:
+        # Versions 01 and 02 don't support revlog flags, and we need to
+        # mark LFS entries with REVIDX_EXTSTORED.
+        versions.discard('01')
+        versions.discard('02')
+
     return versions
 
 def localversion(repo):

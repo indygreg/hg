@@ -11,6 +11,7 @@ import datetime
 import errno
 import os
 import re
+import shlex
 import subprocess
 
 from mercurial.i18n import _
@@ -18,11 +19,67 @@ from mercurial import (
     encoding,
     error,
     phases,
+    pycompat,
     util,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 pickle = util.pickle
 propertycache = util.propertycache
+
+def _encodeornone(d):
+    if d is None:
+        return
+    return d.encode('latin1')
+
+class _shlexpy3proxy(object):
+
+    def __init__(self, l):
+        self._l = l
+
+    def __iter__(self):
+        return (_encodeornone(v) for v in self._l)
+
+    def get_token(self):
+        return _encodeornone(self._l.get_token())
+
+    @property
+    def infile(self):
+        return self._l.infile or '<unknown>'
+
+    @property
+    def lineno(self):
+        return self._l.lineno
+
+def shlexer(data=None, filepath=None, wordchars=None, whitespace=None):
+    if data is None:
+        if pycompat.ispy3:
+            data = open(filepath, 'r', encoding=r'latin1')
+        else:
+            data = open(filepath, 'r')
+    else:
+        if filepath is not None:
+            raise error.ProgrammingError(
+                'shlexer only accepts data or filepath, not both')
+        if pycompat.ispy3:
+            data = data.decode('latin1')
+    l = shlex.shlex(data, infile=filepath, posix=True)
+    if whitespace is not None:
+        l.whitespace_split = True
+        if pycompat.ispy3:
+            l.whitespace += whitespace.decode('latin1')
+        else:
+            l.whitespace += whitespace
+    if wordchars is not None:
+        if pycompat.ispy3:
+            l.wordchars += wordchars.decode('latin1')
+        else:
+            l.wordchars += wordchars
+    if pycompat.ispy3:
+        return _shlexpy3proxy(l)
+    return l
 
 def encodeargs(args):
     def encodearg(s):
@@ -42,7 +99,7 @@ class MissingTool(Exception):
 
 def checktool(exe, name=None, abort=True):
     name = name or exe
-    if not util.findexe(exe):
+    if not procutil.findexe(exe):
         if abort:
             exc = error.Abort
         else:
@@ -87,7 +144,7 @@ class converter_source(object):
         """ fails if revstr is not a 40 byte hex. mercurial and git both uses
             such format for their revision numbering
         """
-        if not re.match(r'[0-9a-fA-F]{40,40}$', revstr):
+        if not re.match(br'[0-9a-fA-F]{40,40}$', revstr):
             raise error.Abort(_('%s entry %s is not a valid revision'
                                ' identifier') % (mapname, revstr))
 
@@ -160,12 +217,13 @@ class converter_source(object):
         if isinstance(s, unicode):
             return s.encode("utf-8")
         try:
-            return s.decode(encoding).encode("utf-8")
+            return s.decode(pycompat.sysstr(encoding)).encode("utf-8")
         except UnicodeError:
             try:
                 return s.decode("latin-1").encode("utf-8")
             except UnicodeError:
-                return s.decode(encoding, "replace").encode("utf-8")
+                return s.decode(pycompat.sysstr(encoding),
+                                "replace").encode("utf-8")
 
     def getchangedfiles(self, rev, i):
         """Return the files changed by rev compared to parent[i].
@@ -322,6 +380,7 @@ class commandline(object):
         pass
 
     def _cmdline(self, cmd, *args, **kwargs):
+        kwargs = pycompat.byteskwargs(kwargs)
         cmdline = [self.command, cmd] + list(args)
         for k, v in kwargs.iteritems():
             if len(k) == 1:
@@ -335,25 +394,25 @@ class commandline(object):
                     cmdline[-1] += '=' + v
             except TypeError:
                 pass
-        cmdline = [util.shellquote(arg) for arg in cmdline]
+        cmdline = [procutil.shellquote(arg) for arg in cmdline]
         if not self.ui.debugflag:
-            cmdline += ['2>', os.devnull]
+            cmdline += ['2>', pycompat.bytestr(os.devnull)]
         cmdline = ' '.join(cmdline)
         return cmdline
 
     def _run(self, cmd, *args, **kwargs):
         def popen(cmdline):
             p = subprocess.Popen(cmdline, shell=True, bufsize=-1,
-                    close_fds=util.closefds,
-                    stdout=subprocess.PIPE)
+                                 close_fds=procutil.closefds,
+                                 stdout=subprocess.PIPE)
             return p
         return self._dorun(popen, cmd, *args, **kwargs)
 
     def _run2(self, cmd, *args, **kwargs):
-        return self._dorun(util.popen2, cmd, *args, **kwargs)
+        return self._dorun(procutil.popen2, cmd, *args, **kwargs)
 
     def _run3(self, cmd, *args, **kwargs):
-        return self._dorun(util.popen3, cmd, *args, **kwargs)
+        return self._dorun(procutil.popen3, cmd, *args, **kwargs)
 
     def _dorun(self, openfunc, cmd,  *args, **kwargs):
         cmdline = self._cmdline(cmd, *args, **kwargs)
@@ -382,7 +441,7 @@ class commandline(object):
             if output:
                 self.ui.warn(_('%s error:\n') % self.command)
                 self.ui.warn(output)
-            msg = util.explainexit(status)[0]
+            msg = procutil.explainexit(status)
             raise error.Abort('%s %s' % (self.command, msg))
 
     def run0(self, cmd, *args, **kwargs):
@@ -416,17 +475,17 @@ class commandline(object):
     def _limit_arglist(self, arglist, cmd, *args, **kwargs):
         cmdlen = len(self._cmdline(cmd, *args, **kwargs))
         limit = self.argmax - cmdlen
-        bytes = 0
+        numbytes = 0
         fl = []
         for fn in arglist:
             b = len(fn) + 3
-            if bytes + b < limit or len(fl) == 0:
+            if numbytes + b < limit or len(fl) == 0:
                 fl.append(fn)
-                bytes += b
+                numbytes += b
             else:
                 yield fl
                 fl = [fn]
-                bytes = b
+                numbytes = b
         if fl:
             yield fl
 
@@ -447,7 +506,7 @@ class mapfile(dict):
         if not self.path:
             return
         try:
-            fp = open(self.path, 'r')
+            fp = open(self.path, 'rb')
         except IOError as err:
             if err.errno != errno.ENOENT:
                 raise
@@ -471,12 +530,12 @@ class mapfile(dict):
     def __setitem__(self, key, value):
         if self.fp is None:
             try:
-                self.fp = open(self.path, 'a')
+                self.fp = open(self.path, 'ab')
             except IOError as err:
                 raise error.Abort(
                     _('could not open map file %r: %s') %
                     (self.path, encoding.strtolocal(err.strerror)))
-        self.fp.write('%s %s\n' % (key, value))
+        self.fp.write(util.tonativeeol('%s %s\n' % (key, value)))
         self.fp.flush()
         super(mapfile, self).__setitem__(key, value)
 
@@ -486,7 +545,7 @@ class mapfile(dict):
             self.fp = None
 
 def makedatetimestamp(t):
-    """Like util.makedate() but for time t instead of current time"""
+    """Like dateutil.makedate() but for time t instead of current time"""
     delta = (datetime.datetime.utcfromtimestamp(t) -
              datetime.datetime.fromtimestamp(t))
     tz = delta.days * 86400 + delta.seconds

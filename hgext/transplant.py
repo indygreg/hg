@@ -24,6 +24,7 @@ from mercurial import (
     error,
     exchange,
     hg,
+    logcmdutil,
     match,
     merge,
     node as nodemod,
@@ -36,6 +37,10 @@ from mercurial import (
     smartset,
     util,
     vfs as vfsmod,
+)
+from mercurial.utils import (
+    procutil,
+    stringutil,
 )
 
 class TransplantError(error.Abort):
@@ -119,7 +124,8 @@ class transplanter(object):
                                        opener=self.opener)
         def getcommiteditor():
             editform = cmdutil.mergeeditform(repo[None], 'transplant')
-            return cmdutil.getcommiteditor(editform=editform, **opts)
+            return cmdutil.getcommiteditor(editform=editform,
+                                           **pycompat.strkwargs(opts))
         self.getcommiteditor = getcommiteditor
 
     def applied(self, repo, node, parent):
@@ -160,7 +166,7 @@ class transplanter(object):
             tr = repo.transaction('transplant')
             for rev in revs:
                 node = revmap[rev]
-                revstr = '%s:%s' % (rev, nodemod.short(node))
+                revstr = '%d:%s' % (rev, nodemod.short(node))
 
                 if self.applied(repo, node, p1):
                     self.ui.warn(_('skipping already applied revision %s\n') %
@@ -194,7 +200,7 @@ class transplanter(object):
                 skipmerge = False
                 if parents[1] != revlog.nullid:
                     if not opts.get('parent'):
-                        self.ui.note(_('skipping merge changeset %s:%s\n')
+                        self.ui.note(_('skipping merge changeset %d:%s\n')
                                      % (rev, nodemod.short(node)))
                         skipmerge = True
                     else:
@@ -210,7 +216,7 @@ class transplanter(object):
                     patchfile = None
                 else:
                     fd, patchfile = tempfile.mkstemp(prefix='hg-transplant-')
-                    fp = os.fdopen(fd, pycompat.sysstr('w'))
+                    fp = os.fdopen(fd, r'wb')
                     gen = patch.diff(source, parent, node, opts=diffopts)
                     for chunk in gen:
                         fp.write(chunk)
@@ -258,7 +264,7 @@ class transplanter(object):
         self.ui.status(_('filtering %s\n') % patchfile)
         user, date, msg = (changelog[1], changelog[2], changelog[4])
         fd, headerfile = tempfile.mkstemp(prefix='hg-transplant-')
-        fp = os.fdopen(fd, pycompat.sysstr('w'))
+        fp = os.fdopen(fd, r'wb')
         fp.write("# HG changeset patch\n")
         fp.write("# User %s\n" % user)
         fp.write("# Date %d %d\n" % date)
@@ -266,14 +272,15 @@ class transplanter(object):
         fp.close()
 
         try:
-            self.ui.system('%s %s %s' % (filter, util.shellquote(headerfile),
-                                         util.shellquote(patchfile)),
+            self.ui.system('%s %s %s' % (filter,
+                                         procutil.shellquote(headerfile),
+                                         procutil.shellquote(patchfile)),
                            environ={'HGUSER': changelog[1],
                                     'HGREVISION': nodemod.hex(node),
                                     },
                            onerr=error.Abort, errprefix=_('filter failed'),
                            blockedtag='transplant_filter')
-            user, date, msg = self.parselog(file(headerfile))[1:4]
+            user, date, msg = self.parselog(open(headerfile, 'rb'))[1:4]
         finally:
             os.unlink(headerfile)
 
@@ -309,7 +316,7 @@ class transplanter(object):
                 p1 = repo.dirstate.p1()
                 p2 = node
                 self.log(user, date, message, p1, p2, merge=merge)
-                self.ui.write(str(inst) + '\n')
+                self.ui.write(stringutil.forcebytestr(inst) + '\n')
                 raise TransplantError(_('fix up the working directory and run '
                                         'hg transplant --continue'))
         else:
@@ -501,7 +508,7 @@ def hasnode(repo, node):
 
 def browserevs(ui, repo, nodes, opts):
     '''interactively transplant changesets'''
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     transplants = []
     merges = []
     prompt = _('apply changeset? [ynmpcq?]:'
@@ -646,6 +653,7 @@ def _dotransplant(ui, repo, *revs, **opts):
                 raise error.Abort(_('--all is incompatible with a '
                                    'revision list'))
 
+    opts = pycompat.byteskwargs(opts)
     checkopts(opts, revs)
 
     if not opts.get('log'):
@@ -695,7 +703,7 @@ def _dotransplant(ui, repo, *revs, **opts):
 
         tf = tp.transplantfilter(repo, source, p1)
         if opts.get('prune'):
-            prune = set(source.lookup(r)
+            prune = set(source[r].node()
                         for r in scmutil.revrange(source, opts.get('prune')))
             matchfn = lambda x: tf(x) and x not in prune
         else:
@@ -704,7 +712,7 @@ def _dotransplant(ui, repo, *revs, **opts):
         revmap = {}
         if revs:
             for r in scmutil.revrange(source, revs):
-                revmap[int(r)] = source.lookup(r)
+                revmap[int(r)] = source[r].node()
         elif opts.get('all') or not merges:
             if source != repo:
                 alltransplants = incwalk(source, csets, match=matchfn)
@@ -741,10 +749,11 @@ def revsettransplanted(repo, subset, x):
 
 templatekeyword = registrar.templatekeyword()
 
-@templatekeyword('transplanted')
-def kwtransplanted(repo, ctx, **args):
+@templatekeyword('transplanted', requires={'ctx'})
+def kwtransplanted(context, mapping):
     """String. The node identifier of the transplanted
     changeset if any."""
+    ctx = context.resource(mapping, 'ctx')
     n = ctx.extra().get('transplant_source')
     return n and nodemod.hex(n) or ''
 

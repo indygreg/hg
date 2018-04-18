@@ -23,6 +23,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 stringio = util.stringio
 
 # This is required for ncurses to display non-ASCII characters in default user
@@ -547,7 +550,7 @@ def testchunkselector(testfn, ui, headerlist, operation=None):
     chunkselector = curseschunkselector(headerlist, ui, operation)
     if testfn and os.path.exists(testfn):
         testf = open(testfn)
-        testcommands = map(lambda x: x.rstrip('\n'), testf.readlines())
+        testcommands = [x.rstrip('\n') for x in testf.readlines()]
         testf.close()
         while True:
             if chunkselector.handlekeypressed(testcommands.pop(0), test=True):
@@ -585,7 +588,7 @@ class curseschunkselector(object):
         # long as not explicitly set to a falsy value - especially,
         # when not set at all. This is to stay most compatible with
         # previous (color only) behaviour.
-        uicolor = util.parsebool(self.ui.config('ui', 'color'))
+        uicolor = stringutil.parsebool(self.ui.config('ui', 'color'))
         self.usecolor = uicolor is not False
 
         # the currently selected header, hunk, or hunk-line
@@ -950,7 +953,7 @@ class curseschunkselector(object):
         # preprocess the text, converting tabs to spaces
         text = text.expandtabs(4)
         # strip \n, and convert control characters to ^[char] representation
-        text = re.sub(r'[\x00-\x08\x0a-\x1f]',
+        text = re.sub(br'[\x00-\x08\x0a-\x1f]',
                 lambda m:'^' + chr(ord(m.group()) + 64), text.strip('\n'))
 
         if pair is not None:
@@ -1058,7 +1061,7 @@ class curseschunkselector(object):
         if len(lines) != self.numstatuslines:
             self.numstatuslines = len(lines)
             self.statuswin.resize(self.numstatuslines, self.xscreensize)
-        return [util.ellipsis(l, self.xscreensize - 1) for l in lines]
+        return [stringutil.ellipsis(l, self.xscreensize - 1) for l in lines]
 
     def updatescreen(self):
         self.statuswin.erase()
@@ -1335,7 +1338,7 @@ class curseschunkselector(object):
         # temporarily disable printing to windows by printstring
         patchdisplaystring = self.printitem(item, ignorefolding,
                                             recursechildren, towin=False)
-        numlines = len(patchdisplaystring) / self.xscreensize
+        numlines = len(patchdisplaystring) // self.xscreensize
         return numlines
 
     def sigwinchhandler(self, n, frame):

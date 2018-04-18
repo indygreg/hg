@@ -64,7 +64,7 @@ def buildprobtable(fp, cmd='hg manifest tip'):
         counts.pop(c, None)
     t = sum(counts.itervalues()) / 100.0
     fp.write('probtable = (')
-    for i, (k, v) in enumerate(sorted(counts.iteritems(), key=lambda x: x[1],
+    for i, (k, v) in enumerate(sorted(counts.items(), key=lambda x: x[1],
                                       reverse=True)):
         if (i % 5) == 0:
             fp.write('\n    ')

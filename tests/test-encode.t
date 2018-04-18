@@ -59,5 +59,14 @@ check hg cat operation
   this is a test
   $ hg -R .. cat --decode ../a.gz | gunzip
   this is a test
+  $ cd ..
+
+check tempfile filter
+
+  $ hg cat a.gz --decode --config 'decode.*.gz=tempfile:gzip -c INFILE > OUTFILE' | gunzip
+  this is a test
+  $ hg cat a.gz --decode --config 'decode.*.gz=tempfile:sh -c "exit 1"'
+  abort: command '*' failed: exited with status 1 (glob)
+  [255]
 
   $ cd ..

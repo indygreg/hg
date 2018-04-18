@@ -53,13 +53,8 @@ def findcommonincoming(repo, remote, heads=None, force=False, ancestorsof=None):
         return treediscovery.findcommonincoming(repo, remote, heads, force)
 
     if heads:
-        allknown = True
         knownnode = repo.changelog.hasnode # no nodemap until it is filtered
-        for h in heads:
-            if not knownnode(h):
-                allknown = False
-                break
-        if allknown:
+        if all(knownnode(h) for h in heads):
             return (heads, False, heads)
 
     res = setdiscovery.findcommonheads(repo.ui, repo, remote,
@@ -208,13 +203,16 @@ def _headssummary(pushop):
     headssum = {}
     # A. Create set of branches involved in the push.
     branches = set(repo[n].branch() for n in outgoing.missing)
-    remotemap = remote.branchmap()
+
+    with remote.commandexecutor() as e:
+        remotemap = e.callcommand('branchmap', {}).result()
+
     newbranches = branches - set(remotemap)
     branches.difference_update(newbranches)
 
     # A. register remote heads
     remotebranches = set()
-    for branch, heads in remote.branchmap().iteritems():
+    for branch, heads in remotemap.iteritems():
         remotebranches.add(branch)
         known = []
         unsynced = []
@@ -292,7 +290,12 @@ def _nowarnheads(pushop):
     repo = pushop.repo.unfiltered()
     remote = pushop.remote
     localbookmarks = repo._bookmarks
-    remotebookmarks = remote.listkeys('bookmarks')
+
+    with remote.commandexecutor() as e:
+        remotebookmarks = e.callcommand('listkeys', {
+            'namespace': 'bookmarks',
+        }).result()
+
     bookmarkedheads = set()
 
     # internal config: bookmarks.pushing
@@ -302,12 +305,12 @@ def _nowarnheads(pushop):
     for bm in localbookmarks:
         rnode = remotebookmarks.get(bm)
         if rnode and rnode in repo:
-            lctx, rctx = repo[bm], repo[rnode]
+            lctx, rctx = localbookmarks.changectx(bm), repo[rnode]
             if bookmarks.validdest(repo, rctx, lctx):
                 bookmarkedheads.add(lctx.node())
         else:
             if bm in newbookmarks and bm not in remotebookmarks:
-                bookmarkedheads.add(repo[bm].node())
+                bookmarkedheads.add(localbookmarks[bm])
 
     return bookmarkedheads
 

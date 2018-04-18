@@ -44,16 +44,16 @@ from mercurial.hgweb import (
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('badserver', 'closeafteraccept',
+configitem(b'badserver', b'closeafteraccept',
     default=False,
 )
-configitem('badserver', 'closeafterrecvbytes',
-    default=0,
+configitem(b'badserver', b'closeafterrecvbytes',
+    default='0',
 )
-configitem('badserver', 'closeaftersendbytes',
-    default=0,
+configitem(b'badserver', b'closeaftersendbytes',
+    default='0',
 )
-configitem('badserver', 'closebeforeaccept',
+configitem(b'badserver', b'closebeforeaccept',
     default=False,
 )
 
@@ -238,6 +238,13 @@ def extsetup(ui):
             self._ui = ui
             super(badserver, self).__init__(ui, *args, **kwargs)
 
+            recvbytes = self._ui.config('badserver', 'closeafterrecvbytes')
+            recvbytes = recvbytes.split(',')
+            self.closeafterrecvbytes = [int(v) for v in recvbytes if v]
+            sendbytes = self._ui.config('badserver', 'closeaftersendbytes')
+            sendbytes = sendbytes.split(',')
+            self.closeaftersendbytes = [int(v) for v in sendbytes if v]
+
             # Need to inherit object so super() works.
             class badrequesthandler(self.RequestHandlerClass, object):
                 def send_header(self, name, value):
@@ -275,10 +282,14 @@ def extsetup(ui):
         # is a hgweb.server._httprequesthandler.
         def process_request(self, socket, address):
             # Wrap socket in a proxy if we need to count bytes.
-            closeafterrecvbytes = self._ui.configint('badserver',
-                                                     'closeafterrecvbytes')
-            closeaftersendbytes = self._ui.configint('badserver',
-                                                     'closeaftersendbytes')
+            if self.closeafterrecvbytes:
+                closeafterrecvbytes = self.closeafterrecvbytes.pop(0)
+            else:
+                closeafterrecvbytes = 0
+            if self.closeaftersendbytes:
+                closeaftersendbytes = self.closeaftersendbytes.pop(0)
+            else:
+                closeaftersendbytes = 0
 
             if closeafterrecvbytes or closeaftersendbytes:
                 socket = socketproxy(socket, self.errorlog,

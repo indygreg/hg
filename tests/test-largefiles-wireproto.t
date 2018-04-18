@@ -1,3 +1,13 @@
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
 This file contains testcases that tend to be related to the wire protocol part
 of largefiles.
 
@@ -302,7 +312,7 @@ largefiles pulled on update - no server side problems:
   getting changed largefiles
   using http://localhost:$HGPORT2/
   sending capabilities command
-  sending batch command
+  sending statlfile command
   getting largefiles: 0/1 files (0.00%)
   getting f1:02a439e5c31c526465ab1a0ca1f431f76b827b90
   sending getlfile command
@@ -352,7 +362,7 @@ largefiles should batch verify remote calls
   searching 2 changesets for largefiles
   verified existence of 2 revisions of 2 largefiles
   $ tail -1 access.log
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=statlfile+sha%3D972a1a11f19934401291cc99117ec614933374ce%3Bstatlfile+sha%3Dc801c9cfe94400963fcb683246217d5db77f9a9a x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=statlfile+sha%3D972a1a11f19934401291cc99117ec614933374ce%3Bstatlfile+sha%3Dc801c9cfe94400963fcb683246217d5db77f9a9a x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   $ hg -R batchverifyclone update
   getting changed largefiles
   2 largefiles updated, 0 removed
@@ -390,7 +400,7 @@ available locally.
   searching 3 changesets for largefiles
   verified existence of 3 revisions of 3 largefiles
   $ tail -1 access.log
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=statlfile+sha%3Dc8559c3c9cfb42131794b7d8009230403b9b454c x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=statlfile HTTP/1.1" 200 - x-hgarg-1:sha=c8559c3c9cfb42131794b7d8009230403b9b454c x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
 
   $ killdaemons.py
 
@@ -414,7 +424,7 @@ a large file from the server rather than to get it from the cache
   > import base64
   > from mercurial.hgweb import common
   > def perform_authentication(hgweb, req, op):
-  >     auth = req.env.get('HTTP_AUTHORIZATION')
+  >     auth = req.headers.get('Authorization')
   >     if not auth:
   >         raise common.ErrorResponse(common.HTTP_UNAUTHORIZED, 'who',
   >                 [('WWW-Authenticate', 'Basic Realm="mercurial"')])

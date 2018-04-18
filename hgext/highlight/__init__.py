@@ -30,13 +30,11 @@ from __future__ import absolute_import
 
 from . import highlight
 from mercurial.hgweb import (
-    common,
     webcommands,
     webutil,
 )
 
 from mercurial import (
-    encoding,
     extensions,
     fileset,
 )
@@ -59,8 +57,8 @@ def pygmentize(web, field, fctx, tmpl):
         highlight.pygmentize(field, fctx, style, tmpl,
                 guessfilenameonly=filenameonly)
 
-def filerevision_highlight(orig, web, req, tmpl, fctx):
-    mt = ''.join(tmpl('mimetype', encoding=encoding.encoding))
+def filerevision_highlight(orig, web, fctx):
+    mt = web.res.headers['Content-Type']
     # only pygmentize for mimetype containing 'html' so we both match
     # 'text/html' and possibly 'application/xhtml+xml' in the future
     # so that we don't have to touch the extension when the mimetype
@@ -69,24 +67,27 @@ def filerevision_highlight(orig, web, req, tmpl, fctx):
     # can't clash with the file's content-type here in case we
     # pygmentize a html file
     if 'html' in mt:
-        pygmentize(web, 'fileline', fctx, tmpl)
+        pygmentize(web, 'fileline', fctx, web.tmpl)
 
-    return orig(web, req, tmpl, fctx)
+    return orig(web, fctx)
 
-def annotate_highlight(orig, web, req, tmpl):
-    mt = ''.join(tmpl('mimetype', encoding=encoding.encoding))
+def annotate_highlight(orig, web):
+    mt = web.res.headers['Content-Type']
     if 'html' in mt:
-        fctx = webutil.filectx(web.repo, req)
-        pygmentize(web, 'annotateline', fctx, tmpl)
+        fctx = webutil.filectx(web.repo, web.req)
+        pygmentize(web, 'annotateline', fctx, web.tmpl)
 
-    return orig(web, req, tmpl)
+    return orig(web)
 
-def generate_css(web, req, tmpl):
+def generate_css(web):
     pg_style = web.config('web', 'pygments_style', 'colorful')
     fmter = highlight.HtmlFormatter(style=pg_style)
-    req.respond(common.HTTP_OK, 'text/css')
-    return ['/* pygments_style = %s */\n\n' % pg_style,
-            fmter.get_style_defs('')]
+    web.res.headers['Content-Type'] = 'text/css'
+    web.res.setbodybytes(''.join([
+        '/* pygments_style = %s */\n\n' % pg_style,
+        fmter.get_style_defs(''),
+    ]))
+    return web.res.sendresponse()
 
 def extsetup():
     # monkeypatch in the new version

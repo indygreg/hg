@@ -12,7 +12,7 @@ Test UI worker interaction
   > def abort(ui, args):
   >     if args[0] == 0:
   >         # by first worker for test stability
-  >         raise error.Abort('known exception')
+  >         raise error.Abort(b'known exception')
   >     return runme(ui, [])
   > def exc(ui, args):
   >     if args[0] == 0:
@@ -21,25 +21,25 @@ Test UI worker interaction
   >     return runme(ui, [])
   > def runme(ui, args):
   >     for arg in args:
-  >         ui.status('run\n')
+  >         ui.status(b'run\n')
   >         yield 1, arg
   >     time.sleep(0.1) # easier to trigger killworkers code path
   > functable = {
-  >     'abort': abort,
-  >     'exc': exc,
-  >     'runme': runme,
+  >     b'abort': abort,
+  >     b'exc': exc,
+  >     b'runme': runme,
   > }
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'test', [], 'hg test [COST] [FUNC]')
-  > def t(ui, repo, cost=1.0, func='runme'):
+  > @command(b'test', [], b'hg test [COST] [FUNC]')
+  > def t(ui, repo, cost=1.0, func=b'runme'):
   >     cost = float(cost)
   >     func = functable[func]
-  >     ui.status('start\n')
+  >     ui.status(b'start\n')
   >     runs = worker.worker(ui, cost, func, (ui,), range(8))
   >     for n, i in runs:
   >         pass
-  >     ui.status('done\n')
+  >     ui.status(b'done\n')
   > EOF
   $ abspath=`pwd`/t.py
   $ hg init

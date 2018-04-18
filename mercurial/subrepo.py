@@ -1,4 +1,4 @@
-# subrepo.py - sub-repository handling for Mercurial
+# subrepo.py - sub-repository classes and factory
 #
 # Copyright 2009-2010 Matt Mackall <mpm@selenic.com>
 #
@@ -19,29 +19,34 @@ import sys
 import tarfile
 import xml.dom.minidom
 
-
 from .i18n import _
 from . import (
     cmdutil,
-    config,
     encoding,
     error,
     exchange,
-    filemerge,
+    logcmdutil,
     match as matchmod,
     node,
     pathutil,
     phases,
     pycompat,
     scmutil,
+    subrepoutil,
     util,
     vfs as vfsmod,
 )
+from .utils import (
+    dateutil,
+    procutil,
+    stringutil,
+)
 
 hg = None
+reporelpath = subrepoutil.reporelpath
+subrelpath = subrepoutil.subrelpath
+_abssource = subrepoutil._abssource
 propertycache = util.propertycache
-
-nullstate = ('', '', 'empty')
 
 def _expandedabspath(path):
     '''
@@ -73,290 +78,13 @@ def annotatesubrepoerror(func):
             raise ex
         except error.Abort as ex:
             subrepo = subrelpath(self)
-            errormsg = str(ex) + ' ' + _('(in subrepository "%s")') % subrepo
+            errormsg = (stringutil.forcebytestr(ex) + ' '
+                        + _('(in subrepository "%s")') % subrepo)
             # avoid handling this exception by raising a SubrepoAbort exception
             raise SubrepoAbort(errormsg, hint=ex.hint, subrepo=subrepo,
                                cause=sys.exc_info())
         return res
     return decoratedmethod
-
-def state(ctx, ui):
-    """return a state dict, mapping subrepo paths configured in .hgsub
-    to tuple: (source from .hgsub, revision from .hgsubstate, kind
-    (key in types dict))
-    """
-    p = config.config()
-    repo = ctx.repo()
-    def read(f, sections=None, remap=None):
-        if f in ctx:
-            try:
-                data = ctx[f].data()
-            except IOError as err:
-                if err.errno != errno.ENOENT:
-                    raise
-                # handle missing subrepo spec files as removed
-                ui.warn(_("warning: subrepo spec file \'%s\' not found\n") %
-                        repo.pathto(f))
-                return
-            p.parse(f, data, sections, remap, read)
-        else:
-            raise error.Abort(_("subrepo spec file \'%s\' not found") %
-                             repo.pathto(f))
-    if '.hgsub' in ctx:
-        read('.hgsub')
-
-    for path, src in ui.configitems('subpaths'):
-        p.set('subpaths', path, src, ui.configsource('subpaths', path))
-
-    rev = {}
-    if '.hgsubstate' in ctx:
-        try:
-            for i, l in enumerate(ctx['.hgsubstate'].data().splitlines()):
-                l = l.lstrip()
-                if not l:
-                    continue
-                try:
-                    revision, path = l.split(" ", 1)
-                except ValueError:
-                    raise error.Abort(_("invalid subrepository revision "
-                                       "specifier in \'%s\' line %d")
-                                     % (repo.pathto('.hgsubstate'), (i + 1)))
-                rev[path] = revision
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
-
-    def remap(src):
-        for pattern, repl in p.items('subpaths'):
-            # Turn r'C:\foo\bar' into r'C:\\foo\\bar' since re.sub
-            # does a string decode.
-            repl = util.escapestr(repl)
-            # However, we still want to allow back references to go
-            # through unharmed, so we turn r'\\1' into r'\1'. Again,
-            # extra escapes are needed because re.sub string decodes.
-            repl = re.sub(br'\\\\([0-9]+)', br'\\\1', repl)
-            try:
-                src = re.sub(pattern, repl, src, 1)
-            except re.error as e:
-                raise error.Abort(_("bad subrepository pattern in %s: %s")
-                                 % (p.source('subpaths', pattern), e))
-        return src
-
-    state = {}
-    for path, src in p[''].items():
-        kind = 'hg'
-        if src.startswith('['):
-            if ']' not in src:
-                raise error.Abort(_('missing ] in subrepository source'))
-            kind, src = src.split(']', 1)
-            kind = kind[1:]
-            src = src.lstrip() # strip any extra whitespace after ']'
-
-        if not util.url(src).isabs():
-            parent = _abssource(repo, abort=False)
-            if parent:
-                parent = util.url(parent)
-                parent.path = posixpath.join(parent.path or '', src)
-                parent.path = posixpath.normpath(parent.path)
-                joined = str(parent)
-                # Remap the full joined path and use it if it changes,
-                # else remap the original source.
-                remapped = remap(joined)
-                if remapped == joined:
-                    src = remap(src)
-                else:
-                    src = remapped
-
-        src = remap(src)
-        state[util.pconvert(path)] = (src.strip(), rev.get(path, ''), kind)
-
-    return state
-
-def writestate(repo, state):
-    """rewrite .hgsubstate in (outer) repo with these subrepo states"""
-    lines = ['%s %s\n' % (state[s][1], s) for s in sorted(state)
-                                                if state[s][1] != nullstate[1]]
-    repo.wwrite('.hgsubstate', ''.join(lines), '')
-
-def submerge(repo, wctx, mctx, actx, overwrite, labels=None):
-    """delegated from merge.applyupdates: merging of .hgsubstate file
-    in working context, merging context and ancestor context"""
-    if mctx == actx: # backwards?
-        actx = wctx.p1()
-    s1 = wctx.substate
-    s2 = mctx.substate
-    sa = actx.substate
-    sm = {}
-
-    repo.ui.debug("subrepo merge %s %s %s\n" % (wctx, mctx, actx))
-
-    def debug(s, msg, r=""):
-        if r:
-            r = "%s:%s:%s" % r
-        repo.ui.debug("  subrepo %s: %s %s\n" % (s, msg, r))
-
-    promptssrc = filemerge.partextras(labels)
-    for s, l in sorted(s1.iteritems()):
-        prompts = None
-        a = sa.get(s, nullstate)
-        ld = l # local state with possible dirty flag for compares
-        if wctx.sub(s).dirty():
-            ld = (l[0], l[1] + "+")
-        if wctx == actx: # overwrite
-            a = ld
-
-        prompts = promptssrc.copy()
-        prompts['s'] = s
-        if s in s2:
-            r = s2[s]
-            if ld == r or r == a: # no change or local is newer
-                sm[s] = l
-                continue
-            elif ld == a: # other side changed
-                debug(s, "other changed, get", r)
-                wctx.sub(s).get(r, overwrite)
-                sm[s] = r
-            elif ld[0] != r[0]: # sources differ
-                prompts['lo'] = l[0]
-                prompts['ro'] = r[0]
-                if repo.ui.promptchoice(
-                    _(' subrepository sources for %(s)s differ\n'
-                      'use (l)ocal%(l)s source (%(lo)s)'
-                      ' or (r)emote%(o)s source (%(ro)s)?'
-                      '$$ &Local $$ &Remote') % prompts, 0):
-                    debug(s, "prompt changed, get", r)
-                    wctx.sub(s).get(r, overwrite)
-                    sm[s] = r
-            elif ld[1] == a[1]: # local side is unchanged
-                debug(s, "other side changed, get", r)
-                wctx.sub(s).get(r, overwrite)
-                sm[s] = r
-            else:
-                debug(s, "both sides changed")
-                srepo = wctx.sub(s)
-                prompts['sl'] = srepo.shortid(l[1])
-                prompts['sr'] = srepo.shortid(r[1])
-                option = repo.ui.promptchoice(
-                    _(' subrepository %(s)s diverged (local revision: %(sl)s, '
-                      'remote revision: %(sr)s)\n'
-                      '(M)erge, keep (l)ocal%(l)s or keep (r)emote%(o)s?'
-                      '$$ &Merge $$ &Local $$ &Remote')
-                    % prompts, 0)
-                if option == 0:
-                    wctx.sub(s).merge(r)
-                    sm[s] = l
-                    debug(s, "merge with", r)
-                elif option == 1:
-                    sm[s] = l
-                    debug(s, "keep local subrepo revision", l)
-                else:
-                    wctx.sub(s).get(r, overwrite)
-                    sm[s] = r
-                    debug(s, "get remote subrepo revision", r)
-        elif ld == a: # remote removed, local unchanged
-            debug(s, "remote removed, remove")
-            wctx.sub(s).remove()
-        elif a == nullstate: # not present in remote or ancestor
-            debug(s, "local added, keep")
-            sm[s] = l
-            continue
-        else:
-            if repo.ui.promptchoice(
-                _(' local%(l)s changed subrepository %(s)s'
-                  ' which remote%(o)s removed\n'
-                  'use (c)hanged version or (d)elete?'
-                  '$$ &Changed $$ &Delete') % prompts, 0):
-                debug(s, "prompt remove")
-                wctx.sub(s).remove()
-
-    for s, r in sorted(s2.items()):
-        prompts = None
-        if s in s1:
-            continue
-        elif s not in sa:
-            debug(s, "remote added, get", r)
-            mctx.sub(s).get(r)
-            sm[s] = r
-        elif r != sa[s]:
-            prompts = promptssrc.copy()
-            prompts['s'] = s
-            if repo.ui.promptchoice(
-                _(' remote%(o)s changed subrepository %(s)s'
-                  ' which local%(l)s removed\n'
-                  'use (c)hanged version or (d)elete?'
-                  '$$ &Changed $$ &Delete') % prompts, 0) == 0:
-                debug(s, "prompt recreate", r)
-                mctx.sub(s).get(r)
-                sm[s] = r
-
-    # record merged .hgsubstate
-    writestate(repo, sm)
-    return sm
-
-def precommit(ui, wctx, status, match, force=False):
-    """Calculate .hgsubstate changes that should be applied before committing
-
-    Returns (subs, commitsubs, newstate) where
-    - subs: changed subrepos (including dirty ones)
-    - commitsubs: dirty subrepos which the caller needs to commit recursively
-    - newstate: new state dict which the caller must write to .hgsubstate
-
-    This also updates the given status argument.
-    """
-    subs = []
-    commitsubs = set()
-    newstate = wctx.substate.copy()
-
-    # only manage subrepos and .hgsubstate if .hgsub is present
-    if '.hgsub' in wctx:
-        # we'll decide whether to track this ourselves, thanks
-        for c in status.modified, status.added, status.removed:
-            if '.hgsubstate' in c:
-                c.remove('.hgsubstate')
-
-        # compare current state to last committed state
-        # build new substate based on last committed state
-        oldstate = wctx.p1().substate
-        for s in sorted(newstate.keys()):
-            if not match(s):
-                # ignore working copy, use old state if present
-                if s in oldstate:
-                    newstate[s] = oldstate[s]
-                    continue
-                if not force:
-                    raise error.Abort(
-                        _("commit with new subrepo %s excluded") % s)
-            dirtyreason = wctx.sub(s).dirtyreason(True)
-            if dirtyreason:
-                if not ui.configbool('ui', 'commitsubrepos'):
-                    raise error.Abort(dirtyreason,
-                        hint=_("use --subrepos for recursive commit"))
-                subs.append(s)
-                commitsubs.add(s)
-            else:
-                bs = wctx.sub(s).basestate()
-                newstate[s] = (newstate[s][0], bs, newstate[s][2])
-                if oldstate.get(s, (None, None, None))[1] != bs:
-                    subs.append(s)
-
-        # check for removed subrepos
-        for p in wctx.parents():
-            r = [s for s in p.substate if s not in newstate]
-            subs += [s for s in r if match(s)]
-        if subs:
-            if (not match('.hgsub') and
-                '.hgsub' in (wctx.modified() + wctx.added())):
-                raise error.Abort(_("can't commit subrepos without .hgsub"))
-            status.modified.insert(0, '.hgsubstate')
-
-    elif '.hgsub' in status.removed:
-        # clean up .hgsubstate when .hgsub is removed
-        if ('.hgsubstate' in wctx and
-            '.hgsubstate' not in (status.modified + status.added +
-                                  status.removed)):
-            status.removed.insert(0, '.hgsubstate')
-
-    return subs, commitsubs, newstate
 
 def _updateprompt(ui, sub, dirty, local, remote):
     if dirty:
@@ -371,64 +99,6 @@ def _updateprompt(ui, sub, dirty, local, remote):
                  '$$ &Local $$ &Remote')
                % (subrelpath(sub), local, remote))
     return ui.promptchoice(msg, 0)
-
-def reporelpath(repo):
-    """return path to this (sub)repo as seen from outermost repo"""
-    parent = repo
-    while util.safehasattr(parent, '_subparent'):
-        parent = parent._subparent
-    return repo.root[len(pathutil.normasprefix(parent.root)):]
-
-def subrelpath(sub):
-    """return path to this subrepo as seen from outermost repo"""
-    return sub._relpath
-
-def _abssource(repo, push=False, abort=True):
-    """return pull/push path of repo - either based on parent repo .hgsub info
-    or on the top repo config. Abort or return None if no source found."""
-    if util.safehasattr(repo, '_subparent'):
-        source = util.url(repo._subsource)
-        if source.isabs():
-            return bytes(source)
-        source.path = posixpath.normpath(source.path)
-        parent = _abssource(repo._subparent, push, abort=False)
-        if parent:
-            parent = util.url(util.pconvert(parent))
-            parent.path = posixpath.join(parent.path or '', source.path)
-            parent.path = posixpath.normpath(parent.path)
-            return bytes(parent)
-    else: # recursion reached top repo
-        path = None
-        if util.safehasattr(repo, '_subtoppath'):
-            path = repo._subtoppath
-        elif push and repo.ui.config('paths', 'default-push'):
-            path = repo.ui.config('paths', 'default-push')
-        elif repo.ui.config('paths', 'default'):
-            path = repo.ui.config('paths', 'default')
-        elif repo.shared():
-            # chop off the .hg component to get the default path form.  This has
-            # already run through vfsmod.vfs(..., realpath=True), so it doesn't
-            # have problems with 'C:'
-            return os.path.dirname(repo.sharedpath)
-        if path:
-            # issue5770: 'C:\' and 'C:' are not equivalent paths.  The former is
-            # as expected: an absolute path to the root of the C: drive.  The
-            # latter is a relative path, and works like so:
-            #
-            #   C:\>cd C:\some\path
-            #   C:\>D:
-            #   D:\>python -c "import os; print os.path.abspath('C:')"
-            #   C:\some\path
-            #
-            #   D:\>python -c "import os; print os.path.abspath('C:relative')"
-            #   C:\some\path\relative
-            if util.hasdriveletter(path):
-                if len(path) == 2 or path[2:3] not in br'\/':
-                    path = os.path.abspath(path)
-            return path
-
-    if abort:
-        raise error.Abort(_("default path for subrepository not found"))
 
 def _sanitize(ui, vfs, ignore):
     for dirname, dirs, names in vfs.walk():
@@ -507,37 +177,6 @@ def nullsubrepo(ctx, path, pctx):
     if state[2] == 'hg':
         subrev = "0" * 40
     return types[state[2]](pctx, path, (state[0], subrev), True)
-
-def newcommitphase(ui, ctx):
-    commitphase = phases.newcommitphase(ui)
-    substate = getattr(ctx, "substate", None)
-    if not substate:
-        return commitphase
-    check = ui.config('phases', 'checksubrepos')
-    if check not in ('ignore', 'follow', 'abort'):
-        raise error.Abort(_('invalid phases.checksubrepos configuration: %s')
-                         % (check))
-    if check == 'ignore':
-        return commitphase
-    maxphase = phases.public
-    maxsub = None
-    for s in sorted(substate):
-        sub = ctx.sub(s)
-        subphase = sub.phase(substate[s][1])
-        if maxphase < subphase:
-            maxphase = subphase
-            maxsub = s
-    if commitphase < maxphase:
-        if check == 'abort':
-            raise error.Abort(_("can't commit in %s phase"
-                               " conflicting %s from subrepository %s") %
-                             (phases.phasenames[commitphase],
-                              phases.phasenames[maxphase], maxsub))
-        ui.warn(_("warning: changes are committed in"
-                  " %s phase from subrepository %s\n") %
-                (phases.phasenames[maxphase], maxsub))
-        return maxphase
-    return commitphase
 
 # subrepo classes need to implement the following abstract class:
 
@@ -648,7 +287,7 @@ class abstractsubrepo(object):
     def add(self, ui, match, prefix, explicitonly, **opts):
         return []
 
-    def addremove(self, matcher, prefix, opts, dry_run, similarity):
+    def addremove(self, matcher, prefix, opts):
         self.ui.warn("%s: %s" % (prefix, _("addremove is not supported")))
         return 1
 
@@ -713,10 +352,11 @@ class abstractsubrepo(object):
         matched by the match function
         '''
 
-    def forget(self, match, prefix):
+    def forget(self, match, prefix, dryrun, interactive):
         return ([], [])
 
-    def removefiles(self, matcher, prefix, after, force, subrepos, warnings):
+    def removefiles(self, matcher, prefix, after, force, subrepos,
+                    dryrun, warnings):
         """remove the matched files from the subrepository and the filesystem,
         possibly by force and/or after the file has been removed from the
         filesystem.  Return 0 on success, 1 on any warning.
@@ -870,15 +510,14 @@ class hgsubrepo(abstractsubrepo):
                            explicitonly, **opts)
 
     @annotatesubrepoerror
-    def addremove(self, m, prefix, opts, dry_run, similarity):
+    def addremove(self, m, prefix, opts):
         # In the same way as sub directories are processed, once in a subrepo,
         # always entry any of its subrepos.  Don't corrupt the options that will
         # be used to process sibling subrepos however.
         opts = copy.copy(opts)
         opts['subrepos'] = True
         return scmutil.addremove(self._repo, m,
-                                 self.wvfs.reljoin(prefix, self._path), opts,
-                                 dry_run, similarity)
+                                 self.wvfs.reljoin(prefix, self._path), opts)
 
     @annotatesubrepoerror
     def cat(self, match, fm, fntemplate, prefix, **opts):
@@ -907,10 +546,10 @@ class hgsubrepo(abstractsubrepo):
             # in hex format
             if node2 is not None:
                 node2 = node.bin(node2)
-            cmdutil.diffordiffstat(ui, self._repo, diffopts,
-                                   node1, node2, match,
-                                   prefix=posixpath.join(prefix, self._path),
-                                   listsubrepos=True, **opts)
+            logcmdutil.diffordiffstat(ui, self._repo, diffopts,
+                                      node1, node2, match,
+                                      prefix=posixpath.join(prefix, self._path),
+                                      listsubrepos=True, **opts)
         except error.RepoLookupError as inst:
             self.ui.warn(_('warning: error "%s" in subrepository "%s"\n')
                           % (inst, subrelpath(self)))
@@ -918,9 +557,14 @@ class hgsubrepo(abstractsubrepo):
     @annotatesubrepoerror
     def archive(self, archiver, prefix, match=None, decode=True):
         self._get(self._state + ('hg',))
-        total = abstractsubrepo.archive(self, archiver, prefix, match)
+        files = self.files()
+        if match:
+            files = [f for f in files if match(f)]
         rev = self._state[1]
         ctx = self._repo[rev]
+        scmutil.prefetchfiles(self._repo, [ctx.rev()],
+                              scmutil.matchfiles(self._repo, files))
+        total = abstractsubrepo.archive(self, archiver, prefix, match)
         for subpath in ctx.substate:
             s = subrepo(ctx, subpath, True)
             submatch = matchmod.subdirmatcher(subpath, match)
@@ -959,7 +603,7 @@ class hgsubrepo(abstractsubrepo):
 
     @annotatesubrepoerror
     def phase(self, state):
-        return self._repo[state].phase()
+        return self._repo[state or '.'].phase()
 
     @annotatesubrepoerror
     def remove(self):
@@ -1080,7 +724,7 @@ class hgsubrepo(abstractsubrepo):
         ssh = opts.get('ssh')
 
         # push subrepos depth-first for coherent ordering
-        c = self._repo['']
+        c = self._repo['.']
         subs = c.substate # only repos that are committed
         for s in sorted(subs):
             if c.sub(s).push(opts) == 0:
@@ -1172,15 +816,17 @@ class hgsubrepo(abstractsubrepo):
         return ctx.walk(match)
 
     @annotatesubrepoerror
-    def forget(self, match, prefix):
+    def forget(self, match, prefix, dryrun, interactive):
         return cmdutil.forget(self.ui, self._repo, match,
-                              self.wvfs.reljoin(prefix, self._path), True)
+                              self.wvfs.reljoin(prefix, self._path),
+                              True, dryrun=dryrun, interactive=interactive)
 
     @annotatesubrepoerror
-    def removefiles(self, matcher, prefix, after, force, subrepos, warnings):
+    def removefiles(self, matcher, prefix, after, force, subrepos,
+                    dryrun, warnings):
         return cmdutil.remove(self.ui, self._repo, matcher,
                               self.wvfs.reljoin(prefix, self._path),
-                              after, force, subrepos)
+                              after, force, subrepos, dryrun)
 
     @annotatesubrepoerror
     def revert(self, substate, *pats, **opts):
@@ -1269,7 +915,7 @@ class svnsubrepo(abstractsubrepo):
     def __init__(self, ctx, path, state, allowcreate):
         super(svnsubrepo, self).__init__(ctx, path)
         self._state = state
-        self._exe = util.findexe('svn')
+        self._exe = procutil.findexe('svn')
         if not self._exe:
             raise error.Abort(_("'svn' executable not found for subrepo '%s'")
                              % self._path)
@@ -1299,7 +945,7 @@ class svnsubrepo(abstractsubrepo):
             env['LANG'] = lc_all
             del env['LC_ALL']
         env['LC_MESSAGES'] = 'C'
-        p = subprocess.Popen(cmd, bufsize=-1, close_fds=util.closefds,
+        p = subprocess.Popen(cmd, bufsize=-1, close_fds=procutil.closefds,
                              stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                               universal_newlines=True, env=env, **extrakw)
         stdout, stderr = p.communicate()
@@ -1484,7 +1130,7 @@ class svnsubrepo(abstractsubrepo):
         doc = xml.dom.minidom.parseString(output)
         paths = []
         for e in doc.getElementsByTagName('entry'):
-            kind = str(e.getAttribute('kind'))
+            kind = pycompat.bytestr(e.getAttribute('kind'))
             if kind != 'file':
                 continue
             name = ''.join(c.data for c
@@ -1617,7 +1263,7 @@ class gitsubrepo(abstractsubrepo):
             # the end of git diff arguments is used for paths
             commands.insert(1, '--color')
         p = subprocess.Popen([self._gitexecutable] + commands, bufsize=-1,
-                             cwd=cwd, env=env, close_fds=util.closefds,
+                             cwd=cwd, env=env, close_fds=procutil.closefds,
                              stdout=subprocess.PIPE, stderr=errpipe)
         if stream:
             return p.stdout, None
@@ -1849,7 +1495,7 @@ class gitsubrepo(abstractsubrepo):
         if date:
             # git's date parser silently ignores when seconds < 1e9
             # convert to ISO8601
-            env['GIT_AUTHOR_DATE'] = util.datestr(date,
+            env['GIT_AUTHOR_DATE'] = dateutil.datestr(date,
                                                   '%Y-%m-%dT%H:%M:%S %1%2')
         self._gitcommand(cmd, env=env)
         # make sure commit works otherwise HEAD might not exist under certain
@@ -1992,7 +1638,7 @@ class gitsubrepo(abstractsubrepo):
         # This should be much faster than manually traversing the trees
         # and objects with many subprocess calls.
         tarstream = self._gitcommand(['archive', revision], stream=True)
-        tar = tarfile.open(fileobj=tarstream, mode='r|')
+        tar = tarfile.open(fileobj=tarstream, mode=r'r|')
         relpath = subrelpath(self)
         self.ui.progress(_('archiving (%s)') % relpath, 0, unit=_('files'))
         for i, info in enumerate(tar):
@@ -2025,8 +1671,7 @@ class gitsubrepo(abstractsubrepo):
         # TODO: add support for non-plain formatter (see cmdutil.cat())
         for f in match.files():
             output = self._gitcommand(["show", "%s:%s" % (rev, f)])
-            fp = cmdutil.makefileobj(self._subparent, fntemplate,
-                                     self._ctx.node(),
+            fp = cmdutil.makefileobj(self._ctx, fntemplate,
                                      pathname=self.wvfs.reljoin(prefix, f))
             fp.write(output)
             fp.close()

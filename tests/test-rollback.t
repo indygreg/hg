@@ -220,29 +220,29 @@ I/O errors on stdio are handled properly (issue5658)
   > import errno
   > from mercurial.i18n import _
   > from mercurial import (
-  >     registrar,
   >     error,
+  >     registrar,
   >     ui as uimod,
   > )
   > 
   > configtable = {}
   > configitem = registrar.configitem(configtable)
   > 
-  > configitem('ui', 'ioerrors',
+  > configitem(b'ui', b'ioerrors',
   >     default=list,
   > )
   > 
   > def pretxncommit(ui, repo, **kwargs):
-  >     ui.warn('warn during pretxncommit\n')
+  >     ui.warn(b'warn during pretxncommit\n')
   > 
   > def pretxnclose(ui, repo, **kwargs):
-  >     ui.warn('warn during pretxnclose\n')
+  >     ui.warn(b'warn during pretxnclose\n')
   > 
   > def txnclose(ui, repo, **kwargs):
-  >     ui.warn('warn during txnclose\n')
+  >     ui.warn(b'warn during txnclose\n')
   > 
   > def txnabort(ui, repo, **kwargs):
-  >     ui.warn('warn during abort\n')
+  >     ui.warn(b'warn during abort\n')
   > 
   > class fdproxy(object):
   >     def __init__(self, ui, o):
@@ -253,25 +253,25 @@ I/O errors on stdio are handled properly (issue5658)
   >         return getattr(self._o, attr)
   > 
   >     def write(self, msg):
-  >         errors = set(self._ui.configlist('ui', 'ioerrors'))
-  >         pretxncommit = msg == 'warn during pretxncommit\n'
-  >         pretxnclose = msg == 'warn during pretxnclose\n'
-  >         txnclose = msg == 'warn during txnclose\n'
-  >         txnabort = msg == 'warn during abort\n'
-  >         msgabort = msg == _('transaction abort!\n')
-  >         msgrollback = msg == _('rollback completed\n')
+  >         errors = set(self._ui.configlist(b'ui', b'ioerrors'))
+  >         pretxncommit = msg == b'warn during pretxncommit\n'
+  >         pretxnclose = msg == b'warn during pretxnclose\n'
+  >         txnclose = msg == b'warn during txnclose\n'
+  >         txnabort = msg == b'warn during abort\n'
+  >         msgabort = msg == _(b'transaction abort!\n')
+  >         msgrollback = msg == _(b'rollback completed\n')
   > 
-  >         if pretxncommit and 'pretxncommit' in errors:
+  >         if pretxncommit and b'pretxncommit' in errors:
   >             raise IOError(errno.EPIPE, 'simulated epipe')
-  >         if pretxnclose and 'pretxnclose' in errors:
+  >         if pretxnclose and b'pretxnclose' in errors:
   >             raise IOError(errno.EIO, 'simulated eio')
-  >         if txnclose and 'txnclose' in errors:
+  >         if txnclose and b'txnclose' in errors:
   >             raise IOError(errno.EBADF, 'simulated badf')
-  >         if txnabort and 'txnabort' in errors:
+  >         if txnabort and b'txnabort' in errors:
   >             raise IOError(errno.EPIPE, 'simulated epipe')
-  >         if msgabort and 'msgabort' in errors:
+  >         if msgabort and b'msgabort' in errors:
   >             raise IOError(errno.EBADF, 'simulated ebadf')
-  >         if msgrollback and 'msgrollback' in errors:
+  >         if msgrollback and b'msgrollback' in errors:
   >             raise IOError(errno.EIO, 'simulated eio')
   > 
   >         return self._o.write(msg)
@@ -289,10 +289,10 @@ I/O errors on stdio are handled properly (issue5658)
   >     ui.__class__ = badui
   > 
   > def reposetup(ui, repo):
-  >     ui.setconfig('hooks', 'pretxnclose.badui', pretxnclose, 'badui')
-  >     ui.setconfig('hooks', 'txnclose.badui', txnclose, 'badui')
-  >     ui.setconfig('hooks', 'pretxncommit.badui', pretxncommit, 'badui')
-  >     ui.setconfig('hooks', 'txnabort.badui', txnabort, 'badui')
+  >     ui.setconfig(b'hooks', b'pretxnclose.badui', pretxnclose, b'badui')
+  >     ui.setconfig(b'hooks', b'txnclose.badui', txnclose, b'badui')
+  >     ui.setconfig(b'hooks', b'pretxncommit.badui', pretxncommit, b'badui')
+  >     ui.setconfig(b'hooks', b'txnabort.badui', txnabort, b'badui')
   > EOF
 
   $ cat >> $HGRCPATH << EOF

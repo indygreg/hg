@@ -65,6 +65,7 @@ def handleexception(orig, ui):
             primaryframe,
             hgframe,
             hgline,
+            ui.environ[b'TESTNAME'].decode('utf-8', 'replace'),
         ]
         fh.write(b'\0'.join(p.encode('utf-8', 'replace') for p in parts))
 

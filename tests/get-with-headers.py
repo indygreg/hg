@@ -3,7 +3,7 @@
 """This does HTTP GET requests given a host:port and path and returns
 a subset of the headers plus the body of the result."""
 
-from __future__ import absolute_import, print_function
+from __future__ import absolute_import
 
 import argparse
 import json
@@ -22,6 +22,8 @@ try:
     msvcrt.setmode(sys.stderr.fileno(), os.O_BINARY)
 except ImportError:
     pass
+
+stdout = getattr(sys.stdout, 'buffer', sys.stdout)
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--twice', action='store_true')
@@ -62,21 +64,23 @@ def request(host, path, show):
     conn = httplib.HTTPConnection(host)
     conn.request("GET", '/' + path, None, headers)
     response = conn.getresponse()
-    print(response.status, response.reason)
+    stdout.write(b'%d %s\n' % (response.status,
+                               response.reason.encode('ascii')))
     if show[:1] == ['-']:
         show = sorted(h for h, v in response.getheaders()
                       if h.lower() not in show)
     for h in [h.lower() for h in show]:
         if response.getheader(h, None) is not None:
-            print("%s: %s" % (h, response.getheader(h)))
+            stdout.write(b"%s: %s\n" % (h.encode('ascii'),
+                                        response.getheader(h).encode('ascii')))
     if not headeronly:
-        print()
+        stdout.write(b'\n')
         data = response.read()
 
         if args.bodyfile:
             bodyfh = open(args.bodyfile, 'wb')
         else:
-            bodyfh = sys.stdout
+            bodyfh = stdout
 
         # Pretty print JSON. This also has the beneficial side-effect
         # of verifying emitted JSON is well-formed.

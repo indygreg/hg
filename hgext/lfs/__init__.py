@@ -87,7 +87,9 @@ Configs::
     #   git-lfs endpoint
     # - file:///tmp/path
     #   local filesystem, usually for testing
-    # if unset, lfs will prompt setting this when it must use this value.
+    # if unset, lfs will assume the remote repository also handles blob storage
+    # for http(s) URLs.  Otherwise, lfs will prompt to set this when it must
+    # use this value.
     # (default: unset)
     url = https://example.com/repo.git/info/lfs
 
@@ -143,15 +145,17 @@ from mercurial import (
     registrar,
     revlog,
     scmutil,
-    templatekw,
+    templateutil,
     upgrade,
     util,
     vfs as vfsmod,
-    wireproto,
+    wireprotoserver,
+    wireprotov1server,
 )
 
 from . import (
     blobstore,
+    wireprotolfsserver,
     wrapper,
 )
 
@@ -164,8 +168,14 @@ testedwith = 'ships-with-hg-core'
 configtable = {}
 configitem = registrar.configitem(configtable)
 
+configitem('experimental', 'lfs.serve',
+    default=True,
+)
 configitem('experimental', 'lfs.user-agent',
     default=None,
+)
+configitem('experimental', 'lfs.disableusercache',
+    default=False,
 )
 configitem('experimental', 'lfs.worker-enable',
     default=False,
@@ -192,13 +202,14 @@ cmdtable = {}
 command = registrar.command(cmdtable)
 
 templatekeyword = registrar.templatekeyword()
+filesetpredicate = registrar.filesetpredicate()
 
 def featuresetup(ui, supported):
     # don't die on seeing a repo with the lfs requirement
     supported |= {'lfs'}
 
 def uisetup(ui):
-    localrepo.localrepository.featuresetupfuncs.add(featuresetup)
+    localrepo.featuresetupfuncs.add(featuresetup)
 
 def reposetup(ui, repo):
     # Nothing to do with a remote repo
@@ -211,7 +222,7 @@ def reposetup(ui, repo):
     class lfsrepo(repo.__class__):
         @localrepo.unfilteredmethod
         def commitctx(self, ctx, error=False):
-            repo.svfs.options['lfstrack'] = _trackedmatcher(self, ctx)
+            repo.svfs.options['lfstrack'] = _trackedmatcher(self)
             return super(lfsrepo, self).commitctx(ctx, error)
 
     repo.__class__ = lfsrepo
@@ -219,15 +230,17 @@ def reposetup(ui, repo):
     if 'lfs' not in repo.requirements:
         def checkrequireslfs(ui, repo, **kwargs):
             if 'lfs' not in repo.requirements:
-                last = kwargs.get('node_last')
+                last = kwargs.get(r'node_last')
                 _bin = node.bin
                 if last:
-                    s = repo.set('%n:%n', _bin(kwargs['node']), _bin(last))
+                    s = repo.set('%n:%n', _bin(kwargs[r'node']), _bin(last))
                 else:
-                    s = repo.set('%n', _bin(kwargs['node']))
+                    s = repo.set('%n', _bin(kwargs[r'node']))
+            match = repo.narrowmatch()
             for ctx in s:
                 # TODO: is there a way to just walk the files in the commit?
-                if any(ctx[f].islfs() for f in ctx.files() if f in ctx):
+                if any(ctx[f].islfs() for f in ctx.files()
+                       if f in ctx and match(f)):
                     repo.requirements.add('lfs')
                     repo._writerequirements()
                     repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
@@ -238,7 +251,7 @@ def reposetup(ui, repo):
     else:
         repo.prepushoutgoinghooks.add('lfs', wrapper.prepush)
 
-def _trackedmatcher(repo, ctx):
+def _trackedmatcher(repo):
     """Return a function (path, size) -> bool indicating whether or not to
     track a given file with lfs."""
     if not repo.wvfs.exists('.hglfs'):
@@ -306,14 +319,13 @@ def extsetup(ui):
                  wrapper.upgraderequirements)
 
     wrapfunction(changegroup,
-                 'supportedoutgoingversions',
-                 wrapper.supportedoutgoingversions)
-    wrapfunction(changegroup,
                  'allsupportedversions',
                  wrapper.allsupportedversions)
 
     wrapfunction(exchange, 'push', wrapper.push)
-    wrapfunction(wireproto, '_capabilities', wrapper._capabilities)
+    wrapfunction(wireprotov1server, '_capabilities', wrapper._capabilities)
+    wrapfunction(wireprotoserver, 'handlewsgirequest',
+                 wireprotolfsserver.handlewsgirequest)
 
     wrapfunction(context.basefilectx, 'cmp', wrapper.filectxcmp)
     wrapfunction(context.basefilectx, 'isbinary', wrapper.filectxisbinary)
@@ -331,12 +343,12 @@ def extsetup(ui):
     wrapfunction(hg, 'clone', wrapper.hgclone)
     wrapfunction(hg, 'postshare', wrapper.hgpostshare)
 
+    scmutil.fileprefetchhooks.add('lfs', wrapper._prefetchfiles)
+
     # Make bundle choose changegroup3 instead of changegroup2. This affects
     # "hg bundle" command. Note: it does not cover all bundle formats like
     # "packed1". Using "packed1" with lfs will likely cause trouble.
-    names = [k for k, v in exchange._bundlespeccgversions.items() if v == '02']
-    for k in names:
-        exchange._bundlespeccgversions[k] = '03'
+    exchange._bundlespeccontentopts["v2"]["cg.version"] = "03"
 
     # bundlerepo uses "vfsmod.readonlyvfs(othervfs)", we need to make sure lfs
     # options and blob stores are passed from othervfs to the new readonlyvfs.
@@ -345,12 +357,21 @@ def extsetup(ui):
     # when writing a bundle via "hg bundle" command, upload related LFS blobs
     wrapfunction(bundle2, 'writenewbundle', wrapper.writenewbundle)
 
-@templatekeyword('lfs_files')
-def lfsfiles(repo, ctx, **args):
-    """List of strings. LFS files added or modified by the changeset."""
-    args = pycompat.byteskwargs(args)
+@filesetpredicate('lfs()', callstatus=True)
+def lfsfileset(mctx, x):
+    """File that uses LFS storage."""
+    # i18n: "lfs" is a keyword
+    fileset.getargs(x, 0, 0, _("lfs takes no arguments"))
+    return [f for f in mctx.subset
+            if wrapper.pointerfromctx(mctx.ctx, f, removed=True) is not None]
 
-    pointers = wrapper.pointersfromctx(ctx) # {path: pointer}
+@templatekeyword('lfs_files', requires={'ctx'})
+def lfsfiles(context, mapping):
+    """List of strings. All files modified, added, or removed by this
+    changeset."""
+    ctx = context.resource(mapping, 'ctx')
+
+    pointers = wrapper.pointersfromctx(ctx, removed=True) # {path: pointer}
     files = sorted(pointers.keys())
 
     def pointer(v):
@@ -361,18 +382,18 @@ def lfsfiles(repo, ctx, **args):
 
     makemap = lambda v: {
         'file': v,
-        'lfsoid': pointers[v].oid(),
-        'lfspointer': templatekw.hybriddict(pointer(v)),
+        'lfsoid': pointers[v].oid() if pointers[v] else None,
+        'lfspointer': templateutil.hybriddict(pointer(v)),
     }
 
     # TODO: make the separator ', '?
-    f = templatekw._showlist('lfs_file', files, args)
-    return templatekw._hybrid(f, files, makemap, pycompat.identity)
+    f = templateutil._showcompatlist(context, mapping, 'lfs_file', files)
+    return templateutil.hybrid(f, files, makemap, pycompat.identity)
 
 @command('debuglfsupload',
          [('r', 'rev', [], _('upload large files introduced by REV'))])
 def debuglfsupload(ui, repo, **opts):
     """upload lfs blobs added by the working copy parent or given revisions"""
-    revs = opts.get('rev', [])
+    revs = opts.get(r'rev', [])
     pointers = wrapper.extractpointers(repo, scmutil.revrange(repo, revs))
     wrapper.uploadblobs(repo, pointers)

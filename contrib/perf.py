@@ -64,6 +64,12 @@ try:
     from mercurial import scmutil # since 1.9 (or 8b252e826c68)
 except ImportError:
     pass
+try:
+    from mercurial import pycompat
+    getargspec = pycompat.getargspec  # added to module after 4.5
+except (ImportError, AttributeError):
+    import inspect
+    getargspec = inspect.getargspec
 
 # for "historical portability":
 # define util.safehasattr forcibly, because util.safehasattr has been
@@ -114,9 +120,8 @@ def parsealiases(cmd):
 if safehasattr(registrar, 'command'):
     command = registrar.command(cmdtable)
 elif safehasattr(cmdutil, 'command'):
-    import inspect
     command = cmdutil.command(cmdtable)
-    if 'norepo' not in inspect.getargspec(command)[0]:
+    if 'norepo' not in getargspec(command).args:
         # for "historical portability":
         # wrap original cmdutil.command, because "norepo" option has
         # been available since 3.1 (or 75a96326cecb)
@@ -418,7 +423,8 @@ def perfaddremove(ui, repo, **opts):
         oldquiet = repo.ui.quiet
         repo.ui.quiet = True
         matcher = scmutil.match(repo[None])
-        timer(lambda: scmutil.addremove(repo, matcher, "", dry_run=True))
+        opts['dry_run'] = True
+        timer(lambda: scmutil.addremove(repo, matcher, "", opts))
     finally:
         repo.ui.quiet = oldquiet
         fm.end()
@@ -761,7 +767,7 @@ def perfmanifest(ui, repo, rev, **opts):
 @command('perfchangeset', formatteropts)
 def perfchangeset(ui, repo, rev, **opts):
     timer, fm = gettimer(ui, opts)
-    n = repo[rev].node()
+    n = scmutil.revsingle(repo, rev).node()
     def d():
         repo.changelog.read(n)
         #repo.changelog._cache = None
@@ -847,7 +853,7 @@ def perfnodelookup(ui, repo, rev, **opts):
     timer, fm = gettimer(ui, opts)
     import mercurial.revlog
     mercurial.revlog._prereadsize = 2**24 # disable lazy parser in old hg
-    n = repo[rev].node()
+    n = scmutil.revsingle(repo, rev).node()
     cl = mercurial.revlog.revlog(getsvfs(repo), "00changelog.i")
     def d():
         cl.rev(n)
@@ -934,11 +940,16 @@ def perffncacheencode(ui, repo, **opts):
     timer(d)
     fm.end()
 
-def _bdiffworker(q, ready, done):
+def _bdiffworker(q, blocks, xdiff, ready, done):
     while not done.is_set():
         pair = q.get()
         while pair is not None:
-            mdiff.textdiff(*pair)
+            if xdiff:
+                mdiff.bdiff.xdiffblocks(*pair)
+            elif blocks:
+                mdiff.bdiff.blocks(*pair)
+            else:
+                mdiff.textdiff(*pair)
             q.task_done()
             pair = q.get()
         q.task_done() # for the None one
@@ -949,6 +960,8 @@ def _bdiffworker(q, ready, done):
     ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
     ('', 'alldata', False, 'test bdiffs for all associated revisions'),
     ('', 'threads', 0, 'number of thread to use (disable with 0)'),
+    ('', 'blocks', False, 'test computing diffs into blocks'),
+    ('', 'xdiff', False, 'use xdiff algorithm'),
     ],
 
     '-c|-m|FILE REV')
@@ -964,6 +977,11 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     measure bdiffs for all changes related to that changeset (manifest
     and filelogs).
     """
+    opts = pycompat.byteskwargs(opts)
+
+    if opts['xdiff'] and not opts['blocks']:
+        raise error.CommandError('perfbdiff', '--xdiff requires --blocks')
+
     if opts['alldata']:
         opts['changelog'] = True
 
@@ -972,6 +990,8 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     elif rev is None:
         raise error.CommandError('perfbdiff', 'invalid arguments')
 
+    blocks = opts['blocks']
+    xdiff = opts['xdiff']
     textpairs = []
 
     r = cmdutil.openrevlog(repo, 'perfbdiff', file_, opts)
@@ -1002,7 +1022,12 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
     if not withthreads:
         def d():
             for pair in textpairs:
-                mdiff.textdiff(*pair)
+                if xdiff:
+                    mdiff.bdiff.xdiffblocks(*pair)
+                elif blocks:
+                    mdiff.bdiff.blocks(*pair)
+                else:
+                    mdiff.textdiff(*pair)
     else:
         q = util.queue()
         for i in xrange(threads):
@@ -1010,7 +1035,8 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
         ready = threading.Condition()
         done = threading.Event()
         for i in xrange(threads):
-            threading.Thread(target=_bdiffworker, args=(q, ready, done)).start()
+            threading.Thread(target=_bdiffworker,
+                             args=(q, blocks, xdiff, ready, done)).start()
         q.join()
         def d():
             for pair in textpairs:
@@ -1030,6 +1056,71 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
             q.put(None)
         with ready:
             ready.notify_all()
+
+@command('perfunidiff', revlogopts + formatteropts + [
+    ('', 'count', 1, 'number of revisions to test (when using --startrev)'),
+    ('', 'alldata', False, 'test unidiffs for all associated revisions'),
+    ], '-c|-m|FILE REV')
+def perfunidiff(ui, repo, file_, rev=None, count=None, **opts):
+    """benchmark a unified diff between revisions
+
+    This doesn't include any copy tracing - it's just a unified diff
+    of the texts.
+
+    By default, benchmark a diff between its delta parent and itself.
+
+    With ``--count``, benchmark diffs between delta parents and self for N
+    revisions starting at the specified revision.
+
+    With ``--alldata``, assume the requested revision is a changeset and
+    measure diffs for all changes related to that changeset (manifest
+    and filelogs).
+    """
+    if opts['alldata']:
+        opts['changelog'] = True
+
+    if opts.get('changelog') or opts.get('manifest'):
+        file_, rev = None, file_
+    elif rev is None:
+        raise error.CommandError('perfunidiff', 'invalid arguments')
+
+    textpairs = []
+
+    r = cmdutil.openrevlog(repo, 'perfunidiff', file_, opts)
+
+    startrev = r.rev(r.lookup(rev))
+    for rev in range(startrev, min(startrev + count, len(r) - 1)):
+        if opts['alldata']:
+            # Load revisions associated with changeset.
+            ctx = repo[rev]
+            mtext = repo.manifestlog._revlog.revision(ctx.manifestnode())
+            for pctx in ctx.parents():
+                pman = repo.manifestlog._revlog.revision(pctx.manifestnode())
+                textpairs.append((pman, mtext))
+
+            # Load filelog revisions by iterating manifest delta.
+            man = ctx.manifest()
+            pman = ctx.p1().manifest()
+            for filename, change in pman.diff(man).items():
+                fctx = repo.file(filename)
+                f1 = fctx.revision(change[0][0] or -1)
+                f2 = fctx.revision(change[1][0] or -1)
+                textpairs.append((f1, f2))
+        else:
+            dp = r.deltaparent(rev)
+            textpairs.append((r.revision(dp), r.revision(rev)))
+
+    def d():
+        for left, right in textpairs:
+            # The date strings don't matter, so we pass empty strings.
+            headerlines, hunks = mdiff.unidiff(
+                left, '', right, '', 'left', 'right', binary=False)
+            # consume iterators in roughly the way patch.py does
+            b'\n'.join(headerlines)
+            b''.join(sum((list(hlines) for hrange, hlines in hunks), []))
+    timer, fm = gettimer(ui, opts)
+    timer(d)
+    fm.end()
 
 @command('perfdiffwd', formatteropts)
 def perfdiffwd(ui, repo, **opts):
@@ -1498,11 +1589,13 @@ def perfvolatilesets(ui, repo, *names, **opts):
           ('', 'clear-revbranch', False,
            'purge the revbranch cache between computation'),
          ] + formatteropts)
-def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
+def perfbranchmap(ui, repo, *filternames, **opts):
     """benchmark the update of a branchmap
 
     This benchmarks the full repo.branchmap() call with read and write disabled
     """
+    full = opts.get("full", False)
+    clear_revbranch = opts.get("clear_revbranch", False)
     timer, fm = gettimer(ui, opts)
     def getbranchmap(filtername):
         """generate a benchmark function for the filtername"""
@@ -1521,6 +1614,8 @@ def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
         return d
     # add filter in smaller subset to bigger subset
     possiblefilters = set(repoview.filtertable)
+    if filternames:
+        possiblefilters &= set(filternames)
     subsettable = getbranchmapsubsettable()
     allfilters = []
     while possiblefilters:
@@ -1537,8 +1632,9 @@ def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
     if not full:
         for name in allfilters:
             repo.filtered(name).branchmap()
-    # add unfiltered
-    allfilters.append(None)
+    if not filternames or 'unfiltered' in filternames:
+        # add unfiltered
+        allfilters.append(None)
 
     branchcacheread = safeattrsetter(branchmap, 'read')
     branchcachewrite = safeattrsetter(branchmap.branchcache, 'write')
@@ -1546,7 +1642,10 @@ def perfbranchmap(ui, repo, full=False, clear_revbranch=False, **opts):
     branchcachewrite.set(lambda bc, repo: None)
     try:
         for name in allfilters:
-            timer(getbranchmap(name), title=str(name))
+            printname = name
+            if name is None:
+                printname = 'unfiltered'
+            timer(getbranchmap(name), title=str(printname))
     finally:
         branchcacheread.restore()
         branchcachewrite.restore()

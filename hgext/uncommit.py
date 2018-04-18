@@ -51,7 +51,7 @@ configitem('experimental', 'uncommitondirtywdir',
 # leave the attribute unspecified.
 testedwith = 'ships-with-hg-core'
 
-def _commitfiltered(repo, ctx, match, allowempty):
+def _commitfiltered(repo, ctx, match, keepcommit):
     """Recommit ctx with changed files not in match. Return the new
     node identifier, or None if nothing changed.
     """
@@ -66,7 +66,7 @@ def _commitfiltered(repo, ctx, match, allowempty):
 
     files = (initialfiles - exclude)
     # return the p1 so that we don't create an obsmarker later
-    if not files and not allowempty:
+    if not keepcommit:
         return ctx.parents()[0].node()
 
     # Filter copies
@@ -151,13 +151,16 @@ def uncommit(ui, repo, *pats, **opts):
     files to their uncommitted state. This means that files modified or
     deleted in the changeset will be left unchanged, and so will remain
     modified in the working directory.
+
+    If no files are specified, the commit will be pruned, unless --keep is
+    given.
     """
     opts = pycompat.byteskwargs(opts)
 
     with repo.wlock(), repo.lock():
 
         if not pats and not repo.ui.configbool('experimental',
-                                                'uncommitondirtywdir'):
+                                               'uncommitondirtywdir'):
             cmdutil.bailifchanged(repo)
         old = repo['.']
         rewriteutil.precheck(repo, [old.rev()], 'uncommit')
@@ -166,7 +169,8 @@ def uncommit(ui, repo, *pats, **opts):
 
         with repo.transaction('uncommit'):
             match = scmutil.match(old, pats, opts)
-            newid = _commitfiltered(repo, old, match, opts.get('keep'))
+            keepcommit = opts.get('keep') or pats
+            newid = _commitfiltered(repo, old, match, keepcommit)
             if newid is None:
                 ui.status(_("nothing to uncommit\n"))
                 return 1

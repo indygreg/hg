@@ -177,3 +177,26 @@ Mixed sub-sections and bullet list
       paragraph: Bullet item 1
     bullet point:
       paragraph: Bullet item 2
+
+Warn user in case of unexpected block while parsing
+
+  $ hg init relnotes-warn
+  $ cd relnotes-warn
+  $ touch feature1
+  $ hg -q commit -A -l - << EOF
+  > commit 1
+  > 
+  > .. feature::
+  > 
+  >    new feature added.
+  >     some words about the feature.
+  > EOF
+
+  $ hg releasenote -r .
+  changeset a4251905c440: unexpected block in release notes directive feature
+  New Features
+  ============
+  
+  * new feature added.  some words about the feature.
+
+  $ cd ..

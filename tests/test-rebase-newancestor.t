@@ -1,6 +1,4 @@
   $ cat >> $HGRCPATH <<EOF
-  > [format]
-  > usegeneraldelta=yes
   > [extensions]
   > rebase=
   > drawdag=$TESTDIR/drawdag.py

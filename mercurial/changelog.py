@@ -20,8 +20,13 @@ from .thirdparty import (
 from . import (
     encoding,
     error,
+    pycompat,
     revlog,
     util,
+)
+from .utils import (
+    dateutil,
+    stringutil,
 )
 
 _defaultextra = {'branch': 'default'}
@@ -34,7 +39,7 @@ def _string_escape(text):
     >>> s
     'ab\\ncd\\\\\\\\n\\x00ab\\rcd\\\\\\n'
     >>> res = _string_escape(s)
-    >>> s == util.unescapestr(res)
+    >>> s == stringutil.unescapestr(res)
     True
     """
     # subset of the string_escape codec
@@ -60,7 +65,7 @@ def decodeextra(text):
                 l = l.replace('\\\\', '\\\\\n')
                 l = l.replace('\\0', '\0')
                 l = l.replace('\n', '')
-            k, v = util.unescapestr(l).split(':', 1)
+            k, v = stringutil.unescapestr(l).split(':', 1)
             extra[k] = v
     return extra
 
@@ -90,6 +95,11 @@ class appender(object):
         return self.offset
     def flush(self):
         pass
+
+    @property
+    def closed(self):
+        return self.fp.closed
+
     def close(self):
         self.fp.close()
 
@@ -126,6 +136,13 @@ class appender(object):
         self.data.append(bytes(s))
         self.offset += len(s)
         self._end += len(s)
+
+    def __enter__(self):
+        self.fp.__enter__()
+        return self
+
+    def __exit__(self, *args):
+        return self.fp.__exit__(*args)
 
 def _divertopener(opener, target):
     """build an opener that writes in 'target.a' instead of 'target'"""
@@ -420,7 +437,7 @@ class changelog(revlog.revlog):
             self._delaybuf = None
         self._divert = False
         # split when we're done
-        self.checkinlinesize(tr)
+        self._enforceinlinesize(tr)
 
     def _writepending(self, tr):
         "create a file containing the unfinalized state for pretxnchangegroup"
@@ -446,9 +463,9 @@ class changelog(revlog.revlog):
 
         return False
 
-    def checkinlinesize(self, tr, fp=None):
+    def _enforceinlinesize(self, tr, fp=None):
         if not self._delayed:
-            revlog.revlog.checkinlinesize(self, tr, fp)
+            revlog.revlog._enforceinlinesize(self, tr, fp)
 
     def read(self, node):
         """Obtain data from a parsed changelog revision.
@@ -505,15 +522,15 @@ class changelog(revlog.revlog):
         if not user:
             raise error.RevlogError(_("empty username"))
         if "\n" in user:
-            raise error.RevlogError(_("username %s contains a newline")
-                                    % repr(user))
+            raise error.RevlogError(_("username %r contains a newline")
+                                    % pycompat.bytestr(user))
 
         desc = stripdesc(desc)
 
         if date:
-            parseddate = "%d %d" % util.parsedate(date)
+            parseddate = "%d %d" % dateutil.parsedate(date)
         else:
-            parseddate = "%d %d" % util.makedate()
+            parseddate = "%d %d" % dateutil.makedate()
         if extra:
             branch = extra.get("branch")
             if branch in ("default", ""):

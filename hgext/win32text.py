@@ -50,7 +50,9 @@ from mercurial.node import (
 )
 from mercurial import (
     registrar,
-    util,
+)
+from mercurial.utils import (
+    stringutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -100,22 +102,22 @@ def macdumbencode(s, cmd):
     return s.replace('\r', '\n')
 
 def cleverdecode(s, cmd, **kwargs):
-    if not util.binary(s):
+    if not stringutil.binary(s):
         return dumbdecode(s, cmd, **kwargs)
     return s
 
 def cleverencode(s, cmd):
-    if not util.binary(s):
+    if not stringutil.binary(s):
         return dumbencode(s, cmd)
     return s
 
 def macdecode(s, cmd, **kwargs):
-    if not util.binary(s):
+    if not stringutil.binary(s):
         return macdumbdecode(s, cmd, **kwargs)
     return s
 
 def macencode(s, cmd):
-    if not util.binary(s):
+    if not stringutil.binary(s):
         return macdumbencode(s, cmd)
     return s
 
@@ -146,7 +148,7 @@ def forbidnewline(ui, repo, hooktype, node, newline, **kwargs):
                 continue
             seen.add(f)
             data = c[f].data()
-            if not util.binary(data) and newline in data:
+            if not stringutil.binary(data) and newline in data:
                 if not halt:
                     ui.warn(_('attempt to commit or push text file(s) '
                               'using %s line endings\n') %

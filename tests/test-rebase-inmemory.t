@@ -140,12 +140,11 @@ Ensure symlink and executable files were rebased properly:
   $ ls -l f | cut -c -10
   -rwxr-xr-x
 
-Rebase the working copy parent, which should default to an on-disk merge even if
-we requested in-memory.
+Rebase the working copy parent
   $ hg up -C 3
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg rebase -r 3 -d 0 --debug | grep rebasing
-  rebasing on disk
+  rebasing in-memory
   rebasing 3:753feb6fd12a "c" (tip)
   $ hg tglog
   @  3: 844a7de3e617 'c'

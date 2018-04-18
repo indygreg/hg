@@ -41,7 +41,7 @@ another repository of push/pull/clone on localhost:
   >             supported |= {'featuresetup-test'}
   >             return
   > def uisetup(ui):
-  >     localrepo.localrepository.featuresetupfuncs.add(featuresetup)
+  >     localrepo.featuresetupfuncs.add(featuresetup)
   > EOF
   $ cat > supported/.hg/hgrc <<EOF
   > [extensions]

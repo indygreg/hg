@@ -15,7 +15,7 @@ foundopts = {}
 documented = {}
 allowinconsistent = set()
 
-configre = re.compile(r'''
+configre = re.compile(br'''
     # Function call
     ui\.config(?P<ctype>|int|bool|list)\(
         # First argument.
@@ -25,7 +25,7 @@ configre = re.compile(r'''
         (?:default=)?(?P<default>\S+?))?
     \)''', re.VERBOSE | re.MULTILINE)
 
-configwithre = re.compile('''
+configwithre = re.compile(b'''
     ui\.config(?P<ctype>with)\(
         # First argument is callback function. This doesn't parse robustly
         # if it is e.g. a function call.
@@ -35,57 +35,57 @@ configwithre = re.compile('''
         (?:default=)?(?P<default>\S+?))?
     \)''', re.VERBOSE | re.MULTILINE)
 
-configpartialre = (r"""ui\.config""")
+configpartialre = (br"""ui\.config""")
 
-ignorere = re.compile(r'''
+ignorere = re.compile(br'''
     \#\s(?P<reason>internal|experimental|deprecated|developer|inconsistent)\s
     config:\s(?P<config>\S+\.\S+)$
     ''', re.VERBOSE | re.MULTILINE)
 
 def main(args):
     for f in args:
-        sect = ''
-        prevname = ''
-        confsect = ''
-        carryover = ''
+        sect = b''
+        prevname = b''
+        confsect = b''
+        carryover = b''
         linenum = 0
-        for l in open(f):
+        for l in open(f, 'rb'):
             linenum += 1
 
             # check topic-like bits
-            m = re.match('\s*``(\S+)``', l)
+            m = re.match(b'\s*``(\S+)``', l)
             if m:
                 prevname = m.group(1)
-            if re.match('^\s*-+$', l):
+            if re.match(b'^\s*-+$', l):
                 sect = prevname
-                prevname = ''
+                prevname = b''
 
             if sect and prevname:
-                name = sect + '.' + prevname
+                name = sect + b'.' + prevname
                 documented[name] = 1
 
             # check docstring bits
-            m = re.match(r'^\s+\[(\S+)\]', l)
+            m = re.match(br'^\s+\[(\S+)\]', l)
             if m:
                 confsect = m.group(1)
                 continue
-            m = re.match(r'^\s+(?:#\s*)?(\S+) = ', l)
+            m = re.match(br'^\s+(?:#\s*)?(\S+) = ', l)
             if m:
-                name = confsect + '.' + m.group(1)
+                name = confsect + b'.' + m.group(1)
                 documented[name] = 1
 
             # like the bugzilla extension
-            m = re.match(r'^\s*(\S+\.\S+)$', l)
+            m = re.match(br'^\s*(\S+\.\S+)$', l)
             if m:
                 documented[m.group(1)] = 1
 
             # like convert
-            m = re.match(r'^\s*:(\S+\.\S+):\s+', l)
+            m = re.match(br'^\s*:(\S+\.\S+):\s+', l)
             if m:
                 documented[m.group(1)] = 1
 
             # quoted in help or docstrings
-            m = re.match(r'.*?``(\S+\.\S+)``', l)
+            m = re.match(br'.*?``(\S+\.\S+)``', l)
             if m:
                 documented[m.group(1)] = 1
 
@@ -108,7 +108,7 @@ def main(args):
                 default = m.group('default')
                 if default in (None, 'False', 'None', '0', '[]', '""', "''"):
                     default = ''
-                if re.match('[a-z.]+$', default):
+                if re.match(b'[a-z.]+$', default):
                     default = '<variable>'
                 if (name in foundopts and (ctype, default) != foundopts[name]
                     and name not in allowinconsistent):

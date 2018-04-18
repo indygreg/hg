@@ -172,6 +172,77 @@ Add some changes with two diff hunks
   +3
   +4
   
+  $ hg log -f --graph -L foo,5:7 -p
+  @  changeset:   5:cfdf972b3971
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     foo: 3 -> 3+ and 11+ -> 11-; bar: a -> a+
+  |
+  |  diff --git a/foo b/foo
+  |  --- a/foo
+  |  +++ b/foo
+  |  @@ -4,7 +4,7 @@
+  |   0
+  |    1
+  |   2+
+  |  -3
+  |  +3+
+  |   4
+  |   5
+  |   6
+  |
+  o  changeset:   4:eaec41c1a0c9
+  :  user:        test
+  :  date:        Thu Jan 01 00:00:00 1970 +0000
+  :  summary:     11 -> 11+; leading space before "1"
+  :
+  :  diff --git a/foo b/foo
+  :  --- a/foo
+  :  +++ b/foo
+  :  @@ -2,7 +2,7 @@
+  :   0
+  :   0
+  :   0
+  :  -1
+  :  + 1
+  :   2+
+  :   3
+  :   4
+  :
+  o  changeset:   2:63a884426fd0
+  :  user:        test
+  :  date:        Thu Jan 01 00:00:00 1970 +0000
+  :  summary:     2 -> 2+; added bar
+  :
+  :  diff --git a/foo b/foo
+  :  --- a/foo
+  :  +++ b/foo
+  :  @@ -3,6 +3,6 @@
+  :   0
+  :   0
+  :   1
+  :  -2
+  :  +2+
+  :   3
+  :   4
+  :
+  o  changeset:   0:5ae1f82b9a00
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     init
+  
+     diff --git a/foo b/foo
+     new file mode 100644
+     --- /dev/null
+     +++ b/foo
+     @@ -0,0 +1,5 @@
+     +0
+     +1
+     +2
+     +3
+     +4
+  
 
 With --template.
 
@@ -183,52 +254,52 @@ With --template.
   $ hg log -f -L foo,5:7 -T json
   [
    {
-    "rev": 5,
-    "node": "cfdf972b3971a2a59638bf9583c0debbffee5404",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "foo: 3 -> 3+ and 11+ -> 11-; bar: a -> a+",
-    "bookmarks": [],
+    "node": "cfdf972b3971a2a59638bf9583c0debbffee5404",
+    "parents": ["eaec41c1a0c9ad0a5e999611d0149d171beffb8c"],
+    "phase": "draft",
+    "rev": 5,
     "tags": ["tip"],
-    "parents": ["eaec41c1a0c9ad0a5e999611d0149d171beffb8c"]
+    "user": "test"
    },
    {
-    "rev": 4,
-    "node": "eaec41c1a0c9ad0a5e999611d0149d171beffb8c",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "11 -> 11+; leading space before \"1\"",
-    "bookmarks": [],
+    "node": "eaec41c1a0c9ad0a5e999611d0149d171beffb8c",
+    "parents": ["730a61fbaecf426c17c2c66bc42d195b5d5b0ba8"],
+    "phase": "draft",
+    "rev": 4,
     "tags": [],
-    "parents": ["730a61fbaecf426c17c2c66bc42d195b5d5b0ba8"]
+    "user": "test"
    },
    {
-    "rev": 2,
-    "node": "63a884426fd0b277fcd55895bbb2f230434576eb",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "2 -> 2+; added bar",
-    "bookmarks": [],
+    "node": "63a884426fd0b277fcd55895bbb2f230434576eb",
+    "parents": ["29a1e7c6b80024f63f310a2d71de979e9d2996d7"],
+    "phase": "draft",
+    "rev": 2,
     "tags": [],
-    "parents": ["29a1e7c6b80024f63f310a2d71de979e9d2996d7"]
+    "user": "test"
    },
    {
-    "rev": 0,
-    "node": "5ae1f82b9a000ff1e0967d0dac1c58b9d796e1b4",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "init",
-    "bookmarks": [],
+    "node": "5ae1f82b9a000ff1e0967d0dac1c58b9d796e1b4",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
     "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"]
+    "user": "test"
    }
   ]
 
@@ -800,7 +871,7 @@ Renames are followed.
 Binary files work but without diff hunks filtering.
 (Checking w/ and w/o diff.git option.)
 
-  >>> open('binary', 'wb').write('this\nis\na\nbinary\0')
+  >>> open('binary', 'wb').write(b'this\nis\na\nbinary\0') and None
   $ hg add binary
   $ hg ci -m 'add a binary file' --quiet
   $ hg log -f -L binary,1:2 -p
@@ -848,10 +919,4 @@ We get an error for removed files.
   $ hg ci -m 'remove baz' --quiet
   $ hg log -f -L dir/baz,5:7 -p
   abort: cannot follow file not in parent revision: "dir/baz"
-  [255]
-
-Graph log does work yet.
-
-  $ hg log -f -L dir/baz,5:7 --graph
-  abort: graph not supported with line range patterns
   [255]

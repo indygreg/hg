@@ -17,8 +17,8 @@
 
 #include "bdiff.h"
 #include "bitmanipulation.h"
+#include "thirdparty/xdiff/xdiff.h"
 #include "util.h"
-
 
 static PyObject *blocks(PyObject *self, PyObject *args)
 {
@@ -61,42 +61,60 @@ nomem:
 
 static PyObject *bdiff(PyObject *self, PyObject *args)
 {
-	char *sa, *sb, *rb, *ia, *ib;
+	Py_buffer ba, bb;
+	char *rb, *ia, *ib;
 	PyObject *result = NULL;
-	struct bdiff_line *al, *bl;
+	struct bdiff_line *al = NULL, *bl = NULL;
 	struct bdiff_hunk l, *h;
 	int an, bn, count;
 	Py_ssize_t len = 0, la, lb, li = 0, lcommon = 0, lmax;
-	PyThreadState *_save;
+	PyThreadState *_save = NULL;
 
 	l.next = NULL;
 
-	if (!PyArg_ParseTuple(args, "s#s#:bdiff", &sa, &la, &sb, &lb))
+	if (!PyArg_ParseTuple(args, PY23("s*s*:bdiff", "y*y*:bdiff"), &ba, &bb))
 		return NULL;
+
+	if (!PyBuffer_IsContiguous(&ba, 'C') || ba.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError, "bdiff input not contiguous");
+		goto cleanup;
+	}
+
+	if (!PyBuffer_IsContiguous(&bb, 'C') || bb.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError, "bdiff input not contiguous");
+		goto cleanup;
+	}
+
+	la = ba.len;
+	lb = bb.len;
 
 	if (la > UINT_MAX || lb > UINT_MAX) {
 		PyErr_SetString(PyExc_ValueError, "bdiff inputs too large");
-		return NULL;
+		goto cleanup;
 	}
 
 	_save = PyEval_SaveThread();
 
 	lmax = la > lb ? lb : la;
-	for (ia = sa, ib = sb;
-	     li < lmax && *ia == *ib;
-	     ++li, ++ia, ++ib)
+	for (ia = ba.buf, ib = bb.buf; li < lmax && *ia == *ib;
+	     ++li, ++ia, ++ib) {
 		if (*ia == '\n')
 			lcommon = li + 1;
+	}
 	/* we can almost add: if (li == lmax) lcommon = li; */
 
-	an = bdiff_splitlines(sa + lcommon, la - lcommon, &al);
-	bn = bdiff_splitlines(sb + lcommon, lb - lcommon, &bl);
-	if (!al || !bl)
-		goto nomem;
+	an = bdiff_splitlines((char *)ba.buf + lcommon, la - lcommon, &al);
+	bn = bdiff_splitlines((char *)bb.buf + lcommon, lb - lcommon, &bl);
+	if (!al || !bl) {
+		PyErr_NoMemory();
+		goto cleanup;
+	}
 
 	count = bdiff_diff(al, an, bl, bn, &l);
-	if (count < 0)
-		goto nomem;
+	if (count < 0) {
+		PyErr_NoMemory();
+		goto cleanup;
+	}
 
 	/* calculate length of output */
 	la = lb = 0;
@@ -112,7 +130,7 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 	result = PyBytes_FromStringAndSize(NULL, len);
 
 	if (!result)
-		goto nomem;
+		goto cleanup;
 
 	/* build binary patch */
 	rb = PyBytes_AsString(result);
@@ -122,7 +140,8 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 		if (h->a1 != la || h->b1 != lb) {
 			len = bl[h->b1].l - bl[lb].l;
 			putbe32((uint32_t)(al[la].l + lcommon - al->l), rb);
-			putbe32((uint32_t)(al[h->a1].l + lcommon - al->l), rb + 4);
+			putbe32((uint32_t)(al[h->a1].l + lcommon - al->l),
+			        rb + 4);
 			putbe32((uint32_t)len, rb + 8);
 			memcpy(rb + 12, bl[lb].l, len);
 			rb += 12 + len;
@@ -131,13 +150,21 @@ static PyObject *bdiff(PyObject *self, PyObject *args)
 		lb = h->b2;
 	}
 
-nomem:
+cleanup:
 	if (_save)
 		PyEval_RestoreThread(_save);
-	free(al);
-	free(bl);
-	bdiff_freehunks(l.next);
-	return result ? result : PyErr_NoMemory();
+	PyBuffer_Release(&ba);
+	PyBuffer_Release(&bb);
+	if (al) {
+		free(al);
+	}
+	if (bl) {
+		free(bl);
+	}
+	if (l.next) {
+		bdiff_freehunks(l.next);
+	}
+	return result;
 }
 
 /*
@@ -167,8 +194,8 @@ static PyObject *fixws(PyObject *self, PyObject *args)
 		if (c == ' ' || c == '\t' || c == '\r') {
 			if (!allws && (wlen == 0 || w[wlen - 1] != ' '))
 				w[wlen++] = ' ';
-		} else if (c == '\n' && !allws
-			  && wlen > 0 && w[wlen - 1] == ' ') {
+		} else if (c == '\n' && !allws && wlen > 0 &&
+		           w[wlen - 1] == ' ') {
 			w[wlen - 1] = '\n';
 		} else {
 			w[wlen++] = c;
@@ -182,25 +209,124 @@ nomem:
 	return result ? result : PyErr_NoMemory();
 }
 
+static bool sliceintolist(PyObject *list, Py_ssize_t destidx,
+                          const char *source, Py_ssize_t len)
+{
+	PyObject *sliced = PyBytes_FromStringAndSize(source, len);
+	if (sliced == NULL)
+		return false;
+	PyList_SET_ITEM(list, destidx, sliced);
+	return true;
+}
+
+static PyObject *splitnewlines(PyObject *self, PyObject *args)
+{
+	const char *text;
+	Py_ssize_t nelts = 0, size, i, start = 0;
+	PyObject *result = NULL;
+
+	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &text, &size)) {
+		goto abort;
+	}
+	if (!size) {
+		return PyList_New(0);
+	}
+	/* This loops to size-1 because if the last byte is a newline,
+	 * we don't want to perform a split there. */
+	for (i = 0; i < size - 1; ++i) {
+		if (text[i] == '\n') {
+			++nelts;
+		}
+	}
+	if ((result = PyList_New(nelts + 1)) == NULL)
+		goto abort;
+	nelts = 0;
+	for (i = 0; i < size - 1; ++i) {
+		if (text[i] == '\n') {
+			if (!sliceintolist(result, nelts++, text + start,
+			                   i - start + 1))
+				goto abort;
+			start = i + 1;
+		}
+	}
+	if (!sliceintolist(result, nelts++, text + start, size - start))
+		goto abort;
+	return result;
+abort:
+	Py_XDECREF(result);
+	return NULL;
+}
+
+static int hunk_consumer(int64_t a1, int64_t a2, int64_t b1, int64_t b2,
+                         void *priv)
+{
+	PyObject *rl = (PyObject *)priv;
+	PyObject *m = Py_BuildValue("llll", a1, a2, b1, b2);
+	if (!m)
+		return -1;
+	if (PyList_Append(rl, m) != 0) {
+		Py_DECREF(m);
+		return -1;
+	}
+	return 0;
+}
+
+static PyObject *xdiffblocks(PyObject *self, PyObject *args)
+{
+	Py_ssize_t la, lb;
+	mmfile_t a, b;
+	PyObject *rl;
+
+	xpparam_t xpp = {
+	    XDF_INDENT_HEURISTIC, /* flags */
+	};
+	xdemitconf_t xecfg = {
+	    XDL_EMIT_BDIFFHUNK, /* flags */
+	    hunk_consumer,      /* hunk_consume_func */
+	};
+	xdemitcb_t ecb = {
+	    NULL, /* priv */
+	};
+
+	if (!PyArg_ParseTuple(args, PY23("s#s#", "y#y#"), &a.ptr, &la, &b.ptr,
+	                      &lb))
+		return NULL;
+
+	a.size = la;
+	b.size = lb;
+
+	rl = PyList_New(0);
+	if (!rl)
+		return PyErr_NoMemory();
+
+	ecb.priv = rl;
+
+	if (xdl_diff(&a, &b, &xpp, &xecfg, &ecb) != 0) {
+		Py_DECREF(rl);
+		return PyErr_NoMemory();
+	}
+
+	return rl;
+}
 
 static char mdiff_doc[] = "Efficient binary diff.";
 
 static PyMethodDef methods[] = {
-	{"bdiff", bdiff, METH_VARARGS, "calculate a binary diff\n"},
-	{"blocks", blocks, METH_VARARGS, "find a list of matching lines\n"},
-	{"fixws", fixws, METH_VARARGS, "normalize diff whitespaces\n"},
-	{NULL, NULL}
+    {"bdiff", bdiff, METH_VARARGS, "calculate a binary diff\n"},
+    {"blocks", blocks, METH_VARARGS, "find a list of matching lines\n"},
+    {"fixws", fixws, METH_VARARGS, "normalize diff whitespaces\n"},
+    {"splitnewlines", splitnewlines, METH_VARARGS,
+     "like str.splitlines, but only split on newlines\n"},
+    {"xdiffblocks", xdiffblocks, METH_VARARGS,
+     "find a list of matching lines using xdiff algorithm\n"},
+    {NULL, NULL},
 };
 
-static const int version = 1;
+static const int version = 3;
 
 #ifdef IS_PY3K
 static struct PyModuleDef bdiff_module = {
-	PyModuleDef_HEAD_INIT,
-	"bdiff",
-	mdiff_doc,
-	-1,
-	methods
+    PyModuleDef_HEAD_INIT, "bdiff", mdiff_doc, -1, methods,
 };
 
 PyMODINIT_FUNC PyInit_bdiff(void)

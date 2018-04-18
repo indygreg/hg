@@ -28,19 +28,48 @@ from .. import (
     error,
     match,
     mdiff,
+    obsutil,
     patch,
     pathutil,
     pycompat,
+    scmutil,
     templatefilters,
     templatekw,
+    templateutil,
     ui as uimod,
     util,
 )
 
+from ..utils import (
+    stringutil,
+)
+
+archivespecs = util.sortdict((
+    ('zip', ('application/zip', 'zip', '.zip', None)),
+    ('gz', ('application/x-gzip', 'tgz', '.tar.gz', None)),
+    ('bz2', ('application/x-bzip2', 'tbz2', '.tar.bz2', None)),
+))
+
+def archivelist(ui, nodeid, url=None):
+    allowed = ui.configlist('web', 'allow_archive', untrusted=True)
+    archives = []
+
+    for typ, spec in archivespecs.iteritems():
+        if typ in allowed or ui.configbool('web', 'allow' + typ,
+                                           untrusted=True):
+            archives.append({
+                'type': typ,
+                'extension': spec[2],
+                'node': nodeid,
+                'url': url,
+            })
+
+    return templateutil.mappinglist(archives)
+
 def up(p):
-    if p[0] != "/":
+    if p[0:1] != "/":
         p = "/" + p
-    if p[-1] == "/":
+    if p[-1:] == "/":
         p = p[:-1]
     up = os.path.dirname(p)
     if up == "/":
@@ -96,14 +125,16 @@ class revnav(object):
         :limit: how far shall we link
 
         The return is:
-            - a single element tuple
+            - a single element mappinglist
             - containing a dictionary with a `before` and `after` key
-            - values are generator functions taking arbitrary number of kwargs
-            - yield items are dictionaries with `label` and `node` keys
+            - values are dictionaries with `label` and `node` keys
         """
         if not self:
             # empty repo
-            return ({'before': (), 'after': ()},)
+            return templateutil.mappinglist([
+                {'before': templateutil.mappinglist([]),
+                 'after': templateutil.mappinglist([])},
+            ])
 
         targets = []
         for f in _navseq(1, pagelen):
@@ -114,22 +145,25 @@ class revnav(object):
         targets.sort()
 
         first = self._first()
-        navbefore = [("(%i)" % first, self.hex(first))]
+        navbefore = [{'label': '(%i)' % first, 'node': self.hex(first)}]
         navafter = []
         for rev in targets:
             if rev not in self._revlog:
                 continue
             if pos < rev < limit:
-                navafter.append(("+%d" % abs(rev - pos), self.hex(rev)))
+                navafter.append({'label': '+%d' % abs(rev - pos),
+                                 'node': self.hex(rev)})
             if 0 < rev < pos:
-                navbefore.append(("-%d" % abs(rev - pos), self.hex(rev)))
+                navbefore.append({'label': '-%d' % abs(rev - pos),
+                                  'node': self.hex(rev)})
 
+        navafter.append({'label': 'tip', 'node': 'tip'})
 
-        navafter.append(("tip", "tip"))
-
-        data = lambda i: {"label": i[0], "node": i[1]}
-        return ({'before': lambda **map: (data(i) for i in navbefore),
-                 'after':  lambda **map: (data(i) for i in navafter)},)
+        # TODO: maybe this can be a scalar object supporting tomap()
+        return templateutil.mappinglist([
+            {'before': templateutil.mappinglist(navbefore),
+             'after': templateutil.mappinglist(navafter)},
+        ])
 
 class filerevnav(revnav):
 
@@ -147,46 +181,45 @@ class filerevnav(revnav):
     def hex(self, rev):
         return hex(self._changelog.node(self._revlog.linkrev(rev)))
 
-class _siblings(object):
-    def __init__(self, siblings=None, hiderev=None):
-        if siblings is None:
-            siblings = []
-        self.siblings = [s for s in siblings if s.node() != nullid]
-        if len(self.siblings) == 1 and self.siblings[0].rev() == hiderev:
-            self.siblings = []
+# TODO: maybe this can be a wrapper class for changectx/filectx list, which
+# yields {'ctx': ctx}
+def _ctxsgen(context, ctxs):
+    for s in ctxs:
+        d = {
+            'node': s.hex(),
+            'rev': s.rev(),
+            'user': s.user(),
+            'date': s.date(),
+            'description': s.description(),
+            'branch': s.branch(),
+        }
+        if util.safehasattr(s, 'path'):
+            d['file'] = s.path()
+        yield d
 
-    def __iter__(self):
-        for s in self.siblings:
-            d = {
-                'node': s.hex(),
-                'rev': s.rev(),
-                'user': s.user(),
-                'date': s.date(),
-                'description': s.description(),
-                'branch': s.branch(),
-            }
-            if util.safehasattr(s, 'path'):
-                d['file'] = s.path()
-            yield d
-
-    def __len__(self):
-        return len(self.siblings)
+def _siblings(siblings=None, hiderev=None):
+    if siblings is None:
+        siblings = []
+    siblings = [s for s in siblings if s.node() != nullid]
+    if len(siblings) == 1 and siblings[0].rev() == hiderev:
+        siblings = []
+    return templateutil.mappinggenerator(_ctxsgen, args=(siblings,))
 
 def difffeatureopts(req, ui, section):
     diffopts = patch.difffeatureopts(ui, untrusted=True,
                                      section=section, whitespace=True)
 
     for k in ('ignorews', 'ignorewsamount', 'ignorewseol', 'ignoreblanklines'):
-        v = req.form.get(k, [None])[0]
+        v = req.qsparams.get(k)
         if v is not None:
-            v = util.parsebool(v)
+            v = stringutil.parsebool(v)
             setattr(diffopts, k, v if v is not None else True)
 
     return diffopts
 
 def annotate(req, fctx, ui):
     diffopts = difffeatureopts(req, ui, 'annotate')
-    return fctx.annotate(follow=True, linenumber=True, diffopts=diffopts)
+    return fctx.annotate(follow=True, diffopts=diffopts)
 
 def parents(ctx, hide=None):
     if isinstance(ctx, context.basefilectx):
@@ -242,12 +275,18 @@ def nodebranchnodefault(ctx):
     return branches
 
 def showtag(repo, tmpl, t1, node=nullid, **args):
+    args = pycompat.byteskwargs(args)
     for t in repo.nodetags(node):
-        yield tmpl(t1, tag=t, **args)
+        lm = args.copy()
+        lm['tag'] = t
+        yield tmpl.generate(t1, lm)
 
 def showbookmark(repo, tmpl, t1, node=nullid, **args):
+    args = pycompat.byteskwargs(args)
     for t in repo.nodebookmarks(node):
-        yield tmpl(t1, bookmark=t, **args)
+        lm = args.copy()
+        lm['bookmark'] = t
+        yield tmpl.generate(t1, lm)
 
 def branchentries(repo, stripecount, limit=0):
     tips = []
@@ -284,57 +323,46 @@ def cleanpath(repo, path):
     path = path.lstrip('/')
     return pathutil.canonpath(repo.root, '', path)
 
-def changeidctx(repo, changeid):
-    try:
-        ctx = repo[changeid]
-    except error.RepoError:
-        man = repo.manifestlog._revlog
-        ctx = repo[man.linkrev(man.rev(man.lookup(changeid)))]
-
-    return ctx
-
 def changectx(repo, req):
     changeid = "tip"
-    if 'node' in req.form:
-        changeid = req.form['node'][0]
+    if 'node' in req.qsparams:
+        changeid = req.qsparams['node']
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[(ipos + 1):]
-    elif 'manifest' in req.form:
-        changeid = req.form['manifest'][0]
 
-    return changeidctx(repo, changeid)
+    return scmutil.revsymbol(repo, changeid)
 
 def basechangectx(repo, req):
-    if 'node' in req.form:
-        changeid = req.form['node'][0]
+    if 'node' in req.qsparams:
+        changeid = req.qsparams['node']
         ipos = changeid.find(':')
         if ipos != -1:
             changeid = changeid[:ipos]
-            return changeidctx(repo, changeid)
+            return scmutil.revsymbol(repo, changeid)
 
     return None
 
 def filectx(repo, req):
-    if 'file' not in req.form:
+    if 'file' not in req.qsparams:
         raise ErrorResponse(HTTP_NOT_FOUND, 'file not given')
-    path = cleanpath(repo, req.form['file'][0])
-    if 'node' in req.form:
-        changeid = req.form['node'][0]
-    elif 'filenode' in req.form:
-        changeid = req.form['filenode'][0]
+    path = cleanpath(repo, req.qsparams['file'])
+    if 'node' in req.qsparams:
+        changeid = req.qsparams['node']
+    elif 'filenode' in req.qsparams:
+        changeid = req.qsparams['filenode']
     else:
         raise ErrorResponse(HTTP_NOT_FOUND, 'node or filenode not given')
     try:
-        fctx = repo[changeid][path]
+        fctx = scmutil.revsymbol(repo, changeid)[path]
     except error.RepoError:
         fctx = repo.filectx(path, fileid=changeid)
 
     return fctx
 
 def linerange(req):
-    linerange = req.form.get('linerange')
-    if linerange is None:
+    linerange = req.qsparams.getall('linerange')
+    if not linerange:
         return None
     if len(linerange) > 1:
         raise ErrorResponse(HTTP_BAD_REQUEST,
@@ -347,20 +375,41 @@ def linerange(req):
     try:
         return util.processlinerange(fromline, toline)
     except error.ParseError as exc:
-        raise ErrorResponse(HTTP_BAD_REQUEST, str(exc))
+        raise ErrorResponse(HTTP_BAD_REQUEST, pycompat.bytestr(exc))
 
 def formatlinerange(fromline, toline):
     return '%d:%d' % (fromline + 1, toline)
 
-def succsandmarkers(repo, ctx):
-    for item in templatekw.showsuccsandmarkers(repo, ctx):
+def succsandmarkers(context, mapping):
+    repo = context.resource(mapping, 'repo')
+    itemmappings = templatekw.showsuccsandmarkers(context, mapping)
+    for item in itemmappings.tovalue(context, mapping):
         item['successors'] = _siblings(repo[successor]
                                        for successor in item['successors'])
         yield item
 
+# teach templater succsandmarkers is switched to (context, mapping) API
+succsandmarkers._requires = {'repo', 'ctx'}
+
+def whyunstable(context, mapping):
+    repo = context.resource(mapping, 'repo')
+    ctx = context.resource(mapping, 'ctx')
+
+    entries = obsutil.whyunstable(repo, ctx)
+    for entry in entries:
+        if entry.get('divergentnodes'):
+            entry['divergentnodes'] = _siblings(entry['divergentnodes'])
+        yield entry
+
+whyunstable._requires = {'repo', 'ctx'}
+
 def commonentry(repo, ctx):
     node = ctx.node()
     return {
+        # TODO: perhaps ctx.changectx() should be assigned if ctx is a
+        # filectx, but I'm not pretty sure if that would always work because
+        # fctx.parents() != fctx.changectx.parents() for example.
+        'ctx': ctx,
         'rev': ctx.rev(),
         'node': hex(node),
         'author': ctx.user(),
@@ -369,8 +418,9 @@ def commonentry(repo, ctx):
         'extra': ctx.extra(),
         'phase': ctx.phasestr(),
         'obsolete': ctx.obsolete(),
-        'succsandmarkers': lambda **x: succsandmarkers(repo, ctx),
+        'succsandmarkers': succsandmarkers,
         'instabilities': [{"instability": i} for i in ctx.instabilities()],
+        'whyunstable': whyunstable,
         'branch': nodebranchnodefault(ctx),
         'inbranch': nodeinbranch(repo, ctx),
         'branches': nodebranchdict(repo, ctx),
@@ -380,7 +430,7 @@ def commonentry(repo, ctx):
         'child': lambda **x: children(ctx),
     }
 
-def changelistentry(web, ctx, tmpl):
+def changelistentry(web, ctx):
     '''Obtain a dictionary to be used for entries in a changelist.
 
     This function is called when producing items for the "entries" list passed
@@ -389,8 +439,8 @@ def changelistentry(web, ctx, tmpl):
     repo = web.repo
     rev = ctx.rev()
     n = ctx.node()
-    showtags = showtag(repo, tmpl, 'changelogtag', n)
-    files = listfilediffs(tmpl, ctx.files(), n, web.maxfiles)
+    showtags = showtag(repo, web.tmpl, 'changelogtag', n)
+    files = listfilediffs(web.tmpl, ctx.files(), n, web.maxfiles)
 
     entry = commonentry(repo, ctx)
     entry.update(
@@ -403,16 +453,16 @@ def changelistentry(web, ctx, tmpl):
     return entry
 
 def symrevorshortnode(req, ctx):
-    if 'node' in req.form:
-        return templatefilters.revescape(req.form['node'][0])
+    if 'node' in req.qsparams:
+        return templatefilters.revescape(req.qsparams['node'])
     else:
         return short(ctx.node())
 
-def changesetentry(web, req, tmpl, ctx):
+def changesetentry(web, ctx):
     '''Obtain a dictionary to be used to render the "changeset" template.'''
 
-    showtags = showtag(web.repo, tmpl, 'changesettag', ctx.node())
-    showbookmarks = showbookmark(web.repo, tmpl, 'changesetbookmark',
+    showtags = showtag(web.repo, web.tmpl, 'changesettag', ctx.node())
+    showbookmarks = showbookmark(web.repo, web.tmpl, 'changesetbookmark',
                                  ctx.node())
     showbranch = nodebranchnodefault(ctx)
 
@@ -420,27 +470,30 @@ def changesetentry(web, req, tmpl, ctx):
     parity = paritygen(web.stripecount)
     for blockno, f in enumerate(ctx.files()):
         template = 'filenodelink' if f in ctx else 'filenolink'
-        files.append(tmpl(template,
-                          node=ctx.hex(), file=f, blockno=blockno + 1,
-                          parity=next(parity)))
+        files.append(web.tmpl.generate(template, {
+            'node': ctx.hex(),
+            'file': f,
+            'blockno': blockno + 1,
+            'parity': next(parity),
+        }))
 
-    basectx = basechangectx(web.repo, req)
+    basectx = basechangectx(web.repo, web.req)
     if basectx is None:
         basectx = ctx.p1()
 
     style = web.config('web', 'style')
-    if 'style' in req.form:
-        style = req.form['style'][0]
+    if 'style' in web.req.qsparams:
+        style = web.req.qsparams['style']
 
-    diff = diffs(web, tmpl, ctx, basectx, None, style)
+    diff = diffs(web, ctx, basectx, None, style)
 
     parity = paritygen(web.stripecount)
     diffstatsgen = diffstatgen(ctx, basectx)
-    diffstats = diffstat(tmpl, ctx, diffstatsgen, parity)
+    diffstats = diffstat(web.tmpl, ctx, diffstatsgen, parity)
 
     return dict(
         diff=diff,
-        symrev=symrevorshortnode(req, ctx),
+        symrev=symrevorshortnode(web.req, ctx),
         basenode=basectx.hex(),
         changesettag=showtags,
         changesetbookmark=showbookmarks,
@@ -449,15 +502,15 @@ def changesetentry(web, req, tmpl, ctx):
         diffsummary=lambda **x: diffsummary(diffstatsgen),
         diffstat=diffstats,
         archives=web.archivelist(ctx.hex()),
-        **commonentry(web.repo, ctx))
+        **pycompat.strkwargs(commonentry(web.repo, ctx)))
 
 def listfilediffs(tmpl, files, node, max):
     for f in files[:max]:
-        yield tmpl('filedifflink', node=hex(node), file=f)
+        yield tmpl.generate('filedifflink', {'node': hex(node), 'file': f})
     if len(files) > max:
-        yield tmpl('fileellipses')
+        yield tmpl.generate('fileellipses', {})
 
-def diffs(web, tmpl, ctx, basectx, files, style, linerange=None,
+def diffs(web, ctx, basectx, files, style, linerange=None,
           lineidprefix=''):
 
     def prettyprintlines(lines, blockno):
@@ -471,11 +524,12 @@ def diffs(web, tmpl, ctx, basectx, files, style, linerange=None,
                 ltype = "difflineat"
             else:
                 ltype = "diffline"
-            yield tmpl(ltype,
-                       line=l,
-                       lineno=lineno,
-                       lineid=lineidprefix + "l%s" % difflineno,
-                       linenumber="% 8s" % difflineno)
+            yield web.tmpl.generate(ltype, {
+                'line': l,
+                'lineno': lineno,
+                'lineid': lineidprefix + "l%s" % difflineno,
+                'linenumber': "% 8s" % difflineno,
+            })
 
     repo = web.repo
     if files:
@@ -500,24 +554,30 @@ def diffs(web, tmpl, ctx, basectx, files, style, linerange=None,
                     continue
             lines.extend(hunklines)
         if lines:
-            yield tmpl('diffblock', parity=next(parity), blockno=blockno,
-                       lines=prettyprintlines(lines, blockno))
+            yield web.tmpl.generate('diffblock', {
+                'parity': next(parity),
+                'blockno': blockno,
+                'lines': prettyprintlines(lines, blockno),
+            })
 
 def compare(tmpl, context, leftlines, rightlines):
     '''Generator function that provides side-by-side comparison data.'''
 
     def compline(type, leftlineno, leftline, rightlineno, rightline):
-        lineid = leftlineno and ("l%s" % leftlineno) or ''
-        lineid += rightlineno and ("r%s" % rightlineno) or ''
-        return tmpl('comparisonline',
-                    type=type,
-                    lineid=lineid,
-                    leftlineno=leftlineno,
-                    leftlinenumber="% 6s" % (leftlineno or ''),
-                    leftline=leftline or '',
-                    rightlineno=rightlineno,
-                    rightlinenumber="% 6s" % (rightlineno or ''),
-                    rightline=rightline or '')
+        lineid = leftlineno and ("l%d" % leftlineno) or ''
+        lineid += rightlineno and ("r%d" % rightlineno) or ''
+        llno = '%d' % leftlineno if leftlineno else ''
+        rlno = '%d' % rightlineno if rightlineno else ''
+        return tmpl.generate('comparisonline', {
+            'type': type,
+            'lineid': lineid,
+            'leftlineno': leftlineno,
+            'leftlinenumber': "% 6s" % llno,
+            'leftline': leftline or '',
+            'rightlineno': rightlineno,
+            'rightlinenumber': "% 6s" % rlno,
+            'rightline': rightline or '',
+        })
 
     def getblock(opcodes):
         for type, llo, lhi, rlo, rhi in opcodes:
@@ -547,10 +607,11 @@ def compare(tmpl, context, leftlines, rightlines):
 
     s = difflib.SequenceMatcher(None, leftlines, rightlines)
     if context < 0:
-        yield tmpl('comparisonblock', lines=getblock(s.get_opcodes()))
+        yield tmpl.generate('comparisonblock',
+                            {'lines': getblock(s.get_opcodes())})
     else:
         for oc in s.get_grouped_opcodes(n=context):
-            yield tmpl('comparisonblock', lines=getblock(oc))
+            yield tmpl.generate('comparisonblock', {'lines': getblock(oc)})
 
 def diffstatgen(ctx, basectx):
     '''Generator function that provides the diffstat data.'''
@@ -584,28 +645,48 @@ def diffstat(tmpl, ctx, statgen, parity):
         template = 'diffstatlink' if filename in files else 'diffstatnolink'
         total = adds + removes
         fileno += 1
-        yield tmpl(template, node=ctx.hex(), file=filename, fileno=fileno,
-                   total=total, addpct=pct(adds), removepct=pct(removes),
-                   parity=next(parity))
+        yield tmpl.generate(template, {
+            'node': ctx.hex(),
+            'file': filename,
+            'fileno': fileno,
+            'total': total,
+            'addpct': pct(adds),
+            'removepct': pct(removes),
+            'parity': next(parity),
+        })
 
-class sessionvars(object):
+class sessionvars(templateutil.wrapped):
     def __init__(self, vars, start='?'):
-        self.start = start
-        self.vars = vars
+        self._start = start
+        self._vars = vars
+
     def __getitem__(self, key):
-        return self.vars[key]
+        return self._vars[key]
+
     def __setitem__(self, key, value):
-        self.vars[key] = value
+        self._vars[key] = value
+
     def __copy__(self):
-        return sessionvars(copy.copy(self.vars), self.start)
-    def __iter__(self):
-        separator = self.start
-        for key, value in sorted(self.vars.iteritems()):
+        return sessionvars(copy.copy(self._vars), self._start)
+
+    def itermaps(self, context):
+        separator = self._start
+        for key, value in sorted(self._vars.iteritems()):
             yield {'name': key,
                    'value': pycompat.bytestr(value),
                    'separator': separator,
             }
             separator = '&'
+
+    def join(self, context, mapping, sep):
+        # could be '{separator}{name}={value|urlescape}'
+        raise error.ParseError(_('not displayable without template'))
+
+    def show(self, context, mapping):
+        return self.join(context, '')
+
+    def tovalue(self, context, mapping):
+        return self._vars
 
 class wsgiui(uimod.ui):
     # default termwidth breaks under mod_wsgi
@@ -619,14 +700,14 @@ def getwebsubs(repo):
     websubdefs += repo.ui.configitems('interhg')
     for key, pattern in websubdefs:
         # grab the delimiter from the character after the "s"
-        unesc = pattern[1]
+        unesc = pattern[1:2]
         delim = re.escape(unesc)
 
         # identify portions of the pattern, taking care to avoid escaped
         # delimiters. the replace format and flags are optional, but
         # delimiters are required.
         match = re.match(
-            r'^s%s(.+)(?:(?<=\\\\)|(?<!\\))%s(.*)%s([ilmsux])*$'
+            br'^s%s(.+)(?:(?<=\\\\)|(?<!\\))%s(.*)%s([ilmsux])*$'
             % (delim, delim, delim), pattern)
         if not match:
             repo.ui.warn(_("websub: invalid pattern for %s: %s\n")
@@ -634,7 +715,7 @@ def getwebsubs(repo):
             continue
 
         # we need to unescape the delimiter for regexp and format
-        delim_re = re.compile(r'(?<!\\)\\%s' % delim)
+        delim_re = re.compile(br'(?<!\\)\\%s' % delim)
         regexp = delim_re.sub(unesc, match.group(1))
         format = delim_re.sub(unesc, match.group(2))
 

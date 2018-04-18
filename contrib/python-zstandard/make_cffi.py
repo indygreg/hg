@@ -27,6 +27,11 @@ SOURCES = ['zstd/%s' % p for p in (
     'compress/fse_compress.c',
     'compress/huf_compress.c',
     'compress/zstd_compress.c',
+    'compress/zstd_double_fast.c',
+    'compress/zstd_fast.c',
+    'compress/zstd_lazy.c',
+    'compress/zstd_ldm.c',
+    'compress/zstd_opt.c',
     'compress/zstdmt_compress.c',
     'decompress/huf_decompress.c',
     'decompress/zstd_decompress.c',
@@ -38,7 +43,6 @@ SOURCES = ['zstd/%s' % p for p in (
 # Headers whose preprocessed output will be fed into cdef().
 HEADERS = [os.path.join(HERE, 'zstd', *p) for p in (
     ('zstd.h',),
-    ('compress', 'zstdmt_compress.h'),
     ('dictBuilder', 'zdict.h'),
 )]
 
@@ -80,7 +84,9 @@ else:
 def preprocess(path):
     with open(path, 'rb') as fh:
         lines = []
-        for l in fh:
+        it = iter(fh)
+
+        for l in it:
             # zstd.h includes <stddef.h>, which is also included by cffi's
             # boilerplate. This can lead to duplicate declarations. So we strip
             # this include from the preprocessor invocation.
@@ -137,18 +143,21 @@ def normalize_output(output):
 
 
 ffi = cffi.FFI()
+# zstd.h uses a possible undefined MIN(). Define it until
+# https://github.com/facebook/zstd/issues/976 is fixed.
 # *_DISABLE_DEPRECATE_WARNINGS prevents the compiler from emitting a warning
 # when cffi uses the function. Since we statically link against zstd, even
 # if we use the deprecated functions it shouldn't be a huge problem.
 ffi.set_source('_zstd_cffi', '''
-#include "mem.h"
+#define MIN(a,b) ((a)<(b) ? (a) : (b))
 #define ZSTD_STATIC_LINKING_ONLY
-#include "zstd.h"
+#include <zstd.h>
 #define ZDICT_STATIC_LINKING_ONLY
 #define ZDICT_DISABLE_DEPRECATE_WARNINGS
-#include "zdict.h"
-#include "zstdmt_compress.h"
-''', sources=SOURCES, include_dirs=INCLUDE_DIRS)
+#include <zdict.h>
+''', sources=SOURCES,
+     include_dirs=INCLUDE_DIRS,
+     extra_compile_args=['-DZSTD_MULTITHREAD'])
 
 DEFINE = re.compile(b'^\\#define ([a-zA-Z0-9_]+) ')
 

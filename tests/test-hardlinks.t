@@ -1,4 +1,4 @@
-#require hardlink
+#require hardlink reporevlogstore
 
   $ cat > nlinks.py <<EOF
   > from __future__ import print_function
@@ -49,10 +49,10 @@ Prepare repo r1:
   1 r1/.hg/store/00manifest.i
   1 r1/.hg/store/data/d1/f2.i
   1 r1/.hg/store/data/f1.i
-  1 r1/.hg/store/fncache
+  1 r1/.hg/store/fncache (repofncache !)
   1 r1/.hg/store/phaseroots
   1 r1/.hg/store/undo
-  1 r1/.hg/store/undo.backup.fncache
+  1 r1/.hg/store/undo.backup.fncache (repofncache !)
   1 r1/.hg/store/undo.backupfiles
   1 r1/.hg/store/undo.phaseroots
 
@@ -89,10 +89,10 @@ Repos r1 and r2 should now contain hardlinked files:
   2 r1/.hg/store/00manifest.i
   2 r1/.hg/store/data/d1/f2.i
   2 r1/.hg/store/data/f1.i
-  2 r1/.hg/store/fncache
+  2 r1/.hg/store/fncache (repofncache !)
   1 r1/.hg/store/phaseroots
   1 r1/.hg/store/undo
-  1 r1/.hg/store/undo.backup.fncache
+  1 r1/.hg/store/undo.backup.fncache (repofncache !)
   1 r1/.hg/store/undo.backupfiles
   1 r1/.hg/store/undo.phaseroots
 
@@ -101,7 +101,7 @@ Repos r1 and r2 should now contain hardlinked files:
   2 r2/.hg/store/00manifest.i
   2 r2/.hg/store/data/d1/f2.i
   2 r2/.hg/store/data/f1.i
-  2 r2/.hg/store/fncache
+  2 r2/.hg/store/fncache (repofncache !)
 
 Repo r3 should not be hardlinked:
 
@@ -110,7 +110,7 @@ Repo r3 should not be hardlinked:
   1 r3/.hg/store/00manifest.i
   1 r3/.hg/store/data/d1/f2.i
   1 r3/.hg/store/data/f1.i
-  1 r3/.hg/store/fncache
+  1 r3/.hg/store/fncache (repofncache !)
   1 r3/.hg/store/phaseroots
   1 r3/.hg/store/undo
   1 r3/.hg/store/undo.backupfiles
@@ -136,10 +136,10 @@ Create a non-inlined filelog in r3:
   1 r3/.hg/store/data/d1/f2.d
   1 r3/.hg/store/data/d1/f2.i
   1 r3/.hg/store/data/f1.i
-  1 r3/.hg/store/fncache
+  1 r3/.hg/store/fncache (repofncache !)
   1 r3/.hg/store/phaseroots
   1 r3/.hg/store/undo
-  1 r3/.hg/store/undo.backup.fncache
+  1 r3/.hg/store/undo.backup.fncache (repofncache !)
   1 r3/.hg/store/undo.backup.phaseroots
   1 r3/.hg/store/undo.backupfiles
   1 r3/.hg/store/undo.phaseroots
@@ -169,9 +169,9 @@ Push to repo r1 should break up most hardlinks in r2:
   1 r2/.hg/store/00manifest.i
   1 r2/.hg/store/data/d1/f2.i
   2 r2/.hg/store/data/f1.i
-  [12] r2/\.hg/store/fncache (re)
+  [12] r2/\.hg/store/fncache (re) (repofncache !)
 
-#if hardlink-whitelisted
+#if hardlink-whitelisted repofncache
   $ nlinksdir r2/.hg/store/fncache
   2 r2/.hg/store/fncache
 #endif
@@ -199,9 +199,9 @@ Committing a change to f1 in r1 must break up hardlink f1.i in r2:
   1 r2/.hg/store/00manifest.i
   1 r2/.hg/store/data/d1/f2.i
   1 r2/.hg/store/data/f1.i
-  [12] r2/\.hg/store/fncache (re)
+  [12] r2/\.hg/store/fncache (re) (repofncache !)
 
-#if hardlink-whitelisted
+#if hardlink-whitelisted repofncache
   $ nlinksdir r2/.hg/store/fncache
   2 r2/.hg/store/fncache
 #endif
@@ -254,10 +254,10 @@ r4 has hardlinks in the working dir (not just inside .hg):
   2 r4/.hg/store/data/d1/f2.i
   2 r4/.hg/store/data/f1.i
   2 r4/.hg/store/data/f3.i
-  2 r4/.hg/store/fncache
+  2 r4/.hg/store/fncache (repofncache !)
   2 r4/.hg/store/phaseroots
   2 r4/.hg/store/undo
-  2 r4/.hg/store/undo.backup.fncache
+  2 r4/.hg/store/undo.backup.fncache (repofncache !)
   2 r4/.hg/store/undo.backup.phaseroots
   2 r4/.hg/store/undo.backupfiles
   2 r4/.hg/store/undo.phaseroots
@@ -307,7 +307,7 @@ Update back to revision 12 in r4 should break hardlink of file f1 and f3:
   2 r4/.hg/store/fncache
   2 r4/.hg/store/phaseroots
   2 r4/.hg/store/undo
-  2 r4/.hg/store/undo.backup.fncache
+  2 r4/.hg/store/undo.backup.fncache (repofncache !)
   2 r4/.hg/store/undo.backup.phaseroots
   2 r4/.hg/store/undo.backupfiles
   2 r4/.hg/store/undo.phaseroots

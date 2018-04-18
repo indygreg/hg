@@ -92,7 +92,7 @@ class unionrevlog(revlog.revlog):
 
         return mdiff.textdiff(self.revision(rev1), self.revision(rev2))
 
-    def revision(self, nodeorrev, raw=False):
+    def revision(self, nodeorrev, _df=None, raw=False):
         """return an uncompressed revision of a given node or revision
         number.
         """
@@ -163,13 +163,15 @@ class unionmanifest(unionrevlog, manifest.manifestrevlog):
     def baserevdiff(self, rev1, rev2):
         return manifest.manifestrevlog.revdiff(self, rev1, rev2)
 
-class unionfilelog(unionrevlog, filelog.filelog):
+class unionfilelog(filelog.filelog):
     def __init__(self, opener, path, opener2, linkmapper, repo):
         filelog.filelog.__init__(self, opener, path)
         filelog2 = filelog.filelog(opener2, path)
-        unionrevlog.__init__(self, opener, self.indexfile, filelog2,
-                             linkmapper)
+        self._revlog = unionrevlog(opener, self.indexfile,
+                                   filelog2._revlog, linkmapper)
         self._repo = repo
+        self.repotiprev = self._revlog.repotiprev
+        self.revlog2 = self._revlog.revlog2
 
     def baserevision(self, nodeorrev):
         return filelog.filelog.revision(self, nodeorrev)
@@ -229,7 +231,7 @@ class unionrepository(localrepo.localrepository):
     def getcwd(self):
         return pycompat.getcwd() # always outside the repo
 
-def instance(ui, path, create):
+def instance(ui, path, create, intents=None):
     if create:
         raise error.Abort(_('cannot create new union repository'))
     parentpath = ui.config("bundle", "mainreporoot")

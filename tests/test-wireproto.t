@@ -94,30 +94,27 @@ HTTP without args-in-POST:
   * - - [*] "POST /?cmd=debugwireargs HTTP/1.1" 200 - x-hgargs-post:1033* (glob)
   * - - [*] "POST /?cmd=debugwireargs HTTP/1.1" 200 - x-hgargs-post:1033* (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=quatre&one=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=quatre&one=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=quatre&one=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=quatre&one=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=qu++atre&one=+un&three=trois+&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=qu++atre&one=+un&three=trois+&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=qu++atre&one=+un&three=trois+&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=qu++atre&one=+un&three=trois+&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=vier&one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=vier&one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=vier&one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=vier&one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:one=eins&two=zwei x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=onethousandcharactersxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&one x-hgarg-2:=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=onethousandcharactersxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&one x-hgarg-2:=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=onethousandcharactersxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&one x-hgarg-2:=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs HTTP/1.1" 200 - x-hgarg-1:four=onethousandcharactersxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&one x-hgarg-2:=un&three=trois&two=deux x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
 
 HTTP without the httpheader capability:
 
-  $ HGRCPATH="`pwd`/repo/.hgrc"
-  $ export HGRCPATH
-  $ CAP=httpheader
-  $ . "$TESTDIR/notcapable"
+  $ CAP=httpheader . "$TESTDIR/notcapable"
 
   $ hg serve -R repo -p $HGPORT2 -d --pid-file=hg2.pid -E error2.log -A access2.log
   $ cat hg2.pid >> $DAEMON_PIDS
@@ -133,17 +130,17 @@ HTTP without the httpheader capability:
   $ cat error2.log
   $ cat access2.log
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=quatre&one=un&three=trois&two=deux HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=quatre&one=un&three=trois&two=deux HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=quatre&one=un&three=trois&two=deux HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=quatre&one=un&three=trois&two=deux HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=vier&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=vier&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=vier&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&four=vier&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
   * - - [*] "GET /?cmd=capabilities HTTP/1.1" 200 - (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
-  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /?cmd=debugwireargs&one=eins&two=zwei HTTP/1.1" 200 - x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull (glob)
 
 SSH (try to exercise the ssh functionality with a dummy script):
 

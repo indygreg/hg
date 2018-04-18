@@ -10,11 +10,79 @@ return multiple response types.
 The protocol is synchronous and does not support multiplexing (concurrent
 commands).
 
-Transport Protocols
-===================
+Handshake
+=========
 
-HTTP Transport
---------------
+It is required or common for clients to perform a *handshake* when connecting
+to a server. The handshake serves the following purposes:
+
+* Negotiating protocol/transport level options
+* Allows the client to learn about server capabilities to influence
+  future requests
+* Ensures the underlying transport channel is in a *clean* state
+
+An important goal of the handshake is to allow clients to use more modern
+wire protocol features. By default, clients must assume they are talking
+to an old version of Mercurial server (possibly even the very first
+implementation). So, clients should not attempt to call or utilize modern
+wire protocol features until they have confirmation that the server
+supports them. The handshake implementation is designed to allow both
+ends to utilize the latest set of features and capabilities with as
+few round trips as possible.
+
+The handshake mechanism varies by transport and protocol and is documented
+in the sections below.
+
+HTTP Protocol
+=============
+
+Handshake
+---------
+
+The client sends a ``capabilities`` command request (``?cmd=capabilities``)
+as soon as HTTP requests may be issued.
+
+By default, the server responds with a version 1 capabilities string, which
+the client parses to learn about the server's abilities. The ``Content-Type``
+for this response is ``application/mercurial-0.1`` or
+``application/mercurial-0.2`` depending on whether the client advertised
+support for version ``0.2`` in its request. (Clients aren't supposed to
+advertise support for ``0.2`` until the capabilities response indicates
+the server's support for that media type. However, a client could
+conceivably cache this metadata and issue the capabilities request in such
+a way to elicit an ``application/mercurial-0.2`` response.)
+
+Clients wishing to switch to a newer API service may send an
+``X-HgUpgrade-<X>`` header containing a space-delimited list of API service
+names the client is capable of speaking. The request MUST also include an
+``X-HgProto-<X>`` header advertising a known serialization format for the
+response. ``cbor`` is currently the only defined serialization format.
+
+If the request contains these headers, the response ``Content-Type`` MAY
+be for a different media type. e.g. ``application/mercurial-cbor`` if the
+client advertises support for CBOR.
+
+The response MUST be deserializable to a map with the following keys:
+
+apibase
+   URL path to API services, relative to the repository root. e.g. ``api/``.
+
+apis
+   A map of API service names to API descriptors. An API descriptor contains
+   more details about that API. In the case of the HTTP Version 2 Transport,
+   it will be the normal response to a ``capabilities`` command.
+
+   Only the services advertised by the client that are also available on
+   the server are advertised.
+
+v1capabilities
+   The capabilities string that would be returned by a version 1 response.
+
+The client can then inspect the server-advertised APIs and decide which
+API to use, including continuing to use the HTTP Version 1 Transport.
+
+HTTP Version 1 Transport
+------------------------
 
 Commands are issued as HTTP/1.0 or HTTP/1.1 requests. Commands are
 sent to the base URL of the repository with the command name sent in
@@ -91,11 +159,8 @@ The ``application/hg-error`` media type indicates a generic error occurred.
 The content of the HTTP response body typically holds text describing the
 error.
 
-The ``application/hg-changegroup`` media type indicates a changegroup response
-type.
-
-Clients also accept the ``text/plain`` media type. All other media
-types should cause the client to error.
+The ``application/mercurial-cbor`` media type indicates a CBOR payload
+and should be interpreted as identical to ``application/cbor``.
 
 Behavior of media types is further described in the ``Content Negotiation``
 section below.
@@ -112,11 +177,256 @@ A command returning a ``stream`` response issues a
 ``application/mercurial-0.*`` media type and the HTTP response is typically
 using *chunked transfer* (``Transfer-Encoding: chunked``).
 
-SSH Transport
-=============
+HTTP Version 2 Transport
+------------------------
 
-The SSH transport is a custom text-based protocol suitable for use over any
-bi-directional stream transport. It is most commonly used with SSH.
+**Experimental - feature under active development**
+
+Version 2 of the HTTP protocol is exposed under the ``/api/*`` URL space.
+It's final API name is not yet formalized.
+
+Commands are triggered by sending HTTP POST requests against URLs of the
+form ``<permission>/<command>``, where ``<permission>`` is ``ro`` or
+``rw``, meaning read-only and read-write, respectively and ``<command>``
+is a named wire protocol command.
+
+Non-POST request methods MUST be rejected by the server with an HTTP
+405 response.
+
+Commands that modify repository state in meaningful ways MUST NOT be
+exposed under the ``ro`` URL prefix. All available commands MUST be
+available under the ``rw`` URL prefix.
+
+Server adminstrators MAY implement blanket HTTP authentication keyed
+off the URL prefix. For example, a server may require authentication
+for all ``rw/*`` URLs and let unauthenticated requests to ``ro/*``
+URL proceed. A server MAY issue an HTTP 401, 403, or 407 response
+in accordance with RFC 7235. Clients SHOULD recognize the HTTP Basic
+(RFC 7617) and Digest (RFC 7616) authentication schemes. Clients SHOULD
+make an attempt to recognize unknown schemes using the
+``WWW-Authenticate`` response header on a 401 response, as defined by
+RFC 7235.
+
+Read-only commands are accessible under ``rw/*`` URLs so clients can
+signal the intent of the operation very early in the connection
+lifecycle. For example, a ``push`` operation - which consists of
+various read-only commands mixed with at least one read-write command -
+can perform all commands against ``rw/*`` URLs so that any server-side
+authentication requirements are discovered upon attempting the first
+command - not potentially several commands into the exchange. This
+allows clients to fail faster or prompt for credentials as soon as the
+exchange takes place. This provides a better end-user experience.
+
+Requests to unknown commands or URLS result in an HTTP 404.
+TODO formally define response type, how error is communicated, etc.
+
+HTTP request and response bodies use the *Unified Frame-Based Protocol*
+(defined below) for media exchange. The entirety of the HTTP message
+body is 0 or more frames as defined by this protocol.
+
+Clients and servers MUST advertise the ``TBD`` media type via the
+``Content-Type`` request and response headers. In addition, clients MUST
+advertise this media type value in their ``Accept`` request header in all
+requests.
+TODO finalize the media type. For now, it is defined in wireprotoserver.py.
+
+Servers receiving requests without an ``Accept`` header SHOULD respond with
+an HTTP 406.
+
+Servers receiving requests with an invalid ``Content-Type`` header SHOULD
+respond with an HTTP 415.
+
+The command to run is specified in the POST payload as defined by the
+*Unified Frame-Based Protocol*. This is redundant with data already
+encoded in the URL. This is by design, so server operators can have
+better understanding about server activity from looking merely at
+HTTP access logs.
+
+In most circumstances, the command specified in the URL MUST match
+the command specified in the frame-based payload or the server will
+respond with an error. The exception to this is the special
+``multirequest`` URL. (See below.) In addition, HTTP requests
+are limited to one command invocation. The exception is the special
+``multirequest`` URL.
+
+The ``multirequest`` command endpoints (``ro/multirequest`` and
+``rw/multirequest``) are special in that they allow the execution of
+*any* command and allow the execution of multiple commands. If the
+HTTP request issues multiple commands across multiple frames, all
+issued commands will be processed by the server. Per the defined
+behavior of the *Unified Frame-Based Protocol*, commands may be
+issued interleaved and responses may come back in a different order
+than they were issued. Clients MUST be able to deal with this.
+
+SSH Protocol
+============
+
+Handshake
+---------
+
+For all clients, the handshake consists of the client sending 1 or more
+commands to the server using version 1 of the transport. Servers respond
+to commands they know how to respond to and send an empty response (``0\n``)
+for unknown commands (per standard behavior of version 1 of the transport).
+Clients then typically look for a response to the newest sent command to
+determine which transport version to use and what the available features for
+the connection and server are.
+
+Preceding any response from client-issued commands, the server may print
+non-protocol output. It is common for SSH servers to print banners, message
+of the day announcements, etc when clients connect. It is assumed that any
+such *banner* output will precede any Mercurial server output. So clients
+must be prepared to handle server output on initial connect that isn't
+in response to any client-issued command and doesn't conform to Mercurial's
+wire protocol. This *banner* output should only be on stdout. However,
+some servers may send output on stderr.
+
+Pre 0.9.1 clients issue a ``between`` command with the ``pairs`` argument
+having the value
+``0000000000000000000000000000000000000000-0000000000000000000000000000000000000000``.
+
+The ``between`` command has been supported since the original Mercurial
+SSH server. Requesting the empty range will return a ``\n`` string response,
+which will be encoded as ``1\n\n`` (value length of ``1`` followed by a newline
+followed by the value, which happens to be a newline).
+
+For pre 0.9.1 clients and all servers, the exchange looks like::
+
+   c: between\n
+   c: pairs 81\n
+   c: 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: 1\n
+   s: \n
+
+0.9.1+ clients send a ``hello`` command (with no arguments) before the
+``between`` command. The response to this command allows clients to
+discover server capabilities and settings.
+
+An example exchange between 0.9.1+ clients and a ``hello`` aware server looks
+like::
+
+   c: hello\n
+   c: between\n
+   c: pairs 81\n
+   c: 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: 324\n
+   s: capabilities: lookup changegroupsubset branchmap pushkey known getbundle ...\n
+   s: 1\n
+   s: \n
+
+And a similar scenario but with servers sending a banner on connect::
+
+   c: hello\n
+   c: between\n
+   c: pairs 81\n
+   c: 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: welcome to the server\n
+   s: if you find any issues, email someone@somewhere.com\n
+   s: 324\n
+   s: capabilities: lookup changegroupsubset branchmap pushkey known getbundle ...\n
+   s: 1\n
+   s: \n
+
+Note that output from the ``hello`` command is terminated by a ``\n``. This is
+part of the response payload and not part of the wire protocol adding a newline
+after responses. In other words, the length of the response contains the
+trailing ``\n``.
+
+Clients supporting version 2 of the SSH transport send a line beginning
+with ``upgrade`` before the ``hello`` and ``between`` commands. The line
+(which isn't a well-formed command line because it doesn't consist of a
+single command name) serves to both communicate the client's intent to
+switch to transport version 2 (transports are version 1 by default) as
+well as to advertise the client's transport-level capabilities so the
+server may satisfy that request immediately.
+
+The upgrade line has the form:
+
+    upgrade <token> <transport capabilities>
+
+That is the literal string ``upgrade`` followed by a space, followed by
+a randomly generated string, followed by a space, followed by a string
+denoting the client's transport capabilities.
+
+The token can be anything. However, a random UUID is recommended. (Use
+of version 4 UUIDs is recommended because version 1 UUIDs can leak the
+client's MAC address.)
+
+The transport capabilities string is a URL/percent encoded string
+containing key-value pairs defining the client's transport-level
+capabilities. The following capabilities are defined:
+
+proto
+   A comma-delimited list of transport protocol versions the client
+   supports. e.g. ``ssh-v2``.
+
+If the server does not recognize the ``upgrade`` line, it should issue
+an empty response and continue processing the ``hello`` and ``between``
+commands. Here is an example handshake between a version 2 aware client
+and a non version 2 aware server:
+
+   c: upgrade 2e82ab3f-9ce3-4b4e-8f8c-6fd1c0e9e23a proto=ssh-v2
+   c: hello\n
+   c: between\n
+   c: pairs 81\n
+   c: 0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: 0\n
+   s: 324\n
+   s: capabilities: lookup changegroupsubset branchmap pushkey known getbundle ...\n
+   s: 1\n
+   s: \n
+
+(The initial ``0\n`` line from the server indicates an empty response to
+the unknown ``upgrade ..`` command/line.)
+
+If the server recognizes the ``upgrade`` line and is willing to satisfy that
+upgrade request, it replies to with a payload of the following form:
+
+   upgraded <token> <transport name>\n
+
+This line is the literal string ``upgraded``, a space, the token that was
+specified by the client in its ``upgrade ...`` request line, a space, and the
+name of the transport protocol that was chosen by the server. The transport
+name MUST match one of the names the client specified in the ``proto`` field
+of its ``upgrade ...`` request line.
+
+If a server issues an ``upgraded`` response, it MUST also read and ignore
+the lines associated with the ``hello`` and ``between`` command requests
+that were issued by the server. It is assumed that the negotiated transport
+will respond with equivalent requested information following the transport
+handshake.
+
+All data following the ``\n`` terminating the ``upgraded`` line is the
+domain of the negotiated transport. It is common for the data immediately
+following to contain additional metadata about the state of the transport and
+the server. However, this isn't strictly speaking part of the transport
+handshake and isn't covered by this section.
+
+Here is an example handshake between a version 2 aware client and a version
+2 aware server:
+
+   c:  upgrade 2e82ab3f-9ce3-4b4e-8f8c-6fd1c0e9e23a proto=ssh-v2
+   c:  hello\n
+   c:  between\n
+   c:  pairs 81\n
+   c:  0000000000000000000000000000000000000000-0000000000000000000000000000000000000000
+   s: upgraded 2e82ab3f-9ce3-4b4e-8f8c-6fd1c0e9e23a ssh-v2\n
+   s: <additional transport specific data>
+
+The client-issued token that is echoed in the response provides a more
+resilient mechanism for differentiating *banner* output from Mercurial
+output. In version 1, properly formatted banner output could get confused
+for Mercurial server output. By submitting a randomly generated token
+that is then present in the response, the client can look for that token
+in response lines and have reasonable certainty that the line did not
+originate from a *banner* message.
+
+SSH Version 1 Transport
+-----------------------
+
+The SSH transport (version 1) is a custom text-based protocol suitable for
+use over any bi-directional stream transport. It is most commonly used with
+SSH.
 
 A SSH transport server can be started with ``hg serve --stdio``. The stdin,
 stderr, and stdout file descriptors of the started process are used to exchange
@@ -173,6 +483,532 @@ If the server receives an unknown command, it will send an empty ``string``
 response.
 
 The server terminates if it receives an empty command (a ``\n`` character).
+
+If the server announces support for the ``protocaps`` capability, the client
+should issue a ``protocaps`` command after the initial handshake to annonunce
+its own capabilities. The client capabilities are persistent.
+
+SSH Version 2 Transport
+-----------------------
+
+**Experimental and under development**
+
+Version 2 of the SSH transport behaves identically to version 1 of the SSH
+transport with the exception of handshake semantics. See above for how
+version 2 of the SSH transport is negotiated.
+
+Immediately following the ``upgraded`` line signaling a switch to version
+2 of the SSH protocol, the server automatically sends additional details
+about the capabilities of the remote server. This has the form:
+
+   <integer length of value>\n
+   capabilities: ...\n
+
+e.g.
+
+   s: upgraded 2e82ab3f-9ce3-4b4e-8f8c-6fd1c0e9e23a ssh-v2\n
+   s: 240\n
+   s: capabilities: known getbundle batch ...\n
+
+Following capabilities advertisement, the peers communicate using version
+1 of the SSH transport.
+
+Unified Frame-Based Protocol
+============================
+
+**Experimental and under development**
+
+The *Unified Frame-Based Protocol* is a communications protocol between
+Mercurial peers. The protocol aims to be mostly transport agnostic
+(works similarly on HTTP, SSH, etc).
+
+To operate the protocol, a bi-directional, half-duplex pipe supporting
+ordered sends and receives is required. That is, each peer has one pipe
+for sending data and another for receiving.
+
+All data is read and written in atomic units called *frames*. These
+are conceptually similar to TCP packets. Higher-level functionality
+is built on the exchange and processing of frames.
+
+All frames are associated with a *stream*. A *stream* provides a
+unidirectional grouping of frames. Streams facilitate two goals:
+content encoding and parallelism. There is a dedicated section on
+streams below.
+
+The protocol is request-response based: the client issues requests to
+the server, which issues replies to those requests. Server-initiated
+messaging is not currently supported, but this specification carves
+out room to implement it.
+
+All frames are associated with a numbered request. Frames can thus
+be logically grouped by their request ID.
+
+Frames begin with an 8 octet header followed by a variable length
+payload::
+
+    +------------------------------------------------+
+    |                 Length (24)                    |
+    +--------------------------------+---------------+
+    |         Request ID (16)        | Stream ID (8) |
+    +------------------+-------------+---------------+
+    | Stream Flags (8) |
+    +-----------+------+
+    | Type (4)  |
+    +-----------+
+    | Flags (4) |
+    +===========+===================================================|
+    |                     Frame Payload (0...)                    ...
+    +---------------------------------------------------------------+
+
+The length of the frame payload is expressed as an unsigned 24 bit
+little endian integer. Values larger than 65535 MUST NOT be used unless
+given permission by the server as part of the negotiated capabilities
+during the handshake. The frame header is not part of the advertised
+frame length. The payload length is the over-the-wire length. If there
+is content encoding applied to the payload as part of the frame's stream,
+the length is the output of that content encoding, not the input.
+
+The 16-bit ``Request ID`` field denotes the integer request identifier,
+stored as an unsigned little endian integer. Odd numbered requests are
+client-initiated. Even numbered requests are server-initiated. This
+refers to where the *request* was initiated - not where the *frame* was
+initiated, so servers will send frames with odd ``Request ID`` in
+response to client-initiated requests. Implementations are advised to
+start ordering request identifiers at ``1`` and ``0``, increment by
+``2``, and wrap around if all available numbers have been exhausted.
+
+The 8-bit ``Stream ID`` field denotes the stream that the frame is
+associated with. Frames belonging to a stream may have content
+encoding applied and the receiver may need to decode the raw frame
+payload to obtain the original data. Odd numbered IDs are
+client-initiated. Even numbered IDs are server-initiated.
+
+The 8-bit ``Stream Flags`` field defines stream processing semantics.
+See the section on streams below.
+
+The 4-bit ``Type`` field denotes the type of frame being sent.
+
+The 4-bit ``Flags`` field defines special, per-type attributes for
+the frame.
+
+The sections below define the frame types and their behavior.
+
+Command Request (``0x01``)
+--------------------------
+
+This frame contains a request to run a command.
+
+The payload consists of a CBOR map defining the command request. The
+bytestring keys of that map are:
+
+name
+   Name of the command that should be executed (bytestring).
+args
+   Map of bytestring keys to various value types containing the named
+   arguments to this command.
+
+   Each command defines its own set of argument names and their expected
+   types.
+
+This frame type MUST ONLY be sent from clients to servers: it is illegal
+for a server to send this frame to a client.
+
+The following flag values are defined for this type:
+
+0x01
+   New command request. When set, this frame represents the beginning
+   of a new request to run a command. The ``Request ID`` attached to this
+   frame MUST NOT be active.
+0x02
+   Command request continuation. When set, this frame is a continuation
+   from a previous command request frame for its ``Request ID``. This
+   flag is set when the CBOR data for a command request does not fit
+   in a single frame.
+0x04
+   Additional frames expected. When set, the command request didn't fit
+   into a single frame and additional CBOR data follows in a subsequent
+   frame.
+0x08
+   Command data frames expected. When set, command data frames are
+   expected to follow the final command request frame for this request.
+
+``0x01`` MUST be set on the initial command request frame for a
+``Request ID``.
+
+``0x01`` or ``0x02`` MUST be set to indicate this frame's role in
+a series of command request frames.
+
+If command data frames are to be sent, ``0x08`` MUST be set on ALL
+command request frames.
+
+Command Data (``0x02``)
+-----------------------
+
+This frame contains raw data for a command.
+
+Most commands can be executed by specifying arguments. However,
+arguments have an upper bound to their length. For commands that
+accept data that is beyond this length or whose length isn't known
+when the command is initially sent, they will need to stream
+arbitrary data to the server. This frame type facilitates the sending
+of this data.
+
+The payload of this frame type consists of a stream of raw data to be
+consumed by the command handler on the server. The format of the data
+is command specific.
+
+The following flag values are defined for this type:
+
+0x01
+   Command data continuation. When set, the data for this command
+   continues into a subsequent frame.
+
+0x02
+   End of data. When set, command data has been fully sent to the
+   server. The command has been fully issued and no new data for this
+   command will be sent. The next frame will belong to a new command.
+
+Command Response Data (``0x03``)
+--------------------------------
+
+This frame contains response data to an issued command.
+
+Response data ALWAYS consists of a series of 1 or more CBOR encoded
+values. A CBOR value may be using indefinite length encoding. And the
+bytes constituting the value may span several frames.
+
+The following flag values are defined for this type:
+
+0x01
+   Data continuation. When set, an additional frame containing response data
+   will follow.
+0x02
+   End of data. When set, the response data has been fully sent and
+   no additional frames for this response will be sent.
+
+The ``0x01`` flag is mutually exclusive with the ``0x02`` flag.
+
+Error Occurred (``0x05``)
+-------------------------
+
+Some kind of error occurred.
+
+There are 3 general kinds of failures that can occur:
+
+* Command error encountered before any response issued
+* Command error encountered after a response was issued
+* Protocol or stream level error
+
+This frame type is used to capture the latter cases. (The general
+command error case is handled by the leading CBOR map in
+``Command Response`` frames.)
+
+The payload of this frame contains a CBOR map detailing the error. That
+map has the following bytestring keys:
+
+type
+   (bytestring) The overall type of error encountered. Can be one of the
+   following values:
+
+   protocol
+      A protocol-level error occurred. This typically means someone
+      is violating the framing protocol semantics and the server is
+      refusing to proceed.
+
+   server
+      A server-level error occurred. This typically indicates some kind of
+      logic error on the server, likely the fault of the server.
+
+   command
+      A command-level error, likely the fault of the client.
+
+message
+   (array of maps) A richly formatted message that is intended for
+   human consumption. See the ``Human Output Side-Channel`` frame
+   section for a description of the format of this data structure.
+
+Human Output Side-Channel (``0x06``)
+------------------------------------
+
+This frame contains a message that is intended to be displayed to
+people. Whereas most frames communicate machine readable data, this
+frame communicates textual data that is intended to be shown to
+humans.
+
+The frame consists of a series of *formatting requests*. Each formatting
+request consists of a formatting string, arguments for that formatting
+string, and labels to apply to that formatting string.
+
+A formatting string is a printf()-like string that allows variable
+substitution within the string. Labels allow the rendered text to be
+*decorated*. Assuming use of the canonical Mercurial code base, a
+formatting string can be the input to the ``i18n._`` function. This
+allows messages emitted from the server to be localized. So even if
+the server has different i18n settings, people could see messages in
+their *native* settings. Similarly, the use of labels allows
+decorations like coloring and underlining to be applied using the
+client's configured rendering settings.
+
+Formatting strings are similar to ``printf()`` strings or how
+Python's ``%`` operator works. The only supported formatting sequences
+are ``%s`` and ``%%``. ``%s`` will be replaced by whatever the string
+at that position resolves to. ``%%`` will be replaced by ``%``. All
+other 2-byte sequences beginning with ``%`` represent a literal
+``%`` followed by that character. However, future versions of the
+wire protocol reserve the right to allow clients to opt in to receiving
+formatting strings with additional formatters, hence why ``%%`` is
+required to represent the literal ``%``.
+
+The frame payload consists of a CBOR array of CBOR maps. Each map
+defines an *atom* of text data to print. Each *atom* has the following
+bytestring keys:
+
+msg
+   (bytestring) The formatting string. Content MUST be ASCII.
+args (optional)
+   Array of bytestrings defining arguments to the formatting string.
+labels (optional)
+   Array of bytestrings defining labels to apply to this atom.
+
+All data to be printed MUST be encoded into a single frame: this frame
+does not support spanning data across multiple frames.
+
+All textual data encoded in these frames is assumed to be line delimited.
+The last atom in the frame SHOULD end with a newline (``\n``). If it
+doesn't, clients MAY add a newline to facilitate immediate printing.
+
+Progress Update (``0x07``)
+--------------------------
+
+This frame holds the progress of an operation on the peer. Consumption
+of these frames allows clients to display progress bars, estimated
+completion times, etc.
+
+Each frame defines the progress of a single operation on the peer. The
+payload consists of a CBOR map with the following bytestring keys:
+
+topic
+   Topic name (string)
+pos
+   Current numeric position within the topic (integer)
+total
+   Total/end numeric position of this topic (unsigned integer)
+label (optional)
+   Unit label (string)
+item (optional)
+   Item name (string)
+
+Progress state is created when a frame is received referencing a
+*topic* that isn't currently tracked. Progress tracking for that
+*topic* is finished when a frame is received reporting the current
+position of that topic as ``-1``.
+
+Multiple *topics* may be active at any given time.
+
+Rendering of progress information is not mandated or governed by this
+specification: implementations MAY render progress information however
+they see fit, including not at all.
+
+The string data describing the topic SHOULD be static strings to
+facilitate receivers localizing that string data. The emitter
+MUST normalize all string data to valid UTF-8 and receivers SHOULD
+validate that received data conforms to UTF-8. The topic name
+SHOULD be ASCII.
+
+Stream Encoding Settings (``0x08``)
+-----------------------------------
+
+This frame type holds information defining the content encoding
+settings for a *stream*.
+
+This frame type is likely consumed by the protocol layer and is not
+passed on to applications.
+
+This frame type MUST ONLY occur on frames having the *Beginning of Stream*
+``Stream Flag`` set.
+
+The payload of this frame defines what content encoding has (possibly)
+been applied to the payloads of subsequent frames in this stream.
+
+The payload begins with an 8-bit integer defining the length of the
+encoding *profile*, followed by the string name of that profile, which
+must be an ASCII string. All bytes that follow can be used by that
+profile for supplemental settings definitions. See the section below
+on defined encoding profiles.
+
+Stream States and Flags
+-----------------------
+
+Streams can be in two states: *open* and *closed*. An *open* stream
+is active and frames attached to that stream could arrive at any time.
+A *closed* stream is not active. If a frame attached to a *closed*
+stream arrives, that frame MUST have an appropriate stream flag
+set indicating beginning of stream. All streams are in the *closed*
+state by default.
+
+The ``Stream Flags`` field denotes a set of bit flags for defining
+the relationship of this frame within a stream. The following flags
+are defined:
+
+0x01
+   Beginning of stream. The first frame in the stream MUST set this
+   flag. When received, the ``Stream ID`` this frame is attached to
+   becomes ``open``.
+
+0x02
+   End of stream. The last frame in a stream MUST set this flag. When
+   received, the ``Stream ID`` this frame is attached to becomes
+   ``closed``. Any content encoding context associated with this stream
+   can be destroyed after processing the payload of this frame.
+
+0x04
+   Apply content encoding. When set, any content encoding settings
+   defined by the stream should be applied when attempting to read
+   the frame. When not set, the frame payload isn't encoded.
+
+Streams
+-------
+
+Streams - along with ``Request IDs`` - facilitate grouping of frames.
+But the purpose of each is quite different and the groupings they
+constitute are independent.
+
+A ``Request ID`` is essentially a tag. It tells you which logical
+request a frame is associated with.
+
+A *stream* is a sequence of frames grouped for the express purpose
+of applying a stateful encoding or for denoting sub-groups of frames.
+
+Unlike ``Request ID``s which span the request and response, a stream
+is unidirectional and stream IDs are independent from client to
+server.
+
+There is no strict hierarchical relationship between ``Request IDs``
+and *streams*. A stream can contain frames having multiple
+``Request IDs``. Frames belonging to the same ``Request ID`` can
+span multiple streams.
+
+One goal of streams is to facilitate content encoding. A stream can
+define an encoding to be applied to frame payloads. For example, the
+payload transmitted over the wire may contain output from a
+zstandard compression operation and the receiving end may decompress
+that payload to obtain the original data.
+
+The other goal of streams is to facilitate concurrent execution. For
+example, a server could spawn 4 threads to service a request that can
+be easily parallelized. Each of those 4 threads could write into its
+own stream. Those streams could then in turn be delivered to 4 threads
+on the receiving end, with each thread consuming its stream in near
+isolation. The *main* thread on both ends merely does I/O and
+encodes/decodes frame headers: the bulk of the work is done by worker
+threads.
+
+In addition, since content encoding is defined per stream, each
+*worker thread* could perform potentially CPU bound work concurrently
+with other threads. This approach of applying encoding at the
+sub-protocol / stream level eliminates a potential resource constraint
+on the protocol stream as a whole (it is common for the throughput of
+a compression engine to be smaller than the throughput of a network).
+
+Having multiple streams - each with their own encoding settings - also
+facilitates the use of advanced data compression techniques. For
+example, a transmitter could see that it is generating data faster
+and slower than the receiving end is consuming it and adjust its
+compression settings to trade CPU for compression ratio accordingly.
+
+While streams can define a content encoding, not all frames within
+that stream must use that content encoding. This can be useful when
+data is being served from caches and being derived dynamically. A
+cache could pre-compressed data so the server doesn't have to
+recompress it. The ability to pick and choose which frames are
+compressed allows servers to easily send data to the wire without
+involving potentially expensive encoding overhead.
+
+Content Encoding Profiles
+-------------------------
+
+Streams can have named content encoding *profiles* associated with
+them. A profile defines a shared understanding of content encoding
+settings and behavior.
+
+The following profiles are defined:
+
+TBD
+
+Command Protocol
+----------------
+
+A client can request that a remote run a command by sending it
+frames defining that command. This logical stream is composed of
+1 or more ``Command Request`` frames and and 0 or more ``Command Data``
+frames.
+
+All frames composing a single command request MUST be associated with
+the same ``Request ID``.
+
+Clients MAY send additional command requests without waiting on the
+response to a previous command request. If they do so, they MUST ensure
+that the ``Request ID`` field of outbound frames does not conflict
+with that of an active ``Request ID`` whose response has not yet been
+fully received.
+
+Servers MAY respond to commands in a different order than they were
+sent over the wire. Clients MUST be prepared to deal with this. Servers
+also MAY start executing commands in a different order than they were
+received, or MAY execute multiple commands concurrently.
+
+If there is a dependency between commands or a race condition between
+commands executing (e.g. a read-only command that depends on the results
+of a command that mutates the repository), then clients MUST NOT send
+frames issuing a command until a response to all dependent commands has
+been received.
+TODO think about whether we should express dependencies between commands
+to avoid roundtrip latency.
+
+A command is defined by a command name, 0 or more command arguments,
+and optional command data.
+
+Arguments are the recommended mechanism for transferring fixed sets of
+parameters to a command. Data is appropriate for transferring variable
+data. Thinking in terms of HTTP, arguments would be headers and data
+would be the message body.
+
+It is recommended for servers to delay the dispatch of a command
+until all argument have been received. Servers MAY impose limits on the
+maximum argument size.
+TODO define failure mechanism.
+
+Servers MAY dispatch to commands immediately once argument data
+is available or delay until command data is received in full.
+
+Once a ``Command Request`` frame is sent, a client must be prepared to
+receive any of the following frames associated with that request:
+``Command Response``, ``Error Response``, ``Human Output Side-Channel``,
+``Progress Update``.
+
+The *main* response for a command will be in ``Command Response`` frames.
+The payloads of these frames consist of 1 or more CBOR encoded values.
+The first CBOR value on the first ``Command Response`` frame is special
+and denotes the overall status of the command. This CBOR map contains
+the following bytestring keys:
+
+status
+   (bytestring) A well-defined message containing the overall status of
+   this command request. The following values are defined:
+
+   ok
+      The command was received successfully and its response follows.
+   error
+      There was an error processing the command. More details about the
+      error are encoded in the ``error`` key.
+
+error (optional)
+   A map containing information about an encountered error. The map has the
+   following keys:
+
+   message
+      (array of maps) A message describing the error. The message uses the
+      same format as those in the ``Human Output Side-Channel`` frame.
 
 Capabilities
 ============
@@ -374,6 +1210,23 @@ This capability was introduced in Mercurial 0.9.2 (released December
 This capability was introduced at the same time as the ``changegroupsubset``
 capability/command.
 
+partial-pull
+------------
+
+Indicates that the client can deal with partial answers to pull requests
+by repeating the request.
+
+If this parameter is not advertised, the server will not send pull bundles.
+
+This client capability was introduced in Mercurial 4.6.
+
+protocaps
+---------
+
+Whether the server supports the ``protocaps`` command for SSH V1 transport.
+
+This capability was introduced in Mercurial 4.6.
+
 pushkey
 -------
 
@@ -463,53 +1316,6 @@ comma-delimited list. e.g. ``HG10GZ,HG10BZ,HG10UN``. The order of values
 reflects the priority/preference of that type, where the first value is the
 most preferred type.
 
-Handshake Protocol
-==================
-
-While not explicitly required, it is common for clients to perform a
-*handshake* when connecting to a server. The handshake accomplishes 2 things:
-
-* Obtaining capabilities and other server features
-* Flushing extra server output (e.g. SSH servers may print extra text
-  when connecting that may confuse the wire protocol)
-
-This isn't a traditional *handshake* as far as network protocols go because
-there is no persistent state as a result of the handshake: the handshake is
-simply the issuing of commands and commands are stateless.
-
-The canonical clients perform a capabilities lookup at connection establishment
-time. This is because clients must assume a server only supports the features
-of the original Mercurial server implementation until proven otherwise (from
-advertised capabilities). Nearly every server running today supports features
-that weren't present in the original Mercurial server implementation. Rather
-than wait for a client to perform functionality that needs to consult
-capabilities, it issues the lookup at connection start to avoid any delay later.
-
-For HTTP servers, the client sends a ``capabilities`` command request as
-soon as the connection is established. The server responds with a capabilities
-string, which the client parses.
-
-For SSH servers, the client sends the ``hello`` command (no arguments)
-and a ``between`` command with the ``pairs`` argument having the value
-``0000000000000000000000000000000000000000-0000000000000000000000000000000000000000``.
-
-The ``between`` command has been supported since the original Mercurial
-server. Requesting the empty range will return a ``\n`` string response,
-which will be encoded as ``1\n\n`` (value length of ``1`` followed by a newline
-followed by the value, which happens to  be a newline).
-
-The ``hello`` command was later introduced. Servers supporting it will issue
-a response to that command before sending the ``1\n\n`` response to the
-``between`` command. Servers not supporting ``hello`` will send an empty
-response (``0\n``).
-
-In addition to the expected output from the ``hello`` and ``between`` commands,
-servers may also send other output, such as *message of the day (MOTD)*
-announcements. Clients assume servers will send this output before the
-Mercurial server replies to the client-issued commands. So any server output
-not conforming to the expected command responses is assumed to be not related
-to Mercurial and can be ignored.
-
 Content Negotiation
 ===================
 
@@ -519,8 +1325,8 @@ have been built into commands themselves because most commands only send a
 well-defined response type and only certain commands needed to support
 functionality like compression.
 
-Currently, only the HTTP transport supports content negotiation at the protocol
-layer.
+Currently, only the HTTP version 1 transport supports content negotiation
+at the protocol layer.
 
 HTTP requests advertise supported response formats via the ``X-HgProto-<N>``
 request header, where ``<N>`` is an integer starting at 1 allowing the logical
@@ -536,6 +1342,12 @@ The following parameters are defined:
 0.2
    Indicates the client supports receiving ``application/mercurial-0.2``
    responses.
+
+cbor
+   Indicates the client supports receiving ``application/mercurial-cbor``
+   responses.
+
+   (Only intended to be used with version 2 transports.)
 
 comp
    Indicates compression formats the client can decode. Value is a list of
@@ -662,6 +1474,8 @@ There is no trailing newline.
 
 This command does not accept any arguments. Return type is a ``string``.
 
+This command was introduced in Mercurial 0.9.1 (released July 2006).
+
 changegroup
 -----------
 
@@ -737,7 +1551,7 @@ phases
    Boolean indicating whether phases data is requested.
 
 The return type on success is a ``stream`` where the value is bundle.
-On the HTTP transport, the response is zlib compressed.
+On the HTTP version 1 transport, the response is zlib compressed.
 
 If an error occurs, a generic error response can be sent.
 
@@ -778,6 +1592,8 @@ SSH clients typically issue this command as soon as a connection is
 established.
 
 This command does not accept any arguments. The return type is a ``string``.
+
+This command was introduced in Mercurial 0.9.1 (released July 2006).
 
 listkeys
 --------
@@ -826,6 +1642,16 @@ will be present at byte offset N.
 
 There is no trailing newline.
 
+protocaps
+---------
+
+Notify the server about the client capabilities in the SSH V1 transport
+protocol.
+
+The ``caps`` argument is a space-delimited list of capabilities.
+
+The server will reply with the string ``OK``.
+
 pushkey
 -------
 
@@ -838,13 +1664,14 @@ All arguments are string types.
 
 The return type is a ``string``. The value depends on the transport protocol.
 
-The SSH transport sends a string encoded integer followed by a newline
-(``\n``) which indicates operation result. The server may send additional
-output on the ``stderr`` stream that should be displayed to the user.
+The SSH version 1 transport sends a string encoded integer followed by a
+newline (``\n``) which indicates operation result. The server may send
+additional output on the ``stderr`` stream that should be displayed to the
+user.
 
-The HTTP transport sends a string encoded integer followed by a newline
-followed by additional server output that should be displayed to the user.
-This may include output from hooks, etc.
+The HTTP version 1 transport sends a string encoded integer followed by a
+newline followed by additional server output that should be displayed to
+the user. This may include output from hooks, etc.
 
 The integer result varies by namespace. ``0`` means an error has occurred
 and there should be additional output to display to the user.
@@ -908,18 +1735,179 @@ is 1 fewer head.
 
 The encoding of the ``push response`` type varies by transport.
 
-For the SSH transport, this type is composed of 2 ``string`` responses: an
-empty response (``0\n``) followed by the integer result value. e.g.
-``1\n2``. So the full response might be ``0\n1\n2``.
+For the SSH version 1 transport, this type is composed of 2 ``string``
+responses: an empty response (``0\n``) followed by the integer result value.
+e.g. ``1\n2``. So the full response might be ``0\n1\n2``.
 
-For the HTTP transport, the response is a ``string`` type composed of an
-integer result value followed by a newline (``\n``) followed by string
+For the HTTP version 1 transport, the response is a ``string`` type composed
+of an integer result value followed by a newline (``\n``) followed by string
 content holding server output that should be displayed on the client (output
 hooks, etc).
 
 In some cases, the server may respond with a ``bundle2`` bundle. In this
-case, the response type is ``stream``. For the HTTP transport, the response
-is zlib compressed.
+case, the response type is ``stream``. For the HTTP version 1 transport, the
+response is zlib compressed.
 
 The server may also respond with a generic error type, which contains a string
 indicating the failure.
+
+Frame-Based Protocol Commands
+=============================
+
+**Experimental and under active development**
+
+This section documents the wire protocol commands exposed to transports
+using the frame-based protocol. The set of commands exposed through
+these transports is distinct from the set of commands exposed to legacy
+transports.
+
+The frame-based protocol uses CBOR to encode command execution requests.
+All command arguments must be mapped to a specific or set of CBOR data
+types.
+
+The response to many commands is also CBOR. There is no common response
+format: each command defines its own response format.
+
+TODO require node type be specified, as N bytes of binary node value
+could be ambiguous once SHA-1 is replaced.
+
+branchmap
+---------
+
+Obtain heads in named branches.
+
+Receives no arguments.
+
+The response is a map with bytestring keys defining the branch name.
+Values are arrays of bytestring defining raw changeset nodes.
+
+capabilities
+------------
+
+Obtain the server's capabilities.
+
+Receives no arguments.
+
+This command is typically called only as part of the handshake during
+initial connection establishment.
+
+The response is a map with bytestring keys defining server information.
+
+The defined keys are:
+
+commands
+   A map defining available wire protocol commands on this server.
+
+   Keys in the map are the names of commands that can be invoked. Values
+   are maps defining information about that command. The bytestring keys
+   are:
+
+      args
+         A map of argument names and their expected types.
+
+         Types are defined as a representative value for the expected type.
+         e.g. an argument expecting a boolean type will have its value
+         set to true. An integer type will have its value set to 42. The
+         actual values are arbitrary and may not have meaning.
+      permissions
+         An array of permissions required to execute this command.
+
+compression
+   An array of maps defining available compression format support.
+
+   The array is sorted from most preferred to least preferred.
+
+   Each entry has the following bytestring keys:
+
+      name
+         Name of the compression engine. e.g. ``zstd`` or ``zlib``.
+
+framingmediatypes
+   An array of bytestrings defining the supported framing protocol
+   media types. Servers will not accept media types not in this list.
+
+rawrepoformats
+   An array of storage formats the repository is using. This set of
+   requirements can be used to determine whether a client can read a
+   *raw* copy of file data available.
+
+heads
+-----
+
+Obtain DAG heads in the repository.
+
+The command accepts the following arguments:
+
+publiconly (optional)
+   (boolean) If set, operate on the DAG for public phase changesets only.
+   Non-public (i.e. draft) phase DAG heads will not be returned.
+
+The response is a CBOR array of bytestrings defining changeset nodes
+of DAG heads. The array can be empty if the repository is empty or no
+changesets satisfied the request.
+
+TODO consider exposing phase of heads in response
+
+known
+-----
+
+Determine whether a series of changeset nodes is known to the server.
+
+The command accepts the following arguments:
+
+nodes
+   (array of bytestrings) List of changeset nodes whose presence to
+   query.
+
+The response is a bytestring where each byte contains a 0 or 1 for the
+corresponding requested node at the same index.
+
+TODO use a bit array for even more compact response
+
+listkeys
+--------
+
+List values in a specified ``pushkey`` namespace.
+
+The command receives the following arguments:
+
+namespace
+   (bytestring) Pushkey namespace to query.
+
+The response is a map with bytestring keys and values.
+
+TODO consider using binary to represent nodes in certain pushkey namespaces.
+
+lookup
+------
+
+Try to resolve a value to a changeset revision.
+
+Unlike ``known`` which operates on changeset nodes, lookup operates on
+node fragments and other names that a user may use.
+
+The command receives the following arguments:
+
+key
+   (bytestring) Value to try to resolve.
+
+On success, returns a bytestring containing the resolved node.
+
+pushkey
+-------
+
+Set a value using the ``pushkey`` protocol.
+
+The command receives the following arguments:
+
+namespace
+   (bytestring) Pushkey namespace to operate on.
+key
+   (bytestring) The pushkey key to set.
+old
+   (bytestring) Old value for this key.
+new
+   (bytestring) New value for this key.
+
+TODO consider using binary to represent nodes is certain pushkey namespaces.
+TODO better define response type and meaning.

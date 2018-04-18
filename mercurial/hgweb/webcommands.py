@@ -19,7 +19,6 @@ from .common import (
     ErrorResponse,
     HTTP_FORBIDDEN,
     HTTP_NOT_FOUND,
-    HTTP_OK,
     get_contact,
     paritygen,
     staticfile,
@@ -37,7 +36,11 @@ from .. import (
     scmutil,
     smartset,
     templater,
-    util,
+    templateutil,
+)
+
+from ..utils import (
+    stringutil,
 )
 
 from . import (
@@ -53,10 +56,20 @@ class webcommand(object):
     The decorator takes as its positional arguments the name/path the
     command should be accessible under.
 
+    When called, functions receive as arguments a ``requestcontext``,
+    ``wsgirequest``, and a templater instance for generatoring output.
+    The functions should populate the ``rctx.res`` object with details
+    about the HTTP response.
+
+    The function returns a generator to be consumed by the WSGI application.
+    For most commands, this should be the result from
+    ``web.res.sendresponse()``. Many commands will call ``web.sendtemplate()``
+    to render a template.
+
     Usage:
 
     @webcommand('mycommand')
-    def mycommand(web, req, tmpl):
+    def mycommand(web):
         pass
     """
 
@@ -69,7 +82,7 @@ class webcommand(object):
         return func
 
 @webcommand('log')
-def log(web, req, tmpl):
+def log(web):
     """
     /log[/{revision}[/{path}]]
     --------------------------
@@ -85,28 +98,24 @@ def log(web, req, tmpl):
     file will be shown. This form is equivalent to the ``filelog`` handler.
     """
 
-    if 'file' in req.form and req.form['file'][0]:
-        return filelog(web, req, tmpl)
+    if web.req.qsparams.get('file'):
+        return filelog(web)
     else:
-        return changelog(web, req, tmpl)
+        return changelog(web)
 
 @webcommand('rawfile')
-def rawfile(web, req, tmpl):
+def rawfile(web):
     guessmime = web.configbool('web', 'guessmime')
 
-    path = webutil.cleanpath(web.repo, req.form.get('file', [''])[0])
+    path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
-        content = manifest(web, req, tmpl)
-        req.respond(HTTP_OK, web.ctype)
-        return content
+        return manifest(web)
 
     try:
-        fctx = webutil.filectx(web.repo, req)
+        fctx = webutil.filectx(web.repo, web.req)
     except error.LookupError as inst:
         try:
-            content = manifest(web, req, tmpl)
-            req.respond(HTTP_OK, web.ctype)
-            return content
+            return manifest(web)
         except ErrorResponse:
             raise inst
 
@@ -116,23 +125,27 @@ def rawfile(web, req, tmpl):
     if guessmime:
         mt = mimetypes.guess_type(path)[0]
         if mt is None:
-            if util.binary(text):
+            if stringutil.binary(text):
                 mt = 'application/binary'
             else:
                 mt = 'text/plain'
     if mt.startswith('text/'):
         mt += '; charset="%s"' % encoding.encoding
 
-    req.respond(HTTP_OK, mt, path, body=text)
-    return []
+    web.res.headers['Content-Type'] = mt
+    filename = (path.rpartition('/')[-1]
+                .replace('\\', '\\\\').replace('"', '\\"'))
+    web.res.headers['Content-Disposition'] = 'inline; filename="%s"' % filename
+    web.res.setbodybytes(text)
+    return web.res.sendresponse()
 
-def _filerevision(web, req, tmpl, fctx):
+def _filerevision(web, fctx):
     f = fctx.path()
     text = fctx.data()
     parity = paritygen(web.stripecount)
     ishead = fctx.filerev() in fctx.filelog().headrevs()
 
-    if util.binary(text):
+    if stringutil.binary(text):
         mt = mimetypes.guess_type(f)[0] or 'application/octet-stream'
         text = '(binary:%s)' % mt
 
@@ -143,18 +156,19 @@ def _filerevision(web, req, tmpl, fctx):
                    "linenumber": "% 6d" % (lineno + 1),
                    "parity": next(parity)}
 
-    return tmpl("filerevision",
-                file=f,
-                path=webutil.up(f),
-                text=lines(),
-                symrev=webutil.symrevorshortnode(req, fctx),
-                rename=webutil.renamelink(fctx),
-                permissions=fctx.manifest().flags(f),
-                ishead=int(ishead),
-                **webutil.commonentry(web.repo, fctx))
+    return web.sendtemplate(
+        'filerevision',
+        file=f,
+        path=webutil.up(f),
+        text=lines(),
+        symrev=webutil.symrevorshortnode(web.req, fctx),
+        rename=webutil.renamelink(fctx),
+        permissions=fctx.manifest().flags(f),
+        ishead=int(ishead),
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('file')
-def file(web, req, tmpl):
+def file(web):
     """
     /file/{revision}[/{path}]
     -------------------------
@@ -173,18 +187,21 @@ def file(web, req, tmpl):
     If ``path`` is not defined, information about the root directory will
     be rendered.
     """
-    path = webutil.cleanpath(web.repo, req.form.get('file', [''])[0])
+    if web.req.qsparams.get('style') == 'raw':
+        return rawfile(web)
+
+    path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     if not path:
-        return manifest(web, req, tmpl)
+        return manifest(web)
     try:
-        return _filerevision(web, req, tmpl, webutil.filectx(web.repo, req))
+        return _filerevision(web, webutil.filectx(web.repo, web.req))
     except error.LookupError as inst:
         try:
-            return manifest(web, req, tmpl)
+            return manifest(web)
         except ErrorResponse:
             raise inst
 
-def _search(web, req, tmpl):
+def _search(web):
     MODE_REVISION = 'rev'
     MODE_KEYWORD = 'keyword'
     MODE_REVSET = 'revset'
@@ -232,7 +249,7 @@ def _search(web, req, tmpl):
 
     def getsearchmode(query):
         try:
-            ctx = web.repo[query]
+            ctx = scmutil.revsymbol(web.repo, query)
         except (error.RepoError, error.LookupError):
             # query is not an exact revision pointer, need to
             # decide if it's a revset expression or keywords
@@ -259,7 +276,8 @@ def _search(web, req, tmpl):
         if not funcsused.issubset(revset.safesymbols):
             return MODE_KEYWORD, query
 
-        mfunc = revset.match(web.repo.ui, revdef, repo=web.repo)
+        mfunc = revset.match(web.repo.ui, revdef,
+                             lookup=revset.lookupfn(web.repo))
         try:
             revs = mfunc(web.repo)
             return MODE_REVSET, revs
@@ -271,44 +289,47 @@ def _search(web, req, tmpl):
                 LookupError):
             return MODE_KEYWORD, query
 
-    def changelist(**map):
+    def changelist(context):
         count = 0
 
         for ctx in searchfunc[0](funcarg):
             count += 1
             n = ctx.node()
-            showtags = webutil.showtag(web.repo, tmpl, 'changelogtag', n)
-            files = webutil.listfilediffs(tmpl, ctx.files(), n, web.maxfiles)
+            showtags = webutil.showtag(web.repo, web.tmpl, 'changelogtag', n)
+            files = webutil.listfilediffs(web.tmpl, ctx.files(), n,
+                                          web.maxfiles)
 
-            yield tmpl('searchentry',
-                       parity=next(parity),
-                       changelogtag=showtags,
-                       files=files,
-                       **webutil.commonentry(web.repo, ctx))
+            lm = webutil.commonentry(web.repo, ctx)
+            lm.update({
+                'parity': next(parity),
+                'changelogtag': showtags,
+                'files': files,
+            })
+            yield lm
 
             if count >= revcount:
                 break
 
-    query = req.form['rev'][0]
+    query = web.req.qsparams['rev']
     revcount = web.maxchanges
-    if 'revcount' in req.form:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.form.get('revcount', [revcount])[0])
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
+    lessvars['revcount'] = max(revcount // 2, 1)
     lessvars['rev'] = query
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
     morevars['rev'] = query
 
     mode, funcarg = getsearchmode(query)
 
-    if 'forcekw' in req.form:
+    if 'forcekw' in web.req.qsparams:
         showforcekw = ''
         showunforcekw = searchfuncs[mode][1]
         mode = MODE_KEYWORD
@@ -325,14 +346,21 @@ def _search(web, req, tmpl):
     tip = web.repo['tip']
     parity = paritygen(web.stripecount)
 
-    return tmpl('search', query=query, node=tip.hex(), symrev='tip',
-                entries=changelist, archives=web.archivelist("tip"),
-                morevars=morevars, lessvars=lessvars,
-                modedesc=searchfunc[1],
-                showforcekw=showforcekw, showunforcekw=showunforcekw)
+    return web.sendtemplate(
+        'search',
+        query=query,
+        node=tip.hex(),
+        symrev='tip',
+        entries=templateutil.mappinggenerator(changelist, name='searchentry'),
+        archives=web.archivelist('tip'),
+        morevars=morevars,
+        lessvars=lessvars,
+        modedesc=searchfunc[1],
+        showforcekw=showforcekw,
+        showunforcekw=showunforcekw)
 
 @webcommand('changelog')
-def changelog(web, req, tmpl, shortlog=False):
+def changelog(web, shortlog=False):
     """
     /changelog[/{revision}]
     -----------------------
@@ -358,11 +386,11 @@ def changelog(web, req, tmpl, shortlog=False):
     """
 
     query = ''
-    if 'node' in req.form:
-        ctx = webutil.changectx(web.repo, req)
-        symrev = webutil.symrevorshortnode(req, ctx)
-    elif 'rev' in req.form:
-        return _search(web, req, tmpl)
+    if 'node' in web.req.qsparams:
+        ctx = webutil.changectx(web.repo, web.req)
+        symrev = webutil.symrevorshortnode(web.req, ctx)
+    elif 'rev' in web.req.qsparams:
+        return _search(web)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'
@@ -377,7 +405,7 @@ def changelog(web, req, tmpl, shortlog=False):
             if curcount > revcount + 1:
                 break
 
-            entry = webutil.changelistentry(web, web.repo[rev], tmpl)
+            entry = webutil.changelistentry(web, web.repo[rev])
             entry['parity'] = next(parity)
             yield entry
 
@@ -386,17 +414,17 @@ def changelog(web, req, tmpl, shortlog=False):
     else:
         revcount = web.maxchanges
 
-    if 'revcount' in req.form:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.form.get('revcount', [revcount])[0])
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
+    lessvars['revcount'] = max(revcount // 2, 1)
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
     count = len(web.repo)
@@ -413,15 +441,24 @@ def changelog(web, req, tmpl, shortlog=False):
     else:
         nextentry = []
 
-    return tmpl('shortlog' if shortlog else 'changelog', changenav=changenav,
-                node=ctx.hex(), rev=pos, symrev=symrev, changesets=count,
-                entries=entries,
-                latestentry=latestentry, nextentry=nextentry,
-                archives=web.archivelist("tip"), revcount=revcount,
-                morevars=morevars, lessvars=lessvars, query=query)
+    return web.sendtemplate(
+        'shortlog' if shortlog else 'changelog',
+        changenav=changenav,
+        node=ctx.hex(),
+        rev=pos,
+        symrev=symrev,
+        changesets=count,
+        entries=entries,
+        latestentry=latestentry,
+        nextentry=nextentry,
+        archives=web.archivelist('tip'),
+        revcount=revcount,
+        morevars=morevars,
+        lessvars=lessvars,
+        query=query)
 
 @webcommand('shortlog')
-def shortlog(web, req, tmpl):
+def shortlog(web):
     """
     /shortlog
     ---------
@@ -432,10 +469,10 @@ def shortlog(web, req, tmpl):
     difference is the ``shortlog`` template will be rendered instead of the
     ``changelog`` template.
     """
-    return changelog(web, req, tmpl, shortlog=True)
+    return changelog(web, shortlog=True)
 
 @webcommand('changeset')
-def changeset(web, req, tmpl):
+def changeset(web):
     """
     /changeset[/{revision}]
     -----------------------
@@ -450,9 +487,11 @@ def changeset(web, req, tmpl):
     ``changesetbookmark``, ``filenodelink``, ``filenolink``, and the many
     templates related to diffs may all be used to produce the output.
     """
-    ctx = webutil.changectx(web.repo, req)
+    ctx = webutil.changectx(web.repo, web.req)
 
-    return tmpl('changeset', **webutil.changesetentry(web, req, tmpl, ctx))
+    return web.sendtemplate(
+        'changeset',
+        **webutil.changesetentry(web, ctx))
 
 rev = webcommand('rev')(changeset)
 
@@ -465,7 +504,7 @@ def decodepath(path):
     return path
 
 @webcommand('manifest')
-def manifest(web, req, tmpl):
+def manifest(web):
     """
     /manifest[/{revision}[/{path}]]
     -------------------------------
@@ -481,13 +520,13 @@ def manifest(web, req, tmpl):
 
     The ``manifest`` template will be rendered for this handler.
     """
-    if 'node' in req.form:
-        ctx = webutil.changectx(web.repo, req)
-        symrev = webutil.symrevorshortnode(req, ctx)
+    if 'node' in web.req.qsparams:
+        ctx = webutil.changectx(web.repo, web.req)
+        symrev = webutil.symrevorshortnode(web.req, ctx)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'
-    path = webutil.cleanpath(web.repo, req.form.get('file', [''])[0])
+    path = webutil.cleanpath(web.repo, web.req.qsparams.get('file', ''))
     mf = ctx.manifest()
     node = ctx.node()
 
@@ -495,7 +534,7 @@ def manifest(web, req, tmpl):
     dirs = {}
     parity = paritygen(web.stripecount)
 
-    if path and path[-1] != "/":
+    if path and path[-1:] != "/":
         path += "/"
     l = len(path)
     abspath = "/" + path
@@ -542,7 +581,7 @@ def manifest(web, req, tmpl):
             emptydirs = []
             h = dirs[d]
             while isinstance(h, dict) and len(h) == 1:
-                k, v = h.items()[0]
+                k, v = next(iter(h.items()))
                 if v:
                     emptydirs.append(k)
                 h = v
@@ -553,18 +592,19 @@ def manifest(web, req, tmpl):
                    "emptydirs": "/".join(emptydirs),
                    "basename": d}
 
-    return tmpl("manifest",
-                symrev=symrev,
-                path=abspath,
-                up=webutil.up(abspath),
-                upparity=next(parity),
-                fentries=filelist,
-                dentries=dirlist,
-                archives=web.archivelist(hex(node)),
-                **webutil.commonentry(web.repo, ctx))
+    return web.sendtemplate(
+        'manifest',
+        symrev=symrev,
+        path=abspath,
+        up=webutil.up(abspath),
+        upparity=next(parity),
+        fentries=filelist,
+        dentries=dirlist,
+        archives=web.archivelist(hex(node)),
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 @webcommand('tags')
-def tags(web, req, tmpl):
+def tags(web):
     """
     /tags
     -----
@@ -590,14 +630,15 @@ def tags(web, req, tmpl):
                    "date": web.repo[n].date(),
                    "node": hex(n)}
 
-    return tmpl("tags",
-                node=hex(web.repo.changelog.tip()),
-                entries=lambda **x: entries(False, False, **x),
-                entriesnotip=lambda **x: entries(True, False, **x),
-                latestentry=lambda **x: entries(True, True, **x))
+    return web.sendtemplate(
+        'tags',
+        node=hex(web.repo.changelog.tip()),
+        entries=lambda **x: entries(False, False, **x),
+        entriesnotip=lambda **x: entries(True, False, **x),
+        latestentry=lambda **x: entries(True, True, **x))
 
 @webcommand('bookmarks')
-def bookmarks(web, req, tmpl):
+def bookmarks(web):
     """
     /bookmarks
     ----------
@@ -628,14 +669,15 @@ def bookmarks(web, req, tmpl):
     else:
         latestrev = -1
 
-    return tmpl("bookmarks",
-                node=hex(web.repo.changelog.tip()),
-                lastchange=[{"date": web.repo[latestrev].date()}],
-                entries=lambda **x: entries(latestonly=False, **x),
-                latestentry=lambda **x: entries(latestonly=True, **x))
+    return web.sendtemplate(
+        'bookmarks',
+        node=hex(web.repo.changelog.tip()),
+        lastchange=[{'date': web.repo[latestrev].date()}],
+        entries=lambda **x: entries(latestonly=False, **x),
+        latestentry=lambda **x: entries(latestonly=True, **x))
 
 @webcommand('branches')
-def branches(web, req, tmpl):
+def branches(web):
     """
     /branches
     ---------
@@ -650,11 +692,15 @@ def branches(web, req, tmpl):
     """
     entries = webutil.branchentries(web.repo, web.stripecount)
     latestentry = webutil.branchentries(web.repo, web.stripecount, 1)
-    return tmpl('branches', node=hex(web.repo.changelog.tip()),
-                entries=entries, latestentry=latestentry)
+
+    return web.sendtemplate(
+        'branches',
+        node=hex(web.repo.changelog.tip()),
+        entries=entries,
+        latestentry=latestentry)
 
 @webcommand('summary')
-def summary(web, req, tmpl):
+def summary(web):
     """
     /summary
     --------
@@ -668,7 +714,7 @@ def summary(web, req, tmpl):
     """
     i = reversed(web.repo.tagslist())
 
-    def tagentries(**map):
+    def tagentries(context):
         parity = paritygen(web.stripecount)
         count = 0
         for k, n in i:
@@ -679,11 +725,12 @@ def summary(web, req, tmpl):
             if count > 10: # limit to 10 tags
                 break
 
-            yield tmpl("tagentry",
-                       parity=next(parity),
-                       tag=k,
-                       node=hex(n),
-                       date=web.repo[n].date())
+            yield {
+                'parity': next(parity),
+                'tag': k,
+                'node': hex(n),
+                'date': web.repo[n].date(),
+            }
 
     def bookmarks(**map):
         parity = paritygen(web.stripecount)
@@ -696,7 +743,7 @@ def summary(web, req, tmpl):
                    'date': web.repo[n].date(),
                    'node': hex(n)}
 
-    def changelist(**map):
+    def changelist(context):
         parity = paritygen(web.stripecount, offset=start - end)
         l = [] # build a list in forward order for efficiency
         revs = []
@@ -704,11 +751,9 @@ def summary(web, req, tmpl):
             revs = web.repo.changelog.revs(start, end - 1)
         for i in revs:
             ctx = web.repo[i]
-
-            l.append(tmpl(
-                'shortlogentry',
-                parity=next(parity),
-                **webutil.commonentry(web.repo, ctx)))
+            lm = webutil.commonentry(web.repo, ctx)
+            lm['parity'] = next(parity)
+            l.append(lm)
 
         for entry in reversed(l):
             yield entry
@@ -721,21 +766,25 @@ def summary(web, req, tmpl):
     desc = web.config("web", "description")
     if not desc:
         desc = 'unknown'
-    return tmpl("summary",
-                desc=desc,
-                owner=get_contact(web.config) or "unknown",
-                lastchange=tip.date(),
-                tags=tagentries,
-                bookmarks=bookmarks,
-                branches=webutil.branchentries(web.repo, web.stripecount, 10),
-                shortlog=changelist,
-                node=tip.hex(),
-                symrev='tip',
-                archives=web.archivelist("tip"),
-                labels=web.configlist('web', 'labels'))
+    labels = web.configlist('web', 'labels')
+
+    return web.sendtemplate(
+        'summary',
+        desc=desc,
+        owner=get_contact(web.config) or 'unknown',
+        lastchange=tip.date(),
+        tags=templateutil.mappinggenerator(tagentries, name='tagentry'),
+        bookmarks=bookmarks,
+        branches=webutil.branchentries(web.repo, web.stripecount, 10),
+        shortlog=templateutil.mappinggenerator(changelist,
+                                               name='shortlogentry'),
+        node=tip.hex(),
+        symrev='tip',
+        archives=web.archivelist('tip'),
+        labels=templateutil.hybridlist(labels, name='label'))
 
 @webcommand('filediff')
-def filediff(web, req, tmpl):
+def filediff(web):
     """
     /diff/{revision}/{path}
     -----------------------
@@ -749,10 +798,10 @@ def filediff(web, req, tmpl):
     """
     fctx, ctx = None, None
     try:
-        fctx = webutil.filectx(web.repo, req)
+        fctx = webutil.filectx(web.repo, web.req)
     except LookupError:
-        ctx = webutil.changectx(web.repo, req)
-        path = webutil.cleanpath(web.repo, req.form['file'][0])
+        ctx = webutil.changectx(web.repo, web.req)
+        path = webutil.cleanpath(web.repo, web.req.qsparams['file'])
         if path not in ctx.files():
             raise
 
@@ -762,27 +811,29 @@ def filediff(web, req, tmpl):
     basectx = ctx.p1()
 
     style = web.config('web', 'style')
-    if 'style' in req.form:
-        style = req.form['style'][0]
+    if 'style' in web.req.qsparams:
+        style = web.req.qsparams['style']
 
-    diffs = webutil.diffs(web, tmpl, ctx, basectx, [path], style)
+    diffs = webutil.diffs(web, ctx, basectx, [path], style)
     if fctx is not None:
         rename = webutil.renamelink(fctx)
         ctx = fctx
     else:
         rename = []
         ctx = ctx
-    return tmpl("filediff",
-                file=path,
-                symrev=webutil.symrevorshortnode(req, ctx),
-                rename=rename,
-                diff=diffs,
-                **webutil.commonentry(web.repo, ctx))
+
+    return web.sendtemplate(
+        'filediff',
+        file=path,
+        symrev=webutil.symrevorshortnode(web.req, ctx),
+        rename=rename,
+        diff=diffs,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 diff = webcommand('diff')(filediff)
 
 @webcommand('comparison')
-def comparison(web, req, tmpl):
+def comparison(web):
     """
     /comparison/{revision}/{path}
     -----------------------------
@@ -798,14 +849,14 @@ def comparison(web, req, tmpl):
 
     The ``filecomparison`` template is rendered.
     """
-    ctx = webutil.changectx(web.repo, req)
-    if 'file' not in req.form:
+    ctx = webutil.changectx(web.repo, web.req)
+    if 'file' not in web.req.qsparams:
         raise ErrorResponse(HTTP_NOT_FOUND, 'file not given')
-    path = webutil.cleanpath(web.repo, req.form['file'][0])
+    path = webutil.cleanpath(web.repo, web.req.qsparams['file'])
 
     parsecontext = lambda v: v == 'full' and -1 or int(v)
-    if 'context' in req.form:
-        context = parsecontext(req.form['context'][0])
+    if 'context' in web.req.qsparams:
+        context = parsecontext(web.req.qsparams['context'])
     else:
         context = parsecontext(web.config('web', 'comparisoncontext', '5'))
 
@@ -836,26 +887,28 @@ def comparison(web, req, tmpl):
         pfctx = ctx.parents()[0][path]
         leftlines = filelines(pfctx)
 
-    comparison = webutil.compare(tmpl, context, leftlines, rightlines)
+    comparison = webutil.compare(web.tmpl, context, leftlines, rightlines)
     if fctx is not None:
         rename = webutil.renamelink(fctx)
         ctx = fctx
     else:
         rename = []
         ctx = ctx
-    return tmpl('filecomparison',
-                file=path,
-                symrev=webutil.symrevorshortnode(req, ctx),
-                rename=rename,
-                leftrev=leftrev,
-                leftnode=hex(leftnode),
-                rightrev=rightrev,
-                rightnode=hex(rightnode),
-                comparison=comparison,
-                **webutil.commonentry(web.repo, ctx))
+
+    return web.sendtemplate(
+        'filecomparison',
+        file=path,
+        symrev=webutil.symrevorshortnode(web.req, ctx),
+        rename=rename,
+        leftrev=leftrev,
+        leftnode=hex(leftnode),
+        rightrev=rightrev,
+        rightnode=hex(rightnode),
+        comparison=comparison,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
 @webcommand('annotate')
-def annotate(web, req, tmpl):
+def annotate(web):
     """
     /annotate/{revision}/{path}
     ---------------------------
@@ -871,7 +924,7 @@ def annotate(web, req, tmpl):
 
     The ``fileannotate`` template is rendered.
     """
-    fctx = webutil.filectx(web.repo, req)
+    fctx = webutil.filectx(web.repo, web.req)
     f = fctx.path()
     parity = paritygen(web.stripecount)
     ishead = fctx.filerev() in fctx.filelog().headrevs()
@@ -899,13 +952,14 @@ def annotate(web, req, tmpl):
         if fctx.isbinary():
             mt = (mimetypes.guess_type(fctx.path())[0]
                   or 'application/octet-stream')
-            lines = [((fctx.filectx(fctx.filerev()), 1), '(binary:%s)' % mt)]
+            lines = [dagop.annotateline(fctx=fctx.filectx(fctx.filerev()),
+                                        lineno=1, text='(binary:%s)' % mt)]
         else:
-            lines = webutil.annotate(req, fctx, web.repo.ui)
+            lines = webutil.annotate(web.req, fctx, web.repo.ui)
 
         previousrev = None
         blockparitygen = paritygen(1)
-        for lineno, (aline, l) in enumerate(lines):
+        for lineno, aline in enumerate(lines):
             f = aline.fctx
             rev = f.rev()
             if rev != previousrev:
@@ -925,28 +979,29 @@ def annotate(web, req, tmpl):
                    "blockhead": blockhead,
                    "blockparity": blockparity,
                    "targetline": aline.lineno,
-                   "line": l,
+                   "line": aline.text,
                    "lineno": lineno + 1,
                    "lineid": "l%d" % (lineno + 1),
                    "linenumber": "% 6d" % (lineno + 1),
                    "revdate": f.date()}
 
-    diffopts = webutil.difffeatureopts(req, web.repo.ui, 'annotate')
+    diffopts = webutil.difffeatureopts(web.req, web.repo.ui, 'annotate')
     diffopts = {k: getattr(diffopts, k) for k in diffopts.defaults}
 
-    return tmpl("fileannotate",
-                file=f,
-                annotate=annotate,
-                path=webutil.up(f),
-                symrev=webutil.symrevorshortnode(req, fctx),
-                rename=webutil.renamelink(fctx),
-                permissions=fctx.manifest().flags(f),
-                ishead=int(ishead),
-                diffopts=diffopts,
-                **webutil.commonentry(web.repo, fctx))
+    return web.sendtemplate(
+        'fileannotate',
+        file=f,
+        annotate=annotate,
+        path=webutil.up(f),
+        symrev=webutil.symrevorshortnode(web.req, fctx),
+        rename=webutil.renamelink(fctx),
+        permissions=fctx.manifest().flags(f),
+        ishead=int(ishead),
+        diffopts=diffopts,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('filelog')
-def filelog(web, req, tmpl):
+def filelog(web):
     """
     /filelog/{revision}/{path}
     --------------------------
@@ -960,16 +1015,16 @@ def filelog(web, req, tmpl):
     """
 
     try:
-        fctx = webutil.filectx(web.repo, req)
+        fctx = webutil.filectx(web.repo, web.req)
         f = fctx.path()
         fl = fctx.filelog()
     except error.LookupError:
-        f = webutil.cleanpath(web.repo, req.form['file'][0])
+        f = webutil.cleanpath(web.repo, web.req.qsparams['file'])
         fl = web.repo.file(f)
         numrevs = len(fl)
         if not numrevs: # file doesn't exist at all
             raise
-        rev = webutil.changectx(web.repo, req).rev()
+        rev = webutil.changectx(web.repo, web.req).rev()
         first = fl.linkrev(0)
         if rev < first: # current rev is from before file existed
             raise
@@ -979,27 +1034,27 @@ def filelog(web, req, tmpl):
         fctx = web.repo.filectx(f, fl.linkrev(frev))
 
     revcount = web.maxshortchanges
-    if 'revcount' in req.form:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.form.get('revcount', [revcount])[0])
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
-    lrange = webutil.linerange(req)
+    lrange = webutil.linerange(web.req)
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
+    lessvars['revcount'] = max(revcount // 2, 1)
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
-    patch = 'patch' in req.form
+    patch = 'patch' in web.req.qsparams
     if patch:
-        lessvars['patch'] = morevars['patch'] = req.form['patch'][0]
-    descend = 'descend' in req.form
+        lessvars['patch'] = morevars['patch'] = web.req.qsparams['patch']
+    descend = 'descend' in web.req.qsparams
     if descend:
-        lessvars['descend'] = morevars['descend'] = req.form['descend'][0]
+        lessvars['descend'] = morevars['descend'] = web.req.qsparams['descend']
 
     count = fctx.filerev() + 1
     start = max(0, count - revcount) # first rev on this page
@@ -1007,18 +1062,20 @@ def filelog(web, req, tmpl):
     parity = paritygen(web.stripecount, offset=start - end)
 
     repo = web.repo
-    revs = fctx.filelog().revs(start, end - 1)
+    filelog = fctx.filelog()
+    revs = [filerev for filerev in filelog.revs(start, end - 1)
+            if filelog.linkrev(filerev) in repo]
     entries = []
 
     diffstyle = web.config('web', 'style')
-    if 'style' in req.form:
-        diffstyle = req.form['style'][0]
+    if 'style' in web.req.qsparams:
+        diffstyle = web.req.qsparams['style']
 
     def diff(fctx, linerange=None):
         ctx = fctx.changectx()
         basectx = ctx.p1()
         path = fctx.path()
-        return webutil.diffs(web, tmpl, ctx, basectx, [path], diffstyle,
+        return webutil.diffs(web, ctx, basectx, [path], diffstyle,
                              linerange=linerange,
                              lineidprefix='%s-' % ctx.hex()[:12])
 
@@ -1027,7 +1084,7 @@ def filelog(web, req, tmpl):
         linerange = webutil.formatlinerange(*lrange)
         # deactivate numeric nav links when linerange is specified as this
         # would required a dedicated "revnav" class
-        nav = None
+        nav = templateutil.mappinglist([])
         if descend:
             it = dagop.blockdescendants(fctx, *lrange)
         else:
@@ -1044,7 +1101,7 @@ def filelog(web, req, tmpl):
                 file=path,
                 diff=diffs,
                 linerange=webutil.formatlinerange(*lr),
-                **webutil.commonentry(repo, c)))
+                **pycompat.strkwargs(webutil.commonentry(repo, c))))
             if i == revcount:
                 break
         lessvars['linerange'] = webutil.formatlinerange(*lrange)
@@ -1061,29 +1118,30 @@ def filelog(web, req, tmpl):
                 file=f,
                 diff=diffs,
                 rename=webutil.renamelink(iterfctx),
-                **webutil.commonentry(repo, iterfctx)))
+                **pycompat.strkwargs(webutil.commonentry(repo, iterfctx))))
         entries.reverse()
         revnav = webutil.filerevnav(web.repo, fctx.path())
         nav = revnav.gen(end - 1, revcount, count)
 
     latestentry = entries[:1]
 
-    return tmpl("filelog",
-                file=f,
-                nav=nav,
-                symrev=webutil.symrevorshortnode(req, fctx),
-                entries=entries,
-                descend=descend,
-                patch=patch,
-                latestentry=latestentry,
-                linerange=linerange,
-                revcount=revcount,
-                morevars=morevars,
-                lessvars=lessvars,
-                **webutil.commonentry(web.repo, fctx))
+    return web.sendtemplate(
+        'filelog',
+        file=f,
+        nav=nav,
+        symrev=webutil.symrevorshortnode(web.req, fctx),
+        entries=entries,
+        descend=descend,
+        patch=patch,
+        latestentry=latestentry,
+        linerange=linerange,
+        revcount=revcount,
+        morevars=morevars,
+        lessvars=lessvars,
+        **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('archive')
-def archive(web, req, tmpl):
+def archive(web):
     """
     /archive/{revision}.{format}[/{path}]
     -------------------------------------
@@ -1103,11 +1161,11 @@ def archive(web, req, tmpl):
     No template is used for this handler. Raw, binary content is generated.
     """
 
-    type_ = req.form.get('type', [None])[0]
+    type_ = web.req.qsparams.get('type')
     allowed = web.configlist("web", "allow_archive")
-    key = req.form['node'][0]
+    key = web.req.qsparams['node']
 
-    if type_ not in web.archivespecs:
+    if type_ not in webutil.archivespecs:
         msg = 'Unsupported archive type: %s' % type_
         raise ErrorResponse(HTTP_NOT_FOUND, msg)
 
@@ -1116,44 +1174,51 @@ def archive(web, req, tmpl):
         msg = 'Archive type not allowed: %s' % type_
         raise ErrorResponse(HTTP_FORBIDDEN, msg)
 
-    reponame = re.sub(r"\W+", "-", os.path.basename(web.reponame))
+    reponame = re.sub(br"\W+", "-", os.path.basename(web.reponame))
     cnode = web.repo.lookup(key)
     arch_version = key
     if cnode == key or key == 'tip':
         arch_version = short(cnode)
     name = "%s-%s" % (reponame, arch_version)
 
-    ctx = webutil.changectx(web.repo, req)
+    ctx = webutil.changectx(web.repo, web.req)
     pats = []
     match = scmutil.match(ctx, [])
-    file = req.form.get('file', None)
+    file = web.req.qsparams.get('file')
     if file:
-        pats = ['path:' + file[0]]
+        pats = ['path:' + file]
         match = scmutil.match(ctx, pats, default='path')
         if pats:
             files = [f for f in ctx.manifest().keys() if match(f)]
             if not files:
                 raise ErrorResponse(HTTP_NOT_FOUND,
-                    'file(s) not found: %s' % file[0])
+                    'file(s) not found: %s' % file)
 
-    mimetype, artype, extension, encoding = web.archivespecs[type_]
-    headers = [
-        ('Content-Disposition', 'attachment; filename=%s%s' % (name, extension))
-        ]
+    mimetype, artype, extension, encoding = webutil.archivespecs[type_]
+
+    web.res.headers['Content-Type'] = mimetype
+    web.res.headers['Content-Disposition'] = 'attachment; filename=%s%s' % (
+        name, extension)
+
     if encoding:
-        headers.append(('Content-Encoding', encoding))
-    req.headers.extend(headers)
-    req.respond(HTTP_OK, mimetype)
+        web.res.headers['Content-Encoding'] = encoding
 
-    archival.archive(web.repo, req, cnode, artype, prefix=name,
+    web.res.setbodywillwrite()
+    if list(web.res.sendresponse()):
+        raise error.ProgrammingError('sendresponse() should not emit data '
+                                     'if writing later')
+
+    bodyfh = web.res.getbodyfile()
+
+    archival.archive(web.repo, bodyfh, cnode, artype, prefix=name,
                      matchfn=match,
                      subrepos=web.configbool("web", "archivesubrepos"))
+
     return []
 
-
 @webcommand('static')
-def static(web, req, tmpl):
-    fname = req.form['file'][0]
+def static(web):
+    fname = web.req.qsparams['file']
     # a repo owner may set web.static in .hg/hgrc to get any file
     # readable by the user running the CGI script
     static = web.config("web", "static", None, untrusted=False)
@@ -1162,11 +1227,12 @@ def static(web, req, tmpl):
         if isinstance(tp, str):
             tp = [tp]
         static = [os.path.join(p, 'static') for p in tp]
-    staticfile(static, fname, req)
-    return []
+
+    staticfile(static, fname, web.res)
+    return web.res.sendresponse()
 
 @webcommand('graph')
-def graph(web, req, tmpl):
+def graph(web):
     """
     /graph[/{revision}]
     -------------------
@@ -1189,9 +1255,9 @@ def graph(web, req, tmpl):
     This handler will render the ``graph`` template.
     """
 
-    if 'node' in req.form:
-        ctx = webutil.changectx(web.repo, req)
-        symrev = webutil.symrevorshortnode(req, ctx)
+    if 'node' in web.req.qsparams:
+        ctx = webutil.changectx(web.repo, web.req)
+        symrev = webutil.symrevorshortnode(web.req, ctx)
     else:
         ctx = web.repo['tip']
         symrev = 'tip'
@@ -1199,21 +1265,21 @@ def graph(web, req, tmpl):
 
     bg_height = 39
     revcount = web.maxshortchanges
-    if 'revcount' in req.form:
+    if 'revcount' in web.req.qsparams:
         try:
-            revcount = int(req.form.get('revcount', [revcount])[0])
+            revcount = int(web.req.qsparams.get('revcount', revcount))
             revcount = max(revcount, 1)
-            tmpl.defaults['sessionvars']['revcount'] = revcount
+            web.tmpl.defaults['sessionvars']['revcount'] = revcount
         except ValueError:
             pass
 
-    lessvars = copy.copy(tmpl.defaults['sessionvars'])
-    lessvars['revcount'] = max(revcount / 2, 1)
-    morevars = copy.copy(tmpl.defaults['sessionvars'])
+    lessvars = copy.copy(web.tmpl.defaults['sessionvars'])
+    lessvars['revcount'] = max(revcount // 2, 1)
+    morevars = copy.copy(web.tmpl.defaults['sessionvars'])
     morevars['revcount'] = revcount * 2
 
-    graphtop = req.form.get('graphtop', [ctx.hex()])[0]
-    graphvars = copy.copy(tmpl.defaults['sessionvars'])
+    graphtop = web.req.qsparams.get('graphtop', ctx.hex())
+    graphvars = copy.copy(web.tmpl.defaults['sessionvars'])
     graphvars['graphtop'] = graphtop
 
     count = len(web.repo)
@@ -1305,17 +1371,24 @@ def graph(web, req, tmpl):
 
     rows = len(tree)
 
-    return tmpl('graph', rev=rev, symrev=symrev, revcount=revcount,
-                uprev=uprev,
-                lessvars=lessvars, morevars=morevars, downrev=downrev,
-                graphvars=graphvars,
-                rows=rows,
-                bg_height=bg_height,
-                changesets=count,
-                nextentry=nextentry,
-                jsdata=lambda **x: jsdata(),
-                nodes=lambda **x: nodes(),
-                node=ctx.hex(), changenav=changenav)
+    return web.sendtemplate(
+        'graph',
+        rev=rev,
+        symrev=symrev,
+        revcount=revcount,
+        uprev=uprev,
+        lessvars=lessvars,
+        morevars=morevars,
+        downrev=downrev,
+        graphvars=graphvars,
+        rows=rows,
+        bg_height=bg_height,
+        changesets=count,
+        nextentry=nextentry,
+        jsdata=lambda **x: jsdata(),
+        nodes=lambda **x: nodes(),
+        node=ctx.hex(),
+        changenav=changenav)
 
 def _getdoc(e):
     doc = e[0].__doc__
@@ -1326,7 +1399,7 @@ def _getdoc(e):
     return doc
 
 @webcommand('help')
-def help(web, req, tmpl):
+def help(web):
     """
     /help[/{topic}]
     ---------------
@@ -1342,7 +1415,7 @@ def help(web, req, tmpl):
     """
     from .. import commands, help as helpmod  # avoid cycle
 
-    topicname = req.form.get('node', [None])[0]
+    topicname = web.req.qsparams.get('node')
     if not topicname:
         def topics(**map):
             for entries, summary, _doc in helpmod.helptable:
@@ -1371,8 +1444,12 @@ def help(web, req, tmpl):
             for c, doc in other:
                 yield {'topic': c, 'summary': doc}
 
-        return tmpl('helptopics', topics=topics, earlycommands=earlycommands,
-                    othercommands=othercommands, title='Index')
+        return web.sendtemplate(
+            'helptopics',
+            topics=topics,
+            earlycommands=earlycommands,
+            othercommands=othercommands,
+            title='Index')
 
     # Render an index of sub-topics.
     if topicname in helpmod.subtopics:
@@ -1384,8 +1461,11 @@ def help(web, req, tmpl):
                 'summary': summary,
             })
 
-        return tmpl('helptopics', topics=topics, title=topicname,
-                    subindex=True)
+        return web.sendtemplate(
+            'helptopics',
+            topics=topics,
+            title=topicname,
+            subindex=True)
 
     u = webutil.wsgiui.load()
     u.verbose = True
@@ -1403,9 +1483,13 @@ def help(web, req, tmpl):
 
     try:
         doc = helpmod.help_(u, commands, topic, subtopic=subtopic)
-    except error.UnknownCommand:
+    except error.Abort:
         raise ErrorResponse(HTTP_NOT_FOUND)
-    return tmpl('help', topic=topicname, doc=doc)
+
+    return web.sendtemplate(
+        'help',
+        topic=topicname,
+        doc=doc)
 
 # tell hggettext to extract docstrings from these functions:
 i18nfunctions = commands.values()

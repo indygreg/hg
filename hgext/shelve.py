@@ -25,6 +25,7 @@ from __future__ import absolute_import
 import collections
 import errno
 import itertools
+import stat
 
 from mercurial.i18n import _
 from mercurial import (
@@ -54,6 +55,10 @@ from mercurial import (
 
 from . import (
     rebase,
+)
+from mercurial.utils import (
+    dateutil,
+    stringutil,
 )
 
 cmdtable = {}
@@ -192,7 +197,7 @@ class shelvedstate(object):
             d['nodestoremove'] = [nodemod.bin(h)
                                   for h in d['nodestoremove'].split(' ')]
         except (ValueError, TypeError, KeyError) as err:
-            raise error.CorruptedState(str(err))
+            raise error.CorruptedState(pycompat.bytestr(err))
 
     @classmethod
     def _getversion(cls, repo):
@@ -201,7 +206,7 @@ class shelvedstate(object):
         try:
             version = int(fp.readline().strip())
         except ValueError as err:
-            raise error.CorruptedState(str(err))
+            raise error.CorruptedState(pycompat.bytestr(err))
         finally:
             fp.close()
         return version
@@ -251,7 +256,7 @@ class shelvedstate(object):
             if d.get('activebook', '') != cls._noactivebook:
                 obj.activebookmark = d.get('activebook', '')
         except (error.RepoLookupError, KeyError) as err:
-            raise error.CorruptedState(str(err))
+            raise error.CorruptedState(pycompat.bytestr(err))
 
         return obj
 
@@ -271,7 +276,7 @@ class shelvedstate(object):
             "activebook": activebook or cls._noactivebook
         }
         scmutil.simplekeyvaluefile(repo.vfs, cls._filename)\
-               .write(info, firstline=str(cls._version))
+               .write(info, firstline=("%d" % cls._version))
 
     @classmethod
     def clear(cls, repo):
@@ -282,7 +287,7 @@ def cleanupoldbackups(repo):
     maxbackups = repo.ui.configint('shelve', 'maxbackups')
     hgfiles = [f for f in vfs.listdir()
                if f.endswith('.' + patchextension)]
-    hgfiles = sorted([(vfs.stat(f).st_mtime, f) for f in hgfiles])
+    hgfiles = sorted([(vfs.stat(f)[stat.ST_MTIME], f) for f in hgfiles])
     if 0 < maxbackups and maxbackups < len(hgfiles):
         bordermtime = hgfiles[-maxbackups][0]
     else:
@@ -408,9 +413,8 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
 def _shelvecreatedcommit(repo, node, name):
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, 'hg').writebundle(bases, node)
-    cmdutil.export(repo, [node],
-                   fp=shelvedfile(repo, name, patchextension).opener('wb'),
-                   opts=mdiff.diffopts(git=True))
+    with shelvedfile(repo, name, patchextension).opener('wb') as fp:
+        cmdutil.exportfile(repo, [node], fp, opts=mdiff.diffopts(git=True))
 
 def _includeunknownfiles(repo, pats, opts, extra):
     s = repo.status(match=scmutil.match(repo[None], pats, opts),
@@ -475,7 +479,7 @@ def _docreatecmd(ui, repo, pats, opts):
         _shelvecreatedcommit(repo, node, name)
 
         if ui.formatted():
-            desc = util.ellipsis(desc, ui.termwidth())
+            desc = stringutil.ellipsis(desc, ui.termwidth())
         ui.status(_('shelved as %s\n') % name)
         hg.update(repo, parent.node())
         if origbranch != repo['.'].branch() and not _isbareshelve(pats, opts):
@@ -541,7 +545,7 @@ def listshelves(repo):
         if not pfx or sfx != patchextension:
             continue
         st = shelvedfile(repo, name).stat()
-        info.append((st.st_mtime, shelvedfile(repo, pfx).filename()))
+        info.append((st[stat.ST_MTIME], shelvedfile(repo, pfx).filename()))
     return sorted(info, reverse=True)
 
 def listcmd(ui, repo, pats, opts):
@@ -563,7 +567,8 @@ def listcmd(ui, repo, pats, opts):
             continue
         ui.write(' ' * (16 - len(sname)))
         used = 16
-        age = '(%s)' % templatefilters.age(util.makedate(mtime), abbrev=True)
+        date = dateutil.makedate(mtime)
+        age = '(%s)' % templatefilters.age(date, abbrev=True)
         ui.write(age, label='shelve.age')
         ui.write(' ' * (12 - len(age)))
         used += 12
@@ -575,7 +580,7 @@ def listcmd(ui, repo, pats, opts):
                 if not line.startswith('#'):
                     desc = line.rstrip()
                     if ui.formatted():
-                        desc = util.ellipsis(desc, width - used)
+                        desc = stringutil.ellipsis(desc, width - used)
                     ui.write(desc)
                     break
             ui.write('\n')
@@ -619,7 +624,7 @@ def unshelveabort(ui, repo, state, opts):
             repo.vfs.rename('unshelverebasestate', 'rebasestate')
             try:
                 rebase.rebase(ui, repo, **{
-                    'abort' : True
+                    r'abort' : True
                 })
             except Exception:
                 repo.vfs.rename('rebasestate', 'unshelverebasestate')
@@ -648,7 +653,7 @@ def mergefiles(ui, repo, wctx, shelvectx):
         ui.pushbuffer(True)
         cmdutil.revert(ui, repo, shelvectx, repo.dirstate.parents(),
                        *pathtofiles(repo, files),
-                       **{'no_backup': True})
+                       **{r'no_backup': True})
         ui.popbuffer()
 
 def restorebranch(ui, repo, branchtorestore):
@@ -681,7 +686,7 @@ def unshelvecontinue(ui, repo, state, opts):
         repo.vfs.rename('unshelverebasestate', 'rebasestate')
         try:
             rebase.rebase(ui, repo, **{
-                'continue' : True
+                r'continue' : True
             })
         except Exception:
             repo.vfs.rename('rebasestate', 'unshelverebasestate')
@@ -744,10 +749,10 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     ui.status(_('rebasing shelved changes\n'))
     try:
         rebase.rebase(ui, repo, **{
-            'rev': [shelvectx.rev()],
-            'dest': str(tmpwctx.rev()),
-            'keep': True,
-            'tool': opts.get('tool', ''),
+            r'rev': [shelvectx.rev()],
+            r'dest': "%d" % tmpwctx.rev(),
+            r'keep': True,
+            r'tool': opts.get('tool', ''),
         })
     except error.InterventionRequired:
         tr.close()
@@ -881,7 +886,7 @@ def _dounshelve(ui, repo, *shelved, **opts):
                 raise
             cmdutil.wrongtooltocontinue(repo, _('unshelve'))
         except error.CorruptedState as err:
-            ui.debug(str(err) + '\n')
+            ui.debug(pycompat.bytestr(err) + '\n')
             if continuef:
                 msg = _('corrupted shelved state file')
                 hint = _('please run hg unshelve --abort to abort unshelve '

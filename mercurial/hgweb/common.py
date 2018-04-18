@@ -12,6 +12,7 @@ import base64
 import errno
 import mimetypes
 import os
+import stat
 
 from .. import (
     encoding,
@@ -22,12 +23,15 @@ from .. import (
 httpserver = util.httpserver
 
 HTTP_OK = 200
+HTTP_CREATED = 201
 HTTP_NOT_MODIFIED = 304
 HTTP_BAD_REQUEST = 400
 HTTP_UNAUTHORIZED = 401
 HTTP_FORBIDDEN = 403
 HTTP_NOT_FOUND = 404
 HTTP_METHOD_NOT_ALLOWED = 405
+HTTP_NOT_ACCEPTABLE = 406
+HTTP_UNSUPPORTED_MEDIA_TYPE = 415
 HTTP_SERVER_ERROR = 500
 
 
@@ -45,7 +49,7 @@ def checkauthz(hgweb, req, op):
     authentication info). Return if op allowed, else raise an ErrorResponse
     exception.'''
 
-    user = req.env.get('REMOTE_USER')
+    user = req.remoteuser
 
     deny_read = hgweb.configlist('web', 'deny_read')
     if deny_read and (not user or ismember(hgweb.repo.ui, user, deny_read)):
@@ -60,15 +64,19 @@ def checkauthz(hgweb, req, op):
     elif op == 'pull' or op is None: # op is None for interface requests
         return
 
+    # Allow LFS uploading via PUT requests
+    if op == 'upload':
+        if req.method != 'PUT':
+            msg = 'upload requires PUT request'
+            raise ErrorResponse(HTTP_METHOD_NOT_ALLOWED, msg)
     # enforce that you can only push using POST requests
-    if req.env['REQUEST_METHOD'] != 'POST':
+    elif req.method != 'POST':
         msg = 'push requires POST request'
         raise ErrorResponse(HTTP_METHOD_NOT_ALLOWED, msg)
 
     # require ssl by default for pushing, auth info cannot be sniffed
     # and replayed
-    scheme = req.env.get('wsgi.url_scheme')
-    if hgweb.configbool('web', 'push_ssl') and scheme != 'https':
+    if hgweb.configbool('web', 'push_ssl') and req.urlscheme != 'https':
         raise ErrorResponse(HTTP_FORBIDDEN, 'ssl required')
 
     deny = hgweb.configlist('web', 'deny_push')
@@ -81,7 +89,7 @@ def checkauthz(hgweb, req, op):
 
 # Hooks for hgweb permission checks; extensions can add hooks here.
 # Each hook is invoked like this: hook(hgweb, request, operation),
-# where operation is either read, pull or push. Hooks should either
+# where operation is either read, pull, push or upload. Hooks should either
 # raise an ErrorResponse exception, or just return.
 #
 # It is possible to do both authentication and authorization through
@@ -93,13 +101,20 @@ class ErrorResponse(Exception):
     def __init__(self, code, message=None, headers=None):
         if message is None:
             message = _statusmessage(code)
-        Exception.__init__(self, message)
+        Exception.__init__(self, pycompat.sysstr(message))
         self.code = code
         if headers is None:
             headers = []
         self.headers = headers
 
 class continuereader(object):
+    """File object wrapper to handle HTTP 100-continue.
+
+    This is used by servers so they automatically handle Expect: 100-continue
+    request headers. On first read of the request body, the 100 Continue
+    response is sent. This should trigger the client into actually sending
+    the request body.
+    """
     def __init__(self, f, write):
         self.f = f
         self._write = write
@@ -118,7 +133,8 @@ class continuereader(object):
 
 def _statusmessage(code):
     responses = httpserver.basehttprequesthandler.responses
-    return responses.get(code, ('Error', 'Unknown error'))[0]
+    return pycompat.bytesurl(
+        responses.get(code, (r'Error', r'Unknown error'))[0])
 
 def statusmessage(code, message=None):
     return '%d %s' % (code, message or _statusmessage(code))
@@ -132,20 +148,20 @@ def get_stat(spath, fn):
         return os.stat(spath)
 
 def get_mtime(spath):
-    return get_stat(spath, "00changelog.i").st_mtime
+    return get_stat(spath, "00changelog.i")[stat.ST_MTIME]
 
 def ispathsafe(path):
     """Determine if a path is safe to use for filesystem access."""
     parts = path.split('/')
     for part in parts:
-        if (part in ('', os.curdir, os.pardir) or
+        if (part in ('', pycompat.oscurdir, pycompat.ospardir) or
             pycompat.ossep in part or
             pycompat.osaltsep is not None and pycompat.osaltsep in part):
             return False
 
     return True
 
-def staticfile(directory, fname, req):
+def staticfile(directory, fname, res):
     """return a file inside directory with guessed Content-Type header
 
     fname always uses '/' as directory separator and isn't allowed to
@@ -170,7 +186,9 @@ def staticfile(directory, fname, req):
         with open(path, 'rb') as fh:
             data = fh.read()
 
-        req.respond(HTTP_OK, ct, body=data)
+        res.headers['Content-Type'] = ct
+        res.setbodybytes(data)
+        return res
     except TypeError:
         raise ErrorResponse(HTTP_SERVER_ERROR, 'illegal filename')
     except OSError as err:
@@ -185,7 +203,7 @@ def paritygen(stripecount, offset=0):
     if stripecount and offset:
         # account for offset, e.g. due to building the list in reverse
         count = (stripecount + offset) % stripecount
-        parity = (stripecount + offset) / stripecount & 1
+        parity = (stripecount + offset) // stripecount & 1
     else:
         count = 0
         parity = 0
@@ -205,12 +223,6 @@ def get_contact(config):
     return (config("web", "contact") or
             config("ui", "username") or
             encoding.environ.get("EMAIL") or "")
-
-def caching(web, req):
-    tag = r'W/"%d"' % web.mtime
-    if req.env.get('HTTP_IF_NONE_MATCH') == tag:
-        raise ErrorResponse(HTTP_NOT_MODIFIED)
-    req.headers.append(('ETag', tag))
 
 def cspvalues(ui):
     """Obtain the Content-Security-Policy header and nonce value.

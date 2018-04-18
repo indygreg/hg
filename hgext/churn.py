@@ -18,12 +18,13 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     encoding,
+    logcmdutil,
     patch,
     pycompat,
     registrar,
     scmutil,
-    util,
 )
+from mercurial.utils import dateutil
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -54,7 +55,7 @@ def countrate(ui, repo, amap, *pats, **opts):
             return date.strftime(opts['dateformat'])
     else:
         tmpl = opts.get('oldtemplate') or opts.get('template')
-        tmpl = cmdutil.makelogtemplater(ui, repo, tmpl)
+        tmpl = logcmdutil.maketemplater(ui, repo, tmpl)
         def getkey(ctx):
             ui.pushbuffer()
             tmpl.show(ctx)
@@ -64,7 +65,7 @@ def countrate(ui, repo, amap, *pats, **opts):
     rate = {}
     df = False
     if opts.get('date'):
-        df = util.matchdate(opts['date'])
+        df = dateutil.matchdate(opts['date'])
 
     m = scmutil.match(repo[None], pats, opts)
     def prep(ctx, fns):
@@ -170,7 +171,7 @@ def churn(ui, repo, *pats, **opts):
                     ui.warn(_("skipping malformed alias: %s\n") % l)
                 continue
 
-    rate = countrate(ui, repo, amap, *pats, **opts).items()
+    rate = list(countrate(ui, repo, amap, *pats, **opts).items())
     if not rate:
         return
 

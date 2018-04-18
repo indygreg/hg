@@ -90,3 +90,13 @@ def fixws(text, allws):
         text = re.sub('[ \t\r]+', ' ', text)
         text = text.replace(' \n', '\n')
     return text
+
+def splitnewlines(text):
+    '''like str.splitlines, but only split on newlines.'''
+    lines = [l + '\n' for l in text.split('\n')]
+    if lines:
+        if lines[-1] == '\n':
+            lines.pop()
+        else:
+            lines[-1] = lines[-1][:-1]
+    return lines

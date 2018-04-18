@@ -15,7 +15,10 @@ demandimport.ignore.extend(['pkgutil', 'pkg_resources', '__main__'])
 
 from mercurial import (
     encoding,
-    util,
+)
+
+from mercurial.utils import (
+    stringutil,
 )
 
 with demandimport.deactivated():
@@ -47,7 +50,7 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
         tmpl.cache['header'] = new_header
 
     text = fctx.data()
-    if util.binary(text):
+    if stringutil.binary(text):
         return
 
     # str.splitlines() != unicode.splitlines() because "reasons"

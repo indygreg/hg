@@ -18,6 +18,7 @@ import weakref
 
 from .i18n import _
 from .node import (
+    bin,
     hex,
     nullid,
     short,
@@ -39,6 +40,11 @@ from . import (
     url,
     util,
     vfs,
+)
+
+from .utils import (
+    procutil,
+    stringutil,
 )
 
 if pycompat.iswindows:
@@ -162,13 +168,14 @@ def callcatch(ui, func):
             reason = _('timed out waiting for lock held by %r') % inst.locker
         else:
             reason = _('lock held by %r') % inst.locker
-        ui.warn(_("abort: %s: %s\n") % (inst.desc or inst.filename, reason))
+        ui.warn(_("abort: %s: %s\n")
+                % (inst.desc or stringutil.forcebytestr(inst.filename), reason))
         if not inst.locker:
             ui.warn(_("(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
         ui.warn(_("abort: could not lock %s: %s\n") %
-               (inst.desc or inst.filename,
-                encoding.strtolocal(inst.strerror)))
+                (inst.desc or stringutil.forcebytestr(inst.filename),
+                 encoding.strtolocal(inst.strerror)))
     except error.OutOfBandError as inst:
         if inst.args:
             msg = _("abort: remote error:\n")
@@ -185,12 +192,15 @@ def callcatch(ui, func):
             ui.warn(_("(%s)\n") % inst.hint)
     except error.ResponseError as inst:
         ui.warn(_("abort: %s") % inst.args[0])
-        if not isinstance(inst.args[1], basestring):
-            ui.warn(" %r\n" % (inst.args[1],))
-        elif not inst.args[1]:
+        msg = inst.args[1]
+        if isinstance(msg, type(u'')):
+            msg = pycompat.sysbytes(msg)
+        if not isinstance(msg, bytes):
+            ui.warn(" %r\n" % (msg,))
+        elif not msg:
             ui.warn(_(" empty string\n"))
         else:
-            ui.warn("\n%r\n" % util.ellipsis(inst.args[1]))
+            ui.warn("\n%r\n" % stringutil.ellipsis(msg))
     except error.CensoredNodeError as inst:
         ui.warn(_("abort: file censored %s!\n") % inst)
     except error.RevlogError as inst:
@@ -207,15 +217,15 @@ def callcatch(ui, func):
         if inst.hint:
             ui.warn(_("(%s)\n") % inst.hint)
     except ImportError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
-        m = str(inst).split()[-1]
+        ui.warn(_("abort: %s!\n") % stringutil.forcebytestr(inst))
+        m = stringutil.forcebytestr(inst).split()[-1]
         if m in "mpatch bdiff".split():
             ui.warn(_("(did you forget to compile extensions?)\n"))
         elif m in "zlib".split():
             ui.warn(_("(is your Python install correct?)\n"))
     except IOError as inst:
         if util.safehasattr(inst, "code"):
-            ui.warn(_("abort: %s\n") % inst)
+            ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst))
         elif util.safehasattr(inst, "reason"):
             try: # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]
@@ -232,7 +242,8 @@ def callcatch(ui, func):
         elif getattr(inst, "strerror", None):
             if getattr(inst, "filename", None):
                 ui.warn(_("abort: %s: %s\n") % (
-                    encoding.strtolocal(inst.strerror), inst.filename))
+                    encoding.strtolocal(inst.strerror),
+                    stringutil.forcebytestr(inst.filename)))
             else:
                 ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
         else:
@@ -240,7 +251,8 @@ def callcatch(ui, func):
     except OSError as inst:
         if getattr(inst, "filename", None) is not None:
             ui.warn(_("abort: %s: '%s'\n") % (
-                encoding.strtolocal(inst.strerror), inst.filename))
+                encoding.strtolocal(inst.strerror),
+                stringutil.forcebytestr(inst.filename)))
         else:
             ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:
@@ -250,7 +262,7 @@ def callcatch(ui, func):
         # Just in case catch this and and pass exit code to caller.
         return inst.code
     except socket.error as inst:
-        ui.warn(_("abort: %s\n") % inst.args[-1])
+        ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
 
     return -1
 
@@ -261,12 +273,15 @@ def checknewlabel(repo, lbl, kind):
         raise error.Abort(_("the name '%s' is reserved") % lbl)
     for c in (':', '\0', '\n', '\r'):
         if c in lbl:
-            raise error.Abort(_("%r cannot be used in a name") % c)
+            raise error.Abort(
+                _("%r cannot be used in a name") % pycompat.bytestr(c))
     try:
         int(lbl)
         raise error.Abort(_("cannot use an integer as a name"))
     except ValueError:
         pass
+    if lbl.strip() != lbl:
+        raise error.Abort(_("leading or trailing whitespace in name %r") % lbl)
 
 def checkfilename(f):
     '''Check that the filename f is an acceptable filename for a tracked file'''
@@ -280,7 +295,7 @@ def checkportable(ui, f):
     if abort or warn:
         msg = util.checkwinfilename(f)
         if msg:
-            msg = "%s: %s" % (msg, util.shellquote(f))
+            msg = "%s: %s" % (msg, procutil.shellquote(f))
             if abort:
                 raise error.Abort(msg)
             ui.warn(_("warning: %s\n") % msg)
@@ -290,7 +305,7 @@ def checkportabilityalert(ui):
     non-portable filenames'''
     val = ui.config('ui', 'portablefilenames')
     lval = val.lower()
-    bval = util.parsebool(val)
+    bval = stringutil.parsebool(val)
     abort = pycompat.iswindows or lval == 'abort'
     warn = bval or lval == 'warn'
     if bval is None and not (warn or abort or lval == 'ignore'):
@@ -355,12 +370,8 @@ def walkrepos(path, followsym=False, seen_dirs=None, recurse=False):
     samestat = getattr(os.path, 'samestat', None)
     if followsym and samestat is not None:
         def adddir(dirlst, dirname):
-            match = False
             dirstat = os.stat(dirname)
-            for lstdirstat in dirlst:
-                if samestat(dirstat, lstdirstat):
-                    match = True
-                    break
+            match = any(samestat(dirstat, lstdirstat) for lstdirstat in dirlst)
             if not match:
                 dirlst.append(dirstat)
             return not match
@@ -411,7 +422,7 @@ def intrev(ctx):
 
 def formatchangeid(ctx):
     """Format changectx as '{rev}:{node|formatnode}', which is the default
-    template provided by cmdutil.changeset_templater"""
+    template provided by logcmdutil.changesettemplater"""
     repo = ctx.repo()
     return formatrevnode(repo.ui, intrev(ctx), binnode(ctx))
 
@@ -422,6 +433,120 @@ def formatrevnode(ui, rev, node):
     else:
         hexfunc = short
     return '%d:%s' % (rev, hexfunc(node))
+
+def resolvehexnodeidprefix(repo, prefix):
+    # Uses unfiltered repo because it's faster when prefix is ambiguous/
+    # This matches the shortesthexnodeidprefix() function below.
+    node = repo.unfiltered().changelog._partialmatch(prefix)
+    if node is None:
+        return
+    repo.changelog.rev(node)  # make sure node isn't filtered
+    return node
+
+def shortesthexnodeidprefix(repo, node, minlength=1):
+    """Find the shortest unambiguous prefix that matches hexnode."""
+    # _partialmatch() of filtered changelog could take O(len(repo)) time,
+    # which would be unacceptably slow. so we look for hash collision in
+    # unfiltered space, which means some hashes may be slightly longer.
+    return repo.unfiltered().changelog.shortest(node, minlength)
+
+def isrevsymbol(repo, symbol):
+    """Checks if a symbol exists in the repo.
+
+    See revsymbol() for details. Raises error.LookupError if the symbol is an
+    ambiguous nodeid prefix.
+    """
+    try:
+        revsymbol(repo, symbol)
+        return True
+    except error.RepoLookupError:
+        return False
+
+def revsymbol(repo, symbol):
+    """Returns a context given a single revision symbol (as string).
+
+    This is similar to revsingle(), but accepts only a single revision symbol,
+    i.e. things like ".", "tip", "1234", "deadbeef", "my-bookmark" work, but
+    not "max(public())".
+    """
+    if not isinstance(symbol, bytes):
+        msg = ("symbol (%s of type %s) was not a string, did you mean "
+               "repo[symbol]?" % (symbol, type(symbol)))
+        raise error.ProgrammingError(msg)
+    try:
+        if symbol in ('.', 'tip', 'null'):
+            return repo[symbol]
+
+        try:
+            r = int(symbol)
+            if '%d' % r != symbol:
+                raise ValueError
+            l = len(repo.changelog)
+            if r < 0:
+                r += l
+            if r < 0 or r >= l and r != wdirrev:
+                raise ValueError
+            return repo[r]
+        except error.FilteredIndexError:
+            raise
+        except (ValueError, OverflowError, IndexError):
+            pass
+
+        if len(symbol) == 40:
+            try:
+                node = bin(symbol)
+                rev = repo.changelog.rev(node)
+                return repo[rev]
+            except error.FilteredLookupError:
+                raise
+            except (TypeError, LookupError):
+                pass
+
+        # look up bookmarks through the name interface
+        try:
+            node = repo.names.singlenode(repo, symbol)
+            rev = repo.changelog.rev(node)
+            return repo[rev]
+        except KeyError:
+            pass
+
+        node = resolvehexnodeidprefix(repo, symbol)
+        if node is not None:
+            rev = repo.changelog.rev(node)
+            return repo[rev]
+
+        raise error.RepoLookupError(_("unknown revision '%s'") % symbol)
+
+    except error.WdirUnsupported:
+        return repo[None]
+    except (error.FilteredIndexError, error.FilteredLookupError,
+            error.FilteredRepoLookupError):
+        raise _filterederror(repo, symbol)
+
+def _filterederror(repo, changeid):
+    """build an exception to be raised about a filtered changeid
+
+    This is extracted in a function to help extensions (eg: evolve) to
+    experiment with various message variants."""
+    if repo.filtername.startswith('visible'):
+
+        # Check if the changeset is obsolete
+        unfilteredrepo = repo.unfiltered()
+        ctx = revsymbol(unfilteredrepo, changeid)
+
+        # If the changeset is obsolete, enrich the message with the reason
+        # that made this changeset not visible
+        if ctx.obsolete():
+            msg = obsutil._getfilteredreason(repo, changeid, ctx)
+        else:
+            msg = _("hidden revision '%s'") % changeid
+
+        hint = _('use --hidden to access hidden revisions')
+
+        return error.FilteredRepoLookupError(msg, hint=hint)
+    msg = _("filtered revision '%s' (not in '%s' subset)")
+    msg %= (changeid, repo.filtername)
+    return error.FilteredRepoLookupError(msg)
 
 def revsingle(repo, revspec, default='.', localalias=None):
     if not revspec and revspec != 0:
@@ -436,9 +561,14 @@ def _pairspec(revspec):
     tree = revsetlang.parse(revspec)
     return tree and tree[0] in ('range', 'rangepre', 'rangepost', 'rangeall')
 
+def revpairnodes(repo, revs):
+    repo.ui.deprecwarn("revpairnodes is deprecated, please use revpair", "4.6")
+    ctx1, ctx2 = revpair(repo, revs)
+    return ctx1.node(), ctx2.node()
+
 def revpair(repo, revs):
     if not revs:
-        return repo.dirstate.p1(), None
+        return repo['.'], repo[None]
 
     l = revrange(repo, revs)
 
@@ -462,9 +592,9 @@ def revpair(repo, revs):
 
     # if top-level is range expression, the result must always be a pair
     if first == second and len(revs) == 1 and not _pairspec(revs[0]):
-        return repo.lookup(first), None
+        return repo[first], repo[None]
 
-    return repo.lookup(first), repo.lookup(second)
+    return repo[first], repo[second]
 
 def revrange(repo, specs, localalias=None):
     """Execute 1 to many revsets and return the union.
@@ -684,7 +814,8 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
                 continue
             from . import bookmarks # avoid import cycle
             repo.ui.debug('moving bookmarks %r from %s to %s\n' %
-                          (oldbmarks, hex(oldnode), hex(newnode)))
+                          (util.rapply(pycompat.maybebytestr, oldbmarks),
+                           hex(oldnode), hex(newnode)))
             # Delete divergent bookmarks being parents of related newnodes
             deleterevs = repo.revs('parents(roots(%ln & (::%n))) - parents(%n)',
                                    allnewnodes, newnode, oldnode)
@@ -720,14 +851,18 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
             if tostrip:
                 repair.delayedstrip(repo.ui, repo, tostrip, operation)
 
-def addremove(repo, matcher, prefix, opts=None, dry_run=None, similarity=None):
+def addremove(repo, matcher, prefix, opts=None):
     if opts is None:
         opts = {}
     m = matcher
-    if dry_run is None:
-        dry_run = opts.get('dry_run')
-    if similarity is None:
+    dry_run = opts.get('dry_run')
+    try:
         similarity = float(opts.get('similarity') or 0)
+    except ValueError:
+        raise error.Abort(_('similarity must be a number'))
+    if similarity < 0 or similarity > 100:
+        raise error.Abort(_('similarity must be between 0 and 100'))
+    similarity /= 100.0
 
     ret = 0
     join = lambda f: os.path.join(prefix, f)
@@ -738,7 +873,7 @@ def addremove(repo, matcher, prefix, opts=None, dry_run=None, similarity=None):
         if opts.get('subrepos') or m.exact(subpath) or any(submatch.files()):
             sub = wctx.sub(subpath)
             try:
-                if sub.addremove(submatch, prefix, opts, dry_run, similarity):
+                if sub.addremove(submatch, prefix, opts):
                     ret = 1
             except error.LookupError:
                 repo.ui.status(_("skipping missing subrepository: %s\n")
@@ -885,7 +1020,7 @@ def readrequires(opener, supported):
     missings = []
     for r in requirements:
         if r not in supported:
-            if not r or not r[0].isalnum():
+            if not r or not r[0:1].isalnum():
                 raise error.RequirementError(_(".hg/requires file is corrupt"))
             missings.append(r)
     missings.sort()
@@ -1080,7 +1215,7 @@ def extdatasource(repo, source):
             # external commands should be run relative to the repo root
             cmd = spec[6:]
             proc = subprocess.Popen(cmd, shell=True, bufsize=-1,
-                                    close_fds=util.closefds,
+                                    close_fds=procutil.closefds,
                                     stdout=subprocess.PIPE, cwd=repo.root)
             src = proc.stdout
         else:
@@ -1094,7 +1229,7 @@ def extdatasource(repo, source):
 
             k = encoding.tolocal(k)
             try:
-                data[repo[k].rev()] = encoding.tolocal(v)
+                data[revsingle(repo, k).rev()] = encoding.tolocal(v)
             except (error.LookupError, error.RepoLookupError):
                 pass # we ignore data for nodes that don't exist locally
     finally:
@@ -1104,7 +1239,7 @@ def extdatasource(repo, source):
             src.close()
     if proc and proc.returncode != 0:
         raise error.Abort(_("extdata command '%s' failed: %s")
-                          % (cmd, util.explainexit(proc.returncode)[0]))
+                          % (cmd, procutil.explainexit(proc.returncode)))
 
     return data
 
@@ -1196,7 +1331,7 @@ class simplekeyvaluefile(object):
             if k == self.firstlinekey:
                 e = "key name '%s' is reserved" % self.firstlinekey
                 raise error.ProgrammingError(e)
-            if not k[0].isalpha():
+            if not k[0:1].isalpha():
                 e = "keys must start with a letter in a key-value file"
                 raise error.ProgrammingError(e)
             if not k.isalnum():
@@ -1221,6 +1356,22 @@ _reportnewcssource = [
     'pull',
     'unbundle',
 ]
+
+def prefetchfiles(repo, revs, match):
+    """Invokes the registered file prefetch functions, allowing extensions to
+    ensure the corresponding files are available locally, before the command
+    uses them."""
+    if match:
+        # The command itself will complain about files that don't exist, so
+        # don't duplicate the message.
+        match = matchmod.badmatch(match, lambda fn, msg: None)
+    else:
+        match = matchall(repo)
+
+    fileprefetchhooks(repo, revs, match)
+
+# a list of (repo, revs, match) prefetch functions
+fileprefetchhooks = util.hooks()
 
 # A marker that tells the evolve extension to suppress its own reporting
 _reportstroubledchangesets = True
@@ -1404,7 +1555,7 @@ def _getrevsfromsymbols(repo, symbols):
 
         try:
             s = pmatch(s)
-        except error.LookupError:
+        except (error.LookupError, error.WdirUnsupported):
             s = None
 
         if s is not None:

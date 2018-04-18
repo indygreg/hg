@@ -31,12 +31,15 @@ allowsymbolimports = (
     # for cffi modules to re-export pure functions
     'mercurial.pure.base85',
     'mercurial.pure.bdiff',
-    'mercurial.pure.diffhelpers',
     'mercurial.pure.mpatch',
     'mercurial.pure.osutil',
     'mercurial.pure.parsers',
     # third-party imports should be directly imported
     'mercurial.thirdparty',
+    'mercurial.thirdparty.cbor',
+    'mercurial.thirdparty.cbor.cbor2',
+    'mercurial.thirdparty.zope',
+    'mercurial.thirdparty.zope.interface',
 )
 
 # Whitelist of symbols that can be directly imported.

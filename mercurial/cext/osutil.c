@@ -121,6 +121,27 @@ static void listdir_stat_dealloc(PyObject *o)
 	o->ob_type->tp_free(o);
 }
 
+static PyObject *listdir_stat_getitem(PyObject *self, PyObject *key)
+{
+	long index = PyLong_AsLong(key);
+	if (index == -1 && PyErr_Occurred()) {
+		return NULL;
+	}
+	if (index != 8) {
+		PyErr_Format(PyExc_IndexError, "osutil.stat objects only "
+		                               "support stat.ST_MTIME in "
+		                               "__getitem__");
+		return NULL;
+	}
+	return listdir_stat_st_mtime(self, NULL);
+}
+
+static PyMappingMethods listdir_stat_type_mapping_methods = {
+	(lenfunc)NULL,             /* mp_length */
+	(binaryfunc)listdir_stat_getitem,       /* mp_subscript */
+	(objobjargproc)NULL,    /* mp_ass_subscript */
+};
+
 static PyTypeObject listdir_stat_type = {
 	PyVarObject_HEAD_INIT(NULL, 0) /* header */
 	"osutil.stat",             /*tp_name*/
@@ -134,7 +155,7 @@ static PyTypeObject listdir_stat_type = {
 	0,                         /*tp_repr*/
 	0,                         /*tp_as_number*/
 	0,                         /*tp_as_sequence*/
-	0,                         /*tp_as_mapping*/
+	&listdir_stat_type_mapping_methods, /*tp_as_mapping*/
 	0,                         /*tp_hash */
 	0,                         /*tp_call*/
 	0,                         /*tp_str*/
@@ -184,7 +205,7 @@ static PyObject *make_item(const WIN32_FIND_DATAA *fd, int wantstat)
 		? _S_IFDIR : _S_IFREG;
 
 	if (!wantstat)
-		return Py_BuildValue("si", fd->cFileName, kind);
+		return Py_BuildValue(PY23("si", "yi"), fd->cFileName, kind);
 
 	py_st = PyObject_CallObject((PyObject *)&listdir_stat_type, NULL);
 	if (!py_st)
@@ -202,7 +223,7 @@ static PyObject *make_item(const WIN32_FIND_DATAA *fd, int wantstat)
 	if (kind == _S_IFREG)
 		stp->st_size = ((__int64)fd->nFileSizeHigh << 32)
 				+ fd->nFileSizeLow;
-	return Py_BuildValue("siN", fd->cFileName,
+	return Py_BuildValue(PY23("siN", "yiN"), fd->cFileName,
 		kind, py_st);
 }
 
@@ -390,9 +411,11 @@ static PyObject *_listdir_stat(char *path, int pathlen, int keepstat,
 			stat = makestat(&st);
 			if (!stat)
 				goto error;
-			elem = Py_BuildValue("siN", ent->d_name, kind, stat);
+			elem = Py_BuildValue(PY23("siN", "yiN"), ent->d_name,
+					     kind, stat);
 		} else
-			elem = Py_BuildValue("si", ent->d_name, kind);
+			elem = Py_BuildValue(PY23("si", "yi"), ent->d_name,
+					     kind);
 		if (!elem)
 			goto error;
 		stat = NULL;
@@ -570,9 +593,11 @@ static PyObject *_listdir_batch(char *path, int pathlen, int keepstat,
 				stat = makestat(&st);
 				if (!stat)
 					goto error;
-				elem = Py_BuildValue("siN", filename, kind, stat);
+				elem = Py_BuildValue(PY23("siN", "yiN"),
+						     filename, kind, stat);
 			} else
-				elem = Py_BuildValue("si", filename, kind);
+				elem = Py_BuildValue(PY23("si", "yi"),
+						     filename, kind);
 			if (!elem)
 				goto error;
 			stat = NULL;
@@ -754,7 +779,7 @@ bail:
 static PyObject *setprocname(PyObject *self, PyObject *args)
 {
 	const char *name = NULL;
-	if (!PyArg_ParseTuple(args, "s", &name))
+	if (!PyArg_ParseTuple(args, PY23("s", "y"), &name))
 		return NULL;
 
 #if defined(SETPROCNAME_USE_SETPROCTITLE)
@@ -1101,14 +1126,14 @@ static PyObject *getfstype(PyObject *self, PyObject *args)
 	const char *path = NULL;
 	struct statfs buf;
 	int r;
-	if (!PyArg_ParseTuple(args, "s", &path))
+	if (!PyArg_ParseTuple(args, PY23("s", "y"), &path))
 		return NULL;
 
 	memset(&buf, 0, sizeof(buf));
 	r = statfs(path, &buf);
 	if (r != 0)
 		return PyErr_SetFromErrno(PyExc_OSError);
-	return Py_BuildValue("s", describefstype(&buf));
+	return Py_BuildValue(PY23("s", "y"), describefstype(&buf));
 }
 #endif /* defined(HAVE_LINUX_STATFS) || defined(HAVE_BSD_STATFS) */
 
@@ -1119,14 +1144,14 @@ static PyObject *getfsmountpoint(PyObject *self, PyObject *args)
 	const char *path = NULL;
 	struct statfs buf;
 	int r;
-	if (!PyArg_ParseTuple(args, "s", &path))
+	if (!PyArg_ParseTuple(args, PY23("s", "y"), &path))
 		return NULL;
 
 	memset(&buf, 0, sizeof(buf));
 	r = statfs(path, &buf);
 	if (r != 0)
 		return PyErr_SetFromErrno(PyExc_OSError);
-	return Py_BuildValue("s", buf.f_mntonname);
+	return Py_BuildValue(PY23("s", "y"), buf.f_mntonname);
 }
 #endif /* defined(HAVE_BSD_STATFS) */
 
@@ -1160,7 +1185,8 @@ static PyObject *listdir(PyObject *self, PyObject *args, PyObject *kwargs)
 
 	static char *kwlist[] = {"path", "stat", "skip", NULL};
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s#|OO:listdir",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, PY23("s#|OO:listdir",
+							    "y#|OO:listdir"),
 			kwlist, &path, &plen, &statobj, &skipobj))
 		return NULL;
 
@@ -1193,7 +1219,9 @@ static PyObject *posixfile(PyObject *self, PyObject *args, PyObject *kwds)
 	int plus;
 	FILE *fp;
 
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "et|si:posixfile", kwlist,
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, PY23("et|si:posixfile",
+							  "et|yi:posixfile"),
+					 kwlist,
 					 Py_FileSystemDefaultEncoding,
 					 &name, &mode, &bufsize))
 		return NULL;
@@ -1345,7 +1373,7 @@ static PyMethodDef methods[] = {
 	{NULL, NULL}
 };
 
-static const int version = 3;
+static const int version = 4;
 
 #ifdef IS_PY3K
 static struct PyModuleDef osutil_module = {

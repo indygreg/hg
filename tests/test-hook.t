@@ -3,8 +3,11 @@ commit hooks can see env vars
 
 
   $ cat > $TESTTMP/txnabort.checkargs.py <<EOF
+  > from mercurial import pycompat
   > def showargs(ui, repo, hooktype, **kwargs):
-  >     ui.write('%s Python hook: %s\n' % (hooktype, ','.join(sorted(kwargs))))
+  >     kwargs = pycompat.byteskwargs(kwargs)
+  >     ui.write(b'%s Python hook: %s\n' % (hooktype,
+  >                                         b','.join(sorted(kwargs))))
   > EOF
 
   $ hg init a
@@ -190,11 +193,11 @@ more there after
   00changelog.i
   00manifest.i
   data
-  fncache
+  fncache (repofncache !)
   journal.phaseroots
   phaseroots
   undo
-  undo.backup.fncache
+  undo.backup.fncache (repofncache !)
   undo.backupfiles
   undo.phaseroots
 
@@ -410,16 +413,19 @@ preoutgoing hook can prevent outgoing changes for local clones
 
   $ cat > hooktests.py <<EOF
   > from __future__ import print_function
-  > from mercurial import error
+  > from mercurial import (
+  >     error,
+  >     pycompat,
+  > )
   > 
   > uncallable = 0
   > 
   > def printargs(ui, args):
-  >     a = list(args.items())
+  >     a = list(pycompat.byteskwargs(args).items())
   >     a.sort()
-  >     ui.write('hook args:\n')
+  >     ui.write(b'hook args:\n')
   >     for k, v in a:
-  >        ui.write('  %s %s\n' % (k, v))
+  >        ui.write(b'  %s %s\n' % (k, v))
   > 
   > def passhook(ui, repo, **args):
   >     printargs(ui, args)
@@ -435,16 +441,16 @@ preoutgoing hook can prevent outgoing changes for local clones
   >     raise LocalException('exception from hook')
   > 
   > def aborthook(**args):
-  >     raise error.Abort('raise abort from hook')
+  >     raise error.Abort(b'raise abort from hook')
   > 
   > def brokenhook(**args):
   >     return 1 + {}
   > 
   > def verbosehook(ui, **args):
-  >     ui.note('verbose output from hook\n')
+  >     ui.note(b'verbose output from hook\n')
   > 
   > def printtags(ui, repo, **args):
-  >     ui.write('%s\n' % sorted(repo.tags()))
+  >     ui.write(b'[%s]\n' % b', '.join(sorted(repo.tags())))
   > 
   > class container:
   >     unreachable = 1
@@ -630,10 +636,10 @@ make sure --traceback works
 
   $ cat > hookext.py <<EOF
   > def autohook(ui, **args):
-  >     ui.write('Automatically installed hook\n')
+  >     ui.write(b'Automatically installed hook\n')
   > 
   > def reposetup(ui, repo):
-  >     repo.ui.setconfig("hooks", "commit.auto", autohook)
+  >     repo.ui.setconfig(b"hooks", b"commit.auto", autohook)
   > EOF
   $ echo '[extensions]' >> .hg/hgrc
   $ echo 'hookext = hookext.py' >> .hg/hgrc
@@ -667,7 +673,7 @@ test python hook configured with python:[file]:[hook] syntax
   $ cd hooks
   $ cat > testhooks.py <<EOF
   > def testhook(ui, **args):
-  >     ui.write('hook works\n')
+  >     ui.write(b'hook works\n')
   > EOF
   $ echo '[hooks]' > ../repo/.hg/hgrc
   $ echo "pre-commit.test = python:`pwd`/testhooks.py:testhook" >> ../repo/.hg/hgrc
@@ -766,7 +772,7 @@ new tags must be visible in pretxncommit (issue3210)
 
   $ echo 'pretxncommit.printtags = python:hooktests.printtags' >> .hg/hgrc
   $ hg tag -f foo
-  ['a', 'foo', 'tip']
+  [a, foo, tip]
 
 post-init hooks must not crash (issue4983)
 This also creates the `to` repo for the next test block.
@@ -886,7 +892,7 @@ Hook from untrusted hgrc are reported as failure
   > def uisetup(ui):
   >     class untrustedui(ui.__class__):
   >         def _trusted(self, fp, f):
-  >             if util.normpath(fp.name).endswith('untrusted/.hg/hgrc'):
+  >             if util.normpath(fp.name).endswith(b'untrusted/.hg/hgrc'):
   >                 return False
   >             return super(untrustedui, self)._trusted(fp, f)
   >     ui.__class__ = untrustedui

@@ -1,5 +1,16 @@
 #require killdaemons
 
+#if no-windows
+For debugging: this is a pretty simple test that is a good candidate
+for tracking down network-related bugs. Sometimes a command in this
+hangs, so having showstack pre-loaded is sometimes helpful. This also
+gives us a test that at least proves showstack can be loaded.
+  $ cat >> $HGRCPATH <<EOF
+  > [extensions]
+  > showstack = $TESTDIR/../contrib/showstack.py
+  > EOF
+#endif
+
   $ hg init test
   $ cd test
   $ echo a > a

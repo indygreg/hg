@@ -1363,13 +1363,18 @@ Supported arguments:
 ``args``
   The arguments to pass to the tool executable. You can refer to the
   files being merged as well as the output file through these
-  variables: ``$base``, ``$local``, ``$other``, ``$output``. The meaning
-  of ``$local`` and ``$other`` can vary depending on which action is being
-  performed. During and update or merge, ``$local`` represents the original
-  state of the file, while ``$other`` represents the commit you are updating
-  to or the commit you are merging with. During a rebase ``$local``
-  represents the destination of the rebase, and ``$other`` represents the
-  commit being rebased.
+  variables: ``$base``, ``$local``, ``$other``, ``$output``.
+
+  The meaning of ``$local`` and ``$other`` can vary depending on which action is
+  being performed. During an update or merge, ``$local`` represents the original
+  state of the file, while ``$other`` represents the commit you are updating to or
+  the commit you are merging with. During a rebase, ``$local`` represents the
+  destination of the rebase, and ``$other`` represents the commit being rebased.
+
+  Some operations define custom labels to assist with identifying the revisions,
+  accessible via ``$labellocal``, ``$labelother``, and ``$labelbase``. If custom
+  labels are not available, these will be ``local``, ``other``, and ``base``,
+  respectively.
   (default: ``$local $base $other``)
 
 ``premerge``
@@ -1404,6 +1409,21 @@ Supported arguments:
 
 ``gui``
   This tool requires a graphical interface to run. (default: False)
+
+``mergemarkers``
+  Controls whether the labels passed via ``$labellocal``, ``$labelother``, and
+  ``$labelbase`` are ``detailed`` (respecting ``mergemarkertemplate``) or
+  ``basic``. If ``premerge`` is ``keep`` or ``keep-merge3``, the conflict
+  markers generated during premerge will be ``detailed`` if either this option or
+  the corresponding option in the ``[ui]`` section is ``detailed``.
+  (default: ``basic``)
+
+``mergemarkertemplate``
+  This setting can be used to override ``mergemarkertemplate`` from the ``[ui]``
+  section on a per-tool basis; this applies to the ``$label``-prefixed variables
+  and to the conflict markers that are generated if ``premerge`` is ``keep` or
+  ``keep-merge3``. See the corresponding variable in ``[ui]`` for more
+  information.
 
 .. container:: windows
 
@@ -1564,8 +1584,7 @@ profiler (named ``stat``).
 
 In this section description, 'profiling data' stands for the raw data
 collected during profiling, while 'profiling report' stands for a
-statistical text report generated from the profiling data. The
-profiling is done using lsprof.
+statistical text report generated from the profiling data.
 
 ``enabled``
     Enable the profiler.
@@ -1637,7 +1656,7 @@ profiling is done using lsprof.
     Show at most this number of lines of drill-down info after each main entry.
     This can help explain the difference between Total and Inline.
     Specific to the ``ls`` instrumenting profiler.
-    (default: 5)
+    (default: 0)
 
 ``showmin``
     Minimum fraction of samples an entry must have for it to be displayed.
@@ -1771,6 +1790,19 @@ Controls generic server settings.
     If this option is set, ``preferuncompressed`` and/or clone bundles
     are highly recommended. Partial clones will still be allowed.
     (default: False)
+
+``streamunbundle``
+    When set, servers will apply data sent from the client directly,
+    otherwise it will be written to a temporary file first. This option
+    effectively prevents concurrent pushes.
+
+``pullbundle``
+    When set, the server will check pullbundle.manifest for bundles
+    covering the requested heads and common nodes. The first matching
+    entry will be streamed to the client.
+
+    For HTTP transport, the stream will still use zlib compression
+    for older clients.
 
 ``concurrent-push-mode``
     Level of allowed race condition between two pushing clients.
@@ -2119,6 +2151,8 @@ User interface controls.
     environment variables that govern your locale. If the encoding of the merge
     markers is different from the encoding of the merged files,
     serious problems may occur.
+
+    Can be overridden per-merge-tool, see the ``[merge-tools]`` section.
 
 ``origbackuppath``
     The path to a directory used to store generated .orig files. If the path is
@@ -2505,6 +2539,9 @@ The full set of options is:
 
     Values less than or equal to 0 always refresh.
     (default: 20)
+
+``server-header``
+    Value for HTTP ``Server`` response header.
 
 ``staticurl``
     Base URL to use for static files. If unset, static files (e.g. the

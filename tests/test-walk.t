@@ -304,12 +304,10 @@
   f  beans/turtle    beans/turtle
   $ hg debugwalk -Xbeans/black beans/black
   matcher: <differencematcher m1=<patternmatcher patterns='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans\\/black(?:/|$))'>>
-  f  beans/black  beans/black  exact
   $ hg debugwalk -Xbeans/black -Ibeans/black
   matcher: <differencematcher m1=<includematcher includes='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans\\/black(?:/|$))'>>
   $ hg debugwalk -Xbeans beans/black
   matcher: <differencematcher m1=<patternmatcher patterns='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
-  f  beans/black  beans/black  exact
   $ hg debugwalk -Xbeans -Ibeans/black
   matcher: <differencematcher m1=<includematcher includes='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
   $ hg debugwalk 'glob:mammals/../beans/b*'
@@ -345,17 +343,13 @@
   [255]
 
 Test explicit paths and excludes:
-(BROKEN: nothing should be included, but wctx.walk() does)
 
   $ hg debugwalk fennel -X fennel
   matcher: <differencematcher m1=<patternmatcher patterns='(?:fennel(?:/|$))'>, m2=<includematcher includes='(?:fennel(?:/|$))'>>
-  f  fennel  fennel  exact
   $ hg debugwalk fennel -X 'f*'
   matcher: <differencematcher m1=<patternmatcher patterns='(?:fennel(?:/|$))'>, m2=<includematcher includes='(?:f[^/]*(?:/|$))'>>
-  f  fennel  fennel  exact
   $ hg debugwalk beans/black -X 'path:beans'
   matcher: <differencematcher m1=<patternmatcher patterns='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
-  f  beans/black  beans/black  exact
   $ hg debugwalk -I 'path:beans/black' -X 'path:beans'
   matcher: <differencematcher m1=<includematcher includes='(?:beans\\/black(?:/|$))'>, m2=<includematcher includes='(?:beans(?:/|$))'>>
 
@@ -494,12 +488,12 @@ Test patterns:
 
 Test listfile and listfile0
 
-  $ $PYTHON -c "file('listfile0', 'wb').write('fenugreek\0new\0')"
+  $ $PYTHON -c "open('listfile0', 'wb').write(b'fenugreek\0new\0')"
   $ hg debugwalk -I 'listfile0:listfile0'
   matcher: <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$))'>
   f  fenugreek  fenugreek
   f  new        new
-  $ $PYTHON -c "file('listfile', 'wb').write('fenugreek\nnew\r\nmammals/skunk\n')"
+  $ $PYTHON -c "open('listfile', 'wb').write(b'fenugreek\nnew\r\nmammals/skunk\n')"
   $ hg debugwalk -I 'listfile:listfile'
   matcher: <includematcher includes='(?:fenugreek(?:/|$)|new(?:/|$)|mammals\\/skunk(?:/|$))'>
   f  fenugreek      fenugreek
@@ -525,7 +519,12 @@ Test split patterns on overflow
 
   $ cd t
   $ echo fennel > overflow.list
-  $ $PYTHON -c "for i in xrange(20000 / 100): print 'x' * 100" >> overflow.list
+  $ cat >> printnum.py <<EOF
+  > from __future__ import print_function
+  > for i in range(20000 // 100):
+  >   print('x' * 100)
+  > EOF
+  $ $PYTHON printnum.py >> overflow.list
   $ echo fenugreek >> overflow.list
   $ hg debugwalk 'listfile:overflow.list' 2>&1 | egrep -v '(^matcher: |^xxx)'
   f  fennel     fennel     exact

@@ -1,3 +1,5 @@
+#require repofncache
+
 Init repo1:
 
   $ hg init repo1
@@ -236,7 +238,7 @@ Aborting lock does not prevent fncache writes
   >             wlock.release()
   > 
   > def extsetup(ui):
-  >     extensions.wrapcommand(commands.table, "commit", commitwrap)
+  >     extensions.wrapcommand(commands.table, b"commit", commitwrap)
   > EOF
   $ extpath=`pwd`/exceptionext.py
   $ hg init fncachetxn
@@ -259,14 +261,14 @@ Aborting transaction prevents fncache change
   > def wrapper(orig, self, *args, **kwargs):
   >     tr = orig(self, *args, **kwargs)
   >     def fail(tr):
-  >         raise error.Abort("forced transaction failure")
+  >         raise error.Abort(b"forced transaction failure")
   >     # zzz prefix to ensure it sorted after store.write
-  >     tr.addfinalize('zzz-forcefails', fail)
+  >     tr.addfinalize(b'zzz-forcefails', fail)
   >     return tr
   > 
   > def uisetup(ui):
   >     extensions.wrapfunction(
-  >         localrepo.localrepository, 'transaction', wrapper)
+  >         localrepo.localrepository, b'transaction', wrapper)
   > 
   > cmdtable = {}
   > 

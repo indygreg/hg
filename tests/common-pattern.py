@@ -22,6 +22,7 @@ substitutions = [
      br'phases%253Dheads%250A'
      br'pushkey%250A'
      br'remote-changegroup%253Dhttp%252Chttps%250A'
+     br'rev-branch-cache%250A'
      br'stream%253Dv2',
      # (the replacement patterns)
      br'$USUAL_BUNDLE_CAPS$'
@@ -50,6 +51,7 @@ substitutions = [
      br'phases%3Dheads%0A'
      br'pushkey%0A'
      br'remote-changegroup%3Dhttp%2Chttps%0A'
+     br'rev-branch-cache%0A'
      br'stream%3Dv2',
      # (replacement patterns)
      br'$USUAL_BUNDLE2_CAPS$'
@@ -64,13 +66,26 @@ substitutions = [
      br'listkeys%0A'
      br'phases%3Dheads%0A'
      br'pushkey%0A'
-     br'remote-changegroup%3Dhttp%2Chttps',
+     br'remote-changegroup%3Dhttp%2Chttps%0A'
+     br'rev-branch-cache',
      # (replacement patterns)
      br'$USUAL_BUNDLE2_CAPS_SERVER$'
      ),
-    # HTTP log dates
-    (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "GET',
-     br' - - [$LOGDATE$] "GET'
+    # HTTP access log dates
+    (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] "(GET|PUT|POST)',
+     lambda m: br' - - [$LOGDATE$] "' + m.group(1)
+    ),
+    # HTTP error log dates
+    (br' - - \[\d\d/.../2\d\d\d \d\d:\d\d:\d\d] (HG error:|Exception)',
+     lambda m: br' - - [$ERRDATE$] ' + m.group(1)
+    ),
+    # HTTP header dates- RFC 1123
+    (br'([Dd]ate): [A-Za-z]{3}, \d\d [A-Za-z]{3} \d{4} \d\d:\d\d:\d\d GMT',
+     lambda m: br'%s: $HTTP_DATE$' % m.group(1)
+    ),
+    # LFS expiration value
+    (br'"expires_at": "\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ"',
+     br'"expires_at": "$ISO_8601_DATE_TIME$"'
     ),
     # Windows has an extra '/' in the following lines that get globbed away:
     #   pushing to file:/*/$TESTTMP/r2 (glob)

@@ -31,7 +31,6 @@ except ImportError:
 
 osutil = policy.importmod(r'osutil')
 
-executablepath = win32.executablepath
 getfsmountpoint = win32.getvolumename
 getfstype = win32.getfstype
 getuser = win32.getuser
@@ -296,22 +295,21 @@ def shellquote(s):
         return s
     return '"%s"' % _quotere.sub(r'\1\1\\\2', s)
 
+def _unquote(s):
+    if s.startswith(b'"') and s.endswith(b'"'):
+        return s[1:-1]
+    return s
+
+def shellsplit(s):
+    """Parse a command string in cmd.exe way (best-effort)"""
+    return pycompat.maplist(_unquote, pycompat.shlexsplit(s, posix=False))
+
 def quotecommand(cmd):
     """Build a command string suitable for os.popen* calls."""
     if sys.version_info < (2, 7, 1):
         # Python versions since 2.7.1 do this extra quoting themselves
         return '"' + cmd + '"'
     return cmd
-
-def popen(command, mode='r'):
-    # Work around "popen spawned process may not write to stdout
-    # under windows"
-    # http://bugs.python.org/issue1366
-    command += " 2> %s" % os.devnull
-    return os.popen(quotecommand(command), mode)
-
-def explainexit(code):
-    return _("exited with status %d") % code, code
 
 # if you change this stub into a real check, please try to implement the
 # username and groupname functions above, too.

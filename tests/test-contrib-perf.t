@@ -114,6 +114,7 @@ perfstatus
    perftags      (no help text available)
    perftemplating
                  (no help text available)
+   perfunidiff   benchmark a unified diff between revisions
    perfvolatilesets
                  benchmark the computation of various volatile set
    perfwalk      (no help text available)
@@ -126,6 +127,8 @@ perfstatus
   $ hg perfannotate a
   $ hg perfbdiff -c 1
   $ hg perfbdiff --alldata 1
+  $ hg perfunidiff -c 1
+  $ hg perfunidiff --alldata 1
   $ hg perfbookmarks
   $ hg perfbranchmap
   $ hg perfcca
@@ -139,9 +142,11 @@ perfstatus
   $ hg perfdirstatedirs
   $ hg perfdirstatefoldmap
   $ hg perfdirstatewrite
+#if repofncache
   $ hg perffncacheencode
   $ hg perffncacheload
   $ hg perffncachewrite
+#endif
   $ hg perfheads
   $ hg perfindex
   $ hg perfloadmarkers
@@ -155,7 +160,9 @@ perfstatus
   $ hg perfpathcopies 1 2
   $ hg perfrawfiles 2
   $ hg perfrevlogindex -c
+#if reporevlogstore
   $ hg perfrevlogrevisions .hg/store/data/a.i
+#endif
   $ hg perfrevlogrevision -m 0
   $ hg perfrevlogchunks -c
   $ hg perfrevrange

@@ -9,8 +9,10 @@ from __future__ import absolute_import
 
 import struct
 
-_b85chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
-            "abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~"
+from .. import pycompat
+
+_b85chars = pycompat.bytestr("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdef"
+                             "ghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~")
 _b85chars2 = [(a + b) for a in _b85chars for b in _b85chars]
 _b85dec = {}
 
@@ -51,6 +53,7 @@ def b85decode(text):
     out = []
     for i in range(0, len(text), 5):
         chunk = text[i:i + 5]
+        chunk = pycompat.bytestr(chunk)
         acc = 0
         for j, c in enumerate(chunk):
             try:

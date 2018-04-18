@@ -20,10 +20,9 @@ static void ZstdDecompressorIterator_dealloc(ZstdDecompressorIterator* self) {
 	Py_XDECREF(self->decompressor);
 	Py_XDECREF(self->reader);
 
-	if (self->buffer) {
-		PyBuffer_Release(self->buffer);
-		PyMem_FREE(self->buffer);
-		self->buffer = NULL;
+	if (self->buffer.buf) {
+		PyBuffer_Release(&self->buffer);
+		memset(&self->buffer, 0, sizeof(self->buffer));
 	}
 
 	if (self->input.src) {
@@ -45,8 +44,6 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 	DecompressorIteratorResult result;
 	size_t oldInputPos = self->input.pos;
 
-	assert(self->decompressor->dstream);
-
 	result.chunk = NULL;
 
 	chunk = PyBytes_FromStringAndSize(NULL, self->outSize);
@@ -60,7 +57,7 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 	self->output.pos = 0;
 
 	Py_BEGIN_ALLOW_THREADS
-	zresult = ZSTD_decompressStream(self->decompressor->dstream, &self->output, &self->input);
+	zresult = ZSTD_decompress_generic(self->decompressor->dctx, &self->output, &self->input);
 	Py_END_ALLOW_THREADS
 
 	/* We're done with the pointer. Nullify to prevent anyone from getting a
@@ -86,7 +83,8 @@ static DecompressorIteratorResult read_decompressor_iterator(ZstdDecompressorIte
 	/* If it produced output data, return it. */
 	if (self->output.pos) {
 		if (self->output.pos < self->outSize) {
-			if (_PyBytes_Resize(&chunk, self->output.pos)) {
+			if (safe_pybytes_resize(&chunk, self->output.pos)) {
+				Py_XDECREF(chunk);
 				result.errored = 1;
 				return result;
 			}
@@ -137,15 +135,15 @@ read_from_source:
 			PyBytes_AsStringAndSize(readResult, &readBuffer, &readSize);
 		}
 		else {
-			assert(self->buffer && self->buffer->buf);
+			assert(self->buffer.buf);
 
 			/* Only support contiguous C arrays for now */
-			assert(self->buffer->strides == NULL && self->buffer->suboffsets == NULL);
-			assert(self->buffer->itemsize == 1);
+			assert(self->buffer.strides == NULL && self->buffer.suboffsets == NULL);
+			assert(self->buffer.itemsize == 1);
 
 			/* TODO avoid memcpy() below */
-			readBuffer = (char *)self->buffer->buf + self->bufferOffset;
-			bufferRemaining = self->buffer->len - self->bufferOffset;
+			readBuffer = (char *)self->buffer.buf + self->bufferOffset;
+			bufferRemaining = self->buffer.len - self->bufferOffset;
 			readSize = min(bufferRemaining, (Py_ssize_t)self->inSize);
 			self->bufferOffset += readSize;
 		}

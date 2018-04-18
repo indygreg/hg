@@ -49,7 +49,7 @@ don't sit forever trying to double-lock the source repo
 
 Test files are read in binary mode
 
-  $ $PYTHON -c "file('.hg/store/data/dummy.i', 'wb').write('a\r\nb\n')"
+  $ $PYTHON -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\r\nb\n')"
   $ cd ..
 
 
@@ -68,10 +68,12 @@ clone and pull to break links
   $ echo b >> b
   $ hg ci -m changeb
   created new head
-  $ $PYTHON -c "file('.hg/store/data/dummy.i', 'wb').write('a\nb\r\n')"
+  $ $PYTHON -c "open('.hg/store/data/dummy.i', 'wb').write(b'a\nb\r\n')"
 
 
 relink
+
+#if no-reposimplestore
 
   $ hg relink --debug --config progress.debug=true | fix_path
   relinking $TESTTMP/repo/.hg/store to $TESTTMP/clone/.hg/store
@@ -101,3 +103,4 @@ check hardlinks
   $ $PYTHON arelinked.py repo/.hg/store/data/b.i clone/.hg/store/data/b.i
   repo/.hg/store/data/b.i != clone/.hg/store/data/b.i
 
+#endif

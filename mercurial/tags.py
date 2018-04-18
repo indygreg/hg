@@ -28,6 +28,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 # Tags computation can be expensive and caches exist to make it fast in
 # the common case.
@@ -244,7 +247,7 @@ def readlocaltags(ui, repo, alltags, tagtypes):
 
     # remove tags pointing to invalid nodes
     cl = repo.changelog
-    for t in filetags.keys():
+    for t in list(filetags):
         try:
             cl.rev(filetags[t][0])
         except (LookupError, ValueError):
@@ -276,7 +279,7 @@ def _readtaghist(ui, repo, lines, fn, recode=None, calcnodelines=False):
     count = 0
 
     def dbg(msg):
-        ui.debug("%s, line %s: %s\n" % (fn, count, msg))
+        ui.debug("%s, line %d: %s\n" % (fn, count, msg))
 
     for nline, line in enumerate(lines):
         count += 1
@@ -559,7 +562,7 @@ def _tag(repo, names, node, message, local, user, date, extra=None,
 
     def writetags(fp, names, munge, prevtags):
         fp.seek(0, 2)
-        if prevtags and prevtags[-1] != '\n':
+        if prevtags and not prevtags.endswith('\n'):
             fp.write('\n')
         for name in names:
             if munge:
@@ -739,7 +742,7 @@ class hgtagsfnodescache(object):
         entry = bytearray(prefix + fnode)
         self._raw[offset:offset + _fnodesrecsize] = entry
         # self._dirtyoffset could be None.
-        self._dirtyoffset = min(self._dirtyoffset, offset) or 0
+        self._dirtyoffset = min(self._dirtyoffset or 0, offset or 0)
 
     def write(self):
         """Perform all necessary writes to cache file.
@@ -783,6 +786,6 @@ class hgtagsfnodescache(object):
         except (IOError, OSError) as inst:
             repo.ui.log('tagscache',
                         "couldn't write cache/%s: %s\n" % (
-                        _fnodescachefile, inst))
+                            _fnodescachefile, stringutil.forcebytestr(inst)))
         finally:
             lock.release()

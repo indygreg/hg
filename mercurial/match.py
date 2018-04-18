@@ -13,9 +13,14 @@ import re
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     pathutil,
+    pycompat,
     util,
+)
+from .utils import (
+    stringutil,
 )
 
 allpatternkinds = ('re', 'glob', 'path', 'relglob', 'relpath', 'relre',
@@ -225,7 +230,7 @@ def _donormalize(patterns, default, root, cwd, auditor, warn):
             except IOError as inst:
                 if warn:
                     warn(_("skipping unreadable pattern file '%s': %s\n") %
-                         (pat, inst.strerror))
+                         (pat, stringutil.forcebytestr(inst.strerror)))
             continue
         # else: re or relre - which cannot be normalized
         kindpats.append((kind, pat, ''))
@@ -345,7 +350,7 @@ class alwaysmatcher(basematcher):
         return 'all'
 
     def __repr__(self):
-        return '<alwaysmatcher>'
+        return r'<alwaysmatcher>'
 
 class nevermatcher(basematcher):
     '''Matches nothing.'''
@@ -368,7 +373,7 @@ class nevermatcher(basematcher):
         return False
 
     def __repr__(self):
-        return '<nevermatcher>'
+        return r'<nevermatcher>'
 
 class patternmatcher(basematcher):
 
@@ -397,6 +402,7 @@ class patternmatcher(basematcher):
     def prefix(self):
         return self._prefix
 
+    @encoding.strmethod
     def __repr__(self):
         return ('<patternmatcher patterns=%r>' % self._pats)
 
@@ -424,8 +430,9 @@ class includematcher(basematcher):
                 any(parentdir in self._roots
                     for parentdir in util.finddirs(dir)))
 
+    @encoding.strmethod
     def __repr__(self):
-        return ('<includematcher includes=%r>' % self._pats)
+        return ('<includematcher includes=%r>' % pycompat.bytestr(self._pats))
 
 class exactmatcher(basematcher):
     '''Matches the input files exactly. They are interpreted as paths, not
@@ -452,6 +459,7 @@ class exactmatcher(basematcher):
     def isexact(self):
         return True
 
+    @encoding.strmethod
     def __repr__(self):
         return ('<exactmatcher files=%r>' % self._files)
 
@@ -492,6 +500,7 @@ class differencematcher(basematcher):
     def isexact(self):
         return self._m1.isexact()
 
+    @encoding.strmethod
     def __repr__(self):
         return ('<differencematcher m1=%r, m2=%r>' % (self._m1, self._m2))
 
@@ -558,6 +567,7 @@ class intersectionmatcher(basematcher):
     def isexact(self):
         return self._m1.isexact() or self._m2.isexact()
 
+    @encoding.strmethod
     def __repr__(self):
         return ('<intersectionmatcher m1=%r, m2=%r>' % (self._m1, self._m2))
 
@@ -638,6 +648,7 @@ class subdirmatcher(basematcher):
     def prefix(self):
         return self._matcher.prefix() and not self._always
 
+    @encoding.strmethod
     def __repr__(self):
         return ('<subdirmatcher path=%r, matcher=%r>' %
                 (self._path, self._matcher))
@@ -671,6 +682,7 @@ class unionmatcher(basematcher):
             r |= v
         return r
 
+    @encoding.strmethod
     def __repr__(self):
         return ('<unionmatcher matchers=%r>' % self._matchers)
 

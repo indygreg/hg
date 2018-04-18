@@ -43,7 +43,7 @@ create monotone repository
   $ mkdir dir
   $ echo b > dir/b
   $ echo d > dir/d
-  $ $PYTHON -c 'file("bin", "wb").write("a\\x00b")'
+  $ $PYTHON -c 'open("bin", "wb").write(b"a\\x00b")'
   $ echo c > c
   $ mtn add a dir/b dir/d c bin
   mtn: adding 'a' to workspace manifest
@@ -65,7 +65,7 @@ update monotone working directory
   $ echo b >> dir/b
   $ mtn drop c
   mtn: dropping 'c' from workspace manifest
-  $ $PYTHON -c 'file("bin", "wb").write("b\\x00c")'
+  $ $PYTHON -c 'open("bin", "wb").write(b"b\\x00c")'
   $ mtn ci -m update1
   mtn: beginning commit on branch 'com.selenic.test'
   mtn: committed revision 51d0a982464573a2a2cf5ee2c9219c652aaebeff
@@ -217,8 +217,8 @@ test diverging directory moves
 
 test large file support (> 32kB)
 
-  >>> fp = file('large-file', 'wb')
-  >>> for x in xrange(10000): fp.write('%d\n' % x)
+  >>> fp = open('large-file', 'wb')
+  >>> for x in range(10000): fp.write(b'%d\n' % x)
   >>> fp.close()
   $ md5sum.py large-file
   5d6de8a95c3b6bf9e0ffb808ba5299c1  large-file

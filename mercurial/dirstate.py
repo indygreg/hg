@@ -49,7 +49,7 @@ def _getfsnow(vfs):
     '''Get "now" timestamp on filesystem'''
     tmpfd, tmpname = vfs.mkstemp()
     try:
-        return os.fstat(tmpfd).st_mtime
+        return os.fstat(tmpfd)[stat.ST_MTIME]
     finally:
         os.close(tmpfd)
         vfs.unlink(tmpname)
@@ -98,27 +98,6 @@ class dirstate(object):
         # parentwriters if the code in the with statement exits
         # normally, so we don't have a try/finally here on purpose.
         self._parentwriters -= 1
-
-    def beginparentchange(self):
-        '''Marks the beginning of a set of changes that involve changing
-        the dirstate parents. If there is an exception during this time,
-        the dirstate will not be written when the wlock is released. This
-        prevents writing an incoherent dirstate where the parent doesn't
-        match the contents.
-        '''
-        self._ui.deprecwarn('beginparentchange is obsoleted by the '
-                            'parentchange context manager.', '4.3')
-        self._parentwriters += 1
-
-    def endparentchange(self):
-        '''Marks the end of a set of changes that involve changing the
-        dirstate parents. Once all parent changes have been marked done,
-        the wlock will be free to write the dirstate on release.
-        '''
-        self._ui.deprecwarn('endparentchange is obsoleted by the '
-                            'parentchange context manager.', '4.3')
-        if self._parentwriters > 0:
-            self._parentwriters -= 1
 
     def pendingparentchange(self):
         '''Returns true if the dirstate is in the middle of a set of changes
@@ -360,7 +339,7 @@ class dirstate(object):
         rereads the dirstate. Use localrepo.invalidatedirstate() if you want to
         check whether the dirstate has changed before rereading it.'''
 
-        for a in ("_map", "_branch", "_ignore"):
+        for a in (r"_map", r"_branch", r"_ignore"):
             if a in self.__dict__:
                 delattr(self, a)
         self._lastnormaltime = 0
@@ -392,7 +371,8 @@ class dirstate(object):
         if state == 'a' or oldstate == 'r':
             scmutil.checkfilename(f)
             if self._map.hastrackeddir(f):
-                raise error.Abort(_('directory %r already in dirstate') % f)
+                raise error.Abort(_('directory %r already in dirstate') %
+                                  pycompat.bytestr(f))
             # shadows
             for d in util.finddirs(f):
                 if self._map.hastrackeddir(d):
@@ -400,7 +380,8 @@ class dirstate(object):
                 entry = self._map.get(d)
                 if entry is not None and entry[0] != 'r':
                     raise error.Abort(
-                        _('file %r in dirstate clashes with %r') % (d, f))
+                        _('file %r in dirstate clashes with %r') %
+                        (pycompat.bytestr(d), pycompat.bytestr(f)))
         self._dirty = True
         self._updatedfiles.add(f)
         self._map.addfile(f, oldstate, state, mode, size, mtime)
@@ -408,7 +389,7 @@ class dirstate(object):
     def normal(self, f):
         '''Mark a file normal and clean.'''
         s = os.lstat(self._join(f))
-        mtime = s.st_mtime
+        mtime = s[stat.ST_MTIME]
         self._addpath(f, 'n', s.st_mode,
                       s.st_size & _rangemask, mtime & _rangemask)
         self._map.copymap.pop(f, None)
@@ -647,7 +628,7 @@ class dirstate(object):
             self._origpl = None
         # use the modification time of the newly created temporary file as the
         # filesystem's notion of 'now'
-        now = util.fstat(st).st_mtime & _rangemask
+        now = util.fstat(st)[stat.ST_MTIME] & _rangemask
 
         # enough 'delaywrite' prevents 'pack_dirstate' from dropping
         # timestamp of each entries in dirstate, because of 'now > mtime'
@@ -807,6 +788,17 @@ class dirstate(object):
                         notfoundadd(nf)
                     else:
                         badfn(ff, encoding.strtolocal(inst.strerror))
+
+        # match.files() may contain explicitly-specified paths that shouldn't
+        # be taken; drop them from the list of files found. dirsfound/notfound
+        # aren't filtered here because they will be tested later.
+        if match.anypats():
+            for f in list(results):
+                if f == '.hg' or f in subrepos:
+                    # keep sentinel to disable further out-of-repo walks
+                    continue
+                if not match(f):
+                    del results[f]
 
         # Case insensitive filesystems cannot rely on lstat() failing to detect
         # a case-only rename.  Prune the stat object for any file that does not
@@ -1078,9 +1070,10 @@ class dirstate(object):
                     or size == -2 # other parent
                     or fn in copymap):
                     madd(fn)
-                elif time != st.st_mtime and time != st.st_mtime & _rangemask:
+                elif (time != st[stat.ST_MTIME]
+                      and time != st[stat.ST_MTIME] & _rangemask):
                     ladd(fn)
-                elif st.st_mtime == lastnormaltime:
+                elif st[stat.ST_MTIME] == lastnormaltime:
                     # fn may have just been marked as normal and it may have
                     # changed in the same second without changing its size.
                     # This can happen if we quickly do multiple commits.
@@ -1237,8 +1230,11 @@ class dirstatemap(object):
         util.clearcachedproperty(self, "nonnormalset")
         util.clearcachedproperty(self, "otherparentset")
 
-    def iteritems(self):
+    def items(self):
         return self._map.iteritems()
+
+    # forward for python2,3 compat
+    iteritems = items
 
     def __len__(self):
         return len(self._map)
@@ -1264,9 +1260,9 @@ class dirstatemap(object):
 
     def addfile(self, f, oldstate, state, mode, size, mtime):
         """Add a tracked file to the dirstate."""
-        if oldstate in "?r" and "_dirs" in self.__dict__:
+        if oldstate in "?r" and r"_dirs" in self.__dict__:
             self._dirs.addpath(f)
-        if oldstate == "?" and "_alldirs" in self.__dict__:
+        if oldstate == "?" and r"_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
         self._map[f] = dirstatetuple(state, mode, size, mtime)
         if state != 'n' or mtime == -1:
@@ -1282,11 +1278,11 @@ class dirstatemap(object):
         the file's previous state.  In the future, we should refactor this
         to be more explicit about what that state is.
         """
-        if oldstate not in "?r" and "_dirs" in self.__dict__:
+        if oldstate not in "?r" and r"_dirs" in self.__dict__:
             self._dirs.delpath(f)
-        if oldstate == "?" and "_alldirs" in self.__dict__:
+        if oldstate == "?" and r"_alldirs" in self.__dict__:
             self._alldirs.addpath(f)
-        if "filefoldmap" in self.__dict__:
+        if r"filefoldmap" in self.__dict__:
             normed = util.normcase(f)
             self.filefoldmap.pop(normed, None)
         self._map[f] = dirstatetuple('r', 0, size, 0)
@@ -1299,11 +1295,11 @@ class dirstatemap(object):
         """
         exists = self._map.pop(f, None) is not None
         if exists:
-            if oldstate != "r" and "_dirs" in self.__dict__:
+            if oldstate != "r" and r"_dirs" in self.__dict__:
                 self._dirs.delpath(f)
-            if "_alldirs" in self.__dict__:
+            if r"_alldirs" in self.__dict__:
                 self._alldirs.delpath(f)
-        if "filefoldmap" in self.__dict__:
+        if r"filefoldmap" in self.__dict__:
             normed = util.normcase(f)
             self.filefoldmap.pop(normed, None)
         self.nonnormalset.discard(f)
@@ -1438,7 +1434,7 @@ class dirstatemap(object):
             # This heuristic is imperfect in many ways, so in a future dirstate
             # format update it makes sense to just record the number of entries
             # on write.
-            self._map = parsers.dict_new_presized(len(st) / 71)
+            self._map = parsers.dict_new_presized(len(st) // 71)
 
         # Python's garbage collector triggers a GC each time a certain number
         # of container objects (the number being defined by

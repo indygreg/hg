@@ -13,7 +13,8 @@ from mercurial import (
     error,
     httppeer,
     util,
-    wireproto,
+    wireprototypes,
+    wireprotov1peer,
 )
 
 from . import (
@@ -34,27 +35,28 @@ httpoldcallstream = None
 def putlfile(repo, proto, sha):
     '''Server command for putting a largefile into a repository's local store
     and into the user cache.'''
-    proto.redirect()
+    with proto.mayberedirectstdio() as output:
+        path = lfutil.storepath(repo, sha)
+        util.makedirs(os.path.dirname(path))
+        tmpfp = util.atomictempfile(path, createmode=repo.store.createmode)
 
-    path = lfutil.storepath(repo, sha)
-    util.makedirs(os.path.dirname(path))
-    tmpfp = util.atomictempfile(path, createmode=repo.store.createmode)
+        try:
+            for p in proto.getpayload():
+                tmpfp.write(p)
+            tmpfp._fp.seek(0)
+            if sha != lfutil.hexsha1(tmpfp._fp):
+                raise IOError(0, _('largefile contents do not match hash'))
+            tmpfp.close()
+            lfutil.linktousercache(repo, sha)
+        except IOError as e:
+            repo.ui.warn(_('largefiles: failed to put %s into store: %s\n') %
+                         (sha, e.strerror))
+            return wireprototypes.pushres(
+                1, output.getvalue() if output else '')
+        finally:
+            tmpfp.discard()
 
-    try:
-        proto.getfile(tmpfp)
-        tmpfp._fp.seek(0)
-        if sha != lfutil.hexsha1(tmpfp._fp):
-            raise IOError(0, _('largefile contents do not match hash'))
-        tmpfp.close()
-        lfutil.linktousercache(repo, sha)
-    except IOError as e:
-        repo.ui.warn(_('largefiles: failed to put %s into store: %s\n') %
-                     (sha, e.strerror))
-        return wireproto.pushres(1)
-    finally:
-        tmpfp.discard()
-
-    return wireproto.pushres(0)
+    return wireprototypes.pushres(0, output.getvalue() if output else '')
 
 def getlfile(repo, proto, sha):
     '''Server command for retrieving a largefile from the repository-local
@@ -75,7 +77,7 @@ def getlfile(repo, proto, sha):
         yield '%d\n' % length
         for chunk in util.filechunkiter(f):
             yield chunk
-    return wireproto.streamres_legacy(gen=generator())
+    return wireprototypes.streamreslegacy(gen=generator())
 
 def statlfile(repo, proto, sha):
     '''Server command for checking if a largefile is present - returns '2\n' if
@@ -86,8 +88,8 @@ def statlfile(repo, proto, sha):
     server side.'''
     filename = lfutil.findfile(repo, sha)
     if not filename:
-        return '2\n'
-    return '0\n'
+        return wireprototypes.bytesresponse('2\n')
+    return wireprototypes.bytesresponse('0\n')
 
 def wirereposetup(ui, repo):
     class lfileswirerepository(repo.__class__):
@@ -97,7 +99,7 @@ def wirereposetup(ui, repo):
             # it ...
             if issubclass(self.__class__, httppeer.httppeer):
                 res = self._call('putlfile', data=fd, sha=sha,
-                    headers={'content-type':'application/mercurial-0.1'})
+                    headers={r'content-type': r'application/mercurial-0.1'})
                 try:
                     d, output = res.split('\n', 1)
                     for l in output.splitlines(True):
@@ -143,9 +145,9 @@ def wirereposetup(ui, repo):
                     self._abort(error.ResponseError(_("unexpected response:"),
                                                     chunk))
 
-        @wireproto.batchable
+        @wireprotov1peer.batchable
         def statlfile(self, sha):
-            f = wireproto.future()
+            f = wireprotov1peer.future()
             result = {'sha': sha}
             yield result, f
             try:
@@ -166,12 +168,13 @@ def _capabilities(orig, repo, proto):
     caps.append('largefiles=serve')
     return caps
 
-def heads(repo, proto):
+def heads(orig, repo, proto):
     '''Wrap server command - largefile capable clients will know to call
     lheads instead'''
     if lfutil.islfilesrepo(repo):
-        return wireproto.ooberror(LARGEFILES_REQUIRED_MSG)
-    return wireproto.heads(repo, proto)
+        return wireprototypes.ooberror(LARGEFILES_REQUIRED_MSG)
+
+    return orig(repo, proto)
 
 def sshrepocallstream(self, cmd, **args):
     if cmd == 'heads' and self.capable('largefiles'):
@@ -180,7 +183,7 @@ def sshrepocallstream(self, cmd, **args):
         args[r'cmds'] = args[r'cmds'].replace('heads ', 'lheads ')
     return ssholdcallstream(self, cmd, **args)
 
-headsre = re.compile(r'(^|;)heads\b')
+headsre = re.compile(br'(^|;)heads\b')
 
 def httprepocallstream(self, cmd, **args):
     if cmd == 'heads' and self.capable('largefiles'):

@@ -32,8 +32,12 @@ class wirestore(remotestore.remotestore):
         '''For each hash, return 0 if it is available, other values if not.
         It is usually 2 if the largefile is missing, but might be 1 the server
         has a corrupted copy.'''
-        batch = self.remote.iterbatch()
-        for hash in hashes:
-            batch.statlfile(hash)
-        batch.submit()
-        return dict(zip(hashes, batch.results()))
+
+        with self.remote.commandexecutor() as e:
+            fs = []
+            for hash in hashes:
+                fs.append((hash, e.callcommand('statlfile', {
+                    'sha': hash,
+                })))
+
+            return {hash: f.result() for hash, f in fs}

@@ -319,6 +319,9 @@ def _calcmode(vfs):
 _data = ('data meta 00manifest.d 00manifest.i 00changelog.d 00changelog.i'
          ' phaseroots obsstore')
 
+def isrevlog(f, kind, st):
+    return kind == stat.S_IFREG and f[-2:] in ('.i', '.d')
+
 class basicstore(object):
     '''base class for local repository stores'''
     def __init__(self, path, vfstype):
@@ -333,7 +336,7 @@ class basicstore(object):
     def join(self, f):
         return self.path + '/' + encodedir(f)
 
-    def _walk(self, relpath, recurse):
+    def _walk(self, relpath, recurse, filefilter=isrevlog):
         '''yields (unencoded, encoded, size)'''
         path = self.path
         if relpath:
@@ -347,7 +350,7 @@ class basicstore(object):
                 p = visit.pop()
                 for f, kind, st in readdir(p, stat=True):
                     fp = p + '/' + f
-                    if kind == stat.S_IFREG and f[-2:] in ('.d', '.i'):
+                    if filefilter(f, kind, st):
                         n = util.pconvert(fp[striplen:])
                         l.append((decodedir(n), n, st.st_size))
                     elif kind == stat.S_IFDIR and recurse:

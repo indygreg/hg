@@ -7,7 +7,7 @@
  * GNU General Public License version 2 or any later version.
  */
 
-#include <arpa/inet.h>  /* for ntohl(), htonl() */
+#include <arpa/inet.h> /* for ntohl(), htonl() */
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -26,16 +26,15 @@
 #include "procutil.h"
 #include "util.h"
 
-enum {
-	CAP_GETENCODING = 0x0001,
-	CAP_RUNCOMMAND = 0x0002,
-	/* cHg extension: */
-	CAP_ATTACHIO = 0x0100,
-	CAP_CHDIR = 0x0200,
-	CAP_SETENV = 0x0800,
-	CAP_SETUMASK = 0x1000,
-	CAP_VALIDATE = 0x2000,
-	CAP_SETPROCNAME = 0x4000,
+enum { CAP_GETENCODING = 0x0001,
+       CAP_RUNCOMMAND = 0x0002,
+       /* cHg extension: */
+       CAP_ATTACHIO = 0x0100,
+       CAP_CHDIR = 0x0200,
+       CAP_SETENV = 0x0800,
+       CAP_SETUMASK = 0x1000,
+       CAP_VALIDATE = 0x2000,
+       CAP_SETPROCNAME = 0x4000,
 };
 
 typedef struct {
@@ -44,15 +43,15 @@ typedef struct {
 } cappair_t;
 
 static const cappair_t captable[] = {
-	{"getencoding", CAP_GETENCODING},
-	{"runcommand", CAP_RUNCOMMAND},
-	{"attachio", CAP_ATTACHIO},
-	{"chdir", CAP_CHDIR},
-	{"setenv", CAP_SETENV},
-	{"setumask", CAP_SETUMASK},
-	{"validate", CAP_VALIDATE},
-	{"setprocname", CAP_SETPROCNAME},
-	{NULL, 0},  /* terminator */
+    {"getencoding", CAP_GETENCODING},
+    {"runcommand", CAP_RUNCOMMAND},
+    {"attachio", CAP_ATTACHIO},
+    {"chdir", CAP_CHDIR},
+    {"setenv", CAP_SETENV},
+    {"setumask", CAP_SETUMASK},
+    {"validate", CAP_VALIDATE},
+    {"setprocname", CAP_SETPROCNAME},
+    {NULL, 0}, /* terminator */
 };
 
 typedef struct {
@@ -88,8 +87,8 @@ static void enlargecontext(context_t *ctx, size_t newsize)
 	if (newsize <= ctx->maxdatasize)
 		return;
 
-	newsize = defaultdatasize
-		* ((newsize + defaultdatasize - 1) / defaultdatasize);
+	newsize = defaultdatasize *
+	          ((newsize + defaultdatasize - 1) / defaultdatasize);
 	ctx->data = reallocx(ctx->data, newsize);
 	ctx->maxdatasize = newsize;
 	debugmsg("enlarge context buffer to %zu", ctx->maxdatasize);
@@ -126,12 +125,12 @@ static void readchannel(hgclient_t *hgc)
 	enlargecontext(&hgc->ctx, hgc->ctx.datasize);
 
 	if (isupper(hgc->ctx.ch) && hgc->ctx.ch != 'S')
-		return;  /* assumes input request */
+		return; /* assumes input request */
 
 	size_t cursize = 0;
 	while (cursize < hgc->ctx.datasize) {
 		rsize = recv(hgc->sockfd, hgc->ctx.data + cursize,
-			     hgc->ctx.datasize - cursize, 0);
+		             hgc->ctx.datasize - cursize, 0);
 		if (rsize < 1)
 			abortmsg("failed to read data block");
 		cursize += rsize;
@@ -176,19 +175,19 @@ static void writeblockrequest(const hgclient_t *hgc, const char *chcmd)
 /* Build '\0'-separated list of args. argsize < 0 denotes that args are
  * terminated by NULL. */
 static void packcmdargs(context_t *ctx, const char *const args[],
-			ssize_t argsize)
+                        ssize_t argsize)
 {
 	ctx->datasize = 0;
 	const char *const *const end = (argsize >= 0) ? args + argsize : NULL;
 	for (const char *const *it = args; it != end && *it; ++it) {
-		const size_t n = strlen(*it) + 1;  /* include '\0' */
+		const size_t n = strlen(*it) + 1; /* include '\0' */
 		enlargecontext(ctx, ctx->datasize + n);
 		memcpy(ctx->data + ctx->datasize, *it, n);
 		ctx->datasize += n;
 	}
 
 	if (ctx->datasize > 0)
-		--ctx->datasize;  /* strip last '\0' */
+		--ctx->datasize; /* strip last '\0' */
 }
 
 /* Extract '\0'-separated list of args to new buffer, terminated by NULL */
@@ -199,7 +198,7 @@ static const char **unpackcmdargsnul(const context_t *ctx)
 	const char *s = ctx->data;
 	const char *e = ctx->data + ctx->datasize;
 	for (;;) {
-		if (nargs + 1 >= maxnargs) {  /* including last NULL */
+		if (nargs + 1 >= maxnargs) { /* including last NULL */
 			maxnargs += 256;
 			args = reallocx(args, maxnargs * sizeof(args[0]));
 		}
@@ -237,7 +236,7 @@ static void handlesystemrequest(hgclient_t *hgc)
 {
 	context_t *ctx = &hgc->ctx;
 	enlargecontext(ctx, ctx->datasize + 1);
-	ctx->data[ctx->datasize] = '\0';  /* terminate last string */
+	ctx->data[ctx->datasize] = '\0'; /* terminate last string */
 
 	const char **args = unpackcmdargsnul(ctx);
 	if (!args[0] || !args[1] || !args[2])
@@ -269,8 +268,8 @@ static void handleresponse(hgclient_t *hgc)
 	for (;;) {
 		readchannel(hgc);
 		context_t *ctx = &hgc->ctx;
-		debugmsg("response read from channel %c, size %zu",
-			 ctx->ch, ctx->datasize);
+		debugmsg("response read from channel %c, size %zu", ctx->ch,
+		         ctx->datasize);
 		switch (ctx->ch) {
 		case 'o':
 			fwrite(ctx->data, sizeof(ctx->data[0]), ctx->datasize,
@@ -299,7 +298,7 @@ static void handleresponse(hgclient_t *hgc)
 		default:
 			if (isupper(ctx->ch))
 				abortmsg("cannot handle response (ch = %c)",
-					 ctx->ch);
+				         ctx->ch);
 		}
 	}
 }
@@ -366,8 +365,8 @@ static void readhello(hgclient_t *hgc)
 
 static void updateprocname(hgclient_t *hgc)
 {
-	int r = snprintf(hgc->ctx.data, hgc->ctx.maxdatasize,
-			"chg[worker/%d]", (int)getpid());
+	int r = snprintf(hgc->ctx.data, hgc->ctx.maxdatasize, "chg[worker/%d]",
+	                 (int)getpid());
 	if (r < 0 || (size_t)r >= hgc->ctx.maxdatasize)
 		abortmsg("insufficient buffer to write procname (r = %d)", r);
 	hgc->ctx.datasize = (size_t)r;
@@ -387,7 +386,7 @@ static void attachio(hgclient_t *hgc)
 	static const int fds[3] = {STDIN_FILENO, STDOUT_FILENO, STDERR_FILENO};
 	struct msghdr msgh;
 	memset(&msgh, 0, sizeof(msgh));
-	struct iovec iov = {ctx->data, ctx->datasize};  /* dummy payload */
+	struct iovec iov = {ctx->data, ctx->datasize}; /* dummy payload */
 	msgh.msg_iov = &iov;
 	msgh.msg_iovlen = 1;
 	char fdbuf[CMSG_SPACE(sizeof(fds))];
@@ -552,7 +551,7 @@ pid_t hgc_peerpid(const hgclient_t *hgc)
  *           the last string is guaranteed to be NULL.
  */
 const char **hgc_validate(hgclient_t *hgc, const char *const args[],
-			  size_t argsize)
+                          size_t argsize)
 {
 	assert(hgc);
 	if (!(hgc->capflags & CAP_VALIDATE))

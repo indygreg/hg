@@ -262,7 +262,8 @@ class phasecache(object):
         repo = repo.unfiltered()
         nativeroots = []
         for phase in trackedphases:
-            nativeroots.append(map(repo.changelog.rev, self.phaseroots[phase]))
+            nativeroots.append(pycompat.maplist(repo.changelog.rev,
+                                                self.phaseroots[phase]))
         return repo.changelog.computephases(nativeroots)
 
     def _computephaserevspure(self, repo):
@@ -326,7 +327,7 @@ class phasecache(object):
 
     def _write(self, fp):
         for phase, roots in enumerate(self.phaseroots):
-            for h in roots:
+            for h in sorted(roots):
                 fp.write('%i %s\n' % (phase, hex(h)))
         self.dirty = False
 

@@ -10,29 +10,29 @@ Test interactions between mq and patch.eol
   > EOF
 
   $ cat > makepatch.py <<EOF
-  > f = file('eol.diff', 'wb')
+  > f = open('eol.diff', 'wb')
   > w = f.write
-  > w('test message\n')
-  > w('diff --git a/a b/a\n')
-  > w('--- a/a\n')
-  > w('+++ b/a\n')
-  > w('@@ -1,5 +1,5 @@\n')
-  > w(' a\n')
-  > w('-b\r\n')
-  > w('+y\r\n')
-  > w(' c\r\n')
-  > w(' d\n')
-  > w('-e\n')
-  > w('\ No newline at end of file\n')
-  > w('+z\r\n')
-  > w('\ No newline at end of file\r\n')
+  > w(b'test message\n')
+  > w(b'diff --git a/a b/a\n')
+  > w(b'--- a/a\n')
+  > w(b'+++ b/a\n')
+  > w(b'@@ -1,5 +1,5 @@\n')
+  > w(b' a\n')
+  > w(b'-b\r\n')
+  > w(b'+y\r\n')
+  > w(b' c\r\n')
+  > w(b' d\n')
+  > w(b'-e\n')
+  > w(b'\ No newline at end of file\n')
+  > w(b'+z\r\n')
+  > w(b'\ No newline at end of file\r\n')
   > EOF
 
   $ cat > cateol.py <<EOF
   > import sys
-  > for line in file(sys.argv[1], 'rb'):
-  >     line = line.replace('\r', '<CR>')
-  >     line = line.replace('\n', '<LF>')
+  > for line in open(sys.argv[1], 'rb'):
+  >     line = line.replace(b'\r', b'<CR>')
+  >     line = line.replace(b'\n', b'<LF>')
   >     print(line)
   > EOF
 
@@ -44,7 +44,7 @@ Test interactions between mq and patch.eol
 
 Test different --eol values
 
-  $ $PYTHON -c 'file("a", "wb").write("a\nb\nc\nd\ne")'
+  $ $PYTHON -c 'open("a", "wb").write(b"a\nb\nc\nd\ne")'
   $ hg ci -Am adda
   adding .hgignore
   adding a
@@ -152,15 +152,15 @@ Test .rej file EOL are left unchanged
 
   $ hg init testeol
   $ cd testeol
-  $ $PYTHON -c "file('a', 'wb').write('1\r\n2\r\n3\r\n4')"
+  $ $PYTHON -c "open('a', 'wb').write(b'1\r\n2\r\n3\r\n4')"
   $ hg ci -Am adda
   adding a
-  $ $PYTHON -c "file('a', 'wb').write('1\r\n2\r\n33\r\n4')"
+  $ $PYTHON -c "open('a', 'wb').write(b'1\r\n2\r\n33\r\n4')"
   $ hg qnew patch1
   $ hg qpop
   popping patch1
   patch queue now empty
-  $ $PYTHON -c "file('a', 'wb').write('1\r\n22\r\n33\r\n4')"
+  $ $PYTHON -c "open('a', 'wb').write(b'1\r\n22\r\n33\r\n4')"
   $ hg ci -m changea
 
   $ hg --config 'patch.eol=LF' qpush

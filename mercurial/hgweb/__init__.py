@@ -15,7 +15,10 @@ from ..i18n import _
 from .. import (
     error,
     pycompat,
-    util,
+)
+
+from ..utils import (
+    procutil,
 )
 
 from . import (
@@ -35,7 +38,7 @@ def hgweb(config, name=None, baseui=None):
     - list of virtual:real tuples (multi-repo view)
     '''
 
-    if ((isinstance(config, str) and not os.path.isdir(config)) or
+    if ((isinstance(config, bytes) and not os.path.isdir(config)) or
         isinstance(config, dict) or isinstance(config, list)):
         # create a multi-dir interface
         return hgwebdir_mod.hgwebdir(config, baseui=baseui)
@@ -51,7 +54,7 @@ class httpservice(object):
         self.opts = opts
 
     def init(self):
-        util.setsignalhandler()
+        procutil.setsignalhandler()
         self.httpd = server.create_server(self.ui, self.app)
 
         if self.opts['port'] and not self.ui.verbose:

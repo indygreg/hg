@@ -18,7 +18,7 @@
   > def reposetup(ui, repo):
   >     class debugkeysrepo(repo.__class__):
   >         def listkeys(self, namespace):
-  >             ui.write('listkeys %s\n' % (namespace,))
+  >             ui.write(b'listkeys %s\n' % (namespace,))
   >             return super(debugkeysrepo, self).listkeys(namespace)
   > 
   >     if repo.local():
@@ -715,49 +715,49 @@ List of all markers in JSON
   $ hg debugobsolete -Tjson
   [
    {
-    "date": [1339.0, 0],
+    "date": [1339, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "1339133913391339133913391339133913391339",
     "succnodes": ["ca819180edb99ed25ceafb3e9584ac287e240b00"]
    },
    {
-    "date": [1339.0, 0],
+    "date": [1339, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "1337133713371337133713371337133713371337",
     "succnodes": ["5601fb93a350734d935195fee37f4054c529ff39"]
    },
    {
-    "date": [121.0, 120],
+    "date": [121, 120],
     "flag": 12,
     "metadata": {"user": "test"},
     "prednode": "245bde4270cd1072a27757984f9cda8ba26f08ca",
     "succnodes": ["cdbce2fbb16313928851e97e0d85413f3f7eb77f"]
    },
    {
-    "date": [1338.0, 0],
+    "date": [1338, 0],
     "flag": 1,
     "metadata": {"user": "test"},
     "prednode": "5601fb93a350734d935195fee37f4054c529ff39",
     "succnodes": ["6f96419950729f3671185b847352890f074f7557"]
    },
    {
-    "date": [1338.0, 0],
+    "date": [1338, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "ca819180edb99ed25ceafb3e9584ac287e240b00",
     "succnodes": ["1337133713371337133713371337133713371337"]
    },
    {
-    "date": [1337.0, 0],
+    "date": [1337, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "prednode": "cdbce2fbb16313928851e97e0d85413f3f7eb77f",
     "succnodes": ["ca819180edb99ed25ceafb3e9584ac287e240b00"]
    },
    {
-    "date": [0.0, 0],
+    "date": [0, 0],
     "flag": 0,
     "metadata": {"user": "test"},
     "parentnodes": ["6f96419950729f3671185b847352890f074f7557"],
@@ -893,6 +893,11 @@ check filelog view
 
   $ get-with-headers.py --headeronly localhost:$HGPORT 'log/'`hg log -r . -T "{node}"`/'babar'
   200 Script output follows
+
+check filelog view for hidden commits (obsolete ones are hidden here)
+
+  $ get-with-headers.py localhost:$HGPORT 'log/'`hg log -r . -T "{node}"`/'babar' | grep obsolete
+  [1]
 
   $ get-with-headers.py --headeronly localhost:$HGPORT 'rev/68'
   200 Script output follows
@@ -1033,6 +1038,21 @@ test summary output
   orphan: 2 changesets
   phase-divergent: 1 changesets
 
+test debugwhyunstable output
+
+  $ hg debugwhyunstable 50c51b361e60
+  orphan: obsolete parent 3de5eca88c00aa039da7399a220f4a5221faa585
+  phase-divergent: immutable predecessor 245bde4270cd1072a27757984f9cda8ba26f08ca
+
+test whyunstable template keyword
+
+  $ hg log -r 50c51b361e60 -T '{whyunstable}\n'
+  orphan: obsolete parent 3de5eca88c00
+  phase-divergent: immutable predecessor 245bde4270cd
+  $ hg log -r 50c51b361e60 -T '{whyunstable % "{instability}: {reason} {node|shortest}\n"}'
+  orphan: obsolete parent 3de5
+  phase-divergent: immutable predecessor 245b
+
 #if serve
 
   $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
@@ -1049,20 +1069,8 @@ check obsolete changeset
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=monoblue' | grep '<span class="logtags">'
           <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="obsoletetag" title="obsolete">obsolete</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(obsolete())&style=spartan' | grep 'class="obsolete"'
-    <th class="obsolete">obsolete:</th>
-    <td class="obsolete">pruned</td>
-
-check an obsolete changeset that has been rewritten
-  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=paper' | grep rewritten
-   <td>rewritten as <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a> </td>
-  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=coal' | grep rewritten
-   <td>rewritten as <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a> </td>
-  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=gitweb' | grep rewritten
-  <tr><td>obsolete</td><td>rewritten as <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a> </td></tr>
-  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=monoblue' | grep rewritten
-          <dt>obsolete</dt><dd>rewritten as <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a> </dd>
-  $ get-with-headers.py localhost:$HGPORT 'rev/cda648ca50f5?style=spartan' | grep rewritten
-   <td class="obsolete">rewritten as <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a> </td>
+  <th class="obsolete">obsolete:</th>
+  <td class="obsolete">pruned by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
 
 check changeset with instabilities
 
@@ -1074,13 +1082,34 @@ check changeset with instabilities
     <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
   $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=monoblue' | grep '<span class="logtags">'
           <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="instabilitytag" title="orphan">orphan</span> <span class="instabilitytag" title="phase-divergent">phase-divergent</span> </span>
-  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=spartan' | grep 'class="instabilities"'
-    <th class="instabilities">instabilities:</th>
-    <td class="instabilities">orphan phase-divergent </td>
+  $ get-with-headers.py localhost:$HGPORT 'log?rev=first(phasedivergent())&style=spartan' | grep 'class="unstable"'
+  <th class="unstable">unstable:</th>
+  <td class="unstable">orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a></td>
+  <th class="unstable">unstable:</th>
+  <td class="unstable">phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
+
+check explanation for an orphan and phase-divergent changeset
+
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=paper' | egrep '(orphan|phase-divergent):'
+   <td>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=paper">3de5eca88c00</a><br>
+  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=paper">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=coal' | egrep '(orphan|phase-divergent):'
+   <td>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=coal">3de5eca88c00</a><br>
+  phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=coal">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=gitweb' | egrep '(orphan|phase-divergent):'
+  <td>orphan:  obsolete parent <a class="list" href="/rev/3de5eca88c00?style=gitweb">3de5eca88c00</a></td>
+  <td>phase-divergent:  immutable predecessor <a class="list" href="/rev/245bde4270cd?style=gitweb">245bde4270cd</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=monoblue' | egrep '(orphan|phase-divergent):'
+  <dd>orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=monoblue">3de5eca88c00</a></dd>
+  <dd>phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=monoblue">245bde4270cd</a></dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/50c51b361e60?style=spartan' | egrep '(orphan|phase-divergent):'
+  <td class="unstable">orphan:  obsolete parent <a href="/rev/3de5eca88c00?style=spartan">3de5eca88c00</a></td>
+  <td class="unstable">phase-divergent:  immutable predecessor <a href="/rev/245bde4270cd?style=spartan">245bde4270cd</a></td>
 
   $ killdaemons.py
 
   $ rm hg.pid access.log errors.log
+
 #endif
 
 Test incoming/outcoming with changesets obsoleted remotely, known locally
@@ -1229,6 +1258,7 @@ Test bundle overlay onto hidden revision
   o  0:4b34ecfb0d56 (draft) [ ] A
   
 
+#if repobundlerepo
   $ hg incoming ../repo-bundleoverlay --bundle ../bundleoverlay.hg
   comparing with ../repo-bundleoverlay
   searching for changes
@@ -1241,6 +1271,7 @@ Test bundle overlay onto hidden revision
   |/
   o  0:4b34ecfb0d56 (draft) [ ] A
   
+#endif
 
 #if serve
 
@@ -1291,12 +1322,12 @@ Test heads computation on pending index changes with obsolescence markers
   > 
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b"amendtransient",[], _('hg amendtransient [rev]'))
+  > @command(b"amendtransient",[], _(b'hg amendtransient [rev]'))
   > def amend(ui, repo, *pats, **opts):
   >   opts['message'] = 'Test'
   >   opts['logfile'] = None
   >   cmdutil.amend(ui, repo, repo['.'], {}, pats, opts)
-  >   ui.write('%s\n' % repo.changelog.headrevs())
+  >   ui.write(b'%s\n' % repo.changelog.headrevs())
   > EOF
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -1331,7 +1362,7 @@ bookmarks change
   >  def trhook(tr):
   >   repo = reporef()
   >   hidden1 = repoview.computehidden(repo)
-  >   hidden = repoview.filterrevs(repo, 'visible')
+  >   hidden = repoview.filterrevs(repo, b'visible')
   >   if sorted(hidden1) != sorted(hidden):
   >     print("cache inconsistency")
   >  bkmstoreinst._repo.currenttransaction().addpostclose('test_extension', trhook)
@@ -1423,13 +1454,16 @@ Test ability to pull changeset with locally applying obsolescence markers
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02}
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8
+  cache:rev-branch-cache -- {}
   phase-heads -- {}
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8 draft
 
+#if repobundlerepo
   $ hg pull .hg/strip-backup/e008cf283490-*-backup.hg
   pulling from .hg/strip-backup/e008cf283490-ede36964-backup.hg
   searching for changes
   no changes found
+#endif
   $ hg debugobsolete
   e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
   $ hg log -G
@@ -1464,6 +1498,7 @@ Testing that strip remove markers:
   changegroup -- {nbchanges: 2, version: 02}
       e016b03fd86fcccc54817d120b90b751aaf367d6
       b0551702f918510f01ae838ab03a463054c67b46
+  cache:rev-branch-cache -- {}
   obsmarkers -- {}
       version: 1 (92 bytes)
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
@@ -1520,7 +1555,7 @@ only a subset of those are displayed (because of --rev option)
   $ hg debugobsolete --index --rev "3+7" -Tjson
   [
    {
-    "date": [0.0, 0],
+    "date": [0, 0],
     "flag": 0,
     "index": 1,
     "metadata": {"ef1": "1", "operation": "amend", "user": "test"},
@@ -1528,7 +1563,7 @@ only a subset of those are displayed (because of --rev option)
     "succnodes": ["d27fb9b066076fd921277a4b9e8b9cb48c95bc6a"]
    },
    {
-    "date": [0.0, 0],
+    "date": [0, 0],
     "flag": 0,
     "index": 3,
     "metadata": {"ef1": "1", "operation": "amend", "user": "test"},

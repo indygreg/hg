@@ -624,9 +624,9 @@ commit copy
   $ hg debugrename foo
   foo renamed from bar:26d3ca0dfd18e44d796b564e38dd173c9668d3a9
   $ hg debugindex bar
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0       6  .....       0 26d3ca0dfd18 000000000000 000000000000 (re)
-       1         6       7  .....       1 d267bddd54f7 26d3ca0dfd18 000000000000 (re)
+     rev linkrev nodeid       p1           p2
+       0       0 26d3ca0dfd18 000000000000 000000000000
+       1       1 d267bddd54f7 26d3ca0dfd18 000000000000
 
 Test making empty commits
   $ hg commit --config ui.allowemptycommit=True -m "empty commit"
@@ -644,14 +644,14 @@ verify pathauditor blocks evil filepaths
   $ cat > evil-commit.py <<EOF
   > from __future__ import absolute_import
   > from mercurial import context, hg, node, ui as uimod
-  > notrc = u".h\u200cg".encode('utf-8') + '/hgrc'
+  > notrc = u".h\u200cg".encode('utf-8') + b'/hgrc'
   > u = uimod.ui.load()
-  > r = hg.repository(u, '.')
+  > r = hg.repository(u, b'.')
   > def filectxfn(repo, memctx, path):
   >     return context.memfilectx(repo, memctx, path,
-  >         '[hooks]\nupdate = echo owned')
-  > c = context.memctx(r, [r['tip'].node(), node.nullid],
-  >                    'evil', [notrc], filectxfn, 0)
+  >         b'[hooks]\nupdate = echo owned')
+  > c = context.memctx(r, [r[b'tip'].node(), node.nullid],
+  >                    b'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
   $ $PYTHON evil-commit.py
@@ -670,14 +670,14 @@ verify pathauditor blocks evil filepaths
   $ cat > evil-commit.py <<EOF
   > from __future__ import absolute_import
   > from mercurial import context, hg, node, ui as uimod
-  > notrc = "HG~1/hgrc"
+  > notrc = b"HG~1/hgrc"
   > u = uimod.ui.load()
-  > r = hg.repository(u, '.')
+  > r = hg.repository(u, b'.')
   > def filectxfn(repo, memctx, path):
   >     return context.memfilectx(repo, memctx, path,
-  >         '[hooks]\nupdate = echo owned')
-  > c = context.memctx(r, [r['tip'].node(), node.nullid],
-  >                    'evil', [notrc], filectxfn, 0)
+  >         b'[hooks]\nupdate = echo owned')
+  > c = context.memctx(r, [r[b'tip'].node(), node.nullid],
+  >                    b'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
   $ $PYTHON evil-commit.py
@@ -690,14 +690,14 @@ verify pathauditor blocks evil filepaths
   $ cat > evil-commit.py <<EOF
   > from __future__ import absolute_import
   > from mercurial import context, hg, node, ui as uimod
-  > notrc = "HG8B6C~2/hgrc"
+  > notrc = b"HG8B6C~2/hgrc"
   > u = uimod.ui.load()
-  > r = hg.repository(u, '.')
+  > r = hg.repository(u, b'.')
   > def filectxfn(repo, memctx, path):
   >     return context.memfilectx(repo, memctx, path,
-  >         '[hooks]\nupdate = echo owned')
-  > c = context.memctx(r, [r['tip'].node(), node.nullid],
-  >                    'evil', [notrc], filectxfn, 0)
+  >         b'[hooks]\nupdate = echo owned')
+  > c = context.memctx(r, [r[b'tip'].node(), node.nullid],
+  >                    b'evil', [notrc], filectxfn, 0)
   > r.commitctx(c)
   > EOF
   $ $PYTHON evil-commit.py
@@ -831,4 +831,3 @@ at the end
   second line
 
   $ cd ..
-

@@ -236,10 +236,10 @@ Test bogus rev
 
   $ HGEDITOR=cat hg histedit "tip^^" --commands - << EOF
   > pick eb57da33312f 2 three
-  > pick 0
+  > pick 0u98
   > pick 08d98a8350f3 4 five
   > EOF
-  hg: parse error: invalid changeset 0
+  hg: parse error: invalid changeset 0u98
   [255]
 
 Test short version of command
@@ -280,9 +280,9 @@ Test that trimming description using multi-byte characters
 --------------------------------------------------------------------
 
   $ $PYTHON <<EOF
-  > fp = open('logfile', 'w')
-  > fp.write('12345678901234567890123456789012345678901234567890' +
-  >          '12345') # there are 5 more columns for 80 columns
+  > fp = open('logfile', 'wb')
+  > fp.write(b'12345678901234567890123456789012345678901234567890' +
+  >          b'12345') # there are 5 more columns for 80 columns
   > 
   > # 2 x 4 = 8 columns, but 3 x 4 = 12 bytes
   > fp.write(u'\u3042\u3044\u3046\u3048'.encode('utf-8'))
@@ -552,3 +552,39 @@ Check that 'roll' is selected by default
   #
 
   $ cd ..
+
+Check that histedit's commands accept revsets
+  $ hg init bar
+  $ cd bar
+  $ echo w >> a
+  $ hg ci -qAm "adds a"
+  $ echo x >> b
+  $ hg ci -qAm "adds b"
+  $ echo y >> c
+  $ hg ci -qAm "adds c"
+  $ echo z >> d
+  $ hg ci -qAm "adds d"
+  $ hg log -G -T '{rev} {desc}\n'
+  @  3 adds d
+  |
+  o  2 adds c
+  |
+  o  1 adds b
+  |
+  o  0 adds a
+  
+  $ HGEDITOR=cat hg histedit "2" --commands - << EOF
+  > base -4 adds c
+  > pick 2 adds c
+  > pick tip adds d
+  > EOF
+  $ hg log -G -T '{rev} {desc}\n'
+  @  5 adds d
+  |
+  o  4 adds c
+  |
+  | o  1 adds b
+  |/
+  o  0 adds a
+  
+

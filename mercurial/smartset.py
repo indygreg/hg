@@ -8,7 +8,9 @@
 from __future__ import absolute_import
 
 from . import (
+    encoding,
     error,
+    pycompat,
     util,
 )
 
@@ -19,7 +21,7 @@ def _formatsetrepr(r):
     type(r)   example
     ========  =================================
     tuple     ('<not %r>', other)
-    str       '<branch closed>'
+    bytes     '<branch closed>'
     callable  lambda: '<branch %r>' % sorted(b)
     object    other
     ========  =================================
@@ -27,13 +29,16 @@ def _formatsetrepr(r):
     if r is None:
         return ''
     elif isinstance(r, tuple):
-        return r[0] % r[1:]
-    elif isinstance(r, str):
+        return r[0] % util.rapply(pycompat.maybebytestr, r[1:])
+    elif isinstance(r, bytes):
         return r
     elif callable(r):
         return r()
     else:
-        return repr(r)
+        return pycompat.byterepr(r)
+
+def _typename(o):
+    return pycompat.sysbytes(type(o).__name__).lstrip('_')
 
 class abstractsmartset(object):
 
@@ -306,7 +311,7 @@ class baseset(abstractsmartset):
         self._istopo = False
 
     def __len__(self):
-        if '_list' in self.__dict__:
+        if r'_list' in self.__dict__:
             return len(self._list)
         else:
             return len(self._set)
@@ -384,6 +389,7 @@ class baseset(abstractsmartset):
         s._ascending = self._ascending
         return s
 
+    @encoding.strmethod
     def __repr__(self):
         d = {None: '', False: '-', True: '+'}[self._ascending]
         s = _formatsetrepr(self._datarepr)
@@ -394,8 +400,8 @@ class baseset(abstractsmartset):
             # We fallback to the sorted version for a stable output.
             if self._ascending is not None:
                 l = self._asclist
-            s = repr(l)
-        return '<%s%s %s>' % (type(self).__name__, d, s)
+            s = pycompat.byterepr(l)
+        return '<%s%s %s>' % (_typename(self), d, s)
 
 class filteredset(abstractsmartset):
     """Duck type for baseset class which iterates lazily over the revisions in
@@ -505,12 +511,13 @@ class filteredset(abstractsmartset):
                 pass
             return x
 
+    @encoding.strmethod
     def __repr__(self):
-        xs = [repr(self._subset)]
+        xs = [pycompat.byterepr(self._subset)]
         s = _formatsetrepr(self._condrepr)
         if s:
             xs.append(s)
-        return '<%s %s>' % (type(self).__name__, ', '.join(xs))
+        return '<%s %s>' % (_typename(self), ', '.join(xs))
 
 def _iterordered(ascending, iter1, iter2):
     """produce an ordered iteration from two iterators with the same order
@@ -755,9 +762,10 @@ class addset(abstractsmartset):
         self.reverse()
         return val
 
+    @encoding.strmethod
     def __repr__(self):
         d = {None: '', False: '-', True: '+'}[self._ascending]
-        return '<%s%s %r, %r>' % (type(self).__name__, d, self._r1, self._r2)
+        return '<%s%s %r, %r>' % (_typename(self), d, self._r1, self._r2)
 
 class generatorset(abstractsmartset):
     """Wrap a generator for lazy iteration
@@ -918,9 +926,10 @@ class generatorset(abstractsmartset):
             return self.last()
         return next(it(), None)
 
+    @encoding.strmethod
     def __repr__(self):
         d = {False: '-', True: '+'}[self._ascending]
-        return '<%s%s>' % (type(self).__name__.lstrip('_'), d)
+        return '<%s%s>' % (_typename(self), d)
 
 class _generatorsetasc(generatorset):
     """Special case of generatorset optimized for ascending generators."""
@@ -1087,10 +1096,10 @@ class _spanset(abstractsmartset):
             y = max(self._end - start, self._start)
         return _spanset(x, y, self._ascending, self._hiddenrevs)
 
+    @encoding.strmethod
     def __repr__(self):
         d = {False: '-', True: '+'}[self._ascending]
-        return '<%s%s %d:%d>' % (type(self).__name__.lstrip('_'), d,
-                                 self._start, self._end)
+        return '<%s%s %d:%d>' % (_typename(self), d, self._start, self._end)
 
 class fullreposet(_spanset):
     """a set containing all revisions in the repo
@@ -1123,7 +1132,7 @@ class fullreposet(_spanset):
 
 def prettyformat(revs):
     lines = []
-    rs = repr(revs)
+    rs = pycompat.byterepr(revs)
     p = 0
     while p < len(rs):
         q = rs.find('<', p + 1)

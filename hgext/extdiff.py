@@ -13,6 +13,11 @@ diff programs are called with a configurable set of options and two
 non-option arguments: paths to directories containing snapshots of
 files to compare.
 
+If there is more than one file being compared and the "child" revision
+is the working directory, any modifications made in the external diff
+program will be copied back to the working directory from the temporary
+directory.
+
 The extdiff extension also allows you to configure new diff commands, so
 you do not need to type :hg:`extdiff -p kdiff3` always. ::
 
@@ -65,6 +70,7 @@ from __future__ import absolute_import
 import os
 import re
 import shutil
+import stat
 import tempfile
 from mercurial.i18n import _
 from mercurial.node import (
@@ -76,10 +82,15 @@ from mercurial import (
     cmdutil,
     error,
     filemerge,
+    formatter,
     pycompat,
     registrar,
     scmutil,
     util,
+)
+from mercurial.utils import (
+    procutil,
+    stringutil,
 )
 
 cmdtable = {}
@@ -88,12 +99,12 @@ command = registrar.command(cmdtable)
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('extdiff', r'opts\..*',
+configitem('extdiff', br'opts\..*',
     default='',
     generic=True,
 )
 
-configitem('diff-tools', r'.*\.diffargs$',
+configitem('diff-tools', br'.*\.diffargs$',
     default=None,
     generic=True,
 )
@@ -158,14 +169,18 @@ def dodiff(ui, repo, cmdline, pats, opts):
         msg = _('cannot specify --rev and --change at the same time')
         raise error.Abort(msg)
     elif change:
-        node2 = scmutil.revsingle(repo, change, None).node()
-        node1a, node1b = repo.changelog.parents(node2)
+        ctx2 = scmutil.revsingle(repo, change, None)
+        ctx1a, ctx1b = ctx2.p1(), ctx2.p2()
     else:
-        node1a, node2 = scmutil.revpair(repo, revs)
+        ctx1a, ctx2 = scmutil.revpair(repo, revs)
         if not revs:
-            node1b = repo.dirstate.p2()
+            ctx1b = repo[None].p2()
         else:
-            node1b = nullid
+            ctx1b = repo[nullid]
+
+    node1a = ctx1a.node()
+    node1b = ctx1b.node()
+    node2 = ctx2.node()
 
     # Disable 3-way merge if there is only one parent
     if do3way:
@@ -253,11 +268,13 @@ def dodiff(ui, repo, cmdline, pats, opts):
                 label2 = common_file + rev2
         else:
             template = 'hg-%h.patch'
-            cmdutil.export(repo, [repo[node1a].rev(), repo[node2].rev()],
-                           fntemplate=repo.vfs.reljoin(tmproot, template),
-                           match=matcher)
-            label1a = cmdutil.makefilename(repo, template, node1a)
-            label2 = cmdutil.makefilename(repo, template, node2)
+            with formatter.nullformatter(ui, 'extdiff', {}) as fm:
+                cmdutil.export(repo, [repo[node1a].rev(), repo[node2].rev()],
+                               fm,
+                               fntemplate=repo.vfs.reljoin(tmproot, template),
+                               match=matcher)
+            label1a = cmdutil.makefilename(repo[node1a], template)
+            label2 = cmdutil.makefilename(repo[node2], template)
             dir1a = repo.vfs.reljoin(tmproot, label1a)
             dir2 = repo.vfs.reljoin(tmproot, label2)
             dir1b = None
@@ -276,16 +293,16 @@ def dodiff(ui, repo, cmdline, pats, opts):
             key = match.group(3)
             if not do3way and key == 'parent2':
                 return pre
-            return pre + util.shellquote(replace[key])
+            return pre + procutil.shellquote(replace[key])
 
         # Match parent2 first, so 'parent1?' will match both parent1 and parent
-        regex = (r'''(['"]?)([^\s'"$]*)'''
-                 r'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1')
+        regex = (br'''(['"]?)([^\s'"$]*)'''
+                 br'\$(parent2|parent1?|child|plabel1|plabel2|clabel|root)\1')
         if not do3way and not re.search(regex, cmdline):
             cmdline += ' $parent1 $child'
         cmdline = re.sub(regex, quote, cmdline)
 
-        ui.debug('running %r in %s\n' % (cmdline, tmproot))
+        ui.debug('running %r in %s\n' % (pycompat.bytestr(cmdline), tmproot))
         ui.system(cmdline, cwd=tmproot, blockedtag='extdiff')
 
         for copy_fn, working_fn, st in fnsandstat:
@@ -297,7 +314,8 @@ def dodiff(ui, repo, cmdline, pats, opts):
             # copyfile() carries over the permission, so the mode check could
             # be in an 'elif' branch, but for the case where the file has
             # changed without affecting mtime or size.
-            if (cpstat.st_mtime != st.st_mtime or cpstat.st_size != st.st_size
+            if (cpstat[stat.ST_MTIME] != st[stat.ST_MTIME]
+                or cpstat.st_size != st.st_size
                 or (cpstat.st_mode & 0o100) != (st.st_mode & 0o100)):
                 ui.debug('file changed while diffing. '
                          'Overwriting: %s (src: %s)\n' % (working_fn, copy_fn))
@@ -344,7 +362,7 @@ def extdiff(ui, repo, *pats, **opts):
     if not program:
         program = 'diff'
         option = option or ['-Npru']
-    cmdline = ' '.join(map(util.shellquote, [program] + option))
+    cmdline = ' '.join(map(procutil.shellquote, [program] + option))
     return dodiff(ui, repo, cmdline, pats, opts)
 
 class savedcmd(object):
@@ -365,13 +383,13 @@ class savedcmd(object):
     def __init__(self, path, cmdline):
         # We can't pass non-ASCII through docstrings (and path is
         # in an unknown encoding anyway)
-        docpath = util.escapestr(path)
-        self.__doc__ = self.__doc__ % {'path': util.uirepr(docpath)}
+        docpath = stringutil.escapestr(path)
+        self.__doc__ %= {r'path': pycompat.sysstr(stringutil.uirepr(docpath))}
         self._cmdline = cmdline
 
     def __call__(self, ui, repo, *pats, **opts):
         opts = pycompat.byteskwargs(opts)
-        options = ' '.join(map(util.shellquote, opts['option']))
+        options = ' '.join(map(procutil.shellquote, opts['option']))
         if options:
             options = ' ' + options
         return dodiff(ui, repo, self._cmdline + options, pats, opts)
@@ -382,11 +400,11 @@ def uisetup(ui):
         if cmd.startswith('cmd.'):
             cmd = cmd[4:]
             if not path:
-                path = util.findexe(cmd)
+                path = procutil.findexe(cmd)
                 if path is None:
                     path = filemerge.findexternaltool(ui, cmd) or cmd
             diffopts = ui.config('extdiff', 'opts.' + cmd)
-            cmdline = util.shellquote(path)
+            cmdline = procutil.shellquote(path)
             if diffopts:
                 cmdline += ' ' + diffopts
         elif cmd.startswith('opts.'):
@@ -398,10 +416,10 @@ def uisetup(ui):
                 diffopts = len(pycompat.shlexsplit(cmdline)) > 1
             else:
                 # case "cmd ="
-                path = util.findexe(cmd)
+                path = procutil.findexe(cmd)
                 if path is None:
                     path = filemerge.findexternaltool(ui, cmd) or cmd
-                cmdline = util.shellquote(path)
+                cmdline = procutil.shellquote(path)
                 diffopts = False
         # look for diff arguments in [diff-tools] then [merge-tools]
         if not diffopts:

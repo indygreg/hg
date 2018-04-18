@@ -1,8 +1,6 @@
   $ cat << EOF >> $HGRCPATH
   > [ui]
   > interactive=yes
-  > [format]
-  > usegeneraldelta=yes
   > EOF
 
   $ hg init debugrevlog
@@ -10,6 +8,7 @@
   $ echo a > a
   $ hg ci -Am adda
   adding a
+#if reporevlogstore
   $ hg debugrevlog -m
   format : 1
   flags  : inline, generaldelta
@@ -37,23 +36,40 @@
   uncompressed data size (min/max/avg) : 43 / 43 / 43
   full revision size (min/max/avg)     : 44 / 44 / 44
   delta size (min/max/avg)             : 0 / 0 / 0
+#endif
 
-Test debugindex, with and without the --debug flag
+Test debugindex, with and without the --verbose/--debug flag
   $ hg debugindex a
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0       3   ....       0 b789fdd96dc2 000000000000 000000000000 (re)
+     rev linkrev nodeid       p1           p2
+       0       0 b789fdd96dc2 000000000000 000000000000
+
+#if no-reposimplestore
+  $ hg --verbose debugindex a
+     rev    offset  length linkrev nodeid       p1           p2
+       0         0       3       0 b789fdd96dc2 000000000000 000000000000
+
   $ hg --debug debugindex a
-     rev    offset  length  ..... linkrev nodeid                                   p1                                       p2 (re)
-       0         0       3   ....       0 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000 (re)
+     rev    offset  length linkrev nodeid                                   p1                                       p2
+       0         0       3       0 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000
+#endif
+
   $ hg debugindex -f 1 a
-     rev flag   offset   length     size  .....   link     p1     p2       nodeid (re)
-       0 0000        0        3        2   ....      0     -1     -1 b789fdd96dc2 (re)
+     rev flag     size   link     p1     p2       nodeid
+       0 0000        2      0     -1     -1 b789fdd96dc2
+
+#if no-reposimplestore
+  $ hg --verbose debugindex -f 1 a
+     rev flag   offset   length     size   link     p1     p2       nodeid
+       0 0000        0        3        2      0     -1     -1 b789fdd96dc2
+
   $ hg --debug debugindex -f 1 a
-     rev flag   offset   length     size  .....   link     p1     p2                                   nodeid (re)
-       0 0000        0        3        2   ....      0     -1     -1 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 (re)
+     rev flag   offset   length     size   link     p1     p2                                   nodeid
+       0 0000        0        3        2      0     -1     -1 b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3
+#endif
 
 debugdelta chain basic output
 
+#if reporevlogstore
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000
@@ -167,6 +183,7 @@ Test max chain len
   $ hg ci -m a
   $ printf 'h\n' >> a
   $ hg ci -m a
+
   $ hg debugrevlog -d a
   # rev p1rev p2rev start   end deltastart base   p1   p2 rawsize totalsize compression heads chainlen
       0    -1    -1     0   ???          0    0    0    0     ???      ????           ?     1        0 (glob)
@@ -178,6 +195,7 @@ Test max chain len
       6     5    -1   ???   ???        ???  ???  ???    0     ???      ????           ?     1        1 (glob)
       7     6    -1   ???   ???        ???  ???  ???    0     ???      ????           ?     1        2 (glob)
       8     7    -1   ???   ???        ???  ???  ???    0     ???      ????           ?     1        3 (glob)
+#endif
 
 Test debuglocks command:
 
@@ -379,5 +397,31 @@ Test debugcapabilities command:
     remote-changegroup
       http
       https
+    rev-branch-cache
     stream
       v2
+
+Test debugpeer
+
+  $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" debugpeer ssh://user@dummy/debugrevlog
+  url: ssh://user@dummy/debugrevlog
+  local: no
+  pushable: yes
+
+  $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" --debug debugpeer ssh://user@dummy/debugrevlog
+  running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob) (no-windows !)
+  running "*" "*\tests/dummyssh" "user@dummy" "hg -R debugrevlog serve --stdio" (glob) (windows !)
+  devel-peer-request: hello
+  sending hello command
+  devel-peer-request: between
+  devel-peer-request:   pairs: 81 bytes
+  sending between command
+  remote: 413
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 1
+  devel-peer-request: protocaps
+  devel-peer-request:   caps: * bytes (glob)
+  sending protocaps command
+  url: ssh://user@dummy/debugrevlog
+  local: no
+  pushable: yes

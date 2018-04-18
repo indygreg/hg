@@ -311,8 +311,8 @@ def parsenotesfromrevisions(repo, directives, revs):
             title = block['lines'][0].strip() if block['lines'] else None
 
             if i + 1 == len(blocks):
-                raise error.Abort(_('release notes directive %s lacks content')
-                                  % directive)
+                raise error.Abort(_('changeset %s: release notes directive %s '
+                        'lacks content') % (ctx, directive))
 
             # Now search ahead and find all paragraphs attached to this
             # admonition.
@@ -324,9 +324,12 @@ def parsenotesfromrevisions(repo, directives, revs):
                 if pblock['type'] == 'margin':
                     continue
 
+                if pblock['type'] == 'admonition':
+                    break
+
                 if pblock['type'] != 'paragraph':
-                    raise error.Abort(_('unexpected block in release notes '
-                                        'directive %s') % directive)
+                    repo.ui.warn(_('changeset %s: unexpected block in release '
+                        'notes directive %s\n') % (ctx, directive))
 
                 if pblock['indent'] > 0:
                     paragraphs.append(pblock['lines'])

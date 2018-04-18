@@ -7,7 +7,7 @@ Test applying context diffs
   > lasteol = sys.argv[2] == '1'
   > patterns = sys.argv[3:]
   > 
-  > fp = file(path, 'wb')
+  > fp = open(path, 'wb')
   > for i, pattern in enumerate(patterns):
   >     count = int(pattern[0:-1])
   >     char = pattern[-1] + '\n'
@@ -19,7 +19,7 @@ Test applying context diffs
   > EOF
   $ cat > cat.py <<EOF
   > import sys
-  > sys.stdout.write(repr(file(sys.argv[1], 'rb').read()) + '\n')
+  > sys.stdout.write(repr(open(sys.argv[1], 'rb').read()) + '\n')
   > EOF
 
 Initialize the test repository

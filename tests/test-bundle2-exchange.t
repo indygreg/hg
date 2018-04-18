@@ -1,3 +1,13 @@
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
 Test exchange of common information using bundle2
 
 
@@ -462,28 +472,28 @@ Setting up
   > 
   > configtable = {}
   > configitem = registrar.configitem(configtable)
-  > configitem('failpush', 'reason',
+  > configitem(b'failpush', b'reason',
   >     default=None,
   > )
   > 
   > def _pushbundle2failpart(pushop, bundler):
-  >     reason = pushop.ui.config('failpush', 'reason')
+  >     reason = pushop.ui.config(b'failpush', b'reason')
   >     part = None
-  >     if reason == 'abort':
-  >         bundler.newpart('test:abort')
-  >     if reason == 'unknown':
-  >         bundler.newpart('test:unknown')
-  >     if reason == 'race':
+  >     if reason == b'abort':
+  >         bundler.newpart(b'test:abort')
+  >     if reason == b'unknown':
+  >         bundler.newpart(b'test:unknown')
+  >     if reason == b'race':
   >         # 20 Bytes of crap
-  >         bundler.newpart('check:heads', data='01234567890123456789')
+  >         bundler.newpart(b'check:heads', data=b'01234567890123456789')
   > 
-  > @bundle2.parthandler("test:abort")
+  > @bundle2.parthandler(b"test:abort")
   > def handleabort(op, part):
-  >     raise error.Abort('Abandon ship!', hint="don't panic")
+  >     raise error.Abort(b'Abandon ship!', hint=b"don't panic")
   > 
   > def uisetup(ui):
-  >     exchange.b2partsgenmapping['failpart'] = _pushbundle2failpart
-  >     exchange.b2partsgenorder.insert(0, 'failpart')
+  >     exchange.b2partsgenmapping[b'failpart'] = _pushbundle2failpart
+  >     exchange.b2partsgenorder.insert(0, b'failpart')
   > 
   > EOF
 
@@ -772,16 +782,16 @@ Check abort from mandatory pushkey
   > from mercurial import pushkey
   > from mercurial import node
   > from mercurial import error
-  > @exchange.b2partsgenerator('failingpuskey')
+  > @exchange.b2partsgenerator(b'failingpuskey')
   > def addfailingpushey(pushop, bundler):
   >     enc = pushkey.encode
-  >     part = bundler.newpart('pushkey')
-  >     part.addparam('namespace', enc('phases'))
-  >     part.addparam('key', enc(pushop.repo['cd010b8cd998'].hex()))
-  >     part.addparam('old', enc(str(0))) # successful update
-  >     part.addparam('new', enc(str(0)))
+  >     part = bundler.newpart(b'pushkey')
+  >     part.addparam(b'namespace', enc(b'phases'))
+  >     part.addparam(b'key', enc(b'cd010b8cd998f3981a5a8115f94f8da4ab506089'))
+  >     part.addparam(b'old', enc(b'0')) # successful update
+  >     part.addparam(b'new', enc(b'0'))
   >     def fail(pushop, exc):
-  >         raise error.Abort('Correct phase push failed (because hooks)')
+  >         raise error.Abort(b'Correct phase push failed (because hooks)')
   >     pushop.pkfailcb[part.id] = fail
   > EOF
   $ cat >> $HGRCPATH << EOF
@@ -848,16 +858,16 @@ Check abort from mandatory pushkey
   > from mercurial import pushkey
   > from mercurial import node
   > from mercurial import error
-  > @exchange.b2partsgenerator('failingpuskey')
+  > @exchange.b2partsgenerator(b'failingpuskey')
   > def addfailingpushey(pushop, bundler):
   >     enc = pushkey.encode
-  >     part = bundler.newpart('pushkey')
-  >     part.addparam('namespace', enc('phases'))
-  >     part.addparam('key', enc(pushop.repo['cd010b8cd998'].hex()))
-  >     part.addparam('old', enc(str(4))) # will fail
-  >     part.addparam('new', enc(str(3)))
+  >     part = bundler.newpart(b'pushkey')
+  >     part.addparam(b'namespace', enc(b'phases'))
+  >     part.addparam(b'key', enc(b'cd010b8cd998f3981a5a8115f94f8da4ab506089'))
+  >     part.addparam(b'old', enc(b'4')) # will fail
+  >     part.addparam(b'new', enc(b'3'))
   >     def fail(pushop, exc):
-  >         raise error.Abort('Clown phase push failed')
+  >         raise error.Abort(b'Clown phase push failed')
   >     pushop.pkfailcb[part.id] = fail
   > EOF
   $ cat >> $HGRCPATH << EOF
@@ -923,10 +933,10 @@ Test lazily acquiring the lock during unbundle
 
   $ cat >> $TESTTMP/locktester.py <<EOF
   > import os
-  > from mercurial import extensions, bundle2, util
+  > from mercurial import extensions, bundle2, error
   > def checklock(orig, repo, *args, **kwargs):
   >     if repo.svfs.lexists("lock"):
-  >         raise util.Abort("Lock should not be taken")
+  >         raise error.Abort("Lock should not be taken")
   >     return orig(repo, *args, **kwargs)
   > def extsetup(ui):
   >    extensions.wrapfunction(bundle2, 'processbundle', checklock)

@@ -36,7 +36,8 @@ def findcommonincoming(repo, remote, heads=None, force=False):
     base = set()
 
     if not heads:
-        heads = remote.heads()
+        with remote.commandexecutor() as e:
+            heads = e.callcommand('heads', {}).result()
 
     if repo.changelog.tip() == nullid:
         base.add(nullid)
@@ -65,7 +66,10 @@ def findcommonincoming(repo, remote, heads=None, force=False):
     # a 'branch' here is a linear segment of history, with four parts:
     # head, root, first parent, second parent
     # (a branch always has two parents (or none) by definition)
-    unknown = collections.deque(remote.branches(unknown))
+    with remote.commandexecutor() as e:
+        branches = e.callcommand('branches', {'nodes': unknown}).result()
+
+    unknown = collections.deque(branches)
     while unknown:
         r = []
         while unknown:
@@ -107,7 +111,12 @@ def findcommonincoming(repo, remote, heads=None, force=False):
             repo.ui.debug("request %d: %s\n" %
                         (reqcnt, " ".join(map(short, r))))
             for p in xrange(0, len(r), 10):
-                for b in remote.branches(r[p:p + 10]):
+                with remote.commandexecutor() as e:
+                    branches = e.callcommand('branches', {
+                        'nodes': r[p:p + 10],
+                    }).result()
+
+                for b in branches:
                     repo.ui.debug("received %s:%s\n" %
                                   (short(b[0]), short(b[1])))
                     unknown.append(b)
@@ -117,7 +126,11 @@ def findcommonincoming(repo, remote, heads=None, force=False):
         newsearch = []
         reqcnt += 1
         repo.ui.progress(_('searching'), reqcnt, unit=_('queries'))
-        for n, l in zip(search, remote.between(search)):
+
+        with remote.commandexecutor() as e:
+            between = e.callcommand('between', {'pairs': search}).result()
+
+        for n, l in zip(search, between):
             l.append(n[1])
             p = n[0]
             f = 1

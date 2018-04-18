@@ -10,15 +10,12 @@ from __future__ import absolute_import
 
 import gc
 import os
-import re
 import time
 
 from ..i18n import _
 
 from .common import (
     ErrorResponse,
-    HTTP_NOT_FOUND,
-    HTTP_OK,
     HTTP_SERVER_ERROR,
     cspvalues,
     get_contact,
@@ -26,8 +23,8 @@ from .common import (
     ismember,
     paritygen,
     staticfile,
+    statusmessage,
 )
-from .request import wsgirequest
 
 from .. import (
     configitems,
@@ -38,15 +35,18 @@ from .. import (
     pycompat,
     scmutil,
     templater,
+    templateutil,
     ui as uimod,
     util,
 )
 
 from . import (
     hgweb_mod,
+    request as requestmod,
     webutil,
     wsgicgi,
 )
+from ..utils import dateutil
 
 def cleannames(items):
     return [(util.pconvert(name).strip('/'), path) for name, path in items]
@@ -83,32 +83,174 @@ def urlrepos(prefix, roothead, paths):
         yield (prefix + '/' +
                util.pconvert(path[len(roothead):]).lstrip('/')).strip('/'), path
 
-def geturlcgivars(baseurl, port):
-    """
-    Extract CGI variables from baseurl
+def readallowed(ui, req):
+    """Check allow_read and deny_read config options of a repo's ui object
+    to determine user permissions.  By default, with neither option set (or
+    both empty), allow all users to read the repo.  There are two ways a
+    user can be denied read access:  (1) deny_read is not empty, and the
+    user is unauthenticated or deny_read contains user (or *), and (2)
+    allow_read is not empty and the user is not in allow_read.  Return True
+    if user is allowed to read the repo, else return False."""
 
-    >>> geturlcgivars(b"http://host.org/base", b"80")
-    ('host.org', '80', '/base')
-    >>> geturlcgivars(b"http://host.org:8000/base", b"80")
-    ('host.org', '8000', '/base')
-    >>> geturlcgivars(b'/base', 8000)
-    ('', '8000', '/base')
-    >>> geturlcgivars(b"base", b'8000')
-    ('', '8000', '/base')
-    >>> geturlcgivars(b"http://host", b'8000')
-    ('host', '8000', '/')
-    >>> geturlcgivars(b"http://host/", b'8000')
-    ('host', '8000', '/')
-    """
-    u = util.url(baseurl)
-    name = u.host or ''
-    if u.port:
-        port = u.port
-    path = u.path or ""
-    if not path.startswith('/'):
-        path = '/' + path
+    user = req.remoteuser
 
-    return name, pycompat.bytestr(port), path
+    deny_read = ui.configlist('web', 'deny_read', untrusted=True)
+    if deny_read and (not user or ismember(ui, user, deny_read)):
+        return False
+
+    allow_read = ui.configlist('web', 'allow_read', untrusted=True)
+    # by default, allow reading if no allow_read option has been set
+    if not allow_read or ismember(ui, user, allow_read):
+        return True
+
+    return False
+
+def rawindexentries(ui, repos, req, subdir=''):
+    descend = ui.configbool('web', 'descend')
+    collapse = ui.configbool('web', 'collapse')
+    seenrepos = set()
+    seendirs = set()
+    for name, path in repos:
+
+        if not name.startswith(subdir):
+            continue
+        name = name[len(subdir):]
+        directory = False
+
+        if '/' in name:
+            if not descend:
+                continue
+
+            nameparts = name.split('/')
+            rootname = nameparts[0]
+
+            if not collapse:
+                pass
+            elif rootname in seendirs:
+                continue
+            elif rootname in seenrepos:
+                pass
+            else:
+                directory = True
+                name = rootname
+
+                # redefine the path to refer to the directory
+                discarded = '/'.join(nameparts[1:])
+
+                # remove name parts plus accompanying slash
+                path = path[:-len(discarded) - 1]
+
+                try:
+                    r = hg.repository(ui, path)
+                    directory = False
+                except (IOError, error.RepoError):
+                    pass
+
+        parts = [
+            req.apppath.strip('/'),
+            subdir.strip('/'),
+            name.strip('/'),
+        ]
+        url = '/' + '/'.join(p for p in parts if p) + '/'
+
+        # show either a directory entry or a repository
+        if directory:
+            # get the directory's time information
+            try:
+                d = (get_mtime(path), dateutil.makedate()[1])
+            except OSError:
+                continue
+
+            # add '/' to the name to make it obvious that
+            # the entry is a directory, not a regular repository
+            row = {'contact': "",
+                   'contact_sort': "",
+                   'name': name + '/',
+                   'name_sort': name,
+                   'url': url,
+                   'description': "",
+                   'description_sort': "",
+                   'lastchange': d,
+                   'lastchange_sort': d[1] - d[0],
+                   'archives': templateutil.mappinglist([]),
+                   'isdirectory': True,
+                   'labels': templateutil.hybridlist([], name='label'),
+                   }
+
+            seendirs.add(name)
+            yield row
+            continue
+
+        u = ui.copy()
+        try:
+            u.readconfig(os.path.join(path, '.hg', 'hgrc'))
+        except Exception as e:
+            u.warn(_('error reading %s/.hg/hgrc: %s\n') % (path, e))
+            continue
+
+        def get(section, name, default=uimod._unset):
+            return u.config(section, name, default, untrusted=True)
+
+        if u.configbool("web", "hidden", untrusted=True):
+            continue
+
+        if not readallowed(u, req):
+            continue
+
+        # update time with local timezone
+        try:
+            r = hg.repository(ui, path)
+        except IOError:
+            u.warn(_('error accessing repository at %s\n') % path)
+            continue
+        except error.RepoError:
+            u.warn(_('error accessing repository at %s\n') % path)
+            continue
+        try:
+            d = (get_mtime(r.spath), dateutil.makedate()[1])
+        except OSError:
+            continue
+
+        contact = get_contact(get)
+        description = get("web", "description")
+        seenrepos.add(name)
+        name = get("web", "name", name)
+        labels = u.configlist('web', 'labels', untrusted=True)
+        row = {'contact': contact or "unknown",
+               'contact_sort': contact.upper() or "unknown",
+               'name': name,
+               'name_sort': name,
+               'url': url,
+               'description': description or "unknown",
+               'description_sort': description.upper() or "unknown",
+               'lastchange': d,
+               'lastchange_sort': d[1] - d[0],
+               'archives': webutil.archivelist(u, "tip", url),
+               'isdirectory': None,
+               'labels': templateutil.hybridlist(labels, name='label'),
+               }
+
+        yield row
+
+def _indexentriesgen(context, ui, repos, req, stripecount, sortcolumn,
+                     descending, subdir):
+    rows = rawindexentries(ui, repos, req, subdir=subdir)
+
+    sortdefault = None, False
+
+    if sortcolumn and sortdefault != (sortcolumn, descending):
+        sortkey = '%s_sort' % sortcolumn
+        rows = sorted(rows, key=lambda x: x[sortkey],
+                      reverse=descending)
+
+    for row, parity in zip(rows, paritygen(stripecount)):
+        row['parity'] = parity
+        yield row
+
+def indexentries(ui, repos, req, stripecount, sortcolumn='',
+                 descending=False, subdir=''):
+    args = (ui, repos, req, stripecount, sortcolumn, descending, subdir)
+    return templateutil.mappinggenerator(_indexentriesgen, args=args)
 
 class hgwebdir(object):
     """HTTP server for multiple repositories.
@@ -180,7 +322,6 @@ class hgwebdir(object):
         self.stripecount = self.ui.config('web', 'stripes')
         if self.stripecount:
             self.stripecount = int(self.stripecount)
-        self._baseurl = self.ui.config('web', 'baseurl')
         prefix = self.ui.config('web', 'prefix')
         if prefix.startswith('/'):
             prefix = prefix[1:]
@@ -197,36 +338,17 @@ class hgwebdir(object):
         wsgicgi.launch(self)
 
     def __call__(self, env, respond):
-        req = wsgirequest(env, respond)
-        return self.run_wsgi(req)
+        baseurl = self.ui.config('web', 'baseurl')
+        req = requestmod.parserequestfromenv(env, altbaseurl=baseurl)
+        res = requestmod.wsgiresponse(req, respond)
 
-    def read_allowed(self, ui, req):
-        """Check allow_read and deny_read config options of a repo's ui object
-        to determine user permissions.  By default, with neither option set (or
-        both empty), allow all users to read the repo.  There are two ways a
-        user can be denied read access:  (1) deny_read is not empty, and the
-        user is unauthenticated or deny_read contains user (or *), and (2)
-        allow_read is not empty and the user is not in allow_read.  Return True
-        if user is allowed to read the repo, else return False."""
+        return self.run_wsgi(req, res)
 
-        user = req.env.get('REMOTE_USER')
-
-        deny_read = ui.configlist('web', 'deny_read', untrusted=True)
-        if deny_read and (not user or ismember(ui, user, deny_read)):
-            return False
-
-        allow_read = ui.configlist('web', 'allow_read', untrusted=True)
-        # by default, allow reading if no allow_read option has been set
-        if (not allow_read) or ismember(ui, user, allow_read):
-            return True
-
-        return False
-
-    def run_wsgi(self, req):
+    def run_wsgi(self, req, res):
         profile = self.ui.configbool('profiling', 'enabled')
         with profiling.profile(self.ui, enabled=profile):
             try:
-                for r in self._runwsgi(req):
+                for r in self._runwsgi(req, res):
                     yield r
             finally:
                 # There are known cycles in localrepository that prevent
@@ -238,25 +360,28 @@ class hgwebdir(object):
                 # instances instead of every request.
                 gc.collect()
 
-    def _runwsgi(self, req):
+    def _runwsgi(self, req, res):
         try:
             self.refresh()
 
             csp, nonce = cspvalues(self.ui)
             if csp:
-                req.headers.append(('Content-Security-Policy', csp))
+                res.headers['Content-Security-Policy'] = csp
 
-            virtual = req.env.get("PATH_INFO", "").strip('/')
+            virtual = req.dispatchpath.strip('/')
             tmpl = self.templater(req, nonce)
-            ctype = tmpl('mimetype', encoding=encoding.encoding)
-            ctype = templater.stringify(ctype)
+            ctype = tmpl.render('mimetype', {'encoding': encoding.encoding})
+
+            # Global defaults. These can be overridden by any handler.
+            res.status = '200 Script output follows'
+            res.headers['Content-Type'] = ctype
 
             # a static file
-            if virtual.startswith('static/') or 'static' in req.form:
+            if virtual.startswith('static/') or 'static' in req.qsparams:
                 if virtual.startswith('static/'):
                     fname = virtual[7:]
                 else:
-                    fname = req.form['static'][0]
+                    fname = req.qsparams['static']
                 static = self.ui.config("web", "static", None,
                                         untrusted=False)
                 if not static:
@@ -264,24 +389,23 @@ class hgwebdir(object):
                     if isinstance(tp, str):
                         tp = [tp]
                     static = [os.path.join(p, 'static') for p in tp]
-                staticfile(static, fname, req)
-                return []
+
+                staticfile(static, fname, res)
+                return res.sendresponse()
 
             # top-level index
 
             repos = dict(self.repos)
 
             if (not virtual or virtual == 'index') and virtual not in repos:
-                req.respond(HTTP_OK, ctype)
-                return self.makeindex(req, tmpl)
+                return self.makeindex(req, res, tmpl)
 
             # nested indexes and hgwebs
 
             if virtual.endswith('/index') and virtual not in repos:
                 subdir = virtual[:-len('index')]
                 if any(r.startswith(subdir) for r in repos):
-                    req.respond(HTTP_OK, ctype)
-                    return self.makeindex(req, tmpl, subdir)
+                    return self.makeindex(req, res, tmpl, subdir)
 
             def _virtualdirs():
                 # Check the full virtual path, each parent, and the root ('')
@@ -296,11 +420,19 @@ class hgwebdir(object):
             for virtualrepo in _virtualdirs():
                 real = repos.get(virtualrepo)
                 if real:
-                    req.env['REPO_NAME'] = virtualrepo
+                    # Re-parse the WSGI environment to take into account our
+                    # repository path component.
+                    uenv = req.rawenv
+                    if pycompat.ispy3:
+                        uenv = {k.decode('latin1'): v for k, v in
+                                uenv.iteritems()}
+                    req = requestmod.parserequestfromenv(
+                        uenv, reponame=virtualrepo,
+                        altbaseurl=self.ui.config('web', 'baseurl'))
                     try:
                         # ensure caller gets private copy of ui
                         repo = hg.repository(self.ui.copy(), real)
-                        return hgweb_mod.hgweb(repo).run_wsgi(req)
+                        return hgweb_mod.hgweb(repo).run_wsgi(req, res)
                     except IOError as inst:
                         msg = encoding.strtolocal(inst.strerror)
                         raise ErrorResponse(HTTP_SERVER_ERROR, msg)
@@ -310,173 +442,26 @@ class hgwebdir(object):
             # browse subdirectories
             subdir = virtual + '/'
             if [r for r in repos if r.startswith(subdir)]:
-                req.respond(HTTP_OK, ctype)
-                return self.makeindex(req, tmpl, subdir)
+                return self.makeindex(req, res, tmpl, subdir)
 
             # prefixes not found
-            req.respond(HTTP_NOT_FOUND, ctype)
-            return tmpl("notfound", repo=virtual)
+            res.status = '404 Not Found'
+            res.setbodygen(tmpl.generate('notfound', {'repo': virtual}))
+            return res.sendresponse()
 
-        except ErrorResponse as err:
-            req.respond(err, ctype)
-            return tmpl('error', error=err.message or '')
+        except ErrorResponse as e:
+            res.status = statusmessage(e.code, pycompat.bytestr(e))
+            res.setbodygen(tmpl.generate('error', {'error': e.message or ''}))
+            return res.sendresponse()
         finally:
             tmpl = None
 
-    def makeindex(self, req, tmpl, subdir=""):
-
-        def archivelist(ui, nodeid, url):
-            allowed = ui.configlist("web", "allow_archive", untrusted=True)
-            archives = []
-            for typ, spec in hgweb_mod.archivespecs.iteritems():
-                if typ in allowed or ui.configbool("web", "allow" + typ,
-                                                    untrusted=True):
-                    archives.append({"type": typ, "extension": spec[2],
-                                     "node": nodeid, "url": url})
-            return archives
-
-        def rawentries(subdir="", **map):
-
-            descend = self.ui.configbool('web', 'descend')
-            collapse = self.ui.configbool('web', 'collapse')
-            seenrepos = set()
-            seendirs = set()
-            for name, path in self.repos:
-
-                if not name.startswith(subdir):
-                    continue
-                name = name[len(subdir):]
-                directory = False
-
-                if '/' in name:
-                    if not descend:
-                        continue
-
-                    nameparts = name.split('/')
-                    rootname = nameparts[0]
-
-                    if not collapse:
-                        pass
-                    elif rootname in seendirs:
-                        continue
-                    elif rootname in seenrepos:
-                        pass
-                    else:
-                        directory = True
-                        name = rootname
-
-                        # redefine the path to refer to the directory
-                        discarded = '/'.join(nameparts[1:])
-
-                        # remove name parts plus accompanying slash
-                        path = path[:-len(discarded) - 1]
-
-                        try:
-                            r = hg.repository(self.ui, path)
-                            directory = False
-                        except (IOError, error.RepoError):
-                            pass
-
-                parts = [name]
-                parts.insert(0, '/' + subdir.rstrip('/'))
-                if req.env['SCRIPT_NAME']:
-                    parts.insert(0, req.env['SCRIPT_NAME'])
-                url = re.sub(r'/+', '/', '/'.join(parts) + '/')
-
-                # show either a directory entry or a repository
-                if directory:
-                    # get the directory's time information
-                    try:
-                        d = (get_mtime(path), util.makedate()[1])
-                    except OSError:
-                        continue
-
-                    # add '/' to the name to make it obvious that
-                    # the entry is a directory, not a regular repository
-                    row = {'contact': "",
-                           'contact_sort': "",
-                           'name': name + '/',
-                           'name_sort': name,
-                           'url': url,
-                           'description': "",
-                           'description_sort': "",
-                           'lastchange': d,
-                           'lastchange_sort': d[1]-d[0],
-                           'archives': [],
-                           'isdirectory': True,
-                           'labels': [],
-                           }
-
-                    seendirs.add(name)
-                    yield row
-                    continue
-
-                u = self.ui.copy()
-                try:
-                    u.readconfig(os.path.join(path, '.hg', 'hgrc'))
-                except Exception as e:
-                    u.warn(_('error reading %s/.hg/hgrc: %s\n') % (path, e))
-                    continue
-                def get(section, name, default=uimod._unset):
-                    return u.config(section, name, default, untrusted=True)
-
-                if u.configbool("web", "hidden", untrusted=True):
-                    continue
-
-                if not self.read_allowed(u, req):
-                    continue
-
-                # update time with local timezone
-                try:
-                    r = hg.repository(self.ui, path)
-                except IOError:
-                    u.warn(_('error accessing repository at %s\n') % path)
-                    continue
-                except error.RepoError:
-                    u.warn(_('error accessing repository at %s\n') % path)
-                    continue
-                try:
-                    d = (get_mtime(r.spath), util.makedate()[1])
-                except OSError:
-                    continue
-
-                contact = get_contact(get)
-                description = get("web", "description")
-                seenrepos.add(name)
-                name = get("web", "name", name)
-                row = {'contact': contact or "unknown",
-                       'contact_sort': contact.upper() or "unknown",
-                       'name': name,
-                       'name_sort': name,
-                       'url': url,
-                       'description': description or "unknown",
-                       'description_sort': description.upper() or "unknown",
-                       'lastchange': d,
-                       'lastchange_sort': d[1]-d[0],
-                       'archives': archivelist(u, "tip", url),
-                       'isdirectory': None,
-                       'labels': u.configlist('web', 'labels', untrusted=True),
-                       }
-
-                yield row
-
-        sortdefault = None, False
-        def entries(sortcolumn="", descending=False, subdir="", **map):
-            rows = rawentries(subdir=subdir, **map)
-
-            if sortcolumn and sortdefault != (sortcolumn, descending):
-                sortkey = '%s_sort' % sortcolumn
-                rows = sorted(rows, key=lambda x: x[sortkey],
-                              reverse=descending)
-            for row, parity in zip(rows, paritygen(self.stripecount)):
-                row['parity'] = parity
-                yield row
-
+    def makeindex(self, req, res, tmpl, subdir=""):
         self.refresh()
         sortable = ["name", "description", "contact", "lastchange"]
-        sortcolumn, descending = sortdefault
-        if 'sort' in req.form:
-            sortcolumn = req.form['sort'][0]
+        sortcolumn, descending = None, False
+        if 'sort' in req.qsparams:
+            sortcolumn = req.qsparams['sort']
             descending = sortcolumn.startswith('-')
             if descending:
                 sortcolumn = sortcolumn[1:]
@@ -489,12 +474,21 @@ class hgwebdir(object):
                 for column in sortable]
 
         self.refresh()
-        self.updatereqenv(req.env)
 
-        return tmpl("index", entries=entries, subdir=subdir,
-                    pathdef=hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),
-                    sortcolumn=sortcolumn, descending=descending,
-                    **dict(sort))
+        entries = indexentries(self.ui, self.repos, req,
+                               self.stripecount, sortcolumn=sortcolumn,
+                               descending=descending, subdir=subdir)
+
+        mapping = {
+            'entries': entries,
+            'subdir': subdir,
+            'pathdef': hgweb_mod.makebreadcrumb('/' + subdir, self.prefix),
+            'sortcolumn': sortcolumn,
+            'descending': descending,
+        }
+        mapping.update(sort)
+        res.setbodygen(tmpl.generate('index', mapping))
+        return res.sendresponse()
 
     def templater(self, req, nonce):
 
@@ -507,30 +501,24 @@ class hgwebdir(object):
         def config(section, name, default=uimod._unset, untrusted=True):
             return self.ui.config(section, name, default, untrusted)
 
-        self.updatereqenv(req.env)
-
-        url = req.env.get('SCRIPT_NAME', '')
-        if not url.endswith('/'):
-            url += '/'
-
         vars = {}
         styles, (style, mapfile) = hgweb_mod.getstyle(req, config,
                                                       self.templatepath)
         if style == styles[0]:
             vars['style'] = style
 
-        start = r'&' if url[-1] == r'?' else r'?'
-        sessionvars = webutil.sessionvars(vars, start)
+        sessionvars = webutil.sessionvars(vars, r'?')
         logourl = config('web', 'logourl')
         logoimg = config('web', 'logoimg')
-        staticurl = config('web', 'staticurl') or url + 'static/'
+        staticurl = (config('web', 'staticurl')
+                     or req.apppath + '/static/')
         if not staticurl.endswith('/'):
             staticurl += '/'
 
         defaults = {
             "encoding": encoding.encoding,
             "motd": motd,
-            "url": url,
+            "url": req.apppath + '/',
             "logourl": logourl,
             "logoimg": logoimg,
             "staticurl": staticurl,
@@ -540,10 +528,3 @@ class hgwebdir(object):
         }
         tmpl = templater.templater.frommapfile(mapfile, defaults=defaults)
         return tmpl
-
-    def updatereqenv(self, env):
-        if self._baseurl is not None:
-            name, port, path = geturlcgivars(self._baseurl, env['SERVER_PORT'])
-            env['SERVER_NAME'] = name
-            env['SERVER_PORT'] = port
-            env['SCRIPT_NAME'] = path

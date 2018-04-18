@@ -23,7 +23,7 @@
   $ echo a >> a
   $ hg ci -mb
   $ req() {
-  >     hg serve -p $HGPORT -d --pid-file=hg.pid -E errors.log
+  >     hg $1 serve -p $HGPORT -d --pid-file=hg.pid -E errors.log
   >     cat hg.pid >> $DAEMON_PIDS
   >     hg --cwd ../test2 push http://localhost:$HGPORT/
   >     exitstatus=$?
@@ -70,6 +70,58 @@ expect success
   > echo "phase-move: $HG_NODE:  $HG_OLDPHASE -> $HG_PHASE"
   > EOF
 
+#if bundle1
+  $ cat >> .hg/hgrc <<EOF
+  > allow_push = *
+  > [hooks]
+  > changegroup = sh -c "printenv.py changegroup 0"
+  > pushkey = sh -c "printenv.py pushkey 0"
+  > txnclose-phase.test = sh $TESTTMP/hook.sh 
+  > EOF
+  $ req "--debug --config extensions.blackbox="
+  listening at http://*:$HGPORT/ (bound to $LOCALIP:$HGPORT) (glob) (?)
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  remote: redirecting incoming bundle to */hg-unbundle-* (glob)
+  remote: adding changesets
+  remote: add changeset ba677d0156c1
+  remote: adding manifests
+  remote: adding file changes
+  remote: adding a revisions
+  remote: added 1 changesets with 1 changes to 1 files
+  remote: updating the branch cache
+  remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
+  remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
+  remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
+  remote: running hook changegroup: sh -c "printenv.py changegroup 0"
+  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  % serve errors
+  $ hg rollback
+  repository tip rolled back to revision 0 (undo serve)
+  $ req "--debug --config server.streamunbundle=True --config extensions.blackbox="
+  listening at http://*:$HGPORT/ (bound to $LOCALIP:$HGPORT) (glob) (?)
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  remote: adding changesets
+  remote: add changeset ba677d0156c1
+  remote: adding manifests
+  remote: adding file changes
+  remote: adding a revisions
+  remote: added 1 changesets with 1 changes to 1 files
+  remote: updating the branch cache
+  remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
+  remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
+  remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
+  remote: running hook changegroup: sh -c "printenv.py changegroup 0"
+  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
+  % serve errors
+  $ hg rollback
+  repository tip rolled back to revision 0 (undo serve)
+#endif
+
+#if bundle2
   $ cat >> .hg/hgrc <<EOF
   > allow_push = *
   > [hooks]
@@ -86,11 +138,11 @@ expect success
   remote: added 1 changesets with 1 changes to 1 files
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
-  remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle1 !)
-  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob) (bundle2 !)
+  remote: changegroup hook: HG_BUNDLE2=1 HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
   % serve errors
   $ hg rollback
   repository tip rolled back to revision 0 (undo serve)
+#endif
 
 expect success, server lacks the httpheader capability
 

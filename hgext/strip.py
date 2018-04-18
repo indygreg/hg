@@ -181,13 +181,10 @@ def stripcmd(ui, repo, *revs, **opts):
         strippedrevs = revs.union(descendants)
         roots = revs.difference(descendants)
 
-        update = False
         # if one of the wdir parent is stripped we'll need
         # to update away to an earlier revision
-        for p in repo.dirstate.parents():
-            if p != nullid and cl.rev(p) in strippedrevs:
-                update = True
-                break
+        update = any(p != nullid and cl.rev(p) in strippedrevs
+                     for p in repo.dirstate.parents())
 
         rootnodes = set(cl.node(r) for r in roots)
 
@@ -215,7 +212,7 @@ def stripcmd(ui, repo, *revs, **opts):
 
             # only reset the dirstate for files that would actually change
             # between the working context and uctx
-            descendantrevs = repo.revs("%s::." % uctx.rev())
+            descendantrevs = repo.revs(b"%d::.", uctx.rev())
             changedfiles = []
             for rev in descendantrevs:
                 # blindly reset the files, regardless of what actually changed

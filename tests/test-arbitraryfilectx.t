@@ -2,14 +2,14 @@ Setup:
   $ cat > eval.py <<EOF
   > from __future__ import absolute_import
   > import filecmp
-  > from mercurial import commands, context, registrar
+  > from mercurial import commands, context, pycompat, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'eval', [], 'hg eval CMD')
+  > @command(b'eval', [], b'hg eval CMD')
   > def eval_(ui, repo, *cmds, **opts):
-  >     cmd = " ".join(cmds)
-  >     res = str(eval(cmd, globals(), locals()))
-  >     ui.warn("%s" % res)
+  >     cmd = b" ".join(cmds)
+  >     res = pycompat.bytestr(eval(cmd, globals(), locals()))
+  >     ui.warn(b"%s" % res)
   > EOF
 
   $ echo "[extensions]" >> $HGRCPATH

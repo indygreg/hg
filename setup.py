@@ -255,6 +255,7 @@ def filterhgerr(err):
            if (not e.startswith(b'not trusting file')
                and not e.startswith(b'warning: Not importing')
                and not e.startswith(b'obsolete feature not enabled')
+               and not e.startswith(b'*** failed to import extension')
                and not e.startswith(b'devel-warn:'))]
     return b'\n'.join(b'  ' + e for e in err)
 
@@ -806,13 +807,22 @@ packages = ['mercurial',
             'mercurial.cext',
             'mercurial.cffi',
             'mercurial.hgweb',
-            'mercurial.httpclient',
             'mercurial.pure',
             'mercurial.thirdparty',
             'mercurial.thirdparty.attr',
+            'mercurial.thirdparty.cbor',
+            'mercurial.thirdparty.cbor.cbor2',
+            'mercurial.thirdparty.concurrent',
+            'mercurial.thirdparty.concurrent.futures',
+            'mercurial.thirdparty.zope',
+            'mercurial.thirdparty.zope.interface',
+            'mercurial.utils',
             'hgext', 'hgext.convert', 'hgext.fsmonitor',
-            'hgext.fsmonitor.pywatchman', 'hgext.highlight',
-            'hgext.largefiles', 'hgext.lfs', 'hgext.zeroconf', 'hgext3rd',
+            'hgext.fsmonitor.pywatchman',
+            'hgext.infinitepush',
+            'hgext.highlight',
+            'hgext.largefiles', 'hgext.lfs', 'hgext.narrow',
+            'hgext.zeroconf', 'hgext3rd',
             'hgdemandimport']
 
 common_depends = ['mercurial/bitmanipulation.h',
@@ -846,17 +856,30 @@ for plat, macro, code in [
 if sys.platform == 'darwin':
     osutil_ldflags += ['-framework', 'ApplicationServices']
 
+xdiff_srcs = [
+    'mercurial/thirdparty/xdiff/xdiffi.c',
+    'mercurial/thirdparty/xdiff/xprepare.c',
+    'mercurial/thirdparty/xdiff/xutils.c',
+]
+
+xdiff_headers = [
+    'mercurial/thirdparty/xdiff/xdiff.h',
+    'mercurial/thirdparty/xdiff/xdiffi.h',
+    'mercurial/thirdparty/xdiff/xinclude.h',
+    'mercurial/thirdparty/xdiff/xmacros.h',
+    'mercurial/thirdparty/xdiff/xprepare.h',
+    'mercurial/thirdparty/xdiff/xtypes.h',
+    'mercurial/thirdparty/xdiff/xutils.h',
+]
+
 extmodules = [
     Extension('mercurial.cext.base85', ['mercurial/cext/base85.c'],
               include_dirs=common_include_dirs,
               depends=common_depends),
     Extension('mercurial.cext.bdiff', ['mercurial/bdiff.c',
-                                       'mercurial/cext/bdiff.c'],
+                                       'mercurial/cext/bdiff.c'] + xdiff_srcs,
               include_dirs=common_include_dirs,
-              depends=common_depends + ['mercurial/bdiff.h']),
-    Extension('mercurial.cext.diffhelpers', ['mercurial/cext/diffhelpers.c'],
-              include_dirs=common_include_dirs,
-              depends=common_depends),
+              depends=common_depends + ['mercurial/bdiff.h'] + xdiff_headers),
     Extension('mercurial.cext.mpatch', ['mercurial/mpatch.c',
                                         'mercurial/cext/mpatch.c'],
               include_dirs=common_include_dirs,
@@ -874,6 +897,10 @@ extmodules = [
               extra_compile_args=osutil_cflags,
               extra_link_args=osutil_ldflags,
               depends=common_depends),
+    Extension(
+        'mercurial.thirdparty.zope.interface._zope_interface_coptimizations', [
+        'mercurial/thirdparty/zope/interface/_zope_interface_coptimizations.c',
+        ]),
     Extension('hgext.fsmonitor.pywatchman.bser',
               ['hgext/fsmonitor/pywatchman/bser.c']),
     ]

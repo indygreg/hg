@@ -1,3 +1,7 @@
+The simple store doesn't escape paths robustly and can't store paths
+with periods, etc. So much of this test fails with it.
+#require no-reposimplestore
+
   $ hg init
 
 audit of .hg
@@ -109,8 +113,7 @@ attack back/test where back symlinks to ..
 #else
 ('back' will be a file and cause some other system specific error)
   $ hg update -Cr2
-  back: is both a file and a directory
-  abort: * (glob)
+  abort: $TESTTMP/target/back/test: $ENOTDIR$
   [255]
 #endif
 

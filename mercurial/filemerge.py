@@ -7,8 +7,10 @@
 
 from __future__ import absolute_import
 
+import contextlib
 import os
 import re
+import shutil
 import tempfile
 
 from .i18n import _
@@ -27,6 +29,11 @@ from . import (
     templatekw,
     templater,
     util,
+)
+
+from .utils import (
+    procutil,
+    stringutil,
 )
 
 def _toolstr(ui, tool, part, *args):
@@ -116,11 +123,11 @@ def findexternaltool(ui, tool):
             continue
         p = util.lookupreg(k, _toolstr(ui, tool, "regname"))
         if p:
-            p = util.findexe(p + _toolstr(ui, tool, "regappend", ""))
+            p = procutil.findexe(p + _toolstr(ui, tool, "regappend", ""))
             if p:
                 return p
     exe = _toolstr(ui, tool, "executable", tool)
-    return util.findexe(util.expandpath(exe))
+    return procutil.findexe(util.expandpath(exe))
 
 def _picktool(repo, ui, path, binary, symlink, changedelete):
     def supportscd(tool):
@@ -143,7 +150,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
             # the nomerge tools are the only tools that support change/delete
             # conflicts
             pass
-        elif not util.gui() and _toolbool(ui, tool, "gui"):
+        elif not procutil.gui() and _toolbool(ui, tool, "gui"):
             ui.warn(_("tool %s requires a GUI\n") % tmsg)
         else:
             return True
@@ -158,7 +165,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
             return ":prompt", None
         else:
             if toolpath:
-                return (force, util.shellquote(toolpath))
+                return (force, procutil.shellquote(toolpath))
             else:
                 # mimic HGMERGE if given tool not found
                 return (force, force)
@@ -176,7 +183,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
         mf = match.match(repo.root, '', [pat])
         if mf(path) and check(tool, pat, symlink, False, changedelete):
             toolpath = _findtool(ui, tool)
-            return (tool, util.shellquote(toolpath))
+            return (tool, procutil.shellquote(toolpath))
 
     # then merge tools
     tools = {}
@@ -201,7 +208,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
     for p, t in tools:
         if check(t, None, symlink, binary, changedelete):
             toolpath = _findtool(ui, t)
-            return (t, util.shellquote(toolpath))
+            return (t, procutil.shellquote(toolpath))
 
     # internal merge or prompt as last resort
     if symlink or binary or changedelete:
@@ -509,28 +516,41 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
                        'for %s\n') % (tool, fcd.path()))
         return False, 1, None
     unused, unused, unused, back = files
-    a = _workingpath(repo, fcd)
-    b, c = _maketempfiles(repo, fco, fca)
-    try:
-        out = ""
+    localpath = _workingpath(repo, fcd)
+    args = _toolstr(repo.ui, tool, "args")
+
+    with _maketempfiles(repo, fco, fca, repo.wvfs.join(back.path()),
+                        "$output" in args) as temppaths:
+        basepath, otherpath, localoutputpath = temppaths
+        outpath = ""
+        mylabel, otherlabel = labels[:2]
+        if len(labels) >= 3:
+            baselabel = labels[2]
+        else:
+            baselabel = 'base'
         env = {'HG_FILE': fcd.path(),
                'HG_MY_NODE': short(mynode),
-               'HG_OTHER_NODE': str(fco.changectx()),
-               'HG_BASE_NODE': str(fca.changectx()),
+               'HG_OTHER_NODE': short(fco.changectx().node()),
+               'HG_BASE_NODE': short(fca.changectx().node()),
                'HG_MY_ISLINK': 'l' in fcd.flags(),
                'HG_OTHER_ISLINK': 'l' in fco.flags(),
                'HG_BASE_ISLINK': 'l' in fca.flags(),
+               'HG_MY_LABEL': mylabel,
+               'HG_OTHER_LABEL': otherlabel,
+               'HG_BASE_LABEL': baselabel,
                }
         ui = repo.ui
 
-        args = _toolstr(ui, tool, "args")
         if "$output" in args:
             # read input from backup, write to original
-            out = a
-            a = repo.wvfs.join(back.path())
-        replace = {'local': a, 'base': b, 'other': c, 'output': out}
-        args = util.interpolate(r'\$', replace, args,
-                                lambda s: util.shellquote(util.localpath(s)))
+            outpath = localpath
+            localpath = localoutputpath
+        replace = {'local': localpath, 'base': basepath, 'other': otherpath,
+                   'output': outpath, 'labellocal': mylabel,
+                   'labelother': otherlabel, 'labelbase': baselabel}
+        args = util.interpolate(
+            br'\$', replace, args,
+            lambda s: procutil.shellquote(util.localpath(s)))
         cmd = toolpath + ' ' + args
         if _toolbool(ui, tool, "gui"):
             repo.ui.status(_('running merge tool %s for file %s\n') %
@@ -539,9 +559,6 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         r = ui.system(cmd, cwd=repo.root, environ=env, blockedtag='mergetool')
         repo.ui.debug('merge tool returned: %d\n' % r)
         return True, r, False
-    finally:
-        util.unlink(b)
-        util.unlink(c)
 
 def _formatconflictmarker(ctx, template, label, pad):
     """Applies the given template to the ctx, prefixed by the label.
@@ -553,7 +570,7 @@ def _formatconflictmarker(ctx, template, label, pad):
         ctx = ctx.p1()
 
     props = {'ctx': ctx}
-    templateresult = template.render(props)
+    templateresult = template.renderdefault(props)
 
     label = ('%s:' % label).ljust(pad + 1)
     mark = '%s %s' % (label, templateresult)
@@ -562,11 +579,11 @@ def _formatconflictmarker(ctx, template, label, pad):
         mark = mark.splitlines()[0] # split for safety
 
     # 8 for the prefix of conflict marker lines (e.g. '<<<<<<< ')
-    return util.ellipsis(mark, 80 - 8)
+    return stringutil.ellipsis(mark, 80 - 8)
 
 _defaultconflictlabels = ['local', 'other']
 
-def _formatlabels(repo, fcd, fco, fca, labels):
+def _formatlabels(repo, fcd, fco, fca, labels, tool=None):
     """Formats the given labels using the conflict marker template.
 
     Returns a list of formatted labels.
@@ -577,6 +594,8 @@ def _formatlabels(repo, fcd, fco, fca, labels):
 
     ui = repo.ui
     template = ui.config('ui', 'mergemarkertemplate')
+    if tool is not None:
+        template = _toolstr(ui, tool, 'mergemarkertemplate', template)
     template = templater.unquotestring(template)
     tres = formatter.templateresources(ui, repo)
     tmpl = formatter.maketemplater(ui, template, defaults=templatekw.keywords,
@@ -653,24 +672,62 @@ def _makebackup(repo, ui, wctx, fcd, premerge):
         # the backup context regardless of where it lives.
         return context.arbitraryfilectx(back, repo=repo)
 
-def _maketempfiles(repo, fco, fca):
-    """Writes out `fco` and `fca` as temporary files, so an external merge
-    tool may use them.
+@contextlib.contextmanager
+def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
+    """Writes out `fco` and `fca` as temporary files, and (if uselocalpath)
+    copies `localpath` to another temporary file, so an external merge tool may
+    use them.
     """
-    def temp(prefix, ctx):
-        fullbase, ext = os.path.splitext(ctx.path())
-        pre = "%s~%s." % (os.path.basename(fullbase), prefix)
-        (fd, name) = tempfile.mkstemp(prefix=pre, suffix=ext)
+    tmproot = None
+    tmprootprefix = repo.ui.config('experimental', 'mergetempdirprefix')
+    if tmprootprefix:
+        tmproot = tempfile.mkdtemp(prefix=tmprootprefix)
+
+    def maketempfrompath(prefix, path):
+        fullbase, ext = os.path.splitext(path)
+        pre = "%s~%s" % (os.path.basename(fullbase), prefix)
+        if tmproot:
+            name = os.path.join(tmproot, pre)
+            if ext:
+                name += ext
+            f = open(name, r"wb")
+        else:
+            fd, name = tempfile.mkstemp(prefix=pre + '.', suffix=ext)
+            f = os.fdopen(fd, r"wb")
+        return f, name
+
+    def tempfromcontext(prefix, ctx):
+        f, name = maketempfrompath(prefix, ctx.path())
         data = repo.wwritedata(ctx.path(), ctx.data())
-        f = os.fdopen(fd, pycompat.sysstr("wb"))
         f.write(data)
         f.close()
         return name
 
-    b = temp("base", fca)
-    c = temp("other", fco)
+    b = tempfromcontext("base", fca)
+    c = tempfromcontext("other", fco)
+    d = localpath
+    if uselocalpath:
+        # We start off with this being the backup filename, so remove the .orig
+        # to make syntax-highlighting more likely.
+        if d.endswith('.orig'):
+            d, _ = os.path.splitext(d)
+        f, d = maketempfrompath("local", d)
+        with open(localpath, 'rb') as src:
+            f.write(src.read())
+        f.close()
 
-    return b, c
+    try:
+        yield b, c, d
+    finally:
+        if tmproot:
+            shutil.rmtree(tmproot)
+        else:
+            util.unlink(b)
+            util.unlink(c)
+            # if not uselocalpath, d is the 'orig'/backup file which we
+            # shouldn't delete.
+            if d and uselocalpath:
+                util.unlink(d)
 
 def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     """perform a 3-way merge in the working directory
@@ -706,6 +763,7 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         mergetype = func.mergetype
         onfailure = func.onfailure
         precheck = func.precheck
+        isexternal = False
     else:
         if wctx.isinmemory():
             func = _xmergeimm
@@ -714,6 +772,7 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         mergetype = fullmerge
         onfailure = _("merging %s failed!\n")
         precheck = None
+        isexternal = True
 
     toolconf = tool, toolpath, binary, symlink
 
@@ -743,19 +802,42 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     files = (None, None, None, back)
     r = 1
     try:
-        markerstyle = ui.config('ui', 'mergemarkers')
+        internalmarkerstyle = ui.config('ui', 'mergemarkers')
+        if isexternal:
+            markerstyle = _toolstr(ui, tool, 'mergemarkers')
+        else:
+            markerstyle = internalmarkerstyle
+
         if not labels:
             labels = _defaultconflictlabels
+        formattedlabels = labels
         if markerstyle != 'basic':
-            labels = _formatlabels(repo, fcd, fco, fca, labels)
+            formattedlabels = _formatlabels(repo, fcd, fco, fca, labels,
+                                            tool=tool)
 
         if premerge and mergetype == fullmerge:
-            r = _premerge(repo, fcd, fco, fca, toolconf, files, labels=labels)
+            # conflict markers generated by premerge will use 'detailed'
+            # settings if either ui.mergemarkers or the tool's mergemarkers
+            # setting is 'detailed'. This way tools can have basic labels in
+            # space-constrained areas of the UI, but still get full information
+            # in conflict markers if premerge is 'keep' or 'keep-merge3'.
+            premergelabels = labels
+            labeltool = None
+            if markerstyle != 'basic':
+                # respect 'tool's mergemarkertemplate (which defaults to
+                # ui.mergemarkertemplate)
+                labeltool = tool
+            if internalmarkerstyle != 'basic' or markerstyle != 'basic':
+                premergelabels = _formatlabels(repo, fcd, fco, fca,
+                                               premergelabels, tool=labeltool)
+
+            r = _premerge(repo, fcd, fco, fca, toolconf, files,
+                          labels=premergelabels)
             # complete if premerge successful (r is 0)
             return not r, r, False
 
         needcheck, r, deleted = func(repo, mynode, orig, fcd, fco, fca,
-                                     toolconf, files, labels=labels)
+                                     toolconf, files, labels=formattedlabels)
 
         if needcheck:
             r = _check(repo, r, ui, tool, fcd, files)

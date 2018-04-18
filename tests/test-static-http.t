@@ -1,4 +1,4 @@
-#require killdaemons
+#require killdaemons no-reposimplestore
 
   $ hg clone http://localhost:$HGPORT/ copy
   abort: * (glob)
@@ -222,6 +222,8 @@ List of files accessed over HTTP:
   /.hg/bookmarks
   /.hg/bookmarks.current
   /.hg/cache/hgtagsfnodes1
+  /.hg/cache/rbc-names-v1
+  /.hg/cache/rbc-revs-v1
   /.hg/requires
   /.hg/store/00changelog.i
   /.hg/store/00manifest.i
@@ -234,6 +236,8 @@ List of files accessed over HTTP:
   /remote-with-names/.hg/bookmarks.current
   /remote-with-names/.hg/cache/branch2-served
   /remote-with-names/.hg/cache/hgtagsfnodes1
+  /remote-with-names/.hg/cache/rbc-names-v1
+  /remote-with-names/.hg/cache/rbc-revs-v1
   /remote-with-names/.hg/cache/tags2-served
   /remote-with-names/.hg/localtags
   /remote-with-names/.hg/requires
@@ -248,6 +252,7 @@ List of files accessed over HTTP:
   /remote/.hg/cache/branch2-served
   /remote/.hg/cache/hgtagsfnodes1
   /remote/.hg/cache/rbc-names-v1
+  /remote/.hg/cache/rbc-revs-v1
   /remote/.hg/cache/tags2-served
   /remote/.hg/localtags
   /remote/.hg/requires
@@ -265,6 +270,8 @@ List of files accessed over HTTP:
   /sub/.hg/bookmarks
   /sub/.hg/bookmarks.current
   /sub/.hg/cache/hgtagsfnodes1
+  /sub/.hg/cache/rbc-names-v1
+  /sub/.hg/cache/rbc-revs-v1
   /sub/.hg/requires
   /sub/.hg/store/00changelog.i
   /sub/.hg/store/00manifest.i

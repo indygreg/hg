@@ -19,6 +19,10 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    procutil,
+    stringutil,
+)
 
 def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
     '''call python hook. hook is callable object, looked up as
@@ -41,7 +45,7 @@ def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
                 % (hname, funcname))
         modname = funcname[:d]
         oldpaths = sys.path
-        if util.mainfrozen():
+        if procutil.mainfrozen():
             # binary installs require sys.path manipulation
             modpath, modfile = os.path.split(modname)
             if modpath and modfile:
@@ -49,12 +53,12 @@ def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
                 modname = modfile
         with demandimport.deactivated():
             try:
-                obj = __import__(modname)
+                obj = __import__(pycompat.sysstr(modname))
             except (ImportError, SyntaxError):
                 e1 = sys.exc_info()
                 try:
                     # extensions are loaded with hgext_ prefix
-                    obj = __import__("hgext_%s" % modname)
+                    obj = __import__(r"hgext_%s" % pycompat.sysstr(modname))
                 except (ImportError, SyntaxError):
                     e2 = sys.exc_info()
                     if ui.tracebackflag:
@@ -133,12 +137,8 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     for k, v in args.iteritems():
         if callable(v):
             v = v()
-        if isinstance(v, dict):
-            # make the dictionary element order stable across Python
-            # implementations
-            v = ('{' +
-                 ', '.join('%r: %r' % i for i in sorted(v.iteritems())) +
-                 '}')
+        if isinstance(v, (dict, list)):
+            v = stringutil.pprint(v, bprefix=False)
         env['HG_' + k.upper()] = v
 
     if repo:
@@ -151,7 +151,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
     ui.log('exthook', 'exthook-%s: %s finished in %0.2f seconds\n',
            name, cmd, duration)
     if r:
-        desc, r = util.explainexit(r)
+        desc = procutil.explainexit(r)
         if throw:
             raise error.HookAbort(_('%s hook %s') % (name, desc))
         ui.warn(_('warning: %s hook %s\n') % (name, desc))
@@ -222,11 +222,11 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
         for hname, cmd in hooks:
             if oldstdout == -1 and _redirect:
                 try:
-                    stdoutno = util.stdout.fileno()
-                    stderrno = util.stderr.fileno()
+                    stdoutno = procutil.stdout.fileno()
+                    stderrno = procutil.stderr.fileno()
                     # temporarily redirect stdout to stderr, if possible
                     if stdoutno >= 0 and stderrno >= 0:
-                        util.stdout.flush()
+                        procutil.stdout.flush()
                         oldstdout = os.dup(stdoutno)
                         os.dup2(stderrno, stdoutno)
                 except (OSError, AttributeError):
@@ -265,14 +265,14 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
                 raised = False
 
             res[hname] = r, raised
-
-            # The stderr is fully buffered on Windows when connected to a pipe.
-            # A forcible flush is required to make small stderr data in the
-            # remote side available to the client immediately.
-            util.stderr.flush()
     finally:
+        # The stderr is fully buffered on Windows when connected to a pipe.
+        # A forcible flush is required to make small stderr data in the
+        # remote side available to the client immediately.
+        procutil.stderr.flush()
+
         if _redirect and oldstdout >= 0:
-            util.stdout.flush()  # write hook output to stderr fd
+            procutil.stdout.flush()  # write hook output to stderr fd
             os.dup2(oldstdout, stdoutno)
             os.close(oldstdout)
 

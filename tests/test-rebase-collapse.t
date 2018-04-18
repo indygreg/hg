@@ -2,6 +2,7 @@
   > [extensions]
   > rebase=
   > mq=
+  > drawdag=$TESTDIR/drawdag.py
   > 
   > [phases]
   > publish=False
@@ -11,47 +12,21 @@
   > tglogp = log -G --template "{rev}: {node|short} {phase} '{desc}' {branches}\n"
   > EOF
 
-Create repo a:
+Highest phase of source commits is used:
 
-  $ hg init a
-  $ cd a
-  $ hg unbundle "$TESTDIR/bundles/rebase.hg"
-  adding changesets
-  adding manifests
-  adding file changes
-  added 8 changesets with 7 changes to 7 files (+2 heads)
-  new changesets cd010b8cd998:02de42196ebe
-  (run 'hg heads' to see heads, 'hg merge' to merge)
-  $ hg up tip
-  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg init phase
+  $ cd phase
+  $ hg debugdrawdag << 'EOF'
+  >   D
+  >   |
+  > F C
+  > | |
+  > E B
+  > |/
+  > A
+  > EOF
 
-  $ hg tglog
-  @  7: 02de42196ebe 'H'
-  |
-  | o  6: eea13746799a 'G'
-  |/|
-  o |  5: 24b6387c8c8c 'F'
-  | |
-  | o  4: 9520eea781bc 'E'
-  |/
-  | o  3: 32af7686d403 'D'
-  | |
-  | o  2: 5fddd98957c8 'C'
-  | |
-  | o  1: 42ccdea3bb16 'B'
-  |/
-  o  0: cd010b8cd998 'A'
-  
-  $ cd ..
-
-
-Rebasing B onto H and collapsing changesets with different phases:
-
-
-  $ hg clone -q -u 3 a a1
-  $ cd a1
-
-  $ hg phase --force --secret 3
+  $ hg phase --force --secret D
 
   $ cat > $TESTTMP/editor.sh <<EOF
   > echo "==== before editing"
@@ -59,10 +34,10 @@ Rebasing B onto H and collapsing changesets with different phases:
   > echo "===="
   > echo "edited manually" >> \$1
   > EOF
-  $ HGEDITOR="sh $TESTTMP/editor.sh" hg rebase --collapse --keepbranches -e --dest 7
-  rebasing 1:42ccdea3bb16 "B"
-  rebasing 2:5fddd98957c8 "C"
-  rebasing 3:32af7686d403 "D"
+  $ HGEDITOR="sh $TESTTMP/editor.sh" hg rebase --collapse --keepbranches -e --dest F
+  rebasing 1:112478962961 "B" (B)
+  rebasing 3:26805aba1e60 "C" (C)
+  rebasing 5:f585351a92f8 "D" (D tip)
   ==== before editing
   Collapsed revision
   * B
@@ -73,84 +48,91 @@ Rebasing B onto H and collapsing changesets with different phases:
   HG: Enter commit message.  Lines beginning with 'HG:' are removed.
   HG: Leave message empty to abort commit.
   HG: --
-  HG: user: Nicolas Dumazet <nicdumz.commits@gmail.com>
+  HG: user: test
   HG: branch 'default'
   HG: added B
   HG: added C
   HG: added D
   ====
-  saved backup bundle to $TESTTMP/a1/.hg/strip-backup/42ccdea3bb16-3cb021d3-rebase.hg
+  saved backup bundle to $TESTTMP/phase/.hg/strip-backup/112478962961-cb2a9b47-rebase.hg
 
   $ hg tglogp
-  @  5: 30882080ba93 secret 'Collapsed revision
+  o  3: 92fa5f5fe108 secret 'Collapsed revision
   |  * B
   |  * C
   |  * D
   |
   |
   |  edited manually'
-  o  4: 02de42196ebe draft 'H'
+  o  2: 64a8289d2492 draft 'F'
   |
-  | o  3: eea13746799a draft 'G'
-  |/|
-  o |  2: 24b6387c8c8c draft 'F'
-  | |
-  | o  1: 9520eea781bc draft 'E'
-  |/
-  o  0: cd010b8cd998 draft 'A'
+  o  1: 7fb047a69f22 draft 'E'
+  |
+  o  0: 426bada5c675 draft 'A'
   
   $ hg manifest --rev tip
   A
   B
   C
   D
+  E
   F
-  H
 
   $ cd ..
 
 
-Rebasing E onto H:
+Merge gets linearized:
 
-  $ hg clone -q -u . a a2
-  $ cd a2
+  $ hg init linearized-merge
+  $ cd linearized-merge
 
-  $ hg phase --force --secret 6
-  $ hg rebase --source 4 --collapse --dest 7
-  rebasing 4:9520eea781bc "E"
-  rebasing 6:eea13746799a "G"
-  saved backup bundle to $TESTTMP/a2/.hg/strip-backup/9520eea781bc-fcd8edd4-rebase.hg
+  $ hg debugdrawdag << 'EOF'
+  > F D
+  > |/|
+  > C B
+  > |/
+  > A
+  > EOF
+
+  $ hg phase --force --secret D
+  $ hg rebase --source B --collapse --dest F
+  rebasing 1:112478962961 "B" (B)
+  rebasing 3:4e4f9194f9f1 "D" (D)
+  saved backup bundle to $TESTTMP/linearized-merge/.hg/strip-backup/112478962961-e389075b-rebase.hg
 
   $ hg tglog
-  o  6: 7dd333a2d1e4 'Collapsed revision
-  |  * E
-  |  * G'
-  @  5: 02de42196ebe 'H'
+  o  3: 5bdc08b7da2b 'Collapsed revision
+  |  * B
+  |  * D'
+  o  2: afc707c82df0 'F'
   |
-  o  4: 24b6387c8c8c 'F'
+  o  1: dc0947a82db8 'C'
   |
-  | o  3: 32af7686d403 'D'
-  | |
-  | o  2: 5fddd98957c8 'C'
-  | |
-  | o  1: 42ccdea3bb16 'B'
-  |/
-  o  0: cd010b8cd998 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
-  E
+  B
+  C
   F
-  H
 
   $ cd ..
 
-Rebasing G onto H with custom message:
+Custom message:
 
-  $ hg clone -q -u . a a3
-  $ cd a3
+  $ hg init message
+  $ cd message
 
-  $ hg rebase --base 6 -m 'custom message'
+  $ hg debugdrawdag << 'EOF'
+  >   C
+  >   |
+  > D B
+  > |/
+  > A
+  > EOF
+
+
+  $ hg rebase --base B -m 'custom message'
   abort: message can only be specified with collapse
   [255]
 
@@ -158,144 +140,77 @@ Rebasing G onto H with custom message:
   > env | grep HGEDITFORM
   > true
   > EOF
-  $ HGEDITOR="sh $TESTTMP/checkeditform.sh" hg rebase --source 4 --collapse -m 'custom message' -e --dest 7
-  rebasing 4:9520eea781bc "E"
-  rebasing 6:eea13746799a "G"
+  $ HGEDITOR="sh $TESTTMP/checkeditform.sh" hg rebase --source B --collapse -m 'custom message' -e --dest D
+  rebasing 1:112478962961 "B" (B)
+  rebasing 3:26805aba1e60 "C" (C tip)
   HGEDITFORM=rebase.collapse
-  saved backup bundle to $TESTTMP/a3/.hg/strip-backup/9520eea781bc-fcd8edd4-rebase.hg
+  saved backup bundle to $TESTTMP/message/.hg/strip-backup/112478962961-f4131707-rebase.hg
 
   $ hg tglog
-  o  6: 38ed6a6b026b 'custom message'
+  o  2: 2f197b9a08f3 'custom message'
   |
-  @  5: 02de42196ebe 'H'
+  o  1: b18e25de2cf5 'D'
   |
-  o  4: 24b6387c8c8c 'F'
-  |
-  | o  3: 32af7686d403 'D'
-  | |
-  | o  2: 5fddd98957c8 'C'
-  | |
-  | o  1: 42ccdea3bb16 'B'
-  |/
-  o  0: cd010b8cd998 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
-  E
-  F
-  H
+  B
+  C
+  D
 
   $ cd ..
-
-Create repo b:
-
-  $ hg init b
-  $ cd b
-
-  $ echo A > A
-  $ hg ci -Am A
-  adding A
-  $ echo B > B
-  $ hg ci -Am B
-  adding B
-
-  $ hg up -q 0
-
-  $ echo C > C
-  $ hg ci -Am C
-  adding C
-  created new head
-
-  $ hg merge
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-
-  $ echo D > D
-  $ hg ci -Am D
-  adding D
-
-  $ hg up -q 1
-
-  $ echo E > E
-  $ hg ci -Am E
-  adding E
-  created new head
-
-  $ echo F > F
-  $ hg ci -Am F
-  adding F
-
-  $ hg merge
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-  $ hg ci -m G
-
-  $ hg up -q 0
-
-  $ echo H > H
-  $ hg ci -Am H
-  adding H
-  created new head
-
-  $ hg tglog
-  @  7: c65502d41787 'H'
-  |
-  | o    6: c772a8b2dc17 'G'
-  | |\
-  | | o  5: 7f219660301f 'F'
-  | | |
-  | | o  4: 8a5212ebc852 'E'
-  | | |
-  | o |  3: 2870ad076e54 'D'
-  | |\|
-  | o |  2: c5cefa58fd55 'C'
-  |/ /
-  | o  1: 27547f69f254 'B'
-  |/
-  o  0: 4a2df7238c3b 'A'
-  
-  $ cd ..
-
 
 Rebase and collapse - more than one external (fail):
 
-  $ hg clone -q -u . b b1
-  $ cd b1
+  $ hg init multiple-external-parents
+  $ cd multiple-external-parents
 
-  $ hg rebase -s 2 --dest 7 --collapse
-  abort: unable to collapse on top of 7, there is more than one external parent: 1, 5
+  $ hg debugdrawdag << 'EOF'
+  >   G
+  >   |\
+  >   | F
+  >   | |
+  >   D E
+  >   |\|
+  > H C B
+  >  \|/
+  >   A
+  > EOF
+
+  $ hg rebase -s C --dest H --collapse
+  abort: unable to collapse on top of 3, there is more than one external parent: 1, 6
   [255]
 
 Rebase and collapse - E onto H:
 
-  $ hg rebase -s 4 --dest 7 --collapse # root (4) is not a merge
-  rebasing 4:8a5212ebc852 "E"
-  rebasing 5:7f219660301f "F"
-  rebasing 6:c772a8b2dc17 "G"
-  saved backup bundle to $TESTTMP/b1/.hg/strip-backup/8a5212ebc852-75046b61-rebase.hg
+  $ hg rebase -s E --dest I --collapse # root (E) is not a merge
+  abort: unknown revision 'I'!
+  [255]
 
   $ hg tglog
-  o    5: f97c4725bd99 'Collapsed revision
-  |\   * E
-  | |  * F
-  | |  * G'
-  | @  4: c65502d41787 'H'
+  o    7: 64e264db77f0 'G'
+  |\
+  | o  6: 11abe3fb10b8 'F'
   | |
-  o |    3: 2870ad076e54 'D'
-  |\ \
-  | o |  2: c5cefa58fd55 'C'
-  | |/
-  o /  1: 27547f69f254 'B'
+  | o  5: 49cb92066bfd 'E'
+  | |
+  o |  4: 4e4f9194f9f1 'D'
+  |\|
+  | | o  3: 575c4b5ec114 'H'
+  | | |
+  o---+  2: dc0947a82db8 'C'
+   / /
+  o /  1: 112478962961 'B'
   |/
-  o  0: 4a2df7238c3b 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
+  B
   C
-  D
   E
   F
-  H
 
   $ cd ..
 
@@ -308,146 +223,98 @@ the parent of a node that is a child of the node stripped becomes a head (node
 3). The code is now much simpler and we could just test a simpler scenario
 We keep it the test this way in case new complexity is injected.
 
-  $ hg clone -q -u . b b2
-  $ cd b2
+Create repo b:
+
+  $ hg init branch-heads
+  $ cd branch-heads
+
+  $ hg debugdrawdag << 'EOF'
+  >   G
+  >   |\
+  >   | F
+  >   | |
+  >   D E
+  >   |\|
+  > H C B
+  >  \|/
+  >   A
+  > EOF
 
   $ hg heads --template="{rev}:{node} {branch}\n"
-  7:c65502d4178782309ce0574c5ae6ee9485a9bafa default
-  6:c772a8b2dc17629cec88a19d09c926c4814b12c7 default
+  7:64e264db77f061f16d9132b70c5a58e2461fb630 default
+  3:575c4b5ec114d64b681d33f8792853568bfb2b2c default
 
-  $ cat $TESTTMP/b2/.hg/cache/branch2-served
-  c65502d4178782309ce0574c5ae6ee9485a9bafa 7
-  c772a8b2dc17629cec88a19d09c926c4814b12c7 o default
-  c65502d4178782309ce0574c5ae6ee9485a9bafa o default
+  $ cat $TESTTMP/branch-heads/.hg/cache/branch2-served
+  64e264db77f061f16d9132b70c5a58e2461fb630 7
+  575c4b5ec114d64b681d33f8792853568bfb2b2c o default
+  64e264db77f061f16d9132b70c5a58e2461fb630 o default
 
   $ hg strip 4
-  saved backup bundle to $TESTTMP/b2/.hg/strip-backup/8a5212ebc852-75046b61-backup.hg
+  saved backup bundle to $TESTTMP/branch-heads/.hg/strip-backup/4e4f9194f9f1-5ec4b5e6-backup.hg
 
-  $ cat $TESTTMP/b2/.hg/cache/branch2-served
-  c65502d4178782309ce0574c5ae6ee9485a9bafa 4
-  2870ad076e541e714f3c2bc32826b5c6a6e5b040 o default
-  c65502d4178782309ce0574c5ae6ee9485a9bafa o default
+  $ cat $TESTTMP/branch-heads/.hg/cache/branch2-served
+  11abe3fb10b8689b560681094b17fe161871d043 5
+  dc0947a82db884575bb76ea10ac97b08536bfa03 o default
+  575c4b5ec114d64b681d33f8792853568bfb2b2c o default
+  11abe3fb10b8689b560681094b17fe161871d043 o default
 
   $ hg heads --template="{rev}:{node} {branch}\n"
-  4:c65502d4178782309ce0574c5ae6ee9485a9bafa default
-  3:2870ad076e541e714f3c2bc32826b5c6a6e5b040 default
+  5:11abe3fb10b8689b560681094b17fe161871d043 default
+  3:575c4b5ec114d64b681d33f8792853568bfb2b2c default
+  2:dc0947a82db884575bb76ea10ac97b08536bfa03 default
 
   $ cd ..
 
 
 
+Preserves external parent
 
+  $ hg init external-parent
+  $ cd external-parent
 
+  $ hg debugdrawdag << 'EOF'
+  >   H
+  >   |\
+  >   | G
+  >   | |
+  >   | F # F/E = F\n
+  >   | |
+  >   D E # D/D = D\n
+  >   |\|
+  > I C B
+  >  \|/
+  >   A
+  > EOF
 
-Create repo c:
-
-  $ hg init c
-  $ cd c
-
-  $ echo A > A
-  $ hg ci -Am A
-  adding A
-  $ echo B > B
-  $ hg ci -Am B
-  adding B
-
-  $ hg up -q 0
-
-  $ echo C > C
-  $ hg ci -Am C
-  adding C
-  created new head
-
-  $ hg merge
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-
-  $ echo D > D
-  $ hg ci -Am D
-  adding D
-
-  $ hg up -q 1
-
-  $ echo E > E
-  $ hg ci -Am E
-  adding E
-  created new head
-  $ echo F > E
-  $ hg ci -m 'F'
-
-  $ echo G > G
-  $ hg ci -Am G
-  adding G
-
-  $ hg merge
-  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-
-  $ hg ci -m H
-
-  $ hg up -q 0
-
-  $ echo I > I
-  $ hg ci -Am I
-  adding I
-  created new head
+  $ hg rebase -s F --dest I --collapse # root (F) is not a merge
+  rebasing 6:c82b08f646f1 "F" (F)
+  rebasing 7:a6db7fa104e1 "G" (G)
+  rebasing 8:e1d201b72d91 "H" (H tip)
+  saved backup bundle to $TESTTMP/external-parent/.hg/strip-backup/c82b08f646f1-f2721fbf-rebase.hg
 
   $ hg tglog
-  @  8: 46d6f0e29c20 'I'
-  |
-  | o    7: 417d3b648079 'H'
-  | |\
-  | | o  6: 55a44ad28289 'G'
-  | | |
-  | | o  5: dca5924bb570 'F'
-  | | |
-  | | o  4: 8a5212ebc852 'E'
-  | | |
-  | o |  3: 2870ad076e54 'D'
-  | |\|
-  | o |  2: c5cefa58fd55 'C'
-  |/ /
-  | o  1: 27547f69f254 'B'
-  |/
-  o  0: 4a2df7238c3b 'A'
-  
-  $ cd ..
-
-
-Rebase and collapse - E onto I:
-
-  $ hg clone -q -u . c c1
-  $ cd c1
-
-  $ hg rebase -s 4 --dest 8 --collapse # root (4) is not a merge
-  rebasing 4:8a5212ebc852 "E"
-  rebasing 5:dca5924bb570 "F"
-  merging E
-  rebasing 6:55a44ad28289 "G"
-  rebasing 7:417d3b648079 "H"
-  saved backup bundle to $TESTTMP/c1/.hg/strip-backup/8a5212ebc852-f95d0879-rebase.hg
-
-  $ hg tglog
-  o    5: 340b34a63b39 'Collapsed revision
-  |\   * E
-  | |  * F
+  o    6: 681daa3e686d 'Collapsed revision
+  |\   * F
   | |  * G
   | |  * H'
-  | @  4: 46d6f0e29c20 'I'
-  | |
-  o |    3: 2870ad076e54 'D'
-  |\ \
-  | o |  2: c5cefa58fd55 'C'
-  | |/
-  o /  1: 27547f69f254 'B'
+  | | o  5: 49cb92066bfd 'E'
+  | | |
+  | o |  4: 09143c0bf13e 'D'
+  | |\|
+  o | |  3: 08ebfeb61bac 'I'
+  | | |
+  | o |  2: dc0947a82db8 'C'
+  |/ /
+  | o  1: 112478962961 'B'
   |/
-  o  0: 4a2df7238c3b 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
   C
   D
   E
+  F
   G
   I
 
@@ -457,78 +324,109 @@ Rebase and collapse - E onto I:
 
   $ cd ..
 
+Rebasing from multiple bases:
 
-Create repo d:
-
-  $ hg init d
-  $ cd d
-
-  $ echo A > A
-  $ hg ci -Am A
-  adding A
-  $ echo B > B
-  $ hg ci -Am B
-  adding B
-  $ echo C > C
-  $ hg ci -Am C
-  adding C
-
-  $ hg up -q 1
-
-  $ echo D > D
-  $ hg ci -Am D
-  adding D
-  created new head
-  $ hg merge
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  (branch merge, don't forget to commit)
-
-  $ hg ci -m E
-
-  $ hg up -q 0
-
-  $ echo F > F
-  $ hg ci -Am F
-  adding F
-  created new head
-
+  $ hg init multiple-bases
+  $ cd multiple-bases
+  $ hg debugdrawdag << 'EOF'
+  >   C B
+  > D |/
+  > |/
+  > A
+  > EOF
+  $ hg rebase --collapse -r 'B+C' -d D
+  rebasing 1:fc2b737bb2e5 "B" (B)
+  rebasing 2:dc0947a82db8 "C" (C)
+  saved backup bundle to $TESTTMP/multiple-bases/.hg/strip-backup/dc0947a82db8-b0c1a7ea-rebase.hg
   $ hg tglog
-  @  5: c137c2b8081f 'F'
+  o  2: 2127ae44d291 'Collapsed revision
+  |  * B
+  |  * C'
+  o  1: b18e25de2cf5 'D'
   |
-  | o    4: 0a42590ed746 'E'
-  | |\
-  | | o  3: 7bbcd6078bcc 'D'
-  | | |
-  | o |  2: f838bfaca5c7 'C'
-  | |/
-  | o  1: 27547f69f254 'B'
-  |/
-  o  0: 4a2df7238c3b 'A'
+  o  0: 426bada5c675 'A'
   
   $ cd ..
 
+With non-contiguous commits:
 
-Rebase and collapse - B onto F:
+  $ hg init non-contiguous
+  $ cd non-contiguous
+  $ cat >> .hg/hgrc <<EOF
+  > [experimental]
+  > evolution=all
+  > EOF
 
-  $ hg clone -q -u . d d1
-  $ cd d1
+  $ hg debugdrawdag << 'EOF'
+  > F
+  > |
+  > E
+  > |
+  > D
+  > |
+  > C
+  > |
+  > B G
+  > |/
+  > A
+  > EOF
 
-  $ hg rebase -s 1 --collapse --dest 5
-  rebasing 1:27547f69f254 "B"
-  rebasing 2:f838bfaca5c7 "C"
-  rebasing 3:7bbcd6078bcc "D"
-  rebasing 4:0a42590ed746 "E"
-  saved backup bundle to $TESTTMP/d1/.hg/strip-backup/27547f69f254-9a3f7d92-rebase.hg
+BROKEN: should be allowed
+  $ hg rebase --collapse -r 'B+D+F' -d G
+  abort: unable to collapse on top of 2, there is more than one external parent: 3, 5
+  [255]
+  $ cd ..
+
+
+  $ hg init multiple-external-parents-2
+  $ cd multiple-external-parents-2
+  $ hg debugdrawdag << 'EOF'
+  > D       G
+  > |\     /|
+  > B C   E F
+  >  \|   |/
+  >   \ H /
+  >    \|/
+  >     A
+  > EOF
+
+  $ hg rebase --collapse -d H -s 'B+F'
+  abort: unable to collapse on top of 5, there is more than one external parent: 1, 3
+  [255]
+  $ cd ..
+
+With internal merge:
+
+  $ hg init internal-merge
+  $ cd internal-merge
+
+  $ hg debugdrawdag << 'EOF'
+  >   E
+  >   |\
+  >   C D
+  >   |/
+  > F B
+  > |/
+  > A
+  > EOF
+
+
+  $ hg rebase -s B --collapse --dest F
+  rebasing 1:112478962961 "B" (B)
+  rebasing 3:26805aba1e60 "C" (C)
+  rebasing 4:be0ef73c17ad "D" (D)
+  rebasing 5:02c4367d6973 "E" (E tip)
+  saved backup bundle to $TESTTMP/internal-merge/.hg/strip-backup/112478962961-1dfb057b-rebase.hg
 
   $ hg tglog
-  o  2: b72eaccb283f 'Collapsed revision
+  o  2: c0512a1797b0 'Collapsed revision
   |  * B
   |  * C
   |  * D
   |  * E'
-  @  1: c137c2b8081f 'F'
+  o  1: 8908a377a434 'F'
   |
-  o  0: 4a2df7238c3b 'A'
+  o  0: 426bada5c675 'A'
   
   $ hg manifest --rev tip
   A
@@ -536,9 +434,9 @@ Rebase and collapse - B onto F:
   C
   D
   F
+  $ cd ..
 
 Interactions between collapse and keepbranches
-  $ cd ..
   $ hg init e
   $ cd e
   $ echo 'a' > a
@@ -733,46 +631,28 @@ Test stripping a revision with another child
   $ hg init f
   $ cd f
 
-  $ echo A > A
-  $ hg ci -Am A
-  adding A
-  $ echo B > B
-  $ hg ci -Am B
-  adding B
+  $ hg debugdrawdag << 'EOF'
+  > C B
+  > |/
+  > A
+  > EOF
 
-  $ hg up -q 0
+  $ hg heads --template="{rev}:{node} {branch}: {desc}\n"
+  2:dc0947a82db884575bb76ea10ac97b08536bfa03 default: C
+  1:112478962961147124edd43549aedd1a335e44bf default: B
 
-  $ echo C > C
-  $ hg ci -Am C
-  adding C
-  created new head
+  $ hg strip C
+  saved backup bundle to $TESTTMP/f/.hg/strip-backup/dc0947a82db8-d21b92a4-backup.hg
 
   $ hg tglog
-  @  2: c5cefa58fd55 'C'
+  o  1: 112478962961 'B'
   |
-  | o  1: 27547f69f254 'B'
-  |/
-  o  0: 4a2df7238c3b 'A'
+  o  0: 426bada5c675 'A'
   
 
 
   $ hg heads --template="{rev}:{node} {branch}: {desc}\n"
-  2:c5cefa58fd557f84b72b87f970135984337acbc5 default: C
-  1:27547f69f25460a52fff66ad004e58da7ad3fb56 default: B
-
-  $ hg strip 2
-  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  saved backup bundle to $TESTTMP/f/.hg/strip-backup/c5cefa58fd55-629429f4-backup.hg
-
-  $ hg tglog
-  o  1: 27547f69f254 'B'
-  |
-  @  0: 4a2df7238c3b 'A'
-  
-
-
-  $ hg heads --template="{rev}:{node} {branch}: {desc}\n"
-  1:27547f69f25460a52fff66ad004e58da7ad3fb56 default: B
+  1:112478962961147124edd43549aedd1a335e44bf default: B
 
   $ cd ..
 
@@ -812,46 +692,128 @@ running into merge conflict and invoking rebase --continue.
 
   $ hg init collapse_remember_message
   $ cd collapse_remember_message
-  $ touch a
-  $ hg add a
-  $ hg commit -m "a"
-  $ echo "a-default" > a
-  $ hg commit -m "a-default"
-  $ hg update -r 0
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg branch dev
-  marked working directory as branch dev
-  (branches are permanent and global, did you want a bookmark?)
-  $ echo "a-dev" > a
-  $ hg commit -m "a-dev"
-  $ hg rebase --collapse -m "a-default-dev" -d 1
-  rebasing 2:b8d8db2b242d "a-dev" (tip)
-  merging a
-  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  $ hg debugdrawdag << 'EOF'
+  > C B # B/A = B\n
+  > |/  # C/A = C\n
+  > A
+  > EOF
+  $ hg rebase --collapse -m "new message" -b B -d C
+  rebasing 1:81e5401e4d37 "B" (B)
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
   unresolved conflicts (see hg resolve, then hg rebase --continue)
   [1]
-  $ rm a.orig
-  $ hg resolve --mark a
+  $ rm A.orig
+  $ hg resolve --mark A
   (no more unresolved files)
   continue: hg rebase --continue
   $ hg rebase --continue
-  rebasing 2:b8d8db2b242d "a-dev" (tip)
-  saved backup bundle to $TESTTMP/collapse_remember_message/.hg/strip-backup/b8d8db2b242d-f474c19a-rebase.hg
+  rebasing 1:81e5401e4d37 "B" (B)
+  saved backup bundle to $TESTTMP/collapse_remember_message/.hg/strip-backup/81e5401e4d37-96c3dd30-rebase.hg
   $ hg log
-  changeset:   2:45ba1d1a8665
+  changeset:   2:17186933e123
   tag:         tip
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     a-default-dev
+  summary:     new message
   
-  changeset:   1:3c8db56a44bc
+  changeset:   1:043039e9df84
+  tag:         C
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     a-default
+  summary:     C
   
-  changeset:   0:3903775176ed
+  changeset:   0:426bada5c675
+  tag:         A
   user:        test
   date:        Thu Jan 01 00:00:00 1970 +0000
-  summary:     a
+  summary:     A
   
   $ cd ..
+
+Test aborted editor on final message
+
+  $ HGMERGE=:merge3
+  $ export HGMERGE
+  $ hg init aborted-editor
+  $ cd aborted-editor
+  $ hg debugdrawdag << 'EOF'
+  > C   # D/A = D\n
+  > |   # C/A = C\n
+  > B D # B/A = B\n
+  > |/  # A/A = A\n
+  > A
+  > EOF
+  $ hg rebase --collapse -t internal:merge3 -s B -d D
+  rebasing 1:f899f3910ce7 "B" (B)
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg tglog
+  o  3: 63668d570d21 'C'
+  |
+  | @  2: 82b8abf9c185 'D'
+  | |
+  @ |  1: f899f3910ce7 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+  $ cat A
+  <<<<<<< dest:   82b8abf9c185 D - test: D
+  D
+  ||||||| base
+  A
+  =======
+  B
+  >>>>>>> source: f899f3910ce7 B - test: B
+  $ echo BC > A
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue
+  rebasing 1:f899f3910ce7 "B" (B)
+  rebasing 3:63668d570d21 "C" (C tip)
+  merging A
+  warning: conflicts while merging A! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg tglog
+  @  3: 63668d570d21 'C'
+  |
+  | @  2: 82b8abf9c185 'D'
+  | |
+  o |  1: f899f3910ce7 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+  $ cat A
+  <<<<<<< dest:   82b8abf9c185 D - test: D
+  BC
+  ||||||| base
+  B
+  =======
+  C
+  >>>>>>> source: 63668d570d21 C tip - test: C
+  $ echo BD > A
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ HGEDITOR=false hg rebase --continue --config ui.interactive=1
+  already rebased 1:f899f3910ce7 "B" (B) as 82b8abf9c185
+  rebasing 3:63668d570d21 "C" (C tip)
+  abort: edit failed: false exited with status 1
+  [255]
+  $ hg tglog
+  o  3: 63668d570d21 'C'
+  |
+  | @  2: 82b8abf9c185 'D'
+  | |
+  o |  1: f899f3910ce7 'B'
+  |/
+  o  0: 4a2df7238c3b 'A'
+  
+  $ hg rebase --continue
+  already rebased 1:f899f3910ce7 "B" (B) as 82b8abf9c185
+  already rebased 3:63668d570d21 "C" (C tip) as 82b8abf9c185
+  saved backup bundle to $TESTTMP/aborted-editor/.hg/strip-backup/f899f3910ce7-7cab5e15-rebase.hg

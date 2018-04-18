@@ -85,24 +85,30 @@ don't allow marking or unmarking driver-resolved files
 
   $ cat > $TESTTMP/markdriver.py << EOF
   > '''mark and unmark files as driver-resolved'''
-  > from mercurial import merge, registrar, scmutil
+  > from mercurial import (
+  >    merge,
+  >    pycompat,
+  >    registrar,
+  >    scmutil,
+  > )
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'markdriver',
-  >   [('u', 'unmark', None, '')],
-  >   'FILE...')
+  >   [(b'u', b'unmark', None, b'')],
+  >   b'FILE...')
   > def markdriver(ui, repo, *pats, **opts):
   >     wlock = repo.wlock()
+  >     opts = pycompat.byteskwargs(opts)
   >     try:
   >         ms = merge.mergestate.read(repo)
   >         m = scmutil.match(repo[None], pats, opts)
   >         for f in ms:
   >             if not m(f):
   >                 continue
-  >             if not opts['unmark']:
-  >                 ms.mark(f, 'd')
+  >             if not opts[b'unmark']:
+  >                 ms.mark(f, b'd')
   >             else:
-  >                 ms.mark(f, 'u')
+  >                 ms.mark(f, b'u')
   >         ms.commit()
   >     finally:
   >         wlock.release()

@@ -146,6 +146,13 @@ Issue683: peculiarity with hg revert of an removed then added file
   M a
   ? a.orig
 
+excluded file shouldn't be added even if it is explicitly specified
+
+  $ hg add a.orig -X '*.orig'
+  $ hg st
+  M a
+  ? a.orig
+
 Forgotten file can be added back (as either clean or modified)
 
   $ hg forget b
@@ -247,5 +254,76 @@ and OS X
   removing CapsDir1/CapsDir/ABC.txt
   removing CapsDir1/CapsDir/SubDir/Def.txt
 #endif
+
+  $ cd ..
+
+test --dry-run mode in forget
+
+  $ hg init testdir_forget
+  $ cd testdir_forget
+  $ echo foo > foo
+  $ hg add foo
+  $ hg commit -m "foo"
+  $ hg forget foo --dry-run -v
+  removing foo
+  $ hg diff
+  $ hg forget not_exist -n
+  not_exist: $ENOENT$
+  [1]
+
+  $ cd ..
+
+test --interactive mode in forget
+
+  $ hg init interactiveforget
+  $ cd interactiveforget
+  $ echo foo > foo
+  $ hg commit -qAm "foo"
+  $ echo bar > bar
+  $ hg commit -qAm "bar"
+  $ hg forget foo --dry-run -i
+  abort: cannot specify both --dry-run and --interactive
+  [255]
+
+  $ hg forget foo --config ui.interactive=True -i << EOF
+  > ?
+  > n
+  > EOF
+  forget foo [Ynsa?] ?
+  y - yes, forget this file
+  n - no, skip this file
+  s - skip remaining files
+  a - include all remaining files
+  ? - ? (display help)
+  forget foo [Ynsa?] n
+
+  $ hg forget foo bar --config ui.interactive=True -i << EOF
+  > y
+  > n
+  > EOF
+  forget bar [Ynsa?] y
+  forget foo [Ynsa?] n
+  removing bar
+  $ hg status
+  R bar
+  $ hg up -qC .
+
+  $ hg forget foo bar --config ui.interactive=True -i << EOF
+  > s
+  > EOF
+  forget bar [Ynsa?] s
+  $ hg st
+  $ hg up -qC .
+
+  $ hg forget foo bar --config ui.interactive=True -i << EOF
+  > a
+  > EOF
+  forget bar [Ynsa?] a
+  removing bar
+  removing foo
+  $ hg status
+  R bar
+  R foo
+  $ hg up -qC .
 
   $ cd ..

@@ -10,6 +10,7 @@ from __future__ import absolute_import
 import contextlib
 import errno
 import os
+import signal
 import socket
 import time
 import warnings
@@ -20,7 +21,10 @@ from . import (
     encoding,
     error,
     pycompat,
-    util,
+)
+
+from .utils import (
+    procutil,
 )
 
 def _getlockprefix():
@@ -30,9 +34,7 @@ def _getlockprefix():
     confidence. Typically it's just hostname. On modern linux, we include an
     extra Linux-specific pid namespace identifier.
     """
-    result = socket.gethostname()
-    if pycompat.ispy3:
-        result = result.encode(pycompat.sysstr(encoding.encoding), 'replace')
+    result = encoding.strtolocal(socket.gethostname())
     if pycompat.sysplatform.startswith('linux'):
         try:
             result += '/%x' % os.stat('/proc/self/ns/pid').st_ino
@@ -40,6 +42,64 @@ def _getlockprefix():
             if ex.errno not in (errno.ENOENT, errno.EACCES, errno.ENOTDIR):
                 raise
     return result
+
+@contextlib.contextmanager
+def _delayedinterrupt():
+    """Block signal interrupt while doing something critical
+
+    This makes sure that the code block wrapped by this context manager won't
+    be interrupted.
+
+    For Windows developers: It appears not possible to guard time.sleep()
+    from CTRL_C_EVENT, so please don't use time.sleep() to test if this is
+    working.
+    """
+    assertedsigs = []
+    blocked = False
+    orighandlers = {}
+
+    def raiseinterrupt(num):
+        if (num == getattr(signal, 'SIGINT', None) or
+            num == getattr(signal, 'CTRL_C_EVENT', None)):
+            raise KeyboardInterrupt
+        else:
+            raise error.SignalInterrupt
+    def catchterm(num, frame):
+        if blocked:
+            assertedsigs.append(num)
+        else:
+            raiseinterrupt(num)
+
+    try:
+        # save handlers first so they can be restored even if a setup is
+        # interrupted between signal.signal() and orighandlers[] =.
+        for name in ['CTRL_C_EVENT', 'SIGINT', 'SIGBREAK', 'SIGHUP', 'SIGTERM']:
+            num = getattr(signal, name, None)
+            if num and num not in orighandlers:
+                orighandlers[num] = signal.getsignal(num)
+        try:
+            for num in orighandlers:
+                signal.signal(num, catchterm)
+        except ValueError:
+            pass # in a thread? no luck
+
+        blocked = True
+        yield
+    finally:
+        # no simple way to reliably restore all signal handlers because
+        # any loops, recursive function calls, except blocks, etc. can be
+        # interrupted. so instead, make catchterm() raise interrupt.
+        blocked = False
+        try:
+            for num, handler in orighandlers.items():
+                signal.signal(num, handler)
+        except ValueError:
+            pass # in a thread?
+
+    # re-raise interrupt exception if any, which may be shadowed by a new
+    # interrupt occurred while re-raising the first one
+    if assertedsigs:
+        raiseinterrupt(assertedsigs[0])
 
 def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
     """return an acquired lock or raise an a LockHeld exception
@@ -52,10 +112,12 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
         # show more details for new-style locks
         if ':' in locker:
             host, pid = locker.split(":", 1)
-            msg = _("waiting for lock on %s held by process %r "
-                    "on host %r\n") % (l.desc, pid, host)
+            msg = (_("waiting for lock on %s held by process %r on host %r\n")
+                   % (pycompat.bytestr(l.desc), pycompat.bytestr(pid),
+                      pycompat.bytestr(host)))
         else:
-            msg = _("waiting for lock on %s held by %r\n") % (l.desc, locker)
+            msg = (_("waiting for lock on %s held by %r\n")
+                   % (l.desc, pycompat.bytestr(locker)))
         printer(msg)
 
     l = lock(vfs, lockname, 0, *args, dolock=False, **kwargs)
@@ -86,9 +148,9 @@ def trylock(ui, vfs, lockname, timeout, warntimeout, *args, **kwargs):
     l.delay = delay
     if l.delay:
         if 0 <= warningidx <= l.delay:
-            ui.warn(_("got lock after %s seconds\n") % l.delay)
+            ui.warn(_("got lock after %d seconds\n") % l.delay)
         else:
-            ui.debug("got lock after %s seconds\n" % l.delay)
+            ui.debug("got lock after %d seconds\n" % l.delay)
     if l.acquirefn:
         l.acquirefn()
     return l
@@ -113,11 +175,11 @@ class lock(object):
 
     _host = None
 
-    def __init__(self, vfs, file, timeout=-1, releasefn=None, acquirefn=None,
+    def __init__(self, vfs, fname, timeout=-1, releasefn=None, acquirefn=None,
                  desc=None, inheritchecker=None, parentlock=None,
                  dolock=True):
         self.vfs = vfs
-        self.f = file
+        self.f = fname
         self.held = 0
         self.timeout = timeout
         self.releasefn = releasefn
@@ -153,8 +215,8 @@ class lock(object):
         self.release()
 
     def _getpid(self):
-        # wrapper around util.getpid() to make testing easier
-        return util.getpid()
+        # wrapper around procutil.getpid() to make testing easier
+        return procutil.getpid()
 
     def lock(self):
         timeout = self.timeout
@@ -182,8 +244,9 @@ class lock(object):
         while not self.held and retry:
             retry -= 1
             try:
-                self.vfs.makelock(lockname, self.f)
-                self.held = 1
+                with _delayedinterrupt():
+                    self.vfs.makelock(lockname, self.f)
+                    self.held = 1
             except (OSError, IOError) as why:
                 if why.errno == errno.EEXIST:
                     locker = self._readlock()
@@ -239,7 +302,7 @@ class lock(object):
             pid = int(pid)
         except ValueError:
             return locker
-        if util.testpid(pid):
+        if procutil.testpid(pid):
             return locker
         # if locker dead, break lock.  must do this with another lock
         # held, or can race and break valid lock.
@@ -285,7 +348,7 @@ class lock(object):
         if self._parentheld:
             lockname = self.parentlock
         else:
-            lockname = '%s:%s' % (lock._host, self.pid)
+            lockname = b'%s:%d' % (lock._host, self.pid)
         self._inherited = True
         try:
             yield lockname

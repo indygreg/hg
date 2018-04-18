@@ -13,12 +13,13 @@ and O(changes) merge between branches.
 
 from __future__ import absolute_import
 
-import binascii
 import collections
+import contextlib
 import errno
 import hashlib
 import heapq
 import os
+import re
 import struct
 import zlib
 
@@ -28,6 +29,7 @@ from .node import (
     hex,
     nullid,
     nullrev,
+    wdirfilenodeids,
     wdirhex,
     wdirid,
     wdirrev,
@@ -44,6 +46,9 @@ from . import (
     pycompat,
     templatefilters,
     util,
+)
+from .utils import (
+    stringutil,
 )
 
 parsers = policy.importmod(r'parsers')
@@ -93,6 +98,29 @@ ProgrammingError = error.ProgrammingError
 _flagprocessors = {
     REVIDX_ISCENSORED: None,
 }
+
+_mdre = re.compile('\1\n')
+def parsemeta(text):
+    """return (metadatadict, metadatasize)"""
+    # text can be buffer, so we can't use .startswith or .index
+    if text[:2] != '\1\n':
+        return None, None
+    s = _mdre.search(text, 2).start()
+    mtext = text[2:s]
+    meta = {}
+    for l in mtext.splitlines():
+        k, v = l.split(": ", 1)
+        meta[k] = v
+    return meta, (s + 2)
+
+def packmeta(meta, text):
+    keys = sorted(meta)
+    metatext = "".join("%s: %s\n" % (k, meta[k]) for k in keys)
+    return "\1\n%s\1\n%s" % (metatext, text)
+
+def _censoredtext(text):
+    m, offs = parsemeta(text)
+    return m and "censored" in m
 
 def addflagprocessor(flag, processor):
     """Register a flag processor on a revision data flag.
@@ -551,9 +579,11 @@ class revlog(object):
     If mmaplargeindex is True, and an mmapindexthreshold is set, the
     index will be mmapped rather than read if it is larger than the
     configured threshold.
+
+    If censorable is True, the revlog can have censored revisions.
     """
     def __init__(self, opener, indexfile, datafile=None, checkambig=False,
-                 mmaplargeindex=False):
+                 mmaplargeindex=False, censorable=False):
         """
         create a revlog object
 
@@ -566,6 +596,7 @@ class revlog(object):
         #  When True, indexfile is opened with checkambig=True at writing, to
         #  avoid file stat ambiguity.
         self._checkambig = checkambig
+        self._censorable = censorable
         # 3-tuple of (node, rev, text) for a raw revision.
         self._cache = None
         # Maps rev to chain base rev.
@@ -629,13 +660,12 @@ class revlog(object):
         indexdata = ''
         self._initempty = True
         try:
-            f = self.opener(self.indexfile)
-            if (mmapindexthreshold is not None and
-                    self.opener.fstat(f).st_size >= mmapindexthreshold):
-                indexdata = util.buffer(util.mmapread(f))
-            else:
-                indexdata = f.read()
-            f.close()
+            with self._indexfp() as f:
+                if (mmapindexthreshold is not None and
+                        self.opener.fstat(f).st_size >= mmapindexthreshold):
+                    indexdata = util.buffer(util.mmapread(f))
+                else:
+                    indexdata = f.read()
             if len(indexdata) > 0:
                 v = versionformat_unpack(indexdata[:4])[0]
                 self._initempty = False
@@ -689,6 +719,32 @@ class revlog(object):
     @util.propertycache
     def _compressor(self):
         return util.compengines[self._compengine].revlogcompressor()
+
+    def _indexfp(self, mode='r'):
+        """file object for the revlog's index file"""
+        args = {r'mode': mode}
+        if mode != 'r':
+            args[r'checkambig'] = self._checkambig
+        if mode == 'w':
+            args[r'atomictemp'] = True
+        return self.opener(self.indexfile, **args)
+
+    def _datafp(self, mode='r'):
+        """file object for the revlog's data file"""
+        return self.opener(self.datafile, mode=mode)
+
+    @contextlib.contextmanager
+    def _datareadfp(self, existingfp=None):
+        """file object suitable to read data"""
+        if existingfp is not None:
+            yield existingfp
+        else:
+            if self._inline:
+                func = self._indexfp
+            else:
+                func = self._datafp
+            with func() as fp:
+                yield fp
 
     def tip(self):
         return self.node(len(self.index) - 2)
@@ -752,7 +808,7 @@ class revlog(object):
             raise
         except RevlogError:
             # parsers.c radix tree lookup failed
-            if node == wdirid:
+            if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
             raise LookupError(node, self.indexfile, _('no node'))
         except KeyError:
@@ -762,13 +818,15 @@ class revlog(object):
             p = self._nodepos
             if p is None:
                 p = len(i) - 2
+            else:
+                assert p < len(i)
             for r in xrange(p, -1, -1):
                 v = i[r][7]
                 n[v] = r
                 if v == node:
                     self._nodepos = r - 1
                     return r
-            if node == wdirid:
+            if node == wdirid or node in wdirfilenodeids:
                 raise error.WdirUnsupported
             raise LookupError(node, self.indexfile, _('no node'))
 
@@ -1362,7 +1420,7 @@ class revlog(object):
         try:
             # str(rev)
             rev = int(id)
-            if str(rev) != id:
+            if "%d" % rev != id:
                 raise ValueError
             if rev < 0:
                 rev = len(self) + rev
@@ -1381,6 +1439,7 @@ class revlog(object):
                 pass
 
     def _partialmatch(self, id):
+        # we don't care wdirfilenodeids as they should be always full hash
         maybewdir = wdirhex.startswith(id)
         try:
             partial = self.index.partialmatch(id)
@@ -1424,7 +1483,7 @@ class revlog(object):
                 if maybewdir:
                     raise error.WdirUnsupported
                 return None
-            except (TypeError, binascii.Error):
+            except TypeError:
                 pass
 
     def lookup(self, id):
@@ -1441,8 +1500,8 @@ class revlog(object):
 
         raise LookupError(id, self.indexfile, _('no match found'))
 
-    def shortest(self, hexnode, minlength=1):
-        """Find the shortest unambiguous prefix that matches hexnode."""
+    def shortest(self, node, minlength=1):
+        """Find the shortest unambiguous prefix that matches node."""
         def isvalid(test):
             try:
                 if self._partialmatch(test) is None:
@@ -1464,6 +1523,7 @@ class revlog(object):
                 # single 'ff...' match
                 return True
 
+        hexnode = hex(node)
         shortest = hexnode
         startlength = max(6, minlength)
         length = startlength
@@ -1510,15 +1570,6 @@ class revlog(object):
 
         Returns a str or buffer of raw byte data.
         """
-        if df is not None:
-            closehandle = False
-        else:
-            if self._inline:
-                df = self.opener(self.indexfile)
-            else:
-                df = self.opener(self.datafile)
-            closehandle = True
-
         # Cache data both forward and backward around the requested
         # data, in a fixed size window. This helps speed up operations
         # involving reading the revlog backwards.
@@ -1526,10 +1577,9 @@ class revlog(object):
         realoffset = offset & ~(cachesize - 1)
         reallength = (((offset + length + cachesize) & ~(cachesize - 1))
                       - realoffset)
-        df.seek(realoffset)
-        d = df.read(reallength)
-        if closehandle:
-            df.close()
+        with self._datareadfp(df) as df:
+            df.seek(realoffset)
+            d = df.read(reallength)
         self._cachesegment(realoffset, d)
         if offset != realoffset or reallength != length:
             return util.buffer(d, offset - realoffset, length)
@@ -1829,16 +1879,21 @@ class revlog(object):
         Available as a function so that subclasses can extend hash mismatch
         behaviors as needed.
         """
-        if p1 is None and p2 is None:
-            p1, p2 = self.parents(node)
-        if node != self.hash(text, p1, p2):
-            revornode = rev
-            if revornode is None:
-                revornode = templatefilters.short(hex(node))
-            raise RevlogError(_("integrity check failed on %s:%s")
-                % (self.indexfile, pycompat.bytestr(revornode)))
+        try:
+            if p1 is None and p2 is None:
+                p1, p2 = self.parents(node)
+            if node != self.hash(text, p1, p2):
+                revornode = rev
+                if revornode is None:
+                    revornode = templatefilters.short(hex(node))
+                raise RevlogError(_("integrity check failed on %s:%s")
+                    % (self.indexfile, pycompat.bytestr(revornode)))
+        except RevlogError:
+            if self._censorable and _censoredtext(text):
+                raise error.CensoredNodeError(self.indexfile, node, text)
+            raise
 
-    def checkinlinesize(self, tr, fp=None):
+    def _enforceinlinesize(self, tr, fp=None):
         """Check if the revlog is too big for inline and convert if so.
 
         This should be called after revisions are added to the revlog. If the
@@ -1867,24 +1922,20 @@ class revlog(object):
             fp.flush()
             fp.close()
 
-        df = self.opener(self.datafile, 'w')
-        try:
+        with self._datafp('w') as df:
             for r in self:
                 df.write(self._getsegmentforrevs(r, r)[1])
-        finally:
-            df.close()
 
-        fp = self.opener(self.indexfile, 'w', atomictemp=True,
-                         checkambig=self._checkambig)
-        self.version &= ~FLAG_INLINE_DATA
-        self._inline = False
-        for i in self:
-            e = self._io.packentry(self.index[i], self.node, self.version, i)
-            fp.write(e)
+        with self._indexfp('w') as fp:
+            self.version &= ~FLAG_INLINE_DATA
+            self._inline = False
+            io = self._io
+            for i in self:
+                e = io.packentry(self.index[i], self.node, self.version, i)
+                fp.write(e)
 
-        # if we don't call close, the temp file will never replace the
-        # real index
-        fp.close()
+            # the temp file replace the real index when we exit the context
+            # manager
 
         tr.replace(self.indexfile, trindex * self._io.size)
         self._chunkclear()
@@ -1943,8 +1994,8 @@ class revlog(object):
         """
         dfh = None
         if not self._inline:
-            dfh = self.opener(self.datafile, "a+")
-        ifh = self.opener(self.indexfile, "a+", checkambig=self._checkambig)
+            dfh = self._datafp("a+")
+        ifh = self._indexfp("a+")
         try:
             return self._addrevision(node, rawtext, transaction, link, p1, p2,
                                      flags, cachedelta, ifh, dfh,
@@ -2005,7 +2056,8 @@ class revlog(object):
             try:
                 return _zlibdecompress(data)
             except zlib.error as e:
-                raise RevlogError(_('revlog decompress error: %s') % str(e))
+                raise RevlogError(_('revlog decompress error: %s') %
+                                  stringutil.forcebytestr(e))
         # '\0' is more common than 'u' so it goes first.
         elif t == '\0':
             return data
@@ -2067,7 +2119,7 @@ class revlog(object):
         if node == nullid:
             raise RevlogError(_("%s: attempt to add null revision") %
                               (self.indexfile))
-        if node == wdirid:
+        if node == wdirid or node in wdirfilenodeids:
             raise RevlogError(_("%s: attempt to add wdir revision") %
                               (self.indexfile))
 
@@ -2129,7 +2181,7 @@ class revlog(object):
         if alwayscache and rawtext is None:
             rawtext = deltacomputer._buildtext(revinfo, fh)
 
-        if type(rawtext) == str: # only accept immutable objects
+        if type(rawtext) == bytes: # only accept immutable objects
             self._cache = (node, curr, rawtext)
         self._chainbasecache[curr] = chainbase
         return node
@@ -2163,7 +2215,7 @@ class revlog(object):
             ifh.write(entry)
             ifh.write(data[0])
             ifh.write(data[1])
-            self.checkinlinesize(transaction, ifh)
+            self._enforceinlinesize(transaction, ifh)
 
     def addgroup(self, deltas, linkmapper, transaction, addrevisioncb=None):
         """
@@ -2183,7 +2235,7 @@ class revlog(object):
         end = 0
         if r:
             end = self.end(r - 1)
-        ifh = self.opener(self.indexfile, "a+", checkambig=self._checkambig)
+        ifh = self._indexfp("a+")
         isize = r * self._io.size
         if self._inline:
             transaction.add(self.indexfile, end + isize, r)
@@ -2191,7 +2243,7 @@ class revlog(object):
         else:
             transaction.add(self.indexfile, isize, r)
             transaction.add(self.datafile, end)
-            dfh = self.opener(self.datafile, "a+")
+            dfh = self._datafp("a+")
         def flush():
             if dfh:
                 dfh.flush()
@@ -2254,9 +2306,8 @@ class revlog(object):
                     # addrevision switched from inline to conventional
                     # reopen the index
                     ifh.close()
-                    dfh = self.opener(self.datafile, "a+")
-                    ifh = self.opener(self.indexfile, "a+",
-                                      checkambig=self._checkambig)
+                    dfh = self._datafp("a+")
+                    ifh = self._indexfp("a+")
         finally:
             if dfh:
                 dfh.close()
@@ -2266,11 +2317,33 @@ class revlog(object):
 
     def iscensored(self, rev):
         """Check if a file revision is censored."""
-        return False
+        if not self._censorable:
+            return False
+
+        return self.flags(rev) & REVIDX_ISCENSORED
 
     def _peek_iscensored(self, baserev, delta, flush):
         """Quickly check if a delta produces a censored revision."""
-        return False
+        if not self._censorable:
+            return False
+
+        # Fragile heuristic: unless new file meta keys are added alphabetically
+        # preceding "censored", all censored revisions are prefixed by
+        # "\1\ncensored:". A delta producing such a censored revision must be a
+        # full-replacement delta, so we inspect the first and only patch in the
+        # delta for this prefix.
+        hlen = struct.calcsize(">lll")
+        if len(delta) <= hlen:
+            return False
+
+        oldlen = self.rawsize(baserev)
+        newlen = len(delta) - hlen
+        if delta[:hlen] != mdiff.replacediffheader(oldlen, newlen):
+            return False
+
+        add = "\1\ncensored:"
+        addlen = len(add)
+        return newlen >= addlen and delta[hlen:hlen + addlen] == add
 
     def getstrippoint(self, minlink):
         """find the minimum rev that must be stripped to strip the linkrev
@@ -2351,6 +2424,7 @@ class revlog(object):
             del self.nodemap[self.node(x)]
 
         del self.index[rev:-1]
+        self._nodepos = None
 
     def checksize(self):
         expected = 0
@@ -2358,10 +2432,9 @@ class revlog(object):
             expected = max(0, self.end(len(self) - 1))
 
         try:
-            f = self.opener(self.datafile)
-            f.seek(0, 2)
-            actual = f.tell()
-            f.close()
+            with self._datafp() as f:
+                f.seek(0, 2)
+                actual = f.tell()
             dd = actual - expected
         except IOError as inst:
             if inst.errno != errno.ENOENT:
@@ -2488,7 +2561,7 @@ class revlog(object):
                 if populatecachedelta:
                     dp = self.deltaparent(rev)
                     if dp != nullrev:
-                        cachedelta = (dp, str(self._chunk(rev)))
+                        cachedelta = (dp, bytes(self._chunk(rev)))
 
                 if not cachedelta:
                     rawtext = self.revision(rev, raw=True)

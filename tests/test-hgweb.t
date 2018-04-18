@@ -333,14 +333,14 @@ stop and restart
 
 Test the access/error files are opened in append mode
 
-  $ $PYTHON -c "print len(file('access.log').readlines()), 'log lines written'"
+  $ $PYTHON -c "print len(open('access.log', 'rb').readlines()), 'log lines written'"
   14 log lines written
 
 static file
 
   $ get-with-headers.py --twice localhost:$HGPORT 'static/style-gitweb.css' - date etag server
   200 Script output follows
-  content-length: 9118
+  content-length: 9059
   content-type: text/css
   
   body { font-family: sans-serif; font-size: 12px; border:solid #d9d8d1; border-width:1px; margin:10px; background: white; color: black; }
@@ -374,7 +374,7 @@ static file
   div.title_text { padding:6px 0px; border: solid #d9d8d1; border-width:0px 0px 1px; }
   div.log_body { padding:8px 8px 8px 150px; }
   .age { white-space:nowrap; }
-  span.age { position:relative; float:left; width:142px; font-style:italic; }
+  a.title span.age { position:relative; float:left; width:142px; font-style:italic; }
   div.log_link {
   	padding:0px 8px;
   	font-size:10px; font-family:sans-serif; font-style:normal;
@@ -577,6 +577,7 @@ static file
   }
   
   .btn-followlines {
+    position: absolute;
     display: none;
     cursor: pointer;
     box-sizing: content-box;
@@ -592,14 +593,6 @@ static file
     font-family: monospace;
     text-align: center;
     line-height: 5px;
-  }
-  
-  tr .btn-followlines {
-    position: absolute;
-  }
-  
-  span .btn-followlines {
-    float: left;
   }
   
   span.followlines-select .btn-followlines {

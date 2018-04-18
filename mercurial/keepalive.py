@@ -97,6 +97,9 @@ from . import (
     urllibcompat,
     util,
 )
+from .utils import (
+    procutil,
+)
 
 httplib = util.httplib
 urlerr = util.urlerr
@@ -315,24 +318,24 @@ class KeepAliveHandler(object):
         headers.update(sorted(req.unredirected_hdrs.items()))
         headers = util.sortdict((n.lower(), v) for n, v in headers.items())
         skipheaders = {}
-        for n in ('host', 'accept-encoding'):
+        for n in (r'host', r'accept-encoding'):
             if n in headers:
-                skipheaders['skip_' + n.replace('-', '_')] = 1
+                skipheaders[r'skip_' + n.replace(r'-', r'_')] = 1
         try:
             if urllibcompat.hasdata(req):
                 data = urllibcompat.getdata(req)
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    **pycompat.strkwargs(skipheaders))
-                if 'content-type' not in headers:
-                    h.putheader('Content-type',
-                                'application/x-www-form-urlencoded')
-                if 'content-length' not in headers:
-                    h.putheader('Content-length', '%d' % len(data))
+                    **skipheaders)
+                if r'content-type' not in headers:
+                    h.putheader(r'Content-type',
+                                r'application/x-www-form-urlencoded')
+                if r'content-length' not in headers:
+                    h.putheader(r'Content-length', r'%d' % len(data))
             else:
                 h.putrequest(
                     req.get_method(), urllibcompat.getselector(req),
-                    **pycompat.strkwargs(skipheaders))
+                    **skipheaders)
         except socket.error as err:
             raise urlerr.urlerror(err)
         for k, v in headers.items():
@@ -346,7 +349,7 @@ class HTTPHandler(KeepAliveHandler, urlreq.httphandler):
 
 class HTTPResponse(httplib.HTTPResponse):
     # we need to subclass HTTPResponse in order to
-    # 1) add readline() and readlines() methods
+    # 1) add readline(), readlines(), and readinto() methods
     # 2) add close_connection() methods
     # 3) add info() and geturl() methods
 
@@ -381,6 +384,7 @@ class HTTPResponse(httplib.HTTPResponse):
         self._connection = None # (same)
 
     _raw_read = httplib.HTTPResponse.read
+    _raw_readinto = getattr(httplib.HTTPResponse, 'readinto', None)
 
     def close(self):
         if self.fp:
@@ -519,6 +523,26 @@ class HTTPResponse(httplib.HTTPResponse):
                 break
         return list
 
+    def readinto(self, dest):
+        if self._raw_readinto is None:
+            res = self.read(len(dest))
+            if not res:
+                return 0
+            dest[0:len(res)] = res
+            return len(res)
+        total = len(dest)
+        have = len(self._rbuf)
+        if have >= total:
+            dest[0:total] = self._rbuf[:total]
+            self._rbuf = self._rbuf[total:]
+            return total
+        mv = memoryview(dest)
+        got = self._raw_readinto(mv[have:total])
+        dest[0:have] = self._rbuf
+        got += len(self._rbuf)
+        self._rbuf = ''
+        return got
+
 def safesend(self, str):
     """Send `str' to the server.
 
@@ -635,14 +659,14 @@ def continuity(url):
 def comp(N, url):
     print('  making %i connections to:\n  %s' % (N, url))
 
-    util.stdout.write('  first using the normal urllib handlers')
+    procutil.stdout.write('  first using the normal urllib handlers')
     # first use normal opener
     opener = urlreq.buildopener()
     urlreq.installopener(opener)
     t1 = fetch(N, url)
     print('  TIME: %.3f s' % t1)
 
-    util.stdout.write('  now using the keepalive handler       ')
+    procutil.stdout.write('  now using the keepalive handler       ')
     # now install the keepalive handler and try again
     opener = urlreq.buildopener(HTTPHandler())
     urlreq.installopener(opener)
@@ -687,11 +711,11 @@ def test_timeout(url):
     i = 20
     print("  waiting %i seconds for the server to close the connection" % i)
     while i > 0:
-        util.stdout.write('\r  %2i' % i)
-        util.stdout.flush()
+        procutil.stdout.write('\r  %2i' % i)
+        procutil.stdout.flush()
         time.sleep(1)
         i -= 1
-    util.stderr.write('\r')
+    procutil.stderr.write('\r')
 
     print("  fetching the file a second time")
     fo = urlreq.urlopen(url)

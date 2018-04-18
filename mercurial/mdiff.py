@@ -13,11 +13,15 @@ import zlib
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     policy,
     pycompat,
     util,
 )
+from .utils import dateutil
+
+_missing_newline_marker = "\\ No newline at end of file\n"
 
 bdiff = policy.importmod(r'bdiff')
 mpatch = policy.importmod(r'mpatch')
@@ -27,16 +31,7 @@ fixws = bdiff.fixws
 patches = mpatch.patches
 patchedsize = mpatch.patchedsize
 textdiff = bdiff.bdiff
-
-def splitnewlines(text):
-    '''like str.splitlines, but only split on newlines.'''
-    lines = [l + '\n' for l in text.split('\n')]
-    if lines:
-        if lines[-1] == '\n':
-            lines.pop()
-        else:
-            lines[-1] = lines[-1][:-1]
-    return lines
+splitnewlines = bdiff.splitnewlines
 
 class diffopts(object):
     '''context is the number of context lines
@@ -68,6 +63,7 @@ class diffopts(object):
         'upgrade': False,
         'showsimilarity': False,
         'worddiff': False,
+        'xdiff': False,
         }
 
     def __init__(self, **opts):
@@ -82,7 +78,8 @@ class diffopts(object):
             self.context = int(self.context)
         except ValueError:
             raise error.Abort(_('diff context lines count must be '
-                               'an integer, not %r') % self.context)
+                                'an integer, not %r') %
+                              pycompat.bytestr(self.context))
 
     def copy(self, **kwargs):
         opts = dict((k, getattr(self, k)) for k in self.defaults)
@@ -100,7 +97,7 @@ def wsclean(opts, text, blank=True):
     if blank and opts.ignoreblanklines:
         text = re.sub('\n+', '\n', text).strip('\n')
     if opts.ignorewseol:
-        text = re.sub(br'[ \t\r\f]+\n', r'\n', text)
+        text = re.sub(br'[ \t\r\f]+\n', br'\n', text)
     return text
 
 def splitblock(base1, lines1, base2, lines2, opts):
@@ -193,6 +190,13 @@ def blocksinrange(blocks, rangeb):
         raise error.Abort(_('line range exceeds file size'))
     return filteredblocks, (lba, uba)
 
+def chooseblocksfunc(opts=None):
+    if (opts is None or not opts.xdiff
+        or not util.safehasattr(bdiff, 'xdiffblocks')):
+        return bdiff.blocks
+    else:
+        return bdiff.xdiffblocks
+
 def allblocks(text1, text2, opts=None, lines1=None, lines2=None):
     """Return (block, type) tuples, where block is an mdiff.blocks
     line entry. type is '=' for blocks matching exactly one another
@@ -206,7 +210,7 @@ def allblocks(text1, text2, opts=None, lines1=None, lines2=None):
     if opts.ignorews or opts.ignorewsamount or opts.ignorewseol:
         text1 = wsclean(opts, text1, False)
         text2 = wsclean(opts, text2, False)
-    diff = bdiff.blocks(text1, text2)
+    diff = chooseblocksfunc(opts)(text1, text2)
     for i, s1 in enumerate(diff):
         # The first match is special.
         # we've either found a match starting at line 0 or a match later
@@ -234,13 +238,15 @@ def allblocks(text1, text2, opts=None, lines1=None, lines2=None):
             yield s, type
         yield s1, '='
 
-def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts):
+def unidiff(a, ad, b, bd, fn1, fn2, binary, opts=defaultopts):
     """Return a unified diff as a (headers, hunks) tuple.
 
     If the diff is not null, `headers` is a list with unified diff header
     lines "--- <original>" and "+++ <new>" and `hunks` is a generator yielding
     (hunkrange, hunklines) coming from _unidiff().
     Otherwise, `headers` and `hunks` are empty.
+
+    Set binary=True if either a or b should be taken as a binary file.
     """
     def datetag(date, fn=None):
         if not opts.git and not opts.nodates:
@@ -259,23 +265,18 @@ def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts):
         aprefix = 'a/'
         bprefix = 'b/'
 
-    epoch = util.datestr((0, 0))
+    epoch = dateutil.datestr((0, 0))
 
     fn1 = util.pconvert(fn1)
     fn2 = util.pconvert(fn2)
 
-    def checknonewline(lines):
-        for text in lines:
-            if text[-1:] != '\n':
-                text += "\n\ No newline at end of file\n"
-            yield text
-
-    if not opts.text and (util.binary(a) or util.binary(b)):
+    if binary:
         if a and b and len(a) == len(b) and a == b:
             return sentinel
         headerlines = []
         hunks = (None, ['Binary file %s has changed\n' % fn1]),
     elif not a:
+        without_newline = not b.endswith('\n')
         b = splitnewlines(b)
         if a is None:
             l1 = '--- /dev/null%s' % datetag(epoch)
@@ -286,8 +287,12 @@ def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts):
         size = len(b)
         hunkrange = (0, 0, 1, size)
         hunklines = ["@@ -0,0 +1,%d @@\n" % size] + ["+" + e for e in b]
-        hunks = (hunkrange, checknonewline(hunklines)),
+        if without_newline:
+            hunklines[-1] += '\n'
+            hunklines.append(_missing_newline_marker)
+        hunks = (hunkrange, hunklines),
     elif not b:
+        without_newline = not a.endswith('\n')
         a = splitnewlines(a)
         l1 = "--- %s%s%s" % (aprefix, fn1, datetag(ad, fn1))
         if b is None:
@@ -298,24 +303,19 @@ def unidiff(a, ad, b, bd, fn1, fn2, opts=defaultopts):
         size = len(a)
         hunkrange = (1, size, 0, 0)
         hunklines = ["@@ -1,%d +0,0 @@\n" % size] + ["-" + e for e in a]
-        hunks = (hunkrange, checknonewline(hunklines)),
+        if without_newline:
+            hunklines[-1] += '\n'
+            hunklines.append(_missing_newline_marker)
+        hunks = (hunkrange, hunklines),
     else:
-        diffhunks = _unidiff(a, b, opts=opts)
-        try:
-            hunkrange, hunklines = next(diffhunks)
-        except StopIteration:
+        hunks = _unidiff(a, b, opts=opts)
+        if not next(hunks):
             return sentinel
 
         headerlines = [
             "--- %s%s%s" % (aprefix, fn1, datetag(ad, fn1)),
             "+++ %s%s%s" % (bprefix, fn2, datetag(bd, fn2)),
         ]
-        def rewindhunks():
-            yield hunkrange, checknonewline(hunklines)
-            for hr, hl in diffhunks:
-                yield hr, checknonewline(hl)
-
-        hunks = rewindhunks()
 
     return headerlines, hunks
 
@@ -327,6 +327,8 @@ def _unidiff(t1, t2, opts=defaultopts):
     form the '@@ -s1,l1 +s2,l2 @@' header and `hunklines` is a list of lines
     of the hunk combining said header followed by line additions and
     deletions.
+
+    The hunks are prefixed with a bool.
     """
     l1 = splitnewlines(t1)
     l2 = splitnewlines(t2)
@@ -357,7 +359,11 @@ def _unidiff(t1, t2, opts=defaultopts):
             # alphanumeric char.
             for i in xrange(astart - 1, lastpos - 1, -1):
                 if l1[i][0:1].isalnum():
-                    func = ' ' + l1[i].rstrip()[:40]
+                    func = b' ' + l1[i].rstrip()
+                    # split long function name if ASCII. otherwise we have no
+                    # idea where the multi-byte boundary is, so just leave it.
+                    if encoding.isasciistr(func):
+                        func = func[:41]
                     lastfunc[1] = func
                     break
             # by recording this hunk's starting point as the next place to
@@ -377,6 +383,26 @@ def _unidiff(t1, t2, opts=defaultopts):
             + delta
             + [' ' + l1[x] for x in xrange(a2, aend)]
         )
+        # If either file ends without a newline and the last line of
+        # that file is part of a hunk, a marker is printed. If the
+        # last line of both files is identical and neither ends in
+        # a newline, print only one marker. That's the only case in
+        # which the hunk can end in a shared line without a newline.
+        skip = False
+        if not t1.endswith('\n') and astart + alen == len(l1) + 1:
+            for i in xrange(len(hunklines) - 1, -1, -1):
+                if hunklines[i].startswith(('-', ' ')):
+                    if hunklines[i].startswith(' '):
+                        skip = True
+                    hunklines[i] += '\n'
+                    hunklines.insert(i + 1, _missing_newline_marker)
+                    break
+        if not skip and not t2.endswith('\n') and bstart + blen == len(l2) + 1:
+            for i in xrange(len(hunklines) - 1, -1, -1):
+                if hunklines[i].startswith('+'):
+                    hunklines[i] += '\n'
+                    hunklines.insert(i + 1, _missing_newline_marker)
+                    break
         yield hunkrange, hunklines
 
     # bdiff.blocks gives us the matching sequences in the files.  The loop
@@ -385,6 +411,7 @@ def _unidiff(t1, t2, opts=defaultopts):
     #
     hunk = None
     ignoredlines = 0
+    has_hunks = False
     for s, stype in allblocks(t1, t2, opts, l1, l2):
         a1, a2, b1, b2 = s
         if stype != '!':
@@ -411,6 +438,9 @@ def _unidiff(t1, t2, opts=defaultopts):
                 astart = hunk[1]
                 bstart = hunk[3]
             else:
+                if not has_hunks:
+                    has_hunks = True
+                    yield True
                 for x in yieldhunk(hunk):
                     yield x
         if prev:
@@ -427,17 +457,22 @@ def _unidiff(t1, t2, opts=defaultopts):
         delta[len(delta):] = ['+' + x for x in new]
 
     if hunk:
+        if not has_hunks:
+            has_hunks = True
+            yield True
         for x in yieldhunk(hunk):
             yield x
+    elif not has_hunks:
+        yield False
 
 def b85diff(to, tn):
     '''print base85-encoded binary diff'''
     def fmtline(line):
         l = len(line)
         if l <= 26:
-            l = chr(ord('A') + l - 1)
+            l = pycompat.bytechr(ord('A') + l - 1)
         else:
-            l = chr(l - 26 + ord('a') - 1)
+            l = pycompat.bytechr(l - 26 + ord('a') - 1)
         return '%c%s\n' % (l, util.b85encode(line, True))
 
     def chunk(text, csize=52):

@@ -18,8 +18,12 @@ from .node import (
 from . import (
     encoding,
     error,
+    pycompat,
     scmutil,
     util,
+)
+from .utils import (
+    stringutil,
 )
 
 calcsize = struct.calcsize
@@ -52,18 +56,19 @@ def read(repo):
                               filteredhash=filteredhash)
         if not partial.validfor(repo):
             # invalidate the cache
-            raise ValueError('tip differs')
+            raise ValueError(r'tip differs')
         cl = repo.changelog
         for l in lines:
             if not l:
                 continue
             node, state, label = l.split(" ", 2)
             if state not in 'oc':
-                raise ValueError('invalid branch state')
+                raise ValueError(r'invalid branch state')
             label = encoding.tolocal(label.strip())
             node = bin(node)
             if not cl.hasnode(node):
-                raise ValueError('node %s does not exist' % hex(node))
+                raise ValueError(
+                    r'node %s does not exist' % pycompat.sysstr(hex(node)))
             partial.setdefault(label, []).append(node)
             if state == 'c':
                 partial._closednodes.add(node)
@@ -73,7 +78,7 @@ def read(repo):
             if repo.filtername is not None:
                 msg += ' (%s)' % repo.filtername
             msg += ': %s\n'
-            repo.ui.debug(msg % inst)
+            repo.ui.debug(msg % pycompat.bytestr(inst))
         partial = None
     return partial
 
@@ -253,7 +258,8 @@ class branchcache(dict):
                         repo.filtername, len(self), nodecount)
         except (IOError, OSError, error.Abort) as inst:
             # Abort may be raised by read only opener, so log and continue
-            repo.ui.debug("couldn't write branch cache: %s\n" % inst)
+            repo.ui.debug("couldn't write branch cache: %s\n" %
+                          stringutil.forcebytestr(inst))
 
     def update(self, repo, revgen):
         """Given a branchhead cache, self, that may have extra nodes or be
@@ -375,7 +381,7 @@ class revbranchcache(object):
                 self._rbcrevs[:] = data
             except (IOError, OSError) as inst:
                 repo.ui.debug("couldn't read revision branch cache: %s\n" %
-                              inst)
+                              stringutil.forcebytestr(inst))
         # remember number of good records on disk
         self._rbcrevslen = min(len(self._rbcrevs) // _rbcrecsize,
                                len(repo.changelog))
@@ -451,6 +457,26 @@ class revbranchcache(object):
         self._setcachedata(rev, reponode, branchidx)
         return b, close
 
+    def setdata(self, branch, rev, node, close):
+        """add new data information to the cache"""
+        if branch in self._namesreverse:
+            branchidx = self._namesreverse[branch]
+        else:
+            branchidx = len(self._names)
+            self._names.append(branch)
+            self._namesreverse[branch] = branchidx
+        if close:
+            branchidx |= _rbccloseflag
+        self._setcachedata(rev, node, branchidx)
+        # If no cache data were readable (non exists, bad permission, etc)
+        # the cache was bypassing itself by setting:
+        #
+        #   self.branchinfo = self._branchinfo
+        #
+        # Since we now have data in the cache, we need to drop this bypassing.
+        if 'branchinfo' in vars(self):
+            del self.branchinfo
+
     def _setcachedata(self, rev, node, branchidx):
         """Writes the node's branch data to the in-memory cache data."""
         if rev == nullrev:
@@ -517,7 +543,7 @@ class revbranchcache(object):
                 self._rbcrevslen = revs
         except (IOError, OSError, error.Abort, error.LockError) as inst:
             repo.ui.debug("couldn't write revision branch cache%s: %s\n"
-                          % (step, inst))
+                          % (step, stringutil.forcebytestr(inst)))
         finally:
             if wlock is not None:
                 wlock.release()

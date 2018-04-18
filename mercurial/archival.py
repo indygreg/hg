@@ -21,6 +21,8 @@ from . import (
     error,
     formatter,
     match as matchmod,
+    pycompat,
+    scmutil,
     util,
     vfs as vfsmod,
 )
@@ -37,7 +39,7 @@ def tidyprefix(dest, kind, prefix):
     if prefix:
         prefix = util.normpath(prefix)
     else:
-        if not isinstance(dest, str):
+        if not isinstance(dest, bytes):
             raise ValueError('dest must be string if no prefix')
         prefix = os.path.basename(dest)
         lower = prefix.lower()
@@ -76,29 +78,27 @@ def _rootctx(repo):
         return repo[rev]
     return repo['null']
 
+# {tags} on ctx includes local tags and 'tip', with no current way to limit
+# that to global tags.  Therefore, use {latesttag} as a substitute when
+# the distance is 0, since that will be the list of global tags on ctx.
+_defaultmetatemplate = br'''
+repo: {root}
+node: {ifcontains(rev, revset("wdir()"), "{p1node}{dirty}", "{node}")}
+branch: {branch|utf8}
+{ifeq(latesttagdistance, 0, join(latesttag % "tag: {tag}", "\n"),
+      separate("\n",
+               join(latesttag % "latesttag: {tag}", "\n"),
+               "latesttagdistance: {latesttagdistance}",
+               "changessincelatesttag: {changessincelatesttag}"))}
+'''[1:]  # drop leading '\n'
+
 def buildmetadata(ctx):
     '''build content of .hg_archival.txt'''
     repo = ctx.repo()
 
-    default = (
-        r'repo: {root}\n'
-        r'node: {ifcontains(rev, revset("wdir()"),'
-                            r'"{p1node}{dirty}", "{node}")}\n'
-        r'branch: {branch|utf8}\n'
-
-        # {tags} on ctx includes local tags and 'tip', with no current way to
-        # limit that to global tags.  Therefore, use {latesttag} as a substitute
-        # when the distance is 0, since that will be the list of global tags on
-        # ctx.
-        r'{ifeq(latesttagdistance, 0, latesttag % "tag: {tag}\n",'
-                       r'"{latesttag % "latesttag: {tag}\n"}'
-                       r'latesttagdistance: {latesttagdistance}\n'
-                       r'changessincelatesttag: {changessincelatesttag}\n")}'
-    )
-
     opts = {
         'template': repo.ui.config('experimental', 'archivemetatemplate',
-                                   default)
+                                   _defaultmetatemplate)
     }
 
     out = util.stringio()
@@ -125,7 +125,7 @@ class tarit(object):
 
         def __init__(self, *args, **kw):
             timestamp = None
-            if 'timestamp' in kw:
+            if r'timestamp' in kw:
                 timestamp = kw.pop(r'timestamp')
             if timestamp is None:
                 self.timestamp = time.time()
@@ -142,8 +142,8 @@ class tarit(object):
             flags = 0
             if fname:
                 flags = gzip.FNAME
-            self.fileobj.write(chr(flags))
-            gzip.write32u(self.fileobj, long(self.timestamp))
+            self.fileobj.write(pycompat.bytechr(flags))
+            gzip.write32u(self.fileobj, int(self.timestamp))
             self.fileobj.write('\002')
             self.fileobj.write('\377')
             if fname:
@@ -155,30 +155,34 @@ class tarit(object):
 
         def taropen(mode, name='', fileobj=None):
             if kind == 'gz':
-                mode = mode[0]
+                mode = mode[0:1]
                 if not fileobj:
                     fileobj = open(name, mode + 'b')
-                gzfileobj = self.GzipFileWithTime(name, mode + 'b',
+                gzfileobj = self.GzipFileWithTime(name,
+                                                  pycompat.sysstr(mode + 'b'),
                                                   zlib.Z_BEST_COMPRESSION,
                                                   fileobj, timestamp=mtime)
                 self.fileobj = gzfileobj
-                return tarfile.TarFile.taropen(name, mode, gzfileobj)
+                return tarfile.TarFile.taropen(
+                    name, pycompat.sysstr(mode), gzfileobj)
             else:
-                return tarfile.open(name, mode + kind, fileobj)
+                return tarfile.open(
+                    name, pycompat.sysstr(mode + kind), fileobj)
 
-        if isinstance(dest, str):
+        if isinstance(dest, bytes):
             self.z = taropen('w:', name=dest)
         else:
             self.z = taropen('w|', fileobj=dest)
 
     def addfile(self, name, mode, islink, data):
+        name = pycompat.fsdecode(name)
         i = tarfile.TarInfo(name)
         i.mtime = self.mtime
         i.size = len(data)
         if islink:
             i.type = tarfile.SYMTYPE
             i.mode = 0o777
-            i.linkname = data
+            i.linkname = pycompat.fsdecode(data)
             data = None
             i.size = 0
         else:
@@ -191,35 +195,12 @@ class tarit(object):
         if self.fileobj:
             self.fileobj.close()
 
-class tellable(object):
-    '''provide tell method for zipfile.ZipFile when writing to http
-    response file object.'''
-
-    def __init__(self, fp):
-        self.fp = fp
-        self.offset = 0
-
-    def __getattr__(self, key):
-        return getattr(self.fp, key)
-
-    def write(self, s):
-        self.fp.write(s)
-        self.offset += len(s)
-
-    def tell(self):
-        return self.offset
-
 class zipit(object):
     '''write archive to zip file or stream.  can write uncompressed,
     or compressed with deflate.'''
 
     def __init__(self, dest, mtime, compress=True):
-        if not isinstance(dest, str):
-            try:
-                dest.tell()
-            except (AttributeError, IOError):
-                dest = tellable(dest)
-        self.z = zipfile.ZipFile(dest, 'w',
+        self.z = zipfile.ZipFile(pycompat.fsdecode(dest), r'w',
                                  compress and zipfile.ZIP_DEFLATED or
                                  zipfile.ZIP_STORED)
 
@@ -233,7 +214,7 @@ class zipit(object):
         self.date_time = time.gmtime(mtime)[:6]
 
     def addfile(self, name, mode, islink, data):
-        i = zipfile.ZipInfo(name, self.date_time)
+        i = zipfile.ZipInfo(pycompat.fsdecode(name), self.date_time)
         i.compress_type = self.z.compression
         # unzip will not honor unix file modes unless file creator is
         # set to unix (id 3).
@@ -268,7 +249,7 @@ class fileit(object):
         if islink:
             self.opener.symlink(data, name)
             return
-        f = self.opener(name, "w", atomictemp=True)
+        f = self.opener(name, "w", atomictemp=False)
         f.write(data)
         f.close()
         destfile = os.path.join(self.basedir, name)
@@ -339,6 +320,8 @@ def archive(repo, dest, node, kind, decode=True, matchfn=None,
     total = len(files)
     if total:
         files.sort()
+        scmutil.prefetchfiles(repo, [ctx.rev()],
+                              scmutil.matchfiles(repo, files))
         repo.ui.progress(_('archiving'), 0, unit=_('files'), total=total)
         for i, f in enumerate(files):
             ff = ctx.flags(f)

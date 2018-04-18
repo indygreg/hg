@@ -17,7 +17,7 @@ hg debuginstall
   checking "re2" regexp engine \((available|missing)\) (re)
   checking templates (*mercurial?templates)... (glob)
   checking default template (*mercurial?templates?map-cmdline.default) (glob)
-  checking commit editor... (* -c "import sys; sys.exit(0)") (glob)
+  checking commit editor... (*) (glob)
   checking username (test)
   no problems detected
 
@@ -31,7 +31,7 @@ hg debuginstall JSON
     "defaulttemplate": "*mercurial?templates?map-cmdline.default", (glob)
     "defaulttemplateerror": null,
     "defaulttemplatenotfound": "default",
-    "editor": "* -c \"import sys; sys.exit(0)\"", (glob)
+    "editor": "*", (glob)
     "editornotfound": false,
     "encoding": "ascii",
     "encodingerror": null,
@@ -72,7 +72,7 @@ hg debuginstall with no username
   checking "re2" regexp engine \((available|missing)\) (re)
   checking templates (*mercurial?templates)... (glob)
   checking default template (*mercurial?templates?map-cmdline.default) (glob)
-  checking commit editor... (* -c "import sys; sys.exit(0)") (glob)
+  checking commit editor... (*) (glob)
   checking username...
    no username supplied
    (specify a username in your configuration file)
@@ -119,6 +119,35 @@ path variables are expanded (~ is the same as $TESTTMP)
   checking commit editor... ($TESTTMP/tools/testeditor.exe)
   checking username (test)
   no problems detected
+
+print out the binary post-shlexsplit in the error message when commit editor is
+not found (this is intentionally using backslashes to mimic a windows usecase).
+  $ HGEDITOR="c:\foo\bar\baz.exe -y -z" hg debuginstall
+  checking encoding (ascii)...
+  checking Python executable (*) (glob)
+  checking Python version (*) (glob)
+  checking Python lib (*lib*)... (glob)
+  checking Python security support (*) (glob)
+    TLS 1.2 not supported by Python install; network connections lack modern security (?)
+    SNI not supported by Python install; may have connectivity issues with some servers (?)
+  checking Mercurial version (*) (glob)
+  checking Mercurial custom build (*) (glob)
+  checking module policy (*) (glob)
+  checking installed modules (*mercurial)... (glob)
+  checking registered compression engines (*zlib*) (glob)
+  checking available compression engines (*zlib*) (glob)
+  checking available compression engines for wire protocol (*zlib*) (glob)
+  checking "re2" regexp engine \((available|missing)\) (re)
+  checking templates (*mercurial?templates)... (glob)
+  checking default template (*mercurial?templates?map-cmdline.default) (glob)
+  checking commit editor... (c:\foo\bar\baz.exe) (windows !)
+   Can't find editor 'c:\foo\bar\baz.exe' in PATH (windows !)
+  checking commit editor... (c:foobarbaz.exe) (no-windows !)
+   Can't find editor 'c:foobarbaz.exe' in PATH (no-windows !)
+   (specify a commit editor in your configuration file)
+  checking username (test)
+  1 problems detected, please check your install!
+  [1]
 
 #if test-repo
   $ . "$TESTDIR/helpers-testrepo.sh"

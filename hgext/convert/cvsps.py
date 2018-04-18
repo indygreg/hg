@@ -17,6 +17,11 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import (
+    dateutil,
+    procutil,
+    stringutil,
+)
 
 pickle = util.pickle
 
@@ -132,7 +137,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
         # Get the real directory in the repository
         try:
-            prefix = open(os.path.join('CVS','Repository')).read().strip()
+            prefix = open(os.path.join('CVS','Repository'), 'rb').read().strip()
             directory = prefix
             if prefix == ".":
                 prefix = ""
@@ -144,7 +149,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
         # Use the Root file in the sandbox, if it exists
         try:
-            root = open(os.path.join('CVS','Root')).read().strip()
+            root = open(os.path.join('CVS','Root'), 'rb').read().strip()
         except IOError:
             pass
 
@@ -170,14 +175,14 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
         #    /pserver/user/server/path
         # are mapped to different cache file names.
         cachefile = root.split(":") + [directory, "cache"]
-        cachefile = ['-'.join(re.findall(r'\w+', s)) for s in cachefile if s]
+        cachefile = ['-'.join(re.findall(br'\w+', s)) for s in cachefile if s]
         cachefile = os.path.join(cachedir,
                                  '.'.join([s for s in cachefile if s]))
 
     if cache == 'update':
         try:
             ui.note(_('reading cvs log cache %s\n') % cachefile)
-            oldlog = pickle.load(open(cachefile))
+            oldlog = pickle.load(open(cachefile, 'rb'))
             for e in oldlog:
                 if not (util.safehasattr(e, 'branchpoints') and
                         util.safehasattr(e, 'commitid') and
@@ -192,7 +197,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
         if oldlog:
             date = oldlog[-1].date    # last commit date as a (time,tz) tuple
-            date = util.datestr(date, '%Y/%m/%d %H:%M:%S %1%2')
+            date = dateutil.datestr(date, '%Y/%m/%d %H:%M:%S %1%2')
 
     # build the CVS commandline
     cmd = ['cvs', '-q']
@@ -219,17 +224,17 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     state = 0
     store = False # set when a new record can be appended
 
-    cmd = [util.shellquote(arg) for arg in cmd]
+    cmd = [procutil.shellquote(arg) for arg in cmd]
     ui.note(_("running %s\n") % (' '.join(cmd)))
     ui.debug("prefix=%r directory=%r root=%r\n" % (prefix, directory, root))
 
-    pfp = util.popen(' '.join(cmd))
-    peek = pfp.readline()
+    pfp = procutil.popen(' '.join(cmd), 'rb')
+    peek = util.fromnativeeol(pfp.readline())
     while True:
         line = peek
         if line == '':
             break
-        peek = pfp.readline()
+        peek = util.fromnativeeol(pfp.readline())
         if line.endswith('\n'):
             line = line[:-1]
         #ui.debug('state=%d line=%r\n' % (state, line))
@@ -336,7 +341,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             if len(d.split()) != 3:
                 # cvs log dates always in GMT
                 d = d + ' UTC'
-            e.date = util.parsedate(d, ['%y/%m/%d %H:%M:%S',
+            e.date = dateutil.parsedate(d, ['%y/%m/%d %H:%M:%S',
                                         '%Y/%m/%d %H:%M:%S',
                                         '%Y-%m-%d %H:%M:%S'])
             e.author = scache(match.group(2))
@@ -451,7 +456,8 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             rcsmap[e.rcs.replace('/Attic/', '/')] = e.rcs
 
             if len(log) % 100 == 0:
-                ui.status(util.ellipsis('%d %s' % (len(log), e.file), 80)+'\n')
+                ui.status(stringutil.ellipsis('%d %s' % (len(log), e.file), 80)
+                          + '\n')
 
     log.sort(key=lambda x: (x.rcs, x.revision))
 
@@ -486,7 +492,7 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
 
             # write the new cachefile
             ui.note(_('writing cvs log cache %s\n') % cachefile)
-            pickle.dump(log, open(cachefile, 'w'))
+            pickle.dump(log, open(cachefile, 'wb'))
         else:
             log = oldlog
 
@@ -607,7 +613,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             files = set()
             if len(changesets) % 100 == 0:
                 t = '%d %s' % (len(changesets), repr(e.comment)[1:-1])
-                ui.status(util.ellipsis(t, 80) + '\n')
+                ui.status(stringutil.ellipsis(t, 80) + '\n')
 
         c.entries.append(e)
         files.add(e.file)
@@ -855,6 +861,7 @@ def debugcvsps(ui, *args, **opts):
     repository, and convert the log to changesets based on matching
     commit log entries and dates.
     '''
+    opts = pycompat.byteskwargs(opts)
     if opts["new_cache"]:
         cache = "write"
     elif opts["update_cache"]:
@@ -900,7 +907,7 @@ def debugcvsps(ui, *args, **opts):
             #       bug-for-bug compatibility with cvsps.
             ui.write('---------------------\n')
             ui.write(('PatchSet %d \n' % cs.id))
-            ui.write(('Date: %s\n' % util.datestr(cs.date,
+            ui.write(('Date: %s\n' % dateutil.datestr(cs.date,
                                                  '%Y/%m/%d %H:%M:%S %1%2')))
             ui.write(('Author: %s\n' % cs.author))
             ui.write(('Branch: %s\n' % (cs.branch or 'HEAD')))
@@ -912,7 +919,7 @@ def debugcvsps(ui, *args, **opts):
             if opts["parents"] and cs.parents:
                 if len(cs.parents) > 1:
                     ui.write(('Parents: %s\n' %
-                             (','.join([str(p.id) for p in cs.parents]))))
+                             (','.join([(b"%d" % p.id) for p in cs.parents]))))
                 else:
                     ui.write(('Parent: %d\n' % cs.parents[0].id))
 
@@ -934,18 +941,18 @@ def debugcvsps(ui, *args, **opts):
                     fn = fn[len(opts["prefix"]):]
                 ui.write('\t%s:%s->%s%s \n' % (
                         fn, '.'.join([str(x) for x in f.parent]) or 'INITIAL',
-                        '.'.join([str(x) for x in f.revision]),
+                        '.'.join([(b"%d" % x) for x in f.revision]),
                         ['', '(DEAD)'][f.dead]))
             ui.write('\n')
 
         # have we seen the start tag?
         if revisions and off:
-            if revisions[0] == str(cs.id) or \
+            if revisions[0] == (b"%d" % cs.id) or \
                 revisions[0] in cs.tags:
                 off = False
 
         # see if we reached the end tag
         if len(revisions) > 1 and not off:
-            if revisions[1] == str(cs.id) or \
+            if revisions[1] == (b"%d" % cs.id) or \
                 revisions[1] in cs.tags:
                 break

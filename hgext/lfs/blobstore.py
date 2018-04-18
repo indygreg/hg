@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import hashlib
 import json
 import os
@@ -18,6 +19,7 @@ from mercurial.i18n import _
 from mercurial import (
     error,
     pathutil,
+    pycompat,
     url as urlmod,
     util,
     vfs as vfsmod,
@@ -27,7 +29,7 @@ from mercurial import (
 from ..largefiles import lfutil
 
 # 64 bytes for SHA256
-_lfsre = re.compile(r'\A[a-f0-9]{64}\Z')
+_lfsre = re.compile(br'\A[a-f0-9]{64}\Z')
 
 class lfsvfs(vfsmod.vfs):
     def join(self, path):
@@ -57,6 +59,26 @@ class lfsvfs(vfsmod.vfs):
                              if _lfsre.match(dirpath + f)])
 
         yield ('', [], oids)
+
+class nullvfs(lfsvfs):
+    def __init__(self):
+        pass
+
+    def exists(self, oid):
+        return False
+
+    def read(self, oid):
+        # store.read() calls into here if the blob doesn't exist in its
+        # self.vfs.  Raise the same error as a normal vfs when asked to read a
+        # file that doesn't exist.  The only difference is the full file path
+        # isn't available in the error.
+        raise IOError(errno.ENOENT, '%s: No such file or directory' % oid)
+
+    def walk(self, path=None, onerror=None):
+        return ('', [], [])
+
+    def write(self, oid, data):
+        pass
 
 class filewithprogress(object):
     """a file-like object that supports __len__ and read.
@@ -96,8 +118,12 @@ class local(object):
     def __init__(self, repo):
         fullpath = repo.svfs.join('lfs/objects')
         self.vfs = lfsvfs(fullpath)
-        usercache = lfutil._usercachedir(repo.ui, 'lfs')
-        self.cachevfs = lfsvfs(usercache)
+
+        if repo.ui.configbool('experimental', 'lfs.disableusercache'):
+            self.cachevfs = nullvfs()
+        else:
+            usercache = lfutil._usercachedir(repo.ui, 'lfs')
+            self.cachevfs = lfsvfs(usercache)
         self.ui = repo.ui
 
     def open(self, oid):
@@ -126,13 +152,10 @@ class local(object):
 
             realoid = sha256.hexdigest()
             if realoid != oid:
-                raise error.Abort(_('corrupt remote lfs object: %s') % oid)
+                raise LfsCorruptionError(_('corrupt remote lfs object: %s')
+                                         % oid)
 
-        # XXX: should we verify the content of the cache, and hardlink back to
-        # the local store on success, but truncate, write and link on failure?
-        if not self.cachevfs.exists(oid):
-            self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
-            lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
+        self._linktousercache(oid)
 
     def write(self, oid, data):
         """Write blob to local blobstore.
@@ -143,9 +166,13 @@ class local(object):
         with self.vfs(oid, 'wb', atomictemp=True) as fp:
             fp.write(data)
 
+        self._linktousercache(oid)
+
+    def _linktousercache(self, oid):
         # XXX: should we verify the content of the cache, and hardlink back to
         # the local store on success, but truncate, write and link on failure?
-        if not self.cachevfs.exists(oid):
+        if (not self.cachevfs.exists(oid)
+            and not isinstance(self.cachevfs, nullvfs)):
             self.ui.note(_('lfs: adding %s to the usercache\n') % oid)
             lfutil.link(self.vfs.join(oid), self.cachevfs.join(oid))
 
@@ -174,6 +201,17 @@ class local(object):
             _verify(oid, blob)
         return blob
 
+    def verify(self, oid):
+        """Indicate whether or not the hash of the underlying file matches its
+        name."""
+        sha256 = hashlib.sha256()
+
+        with self.open(oid) as fp:
+            for chunk in util.filechunkiter(fp, size=1048576):
+                sha256.update(chunk)
+
+        return oid == sha256.hexdigest()
+
     def has(self, oid):
         """Returns True if the local blobstore contains the requested blob,
         False otherwise."""
@@ -194,11 +232,11 @@ class _gitlfsremote(object):
 
     def writebatch(self, pointers, fromstore):
         """Batch upload from local to remote blobstore."""
-        self._batch(pointers, fromstore, 'upload')
+        self._batch(_deduplicate(pointers), fromstore, 'upload')
 
     def readbatch(self, pointers, tostore):
         """Batch download from remote to local blostore."""
-        self._batch(pointers, tostore, 'download')
+        self._batch(_deduplicate(pointers), tostore, 'download')
 
     def _batchrequest(self, pointers, action):
         """Get metadata about objects pointed by pointers for given action
@@ -216,7 +254,8 @@ class _gitlfsremote(object):
         batchreq.add_header('Accept', 'application/vnd.git-lfs+json')
         batchreq.add_header('Content-Type', 'application/vnd.git-lfs+json')
         try:
-            rawjson = self.urlopener.open(batchreq).read()
+            rsp = self.urlopener.open(batchreq)
+            rawjson = rsp.read()
         except util.urlerr.httperror as ex:
             raise LfsRemoteError(_('LFS HTTP error: %s (action=%s)')
                                  % (ex, action))
@@ -225,6 +264,20 @@ class _gitlfsremote(object):
         except ValueError:
             raise LfsRemoteError(_('LFS server returns invalid JSON: %s')
                                  % rawjson)
+
+        if self.ui.debugflag:
+            self.ui.debug('Status: %d\n' % rsp.status)
+            # lfs-test-server and hg serve return headers in different order
+            self.ui.debug('%s\n'
+                          % '\n'.join(sorted(str(rsp.info()).splitlines())))
+
+            if 'objects' in response:
+                response['objects'] = sorted(response['objects'],
+                                             key=lambda p: p['oid'])
+            self.ui.debug('%s\n'
+                          % json.dumps(response, indent=2,
+                                       separators=('', ': '), sort_keys=True))
+
         return response
 
     def _checkforservererror(self, pointers, responses, action):
@@ -236,23 +289,34 @@ class _gitlfsremote(object):
             # server implementation (ex. lfs-test-server)  does not set "error"
             # but just removes "download" from "actions". Treat that case
             # as the same as 404 error.
-            notfound = (response.get('error', {}).get('code') == 404
-                        or (action == 'download'
-                            and action not in response.get('actions', [])))
-            if notfound:
-                ptrmap = {p.oid(): p for p in pointers}
-                p = ptrmap.get(response['oid'], None)
-                if p:
-                    filename = getattr(p, 'filename', 'unknown')
-                    raise LfsRemoteError(
-                        _(('LFS server error. Remote object '
-                          'for "%s" not found: %r')) % (filename, response))
+            if 'error' not in response:
+                if (action == 'download'
+                    and action not in response.get('actions', [])):
+                    code = 404
                 else:
-                    raise LfsRemoteError(
-                        _('LFS server error. Unsolicited response for oid %s')
-                        % response['oid'])
-            if 'error' in response:
-                raise LfsRemoteError(_('LFS server error: %r') % response)
+                    continue
+            else:
+                # An error dict without a code doesn't make much sense, so
+                # treat as a server error.
+                code = response.get('error').get('code', 500)
+
+            ptrmap = {p.oid(): p for p in pointers}
+            p = ptrmap.get(response['oid'], None)
+            if p:
+                filename = getattr(p, 'filename', 'unknown')
+                errors = {
+                    404: 'The object does not exist',
+                    410: 'The object was removed by the owner',
+                    422: 'Validation error',
+                    500: 'Internal server error',
+                }
+                msg = errors.get(code, 'status code %d' % code)
+                raise LfsRemoteError(_('LFS server error for "%s": %s')
+                                     % (filename, msg))
+            else:
+                raise LfsRemoteError(
+                    _('LFS server error. Unsolicited response for oid %s')
+                    % response['oid'])
 
     def _extractobjects(self, response, pointers, action):
         """extract objects from response of the batch API
@@ -281,18 +345,20 @@ class _gitlfsremote(object):
         See https://github.com/git-lfs/git-lfs/blob/master/docs/api/\
         basic-transfers.md
         """
-        oid = str(obj['oid'])
+        oid = pycompat.bytestr(obj['oid'])
 
-        href = str(obj['actions'][action].get('href'))
+        href = pycompat.bytestr(obj['actions'][action].get('href'))
         headers = obj['actions'][action].get('header', {}).items()
 
         request = util.urlreq.request(href)
         if action == 'upload':
             # If uploading blobs, read data from local blobstore.
-            with localstore.open(oid) as fp:
-                _verifyfile(oid, fp)
+            if not localstore.verify(oid):
+                raise error.Abort(_('detected corrupt lfs object: %s') % oid,
+                                  hint=_('run hg verify'))
             request.data = filewithprogress(localstore.open(oid), None)
             request.get_method = lambda: 'PUT'
+            request.add_header('Content-Type', 'application/octet-stream')
 
         for k, v in headers:
             request.add_header(k, v)
@@ -300,6 +366,13 @@ class _gitlfsremote(object):
         response = b''
         try:
             req = self.urlopener.open(request)
+
+            if self.ui.debugflag:
+                self.ui.debug('Status: %d\n' % req.status)
+                # lfs-test-server and hg serve return headers in different order
+                self.ui.debug('%s\n'
+                              % '\n'.join(sorted(str(req.info()).splitlines())))
+
             if action == 'download':
                 # If downloading blobs, store downloaded data to local blobstore
                 localstore.download(oid, req)
@@ -366,11 +439,21 @@ class _gitlfsremote(object):
             oids = transfer(sorted(objects, key=lambda o: o.get('oid')))
 
         processed = 0
+        blobs = 0
         for _one, oid in oids:
             processed += sizes[oid]
+            blobs += 1
             self.ui.progress(topic, processed, total=total)
             self.ui.note(_('lfs: processed: %s\n') % oid)
         self.ui.progress(topic, pos=None, total=total)
+
+        if blobs > 0:
+            if action == 'upload':
+                self.ui.status(_('lfs: uploaded %d files (%s)\n')
+                               % (blobs, util.bytecount(processed)))
+            elif action == 'download':
+                self.ui.status(_('lfs: downloaded %d files (%s)\n')
+                               % (blobs, util.bytecount(processed)))
 
     def __del__(self):
         # copied from mercurial/httppeer.py
@@ -388,13 +471,13 @@ class _dummyremote(object):
         self.vfs = lfsvfs(fullpath)
 
     def writebatch(self, pointers, fromstore):
-        for p in pointers:
+        for p in _deduplicate(pointers):
             content = fromstore.read(p.oid(), verify=True)
             with self.vfs(p.oid(), 'wb', atomictemp=True) as fp:
                 fp.write(content)
 
     def readbatch(self, pointers, tostore):
-        for p in pointers:
+        for p in _deduplicate(pointers):
             with self.vfs(p.oid(), 'rb') as fp:
                 tostore.download(p.oid(), fp)
 
@@ -433,27 +516,56 @@ _storemap = {
     None: _promptremote,
 }
 
+def _deduplicate(pointers):
+    """Remove any duplicate oids that exist in the list"""
+    reduced = util.sortdict()
+    for p in pointers:
+        reduced[p.oid()] = p
+    return reduced.values()
+
 def _verify(oid, content):
     realoid = hashlib.sha256(content).hexdigest()
     if realoid != oid:
-        raise error.Abort(_('detected corrupt lfs object: %s') % oid,
-                          hint=_('run hg verify'))
+        raise LfsCorruptionError(_('detected corrupt lfs object: %s') % oid,
+                                 hint=_('run hg verify'))
 
-def _verifyfile(oid, fp):
-    sha256 = hashlib.sha256()
-    while True:
-        data = fp.read(1024 * 1024)
-        if not data:
-            break
-        sha256.update(data)
-    realoid = sha256.hexdigest()
-    if realoid != oid:
-        raise error.Abort(_('detected corrupt lfs object: %s') % oid,
-                          hint=_('run hg verify'))
+def remote(repo, remote=None):
+    """remotestore factory. return a store in _storemap depending on config
 
-def remote(repo):
-    """remotestore factory. return a store in _storemap depending on config"""
-    url = util.url(repo.ui.config('lfs', 'url') or '')
+    If ``lfs.url`` is specified, use that remote endpoint.  Otherwise, try to
+    infer the endpoint, based on the remote repository using the same path
+    adjustments as git.  As an extension, 'http' is supported as well so that
+    ``hg serve`` works out of the box.
+
+    https://github.com/git-lfs/git-lfs/blob/master/docs/api/server-discovery.md
+    """
+    lfsurl = repo.ui.config('lfs', 'url')
+    url = util.url(lfsurl or '')
+    if lfsurl is None:
+        if remote:
+            path = remote
+        elif util.safehasattr(repo, '_subtoppath'):
+            # The pull command sets this during the optional update phase, which
+            # tells exactly where the pull originated, whether 'paths.default'
+            # or explicit.
+            path = repo._subtoppath
+        else:
+            # TODO: investigate 'paths.remote:lfsurl' style path customization,
+            # and fall back to inferring from 'paths.remote' if unspecified.
+            path = repo.ui.config('paths', 'default') or ''
+
+        defaulturl = util.url(path)
+
+        # TODO: support local paths as well.
+        # TODO: consider the ssh -> https transformation that git applies
+        if defaulturl.scheme in (b'http', b'https'):
+            if defaulturl.path and defaulturl.path[:-1] != b'/':
+                defaulturl.path += b'/'
+            defaulturl.path = (defaulturl.path or b'') + b'.git/info/lfs'
+
+            url = util.url(bytes(defaulturl))
+            repo.ui.note(_('lfs: assuming remote store: %s\n') % url)
+
     scheme = url.scheme
     if scheme not in _storemap:
         raise error.Abort(_('lfs: unknown url scheme: %s') % scheme)
@@ -461,3 +573,8 @@ def remote(repo):
 
 class LfsRemoteError(error.RevlogError):
     pass
+
+class LfsCorruptionError(error.Abort):
+    """Raised when a corrupt blob is detected, aborting an operation
+
+    It exists to allow specialized handling on the server side."""

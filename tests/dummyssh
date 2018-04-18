@@ -15,8 +15,8 @@ os.environ["SSH_CLIENT"] = "%s 1 2" % os.environ.get('LOCALIP', '127.0.0.1')
 log = open("dummylog", "ab")
 log.write(b"Got arguments")
 for i, arg in enumerate(sys.argv[1:]):
-    log.write(b" %d:%s" % (i + 1, arg))
-log.write("\n")
+    log.write(b" %d:%s" % (i + 1, arg.encode('latin1')))
+log.write(b"\n")
 log.close()
 hgcmd = sys.argv[2]
 if os.name == 'nt':

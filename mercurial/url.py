@@ -12,6 +12,7 @@ from __future__ import absolute_import
 import base64
 import os
 import socket
+import sys
 
 from .i18n import _
 from . import (
@@ -23,6 +24,9 @@ from . import (
     sslutil,
     urllibcompat,
     util,
+)
+from .utils import (
+    stringutil,
 )
 
 httplib = util.httplib
@@ -67,15 +71,15 @@ class passwordmgr(object):
                 user, passwd = auth.get('username'), auth.get('password')
                 self.ui.debug("using auth.%s.* for authentication\n" % group)
         if not user or not passwd:
-            u = util.url(authuri)
+            u = util.url(pycompat.bytesurl(authuri))
             u.query = None
             if not self.ui.interactive():
                 raise error.Abort(_('http authorization required for %s') %
-                                 util.hidepassword(str(u)))
+                                  util.hidepassword(bytes(u)))
 
             self.ui.write(_("http authorization required for %s\n") %
-                          util.hidepassword(str(u)))
-            self.ui.write(_("realm: %s\n") % realm)
+                          util.hidepassword(bytes(u)))
+            self.ui.write(_("realm: %s\n") % pycompat.bytesurl(realm))
             if user:
                 self.ui.write(_("user: %s\n") % user)
             else:
@@ -124,10 +128,9 @@ class proxyhandler(urlreq.proxyhandler):
             else:
                 self.no_list = no_list
 
-            proxyurl = str(proxy)
+            proxyurl = bytes(proxy)
             proxies = {'http': proxyurl, 'https': proxyurl}
-            ui.debug('proxying through http://%s:%s\n' %
-                      (proxy.host, proxy.port))
+            ui.debug('proxying through %s\n' % util.hidepassword(proxyurl))
         else:
             proxies = {}
 
@@ -297,6 +300,44 @@ class httphandler(keepalive.HTTPHandler):
         _generic_start_transaction(self, h, req)
         return keepalive.HTTPHandler._start_transaction(self, h, req)
 
+class logginghttpconnection(keepalive.HTTPConnection):
+    def __init__(self, createconn, *args, **kwargs):
+        keepalive.HTTPConnection.__init__(self, *args, **kwargs)
+        self._create_connection = createconn
+
+    if sys.version_info < (2, 7, 7):
+        # copied from 2.7.14, since old implementations directly call
+        # socket.create_connection()
+        def connect(self):
+            self.sock = self._create_connection((self.host, self.port),
+                                                self.timeout,
+                                                self.source_address)
+            if self._tunnel_host:
+                self._tunnel()
+
+class logginghttphandler(httphandler):
+    """HTTP handler that logs socket I/O."""
+    def __init__(self, logfh, name, observeropts):
+        super(logginghttphandler, self).__init__()
+
+        self._logfh = logfh
+        self._logname = name
+        self._observeropts = observeropts
+
+    # do_open() calls the passed class to instantiate an HTTPConnection. We
+    # pass in a callable method that creates a custom HTTPConnection instance
+    # whose callback to create the socket knows how to proxy the socket.
+    def http_open(self, req):
+        return self.do_open(self._makeconnection, req)
+
+    def _makeconnection(self, *args, **kwargs):
+        def createconnection(*args, **kwargs):
+            sock = socket.create_connection(*args, **kwargs)
+            return util.makeloggingsocket(self._logfh, sock, self._logname,
+                                          **self._observeropts)
+
+        return logginghttpconnection(createconnection, *args, **kwargs)
+
 if has_https:
     class httpsconnection(httplib.HTTPConnection):
         response_class = keepalive.HTTPResponse
@@ -425,8 +466,8 @@ class httpbasicauthhandler(urlreq.httpbasicauthhandler):
         user, pw = self.passwd.find_user_password(
             realm, urllibcompat.getfullurl(req))
         if pw is not None:
-            raw = "%s:%s" % (user, pw)
-            auth = 'Basic %s' % base64.b64encode(raw).strip()
+            raw = "%s:%s" % (pycompat.bytesurl(user), pycompat.bytesurl(pw))
+            auth = r'Basic %s' % pycompat.strurl(base64.b64encode(raw).strip())
             if req.get_header(self.auth_header, None) == auth:
                 return None
             self.auth = auth
@@ -445,12 +486,13 @@ class cookiehandler(urlreq.basehandler):
 
         cookiefile = util.expandpath(cookiefile)
         try:
-            cookiejar = util.cookielib.MozillaCookieJar(cookiefile)
+            cookiejar = util.cookielib.MozillaCookieJar(
+                pycompat.fsdecode(cookiefile))
             cookiejar.load()
             self.cookiejar = cookiejar
         except util.cookielib.LoadError as e:
             ui.warn(_('(error loading cookie file %s: %s; continuing without '
-                      'cookies)\n') % (cookiefile, str(e)))
+                      'cookies)\n') % (cookiefile, stringutil.forcebytestr(e)))
 
     def http_request(self, request):
         if self.cookiejar:
@@ -466,20 +508,33 @@ class cookiehandler(urlreq.basehandler):
 
 handlerfuncs = []
 
-def opener(ui, authinfo=None, useragent=None):
+def opener(ui, authinfo=None, useragent=None, loggingfh=None,
+           loggingname=b's', loggingopts=None, sendaccept=True):
     '''
     construct an opener suitable for urllib2
     authinfo will be added to the password manager
+
+    The opener can be configured to log socket events if the various
+    ``logging*`` arguments are specified.
+
+    ``loggingfh`` denotes a file object to log events to.
+    ``loggingname`` denotes the name of the to print when logging.
+    ``loggingopts`` is a dict of keyword arguments to pass to the constructed
+    ``util.socketobserver`` instance.
+
+    ``sendaccept`` allows controlling whether the ``Accept`` request header
+    is sent. The header is sent by default.
     '''
-    # experimental config: ui.usehttp2
-    if ui.configbool('ui', 'usehttp2'):
-        handlers = [
-            httpconnectionmod.http2handler(
-                ui,
-                passwordmgr(ui, ui.httppasswordmgrdb))
-        ]
+    handlers = []
+
+    if loggingfh:
+        handlers.append(logginghttphandler(loggingfh, loggingname,
+                                           loggingopts or {}))
+        # We don't yet support HTTPS when logging I/O. If we attempt to open
+        # an HTTPS URL, we'll likely fail due to unknown protocol.
+
     else:
-        handlers = [httphandler()]
+        handlers.append(httphandler())
         if has_https:
             handlers.append(httpshandler(ui))
 
@@ -525,7 +580,9 @@ def opener(ui, authinfo=None, useragent=None):
     # been sent on all requests since forever. We keep sending it for backwards
     # compatibility reasons. Modern versions of the wire protocol use
     # X-HgProto-<N> for advertising client support.
-    opener.addheaders.append((r'Accept', r'application/mercurial-0.1'))
+    if sendaccept:
+        opener.addheaders.append((r'Accept', r'application/mercurial-0.1'))
+
     return opener
 
 def open(ui, url_, data=None):
@@ -535,6 +592,6 @@ def open(ui, url_, data=None):
         url_, authinfo = u.authinfo()
     else:
         path = util.normpath(os.path.abspath(url_))
-        url_ = 'file://' + urlreq.pathname2url(path)
+        url_ = 'file://' + pycompat.bytesurl(urlreq.pathname2url(path))
         authinfo = None
-    return opener(ui, authinfo).open(url_, data)
+    return opener(ui, authinfo).open(pycompat.strurl(url_), data)

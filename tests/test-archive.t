@@ -106,10 +106,13 @@ hg subrepos are shared into existence on demand if the parent was shared
   >         --config extensions.blackbox= --config blackbox.track=develwarn
   >     cat hg.pid >> $DAEMON_PIDS
   >     echo % $1 allowed should give 200
-  >     get-with-headers.py localhost:$HGPORT "archive/tip.$2" | head -n 1
+  >     get-with-headers.py --bodyfile body localhost:$HGPORT "archive/tip.$2" -
+  >     f --size --sha1 body
   >     echo % $3 and $4 disallowed should both give 403
-  >     get-with-headers.py localhost:$HGPORT "archive/tip.$3" | head -n 1
-  >     get-with-headers.py localhost:$HGPORT "archive/tip.$4" | head -n 1
+  >     get-with-headers.py --bodyfile body localhost:$HGPORT "archive/tip.$3" -
+  >     f --size --sha1 body
+  >     get-with-headers.py --bodyfile body localhost:$HGPORT "archive/tip.$4" -
+  >     f --size --sha1 body
   >     killdaemons.py
   >     cat errors.log
   >     hg blackbox --config extensions.blackbox= --config blackbox.track=
@@ -121,42 +124,174 @@ check http return codes
   $ test_archtype gz tar.gz tar.bz2 zip
   % gz allowed should give 200
   200 Script output follows
+  content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.gz
+  content-type: application/x-gzip
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505
   % tar.bz2 and zip disallowed should both give 403
   403 Archive type not allowed: bz2
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
   403 Archive type not allowed: zip
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
   $ test_archtype bz2 tar.bz2 zip tar.gz
   % bz2 allowed should give 200
   200 Script output follows
+  content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.bz2
+  content-type: application/x-bzip2
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b
   % zip and tar.gz disallowed should both give 403
   403 Archive type not allowed: zip
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
   403 Archive type not allowed: gz
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
   $ test_archtype zip zip tar.gz tar.bz2
   % zip allowed should give 200
   200 Script output follows
+  content-disposition: attachment; filename=test-archive-1701ef1f1510.zip
+  content-type: application/zip
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1377, sha1=677b14d3d048778d5eb5552c14a67e6192068650
   % tar.gz and tar.bz2 disallowed should both give 403
   403 Archive type not allowed: gz
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
   403 Archive type not allowed: bz2
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
 
 check http return codes (with deprecated option)
 
   $ test_archtype_deprecated gz tar.gz tar.bz2 zip
   % gz allowed should give 200
   200 Script output follows
+  content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.gz
+  content-type: application/x-gzip
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=408, sha1=8fa06531bddecc365a9f5edb0f88b65974bfe505
   % tar.bz2 and zip disallowed should both give 403
   403 Archive type not allowed: bz2
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
   403 Archive type not allowed: zip
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
   $ test_archtype_deprecated bz2 tar.bz2 zip tar.gz
   % bz2 allowed should give 200
   200 Script output follows
+  content-disposition: attachment; filename=test-archive-1701ef1f1510.tar.bz2
+  content-type: application/x-bzip2
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=426, sha1=8d87f5aba6e14f1bfea6c232985982c278b2fb0b
   % zip and tar.gz disallowed should both give 403
   403 Archive type not allowed: zip
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=cbfa5574b337348bfd0564cc534474d002e7d6c7
   403 Archive type not allowed: gz
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
   $ test_archtype_deprecated zip zip tar.gz tar.bz2
   % zip allowed should give 200
   200 Script output follows
+  content-disposition: attachment; filename=test-archive-1701ef1f1510.zip
+  content-type: application/zip
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1377, sha1=677b14d3d048778d5eb5552c14a67e6192068650
   % tar.gz and tar.bz2 disallowed should both give 403
   403 Archive type not allowed: gz
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1450, sha1=71f0b12d59f85fdcfe8ff493e2dc66863f2f7734
   403 Archive type not allowed: bz2
+  content-type: text/html; charset=ascii
+  date: $HTTP_DATE$
+  etag: W/"*" (glob)
+  server: testing stub value
+  transfer-encoding: chunked
+  
+  body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
 
   $ echo "allow_archive = gz bz2 zip" >> .hg/hgrc
   $ hg serve -p $HGPORT -d --pid-file=hg.pid -E errors.log

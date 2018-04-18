@@ -1,5 +1,193 @@
+===============
 Version History
 ===============
+
+1.0.0 (not yet released)
+========================
+
+Actions Blocking Release
+------------------------
+
+* compression and decompression APIs that support ``io.rawIOBase`` interface
+  (#13).
+* Refactor module names so C and CFFI extensions live under ``zstandard``
+  package.
+* Overall API design review.
+* Use Python allocator where possible.
+* Figure out what to do about experimental APIs not implemented by CFFI.
+* APIs for auto adjusting compression parameters based on input size. e.g.
+  clamping the window log so it isn't too large for input.
+* Consider allowing compressor and decompressor instances to be thread safe,
+  support concurrent operations. Or track when an operation is in progress and
+  refuse to let concurrent operations use the same instance.
+* Support for magic-less frames for all decompression operations (``decompress()``
+  doesn't work due to sniffing the content size and the lack of a ZSTD API to
+  sniff magic-less frames - this should be fixed in 1.3.5.).
+* Audit for complete flushing when ending compression streams.
+* Deprecate legacy APIs.
+* Audit for ability to control read/write sizes on all APIs.
+* Detect memory leaks via bench.py.
+* Remove low-level compression parameters from ``ZstdCompressor.__init__`` and
+  require use of ``CompressionParameters``.
+* Expose ``ZSTD_getFrameProgression()`` from more compressor types.
+
+Other Actions Not Blocking Release
+---------------------------------------
+
+* Support for block compression APIs.
+* API for ensuring max memory ceiling isn't exceeded.
+* Move off nose for testing.
+
+0.9.0 (released 2018-04-08)
+===========================
+
+Backwards Compatibility Notes
+-----------------------------
+
+* CFFI 1.11 or newer is now required (previous requirement was 1.8).
+* The primary module is now ``zstandard``. Please change imports of ``zstd``
+  and ``zstd_cffi`` to ``import zstandard``. See the README for more. Support
+  for importing the old names will be dropped in the next release.
+* ``ZstdCompressor.read_from()`` and ``ZstdDecompressor.read_from()`` have
+  been renamed to ``read_to_iter()``. ``read_from()`` is aliased to the new
+  name and will be deleted in a future release.
+* Support for Python 2.6 has been removed.
+* Support for Python 3.3 has been removed.
+* The ``selectivity`` argument to ``train_dictionary()`` has been removed, as
+  the feature disappeared from zstd 1.3.
+* Support for legacy dictionaries has been removed. Cover dictionaries are now
+  the default. ``train_cover_dictionary()`` has effectively been renamed to
+  ``train_dictionary()``.
+* The ``allow_empty`` argument from ``ZstdCompressor.compress()`` has been
+  deleted and the method now allows empty inputs to be compressed by default.
+* ``estimate_compression_context_size()`` has been removed. Use
+  ``CompressionParameters.estimated_compression_context_size()`` instead.
+* ``get_compression_parameters()`` has been removed. Use
+  ``CompressionParameters.from_level()`` instead.
+* The arguments to ``CompressionParameters.__init__()`` have changed. If you
+  were using positional arguments before, the positions now map to different
+  arguments. It is recommended to use keyword arguments to construct
+  ``CompressionParameters`` instances.
+* ``TARGETLENGTH_MAX`` constant has been removed (it disappeared from zstandard
+  1.3.4).
+* ``ZstdCompressor.write_to()`` and ``ZstdDecompressor.write_to()`` have been
+  renamed to ``ZstdCompressor.stream_writer()`` and
+  ``ZstdDecompressor.stream_writer()``, respectively. The old names are still
+  aliased, but will be removed in the next major release.
+* Content sizes are written into frame headers by default
+  (``ZstdCompressor(write_content_size=True)`` is now the default).
+* ``CompressionParameters`` has been renamed to ``ZstdCompressionParameters``
+  for consistency with other types. The old name is an alias and will be removed
+  in the next major release.
+
+Bug Fixes
+---------
+
+* Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40) (from 0.8.2).
+* Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35) (from 0.8.2).
+* Fixed memory leak of ``ZSTD_DDict`` instances in CFFI's ``ZstdDecompressor``.
+
+New Features
+------------
+
+* Bundlded zstandard library upgraded from 1.1.3 to 1.3.4. This delivers various
+  bug fixes and performance improvements. It also gives us access to newer
+  features.
+* Support for negative compression levels.
+* Support for *long distance matching* (facilitates compression ratios that approach
+  LZMA).
+* Supporting for reading empty zstandard frames (with an embedded content size
+  of 0).
+* Support for writing and partial support for reading zstandard frames without a
+  magic header.
+* New ``stream_reader()`` API that exposes the ``io.RawIOBase`` interface (allows
+  you to ``.read()`` from a file-like object).
+* Several minor features, bug fixes, and performance enhancements.
+* Wheels for Linux and macOS are now provided with releases.
+
+Changes
+-------
+
+* Functions accepting bytes data now use the buffer protocol and can accept
+  more types (like ``memoryview`` and ``bytearray``) (#26).
+* Add #includes so compilation on OS X and BSDs works (#20).
+* New ``ZstdDecompressor.stream_reader()`` API to obtain a read-only i/o stream
+  of decompressed data for a source.
+* New ``ZstdCompressor.stream_reader()`` API to obtain a read-only i/o stream of
+  compressed data for a source.
+* Renamed ``ZstdDecompressor.read_from()`` to ``ZstdDecompressor.read_to_iter()``.
+  The old name is still available.
+* Renamed ``ZstdCompressor.read_from()`` to ``ZstdCompressor.read_to_iter()``.
+  ``read_from()`` is still available at its old location.
+* Introduce the ``zstandard`` module to import and re-export the C or CFFI
+  *backend* as appropriate. Behavior can be controlled via the
+  ``PYTHON_ZSTANDARD_IMPORT_POLICY`` environment variable. See README for
+  usage info.
+* Vendored version of zstd upgraded to 1.3.4.
+* Added module constants ``CONTENTSIZE_UNKNOWN`` and ``CONTENTSIZE_ERROR``.
+* Add ``STRATEGY_BTULTRA`` compression strategy constant.
+* Switch from deprecated ``ZSTD_getDecompressedSize()`` to
+  ``ZSTD_getFrameContentSize()`` replacement.
+* ``ZstdCompressor.compress()`` can now compress empty inputs without requiring
+  special handling.
+* ``ZstdCompressor`` and ``ZstdDecompressor`` now have a ``memory_size()``
+  method for determining the current memory utilization of the underlying zstd
+  primitive.
+* ``train_dictionary()`` has new arguments and functionality for trying multiple
+  variations of COVER parameters and selecting the best one.
+* Added module constants ``LDM_MINMATCH_MIN``, ``LDM_MINMATCH_MAX``, and
+  ``LDM_BUCKETSIZELOG_MAX``.
+* Converted all consumers to the zstandard *new advanced API*, which uses
+  ``ZSTD_compress_generic()``
+* ``CompressionParameters.__init__`` now accepts several more arguments,
+  including support for *long distance matching*.
+* ``ZstdCompressionDict.__init__`` now accepts a ``dict_type`` argument that
+  controls how the dictionary should be interpreted. This can be used to
+  force the use of *content-only* dictionaries or to require the presence
+  of the dictionary magic header.
+* ``ZstdCompressionDict.precompute_compress()`` can be used to precompute the
+  compression dictionary so it can efficiently be used with multiple
+  ``ZstdCompressor`` instances.
+* Digested dictionaries are now stored in ``ZstdCompressionDict`` instances,
+  created automatically on first use, and automatically reused by all
+  ``ZstdDecompressor`` instances bound to that dictionary.
+* All meaningful functions now accept keyword arguments.
+* ``ZstdDecompressor.decompressobj()`` now accepts a ``write_size`` argument
+  to control how much work to perform on every decompressor invocation.
+* ``ZstdCompressor.write_to()`` now exposes a ``tell()``, which exposes the
+  total number of bytes written so far.
+* ``ZstdDecompressor.stream_reader()`` now supports ``seek()`` when moving
+  forward in the stream.
+* Removed ``TARGETLENGTH_MAX`` constant.
+* Added ``frame_header_size(data)`` function.
+* Added ``frame_content_size(data)`` function.
+* Consumers of ``ZSTD_decompress*`` have been switched to the new *advanced
+  decompression* API.
+* ``ZstdCompressor`` and ``ZstdCompressionParams`` can now be constructed with
+  negative compression levels.
+* ``ZstdDecompressor`` now accepts a ``max_window_size`` argument to limit the
+  amount of memory required for decompression operations.
+* ``FORMAT_ZSTD1`` and ``FORMAT_ZSTD1_MAGICLESS`` constants to be used with
+  the ``format`` compression parameter to control whether the frame magic
+  header is written.
+* ``ZstdDecompressor`` now accepts a ``format`` argument to control the
+  expected frame format.
+* ``ZstdCompressor`` now has a ``frame_progression()`` method to return
+  information about the current compression operation.
+* Error messages in CFFI no longer have ``b''`` literals.
+* Compiler warnings and underlying overflow issues on 32-bit platforms have been
+  fixed.
+* Builds in CI now build with compiler warnings as errors. This should hopefully
+  fix new compiler warnings from being introduced.
+* Make ``ZstdCompressor(write_content_size=True)`` and
+  ``CompressionParameters(write_content_size=True)`` the default.
+* ``CompressionParameters`` has been renamed to ``ZstdCompressionParameters``.
+
+0.8.2 (released 2018-02-22)
+---------------------------
+
+* Fixed memory leak in ``ZstdCompressor.copy_stream()`` (#40).
+* Fixed memory leak in ``ZstdDecompressor.copy_stream()`` (#35).
 
 0.8.1 (released 2017-04-08)
 ---------------------------
@@ -7,7 +195,7 @@ Version History
 * Add #includes so compilation on OS X and BSDs works (#20).
 
 0.8.0 (released 2017-03-08)
----------------------------
+===========================
 
 * CompressionParameters now has a estimated_compression_context_size() method.
   zstd.estimate_compression_context_size() is now deprecated and slated for
@@ -35,7 +223,7 @@ Version History
   DictParameters instance to control dictionary generation.
 
 0.7.0 (released 2017-02-07)
----------------------------
+===========================
 
 * Added zstd.get_frame_parameters() to obtain info about a zstd frame.
 * Added ZstdDecompressor.decompress_content_dict_chain() for efficient
@@ -62,7 +250,7 @@ Version History
 * DictParameters instances now expose their values as attributes.
 
 0.6.0 (released 2017-01-14)
----------------------------
+===========================
 
 * Support for legacy zstd protocols (build time opt in feature).
 * Automation improvements to test against Python 3.6, latest versions
@@ -79,17 +267,17 @@ Version History
 * Disallow compress(b'') when writing content sizes by default (issue #11).
 
 0.5.2 (released 2016-11-12)
----------------------------
+===========================
 
 * more packaging fixes for source distribution
 
 0.5.1 (released 2016-11-12)
----------------------------
+===========================
 
 * setup_zstd.py is included in the source distribution
 
 0.5.0 (released 2016-11-10)
----------------------------
+===========================
 
 * Vendored version of zstd updated to 1.1.1.
 * Continuous integration for Python 3.6 and 3.7
@@ -114,8 +302,8 @@ Version History
 * The monolithic ``zstd.c`` file has been split into a header file defining
   types and separate ``.c`` source files for the implementation.
 
-History of the Project
-======================
+Older History
+=============
 
 2016-08-31 - Zstandard 1.0.0 is released and Gregory starts hacking on a
 Python extension for use by the Mercurial project. A very hacky prototype

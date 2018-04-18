@@ -18,6 +18,9 @@ from mercurial import (
     registrar,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -168,8 +171,8 @@ def do_relink(src, dst, files, ui):
         source = os.path.join(src, f)
         tgt = os.path.join(dst, f)
         # Binary mode, so that read() works correctly, especially on Windows
-        sfp = file(source, 'rb')
-        dfp = file(tgt, 'rb')
+        sfp = open(source, 'rb')
+        dfp = open(tgt, 'rb')
         sin = sfp.read(CHUNKLEN)
         while sin:
             din = dfp.read(CHUNKLEN)
@@ -187,7 +190,7 @@ def do_relink(src, dst, files, ui):
             relinked += 1
             savedbytes += sz
         except OSError as inst:
-            ui.warn('%s: %s\n' % (tgt, str(inst)))
+            ui.warn('%s: %s\n' % (tgt, stringutil.forcebytestr(inst)))
 
     ui.progress(_('relinking'), None)
 

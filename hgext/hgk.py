@@ -51,7 +51,6 @@ from mercurial import (
     pycompat,
     registrar,
     scmutil,
-    util,
 )
 
 cmdtable = {}
@@ -105,15 +104,15 @@ def difftree(ui, repo, node1=None, node2=None, *files, **opts):
 
     while True:
         if opts[r'stdin']:
-            try:
-                line = util.bytesinput(ui.fin, ui.fout).split(' ')
-                node1 = line[0]
-                if len(line) > 1:
-                    node2 = line[1]
-                else:
-                    node2 = None
-            except EOFError:
+            line = ui.fin.readline()
+            if not line:
                 break
+            line = line.rstrip(pycompat.oslinesep).split(b' ')
+            node1 = line[0]
+            if len(line) > 1:
+                node2 = line[1]
+            else:
+                node2 = None
         node1 = repo.lookup(node1)
         if node2:
             node2 = repo.lookup(node2)
@@ -146,7 +145,7 @@ def catcommit(ui, repo, n, prefix, ctx=None):
 
     date = ctx.date()
     description = ctx.description().replace("\0", "")
-    ui.write(("author %s %s %s\n" % (ctx.user(), int(date[0]), date[1])))
+    ui.write(("author %s %d %d\n" % (ctx.user(), int(date[0]), date[1])))
 
     if 'committer' in ctx.extra():
         ui.write(("committer %s\n" % ctx.extra()['committer']))
@@ -186,12 +185,11 @@ def catfile(ui, repo, type=None, r=None, **opts):
     #
     prefix = ""
     if opts[r'stdin']:
-        try:
-            (type, r) = util.bytesinput(ui.fin, ui.fout).split(' ')
-            prefix = "    "
-        except EOFError:
+        line = ui.fin.readline()
+        if not line:
             return
-
+        (type, r) = line.rstrip(pycompat.oslinesep).split(b' ')
+        prefix = "    "
     else:
         if not type or not r:
             ui.warn(_("cat-file: type or revision not supplied\n"))
@@ -204,10 +202,10 @@ def catfile(ui, repo, type=None, r=None, **opts):
         n = repo.lookup(r)
         catcommit(ui, repo, n, prefix)
         if opts[r'stdin']:
-            try:
-                (type, r) = util.bytesinput(ui.fin, ui.fout).split(' ')
-            except EOFError:
+            line = ui.fin.readline()
+            if not line:
                 break
+            (type, r) = line.rstrip(pycompat.oslinesep).split(b' ')
         else:
             break
 

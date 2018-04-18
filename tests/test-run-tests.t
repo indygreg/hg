@@ -6,8 +6,7 @@ Avoid interference from actual test env:
 
 Smoke test with install
 ============
-
-  $ run-tests.py $HGTEST_RUN_TESTS_PURE -l
+  $ $PYTHON $TESTDIR/run-tests.py $HGTEST_RUN_TESTS_PURE -l
   
   # Ran 0 tests, 0 skipped, 0 failed.
 
@@ -15,14 +14,14 @@ Define a helper to avoid the install step
 =============
   $ rt()
   > {
-  >     run-tests.py --with-hg=`which hg` "$@"
+  >     $PYTHON $TESTDIR/run-tests.py --with-hg=`which hg` "$@"
   > }
 
 error paths
 
 #if symlink
   $ ln -s `which true` hg
-  $ run-tests.py --with-hg=./hg
+  $ $PYTHON $TESTDIR/run-tests.py --with-hg=./hg
   warning: --with-hg should specify an hg script
   
   # Ran 0 tests, 0 skipped, 0 failed.
@@ -31,7 +30,7 @@ error paths
 
 #if execbit
   $ touch hg
-  $ run-tests.py --with-hg=./hg
+  $ $PYTHON $TESTDIR/run-tests.py --with-hg=./hg
   usage: run-tests.py [options] [tests]
   run-tests.py: error: --with-hg must specify an executable hg script
   [2]
@@ -374,6 +373,7 @@ test --xunit support
   </testsuite>
 
   $ cat .testtimes
+  test-empty.t * (glob)
   test-failure-unicode.t * (glob)
   test-failure.t * (glob)
   test-success.t * (glob)
@@ -541,6 +541,12 @@ Verify that when a process fails to start we show a useful message
   > EOF
   $ rt test-serve-fail.t
   
+  --- $TESTTMP/test-serve-fail.t
+  +++ $TESTTMP/test-serve-fail.t.err
+  @@ -1* +1,2 @@ (glob)
+     $ echo 'abort: child process failed to start blah'
+  +  abort: child process failed to start blah
+  
   ERROR: test-serve-fail.t output changed
   !
   Failed test-serve-fail.t: server failed to start (HGPORT=*) (glob)
@@ -551,7 +557,12 @@ Verify that when a process fails to start we show a useful message
 
 Verify that we can try other ports
 ===================================
-  $ hg init inuse
+
+Extensions aren't inherited by the invoked run-tests.py. An extension
+introducing a repository requirement could cause this to fail. So we force
+HGRCPATH to get a clean environment.
+
+  $ HGRCPATH= hg init inuse
   $ hg serve -R inuse -p $HGPORT -d --pid-file=blocks.pid
   $ cat blocks.pid >> $DAEMON_PIDS
   $ cat > test-serve-inuse.t <<EOF
@@ -914,16 +925,24 @@ Skips
 ================
   $ cat > test-skip.t <<EOF
   >   $ echo xyzzy
+  > #if true
   > #require false
+  > #end
+  > EOF
+  $ cat > test-noskip.t <<EOF
+  > #if false
+  > #require false
+  > #endif
   > EOF
   $ rt --nodiff
-  !.s
+  !.s.
   Skipped test-skip.t: missing feature: nail clipper
   Failed test-failure.t: output changed
-  # Ran 2 tests, 1 skipped, 1 failed.
+  # Ran 3 tests, 1 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
 
+  $ rm test-noskip.t
   $ rt --keyword xyzzy
   .s
   Skipped test-skip.t: missing feature: nail clipper

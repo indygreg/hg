@@ -489,9 +489,9 @@ Test actual protocol when pulling one new head in addition to common heads
   $ killdaemons.py
   $ cut -d' ' -f6- access.log | grep -v cmd=known # cmd=known uses random sampling
   "GET /?cmd=capabilities HTTP/1.1" 200 -
-  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D513314ca8b3ae4dac8eec56966265b00fcf866db x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:$USUAL_BUNDLE_CAPS$&cg=1&common=513314ca8b3ae4dac8eec56966265b00fcf866db&heads=e64a39e7da8b0d54bc63e81169aff001c13b3477 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
-  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$
+  "GET /?cmd=batch HTTP/1.1" 200 - x-hgarg-1:cmds=heads+%3Bknown+nodes%3D513314ca8b3ae4dac8eec56966265b00fcf866db x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=getbundle HTTP/1.1" 200 - x-hgarg-1:$USUAL_BUNDLE_CAPS$&cg=1&common=513314ca8b3ae4dac8eec56966265b00fcf866db&heads=e64a39e7da8b0d54bc63e81169aff001c13b3477 x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
+  "GET /?cmd=listkeys HTTP/1.1" 200 - x-hgarg-1:namespace=phases x-hgproto-1:0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull
   $ cat errors.log
 
   $ cd ..
@@ -512,8 +512,12 @@ generate new bundles:
   $ hg -R r2 bundle -qa $TESTDIR/bundles/issue4438-r2.hg
 #else
 use existing bundles:
-  $ hg clone -q $TESTDIR/bundles/issue4438-r1.hg r1
-  $ hg clone -q $TESTDIR/bundles/issue4438-r2.hg r2
+  $ hg init r1
+  $ hg -R r1 -q unbundle $TESTDIR/bundles/issue4438-r1.hg
+  $ hg -R r1 -q up
+  $ hg init r2
+  $ hg -R r2 -q unbundle $TESTDIR/bundles/issue4438-r2.hg
+  $ hg -R r2 -q up
 #endif
 
 Set iteration order could cause wrong and unstable results - fixed in 73cfaa348650:

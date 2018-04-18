@@ -1,2 +1,2 @@
-public attributes not in abstract interface: badpeer.badattribute
-public attributes not in abstract interface: badpeer.badmethod
+public attribute not declared in interfaces: badpeer.badattribute
+public attribute not declared in interfaces: badpeer.badmethod

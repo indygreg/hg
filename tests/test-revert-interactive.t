@@ -420,4 +420,13 @@ When a line without EOL is selected during "revert -i" (issue5651)
   $ cat a
   0
 
+When specified pattern does not exist, we should exit early (issue5789).
+
+  $ hg files
+  a
+  $ hg rev b
+  b: no such file in rev b40d1912accf
+  $ hg rev -i b
+  b: no such file in rev b40d1912accf
+
   $ cd ..

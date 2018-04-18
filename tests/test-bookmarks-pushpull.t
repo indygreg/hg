@@ -129,10 +129,10 @@ delete a remote bookmark
   bundle2-output: bundle parameter: 
   bundle2-output: start of parts
   bundle2-output: bundle part: "replycaps"
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 222 bytes payload
   bundle2-output: part 0: "REPLYCAPS"
   bundle2-output: header chunk size: 16
-  bundle2-output: payload chunk size: 205
+  bundle2-output: payload chunk size: 222
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "check:bookmarks"
   bundle2-output-part: "check:bookmarks" 23 bytes payload
@@ -162,9 +162,9 @@ delete a remote bookmark
   bundle2-input: part parameters: 0
   bundle2-input: found a handler for part replycaps
   bundle2-input-part: "replycaps" supported
-  bundle2-input: payload chunk size: 205
+  bundle2-input: payload chunk size: 222
   bundle2-input: payload chunk size: 0
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 222
   bundle2-input: part header size: 22
   bundle2-input: part type: "CHECK:BOOKMARKS"
   bundle2-input: part id: "1"
@@ -241,10 +241,10 @@ delete a remote bookmark
   bundle2-output: bundle parameter: 
   bundle2-output: start of parts
   bundle2-output: bundle part: "replycaps"
-  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "replycaps" 222 bytes payload
   bundle2-output: part 0: "REPLYCAPS"
   bundle2-output: header chunk size: 16
-  bundle2-output: payload chunk size: 205
+  bundle2-output: payload chunk size: 222
   bundle2-output: closing payload chunk
   bundle2-output: bundle part: "check:bookmarks"
   bundle2-output-part: "check:bookmarks" 23 bytes payload
@@ -275,9 +275,9 @@ delete a remote bookmark
   bundle2-input: part parameters: 0
   bundle2-input: found a handler for part replycaps
   bundle2-input-part: "replycaps" supported
-  bundle2-input: payload chunk size: 205
+  bundle2-input: payload chunk size: 222
   bundle2-input: payload chunk size: 0
-  bundle2-input-part: total payload size 205
+  bundle2-input-part: total payload size 222
   bundle2-input: part header size: 22
   bundle2-input: part type: "CHECK:BOOKMARKS"
   bundle2-input: part id: "1"
@@ -1030,6 +1030,34 @@ pushing an unchanged bookmark should result in no changes
   no changes found
   [1]
 
+Pushing a really long bookmark should work fine (issue5165)
+===============================================
+
+#if b2-binary
+  >>> open('longname', 'w').write('wat' * 100)
+  $ hg book `cat longname`
+  $ hg push -B `cat longname` ../unchanged-b
+  pushing to ../unchanged-b
+  searching for changes
+  no changes found
+  exporting bookmark (wat){100} (re)
+  [1]
+  $ hg -R ../unchanged-b book --delete `cat longname`
+
+Test again but forcing bundle2 exchange to make sure that doesn't regress.
+
+  $ hg push -B `cat longname` ../unchanged-b --config devel.legacy.exchange=bundle1
+  pushing to ../unchanged-b
+  searching for changes
+  no changes found
+  exporting bookmark (wat){100} (re)
+  [1]
+  $ hg -R ../unchanged-b book --delete `cat longname`
+  $ hg book --delete `cat longname`
+  $ hg co @
+  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  (activating bookmark @)
+#endif
 
 Check hook preventing push (issue4455)
 ======================================

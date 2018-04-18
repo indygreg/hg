@@ -898,15 +898,21 @@ This tests that translated help message is lower()-ed correctly.
 
   $ cat > $TESTTMP/escape.py <<EOF
   > from __future__ import absolute_import
-  > import sys
+  > from mercurial import (
+  >     pycompat,
+  > )
+  > from mercurial.utils import (
+  >     procutil,
+  > )
   > def escape(c):
   >     o = ord(c)
   >     if o < 0x80:
   >         return c
   >     else:
-  >         return r'\x%02x' % o # escape char setting MSB
-  > for l in sys.stdin:
-  >     sys.stdout.write(''.join(escape(c) for c in l))
+  >         return br'\x%02x' % o # escape char setting MSB
+  > for l in procutil.stdin:
+  >     procutil.stdout.write(
+  >         b''.join(escape(c) for c in pycompat.iterbytestr(l)))
   > EOF
 
   $ hg commit -i --encoding cp932 2>&1 <<EOF | $PYTHON $TESTTMP/escape.py | grep '^y - '

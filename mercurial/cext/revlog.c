@@ -87,9 +87,9 @@ static const char nullid[20];
 static Py_ssize_t inline_scan(indexObject *self, const char **offsets);
 
 #if LONG_MAX == 0x7fffffffL
-static char *tuple_format = "Kiiiiiis#";
+static const char *const tuple_format = PY23("Kiiiiiis#", "Kiiiiiiy#");
 #else
-static char *tuple_format = "kiiiiiis#";
+static const char *const tuple_format = PY23("kiiiiiis#", "kiiiiiiy#");
 #endif
 
 /* A RevlogNG v1 index entry is 64 bytes long. */
@@ -643,8 +643,10 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 
 	if (!PyArg_ParseTuple(args, "O", &roots))
 		goto done;
-	if (roots == NULL || !PyList_Check(roots))
+	if (roots == NULL || !PyList_Check(roots)) {
+		PyErr_SetString(PyExc_TypeError, "roots must be a list");
 		goto done;
+	}
 
 	phases = calloc(len, 1); /* phase per rev: {0: public, 1: draft, 2: secret} */
 	if (phases == NULL) {
@@ -667,8 +669,11 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 		if (phaseset == NULL)
 			goto release;
 		PyList_SET_ITEM(phasessetlist, i+1, phaseset);
-		if (!PyList_Check(phaseroots))
+		if (!PyList_Check(phaseroots)) {
+			PyErr_SetString(PyExc_TypeError,
+					"roots item must be a list");
 			goto release;
+		}
 		minrevphase = add_roots_get_min(self, phaseroots, i+1, phases);
 		if (minrevphase == -2) /* Error from add_roots_get_min */
 			goto release;
@@ -1243,7 +1248,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 	char *node;
 	int rev, i;
 
-	if (!PyArg_ParseTuple(args, "s#", &node, &nodelen))
+	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &node, &nodelen))
 		return NULL;
 
 	if (nodelen < 4) {
@@ -2077,7 +2082,7 @@ void revlog_module_init(PyObject *mod)
 	Py_INCREF(&indexType);
 	PyModule_AddObject(mod, "index", (PyObject *)&indexType);
 
-	nullentry = Py_BuildValue("iiiiiiis#", 0, 0, 0,
+	nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
 				  -1, -1, -1, -1, nullid, 20);
 	if (nullentry)
 		PyObject_GC_UnTrack(nullentry);

@@ -4,9 +4,13 @@
   > # should clobber ci but not commit (issue2993)
   > ci = version
   > myinit = init
+  > myinit:doc = This is my documented alias for init.
+  > myinit:help = [OPTIONS] [BLA] [BLE]
   > mycommit = commit
+  > mycommit:doc = This is my alias with only doc.
   > optionalrepo = showconfig alias.myinit
   > cleanstatus = status -c
+  > cleanstatus:help = [ONLYHELPHERE]
   > unknown = bargle
   > ambiguous = s
   > recursive = recursive
@@ -20,9 +24,13 @@
   > no--config = status --config a.config=1
   > mylog = log
   > lognull = log -r null
+  > lognull:doc = Logs the null rev
+  > lognull:help = foo bar baz
   > shortlog = log --template '{rev} {node|short} | {date|isodate}\n'
   > positional = log --template '{\$2} {\$1} | {date|isodate}\n'
   > dln = lognull --debug
+  > recursivedoc = dln
+  > recursivedoc:doc = Logs the null rev in debug mode
   > nousage = rollback
   > put = export -r 0 -o "\$FOO/%R.diff"
   > blank = !printf '\n'
@@ -53,11 +61,148 @@
   > log = -v
   > EOF
 
-
 basic
 
   $ hg myinit alias
 
+help
+
+  $ hg help -c | grep myinit
+   myinit             This is my documented alias for init.
+  $ hg help -c | grep mycommit
+   mycommit           This is my alias with only doc.
+  $ hg help -c | grep cleanstatus
+   cleanstatus        show changed files in the working directory
+  $ hg help -c | grep lognull
+   lognull            Logs the null rev
+  $ hg help -c | grep dln
+   dln                Logs the null rev
+  $ hg help -c | grep recursivedoc
+   recursivedoc       Logs the null rev in debug mode
+  $ hg help myinit
+  hg myinit [OPTIONS] [BLA] [BLE]
+  
+  alias for: hg init
+  
+  This is my documented alias for init.
+  
+  defined by: * (glob)
+  */* (glob) (?)
+  */* (glob) (?)
+  */* (glob) (?)
+  
+  options:
+  
+   -e --ssh CMD       specify ssh command to use
+      --remotecmd CMD specify hg command to run on the remote side
+      --insecure      do not verify server certificate (ignoring web.cacerts
+                      config)
+  
+  (some details hidden, use --verbose to show complete help)
+
+  $ hg help mycommit
+  hg mycommit [OPTION]... [FILE]...
+  
+  alias for: hg commit
+  
+  This is my alias with only doc.
+  
+  defined by: * (glob)
+  */* (glob) (?)
+  */* (glob) (?)
+  */* (glob) (?)
+  
+  options ([+] can be repeated):
+  
+   -A --addremove           mark new/missing files as added/removed before
+                            committing
+      --close-branch        mark a branch head as closed
+      --amend               amend the parent of the working directory
+   -s --secret              use the secret phase for committing
+   -e --edit                invoke editor on commit messages
+   -i --interactive         use interactive mode
+   -I --include PATTERN [+] include names matching the given patterns
+   -X --exclude PATTERN [+] exclude names matching the given patterns
+   -m --message TEXT        use text as commit message
+   -l --logfile FILE        read commit message from file
+   -d --date DATE           record the specified date as commit date
+   -u --user USER           record the specified user as committer
+   -S --subrepos            recurse into subrepositories
+  
+  (some details hidden, use --verbose to show complete help)
+
+  $ hg help cleanstatus
+  hg cleanstatus [ONLYHELPHERE]
+  
+  alias for: hg status -c
+  
+  show changed files in the working directory
+  
+      Show status of files in the repository. If names are given, only files
+      that match are shown. Files that are clean or ignored or the source of a
+      copy/move operation, are not listed unless -c/--clean, -i/--ignored,
+      -C/--copies or -A/--all are given. Unless options described with "show
+      only ..." are given, the options -mardu are used.
+  
+      Option -q/--quiet hides untracked (unknown and ignored) files unless
+      explicitly requested with -u/--unknown or -i/--ignored.
+  
+      Note:
+         'hg status' may appear to disagree with diff if permissions have
+         changed or a merge has occurred. The standard diff format does not
+         report permission changes and diff only reports changes relative to one
+         merge parent.
+  
+      If one revision is given, it is used as the base revision. If two
+      revisions are given, the differences between them are shown. The --change
+      option can also be used as a shortcut to list the changed files of a
+      revision from its first parent.
+  
+      The codes used to show the status of files are:
+  
+        M = modified
+        A = added
+        R = removed
+        C = clean
+        ! = missing (deleted by non-hg command, but still tracked)
+        ? = not tracked
+        I = ignored
+          = origin of the previous file (with --copies)
+  
+      Returns 0 on success.
+  
+  defined by: * (glob)
+  */* (glob) (?)
+  */* (glob) (?)
+  */* (glob) (?)
+  
+  options ([+] can be repeated):
+  
+   -A --all                 show status of all files
+   -m --modified            show only modified files
+   -a --added               show only added files
+   -r --removed             show only removed files
+   -d --deleted             show only deleted (but tracked) files
+   -c --clean               show only files without changes
+   -u --unknown             show only unknown (not tracked) files
+   -i --ignored             show only ignored files
+   -n --no-status           hide status prefix
+   -C --copies              show source of copied files
+   -0 --print0              end filenames with NUL, for use with xargs
+      --rev REV [+]         show difference from revision
+      --change REV          list the changed files of a revision
+   -I --include PATTERN [+] include names matching the given patterns
+   -X --exclude PATTERN [+] exclude names matching the given patterns
+   -S --subrepos            recurse into subrepositories
+  
+  (some details hidden, use --verbose to show complete help)
+
+  $ hg help recursivedoc | head -n 5
+  hg recursivedoc foo bar baz
+  
+  alias for: hg dln
+  
+  Logs the null rev in debug mode
 
 unknown
 
@@ -440,6 +585,10 @@ command provided extension, should be aborted.
   > rebate = !echo this is \$HG_ARGS
   > EOF
 #endif
+  $ cat >> .hg/hgrc <<EOF
+  > rebate:doc = This is my alias which just prints something.
+  > rebate:help = [MYARGS]
+  > EOF
   $ hg reba
   hg: command 'reba' is ambiguous:
       rebase rebate
@@ -448,6 +597,44 @@ command provided extension, should be aborted.
   this is rebate
   $ hg rebat --foo-bar
   this is rebate --foo-bar
+
+help for a shell alias
+
+  $ hg help -c | grep rebate
+   rebate             This is my alias which just prints something.
+  $ hg help rebate
+  hg rebate [MYARGS]
+  
+  shell alias for: echo this is %HG_ARGS% (windows !)
+  shell alias for: echo this is $HG_ARGS (no-windows !)
+  
+  This is my alias which just prints something.
+  
+  defined by:* (glob)
+  */* (glob) (?)
+  */* (glob) (?)
+  */* (glob) (?)
+  
+  (some details hidden, use --verbose to show complete help)
+
+invalid character in user-specified help
+
+  >>> with open('.hg/hgrc', 'ab') as f:
+  ...     f.write(b'[alias]\n'
+  ...             b'invaliddoc = log\n'
+  ...             b'invaliddoc:doc = \xc0\n'
+  ...             b'invalidhelp = log\n'
+  ...             b'invalidhelp:help = \xc0\n') and None
+  $ hg help invaliddoc
+  non-ASCII character in alias definition 'invaliddoc:doc'
+  $ hg help invalidhelp
+  non-ASCII character in alias definition 'invalidhelp:help'
+  $ hg invaliddoc
+  abort: non-ASCII character in alias definition 'invaliddoc:doc'
+  [255]
+  $ hg invalidhelp
+  abort: non-ASCII character in alias definition 'invalidhelp:help'
+  [255]
 
 invalid arguments
 
@@ -548,12 +735,12 @@ environment variable changes in alias commands
   > from mercurial import cmdutil, commands, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('expandalias')
+  > @command(b'expandalias')
   > def expandalias(ui, repo, name):
   >     alias = cmdutil.findcmd(name, commands.table)[1][0]
-  >     ui.write('%s args: %s\n' % (name, ' '.join(alias.args)))
+  >     ui.write(b'%s args: %s\n' % (name, b' '.join(alias.args)))
   >     os.environ['COUNT'] = '2'
-  >     ui.write('%s args: %s (with COUNT=2)\n' % (name, ' '.join(alias.args)))
+  >     ui.write(b'%s args: %s (with COUNT=2)\n' % (name, b' '.join(alias.args)))
   > EOF
 
   $ cat >> $HGRCPATH <<'EOF'

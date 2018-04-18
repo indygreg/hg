@@ -8,13 +8,20 @@
 from __future__ import absolute_import
 
 import re
+import uuid
 
 from .i18n import _
 from . import (
     error,
     pycompat,
     util,
-    wireproto,
+    wireprotoserver,
+    wireprototypes,
+    wireprotov1peer,
+    wireprotov1server,
+)
+from .utils import (
+    procutil,
 )
 
 def _serverquote(s):
@@ -29,10 +36,11 @@ def _forwardoutput(ui, pipe):
     """display all data currently available on pipe as remote output.
 
     This is non blocking."""
-    s = util.readpipe(pipe)
-    if s:
-        for l in s.splitlines():
-            ui.status(_("remote: "), l, '\n')
+    if pipe:
+        s = procutil.readpipe(pipe)
+        if s:
+            for l in s.splitlines():
+                ui.status(_("remote: "), l, '\n')
 
 class doublepipe(object):
     """Operate a side-channel pipe in addition of a main one
@@ -63,8 +71,11 @@ class doublepipe(object):
 
         (This will only wait for data if the setup is supported by `util.poll`)
         """
-        if getattr(self._main, 'hasbuffer', False): # getattr for classic pipe
-            return (True, True) # main has data, assume side is worth poking at.
+        if (isinstance(self._main, util.bufferedinputpipe) and
+            self._main.hasbuffer):
+            # Main has data. Assume side is worth poking at.
+            return True, True
+
         fds = [self._main.fileno(), self._side.fileno()]
         try:
             act = util.poll(fds)
@@ -114,49 +125,271 @@ class doublepipe(object):
     def flush(self):
         return self._main.flush()
 
-class sshpeer(wireproto.wirepeer):
-    def __init__(self, ui, path, create=False):
-        self._url = path
-        self._ui = ui
-        self._pipeo = self._pipei = self._pipee = None
+def _cleanuppipes(ui, pipei, pipeo, pipee):
+    """Clean up pipes used by an SSH connection."""
+    if pipeo:
+        pipeo.close()
+    if pipei:
+        pipei.close()
 
-        u = util.url(path, parsequery=False, parsefragment=False)
-        if u.scheme != 'ssh' or not u.host or u.path is None:
-            self._abort(error.RepoError(_("couldn't parse location %s") % path))
+    if pipee:
+        # Try to read from the err descriptor until EOF.
+        try:
+            for l in pipee:
+                ui.status(_('remote: '), l)
+        except (IOError, ValueError):
+            pass
 
-        util.checksafessh(path)
+        pipee.close()
 
-        if u.passwd is not None:
-            self._abort(error.RepoError(_("password in URL not supported")))
+def _makeconnection(ui, sshcmd, args, remotecmd, path, sshenv=None):
+    """Create an SSH connection to a server.
 
-        self._user = u.user
-        self._host = u.host
-        self._port = u.port
-        self._path = u.path or '.'
+    Returns a tuple of (process, stdin, stdout, stderr) for the
+    spawned process.
+    """
+    cmd = '%s %s %s' % (
+        sshcmd,
+        args,
+        procutil.shellquote('%s -R %s serve --stdio' % (
+            _serverquote(remotecmd), _serverquote(path))))
 
-        sshcmd = self.ui.config("ui", "ssh")
-        remotecmd = self.ui.config("ui", "remotecmd")
-        sshaddenv = dict(self.ui.configitems("sshenv"))
-        sshenv = util.shellenviron(sshaddenv)
+    ui.debug('running %s\n' % cmd)
+    cmd = procutil.quotecommand(cmd)
 
-        args = util.sshargs(sshcmd, self._host, self._user, self._port)
+    # no buffer allow the use of 'select'
+    # feel free to remove buffering and select usage when we ultimately
+    # move to threading.
+    stdin, stdout, stderr, proc = procutil.popen4(cmd, bufsize=0, env=sshenv)
 
-        if create:
-            cmd = '%s %s %s' % (sshcmd, args,
-                util.shellquote("%s init %s" %
-                    (_serverquote(remotecmd), _serverquote(self._path))))
-            ui.debug('running %s\n' % cmd)
-            res = ui.system(cmd, blockedtag='sshpeer', environ=sshenv)
-            if res != 0:
-                self._abort(error.RepoError(_("could not create remote repo")))
+    return proc, stdin, stdout, stderr
 
-        self._validaterepo(sshcmd, args, remotecmd, sshenv)
+def _clientcapabilities():
+    """Return list of capabilities of this client.
 
-    # Begin of _basepeer interface.
+    Returns a list of capabilities that are supported by this client.
+    """
+    protoparams = {'partial-pull'}
+    comps = [e.wireprotosupport().name for e in
+             util.compengines.supportedwireengines(util.CLIENTROLE)]
+    protoparams.add('comp=%s' % ','.join(comps))
+    return protoparams
 
-    @util.propertycache
-    def ui(self):
-        return self._ui
+def _performhandshake(ui, stdin, stdout, stderr):
+    def badresponse():
+        # Flush any output on stderr.
+        _forwardoutput(ui, stderr)
+
+        msg = _('no suitable response from remote hg')
+        hint = ui.config('ui', 'ssherrorhint')
+        raise error.RepoError(msg, hint=hint)
+
+    # The handshake consists of sending wire protocol commands in reverse
+    # order of protocol implementation and then sniffing for a response
+    # to one of them.
+    #
+    # Those commands (from oldest to newest) are:
+    #
+    # ``between``
+    #   Asks for the set of revisions between a pair of revisions. Command
+    #   present in all Mercurial server implementations.
+    #
+    # ``hello``
+    #   Instructs the server to advertise its capabilities. Introduced in
+    #   Mercurial 0.9.1.
+    #
+    # ``upgrade``
+    #   Requests upgrade from default transport protocol version 1 to
+    #   a newer version. Introduced in Mercurial 4.6 as an experimental
+    #   feature.
+    #
+    # The ``between`` command is issued with a request for the null
+    # range. If the remote is a Mercurial server, this request will
+    # generate a specific response: ``1\n\n``. This represents the
+    # wire protocol encoded value for ``\n``. We look for ``1\n\n``
+    # in the output stream and know this is the response to ``between``
+    # and we're at the end of our handshake reply.
+    #
+    # The response to the ``hello`` command will be a line with the
+    # length of the value returned by that command followed by that
+    # value. If the server doesn't support ``hello`` (which should be
+    # rare), that line will be ``0\n``. Otherwise, the value will contain
+    # RFC 822 like lines. Of these, the ``capabilities:`` line contains
+    # the capabilities of the server.
+    #
+    # The ``upgrade`` command isn't really a command in the traditional
+    # sense of version 1 of the transport because it isn't using the
+    # proper mechanism for formatting insteads: instead, it just encodes
+    # arguments on the line, delimited by spaces.
+    #
+    # The ``upgrade`` line looks like ``upgrade <token> <capabilities>``.
+    # If the server doesn't support protocol upgrades, it will reply to
+    # this line with ``0\n``. Otherwise, it emits an
+    # ``upgraded <token> <protocol>`` line to both stdout and stderr.
+    # Content immediately following this line describes additional
+    # protocol and server state.
+    #
+    # In addition to the responses to our command requests, the server
+    # may emit "banner" output on stdout. SSH servers are allowed to
+    # print messages to stdout on login. Issuing commands on connection
+    # allows us to flush this banner output from the server by scanning
+    # for output to our well-known ``between`` command. Of course, if
+    # the banner contains ``1\n\n``, this will throw off our detection.
+
+    requestlog = ui.configbool('devel', 'debug.peer-request')
+
+    # Generate a random token to help identify responses to version 2
+    # upgrade request.
+    token = pycompat.sysbytes(str(uuid.uuid4()))
+    upgradecaps = [
+        ('proto', wireprotoserver.SSHV2),
+    ]
+    upgradecaps = util.urlreq.urlencode(upgradecaps)
+
+    try:
+        pairsarg = '%s-%s' % ('0' * 40, '0' * 40)
+        handshake = [
+            'hello\n',
+            'between\n',
+            'pairs %d\n' % len(pairsarg),
+            pairsarg,
+        ]
+
+        # Request upgrade to version 2 if configured.
+        if ui.configbool('experimental', 'sshpeer.advertise-v2'):
+            ui.debug('sending upgrade request: %s %s\n' % (token, upgradecaps))
+            handshake.insert(0, 'upgrade %s %s\n' % (token, upgradecaps))
+
+        if requestlog:
+            ui.debug('devel-peer-request: hello\n')
+        ui.debug('sending hello command\n')
+        if requestlog:
+            ui.debug('devel-peer-request: between\n')
+            ui.debug('devel-peer-request:   pairs: %d bytes\n' % len(pairsarg))
+        ui.debug('sending between command\n')
+
+        stdin.write(''.join(handshake))
+        stdin.flush()
+    except IOError:
+        badresponse()
+
+    # Assume version 1 of wire protocol by default.
+    protoname = wireprototypes.SSHV1
+    reupgraded = re.compile(b'^upgraded %s (.*)$' % re.escape(token))
+
+    lines = ['', 'dummy']
+    max_noise = 500
+    while lines[-1] and max_noise:
+        try:
+            l = stdout.readline()
+            _forwardoutput(ui, stderr)
+
+            # Look for reply to protocol upgrade request. It has a token
+            # in it, so there should be no false positives.
+            m = reupgraded.match(l)
+            if m:
+                protoname = m.group(1)
+                ui.debug('protocol upgraded to %s\n' % protoname)
+                # If an upgrade was handled, the ``hello`` and ``between``
+                # requests are ignored. The next output belongs to the
+                # protocol, so stop scanning lines.
+                break
+
+            # Otherwise it could be a banner, ``0\n`` response if server
+            # doesn't support upgrade.
+
+            if lines[-1] == '1\n' and l == '\n':
+                break
+            if l:
+                ui.debug('remote: ', l)
+            lines.append(l)
+            max_noise -= 1
+        except IOError:
+            badresponse()
+    else:
+        badresponse()
+
+    caps = set()
+
+    # For version 1, we should see a ``capabilities`` line in response to the
+    # ``hello`` command.
+    if protoname == wireprototypes.SSHV1:
+        for l in reversed(lines):
+            # Look for response to ``hello`` command. Scan from the back so
+            # we don't misinterpret banner output as the command reply.
+            if l.startswith('capabilities:'):
+                caps.update(l[:-1].split(':')[1].split())
+                break
+    elif protoname == wireprotoserver.SSHV2:
+        # We see a line with number of bytes to follow and then a value
+        # looking like ``capabilities: *``.
+        line = stdout.readline()
+        try:
+            valuelen = int(line)
+        except ValueError:
+            badresponse()
+
+        capsline = stdout.read(valuelen)
+        if not capsline.startswith('capabilities: '):
+            badresponse()
+
+        ui.debug('remote: %s\n' % capsline)
+
+        caps.update(capsline.split(':')[1].split())
+        # Trailing newline.
+        stdout.read(1)
+
+    # Error if we couldn't find capabilities, this means:
+    #
+    # 1. Remote isn't a Mercurial server
+    # 2. Remote is a <0.9.1 Mercurial server
+    # 3. Remote is a future Mercurial server that dropped ``hello``
+    #    and other attempted handshake mechanisms.
+    if not caps:
+        badresponse()
+
+    # Flush any output on stderr before proceeding.
+    _forwardoutput(ui, stderr)
+
+    return protoname, caps
+
+class sshv1peer(wireprotov1peer.wirepeer):
+    def __init__(self, ui, url, proc, stdin, stdout, stderr, caps,
+                 autoreadstderr=True):
+        """Create a peer from an existing SSH connection.
+
+        ``proc`` is a handle on the underlying SSH process.
+        ``stdin``, ``stdout``, and ``stderr`` are handles on the stdio
+        pipes for that process.
+        ``caps`` is a set of capabilities supported by the remote.
+        ``autoreadstderr`` denotes whether to automatically read from
+        stderr and to forward its output.
+        """
+        self._url = url
+        self.ui = ui
+        # self._subprocess is unused. Keeping a handle on the process
+        # holds a reference and prevents it from being garbage collected.
+        self._subprocess = proc
+
+        # And we hook up our "doublepipe" wrapper to allow querying
+        # stderr any time we perform I/O.
+        if autoreadstderr:
+            stdout = doublepipe(ui, util.bufferedinputpipe(stdout), stderr)
+            stdin = doublepipe(ui, stdin, stderr)
+
+        self._pipeo = stdin
+        self._pipei = stdout
+        self._pipee = stderr
+        self._caps = caps
+        self._autoreadstderr = autoreadstderr
+
+    # Commands that have a "framed" response where the first line of the
+    # response contains the length of that response.
+    _FRAMED_COMMANDS = {
+        'batch',
+    }
+
+    # Begin of ipeerconnection interface.
 
     def url(self):
         return self._url
@@ -173,72 +406,14 @@ class sshpeer(wireproto.wirepeer):
     def close(self):
         pass
 
-    # End of _basepeer interface.
+    # End of ipeerconnection interface.
 
-    # Begin of _basewirecommands interface.
+    # Begin of ipeercommands interface.
 
     def capabilities(self):
         return self._caps
 
-    # End of _basewirecommands interface.
-
-    def _validaterepo(self, sshcmd, args, remotecmd, sshenv=None):
-        # cleanup up previous run
-        self._cleanup()
-
-        cmd = '%s %s %s' % (sshcmd, args,
-            util.shellquote("%s -R %s serve --stdio" %
-                (_serverquote(remotecmd), _serverquote(self._path))))
-        self.ui.debug('running %s\n' % cmd)
-        cmd = util.quotecommand(cmd)
-
-        # while self._subprocess isn't used, having it allows the subprocess to
-        # to clean up correctly later
-        #
-        # no buffer allow the use of 'select'
-        # feel free to remove buffering and select usage when we ultimately
-        # move to threading.
-        sub = util.popen4(cmd, bufsize=0, env=sshenv)
-        self._pipeo, self._pipei, self._pipee, self._subprocess = sub
-
-        self._pipei = util.bufferedinputpipe(self._pipei)
-        self._pipei = doublepipe(self.ui, self._pipei, self._pipee)
-        self._pipeo = doublepipe(self.ui, self._pipeo, self._pipee)
-
-        def badresponse():
-            msg = _("no suitable response from remote hg")
-            hint = self.ui.config("ui", "ssherrorhint")
-            self._abort(error.RepoError(msg, hint=hint))
-
-        try:
-            # skip any noise generated by remote shell
-            self._callstream("hello")
-            r = self._callstream("between", pairs=("%s-%s" % ("0"*40, "0"*40)))
-        except IOError:
-            badresponse()
-
-        lines = ["", "dummy"]
-        max_noise = 500
-        while lines[-1] and max_noise:
-            try:
-                l = r.readline()
-                self._readerr()
-                if lines[-1] == "1\n" and l == "\n":
-                    break
-                if l:
-                    self.ui.debug("remote: ", l)
-                lines.append(l)
-                max_noise -= 1
-            except IOError:
-                badresponse()
-        else:
-            badresponse()
-
-        self._caps = set()
-        for l in reversed(lines):
-            if l.startswith("capabilities:"):
-                self._caps.update(l[:-1].split(":")[1].split())
-                break
+    # End of ipeercommands interface.
 
     def _readerr(self):
         _forwardoutput(self.ui, self._pipee)
@@ -248,41 +423,11 @@ class sshpeer(wireproto.wirepeer):
         raise exception
 
     def _cleanup(self):
-        if self._pipeo is None:
-            return
-        self._pipeo.close()
-        self._pipei.close()
-        try:
-            # read the error descriptor until EOF
-            for l in self._pipee:
-                self.ui.status(_("remote: "), l)
-        except (IOError, ValueError):
-            pass
-        self._pipee.close()
+        _cleanuppipes(self.ui, self._pipei, self._pipeo, self._pipee)
 
     __del__ = _cleanup
 
-    def _submitbatch(self, req):
-        rsp = self._callstream("batch", cmds=wireproto.encodebatchcmds(req))
-        available = self._getamount()
-        # TODO this response parsing is probably suboptimal for large
-        # batches with large responses.
-        toread = min(available, 1024)
-        work = rsp.read(toread)
-        available -= toread
-        chunk = work
-        while chunk:
-            while ';' in work:
-                one, work = work.split(';', 1)
-                yield wireproto.unescapearg(one)
-            toread = min(available, 1024)
-            chunk = rsp.read(toread)
-            available -= toread
-            work += chunk
-        yield wireproto.unescapearg(work)
-
-    def _callstream(self, cmd, **args):
-        args = pycompat.byteskwargs(args)
+    def _sendrequest(self, cmd, args, framed=False):
         if (self.ui.debugflag
             and self.ui.configbool('devel', 'debug.peer-request')):
             dbg = self.ui.debug
@@ -296,7 +441,7 @@ class sshpeer(wireproto.wirepeer):
                         dbg(line % '  %s-%s: %d' % (key, dk, len(dv)))
         self.ui.debug("sending %s command\n" % cmd)
         self._pipeo.write("%s\n" % cmd)
-        _func, names = wireproto.commands[cmd]
+        _func, names = wireprotov1server.commands[cmd]
         keys = names.split()
         wireargs = {}
         for k in keys:
@@ -316,58 +461,176 @@ class sshpeer(wireproto.wirepeer):
                 self._pipeo.write(v)
         self._pipeo.flush()
 
+        # We know exactly how many bytes are in the response. So return a proxy
+        # around the raw output stream that allows reading exactly this many
+        # bytes. Callers then can read() without fear of overrunning the
+        # response.
+        if framed:
+            amount = self._getamount()
+            return util.cappedreader(self._pipei, amount)
+
         return self._pipei
 
+    def _callstream(self, cmd, **args):
+        args = pycompat.byteskwargs(args)
+        return self._sendrequest(cmd, args, framed=cmd in self._FRAMED_COMMANDS)
+
     def _callcompressable(self, cmd, **args):
-        return self._callstream(cmd, **args)
+        args = pycompat.byteskwargs(args)
+        return self._sendrequest(cmd, args, framed=cmd in self._FRAMED_COMMANDS)
 
     def _call(self, cmd, **args):
-        self._callstream(cmd, **args)
-        return self._recv()
+        args = pycompat.byteskwargs(args)
+        return self._sendrequest(cmd, args, framed=True).read()
 
     def _callpush(self, cmd, fp, **args):
+        # The server responds with an empty frame if the client should
+        # continue submitting the payload.
         r = self._call(cmd, **args)
         if r:
             return '', r
+
+        # The payload consists of frames with content followed by an empty
+        # frame.
         for d in iter(lambda: fp.read(4096), ''):
-            self._send(d)
-        self._send("", flush=True)
-        r = self._recv()
+            self._writeframed(d)
+        self._writeframed("", flush=True)
+
+        # In case of success, there is an empty frame and a frame containing
+        # the integer result (as a string).
+        # In case of error, there is a non-empty frame containing the error.
+        r = self._readframed()
         if r:
             return '', r
-        return self._recv(), ''
+        return self._readframed(), ''
 
     def _calltwowaystream(self, cmd, fp, **args):
+        # The server responds with an empty frame if the client should
+        # continue submitting the payload.
         r = self._call(cmd, **args)
         if r:
             # XXX needs to be made better
             raise error.Abort(_('unexpected remote reply: %s') % r)
+
+        # The payload consists of frames with content followed by an empty
+        # frame.
         for d in iter(lambda: fp.read(4096), ''):
-            self._send(d)
-        self._send("", flush=True)
+            self._writeframed(d)
+        self._writeframed("", flush=True)
+
         return self._pipei
 
     def _getamount(self):
         l = self._pipei.readline()
         if l == '\n':
-            self._readerr()
+            if self._autoreadstderr:
+                self._readerr()
             msg = _('check previous remote output')
             self._abort(error.OutOfBandError(hint=msg))
-        self._readerr()
+        if self._autoreadstderr:
+            self._readerr()
         try:
             return int(l)
         except ValueError:
             self._abort(error.ResponseError(_("unexpected response:"), l))
 
-    def _recv(self):
-        return self._pipei.read(self._getamount())
+    def _readframed(self):
+        size = self._getamount()
+        if not size:
+            return b''
 
-    def _send(self, data, flush=False):
+        return self._pipei.read(size)
+
+    def _writeframed(self, data, flush=False):
         self._pipeo.write("%d\n" % len(data))
         if data:
             self._pipeo.write(data)
         if flush:
             self._pipeo.flush()
-        self._readerr()
+        if self._autoreadstderr:
+            self._readerr()
 
-instance = sshpeer
+class sshv2peer(sshv1peer):
+    """A peer that speakers version 2 of the transport protocol."""
+    # Currently version 2 is identical to version 1 post handshake.
+    # And handshake is performed before the peer is instantiated. So
+    # we need no custom code.
+
+def makepeer(ui, path, proc, stdin, stdout, stderr, autoreadstderr=True):
+    """Make a peer instance from existing pipes.
+
+    ``path`` and ``proc`` are stored on the eventual peer instance and may
+    not be used for anything meaningful.
+
+    ``stdin``, ``stdout``, and ``stderr`` are the pipes connected to the
+    SSH server's stdio handles.
+
+    This function is factored out to allow creating peers that don't
+    actually spawn a new process. It is useful for starting SSH protocol
+    servers and clients via non-standard means, which can be useful for
+    testing.
+    """
+    try:
+        protoname, caps = _performhandshake(ui, stdin, stdout, stderr)
+    except Exception:
+        _cleanuppipes(ui, stdout, stdin, stderr)
+        raise
+
+    if protoname == wireprototypes.SSHV1:
+        return sshv1peer(ui, path, proc, stdin, stdout, stderr, caps,
+                         autoreadstderr=autoreadstderr)
+    elif protoname == wireprototypes.SSHV2:
+        return sshv2peer(ui, path, proc, stdin, stdout, stderr, caps,
+                         autoreadstderr=autoreadstderr)
+    else:
+        _cleanuppipes(ui, stdout, stdin, stderr)
+        raise error.RepoError(_('unknown version of SSH protocol: %s') %
+                              protoname)
+
+def instance(ui, path, create, intents=None):
+    """Create an SSH peer.
+
+    The returned object conforms to the ``wireprotov1peer.wirepeer`` interface.
+    """
+    u = util.url(path, parsequery=False, parsefragment=False)
+    if u.scheme != 'ssh' or not u.host or u.path is None:
+        raise error.RepoError(_("couldn't parse location %s") % path)
+
+    util.checksafessh(path)
+
+    if u.passwd is not None:
+        raise error.RepoError(_('password in URL not supported'))
+
+    sshcmd = ui.config('ui', 'ssh')
+    remotecmd = ui.config('ui', 'remotecmd')
+    sshaddenv = dict(ui.configitems('sshenv'))
+    sshenv = procutil.shellenviron(sshaddenv)
+    remotepath = u.path or '.'
+
+    args = procutil.sshargs(sshcmd, u.host, u.user, u.port)
+
+    if create:
+        cmd = '%s %s %s' % (sshcmd, args,
+            procutil.shellquote('%s init %s' %
+                (_serverquote(remotecmd), _serverquote(remotepath))))
+        ui.debug('running %s\n' % cmd)
+        res = ui.system(cmd, blockedtag='sshpeer', environ=sshenv)
+        if res != 0:
+            raise error.RepoError(_('could not create remote repo'))
+
+    proc, stdin, stdout, stderr = _makeconnection(ui, sshcmd, args, remotecmd,
+                                                  remotepath, sshenv)
+
+    peer = makepeer(ui, path, proc, stdin, stdout, stderr)
+
+    # Finally, if supported by the server, notify it about our own
+    # capabilities.
+    if 'protocaps' in peer.capabilities():
+        try:
+            peer._call("protocaps",
+                       caps=' '.join(sorted(_clientcapabilities())))
+        except IOError:
+            peer._cleanup()
+            raise error.RepoError(_('capability exchange failed'))
+
+    return peer

@@ -121,6 +121,10 @@
     Maximum number of diff lines to include in notification email. Set to 0 to
     disable the diff, or -1 to include all of it. Default: 300.
   
+  notify.maxdiffstat
+    Maximum number of diffstat lines to include in notification email. Set to -1
+    to include all of it. Default: -1.
+  
   notify.maxsubject
     Maximum number of characters in email's subject line. Default: 67.
   
@@ -152,19 +156,21 @@
   no commands defined
   $ hg init a
   $ echo a > a/a
+  $ echo b > a/b
 
 commit
 
   $ hg --cwd a commit -Ama -d '0 0'
   adding a
-
+  adding b
 
 clone
 
   $ hg --traceback clone a b
   updating to branch default
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo a >> a/a
+  $ echo b >> a/b
 
 commit
 
@@ -187,29 +193,34 @@ pull (minimal config)
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets 0647d048b600
+  added 1 changesets with 2 changes to 2 files
+  new changesets 00a13f371396
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Date: * (glob)
   Subject: changeset in $TESTTMP/b: b
   From: test
-  X-Hg-Notification: changeset 0647d048b600
+  X-Hg-Notification: changeset 00a13f371396
   Message-Id: <*> (glob)
   To: baz, foo@bar
   
-  changeset 0647d048b600 in $TESTTMP/b
-  details: $TESTTMP/b?cmd=changeset;node=0647d048b600
+  changeset 00a13f371396 in $TESTTMP/b
+  details: $TESTTMP/b?cmd=changeset;node=00a13f371396
   description: b
   
-  diffs (6 lines):
+  diffs (12 lines):
   
-  diff -r cb9a9f314b8b -r 0647d048b600 a
+  diff -r 0cd96de13884 -r 00a13f371396 a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
   +++ b/a	Thu Jan 01 00:00:01 1970 +0000
   @@ -1,1 +1,2 @@ a
   +a
+  diff -r 0cd96de13884 -r 00a13f371396 b
+  --- a/b	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:01 1970 +0000
+  @@ -1,1 +1,2 @@ b
+  +b
   (run 'hg update' to get a working copy)
 
   $ cat <<EOF >> $HGRCPATH
@@ -241,8 +252,8 @@ pull
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets 0647d048b600
+  added 1 changesets with 2 changes to 2 files
+  new changesets 00a13f371396
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -250,19 +261,24 @@ pull
   Date: * (glob)
   Subject: b
   From: test@test.com
-  X-Hg-Notification: changeset 0647d048b600
+  X-Hg-Notification: changeset 00a13f371396
   Message-Id: <*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset 0647d048b600 in b
+  changeset 00a13f371396 in b
   description: b
-  diffs (6 lines):
+  diffs (12 lines):
   
-  diff -r cb9a9f314b8b -r 0647d048b600 a
+  diff -r 0cd96de13884 -r 00a13f371396 a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
   +++ b/a	Thu Jan 01 00:00:01 1970 +0000
   @@ -1,1 +1,2 @@ a
   +a
+  diff -r 0cd96de13884 -r 00a13f371396 b
+  --- a/b	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:01 1970 +0000
+  @@ -1,1 +1,2 @@ b
+  +b
   (run 'hg update' to get a working copy)
 
   $ cat << EOF >> $HGRCPATH
@@ -278,14 +294,14 @@ pull
 
   $ hg --cwd b rollback
   repository tip rolled back to revision 0 (undo pull)
-  $ hg --traceback --cwd b pull ../a | $PYTHON $TESTTMP/filter.py
+  $ hg --traceback --config notify.maxdiffstat=1 --cwd b pull ../a | $PYTHON $TESTTMP/filter.py
   pulling from ../a
   searching for changes
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 1 changes to 1 files
-  new changesets 0647d048b600
+  added 1 changesets with 2 changes to 2 files
+  new changesets 00a13f371396
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -293,34 +309,39 @@ pull
   Date: * (glob)
   Subject: b
   From: test@test.com
-  X-Hg-Notification: changeset 0647d048b600
+  X-Hg-Notification: changeset 00a13f371396
   Message-Id: <*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset 0647d048b600 in b
+  changeset 00a13f371396 in b
   description: b
-  diffstat:
-   a |  1 + 1 files changed, 1 insertions(+), 0 deletions(-)
+  diffstat (truncated from 2 to 1 lines):
+   a |  1 + 2 files changed, 2 insertions(+), 0 deletions(-)
   
-  diffs (6 lines):
+  diffs (12 lines):
   
-  diff -r cb9a9f314b8b -r 0647d048b600 a
+  diff -r 0cd96de13884 -r 00a13f371396 a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
   +++ b/a	Thu Jan 01 00:00:01 1970 +0000
   @@ -1,1 +1,2 @@ a
   +a
+  diff -r 0cd96de13884 -r 00a13f371396 b
+  --- a/b	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:01 1970 +0000
+  @@ -1,1 +1,2 @@ b
+  +b
   (run 'hg update' to get a working copy)
 
 test merge
 
   $ cd a
   $ hg up -C 0
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ echo a >> a
   $ hg ci -Am adda2 -d '2 0'
   created new head
   $ hg merge
-  0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ hg ci -m merge -d '3 0'
   $ cd ..
@@ -331,7 +352,7 @@ test merge
   adding manifests
   adding file changes
   added 2 changesets with 0 changes to 0 files
-  new changesets 0a184ce6067f:6a0cf76b2701
+  new changesets 3332653e1f3c:fccf66cd0c35
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -339,18 +360,18 @@ test merge
   Date: * (glob)
   Subject: adda2
   From: test@test.com
-  X-Hg-Notification: changeset 0a184ce6067f
+  X-Hg-Notification: changeset 3332653e1f3c
   Message-Id: <*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset 0a184ce6067f in b
+  changeset 3332653e1f3c in b
   description: adda2
   diffstat:
    a |  1 + 1 files changed, 1 insertions(+), 0 deletions(-)
   
   diffs (6 lines):
   
-  diff -r cb9a9f314b8b -r 0a184ce6067f a
+  diff -r 0cd96de13884 -r 3332653e1f3c a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
   +++ b/a	Thu Jan 01 00:00:02 1970 +0000
   @@ -1,1 +1,2 @@ a
@@ -362,12 +383,22 @@ test merge
   Date: * (glob)
   Subject: merge
   From: test@test.com
-  X-Hg-Notification: changeset 6a0cf76b2701
+  X-Hg-Notification: changeset fccf66cd0c35
   Message-Id: <*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset 6a0cf76b2701 in b
+  changeset fccf66cd0c35 in b
   description: merge
+  diffstat:
+   b |  1 + 1 files changed, 1 insertions(+), 0 deletions(-)
+  
+  diffs (6 lines):
+  
+  diff -r 3332653e1f3c -r fccf66cd0c35 b
+  --- a/b	Thu Jan 01 00:00:02 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:03 1970 +0000
+  @@ -1,1 +1,2 @@ b
+  +b
   (run 'hg update' to get a working copy)
 
 non-ascii content and truncation of multi-byte subject
@@ -387,7 +418,7 @@ non-ascii content and truncation of multi-byte subject
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets 7ea05ad269dc
+  new changesets 0f25f9c22b4c
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 8bit
@@ -395,18 +426,18 @@ non-ascii content and truncation of multi-byte subject
   Date: * (glob)
   Subject: \xc3\xa0... (esc)
   From: test@test.com
-  X-Hg-Notification: changeset 7ea05ad269dc
+  X-Hg-Notification: changeset 0f25f9c22b4c
   Message-Id: <*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset 7ea05ad269dc in b
+  changeset 0f25f9c22b4c in b
   description: \xc3\xa0\xc3\xa1\xc3\xa2\xc3\xa3\xc3\xa4 (esc)
   diffstat:
    a |  1 + 1 files changed, 1 insertions(+), 0 deletions(-)
   
   diffs (7 lines):
   
-  diff -r 6a0cf76b2701 -r 7ea05ad269dc a
+  diff -r fccf66cd0c35 -r 0f25f9c22b4c a
   --- a/a	Thu Jan 01 00:00:03 1970 +0000
   +++ b/a	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,2 +1,3 @@ a a
@@ -421,7 +452,7 @@ long lines
   > test = False
   > mbox = mbox
   > EOF
-  $ $PYTHON -c 'file("a/a", "ab").write("no" * 500 + "\xd1\x84" + "\n")'
+  $ $PYTHON -c 'open("a/a", "ab").write("no" * 500 + "\xd1\x84" + "\n")'
   $ hg --cwd a commit -A -m "long line"
   $ hg --traceback --cwd b pull ../a
   pulling from ../a
@@ -430,7 +461,7 @@ long lines
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets a323cae54f6e
+  new changesets a846b5f6ebb7
   notify: sending 2 subscribers 1 changes
   (run 'hg update' to get a working copy)
   $ $PYTHON $TESTTMP/filter.py < b/mbox
@@ -442,18 +473,18 @@ long lines
   Date: * (glob)
   Subject: long line
   From: test@test.com
-  X-Hg-Notification: changeset a323cae54f6e
-  Message-Id: <hg.a323cae54f6e.*.*@*> (glob)
+  X-Hg-Notification: changeset a846b5f6ebb7
+  Message-Id: <hg.a846b5f6ebb7.*.*@*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset a323cae54f6e in b
+  changeset a846b5f6ebb7 in b
   description: long line
   diffstat:
    a |  1 + 1 files changed, 1 insertions(+), 0 deletions(-)
   
   diffs (8 lines):
   
-  diff -r 7ea05ad269dc -r a323cae54f6e a
+  diff -r 0f25f9c22b4c -r a846b5f6ebb7 a
   --- a/a	Thu Jan 01 00:00:00 1970 +0000
   +++ b/a	Thu Jan 01 00:00:00 1970 +0000
   @@ -1,3 +1,4 @@ a a a
@@ -500,7 +531,7 @@ long lines
   adding manifests
   adding file changes
   added 1 changesets with 1 changes to 1 files
-  new changesets b7cf10b2bdec
+  new changesets f7e5aaed4080
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -508,11 +539,11 @@ long lines
   Date: * (glob)
   Subject: test
   From: test@test.com
-  X-Hg-Notification: changeset b7cf10b2bdec
-  Message-Id: <hg.b7cf10b2bdec.*.*@*> (glob)
+  X-Hg-Notification: changeset f7e5aaed4080
+  Message-Id: <hg.f7e5aaed4080.*.*@*> (glob)
   To: baz@test.com, foo@bar, notify@example.com
   
-  changeset b7cf10b2bdec in b
+  changeset f7e5aaed4080 in b
   description: test
   (run 'hg update' to get a working copy)
 
@@ -530,7 +561,7 @@ from different branch
   adding manifests
   adding file changes
   added 1 changesets with 0 changes to 0 files (+1 heads)
-  new changesets 5a07df312a79
+  new changesets 645eb6690ecf
   MIME-Version: 1.0
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
@@ -538,11 +569,11 @@ from different branch
   Date: * (glob)
   Subject: test
   From: test@test.com
-  X-Hg-Notification: changeset 5a07df312a79
-  Message-Id: <hg.5a07df312a79.*.*@*> (glob)
+  X-Hg-Notification: changeset 645eb6690ecf
+  Message-Id: <hg.645eb6690ecf.*.*@*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset 5a07df312a79 in b
+  changeset 645eb6690ecf in b
   description: test
   (run 'hg heads' to see heads)
 
@@ -559,12 +590,12 @@ default template:
   Date: * (glob)
   Subject: changeset in b: default template
   From: test@test.com
-  X-Hg-Notification: changeset f5e8ec95bf59
-  Message-Id: <hg.f5e8ec95bf59.*.*@*> (glob)
+  X-Hg-Notification: changeset 5cd4346eed47
+  Message-Id: <hg.5cd4346eed47.*.*@*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset f5e8ec95bf59 in $TESTTMP/b
-  details: http://test/b?cmd=changeset;node=f5e8ec95bf59
+  changeset 5cd4346eed47 in $TESTTMP/b
+  details: http://test/b?cmd=changeset;node=5cd4346eed47
   description: default template
 
 with style:
@@ -588,11 +619,11 @@ with style:
   Date: * (glob)
   Subject: with style
   From: test@test.com
-  X-Hg-Notification: changeset 9e2c3a8e9c43
-  Message-Id: <hg.9e2c3a8e9c43.*.*@*> (glob)
+  X-Hg-Notification: changeset ec8d9d852f56
+  Message-Id: <hg.ec8d9d852f56.*.*@*> (glob)
   To: baz@test.com, foo@bar
   
-  changeset 9e2c3a8e9c43
+  changeset ec8d9d852f56
 
 with template (overrides style):
 
@@ -609,10 +640,10 @@ with template (overrides style):
   Content-Type: text/plain; charset="us-ascii"
   Content-Transfer-Encoding: 7bit
   Date: * (glob)
-  Subject: e2cbf5bf18a7: with template
+  Subject: 14721b538ae3: with template
   From: test@test.com
-  X-Hg-Notification: changeset e2cbf5bf18a7
-  Message-Id: <hg.e2cbf5bf18a7.*.*@*> (glob)
+  X-Hg-Notification: changeset 14721b538ae3
+  Message-Id: <hg.14721b538ae3.*.*@*> (glob)
   To: baz@test.com, foo@bar
   
   with template

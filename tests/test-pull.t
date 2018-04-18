@@ -1,5 +1,15 @@
 #require serve
 
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
   $ hg init test
   $ cd test
 
@@ -62,7 +72,7 @@ not are encoded like a node:
   [255]
   $ hg pull -r 'xxxxxxxxxxxxxxxxxx y'
   pulling from http://foo@localhost:$HGPORT/
-  abort: unknown revision '7878787878787878787878787878787878782079'!
+  abort: unknown revision 'xxxxxxxxxxxxxxxxxx y'!
   [255]
 
 Issue622: hg init && hg pull -u URL doesn't checkout default branch

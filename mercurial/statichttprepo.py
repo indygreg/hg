@@ -13,7 +13,6 @@ import errno
 
 from .i18n import _
 from . import (
-    byterange,
     changelog,
     error,
     localrepo,
@@ -82,10 +81,36 @@ class httprangereader(object):
     def close(self):
         pass
 
+# _RangeError and _HTTPRangeHandler were originally in byterange.py,
+# which was itself extracted from urlgrabber. See the last version of
+# byterange.py from history if you need more information.
+class _RangeError(IOError):
+    """Error raised when an unsatisfiable range is requested."""
+
+class _HTTPRangeHandler(urlreq.basehandler):
+    """Handler that enables HTTP Range headers.
+
+    This was extremely simple. The Range header is a HTTP feature to
+    begin with so all this class does is tell urllib2 that the
+    "206 Partial Content" response from the HTTP server is what we
+    expected.
+    """
+
+    def http_error_206(self, req, fp, code, msg, hdrs):
+        # 206 Partial Content Response
+        r = urlreq.addinfourl(fp, hdrs, req.get_full_url())
+        r.code = code
+        r.msg = msg
+        return r
+
+    def http_error_416(self, req, fp, code, msg, hdrs):
+        # HTTP's Range Not Satisfiable error
+        raise _RangeError('Requested Range Not Satisfiable')
+
 def build_opener(ui, authinfo):
     # urllib cannot handle URLs with embedded user or passwd
     urlopener = url.opener(ui, authinfo)
-    urlopener.add_handler(byterange.HTTPRangeHandler())
+    urlopener.add_handler(_HTTPRangeHandler())
 
     class statichttpvfs(vfsmod.abstractvfs):
         def __init__(self, base):
@@ -190,7 +215,7 @@ class statichttprepository(localrepo.localrepository):
     def _writecaches(self):
         pass # statichttprepository are read only
 
-def instance(ui, path, create):
+def instance(ui, path, create, intents=None):
     if create:
         raise error.Abort(_('cannot create new static-http repository'))
     return statichttprepository(ui, path[7:])

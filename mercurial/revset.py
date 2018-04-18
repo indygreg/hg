@@ -28,7 +28,12 @@ from . import (
     revsetlang,
     scmutil,
     smartset,
+    stack as stackmod,
     util,
+)
+from .utils import (
+    dateutil,
+    stringutil,
 )
 
 # helpers for processing parsed tree
@@ -105,10 +110,15 @@ def _getrevsource(repo, r):
                 pass
     return None
 
+def _sortedb(xs):
+    return sorted(util.rapply(pycompat.maybebytestr, xs))
+
 # operator methods
 
 def stringset(repo, subset, x, order):
-    x = scmutil.intrev(repo[x])
+    if not x:
+        raise error.ParseError(_("empty string is not a valid revision"))
+    x = scmutil.intrev(scmutil.revsymbol(repo, x))
     if (x in subset
         or x == node.nullrev and isinstance(subset, fullreposet)):
         return baseset([x])
@@ -442,7 +452,7 @@ def bookmark(repo, subset, x):
         bm = getstring(args[0],
                        # i18n: "bookmark" is a keyword
                        _('the argument to bookmark must be a string'))
-        kind, pattern, matcher = util.stringmatcher(bm)
+        kind, pattern, matcher = stringutil.stringmatcher(bm)
         bms = set()
         if kind == 'literal':
             bmrev = repo._bookmarks.get(pattern, None)
@@ -487,7 +497,7 @@ def branch(repo, subset, x):
         # not a string, but another revspec, e.g. tip()
         pass
     else:
-        kind, pattern, matcher = util.stringmatcher(b)
+        kind, pattern, matcher = stringutil.stringmatcher(b)
         if kind == 'literal':
             # note: falls through to the revspec case if no branch with
             # this name exists and pattern kind is not specified explicitly
@@ -507,15 +517,7 @@ def branch(repo, subset, x):
         b.add(getbranch(r))
     c = s.__contains__
     return subset.filter(lambda r: c(r) or getbranch(r) in b,
-                         condrepr=lambda: '<branch %r>' % sorted(b))
-
-@predicate('bumped()', safe=True)
-def bumped(repo, subset, x):
-    msg = ("'bumped()' is deprecated, "
-           "use 'phasedivergent()'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return phasedivergent(repo, subset, x)
+                         condrepr=lambda: '<branch %r>' % _sortedb(b))
 
 @predicate('phasedivergent()', safe=True)
 def phasedivergent(repo, subset, x):
@@ -663,7 +665,7 @@ def date(repo, subset, x):
     """
     # i18n: "date" is a keyword
     ds = getstring(x, _("date requires a string"))
-    dm = util.matchdate(ds)
+    dm = dateutil.matchdate(ds)
     return subset.filter(lambda x: dm(repo[x].date()[0]),
                          condrepr=('<date %r>', ds))
 
@@ -768,15 +770,7 @@ def destination(repo, subset, x):
             src = _getrevsource(repo, r)
 
     return subset.filter(dests.__contains__,
-                         condrepr=lambda: '<destination %r>' % sorted(dests))
-
-@predicate('divergent()', safe=True)
-def divergent(repo, subset, x):
-    msg = ("'divergent()' is deprecated, "
-           "use 'contentdivergent()'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return contentdivergent(repo, subset, x)
+                         condrepr=lambda: '<destination %r>' % _sortedb(dests))
 
 @predicate('contentdivergent()', safe=True)
 def contentdivergent(repo, subset, x):
@@ -830,7 +824,7 @@ def extra(repo, subset, x):
         # i18n: "extra" is a keyword
         value = getstring(args['value'], _('second argument to extra must be '
                                            'a string'))
-        kind, value, matcher = util.stringmatcher(value)
+        kind, value, matcher = stringutil.stringmatcher(value)
 
     def _matchvalue(r):
         extra = repo[r].extra()
@@ -1024,7 +1018,8 @@ def grep(repo, subset, x):
         # i18n: "grep" is a keyword
         gr = re.compile(getstring(x, _("grep requires a string")))
     except re.error as e:
-        raise error.ParseError(_('invalid match pattern: %s') % e)
+        raise error.ParseError(
+            _('invalid match pattern: %s') % stringutil.forcebytestr(e))
 
     def matches(x):
         c = repo[x]
@@ -1296,7 +1291,7 @@ def named(repo, subset, x):
     ns = getstring(args[0],
                    # i18n: "named" is a keyword
                    _('the argument to named must be a string'))
-    kind, pattern, matcher = util.stringmatcher(ns)
+    kind, pattern, matcher = stringutil.stringmatcher(ns)
     namespaces = set()
     if kind == 'literal':
         if pattern not in repo.names:
@@ -1542,6 +1537,21 @@ def secret(repo, subset, x):
     getargs(x, 0, 0, _("secret takes no arguments"))
     target = phases.secret
     return _phase(repo, subset, target)
+
+@predicate('stack([revs])', safe=True)
+def stack(repo, subset, x):
+    """Experimental revset for the stack of changesets or working directory
+    parent. (EXPERIMENTAL)
+    """
+    if x is None:
+        stacks = stackmod.getstack(repo, x)
+    else:
+        stacks = smartset.baseset([])
+        for revision in getset(repo, fullreposet(repo), x):
+            currentstack = stackmod.getstack(repo, revision)
+            stacks = stacks + currentstack
+
+    return subset & stacks
 
 def parentspec(repo, subset, x, n, order):
     """``set^0``
@@ -1854,11 +1864,12 @@ def _getsortargs(x):
     keyflags = []
     for k in keys.split():
         fk = k
-        reverse = (k[0] == '-')
+        reverse = (k.startswith('-'))
         if reverse:
             k = k[1:]
         if k not in _sortkeyfuncs and k != 'topo':
-            raise error.ParseError(_("unknown sort key %r") % fk)
+            raise error.ParseError(
+                _("unknown sort key %r") % pycompat.bytestr(fk))
         keyflags.append((k, reverse))
 
     if len(keyflags) > 1 and any(k == 'topo' for k, reverse in keyflags):
@@ -1936,7 +1947,7 @@ def subrepo(repo, subset, x):
     m = matchmod.exact(repo.root, repo.root, ['.hgsubstate'])
 
     def submatches(names):
-        k, p, m = util.stringmatcher(pat)
+        k, p, m = stringutil.stringmatcher(pat)
         for name in names:
             if m(name):
                 yield name
@@ -1989,8 +2000,8 @@ def successors(repo, subset, x):
     return subset & d
 
 def _substringmatcher(pattern, casesensitive=True):
-    kind, pattern, matcher = util.stringmatcher(pattern,
-                                                casesensitive=casesensitive)
+    kind, pattern, matcher = stringutil.stringmatcher(
+        pattern, casesensitive=casesensitive)
     if kind == 'literal':
         if not casesensitive:
             pattern = encoding.lower(pattern)
@@ -2013,7 +2024,7 @@ def tag(repo, subset, x):
         pattern = getstring(args[0],
                             # i18n: "tag" is a keyword
                             _('the argument to tag must be a string'))
-        kind, pattern, matcher = util.stringmatcher(pattern)
+        kind, pattern, matcher = stringutil.stringmatcher(pattern)
         if kind == 'literal':
             # avoid resolving all tags
             tn = repo._tagscache.tags.get(pattern, None)
@@ -2030,14 +2041,6 @@ def tag(repo, subset, x):
 @predicate('tagged', safe=True)
 def tagged(repo, subset, x):
     return tag(repo, subset, x)
-
-@predicate('unstable()', safe=True)
-def unstable(repo, subset, x):
-    msg = ("'unstable()' is deprecated, "
-           "use 'orphan()'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return orphan(repo, subset, x)
 
 @predicate('orphan()', safe=True)
 def orphan(repo, subset, x):
@@ -2080,7 +2083,7 @@ def _orderedlist(repo, subset, x):
         try:
             # fast path for integer revision
             r = int(t)
-            if str(r) != t or r not in cl:
+            if ('%d' % r) != t or r not in cl:
                 raise ValueError
             revs = [r]
         except ValueError:
@@ -2163,17 +2166,19 @@ methods = {
     "parentpost": parentpost,
 }
 
-def posttreebuilthook(tree, repo):
-    # hook for extensions to execute code on the optimized tree
-    pass
+def lookupfn(repo):
+    return lambda symbol: scmutil.isrevsymbol(repo, symbol)
 
-def match(ui, spec, repo=None):
+def match(ui, spec, lookup=None):
     """Create a matcher for a single revision spec"""
-    return matchany(ui, [spec], repo=repo)
+    return matchany(ui, [spec], lookup=None)
 
-def matchany(ui, specs, repo=None, localalias=None):
+def matchany(ui, specs, lookup=None, localalias=None):
     """Create a matcher that will include any revisions matching one of the
     given specs
+
+    If lookup function is not None, the parser will first attempt to handle
+    old-style ranges, which may contain operator characters.
 
     If localalias is not None, it is a dict {name: definitionstring}. It takes
     precedence over [revsetalias] config section.
@@ -2184,9 +2189,6 @@ def matchany(ui, specs, repo=None, localalias=None):
         return mfunc
     if not all(specs):
         raise error.ParseError(_("empty query"))
-    lookup = None
-    if repo:
-        lookup = repo.__contains__
     if len(specs) == 1:
         tree = revsetlang.parse(specs[0], lookup)
     else:
@@ -2205,7 +2207,6 @@ def matchany(ui, specs, repo=None, localalias=None):
     tree = revsetlang.foldconcat(tree)
     tree = revsetlang.analyze(tree)
     tree = revsetlang.optimize(tree)
-    posttreebuilthook(tree, repo)
     return makematcher(tree)
 
 def makematcher(tree):

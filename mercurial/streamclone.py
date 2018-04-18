@@ -126,11 +126,18 @@ def maybeperformlegacystreamclone(pullop):
     # creation.
     rbranchmap = None
     if remote.capable('branchmap'):
-        rbranchmap = remote.branchmap()
+        with remote.commandexecutor() as e:
+            rbranchmap = e.callcommand('branchmap', {}).result()
 
     repo.ui.status(_('streaming all changes\n'))
 
-    fp = remote.stream_out()
+    with remote.commandexecutor() as e:
+        fp = e.callcommand('stream_out', {}).result()
+
+    # TODO strictly speaking, this code should all be inside the context
+    # manager because the context manager is supposed to ensure all wire state
+    # is flushed when exiting. But the legacy peers don't do this, so it
+    # doesn't matter.
     l = fp.readline()
     try:
         resp = int(l)

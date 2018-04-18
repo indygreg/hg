@@ -15,6 +15,40 @@ from . import (
     phases,
     util,
 )
+from .utils import dateutil
+
+### obsolescence marker flag
+
+## bumpedfix flag
+#
+# When a changeset A' succeed to a changeset A which became public, we call A'
+# "bumped" because it's a successors of a public changesets
+#
+# o    A' (bumped)
+# |`:
+# | o  A
+# |/
+# o    Z
+#
+# The way to solve this situation is to create a new changeset Ad as children
+# of A. This changeset have the same content than A'. So the diff from A to A'
+# is the same than the diff from A to Ad. Ad is marked as a successors of A'
+#
+# o   Ad
+# |`:
+# | x A'
+# |'|
+# o | A
+# |/
+# o Z
+#
+# But by transitivity Ad is also a successors of A. To avoid having Ad marked
+# as bumped too, we add the `bumpedfix` flag to the marker. <A', (Ad,)>.
+# This flag mean that the successors express the changes between the public and
+# bumped version and fix the situation, breaking the transitivity of
+# "bumped" here.
+bumpedfix = 1
+usingsha256 = 2
 
 class marker(object):
     """Wrap obsolete marker raw data"""
@@ -32,12 +66,6 @@ class marker(object):
         if type(other) != type(self):
             return False
         return self._data == other._data
-
-    def precnode(self):
-        msg = ("'marker.precnode' is deprecated, "
-               "use 'marker.prednode'")
-        util.nouideprecwarn(msg, '4.4')
-        return self.prednode()
 
     def prednode(self):
         """Predecessor changeset node identifier"""
@@ -105,15 +133,6 @@ def closestpredecessors(repo, nodeid):
                 yield precnodeid
             else:
                 stack.append(precnodeid)
-
-def allprecursors(*args, **kwargs):
-    """ (DEPRECATED)
-    """
-    msg = ("'obsutil.allprecursors' is deprecated, "
-           "use 'obsutil.allpredecessors'")
-    util.nouideprecwarn(msg, '4.4')
-
-    return allpredecessors(*args, **kwargs)
 
 def allpredecessors(obsstore, nodes, ignoreflags=0):
     """Yield node for every precursors of <nodes>.
@@ -421,10 +440,10 @@ def geteffectflag(relation):
 
         # Check if other meta has changed
         changeextra = changectx.extra().items()
-        ctxmeta = filter(metanotblacklisted, changeextra)
+        ctxmeta = list(filter(metanotblacklisted, changeextra))
 
         sourceextra = source.extra().items()
-        srcmeta = filter(metanotblacklisted, sourceextra)
+        srcmeta = list(filter(metanotblacklisted, sourceextra))
 
         if ctxmeta != srcmeta:
             effects |= METACHANGED
@@ -813,7 +832,7 @@ def markersoperations(markers):
 
     return sorted(operations)
 
-def obsfateprinter(successors, markers, ui):
+def obsfateprinter(ui, repo, successors, markers, formatctx):
     """ Build a obsfate string for a single successorset using all obsfate
     related function defined in obsutil
     """
@@ -833,7 +852,7 @@ def obsfateprinter(successors, markers, ui):
 
     # Successors
     if successors:
-        fmtsuccessors = [successors.joinfmt(succ) for succ in successors]
+        fmtsuccessors = [formatctx(repo[succ]) for succ in successors]
         line.append(" as %s" % ", ".join(fmtsuccessors))
 
     # Users
@@ -856,11 +875,11 @@ def obsfateprinter(successors, markers, ui):
         max_date = max(dates)
 
         if min_date == max_date:
-            fmtmin_date = util.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
+            fmtmin_date = dateutil.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
             line.append(" (at %s)" % fmtmin_date)
         else:
-            fmtmin_date = util.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
-            fmtmax_date = util.datestr(max_date, '%Y-%m-%d %H:%M %1%2')
+            fmtmin_date = dateutil.datestr(min_date, '%Y-%m-%d %H:%M %1%2')
+            fmtmax_date = dateutil.datestr(max_date, '%Y-%m-%d %H:%M %1%2')
             line.append(" (between %s and %s)" % (fmtmin_date, fmtmax_date))
 
     return "".join(line)
@@ -904,3 +923,55 @@ def _getfilteredreason(repo, changeid, ctx):
 
             args = (changeid, firstsuccessors, remainingnumber)
             return filteredmsgtable['superseded_split_several'] % args
+
+def divergentsets(repo, ctx):
+    """Compute sets of commits divergent with a given one"""
+    cache = {}
+    base = {}
+    for n in allpredecessors(repo.obsstore, [ctx.node()]):
+        if n == ctx.node():
+            # a node can't be a base for divergence with itself
+            continue
+        nsuccsets = successorssets(repo, n, cache)
+        for nsuccset in nsuccsets:
+            if ctx.node() in nsuccset:
+                # we are only interested in *other* successor sets
+                continue
+            if tuple(nsuccset) in base:
+                # we already know the latest base for this divergency
+                continue
+            base[tuple(nsuccset)] = n
+    return [{'divergentnodes': divset, 'commonpredecessor': b}
+            for divset, b in base.iteritems()]
+
+def whyunstable(repo, ctx):
+    result = []
+    if ctx.orphan():
+        for parent in ctx.parents():
+            kind = None
+            if parent.orphan():
+                kind = 'orphan'
+            elif parent.obsolete():
+                kind = 'obsolete'
+            if kind is not None:
+                result.append({'instability': 'orphan',
+                               'reason': '%s parent' % kind,
+                               'node': parent.hex()})
+    if ctx.phasedivergent():
+        predecessors = allpredecessors(repo.obsstore, [ctx.node()],
+                                       ignoreflags=bumpedfix)
+        immutable = [repo[p] for p in predecessors
+                     if p in repo and not repo[p].mutable()]
+        for predecessor in immutable:
+            result.append({'instability': 'phase-divergent',
+                           'reason': 'immutable predecessor',
+                           'node': predecessor.hex()})
+    if ctx.contentdivergent():
+        dsets = divergentsets(repo, ctx)
+        for dset in dsets:
+            divnodes = [repo[n] for n in dset['divergentnodes']]
+            result.append({'instability': 'content-divergent',
+                           'divergentnodes': divnodes,
+                           'reason': 'predecessor',
+                           'node': nodemod.hex(dset['commonpredecessor'])})
+    return result

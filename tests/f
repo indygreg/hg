@@ -25,6 +25,7 @@ This can be used instead of tools like:
 
 from __future__ import absolute_import
 
+import binascii
 import glob
 import hashlib
 import optparse
@@ -58,46 +59,48 @@ def visit(opts, filenames, outfile):
         facts = []
         if isfile:
             if opts.type:
-                facts.append('file')
+                facts.append(b'file')
             if any((opts.hexdump, opts.dump, opts.md5, opts.sha1, opts.sha256)):
-                content = open(f, 'rb').read()
+                with open(f, 'rb') as fobj:
+                    content = fobj.read()
         elif islink:
             if opts.type:
-                facts.append('link')
+                facts.append(b'link')
             content = os.readlink(f)
         elif isstdin:
             content = getattr(sys.stdin, 'buffer', sys.stdin).read()
             if opts.size:
-                facts.append('size=%s' % len(content))
+                facts.append(b'size=%d' % len(content))
         elif isdir:
             if opts.recurse or opts.type:
                 dirfiles = glob.glob(f + '/*')
-                facts.append('directory with %s files' % len(dirfiles))
+                facts.append(b'directory with %d files' % len(dirfiles))
         elif opts.type:
-            facts.append('type unknown')
+            facts.append(b'type unknown')
         if not isstdin:
             stat = os.lstat(f)
             if opts.size and not isdir:
-                facts.append('size=%s' % stat.st_size)
+                facts.append(b'size=%d' % stat.st_size)
             if opts.mode and not islink:
-                facts.append('mode=%o' % (stat.st_mode & 0o777))
+                facts.append(b'mode=%o' % (stat.st_mode & 0o777))
             if opts.links:
-                facts.append('links=%s' % stat.st_nlink)
+                facts.append(b'links=%s' % stat.st_nlink)
             if opts.newer:
                 # mtime might be in whole seconds so newer file might be same
                 if stat.st_mtime >= os.stat(opts.newer).st_mtime:
-                    facts.append('newer than %s' % opts.newer)
+                    facts.append(b'newer than %s' % opts.newer)
                 else:
-                    facts.append('older than %s' % opts.newer)
+                    facts.append(b'older than %s' % opts.newer)
         if opts.md5 and content is not None:
             h = hashlib.md5(content)
-            facts.append('md5=%s' % h.hexdigest()[:opts.bytes])
+            facts.append(b'md5=%s' % binascii.hexlify(h.digest())[:opts.bytes])
         if opts.sha1 and content is not None:
             h = hashlib.sha1(content)
-            facts.append('sha1=%s' % h.hexdigest()[:opts.bytes])
+            facts.append(b'sha1=%s' % binascii.hexlify(h.digest())[:opts.bytes])
         if opts.sha256 and content is not None:
             h = hashlib.sha256(content)
-            facts.append('sha256=%s' % h.hexdigest()[:opts.bytes])
+            facts.append(b'sha256=%s' %
+                         binascii.hexlify(h.digest())[:opts.bytes])
         if isstdin:
             outfile.write(b', '.join(facts) + b'\n')
         elif facts:

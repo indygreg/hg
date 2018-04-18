@@ -80,8 +80,7 @@ def main(argv=()):
         print('warning: Python 3.6.0 and 3.6.1 have '
               'a bug which breaks Mercurial')
         print('(see https://bugs.python.org/issue29714 for details)')
-        # TODO(augie): uncomment exit when Python 3.6.2 is available
-        # sys.exit(1)
+        sys.exit(1)
 
     rt = subprocess.Popen([opts.python3, 'run-tests.py', '-j', str(opts.j),
                            '--blacklist', opts.working_tests, '--json'])

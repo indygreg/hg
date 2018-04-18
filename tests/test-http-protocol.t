@@ -1,3 +1,5 @@
+  $ . $TESTDIR/wireprotohelpers.sh
+
   $ cat >> $HGRCPATH << EOF
   > [web]
   > push_ssl = false
@@ -49,8 +51,8 @@ Server should send application/mercurial-0.1 to clients if no Accept is used
   $ get-with-headers.py --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.1
-  date: * (glob)
-  server: * (glob)
+  date: $HTTP_DATE$
+  server: testing stub value
   transfer-encoding: chunked
 
 Server should send application/mercurial-0.1 when client says it wants it
@@ -58,8 +60,8 @@ Server should send application/mercurial-0.1 when client says it wants it
   $ get-with-headers.py --hgproto '0.1' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.1
-  date: * (glob)
-  server: * (glob)
+  date: $HTTP_DATE$
+  server: testing stub value
   transfer-encoding: chunked
 
 Server should send application/mercurial-0.2 when client says it wants it
@@ -67,15 +69,15 @@ Server should send application/mercurial-0.2 when client says it wants it
   $ get-with-headers.py --hgproto '0.2' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.2
-  date: * (glob)
-  server: * (glob)
+  date: $HTTP_DATE$
+  server: testing stub value
   transfer-encoding: chunked
 
   $ get-with-headers.py --hgproto '0.1 0.2' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.2
-  date: * (glob)
-  server: * (glob)
+  date: $HTTP_DATE$
+  server: testing stub value
   transfer-encoding: chunked
 
 Requesting a compression format that server doesn't support results will fall back to 0.1
@@ -83,8 +85,8 @@ Requesting a compression format that server doesn't support results will fall ba
   $ get-with-headers.py --hgproto '0.2 comp=aa' --headeronly $LOCALIP:$HGPORT '?cmd=getbundle&heads=e93700bd72895c5addab234c56d4024b487a362f&common=0000000000000000000000000000000000000000' -
   200 Script output follows
   content-type: application/mercurial-0.1
-  date: * (glob)
-  server: * (glob)
+  date: $HTTP_DATE$
+  server: testing stub value
   transfer-encoding: chunked
 
 #if zstd
@@ -105,8 +107,8 @@ application/mercurial-0.2 is not yet used on non-streaming responses
   200 Script output follows
   content-length: 41
   content-type: application/mercurial-0.1
-  date: * (glob)
-  server: * (glob)
+  date: $HTTP_DATE$
+  server: testing stub value
   
   e93700bd72895c5addab234c56d4024b487a362f
 
@@ -161,3 +163,173 @@ Client receives only supported format even if not server preferred format
   0000: 32 30 30 20 53 63 72 69 70 74 20 6f 75 74 70 75 |200 Script outpu|
   0010: 74 20 66 6f 6c 6c 6f 77 73 0a 0a 04 7a 6c 69 62 |t follows...zlib|
   0020: 78                                              |x|
+
+  $ killdaemons.py
+  $ cd ..
+
+Test listkeys for listing namespaces
+
+  $ hg init empty
+  $ hg -R empty serve -p $HGPORT -d --pid-file hg.pid
+  $ cat hg.pid > $DAEMON_PIDS
+
+  $ hg --verbose debugwireproto http://$LOCALIP:$HGPORT << EOF
+  > command listkeys
+  >     namespace namespaces
+  > EOF
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s>     Content-Length: *\r\n (glob)
+  s>     \r\n
+  s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  sending listkeys command
+  s>     GET /?cmd=listkeys HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgArg-1,X-HgProto-1\r\n
+  s>     x-hgarg-1: namespace=namespaces\r\n
+  s>     x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s>     Content-Length: 30\r\n
+  s>     \r\n
+  s>     bookmarks\t\n
+  s>     namespaces\t\n
+  s>     phases\t
+  response: {b'bookmarks': b'', b'namespaces': b'', b'phases': b''}
+
+Same thing, but with "httprequest" command
+
+  $ hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT << EOF
+  > httprequest GET ?cmd=listkeys
+  >     user-agent: test
+  >     x-hgarg-1: namespace=namespaces
+  > EOF
+  using raw connection to peer
+  s>     GET /?cmd=listkeys HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     user-agent: test\r\n
+  s>     x-hgarg-1: namespace=namespaces\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s>     Content-Length: 30\r\n
+  s>     \r\n
+  s>     bookmarks\t\n
+  s>     namespaces\t\n
+  s>     phases\t
+
+Client with HTTPv2 enabled advertises that and gets old capabilities response from old server
+
+  $ hg --config experimental.httppeer.advertise-v2=true --verbose debugwireproto http://$LOCALIP:$HGPORT << EOF
+  > command heads
+  > EOF
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
+  s>     x-hgproto-1: cbor\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0001\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s>     Content-Length: 458\r\n
+  s>     \r\n
+  s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  sending heads command
+  s>     GET /?cmd=heads HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgProto-1\r\n
+  s>     x-hgproto-1: 0.1 0.2 comp=$USUAL_COMPRESSIONS$ partial-pull\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 Script output follows\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-0.1\r\n
+  s>     Content-Length: 41\r\n
+  s>     \r\n
+  s>     0000000000000000000000000000000000000000\n
+  response: [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00']
+
+  $ killdaemons.py
+  $ enablehttpv2 empty
+  $ hg -R empty serve -p $HGPORT -d --pid-file hg.pid
+  $ cat hg.pid > $DAEMON_PIDS
+
+Client with HTTPv2 enabled automatically upgrades if the server supports it
+
+  $ hg --config experimental.httppeer.advertise-v2=true --verbose debugwireproto http://$LOCALIP:$HGPORT << EOF
+  > command heads
+  > EOF
+  s>     GET /?cmd=capabilities HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     vary: X-HgProto-1,X-HgUpgrade-1\r\n
+  s>     x-hgproto-1: cbor\r\n
+  s>     x-hgupgrade-1: exp-http-v2-0001\r\n
+  s>     accept: application/mercurial-0.1\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-cbor\r\n
+  s>     Content-Length: *\r\n (glob)
+  s>     \r\n
+  s>     \xa3Dapis\xa1Pexp-http-v2-0001\xa4Hcommands\xa7Eheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyCnewCnewColdColdInamespaceBnsKpermissions\x81DpushHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullKcompression\x82\xa1DnameDzstd\xa1DnameDzlibNrawrepoformats\x82LgeneraldeltaHrevlogv1Qframingmediatypes\x81X&application/mercurial-exp-framing-0005GapibaseDapi/Nv1capabilitiesY\x01\xcabatch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  sending heads command
+  s>     POST /api/exp-http-v2-0001/ro/heads HTTP/1.1\r\n
+  s>     Accept-Encoding: identity\r\n
+  s>     accept: application/mercurial-exp-framing-0005\r\n
+  s>     content-type: application/mercurial-exp-framing-0005\r\n
+  s>     content-length: 20\r\n
+  s>     host: $LOCALIP:$HGPORT\r\n (glob)
+  s>     user-agent: Mercurial debugwireproto\r\n
+  s>     \r\n
+  s>     \x0c\x00\x00\x01\x00\x01\x01\x11\xa1DnameEheads
+  s> makefile('rb', None)
+  s>     HTTP/1.1 200 OK\r\n
+  s>     Server: testing stub value\r\n
+  s>     Date: $HTTP_DATE$\r\n
+  s>     Content-Type: application/mercurial-exp-framing-0005\r\n
+  s>     Transfer-Encoding: chunked\r\n
+  s>     \r\n
+  s>     29\r\n
+  s>     !\x00\x00\x01\x00\x02\x012
+  s>     \xa1FstatusBok\x81T\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00
+  s>     \r\n
+  received frame(size=33; request=1; stream=2; streamflags=stream-begin; type=command-response; flags=eos)
+  s>     0\r\n
+  s>     \r\n
+  response: [b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00']
+
+  $ killdaemons.py

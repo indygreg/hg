@@ -11,6 +11,7 @@ from __future__ import absolute_import
 from .node import hex
 
 from . import (
+    util,
     vfs as vfsmod,
 )
 
@@ -94,6 +95,30 @@ def saveremotenames(repo, remotepath, branches=None, bookmarks=None):
     finally:
         wlock.release()
 
+def activepath(repo, remote):
+    """returns remote path"""
+    local = None
+    # is the remote a local peer
+    local = remote.local()
+
+    # determine the remote path from the repo, if possible; else just
+    # use the string given to us
+    rpath = remote
+    if local:
+        rpath = remote._repo.root
+    elif not isinstance(remote, bytes):
+        rpath = remote._url
+
+    # represent the remotepath with user defined path name if exists
+    for path, url in repo.ui.configitems('paths'):
+        # remove auth info from user defined url
+        url = util.removeauth(url)
+        if url == rpath:
+            rpath = path
+            break
+
+    return rpath
+
 def pullremotenames(localrepo, remoterepo):
     """
     pulls bookmarks and branches information of the remote repo during a
@@ -101,15 +126,24 @@ def pullremotenames(localrepo, remoterepo):
     localrepo is our local repository
     remoterepo is the peer instance
     """
-    remotepath = remoterepo.url()
-    bookmarks = remoterepo.listkeys('bookmarks')
+    remotepath = activepath(localrepo, remoterepo)
+
+    with remoterepo.commandexecutor() as e:
+        bookmarks = e.callcommand('listkeys', {
+            'namespace': 'bookmarks',
+        }).result()
+
     # on a push, we don't want to keep obsolete heads since
     # they won't show up as heads on the next pull, so we
     # remove them here otherwise we would require the user
     # to issue a pull to refresh the storage
     bmap = {}
     repo = localrepo.unfiltered()
-    for branch, nodes in remoterepo.branchmap().iteritems():
+
+    with remoterepo.commandexecutor() as e:
+        branchmap = e.callcommand('branchmap', {}).result()
+
+    for branch, nodes in branchmap.iteritems():
         bmap[branch] = []
         for node in nodes:
             if node in repo and not repo[node].obsolete():

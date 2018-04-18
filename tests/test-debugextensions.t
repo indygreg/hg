@@ -1,12 +1,14 @@
+#if no-extraextensions
   $ hg debugextensions
+#endif
 
   $ debugpath=`pwd`/extwithoutinfos.py
 
   $ cat > extwithoutinfos.py <<EOF
   > EOF
   $ cat > extwithinfos.py <<EOF
-  > testedwith = '3.0 3.1 3.2.1'
-  > buglink = 'https://example.org/bts'
+  > testedwith = b'3.0 3.1 3.2.1'
+  > buglink = b'https://example.org/bts'
   > EOF
 
   $ cat >> $HGRCPATH <<EOF
@@ -18,6 +20,10 @@
   > ext1 = $debugpath
   > ext2 = `pwd`/extwithinfos.py
   > EOF
+
+  $ for extension in $HGTESTEXTRAEXTENSIONS; do
+  >     echo "$extension=!" >> $HGRCPATH
+  > done
 
   $ hg debugextensions
   ext1 (untested!)

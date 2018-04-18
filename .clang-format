@@ -6,3 +6,8 @@ AllowShortIfStatementsOnASingleLine: false
 IndentCaseLabels: false
 AllowShortBlocksOnASingleLine: false
 AllowShortFunctionsOnASingleLine: false
+IncludeCategories:
+  - Regex:           '^<'
+    Priority:        1
+  - Regex:           '^"'
+    Priority:        2

@@ -168,19 +168,19 @@ class convert_git(common.converter_source, common.commandline):
                     raise error.Abort(_('cannot retrieve git head "%s"') % rev)
         return heads
 
-    def catfile(self, rev, type):
+    def catfile(self, rev, ftype):
         if rev == nodemod.nullhex:
             raise IOError
         self.catfilepipe[0].write(rev+'\n')
         self.catfilepipe[0].flush()
         info = self.catfilepipe[1].readline().split()
-        if info[1] != type:
-            raise error.Abort(_('cannot read %r object at %s') % (type, rev))
+        if info[1] != ftype:
+            raise error.Abort(_('cannot read %r object at %s') % (ftype, rev))
         size = int(info[2])
         data = self.catfilepipe[1].read(size)
         if len(data) < size:
             raise error.Abort(_('cannot read %r object at %s: unexpected size')
-                             % (type, rev))
+                              % (ftype, rev))
         # read the trailing newline
         self.catfilepipe[1].read(1)
         return data
@@ -372,7 +372,7 @@ class convert_git(common.converter_source, common.commandline):
 
         tzs, tzh, tzm = tz[-5:-4] + "1", tz[-4:-2], tz[-2:]
         tz = -int(tzs) * (int(tzh) * 3600 + int(tzm))
-        date = tm + " " + str(tz)
+        date = tm + " " + (b"%d" % tz)
         saverev = self.ui.configbool('convert', 'git.saverev')
 
         c = common.commit(parents=parents, date=date, author=author,
@@ -435,7 +435,7 @@ class convert_git(common.converter_source, common.commandline):
         else:
             output, status = self.gitrunlines('diff-tree', '--name-only',
                                               '--root', '-r', version,
-                                              '%s^%s' % (version, i + 1), '--')
+                                              '%s^%d' % (version, i + 1), '--')
             if status:
                 raise error.Abort(_('cannot read changes in %s') % version)
             changes = [f.rstrip('\n') for f in output]

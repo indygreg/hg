@@ -26,26 +26,26 @@
 
 /* state machine for the fast path */
 enum path_state {
-	START,   /* first byte of a path component */
-	A,       /* "AUX" */
+	START, /* first byte of a path component */
+	A,     /* "AUX" */
 	AU,
-	THIRD,   /* third of a 3-byte sequence, e.g. "AUX", "NUL" */
-	C,       /* "CON" or "COMn" */
+	THIRD, /* third of a 3-byte sequence, e.g. "AUX", "NUL" */
+	C,     /* "CON" or "COMn" */
 	CO,
-	COMLPT,  /* "COM" or "LPT" */
+	COMLPT, /* "COM" or "LPT" */
 	COMLPTn,
 	L,
 	LP,
 	N,
 	NU,
-	P,       /* "PRN" */
+	P, /* "PRN" */
 	PR,
-	LDOT,    /* leading '.' */
-	DOT,     /* '.' in a non-leading position */
-	H,       /* ".h" */
-	HGDI,    /* ".hg", ".d", or ".i" */
+	LDOT, /* leading '.' */
+	DOT,  /* '.' in a non-leading position */
+	H,    /* ".h" */
+	HGDI, /* ".hg", ".d", or ".i" */
 	SPACE,
-	DEFAULT  /* byte of a path component after the first */
+	DEFAULT, /* byte of a path component after the first */
 };
 
 /* state machine for dir-encoding */
@@ -53,7 +53,7 @@ enum dir_state {
 	DDOT,
 	DH,
 	DHGDI,
-	DDEFAULT
+	DDEFAULT,
 };
 
 static inline int inset(const uint32_t bitset[], char c)
@@ -82,7 +82,7 @@ static inline void memcopy(char *dest, Py_ssize_t *destlen, size_t destsize,
 }
 
 static inline void hexencode(char *dest, Py_ssize_t *destlen, size_t destsize,
-			     uint8_t c)
+                             uint8_t c)
 {
 	static const char hexdigit[] = "0123456789abcdef";
 
@@ -92,14 +92,14 @@ static inline void hexencode(char *dest, Py_ssize_t *destlen, size_t destsize,
 
 /* 3-byte escape: tilde followed by two hex digits */
 static inline void escape3(char *dest, Py_ssize_t *destlen, size_t destsize,
-			   char c)
+                           char c)
 {
 	charcopy(dest, destlen, destsize, '~');
 	hexencode(dest, destlen, destsize, c);
 }
 
-static Py_ssize_t _encodedir(char *dest, size_t destsize,
-                             const char *src, Py_ssize_t len)
+static Py_ssize_t _encodedir(char *dest, size_t destsize, const char *src,
+                             Py_ssize_t len)
 {
 	enum dir_state state = DDEFAULT;
 	Py_ssize_t i = 0, destlen = 0;
@@ -126,8 +126,8 @@ static Py_ssize_t _encodedir(char *dest, size_t destsize,
 			if (src[i] == 'g') {
 				state = DHGDI;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DDEFAULT;
+			} else
+				state = DDEFAULT;
 			break;
 		case DHGDI:
 			if (src[i] == '/') {
@@ -173,17 +173,15 @@ PyObject *encodedir(PyObject *self, PyObject *args)
 	if (newobj) {
 		assert(PyBytes_Check(newobj));
 		Py_SIZE(newobj)--;
-		_encodedir(PyBytes_AS_STRING(newobj), newlen, path,
-			   len + 1);
+		_encodedir(PyBytes_AS_STRING(newobj), newlen, path, len + 1);
 	}
 
 	return newobj;
 }
 
 static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
-			  char *dest, Py_ssize_t destlen, size_t destsize,
-			  const char *src, Py_ssize_t len,
-			  int encodedir)
+                          char *dest, Py_ssize_t destlen, size_t destsize,
+                          const char *src, Py_ssize_t len, int encodedir)
 {
 	enum path_state state = START;
 	Py_ssize_t i = 0;
@@ -237,15 +235,15 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'u') {
 				state = AU;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case AU:
 			if (src[i] == 'x') {
 				state = THIRD;
 				i++;
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case THIRD:
 			state = DEFAULT;
@@ -264,24 +262,30 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'o') {
 				state = CO;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case CO:
 			if (src[i] == 'm') {
 				state = COMLPT;
 				i++;
-			}
-			else if (src[i] == 'n') {
+			} else if (src[i] == 'n') {
 				state = THIRD;
 				i++;
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case COMLPT:
 			switch (src[i]) {
-			case '1': case '2': case '3': case '4': case '5':
-			case '6': case '7': case '8': case '9':
+			case '1':
+			case '2':
+			case '3':
+			case '4':
+			case '5':
+			case '6':
+			case '7':
+			case '8':
+			case '9':
 				state = COMLPTn;
 				i++;
 				break;
@@ -301,8 +305,8 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 				charcopy(dest, &destlen, destsize, src[i - 1]);
 				break;
 			default:
-				memcopy(dest, &destlen, destsize,
-					&src[i - 2], 2);
+				memcopy(dest, &destlen, destsize, &src[i - 2],
+				        2);
 				break;
 			}
 			break;
@@ -310,43 +314,43 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'p') {
 				state = LP;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case LP:
 			if (src[i] == 't') {
 				state = COMLPT;
 				i++;
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case N:
 			if (src[i] == 'u') {
 				state = NU;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case NU:
 			if (src[i] == 'l') {
 				state = THIRD;
 				i++;
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case P:
 			if (src[i] == 'r') {
 				state = PR;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case PR:
 			if (src[i] == 'n') {
 				state = THIRD;
 				i++;
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case LDOT:
 			switch (src[i]) {
@@ -393,18 +397,18 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 			if (src[i] == 'g') {
 				state = HGDI;
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case HGDI:
 			if (src[i] == '/') {
 				state = START;
 				if (encodedir)
 					memcopy(dest, &destlen, destsize, ".hg",
-						3);
+					        3);
 				charcopy(dest, &destlen, destsize, src[i++]);
-			}
-			else state = DEFAULT;
+			} else
+				state = DEFAULT;
 			break;
 		case SPACE:
 			switch (src[i]) {
@@ -444,19 +448,17 @@ static Py_ssize_t _encode(const uint32_t twobytes[8], const uint32_t onebyte[8],
 				if (inset(onebyte, src[i])) {
 					do {
 						charcopy(dest, &destlen,
-							 destsize, src[i++]);
+						         destsize, src[i++]);
 					} while (i < len &&
-						 inset(onebyte, src[i]));
-				}
-				else if (inset(twobytes, src[i])) {
+					         inset(onebyte, src[i]));
+				} else if (inset(twobytes, src[i])) {
 					char c = src[i++];
 					charcopy(dest, &destlen, destsize, '_');
 					charcopy(dest, &destlen, destsize,
-						 c == '_' ? '_' : c + 32);
-				}
-				else
+					         c == '_' ? '_' : c + 32);
+				} else
 					escape3(dest, &destlen, destsize,
-						src[i++]);
+					        src[i++]);
 				break;
 			}
 			break;
@@ -466,31 +468,29 @@ done:
 	return destlen;
 }
 
-static Py_ssize_t basicencode(char *dest, size_t destsize,
-			      const char *src, Py_ssize_t len)
+static Py_ssize_t basicencode(char *dest, size_t destsize, const char *src,
+                              Py_ssize_t len)
 {
-	static const uint32_t twobytes[8] = { 0, 0, 0x87fffffe };
+	static const uint32_t twobytes[8] = {0, 0, 0x87fffffe};
 
 	static const uint32_t onebyte[8] = {
-		1, 0x2bff3bfa, 0x68000001, 0x2fffffff,
+	    1, 0x2bff3bfa, 0x68000001, 0x2fffffff,
 	};
 
 	Py_ssize_t destlen = 0;
 
-	return _encode(twobytes, onebyte, dest, destlen, destsize,
-		       src, len, 1);
+	return _encode(twobytes, onebyte, dest, destlen, destsize, src, len, 1);
 }
 
 static const Py_ssize_t maxstorepathlen = 120;
 
-static Py_ssize_t _lowerencode(char *dest, size_t destsize,
-			       const char *src, Py_ssize_t len)
+static Py_ssize_t _lowerencode(char *dest, size_t destsize, const char *src,
+                               Py_ssize_t len)
 {
-	static const uint32_t onebyte[8] = {
-		1, 0x2bfffbfb, 0xe8000001, 0x2fffffff
-	};
+	static const uint32_t onebyte[8] = {1, 0x2bfffbfb, 0xe8000001,
+	                                    0x2fffffff};
 
-	static const uint32_t lower[8] = { 0, 0, 0x7fffffe };
+	static const uint32_t lower[8] = {0, 0, 0x7fffffe};
 
 	Py_ssize_t i, destlen = 0;
 
@@ -512,7 +512,8 @@ PyObject *lowerencode(PyObject *self, PyObject *args)
 	Py_ssize_t len, newlen;
 	PyObject *ret;
 
-	if (!PyArg_ParseTuple(args, "s#:lowerencode", &path, &len))
+	if (!PyArg_ParseTuple(args, PY23("s#:lowerencode", "y#:lowerencode"),
+	                      &path, &len))
 		return NULL;
 
 	newlen = _lowerencode(NULL, 0, path, len);
@@ -524,13 +525,13 @@ PyObject *lowerencode(PyObject *self, PyObject *args)
 }
 
 /* See store.py:_auxencode for a description. */
-static Py_ssize_t auxencode(char *dest, size_t destsize,
-			    const char *src, Py_ssize_t len)
+static Py_ssize_t auxencode(char *dest, size_t destsize, const char *src,
+                            Py_ssize_t len)
 {
 	static const uint32_t twobytes[8];
 
 	static const uint32_t onebyte[8] = {
-		~0U, 0xffff3ffe, ~0U, ~0U, ~0U, ~0U, ~0U, ~0U,
+	    ~0U, 0xffff3ffe, ~0U, ~0U, ~0U, ~0U, ~0U, ~0U,
 	};
 
 	return _encode(twobytes, onebyte, dest, 0, destsize, src, len, 0);
@@ -590,8 +591,7 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 				break;
 			charcopy(dest, &destlen, destsize, src[i]);
 			p = -1;
-		}
-		else if (p < dirprefixlen)
+		} else if (p < dirprefixlen)
 			charcopy(dest, &destlen, destsize, src[i]);
 	}
 
@@ -622,13 +622,13 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 	slop = maxstorepathlen - used;
 	if (slop > 0) {
 		Py_ssize_t basenamelen =
-			lastslash >= 0 ? len - lastslash - 2 : len - 1;
+		    lastslash >= 0 ? len - lastslash - 2 : len - 1;
 
 		if (basenamelen > slop)
 			basenamelen = slop;
 		if (basenamelen > 0)
 			memcopy(dest, &destlen, destsize, &src[lastslash + 1],
-				basenamelen);
+			        basenamelen);
 	}
 
 	/* Add hash and suffix. */
@@ -637,7 +637,7 @@ static PyObject *hashmangle(const char *src, Py_ssize_t len, const char sha[20])
 
 	if (lastdot >= 0)
 		memcopy(dest, &destlen, destsize, &src[lastdot],
-			len - lastdot - 1);
+		        len - lastdot - 1);
 
 	assert(PyBytes_Check(ret));
 	Py_SIZE(ret) = destlen;
@@ -672,8 +672,8 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 
 		if (shafunc == NULL) {
 			PyErr_SetString(PyExc_AttributeError,
-					"module 'hashlib' has no "
-					"attribute 'sha1'");
+			                "module 'hashlib' has no "
+			                "attribute 'sha1'");
 			return -1;
 		}
 	}
@@ -690,7 +690,7 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 
 	if (!PyBytes_Check(hashobj) || PyBytes_GET_SIZE(hashobj) != 20) {
 		PyErr_SetString(PyExc_TypeError,
-				"result of digest is not a 20-byte hash");
+		                "result of digest is not a 20-byte hash");
 		Py_DECREF(hashobj);
 		return -1;
 	}
@@ -755,10 +755,9 @@ PyObject *pathencode(PyObject *self, PyObject *args)
 			assert(PyBytes_Check(newobj));
 			Py_SIZE(newobj)--;
 			basicencode(PyBytes_AS_STRING(newobj), newlen, path,
-				    len + 1);
+			            len + 1);
 		}
-	}
-	else
+	} else
 		newobj = hashencode(path, len + 1);
 
 	return newobj;

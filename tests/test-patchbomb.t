@@ -24,8 +24,6 @@ Mercurial-patchbomb/.* -> Mercurial-patchbomb/* (glob)
   >     print(l, end='')
   > EOF
   $ FILTERBOUNDARY="$PYTHON `pwd`/prune-blank-after-boundary.py"
-  $ echo "[format]" >> $HGRCPATH
-  $ echo "usegeneraldelta=yes" >> $HGRCPATH
   $ echo "[extensions]" >> $HGRCPATH
   $ echo "patchbomb=" >> $HGRCPATH
 
@@ -390,14 +388,15 @@ test bundle and description:
   Content-Disposition: attachment; filename="bundle.hg"
   Content-Transfer-Encoding: base64
   
-  SEcyMAAAAA5Db21wcmVzc2lvbj1CWkJaaDkxQVkmU1nYvy2xAAAJf//7vFYQXD1/4H7R09C/470I
-  Ak0E4pe4SIIIgQSgGEQOcLAA5VBKqeppMxTI0YjQNBgQMQDI0GgMhtR6I0GI2p6I0yeSEVT9MiYn
-  qjCYQwCBtARptARgBNDEwAGiDCMA40NGjQaNA0AAAAADIAAAA0BkABktCk6qObVxZ2A/33KHibLr
-  UQ4BwkgcPcmuCUAQZCztIWgR1SpBS6IqbIij4UFwhnnMkElcFTqoucIWbsBPK3l+6c+xYaVBWsJo
-  aT0OV/YAOvLrziifDQMJOMIaaYce9agtI2EwQBAq089UiRU+evFHSLRBT7Wa/D/YBaUtU5ezvtr3
-  6yrIS4Iyp9VWESdWPEi6VjRjdcEY4HvbmDIVEAEVJIUrHNIBx/MmnBBRkw8tSlCQ8ABZxf5ejgBI
-  pP5TSQPLVMYbq1qbBPmWN0LYVlAvRbP4X512kDQZ9y4TQbvoZmhe+54sRsEJ8GW3hMJjERh0NNlg
-  aB+3Cw/4u5IpwoSGxfltiA==
+  SEcyMAAAAA5Db21wcmVzc2lvbj1CWkJaaDkxQVkmU1kHdO0GAAAN////vFcSXL9/8H7R09C/578I
+  Ak0E4pe4SIIIgQSgGEQOcLABGYYNKiaaZGEyYjJhGTTRpiHogxGmTRiGRkNMIwhhPSbQJtpQiJkn
+  poyk9I0PUeoNNNBkeUAHqGgD0Ro0NNBoBoaMagNBoNCpNPUemp6QGmgyaPSGmQxGhkZDQbUaBkHp
+  MhoaANNMhkIyIauvSJPL4aUXjIQemQXkoaqOKqAQDIABsZALnf0yCLAyvmktzDWBCVHO6bb6kCqE
+  ZobVEhmMBjs0oQzekgs6PgZSyII8zy9mmG9To49ZlN6TaX5BxlS7cJiuICUdyjNQPIIdQs1Qqqqk
+  JZ2/BksYcU4HQyssZcpkoMco6gRc888KF9BO7BvuSuIPz7A4crBoaQB+euFU1ilz8yIBBmNBDgRX
+  pVh4zkmPiSKcqRJxcshMqh0vkKlgQDTcOujtdmnMVBZfQiPPemcHm2098VJyHBAOqOwluyIKyG92
+  JAR0CCu9SB5q9DyPHUdc5yB5CurIZHt3GM0dCiQRIN0EAcQNmTYTiHdi6B6Dc/ma0hrmSCQXBzfU
+  BEwthEg0YGaJf4u5IpwoSAO6doMA
   --===============*==-- (glob)
 
 with a specific bundle type

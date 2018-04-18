@@ -124,7 +124,7 @@ check-code:
 
 format-c:
 	clang-format --style file -i \
-	  `hg files 'set:(**.c or **.cc or **.h) and not "listfile:contrib/clang-format-blacklist"'`
+	  `hg files 'set:(**.c or **.cc or **.h) and not "listfile:contrib/clang-format-ignorelist"'`
 
 update-pot: i18n/hg.pot
 
@@ -132,8 +132,9 @@ i18n/hg.pot: $(PYFILES) $(DOCFILES) i18n/posplit i18n/hggettext
 	$(PYTHON) i18n/hggettext mercurial/commands.py \
 	  hgext/*.py hgext/*/__init__.py \
 	  mercurial/fileset.py mercurial/revset.py \
-	  mercurial/templatefilters.py mercurial/templatekw.py \
-	  mercurial/templater.py \
+	  mercurial/templatefilters.py \
+	  mercurial/templatefuncs.py \
+	  mercurial/templatekw.py \
 	  mercurial/filemerge.py \
 	  mercurial/hgweb/webcommands.py \
 	  mercurial/util.py \
@@ -212,11 +213,9 @@ contrib/docker/debian-%: contrib/docker/debian.template
 	sed "s/__CODENAME__/$*/" $< > $@
 
 docker-debian-jessie: contrib/docker/debian-jessie
-	mkdir -p packages/debian-jessie
 	contrib/dockerdeb debian jessie
 
 docker-debian-stretch: contrib/docker/debian-stretch
-	mkdir -p packages/debian-stretch
 	contrib/dockerdeb debian stretch
 
 contrib/docker/ubuntu-%: contrib/docker/ubuntu.template
@@ -234,23 +233,17 @@ docker-ubuntu-xenial: contrib/docker/ubuntu-xenial
 docker-ubuntu-xenial-ppa: contrib/docker/ubuntu-xenial
 	contrib/dockerdeb ubuntu xenial --source-only
 
-docker-ubuntu-yakkety: contrib/docker/ubuntu-yakkety
-	contrib/dockerdeb ubuntu yakkety
-
-docker-ubuntu-yakkety-ppa: contrib/docker/ubuntu-yakkety
-	contrib/dockerdeb ubuntu yakkety --source-only
-
-docker-ubuntu-zesty: contrib/docker/ubuntu-zesty
-	contrib/dockerdeb ubuntu zesty
-
-docker-ubuntu-zesty-ppa: contrib/docker/ubuntu-zesty
-	contrib/dockerdeb ubuntu zesty --source-only
-
 docker-ubuntu-artful: contrib/docker/ubuntu-artful
 	contrib/dockerdeb ubuntu artful
 
 docker-ubuntu-artful-ppa: contrib/docker/ubuntu-artful
 	contrib/dockerdeb ubuntu artful --source-only
+
+docker-ubuntu-bionic: contrib/docker/ubuntu-bionic
+	contrib/dockerdeb ubuntu bionic
+
+docker-ubuntu-bionic-ppa: contrib/docker/ubuntu-bionic
+	contrib/dockerdeb ubuntu bionic --source-only
 
 fedora20:
 	mkdir -p packages/fedora20
@@ -315,12 +308,16 @@ linux-wheels-i686:
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
 	install-doc install-home install-home-bin install-home-doc \
 	dist dist-notests check tests check-code format-c update-pot \
-	osx deb ppa docker-debian-jessie docker-debian-stretch \
+	osx deb ppa \
+	docker-debian-jessie \
+	docker-debian-stretch \
 	docker-ubuntu-trusty docker-ubuntu-trusty-ppa \
 	docker-ubuntu-xenial docker-ubuntu-xenial-ppa \
-	docker-ubuntu-yakkety docker-ubuntu-yakkety-ppa \
-	docker-ubuntu-zesty docker-ubuntu-zesty-ppa \
 	docker-ubuntu-artful docker-ubuntu-artful-ppa \
-	fedora20 docker-fedora20 fedora21 docker-fedora21 \
-	centos5 docker-centos5 centos6 docker-centos6 centos7 docker-centos7 \
+	docker-ubuntu-bionic docker-ubuntu-bionic-ppa \
+	fedora20 docker-fedora20 \
+	fedora21 docker-fedora21 \
+	centos5 docker-centos5 \
+	centos6 docker-centos6 \
+	centos7 docker-centos7 \
 	linux-wheels

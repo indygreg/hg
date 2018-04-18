@@ -24,18 +24,23 @@ from mercurial import (
     bookmarks,
     cmdutil,
     dispatch,
+    encoding,
     error,
     extensions,
     hg,
     localrepo,
     lock,
+    logcmdutil,
     node,
     pycompat,
     registrar,
     util,
 )
-
-from . import share
+from mercurial.utils import (
+    dateutil,
+    procutil,
+    stringutil,
+)
 
 cmdtable = {}
 command = registrar.command(cmdtable)
@@ -168,7 +173,7 @@ def unsharejournal(orig, ui, repo, repopath):
     """Copy shared journal entries into this repo when unsharing"""
     if (repo.path == repopath and repo.shared() and
             util.safehasattr(repo, 'journal')):
-        sharedrepo = share._getsrcrepo(repo)
+        sharedrepo = hg.sharedreposource(repo)
         sharedfeatures = _readsharedfeatures(repo)
         if sharedrepo and sharedfeatures > {'journal'}:
             # there is a shared repository and there are shared journal entries
@@ -219,14 +224,16 @@ class journalentry(collections.namedtuple(
             (timestamp, tz), user, command, namespace, name,
             oldhashes, newhashes)
 
-    def __str__(self):
-        """String representation for storage"""
-        time = ' '.join(map(str, self.timestamp))
+    def __bytes__(self):
+        """bytes representation for storage"""
+        time = ' '.join(map(pycompat.bytestr, self.timestamp))
         oldhashes = ','.join([node.hex(hash) for hash in self.oldhashes])
         newhashes = ','.join([node.hex(hash) for hash in self.newhashes])
         return '\n'.join((
             time, self.user, self.command, self.namespace, self.name,
             oldhashes, newhashes))
+
+    __str__ = encoding.strmethod(__bytes__)
 
 class journalstorage(object):
     """Storage for journal entries
@@ -249,7 +256,7 @@ class journalstorage(object):
     _lockref = None
 
     def __init__(self, repo):
-        self.user = util.getuser()
+        self.user = procutil.getuser()
         self.ui = repo.ui
         self.vfs = repo.vfs
 
@@ -257,7 +264,7 @@ class journalstorage(object):
         self.sharedfeatures = self.sharedvfs = None
         if repo.shared():
             features = _readsharedfeatures(repo)
-            sharedrepo = share._getsrcrepo(repo)
+            sharedrepo = hg.sharedreposource(repo)
             if sharedrepo is not None and 'journal' in features:
                 self.sharedvfs = sharedrepo.vfs
                 self.sharedfeatures = features
@@ -266,7 +273,7 @@ class journalstorage(object):
     @property
     def command(self):
         commandstr = ' '.join(
-            map(util.shellquote, journalstorage._currentcommand))
+            map(procutil.shellquote, journalstorage._currentcommand))
         if '\n' in commandstr:
             # truncate multi-line commands
             commandstr = commandstr.partition('\n')[0] + ' ...'
@@ -327,7 +334,7 @@ class journalstorage(object):
             newhashes = [newhashes]
 
         entry = journalentry(
-            util.makedate(), self.user, self.command, namespace, name,
+            dateutil.makedate(), self.user, self.command, namespace, name,
             oldhashes, newhashes)
 
         vfs = self.vfs
@@ -348,7 +355,7 @@ class journalstorage(object):
                 # Read just enough bytes to get a version number (up to 2
                 # digits plus separator)
                 version = f.read(3).partition('\0')[0]
-                if version and version != str(storageversion):
+                if version and version != "%d" % storageversion:
                     # different version of the storage. Exit early (and not
                     # write anything) if this is not a version we can handle or
                     # the file is corrupt. In future, perhaps rotate the file
@@ -358,9 +365,9 @@ class journalstorage(object):
                     return
                 if not version:
                     # empty file, write version first
-                    f.write(str(storageversion) + '\0')
+                    f.write(("%d" % storageversion) + '\0')
                 f.seek(0, os.SEEK_END)
-                f.write(str(entry) + '\0')
+                f.write(bytes(entry) + '\0')
 
     def filtered(self, namespace=None, name=None):
         """Yield all journal entries with the given namespace or name
@@ -373,9 +380,9 @@ class journalstorage(object):
 
         """
         if namespace is not None:
-            namespace = util.stringmatcher(namespace)[-1]
+            namespace = stringutil.stringmatcher(namespace)[-1]
         if name is not None:
-            name = util.stringmatcher(name)[-1]
+            name = stringutil.stringmatcher(name)[-1]
         for entry in self:
             if namespace is not None and not namespace(entry.namespace):
                 continue
@@ -410,7 +417,7 @@ class journalstorage(object):
 
         lines = raw.split('\0')
         version = lines and lines[0]
-        if version != str(storageversion):
+        if version != "%d" % storageversion:
             version = version or _('not available')
             raise error.Abort(_("unknown journal file version '%s'") % version)
 
@@ -478,7 +485,7 @@ def journal(ui, repo, *args, **opts):
             displayname = "'%s'" % name
         ui.status(_("previous locations of %s:\n") % displayname)
 
-    limit = cmdutil.loglimit(opts)
+    limit = logcmdutil.getlimit(opts)
     entry = None
     ui.pager('journal')
     for count, entry in enumerate(repo.journal.filtered(name=name)):
@@ -502,13 +509,13 @@ def journal(ui, repo, *args, **opts):
         fm.write('command', '  %s\n', entry.command)
 
         if opts.get("commits"):
-            displayer = cmdutil.show_changeset(ui, repo, opts, buffered=False)
+            displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
             for hash in entry.newhashes:
                 try:
                     ctx = repo[hash]
                     displayer.show(ctx)
                 except error.RepoLookupError as e:
-                    fm.write('repolookuperror', "%s\n\n", str(e))
+                    fm.write('repolookuperror', "%s\n\n", pycompat.bytestr(e))
             displayer.close()
 
     fm.end()

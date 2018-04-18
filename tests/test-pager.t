@@ -322,6 +322,37 @@ A command with --output option:
   $ hg cat -r0 a --output=-
   paged! 'a\n'
   $ hg cat -r0 a --output=out
+
+  $ hg export -r0
+  paged! '# HG changeset patch\n'
+  paged! '# User test\n'
+  paged! '# Date 0 0\n'
+  paged! '#      Thu Jan 01 00:00:00 1970 +0000\n'
+  paged! '# Node ID 1f0dee641bb7258c56bd60e93edfa2405381c41e\n'
+  paged! '# Parent  0000000000000000000000000000000000000000\n'
+  paged! 'add a\n'
+  paged! '\n'
+  paged! '\x1b[0;1mdiff -r 000000000000 -r 1f0dee641bb7 a\x1b[0m\n'
+  paged! '\x1b[0;31;1m--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\x1b[0m\n'
+  paged! '\x1b[0;32;1m+++ b/a\tThu Jan 01 00:00:00 1970 +0000\x1b[0m\n'
+  paged! '\x1b[0;35m@@ -0,0 +1,1 @@\x1b[0m\n'
+  paged! '\x1b[0;32m+a\x1b[0m\n'
+  $ hg export -r0 -o -
+  paged! '# HG changeset patch\n'
+  paged! '# User test\n'
+  paged! '# Date 0 0\n'
+  paged! '#      Thu Jan 01 00:00:00 1970 +0000\n'
+  paged! '# Node ID 1f0dee641bb7258c56bd60e93edfa2405381c41e\n'
+  paged! '# Parent  0000000000000000000000000000000000000000\n'
+  paged! 'add a\n'
+  paged! '\n'
+  paged! '\x1b[0;1mdiff -r 000000000000 -r 1f0dee641bb7 a\x1b[0m\n'
+  paged! '\x1b[0;31;1m--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\x1b[0m\n'
+  paged! '\x1b[0;32;1m+++ b/a\tThu Jan 01 00:00:00 1970 +0000\x1b[0m\n'
+  paged! '\x1b[0;35m@@ -0,0 +1,1 @@\x1b[0m\n'
+  paged! '\x1b[0;32m+a\x1b[0m\n'
+  $ hg export -r0 -o out
+
   $ rm out
 
 Put annotate in the ignore list for pager:

@@ -16,7 +16,7 @@
   >        return baseset()
   >     return baseset([3,3,2,2])
   > 
-  > mercurial.revset.symbols['r3232'] = r3232
+  > mercurial.revset.symbols[b'r3232'] = r3232
   > EOF
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -47,25 +47,25 @@ these predicates use '\0' as a separator:
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'debugrevlistspec',
-  >     [('', 'optimize', None, 'print parsed tree after optimizing'),
-  >      ('', 'bin', None, 'unhexlify arguments')])
+  >     [(b'', b'optimize', None, b'print parsed tree after optimizing'),
+  >      (b'', b'bin', None, b'unhexlify arguments')])
   > def debugrevlistspec(ui, repo, fmt, *args, **opts):
   >     if opts['bin']:
   >         args = map(nodemod.bin, args)
   >     expr = revsetlang.formatspec(fmt, list(args))
   >     if ui.verbose:
-  >         tree = revsetlang.parse(expr, lookup=repo.__contains__)
-  >         ui.note(revsetlang.prettyformat(tree), "\n")
+  >         tree = revsetlang.parse(expr, lookup=revset.lookupfn(repo))
+  >         ui.note(revsetlang.prettyformat(tree), b"\n")
   >         if opts["optimize"]:
   >             opttree = revsetlang.optimize(revsetlang.analyze(tree))
-  >             ui.note("* optimized:\n", revsetlang.prettyformat(opttree),
-  >                     "\n")
-  >     func = revset.match(ui, expr, repo)
+  >             ui.note(b"* optimized:\n", revsetlang.prettyformat(opttree),
+  >                     b"\n")
+  >     func = revset.match(ui, expr, lookup=revset.lookupfn(repo))
   >     revs = func(repo)
   >     if ui.verbose:
-  >         ui.note("* set:\n", smartset.prettyformat(revs), "\n")
+  >         ui.note(b"* set:\n", smartset.prettyformat(revs), b"\n")
   >     for c in revs:
-  >         ui.write("%s\n" % c)
+  >         ui.write(b"%d\n" % c)
   > EOF
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
@@ -399,6 +399,8 @@ quoting needed
   4
   $ log 'date(this is a test)'
   hg: parse error at 10: unexpected token: symbol
+  (date(this is a test)
+             ^ here)
   [255]
   $ log 'date()'
   hg: parse error: date requires a string
@@ -408,9 +410,11 @@ quoting needed
   [255]
   $ log 'date('
   hg: parse error at 5: not a prefix: end
+  (date(
+        ^ here)
   [255]
   $ log 'date("\xy")'
-  hg: parse error: invalid \x escape
+  hg: parse error: invalid \x escape* (glob)
   [255]
   $ log 'date(tip)'
   hg: parse error: invalid date: 'tip'
@@ -614,18 +618,28 @@ parse errors of relation, subscript and relation-subscript operators:
 
   $ hg debugrevspec '[0]'
   hg: parse error at 0: not a prefix: [
+  ([0]
+   ^ here)
   [255]
   $ hg debugrevspec '.#'
   hg: parse error at 2: not a prefix: end
+  (.#
+     ^ here)
   [255]
   $ hg debugrevspec '#rel'
   hg: parse error at 0: not a prefix: #
+  (#rel
+   ^ here)
   [255]
   $ hg debugrevspec '.#rel[0'
   hg: parse error at 7: unexpected token: end
+  (.#rel[0
+          ^ here)
   [255]
   $ hg debugrevspec '.]'
   hg: parse error at 1: invalid token
+  (.]
+    ^ here)
   [255]
 
   $ hg debugrevspec '.#generations[a]'
@@ -1309,7 +1323,7 @@ test author
   (func
     (symbol 'grep')
     (string '('))
-  hg: parse error: invalid match pattern: unbalanced parenthesis
+  hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \),.*) (re)
   [255]
   $ try 'grep("\bissue\d+")'
   (func
@@ -1330,6 +1344,8 @@ test author
   6
   $ try 'grep(r"\")'
   hg: parse error at 7: unterminated string
+  (grep(r"\")
+          ^ here)
   [255]
   $ log 'head()'
   0
@@ -2774,3 +2790,54 @@ topo.firstbranch should accept any kind of expressions:
 
   $ cd ..
   $ cd repo
+
+test multiline revset with errors
+
+  $ echo > multiline-revset
+  $ echo '. +' >> multiline-revset
+  $ echo '.^ +' >> multiline-revset
+  $ hg log -r "`cat multiline-revset`"
+  hg: parse error at 9: not a prefix: end
+  ( . + .^ +
+            ^ here)
+  [255]
+  $ hg debugrevspec -v 'revset(first(rev(0)))' -p all
+  * parsed:
+  (func
+    (symbol 'revset')
+    (func
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
+  * expanded:
+  (func
+    (symbol 'revset')
+    (func
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
+  * concatenated:
+  (func
+    (symbol 'revset')
+    (func
+      (symbol 'first')
+      (func
+        (symbol 'rev')
+        (symbol '0'))))
+  * analyzed:
+  (func
+    (symbol 'first')
+    (func
+      (symbol 'rev')
+      (symbol '0')))
+  * optimized:
+  (func
+    (symbol 'first')
+    (func
+      (symbol 'rev')
+      (symbol '0')))
+  * set:
+  <baseset+ [0]>
+  0

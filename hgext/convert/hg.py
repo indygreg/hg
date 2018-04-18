@@ -36,13 +36,14 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import dateutil
 stringio = util.stringio
 
 from . import common
 mapfile = common.mapfile
 NoRepo = common.NoRepo
 
-sha1re = re.compile(r'\b[0-9a-f]{12,40}\b')
+sha1re = re.compile(br'\b[0-9a-f]{12,40}\b')
 
 class mercurial_sink(common.converter_sink):
     def __init__(self, ui, repotype, path):
@@ -362,12 +363,8 @@ class mercurial_sink(common.converter_sink):
         return p2
 
     def puttags(self, tags):
-        try:
-            parentctx = self.repo[self.tagsbranch]
-            tagparent = parentctx.node()
-        except error.RepoError:
-            parentctx = None
-            tagparent = nodemod.nullid
+        tagparent = self.repo.branchtip(self.tagsbranch, ignoremissing=True)
+        tagparent = tagparent or nodemod.nullid
 
         oldlines = set()
         for branch, heads in self.repo.branchmap().iteritems():
@@ -404,7 +401,7 @@ class mercurial_sink(common.converter_sink):
             return context.memfilectx(repo, memctx, f, data, False, False, None)
 
         self.ui.status(_("updating tags\n"))
-        date = "%s 0" % int(time.mktime(time.gmtime()))
+        date = "%d 0" % int(time.mktime(time.gmtime()))
         extra = {'branch': self.tagsbranch}
         ctx = context.memctx(self.repo, (tagparent, None), "update tags",
                              [".hgtags"], getfilectx, "convert-repo", date,
@@ -480,7 +477,7 @@ class mercurial_source(common.converter_source):
             else:
                 self.keep = util.always
             if revs:
-                self._heads = [self.repo[r].node() for r in revs]
+                self._heads = [self.repo.lookup(r) for r in revs]
             else:
                 self._heads = self.repo.heads()
         else:
@@ -563,12 +560,7 @@ class mercurial_source(common.converter_source):
                 if copysource in self.ignored:
                     continue
                 # Ignore copy sources not in parent revisions
-                found = False
-                for p in parents:
-                    if copysource in p:
-                        found = True
-                        break
-                if not found:
+                if not any(copysource in p for p in parents):
                     continue
                 copies[name] = copysource
             except TypeError:
@@ -588,7 +580,7 @@ class mercurial_source(common.converter_source):
         crev = rev
 
         return common.commit(author=ctx.user(),
-                             date=util.datestr(ctx.date(),
+                             date=dateutil.datestr(ctx.date(),
                                                '%Y-%m-%d %H:%M:%S %1%2'),
                              desc=ctx.description(),
                              rev=crev,
@@ -625,8 +617,8 @@ class mercurial_source(common.converter_source):
 
     def converted(self, rev, destrev):
         if self.convertfp is None:
-            self.convertfp = open(self.repo.vfs.join('shamap'), 'a')
-        self.convertfp.write('%s %s\n' % (destrev, rev))
+            self.convertfp = open(self.repo.vfs.join('shamap'), 'ab')
+        self.convertfp.write(util.tonativeeol('%s %s\n' % (destrev, rev)))
         self.convertfp.flush()
 
     def before(self):

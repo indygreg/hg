@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 # Initial setup
 
   $ cat >> $HGRCPATH << EOF
@@ -154,9 +156,31 @@ enabled adds the lfs requirement
   $ hg add . -q
   $ hg commit -m 'commit with lfs content'
 
+  $ hg files -r . 'set:added()'
+  large
+  small
+  $ hg files -r . 'set:added() & lfs()'
+  large
+
   $ hg mv large l
   $ hg mv small s
+  $ hg status 'set:removed()'
+  R large
+  R small
+  $ hg status 'set:removed() & lfs()'
+  R large
   $ hg commit -m 'renames'
+
+  $ hg files -r . 'set:copied()'
+  l
+  s
+  $ hg files -r . 'set:copied() & lfs()'
+  l
+  $ hg status --change . 'set:removed()'
+  R large
+  R small
+  $ hg status --change . 'set:removed() & lfs()'
+  R large
 
   $ echo SHORT > l
   $ echo BECOME-LARGER-FROM-SHORTER > s
@@ -174,7 +198,7 @@ enabled adds the lfs requirement
 
   $ hg log -r 'all()' -T '{rev} {join(lfs_files, ", ")}\n'
   0 large
-  1 l
+  1 l, large
   2 s
   3 s
   4 l
@@ -594,8 +618,8 @@ enabled adds the lfs requirement
   $ cat > $TESTTMP/dumpflog.py << EOF
   > # print raw revision sizes, flags, and hashes for certain files
   > import hashlib
-  > from mercurial import revlog
   > from mercurial.node import short
+  > from mercurial import revlog
   > def hash(rawtext):
   >     h = hashlib.sha512()
   >     h.update(rawtext)
@@ -606,7 +630,7 @@ enabled adds the lfs requirement
   >         fl = repo.file(name)
   >         if len(fl) == 0:
   >             continue
-  >         sizes = [revlog.revlog.rawsize(fl, i) for i in fl]
+  >         sizes = [fl.rawsize(i) for i in fl]
   >         texts = [fl.revision(i, raw=True) for i in fl]
   >         flags = [int(fl.flags(i)) for i in fl]
   >         hashes = [hash(t) for t in texts]
@@ -760,7 +784,6 @@ Damaging a file required by the update destination fails the update.
   $ hg --config lfs.usercache=emptycache clone -v repo5 fromcorrupt2
   updating to branch default
   resolving manifests
-  getting l
   abort: corrupt remote lfs object: 22f66a3fc0b9bf3f012c814303995ec07099b3a9ce02a7af84b5970811074a3b
   [255]
 
@@ -1007,13 +1030,35 @@ The .hglfs file works when tracked
   
 The LFS policy stops when the .hglfs is gone
 
-  $ hg rm .hglfs
+  $ mv .hglfs .hglfs_
   $ echo 'largefile3' > lfs.test
   $ echo '012345678901234567890abc' > nolfs.exclude
   $ echo '01234567890123456abc' > lfs.catchall
   $ hg ci -qm 'file test' -X .hglfs
   $ hg log -r . -T '{rev}: {lfs_files % "{file}: {lfsoid}\n"}\n'
   4: 
+
+  $ mv .hglfs_ .hglfs
+  $ echo '012345678901234567890abc' > lfs.test
+  $ hg ci -m 'back to lfs'
+  $ hg rm lfs.test
+  $ hg ci -qm 'remove lfs'
+
+{lfs_files} will list deleted files too
+
+  $ hg log -T "{lfs_files % '{rev} {file}: {lfspointer.oid}\n'}"
+  6 lfs.test: 
+  5 lfs.test: sha256:43f8f41171b6f62a6b61ba4ce98a8a6c1649240a47ebafd43120aa215ac9e7f6
+  3 lfs.catchall: sha256:31f43b9c62b540126b0ad5884dc013d21a61c9329b77de1fceeae2fc58511573
+  3 lfs.test: sha256:8acd23467967bc7b8cc5a280056589b0ba0b17ff21dbd88a7b6474d6290378a6
+  2 lfs.catchall: sha256:d4ec46c2869ba22eceb42a729377432052d9dd75d82fc40390ebaadecee87ee9
+  2 lfs.test: sha256:5489e6ced8c36a7b267292bde9fd5242a5f80a7482e8f23fa0477393dfaa4d6c
+
+  $ hg log -r 'file("set:lfs()")' -T '{rev} {join(lfs_files, ", ")}\n'
+  2 lfs.catchall, lfs.test
+  3 lfs.catchall, lfs.test
+  5 lfs.test
+  6 lfs.test
 
   $ cd ..
 

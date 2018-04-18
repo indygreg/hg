@@ -31,6 +31,7 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     error,
+    pycompat,
     registrar,
     scmutil,
     util,
@@ -84,6 +85,7 @@ def purge(ui, repo, *dirs, **opts):
     list of files that this program would delete, use the --print
     option.
     '''
+    opts = pycompat.byteskwargs(opts)
     act = not opts.get('print')
     eol = '\n'
     if opts.get('print0'):

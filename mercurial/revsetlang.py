@@ -17,6 +17,9 @@ from . import (
     pycompat,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
@@ -86,6 +89,9 @@ def tokenize(program, lookup=None, syminitletters=None, symletters=None):
     [('symbol', '@', 0), ('::', None, 1), ('end', None, 3)]
 
     '''
+    if not isinstance(program, bytes):
+        raise error.ProgrammingError('revset statement must be bytes, got %r'
+                                     % program)
     program = pycompat.bytestr(program)
     if syminitletters is None:
         syminitletters = _syminitletters
@@ -207,7 +213,7 @@ def getinteger(x, err, default=_notset):
         raise error.ParseError(err)
 
 def getboolean(x, err):
-    value = util.parsebool(getsymbol(x))
+    value = stringutil.parsebool(getsymbol(x))
     if value is not None:
         return value
     raise error.ParseError(err)
@@ -349,6 +355,9 @@ def _analyze(x):
     elif op == 'keyvalue':
         return (op, x[1], _analyze(x[2]))
     elif op == 'func':
+        f = getsymbol(x[1])
+        if f == 'revset':
+            return _analyze(x[2])
         return (op, x[1], _analyze(x[2]))
     raise ValueError('invalid operator %r' % op)
 
@@ -479,6 +488,8 @@ def _parsewith(spec, lookup=None, syminitletters=None):
       ...
     ParseError: ('invalid token', 4)
     """
+    if lookup and spec.startswith('revset(') and spec.endswith(')'):
+        lookup = None
     p = parser.parser(elements)
     tree, pos = p.parse(tokenize(spec, lookup=lookup,
                                  syminitletters=syminitletters))
@@ -539,7 +550,19 @@ def foldconcat(tree):
         return tuple(foldconcat(t) for t in tree)
 
 def parse(spec, lookup=None):
-    return _parsewith(spec, lookup=lookup)
+    try:
+        return _parsewith(spec, lookup=lookup)
+    except error.ParseError as inst:
+        if len(inst.args) > 1:  # has location
+            loc = inst.args[1]
+            # Remove newlines -- spaces are equivalent whitespace.
+            spec = spec.replace('\n', ' ')
+            # We want the caret to point to the place in the template that
+            # failed to parse, but in a hint we get a open paren at the
+            # start. Therefore, we print "loc + 1" spaces (instead of "loc")
+            # to line up the caret with the location of the error.
+            inst.hint = spec + '\n' + ' ' * (loc + 1) + '^ ' + _('here')
+        raise
 
 def _quote(s):
     r"""Quote a value in order to make it safe for the revset engine.
@@ -553,7 +576,7 @@ def _quote(s):
     >>> _quote(1)
     "'1'"
     """
-    return "'%s'" % util.escapestr(pycompat.bytestr(s))
+    return "'%s'" % stringutil.escapestr(pycompat.bytestr(s))
 
 def _formatargtype(c, arg):
     if c == 'd':
@@ -561,6 +584,8 @@ def _formatargtype(c, arg):
     elif c == 's':
         return _quote(arg)
     elif c == 'r':
+        if not isinstance(arg, bytes):
+            raise TypeError
         parse(arg) # make sure syntax errors are confined
         return '(%s)' % arg
     elif c == 'n':
@@ -635,7 +660,7 @@ def formatspec(expr, *args):
     "root(_list('a\\\\x00b\\\\x00c\\\\x00d'))"
     >>> formatspec(b'sort(%r, %ps)', b':', [b'desc', b'user'])
     "sort((:), 'desc', 'user')"
-    >>> formatspec('%ls', ['a', "'"])
+    >>> formatspec(b'%ls', [b'a', b"'"])
     "_list('a\\\\x00\\\\'')"
     '''
     expr = pycompat.bytestr(expr)
@@ -717,13 +742,13 @@ def _ishashlikesymbol(symbol):
 def gethashlikesymbols(tree):
     """returns the list of symbols of the tree that look like hashes
 
-    >>> gethashlikesymbols(('dagrange', ('symbol', '3'), ('symbol', 'abe3ff')))
+    >>> gethashlikesymbols(parse(b'3::abe3ff'))
     ['3', 'abe3ff']
-    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '.')))
+    >>> gethashlikesymbols(parse(b'precursors(.)'))
     []
-    >>> gethashlikesymbols(('func', ('symbol', 'precursors'), ('symbol', '34')))
+    >>> gethashlikesymbols(parse(b'precursors(34)'))
     ['34']
-    >>> gethashlikesymbols(('symbol', 'abe3ffZ'))
+    >>> gethashlikesymbols(parse(b'abe3ffZ'))
     []
     """
     if not tree:

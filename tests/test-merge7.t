@@ -109,12 +109,12 @@ pull and merge from test-a again
   three
 
   $ hg debugindex test.txt
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0       7  .....       0 01365c4cca56 000000000000 000000000000 (re)
-       1         7       9  .....       1 7b013192566a 01365c4cca56 000000000000 (re)
-       2        16      15  .....       2 8fe46a3eb557 01365c4cca56 000000000000 (re)
-       3        31      2.  .....       3 fc3148072371 7b013192566a 8fe46a3eb557 (re)
-       4        5.      25  .....       4 d40249267ae3 8fe46a3eb557 000000000000 (re)
+     rev linkrev nodeid       p1           p2
+       0       0 01365c4cca56 000000000000 000000000000
+       1       1 7b013192566a 01365c4cca56 000000000000
+       2       2 8fe46a3eb557 01365c4cca56 000000000000
+       3       3 fc3148072371 7b013192566a 8fe46a3eb557
+       4       4 d40249267ae3 8fe46a3eb557 000000000000
 
   $ hg log
   changeset:   4:40d11a4173a8

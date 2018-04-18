@@ -27,7 +27,7 @@ class Stats(object):
     def __init__(self, data):
         self.data = data
 
-    def sort(self, crit="inlinetime"):
+    def sort(self, crit=r"inlinetime"):
         """XXX docstring"""
         # profiler_entries isn't defined when running under PyPy.
         if profiler_entry:

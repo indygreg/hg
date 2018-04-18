@@ -1,3 +1,5 @@
+#require no-reposimplestore
+
 This tests the interaction between the largefiles and lfs extensions, and
 conversion from largefiles -> lfs.
 
@@ -298,7 +300,7 @@ locally.
   $TESTTMP/nolargefiles/.hg/hgrc:*: extensions.lfs= (glob)
 
   $ hg log -r 'all()' -G -T '{rev} {join(lfs_files, ", ")} ({desc})\n'
-  o  8  (remove large_by_size.bin)
+  o  8 large_by_size.bin (remove large_by_size.bin)
   |
   o  7 large_by_size.bin (large by size)
   |
@@ -338,7 +340,10 @@ locally.
 No diffs when comparing merge and p1 that kept p1's changes.  Diff of lfs to
 largefiles no longer operates in standin files.
 
-  $ hg diff -r 2:3
+This `head -n 20` looks dumb (since we expect no output), but if something
+breaks you can get 1048576 lines of +y in the output, which takes a looooooong
+time to print.
+  $ hg diff -r 2:3 | head -n 20
   $ hg diff -r 2:6
   diff -r e989d0fa3764 -r 752e3a0d8488 large.bin
   --- a/large.bin	Thu Jan 01 00:00:00 1970 +0000

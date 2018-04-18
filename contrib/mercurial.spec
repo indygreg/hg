@@ -6,8 +6,8 @@
 
 %global pythonver %{withpython}
 %global pythonname Python-%{withpython}
-%global docutilsname docutils-0.12
-%global docutilsmd5 4622263b62c5c771c03502afa3157768
+%global docutilsname docutils-0.14
+%global docutilsmd5 c53768d63db3873b7d452833553469de
 %global pythonhg python-hg
 %global hgpyprefix /opt/%{pythonhg}
 # byte compilation will fail on some some Python /test/ files

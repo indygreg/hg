@@ -49,6 +49,10 @@ from mercurial import (
     ui as uimod,
     util,
 )
+from mercurial.utils import (
+    dateutil,
+    procutil,
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -164,9 +168,9 @@ def wrapui(ui):
                 return
             ui._bbinlog = True
             default = self.configdate('devel', 'default-date')
-            date = util.datestr(default, '%Y/%m/%d %H:%M:%S')
-            user = util.getuser()
-            pid = '%d' % util.getpid()
+            date = dateutil.datestr(default, '%Y/%m/%d %H:%M:%S')
+            user = procutil.getuser()
+            pid = '%d' % procutil.getpid()
             formattedmsg = msg[0] % msg[1:]
             rev = '(unknown)'
             changed = ''

@@ -1,30 +1,34 @@
 
   $ cat > engine.py << EOF
   > 
-  > from mercurial import templater
+  > from mercurial import (
+  >     pycompat,
+  >     templater,
+  >     templateutil,
+  > )
   > 
-  > class mytemplater(object):
-  >     def __init__(self, loader, filters, defaults, resources, aliases):
-  >         self.loader = loader
-  >         self._defaults = defaults
-  >         self._resources = resources
+  > class mytemplater(templater.engine):
+  >     def _load(self, t):
+  >         return self._loader(t)
   > 
   >     def process(self, t, map):
-  >         tmpl = self.loader(t)
+  >         tmpl = self._load(t)
   >         props = self._defaults.copy()
   >         props.update(map)
-  >         for k, v in props.iteritems():
-  >             if k in ('templ', 'ctx', 'repo', 'revcache', 'cache', 'troubles'):
+  >         for k, v in props.items():
+  >             if b'{{%s}}' % k not in tmpl:
   >                 continue
-  >             if hasattr(v, '__call__'):
+  >             if callable(v) and getattr(v, '_requires', None) is None:
   >                 props = self._resources.copy()
   >                 props.update(map)
-  >                 v = v(**props)
-  >             v = templater.stringify(v)
-  >             tmpl = tmpl.replace('{{%s}}' % k, v)
+  >                 v = v(**pycompat.strkwargs(props))
+  >             elif callable(v):
+  >                 v = v(self, props)
+  >             v = templateutil.stringify(self, props, v)
+  >             tmpl = tmpl.replace(b'{{%s}}' % k, v)
   >         yield tmpl
   > 
-  > templater.engines['my'] = mytemplater
+  > templater.engines[b'my'] = mytemplater
   > EOF
   $ hg init test
   $ echo '[extensions]' > test/.hg/hgrc

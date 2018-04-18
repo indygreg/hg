@@ -5,11 +5,17 @@ import unittest
 
 from mercurial import (
     mdiff,
+    pycompat,
 )
-from mercurial.context import (
+from mercurial.dagop import (
     annotateline,
+    _annotatedfile,
     _annotatepair,
 )
+
+def tr(a):
+    return [annotateline(fctx, lineno, skip)
+            for fctx, lineno, skip in zip(a.fctxs, a.linenos, a.skips)]
 
 class AnnotateTests(unittest.TestCase):
     """Unit tests for annotate code."""
@@ -25,28 +31,28 @@ class AnnotateTests(unittest.TestCase):
         childdata = b'a\nb2\nc\nc2\nd\n'
         diffopts = mdiff.diffopts()
 
-        def decorate(text, rev):
-            return ([annotateline(fctx=rev, lineno=i)
-                     for i in xrange(1, text.count(b'\n') + 1)],
-                    text)
+        def decorate(text, fctx):
+            n = text.count(b'\n')
+            linenos = pycompat.rangelist(1, n + 1)
+            return _annotatedfile([fctx] * n, linenos, [False] * n, text)
 
         # Basic usage
 
         oldann = decorate(olddata, oldfctx)
         p1ann = decorate(p1data, p1fctx)
         p1ann = _annotatepair([oldann], p1fctx, p1ann, False, diffopts)
-        self.assertEqual(p1ann[0], [
-            annotateline('old', 1),
-            annotateline('old', 2),
-            annotateline('p1', 3),
+        self.assertEqual(tr(p1ann), [
+            annotateline(b'old', 1),
+            annotateline(b'old', 2),
+            annotateline(b'p1', 3),
         ])
 
         p2ann = decorate(p2data, p2fctx)
         p2ann = _annotatepair([oldann], p2fctx, p2ann, False, diffopts)
-        self.assertEqual(p2ann[0], [
-            annotateline('old', 1),
-            annotateline('p2', 2),
-            annotateline('p2', 3),
+        self.assertEqual(tr(p2ann), [
+            annotateline(b'old', 1),
+            annotateline(b'p2', 2),
+            annotateline(b'p2', 3),
         ])
 
         # Test with multiple parents (note the difference caused by ordering)
@@ -54,23 +60,23 @@ class AnnotateTests(unittest.TestCase):
         childann = decorate(childdata, childfctx)
         childann = _annotatepair([p1ann, p2ann], childfctx, childann, False,
                                  diffopts)
-        self.assertEqual(childann[0], [
-            annotateline('old', 1),
-            annotateline('c', 2),
-            annotateline('p2', 2),
-            annotateline('c', 4),
-            annotateline('p2', 3),
+        self.assertEqual(tr(childann), [
+            annotateline(b'old', 1),
+            annotateline(b'c', 2),
+            annotateline(b'p2', 2),
+            annotateline(b'c', 4),
+            annotateline(b'p2', 3),
         ])
 
         childann = decorate(childdata, childfctx)
         childann = _annotatepair([p2ann, p1ann], childfctx, childann, False,
                                  diffopts)
-        self.assertEqual(childann[0], [
-            annotateline('old', 1),
-            annotateline('c', 2),
-            annotateline('p1', 3),
-            annotateline('c', 4),
-            annotateline('p2', 3),
+        self.assertEqual(tr(childann), [
+            annotateline(b'old', 1),
+            annotateline(b'c', 2),
+            annotateline(b'p1', 3),
+            annotateline(b'c', 4),
+            annotateline(b'p2', 3),
         ])
 
         # Test with skipchild (note the difference caused by ordering)
@@ -78,25 +84,25 @@ class AnnotateTests(unittest.TestCase):
         childann = decorate(childdata, childfctx)
         childann = _annotatepair([p1ann, p2ann], childfctx, childann, True,
                                  diffopts)
-        self.assertEqual(childann[0], [
-            annotateline('old', 1),
-            annotateline('old', 2, True),
+        self.assertEqual(tr(childann), [
+            annotateline(b'old', 1),
+            annotateline(b'old', 2, True),
             # note that this line was carried over from earlier so it is *not*
             # marked skipped
-            annotateline('p2', 2),
-            annotateline('p2', 2, True),
-            annotateline('p2', 3),
+            annotateline(b'p2', 2),
+            annotateline(b'p2', 2, True),
+            annotateline(b'p2', 3),
         ])
 
         childann = decorate(childdata, childfctx)
         childann = _annotatepair([p2ann, p1ann], childfctx, childann, True,
                                  diffopts)
-        self.assertEqual(childann[0], [
-            annotateline('old', 1),
-            annotateline('old', 2, True),
-            annotateline('p1', 3),
-            annotateline('p1', 3, True),
-            annotateline('p2', 3),
+        self.assertEqual(tr(childann), [
+            annotateline(b'old', 1),
+            annotateline(b'old', 2, True),
+            annotateline(b'p1', 3),
+            annotateline(b'p1', 3, True),
+            annotateline(b'p2', 3),
         ])
 
 if __name__ == '__main__':

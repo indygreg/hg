@@ -760,7 +760,7 @@ test with a win32ext like setup (differing EOLs)
   $ cd twin2
   $ echo '[patch]' >> .hg/hgrc
   $ echo 'eol = crlf' >> .hg/hgrc
-  $ $PYTHON -c "file('b', 'wb').write('b\r\nb\r\n')"
+  $ $PYTHON -c "open('b', 'wb').write(b'b\r\nb\r\n')"
   $ hg ci -Am addb
   adding b
   $ hg transplant -s ../twin1 tip
@@ -838,9 +838,9 @@ test transplanting a patch turning into a no-op
   $ cd binarysource
   $ echo a > a
   $ hg ci -Am adda a
-  >>> file('b', 'wb').write('\0b1')
+  >>> open('b', 'wb').write(b'\0b1')
   $ hg ci -Am addb b
-  >>> file('b', 'wb').write('\0b2')
+  >>> open('b', 'wb').write(b'\0b2')
   $ hg ci -m changeb b
   $ cd ..
 
@@ -891,14 +891,14 @@ timestamp of them isn't changed on the filesystem (see also issue4583)
   > # emulate that patch.patch() is aborted at patching on "abort" file
   > from mercurial import error, extensions, patch as patchmod
   > def patch(orig, ui, repo, patchname,
-  >           strip=1, prefix='', files=None,
-  >           eolmode='strict', similarity=0):
+  >           strip=1, prefix=b'', files=None,
+  >           eolmode=b'strict', similarity=0):
   >     if files is None:
   >         files = set()
   >     r = orig(ui, repo, patchname,
   >         strip=strip, prefix=prefix, files=files,
   >         eolmode=eolmode, similarity=similarity)
-  >     if 'abort' in files:
+  >     if b'abort' in files:
   >         raise error.PatchError('intentional error while patching')
   >     return r
   > def extsetup(ui):

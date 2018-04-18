@@ -11,16 +11,20 @@ import os
 import re
 import time
 
+from .i18n import _
 from . import (
     encoding,
     error,
-    hbisect,
     node,
     pycompat,
     registrar,
-    templatekw,
+    templateutil,
     url,
     util,
+)
+from .utils import (
+    dateutil,
+    stringutil,
 )
 
 urlerr = util.urlerr
@@ -37,7 +41,7 @@ filters = {}
 
 templatefilter = registrar.templatefilter(filters)
 
-@templatefilter('addbreaks')
+@templatefilter('addbreaks', intype=bytes)
 def addbreaks(text):
     """Any text. Add an XHTML "<br />" tag before the end of
     every line except the last.
@@ -52,7 +56,7 @@ agescales = [("year", 3600 * 24 * 365, 'Y'),
              ("minute", 60, 'm'),
              ("second", 1, 's')]
 
-@templatefilter('age')
+@templatefilter('age', intype=templateutil.date)
 def age(date, abbrev=False):
     """Date. Returns a human-readable date/time difference between the
     given date/time and the current date/time.
@@ -78,7 +82,7 @@ def age(date, abbrev=False):
     else:
         delta = max(1, int(now - then))
         if delta > agescales[0][1] * 2:
-            return util.shortdate(date)
+            return dateutil.shortdate(date)
 
     for t, s, a in agescales:
         n = delta // s
@@ -87,7 +91,7 @@ def age(date, abbrev=False):
                 return '%s from now' % fmt(t, n, a)
             return '%s ago' % fmt(t, n, a)
 
-@templatefilter('basename')
+@templatefilter('basename', intype=bytes)
 def basename(path):
     """Any text. Treats the text as a path, and returns the last
     component of the path after splitting by the path separator.
@@ -98,9 +102,19 @@ def basename(path):
 @templatefilter('count')
 def count(i):
     """List or text. Returns the length as an integer."""
-    return len(i)
+    try:
+        return len(i)
+    except TypeError:
+        raise error.ParseError(_('not countable'))
 
-@templatefilter('domain')
+@templatefilter('dirname', intype=bytes)
+def dirname(path):
+    """Any text. Treats the text as a path, and strips the last
+    component of the path after splitting by the path separator.
+    """
+    return os.path.dirname(path)
+
+@templatefilter('domain', intype=bytes)
 def domain(author):
     """Any text. Finds the first string that looks like an email
     address, and extracts just the domain component. Example: ``User
@@ -115,15 +129,15 @@ def domain(author):
         author = author[:f]
     return author
 
-@templatefilter('email')
+@templatefilter('email', intype=bytes)
 def email(text):
     """Any text. Extracts the first string that looks like an email
     address. Example: ``User <user@example.com>`` becomes
     ``user@example.com``.
     """
-    return util.email(text)
+    return stringutil.email(text)
 
-@templatefilter('escape')
+@templatefilter('escape', intype=bytes)
 def escape(text):
     """Any text. Replaces the special XML/XHTML characters "&", "<"
     and ">" with XML entities, and filters out NUL characters.
@@ -138,38 +152,39 @@ def fill(text, width, initindent='', hangindent=''):
     global para_re, space_re
     if para_re is None:
         para_re = re.compile('(\n\n|\n\\s*[-*]\\s*)', re.M)
-        space_re = re.compile(r'  +')
+        space_re = re.compile(br'  +')
 
     def findparas():
         start = 0
         while True:
             m = para_re.search(text, start)
             if not m:
-                uctext = unicode(text[start:], encoding.encoding)
+                uctext = encoding.unifromlocal(text[start:])
                 w = len(uctext)
                 while 0 < w and uctext[w - 1].isspace():
                     w -= 1
-                yield (uctext[:w].encode(encoding.encoding),
-                       uctext[w:].encode(encoding.encoding))
+                yield (encoding.unitolocal(uctext[:w]),
+                       encoding.unitolocal(uctext[w:]))
                 break
             yield text[start:m.start(0)], m.group(1)
             start = m.end(1)
 
-    return "".join([util.wrap(space_re.sub(' ', util.wrap(para, width)),
-                              width, initindent, hangindent) + rest
+    return "".join([stringutil.wrap(space_re.sub(' ',
+                                                 stringutil.wrap(para, width)),
+                                    width, initindent, hangindent) + rest
                     for para, rest in findparas()])
 
-@templatefilter('fill68')
+@templatefilter('fill68', intype=bytes)
 def fill68(text):
     """Any text. Wraps the text to fit in 68 columns."""
     return fill(text, 68)
 
-@templatefilter('fill76')
+@templatefilter('fill76', intype=bytes)
 def fill76(text):
     """Any text. Wraps the text to fit in 76 columns."""
     return fill(text, 76)
 
-@templatefilter('firstline')
+@templatefilter('firstline', intype=bytes)
 def firstline(text):
     """Any text. Returns the first line of text."""
     try:
@@ -177,34 +192,34 @@ def firstline(text):
     except IndexError:
         return ''
 
-@templatefilter('hex')
+@templatefilter('hex', intype=bytes)
 def hexfilter(text):
     """Any text. Convert a binary Mercurial node identifier into
     its long hexadecimal representation.
     """
     return node.hex(text)
 
-@templatefilter('hgdate')
+@templatefilter('hgdate', intype=templateutil.date)
 def hgdate(text):
     """Date. Returns the date as a pair of numbers: "1157407993
     25200" (Unix timestamp, timezone offset).
     """
     return "%d %d" % text
 
-@templatefilter('isodate')
+@templatefilter('isodate', intype=templateutil.date)
 def isodate(text):
     """Date. Returns the date in ISO 8601 format: "2009-08-18 13:00
     +0200".
     """
-    return util.datestr(text, '%Y-%m-%d %H:%M %1%2')
+    return dateutil.datestr(text, '%Y-%m-%d %H:%M %1%2')
 
-@templatefilter('isodatesec')
+@templatefilter('isodatesec', intype=templateutil.date)
 def isodatesec(text):
     """Date. Returns the date in ISO 8601 format, including
     seconds: "2009-08-18 13:00:13 +0200". See also the rfc3339date
     filter.
     """
-    return util.datestr(text, '%Y-%m-%d %H:%M:%S %1%2')
+    return dateutil.datestr(text, '%Y-%m-%d %H:%M:%S %1%2')
 
 def indent(text, prefix):
     '''indent each non-empty line of text after first with prefix.'''
@@ -248,28 +263,27 @@ def json(obj, paranoid=True):
     elif util.safehasattr(obj, '__iter__'):
         out = [json(i, paranoid) for i in obj]
         return '[' + ', '.join(out) + ']'
-    else:
-        raise TypeError('cannot encode type %s' % obj.__class__.__name__)
+    raise error.ProgrammingError('cannot encode %r' % obj)
 
-@templatefilter('lower')
+@templatefilter('lower', intype=bytes)
 def lower(text):
     """Any text. Converts the text to lowercase."""
     return encoding.lower(text)
 
-@templatefilter('nonempty')
-def nonempty(str):
+@templatefilter('nonempty', intype=bytes)
+def nonempty(text):
     """Any text. Returns '(none)' if the string is empty."""
-    return str or "(none)"
+    return text or "(none)"
 
-@templatefilter('obfuscate')
+@templatefilter('obfuscate', intype=bytes)
 def obfuscate(text):
     """Any text. Returns the input text rendered as a sequence of
     XML entities.
     """
-    text = unicode(text, encoding.encoding, 'replace')
+    text = unicode(text, pycompat.sysstr(encoding.encoding), r'replace')
     return ''.join(['&#%d;' % ord(c) for c in text])
 
-@templatefilter('permissions')
+@templatefilter('permissions', intype=bytes)
 def permissions(flags):
     if "l" in flags:
         return "lrwxrwxrwx"
@@ -277,35 +291,14 @@ def permissions(flags):
         return "-rwxr-xr-x"
     return "-rw-r--r--"
 
-@templatefilter('person')
+@templatefilter('person', intype=bytes)
 def person(author):
     """Any text. Returns the name before an email address,
     interpreting it as per RFC 5322.
-
-    >>> person(b'foo@bar')
-    'foo'
-    >>> person(b'Foo Bar <foo@bar>')
-    'Foo Bar'
-    >>> person(b'"Foo Bar" <foo@bar>')
-    'Foo Bar'
-    >>> person(b'"Foo \"buz\" Bar" <foo@bar>')
-    'Foo "buz" Bar'
-    >>> # The following are invalid, but do exist in real-life
-    ...
-    >>> person(b'Foo "buz" Bar <foo@bar>')
-    'Foo "buz" Bar'
-    >>> person(b'"Foo Bar <foo@bar>')
-    'Foo Bar'
     """
-    if '@' not in author:
-        return author
-    f = author.find('<')
-    if f != -1:
-        return author[:f].strip(' "').replace('\\"', '"')
-    f = author.find('@')
-    return author[:f].replace('.', ' ')
+    return stringutil.person(author)
 
-@templatefilter('revescape')
+@templatefilter('revescape', intype=bytes)
 def revescape(text):
     """Any text. Escapes all "special" characters, except @.
     Forward slashes are escaped twice to prevent web servers from prematurely
@@ -313,68 +306,65 @@ def revescape(text):
     """
     return urlreq.quote(text, safe='/@').replace('/', '%252F')
 
-@templatefilter('rfc3339date')
+@templatefilter('rfc3339date', intype=templateutil.date)
 def rfc3339date(text):
     """Date. Returns a date using the Internet date format
     specified in RFC 3339: "2009-08-18T13:00:13+02:00".
     """
-    return util.datestr(text, "%Y-%m-%dT%H:%M:%S%1:%2")
+    return dateutil.datestr(text, "%Y-%m-%dT%H:%M:%S%1:%2")
 
-@templatefilter('rfc822date')
+@templatefilter('rfc822date', intype=templateutil.date)
 def rfc822date(text):
     """Date. Returns a date using the same format used in email
     headers: "Tue, 18 Aug 2009 13:00:13 +0200".
     """
-    return util.datestr(text, "%a, %d %b %Y %H:%M:%S %1%2")
+    return dateutil.datestr(text, "%a, %d %b %Y %H:%M:%S %1%2")
 
-@templatefilter('short')
+@templatefilter('short', intype=bytes)
 def short(text):
     """Changeset hash. Returns the short form of a changeset hash,
     i.e. a 12 hexadecimal digit string.
     """
     return text[:12]
 
-@templatefilter('shortbisect')
-def shortbisect(text):
-    """Any text. Treats `text` as a bisection status, and
+@templatefilter('shortbisect', intype=bytes)
+def shortbisect(label):
+    """Any text. Treats `label` as a bisection status, and
     returns a single-character representing the status (G: good, B: bad,
     S: skipped, U: untested, I: ignored). Returns single space if `text`
     is not a valid bisection status.
     """
-    return hbisect.shortlabel(text) or ' '
+    if label:
+        return label[0:1].upper()
+    return ' '
 
-@templatefilter('shortdate')
+@templatefilter('shortdate', intype=templateutil.date)
 def shortdate(text):
     """Date. Returns a date like "2006-09-18"."""
-    return util.shortdate(text)
+    return dateutil.shortdate(text)
 
-@templatefilter('slashpath')
+@templatefilter('slashpath', intype=bytes)
 def slashpath(path):
     """Any text. Replaces the native path separator with slash."""
     return util.pconvert(path)
 
-@templatefilter('splitlines')
+@templatefilter('splitlines', intype=bytes)
 def splitlines(text):
     """Any text. Split text into a list of lines."""
-    return templatekw.hybridlist(text.splitlines(), name='line')
+    return templateutil.hybridlist(text.splitlines(), name='line')
 
-@templatefilter('stringescape')
+@templatefilter('stringescape', intype=bytes)
 def stringescape(text):
-    return util.escapestr(text)
+    return stringutil.escapestr(text)
 
-@templatefilter('stringify')
+@templatefilter('stringify', intype=bytes)
 def stringify(thing):
     """Any type. Turns the value into text by converting values into
     text and concatenating them.
     """
-    thing = templatekw.unwraphybrid(thing)
-    if util.safehasattr(thing, '__iter__') and not isinstance(thing, bytes):
-        return "".join([stringify(t) for t in thing if t is not None])
-    if thing is None:
-        return ""
-    return pycompat.bytestr(thing)
+    return thing  # coerced by the intype
 
-@templatefilter('stripdir')
+@templatefilter('stripdir', intype=bytes)
 def stripdir(text):
     """Treat the text as path and strip a directory level, if
     possible. For example, "foo" and "foo/bar" becomes "foo".
@@ -385,42 +375,42 @@ def stripdir(text):
     else:
         return dir
 
-@templatefilter('tabindent')
+@templatefilter('tabindent', intype=bytes)
 def tabindent(text):
     """Any text. Returns the text, with every non-empty line
     except the first starting with a tab character.
     """
     return indent(text, '\t')
 
-@templatefilter('upper')
+@templatefilter('upper', intype=bytes)
 def upper(text):
     """Any text. Converts the text to uppercase."""
     return encoding.upper(text)
 
-@templatefilter('urlescape')
+@templatefilter('urlescape', intype=bytes)
 def urlescape(text):
     """Any text. Escapes all "special" characters. For example,
     "foo bar" becomes "foo%20bar".
     """
     return urlreq.quote(text)
 
-@templatefilter('user')
+@templatefilter('user', intype=bytes)
 def userfilter(text):
     """Any text. Returns a short representation of a user name or email
     address."""
-    return util.shortuser(text)
+    return stringutil.shortuser(text)
 
-@templatefilter('emailuser')
+@templatefilter('emailuser', intype=bytes)
 def emailuser(text):
     """Any text. Returns the user portion of an email address."""
-    return util.emailuser(text)
+    return stringutil.emailuser(text)
 
-@templatefilter('utf8')
+@templatefilter('utf8', intype=bytes)
 def utf8(text):
     """Any text. Converts from the local character encoding to UTF-8."""
     return encoding.fromlocal(text)
 
-@templatefilter('xmlescape')
+@templatefilter('xmlescape', intype=bytes)
 def xmlescape(text):
     text = (text
             .replace('&', '&amp;')

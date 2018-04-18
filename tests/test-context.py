@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 import os
+import stat
 from mercurial.node import hex
 from mercurial import (
     context,
@@ -51,7 +52,7 @@ def getfilectx(repo, memctx, f):
         data += 'bar\n'
     return context.memfilectx(repo, memctx, f, data, 'l' in flags, 'x' in flags)
 
-ctxa = repo.changectx(0)
+ctxa = repo[0]
 ctxb = context.memctx(repo, [ctxa.node(), None], "test diff", ["foo"],
                       getfilectx, ctxa.user(), ctxa.date())
 
@@ -170,7 +171,8 @@ for i in [b'1', b'2', b'3']:
     # touch 00manifest.i mtime so storecache could expire.
     # repo.__dict__['manifestlog'] is deleted by transaction releasefn.
     st = repo.svfs.stat('00manifest.i')
-    repo.svfs.utime('00manifest.i', (st.st_mtime + 1, st.st_mtime + 1))
+    repo.svfs.utime('00manifest.i',
+                    (st[stat.ST_MTIME] + 1, st[stat.ST_MTIME] + 1))
 
     # read the file just committed
     try:

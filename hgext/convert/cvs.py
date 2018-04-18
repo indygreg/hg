@@ -18,6 +18,10 @@ from mercurial import (
     pycompat,
     util,
 )
+from mercurial.utils import (
+    dateutil,
+    procutil,
+)
 
 from . import (
     common,
@@ -46,8 +50,8 @@ class convert_cvs(converter_source):
         self.tags = {}
         self.lastbranch = {}
         self.socket = None
-        self.cvsroot = open(os.path.join(cvs, "Root")).read()[:-1]
-        self.cvsrepo = open(os.path.join(cvs, "Repository")).read()[:-1]
+        self.cvsroot = open(os.path.join(cvs, "Root"), 'rb').read()[:-1]
+        self.cvsrepo = open(os.path.join(cvs, "Repository"), 'rb').read()[:-1]
         self.encoding = encoding.encoding
 
         self._connect()
@@ -87,24 +91,24 @@ class convert_cvs(converter_source):
             for cs in db:
                 if maxrev and cs.id > maxrev:
                     break
-                id = str(cs.id)
+                id = (b"%d" % cs.id)
                 cs.author = self.recode(cs.author)
                 self.lastbranch[cs.branch] = id
                 cs.comment = self.recode(cs.comment)
                 if self.ui.configbool('convert', 'localtimezone'):
                     cs.date = makedatetimestamp(cs.date[0])
-                date = util.datestr(cs.date, '%Y-%m-%d %H:%M:%S %1%2')
+                date = dateutil.datestr(cs.date, '%Y-%m-%d %H:%M:%S %1%2')
                 self.tags.update(dict.fromkeys(cs.tags, id))
 
                 files = {}
                 for f in cs.entries:
-                    files[f.file] = "%s%s" % ('.'.join([str(x)
+                    files[f.file] = "%s%s" % ('.'.join([(b"%d" % x)
                                                         for x in f.revision]),
                                               ['', '(DEAD)'][f.dead])
 
                 # add current commit to set
                 c = commit(author=cs.author, date=date,
-                           parents=[str(p.id) for p in cs.parents],
+                           parents=[(b"%d" % p.id) for p in cs.parents],
                            desc=cs.comment, branch=cs.branch or '')
                 self.changeset[id] = c
                 self.files[id] = files
@@ -141,7 +145,7 @@ class convert_cvs(converter_source):
                     passw = "A"
                     cvspass = os.path.expanduser("~/.cvspass")
                     try:
-                        pf = open(cvspass)
+                        pf = open(cvspass, 'rb')
                         for line in pf.read().splitlines():
                             part1, part2 = line.split(' ', 1)
                             # /1 :pserver:user@example.com:2401/cvsroot/foo
@@ -179,7 +183,7 @@ class convert_cvs(converter_source):
             # :ext:user@host/home/user/path/to/cvsroot
             if root.startswith(":ext:"):
                 root = root[5:]
-            m = re.match(r'(?:([^@:/]+)@)?([^:/]+):?(.*)', root)
+            m = re.match(br'(?:([^@:/]+)@)?([^:/]+):?(.*)', root)
             # Do not take Windows path "c:\foo\bar" for a connection strings
             if os.path.isdir(root) or not m:
                 conntype = "local"
@@ -196,9 +200,9 @@ class convert_cvs(converter_source):
                     cmd = [rsh, host] + cmd
 
             # popen2 does not support argument lists under Windows
-            cmd = [util.shellquote(arg) for arg in cmd]
-            cmd = util.quotecommand(' '.join(cmd))
-            self.writep, self.readp = util.popen2(cmd)
+            cmd = [procutil.shellquote(arg) for arg in cmd]
+            cmd = procutil.quotecommand(' '.join(cmd))
+            self.writep, self.readp = procutil.popen2(cmd)
 
         self.realroot = root
 

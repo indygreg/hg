@@ -4,7 +4,7 @@ import unittest
 from mercurial import error, mdiff
 
 # for readability, line numbers are 0-origin
-text1 = '''
+text1 = b'''
            00 at OLD
            01 at OLD
            02 at OLD
@@ -19,7 +19,7 @@ text1 = '''
            11 at OLD
 '''[1:] # strip initial LF
 
-text2 = '''
+text2 = b'''
 00 at NEW
 01 at NEW
 02 at NEW, 03 at OLD
@@ -47,10 +47,10 @@ class blocksinrangetests(unittest.TestCase):
     def setUp(self):
         self.blocks = list(mdiff.allblocks(text1, text2))
         assert self.blocks == [
-            ([0, 3, 0, 2], '!'),
-            ((3, 7, 2, 6), '='),
-            ([7, 12, 6, 12], '!'),
-            ((12, 12, 12, 12), '='),
+            ([0, 3, 0, 2], b'!'),
+            ((3, 7, 2, 6), b'='),
+            ([7, 12, 6, 12], b'!'),
+            ((12, 12, 12, 12), b'='),
         ], self.blocks
 
     def testWithinEqual(self):

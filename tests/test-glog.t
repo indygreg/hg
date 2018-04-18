@@ -87,21 +87,22 @@ o  (0) root
   >   cmdutil,
   >   commands,
   >   extensions,
+  >   logcmdutil,
   >   revsetlang,
   >   smartset,
   > )
   > 
   > def logrevset(repo, pats, opts):
-  >     revs = cmdutil._logrevs(repo, opts)
+  >     revs = logcmdutil._initialrevs(repo, opts)
   >     if not revs:
   >         return None
-  >     match, pats, slowpath = cmdutil._makelogmatcher(repo, revs, pats, opts)
-  >     return cmdutil._makelogrevset(repo, match, pats, slowpath, opts)
+  >     match, pats, slowpath = logcmdutil._makematcher(repo, revs, pats, opts)
+  >     return logcmdutil._makerevset(repo, match, pats, slowpath, opts)
   > 
   > def uisetup(ui):
   >     def printrevset(orig, repo, pats, opts):
   >         revs, filematcher = orig(repo, pats, opts)
-  >         if opts.get('print_revset'):
+  >         if opts.get(b'print_revset'):
   >             expr = logrevset(repo, pats, opts)
   >             if expr:
   >                 tree = revsetlang.parse(expr)
@@ -109,15 +110,15 @@ o  (0) root
   >             else:
   >                 tree = []
   >             ui = repo.ui
-  >             ui.write('%r\n' % (opts.get('rev', []),))
-  >             ui.write(revsetlang.prettyformat(tree) + '\n')
-  >             ui.write(smartset.prettyformat(revs) + '\n')
+  >             ui.write(b'%r\n' % (opts.get(b'rev', []),))
+  >             ui.write(revsetlang.prettyformat(tree) + b'\n')
+  >             ui.write(smartset.prettyformat(revs) + b'\n')
   >             revs = smartset.baseset()  # display no revisions
   >         return revs, filematcher
-  >     extensions.wrapfunction(cmdutil, 'getlogrevs', printrevset)
-  >     aliases, entry = cmdutil.findcmd('log', commands.table)
-  >     entry[1].append(('', 'print-revset', False,
-  >                      'print generated revset and exit (DEPRECATED)'))
+  >     extensions.wrapfunction(logcmdutil, 'getrevs', printrevset)
+  >     aliases, entry = cmdutil.findcmd(b'log', commands.table)
+  >     entry[1].append((b'', b'print-revset', False,
+  >                      b'print generated revset and exit (DEPRECATED)'))
   > EOF
 
   $ echo "[extensions]" >> $HGRCPATH
@@ -2420,7 +2421,7 @@ working-directory revision
   |
   ~
 
-node template with changeset_printer:
+node template with changesetprinter:
 
   $ hg log -Gqr 5:7 --config ui.graphnodetemplate='"{rev}"'
   7  7:02dbb8e276b8
@@ -2432,7 +2433,7 @@ node template with changeset_printer:
   |
   ~
 
-node template with changeset_templater (shared cache variable):
+node template with changesettemplater (shared cache variable):
 
   $ hg log -Gr 5:7 -T '{latesttag % "{rev} {tag}+{distance}"}\n' \
   > --config ui.graphnodetemplate='{ifeq(latesttagdistance, 0, "#", graphnode)}'

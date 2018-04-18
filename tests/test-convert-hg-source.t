@@ -126,9 +126,9 @@ check shamap LF and CRLF handling
   $ cat > rewrite.py <<EOF
   > import sys
   > # Interlace LF and CRLF
-  > lines = [(l.rstrip() + ((i % 2) and '\n' or '\r\n'))
-  >          for i, l in enumerate(file(sys.argv[1]))]
-  > file(sys.argv[1], 'wb').write(''.join(lines))
+  > lines = [(l.rstrip() + ((i % 2) and b'\n' or b'\r\n'))
+  >          for i, l in enumerate(open(sys.argv[1], 'rb'))]
+  > open(sys.argv[1], 'wb').write(b''.join(lines))
   > EOF
   $ $PYTHON rewrite.py new/.hg/shamap
   $ cd orig
@@ -169,7 +169,12 @@ init broken repository
 
 break it
 
+#if reporevlogstore
   $ rm .hg/store/data/b.*
+#endif
+#if reposimplestore
+  $ rm .hg/store/data/b/*
+#endif
   $ cd ..
   $ hg --config convert.hg.ignoreerrors=True convert broken fixed
   initializing destination fixed repository
@@ -177,7 +182,8 @@ break it
   sorting...
   converting...
   4 init
-  ignoring: data/b.i@1e88685f5dde: no match found
+  ignoring: data/b.i@1e88685f5dde: no match found (reporevlogstore !)
+  ignoring: data/b/index@1e88685f5dde: no node (reposimplestore !)
   3 changeall
   2 changebagain
   1 merge

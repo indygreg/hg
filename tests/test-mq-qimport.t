@@ -6,8 +6,8 @@
   > args = sys.argv[2:]
   > assert (len(args) % 2) == 0
   > 
-  > f = file(path, 'wb')
-  > for i in xrange(len(args)/2):
+  > f = open(path, 'wb')
+  > for i in range(len(args)//2):
   >    count, s = args[2*i:2*i+2]
   >    count = int(count)
   >    s = s.decode('string_escape')

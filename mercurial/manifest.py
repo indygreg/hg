@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import heapq
 import itertools
-import os
 import struct
 
 from .i18n import _
@@ -28,7 +27,7 @@ from . import (
 parsers = policy.importmod(r'parsers')
 propertycache = util.propertycache
 
-def _parsev1(data):
+def _parse(data):
     # This method does a little bit of excessive-looking
     # precondition checking. This is so that the behavior of this
     # class exactly matches its C counterpart to try and help
@@ -47,43 +46,7 @@ def _parsev1(data):
         else:
             yield f, bin(n), ''
 
-def _parsev2(data):
-    metadataend = data.find('\n')
-    # Just ignore metadata for now
-    pos = metadataend + 1
-    prevf = ''
-    while pos < len(data):
-        end = data.find('\n', pos + 1) # +1 to skip stem length byte
-        if end == -1:
-            raise ValueError('Manifest ended with incomplete file entry.')
-        stemlen = ord(data[pos:pos + 1])
-        items = data[pos + 1:end].split('\0')
-        f = prevf[:stemlen] + items[0]
-        if prevf > f:
-            raise ValueError('Manifest entries not in sorted order.')
-        fl = items[1]
-        # Just ignore metadata (items[2:] for now)
-        n = data[end + 1:end + 21]
-        yield f, n, fl
-        pos = end + 22
-        prevf = f
-
-def _parse(data):
-    """Generates (path, node, flags) tuples from a manifest text"""
-    if data.startswith('\0'):
-        return iter(_parsev2(data))
-    else:
-        return iter(_parsev1(data))
-
-def _text(it, usemanifestv2):
-    """Given an iterator over (path, node, flags) tuples, returns a manifest
-    text"""
-    if usemanifestv2:
-        return _textv2(it)
-    else:
-        return _textv1(it)
-
-def _textv1(it):
+def _text(it):
     files = []
     lines = []
     _hex = revlog.hex
@@ -93,19 +56,6 @@ def _textv1(it):
         # be sure to check the templates/ dir again (especially *-raw.tmpl)
         lines.append("%s\0%s%s\n" % (f, _hex(n), fl))
 
-    _checkforbidden(files)
-    return ''.join(lines)
-
-def _textv2(it):
-    files = []
-    lines = ['\0\n']
-    prevf = ''
-    for f, n, fl in it:
-        files.append(f)
-        stem = os.path.commonprefix([prevf, f])
-        stemlen = min(len(stem), 255)
-        lines.append("%c%s\0%s\n%s\n" % (stemlen, f[stemlen:], fl, n))
-        prevf = f
     _checkforbidden(files)
     return ''.join(lines)
 
@@ -414,13 +364,7 @@ except AttributeError:
 
 class manifestdict(object):
     def __init__(self, data=''):
-        if data.startswith('\0'):
-            #_lazymanifest can not parse v2
-            self._lm = _lazymanifest('')
-            for f, n, fl in _parsev2(data):
-                self._lm[f] = n, fl
-        else:
-            self._lm = _lazymanifest(data)
+        self._lm = _lazymanifest(data)
 
     def __getitem__(self, key):
         return self._lm[key][0]
@@ -589,12 +533,9 @@ class manifestdict(object):
     def iterentries(self):
         return self._lm.iterentries()
 
-    def text(self, usemanifestv2=False):
-        if usemanifestv2:
-            return _textv2(self._lm.iterentries())
-        else:
-            # use (probably) native version for v1
-            return self._lm.text()
+    def text(self):
+        # most likely uses native version
+        return self._lm.text()
 
     def fastdelta(self, base, changes):
         """Given a base manifest text as a bytearray and a list of changes
@@ -754,6 +695,12 @@ class treemanifest(object):
         for m in self._dirs.values():
             size += m.__len__()
         return size
+
+    def __nonzero__(self):
+        # Faster than "__len() != 0" since it avoids loading sub-manifests
+        return not self._isempty()
+
+    __bool__ = __nonzero__
 
     def _isempty(self):
         self._load() # for consistency; already loaded by all callers
@@ -954,7 +901,7 @@ class treemanifest(object):
                 else:
                     files.update(m1.iterkeys())
 
-            for fn in t1._files.iterkeys():
+            for fn in t1._files:
                 if fn not in t2._files:
                     files.add(t1._subpath(fn))
 
@@ -1013,7 +960,7 @@ class treemanifest(object):
 
         # yield this dir's files and walk its submanifests
         self._load()
-        for p in sorted(self._dirs.keys() + self._files.keys()):
+        for p in sorted(list(self._dirs) + list(self._files)):
             if p in self._files:
                 fullp = self._subpath(p)
                 if match(fullp):
@@ -1132,12 +1079,12 @@ class treemanifest(object):
                 if fl:
                     self._flags[f] = fl
 
-    def text(self, usemanifestv2=False):
+    def text(self):
         """Get the full data of this manifest as a bytestring."""
         self._load()
-        return _text(self.iterentries(), usemanifestv2)
+        return _text(self.iterentries())
 
-    def dirtext(self, usemanifestv2=False):
+    def dirtext(self):
         """Get the full data of this directory as a bytestring. Make sure that
         any submanifests have been written first, so their nodeids are correct.
         """
@@ -1145,7 +1092,7 @@ class treemanifest(object):
         flags = self.flags
         dirs = [(d[:-1], self._dirs[d]._node, 't') for d in self._dirs]
         files = [(f, self._files[f], flags(f)) for f in self._files]
-        return _text(sorted(dirs + files), usemanifestv2)
+        return _text(sorted(dirs + files))
 
     def read(self, gettext, readsubtree):
         def _load_for_read(s):
@@ -1202,22 +1149,17 @@ class manifestrevlog(revlog.revlog):
         # stacks of commits, the number can go up, hence the config knob below.
         cachesize = 4
         optiontreemanifest = False
-        usemanifestv2 = False
         opts = getattr(opener, 'options', None)
         if opts is not None:
             cachesize = opts.get('manifestcachesize', cachesize)
             optiontreemanifest = opts.get('treemanifest', False)
-            usemanifestv2 = opts.get('manifestv2', usemanifestv2)
 
         self._treeondisk = optiontreemanifest or treemanifest
-        self._usemanifestv2 = usemanifestv2
 
         self._fulltextcache = util.lrucachedict(cachesize)
 
         if dir:
             assert self._treeondisk, 'opts is %r' % opts
-            if not dir.endswith('/'):
-                dir = dir + '/'
 
         if indexfile is None:
             indexfile = '00manifest.i'
@@ -1245,19 +1187,18 @@ class manifestrevlog(revlog.revlog):
         self._fulltextcache.clear()
         self._dirlogcache = {'': self}
 
-    def dirlog(self, dir):
-        if dir:
+    def dirlog(self, d):
+        if d:
             assert self._treeondisk
-        if dir not in self._dirlogcache:
-            mfrevlog = manifestrevlog(self.opener, dir,
+        if d not in self._dirlogcache:
+            mfrevlog = manifestrevlog(self.opener, d,
                                       self._dirlogcache,
                                       treemanifest=self._treeondisk)
-            self._dirlogcache[dir] = mfrevlog
-        return self._dirlogcache[dir]
+            self._dirlogcache[d] = mfrevlog
+        return self._dirlogcache[d]
 
     def add(self, m, transaction, link, p1, p2, added, removed, readtree=None):
-        if (p1 in self.fulltextcache and util.safehasattr(m, 'fastdelta')
-            and not self._usemanifestv2):
+        if p1 in self.fulltextcache and util.safehasattr(m, 'fastdelta'):
             # If our first parent is in the manifest cache, we can
             # compute a delta here using properties we know about the
             # manifest up-front, which may save time later for the
@@ -1284,7 +1225,7 @@ class manifestrevlog(revlog.revlog):
                 n = self._addtree(m, transaction, link, m1, m2, readtree)
                 arraytext = None
             else:
-                text = m.text(self._usemanifestv2)
+                text = m.text()
                 n = self.addrevision(text, transaction, link, p1, p2)
                 arraytext = bytearray(text)
 
@@ -1303,13 +1244,13 @@ class manifestrevlog(revlog.revlog):
             sublog.add(subm, transaction, link, subp1, subp2, None, None,
                        readtree=readtree)
         m.writesubtrees(m1, m2, writesubtree)
-        text = m.dirtext(self._usemanifestv2)
+        text = m.dirtext()
         n = None
         if self._dir != '':
             # Double-check whether contents are unchanged to one parent
-            if text == m1.dirtext(self._usemanifestv2):
+            if text == m1.dirtext():
                 n = m1.node()
-            elif text == m2.dirtext(self._usemanifestv2):
+            elif text == m2.dirtext():
                 n = m2.node()
 
         if not n:
@@ -1338,6 +1279,7 @@ class manifestlog(object):
         self._treeinmem = usetreemanifest
 
         self._revlog = repo._constructmanifest()
+        self._narrowmatch = repo.narrowmatch()
 
         # A cache of the manifestctx or treemanifestctx for each directory
         self._dirmancache = {}
@@ -1361,6 +1303,9 @@ class manifestlog(object):
         if node in self._dirmancache.get(dir, ()):
             return self._dirmancache[dir][node]
 
+        if not self._narrowmatch.always():
+            if not self._narrowmatch.visitdir(dir[:-1] or '.'):
+                return excludeddirmanifestctx(dir, node)
         if dir:
             if self._revlog._treeondisk:
                 if verify:
@@ -1487,19 +1432,6 @@ class manifestctx(object):
         Changing the value of `shallow` has no effect on flat manifests.
         '''
         revlog = self._revlog()
-        if revlog._usemanifestv2:
-            # Need to perform a slow delta
-            r0 = revlog.deltaparent(revlog.rev(self._node))
-            m0 = self._manifestlog[revlog.node(r0)].read()
-            m1 = self.read()
-            md = manifestdict()
-            for f, ((n0, fl0), (n1, fl1)) in m0.diff(m1).iteritems():
-                if n1:
-                    md[f] = n1
-                    if fl1:
-                        md.setflag(f, fl1)
-            return md
-
         r = revlog.rev(self._node)
         d = mdiff.patchtext(revlog.revdiff(revlog.deltaparent(r), r))
         return manifestdict(d)
@@ -1549,6 +1481,10 @@ class treemanifestctx(object):
         #self.linkrev = revlog.linkrev(rev)
 
     def _revlog(self):
+        narrowmatch = self._manifestlog._narrowmatch
+        if not narrowmatch.always():
+            if not narrowmatch.visitdir(self._dir[:-1] or '.'):
+                return excludedmanifestrevlog(self._dir)
         return self._manifestlog._revlog.dirlog(self._dir)
 
     def read(self):
@@ -1602,7 +1538,7 @@ class treemanifestctx(object):
         its 't' flag.
         '''
         revlog = self._revlog()
-        if shallow and not revlog._usemanifestv2:
+        if shallow:
             r = revlog.rev(self._node)
             d = mdiff.patchtext(revlog.revdiff(revlog.deltaparent(r), r))
             return manifestdict(d)
@@ -1641,3 +1577,80 @@ class treemanifestctx(object):
 
     def find(self, key):
         return self.read().find(key)
+
+class excludeddir(treemanifest):
+    """Stand-in for a directory that is excluded from the repository.
+
+    With narrowing active on a repository that uses treemanifests,
+    some of the directory revlogs will be excluded from the resulting
+    clone. This is a huge storage win for clients, but means we need
+    some sort of pseudo-manifest to surface to internals so we can
+    detect a merge conflict outside the narrowspec. That's what this
+    class is: it stands in for a directory whose node is known, but
+    whose contents are unknown.
+    """
+    def __init__(self, dir, node):
+        super(excludeddir, self).__init__(dir)
+        self._node = node
+        # Add an empty file, which will be included by iterators and such,
+        # appearing as the directory itself (i.e. something like "dir/")
+        self._files[''] = node
+        self._flags[''] = 't'
+
+    # Manifests outside the narrowspec should never be modified, so avoid
+    # copying. This makes a noticeable difference when there are very many
+    # directories outside the narrowspec. Also, it makes sense for the copy to
+    # be of the same type as the original, which would not happen with the
+    # super type's copy().
+    def copy(self):
+        return self
+
+class excludeddirmanifestctx(treemanifestctx):
+    """context wrapper for excludeddir - see that docstring for rationale"""
+    def __init__(self, dir, node):
+        self._dir = dir
+        self._node = node
+
+    def read(self):
+        return excludeddir(self._dir, self._node)
+
+    def write(self, *args):
+        raise error.ProgrammingError(
+            'attempt to write manifest from excluded dir %s' % self._dir)
+
+class excludedmanifestrevlog(manifestrevlog):
+    """Stand-in for excluded treemanifest revlogs.
+
+    When narrowing is active on a treemanifest repository, we'll have
+    references to directories we can't see due to the revlog being
+    skipped. This class exists to conform to the manifestrevlog
+    interface for those directories and proactively prevent writes to
+    outside the narrowspec.
+    """
+
+    def __init__(self, dir):
+        self._dir = dir
+
+    def __len__(self):
+        raise error.ProgrammingError(
+            'attempt to get length of excluded dir %s' % self._dir)
+
+    def rev(self, node):
+        raise error.ProgrammingError(
+            'attempt to get rev from excluded dir %s' % self._dir)
+
+    def linkrev(self, node):
+        raise error.ProgrammingError(
+            'attempt to get linkrev from excluded dir %s' % self._dir)
+
+    def node(self, rev):
+        raise error.ProgrammingError(
+            'attempt to get node from excluded dir %s' % self._dir)
+
+    def add(self, *args, **kwargs):
+        # We should never write entries in dirlogs outside the narrow clone.
+        # However, the method still gets called from writesubtree() in
+        # _addtree(), so we need to handle it. We should possibly make that
+        # avoid calling add() with a clean manifest (_dirty is always False
+        # in excludeddir instances).
+        pass

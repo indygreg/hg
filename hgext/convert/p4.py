@@ -14,6 +14,11 @@ from mercurial import (
     error,
     util,
 )
+from mercurial.utils import (
+    dateutil,
+    procutil,
+    stringutil,
+)
 
 from . import common
 
@@ -85,8 +90,8 @@ class p4_source(common.converter_source):
 
     def _parse_view(self, path):
         "Read changes affecting the path"
-        cmd = 'p4 -G changes -s submitted %s' % util.shellquote(path)
-        stdout = util.popen(cmd, mode='rb')
+        cmd = 'p4 -G changes -s submitted %s' % procutil.shellquote(path)
+        stdout = procutil.popen(cmd, mode='rb')
         p4changes = {}
         for d in loaditer(stdout):
             c = d.get("change", None)
@@ -114,8 +119,8 @@ class p4_source(common.converter_source):
             else:
                 views = {"//": ""}
         else:
-            cmd = 'p4 -G client -o %s' % util.shellquote(path)
-            clientspec = marshal.load(util.popen(cmd, mode='rb'))
+            cmd = 'p4 -G client -o %s' % procutil.shellquote(path)
+            clientspec = marshal.load(procutil.popen(cmd, mode='rb'))
 
             views = {}
             for client in clientspec:
@@ -168,7 +173,7 @@ class p4_source(common.converter_source):
                 shortdesc = '**empty changelist description**'
 
             t = '%s %s' % (c.rev, repr(shortdesc)[1:-1])
-            ui.status(util.ellipsis(t, 80) + '\n')
+            ui.status(stringutil.ellipsis(t, 80) + '\n')
 
             files = []
             copies = {}
@@ -194,8 +199,8 @@ class p4_source(common.converter_source):
                 oldname = depotname[filename]
 
                 flcmd = 'p4 -G filelog %s' \
-                      % util.shellquote(oldname)
-                flstdout = util.popen(flcmd, mode='rb')
+                      % procutil.shellquote(oldname)
+                flstdout = procutil.popen(flcmd, mode='rb')
 
                 copiedfilename = None
                 for d in loaditer(flstdout):
@@ -268,11 +273,11 @@ class p4_source(common.converter_source):
 
     def getfile(self, name, rev):
         cmd = 'p4 -G print %s' \
-            % util.shellquote("%s#%s" % (self.depotname[name], rev))
+            % procutil.shellquote("%s#%s" % (self.depotname[name], rev))
 
         lasterror = None
         while True:
-            stdout = util.popen(cmd, mode='rb')
+            stdout = procutil.popen(cmd, mode='rb')
 
             mode = None
             contents = []
@@ -346,7 +351,7 @@ class p4_source(common.converter_source):
             parents = []
 
         return common.commit(author=self.recode(obj["user"]),
-            date=util.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
+            date=dateutil.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
             parents=parents, desc=desc, branch=None, rev=obj['change'],
             extra={"p4": obj['change'], "convert_revision": obj['change']})
 
@@ -354,7 +359,7 @@ class p4_source(common.converter_source):
         """Return an output of `p4 describe` including author, commit date as
         a dictionary."""
         cmd = "p4 -G describe -s %s" % rev
-        stdout = util.popen(cmd, mode='rb')
+        stdout = procutil.popen(cmd, mode='rb')
         return marshal.load(stdout)
 
     def getcommit(self, rev):

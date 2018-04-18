@@ -22,9 +22,9 @@ pid_t hgc_peerpgid(const hgclient_t *hgc);
 pid_t hgc_peerpid(const hgclient_t *hgc);
 
 const char **hgc_validate(hgclient_t *hgc, const char *const args[],
-			  size_t argsize);
+                          size_t argsize);
 int hgc_runcommand(hgclient_t *hgc, const char *const args[], size_t argsize);
 void hgc_attachio(hgclient_t *hgc);
 void hgc_setenv(hgclient_t *hgc, const char *const envp[]);
 
-#endif  /* HGCLIENT_H_ */
+#endif /* HGCLIENT_H_ */

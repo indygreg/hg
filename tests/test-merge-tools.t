@@ -1059,6 +1059,150 @@ premerge=keep-merge3 keeps conflict markers with base content:
   # hg resolve --list
   R f
 
+premerge=keep respects ui.mergemarkers=basic:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 4 --config merge-tools.true.premerge=keep --config ui.mergemarkers=basic
+  merging f
+  <<<<<<< working copy
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev
+  revision 0
+  space
+  revision 4
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  <<<<<<< working copy
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
+premerge=keep ignores ui.mergemarkers=basic if true.mergemarkers=detailed:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 4 --config merge-tools.true.premerge=keep \
+  >     --config ui.mergemarkers=basic \
+  >     --config merge-tools.true.mergemarkers=detailed
+  merging f
+  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  revision 0
+  space
+  revision 4
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  <<<<<<< working copy: ef83787e2614 - test: revision 1
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    81448d39c9a0 - test: revision 4
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
+premerge=keep respects ui.mergemarkertemplate instead of
+true.mergemarkertemplate if true.mergemarkers=basic:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 4 --config merge-tools.true.premerge=keep \
+  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
+  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}'
+  merging f
+  <<<<<<< working copy: uitmpl 1
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    uitmpl 4
+  revision 0
+  space
+  revision 4
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  <<<<<<< working copy: uitmpl 1
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    uitmpl 4
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
+premerge=keep respects true.mergemarkertemplate instead of
+true.mergemarkertemplate if true.mergemarkers=detailed:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 4 --config merge-tools.true.premerge=keep \
+  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
+  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
+  >    --config merge-tools.true.mergemarkers=detailed
+  merging f
+  <<<<<<< working copy: tooltmpl ef83787e2614
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    tooltmpl 81448d39c9a0
+  revision 0
+  space
+  revision 4
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  <<<<<<< working copy: tooltmpl ef83787e2614
+  revision 1
+  space
+  =======
+  revision 4
+  >>>>>>> merge rev:    tooltmpl 81448d39c9a0
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
 
 Tool execution
 
@@ -1190,6 +1334,169 @@ Merge using tool with a path that must be quoted:
   # hg resolve --list
   R f
 
+Merge using a tool that supports labellocal, labelother, and labelbase, checking
+that they're quoted properly as well. This is using the default 'basic'
+mergemarkers even though ui.mergemarkers is 'detailed', so it's ignoring both
+mergemarkertemplate settings:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ cat <<EOF > printargs_merge_tool
+  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > EOF
+  $ hg --config merge-tools.true.executable='sh' \
+  >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
+  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
+  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
+  >    --config ui.mergemarkers=detailed \
+  >    merge -r 2
+  merging f
+  arg: "ll:working copy"
+  arg: "lo:"
+  arg: "merge rev"
+  arg: "lb:base: */f~base.*" (glob)
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ rm -f 'printargs_merge_tool'
+
+Same test with experimental.mergetempdirprefix set:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ cat <<EOF > printargs_merge_tool
+  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > EOF
+  $ hg --config experimental.mergetempdirprefix=$TESTTMP/hgmerge. \
+  >    --config merge-tools.true.executable='sh' \
+  >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
+  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
+  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
+  >    --config ui.mergemarkers=detailed \
+  >    merge -r 2
+  merging f
+  arg: "ll:working copy"
+  arg: "lo:"
+  arg: "merge rev"
+  arg: "lb:base: */hgmerge.*/f~base" (glob)
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ rm -f 'printargs_merge_tool'
+
+Merge using a tool that supports labellocal, labelother, and labelbase, checking
+that they're quoted properly as well. This is using 'detailed' mergemarkers,
+even though ui.mergemarkers is 'basic', and using the tool's
+mergemarkertemplate:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ cat <<EOF > printargs_merge_tool
+  > while test \$# -gt 0; do echo arg: \"\$1\"; shift; done
+  > EOF
+  $ hg --config merge-tools.true.executable='sh' \
+  >    --config merge-tools.true.args='./printargs_merge_tool ll:$labellocal lo: $labelother lb:$labelbase": "$base' \
+  >    --config merge-tools.true.mergemarkers=detailed \
+  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
+  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
+  >    --config ui.mergemarkers=basic \
+  >    merge -r 2
+  merging f
+  arg: "ll:working copy: tooltmpl ef83787e2614"
+  arg: "lo:"
+  arg: "merge rev: tooltmpl 0185f4e0cf02"
+  arg: "lb:base: */f~base.*" (glob)
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ rm -f 'printargs_merge_tool'
+
+The merge tool still gets labellocal and labelother as 'basic' even when
+premerge=keep is used and has 'detailed' markers:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ cat <<EOF > mytool
+  > echo labellocal: \"\$1\"
+  > echo labelother: \"\$2\"
+  > echo "output (arg)": \"\$3\"
+  > echo "output (contents)":
+  > cat "\$3"
+  > EOF
+  $ hg --config merge-tools.true.executable='sh' \
+  >    --config merge-tools.true.args='mytool $labellocal $labelother $output' \
+  >    --config merge-tools.true.premerge=keep \
+  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
+  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
+  >    --config ui.mergemarkers=detailed \
+  >    merge -r 2
+  merging f
+  labellocal: "working copy"
+  labelother: "merge rev"
+  output (arg): "$TESTTMP/f"
+  output (contents):
+  <<<<<<< working copy: uitmpl 1
+  revision 1
+  =======
+  revision 2
+  >>>>>>> merge rev:    uitmpl 2
+  space
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ rm -f 'mytool'
+
+premerge=keep uses the *tool's* mergemarkertemplate if tool's
+mergemarkers=detailed; labellocal and labelother also use the tool's template
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ cat <<EOF > mytool
+  > echo labellocal: \"\$1\"
+  > echo labelother: \"\$2\"
+  > echo "output (arg)": \"\$3\"
+  > echo "output (contents)":
+  > cat "\$3"
+  > EOF
+  $ hg --config merge-tools.true.executable='sh' \
+  >    --config merge-tools.true.args='mytool $labellocal $labelother $output' \
+  >    --config merge-tools.true.premerge=keep \
+  >    --config merge-tools.true.mergemarkers=detailed \
+  >    --config merge-tools.true.mergemarkertemplate='tooltmpl {short(node)}' \
+  >    --config ui.mergemarkertemplate='uitmpl {rev}' \
+  >    --config ui.mergemarkers=detailed \
+  >    merge -r 2
+  merging f
+  labellocal: "working copy: tooltmpl ef83787e2614"
+  labelother: "merge rev: tooltmpl 0185f4e0cf02"
+  output (arg): "$TESTTMP/f"
+  output (contents):
+  <<<<<<< working copy: tooltmpl ef83787e2614
+  revision 1
+  =======
+  revision 2
+  >>>>>>> merge rev:    tooltmpl 0185f4e0cf02
+  space
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ rm -f 'mytool'
+
 Issue3581: Merging a filename that needs to be quoted
 (This test doesn't work on Windows filesystems even on Linux, so check
 for Unix-like permission)
@@ -1278,7 +1585,22 @@ Verify naming of temporary files and that extension is preserved:
   $ hg update -q -C 2
   $ hg merge -y -r tip --tool echo --config merge-tools.echo.args='$base $local $other $output'
   merging f and f.txt to f.txt
-  */f~base.?????? $TESTTMP/f.txt.orig */f~other.??????.txt $TESTTMP/f.txt (glob)
+  */f~base.* */f~local.*.txt */f~other.*.txt $TESTTMP/f.txt (glob)
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+
+Verify naming of temporary files and that extension is preserved
+(experimental.mergetempdirprefix version):
+
+  $ hg update -q -C 1
+  $ hg mv f f.txt
+  $ hg ci -qm "f.txt"
+  $ hg update -q -C 2
+  $ hg merge -y -r tip --tool echo \
+  >    --config merge-tools.echo.args='$base $local $other $output' \
+  >    --config experimental.mergetempdirprefix=$TESTTMP/hgmerge.
+  merging f and f.txt to f.txt
+  $TESTTMP/hgmerge.*/f~base $TESTTMP/hgmerge.*/f~local.txt $TESTTMP/hgmerge.*/f~other.txt $TESTTMP/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 

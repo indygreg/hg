@@ -3,18 +3,23 @@ from __future__ import absolute_import
 import glob
 import os
 import shutil
+import stat
 import tempfile
 import unittest
 
 from mercurial import (
+    pycompat,
     util,
 )
 atomictempfile = util.atomictempfile
 
+if pycompat.ispy3:
+    xrange = range
+
 class testatomictempfile(unittest.TestCase):
     def setUp(self):
-        self._testdir = tempfile.mkdtemp('atomictempfiletest')
-        self._filename = os.path.join(self._testdir, 'testfilename')
+        self._testdir = tempfile.mkdtemp(b'atomictempfiletest')
+        self._filename = os.path.join(self._testdir, b'testfilename')
 
     def tearDown(self):
         shutil.rmtree(self._testdir, True)
@@ -24,14 +29,14 @@ class testatomictempfile(unittest.TestCase):
         self.assertFalse(os.path.isfile(self._filename))
         tempfilename = file._tempname
         self.assertTrue(tempfilename in glob.glob(
-            os.path.join(self._testdir, '.testfilename-*')))
+            os.path.join(self._testdir, b'.testfilename-*')))
 
         file.write(b'argh\n')
         file.close()
 
         self.assertTrue(os.path.isfile(self._filename))
         self.assertTrue(tempfilename not in glob.glob(
-            os.path.join(self._testdir, '.testfilename-*')))
+            os.path.join(self._testdir, b'.testfilename-*')))
 
     # discard() removes the temp file without making the write permanent
     def testdiscard(self):
@@ -42,7 +47,7 @@ class testatomictempfile(unittest.TestCase):
         file.discard()
 
         self.assertFalse(os.path.isfile(self._filename))
-        self.assertTrue(basename not in os.listdir('.'))
+        self.assertTrue(basename not in os.listdir(b'.'))
 
     # if a programmer screws up and passes bad args to atomictempfile, they
     # get a plain ordinary TypeError, not infinite recursion
@@ -54,7 +59,7 @@ class testatomictempfile(unittest.TestCase):
     def testcheckambig(self):
         def atomicwrite(checkambig):
             f = atomictempfile(self._filename, checkambig=checkambig)
-            f.write('FOO')
+            f.write(b'FOO')
             f.close()
 
         # try some times, because reproduction of ambiguity depends on
@@ -62,7 +67,7 @@ class testatomictempfile(unittest.TestCase):
         for i in xrange(5):
             atomicwrite(False)
             oldstat = os.stat(self._filename)
-            if oldstat.st_ctime != oldstat.st_mtime:
+            if oldstat[stat.ST_CTIME] != oldstat[stat.ST_MTIME]:
                 # subsequent changing never causes ambiguity
                 continue
 
@@ -73,14 +78,14 @@ class testatomictempfile(unittest.TestCase):
             for j in xrange(repetition):
                 atomicwrite(True)
             newstat = os.stat(self._filename)
-            if oldstat.st_ctime != newstat.st_ctime:
+            if oldstat[stat.ST_CTIME] != newstat[stat.ST_CTIME]:
                 # timestamp ambiguity was naturally avoided while repetition
                 continue
 
             # st_mtime should be advanced "repetition" times, because
             # all atomicwrite() occurred at same time (in sec)
-            self.assertTrue(newstat.st_mtime ==
-                            ((oldstat.st_mtime + repetition) & 0x7fffffff))
+            oldtime = (oldstat[stat.ST_MTIME] + repetition) & 0x7fffffff
+            self.assertTrue(newstat[stat.ST_MTIME] == oldtime)
             # no more examination is needed, if assumption above is true
             break
         else:
@@ -93,27 +98,27 @@ class testatomictempfile(unittest.TestCase):
     def testread(self):
         with open(self._filename, 'wb') as f:
             f.write(b'foobar\n')
-        file = atomictempfile(self._filename, mode='rb')
+        file = atomictempfile(self._filename, mode=b'rb')
         self.assertTrue(file.read(), b'foobar\n')
         file.discard()
 
     def testcontextmanagersuccess(self):
         """When the context closes, the file is closed"""
-        with atomictempfile('foo') as f:
-            self.assertFalse(os.path.isfile('foo'))
+        with atomictempfile(b'foo') as f:
+            self.assertFalse(os.path.isfile(b'foo'))
             f.write(b'argh\n')
-        self.assertTrue(os.path.isfile('foo'))
+        self.assertTrue(os.path.isfile(b'foo'))
 
     def testcontextmanagerfailure(self):
         """On exception, the file is discarded"""
         try:
-            with atomictempfile('foo') as f:
-                self.assertFalse(os.path.isfile('foo'))
+            with atomictempfile(b'foo') as f:
+                self.assertFalse(os.path.isfile(b'foo'))
                 f.write(b'argh\n')
                 raise ValueError
         except ValueError:
             pass
-        self.assertFalse(os.path.isfile('foo'))
+        self.assertFalse(os.path.isfile(b'foo'))
 
 if __name__ == '__main__':
     import silenttestrunner

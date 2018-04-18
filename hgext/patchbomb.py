@@ -74,6 +74,8 @@ You can set patchbomb to always ask for confirmation by setting
 from __future__ import absolute_import
 
 import email as emailmod
+import email.generator as emailgen
+import email.utils as eutil
 import errno
 import os
 import socket
@@ -83,6 +85,7 @@ from mercurial.i18n import _
 from mercurial import (
     cmdutil,
     commands,
+    encoding,
     error,
     formatter,
     hg,
@@ -96,6 +99,7 @@ from mercurial import (
     templater,
     util,
 )
+from mercurial.utils import dateutil
 stringio = util.stringio
 
 cmdtable = {}
@@ -208,7 +212,7 @@ def _formatprefix(ui, repo, rev, flags, idx, total, numbered):
     if not numbered:
         return '[PATCH%s]' % flag
     else:
-        tlen = len(str(total))
+        tlen = len("%d" % total)
         return '[PATCH %0*d of %d%s]' % (tlen, idx, total, flag)
 
 def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
@@ -265,11 +269,10 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
             if patchtags:
                 patchname = patchtags[0]
             elif total > 1:
-                patchname = cmdutil.makefilename(repo, '%b-%n.patch',
-                                                 binnode, seqno=idx,
-                                                 total=total)
+                patchname = cmdutil.makefilename(repo[node], '%b-%n.patch',
+                                                 seqno=idx, total=total)
             else:
-                patchname = cmdutil.makefilename(repo, '%b.patch', binnode)
+                patchname = cmdutil.makefilename(repo[node], '%b.patch')
         disposition = 'inline'
         if opts.get('attach'):
             disposition = 'attachment'
@@ -303,8 +306,8 @@ def _getpatches(repo, revs, **opts):
             ui.warn(_('warning: working directory has '
                       'uncommitted changes\n'))
         output = stringio()
-        cmdutil.export(repo, [r], fp=output,
-                     opts=patch.difffeatureopts(ui, opts, git=True))
+        cmdutil.exportfile(repo, [r], output,
+                           opts=patch.difffeatureopts(ui, opts, git=True))
         yield output.getvalue().split('\n')
 def _getbundle(repo, dest, **opts):
     """return a bundle containing changesets missing in "dest"
@@ -627,7 +630,7 @@ def email(ui, repo, *revs, **opts):
     if outgoing:
         revs = _getoutgoing(repo, dest, revs)
     if bundle:
-        opts['revs'] = [str(r) for r in revs]
+        opts['revs'] = ["%d" % r for r in revs]
 
     # check if revision exist on the public destination
     publicurl = repo.ui.config('patchbomb', 'publicurl')
@@ -655,19 +658,21 @@ def email(ui, repo, *revs, **opts):
                 else:
                     msg = _('public url %s is missing %s')
                     msg %= (publicurl, missing[0])
+                missingrevs = [ctx.rev() for ctx in missing]
                 revhint = ' '.join('-r %s' % h
-                                  for h in repo.set('heads(%ld)', missing))
+                                   for h in repo.set('heads(%ld)', missingrevs))
                 hint = _("use 'hg push %s %s'") % (publicurl, revhint)
                 raise error.Abort(msg, hint=hint)
 
     # start
     if date:
-        start_time = util.parsedate(date)
+        start_time = dateutil.parsedate(date)
     else:
-        start_time = util.makedate()
+        start_time = dateutil.makedate()
 
     def genmsgid(id):
-        return '<%s.%s@%s>' % (id[:20], int(start_time[0]), socket.getfqdn())
+        return '<%s.%d@%s>' % (id[:20], int(start_time[0]),
+                               encoding.strtolocal(socket.getfqdn()))
 
     # deprecated config: patchbomb.from
     sender = (opts.get('from') or ui.config('email', 'from') or
@@ -744,7 +749,7 @@ def email(ui, repo, *revs, **opts):
         if not parent.endswith('>'):
             parent += '>'
 
-    sender_addr = emailmod.Utils.parseaddr(sender)[1]
+    sender_addr = eutil.parseaddr(encoding.strfromlocal(sender))[1]
     sender = mail.addressencode(ui, sender, _charsets, opts.get('test'))
     sendmail = None
     firstpatch = None
@@ -763,7 +768,7 @@ def email(ui, repo, *revs, **opts):
             parent = m['Message-Id']
 
         m['User-Agent'] = 'Mercurial-patchbomb/%s' % util.version()
-        m['Date'] = emailmod.Utils.formatdate(start_time[0], localtime=True)
+        m['Date'] = eutil.formatdate(start_time[0], localtime=True)
 
         start_time = (start_time[0] + 1, start_time[1])
         m['From'] = sender
@@ -777,7 +782,7 @@ def email(ui, repo, *revs, **opts):
         if opts.get('test'):
             ui.status(_('displaying '), subj, ' ...\n')
             ui.pager('email')
-            generator = emailmod.Generator.Generator(ui, mangle_from_=False)
+            generator = emailgen.Generator(ui, mangle_from_=False)
             try:
                 generator.flatten(m, 0)
                 ui.write('\n')
@@ -794,7 +799,7 @@ def email(ui, repo, *revs, **opts):
                 # Exim does not remove the Bcc field
                 del m['Bcc']
             fp = stringio()
-            generator = emailmod.Generator.Generator(fp, mangle_from_=False)
+            generator = emailgen.Generator(fp, mangle_from_=False)
             generator.flatten(m, 0)
             sendmail(sender_addr, to + bcc + cc, fp.getvalue())
 

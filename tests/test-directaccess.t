@@ -179,7 +179,20 @@ This should not throw error
    foo
   -bar
 
-Commands with undefined cmdtype should not work right now
+Test special hash/rev
+
+  $ hg log -qr 'null:wdir() & 000000000000'
+  -1:000000000000
+  $ hg log -qr 'null:wdir() & ffffffffffff'
+  2147483647:ffffffffffff
+  $ hg log -qr 'null:wdir() & rev(-1)'
+  -1:000000000000
+  $ hg log -qr 'null:wdir() & rev(2147483647)'
+  2147483647:ffffffffffff
+  $ hg log -qr 'null:wdir() & 2147483647'
+  2147483647:ffffffffffff
+
+Commands with undefined intent should not work right now
 
   $ hg phase -r 28ad74
   abort: hidden revision '28ad74' was rewritten as: 2443a0e66469!

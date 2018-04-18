@@ -101,6 +101,7 @@ from mercurial import (
     extensions,
     filelog,
     localrepo,
+    logcmdutil,
     match,
     patch,
     pathutil,
@@ -108,7 +109,12 @@ from mercurial import (
     registrar,
     scmutil,
     templatefilters,
+    templateutil,
     util,
+)
+from mercurial.utils import (
+    dateutil,
+    stringutil,
 )
 
 cmdtable = {}
@@ -151,25 +157,27 @@ configitem('keywordset', 'svn',
     default=False,
 )
 # date like in cvs' $Date
-@templatefilter('utcdate')
-def utcdate(text):
+@templatefilter('utcdate', intype=templateutil.date)
+def utcdate(date):
     '''Date. Returns a UTC-date in this format: "2009/08/18 11:00:13".
     '''
-    return util.datestr((util.parsedate(text)[0], 0), '%Y/%m/%d %H:%M:%S')
+    dateformat = '%Y/%m/%d %H:%M:%S'
+    return dateutil.datestr((date[0], 0), dateformat)
 # date like in svn's $Date
-@templatefilter('svnisodate')
-def svnisodate(text):
+@templatefilter('svnisodate', intype=templateutil.date)
+def svnisodate(date):
     '''Date. Returns a date in this format: "2009-08-18 13:00:13
     +0200 (Tue, 18 Aug 2009)".
     '''
-    return util.datestr(text, '%Y-%m-%d %H:%M:%S %1%2 (%a, %d %b %Y)')
+    return dateutil.datestr(date, '%Y-%m-%d %H:%M:%S %1%2 (%a, %d %b %Y)')
 # date like in svn's $Id
-@templatefilter('svnutcdate')
-def svnutcdate(text):
+@templatefilter('svnutcdate', intype=templateutil.date)
+def svnutcdate(date):
     '''Date. Returns a UTC-date in this format: "2009-08-18
     11:00:13Z".
     '''
-    return util.datestr((util.parsedate(text)[0], 0), '%Y-%m-%d %H:%M:%SZ')
+    dateformat = '%Y-%m-%d %H:%M:%SZ'
+    return dateutil.datestr((date[0], 0), dateformat)
 
 # make keyword tools accessible
 kwtools = {'hgcmd': ''}
@@ -254,7 +262,7 @@ class kwtemplater(object):
         '''Replaces keywords in data with expanded template.'''
         def kwsub(mobj):
             kw = mobj.group(1)
-            ct = cmdutil.makelogtemplater(self.ui, self.repo,
+            ct = logcmdutil.maketemplater(self.ui, self.repo,
                                           self.templates[kw])
             self.ui.pushbuffer()
             ct.show(ctx, root=self.repo.root, file=path)
@@ -268,7 +276,8 @@ class kwtemplater(object):
 
     def expand(self, path, node, data):
         '''Returns data with keywords expanded.'''
-        if not self.restrict and self.match(path) and not util.binary(data):
+        if (not self.restrict and self.match(path)
+            and not stringutil.binary(data)):
             ctx = self.linkctx(path, node)
             return self.substitute(data, path, ctx, self.rekw.sub)
         return data
@@ -300,7 +309,7 @@ class kwtemplater(object):
                 data = self.repo.file(f).read(mf[f])
             else:
                 data = self.repo.wread(f)
-            if util.binary(data):
+            if stringutil.binary(data):
                 continue
             if expand:
                 parents = ctx.parents()
@@ -331,7 +340,7 @@ class kwtemplater(object):
 
     def shrink(self, fname, text):
         '''Returns text with all keyword substitutions removed.'''
-        if self.match(fname) and not util.binary(text):
+        if self.match(fname) and not stringutil.binary(text):
             return _shrinktext(text, self.rekwexp.sub)
         return text
 
@@ -339,7 +348,7 @@ class kwtemplater(object):
         '''Returns lines with keyword substitutions removed.'''
         if self.match(fname):
             text = ''.join(lines)
-            if not util.binary(text):
+            if not stringutil.binary(text):
                 return _shrinktext(text, self.rekwexp.sub).splitlines(True)
         return lines
 
@@ -610,14 +619,14 @@ def kwdiff(orig, repo, *args, **kwargs):
         if kwt:
             kwt.restrict = restrict
 
-def kwweb_skip(orig, web, req, tmpl):
+def kwweb_skip(orig, web):
     '''Wraps webcommands.x turning off keyword expansion.'''
     kwt = getattr(web.repo, '_keywordkwt', None)
     if kwt:
         origmatch = kwt.match
         kwt.match = util.never
     try:
-        for chunk in orig(web, req, tmpl):
+        for chunk in orig(web):
             yield chunk
     finally:
         if kwt:

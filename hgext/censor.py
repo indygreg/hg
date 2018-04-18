@@ -32,7 +32,6 @@ from mercurial.node import short
 
 from mercurial import (
     error,
-    filelog,
     lock as lockmod,
     registrar,
     revlog,
@@ -106,7 +105,7 @@ def _docensor(ui, repo, path, rev='', tombstone='', **opts):
         raise error.Abort(
             _('censor does not support revlog version %d') % (flogv,))
 
-    tombstone = filelog.packmeta({"censored": tombstone}, "")
+    tombstone = revlog.packmeta({"censored": tombstone}, "")
 
     crev = fctx.filerev()
 

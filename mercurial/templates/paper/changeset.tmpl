@@ -51,7 +51,11 @@
 </tr>
 {if(obsolete, '<tr>
  <th>obsolete</th>
- <td>{succsandmarkers%obsfateentry}</td>
+ <td>{join(succsandmarkers%obsfateentry, '<br>\n')}</td>
+</tr>')}
+{if(instabilities, '<tr>
+ <th>unstable</th>
+ <td>{join(whyunstable%whyunstableentry, '<br>\n')}</td>
 </tr>')}
 <tr>
  <th class="author">parents</th>

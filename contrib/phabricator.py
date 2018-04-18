@@ -22,7 +22,8 @@ Config::
     url = https://phab.example.com/
 
     # API token. Get it from https://$HOST/conduit/login/
-    token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    # Deprecated: see [phabricator.auth] below
+    #token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 
     # Repo callsign. If a repo has a URL https://$HOST/diffusion/FOO, then its
     # callsign is "FOO".
@@ -33,6 +34,11 @@ Config::
     # if you need to specify advanced options that is not easily supported by
     # the internal library.
     curlcmd = curl --connect-timeout 2 --retry 3 --silent
+
+    [phabricator.auth]
+    example.url = https://phab.example.com/
+    # API token. Get it from https://$HOST/conduit/login/
+    example.token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 """
 
 from __future__ import absolute_import
@@ -59,6 +65,9 @@ from mercurial import (
     tags,
     url as urlmod,
     util,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 cmdtable = {}
@@ -94,20 +103,56 @@ def urlencodenested(params):
     process('', params)
     return util.urlreq.urlencode(flatparams)
 
+printed_token_warning = False
+
+def readlegacytoken(repo):
+    """Transitional support for old phabricator tokens.
+
+    Remove before the 4.6 release.
+    """
+    global printed_token_warning
+    token = repo.ui.config('phabricator', 'token')
+    if token and not printed_token_warning:
+        printed_token_warning = True
+        repo.ui.warn(_('phabricator.token is deprecated - please '
+                       'migrate to the phabricator.auth section.\n'))
+    return token
+
 def readurltoken(repo):
     """return conduit url, token and make sure they exist
 
     Currently read from [phabricator] config section. In the future, it might
     make sense to read from .arcconfig and .arcrc as well.
     """
-    values = []
-    section = 'phabricator'
-    for name in ['url', 'token']:
-        value = repo.ui.config(section, name)
-        if not value:
-            raise error.Abort(_('config %s.%s is required') % (section, name))
-        values.append(value)
-    return values
+    url = repo.ui.config('phabricator', 'url')
+    if not url:
+        raise error.Abort(_('config %s.%s is required')
+                          % ('phabricator', 'url'))
+
+    groups = {}
+    for key, val in repo.ui.configitems('phabricator.auth'):
+        if '.' not in key:
+            repo.ui.warn(_("ignoring invalid [phabricator.auth] key '%s'\n")
+                         % key)
+            continue
+        group, setting = key.rsplit('.', 1)
+        groups.setdefault(group, {})[setting] = val
+
+    token = None
+    for group, auth in groups.iteritems():
+        if url != auth.get('url'):
+            continue
+        token = auth.get('token')
+        if token:
+            break
+
+    if not token:
+        token = readlegacytoken(repo)
+        if not token:
+            raise error.Abort(_('Can\'t find conduit token associated to %s')
+                              % (url,))
+
+    return url, token
 
 def callconduit(repo, name, params):
     """call Conduit API, params is a dict. return json.loads result, or None"""
@@ -119,7 +164,8 @@ def callconduit(repo, name, params):
     data = urlencodenested(params)
     curlcmd = repo.ui.config('phabricator', 'curlcmd')
     if curlcmd:
-        sin, sout = util.popen2('%s -d @- %s' % (curlcmd, util.shellquote(url)))
+        sin, sout = procutil.popen2('%s -d @- %s'
+                                    % (curlcmd, procutil.shellquote(url)))
         sin.write(data)
         sin.close()
         body = sout.read()
@@ -868,11 +914,12 @@ def phabupdate(ui, repo, spec, **opts):
 
 templatekeyword = registrar.templatekeyword()
 
-@templatekeyword('phabreview')
-def template_review(repo, ctx, revcache, **args):
+@templatekeyword('phabreview', requires={'ctx'})
+def template_review(context, mapping):
     """:phabreview: Object describing the review for this changeset.
     Has attributes `url` and `id`.
     """
+    ctx = context.resource(mapping, 'ctx')
     m = _differentialrevisiondescre.search(ctx.description())
     if m:
         return {

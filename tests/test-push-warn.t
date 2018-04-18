@@ -153,7 +153,7 @@ Specifying a revset that evaluates to null will abort
   uncompressed size of bundle content:
        352 (changelog)
        326 (manifests)
-       253  foo
+       25\d  foo (re)
   adding changesets
   adding manifests
   adding file changes

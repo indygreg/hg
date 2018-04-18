@@ -1,3 +1,5 @@
+#require reporevlogstore
+
 A repo with unknown revlogv2 requirement string cannot be opened
 
   $ hg init invalidreq
@@ -29,7 +31,7 @@ Can create and open repo with revlog v2 requirement
 Unknown flags to revlog are rejected
 
   >>> with open('.hg/store/00changelog.i', 'wb') as fh:
-  ...     fh.write('\x00\x04\xde\xad')
+  ...     fh.write(b'\x00\x04\xde\xad')
 
   $ hg log
   abort: unknown flags (0x04) in version 57005 revlog 00changelog.i!

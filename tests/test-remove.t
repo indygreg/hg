@@ -505,3 +505,32 @@ handling of untracked directories and missing files
   deleting [===========================================>] 1/1\r (no-eol) (esc)
                                                               \r (no-eol) (esc)
   [1]
+
+test dry-run for remove
+
+  $ hg init testdryrun
+  $ cd testdryrun
+  $ echo a>a
+  $ hg ci -qAm1
+  $ hg remove a -nv
+  \r (no-eol) (esc)
+  deleting [===========================================>] 1/1\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  \r (no-eol) (esc)
+  deleting [===========================================>] 1/1\r (no-eol) (esc)
+                                                              \r (no-eol) (esc)
+  removing a
+  $ hg diff
+
+  $ cat >> .hg/hgrc <<EOF
+  > [extensions]
+  > largefiles=
+  > EOF
+  $ echo 'B as largefile' > B
+  $ hg add --large B
+  $ hg ci -m "B"
+  $ hg remove B -nv
+  removing B
+  $ hg st
+
+  $ cd ..

@@ -1,8 +1,6 @@
 #require killdaemons
 
   $ cat << EOF >> $HGRCPATH
-  > [format]
-  > usegeneraldelta=yes
   > [ui]
   > ssh=$PYTHON "$TESTDIR/dummyssh"
   > EOF
@@ -139,13 +137,13 @@ Merge creates 2-parent revision of directory revlog
   $ cat dir1/b
   6
   $ hg debugindex --dir dir1
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      54     -1       1 8b3ffd73f901 000000000000 000000000000
-       1        54      68      0       2 68e9d057c5a8 8b3ffd73f901 000000000000
-       2       122      12      1       4 4698198d2624 68e9d057c5a8 000000000000
-       3       134      55      1       5 44844058ccce 68e9d057c5a8 000000000000
-       4       189      55      1       6 bf3d9b744927 68e9d057c5a8 000000000000
-       5       244      55      4       7 dde7c0af2a03 bf3d9b744927 44844058ccce
+     rev linkrev nodeid       p1           p2
+       0       1 8b3ffd73f901 000000000000 000000000000
+       1       2 68e9d057c5a8 8b3ffd73f901 000000000000
+       2       4 4698198d2624 68e9d057c5a8 000000000000
+       3       5 44844058ccce 68e9d057c5a8 000000000000
+       4       6 bf3d9b744927 68e9d057c5a8 000000000000
+       5       7 dde7c0af2a03 bf3d9b744927 44844058ccce
 
 Merge keeping directory from parent 1 does not create revlog entry. (Note that
 dir1's manifest does change, but only because dir1/a's filelog changes.)
@@ -285,13 +283,13 @@ Merge of two trees
 Parent of tree root manifest should be flat manifest, and two for merge
 
   $ hg debugindex -m
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0      80     -1       0 40536115ed9e 000000000000 000000000000
-       1        80      83      0       1 f3376063c255 40536115ed9e 000000000000
-       2       163      89      0       2 5d9b9da231a2 40536115ed9e 000000000000
-       3       252      83      2       3 d17d663cbd8a 5d9b9da231a2 f3376063c255
-       4       335     124      1       4 51e32a8c60ee f3376063c255 000000000000
-       5       459     126      2       5 cc5baa78b230 5d9b9da231a2 f3376063c255
+     rev linkrev nodeid       p1           p2
+       0       0 40536115ed9e 000000000000 000000000000
+       1       1 f3376063c255 40536115ed9e 000000000000
+       2       2 5d9b9da231a2 40536115ed9e 000000000000
+       3       3 d17d663cbd8a 5d9b9da231a2 f3376063c255
+       4       4 51e32a8c60ee f3376063c255 000000000000
+       5       5 cc5baa78b230 5d9b9da231a2 f3376063c255
 
 
 Status across flat/tree boundary should work
@@ -305,16 +303,16 @@ Status across flat/tree boundary should work
 Turning off treemanifest config has no effect
 
   $ hg debugindex --dir dir1
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0     127     -1       4 064927a0648a 000000000000 000000000000
-       1       127     111      0       5 25ecb8cb8618 000000000000 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
   $ echo 2 > dir1/a
   $ hg --config experimental.treemanifest=False ci -qm 'modify dir1/a'
   $ hg debugindex --dir dir1
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0     127     -1       4 064927a0648a 000000000000 000000000000
-       1       127     111      0       5 25ecb8cb8618 000000000000 000000000000
-       2       238      55      1       6 5b16163a30c6 25ecb8cb8618 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
+       2       6 5b16163a30c6 25ecb8cb8618 000000000000
 
 Stripping and recovering changes should work
 
@@ -324,9 +322,11 @@ Stripping and recovering changes should work
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/repo-mixed/.hg/strip-backup/51cfd7b1e13b-78a2f3ed-backup.hg
   $ hg debugindex --dir dir1
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0     127     -1       4 064927a0648a 000000000000 000000000000
-       1       127     111      0       5 25ecb8cb8618 000000000000 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
+
+#if repobundlerepo
   $ hg incoming .hg/strip-backup/*
   comparing with .hg/strip-backup/*-backup.hg (glob)
   searching for changes
@@ -336,9 +336,9 @@ Stripping and recovering changes should work
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     modify dir1/a
   
-  $ hg pull .hg/strip-backup/*
-  pulling from .hg/strip-backup/51cfd7b1e13b-78a2f3ed-backup.hg
-  searching for changes
+#endif
+
+  $ hg unbundle .hg/strip-backup/*
   adding changesets
   adding manifests
   adding file changes
@@ -349,10 +349,10 @@ Stripping and recovering changes should work
   saved backup bundle to $TESTTMP/repo-mixed/.hg/strip-backup/*-backup.hg (glob)
   $ hg unbundle -q .hg/strip-backup/*
   $ hg debugindex --dir dir1
-     rev    offset  length  delta linkrev nodeid       p1           p2
-       0         0     127     -1       4 064927a0648a 000000000000 000000000000
-       1       127     111      0       5 25ecb8cb8618 000000000000 000000000000
-       2       238      55      1       6 5b16163a30c6 25ecb8cb8618 000000000000
+     rev linkrev nodeid       p1           p2
+       0       4 064927a0648a 000000000000 000000000000
+       1       5 25ecb8cb8618 000000000000 000000000000
+       2       6 5b16163a30c6 25ecb8cb8618 000000000000
   $ hg st --change tip
   M dir1/a
 
@@ -474,7 +474,12 @@ Excludes with a glob should not exclude everything from the glob's root
 
 Test files for a subdirectory.
 
+#if reporevlogstore
   $ rm -r .hg/store/meta/~2e_a
+#endif
+#if reposimplestore
+  $ rm -r .hg/store/meta/._a
+#endif
   $ hg files -r . b
   b/bar/fruits.txt
   b/bar/orange/fly/gnat.py
@@ -490,7 +495,12 @@ Test files for a subdirectory.
 
 Test files with just includes and excludes.
 
+#if reporevlogstore
   $ rm -r .hg/store/meta/~2e_a
+#endif
+#if reposimplestore
+  $ rm -r .hg/store/meta/._a
+#endif
   $ rm -r .hg/store/meta/b/bar/orange/fly
   $ rm -r .hg/store/meta/b/foo/apple/bees
   $ hg files -r . -I path:b/bar -X path:b/bar/orange/fly -I path:b/foo -X path:b/foo/apple/bees
@@ -502,7 +512,12 @@ Test files with just includes and excludes.
 
 Test files for a subdirectory, excluding a directory within it.
 
+#if reporevlogstore
   $ rm -r .hg/store/meta/~2e_a
+#endif
+#if reposimplestore
+  $ rm -r .hg/store/meta/._a
+#endif
   $ rm -r .hg/store/meta/b/foo
   $ hg files -r . -X path:b/foo b
   b/bar/fruits.txt
@@ -518,7 +533,12 @@ Test files for a subdirectory, excluding a directory within it.
 Test files for a sub directory, including only a directory within it, and
 including an unrelated directory.
 
+#if reporevlogstore
   $ rm -r .hg/store/meta/~2e_a
+#endif
+#if reposimplestore
+  $ rm -r .hg/store/meta/._a
+#endif
   $ rm -r .hg/store/meta/b/foo
   $ hg files -r . -I path:b/bar/orange -I path:a b
   b/bar/orange/fly/gnat.py
@@ -532,7 +552,12 @@ including an unrelated directory.
 Test files for a pattern, including a directory, and excluding a directory
 within that.
 
+#if reporevlogstore
   $ rm -r .hg/store/meta/~2e_a
+#endif
+#if reposimplestore
+  $ rm -r .hg/store/meta/._a
+#endif
   $ rm -r .hg/store/meta/b/foo
   $ rm -r .hg/store/meta/b/bar/orange
   $ hg files -r . glob:**.txt -I path:b/bar -X path:b/bar/orange
@@ -557,6 +582,7 @@ Verify works
   checking files
   8 files, 4 changesets, 18 total revisions
 
+#if repofncache
 Dirlogs are included in fncache
   $ grep meta/.A/00manifest.i .hg/store/fncache
   meta/.A/00manifest.i
@@ -581,6 +607,7 @@ Rebuilt fncache includes dirlogs
   adding meta/b/foo/apple/00manifest.i
   adding meta/b/foo/apple/bees/00manifest.i
   16 items added, 0 removed from fncache
+#endif
 
 Finish first server
   $ killdaemons.py
@@ -599,12 +626,12 @@ Verify reports missing dirlog
    b/@1: parent-directory manifest refers to unknown revision f065da70369e
    b/@2: parent-directory manifest refers to unknown revision ac0d30948e0b
    b/@3: parent-directory manifest refers to unknown revision 367152e6af28
-  warning: orphan revlog 'meta/b/bar/00manifest.i'
-  warning: orphan revlog 'meta/b/bar/orange/00manifest.i'
-  warning: orphan revlog 'meta/b/bar/orange/fly/00manifest.i'
-  warning: orphan revlog 'meta/b/foo/00manifest.i'
-  warning: orphan revlog 'meta/b/foo/apple/00manifest.i'
-  warning: orphan revlog 'meta/b/foo/apple/bees/00manifest.i'
+  warning: orphan data file 'meta/b/bar/00manifest.i' (reporevlogstore !)
+  warning: orphan data file 'meta/b/bar/orange/00manifest.i' (reporevlogstore !)
+  warning: orphan data file 'meta/b/bar/orange/fly/00manifest.i' (reporevlogstore !)
+  warning: orphan data file 'meta/b/foo/00manifest.i' (reporevlogstore !)
+  warning: orphan data file 'meta/b/foo/apple/00manifest.i' (reporevlogstore !)
+  warning: orphan data file 'meta/b/foo/apple/bees/00manifest.i' (reporevlogstore !)
   crosschecking files in changesets and manifests
    b/bar/fruits.txt@0: in changeset but not in manifest
    b/bar/orange/fly/gnat.py@0: in changeset but not in manifest
@@ -612,7 +639,7 @@ Verify reports missing dirlog
    b/foo/apple/bees/flower.py@0: in changeset but not in manifest
   checking files
   8 files, 4 changesets, 18 total revisions
-  6 warnings encountered!
+  6 warnings encountered! (reporevlogstore !)
   9 integrity errors encountered!
   (first damaged changeset appears to be 0)
   [1]
@@ -667,6 +694,8 @@ requires got updated to include treemanifest
 Tree manifest revlogs exist.
   $ find deepclone/.hg/store/meta | sort
   deepclone/.hg/store/meta
+  deepclone/.hg/store/meta/._a (reposimplestore !)
+  deepclone/.hg/store/meta/._a/00manifest.i (reposimplestore !)
   deepclone/.hg/store/meta/b
   deepclone/.hg/store/meta/b/00manifest.i
   deepclone/.hg/store/meta/b/bar
@@ -681,8 +710,8 @@ Tree manifest revlogs exist.
   deepclone/.hg/store/meta/b/foo/apple/00manifest.i
   deepclone/.hg/store/meta/b/foo/apple/bees
   deepclone/.hg/store/meta/b/foo/apple/bees/00manifest.i
-  deepclone/.hg/store/meta/~2e_a
-  deepclone/.hg/store/meta/~2e_a/00manifest.i
+  deepclone/.hg/store/meta/~2e_a (reporevlogstore !)
+  deepclone/.hg/store/meta/~2e_a/00manifest.i (reporevlogstore !)
 Verify passes.
   $ cd deepclone
   $ hg verify
@@ -694,6 +723,7 @@ Verify passes.
   8 files, 4 changesets, 18 total revisions
   $ cd ..
 
+#if reporevlogstore
 Create clones using old repo formats to use in later tests
   $ hg clone --config format.usestore=False \
   >   --config experimental.changegroup3=True \
@@ -814,6 +844,8 @@ Packed bundle
   bundle requirements: generaldelta, revlogv1, treemanifest
   $ hg debugbundle --spec repo-packed.hg
   none-packed1;requirements%3Dgeneraldelta%2Crevlogv1%2Ctreemanifest
+
+#endif
 
 Bundle with changegroup2 is not supported
 

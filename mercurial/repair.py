@@ -26,8 +26,12 @@ from . import (
     obsutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
-def _bundle(repo, bases, heads, node, suffix, compress=True, obsolescence=True):
+def backupbundle(repo, bases, heads, node, suffix, compress=True,
+                 obsolescence=True):
     """create a bundle with the specified revisions as a backup"""
 
     backupdir = "strip-backup"
@@ -166,7 +170,7 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
     vfs = repo.vfs
     node = nodelist[-1]
     if backup:
-        backupfile = _bundle(repo, stripbases, cl.heads(), node, topic)
+        backupfile = backupbundle(repo, stripbases, cl.heads(), node, topic)
         repo.ui.status(_("saved backup bundle to %s\n") %
                        vfs.join(backupfile))
         repo.ui.log("backupbundle", "saved backup bundle to %s\n",
@@ -179,8 +183,8 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         # we are trying to strip.  This is harmless since the stripped markers
         # are already backed up and we did not touched the markers for the
         # saved changesets.
-        tmpbundlefile = _bundle(repo, savebases, saveheads, node, 'temp',
-                                compress=False, obsolescence=False)
+        tmpbundlefile = backupbundle(repo, savebases, saveheads, node, 'temp',
+                                     compress=False, obsolescence=False)
 
     try:
         with repo.transaction("strip") as tr:
@@ -235,7 +239,8 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
             except OSError as e:
                 if e.errno != errno.ENOENT:
                     ui.warn(_('error removing %s: %s\n') %
-                            (undovfs.join(undofile), str(e)))
+                            (undovfs.join(undofile),
+                             stringutil.forcebytestr(e)))
 
     except: # re-raises
         if backupfile:

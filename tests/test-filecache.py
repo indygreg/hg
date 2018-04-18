@@ -1,5 +1,6 @@
 from __future__ import absolute_import, print_function
 import os
+import stat
 import subprocess
 import sys
 
@@ -11,10 +12,14 @@ from mercurial import (
     extensions,
     hg,
     localrepo,
+    pycompat,
     ui as uimod,
     util,
     vfs as vfsmod,
 )
+
+if pycompat.ispy3:
+    xrange = range
 
 class fakerepo(object):
     def __init__(self):
@@ -196,7 +201,7 @@ def antiambiguity():
         fp.close()
 
         oldstat = os.stat(filename)
-        if oldstat.st_ctime != oldstat.st_mtime:
+        if oldstat[stat.ST_CTIME] != oldstat[stat.ST_MTIME]:
             # subsequent changing never causes ambiguity
             continue
 
@@ -215,16 +220,17 @@ def antiambiguity():
                 fp.write('BAR')
 
         newstat = os.stat(filename)
-        if oldstat.st_ctime != newstat.st_ctime:
+        if oldstat[stat.ST_CTIME] != newstat[stat.ST_CTIME]:
             # timestamp ambiguity was naturally avoided while repetition
             continue
 
         # st_mtime should be advanced "repetition * 2" times, because
         # all changes occurred at same time (in sec)
-        expected = (oldstat.st_mtime + repetition * 2) & 0x7fffffff
-        if newstat.st_mtime != expected:
-            print("'newstat.st_mtime %s is not %s (as %s + %s * 2)" %
-                  (newstat.st_mtime, expected, oldstat.st_mtime, repetition))
+        expected = (oldstat[stat.ST_MTIME] + repetition * 2) & 0x7fffffff
+        if newstat[stat.ST_MTIME] != expected:
+            print("'newstat[stat.ST_MTIME] %s is not %s (as %s + %s * 2)" %
+                  (newstat[stat.ST_MTIME], expected,
+                   oldstat[stat.ST_MTIME], repetition))
 
         # no more examination is needed regardless of result
         break

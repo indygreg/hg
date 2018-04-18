@@ -1,12 +1,20 @@
 This test is a duplicate of 'test-http.t' feel free to factor out
 parts that are not bundle1/bundle2 specific.
 
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
   $ cat << EOF >> $HGRCPATH
   > [devel]
   > # This test is dedicated to interaction through old bundle
   > legacy.exchange = bundle1
-  > [format] # temporary settings
-  > usegeneraldelta=yes
   > EOF
 
 
@@ -58,6 +66,8 @@ non-existent absolute path
 
 clone remote via stream
 
+#if no-reposimplestore
+
   $ hg clone -e "\"$PYTHON\" \"$TESTDIR/dummyssh\"" --stream ssh://user@dummy/remote local-stream
   streaming all changes
   4 files to transfer, 602 bytes of data
@@ -93,6 +103,8 @@ clone bookmarks via stream
      mybook                    0:1160648e36ce
   $ cd ..
   $ rm -rf local-stream stream2
+
+#endif
 
 clone remote via pull
 
@@ -465,11 +477,14 @@ debug output
   $ hg pull --debug ssh://user@dummy/remote
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
-  remote: 384
-  remote: capabilities: lookup changegroupsubset branchmap pushkey known getbundle unbundlehash batch streamreqs=generaldelta,revlogv1 $USUAL_BUNDLE2_CAPS_SERVER$ unbundle=HG10GZ,HG10BZ,HG10UN
-  remote: 1
+  remote: 413 (sshv1 !)
+  protocol upgraded to exp-ssh-v2-0001 (sshv2 !)
+  remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  remote: 1 (sshv1 !)
+  sending protocaps command
   preparing listkeys for "bookmarks"
   sending listkeys command
   received listkey for "bookmarks": 45 bytes
@@ -489,9 +504,9 @@ debug output
   Got arguments 1:user@dummy 2:hg -R nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R /$TESTTMP/nonexistent serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
-  Got arguments 1:user@dummy 2:hg -R local-stream serve --stdio
-  Got arguments 1:user@dummy 2:hg -R remote serve --stdio
-  Got arguments 1:user@dummy 2:hg -R remote serve --stdio
+  Got arguments 1:user@dummy 2:hg -R local-stream serve --stdio (no-reposimplestore !)
+  Got arguments 1:user@dummy 2:hg -R remote serve --stdio (no-reposimplestore !)
+  Got arguments 1:user@dummy 2:hg -R remote serve --stdio (no-reposimplestore !)
   Got arguments 1:user@dummy 2:hg -R doesnotexist serve --stdio
   Got arguments 1:user@dummy 2:hg -R remote serve --stdio
   Got arguments 1:user@dummy 2:hg -R local serve --stdio

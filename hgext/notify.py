@@ -103,6 +103,10 @@ notify.maxdiff
   Maximum number of diff lines to include in notification email. Set to 0
   to disable the diff, or -1 to include all of it. Default: 300.
 
+notify.maxdiffstat
+  Maximum number of diffstat lines to include in notification email. Set to -1
+  to include all of it. Default: -1.
+
 notify.maxsubject
   Maximum number of characters in email's subject line. Default: 67.
 
@@ -142,12 +146,16 @@ import time
 
 from mercurial.i18n import _
 from mercurial import (
-    cmdutil,
     error,
+    logcmdutil,
     mail,
     patch,
     registrar,
     util,
+)
+from mercurial.utils import (
+    dateutil,
+    stringutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -179,6 +187,9 @@ configitem('notify', 'incoming',
 )
 configitem('notify', 'maxdiff',
     default=300,
+)
+configitem('notify', 'maxdiffstat',
+    default=-1,
 )
 configitem('notify', 'maxsubject',
     default=67,
@@ -257,9 +268,8 @@ class notifier(object):
             mapfile = self.ui.config('notify', 'style')
         if not mapfile and not template:
             template = deftemplates.get(hooktype) or single_template
-        spec = cmdutil.logtemplatespec(template, mapfile)
-        self.t = cmdutil.changeset_templater(self.ui, self.repo, spec,
-                                             False, None, False)
+        spec = logcmdutil.templatespec(template, mapfile)
+        self.t = logcmdutil.changesettemplater(self.ui, self.repo, spec)
 
     def strip(self, path):
         '''strip leading slashes from local path, turn into web-safe path.'''
@@ -277,7 +287,7 @@ class notifier(object):
     def fixmail(self, addr):
         '''try to clean up email addresses.'''
 
-        addr = util.email(addr.strip())
+        addr = stringutil.email(addr.strip())
         if self.domain:
             a = addr.find('@localhost')
             if a != -1:
@@ -361,7 +371,7 @@ class notifier(object):
             for k, v in headers:
                 msg[k] = v
 
-        msg['Date'] = util.datestr(format="%a, %d %b %Y %H:%M:%S %1%2")
+        msg['Date'] = dateutil.datestr(format="%a, %d %b %Y %H:%M:%S %1%2")
 
         # try to make subject line exist and be useful
         if not subject:
@@ -372,7 +382,7 @@ class notifier(object):
                 subject = '%s: %s' % (self.root, s)
         maxsubject = int(self.ui.config('notify', 'maxsubject'))
         if maxsubject:
-            subject = util.ellipsis(subject, maxsubject)
+            subject = stringutil.ellipsis(subject, maxsubject)
         msg['Subject'] = mail.headencode(self.ui, subject,
                                          self.charsets, self.test)
 
@@ -399,7 +409,7 @@ class notifier(object):
         else:
             self.ui.status(_('notify: sending %d subscribers %d changes\n') %
                            (len(subs), count))
-            mail.sendmail(self.ui, util.email(msg['From']),
+            mail.sendmail(self.ui, stringutil.email(msg['From']),
                           subs, msgtext, mbox=self.mbox)
 
     def diff(self, ctx, ref=None):
@@ -415,10 +425,17 @@ class notifier(object):
         difflines = ''.join(chunks).splitlines()
 
         if self.ui.configbool('notify', 'diffstat'):
+            maxdiffstat = int(self.ui.config('notify', 'maxdiffstat'))
             s = patch.diffstat(difflines)
             # s may be nil, don't include the header if it is
             if s:
-                self.ui.write(_('\ndiffstat:\n\n%s') % s)
+                if maxdiffstat >= 0 and s.count("\n") > maxdiffstat + 1:
+                    s = s.split("\n")
+                    msg = _('\ndiffstat (truncated from %d to %d lines):\n\n')
+                    self.ui.write(msg % (len(s) - 2, maxdiffstat))
+                    self.ui.write("\n".join(s[:maxdiffstat] + s[-2:]))
+                else:
+                    self.ui.write(_('\ndiffstat:\n\n%s') % s)
 
         if maxdiff == 0:
             return

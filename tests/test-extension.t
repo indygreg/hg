@@ -7,22 +7,22 @@ Test basic extension support
   > command = registrar.command(cmdtable)
   > configtable = {}
   > configitem = registrar.configitem(configtable)
-  > configitem('tests', 'foo', default="Foo")
+  > configitem(b'tests', b'foo', default=b"Foo")
   > def uisetup(ui):
-  >     ui.write("uisetup called\\n")
+  >     ui.write(b"uisetup called\\n")
   >     ui.flush()
   > def reposetup(ui, repo):
-  >     ui.write("reposetup called for %s\\n" % os.path.basename(repo.root))
-  >     ui.write("ui %s= repo.ui\\n" % (ui == repo.ui and "=" or "!"))
+  >     ui.write(b"reposetup called for %s\\n" % os.path.basename(repo.root))
+  >     ui.write(b"ui %s= repo.ui\\n" % (ui == repo.ui and b"=" or b"!"))
   >     ui.flush()
-  > @command(b'foo', [], 'hg foo')
+  > @command(b'foo', [], b'hg foo')
   > def foo(ui, *args, **kwargs):
-  >     foo = ui.config('tests', 'foo')
+  >     foo = ui.config(b'tests', b'foo')
   >     ui.write(foo)
-  >     ui.write("\\n")
-  > @command(b'bar', [], 'hg bar', norepo=True)
+  >     ui.write(b"\\n")
+  > @command(b'bar', [], b'hg bar', norepo=True)
   > def bar(ui, *args, **kwargs):
-  >     ui.write("Bar\\n")
+  >     ui.write(b"Bar\\n")
   > EOF
   $ abspath=`pwd`/foobar.py
 
@@ -440,12 +440,12 @@ Setup main procedure of extension.
   > @command(b'showabsolute', [], norepo=True)
   > def showabsolute(ui, *args, **opts):
   >     from absextroot import absolute
-  >     ui.write('ABS: %s\n' % '\nABS: '.join(absolute.getresult()))
+  >     ui.write(b'ABS: %s\n' % '\nABS: '.join(absolute.getresult()))
   > 
   > @command(b'showrelative', [], norepo=True)
   > def showrelative(ui, *args, **opts):
   >     from . import relative
-  >     ui.write('REL: %s\n' % '\nREL: '.join(relative.getresult()))
+  >     ui.write(b'REL: %s\n' % '\nREL: '.join(relative.getresult()))
   > 
   > # import modules from external library
   > from extlibroot.lsub1.lsub2 import used as lused, unused as lunused
@@ -564,11 +564,11 @@ hide outer repo
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'debugfoobar', [], 'hg debugfoobar')
+  > @command(b'debugfoobar', [], b'hg debugfoobar')
   > def debugfoobar(ui, repo, *args, **opts):
   >     "yet another debug command"
   >     pass
-  > @command(b'foo', [], 'hg foo')
+  > @command(b'foo', [], b'hg foo')
   > def foo(ui, repo, *args, **opts):
   >     """yet another foo command
   >     This command has been DEPRECATED since forever.
@@ -730,6 +730,10 @@ Extension module help vs command help:
   called with a configurable set of options and two non-option arguments: paths
   to directories containing snapshots of files to compare.
   
+  If there is more than one file being compared and the "child" revision is the
+  working directory, any modifications made in the external diff program will be
+  copied back to the working directory from the temporary directory.
+  
   The extdiff extension also allows you to configure new diff commands, so you
   do not need to type 'hg extdiff -p kdiff3' always.
   
@@ -805,7 +809,7 @@ Test help topic with same name as extension
   > command = registrar.command(cmdtable)
   > """multirevs extension
   > Big multi-line module docstring."""
-  > @command(b'multirevs', [], 'ARG', norepo=True)
+  > @command(b'multirevs', [], b'ARG', norepo=True)
   > def multirevs(ui, repo, arg, *args, **opts):
   >     """multirevs command"""
   >     pass
@@ -863,9 +867,11 @@ Issue811: Problem loading extensions twice (by site and by user)
 Show extensions:
 (note that mq force load strip, also checking it's not loaded twice)
 
+#if no-extraextensions
   $ hg debugextensions
   mq
   strip
+#endif
 
 For extensions, which name matches one of its commands, help
 message should ask '-v -e' to get list of built-in aliases
@@ -880,14 +886,14 @@ along with extension help itself
   > from mercurial import commands, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'dodo', [], 'hg dodo')
+  > @command(b'dodo', [], b'hg dodo')
   > def dodo(ui, *args, **kwargs):
   >     """Does nothing"""
-  >     ui.write("I do nothing. Yay\\n")
-  > @command(b'foofoo', [], 'hg foofoo')
+  >     ui.write(b"I do nothing. Yay\\n")
+  > @command(b'foofoo', [], b'hg foofoo')
   > def foofoo(ui, *args, **kwargs):
   >     """Writes 'Foo foo'"""
-  >     ui.write("Foo foo\\n")
+  >     ui.write(b"Foo foo\\n")
   > EOF
   $ dodopath=$TESTTMP/d/dodo.py
 
@@ -991,14 +997,14 @@ along with extension help
   > from mercurial import commands, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'something', [], 'hg something')
+  > @command(b'something', [], b'hg something')
   > def something(ui, *args, **kwargs):
   >     """Does something"""
-  >     ui.write("I do something. Yaaay\\n")
-  > @command(b'beep', [], 'hg beep')
+  >     ui.write(b"I do something. Yaaay\\n")
+  > @command(b'beep', [], b'hg beep')
   > def beep(ui, *args, **kwargs):
   >     """Writes 'Beep beep'"""
-  >     ui.write("Beep beep\\n")
+  >     ui.write(b"Beep beep\\n")
   > EOF
   $ dudupath=$TESTTMP/d/dudu.py
 
@@ -1235,7 +1241,7 @@ Broken disabled extension and command:
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > class Bogon(Exception): pass
-  > @command(b'throw', [], 'hg throw', norepo=True)
+  > @command(b'throw', [], b'hg throw', norepo=True)
   > def throw(ui, **opts):
   >     """throws an exception"""
   >     raise Bogon()
@@ -1278,8 +1284,8 @@ If the extension specifies a buglink, show that:
 If the extensions declare outdated versions, accuse the older extension first:
   $ echo "from mercurial import util" >> older.py
   $ echo "util.version = lambda:'2.2'" >> older.py
-  $ echo "testedwith = '1.9.3'" >> older.py
-  $ echo "testedwith = '2.1.1'" >> throw.py
+  $ echo "testedwith = b'1.9.3'" >> older.py
+  $ echo "testedwith = b'2.1.1'" >> throw.py
   $ rm -f throw.pyc throw.pyo
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
@@ -1293,7 +1299,7 @@ If the extensions declare outdated versions, accuse the older extension first:
   ** Extensions loaded: throw, older
 
 One extension only tested with older, one only with newer versions:
-  $ echo "util.version = lambda:'2.1'" >> older.py
+  $ echo "util.version = lambda:b'2.1'" >> older.py
   $ rm -f older.pyc older.pyo
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
@@ -1307,7 +1313,7 @@ One extension only tested with older, one only with newer versions:
   ** Extensions loaded: throw, older
 
 Older extension is tested with current version, the other only with newer:
-  $ echo "util.version = lambda:'1.9.3'" >> older.py
+  $ echo "util.version = lambda:b'1.9.3'" >> older.py
   $ rm -f older.pyc older.pyo
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py --config extensions.older=older.py \
@@ -1345,8 +1351,8 @@ Declare the version as supporting this hg version, show regular bts link:
   ** Extensions loaded: throw
 
 Patch version is ignored during compatibility check
-  $ echo "testedwith = '3.2'" >> throw.py
-  $ echo "util.version = lambda:'3.2.2'" >> throw.py
+  $ echo "testedwith = b'3.2'" >> throw.py
+  $ echo "util.version = lambda:b'3.2.2'" >> throw.py
   $ rm -f throw.pyc throw.pyo
   $ rm -Rf __pycache__
   $ hg --config extensions.throw=throw.py throw 2>&1 | egrep '^\*\*'
@@ -1401,6 +1407,11 @@ Test version number support in 'hg version':
   $ hg version -q --config extensions.throw=throw.py
   Mercurial Distributed SCM (version *) (glob)
 
+Test template output:
+
+  $ hg version --config extensions.strip= -T'{extensions}'
+  strip
+
 Test JSON output of version:
 
   $ hg version -Tjson
@@ -1438,8 +1449,8 @@ Refuse to load extensions with minimum version requirements
 
   $ cat > minversion1.py << EOF
   > from mercurial import util
-  > util.version = lambda: '3.5.2'
-  > minimumhgversion = '3.6'
+  > util.version = lambda: b'3.5.2'
+  > minimumhgversion = b'3.6'
   > EOF
   $ hg --config extensions.minversion=minversion1.py version
   (third party extension minversion requires version 3.6 or newer of Mercurial; disabling)
@@ -1452,8 +1463,8 @@ Refuse to load extensions with minimum version requirements
 
   $ cat > minversion2.py << EOF
   > from mercurial import util
-  > util.version = lambda: '3.6'
-  > minimumhgversion = '3.7'
+  > util.version = lambda: b'3.6'
+  > minimumhgversion = b'3.7'
   > EOF
   $ hg --config extensions.minversion=minversion2.py version 2>&1 | egrep '\(third'
   (third party extension minversion requires version 3.7 or newer of Mercurial; disabling)
@@ -1462,8 +1473,8 @@ Can load version that is only off by point release
 
   $ cat > minversion2.py << EOF
   > from mercurial import util
-  > util.version = lambda: '3.6.1'
-  > minimumhgversion = '3.6'
+  > util.version = lambda: b'3.6.1'
+  > minimumhgversion = b'3.6'
   > EOF
   $ hg --config extensions.minversion=minversion3.py version 2>&1 | egrep '\(third'
   [1]
@@ -1472,8 +1483,8 @@ Can load minimum version identical to current
 
   $ cat > minversion3.py << EOF
   > from mercurial import util
-  > util.version = lambda: '3.5'
-  > minimumhgversion = '3.5'
+  > util.version = lambda: b'3.5'
+  > minimumhgversion = b'3.5'
   > EOF
   $ hg --config extensions.minversion=minversion3.py version 2>&1 | egrep '\(third'
   [1]
@@ -1492,7 +1503,7 @@ Commands handling multiple repositories at a time should invoke only
   $ cat > $TESTTMP/reposetuptest.py <<EOF
   > from mercurial import extensions
   > def reposetup(ui, repo):
-  >     ui.write('reposetup() for %s\n' % (repo.root))
+  >     ui.write(b'reposetup() for %s\n' % (repo.root))
   >     ui.flush()
   > EOF
   $ hg init src
@@ -1626,7 +1637,7 @@ Prohibit registration of commands that don't use @command (issue5137)
   > def deprecatedcmd(repo, ui):
   >     pass
   > cmdtable = {
-  >     'deprecatedcmd': (deprecatedcmd, [], ''),
+  >     b'deprecatedcmd': (deprecatedcmd, [], b''),
   > }
   > EOF
   $ cat <<EOF > .hg/hgrc
@@ -1663,7 +1674,7 @@ Test synopsis and docstring extending
   >     docstring = '''
   >     GREPME make sure that this is in the help!
   >     '''
-  >     extensions.wrapcommand(commands.table, 'bookmarks', exbookmarks,
+  >     extensions.wrapcommand(commands.table, b'bookmarks', exbookmarks,
   >                            synopsis, docstring)
   > EOF
   $ abspath=`pwd`/exthelp.py
@@ -1698,7 +1709,7 @@ Prohibit the use of unicode strings as the default value of options
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('dummy', [('', 'opt', u'value', u'help')], 'ext [OPTIONS]')
+  > @command(b'dummy', [('', 'opt', u'value', u'help')], 'ext [OPTIONS]')
   > def ext(*args, **opts):
   >     print(opts['opt'])
   > EOF
@@ -1707,8 +1718,8 @@ Prohibit the use of unicode strings as the default value of options
   > test_unicode_default_value = $TESTTMP/test_unicode_default_value.py
   > EOF
   $ hg -R $TESTTMP/opt-unicode-default dummy
-  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: option 'dummy.opt' has a unicode default value
-  *** (change the dummy.opt default value to a non-unicode string)
+  *** failed to import extension test_unicode_default_value from $TESTTMP/test_unicode_default_value.py: unicode u'value' found in cmdtable.dummy
+  *** (use b'' to make it byte string)
   hg: unknown command 'dummy'
   (did you mean summary?)
   [255]

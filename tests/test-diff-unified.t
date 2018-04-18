@@ -386,3 +386,73 @@ If [diff] git is set to true, but the user says --no-git, we should
    }
 
   $ cd ..
+
+Long function names should be abbreviated, but multi-byte character shouldn't
+be broken up
+
+  $ hg init longfunc
+  $ cd longfunc
+
+  >>> with open('a', 'wb') as f:
+  ...     f.write(b'a' * 39 + b'bb' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 0 b\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'\xc3\xa0' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 0 a with grave (single code point)\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'a\xcc\x80' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 0 a with grave (composition)\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  $ hg ci -qAm0
+
+  >>> with open('a', 'wb') as f:
+  ...     f.write(b'a' * 39 + b'bb' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 1 b\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'\xc3\xa0' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 1 a with grave (single code point)\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b'a' * 39 + b'a\xcc\x80' + b'\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  ...     f.write(b' 1 a with grave (composition)\n') and None
+  ...     f.write(b' .\n' * 3) and None
+  $ hg ci -m1
+
+  $ hg diff -c1 --nodates --show-function
+  diff -r 3e92dd6fa812 -r a256341606cb a
+  --- a/a
+  +++ b/a
+  @@ -2,7 +2,7 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab
+    .
+    .
+    .
+  - 0 b
+  + 1 b
+    .
+    .
+    .
+  @@ -10,7 +10,7 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\xc3\xa0 (esc)
+    .
+    .
+    .
+  - 0 a with grave (single code point)
+  + 1 a with grave (single code point)
+    .
+    .
+    .
+  @@ -18,7 +18,7 @@ aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\xcc\x80 (esc)
+    .
+    .
+    .
+  - 0 a with grave (composition)
+  + 1 a with grave (composition)
+    .
+    .
+    .
+
+  $ cd ..

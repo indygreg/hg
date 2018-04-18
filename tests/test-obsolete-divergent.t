@@ -16,6 +16,11 @@ Enable obsolete
   > debugobsolete = debugobsolete -d '0 0'
   > [phases]
   > publish=False
+  > [templates]
+  > wuentryshort = '{instability}:{if(divergentnodes, " ")}{divergentnodes} {reason} {node|shortest}\n'
+  > whyunstableshort = '{whyunstable % wuentryshort}'
+  > wuentryshorter = '{instability}:{divergentnodes % " {node|shortest} ({phase})"} {reason} {node|shortest}\n'
+  > whyunstableshorter = '{whyunstable % wuentryshorter}'
   > EOF
 
 
@@ -526,6 +531,16 @@ Check more complex obsolescence graft (with divergence)
   9:14608b260df8 A_8
   10:bed64f5d2f5a A_9
 
+  $ hg log -r bed64f5d2f5a -T '{whyunstable}\n' | sort
+  content-divergent: 4:01f36c5a8fda (draft) 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor 007dc284c1f8
+  content-divergent: 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor e442cfc57690
+  $ hg log -r bed64f5d2f5a -T whyunstableshort | sort
+  content-divergent: 4:01f36c5a8fda (draft) 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor 007d
+  content-divergent: 8:7ae126973a96 (draft) 9:14608b260df8 (draft) predecessor e442
+  $ hg log -r bed64f5d2f5a -T whyunstableshorter | sort
+  content-divergent: 01f3 (draft) 7ae1 (draft) 1460 (draft) predecessor 007d
+  content-divergent: 7ae1 (draft) 1460 (draft) predecessor e442
+
 fix the divergence
 
   $ mkcommit A_A; hg up 0
@@ -621,6 +636,34 @@ fix the divergence
       a139f71be9da
   $ hg log -r 'contentdivergent()'
 
+#if serve
+
+  $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid --config web.view=all \
+  >   -A access.log -E errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+check an obsolete changeset that was rewritten and also split
+
+  $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=paper' | egrep 'rewritten|split'
+   <td>rewritten as <a href="/rev/bed64f5d2f5a?style=paper">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span><br>
+  split as <a href="/rev/7ae126973a96?style=paper">7ae126973a96</a> <a href="/rev/14608b260df8?style=paper">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=coal' | egrep 'rewritten|split'
+   <td>rewritten as <a href="/rev/bed64f5d2f5a?style=coal">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span><br>
+  split as <a href="/rev/7ae126973a96?style=coal">7ae126973a96</a> <a href="/rev/14608b260df8?style=coal">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=gitweb' | egrep 'rewritten|split'
+  <td>rewritten as <a class="list" href="/rev/bed64f5d2f5a?style=gitweb">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  <td>split as <a class="list" href="/rev/7ae126973a96?style=gitweb">7ae126973a96</a> <a class="list" href="/rev/14608b260df8?style=gitweb">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=monoblue' | egrep 'rewritten|split'
+  <dd>rewritten as <a href="/rev/bed64f5d2f5a?style=monoblue">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></dd>
+  <dd>split as <a href="/rev/7ae126973a96?style=monoblue">7ae126973a96</a> <a href="/rev/14608b260df8?style=monoblue">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/e442cfc57690?style=spartan' | egrep 'rewritten|split'
+  <td class="obsolete">rewritten as <a href="/rev/bed64f5d2f5a?style=spartan">bed64f5d2f5a</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+  <td class="obsolete">split as <a href="/rev/7ae126973a96?style=spartan">7ae126973a96</a> <a href="/rev/14608b260df8?style=spartan">14608b260df8</a>  by &#116;&#101;&#115;&#116; <span class="age">Thu, 01 Jan 1970 00:00:00 +0000</span></td>
+
+  $ killdaemons.py
+
+#endif
+
   $ cd ..
 
 
@@ -689,3 +732,35 @@ Use scmutil.cleanupnodes API to create divergence
   a178212c3433c4e77b573f6011e29affb8aefa33 1a2a9b5b0030632400aa78e00388c20f99d3ec44 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 'test'}
   a178212c3433c4e77b573f6011e29affb8aefa33 ad6478fb94ecec98b86daae98722865d494ac561 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '13', 'operation': 'test', 'user': 'test'}
   ad6478fb94ecec98b86daae98722865d494ac561 70d5a63ca112acb3764bc1d7320ca90ea688d671 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '9', 'operation': 'test', 'user': 'test'}
+
+  $ hg debugwhyunstable 1a2a9b5b0030
+  content-divergent: 70d5a63ca112acb3764bc1d7320ca90ea688d671 (draft) predecessor a178212c3433c4e77b573f6011e29affb8aefa33
+
+  $ hg log -r 1a2a9b5b0030 -T '{whyunstable}\n'
+  content-divergent: 4:70d5a63ca112 (draft) predecessor a178212c3433
+  $ hg log -r 1a2a9b5b0030 -T whyunstableshort
+  content-divergent: 4:70d5a63ca112 (draft) predecessor a178
+  $ hg log -r 1a2a9b5b0030 -T whyunstableshorter
+  content-divergent: 70d5 (draft) predecessor a178
+
+#if serve
+
+  $ hg serve -n test -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+check explanation for a content-divergent changeset
+
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=paper' | grep divergent:
+   <td>content-divergent: <a href="/rev/70d5a63ca112?style=paper">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=paper">a178212c3433</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=coal' | grep divergent:
+   <td>content-divergent: <a href="/rev/70d5a63ca112?style=coal">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=coal">a178212c3433</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=gitweb' | grep divergent:
+  <td>content-divergent: <a class="list" href="/rev/70d5a63ca112?style=gitweb">70d5a63ca112</a> (draft) predecessor <a class="list" href="/rev/a178212c3433?style=gitweb">a178212c3433</a></td>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=monoblue' | grep divergent:
+  <dd>content-divergent: <a href="/rev/70d5a63ca112?style=monoblue">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=monoblue">a178212c3433</a></dd>
+  $ get-with-headers.py localhost:$HGPORT 'rev/1a2a9b5b0030?style=spartan' | grep divergent:
+  <td class="unstable">content-divergent: <a href="/rev/70d5a63ca112?style=spartan">70d5a63ca112</a> (draft) predecessor <a href="/rev/a178212c3433?style=spartan">a178212c3433</a></td>
+
+  $ killdaemons.py
+
+#endif

@@ -482,7 +482,34 @@ Test that rewriting leaving instability behind is allowed
   |/
   o  0:cd010b8cd998 A
   
+  $ cd ..
+  $ cp -R hidden stabilize
+  $ cd stabilize
+  $ hg rebase --auto-orphans '0::' -d 10
+  abort: --auto-orphans is incompatible with --dest
+  [255]
+  $ hg rebase --auto-orphans '0::'
+  rebasing 9:cf44d2f5a9f4 "D"
+  $ hg log -G
+  o  12:7e3935feaa68 D
+  |
+  o  11:0d8f238b634c C
+  |
+  o  10:7c6027df6a99 B
+  |
+  @  7:02de42196ebe H
+  |
+  | o  6:eea13746799a G
+  |/|
+  o |  5:24b6387c8c8c F
+  | |
+  | o  4:9520eea781bc E
+  |/
+  o  0:cd010b8cd998 A
+  
 
+  $ cd ../hidden
+  $ rm -r ../stabilize
 
 Test multiple root handling
 ------------------------------------
@@ -1218,6 +1245,46 @@ Similar test on a more complex graph
   o  0:b173517d0057 a
   
 
+issue5782
+  $ hg strip -r 0:
+  $ hg debugdrawdag <<EOF
+  >       d
+  >       |
+  >   c1  c # replace: c -> c1
+  >    \ /
+  >     b
+  >     |
+  >     a
+  > EOF
+  1 new orphan changesets
+  $ hg debugobsolete `hg log -T "{node}" --hidden -r 'desc("c1")'`
+  obsoleted 1 changesets
+  $ hg log -G -r 'a': --hidden
+  *  4:76be324c128b d
+  |
+  | x  3:ef8a456de8fa c1 (pruned)
+  | |
+  x |  2:a82ac2b38757 c (rewritten using replace as 3:ef8a456de8fa)
+  |/
+  o  1:488e1b7e7341 b
+  |
+  o  0:b173517d0057 a
+  
+  $ hg rebase -d 0 -r 2
+  rebasing 2:a82ac2b38757 "c" (c)
+  $ hg log -G -r 'a': --hidden
+  o  5:69ad416a4a26 c
+  |
+  | *  4:76be324c128b d
+  | |
+  | | x  3:ef8a456de8fa c1 (pruned)
+  | | |
+  | x |  2:a82ac2b38757 c (rewritten using replace as 3:ef8a456de8fa rewritten using rebase as 5:69ad416a4a26)
+  | |/
+  | o  1:488e1b7e7341 b
+  |/
+  o  0:b173517d0057 a
+  
   $ cd ..
 
 Rebase merge where successor of one parent is equal to destination (issue5198)

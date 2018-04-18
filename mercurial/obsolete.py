@@ -81,6 +81,7 @@ from . import (
     policy,
     util,
 )
+from .utils import dateutil
 
 parsers = policy.importmod(r'parsers')
 
@@ -132,53 +133,34 @@ def _getoptionvalue(repo, option):
 
         return option in result
 
+def getoptions(repo):
+    """Returns dicts showing state of obsolescence features."""
+
+    createmarkersvalue = _getoptionvalue(repo, createmarkersopt)
+    unstablevalue = _getoptionvalue(repo, allowunstableopt)
+    exchangevalue = _getoptionvalue(repo, exchangeopt)
+
+    # createmarkers must be enabled if other options are enabled
+    if ((unstablevalue or exchangevalue) and not createmarkersvalue):
+        raise error.Abort(_("'createmarkers' obsolete option must be enabled "
+                            "if other obsolete options are enabled"))
+
+    return {
+        createmarkersopt: createmarkersvalue,
+        allowunstableopt: unstablevalue,
+        exchangeopt: exchangevalue,
+    }
+
 def isenabled(repo, option):
     """Returns True if the given repository has the given obsolete option
     enabled.
     """
-    createmarkersvalue = _getoptionvalue(repo, createmarkersopt)
-    unstabluevalue = _getoptionvalue(repo, allowunstableopt)
-    exchangevalue = _getoptionvalue(repo, exchangeopt)
+    return getoptions(repo)[option]
 
-    # createmarkers must be enabled if other options are enabled
-    if ((unstabluevalue or exchangevalue) and not createmarkersvalue):
-        raise error.Abort(_("'createmarkers' obsolete option must be enabled "
-                            "if other obsolete options are enabled"))
-
-    return _getoptionvalue(repo, option)
-
-### obsolescence marker flag
-
-## bumpedfix flag
-#
-# When a changeset A' succeed to a changeset A which became public, we call A'
-# "bumped" because it's a successors of a public changesets
-#
-# o    A' (bumped)
-# |`:
-# | o  A
-# |/
-# o    Z
-#
-# The way to solve this situation is to create a new changeset Ad as children
-# of A. This changeset have the same content than A'. So the diff from A to A'
-# is the same than the diff from A to Ad. Ad is marked as a successors of A'
-#
-# o   Ad
-# |`:
-# | x A'
-# |'|
-# o | A
-# |/
-# o Z
-#
-# But by transitivity Ad is also a successors of A. To avoid having Ad marked
-# as bumped too, we add the `bumpedfix` flag to the marker. <A', (Ad,)>.
-# This flag mean that the successors express the changes between the public and
-# bumped version and fix the situation, breaking the transitivity of
-# "bumped" here.
-bumpedfix = 1
-usingsha256 = 2
+# Creating aliases for marker flags because evolve extension looks for
+# bumpedfix in obsolete.py
+bumpedfix = obsutil.bumpedfix
+usingsha256 = obsutil.usingsha256
 
 ## Parsing and writing of version "0"
 #
@@ -506,13 +488,6 @@ def _addsuccessors(successors, markers):
     for mark in markers:
         successors.setdefault(mark[0], set()).add(mark)
 
-def _addprecursors(*args, **kwargs):
-    msg = ("'obsolete._addprecursors' is deprecated, "
-           "use 'obsolete._addpredecessors'")
-    util.nouideprecwarn(msg, '4.4')
-
-    return _addpredecessors(*args, **kwargs)
-
 @util.nogc
 def _addpredecessors(predecessors, markers):
     for mark in markers:
@@ -570,7 +545,7 @@ class obsstore(object):
         return len(self._all)
 
     def __nonzero__(self):
-        if not self._cached('_all'):
+        if not self._cached(r'_all'):
             try:
                 return self.svfs.stat('obsstore').st_size > 1
             except OSError as inst:
@@ -608,13 +583,13 @@ class obsstore(object):
         if date is None:
             if 'date' in metadata:
                 # as a courtesy for out-of-tree extensions
-                date = util.parsedate(metadata.pop('date'))
+                date = dateutil.parsedate(metadata.pop('date'))
             elif ui is not None:
                 date = ui.configdate('devel', 'default-date')
                 if date is None:
-                    date = util.makedate()
+                    date = dateutil.makedate()
             else:
-                date = util.makedate()
+                date = dateutil.makedate()
         if len(prec) != 20:
             raise ValueError(prec)
         for succ in succs:
@@ -663,7 +638,7 @@ class obsstore(object):
             self.caches.clear()
         # records the number of new markers for the transaction hooks
         previous = int(transaction.hookargs.get('new_obsmarkers', '0'))
-        transaction.hookargs['new_obsmarkers'] = str(previous + len(new))
+        transaction.hookargs['new_obsmarkers'] = '%d' % (previous + len(new))
         return len(new)
 
     def mergemarkers(self, transaction, data):
@@ -700,14 +675,6 @@ class obsstore(object):
         _addsuccessors(successors, self._all)
         return successors
 
-    @property
-    def precursors(self):
-        msg = ("'obsstore.precursors' is deprecated, "
-               "use 'obsstore.predecessors'")
-        util.nouideprecwarn(msg, '4.4')
-
-        return self.predecessors
-
     @propertycache
     def predecessors(self):
         predecessors = {}
@@ -727,11 +694,11 @@ class obsstore(object):
         markers = list(markers) # to allow repeated iteration
         self._data = self._data + rawdata
         self._all.extend(markers)
-        if self._cached('successors'):
+        if self._cached(r'successors'):
             _addsuccessors(self.successors, markers)
-        if self._cached('predecessors'):
+        if self._cached(r'predecessors'):
             _addpredecessors(self.predecessors, markers)
-        if self._cached('children'):
+        if self._cached(r'children'):
             _addchildren(self.children, markers)
         _checkinvalidmarkers(markers)
 
@@ -843,42 +810,6 @@ def pushmarker(repo, key, old, new):
         repo.invalidatevolatilesets()
         return True
 
-# keep compatibility for the 4.3 cycle
-def allprecursors(obsstore, nodes, ignoreflags=0):
-    movemsg = 'obsolete.allprecursors moved to obsutil.allprecursors'
-    util.nouideprecwarn(movemsg, '4.3')
-    return obsutil.allprecursors(obsstore, nodes, ignoreflags)
-
-def allsuccessors(obsstore, nodes, ignoreflags=0):
-    movemsg = 'obsolete.allsuccessors moved to obsutil.allsuccessors'
-    util.nouideprecwarn(movemsg, '4.3')
-    return obsutil.allsuccessors(obsstore, nodes, ignoreflags)
-
-def marker(repo, data):
-    movemsg = 'obsolete.marker moved to obsutil.marker'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.marker(repo, data)
-
-def getmarkers(repo, nodes=None, exclusive=False):
-    movemsg = 'obsolete.getmarkers moved to obsutil.getmarkers'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.getmarkers(repo, nodes=nodes, exclusive=exclusive)
-
-def exclusivemarkers(repo, nodes):
-    movemsg = 'obsolete.exclusivemarkers moved to obsutil.exclusivemarkers'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.exclusivemarkers(repo, nodes)
-
-def foreground(repo, nodes):
-    movemsg = 'obsolete.foreground moved to obsutil.foreground'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.foreground(repo, nodes)
-
-def successorssets(repo, initialnode, cache=None):
-    movemsg = 'obsolete.successorssets moved to obsutil.successorssets'
-    repo.ui.deprecwarn(movemsg, '4.3')
-    return obsutil.successorssets(repo, initialnode, cache=cache)
-
 # mapping of 'set-name' -> <function to compute this set>
 cachefuncs = {}
 def cachefor(name):
@@ -933,14 +864,6 @@ def _computeobsoleteset(repo):
     obs = set(r for r in notpublic if isobs(getnode(r)))
     return obs
 
-@cachefor('unstable')
-def _computeunstableset(repo):
-    msg = ("'unstable' volatile set is deprecated, "
-           "use 'orphan'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return _computeorphanset(repo)
-
 @cachefor('orphan')
 def _computeorphanset(repo):
     """the set of non obsolete revisions with obsolete parents"""
@@ -969,14 +892,6 @@ def _computeextinctset(repo):
     """the set of obsolete parents without non obsolete descendants"""
     return getrevs(repo, 'obsolete') - getrevs(repo, 'suspended')
 
-@cachefor('bumped')
-def _computebumpedset(repo):
-    msg = ("'bumped' volatile set is deprecated, "
-           "use 'phasedivergent'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return _computephasedivergentset(repo)
-
 @cachefor('phasedivergent')
 def _computephasedivergentset(repo):
     """the set of revs trying to obsolete public revisions"""
@@ -999,14 +914,6 @@ def _computephasedivergentset(repo):
                 bumped.add(rev)
                 break # Next draft!
     return bumped
-
-@cachefor('divergent')
-def _computedivergentset(repo):
-    msg = ("'divergent' volatile set is deprecated, "
-           "use 'contentdivergent'")
-    repo.ui.deprecwarn(msg, '4.4')
-
-    return _computecontentdivergentset(repo)
 
 @cachefor('contentdivergent')
 def _computecontentdivergentset(repo):

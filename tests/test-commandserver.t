@@ -189,6 +189,8 @@ check that local configs for the cached repo aren't inherited when -R is used:
   > foo = bar
   > EOF
 
+#if no-extraextensions
+
   >>> from hgclient import check, readchannel, runcommand, sep
   >>> @check
   ... def localhgrc(server):
@@ -211,18 +213,18 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ui.slash=True
   ui.interactive=False
   ui.mergemarkers=detailed
-  ui.usehttp2=true (?)
   ui.foo=bar
   ui.nontty=true
   web.address=localhost
   web\.ipv6=(?:True|False) (re)
+  web.server-header=testing stub value
   *** runcommand init foo
   *** runcommand -R foo showconfig ui defaults
   ui.slash=True
   ui.interactive=False
   ui.mergemarkers=detailed
-  ui.usehttp2=true (?)
   ui.nontty=true
+#endif
 
   $ rm -R foo
 
@@ -250,6 +252,8 @@ check that local configs for the cached repo aren't inherited when -R is used:
   ...                input=stringio('some input'))
   *** runcommand --config hooks.pre-identify=python:hook.hook id
   eff892de26ec tip
+  hook talking
+  now try to read something: ''
 
 Clean hook cached version
   $ rm hook.py*
@@ -411,7 +415,7 @@ cache of non-public revisions should be invalidated on repository change
   ...     # load _phasecache._phaserevs and _phasesets
   ...     runcommand(server, ['log', '-qr', 'draft()'])
   ...     # create draft commits by another process
-  ...     for i in xrange(5, 7):
+  ...     for i in range(5, 7):
   ...         f = open('a', 'ab')
   ...         f.seek(0, os.SEEK_END)
   ...         f.write('a\n')
@@ -620,7 +624,7 @@ changelog and manifest would have invalid node:
   > @command(b"debugwritestdout", norepo=True)
   > def debugwritestdout(ui):
   >     os.write(1, "low-level stdout fd and\n")
-  >     sys.stdout.write("stdout should be redirected to /dev/null\n")
+  >     sys.stdout.write("stdout should be redirected to stderr\n")
   >     sys.stdout.flush()
   > EOF
   $ cat <<EOF >> .hg/hgrc
@@ -658,6 +662,8 @@ changelog and manifest would have invalid node:
   *** runcommand debugreadstdin
   read: ''
   *** runcommand debugwritestdout
+  low-level stdout fd and
+  stdout should be redirected to stderr
 
 
 run commandserver in commandserver, which is silly but should work:

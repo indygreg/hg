@@ -1,6 +1,4 @@
   $ cat >> $HGRCPATH <<EOF
-  > [format]
-  > usegeneraldelta=yes
   > [extensions]
   > rebase=
   > drawdag=$TESTDIR/drawdag.py
@@ -150,16 +148,17 @@ Bookmark stays active after --continue
 
 Check that the right ancestors is used while rebasing a merge (issue4041)
 
-  $ hg clone "$TESTDIR/bundles/issue4041.hg" issue4041
-  requesting all changes
+  $ hg init issue4041
+  $ cd issue4041
+  $ hg unbundle "$TESTDIR/bundles/issue4041.hg"
   adding changesets
   adding manifests
   adding file changes
   added 11 changesets with 8 changes to 3 files (+1 heads)
   new changesets 24797d4f68de:2f2496ddf49d
-  updating to branch default
+  (run 'hg heads' to see heads)
+  $ hg up default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ cd issue4041
   $ hg log -G
   o    changeset:   10:2f2496ddf49d
   |\   branch:      f1
@@ -239,7 +238,6 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   rebase status stored
   rebasing 9:e31216eec445 "more changes to f1"
    future parents are 2 and -1
-  rebase status stored
    update to 2:4bc80088dc6b
   resolving manifests
    branchmerge: False, force: True, partial: False
@@ -264,9 +262,9 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   committing changelog
   updating the branch cache
   rebased as 19c888675e13
+  rebase status stored
   rebasing 10:2f2496ddf49d "merge" (tip)
    future parents are 11 and 7
-  rebase status stored
    already in destination
    merge against 10:2f2496ddf49d
      detach base 9:e31216eec445
@@ -284,6 +282,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   committing changelog
   updating the branch cache
   rebased as 2a7f09cac94c
+  rebase status stored
   rebase merging completed
   update back to initial working directory parent
   resolving manifests
@@ -297,8 +296,9 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   list of changesets:
   e31216eec445e44352c5f01588856059466a24c9
   2f2496ddf49d69b5ef23ad8cf9fb2e0e4faf0ac2
-  bundle2-output-bundle: "HG20", (1 params) 2 parts total
+  bundle2-output-bundle: "HG20", (1 params) 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   saved backup bundle to $TESTTMP/issue4041/.hg/strip-backup/e31216eec445-15f7a814-rebase.hg
   3 changesets found
@@ -306,8 +306,9 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   4c9fbe56a16f30c0d5dcc40ec1a97bbe3325209c
   19c888675e133ab5dff84516926a65672eaf04d9
   2a7f09cac94c7f4b73ebd5cd1a62d3b2e8e336bf
-  bundle2-output-bundle: "HG20", 2 parts total
+  bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   adding branch
   bundle2-input-bundle: with-transaction
@@ -321,9 +322,12 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   adding f1.txt revisions
   added 2 changesets with 2 changes to 1 files
   bundle2-input-part: total payload size 1686
+  bundle2-input-part: "cache:rev-branch-cache" supported
+  bundle2-input-part: total payload size 74
+  truncating cache/rbc-revs-v1 to 56
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-bundle: 1 parts total
+  bundle2-input-bundle: 2 parts total
   updating the branch cache
   invalid branchheads cache (served): tip differs
   rebase completed

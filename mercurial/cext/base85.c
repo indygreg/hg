@@ -14,8 +14,9 @@
 
 #include "util.h"
 
-static const char b85chars[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-	"abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
+static const char b85chars[] =
+    "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    "abcdefghijklmnopqrstuvwxyz!#$%&()*+-;<=>?@^_`{|}~";
 static char b85dec[256];
 
 static void b85prep(void)
@@ -36,7 +37,7 @@ static PyObject *b85encode(PyObject *self, PyObject *args)
 	unsigned int acc, val, ch;
 	int pad = 0;
 
-	if (!PyArg_ParseTuple(args, "s#|i", &text, &len, &pad))
+	if (!PyArg_ParseTuple(args, PY23("s#|i", "y#|i"), &text, &len, &pad))
 		return NULL;
 
 	if (pad)
@@ -83,7 +84,7 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 	int c;
 	unsigned int acc;
 
-	if (!PyArg_ParseTuple(args, "s#", &text, &len))
+	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &text, &len))
 		return NULL;
 
 	olen = len / 5 * 4;
@@ -105,25 +106,25 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 			c = b85dec[(int)*text++] - 1;
 			if (c < 0)
 				return PyErr_Format(
-					PyExc_ValueError,
-					"bad base85 character at position %d",
-					(int)i);
+				    PyExc_ValueError,
+				    "bad base85 character at position %d",
+				    (int)i);
 			acc = acc * 85 + c;
 		}
 		if (i++ < len) {
 			c = b85dec[(int)*text++] - 1;
 			if (c < 0)
 				return PyErr_Format(
-					PyExc_ValueError,
-					"bad base85 character at position %d",
-					(int)i);
+				    PyExc_ValueError,
+				    "bad base85 character at position %d",
+				    (int)i);
 			/* overflow detection: 0xffffffff == "|NsC0",
 			 * "|NsC" == 0x03030303 */
 			if (acc > 0x03030303 || (acc *= 85) > 0xffffffff - c)
 				return PyErr_Format(
-					PyExc_ValueError,
-					"bad base85 sequence at position %d",
-					(int)i);
+				    PyExc_ValueError,
+				    "bad base85 sequence at position %d",
+				    (int)i);
 			acc += c;
 		}
 
@@ -145,23 +146,19 @@ static PyObject *b85decode(PyObject *self, PyObject *args)
 static char base85_doc[] = "Base85 Data Encoding";
 
 static PyMethodDef methods[] = {
-	{"b85encode", b85encode, METH_VARARGS,
-	 "Encode text in base85.\n\n"
-	 "If the second parameter is true, pad the result to a multiple of "
-	 "five characters.\n"},
-	{"b85decode", b85decode, METH_VARARGS, "Decode base85 text.\n"},
-	{NULL, NULL}
+    {"b85encode", b85encode, METH_VARARGS,
+     "Encode text in base85.\n\n"
+     "If the second parameter is true, pad the result to a multiple of "
+     "five characters.\n"},
+    {"b85decode", b85decode, METH_VARARGS, "Decode base85 text.\n"},
+    {NULL, NULL},
 };
 
 static const int version = 1;
 
 #ifdef IS_PY3K
 static struct PyModuleDef base85_module = {
-	PyModuleDef_HEAD_INIT,
-	"base85",
-	base85_doc,
-	-1,
-	methods
+    PyModuleDef_HEAD_INIT, "base85", base85_doc, -1, methods,
 };
 
 PyMODINIT_FUNC PyInit_base85(void)

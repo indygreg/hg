@@ -95,7 +95,7 @@ Nested example:
 >>> def subrepos(ui, fm):
 ...     fm.startitem()
 ...     fm.write(b'reponame', b'[%s]\\n', b'baz')
-...     files(ui, fm.nested(b'files'))
+...     files(ui, fm.nested(b'files', tmpl=b'{reponame}'))
 ...     fm.end()
 >>> show(subrepos)
 [baz]
@@ -124,8 +124,10 @@ from . import (
     templatefilters,
     templatekw,
     templater,
+    templateutil,
     util,
 )
+from .utils import dateutil
 
 pickle = util.pickle
 
@@ -136,9 +138,15 @@ class _nullconverter(object):
     storecontext = False
 
     @staticmethod
+    def wrapnested(data, tmpl, sep):
+        '''wrap nested data by appropriate type'''
+        return data
+    @staticmethod
     def formatdate(date, fmt):
         '''convert date tuple to appropriate format'''
-        return date
+        # timestamp can be float, but the canonical form should be int
+        ts, tz = date
+        return (int(ts), tz)
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''convert dict or key-value pairs to appropriate dict format'''
@@ -154,8 +162,7 @@ class baseformatter(object):
     def __init__(self, ui, topic, opts, converter):
         self._ui = ui
         self._topic = topic
-        self._style = opts.get("style")
-        self._template = opts.get("template")
+        self._opts = opts
         self._converter = converter
         self._item = None
         # function to convert node to string suitable for this output
@@ -175,10 +182,10 @@ class baseformatter(object):
     def formatdate(self, date, fmt='%a %b %d %H:%M:%S %Y %1%2'):
         '''convert date tuple to appropriate format'''
         return self._converter.formatdate(date, fmt)
-    def formatdict(self, data, key='key', value='value', fmt='%s=%s', sep=' '):
+    def formatdict(self, data, key='key', value='value', fmt=None, sep=' '):
         '''convert dict or key-value pairs to appropriate dict format'''
         return self._converter.formatdict(data, key, value, fmt, sep)
-    def formatlist(self, data, name, fmt='%s', sep=' '):
+    def formatlist(self, data, name, fmt=None, sep=' '):
         '''convert iterable to appropriate list format'''
         # name is mandatory argument for now, but it could be optional if
         # we have default template keyword, e.g. {item}
@@ -186,7 +193,7 @@ class baseformatter(object):
     def context(self, **ctxs):
         '''insert context objects to be used to render template keywords'''
         ctxs = pycompat.byteskwargs(ctxs)
-        assert all(k == 'ctx' for k in ctxs)
+        assert all(k in {'ctx', 'fctx'} for k in ctxs)
         if self._converter.storecontext:
             self._item.update(ctxs)
     def data(self, **data):
@@ -208,18 +215,19 @@ class baseformatter(object):
     def isplain(self):
         '''check for plain formatter usage'''
         return False
-    def nested(self, field):
+    def nested(self, field, tmpl=None, sep=''):
         '''sub formatter to store nested data in the specified field'''
-        self._item[field] = data = []
+        data = []
+        self._item[field] = self._converter.wrapnested(data, tmpl, sep)
         return _nestedformatter(self._ui, self._converter, data)
     def end(self):
         '''end output for the formatter'''
         if self._item is not None:
             self._showitem()
 
-def nullformatter(ui, topic):
+def nullformatter(ui, topic, opts):
     '''formatter that prints nothing'''
-    return baseformatter(ui, topic, opts={}, converter=_nullconverter)
+    return baseformatter(ui, topic, opts, converter=_nullconverter)
 
 class _nestedformatter(baseformatter):
     '''build sub items and store them in the parent formatter'''
@@ -241,17 +249,29 @@ class _plainconverter(object):
     storecontext = False
 
     @staticmethod
+    def wrapnested(data, tmpl, sep):
+        raise error.ProgrammingError('plainformatter should never be nested')
+    @staticmethod
     def formatdate(date, fmt):
         '''stringify date tuple in the given format'''
-        return util.datestr(date, fmt)
+        return dateutil.datestr(date, fmt)
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''stringify key-value pairs separated by sep'''
-        return sep.join(fmt % (k, v) for k, v in _iteritems(data))
+        prefmt = pycompat.identity
+        if fmt is None:
+            fmt = '%s=%s'
+            prefmt = pycompat.bytestr
+        return sep.join(fmt % (prefmt(k), prefmt(v))
+                        for k, v in _iteritems(data))
     @staticmethod
     def formatlist(data, name, fmt, sep):
         '''stringify iterable separated by sep'''
-        return sep.join(fmt % e for e in data)
+        prefmt = pycompat.identity
+        if fmt is None:
+            fmt = '%s'
+            prefmt = pycompat.bytestr
+        return sep.join(fmt % prefmt(e) for e in data)
 
 class plainformatter(baseformatter):
     '''the default text output scheme'''
@@ -279,7 +299,7 @@ class plainformatter(baseformatter):
         self._write(text, **opts)
     def isplain(self):
         return True
-    def nested(self, field):
+    def nested(self, field, tmpl=None, sep=''):
         # nested data will be directly written to ui
         return self
     def end(self):
@@ -291,7 +311,7 @@ class debugformatter(baseformatter):
         self._out = out
         self._out.write("%s = [\n" % self._topic)
     def _showitem(self):
-        self._out.write("    " + repr(self._item) + ",\n")
+        self._out.write('    %s,\n' % pycompat.byterepr(self._item))
     def end(self):
         baseformatter.end(self)
         self._out.write("]\n")
@@ -339,6 +359,10 @@ class _templateconverter(object):
     storecontext = True
 
     @staticmethod
+    def wrapnested(data, tmpl, sep):
+        '''wrap nested data by templatable type'''
+        return templateutil.mappinglist(data, tmpl=tmpl, sep=sep)
+    @staticmethod
     def formatdate(date, fmt):
         '''return date tuple'''
         return date
@@ -348,14 +372,15 @@ class _templateconverter(object):
         data = util.sortdict(_iteritems(data))
         def f():
             yield _plainconverter.formatdict(data, key, value, fmt, sep)
-        return templatekw.hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
+        return templateutil.hybriddict(data, key=key, value=value, fmt=fmt,
+                                       gen=f)
     @staticmethod
     def formatlist(data, name, fmt, sep):
         '''build object that can be evaluated as either plain string or list'''
         data = list(data)
         def f():
             yield _plainconverter.formatlist(data, name, fmt, sep)
-        return templatekw.hybridlist(data, name=name, fmt=fmt, gen=f)
+        return templateutil.hybridlist(data, name=name, fmt=fmt, gen=f)
 
 class templateformatter(baseformatter):
     def __init__(self, ui, out, topic, opts):
@@ -382,20 +407,7 @@ class templateformatter(baseformatter):
         if part not in self._parts:
             return
         ref = self._parts[part]
-
-        # TODO: add support for filectx. probably each template keyword or
-        # function will have to declare dependent resources. e.g.
-        # @templatekeyword(..., requires=('ctx',))
-        props = {}
-        # explicitly-defined fields precede templatekw
-        props.update(item)
-        if 'ctx' in item:
-            # but template resources must be always available
-            props['repo'] = props['ctx'].repo()
-            props['revcache'] = {}
-        props = pycompat.strkwargs(props)
-        g = self._t(ref, **props)
-        self._out.write(templater.stringify(g))
+        self._out.write(self._t.render(ref, item))
 
     def end(self):
         baseformatter.end(self)
@@ -488,16 +500,71 @@ def maketemplater(ui, tmpl, defaults=None, resources=None, cache=None):
         t.cache[''] = tmpl
     return t
 
-def templateresources(ui, repo=None):
-    """Create a dict of template resources designed for the default templatekw
-    and function"""
-    return {
-        'cache': {},  # for templatekw/funcs to store reusable data
-        'ctx': None,
-        'repo': repo,
-        'revcache': None,  # per-ctx cache; set later
-        'ui': ui,
+class templateresources(templater.resourcemapper):
+    """Resource mapper designed for the default templatekw and function"""
+
+    def __init__(self, ui, repo=None):
+        self._resmap = {
+            'cache': {},  # for templatekw/funcs to store reusable data
+            'repo': repo,
+            'ui': ui,
+        }
+
+    def availablekeys(self, context, mapping):
+        return {k for k, g in self._gettermap.iteritems()
+                if g(self, context, mapping, k) is not None}
+
+    def knownkeys(self):
+        return self._knownkeys
+
+    def lookup(self, context, mapping, key):
+        get = self._gettermap.get(key)
+        if not get:
+            return None
+        return get(self, context, mapping, key)
+
+    def populatemap(self, context, origmapping, newmapping):
+        mapping = {}
+        if self._hasctx(newmapping):
+            mapping['revcache'] = {}  # per-ctx cache
+        if (('node' in origmapping or self._hasctx(origmapping))
+            and ('node' in newmapping or self._hasctx(newmapping))):
+            orignode = templateutil.runsymbol(context, origmapping, 'node')
+            mapping['originalnode'] = orignode
+        return mapping
+
+    def _getsome(self, context, mapping, key):
+        v = mapping.get(key)
+        if v is not None:
+            return v
+        return self._resmap.get(key)
+
+    def _hasctx(self, mapping):
+        return 'ctx' in mapping or 'fctx' in mapping
+
+    def _getctx(self, context, mapping, key):
+        ctx = mapping.get('ctx')
+        if ctx is not None:
+            return ctx
+        fctx = mapping.get('fctx')
+        if fctx is not None:
+            return fctx.changectx()
+
+    def _getrepo(self, context, mapping, key):
+        ctx = self._getctx(context, mapping, 'ctx')
+        if ctx is not None:
+            return ctx.repo()
+        return self._getsome(context, mapping, key)
+
+    _gettermap = {
+        'cache': _getsome,
+        'ctx': _getctx,
+        'fctx': _getsome,
+        'repo': _getrepo,
+        'revcache': _getsome,
+        'ui': _getsome,
     }
+    _knownkeys = set(_gettermap.keys())
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")
@@ -531,7 +598,7 @@ def openformatter(ui, filename, topic, opts):
 def _neverending(fm):
     yield fm
 
-def maybereopen(fm, filename, opts):
+def maybereopen(fm, filename):
     """Create a formatter backed by file if filename specified, else return
     the given formatter
 
@@ -539,6 +606,6 @@ def maybereopen(fm, filename, opts):
     of the given formatter.
     """
     if filename:
-        return openformatter(fm._ui, filename, fm._topic, opts)
+        return openformatter(fm._ui, filename, fm._topic, fm._opts)
     else:
         return _neverending(fm)

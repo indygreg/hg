@@ -68,22 +68,22 @@ verify 7e7d56fe4833 (encoding fallback in branchmap to maintain compatibility wi
   >         self._file = stdout
   > 
   >     def write(self, data):
-  >         if data == '47\n':
+  >         if data == b'47\n':
   >             # latin1 encoding is one %xx (3 bytes) shorter
-  >             data = '44\n'
-  >         elif data.startswith('%C3%A6 '):
+  >             data = b'44\n'
+  >         elif data.startswith(b'%C3%A6 '):
   >             # translate to latin1 encoding
-  >             data = '%%E6 %s' % data[7:]
+  >             data = b'%%E6 %s' % data[7:]
   >         self._file.write(data)
   > 
   >     def __getattr__(self, name):
   >         return getattr(self._file, name)
   > 
-  > sys.stdout = StdoutWrapper(sys.stdout)
-  > sys.stderr = StdoutWrapper(sys.stderr)
+  > sys.stdout = StdoutWrapper(getattr(sys.stdout, 'buffer', sys.stdout))
+  > sys.stderr = StdoutWrapper(getattr(sys.stderr, 'buffer', sys.stderr))
   > 
   > myui = ui.ui.load()
-  > repo = hg.repository(myui, 'a')
+  > repo = hg.repository(myui, b'a')
   > commands.serve(myui, repo, stdio=True, cmdserver=False)
   > EOF
   $ echo baz >> b/foo

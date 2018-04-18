@@ -20,8 +20,13 @@ from .i18n import _
 from . import (
     encoding,
     error,
+    pycompat,
     sslutil,
     util,
+)
+from .utils import (
+    procutil,
+    stringutil,
 )
 
 class STARTTLS(smtplib.SMTP):
@@ -80,7 +85,7 @@ def _smtp(ui):
     local_hostname = ui.config('smtp', 'local_hostname')
     tls = ui.config('smtp', 'tls')
     # backward compatible: when tls = true, we use starttls.
-    starttls = tls == 'starttls' or util.parsebool(tls)
+    starttls = tls == 'starttls' or stringutil.parsebool(tls)
     smtps = tls == 'smtps'
     if (starttls or smtps) and not util.safehasattr(socket, 'ssl'):
         raise error.Abort(_("can't use TLS: Python SSL support not installed"))
@@ -136,16 +141,16 @@ def _smtp(ui):
 def _sendmail(ui, sender, recipients, msg):
     '''send mail using sendmail.'''
     program = ui.config('email', 'method')
-    cmdline = '%s -f %s %s' % (program, util.email(sender),
-                               ' '.join(map(util.email, recipients)))
+    cmdline = '%s -f %s %s' % (program, stringutil.email(sender),
+                               ' '.join(map(stringutil.email, recipients)))
     ui.note(_('sending mail: %s\n') % cmdline)
-    fp = util.popen(cmdline, 'w')
-    fp.write(msg)
+    fp = procutil.popen(cmdline, 'wb')
+    fp.write(util.tonativeeol(msg))
     ret = fp.close()
     if ret:
         raise error.Abort('%s %s' % (
             os.path.basename(program.split(None, 1)[0]),
-            util.explainexit(ret)[0]))
+            procutil.explainexit(ret)))
 
 def _mbox(mbox, sender, recipients, msg):
     '''write mails to mbox'''
@@ -180,13 +185,13 @@ def validateconfig(ui):
             raise error.Abort(_('smtp specified as email transport, '
                                'but no smtp host configured'))
     else:
-        if not util.findexe(method):
+        if not procutil.findexe(method):
             raise error.Abort(_('%r specified as email transport, '
                                'but not in PATH') % method)
 
 def codec2iana(cs):
     ''''''
-    cs = email.charset.Charset(cs).input_charset.lower()
+    cs = pycompat.sysbytes(email.charset.Charset(cs).input_charset.lower())
 
     # "latin1" normalizes to "iso8859-1", standard calls for "iso-8859-1"
     if cs.startswith("iso") and not cs.startswith("iso-"):
@@ -205,7 +210,7 @@ def mimetextpatch(s, subtype='plain', display=False):
         return mimetextqp(s, subtype, 'us-ascii')
     for charset in cs:
         try:
-            s.decode(charset)
+            s.decode(pycompat.sysstr(charset))
             return mimetextqp(s, subtype, codec2iana(charset))
         except UnicodeDecodeError:
             pass
@@ -218,7 +223,7 @@ def mimetextqp(body, subtype, charset):
     '''
     cs = email.charset.Charset(charset)
     msg = email.message.Message()
-    msg.set_type('text/' + subtype)
+    msg.set_type(pycompat.sysstr('text/' + subtype))
 
     for line in body.splitlines():
         if len(line) > 950:
@@ -287,13 +292,13 @@ def _addressencode(ui, name, addr, charsets=None):
             addr = addr.encode('ascii')
         except UnicodeDecodeError:
             raise error.Abort(_('invalid local address: %s') % addr)
-    return email.Utils.formataddr((name, addr))
+    return email.utils.formataddr((name, addr))
 
 def addressencode(ui, address, charsets=None, display=False):
     '''Turns address into RFC-2047 compliant header.'''
     if display or not address:
         return address or ''
-    name, addr = email.Utils.parseaddr(address)
+    name, addr = email.utils.parseaddr(address)
     return _addressencode(ui, name, addr, charsets)
 
 def addrlistencode(ui, addrs, charsets=None, display=False):
@@ -304,7 +309,7 @@ def addrlistencode(ui, addrs, charsets=None, display=False):
         return [a.strip() for a in addrs if a.strip()]
 
     result = []
-    for name, addr in email.Utils.getaddresses(addrs):
+    for name, addr in email.utils.getaddresses(addrs):
         if name or addr:
             result.append(_addressencode(ui, name, addr, charsets))
     return result
@@ -327,6 +332,11 @@ def headdecode(s):
                 continue
             except UnicodeDecodeError:
                 pass
+        # On Python 3, decode_header() may return either bytes or unicode
+        # depending on whether the header has =?<charset>? or not
+        if isinstance(part, type(u'')):
+            uparts.append(part)
+            continue
         try:
             uparts.append(part.decode('UTF-8'))
             continue

@@ -619,18 +619,18 @@ log copies with hardcoded style and with --style=default
   $ hg log -vC -r4 -Tjson
   [
    {
-    "rev": 4,
-    "node": "7e4639b4691b9f84b81036a8d4fb218ce3c5e3a3",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
+    "copies": {"e": "dir/b"},
     "date": [5, 0],
     "desc": "e",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["2ca5ba7019804f1f597249caddf22a64d34df0ba"],
     "files": ["dir/b", "e"],
-    "copies": {"e": "dir/b"}
+    "node": "7e4639b4691b9f84b81036a8d4fb218ce3c5e3a3",
+    "parents": ["2ca5ba7019804f1f597249caddf22a64d34df0ba"],
+    "phase": "draft",
+    "rev": 4,
+    "tags": ["tip"],
+    "user": "test"
    }
   ]
 
@@ -656,6 +656,9 @@ log copies, execute bit set
   6 
 #endif
 
+log copies, empty set
+
+  $ hg log --copies -r '0 and not 0'
 
 log -p d
 
@@ -2016,33 +2019,31 @@ test -u/-k for problematic encoding
   $ hg init problematicencoding
   $ cd problematicencoding
 
-  $ $PYTHON > setup.sh <<EOF
-  > print(u'''
-  > echo a > text
-  > hg add text
-  > hg --encoding utf-8 commit -u '\u30A2' -m none
-  > echo b > text
-  > hg --encoding utf-8 commit -u '\u30C2' -m none
-  > echo c > text
-  > hg --encoding utf-8 commit -u none -m '\u30A2'
-  > echo d > text
-  > hg --encoding utf-8 commit -u none -m '\u30C2'
-  > '''.encode('utf-8'))
-  > EOF
+  >>> with open('setup.sh', 'wb') as f:
+  ...     f.write(u'''
+  ... echo a > text
+  ... hg add text
+  ... hg --encoding utf-8 commit -u '\u30A2' -m none
+  ... echo b > text
+  ... hg --encoding utf-8 commit -u '\u30C2' -m none
+  ... echo c > text
+  ... hg --encoding utf-8 commit -u none -m '\u30A2'
+  ... echo d > text
+  ... hg --encoding utf-8 commit -u none -m '\u30C2'
+  ... '''.encode('utf-8')) and None
   $ sh < setup.sh
 
 test in problematic encoding
-  $ $PYTHON > test.sh <<EOF
-  > print(u'''
-  > hg --encoding cp932 log --template '{rev}\\n' -u '\u30A2'
-  > echo ====
-  > hg --encoding cp932 log --template '{rev}\\n' -u '\u30C2'
-  > echo ====
-  > hg --encoding cp932 log --template '{rev}\\n' -k '\u30A2'
-  > echo ====
-  > hg --encoding cp932 log --template '{rev}\\n' -k '\u30C2'
-  > '''.encode('cp932'))
-  > EOF
+  >>> with open('test.sh', 'wb') as f:
+  ...     f.write(u'''
+  ... hg --encoding cp932 log --template '{rev}\\n' -u '\u30A2'
+  ... echo ====
+  ... hg --encoding cp932 log --template '{rev}\\n' -u '\u30C2'
+  ... echo ====
+  ... hg --encoding cp932 log --template '{rev}\\n' -k '\u30A2'
+  ... echo ====
+  ... hg --encoding cp932 log --template '{rev}\\n' -k '\u30C2'
+  ... '''.encode('cp932')) and None
   $ sh < test.sh
   0
   ====
@@ -2203,45 +2204,45 @@ dirty:
   $ hg log -r 'wdir()' -Tjson
   [
    {
-    "rev": null,
-    "node": null,
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [*, 0], (glob)
     "desc": "",
-    "bookmarks": [],
+    "node": null,
+    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
+    "phase": "draft",
+    "rev": null,
     "tags": [],
-    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"]
+    "user": "test"
    }
   ]
 
   $ hg log -r 'wdir()' -Tjson -q
   [
    {
-    "rev": null,
-    "node": null
+    "node": null,
+    "rev": null
    }
   ]
 
   $ hg log -r 'wdir()' -Tjson --debug
   [
    {
-    "rev": null,
-    "node": null,
+    "added": ["d1/f2"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [*, 0], (glob)
     "desc": "",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
-    "manifest": null,
     "extra": {"branch": "default"},
+    "manifest": null,
     "modified": ["d1/f1"],
-    "added": ["d1/f2"],
-    "removed": [".d6/f1"]
+    "node": null,
+    "parents": ["65624cd9070a035fa7191a54f2b8af39f16b0c08"],
+    "phase": "draft",
+    "removed": [".d6/f1"],
+    "rev": null,
+    "tags": [],
+    "user": "test"
    }
   ]
 
@@ -2255,14 +2256,14 @@ Check that adding an arbitrary name shows up in log automatically
   > from mercurial import namespaces
   > 
   > def reposetup(ui, repo):
-  >     foo = {'foo': repo[0].node()}
+  >     foo = {b'foo': repo[0].node()}
   >     names = lambda r: foo.keys()
   >     namemap = lambda r, name: foo.get(name)
-  >     nodemap = lambda r, node: [name for name, n in foo.iteritems()
+  >     nodemap = lambda r, node: [name for name, n in foo.items()
   >                                if n == node]
   >     ns = namespaces.namespace(
-  >         "bars", templatename="bar", logname="barlog",
-  >         colorname="barcolor", listnames=names, namemap=namemap,
+  >         b"bars", templatename=b"bar", logname=b"barlog",
+  >         colorname=b"barcolor", listnames=names, namemap=namemap,
   >         nodemap=nodemap)
   > 
   >     repo.names.addnamespace(ns)
@@ -2288,6 +2289,25 @@ Check that adding an arbitrary name shows up in log automatically
   
   $ hg --config extensions.names=../names.py log -r 0 --template '{bars}\n'
   foo
+
+Templater parse errors:
+
+simple error
+  $ hg log -r . -T '{shortest(node}'
+  hg: parse error at 14: unexpected token: end
+  ({shortest(node}
+                 ^ here)
+  [255]
+
+multi-line template with error
+  $ hg log -r . -T 'line 1
+  > line2
+  > {shortest(node}
+  > line4\nline5'
+  hg: parse error at 27: unexpected token: end
+  (line 1\nline2\n{shortest(node}\nline4\nline5
+                                ^ here)
+  [255]
 
   $ cd ..
 

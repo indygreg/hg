@@ -114,7 +114,7 @@ def getitemregister(configtable):
 coreconfigitem = getitemregister(coreitems)
 
 coreconfigitem('alias', '.*',
-    default=None,
+    default=dynamicdefault,
     generic=True,
 )
 coreconfigitem('annotate', 'nodates',
@@ -440,6 +440,18 @@ coreconfigitem('experimental', 'bundle2lazylocking',
 coreconfigitem('experimental', 'bundlecomplevel',
     default=None,
 )
+coreconfigitem('experimental', 'bundlecomplevel.bzip2',
+    default=None,
+)
+coreconfigitem('experimental', 'bundlecomplevel.gzip',
+    default=None,
+)
+coreconfigitem('experimental', 'bundlecomplevel.none',
+    default=None,
+)
+coreconfigitem('experimental', 'bundlecomplevel.zstd',
+    default=None,
+)
 coreconfigitem('experimental', 'changegroup3',
     default=False,
 )
@@ -502,6 +514,9 @@ coreconfigitem('experimental', 'worddiff',
 coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,
 )
+coreconfigitem('experimental', 'mergetempdirprefix',
+    default=None,
+)
 coreconfigitem('experimental', 'mmapindexthreshold',
     default=None,
 )
@@ -535,10 +550,10 @@ coreconfigitem('experimental', 'graphstyle.grandparent',
 coreconfigitem('experimental', 'hook-track-tags',
     default=False,
 )
-coreconfigitem('experimental', 'httppostargs',
+coreconfigitem('experimental', 'httppeer.advertise-v2',
     default=False,
 )
-coreconfigitem('experimental', 'manifestv2',
+coreconfigitem('experimental', 'httppostargs',
     default=False,
 )
 coreconfigitem('experimental', 'mergedriver',
@@ -554,6 +569,9 @@ coreconfigitem('experimental', 'revlogv2',
     default=None,
 )
 coreconfigitem('experimental', 'single-head-per-branch',
+    default=False,
+)
+coreconfigitem('experimental', 'sshserver.support-v2',
     default=False,
 )
 coreconfigitem('experimental', 'spacemovesdown',
@@ -572,6 +590,21 @@ coreconfigitem('experimental', 'treemanifest',
     default=False,
 )
 coreconfigitem('experimental', 'update.atomic-file',
+    default=False,
+)
+coreconfigitem('experimental', 'sshpeer.advertise-v2',
+    default=False,
+)
+coreconfigitem('experimental', 'web.apiserver',
+    default=False,
+)
+coreconfigitem('experimental', 'web.api.http-v2',
+    default=False,
+)
+coreconfigitem('experimental', 'web.api.debugreflect',
+    default=False,
+)
+coreconfigitem('experimental', 'xdiff',
     default=False,
 )
 coreconfigitem('extensions', '.*',
@@ -743,6 +776,16 @@ coreconfigitem('merge-tools', br'.*\.gui$',
     generic=True,
     priority=-1,
 )
+coreconfigitem('merge-tools', br'.*\.mergemarkers$',
+    default='basic',
+    generic=True,
+    priority=-1,
+)
+coreconfigitem('merge-tools', br'.*\.mergemarkertemplate$',
+    default=dynamicdefault,  # take from ui.mergemarkertemplate
+    generic=True,
+    priority=-1,
+)
 coreconfigitem('merge-tools', br'.*\.priority$',
     default=0,
     generic=True,
@@ -889,6 +932,12 @@ coreconfigitem('server', 'concurrent-push-mode',
 coreconfigitem('server', 'disablefullbundle',
     default=False,
 )
+coreconfigitem('server', 'streamunbundle',
+    default=False,
+)
+coreconfigitem('server', 'pullbundle',
+    default=False,
+)
 coreconfigitem('server', 'maxhttpheaderlen',
     default=1024,
 )
@@ -906,6 +955,9 @@ coreconfigitem('server', 'validate',
 )
 coreconfigitem('server', 'zliblevel',
     default=-1,
+)
+coreconfigitem('server', 'zstdlevel',
+    default=3,
 )
 coreconfigitem('share', 'pool',
     default=None,
@@ -1013,9 +1065,6 @@ coreconfigitem('ui', 'formatted',
 coreconfigitem('ui', 'graphnodetemplate',
     default=None,
 )
-coreconfigitem('ui', 'http2debuglevel',
-    default=None,
-)
 coreconfigitem('ui', 'interactive',
     default=None,
 )
@@ -1112,9 +1161,6 @@ coreconfigitem('ui', 'traceback',
     default=False,
 )
 coreconfigitem('ui', 'tweakdefaults',
-    default=False,
-)
-coreconfigitem('ui', 'usehttp2',
     default=False,
 )
 coreconfigitem('ui', 'username',
@@ -1241,6 +1287,9 @@ coreconfigitem('web', 'push_ssl',
 )
 coreconfigitem('web', 'refreshinterval',
     default=20,
+)
+coreconfigitem('web', 'server-header',
+    default=None,
 )
 coreconfigitem('web', 'staticurl',
     default=None,

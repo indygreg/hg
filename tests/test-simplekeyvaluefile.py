@@ -51,24 +51,30 @@ class testsimplekeyvaluefile(unittest.TestCase):
         dr = scmutil.simplekeyvaluefile(self.vfs, 'kvfile').read()
         self.assertEqual(dr, dw)
 
+    if not getattr(unittest.TestCase, 'assertRaisesRegex', False):
+        # Python 3.7 deprecates the regex*p* version, but 2.7 lacks
+        # the regex version.
+        assertRaisesRegex = (# camelcase-required
+            unittest.TestCase.assertRaisesRegexp)
+
     def testinvalidkeys(self):
         d = {'0key1': 'value1', 'Key2': 'value2'}
-        with self.assertRaisesRegexp(error.ProgrammingError,
+        with self.assertRaisesRegex(error.ProgrammingError,
                                      'keys must start with a letter.*'):
             scmutil.simplekeyvaluefile(self.vfs, 'kvfile').write(d)
 
         d = {'key1@': 'value1', 'Key2': 'value2'}
-        with self.assertRaisesRegexp(error.ProgrammingError, 'invalid key.*'):
+        with self.assertRaisesRegex(error.ProgrammingError, 'invalid key.*'):
             scmutil.simplekeyvaluefile(self.vfs, 'kvfile').write(d)
 
     def testinvalidvalues(self):
         d = {'key1': 'value1', 'Key2': 'value2\n'}
-        with self.assertRaisesRegexp(error.ProgrammingError,  'invalid val.*'):
+        with self.assertRaisesRegex(error.ProgrammingError,  'invalid val.*'):
             scmutil.simplekeyvaluefile(self.vfs, 'kvfile').write(d)
 
     def testcorruptedfile(self):
         self.vfs.contents['badfile'] = 'ababagalamaga\n'
-        with self.assertRaisesRegexp(error.CorruptedState,
+        with self.assertRaisesRegex(error.CorruptedState,
                                      'dictionary.*element.*'):
             scmutil.simplekeyvaluefile(self.vfs, 'badfile').read()
 

@@ -6,30 +6,36 @@ import unittest
 import silenttestrunner
 
 from mercurial import (
-    sshserver,
-    util,
-    wireproto,
+    wireprotoserver,
+    wireprotov1server,
+)
+
+from mercurial.utils import (
+    procutil,
 )
 
 class SSHServerGetArgsTests(unittest.TestCase):
     def testparseknown(self):
         tests = [
-            ('* 0\nnodes 0\n', ['', {}]),
-            ('* 0\nnodes 40\n1111111111111111111111111111111111111111\n',
-             ['1111111111111111111111111111111111111111', {}]),
+            (b'* 0\nnodes 0\n', [b'', {}]),
+            (b'* 0\nnodes 40\n1111111111111111111111111111111111111111\n',
+             [b'1111111111111111111111111111111111111111', {}]),
         ]
         for input, expected in tests:
-            self.assertparse('known', input, expected)
+            self.assertparse(b'known', input, expected)
 
     def assertparse(self, cmd, input, expected):
         server = mockserver(input)
-        _func, spec = wireproto.commands[cmd]
-        self.assertEqual(server.getargs(spec), expected)
+        proto = wireprotoserver.sshv1protocolhandler(server._ui,
+                                                     server._fin,
+                                                     server._fout)
+        _func, spec = wireprotov1server.commands[cmd]
+        self.assertEqual(proto.getargs(spec), expected)
 
 def mockserver(inbytes):
     ui = mockui(inbytes)
     repo = mockrepo(ui)
-    return sshserver.sshserver(ui, repo)
+    return wireprotoserver.sshserver(ui, repo)
 
 class mockrepo(object):
     def __init__(self, ui):
@@ -43,5 +49,5 @@ class mockui(object):
 
 if __name__ == '__main__':
     # Don't call into msvcrt to set BytesIO to binary mode
-    util.setbinary = lambda fp: True
+    procutil.setbinary = lambda fp: True
     silenttestrunner.main(__name__)

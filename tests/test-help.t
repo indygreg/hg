@@ -44,6 +44,10 @@ Short help:
    summary       summarize working directory state
    update        update working directory (or switch revisions)
 
+Extra extensions will be printed in help output in a non-reliable order since
+the extension is unknown.
+#if no-extraextensions
+
   $ hg help
   Mercurial Distributed SCM
   
@@ -274,6 +278,7 @@ Test extension help:
        purge         command to delete untracked files from the working
                      directory
        relink        recreates hardlinks between repository clones
+       remotenames   showing remotebookmarks and remotebranches in UI
        schemes       extend schemes with shortcuts to repository swarms
        share         share a common history between several working directories
        shelve        save and restore changes to the working directory
@@ -281,6 +286,13 @@ Test extension help:
        transplant    command to transplant changesets from another branch
        win32mbcs     allow the use of MBCS paths with problematic encodings
        zeroconf      discover and advertise repositories on the local network
+
+#endif
+
+Verify that deprecated extensions are included if --verbose:
+
+  $ hg -v help extensions | grep children
+       children      command to display child changesets (DEPRECATED)
 
 Verify that extension keywords appear in help templates
 
@@ -710,15 +722,23 @@ this is a section and erroring out weirdly.
 
   $ cat > helpext.py <<EOF
   > import os
-  > from mercurial import commands, registrar
+  > from mercurial import commands, fancyopts, registrar
   > 
+  > def func(arg):
+  >     return '%sfoo' % arg
+  > class customopt(fancyopts.customopt):
+  >     def newstate(self, oldstate, newparam, abort):
+  >         return '%sbar' % oldstate
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > 
   > @command(b'nohelp',
-  >     [(b'', b'longdesc', 3, b'x'*90),
+  >     [(b'', b'longdesc', 3, b'x'*67),
   >     (b'n', b'', None, b'normal desc'),
-  >     (b'', b'newline', b'', b'line1\nline2')],
+  >     (b'', b'newline', b'', b'line1\nline2'),
+  >     (b'', b'callableopt', func, b'adds foo'),
+  >     (b'', b'customopt', customopt(''), b'adds bar'),
+  >     (b'', b'customopt-withdefault', customopt('foo'), b'adds bar')],
   >     b'hg nohelp',
   >     norepo=True)
   > @command(b'debugoptADV', [(b'', b'aopt', None, b'option is (ADVANCED)')])
@@ -763,9 +783,9 @@ Test for aliases
   $ hg help shellalias
   hg shellalias
   
-  shell alias for:
+  shell alias for: echo hi
   
-    echo hi
+  (no help text available)
   
   defined by: helpext
   
@@ -780,10 +800,14 @@ Test command with no help text
   
   options:
   
-      --longdesc VALUE xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-                       xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx (default: 3)
-   -n --               normal desc
-      --newline VALUE  line1 line2
+      --longdesc VALUE
+                                    xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+                                    xxxxxxxxxxxxxxxxxxxxxxx (default: 3)
+   -n --                            normal desc
+      --newline VALUE               line1 line2
+      --callableopt VALUE           adds foo
+      --customopt VALUE             adds bar
+      --customopt-withdefault VALUE adds bar (default: foo)
   
   (some details hidden, use --verbose to show complete help)
 
@@ -797,6 +821,8 @@ Test command with no help text
    nohelp (no help text available)
 
 Test that default list of commands omits extension commands
+
+#if no-extraextensions
 
   $ hg help
   Mercurial Distributed SCM
@@ -885,6 +911,7 @@ Test that default list of commands omits extension commands
   
   (use 'hg help -v' to show built-in aliases and global options)
 
+#endif
 
 Test list of internal help commands
 
@@ -948,6 +975,7 @@ Test list of internal help commands
    debugoptEXP   (no help text available)
    debugpathcomplete
                  complete part or all of a tracked path
+   debugpeer     establish a connection to a peer repository
    debugpickmergetool
                  examine which merge tool is chosen for specified file
    debugpushkey  access the pushkey key/value protocol
@@ -960,6 +988,7 @@ Test list of internal help commands
    debugrename   dump rename information
    debugrevlog   show data and statistics about a revlog
    debugrevspec  parse and apply a revision specification
+   debugserve    run a server with advanced settings
    debugsetparents
                  manually set the parents of the current working directory
    debugssl      test a secure connection to a server
@@ -968,13 +997,21 @@ Test list of internal help commands
                  show set of successors for revision
    debugtemplate
                  parse and apply a template
+   debuguigetpass
+                 show prompt to type password
+   debuguiprompt
+                 show plain prompt
    debugupdatecaches
                  warm all known caches in the repository
    debugupgraderepo
                  upgrade a repository to use different features
    debugwalk     show how files match on given patterns
+   debugwhyunstable
+                 explain instabilities of a changeset
    debugwireargs
                  (no help text available)
+   debugwireproto
+                 send wire protocol commands to a server
   
   (use 'hg help -v debug' to show built-in aliases and global options)
 
@@ -986,6 +1023,7 @@ internals topic renders index of available sub-topics
   
       To access a subtopic, use "hg help internals.{subtopic-name}"
   
+       bundle2       Bundle2
        bundles       Bundles
        censor        Censor
        changegroups  Changegroups
@@ -1487,11 +1525,14 @@ Test keyword search help
    bookmarks create a new bookmark or list existing bookmarks
    clone     make a copy of an existing repository
    paths     show aliases for remote repositories
+   pull      pull changes from the specified source
    update    update working directory (or switch revisions)
   
   Extensions:
   
    clonebundles advertise pre-generated bundles to seed clones
+   narrow       create clones which fetch history data for subset of files
+                (EXPERIMENTAL)
    prefixedname matched against word "clone"
    relink       recreates hardlinks between repository clones
   
@@ -2826,6 +2867,9 @@ Dish up an empty repo; serve it cold.
   <tr><td>-X</td>
   <td>--exclude PATTERN [+]</td>
   <td>exclude names matching the given patterns</td></tr>
+  <tr><td>-n</td>
+  <td>--dry-run</td>
+  <td>do not perform actions, just print output</td></tr>
   </table>
   <p>
   global options ([+] can be repeated):
@@ -3049,6 +3093,13 @@ Sub-topic indexes rendered properly
   <table class="bigtable">
   <tr><td colspan="2"><h2><a name="topics" href="#topics">Topics</a></h2></td></tr>
   
+  <tr><td>
+  <a href="/help/internals.bundle2">
+  bundle2
+  </a>
+  </td><td>
+  Bundle2
+  </td></tr>
   <tr><td>
   <a href="/help/internals.bundles">
   bundles
@@ -3386,6 +3437,70 @@ Sub-topic topics rendered properly
   </body>
   </html>
   
+
+  $ get-with-headers.py 127.0.0.1:$HGPORT "help/unknowntopic"
+  404 Not Found
+  
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
+  <head>
+  <link rel="icon" href="/static/hgicon.png" type="image/png" />
+  <meta name="robots" content="index, nofollow" />
+  <link rel="stylesheet" href="/static/style-paper.css" type="text/css" />
+  <script type="text/javascript" src="/static/mercurial.js"></script>
+  
+  <title>test: error</title>
+  </head>
+  <body>
+  
+  <div class="container">
+  <div class="menu">
+  <div class="logo">
+  <a href="https://mercurial-scm.org/">
+  <img src="/static/hglogo.png" width=75 height=90 border=0 alt="mercurial" /></a>
+  </div>
+  <ul>
+  <li><a href="/shortlog">log</a></li>
+  <li><a href="/graph">graph</a></li>
+  <li><a href="/tags">tags</a></li>
+  <li><a href="/bookmarks">bookmarks</a></li>
+  <li><a href="/branches">branches</a></li>
+  </ul>
+  <ul>
+  <li><a href="/help">help</a></li>
+  </ul>
+  </div>
+  
+  <div class="main">
+  
+  <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
+  <h3>error</h3>
+  
+  
+  <form class="search" action="/log">
+  
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
+  <div id="hint">Find changesets by keywords (author, files, the commit message), revision
+  number or hash, or <a href="/help/revsets">revset expression</a>.</div>
+  </form>
+  
+  <div class="description">
+  <p>
+  An error occurred while processing your request:
+  </p>
+  <p>
+  Not Found
+  </p>
+  </div>
+  </div>
+  </div>
+  
+  
+  
+  </body>
+  </html>
+  
+  [1]
 
   $ killdaemons.py
 

@@ -10,12 +10,14 @@ from mercurial import (
     node,
     revlog,
     transaction,
-    util,
     vfs as vfsmod,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 for fp in (sys.stdin, sys.stdout, sys.stderr):
-    util.setbinary(fp)
+    procutil.setbinary(fp)
 
 opener = vfsmod.vfs('.', False)
 tr = transaction.transaction(sys.stderr.write, opener, {'store': opener},

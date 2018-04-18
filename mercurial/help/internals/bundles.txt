@@ -63,8 +63,7 @@ supported by ``HG10`` bundles.
 
 ``HG20`` is currently the only defined bundle2 version.
 
-The ``HG20`` format is not yet documented here. See the inline comments
-in ``mercurial/exchange.py`` for now.
+The ``HG20`` format is documented at :hg:`help internals.bundle2`.
 
 Initial ``HG20`` support was added in Mercurial 3.0 (released May
 2014). However, bundle2 bundles were hidden behind an experimental flag

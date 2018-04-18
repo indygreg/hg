@@ -31,7 +31,7 @@ test qpush on empty series
   popping patch2
   popping patch1
   patch queue now empty
-  $ $PYTHON -c 'print "\xe9"' > message
+  $ $PYTHON -c 'import sys; getattr(sys.stdout, "buffer", sys.stdout).write(b"\xe9\n")' > message
   $ cat .hg/patches/bad-patch >> message
   $ mv message .hg/patches/bad-patch
   $ cat > $TESTTMP/wrapplayback.py <<EOF

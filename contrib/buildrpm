@@ -20,8 +20,8 @@ while [ "$1" ]; do
         ;;
     --withpython | --with-python)
         shift
-        PYTHONVER=2.7.10
-        PYTHONMD5=d7547558fd673bd9d38e2108c6b42521
+        PYTHONVER=2.7.14
+        PYTHONMD5=cee2e4b33ad3750da77b2e85f2f8b724
         ;;
     --rpmbuilddir )
         shift

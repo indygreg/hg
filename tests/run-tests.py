@@ -120,6 +120,7 @@ if pygmentspresent:
         }
 
     class TestRunnerLexer(lexer.RegexLexer):
+        testpattern = r'[\w-]+\.(t|py)( \(case [\w-]+\))?'
         tokens = {
             'root': [
                 (r'^Skipped', token.Generic.Skipped, 'skipped'),
@@ -127,11 +128,11 @@ if pygmentspresent:
                 (r'^ERROR: ', token.Generic.Failed, 'failed'),
             ],
             'skipped': [
-                (r'[\w-]+\.(t|py)', token.Generic.SName),
+                (testpattern, token.Generic.SName),
                 (r':.*', token.Generic.Skipped),
             ],
             'failed': [
-                (r'[\w-]+\.(t|py)', token.Generic.FName),
+                (testpattern, token.Generic.FName),
                 (r'(:| ).*', token.Generic.Failed),
             ]
         }
@@ -344,6 +345,8 @@ def getparser():
         help="loop tests repeatedly")
     harness.add_argument('--random', action="store_true",
         help='run tests in random order')
+    harness.add_argument('--order-by-runtime', action="store_true",
+        help='run slowest tests first, according to .testtimes')
     harness.add_argument("-p", "--port", type=int,
         help="port on which servers should listen"
              " (default: $%s or %d)" % defaults['port'])
@@ -989,7 +992,12 @@ class Test(unittest.TestCase):
                 # the intermediate 'compile' step help with debugging
                 code = compile(source.read(), replacementfile, 'exec')
                 exec(code, data)
-                r.extend(data.get('substitutions', ()))
+                for value in data.get('substitutions', ()):
+                    if len(value) != 2:
+                        msg = 'malformatted substitution in %s: %r'
+                        msg %= (replacementfile, value)
+                        raise ValueError(msg)
+                    r.append(value)
         return r
 
     def _escapepath(self, p):
@@ -1046,6 +1054,7 @@ class Test(unittest.TestCase):
         env['PYTHONUSERBASE'] = sysconfig.get_config_var('userbase') or ''
         env['HGEMITWARNINGS'] = '1'
         env['TESTTMP'] = self._testtmp
+        env['TESTNAME'] = self.name
         env['HOME'] = self._testtmp
         # This number should match portneeded in _getport
         for port in xrange(3):
@@ -1060,6 +1069,17 @@ class Test(unittest.TestCase):
         env["HGENCODING"] = "ascii"
         env["HGENCODINGMODE"] = "strict"
         env['HGIPV6'] = str(int(self._useipv6))
+
+        extraextensions = []
+        for opt in self._extraconfigopts:
+            section, key = opt.encode('utf-8').split(b'.', 1)
+            if section != 'extensions':
+                continue
+            name = key.split(b'=', 1)[0]
+            extraextensions.append(name)
+
+        if extraextensions:
+            env['HGTESTEXTRAEXTENSIONS'] = b' '.join(extraextensions)
 
         # LOCALIP could be ::1 or 127.0.0.1. Useful for tests that require raw
         # IP addresses.
@@ -1080,7 +1100,7 @@ class Test(unittest.TestCase):
                 del env[k]
 
         # unset env related to hooks
-        for k in env.keys():
+        for k in list(env):
             if k.startswith('HG_'):
                 del env[k]
 
@@ -1110,6 +1130,7 @@ class Test(unittest.TestCase):
             hgrc.write(b'[web]\n')
             hgrc.write(b'address = localhost\n')
             hgrc.write(b'ipv6 = %s\n' % str(self._useipv6).encode('ascii'))
+            hgrc.write(b'server-header = testing stub value\n')
 
             for opt in self._extraconfigopts:
                 section, key = opt.encode('utf-8').split(b'.', 1)
@@ -1229,6 +1250,7 @@ class TTest(Test):
             self.name = '%s (case %s)' % (self.name, _strpath(case))
             self.errpath = b'%s.%s.err' % (self.errpath[:-4], case)
             self._tmpname += b'-%s' % case
+        self._have = {}
 
     @property
     def refpath(self):
@@ -1268,11 +1290,15 @@ class TTest(Test):
         return self._processoutput(exitcode, output, salt, after, expected)
 
     def _hghave(self, reqs):
+        allreqs = b' '.join(reqs)
+        if allreqs in self._have:
+            return self._have.get(allreqs)
+
         # TODO do something smarter when all other uses of hghave are gone.
         runtestdir = os.path.abspath(os.path.dirname(_bytespath(__file__)))
         tdir = runtestdir.replace(b'\\', b'/')
         proc = Popen4(b'%s -c "%s/hghave %s"' %
-                      (self._shell, tdir, b' '.join(reqs)),
+                      (self._shell, tdir, allreqs),
                       self._testtmp, 0, self._getenv())
         stdout, stderr = proc.communicate()
         ret = proc.wait()
@@ -1283,10 +1309,13 @@ class TTest(Test):
             sys.exit(1)
 
         if ret != 0:
+            self._have[allreqs] = (False, stdout)
             return False, stdout
 
         if b'slow' in reqs:
             self._timeout = self._slowtimeout
+
+        self._have[allreqs] = (True, None)
         return True, None
 
     def _iftest(self, args):
@@ -1341,7 +1370,11 @@ class TTest(Test):
         if os.getenv('MSYSTEM'):
             script.append(b'alias pwd="pwd -W"\n')
         if self._case:
-            script.append(b'TESTCASE=%s\n' % shellquote(self._case))
+            if isinstance(self._case, str):
+                quoted = shellquote(self._case)
+            else:
+                quoted = shellquote(self._case.decode('utf8')).encode('utf8')
+            script.append(b'TESTCASE=%s\n' % quoted)
             script.append(b'export TESTCASE\n')
 
         n = 0
@@ -1352,10 +1385,11 @@ class TTest(Test):
                 lsplit = l.split()
                 if len(lsplit) < 2 or lsplit[0] != b'#require':
                     after.setdefault(pos, []).append('  !!! invalid #require\n')
-                haveresult, message = self._hghave(lsplit[1:])
-                if not haveresult:
-                    script = [b'echo "%s"\nexit 80\n' % message]
-                    break
+                if not skipping:
+                    haveresult, message = self._hghave(lsplit[1:])
+                    if not haveresult:
+                        script = [b'echo "%s"\nexit 80\n' % message]
+                        break
                 after.setdefault(pos, []).append(l)
             elif l.startswith(b'#if'):
                 lsplit = l.split()
@@ -1751,20 +1785,20 @@ class TestResult(unittest._TextTestResult):
             else:
                 servefail, lines = getdiff(expected, got,
                                            test.refpath, test.errpath)
+                self.stream.write('\n')
+                for line in lines:
+                    line = highlightdiff(line, self.color)
+                    if PYTHON3:
+                        self.stream.flush()
+                        self.stream.buffer.write(line)
+                        self.stream.buffer.flush()
+                    else:
+                        self.stream.write(line)
+                        self.stream.flush()
+
                 if servefail:
                     raise test.failureException(
                         'server failed to start (HGPORT=%s)' % test._startport)
-                else:
-                    self.stream.write('\n')
-                    for line in lines:
-                        line = highlightdiff(line, self.color)
-                        if PYTHON3:
-                            self.stream.flush()
-                            self.stream.buffer.write(line)
-                            self.stream.buffer.flush()
-                        else:
-                            self.stream.write(line)
-                            self.stream.flush()
 
             # handle interactive prompt without releasing iolock
             if self._options.interactive:
@@ -2012,10 +2046,11 @@ class TestSuite(unittest.TestSuite):
 def loadtimes(outputdir):
     times = []
     try:
-        with open(os.path.join(outputdir, b'.testtimes-')) as fp:
+        with open(os.path.join(outputdir, b'.testtimes')) as fp:
             for line in fp:
-                ts = line.split()
-                times.append((ts[0], [float(t) for t in ts[1:]]))
+                m = re.match('(.*?) ([0-9. ]+)', line)
+                times.append((m.group(1),
+                              [float(t) for t in m.group(2).split()]))
     except IOError as err:
         if err.errno != errno.ENOENT:
             raise
@@ -2124,13 +2159,21 @@ class TextTestRunner(unittest.TextTestRunner):
             if self._runner.options.exceptions:
                 exceptions = aggregateexceptions(
                     os.path.join(self._runner._outputdir, b'exceptions'))
-                total = sum(exceptions.values())
 
                 self.stream.writeln('Exceptions Report:')
                 self.stream.writeln('%d total from %d frames' %
-                                    (total, len(exceptions)))
-                for (frame, line, exc), count in exceptions.most_common():
-                    self.stream.writeln('%d\t%s: %s' % (count, frame, exc))
+                                    (exceptions['total'],
+                                     len(exceptions['exceptioncounts'])))
+                combined = exceptions['combined']
+                for key in sorted(combined, key=combined.get, reverse=True):
+                    frame, line, exc = key
+                    totalcount, testcount, leastcount, leasttest = combined[key]
+
+                    self.stream.writeln('%d (%d tests)\t%s: %s (%s - %d total)'
+                                        % (totalcount,
+                                           testcount,
+                                           frame, exc,
+                                           leasttest, leastcount))
 
             self.stream.flush()
 
@@ -2172,10 +2215,11 @@ class TextTestRunner(unittest.TextTestRunner):
                     'Failed to identify failure point for %s' % test)
                 continue
             dat = m.groupdict()
-            verb = 'broken' if dat['goodbad'] == 'bad' else 'fixed'
+            verb = 'broken' if dat['goodbad'] == b'bad' else 'fixed'
             self.stream.writeln(
                 '%s %s by %s (%s)' % (
-                    test, verb, dat['node'], dat['summary']))
+                    test, verb, dat['node'].decode('ascii'),
+                    dat['summary'].decode('utf8', 'ignore')))
 
     def printtimes(self, times):
         # iolock held by run
@@ -2279,47 +2323,57 @@ class TextTestRunner(unittest.TextTestRunner):
                              separators=(',', ': '))
         outf.writelines(("testreport =", jsonout))
 
-def sorttests(testdescs, shuffle=False):
+def sorttests(testdescs, previoustimes, shuffle=False):
     """Do an in-place sort of tests."""
     if shuffle:
         random.shuffle(testdescs)
         return
 
-    # keywords for slow tests
-    slow = {b'svn': 10,
-            b'cvs': 10,
-            b'hghave': 10,
-            b'largefiles-update': 10,
-            b'run-tests': 10,
-            b'corruption': 10,
-            b'race': 10,
-            b'i18n': 10,
-            b'check': 100,
-            b'gendoc': 100,
-            b'contrib-perf': 200,
-            }
-    perf = {}
+    if previoustimes:
+        def sortkey(f):
+            f = f['path']
+            if f in previoustimes:
+                # Use most recent time as estimate
+                return -previoustimes[f][-1]
+            else:
+                # Default to a rather arbitrary value of 1 second for new tests
+                return -1.0
+    else:
+        # keywords for slow tests
+        slow = {b'svn': 10,
+                b'cvs': 10,
+                b'hghave': 10,
+                b'largefiles-update': 10,
+                b'run-tests': 10,
+                b'corruption': 10,
+                b'race': 10,
+                b'i18n': 10,
+                b'check': 100,
+                b'gendoc': 100,
+                b'contrib-perf': 200,
+                }
+        perf = {}
 
-    def sortkey(f):
-        # run largest tests first, as they tend to take the longest
-        f = f['path']
-        try:
-            return perf[f]
-        except KeyError:
+        def sortkey(f):
+            # run largest tests first, as they tend to take the longest
+            f = f['path']
             try:
-                val = -os.stat(f).st_size
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    raise
-                perf[f] = -1e9  # file does not exist, tell early
-                return -1e9
-            for kw, mul in slow.items():
-                if kw in f:
-                    val *= mul
-            if f.endswith(b'.py'):
-                val /= 10.0
-            perf[f] = val / 1000.0
-            return perf[f]
+                return perf[f]
+            except KeyError:
+                try:
+                    val = -os.stat(f).st_size
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        raise
+                    perf[f] = -1e9  # file does not exist, tell early
+                    return -1e9
+                for kw, mul in slow.items():
+                    if kw in f:
+                        val *= mul
+                if f.endswith(b'.py'):
+                    val /= 10.0
+                perf[f] = val / 1000.0
+                return perf[f]
 
     testdescs.sort(key=sortkey)
 
@@ -2390,8 +2444,6 @@ class TestRunner(object):
             os.umask(oldmask)
 
     def _run(self, testdescs):
-        sorttests(testdescs, shuffle=self.options.random)
-
         self._testdir = osenvironb[b'TESTDIR'] = getattr(
             os, 'getcwdb', os.getcwd)()
         # assume all tests in same folder for now
@@ -2406,6 +2458,10 @@ class TestRunner(object):
             self._outputdir = self._testdir
             if testdescs and pathname:
                 self._outputdir = os.path.join(self._outputdir, pathname)
+        previoustimes = {}
+        if self.options.order_by_runtime:
+            previoustimes = dict(loadtimes(self._outputdir))
+        sorttests(testdescs, previoustimes, shuffle=self.options.random)
 
         if 'PYTHONHASHSEED' not in os.environ:
             # use a random python hash seed all the time
@@ -3001,22 +3057,57 @@ class TestRunner(object):
                       p.decode("utf-8"))
 
 def aggregateexceptions(path):
-    exceptions = collections.Counter()
+    exceptioncounts = collections.Counter()
+    testsbyfailure = collections.defaultdict(set)
+    failuresbytest = collections.defaultdict(set)
 
     for f in os.listdir(path):
         with open(os.path.join(path, f), 'rb') as fh:
             data = fh.read().split(b'\0')
-            if len(data) != 4:
+            if len(data) != 5:
                 continue
 
-            exc, mainframe, hgframe, hgline = data
+            exc, mainframe, hgframe, hgline, testname = data
             exc = exc.decode('utf-8')
             mainframe = mainframe.decode('utf-8')
             hgframe = hgframe.decode('utf-8')
             hgline = hgline.decode('utf-8')
-            exceptions[(hgframe, hgline, exc)] += 1
+            testname = testname.decode('utf-8')
 
-    return exceptions
+            key = (hgframe, hgline, exc)
+            exceptioncounts[key] += 1
+            testsbyfailure[key].add(testname)
+            failuresbytest[testname].add(key)
+
+    # Find test having fewest failures for each failure.
+    leastfailing = {}
+    for key, tests in testsbyfailure.items():
+        fewesttest = None
+        fewestcount = 99999999
+        for test in sorted(tests):
+            if len(failuresbytest[test]) < fewestcount:
+                fewesttest = test
+                fewestcount = len(failuresbytest[test])
+
+        leastfailing[key] = (fewestcount, fewesttest)
+
+    # Create a combined counter so we can sort by total occurrences and
+    # impacted tests.
+    combined = {}
+    for key in exceptioncounts:
+        combined[key] = (exceptioncounts[key],
+                         len(testsbyfailure[key]),
+                         leastfailing[key][0],
+                         leastfailing[key][1])
+
+    return {
+        'exceptioncounts': exceptioncounts,
+        'total': sum(exceptioncounts.values()),
+        'combined': combined,
+        'leastfailing': leastfailing,
+        'byfailure': testsbyfailure,
+        'bytest': failuresbytest,
+    }
 
 if __name__ == '__main__':
     runner = TestRunner()

@@ -73,8 +73,6 @@
 
 from __future__ import absolute_import
 
-import operator
-
 from .i18n import _
 from .node import (
     hex,
@@ -146,7 +144,7 @@ def writemergedtags(fcd, mergedtags):
     possible to the first parent's .hgtags file.
     '''
     # group the node-tag pairs that must be written next to each other
-    for tname, taglist in mergedtags.items():
+    for tname, taglist in list(mergedtags.items()):
         mergedtags[tname] = grouptagnodesbyline(taglist)
 
     # convert the grouped merged tags dict into a format that resembles the
@@ -164,7 +162,7 @@ def writemergedtags(fcd, mergedtags):
     # before writing them
     # the position is calculated to ensure that the diff of the merged .hgtags
     # file to the first parent's .hgtags file is as small as possible
-    finaltags.sort(key=operator.itemgetter(0))
+    finaltags.sort(key=lambda x: -1 if x[0] is None else x[0])
 
     # finally we can join the sorted groups to get the final contents of the
     # merged .hgtags file, and then write it to disk
@@ -269,4 +267,3 @@ def merge(repo, fcd, fco, fca):
     writemergedtags(fcd, mergedtags)
     ui.note(_('.hgtags merged successfully\n'))
     return False, 0
-

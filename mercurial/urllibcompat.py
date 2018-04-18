@@ -18,7 +18,7 @@ class _pycompatstub(object):
         """Add items that will be populated at the first access"""
         items = map(_sysstr, items)
         self._aliases.update(
-            (item.replace(_sysstr('_'), _sysstr('')).lower(), (origin, item))
+            (item.replace(r'_', r'').lower(), (origin, item))
             for item in items)
 
     def _registeralias(self, origin, attr, name):
@@ -47,6 +47,8 @@ if pycompat.ispy3:
         "urlparse",
         "urlunparse",
     ))
+    urlreq._registeralias(urllib.parse, "parse_qs", "parseqs")
+    urlreq._registeralias(urllib.parse, "parse_qsl", "parseqsl")
     urlreq._registeralias(urllib.parse, "unquote_to_bytes", "unquote")
     import urllib.request
     urlreq._registeraliases(urllib.request, (
@@ -157,6 +159,8 @@ else:
         "urlparse",
         "urlunparse",
     ))
+    urlreq._registeralias(urlparse, "parse_qs", "parseqs")
+    urlreq._registeralias(urlparse, "parse_qsl", "parseqsl")
     urlerr._registeraliases(urllib2, (
         "HTTPError",
         "URLError",

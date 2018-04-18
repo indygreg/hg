@@ -8,7 +8,6 @@ from __future__ import absolute_import
 
 import collections
 import os
-import shlex
 import shutil
 
 from mercurial.i18n import _
@@ -16,9 +15,11 @@ from mercurial import (
     encoding,
     error,
     hg,
+    pycompat,
     scmutil,
     util,
 )
+from mercurial.utils import dateutil
 
 from . import (
     bzr,
@@ -55,9 +56,10 @@ orig_encoding = 'ascii'
 
 def recode(s):
     if isinstance(s, unicode):
-        return s.encode(orig_encoding, 'replace')
+        return s.encode(pycompat.sysstr(orig_encoding), 'replace')
     else:
-        return s.decode('utf-8').encode(orig_encoding, 'replace')
+        return s.decode('utf-8').encode(
+            pycompat.sysstr(orig_encoding), 'replace')
 
 def mapbranch(branch, branchmap):
     '''
@@ -202,16 +204,14 @@ class converter(object):
             return {}
         m = {}
         try:
-            fp = open(path, 'r')
+            fp = open(path, 'rb')
             for i, line in enumerate(util.iterfile(fp)):
                 line = line.splitlines()[0].rstrip()
                 if not line:
                     # Ignore blank lines
                     continue
                 # split line
-                lex = shlex.shlex(line, posix=True)
-                lex.whitespace_split = True
-                lex.whitespace += ','
+                lex = common.shlexer(data=line, whitespace=',')
                 line = list(lex)
                 # check number of parents
                 if not (2 <= len(line) <= 3):
@@ -356,7 +356,7 @@ class converter(object):
             dates = {}
             def getdate(n):
                 if n not in dates:
-                    dates[n] = util.parsedate(self.commitcache[n].date)
+                    dates[n] = dateutil.parsedate(self.commitcache[n].date)
                 return dates[n]
 
             def picknext(nodes):
@@ -407,13 +407,14 @@ class converter(object):
         authorfile = self.authorfile
         if authorfile:
             self.ui.status(_('writing author map file %s\n') % authorfile)
-            ofile = open(authorfile, 'w+')
+            ofile = open(authorfile, 'wb+')
             for author in self.authors:
-                ofile.write("%s=%s\n" % (author, self.authors[author]))
+                ofile.write(util.tonativeeol("%s=%s\n"
+                                             % (author, self.authors[author])))
             ofile.close()
 
     def readauthormap(self, authorfile):
-        afile = open(authorfile, 'r')
+        afile = open(authorfile, 'rb')
         for line in afile:
 
             line = line.strip()
@@ -564,6 +565,7 @@ class converter(object):
         self.map.close()
 
 def convert(ui, src, dest=None, revmapfile=None, **opts):
+    opts = pycompat.byteskwargs(opts)
     global orig_encoding
     orig_encoding = encoding.encoding
     encoding.encoding = 'UTF-8'

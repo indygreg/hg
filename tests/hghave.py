@@ -372,7 +372,7 @@ def has_hardlink():
 def has_hardlink_whitelisted():
     from mercurial import util
     try:
-        fstype = util.getfstype('.')
+        fstype = util.getfstype(b'.')
     except OSError:
         return False
     return fstype in util._hardlinkfswhitelist
@@ -703,8 +703,75 @@ def has_fuzzywuzzy():
 
 @check("clang-libfuzzer", "clang new enough to include libfuzzer")
 def has_clang_libfuzzer():
-    mat = matchoutput('clang --version', 'clang version (\d)')
+    mat = matchoutput('clang --version', b'clang version (\d)')
     if mat:
         # libfuzzer is new in clang 6
         return int(mat.group(1)) > 5
     return False
+
+@check("xdiff", "xdiff algorithm")
+def has_xdiff():
+    try:
+        from mercurial import policy
+        bdiff = policy.importmod('bdiff')
+        return bdiff.xdiffblocks(b'', b'') == [(0, 0, 0, 0)]
+    except (ImportError, AttributeError):
+        return False
+
+@check('extraextensions', 'whether tests are running with extra extensions')
+def has_extraextensions():
+    return 'HGTESTEXTRAEXTENSIONS' in os.environ
+
+def getrepofeatures():
+    """Obtain set of repository features in use.
+
+    HGREPOFEATURES can be used to define or remove features. It contains
+    a space-delimited list of feature strings. Strings beginning with ``-``
+    mean to remove.
+    """
+    # Default list provided by core.
+    features = {
+        'bundlerepo',
+        'revlogstore',
+        'fncache',
+    }
+
+    # Features that imply other features.
+    implies = {
+        'simplestore': ['-revlogstore', '-bundlerepo', '-fncache'],
+    }
+
+    for override in os.environ.get('HGREPOFEATURES', '').split(' '):
+        if not override:
+            continue
+
+        if override.startswith('-'):
+            if override[1:] in features:
+                features.remove(override[1:])
+        else:
+            features.add(override)
+
+            for imply in implies.get(override, []):
+                if imply.startswith('-'):
+                    if imply[1:] in features:
+                        features.remove(imply[1:])
+                else:
+                    features.add(imply)
+
+    return features
+
+@check('reporevlogstore', 'repository using the default revlog store')
+def has_reporevlogstore():
+    return 'revlogstore' in getrepofeatures()
+
+@check('reposimplestore', 'repository using simple storage extension')
+def has_reposimplestore():
+    return 'simplestore' in getrepofeatures()
+
+@check('repobundlerepo', 'whether we can open bundle files as repos')
+def has_repobundlerepo():
+    return 'bundlerepo' in getrepofeatures()
+
+@check('repofncache', 'repository has an fncache')
+def has_repofncache():
+    return 'fncache' in getrepofeatures()

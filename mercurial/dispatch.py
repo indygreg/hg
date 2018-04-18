@@ -35,13 +35,15 @@ from . import (
     hook,
     profiling,
     pycompat,
-    registrar,
     scmutil,
     ui as uimod,
     util,
 )
 
-unrecoverablewrite = registrar.command.unrecoverablewrite
+from .utils import (
+    procutil,
+    stringutil,
+)
 
 class request(object):
     def __init__(self, args, ui=None, repo=None, fin=None, fout=None,
@@ -85,7 +87,7 @@ def run():
     req = request(pycompat.sysargv[1:])
     err = None
     try:
-        status = (dispatch(req) or 0) & 255
+        status = (dispatch(req) or 0)
     except error.StdioError as e:
         err = e
         status = -1
@@ -106,11 +108,36 @@ def run():
         except IOError:
             status = -1
 
+    _silencestdio()
     sys.exit(status & 255)
 
-def _initstdio():
-    for fp in (sys.stdin, sys.stdout, sys.stderr):
-        util.setbinary(fp)
+if pycompat.ispy3:
+    def _initstdio():
+        pass
+
+    def _silencestdio():
+        for fp in (sys.stdout, sys.stderr):
+            # Check if the file is okay
+            try:
+                fp.flush()
+                continue
+            except IOError:
+                pass
+            # Otherwise mark it as closed to silence "Exception ignored in"
+            # message emitted by the interpreter finalizer. Be careful to
+            # not close procutil.stdout, which may be a fdopen-ed file object
+            # and its close() actually closes the underlying file descriptor.
+            try:
+                fp.close()
+            except IOError:
+                pass
+else:
+    def _initstdio():
+        for fp in (sys.stdin, sys.stdout, sys.stderr):
+            procutil.setbinary(fp)
+
+    def _silencestdio():
+        pass
 
 def _getsimilar(symbols, value):
     sim = lambda x: difflib.SequenceMatcher(None, value, x).ratio()
@@ -132,8 +159,8 @@ def _formatparse(write, inst):
         similar = _getsimilar(inst.symbols, inst.function)
     if len(inst.args) > 1:
         write(_("hg: parse error at %s: %s\n") %
-                         (inst.args[1], inst.args[0]))
-        if (inst.args[0][0] == ' '):
+              (pycompat.bytestr(inst.args[1]), inst.args[0]))
+        if inst.args[0].startswith(' '):
             write(_("unexpected leading whitespace\n"))
     else:
         write(_("hg: parse error: %s\n") % inst.args[0])
@@ -142,7 +169,7 @@ def _formatparse(write, inst):
         write(_("(%s)\n") % inst.hint)
 
 def _formatargs(args):
-    return ' '.join(util.shellquote(a) for a in args)
+    return ' '.join(procutil.shellquote(a) for a in args)
 
 def dispatch(req):
     "run the command specified in req.args"
@@ -151,7 +178,7 @@ def dispatch(req):
     elif req.ui:
         ferr = req.ui.ferr
     else:
-        ferr = util.stderr
+        ferr = procutil.stderr
 
     try:
         if not req.ui:
@@ -383,7 +410,7 @@ def aliasargs(fn, givenargs):
     if not util.safehasattr(fn, '_origfunc'):
         args = getattr(fn, 'args', args)
     if args:
-        cmd = ' '.join(map(util.shellquote, args))
+        cmd = ' '.join(map(procutil.shellquote, args))
 
         nums = []
         def replacer(m):
@@ -413,14 +440,14 @@ def aliasinterpolate(name, args, cmd):
     # parameters, separated out into words. Emulate the same behavior here by
     # quoting the arguments individually. POSIX shells will then typically
     # tokenize each argument into exactly one word.
-    replacemap['"$@"'] = ' '.join(util.shellquote(arg) for arg in args)
+    replacemap['"$@"'] = ' '.join(procutil.shellquote(arg) for arg in args)
     # escape '\$' for regex
     regex = '|'.join(replacemap.keys()).replace('$', br'\$')
     r = re.compile(regex)
     return r.sub(lambda x: replacemap[x.group()], cmd)
 
 class cmdalias(object):
-    def __init__(self, name, definition, cmdtable, source):
+    def __init__(self, ui, name, definition, cmdtable, source):
         self.name = self.cmd = name
         self.cmdname = ''
         self.definition = definition
@@ -447,6 +474,7 @@ class cmdalias(object):
             return
 
         if self.definition.startswith('!'):
+            shdef = self.definition[1:]
             self.shell = True
             def fn(ui, *args):
                 env = {'HG_ARGS': ' '.join((self.name,) + args)}
@@ -460,24 +488,26 @@ class cmdalias(object):
                                  "of %i variable in alias '%s' definition.\n"
                                  % (int(m.groups()[0]), self.name))
                         return ''
-                cmd = re.sub(br'\$(\d+|\$)', _checkvar, self.definition[1:])
+                cmd = re.sub(br'\$(\d+|\$)', _checkvar, shdef)
                 cmd = aliasinterpolate(self.name, args, cmd)
                 return ui.system(cmd, environ=env,
                                  blockedtag='alias_%s' % self.name)
             self.fn = fn
+            self._populatehelp(ui, name, shdef, self.fn)
             return
 
         try:
             args = pycompat.shlexsplit(self.definition)
         except ValueError as inst:
             self.badalias = (_("error in definition for alias '%s': %s")
-                             % (self.name, inst))
+                             % (self.name, stringutil.forcebytestr(inst)))
             return
         earlyopts, args = _earlysplitopts(args)
         if earlyopts:
             self.badalias = (_("error in definition for alias '%s': %s may "
                                "only be given on the command line")
-                             % (self.name, '/'.join(zip(*earlyopts)[0])))
+                             % (self.name, '/'.join(pycompat.ziplist(*earlyopts)
+                                                    [0])))
             return
         self.cmdname = cmd = args.pop(0)
         self.givenargs = args
@@ -485,14 +515,12 @@ class cmdalias(object):
         try:
             tableentry = cmdutil.findcmd(cmd, cmdtable, False)[1]
             if len(tableentry) > 2:
-                self.fn, self.opts, self.help = tableentry
+                self.fn, self.opts, cmdhelp = tableentry
             else:
                 self.fn, self.opts = tableentry
+                cmdhelp = None
 
-            if self.help.startswith("hg " + cmd):
-                # drop prefix in old-style help lines so hg shows the alias
-                self.help = self.help[4 + len(cmd):]
-            self.__doc__ = self.fn.__doc__
+            self._populatehelp(ui, name, cmd, self.fn, cmdhelp)
 
         except error.UnknownCommand:
             self.badalias = (_("alias '%s' resolves to unknown command '%s'")
@@ -502,13 +530,36 @@ class cmdalias(object):
             self.badalias = (_("alias '%s' resolves to ambiguous command '%s'")
                              % (self.name, cmd))
 
+    def _populatehelp(self, ui, name, cmd, fn, defaulthelp=None):
+        # confine strings to be passed to i18n.gettext()
+        cfg = {}
+        for k in ('doc', 'help'):
+            v = ui.config('alias', '%s:%s' % (name, k), None)
+            if v is None:
+                continue
+            if not encoding.isasciistr(v):
+                self.badalias = (_("non-ASCII character in alias definition "
+                                   "'%s:%s'") % (name, k))
+                return
+            cfg[k] = v
+
+        self.help = cfg.get('help', defaulthelp or '')
+        if self.help and self.help.startswith("hg " + cmd):
+            # drop prefix in old-style help lines so hg shows the alias
+            self.help = self.help[4 + len(cmd):]
+
+        doc = cfg.get('doc', pycompat.getdoc(fn))
+        if doc is not None:
+            doc = pycompat.sysstr(doc)
+        self.__doc__ = doc
+
     @property
     def args(self):
         args = pycompat.maplist(util.expandpath, self.givenargs)
         return aliasargs(self.fn, args)
 
     def __getattr__(self, name):
-        adefaults = {r'norepo': True, r'cmdtype': unrecoverablewrite,
+        adefaults = {r'norepo': True, r'intents': set(),
                      r'optionalrepo': False, r'inferrepo': False}
         if name not in adefaults:
             raise AttributeError(name)
@@ -546,7 +597,8 @@ class cmdalias(object):
 class lazyaliasentry(object):
     """like a typical command entry (func, opts, help), but is lazy"""
 
-    def __init__(self, name, definition, cmdtable, source):
+    def __init__(self, ui, name, definition, cmdtable, source):
+        self.ui = ui
         self.name = name
         self.definition = definition
         self.cmdtable = cmdtable.copy()
@@ -554,7 +606,8 @@ class lazyaliasentry(object):
 
     @util.propertycache
     def _aliasdef(self):
-        return cmdalias(self.name, self.definition, self.cmdtable, self.source)
+        return cmdalias(self.ui, self.name, self.definition, self.cmdtable,
+                        self.source)
 
     def __getitem__(self, n):
         aliasdef = self._aliasdef
@@ -578,7 +631,7 @@ def addaliases(ui, cmdtable):
     # aliases are processed after extensions have been loaded, so they
     # may use extension commands. Aliases can also use other alias definitions,
     # but only if they have been defined prior to the current definition.
-    for alias, definition in ui.configitems('alias'):
+    for alias, definition in ui.configitems('alias', ignoresub=True):
         try:
             if cmdtable[alias].definition == definition:
                 continue
@@ -587,7 +640,7 @@ def addaliases(ui, cmdtable):
             pass
 
         source = ui.configsource('alias', alias)
-        entry = lazyaliasentry(alias, definition, cmdtable, source)
+        entry = lazyaliasentry(ui, alias, definition, cmdtable, source)
         cmdtable[alias] = entry
 
 def _parse(ui, args):
@@ -597,7 +650,7 @@ def _parse(ui, args):
     try:
         args = fancyopts.fancyopts(args, commands.globalopts, options)
     except getopt.GetoptError as inst:
-        raise error.CommandError(None, inst)
+        raise error.CommandError(None, stringutil.forcebytestr(inst))
 
     if args:
         cmd, args = args[0], args[1:]
@@ -621,7 +674,7 @@ def _parse(ui, args):
     try:
         args = fancyopts.fancyopts(args, c, cmdoptions, gnu=True)
     except getopt.GetoptError as inst:
-        raise error.CommandError(cmd, inst)
+        raise error.CommandError(cmd, stringutil.forcebytestr(inst))
 
     # separate global options back out
     for o in commands.globalopts:
@@ -646,7 +699,8 @@ def _parseconfig(ui, config):
             configs.append((section, name, value))
         except (IndexError, ValueError):
             raise error.Abort(_('malformed --config option: %r '
-                               '(use --config section.name=value)') % cfg)
+                                '(use --config section.name=value)')
+                              % pycompat.bytestr(cfg))
 
     return configs
 
@@ -821,9 +875,7 @@ def _dispatch(req):
 
         if options['verbose'] or options['debug'] or options['quiet']:
             for opt in ('verbose', 'debug', 'quiet'):
-                val = str(bool(options[opt]))
-                if pycompat.ispy3:
-                    val = val.encode('ascii')
+                val = pycompat.bytestr(bool(options[opt]))
                 for ui_ in uis:
                     ui_.setconfig('ui', opt, val, '--' + opt)
 
@@ -847,7 +899,7 @@ def _dispatch(req):
                 ui_.setconfig('ui', 'color', coloropt, '--color')
             color.setup(ui_)
 
-        if util.parsebool(options['pager']):
+        if stringutil.parsebool(options['pager']):
             # ui.pager() expects 'internal-always-' prefix in this case
             ui.pager('internal-always-' + cmd)
         elif options['pager'] != 'auto':
@@ -876,7 +928,8 @@ def _dispatch(req):
             else:
                 try:
                     repo = hg.repository(ui, path=path,
-                                         presetupfuncs=req.prereposetups)
+                                         presetupfuncs=req.prereposetups,
+                                         intents=func.intents)
                     if not repo.local():
                         raise error.Abort(_("repository '%s' is not local")
                                           % path)
@@ -941,9 +994,9 @@ def _exceptionwarning(ui):
     worst = None, ct, ''
     if ui.config('ui', 'supportcontact') is None:
         for name, mod in extensions.extensions():
-            testedwith = getattr(mod, 'testedwith', '')
-            if pycompat.ispy3 and isinstance(testedwith, str):
-                testedwith = testedwith.encode(u'utf-8')
+            # 'testedwith' should be bytes, but not all extensions are ported
+            # to py3 and we don't want UnicodeException because of that.
+            testedwith = stringutil.forcebytestr(getattr(mod, 'testedwith', ''))
             report = getattr(mod, 'buglink', _('the extension author.'))
             if not testedwith.strip():
                 # We found an untested extension. It's likely the culprit.
@@ -965,7 +1018,8 @@ def _exceptionwarning(ui):
     if worst[0] is not None:
         name, testedwith, report = worst
         if not isinstance(testedwith, (bytes, str)):
-            testedwith = '.'.join([str(c) for c in testedwith])
+            testedwith = '.'.join([stringutil.forcebytestr(c)
+                                   for c in testedwith])
         warning = (_('** Unknown exception encountered with '
                      'possibly-broken third-party extension %s\n'
                      '** which supports versions %s of Mercurial.\n'
@@ -978,11 +1032,7 @@ def _exceptionwarning(ui):
             bugtracker = _("https://mercurial-scm.org/wiki/BugTracker")
         warning = (_("** unknown exception encountered, "
                      "please report by visiting\n** ") + bugtracker + '\n')
-    if pycompat.ispy3:
-        sysversion = sys.version.encode(u'utf-8')
-    else:
-        sysversion = sys.version
-    sysversion = sysversion.replace('\n', '')
+    sysversion = pycompat.sysbytes(sys.version).replace('\n', '')
     warning += ((_("** Python %s\n") % sysversion) +
                 (_("** Mercurial Distributed SCM (version %s)\n") %
                  util.version()) +
@@ -997,6 +1047,7 @@ def handlecommandexception(ui):
     this function returns False, ignored otherwise.
     """
     warning = _exceptionwarning(ui)
-    ui.log("commandexception", "%s\n%s\n", warning, traceback.format_exc())
+    ui.log("commandexception", "%s\n%s\n", warning,
+           pycompat.sysbytes(traceback.format_exc()))
     ui.warn(warning)
     return False  # re-raise the exception

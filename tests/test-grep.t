@@ -48,12 +48,17 @@ simple templated
   port:4:914fa752cdea:vaPORTight
   port:4:914fa752cdea:imPORT/exPORT
 
+  $ hg grep port -T '{file}:{rev}:{texts}\n'
+  port:4:export
+  port:4:vaportight
+  port:4:import/export
+
 simple JSON (no "change" field)
 
   $ hg grep -Tjson port
   [
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -62,7 +67,7 @@ simple JSON (no "change" field)
     "user": "spam"
    },
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 2,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -71,7 +76,7 @@ simple JSON (no "change" field)
     "user": "spam"
    },
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 3,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -86,7 +91,7 @@ simple JSON without matching lines
   $ hg grep -Tjson -l port
   [
    {
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 1,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -114,7 +119,7 @@ all JSON
   [
    {
     "change": "-",
-    "date": [4.0, 0],
+    "date": [4, 0],
     "file": "port",
     "line_number": 4,
     "node": "914fa752cdea87777ac1a8d5c858b0c736218f6c",
@@ -124,7 +129,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [3.0, 0],
+    "date": [3, 0],
     "file": "port",
     "line_number": 4,
     "node": "95040cfd017d658c536071c6290230a613c4c2a6",
@@ -134,7 +139,7 @@ all JSON
    },
    {
     "change": "-",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -144,7 +149,7 @@ all JSON
    },
    {
     "change": "-",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -154,7 +159,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 1,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -164,7 +169,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 2,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -174,7 +179,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [2.0, 0],
+    "date": [2, 0],
     "file": "port",
     "line_number": 3,
     "node": "3b325e3481a1f07435d81dfdbfa434d9a0245b47",
@@ -184,7 +189,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [1.0, 0],
+    "date": [1, 0],
     "file": "port",
     "line_number": 2,
     "node": "8b20f75c158513ff5ac80bd0e5219bfb6f0eb587",
@@ -194,7 +199,7 @@ all JSON
    },
    {
     "change": "+",
-    "date": [0.0, 0],
+    "date": [0, 0],
     "file": "port",
     "line_number": 1,
     "node": "f31323c9217050ba245ee8b537c713ec2e8ab226",
@@ -237,6 +242,17 @@ follow
   $ hg grep -f port
   [1]
 
+Test wdir
+(at least, this shouldn't crash)
+
+  $ hg up -q
+  $ echo wport >> port2
+  $ hg stat
+  M port2
+  $ hg grep -r 'wdir()' port
+  abort: working directory revision cannot be specified
+  [255]
+
   $ cd ..
   $ hg init t2
   $ cd t2
@@ -271,7 +287,7 @@ test substring match: '^' should only match at the beginning
 
 match in last "line" without newline
 
-  $ $PYTHON -c 'fp = open("noeol", "wb"); fp.write("no infinite loop"); fp.close();'
+  $ $PYTHON -c 'fp = open("noeol", "wb"); fp.write(b"no infinite loop"); fp.close();'
   $ hg ci -Amnoeol
   adding noeol
   $ hg grep loop
@@ -327,6 +343,17 @@ of just using revision numbers.
   $ hg commit -A -m "3 blue"
 
   $ hg grep --all red
+  color:3:-:red
+  color:1:+:red
+
+Issue3885: test that changing revision order does not alter the
+revisions printed, just their order.
+
+  $ hg grep --all red -r "all()"
+  color:1:+:red
+  color:3:-:red
+
+  $ hg grep --all red -r "reverse(all())"
   color:3:-:red
   color:1:+:red
 

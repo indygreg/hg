@@ -14,7 +14,10 @@ from .i18n import _
 from . import (
     encoding,
     pycompat,
-    util
+)
+
+from .utils import (
+    stringutil,
 )
 
 try:
@@ -87,14 +90,16 @@ _defaultstyles = {
     'branches.inactive': 'none',
     'diff.changed': 'white',
     'diff.deleted': 'red',
-    'diff.deleted.highlight': 'red bold underline',
+    'diff.deleted.changed': 'red',
+    'diff.deleted.unchanged': 'red dim',
     'diff.diffline': 'bold',
     'diff.extended': 'cyan bold',
     'diff.file_a': 'red bold',
     'diff.file_b': 'green bold',
     'diff.hunk': 'magenta',
     'diff.inserted': 'green',
-    'diff.inserted.highlight': 'green bold underline',
+    'diff.inserted.changed': 'green',
+    'diff.inserted.unchanged': 'green dim',
     'diff.tab': '',
     'diff.trailingwhitespace': 'bold red_background',
     'changeset.public': '',
@@ -165,15 +170,15 @@ def _terminfosetup(ui, mode, formatted):
         ui._terminfoparams.clear()
         return
 
-    for key, (b, e, c) in ui._terminfoparams.items():
+    for key, (b, e, c) in ui._terminfoparams.copy().items():
         if not b:
             continue
-        if not c and not curses.tigetstr(e):
+        if not c and not curses.tigetstr(pycompat.sysstr(e)):
             # Most terminals don't support dim, invis, etc, so don't be
             # noisy and use ui.debug().
             ui.debug("no terminfo entry for %s\n" % e)
             del ui._terminfoparams[key]
-    if not curses.tigetstr('setaf') or not curses.tigetstr('setab'):
+    if not curses.tigetstr(r'setaf') or not curses.tigetstr(r'setab'):
         # Only warn about missing terminfo entries if we explicitly asked for
         # terminfo mode and we're in a formatted terminal.
         if mode == "terminfo" and formatted:
@@ -200,7 +205,7 @@ def _modesetup(ui):
 
     auto = (config == 'auto')
     always = False
-    if not auto and util.parsebool(config):
+    if not auto and stringutil.parsebool(config):
         # We want the config to behave like a boolean, "on" is actually auto,
         # but "always" value is treated as a special case to reduce confusion.
         if ui.configsource('ui', 'color') == '--color' or config == 'always':
@@ -322,11 +327,11 @@ def _effect_str(ui, effect):
         if termcode:
             return termcode
         else:
-            return curses.tigetstr(val)
+            return curses.tigetstr(pycompat.sysstr(val))
     elif bg:
-        return curses.tparm(curses.tigetstr('setab'), val)
+        return curses.tparm(curses.tigetstr(r'setab'), val)
     else:
-        return curses.tparm(curses.tigetstr('setaf'), val)
+        return curses.tparm(curses.tigetstr(r'setaf'), val)
 
 def _mergeeffects(text, start, stop):
     """Insert start sequence at every occurrence of stop sequence
@@ -371,7 +376,7 @@ def colorlabel(ui, msg, label):
     """add color control code according to the mode"""
     if ui._colormode == 'debug':
         if label and msg:
-            if msg[-1] == '\n':
+            if msg.endswith('\n'):
                 msg = "[%s|%s]\n" % (label, msg[:-1])
             else:
                 msg = "[%s|%s]" % (label, msg)

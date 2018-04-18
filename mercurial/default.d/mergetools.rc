@@ -1,7 +1,7 @@
 # Some default global settings for common merge tools
 
 [merge-tools]
-kdiff3.args=--auto --L1 base --L2 local --L3 other $base $local $other -o $output
+kdiff3.args=--auto --L1 $labelbase --L2 $labellocal --L3 $labelother $base $local $other -o $output
 kdiff3.regkey=Software\KDiff3
 kdiff3.regkeyalt=Software\Wow6432Node\KDiff3
 kdiff3.regappend=\kdiff3.exe
@@ -26,7 +26,7 @@ merge.priority=-100
 gpyfm.gui=True
 
 meld.gui=True
-meld.args=--label='local' $local --label='merged' $base --label='other' $other -o $output
+meld.args=--label=$labellocal $local --label='merged' $base --label=$labelother $other -o $output
 meld.check=changed
 meld.diffargs=-a --label=$plabel1 $parent --label=$clabel $child
 
@@ -35,7 +35,7 @@ tkdiff.gui=True
 tkdiff.priority=-8
 tkdiff.diffargs=-L $plabel1 $parent -L $clabel $child
 
-xxdiff.args=--show-merged-pane --exit-with-merge-status --title1 local --title2 base --title3 other --merged-filename $output --merge $local $base $other
+xxdiff.args=--show-merged-pane --exit-with-merge-status --title1 $labellocal --title2 $labelbase --title3 $labelother --merged-filename $output --merge $local $base $other
 xxdiff.gui=True
 xxdiff.priority=-8
 xxdiff.diffargs=--title1 $plabel1 $parent --title2 $clabel $child
@@ -44,7 +44,7 @@ diffmerge.regkey=Software\SourceGear\SourceGear DiffMerge\
 diffmerge.regkeyalt=Software\Wow6432Node\SourceGear\SourceGear DiffMerge\
 diffmerge.regname=Location
 diffmerge.priority=-7
-diffmerge.args=-nosplash -merge -title1=local -title2=merged -title3=other $local $base $other -result=$output
+diffmerge.args=-nosplash -merge -title1=$labellocal -title2=merged -title3=$labelother $local $base $other -result=$output
 diffmerge.check=changed
 diffmerge.gui=True
 diffmerge.diffargs=--nosplash --title1=$plabel1 --title2=$clabel $parent $child
@@ -72,7 +72,7 @@ tortoisemerge.gui=True
 tortoisemerge.priority=-8
 tortoisemerge.diffargs=/base:$parent /mine:$child /basename:$plabel1 /minename:$clabel
 
-ecmerge.args=$base $local $other --mode=merge3 --title0=base --title1=local --title2=other --to=$output
+ecmerge.args=$base $local $other --mode=merge3 --title0=$labelbase --title1=$labellocal --title2=$labelother --to=$output
 ecmerge.regkey=Software\Elli\xc3\xa9 Computing\Merge
 ecmerge.regkeyalt=Software\Wow6432Node\Elli\xc3\xa9 Computing\Merge
 ecmerge.gui=True
@@ -93,7 +93,7 @@ filemergexcode.args=-left $other -right $local -ancestor $base -merge $output
 filemergexcode.gui=True
 
 ; Windows version of Beyond Compare
-beyondcompare3.args=$local $other $base $output /ro /lefttitle=local /centertitle=base /righttitle=other /automerge /reviewconflicts /solo
+beyondcompare3.args=$local $other $base $output /ro /lefttitle=$labellocal /centertitle=$labelbase /righttitle=$labelother /automerge /reviewconflicts /solo
 beyondcompare3.regkey=Software\Scooter Software\Beyond Compare 3
 beyondcompare3.regname=ExePath
 beyondcompare3.gui=True
@@ -113,7 +113,7 @@ bcomposx.gui=True
 bcomposx.priority=-1
 bcomposx.diffargs=-lro -lefttitle=$plabel1 -righttitle=$clabel -solo -expandall $parent $child
 
-winmerge.args=/e /x /wl /ub /dl other /dr local $other $local $output
+winmerge.args=/e /x /wl /ub /dl $labelother /dr $labellocal $other $local $output
 winmerge.regkey=Software\Thingamahoochie\WinMerge
 winmerge.regkeyalt=Software\Wow6432Node\Thingamahoochie\WinMerge\
 winmerge.regname=Executable

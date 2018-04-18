@@ -8,15 +8,15 @@ from mercurial import (
 
 u = uimod.ui.load()
 
-repo = hg.repository(u, 'test1', create=1)
+repo = hg.repository(u, b'test1', create=1)
 os.chdir('test1')
 
 def commit(text, time):
-    repo.commit(text=text, date="%d 0" % time)
+    repo.commit(text=text, date=b"%d 0" % time)
 
 def addcommit(name, time):
-    f = open(name, 'w')
-    f.write('%s\n' % name)
+    f = open(name, 'wb')
+    f.write(b'%s\n' % name)
     f.close()
     repo[None].add([name])
     commit(name, time)
@@ -28,27 +28,27 @@ def merge_(rev):
     merge.update(repo, rev, True, False)
 
 if __name__ == '__main__':
-    addcommit("A", 0)
-    addcommit("B", 1)
+    addcommit(b"A", 0)
+    addcommit(b"B", 1)
 
     update(0)
-    addcommit("C", 2)
+    addcommit(b"C", 2)
 
     merge_(1)
-    commit("D", 3)
+    commit(b"D", 3)
 
     update(2)
-    addcommit("E", 4)
-    addcommit("F", 5)
+    addcommit(b"E", 4)
+    addcommit(b"F", 5)
 
     update(3)
-    addcommit("G", 6)
+    addcommit(b"G", 6)
 
     merge_(5)
-    commit("H", 7)
+    commit(b"H", 7)
 
     update(5)
-    addcommit("I", 8)
+    addcommit(b"I", 8)
 
     # Ancestors
     print('Ancestors of 5')

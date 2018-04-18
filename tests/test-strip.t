@@ -1,5 +1,3 @@
-  $ echo "[format]" >> $HGRCPATH
-  $ echo "usegeneraldelta=yes" >> $HGRCPATH
   $ echo "[extensions]" >> $HGRCPATH
   $ echo "strip=" >> $HGRCPATH
   $ echo "drawdag=$TESTDIR/drawdag.py" >> $HGRCPATH
@@ -214,15 +212,14 @@
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02}
       264128213d290d868c54642d13aeaa3675551a78
+  cache:rev-branch-cache -- {}
   phase-heads -- {}
       264128213d290d868c54642d13aeaa3675551a78 draft
-  $ hg pull .hg/strip-backup/*
-  pulling from .hg/strip-backup/264128213d29-0b39d6bf-backup.hg
-  searching for changes
+  $ hg unbundle .hg/strip-backup/*
   adding changesets
   adding manifests
   adding file changes
-  added 1 changesets with 0 changes to 0 files (+1 heads)
+  added 1 changesets with 0 changes to 1 files (+1 heads)
   new changesets 264128213d29
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ rm .hg/strip-backup/*
@@ -448,14 +445,19 @@ verify fncache is kept up-to-date
 
   $ touch a
   $ hg ci -qAm a
+#if repofncache
   $ cat .hg/store/fncache | sort
   data/a.i
   data/bar.i
+#endif
+
   $ hg strip tip
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   saved backup bundle to $TESTTMP/test/.hg/strip-backup/*-backup.hg (glob)
+#if repofncache
   $ cat .hg/store/fncache
   data/bar.i
+#endif
 
 stripping an empty revset
 
@@ -740,12 +742,14 @@ Verify bundles don't get overwritten:
   saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-e68910bd-backup.hg
   $ ls .hg/strip-backup
   3903775176ed-e68910bd-backup.hg
+#if repobundlerepo
   $ hg pull -q -r 3903775176ed .hg/strip-backup/3903775176ed-e68910bd-backup.hg
   $ hg strip -r 0
   saved backup bundle to $TESTTMP/doublebundle/.hg/strip-backup/3903775176ed-54390173-backup.hg
   $ ls .hg/strip-backup
   3903775176ed-54390173-backup.hg
   3903775176ed-e68910bd-backup.hg
+#endif
   $ cd ..
 
 Test that we only bundle the stripped changesets (issue4736)
@@ -811,6 +815,7 @@ Check bundle behavior:
 
   $ hg bundle -r 'desc(mergeCD)' --base 'desc(commitC)' ../issue4736.hg
   2 changesets found
+#if repobundlerepo
   $ hg log -r 'bundle()' -R ../issue4736.hg
   changeset:   3:6625a5168474
   parent:      1:eca11cf91c71
@@ -826,6 +831,7 @@ Check bundle behavior:
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     mergeCD
   
+#endif
 
 check strip behavior
 
@@ -843,13 +849,13 @@ check strip behavior
   list of changesets:
   6625a516847449b6f0fa3737b9ba56e9f0f3032c
   d8db9d1372214336d2b5570f20ee468d2c72fa8b
-  bundle2-output-bundle: "HG20", (1 params) 2 parts total
+  bundle2-output-bundle: "HG20", (1 params) 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/6625a5168474-345bb43d-backup.hg
   updating the branch cache
   invalid branchheads cache (served): tip differs
-  truncating cache/rbc-revs-v1 to 24
   $ hg log -G
   o  changeset:   2:5c51d8d6557d
   |  tag:         tip
@@ -870,6 +876,7 @@ check strip behavior
 
 strip backup content
 
+#if repobundlerepo
   $ hg log -r 'bundle()' -R .hg/strip-backup/6625a5168474-*-backup.hg
   changeset:   3:6625a5168474
   parent:      1:eca11cf91c71
@@ -885,6 +892,9 @@ strip backup content
   date:        Thu Jan 01 00:00:00 1970 +0000
   summary:     mergeCD
   
+
+#endif
+
 Check that the phase cache is properly invalidated after a strip with bookmark.
 
   $ cat > ../stripstalephasecache.py << EOF
@@ -893,17 +903,17 @@ Check that the phase cache is properly invalidated after a strip with bookmark.
   >     def test(transaction):
   >         # observe cache inconsistency
   >         try:
-  >             [repo.changelog.node(r) for r in repo.revs("not public()")]
+  >             [repo.changelog.node(r) for r in repo.revs(b"not public()")]
   >         except IndexError:
-  >             repo.ui.status("Index error!\n")
+  >             repo.ui.status(b"Index error!\n")
   >     transaction = orig(repo, desc, *args, **kwargs)
   >     # warm up the phase cache
-  >     list(repo.revs("not public()"))
-  >     if desc != 'strip':
-  >          transaction.addpostclose("phase invalidation test", test)
+  >     list(repo.revs(b"not public()"))
+  >     if desc != b'strip':
+  >          transaction.addpostclose(b"phase invalidation test", test)
   >     return transaction
   > def extsetup(ui):
-  >     extensions.wrapfunction(localrepo.localrepository, "transaction",
+  >     extensions.wrapfunction(localrepo.localrepository, b"transaction",
   >                             transactioncallback)
   > EOF
   $ hg up -C 2
@@ -930,9 +940,9 @@ Error during post-close callback of the strip transaction
   >     class crashstriprepo(repo.__class__):
   >         def transaction(self, desc, *args, **kwargs):
   >             tr = super(crashstriprepo, self).transaction(desc, *args, **kwargs)
-  >             if desc == 'strip':
-  >                 def crash(tra): raise error.Abort('boom')
-  >                 tr.addpostclose('crash', crash)
+  >             if desc == b'strip':
+  >                 def crash(tra): raise error.Abort(b'boom')
+  >                 tr.addpostclose(b'crash', crash)
   >             return tr
   >     repo.__class__ = crashstriprepo
   > EOF
@@ -1108,9 +1118,7 @@ test stripping a working directory parent doesn't switch named branches
      summary:     commitA
   
 
-  $ hg pull -u $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
-  pulling from $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
-  searching for changes
+  $ hg unbundle -u $TESTTMP/issue4736/.hg/strip-backup/35358f982181-a6f020aa-backup.hg
   adding changesets
   adding manifests
   adding file changes
@@ -1175,16 +1183,16 @@ Use delayedstrip to strip inside a transaction
   > from mercurial import commands, registrar, repair
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('testdelayedstrip')
+  > @command(b'testdelayedstrip')
   > def testdelayedstrip(ui, repo):
   >     def getnodes(expr):
   >         return [repo.changelog.node(r) for r in repo.revs(expr)]
   >     with repo.wlock():
   >         with repo.lock():
-  >             with repo.transaction('delayedstrip'):
-  >                 repair.delayedstrip(ui, repo, getnodes('B+I+Z+D+E'), 'J')
-  >                 repair.delayedstrip(ui, repo, getnodes('G+H+Z'), 'I')
-  >                 commands.commit(ui, repo, message='J', date='0 0')
+  >             with repo.transaction(b'delayedstrip'):
+  >                 repair.delayedstrip(ui, repo, getnodes(b'B+I+Z+D+E'), b'J')
+  >                 repair.delayedstrip(ui, repo, getnodes(b'G+H+Z'), b'I')
+  >                 commands.commit(ui, repo, message=b'J', date=b'0 0')
   > EOF
   $ hg testdelayedstrip --config extensions.t=$TESTTMP/delayedstrip.py
   warning: orphaned descendants detected, not stripping 08ebfeb61bac, 112478962961, 7fb047a69f22
@@ -1225,7 +1233,7 @@ Test high-level scmutil.cleanupnodes API
   > from mercurial import registrar, scmutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('testnodescleanup')
+  > @command(b'testnodescleanup')
   > def testnodescleanup(ui, repo):
   >     def nodes(expr):
   >         return [repo.changelog.node(r) for r in repo.revs(expr)]
@@ -1233,12 +1241,13 @@ Test high-level scmutil.cleanupnodes API
   >         return nodes(expr)[0]
   >     with repo.wlock():
   >         with repo.lock():
-  >             with repo.transaction('delayedstrip'):
-  >                 mapping = {node('F'): [node('F2')],
-  >                            node('D'): [node('D2')],
-  >                            node('G'): [node('G2')]}
-  >                 scmutil.cleanupnodes(repo, mapping, 'replace')
-  >                 scmutil.cleanupnodes(repo, nodes('((B::)+I+Z)-D2'), 'replace')
+  >             with repo.transaction(b'delayedstrip'):
+  >                 mapping = {node(b'F'): [node(b'F2')],
+  >                            node(b'D'): [node(b'D2')],
+  >                            node(b'G'): [node(b'G2')]}
+  >                 scmutil.cleanupnodes(repo, mapping, b'replace')
+  >                 scmutil.cleanupnodes(repo, nodes(b'((B::)+I+Z)-D2'),
+  >                                      b'replace')
   > EOF
   $ hg testnodescleanup --config extensions.t=$TESTTMP/scmutilcleanup.py
   warning: orphaned descendants detected, not stripping 112478962961, 1fc8102cda62, 26805aba1e60

@@ -18,6 +18,7 @@ empty file
 """
 
 from __future__ import absolute_import
+import binascii
 import os
 import sys
 
@@ -56,7 +57,7 @@ makedirs(os.path.join(*'formatv0/.hg/data'.split('/')))
 
 for name, data in files:
     f = open(name, 'wb')
-    f.write(data.decode('hex'))
+    f.write(binascii.unhexlify(data))
     f.close()
 
 sys.exit(0)

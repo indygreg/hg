@@ -9,11 +9,15 @@ from __future__ import absolute_import
 
 import heapq
 
+from .thirdparty import (
+    attr,
+)
 from . import (
     error,
     mdiff,
     node,
     patch,
+    pycompat,
     smartset,
 )
 
@@ -357,6 +361,162 @@ def blockdescendants(fctx, fromline, toline):
             seen[i] = c, linerange1
         if inrange:
             yield c, linerange1
+
+@attr.s(slots=True, frozen=True)
+class annotateline(object):
+    fctx = attr.ib()
+    lineno = attr.ib()
+    # Whether this annotation was the result of a skip-annotate.
+    skip = attr.ib(default=False)
+    text = attr.ib(default=None)
+
+@attr.s(slots=True, frozen=True)
+class _annotatedfile(object):
+    # list indexed by lineno - 1
+    fctxs = attr.ib()
+    linenos = attr.ib()
+    skips = attr.ib()
+    # full file content
+    text = attr.ib()
+
+def _countlines(text):
+    if text.endswith("\n"):
+        return text.count("\n")
+    return text.count("\n") + int(bool(text))
+
+def _decoratelines(text, fctx):
+    n = _countlines(text)
+    linenos = pycompat.rangelist(1, n + 1)
+    return _annotatedfile([fctx] * n, linenos, [False] * n, text)
+
+def _annotatepair(parents, childfctx, child, skipchild, diffopts):
+    r'''
+    Given parent and child fctxes and annotate data for parents, for all lines
+    in either parent that match the child, annotate the child with the parent's
+    data.
+
+    Additionally, if `skipchild` is True, replace all other lines with parent
+    annotate data as well such that child is never blamed for any lines.
+
+    See test-annotate.py for unit tests.
+    '''
+    pblocks = [(parent, mdiff.allblocks(parent.text, child.text, opts=diffopts))
+               for parent in parents]
+
+    if skipchild:
+        # Need to iterate over the blocks twice -- make it a list
+        pblocks = [(p, list(blocks)) for (p, blocks) in pblocks]
+    # Mercurial currently prefers p2 over p1 for annotate.
+    # TODO: change this?
+    for parent, blocks in pblocks:
+        for (a1, a2, b1, b2), t in blocks:
+            # Changed blocks ('!') or blocks made only of blank lines ('~')
+            # belong to the child.
+            if t == '=':
+                child.fctxs[b1:b2] = parent.fctxs[a1:a2]
+                child.linenos[b1:b2] = parent.linenos[a1:a2]
+                child.skips[b1:b2] = parent.skips[a1:a2]
+
+    if skipchild:
+        # Now try and match up anything that couldn't be matched,
+        # Reversing pblocks maintains bias towards p2, matching above
+        # behavior.
+        pblocks.reverse()
+
+        # The heuristics are:
+        # * Work on blocks of changed lines (effectively diff hunks with -U0).
+        # This could potentially be smarter but works well enough.
+        # * For a non-matching section, do a best-effort fit. Match lines in
+        #   diff hunks 1:1, dropping lines as necessary.
+        # * Repeat the last line as a last resort.
+
+        # First, replace as much as possible without repeating the last line.
+        remaining = [(parent, []) for parent, _blocks in pblocks]
+        for idx, (parent, blocks) in enumerate(pblocks):
+            for (a1, a2, b1, b2), _t in blocks:
+                if a2 - a1 >= b2 - b1:
+                    for bk in xrange(b1, b2):
+                        if child.fctxs[bk] == childfctx:
+                            ak = min(a1 + (bk - b1), a2 - 1)
+                            child.fctxs[bk] = parent.fctxs[ak]
+                            child.linenos[bk] = parent.linenos[ak]
+                            child.skips[bk] = True
+                else:
+                    remaining[idx][1].append((a1, a2, b1, b2))
+
+        # Then, look at anything left, which might involve repeating the last
+        # line.
+        for parent, blocks in remaining:
+            for a1, a2, b1, b2 in blocks:
+                for bk in xrange(b1, b2):
+                    if child.fctxs[bk] == childfctx:
+                        ak = min(a1 + (bk - b1), a2 - 1)
+                        child.fctxs[bk] = parent.fctxs[ak]
+                        child.linenos[bk] = parent.linenos[ak]
+                        child.skips[bk] = True
+    return child
+
+def annotate(base, parents, skiprevs=None, diffopts=None):
+    """Core algorithm for filectx.annotate()
+
+    `parents(fctx)` is a function returning a list of parent filectxs.
+    """
+
+    # This algorithm would prefer to be recursive, but Python is a
+    # bit recursion-hostile. Instead we do an iterative
+    # depth-first search.
+
+    # 1st DFS pre-calculates pcache and needed
+    visit = [base]
+    pcache = {}
+    needed = {base: 1}
+    while visit:
+        f = visit.pop()
+        if f in pcache:
+            continue
+        pl = parents(f)
+        pcache[f] = pl
+        for p in pl:
+            needed[p] = needed.get(p, 0) + 1
+            if p not in pcache:
+                visit.append(p)
+
+    # 2nd DFS does the actual annotate
+    visit[:] = [base]
+    hist = {}
+    while visit:
+        f = visit[-1]
+        if f in hist:
+            visit.pop()
+            continue
+
+        ready = True
+        pl = pcache[f]
+        for p in pl:
+            if p not in hist:
+                ready = False
+                visit.append(p)
+        if ready:
+            visit.pop()
+            curr = _decoratelines(f.data(), f)
+            skipchild = False
+            if skiprevs is not None:
+                skipchild = f._changeid in skiprevs
+            curr = _annotatepair([hist[p] for p in pl], f, curr, skipchild,
+                                 diffopts)
+            for p in pl:
+                if needed[p] == 1:
+                    del hist[p]
+                    del needed[p]
+                else:
+                    needed[p] -= 1
+
+            hist[f] = curr
+            del pcache[f]
+
+    a = hist[base]
+    return [annotateline(*r) for r in zip(a.fctxs, a.linenos, a.skips,
+                                          mdiff.splitnewlines(a.text))]
 
 def toposort(revs, parentsfunc, firstbranch=()):
     """Yield revisions from heads to roots one (topo) branch at a time.

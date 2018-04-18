@@ -13,8 +13,9 @@ import re
 from mercurial.i18n import _
 from mercurial import (
     error,
-    util,
+    pycompat,
 )
+from mercurial.utils import dateutil
 
 from . import common
 
@@ -36,7 +37,7 @@ class monotone_source(common.converter_source, common.commandline):
         if not os.path.exists(os.path.join(path, '_MTN')):
             # Could be a monotone repository (SQLite db file)
             try:
-                f = file(path, 'rb')
+                f = open(path, 'rb')
                 header = f.read(16)
                 f.close()
             except IOError:
@@ -45,11 +46,11 @@ class monotone_source(common.converter_source, common.commandline):
                 raise norepo
 
         # regular expressions for parsing monotone output
-        space    = r'\s*'
-        name     = r'\s+"((?:\\"|[^"])*)"\s*'
+        space    = br'\s*'
+        name     = br'\s+"((?:\\"|[^"])*)"\s*'
         value    = name
-        revision = r'\s+\[(\w+)\]\s*'
-        lines    = r'(?:.|\n)+'
+        revision = br'\s+\[(\w+)\]\s*'
+        lines    = br'(?:.|\n)+'
 
         self.dir_re      = re.compile(space + "dir" + name)
         self.file_re     = re.compile(space + "file" + name +
@@ -84,11 +85,12 @@ class monotone_source(common.converter_source, common.commandline):
             return self.mtnrunsingle(*args, **kwargs)
 
     def mtnrunsingle(self, *args, **kwargs):
-        kwargs['d'] = self.path
+        kwargs[r'd'] = self.path
         return self.run0('automate', *args, **kwargs)
 
     def mtnrunstdio(self, *args, **kwargs):
         # Prepare the command in automate stdio format
+        kwargs = pycompat.byteskwargs(kwargs)
         command = []
         for k, v in kwargs.iteritems():
             command.append("%s:%s" % (len(k), k))
@@ -308,9 +310,10 @@ class monotone_source(common.converter_source, common.commandline):
         certs = self.mtngetcerts(rev)
         if certs.get('suspend') == certs["branch"]:
             extra['close'] = 1
+        dateformat = "%Y-%m-%dT%H:%M:%S"
         return common.commit(
             author=certs["author"],
-            date=util.datestr(util.strdate(certs["date"], "%Y-%m-%dT%H:%M:%S")),
+            date=dateutil.datestr(dateutil.strdate(certs["date"], dateformat)),
             desc=certs["changelog"],
             rev=rev,
             parents=self.mtnrun("parents", rev).splitlines(),

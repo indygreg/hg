@@ -11,6 +11,7 @@ This contains aliases to hide python version-specific details from the core.
 from __future__ import absolute_import
 
 import getopt
+import inspect
 import os
 import shlex
 import sys
@@ -25,13 +26,22 @@ if not ispy3:
     import Queue as _queue
     import SocketServer as socketserver
     import xmlrpclib
+
+    from .thirdparty.concurrent import futures
+
+    def future_set_exception_info(f, exc_info):
+        f.set_exception_info(*exc_info)
 else:
+    import concurrent.futures as futures
     import http.cookiejar as cookielib
     import http.client as httplib
     import pickle
     import queue as _queue
     import socketserver
     import xmlrpc.client as xmlrpclib
+
+    def future_set_exception_info(f, exc_info):
+        f.set_exception(exc_info[0])
 
 empty = _queue.Empty
 queue = _queue.Queue
@@ -47,9 +57,11 @@ if ispy3:
 
     fsencode = os.fsencode
     fsdecode = os.fsdecode
+    oscurdir = os.curdir.encode('ascii')
     oslinesep = os.linesep.encode('ascii')
     osname = os.name.encode('ascii')
     ospathsep = os.pathsep.encode('ascii')
+    ospardir = os.pardir.encode('ascii')
     ossep = os.sep.encode('ascii')
     osaltsep = os.altsep
     if osaltsep:
@@ -61,10 +73,21 @@ if ispy3:
     sysexecutable = sys.executable
     if sysexecutable:
         sysexecutable = os.fsencode(sysexecutable)
-    stringio = io.BytesIO
-    maplist = lambda *args: list(map(*args))
-    ziplist = lambda *args: list(zip(*args))
+    bytesio = io.BytesIO
+    # TODO deprecate stringio name, as it is a lie on Python 3.
+    stringio = bytesio
+
+    def maplist(*args):
+        return list(map(*args))
+
+    def rangelist(*args):
+        return list(range(*args))
+
+    def ziplist(*args):
+        return list(zip(*args))
+
     rawinput = input
+    getargspec = inspect.getfullargspec
 
     # TODO: .buffer might not exist if std streams were replaced; we'll need
     # a silly wrapper to make a bytes stream backed by a unicode one.
@@ -83,12 +106,13 @@ if ispy3:
         sysargv = list(map(os.fsencode, sys.argv))
 
     bytechr = struct.Struct('>B').pack
+    byterepr = b'%r'.__mod__
 
     class bytestr(bytes):
         """A bytes which mostly acts as a Python 2 str
 
         >>> bytestr(), bytestr(bytearray(b'foo')), bytestr(u'ascii'), bytestr(1)
-        (b'', b'foo', b'ascii', b'1')
+        ('', 'foo', 'ascii', '1')
         >>> s = bytestr(b'foo')
         >>> assert s is bytestr(s)
 
@@ -98,7 +122,7 @@ if ispy3:
         ...     def __bytes__(self):
         ...         return b'bytes'
         >>> bytestr(bytesable())
-        b'bytes'
+        'bytes'
 
         There's no implicit conversion from non-ascii str as its encoding is
         unknown:
@@ -154,9 +178,18 @@ if ispy3:
         def __iter__(self):
             return iterbytestr(bytes.__iter__(self))
 
+        def __repr__(self):
+            return bytes.__repr__(self)[1:]  # drop b''
+
     def iterbytestr(s):
         """Iterate bytes as if it were a str object of Python 2"""
         return map(bytechr, s)
+
+    def maybebytestr(s):
+        """Promote bytes to bytestr"""
+        if isinstance(s, bytes):
+            return bytestr(s)
+        return s
 
     def sysbytes(s):
         """Convert an internal str (e.g. keyword, __doc__) back to bytes
@@ -180,11 +213,15 @@ if ispy3:
 
     def strurl(url):
         """Converts a bytes url back to str"""
-        return url.decode(u'ascii')
+        if isinstance(url, bytes):
+            return url.decode(u'ascii')
+        return url
 
     def bytesurl(url):
         """Converts a str url to bytes by encoding in ascii"""
-        return url.encode(u'ascii')
+        if isinstance(url, str):
+            return url.encode(u'ascii')
+        return url
 
     def raisewithtb(exc, tb):
         """Raise exception with the given traceback"""
@@ -212,8 +249,10 @@ if ispy3:
     xrange = builtins.range
     unicode = str
 
-    def open(name, mode='r', buffering=-1):
-        return builtins.open(name, sysstr(mode), buffering)
+    def open(name, mode='r', buffering=-1, encoding=None):
+        return builtins.open(name, sysstr(mode), buffering, encoding)
+
+    safehasattr = _wrapattrfunc(builtins.hasattr)
 
     def _getoptbwrapper(orig, args, shortlist, namelist):
         """
@@ -249,21 +288,27 @@ if ispy3:
         return dic
 
     # TODO: handle shlex.shlex().
-    def shlexsplit(s):
+    def shlexsplit(s, comments=False, posix=True):
         """
         Takes bytes argument, convert it to str i.e. unicodes, pass that into
         shlex.split(), convert the returned value to bytes and return that for
         Python 3 compatibility as shelx.split() don't accept bytes on Python 3.
         """
-        ret = shlex.split(s.decode('latin-1'))
+        ret = shlex.split(s.decode('latin-1'), comments, posix)
         return [a.encode('latin-1') for a in ret]
+
+    def emailparser(*args, **kwargs):
+        import email.parser
+        return email.parser.BytesParser(*args, **kwargs)
 
 else:
     import cStringIO
 
     bytechr = chr
+    byterepr = repr
     bytestr = str
     iterbytestr = iter
+    maybebytestr = identity
     sysbytes = identity
     sysstr = identity
     strurl = identity
@@ -292,15 +337,22 @@ else:
     def getdoc(obj):
         return getattr(obj, '__doc__', None)
 
+    _notset = object()
+
+    def safehasattr(thing, attr):
+        return getattr(thing, attr, _notset) is not _notset
+
     def _getoptbwrapper(orig, args, shortlist, namelist):
         return orig(args, shortlist, namelist)
 
     strkwargs = identity
     byteskwargs = identity
 
+    oscurdir = os.curdir
     oslinesep = os.linesep
     osname = os.name
     ospathsep = os.pathsep
+    ospardir = os.pardir
     ossep = os.sep
     osaltsep = os.altsep
     stdin = sys.stdin
@@ -312,10 +364,17 @@ else:
     getcwd = os.getcwd
     sysexecutable = sys.executable
     shlexsplit = shlex.split
-    stringio = cStringIO.StringIO
+    bytesio = cStringIO.StringIO
+    stringio = bytesio
     maplist = map
+    rangelist = range
     ziplist = zip
     rawinput = raw_input
+    getargspec = inspect.getargspec
+
+    def emailparser(*args, **kwargs):
+        import email.parser
+        return email.parser.Parser(*args, **kwargs)
 
 isjython = sysplatform.startswith('java')
 

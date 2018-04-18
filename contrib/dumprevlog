@@ -8,14 +8,20 @@ import sys
 from mercurial import (
     node,
     revlog,
-    util,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 for fp in (sys.stdin, sys.stdout, sys.stderr):
-    util.setbinary(fp)
+    procutil.setbinary(fp)
+
+def binopen(path, mode='rb'):
+    if 'b' not in mode:
+        mode = mode + 'b'
+    return open(path, mode)
 
 for f in sys.argv[1:]:
-    binopen = lambda fn: open(fn, 'rb')
     r = revlog.revlog(binopen, f)
     print("file:", f)
     for i in r:

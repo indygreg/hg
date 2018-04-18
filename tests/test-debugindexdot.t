@@ -13,7 +13,7 @@ Create a short file history including a merge.
   $ HGMERGE=true hg merge -q
   $ hg ci -m merge -d '3 0'
 
-  $ hg debugindexdot .hg/store/data/a.i
+  $ hg debugindexdot a
   digraph G {
   	-1 -> 0
   	0 -> 1

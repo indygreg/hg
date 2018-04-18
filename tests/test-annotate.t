@@ -71,6 +71,11 @@ annotate (JSON)
    }
   ]
 
+log-like templating
+
+  $ hg annotate -T'{lines % "{rev} {node|shortest}: {line}"}' a
+  0 8435: a
+
   $ cat <<EOF >>a
   > a
   > a
@@ -84,6 +89,30 @@ annotate (JSON)
   > b6
   > EOF
   $ hg ci -mb2 -d '2 0'
+
+default output of '{lines}' should be readable
+
+  $ hg annotate -T'{lines}' a
+  0: a
+  1: a
+  1: a
+  $ hg annotate -T'{join(lines, "\n")}' a
+  0: a
+  
+  1: a
+  
+  1: a
+
+several filters can be applied to '{lines}'
+
+  $ hg annotate -T'{lines|json}\n' a
+  [{"line": "a\n", "rev": 0}, {"line": "a\n", "rev": 1}, {"line": "a\n", "rev": 1}]
+  $ hg annotate -T'{lines|stringify}' a
+  0: a
+  1: a
+  1: a
+  $ hg annotate -T'{lines|count}\n' a
+  3
 
 annotate multiple files (JSON)
 
@@ -451,7 +480,7 @@ and its ancestor by overriding "repo._filecommit".
   > EOF
   $ hg debugsetparents 17 17
   $ hg --config extensions.legacyrepo=../legacyrepo.py  commit -m "baz:2"
-  $ hg debugindexdot .hg/store/data/baz.i
+  $ hg debugindexdot baz
   digraph G {
   	-1 -> 0
   	0 -> 1
@@ -483,7 +512,7 @@ and its ancestor by overriding "repo._filecommit".
   > EOF
   $ hg debugsetparents 19 18
   $ hg --config extensions.legacyrepo=../legacyrepo.py  commit -m "baz:4"
-  $ hg debugindexdot .hg/store/data/baz.i
+  $ hg debugindexdot baz
   digraph G {
   	-1 -> 0
   	0 -> 1
@@ -814,6 +843,8 @@ check error cases
   [255]
   $ hg log -r 'followlines(baz, 2:4, startrev=20, descend=[1])'
   hg: parse error at 43: not a prefix: [
+  (followlines(baz, 2:4, startrev=20, descend=[1])
+                                              ^ here)
   [255]
   $ hg log -r 'followlines(baz, 2:4, startrev=20, descend=a)'
   hg: parse error: descend argument must be a boolean
@@ -903,19 +934,19 @@ Annotate with orphaned CR (issue5798)
 
   $ cat <<'EOF' >> "$TESTTMP/substcr.py"
   > import sys
-  > from mercurial import util
-  > util.setbinary(sys.stdin)
-  > util.setbinary(sys.stdout)
+  > from mercurial.utils import procutil
+  > procutil.setbinary(sys.stdin)
+  > procutil.setbinary(sys.stdout)
   > stdin = getattr(sys.stdin, 'buffer', sys.stdin)
   > stdout = getattr(sys.stdout, 'buffer', sys.stdout)
   > stdout.write(stdin.read().replace(b'\r', b'[CR]'))
   > EOF
 
   >>> with open('a', 'wb') as f:
-  ...     f.write(b'0a\r0b\r\n0c\r0d\r\n0e\n0f\n0g')
+  ...     f.write(b'0a\r0b\r\n0c\r0d\r\n0e\n0f\n0g') and None
   $ hg ci -qAm0
   >>> with open('a', 'wb') as f:
-  ...     f.write(b'0a\r0b\r\n1c\r1d\r\n0e\n1f\n0g')
+  ...     f.write(b'0a\r0b\r\n1c\r1d\r\n0e\n1f\n0g') and None
   $ hg ci -m1
 
   $ hg annotate -r0 a | $PYTHON "$TESTTMP/substcr.py"

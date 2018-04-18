@@ -55,10 +55,10 @@ struct mpatch_flist *cpygetitem(void *bins, ssize_t pos)
 	ssize_t blen;
 	int r;
 
-	PyObject *tmp = PyList_GetItem((PyObject*)bins, pos);
+	PyObject *tmp = PyList_GetItem((PyObject *)bins, pos);
 	if (!tmp)
 		return NULL;
-	if (PyObject_AsCharBuffer(tmp, &buffer, (Py_ssize_t*)&blen))
+	if (PyObject_AsCharBuffer(tmp, &buffer, (Py_ssize_t *)&blen))
 		return NULL;
 	if ((r = mpatch_decode(buffer, blen, &res)) < 0) {
 		if (!PyErr_Occurred())
@@ -68,8 +68,7 @@ struct mpatch_flist *cpygetitem(void *bins, ssize_t pos)
 	return res;
 }
 
-static PyObject *
-patches(PyObject *self, PyObject *args)
+static PyObject *patches(PyObject *self, PyObject *args)
 {
 	PyObject *text, *bins, *result;
 	struct mpatch_flist *patch;
@@ -110,7 +109,14 @@ patches(PyObject *self, PyObject *args)
 		goto cleanup;
 	}
 	out = PyBytes_AsString(result);
-	if ((r = mpatch_apply(out, in, inlen, patch)) < 0) {
+	/* clang-format off */
+	{
+		Py_BEGIN_ALLOW_THREADS
+		r = mpatch_apply(out, in, inlen, patch);
+		Py_END_ALLOW_THREADS
+	}
+	/* clang-format on */
+	if (r < 0) {
 		Py_DECREF(result);
 		result = NULL;
 	}
@@ -122,14 +128,13 @@ cleanup:
 }
 
 /* calculate size of a patched file directly */
-static PyObject *
-patchedsize(PyObject *self, PyObject *args)
+static PyObject *patchedsize(PyObject *self, PyObject *args)
 {
 	long orig, start, end, len, outlen = 0, last = 0, pos = 0;
 	Py_ssize_t patchlen;
 	char *bin;
 
-	if (!PyArg_ParseTuple(args, "ls#", &orig, &bin, &patchlen))
+	if (!PyArg_ParseTuple(args, PY23("ls#", "ly#"), &orig, &bin, &patchlen))
 		return NULL;
 
 	while (pos >= 0 && pos < patchlen) {
@@ -146,7 +151,8 @@ patchedsize(PyObject *self, PyObject *args)
 
 	if (pos != patchlen) {
 		if (!PyErr_Occurred())
-			PyErr_SetString(mpatch_Error, "patch cannot be decoded");
+			PyErr_SetString(mpatch_Error,
+			                "patch cannot be decoded");
 		return NULL;
 	}
 
@@ -155,20 +161,16 @@ patchedsize(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef methods[] = {
-	{"patches", patches, METH_VARARGS, "apply a series of patches\n"},
-	{"patchedsize", patchedsize, METH_VARARGS, "calculed patched size\n"},
-	{NULL, NULL}
+    {"patches", patches, METH_VARARGS, "apply a series of patches\n"},
+    {"patchedsize", patchedsize, METH_VARARGS, "calculed patched size\n"},
+    {NULL, NULL},
 };
 
 static const int version = 1;
 
 #ifdef IS_PY3K
 static struct PyModuleDef mpatch_module = {
-	PyModuleDef_HEAD_INIT,
-	"mpatch",
-	mpatch_doc,
-	-1,
-	methods
+    PyModuleDef_HEAD_INIT, "mpatch", mpatch_doc, -1, methods,
 };
 
 PyMODINIT_FUNC PyInit_mpatch(void)
@@ -179,8 +181,8 @@ PyMODINIT_FUNC PyInit_mpatch(void)
 	if (m == NULL)
 		return NULL;
 
-	mpatch_Error = PyErr_NewException("mercurial.cext.mpatch.mpatchError",
-					  NULL, NULL);
+	mpatch_Error =
+	    PyErr_NewException("mercurial.cext.mpatch.mpatchError", NULL, NULL);
 	Py_INCREF(mpatch_Error);
 	PyModule_AddObject(m, "mpatchError", mpatch_Error);
 	PyModule_AddIntConstant(m, "version", version);
@@ -188,13 +190,12 @@ PyMODINIT_FUNC PyInit_mpatch(void)
 	return m;
 }
 #else
-PyMODINIT_FUNC
-initmpatch(void)
+PyMODINIT_FUNC initmpatch(void)
 {
 	PyObject *m;
 	m = Py_InitModule3("mpatch", methods, mpatch_doc);
-	mpatch_Error = PyErr_NewException("mercurial.cext.mpatch.mpatchError",
-					  NULL, NULL);
+	mpatch_Error =
+	    PyErr_NewException("mercurial.cext.mpatch.mpatchError", NULL, NULL);
 	PyModule_AddIntConstant(m, "version", version);
 }
 #endif

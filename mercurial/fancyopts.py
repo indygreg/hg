@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import abc
 import functools
 
 from .i18n import _
@@ -201,6 +202,74 @@ def earlygetopt(args, shortlist, namelist, gnu=False, keepsep=False):
     parsedargs.extend(args[pos:])
     return parsedopts, parsedargs
 
+class customopt(object):
+    """Manage defaults and mutations for any type of opt."""
+
+    __metaclass__ = abc.ABCMeta
+
+    def __init__(self, defaultvalue):
+        self._defaultvalue = defaultvalue
+
+    def _isboolopt(self):
+        return False
+
+    def getdefaultvalue(self):
+        """Returns the default value for this opt.
+
+        Subclasses should override this to return a new value if the value type
+        is mutable."""
+        return self._defaultvalue
+
+    @abc.abstractmethod
+    def newstate(self, oldstate, newparam, abort):
+        """Adds newparam to oldstate and returns the new state.
+
+        On failure, abort can be called with a string error message."""
+
+class _simpleopt(customopt):
+    def _isboolopt(self):
+        return isinstance(self._defaultvalue, (bool, type(None)))
+
+    def newstate(self, oldstate, newparam, abort):
+        return newparam
+
+class _callableopt(customopt):
+    def __init__(self, callablefn):
+        self.callablefn = callablefn
+        super(_callableopt, self).__init__(None)
+
+    def newstate(self, oldstate, newparam, abort):
+        return self.callablefn(newparam)
+
+class _listopt(customopt):
+    def getdefaultvalue(self):
+        return self._defaultvalue[:]
+
+    def newstate(self, oldstate, newparam, abort):
+        oldstate.append(newparam)
+        return oldstate
+
+class _intopt(customopt):
+    def newstate(self, oldstate, newparam, abort):
+        try:
+            return int(newparam)
+        except ValueError:
+            abort(_('expected int'))
+
+def _defaultopt(default):
+    """Returns a default opt implementation, given a default value."""
+
+    if isinstance(default, customopt):
+        return default
+    elif callable(default):
+        return _callableopt(default)
+    elif isinstance(default, list):
+        return _listopt(default[:])
+    elif type(default) is type(1):
+        return _intopt(default)
+    else:
+        return _simpleopt(default)
+
 def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
     """
     read args, parse options, and store options in state
@@ -220,6 +289,7 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
       list - parameter string is added to a list
       integer - parameter strings is stored as int
       function - call function with parameter
+      customopt - subclass of 'customopt'
 
     optaliases is a mapping from a canonical option name to a list of
     additional long options. This exists for preserving backward compatibility
@@ -250,18 +320,13 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
         argmap['-' + short] = name
         for n in onames:
             argmap['--' + n] = name
-        defmap[name] = default
+        defmap[name] = _defaultopt(default)
 
         # copy defaults to state
-        if isinstance(default, list):
-            state[name] = default[:]
-        elif callable(default):
-            state[name] = None
-        else:
-            state[name] = default
+        state[name] = defmap[name].getdefaultvalue()
 
         # does it take a parameter?
-        if not (default is None or default is True or default is False):
+        if not defmap[name]._isboolopt():
             if short:
                 short += ':'
             onames = [n + '=' for n in onames]
@@ -301,21 +366,13 @@ def fancyopts(args, options, state, gnu=False, early=False, optaliases=None):
             boolval = False
         name = argmap[opt]
         obj = defmap[name]
-        t = type(obj)
-        if callable(obj):
-            state[name] = defmap[name](val)
-        elif t is type(1):
-            try:
-                state[name] = int(val)
-            except ValueError:
-                raise error.Abort(_('invalid value %r for option %s, '
-                                   'expected int') % (val, opt))
-        elif t is type(''):
-            state[name] = val
-        elif t is type([]):
-            state[name].append(val)
-        elif t is type(None) or t is type(False):
+        if obj._isboolopt():
             state[name] = boolval
+        else:
+            def abort(s):
+                raise error.Abort(_('invalid value %r for option %s, %s')
+                                  % (pycompat.maybebytestr(val), opt, s))
+            state[name] = defmap[name].newstate(state[name], val, abort)
 
     # return unparsed args
     return args

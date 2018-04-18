@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import, print_function
 
-import io
 import locale
 import os
 import unicodedata
@@ -181,7 +180,8 @@ def fromlocal(s):
         return u.encode("utf-8")
     except UnicodeDecodeError as inst:
         sub = s[max(0, inst.start - 10):inst.start + 10]
-        raise error.Abort("decoding near '%s': %s!" % (sub, inst))
+        raise error.Abort("decoding near '%s': %s!"
+                          % (sub, pycompat.bytestr(inst)))
     except LookupError as k:
         raise error.Abort(k, hint="please check your locale settings")
 
@@ -580,18 +580,3 @@ def fromutf8b(s):
             c = pycompat.bytechr(ord(c.decode("utf-8", _utf8strict)) & 0xff)
         r += c
     return r
-
-if pycompat.ispy3:
-    class strio(io.TextIOWrapper):
-        """Wrapper around TextIOWrapper that respects hg's encoding assumptions.
-
-        Also works around Python closing streams.
-        """
-
-        def __init__(self, buffer):
-            super(strio, self).__init__(buffer, encoding=_sysstr(encoding))
-
-        def __del__(self):
-            """Override __del__ so it doesn't close the underlying stream."""
-else:
-    strio = pycompat.identity

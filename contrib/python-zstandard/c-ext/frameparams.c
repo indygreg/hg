@@ -13,50 +13,56 @@ extern PyObject* ZstdError;
 PyDoc_STRVAR(FrameParameters__doc__,
 	"FrameParameters: information about a zstd frame");
 
-FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args) {
-	const char* source;
-	Py_ssize_t sourceSize;
-	ZSTD_frameParams params;
+FrameParametersObject* get_frame_parameters(PyObject* self, PyObject* args, PyObject* kwargs) {
+	static char* kwlist[] = {
+		"data",
+		NULL
+	};
+
+	Py_buffer source;
+	ZSTD_frameHeader header;
 	FrameParametersObject* result = NULL;
 	size_t zresult;
 
 #if PY_MAJOR_VERSION >= 3
-	if (!PyArg_ParseTuple(args, "y#:get_frame_parameters",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*:get_frame_parameters",
 #else
-	if (!PyArg_ParseTuple(args, "s#:get_frame_parameters",
+	if (!PyArg_ParseTupleAndKeywords(args, kwargs, "s*:get_frame_parameters",
 #endif
-		&source, &sourceSize)) {
+		kwlist, &source)) {
 		return NULL;
 	}
 
-	/* Needed for Python 2 to reject unicode */
-	if (!PyBytes_Check(PyTuple_GET_ITEM(args, 0))) {
-		PyErr_SetString(PyExc_TypeError, "argument must be bytes");
-		return NULL;
+	if (!PyBuffer_IsContiguous(&source, 'C') || source.ndim > 1) {
+		PyErr_SetString(PyExc_ValueError,
+			"data buffer should be contiguous and have at most one dimension");
+		goto finally;
 	}
 
-	zresult = ZSTD_getFrameParams(&params, (void*)source, sourceSize);
+	zresult = ZSTD_getFrameHeader(&header, source.buf, source.len);
 
 	if (ZSTD_isError(zresult)) {
 		PyErr_Format(ZstdError, "cannot get frame parameters: %s", ZSTD_getErrorName(zresult));
-		return NULL;
+		goto finally;
 	}
 
 	if (zresult) {
 		PyErr_Format(ZstdError, "not enough data for frame parameters; need %zu bytes", zresult);
-		return NULL;
+		goto finally;
 	}
 
 	result = PyObject_New(FrameParametersObject, &FrameParametersType);
 	if (!result) {
-		return NULL;
+		goto finally;
 	}
 
-	result->frameContentSize = params.frameContentSize;
-	result->windowSize = params.windowSize;
-	result->dictID = params.dictID;
-	result->checksumFlag = params.checksumFlag ? 1 : 0;
+	result->frameContentSize = header.frameContentSize;
+	result->windowSize = header.windowSize;
+	result->dictID = header.dictID;
+	result->checksumFlag = header.checksumFlag ? 1 : 0;
 
+finally:
+	PyBuffer_Release(&source);
 	return result;
 }
 
@@ -68,7 +74,7 @@ static PyMemberDef FrameParameters_members[] = {
 	{ "content_size", T_ULONGLONG,
 	  offsetof(FrameParametersObject, frameContentSize), READONLY,
 	  "frame content size" },
-	{ "window_size", T_UINT,
+	{ "window_size", T_ULONGLONG,
 	  offsetof(FrameParametersObject, windowSize), READONLY,
 	  "window size" },
 	{ "dict_id", T_UINT,

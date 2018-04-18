@@ -70,7 +70,7 @@ def _commit(orig, ui, repo, *pats, **opts):
 
         # This __dict__ logic is needed because the normal
         # extension.wrapfunction doesn't seem to work.
-        repo.__dict__['commit'] = _wrappedcommit
+        repo.__dict__[r'commit'] = _wrappedcommit
         return orig(ui, repo, *pats, **opts)
     finally:
-        del repo.__dict__['commit']
+        del repo.__dict__[r'commit']

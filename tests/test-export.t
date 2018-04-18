@@ -159,6 +159,85 @@ Exporting wdir revision:
   +foo-wdir
   $ hg revert -q foo
 
+Templated output to stdout:
+
+  $ hg export -Tjson 0
+  [
+   {
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "foo-0",
+    "diff": "diff -r 000000000000 -r 871558de6af2 foo\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -0,0 +1,1 @@\n+foo-0\n",
+    "node": "871558de6af2e8c244222f8eea69b782c94ce3df",
+    "parents": [],
+    "user": "test"
+   }
+  ]
+
+Templated output to single file:
+
+  $ hg export -Tjson 0:1 -o out.json
+  $ cat out.json
+  [
+   {
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "foo-0",
+    "diff": "diff -r 000000000000 -r 871558de6af2 foo\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -0,0 +1,1 @@\n+foo-0\n",
+    "node": "871558de6af2e8c244222f8eea69b782c94ce3df",
+    "parents": [],
+    "user": "test"
+   },
+   {
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "foo-1",
+    "diff": "diff -r 871558de6af2 -r d1c9656e973c foo\n--- a/foo\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +1,2 @@\n foo-0\n+foo-1\n",
+    "node": "d1c9656e973cfb5aebd5499bbd2cb350e3b12266",
+    "parents": ["871558de6af2e8c244222f8eea69b782c94ce3df"],
+    "user": "test"
+   }
+  ]
+
+Templated output to multiple files:
+
+  $ hg export -Tjson 0:1 -o 'out-{rev}.json'
+  $ cat out-0.json
+  [
+   {
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "foo-0",
+    "diff": "diff -r 000000000000 -r 871558de6af2 foo\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -0,0 +1,1 @@\n+foo-0\n",
+    "node": "871558de6af2e8c244222f8eea69b782c94ce3df",
+    "parents": [],
+    "user": "test"
+   }
+  ]
+  $ cat out-1.json
+  [
+   {
+    "branch": "default",
+    "date": [0, 0],
+    "desc": "foo-1",
+    "diff": "diff -r 871558de6af2 -r d1c9656e973c foo\n--- a/foo\tThu Jan 01 00:00:00 1970 +0000\n+++ b/foo\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +1,2 @@\n foo-0\n+foo-1\n",
+    "node": "d1c9656e973cfb5aebd5499bbd2cb350e3b12266",
+    "parents": ["871558de6af2e8c244222f8eea69b782c94ce3df"],
+    "user": "test"
+   }
+  ]
+
+Template keywrods:
+
+  $ hg export 0 -T '# {node|shortest}\n\n{diff}'
+  # 8715
+  
+  diff -r 000000000000 -r 871558de6af2 foo
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +foo-0
+
 No filename should be printed if stdout is specified explicitly:
 
   $ hg export -v 1 -o -
@@ -184,7 +263,49 @@ Checking if only alphanumeric characters are used in the file name (%m option):
   $ hg commit -m " !\"#$%&(,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]"'^'"_\`abcdefghijklmnopqrstuvwxyz{|}~"
   $ hg export -v -o %m.patch tip
   exporting patch:
-  ____________0123456789_______ABCDEFGHIJKLMNOPQRSTUVWXYZ______abcdefghijklmnopqrstuvwxyz____.patch
+  ___________0123456789_______ABCDEFGHIJKLMNOPQRSTUVWXYZ______abcdefghijklmnopqrstuvwxyz____.patch
+
+Template fragments in file name:
+
+  $ hg export -v -o '{node|shortest}.patch' tip
+  exporting patch:
+  197e.patch
+
+Backslash should be preserved because it is a directory separator on Windows:
+
+  $ mkdir out
+  $ hg export -v -o 'out\{node|shortest}.patch' tip
+  exporting patch:
+  out\197e.patch
+
+Still backslash is taken as an escape character in inner template strings:
+
+  $ hg export -v -o '{"out\{foo}.patch"}' tip
+  exporting patch:
+  out{foo}.patch
+
+Invalid pattern in file name:
+
+  $ hg export -o '%x.patch' tip
+  abort: invalid format spec '%x' in output filename
+  [255]
+  $ hg export -o '%' tip
+  abort: incomplete format spec in output filename
+  [255]
+  $ hg export -o '%{"foo"}' tip
+  abort: incomplete format spec in output filename
+  [255]
+  $ hg export -o '%m{' tip
+  hg: parse error at 3: unterminated template expansion
+  (%m{
+      ^ here)
+  [255]
+  $ hg export -o '%\' tip
+  abort: invalid format spec '%\' in output filename
+  [255]
+  $ hg export -o '\%' tip
+  abort: incomplete format spec in output filename
+  [255]
 
 Catch exporting unknown revisions (especially empty revsets, see issue3353)
 

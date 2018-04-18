@@ -1,3 +1,13 @@
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
 Prepare repo a:
 
   $ hg init a
@@ -10,7 +20,7 @@ Prepare repo a:
 
 Create a non-inlined filelog:
 
-  $ $PYTHON -c 'file("data1", "wb").write("".join("%s\n" % x for x in range(10000)))'
+  $ $PYTHON -c 'open("data1", "wb").write(b"".join(b"%d\n" % x for x in range(10000)))'
   $ for j in 0 1 2 3 4 5 6 7 8 9; do
   >   cat data1 >> b
   >   hg commit -m test
@@ -18,12 +28,14 @@ Create a non-inlined filelog:
 
 List files in store/data (should show a 'b.d'):
 
+#if reporevlogstore
   $ for i in .hg/store/data/*; do
   >   echo $i
   > done
   .hg/store/data/a.i
   .hg/store/data/b.d
   .hg/store/data/b.i
+#endif
 
 Trigger branchcache creation:
 
@@ -82,7 +94,18 @@ No update, with debug option:
   linking: 6
   linking: 7
   linking: 8
-  linked 8 files
+  linked 8 files (reporevlogstore !)
+  linking: 9 (reposimplestore !)
+  linking: 10 (reposimplestore !)
+  linking: 11 (reposimplestore !)
+  linking: 12 (reposimplestore !)
+  linking: 13 (reposimplestore !)
+  linking: 14 (reposimplestore !)
+  linking: 15 (reposimplestore !)
+  linking: 16 (reposimplestore !)
+  linking: 17 (reposimplestore !)
+  linking: 18 (reposimplestore !)
+  linked 18 files (reposimplestore !)
 #else
   $ hg --debug clone -U . ../c --config progress.debug=true
   linking: 1
@@ -93,7 +116,18 @@ No update, with debug option:
   copying: 6
   copying: 7
   copying: 8
-  copied 8 files
+  copied 8 files (reporevlogstore !)
+  copying: 9 (reposimplestore !)
+  copying: 10 (reposimplestore !)
+  copying: 11 (reposimplestore !)
+  copying: 12 (reposimplestore !)
+  copying: 13 (reposimplestore !)
+  copying: 14 (reposimplestore !)
+  copying: 15 (reposimplestore !)
+  copying: 16 (reposimplestore !)
+  copying: 17 (reposimplestore !)
+  copying: 18 (reposimplestore !)
+  copied 18 files (reposimplestore !)
 #endif
   $ cd ../c
 
@@ -525,8 +559,8 @@ iterable in addbranchrevs()
   $ cat <<EOF > simpleclone.py
   > from mercurial import ui, hg
   > myui = ui.ui.load()
-  > repo = hg.repository(myui, 'a')
-  > hg.clone(myui, {}, repo, dest="ua")
+  > repo = hg.repository(myui, b'a')
+  > hg.clone(myui, {}, repo, dest=b"ua")
   > EOF
 
   $ $PYTHON simpleclone.py
@@ -539,8 +573,8 @@ iterable in addbranchrevs()
   > from mercurial import ui, hg, extensions
   > myui = ui.ui.load()
   > extensions.loadall(myui)
-  > repo = hg.repository(myui, 'a')
-  > hg.clone(myui, {}, repo, dest="ua", branch=["stable",])
+  > repo = hg.repository(myui, b'a')
+  > hg.clone(myui, {}, repo, dest=b"ua", branch=[b"stable",])
   > EOF
 
   $ $PYTHON branchclone.py
@@ -1142,12 +1176,14 @@ SEC: check for unsafe ssh url
 #if windows
   $ hg clone "ssh://%26touch%20owned%20/" --debug
   running sh -c "read l; read l; read l" "&touch owned " "hg -R . serve --stdio"
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
   [255]
   $ hg clone "ssh://example.com:%26touch%20owned%20/" --debug
   running sh -c "read l; read l; read l" -p "&touch owned " example.com "hg -R . serve --stdio"
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
@@ -1155,12 +1191,14 @@ SEC: check for unsafe ssh url
 #else
   $ hg clone "ssh://%3btouch%20owned%20/" --debug
   running sh -c "read l; read l; read l" ';touch owned ' 'hg -R . serve --stdio'
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
   [255]
   $ hg clone "ssh://example.com:%3btouch%20owned%20/" --debug
   running sh -c "read l; read l; read l" -p ';touch owned ' example.com 'hg -R . serve --stdio'
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!
@@ -1169,6 +1207,7 @@ SEC: check for unsafe ssh url
 
   $ hg clone "ssh://v-alid.example.com/" --debug
   running sh -c "read l; read l; read l" v-alid\.example\.com ['"]hg -R \. serve --stdio['"] (re)
+  sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
   sending hello command
   sending between command
   abort: no suitable response from remote hg!

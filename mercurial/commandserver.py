@@ -16,13 +16,21 @@ import socket
 import struct
 import traceback
 
+try:
+    import selectors
+    selectors.BaseSelector
+except ImportError:
+    from .thirdparty import selectors2 as selectors
+
 from .i18n import _
-from .thirdparty import selectors2
 from . import (
     encoding,
     error,
     pycompat,
     util,
+)
+from .utils import (
+    procutil,
 )
 
 logfile = None
@@ -280,7 +288,7 @@ class server(object):
         hellomsg += '\n'
         hellomsg += 'encoding: ' + encoding.encoding
         hellomsg += '\n'
-        hellomsg += 'pid: %d' % util.getpid()
+        hellomsg += 'pid: %d' % procutil.getpid()
         if util.safehasattr(os, 'getpgid'):
             hellomsg += '\n'
             hellomsg += 'pgid: %d' % os.getpgid(0)
@@ -298,29 +306,6 @@ class server(object):
 
         return 0
 
-def _protectio(ui):
-    """ duplicates streams and redirect original to null if ui uses stdio """
-    ui.flush()
-    newfiles = []
-    nullfd = os.open(os.devnull, os.O_RDWR)
-    for f, sysf, mode in [(ui.fin, util.stdin, pycompat.sysstr('rb')),
-                          (ui.fout, util.stdout, pycompat.sysstr('wb'))]:
-        if f is sysf:
-            newfd = os.dup(f.fileno())
-            os.dup2(nullfd, f.fileno())
-            f = os.fdopen(newfd, mode)
-        newfiles.append(f)
-    os.close(nullfd)
-    return tuple(newfiles)
-
-def _restoreio(ui, fin, fout):
-    """ restores streams from duplicated ones """
-    ui.flush()
-    for f, uif in [(fin, ui.fin), (fout, ui.fout)]:
-        if f is not uif:
-            os.dup2(f.fileno(), uif.fileno())
-            f.close()
-
 class pipeservice(object):
     def __init__(self, ui, repo, opts):
         self.ui = ui
@@ -333,13 +318,12 @@ class pipeservice(object):
         ui = self.ui
         # redirect stdio to null device so that broken extensions or in-process
         # hooks will never cause corruption of channel protocol.
-        fin, fout = _protectio(ui)
-        try:
-            sv = server(ui, self.repo, fin, fout)
-            return sv.serve()
-        finally:
-            sv.cleanup()
-            _restoreio(ui, fin, fout)
+        with procutil.protectedstdio(ui.fin, ui.fout) as (fin, fout):
+            try:
+                sv = server(ui, self.repo, fin, fout)
+                return sv.serve()
+            finally:
+                sv.cleanup()
 
 def _initworkerprocess():
     # use a different process group from the master process, in order to:
@@ -449,8 +433,8 @@ class unixforkingservice(object):
     def init(self):
         self._sock = socket.socket(socket.AF_UNIX)
         self._servicehandler.bindsocket(self._sock, self.address)
-        if util.safehasattr(util, 'unblocksignal'):
-            util.unblocksignal(signal.SIGCHLD)
+        if util.safehasattr(procutil, 'unblocksignal'):
+            procutil.unblocksignal(signal.SIGCHLD)
         o = signal.signal(signal.SIGCHLD, self._sigchldhandler)
         self._oldsigchldhandler = o
         self._socketunlinked = False
@@ -476,8 +460,8 @@ class unixforkingservice(object):
     def _mainloop(self):
         exiting = False
         h = self._servicehandler
-        selector = selectors2.DefaultSelector()
-        selector.register(self._sock, selectors2.EVENT_READ)
+        selector = selectors.DefaultSelector()
+        selector.register(self._sock, selectors.EVENT_READ)
         while True:
             if not exiting and h.shouldexit():
                 # clients can no longer connect() to the domain socket, so

@@ -31,7 +31,7 @@ from mercurial import (
     subrepo,
     upgrade,
     url,
-    wireproto,
+    wireprotov1server,
 )
 
 from . import (
@@ -164,30 +164,30 @@ def uisetup(ui):
                             overrides.openlargefile)
 
     # create the new wireproto commands ...
-    wireproto.commands['putlfile'] = (proto.putlfile, 'sha')
-    wireproto.commands['getlfile'] = (proto.getlfile, 'sha')
-    wireproto.commands['statlfile'] = (proto.statlfile, 'sha')
+    wireprotov1server.wireprotocommand('putlfile', 'sha', permission='push')(
+        proto.putlfile)
+    wireprotov1server.wireprotocommand('getlfile', 'sha', permission='pull')(
+        proto.getlfile)
+    wireprotov1server.wireprotocommand('statlfile', 'sha', permission='pull')(
+        proto.statlfile)
+    wireprotov1server.wireprotocommand('lheads', '', permission='pull')(
+        wireprotov1server.heads)
 
     # ... and wrap some existing ones
-    wireproto.commands['heads'] = (proto.heads, '')
-    wireproto.commands['lheads'] = (wireproto.heads, '')
-
-    # make putlfile behave the same as push and {get,stat}lfile behave
-    # the same as pull w.r.t. permissions checks
-    wireproto.permissions['putlfile'] = 'push'
-    wireproto.permissions['getlfile'] = 'pull'
-    wireproto.permissions['statlfile'] = 'pull'
-    wireproto.permissions['lheads'] = 'pull'
+    extensions.wrapfunction(wireprotov1server.commands['heads'], 'func',
+                            proto.heads)
+    # TODO also wrap wireproto.commandsv2 once heads is implemented there.
 
     extensions.wrapfunction(webcommands, 'decodepath', overrides.decodepath)
 
-    extensions.wrapfunction(wireproto, '_capabilities', proto._capabilities)
+    extensions.wrapfunction(wireprotov1server, '_capabilities',
+                            proto._capabilities)
 
     # can't do this in reposetup because it needs to have happened before
     # wirerepo.__init__ is called
-    proto.ssholdcallstream = sshpeer.sshpeer._callstream
+    proto.ssholdcallstream = sshpeer.sshv1peer._callstream
     proto.httpoldcallstream = httppeer.httppeer._callstream
-    sshpeer.sshpeer._callstream = proto.sshrepocallstream
+    sshpeer.sshv1peer._callstream = proto.sshrepocallstream
     httppeer.httppeer._callstream = proto.httprepocallstream
 
     # override some extensions' stuff as well

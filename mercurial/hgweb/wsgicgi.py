@@ -10,9 +10,14 @@
 
 from __future__ import absolute_import
 
+import os
+
 from .. import (
-    encoding,
-    util,
+    pycompat,
+)
+
+from ..utils import (
+    procutil,
 )
 
 from . import (
@@ -20,10 +25,10 @@ from . import (
 )
 
 def launch(application):
-    util.setbinary(util.stdin)
-    util.setbinary(util.stdout)
+    procutil.setbinary(procutil.stdin)
+    procutil.setbinary(procutil.stdout)
 
-    environ = dict(encoding.environ.iteritems())
+    environ = dict(os.environ.iteritems()) # re-exports
     environ.setdefault(r'PATH_INFO', '')
     if environ.get(r'SERVER_SOFTWARE', r'').startswith(r'Microsoft-IIS'):
         # IIS includes script_name in PATH_INFO
@@ -31,12 +36,12 @@ def launch(application):
         if environ[r'PATH_INFO'].startswith(scriptname):
             environ[r'PATH_INFO'] = environ[r'PATH_INFO'][len(scriptname):]
 
-    stdin = util.stdin
+    stdin = procutil.stdin
     if environ.get(r'HTTP_EXPECT', r'').lower() == r'100-continue':
-        stdin = common.continuereader(stdin, util.stdout.write)
+        stdin = common.continuereader(stdin, procutil.stdout.write)
 
     environ[r'wsgi.input'] = stdin
-    environ[r'wsgi.errors'] = util.stderr
+    environ[r'wsgi.errors'] = procutil.stderr
     environ[r'wsgi.version'] = (1, 0)
     environ[r'wsgi.multithread'] = False
     environ[r'wsgi.multiprocess'] = True
@@ -49,7 +54,7 @@ def launch(application):
 
     headers_set = []
     headers_sent = []
-    out = util.stdout
+    out = procutil.stdout
 
     def write(data):
         if not headers_set:
@@ -58,9 +63,10 @@ def launch(application):
         elif not headers_sent:
             # Before the first output, send the stored headers
             status, response_headers = headers_sent[:] = headers_set
-            out.write('Status: %s\r\n' % status)
-            for header in response_headers:
-                out.write('%s: %s\r\n' % header)
+            out.write('Status: %s\r\n' % pycompat.bytesurl(status))
+            for hk, hv in response_headers:
+                out.write('%s: %s\r\n' % (pycompat.bytesurl(hk),
+                                          pycompat.bytesurl(hv)))
             out.write('\r\n')
 
         out.write(data)

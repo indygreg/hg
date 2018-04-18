@@ -13,7 +13,41 @@ from . import (
     error,
     obsutil,
     scmutil,
+    stack
 )
+
+def orphanpossibledestination(repo, rev):
+    """Return all changesets that may be a new parent for orphan `rev`.
+
+    This function works fine on non-orphan revisions, it's just silly
+    because there's no destination implied by obsolete markers, so
+    it'll return nothing.
+    """
+    tonode = repo.changelog.node
+    parents = repo.changelog.parentrevs
+    torev = repo.changelog.rev
+    dest = set()
+    tovisit = list(parents(rev))
+    while tovisit:
+        r = tovisit.pop()
+        succsets = obsutil.successorssets(repo, tonode(r))
+        if not succsets:
+            # if there are no successors for r, r was probably pruned
+            # and we should walk up to r's parents to try and find
+            # some successors.
+            tovisit.extend(parents(r))
+        else:
+            # We should probably pick only one destination from split
+            # (case where '1 < len(ss)'), This could be the currently
+            # tipmost, but the correct result is less clear when
+            # results of the split have been moved such that they
+            # reside on multiple branches.
+            for ss in succsets:
+                for n in ss:
+                    dr = torev(n)
+                    if dr != -1:
+                        dest.add(dr)
+    return dest
 
 def _destupdateobs(repo, clean):
     """decide of an update destination from obsolescence markers"""
@@ -54,10 +88,10 @@ def _destupdateobs(repo, clean):
 def _destupdatebook(repo, clean):
     """decide on an update destination from active bookmark"""
     # we also move the active bookmark, if any
-    activemark = None
-    node, movemark = bookmarks.calculateupdate(repo.ui, repo, None)
-    if node is not None:
-        activemark = node
+    node = None
+    activemark, movemark = bookmarks.calculateupdate(repo.ui, repo)
+    if activemark is not None:
+        node = repo._bookmarks[activemark]
     return node, movemark, activemark
 
 def _destupdatebranch(repo, clean):
@@ -235,7 +269,7 @@ def _destmergebook(repo, action='merge', sourceset=None, destspace=None):
     """find merge destination in the active bookmark case"""
     node = None
     bmheads = bookmarks.headsforactive(repo)
-    curhead = repo[repo._activebookmark].node()
+    curhead = repo._bookmarks[repo._activebookmark]
     if len(bmheads) == 2:
         if curhead == bmheads[0]:
             node = bmheads[1]
@@ -339,30 +373,28 @@ def destmerge(repo, action='merge', sourceset=None, onheadcheck=True,
                                 onheadcheck=onheadcheck, destspace=destspace)
     return repo[node].rev()
 
-histeditdefaultrevset = 'reverse(only(.) and not public() and not ::merge())'
-
 def desthistedit(ui, repo):
     """Default base revision to edit for `hg histedit`."""
-    default = ui.config('histedit', 'defaultrev', histeditdefaultrevset)
-    if default:
+    default = ui.config('histedit', 'defaultrev')
+
+    if default is None:
+        revs = stack.getstack(repo)
+    elif default:
         revs = scmutil.revrange(repo, [default])
-        if revs:
-            # The revset supplied by the user may not be in ascending order nor
-            # take the first revision. So do this manually.
-            revs.sort()
-            return revs.first()
+
+    if revs:
+        # Take the first revision of the revset as the root
+        return revs.min()
 
     return None
 
 def stackbase(ui, repo):
-    # The histedit default base stops at public changesets, branchpoints,
-    # and merges, which is exactly what we want for a stack.
-    revs = scmutil.revrange(repo, [histeditdefaultrevset])
-    return revs.last() if revs else None
+    revs = stack.getstack(repo)
+    return revs.first() if revs else None
 
 def _statusotherbook(ui, repo):
     bmheads = bookmarks.headsforactive(repo)
-    curhead = repo[repo._activebookmark].node()
+    curhead = repo._bookmarks[repo._activebookmark]
     if repo.revs('%n and parents()', curhead):
         # we are on the active bookmark
         bmheads = [b for b in bmheads if curhead != b]

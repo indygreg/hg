@@ -113,7 +113,7 @@ def setflags(f, l, x):
     if l:
         if not stat.S_ISLNK(s):
             # switch file to link
-            fp = open(f)
+            fp = open(f, 'rb')
             data = fp.read()
             fp.close()
             unlink(f)
@@ -121,7 +121,7 @@ def setflags(f, l, x):
                 os.symlink(data, f)
             except OSError:
                 # failed to make a link, rewrite file
-                fp = open(f, "w")
+                fp = open(f, "wb")
                 fp.write(data)
                 fp.close()
         # no chmod needed at this point
@@ -130,7 +130,7 @@ def setflags(f, l, x):
         # switch link to file
         data = os.readlink(f)
         unlink(f)
-        fp = open(f, "w")
+        fp = open(f, "wb")
         fp.write(data)
         fp.close()
         s = 0o666 & ~umask # avoid restatting for chmod
@@ -264,7 +264,8 @@ def checklink(path):
                 # already exists.
                 target = 'checklink-target'
                 try:
-                    open(os.path.join(cachedir, target), 'w').close()
+                    fullpath = os.path.join(cachedir, target)
+                    open(fullpath, 'w').close()
                 except IOError as inst:
                     if inst[0] == errno.EACCES:
                         # If we can't write to cachedir, just pretend
@@ -461,11 +462,12 @@ def shellquote(s):
     else:
         return "'%s'" % s.replace("'", "'\\''")
 
+def shellsplit(s):
+    """Parse a command string in POSIX shell way (best-effort)"""
+    return pycompat.shlexsplit(s, posix=True)
+
 def quotecommand(cmd):
     return cmd
-
-def popen(command, mode='r'):
-    return os.popen(command, mode)
 
 def testpid(pid):
     '''return False if pid dead, True if running or not sure'''
@@ -476,13 +478,6 @@ def testpid(pid):
         return True
     except OSError as inst:
         return inst.errno != errno.ESRCH
-
-def explainexit(code):
-    """return a 2-tuple (desc, code) describing a subprocess status
-    (codes from kill are negative - not os.system/wait encoding)"""
-    if code >= 0:
-        return _("exited with status %d") % code, code
-    return _("killed by signal %d") % -code, -code
 
 def isowner(st):
     """Return True if the stat object st is from the current user."""
@@ -613,16 +608,13 @@ class cachestat(object):
                     self.stat.st_uid == other.stat.st_uid and
                     self.stat.st_gid == other.stat.st_gid and
                     self.stat.st_size == other.stat.st_size and
-                    self.stat.st_mtime == other.stat.st_mtime and
-                    self.stat.st_ctime == other.stat.st_ctime)
+                    self.stat[stat.ST_MTIME] == other.stat[stat.ST_MTIME] and
+                    self.stat[stat.ST_CTIME] == other.stat[stat.ST_CTIME])
         except AttributeError:
             return False
 
     def __ne__(self, other):
         return not self == other
-
-def executablepath():
-    return None # available on Windows only
 
 def statislink(st):
     '''check whether a stat result is a symlink'''

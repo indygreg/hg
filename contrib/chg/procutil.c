@@ -54,7 +54,7 @@ static void handlestopsignal(int sig)
 		goto error;
 
 	forwardsignal(sig);
-	if (raise(sig) < 0)  /* resend to self */
+	if (raise(sig) < 0) /* resend to self */
 		goto error;
 	if (sigaction(sig, &sa, &oldsa) < 0)
 		goto error;
@@ -205,8 +205,8 @@ pid_t setuppager(const char *pagercmd, const char *envp[])
 		close(pipefds[0]);
 		close(pipefds[1]);
 
-		int r = execle("/bin/sh", "/bin/sh", "-c", pagercmd, NULL,
-				envp);
+		int r =
+		    execle("/bin/sh", "/bin/sh", "-c", pagercmd, NULL, envp);
 		if (r < 0) {
 			abortmsgerrno("cannot start pager '%s'", pagercmd);
 		}

@@ -38,33 +38,33 @@
   $ hg commit -m "0.3m"
 
   $ hg debugindex -f 1 afile
-     rev flag   offset   length     size  .....   link     p1     p2       nodeid (re)
-       0 0000        0        3        2  .....      0     -1     -1 362fef284ce2 (re)
-       1 0000        3        5        4  .....      1      0     -1 125144f7e028 (re)
-       2 0000        8        7        6  .....      2      1     -1 4c982badb186 (re)
-       3 0000       15        9        8  .....      3      2     -1 19b1fc555737 (re)
+     rev flag     size   link     p1     p2       nodeid
+       0 0000        2      0     -1     -1 362fef284ce2
+       1 0000        4      1      0     -1 125144f7e028
+       2 0000        6      2      1     -1 4c982badb186
+       3 0000        8      3      2     -1 19b1fc555737
 
   $ hg debugindex adifferentfile
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0      75  .....       7 2565f3199a74 000000000000 000000000000 (re)
+     rev linkrev nodeid       p1           p2
+       0       7 2565f3199a74 000000000000 000000000000
 
   $ hg debugindex anotherfile
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0      75  .....       8 2565f3199a74 000000000000 000000000000 (re)
+     rev linkrev nodeid       p1           p2
+       0       8 2565f3199a74 000000000000 000000000000
 
   $ hg debugindex fred
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0       8  .....       6 12ab3bcc5ea4 000000000000 000000000000 (re)
+     rev linkrev nodeid       p1           p2
+       0       6 12ab3bcc5ea4 000000000000 000000000000
 
   $ hg debugindex --manifest
-     rev    offset  length  ..... linkrev nodeid       p1           p2 (re)
-       0         0      48  .....       0 43eadb1d2d06 000000000000 000000000000 (re)
-       1        48      48  .....       1 8b89697eba2c 43eadb1d2d06 000000000000 (re)
-       2        96      48  .....       2 626a32663c2f 8b89697eba2c 000000000000 (re)
-       3       144      48  .....       3 f54c32f13478 626a32663c2f 000000000000 (re)
-       4       192      ..  .....       6 de68e904d169 626a32663c2f 000000000000 (re)
-       5       2..      ..  .....       7 09bb521d218d de68e904d169 000000000000 (re)
-       6       3..      54  .....       8 1fde233dfb0f f54c32f13478 000000000000 (re)
+     rev linkrev nodeid       p1           p2
+       0       0 43eadb1d2d06 000000000000 000000000000
+       1       1 8b89697eba2c 43eadb1d2d06 000000000000
+       2       2 626a32663c2f 8b89697eba2c 000000000000
+       3       3 f54c32f13478 626a32663c2f 000000000000
+       4       6 de68e904d169 626a32663c2f 000000000000
+       5       7 09bb521d218d de68e904d169 000000000000
+       6       8 1fde233dfb0f f54c32f13478 000000000000
 
   $ hg verify
   checking changesets

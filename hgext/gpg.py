@@ -19,7 +19,10 @@ from mercurial import (
     node as hgnode,
     pycompat,
     registrar,
-    util,
+)
+from mercurial.utils import (
+    dateutil,
+    procutil,
 )
 
 cmdtable = {}
@@ -51,7 +54,7 @@ class gpg(object):
 
     def sign(self, data):
         gpgcmd = "%s --sign --detach-sign%s" % (self.path, self.key)
-        return util.filter(data, gpgcmd)
+        return procutil.filter(data, gpgcmd)
 
     def verify(self, data, sig):
         """ returns of the good and bad signatures"""
@@ -59,16 +62,16 @@ class gpg(object):
         try:
             # create temporary files
             fd, sigfile = tempfile.mkstemp(prefix="hg-gpg-", suffix=".sig")
-            fp = os.fdopen(fd, pycompat.sysstr('wb'))
+            fp = os.fdopen(fd, r'wb')
             fp.write(sig)
             fp.close()
             fd, datafile = tempfile.mkstemp(prefix="hg-gpg-", suffix=".txt")
-            fp = os.fdopen(fd, pycompat.sysstr('wb'))
+            fp = os.fdopen(fd, r'wb')
             fp.write(data)
             fp.close()
             gpgcmd = ("%s --logger-fd 1 --status-fd 1 --verify "
                       "\"%s\" \"%s\"" % (self.path, sigfile, datafile))
-            ret = util.filter("", gpgcmd)
+            ret = procutil.filter("", gpgcmd)
         finally:
             for f in (sigfile, datafile):
                 try:
@@ -153,8 +156,7 @@ def getkeys(ui, repo, mygpg, sigdata, context):
     # warn for expired key and/or sigs
     for key in keys:
         if key[0] == "ERRSIG":
-            ui.write(_("%s Unknown key ID \"%s\"\n")
-                     % (prefix, shortkey(ui, key[1][:15])))
+            ui.write(_("%s Unknown key ID \"%s\"\n") % (prefix, key[1]))
             continue
         if key[0] == "BADSIG":
             ui.write(_("%s Bad signature from \"%s\"\n") % (prefix, key[2]))
@@ -259,7 +261,7 @@ def _dosign(ui, repo, *revs, **opts):
 
     date = opts.get('date')
     if date:
-        opts['date'] = util.parsedate(date)
+        opts['date'] = dateutil.parsedate(date)
 
     if revs:
         nodes = [repo.lookup(n) for n in revs]
@@ -318,14 +320,7 @@ def _dosign(ui, repo, *revs, **opts):
         repo.commit(message, opts['user'], opts['date'], match=msigs,
                     editor=editor)
     except ValueError as inst:
-        raise error.Abort(str(inst))
-
-def shortkey(ui, key):
-    if len(key) != 16:
-        ui.debug("key ID \"%s\" format error\n" % key)
-        return key
-
-    return key[-8:]
+        raise error.Abort(pycompat.bytestr(inst))
 
 def node2txt(repo, node, ver):
     """map a manifest into some text"""

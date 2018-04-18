@@ -157,14 +157,13 @@ extension and python hooks - use the eol extension for a pythonhook
   > # (in addition, keeping it requires extra care for fsmonitor)
   > eol=!
   > EOF
-  $ hg blackbox -l 6
+  $ hg blackbox -l 5
   1970/01/01 00:00:00 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> update (no-chg !)
-  1970/01/01 00:00:00 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> writing .hg/cache/tags2-visible with 0 tags
   1970/01/01 00:00:00 bob @6563da9dcf87b1949716e38ff3e3dfaa3198eb06 (5000)> pythonhook-preupdate: hgext.eol.preupdate finished in * seconds (glob)
   1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> exthook-update: echo hooked finished in * seconds (glob)
   1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> update exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> serve --cmdserver chgunix --address $TESTTMP.chgsock/server.* --daemon-postexec 'chdir:/' (glob) (chg !)
-  1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> blackbox -l 6
+  1970/01/01 00:00:00 bob @d02f48003e62c24e2659d97d30f2a83abe5d5d51 (5000)> blackbox -l 5
 
 log rotation
 
@@ -265,7 +264,7 @@ Test log recursion from dirty status check
   > from mercurial import context, error, extensions
   > x=[False]
   > def status(orig, *args, **opts):
-  >     args[0].repo().ui.log("broken", "recursion?")
+  >     args[0].repo().ui.log(b"broken", b"recursion?")
   >     return orig(*args, **opts)
   > def reposetup(ui, repo):
   >     extensions.wrapfunction(context.basectx, 'status', status)
@@ -344,7 +343,7 @@ blackbox should work if repo.ui.log is not called (issue5518)
   > from mercurial import registrar, scmutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('raise')
+  > @command(b'raise')
   > def raisecmd(*args):
   >     raise RuntimeError('raise')
   > EOF

@@ -65,7 +65,7 @@ class pathauditor(object):
         parts = util.splitpath(path)
         if (os.path.splitdrive(path)[0]
             or _lowerclean(parts[0]) in ('.hg', '.hg.', '')
-            or os.pardir in parts):
+            or pycompat.ospardir in parts):
             raise error.Abort(_("path contains illegal component: %s") % path)
         # Windows shortname aliases
         for p in parts:
@@ -81,7 +81,7 @@ class pathauditor(object):
                     pos = lparts.index(p)
                     base = os.path.join(*parts[:pos])
                     raise error.Abort(_("path '%s' is inside nested repo %r")
-                                     % (path, base))
+                                      % (path, pycompat.bytestr(base)))
 
         normparts = util.splitpath(normpath)
         assert len(parts) == len(normparts)
@@ -119,13 +119,14 @@ class pathauditor(object):
                 raise
         else:
             if stat.S_ISLNK(st.st_mode):
-                msg = _('path %r traverses symbolic link %r') % (path, prefix)
+                msg = (_('path %r traverses symbolic link %r')
+                       % (pycompat.bytestr(path), pycompat.bytestr(prefix)))
                 raise error.Abort(msg)
             elif (stat.S_ISDIR(st.st_mode) and
                   os.path.isdir(os.path.join(curpath, '.hg'))):
                 if not self.callback or not self.callback(curpath):
                     msg = _("path '%s' is inside nested repo %r")
-                    raise error.Abort(msg % (path, prefix))
+                    raise error.Abort(msg % (path, pycompat.bytestr(prefix)))
 
     def check(self, path):
         try:

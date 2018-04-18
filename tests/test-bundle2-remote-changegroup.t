@@ -1,5 +1,15 @@
 #require killdaemons
 
+#testcases sshv1 sshv2
+
+#if sshv2
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > sshpeer.advertise-v2 = true
+  > sshserver.support-v2 = true
+  > EOF
+#endif
+
 Create an extension to test bundle2 remote-changegroup parts
 
   $ cat > bundle2.py << EOF
@@ -61,8 +71,8 @@ Create an extension to test bundle2 remote-changegroup parts
   >                part.addparam(k, str(v))
   >         elif verb == 'changegroup':
   >             _common, heads = args.split()
-  >             common.extend(repo.lookup(r) for r in repo.revs(_common))
-  >             heads = [repo.lookup(r) for r in repo.revs(heads)]
+  >             common.extend(repo[r].node() for r in repo.revs(_common))
+  >             heads = [repo[r].node() for r in repo.revs(heads)]
   >             outgoing = discovery.outgoing(repo, common, heads)
   >             cg = changegroup.makechangegroup(repo, outgoing, '01',
   >                                              'changegroup')

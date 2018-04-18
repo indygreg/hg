@@ -180,7 +180,7 @@ Test files status in different revisions
 
 Test files properties
 
-  >>> file('bin', 'wb').write('\0a')
+  >>> open('bin', 'wb').write(b'\0a')
   $ fileset 'binary()'
   $ fileset 'binary() and unknown()'
   bin
@@ -219,8 +219,8 @@ Test files properties
   $ hg --config ui.portablefilenames=ignore add con.xml
 #endif
 
-  >>> file('1k', 'wb').write(' '*1024)
-  >>> file('2k', 'wb').write(' '*2048)
+  >>> open('1k', 'wb').write(b' '*1024)
+  >>> open('2k', 'wb').write(b' '*2048)
   $ hg add 1k 2k
   $ fileset 'size("bar")'
   hg: parse error: couldn't parse size: bar
@@ -666,7 +666,11 @@ Empty revset will error at the revset layer
 
   $ fileset "status(' ', '4', added())"
   hg: parse error at 1: not a prefix: end
+  ( 
+    ^ here)
   [255]
   $ fileset "status('2', ' ', added())"
   hg: parse error at 1: not a prefix: end
+  ( 
+    ^ here)
   [255]

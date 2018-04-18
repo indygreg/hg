@@ -17,12 +17,12 @@ Set up helpers
   >     msvcrt.setmode(sys.stdout.fileno(), os.O_BINARY)
   > except ImportError:
   >     pass
-  > (old, new) = sys.argv[1] == 'LF' and ('\n', '\r\n') or ('\r\n', '\n')
+  > (old, new) = sys.argv[1] == 'LF' and (b'\n', b'\r\n') or (b'\r\n', b'\n')
   > print("%% switching encoding from %r to %r" % (old, new))
   > for path in sys.argv[2:]:
-  >     data = file(path, 'rb').read()
+  >     data = open(path, 'rb').read()
   >     data = data.replace(old, new)
-  >     file(path, 'wb').write(data)
+  >     open(path, 'wb').write(data)
   > EOF
 
   $ seteol () {

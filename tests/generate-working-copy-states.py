@@ -42,12 +42,12 @@ import sys
 def generatestates(maxchangesets, parentcontents):
     depth = len(parentcontents)
     if depth == maxchangesets + 1:
-        for tracked in ('untracked', 'tracked'):
-            filename = "_".join([(content is None and 'missing' or content) for
-                                 content in parentcontents]) + "-" + tracked
+        for tracked in (b'untracked', b'tracked'):
+            filename = b"_".join([(content is None and b'missing' or content)
+                                for content in parentcontents]) + b"-" + tracked
             yield (filename, parentcontents)
     else:
-        for content in ({None, 'content' + str(depth + 1)} |
+        for content in ({None, b'content' + (b"%d" % (depth + 1))} |
                       set(parentcontents)):
             for combination in generatestates(maxchangesets,
                                               parentcontents + [content]):
@@ -66,12 +66,12 @@ combinations = sorted(generatestates(maxchangesets, []))
 content = []
 for filename, states in combinations:
     if target == 'filelist':
-        print(filename)
+        print(filename.decode('ascii'))
     elif target == 'state':
         if depth == 'wc':
             # Make sure there is content so the file gets written and can be
             # tracked. It will be deleted outside of this script.
-            content.append((filename, states[maxchangesets] or 'TOBEDELETED'))
+            content.append((filename, states[maxchangesets] or b'TOBEDELETED'))
         else:
             content.append((filename, states[int(depth) - 1]))
     else:
@@ -82,7 +82,7 @@ for filename, states in combinations:
 for filename, data in content:
     if data is not None:
         f = open(filename, 'wb')
-        f.write(data + '\n')
+        f.write(data + b'\n')
         f.close()
     elif os.path.exists(filename):
         os.remove(filename)

@@ -18,7 +18,7 @@ create a little extension that has 3 side-effects:
   >             tip1 = node.short(repo.changelog.tip())
   >             tip2 = node.short(repo.lookup(tip1))
   >             assert tip1 == tip2
-  >             ui.write('new tip: %s\n' % tip1)
+  >             ui.write(b'new tip: %s\n' % tip1)
   >             return result
   >     repo.__class__ = wraprepo
   > 

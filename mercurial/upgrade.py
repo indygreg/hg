@@ -46,7 +46,6 @@ def blocksourcerequirements(repo):
     return {
         # The upgrade code does not yet support these experimental features.
         # This is an artificial limitation.
-        'manifestv2',
         'treemanifest',
         # This was a precursor to generaldelta and was never enabled by default.
         # It should (hopefully) not exist in the wild.
@@ -481,11 +480,13 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
             mrevcount += len(rl)
             msrcsize += datasize
             mrawsize += rawsize
-        elif isinstance(rl, revlog.revlog):
+        elif isinstance(rl, filelog.filelog):
             fcount += 1
             frevcount += len(rl)
             fsrcsize += datasize
             frawsize += rawsize
+        else:
+            error.ProgrammingError('unknown revlog type')
 
     if not revcount:
         return

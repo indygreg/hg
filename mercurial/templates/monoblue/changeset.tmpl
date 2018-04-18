@@ -48,7 +48,8 @@
         {branch%changesetbranch}
         <dt>changeset {rev}</dt>
         <dd><a href="{url|urlescape}rev/{node|short}{sessionvars%urlparameter}">{node|short}</a></dd>
-        {if(obsolete, '<dt>obsolete</dt><dd>{succsandmarkers%obsfateentry}</dd>')}
+        {if(obsolete, succsandmarkers%obsfateentry)}
+        {if(instabilities, whyunstable%whyunstableentry)}
         {ifeq(count(parent), '2', parent%changesetparentdiff, parent%changesetparent)}
         {child%changesetchild}
     </dl>

@@ -86,6 +86,7 @@ from mercurial import (
     hg,
     localrepo,
     lock as lockmod,
+    logcmdutil,
     patch as patchmod,
     phases,
     pycompat,
@@ -93,9 +94,13 @@ from mercurial import (
     revsetlang,
     scmutil,
     smartset,
-    subrepo,
+    subrepoutil,
     util,
     vfs as vfsmod,
+)
+from mercurial.utils import (
+    dateutil,
+    stringutil,
 )
 
 release = lockmod.release
@@ -148,8 +153,12 @@ normname = util.normpath
 class statusentry(object):
     def __init__(self, node, name):
         self.node, self.name = node, name
-    def __repr__(self):
+
+    def __bytes__(self):
         return hex(self.node) + ':' + self.name
+
+    __str__ = encoding.strmethod(__bytes__)
+    __repr__ = encoding.strmethod(__bytes__)
 
 # The order of the headers in 'hg export' HG patches:
 HGHEADERS = [
@@ -276,7 +285,7 @@ class patchheader(object):
         nodeid = None
         diffstart = 0
 
-        for line in file(pf):
+        for line in open(pf, 'rb'):
             line = line.rstrip()
             if (line.startswith('diff --git')
                 or (diffstart and line.startswith('+++ '))):
@@ -391,11 +400,13 @@ class patchheader(object):
                 self.comments.append('')
             self.comments.append(message)
 
-    def __str__(self):
+    def __bytes__(self):
         s = '\n'.join(self.comments).rstrip()
         if not s:
             return ''
         return s + '\n\n'
+
+    __str__ = encoding.strmethod(__bytes__)
 
     def _delmsg(self):
         '''Remove existing message, keeping the rest of the comments fields.
@@ -438,9 +449,9 @@ class queue(object):
     def __init__(self, ui, baseui, path, patchdir=None):
         self.basepath = path
         try:
-            fh = open(os.path.join(path, 'patches.queue'))
-            cur = fh.read().rstrip()
-            fh.close()
+            with open(os.path.join(path, 'patches.queue'), r'rb') as fh:
+                cur = fh.read().rstrip()
+
             if not cur:
                 curpath = os.path.join(path, 'patches')
             else:
@@ -461,7 +472,7 @@ class queue(object):
         self.guardsdirty = False
         # Handle mq.git as a bool with extended values
         gitmode = ui.config('mq', 'git').lower()
-        boolmode = util.parsebool(gitmode)
+        boolmode = stringutil.parsebool(gitmode)
         if boolmode is not None:
             if boolmode:
                 gitmode = 'yes'
@@ -546,10 +557,8 @@ class queue(object):
             for patchfn in patches:
                 patchf = self.opener(patchfn, 'r')
                 # if the patch was a git patch, refresh it as a git patch
-                for line in patchf:
-                    if line.startswith('diff --git'):
-                        diffopts.git = True
-                        break
+                diffopts.git = any(line.startswith('diff --git')
+                                   for line in patchf)
                 patchf.close()
         return diffopts
 
@@ -643,21 +652,22 @@ class queue(object):
         self.seriesdirty = True
 
     def pushable(self, idx):
-        if isinstance(idx, str):
+        if isinstance(idx, bytes):
             idx = self.series.index(idx)
         patchguards = self.seriesguards[idx]
         if not patchguards:
             return True, None
         guards = self.active()
-        exactneg = [g for g in patchguards if g[0] == '-' and g[1:] in guards]
+        exactneg = [g for g in patchguards
+                    if g.startswith('-') and g[1:] in guards]
         if exactneg:
-            return False, repr(exactneg[0])
-        pos = [g for g in patchguards if g[0] == '+']
+            return False, pycompat.byterepr(exactneg[0])
+        pos = [g for g in patchguards if g.startswith('+')]
         exactpos = [g for g in pos if g[1:] in guards]
         if pos:
             if exactpos:
-                return True, repr(exactpos[0])
-            return False, ' '.join(map(repr, pos))
+                return True, pycompat.byterepr(exactpos[0])
+            return False, ' '.join([pycompat.byterepr(p) for p in pos])
         return True, ''
 
     def explainpushable(self, idx, all_patches=False):
@@ -667,7 +677,7 @@ class queue(object):
             write = self.ui.warn
 
         if all_patches or self.ui.verbose:
-            if isinstance(idx, str):
+            if isinstance(idx, bytes):
                 idx = self.series.index(idx)
             pushable, why = self.pushable(idx)
             if all_patches and pushable:
@@ -691,12 +701,12 @@ class queue(object):
 
     def savedirty(self):
         def writelist(items, path):
-            fp = self.opener(path, 'w')
+            fp = self.opener(path, 'wb')
             for i in items:
                 fp.write("%s\n" % i)
             fp.close()
         if self.applieddirty:
-            writelist(map(str, self.applied), self.statuspath)
+            writelist(map(bytes, self.applied), self.statuspath)
             self.applieddirty = False
         if self.seriesdirty:
             writelist(self.fullseries, self.seriespath)
@@ -717,7 +727,8 @@ class queue(object):
         try:
             os.unlink(undo)
         except OSError as inst:
-            self.ui.warn(_('error removing undo: %s\n') % str(inst))
+            self.ui.warn(_('error removing undo: %s\n') %
+                         stringutil.forcebytestr(inst))
 
     def backup(self, repo, files, copy=False):
         # backup local changes in --force case
@@ -739,8 +750,8 @@ class queue(object):
             opts = {}
         stat = opts.get('stat')
         m = scmutil.match(repo[node1], files, opts)
-        cmdutil.diffordiffstat(self.ui, repo, diffopts, node1, node2,  m,
-                               changes, stat, fp)
+        logcmdutil.diffordiffstat(self.ui, repo, diffopts, node1, node2, m,
+                                  changes, stat, fp)
 
     def mergeone(self, repo, mergeq, head, patch, rev, diffopts):
         # first try just applying the patch
@@ -773,7 +784,7 @@ class queue(object):
 
         diffopts = self.patchopts(diffopts, patch)
         patchf = self.opener(patch, "w")
-        comments = str(ph)
+        comments = bytes(ph)
         if comments:
             patchf.write(comments)
         self.printdiff(repo, diffopts, head, n, fp=patchf)
@@ -850,7 +861,7 @@ class queue(object):
                                   files=files, eolmode=None)
             return (True, list(files), fuzz)
         except Exception as inst:
-            self.ui.note(str(inst) + '\n')
+            self.ui.note(stringutil.forcebytestr(inst) + '\n')
             if not self.ui.verbose:
                 self.ui.warn(_("patch failed, unable to continue (try -v)\n"))
             self.ui.traceback()
@@ -963,8 +974,8 @@ class queue(object):
                 wctx = repo[None]
                 pctx = repo['.']
                 overwrite = False
-                mergedsubstate = subrepo.submerge(repo, pctx, wctx, wctx,
-                    overwrite)
+                mergedsubstate = subrepoutil.submerge(repo, pctx, wctx, wctx,
+                                                      overwrite)
                 files += mergedsubstate.keys()
 
             match = scmutil.matchfiles(repo, files or [])
@@ -1011,9 +1022,17 @@ class queue(object):
 
         unknown = []
 
-        for (i, p) in sorted([(self.findseries(p), p) for p in patches],
-                             reverse=True):
-            if i is not None:
+        sortedseries = []
+        for p in patches:
+            idx = self.findseries(p)
+            if idx is None:
+                sortedseries.append((-1, p))
+            else:
+                sortedseries.append((idx, p))
+
+        sortedseries.sort(reverse=True)
+        for (i, p) in sortedseries:
+            if i != -1:
                 del self.fullseries[i]
             else:
                 unknown.append(p)
@@ -1145,7 +1164,7 @@ class queue(object):
         for c in ('#', ':', '\r', '\n'):
             if c in name:
                 raise error.Abort(_('%r cannot be used in the name of a patch')
-                                 % c)
+                                 % pycompat.bytestr(c))
 
     def checkpatchname(self, name, force=False):
         self.checkreservedname(name)
@@ -1178,7 +1197,7 @@ class queue(object):
                 except error.Abort:
                     pass
             i += 1
-            name = '%s__%s' % (namebase, i)
+            name = '%s__%d' % (namebase, i)
         return name
 
     def checkkeepchanges(self, keepchanges, force):
@@ -1189,13 +1208,14 @@ class queue(object):
         """options:
            msg: a string or a no-argument function returning a string
         """
+        opts = pycompat.byteskwargs(opts)
         msg = opts.get('msg')
         edit = opts.get('edit')
         editform = opts.get('editform', 'mq.qnew')
         user = opts.get('user')
         date = opts.get('date')
         if date:
-            date = util.parsedate(date)
+            date = dateutil.parsedate(date)
         diffopts = self.diffopts({'git': opts.get('git')}, plain=True)
         if opts.get('checkname', True):
             self.checkpatchname(patchfn)
@@ -1259,13 +1279,13 @@ class queue(object):
                     if user:
                         ph.setuser(user)
                     if date:
-                        ph.setdate('%s %s' % date)
+                        ph.setdate('%d %d' % date)
                     ph.setparent(hex(nctx.p1().node()))
                     msg = nctx.description().strip()
                     if msg == defaultmsg.strip():
                         msg = ''
                     ph.setmessage(msg)
-                    p.write(str(ph))
+                    p.write(bytes(ph))
                     if commitfiles:
                         parent = self.qparents(repo, n)
                         if inclsubs:
@@ -1550,12 +1570,8 @@ class queue(object):
                         update = True
             else:
                 parents = [p.node() for p in repo[None].parents()]
-                needupdate = False
-                for entry in self.applied[start:]:
-                    if entry.node in parents:
-                        needupdate = True
-                        break
-                update = needupdate
+                update = any(entry.node in parents
+                             for entry in self.applied[start:])
 
             tobackup = set()
             if update:
@@ -1632,6 +1648,7 @@ class queue(object):
         self.printdiff(repo, diffopts, node1, node2, files=pats, opts=opts)
 
     def refresh(self, repo, pats=None, **opts):
+        opts = pycompat.byteskwargs(opts)
         if not self.applied:
             self.ui.write(_("no patches applied\n"))
             return 1
@@ -1641,7 +1658,7 @@ class queue(object):
         newuser = opts.get('user')
         newdate = opts.get('date')
         if newdate:
-            newdate = '%d %d' % util.parsedate(newdate)
+            newdate = '%d %d' % dateutil.parsedate(newdate)
         wlock = repo.wlock()
 
         try:
@@ -1656,7 +1673,7 @@ class queue(object):
             cparents = repo.changelog.parents(top)
             patchparent = self.qparents(repo, top)
 
-            inclsubs = checksubstate(repo, hex(patchparent))
+            inclsubs = checksubstate(repo, patchparent)
             if inclsubs:
                 substatestate = repo.dirstate['.hgsubstate']
 
@@ -1846,7 +1863,7 @@ class queue(object):
                         self.putsubstate2changes(substatestate, c)
                     chunks = patchmod.diff(repo, patchparent,
                                            changes=c, opts=diffopts)
-                    comments = str(ph)
+                    comments = bytes(ph)
                     if comments:
                         patchf.write(comments)
                     for chunk in chunks:
@@ -1912,7 +1929,7 @@ class queue(object):
                 if self.ui.formatted():
                     width = self.ui.termwidth() - len(pfx) - len(patchname) - 2
                     if width > 0:
-                        msg = util.ellipsis(msg, width)
+                        msg = stringutil.ellipsis(msg, width)
                     else:
                         msg = ''
                 self.ui.write(patchname, label='qseries.' + state)
@@ -1927,7 +1944,7 @@ class queue(object):
             length = len(self.series) - start
         if not missing:
             if self.ui.verbose:
-                idxwidth = len(str(start + length - 1))
+                idxwidth = len("%d" % (start + length - 1))
             for i in xrange(start, start + length):
                 patch = self.series[i]
                 if patch in applied:
@@ -2093,7 +2110,7 @@ class queue(object):
         if not self.ui.verbose:
             p = pname
         else:
-            p = str(self.series.index(pname)) + " " + pname
+            p = ("%d" % self.series.index(pname)) + " " + pname
         return p
 
     def qimport(self, repo, files, patchname=None, rev=None, existing=None,
@@ -2165,9 +2182,8 @@ class queue(object):
                     self.checkpatchname(patchname, force)
                     self.fullseries.insert(0, patchname)
 
-                    patchf = self.opener(patchname, "w")
-                    cmdutil.export(repo, [n], fp=patchf, opts=diffopts)
-                    patchf.close()
+                    with self.opener(patchname, "w") as fp:
+                        cmdutil.exportfile(repo, [n], fp, opts=diffopts)
 
                     se = statusentry(n, patchname)
                     self.applied.insert(0, se)
@@ -2260,7 +2276,7 @@ def delete(ui, repo, *patches, **opts):
     To stop managing a patch and move it into permanent history,
     use the :hg:`qfinish` command."""
     q = repo.mq
-    q.delete(repo, patches, opts)
+    q.delete(repo, patches, pycompat.byteskwargs(opts))
     q.savedirty()
     return 0
 
@@ -2497,7 +2513,7 @@ def clone(ui, source, dest=None, **opts):
     ui.note(_('cloning main repository\n'))
     sr, dr = hg.clone(ui, opts, sr.url(), dest,
                       pull=opts.get('pull'),
-                      rev=destrev,
+                      revs=destrev,
                       update=False,
                       stream=opts.get('uncompressed'))
 
@@ -2593,7 +2609,7 @@ def setupheaderopts(ui, opts):
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
     if not opts.get('date') and opts.get('currentdate'):
-        opts['date'] = "%d %d" % util.makedate()
+        opts['date'] = "%d %d" % dateutil.makedate()
 
 @command("^qnew",
          [('e', 'edit', None, _('invoke editor on commit messages')),
@@ -3189,7 +3205,7 @@ def select(ui, repo, *args, **opts):
                 guards[g] += 1
         if ui.verbose:
             guards['NONE'] = noguards
-        guards = guards.items()
+        guards = list(guards.items())
         guards.sort(key=lambda x: x[0][1:])
         if guards:
             ui.note(_('guards in series file:\n'))

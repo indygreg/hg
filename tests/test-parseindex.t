@@ -41,10 +41,17 @@ We approximate that by reducing the read buffer to 1 byte.
   >     def __getattr__(self, key):
   >         return getattr(self.real, key)
   > 
+  >     def __enter__(self):
+  >         self.real.__enter__()
+  >         return self
+  > 
+  >     def __exit__(self, *args, **kwargs):
+  >         return self.real.__exit__(*args, **kwargs)
+  > 
   > def opener(*args):
   >     o = vfs.vfs(*args)
-  >     def wrapper(*a):
-  >         f = o(*a)
+  >     def wrapper(*a, **kwargs):
+  >         f = o(*a, **kwargs)
   >         return singlebyteread(f)
   >     return wrapper
   > 
@@ -136,14 +143,25 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   >     open(n + "/.hg/store/00changelog.i", "wb").write(d)
   > EOF
 
-  $ hg debugindex -f1 limit/.hg/store/00changelog.i
-     rev flag   offset   length     size   base   link     p1     p2       nodeid
-       0 0000        0       63       62      0      0      2     -1 7c31755bf9b5
-       1 0000       63       66       65      1      1      0      2 26333235a41c
-  $ hg debugindex -f1 segv/.hg/store/00changelog.i
-     rev flag   offset   length     size   base   link     p1     p2       nodeid
-       0 0000        0       63       62      0      0  65536     -1 7c31755bf9b5
-       1 0000       63       66       65      1      1      0  65536 26333235a41c
+  $ hg -R limit debugindex -f1 -c
+     rev flag     size   link     p1     p2       nodeid
+       0 0000       62      0      2     -1 7c31755bf9b5
+       1 0000       65      1      0      2 26333235a41c
+
+  $ hg -R limit debugdeltachain -c
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
+        0       1        1       -1    base         63         62         63   1.01613        63         0    0.00000
+        1       2        1       -1    base         66         65         66   1.01538        66         0    0.00000
+
+  $ hg -R segv debugindex -f1 -c
+     rev flag     size   link     p1     p2       nodeid
+       0 0000       62      0  65536     -1 7c31755bf9b5
+       1 0000       65      1      0  65536 26333235a41c
+
+  $ hg -R segv debugdeltachain -c
+      rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
+        0       1        1       -1    base         63         62         63   1.01613        63         0    0.00000
+        1       2        1       -1    base         66         65         66   1.01538        66         0    0.00000
 
   $ cat <<EOF > test.py
   > import sys

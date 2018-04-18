@@ -13,6 +13,7 @@ import os
 import socket
 import sys
 import traceback
+import wsgiref.validate
 
 from ..i18n import _
 
@@ -111,6 +112,9 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             self.log_error(r"Exception happened during processing "
                            r"request '%s':%s%s", self.path, newline, tb)
 
+    def do_PUT(self):
+        self.do_POST()
+
     def do_GET(self):
         self.do_POST()
 
@@ -132,29 +136,28 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'SERVER_NAME'] = self.server.server_name
         env[r'SERVER_PORT'] = str(self.server.server_port)
         env[r'REQUEST_URI'] = self.path
-        env[r'SCRIPT_NAME'] = self.server.prefix
-        env[r'PATH_INFO'] = path[len(self.server.prefix):]
+        env[r'SCRIPT_NAME'] = pycompat.sysstr(self.server.prefix)
+        env[r'PATH_INFO'] = pycompat.sysstr(path[len(self.server.prefix):])
         env[r'REMOTE_HOST'] = self.client_address[0]
         env[r'REMOTE_ADDR'] = self.client_address[0]
-        if query:
-            env[r'QUERY_STRING'] = query
+        env[r'QUERY_STRING'] = query or r''
 
         if pycompat.ispy3:
             if self.headers.get_content_type() is None:
                 env[r'CONTENT_TYPE'] = self.headers.get_default_type()
             else:
                 env[r'CONTENT_TYPE'] = self.headers.get_content_type()
-            length = self.headers.get('content-length')
+            length = self.headers.get(r'content-length')
         else:
             if self.headers.typeheader is None:
                 env[r'CONTENT_TYPE'] = self.headers.type
             else:
                 env[r'CONTENT_TYPE'] = self.headers.typeheader
-            length = self.headers.getheader('content-length')
+            length = self.headers.getheader(r'content-length')
         if length:
             env[r'CONTENT_LENGTH'] = length
         for header in [h for h in self.headers.keys()
-                       if h not in ('content-type', 'content-length')]:
+                       if h not in (r'content-type', r'content-length')]:
             hkey = r'HTTP_' + header.replace(r'-', r'_').upper()
             hval = self.headers.get(header)
             hval = hval.replace(r'\n', r'').strip()
@@ -162,7 +165,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
                 env[hkey] = hval
         env[r'SERVER_PROTOCOL'] = self.request_version
         env[r'wsgi.version'] = (1, 0)
-        env[r'wsgi.url_scheme'] = self.url_scheme
+        env[r'wsgi.url_scheme'] = pycompat.sysstr(self.url_scheme)
         if env.get(r'HTTP_EXPECT', '').lower() == '100-continue':
             self.rfile = common.continuereader(self.rfile, self.wfile.write)
 
@@ -173,6 +176,8 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         env[r'wsgi.multiprocess'] = isinstance(self.server,
                                               socketserver.ForkingMixIn)
         env[r'wsgi.run_once'] = 0
+
+        wsgiref.validate.check_environ(env)
 
         self.saved_status = None
         self.saved_headers = []
@@ -237,6 +242,11 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
             self.wfile.write('0\r\n\r\n')
             self.wfile.flush()
 
+    def version_string(self):
+        if self.server.serverheader:
+            return self.server.serverheader
+        return httpservermod.basehttprequesthandler.version_string(self)
+
 class _httprequesthandlerssl(_httprequesthandler):
     """HTTPS handler based on Python's ssl module"""
 
@@ -265,8 +275,8 @@ class _httprequesthandlerssl(_httprequesthandler):
 
     def setup(self):
         self.connection = self.request
-        self.rfile = socket._fileobject(self.request, "rb", self.rbufsize)
-        self.wfile = socket._fileobject(self.request, "wb", self.wbufsize)
+        self.rfile = self.request.makefile(r"rb", self.rbufsize)
+        self.wfile = self.request.makefile(r"wb", self.wbufsize)
 
 try:
     import threading
@@ -281,7 +291,7 @@ except ImportError:
 
 def openlog(opt, default):
     if opt and opt != '-':
-        return open(opt, 'a')
+        return open(opt, 'ab')
     return default
 
 class MercurialHTTPServer(_mixin, httpservermod.httpserver, object):
@@ -309,6 +319,8 @@ class MercurialHTTPServer(_mixin, httpservermod.httpserver, object):
 
         self.addr, self.port = self.socket.getsockname()[0:2]
         self.fqaddr = socket.getfqdn(addr[0])
+
+        self.serverheader = ui.config('web', 'server-header')
 
 class IPv6HTTPServer(MercurialHTTPServer):
     address_family = getattr(socket, 'AF_INET6', None)

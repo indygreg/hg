@@ -103,7 +103,11 @@ from mercurial import (
     match,
     pycompat,
     registrar,
+    scmutil,
     util,
+)
+from mercurial.utils import (
+    stringutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -133,7 +137,7 @@ def inconsistenteol(data):
 
 def tolf(s, params, ui, **kwargs):
     """Filter to convert to LF EOLs."""
-    if util.binary(s):
+    if stringutil.binary(s):
         return s
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
@@ -144,7 +148,7 @@ def tolf(s, params, ui, **kwargs):
 
 def tocrlf(s, params, ui, **kwargs):
     """Filter to convert to CRLF EOLs."""
-    if util.binary(s):
+    if stringutil.binary(s):
         return s
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
@@ -222,7 +226,7 @@ class eolfile(object):
                 data = ctx[f].data()
                 if (target == "to-lf" and "\r\n" in data
                     or target == "to-crlf" and singlelf.search(data)):
-                    failed.append((f, target, str(ctx)))
+                    failed.append((f, target, bytes(ctx)))
                 break
         return failed
 
@@ -296,7 +300,8 @@ def checkheadshook(ui, repo, node, hooktype, **kwargs):
 hook = checkheadshook
 
 def preupdate(ui, repo, hooktype, parent1, parent2):
-    repo.loadeol([parent1])
+    p1node = scmutil.resolvehexnodeidprefix(repo, parent1)
+    repo.loadeol([p1node])
     return False
 
 def uisetup(ui):
@@ -403,7 +408,7 @@ def reposetup(ui, repo):
                 if fctx is None:
                     continue
                 data = fctx.data()
-                if util.binary(data):
+                if stringutil.binary(data):
                     # We should not abort here, since the user should
                     # be able to say "** = native" to automatically
                     # have all non-binary files taken care of.

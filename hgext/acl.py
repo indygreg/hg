@@ -193,8 +193,6 @@ In the examples below, we will:
 
 from __future__ import absolute_import
 
-import getpass
-
 from mercurial.i18n import _
 from mercurial import (
     error,
@@ -202,6 +200,9 @@ from mercurial import (
     match,
     registrar,
     util,
+)
+from mercurial.utils import (
+    procutil,
 )
 
 urlreq = util.urlreq
@@ -334,13 +335,13 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
         return
 
     user = None
-    if source == 'serve' and 'url' in kwargs:
-        url = kwargs['url'].split(':')
+    if source == 'serve' and r'url' in kwargs:
+        url = kwargs[r'url'].split(':')
         if url[0] == 'remote' and url[1].startswith('http'):
             user = urlreq.unquote(url[3])
 
     if user is None:
-        user = getpass.getuser()
+        user = procutil.getuser()
 
     ui.debug('acl: checking access for user "%s"\n' % user)
 
@@ -355,7 +356,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
     allow = buildmatch(ui, repo, user, 'acl.allow')
     deny = buildmatch(ui, repo, user, 'acl.deny')
 
-    for rev in xrange(repo[node], len(repo)):
+    for rev in xrange(repo[node].rev(), len(repo)):
         ctx = repo[rev]
         branch = ctx.branch()
         if denybranches and denybranches(branch):

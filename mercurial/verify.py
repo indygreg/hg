@@ -47,11 +47,12 @@ class verifier(object):
         self.havecl = len(repo.changelog) > 0
         self.havemf = len(repo.manifestlog._revlog) > 0
         self.revlogv1 = repo.changelog.version != revlog.REVLOGV0
-        self.lrugetctx = util.lrucachefunc(repo.changectx)
+        self.lrugetctx = util.lrucachefunc(repo.__getitem__)
         self.refersmf = False
         self.fncachewarned = False
         # developer config: verify.skipflags
         self.skipflags = repo.ui.configint('verify', 'skipflags')
+        self.warnorphanstorefiles = True
 
     def warn(self, msg):
         self.ui.warn(msg + "\n")
@@ -60,6 +61,7 @@ class verifier(object):
     def err(self, linkrev, msg, filename=None):
         if linkrev is not None:
             self.badrevs.add(linkrev)
+            linkrev = "%d" % linkrev
         else:
             linkrev = '?'
         msg = "%s: %s" % (linkrev, msg)
@@ -69,9 +71,10 @@ class verifier(object):
         self.errors += 1
 
     def exc(self, linkrev, msg, inst, filename=None):
-        if not str(inst):
-            inst = repr(inst)
-        self.err(linkrev, "%s: %s" % (msg, inst), filename)
+        fmsg = pycompat.bytestr(inst)
+        if not fmsg:
+            fmsg = pycompat.byterepr(inst)
+        self.err(linkrev, "%s: %s" % (msg, fmsg), filename)
 
     def checklog(self, obj, name, linkrev):
         if not len(obj) and (self.havecl or self.havemf):
@@ -292,8 +295,9 @@ class verifier(object):
 
         if not dir and subdirnodes:
             ui.progress(_('checking'), None)
-            for f in sorted(storefiles):
-                self.warn(_("warning: orphan revlog '%s'") % f)
+            if self.warnorphanstorefiles:
+                for f in sorted(storefiles):
+                    self.warn(_("warning: orphan data file '%s'") % f)
 
         return filenodes
 
@@ -367,8 +371,10 @@ class verifier(object):
                 try:
                     storefiles.remove(ff)
                 except KeyError:
-                    self.warn(_(" warning: revlog '%s' not in fncache!") % ff)
-                    self.fncachewarned = True
+                    if self.warnorphanstorefiles:
+                        self.warn(_(" warning: revlog '%s' not in fncache!") %
+                                  ff)
+                        self.fncachewarned = True
 
             self.checklog(fl, f, lr)
             seen = {}
@@ -455,12 +461,7 @@ class verifier(object):
                     if rp:
                         if lr is not None and ui.verbose:
                             ctx = lrugetctx(lr)
-                            found = False
-                            for pctx in ctx.parents():
-                                if rp[0] in pctx:
-                                    found = True
-                                    break
-                            if not found:
+                            if not any(rp[0] in pctx for pctx in ctx.parents()):
                                 self.warn(_("warning: copy source of '%s' not"
                                             " in parents of %s") % (f, ctx))
                         fl2 = repo.file(rp[0])
@@ -484,7 +485,8 @@ class verifier(object):
                              short(node), f)
         ui.progress(_('checking'), None)
 
-        for f in sorted(storefiles):
-            self.warn(_("warning: orphan revlog '%s'") % f)
+        if self.warnorphanstorefiles:
+            for f in sorted(storefiles):
+                self.warn(_("warning: orphan data file '%s'") % f)
 
         return len(files), revisions

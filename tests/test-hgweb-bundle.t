@@ -1,4 +1,4 @@
-#require serve
+#require serve repobundlerepo
 
   $ hg init server
   $ cd server

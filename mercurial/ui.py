@@ -37,6 +37,11 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    dateutil,
+    procutil,
+    stringutil,
+)
 
 urlreq = util.urlreq
 
@@ -45,7 +50,7 @@ _keepalnum = ''.join(c for c in map(pycompat.bytechr, range(256))
                      if not c.isalnum())
 
 # The config knobs that will be altered (if unset) by ui.tweakdefaults.
-tweakrc = """
+tweakrc = b"""
 [ui]
 # The rollback command is dangerous. As a rule, don't use it.
 rollback = False
@@ -59,6 +64,10 @@ interface = curses
 status.relative = yes
 # Refuse to perform an `hg update` that would cause a file content merge
 update.check = noconflict
+# Show conflicts information in `hg status`
+status.verbose = True
+# Skip the bisect state in conflicts information in `hg status`
+status.skipstates = bisect
 
 [diff]
 git = 1
@@ -148,14 +157,10 @@ b"""# example system-wide hg config (see 'hg help config' for more info)
 }
 
 def _maybestrurl(maybebytes):
-    if maybebytes is None:
-        return None
-    return pycompat.strurl(maybebytes)
+    return util.rapply(pycompat.strurl, maybebytes)
 
 def _maybebytesurl(maybestr):
-    if maybestr is None:
-        return None
-    return pycompat.bytesurl(maybestr)
+    return util.rapply(pycompat.bytesurl, maybestr)
 
 class httppasswordmgrdbproxy(object):
     """Delays loading urllib2 until it's needed."""
@@ -168,18 +173,14 @@ class httppasswordmgrdbproxy(object):
         return self._mgr
 
     def add_password(self, realm, uris, user, passwd):
-        if isinstance(uris, tuple):
-            uris = tuple(_maybestrurl(u) for u in uris)
-        else:
-            uris = _maybestrurl(uris)
         return self._get_mgr().add_password(
-            _maybestrurl(realm), uris,
+            _maybestrurl(realm), _maybestrurl(uris),
             _maybestrurl(user), _maybestrurl(passwd))
 
     def find_user_password(self, realm, uri):
-        return tuple(_maybebytesurl(v) for v in
-                     self._get_mgr().find_user_password(_maybestrurl(realm),
-                                                        _maybestrurl(uri)))
+        mgr = self._get_mgr()
+        return _maybebytesurl(mgr.find_user_password(_maybestrurl(realm),
+                                                     _maybestrurl(uri)))
 
 def _catchterm(*args):
     raise error.SignalInterrupt
@@ -250,9 +251,9 @@ class ui(object):
             self.httppasswordmgrdb = src.httppasswordmgrdb
             self._blockedtimes = src._blockedtimes
         else:
-            self.fout = util.stdout
-            self.ferr = util.stderr
-            self.fin = util.stdin
+            self.fout = procutil.stdout
+            self.ferr = procutil.stderr
+            self.fin = procutil.stdin
             self.pageractive = False
             self._disablepager = False
             self._tweaked = False
@@ -374,7 +375,7 @@ class ui(object):
         except error.ConfigError as inst:
             if trusted:
                 raise
-            self.warn(_("ignored: %s\n") % str(inst))
+            self.warn(_("ignored: %s\n") % stringutil.forcebytestr(inst))
 
         if self.plain():
             for k in ('debug', 'fallbackencoding', 'quiet', 'slash',
@@ -506,7 +507,7 @@ class ui(object):
               and default != itemdefault):
             msg = ("specifying a mismatched default value for a registered "
                    "config item: '%s.%s' '%s'")
-            msg %= (section, name, default)
+            msg %= (section, name, pycompat.bytestr(default))
             self.develwarn(msg, 2, 'warn-config-default')
 
         for s, n in alternates:
@@ -594,7 +595,7 @@ class ui(object):
             return default
         if isinstance(v, bool):
             return v
-        b = util.parsebool(v)
+        b = stringutil.parsebool(v)
         if b is None:
             raise error.ConfigError(_("%s.%s is not a boolean ('%s')")
                                     % (section, name, v))
@@ -722,7 +723,7 @@ class ui(object):
         (0, 0)
         """
         if self.config(section, name, default, untrusted):
-            return self.configwith(util.parsedate, section, name, default,
+            return self.configwith(dateutil.parsedate, section, name, default,
                                    'date', untrusted)
         if default is _unset:
             return None
@@ -738,11 +739,7 @@ class ui(object):
     def configitems(self, section, untrusted=False, ignoresub=False):
         items = self._data(untrusted).items(section)
         if ignoresub:
-            newitems = {}
-            for k, v in items:
-                if ':' not in k:
-                    newitems[k] = v
-            items = newitems.items()
+            items = [i for i in items if ':' not in i[0]]
         if self.debugflag and not untrusted and self._reportuntrusted:
             for k, v in self._ucfg.items(section):
                 if self._tcfg.get(section, k) != v:
@@ -807,7 +804,8 @@ class ui(object):
             user = self.prompt(_("enter a commit username:"), default=None)
         if user is None and not self.interactive():
             try:
-                user = '%s@%s' % (util.getuser(), socket.getfqdn())
+                user = '%s@%s' % (procutil.getuser(),
+                                  encoding.strtolocal(socket.getfqdn()))
                 self.warn(_("no username found, using '%s' instead\n") % user)
             except KeyError:
                 pass
@@ -816,14 +814,14 @@ class ui(object):
                              hint=_("use 'hg config --edit' "
                                     'to set your username'))
         if "\n" in user:
-            raise error.Abort(_("username %s contains a newline\n")
-                              % repr(user))
+            raise error.Abort(_("username %r contains a newline\n")
+                              % pycompat.bytestr(user))
         return user
 
     def shortuser(self, user):
         """Return a short representation of a user name or email address."""
         if not self.verbose:
-            user = util.shortuser(user)
+            user = stringutil.shortuser(user)
         return user
 
     def expandpath(self, loc, default=None):
@@ -878,6 +876,17 @@ class ui(object):
 
         return "".join(self._buffers.pop())
 
+    def canwritewithoutlabels(self):
+        '''check if write skips the label'''
+        if self._buffers and not self._bufferapplylabels:
+            return True
+        return self._colormode is None
+
+    def canbatchlabeledwrites(self):
+        '''check if write calls with labels are batchable'''
+        # Windows color printing is special, see ``write``.
+        return self._colormode != 'win32'
+
     def write(self, *args, **opts):
         '''write args to output
 
@@ -894,13 +903,17 @@ class ui(object):
         "cmdname.type" is recommended. For example, status issues
         a label of "status.modified" for modified files.
         '''
-        if self._buffers and not opts.get(r'prompt', False):
+        if self._buffers:
             if self._bufferapplylabels:
                 label = opts.get(r'label', '')
                 self._buffers[-1].extend(self.label(a, label) for a in args)
             else:
                 self._buffers[-1].extend(args)
-        elif self._colormode == 'win32':
+        else:
+            self._writenobuf(*args, **opts)
+
+    def _writenobuf(self, *args, **opts):
+        if self._colormode == 'win32':
             # windows color printing is its own can of crab, defer to
             # the color module and that is it.
             color.win32print(self, self._write, *args, **opts)
@@ -916,8 +929,7 @@ class ui(object):
         # opencode timeblockedsection because this is a critical path
         starttime = util.timer()
         try:
-            for a in msgs:
-                self.fout.write(a)
+            self.fout.write(''.join(msgs))
         except IOError as err:
             raise error.StdioError(err)
         finally:
@@ -976,7 +988,7 @@ class ui(object):
     def _isatty(self, fh):
         if self.configbool('ui', 'nontty'):
             return False
-        return util.isatty(fh)
+        return procutil.isatty(fh)
 
     def disablepager(self):
         self._disablepager = True
@@ -1072,7 +1084,7 @@ class ui(object):
             # user so we can also get sane bad PAGER behavior.  MSYS has
             # `more.exe`, so do a cmd.exe style resolution of the executable to
             # determine which one to use.
-            fullcmd = util.findexe(command)
+            fullcmd = procutil.findexe(command)
             if not fullcmd:
                 self.warn(_("missing pager command '%s', skipping pager\n")
                           % command)
@@ -1083,9 +1095,9 @@ class ui(object):
         try:
             pager = subprocess.Popen(
                 command, shell=shell, bufsize=-1,
-                close_fds=util.closefds, stdin=subprocess.PIPE,
-                stdout=util.stdout, stderr=util.stderr,
-                env=util.shellenviron(env))
+                close_fds=procutil.closefds, stdin=subprocess.PIPE,
+                stdout=procutil.stdout, stderr=procutil.stderr,
+                env=procutil.shellenviron(env))
         except OSError as e:
             if e.errno == errno.ENOENT and not shell:
                 self.warn(_("missing pager command '%s', skipping pager\n")
@@ -1094,20 +1106,20 @@ class ui(object):
             raise
 
         # back up original file descriptors
-        stdoutfd = os.dup(util.stdout.fileno())
-        stderrfd = os.dup(util.stderr.fileno())
+        stdoutfd = os.dup(procutil.stdout.fileno())
+        stderrfd = os.dup(procutil.stderr.fileno())
 
-        os.dup2(pager.stdin.fileno(), util.stdout.fileno())
-        if self._isatty(util.stderr):
-            os.dup2(pager.stdin.fileno(), util.stderr.fileno())
+        os.dup2(pager.stdin.fileno(), procutil.stdout.fileno())
+        if self._isatty(procutil.stderr):
+            os.dup2(pager.stdin.fileno(), procutil.stderr.fileno())
 
         @self.atexit
         def killpager():
             if util.safehasattr(signal, "SIGINT"):
                 signal.signal(signal.SIGINT, signal.SIG_IGN)
             # restore original fds, closing pager.stdin copies in the process
-            os.dup2(stdoutfd, util.stdout.fileno())
-            os.dup2(stderrfd, util.stderr.fileno())
+            os.dup2(stdoutfd, procutil.stdout.fileno())
+            os.dup2(stderrfd, procutil.stderr.fileno())
             pager.stdin.close()
             pager.wait()
 
@@ -1255,8 +1267,15 @@ class ui(object):
 
         return i
 
-    def _readline(self, prompt=''):
-        if self._isatty(self.fin):
+    def _readline(self):
+        # Replacing stdin/stdout temporarily is a hard problem on Python 3
+        # because they have to be text streams with *no buffering*. Instead,
+        # we use rawinput() only if call_readline() will be invoked by
+        # PyOS_Readline(), so no I/O will be made at Python layer.
+        usereadline = (self._isatty(self.fin) and self._isatty(self.fout)
+                       and procutil.isstdin(self.fin)
+                       and procutil.isstdout(self.fout))
+        if usereadline:
             try:
                 # magically add command line editing support, where
                 # available
@@ -1265,22 +1284,25 @@ class ui(object):
                 readline.read_history_file
                 # windows sometimes raises something other than ImportError
             except Exception:
-                pass
-
-        # call write() so output goes through subclassed implementation
-        # e.g. color extension on Windows
-        self.write(prompt, prompt=True)
-        self.flush()
+                usereadline = False
 
         # prompt ' ' must exist; otherwise readline may delete entire line
         # - http://bugs.python.org/issue12833
         with self.timeblockedsection('stdio'):
-            line = util.bytesinput(self.fin, self.fout, r' ')
+            if usereadline:
+                line = encoding.strtolocal(pycompat.rawinput(r' '))
+                # When stdin is in binary mode on Windows, it can cause
+                # raw_input() to emit an extra trailing carriage return
+                if pycompat.oslinesep == b'\r\n' and line.endswith(b'\r'):
+                    line = line[:-1]
+            else:
+                self.fout.write(b' ')
+                self.fout.flush()
+                line = self.fin.readline()
+                if not line:
+                    raise EOFError
+                line = line.rstrip(pycompat.oslinesep)
 
-        # When stdin is in binary mode on Windows, it can cause
-        # raw_input() to emit an extra trailing carriage return
-        if pycompat.oslinesep == '\r\n' and line and line[-1] == '\r':
-            line = line[:-1]
         return line
 
     def prompt(self, msg, default="y"):
@@ -1290,8 +1312,10 @@ class ui(object):
         if not self.interactive():
             self.write(msg, ' ', default or '', "\n")
             return default
+        self._writenobuf(msg, label='ui.prompt')
+        self.flush()
         try:
-            r = self._readline(self.label(msg, 'ui.prompt'))
+            r = self._readline()
             if not r:
                 r = default
             if self.configbool('ui', 'promptecho'):
@@ -1477,7 +1501,7 @@ class ui(object):
             rc = self._runsystem(cmd, environ=environ, cwd=cwd, out=out)
         if rc and onerr:
             errmsg = '%s %s' % (os.path.basename(cmd.split(None, 1)[0]),
-                                util.explainexit(rc)[0])
+                                procutil.explainexit(rc))
             if errprefix:
                 errmsg = '%s: %s' % (errprefix, errmsg)
             raise onerr(errmsg)
@@ -1486,7 +1510,7 @@ class ui(object):
     def _runsystem(self, cmd, environ, cwd, out):
         """actually execute the given shell command (can be overridden by
         extensions like chg)"""
-        return util.system(cmd, environ=environ, cwd=cwd, out=out)
+        return procutil.system(cmd, environ=environ, cwd=cwd, out=out)
 
     def traceback(self, exc=None, force=False):
         '''print exception traceback if traceback printing enabled or forced.
@@ -1509,11 +1533,7 @@ class ui(object):
                                ''.join(exconly))
             else:
                 output = traceback.format_exception(exc[0], exc[1], exc[2])
-                data = r''.join(output)
-                if pycompat.ispy3:
-                    enc = pycompat.sysstr(encoding.encoding)
-                    data = data.encode(enc, errors=r'replace')
-                self.write_err(data)
+                self.write_err(encoding.strtolocal(r''.join(output)))
         return self.tracebackflag or force
 
     def geteditor(self):
@@ -1621,13 +1641,15 @@ class ui(object):
         else:
             curframe = inspect.currentframe()
             calframe = inspect.getouterframes(curframe, 2)
-            self.write_err('%s at: %s:%s (%s)\n'
-                           % ((msg,) + calframe[stacklevel][1:4]))
-            self.log('develwarn', '%s at: %s:%s (%s)\n',
-                     msg, *calframe[stacklevel][1:4])
+            fname, lineno, fmsg = calframe[stacklevel][1:4]
+            fname, fmsg = pycompat.sysbytes(fname), pycompat.sysbytes(fmsg)
+            self.write_err('%s at: %s:%d (%s)\n'
+                           % (msg, fname, lineno, fmsg))
+            self.log('develwarn', '%s at: %s:%d (%s)\n',
+                     msg, fname, lineno, fmsg)
             curframe = calframe = None  # avoid cycles
 
-    def deprecwarn(self, msg, version):
+    def deprecwarn(self, msg, version, stacklevel=2):
         """issue a deprecation warning
 
         - msg: message explaining what is deprecated and how to upgrade,
@@ -1638,7 +1660,7 @@ class ui(object):
             return
         msg += ("\n(compatibility will be dropped after Mercurial-%s,"
                 " update your code.)") % version
-        self.develwarn(msg, stacklevel=2, config='deprec-warn')
+        self.develwarn(msg, stacklevel=stacklevel, config='deprec-warn')
 
     def exportableenviron(self):
         """The environment variables that are safe to export, e.g. through
@@ -1755,7 +1777,7 @@ def pushurlpathoption(ui, path, value):
                   'ignoring)\n') % path.name)
         u.fragment = None
 
-    return str(u)
+    return bytes(u)
 
 @pathsuboption('pushrev', 'pushrev')
 def pushrevpathoption(ui, path, value):

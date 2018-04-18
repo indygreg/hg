@@ -44,11 +44,6 @@ except ImportError:
 if r'__pypy__' in sys.builtin_module_names:
     policy = b'cffi'
 
-# Our C extensions aren't yet compatible with Python 3. So use pure Python
-# on Python 3 for now.
-if sys.version_info[0] >= 3:
-    policy = b'py'
-
 # Environment variable can always force settings.
 if sys.version_info[0] >= 3:
     if r'HGMODULEPOLICY' in os.environ:
@@ -71,10 +66,9 @@ def _importfrom(pkgname, modname):
 # keep in sync with "version" in C modules
 _cextversions = {
     (r'cext', r'base85'): 1,
-    (r'cext', r'bdiff'): 1,
-    (r'cext', r'diffhelpers'): 1,
+    (r'cext', r'bdiff'): 3,
     (r'cext', r'mpatch'): 1,
-    (r'cext', r'osutil'): 3,
+    (r'cext', r'osutil'): 4,
     (r'cext', r'parsers'): 4,
 }
 
@@ -83,7 +77,6 @@ _modredirects = {
     (r'cext', r'charencode'): (r'cext', r'parsers'),
     (r'cffi', r'base85'): (r'pure', r'base85'),
     (r'cffi', r'charencode'): (r'pure', r'charencode'),
-    (r'cffi', r'diffhelpers'): (r'pure', r'diffhelpers'),
     (r'cffi', r'parsers'): (r'pure', r'parsers'),
 }
 

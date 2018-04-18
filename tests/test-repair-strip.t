@@ -1,4 +1,4 @@
-#require unix-permissions no-root
+#require unix-permissions no-root reporevlogstore
 
   $ cat > $TESTTMP/dumpjournal.py <<EOF
   > import sys
@@ -62,7 +62,7 @@
    b@?: rev 1 points to nonexistent changeset 2
    (expected 1)
    b@?: 736c29771fba not in manifests
-  warning: orphan revlog 'data/c.i'
+  warning: orphan data file 'data/c.i'
   2 files, 2 changesets, 3 total revisions
   2 warnings encountered!
   2 integrity errors encountered!

@@ -20,6 +20,9 @@ from . import (
     scmutil,
     util,
 )
+from .utils import (
+    stringutil,
+)
 
 elements = {
     # token-type: binding-strength, primary, prefix, infix, suffix
@@ -392,11 +395,10 @@ def sizematcher(x):
     elif expr.startswith(">"):
         a = util.sizetoint(expr[1:])
         return lambda x: x > a
-    elif expr[0].isdigit or expr[0] == '.':
+    else:
         a = util.sizetoint(expr)
         b = _sizetomax(expr)
         return lambda x: x >= a and x <= b
-    raise error.ParseError(_("couldn't parse size: %s") % expr)
 
 @predicate('size(expression)', callexisting=True)
 def size(mctx, x):
@@ -446,7 +448,7 @@ def eol(mctx, x):
     s = []
     for f in mctx.existing():
         d = mctx.ctx[f].data()
-        if util.binary(d):
+        if stringutil.binary(d):
             continue
         if (enc == 'dos' or enc == 'win') and '\r\n' in d:
             s.append(f)
@@ -511,9 +513,7 @@ def status(mctx, x):
     revspec = getstring(r, reverr)
     if not revspec:
         raise error.ParseError(reverr)
-    basenode, node = scmutil.revpair(repo, [baserevspec, revspec])
-    basectx = repo[basenode]
-    ctx = repo[node]
+    basectx, ctx = scmutil.revpair(repo, [baserevspec, revspec])
     return getset(mctx.switch(ctx, _buildstatus(ctx, x, basectx=basectx)), x)
 
 @predicate('subrepo([pattern])')

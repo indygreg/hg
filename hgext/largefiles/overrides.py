@@ -19,6 +19,7 @@ from mercurial import (
     cmdutil,
     error,
     hg,
+    logcmdutil,
     match as matchmod,
     pathutil,
     pycompat,
@@ -41,7 +42,7 @@ def composelargefilematcher(match, manifest):
     matcher'''
     m = copy.copy(match)
     lfile = lambda f: lfutil.standin(f) in manifest
-    m._files = filter(lfile, m._files)
+    m._files = [lf for lf in m._files if lfile(lf)]
     m._fileset = set(m._files)
     m.always = lambda: False
     origmatchfn = m.matchfn
@@ -56,7 +57,7 @@ def composenormalfilematcher(match, manifest, exclude=None):
     m = copy.copy(match)
     notlfile = lambda f: not (lfutil.isstandin(f) or lfutil.standin(f) in
             manifest or f in excluded)
-    m._files = filter(notlfile, m._files)
+    m._files = [lf for lf in m._files if notlfile(lf)]
     m._fileset = set(m._files)
     m.always = lambda: False
     origmatchfn = m.matchfn
@@ -177,7 +178,7 @@ def addlargefiles(ui, repo, isaddremove, matcher, **opts):
         added = [f for f in lfnames if f not in bad]
     return added, bad
 
-def removelargefiles(ui, repo, isaddremove, matcher, **opts):
+def removelargefiles(ui, repo, isaddremove, matcher, dryrun, **opts):
     after = opts.get(r'after')
     m = composelargefilematcher(matcher, repo[None].manifest())
     try:
@@ -222,11 +223,11 @@ def removelargefiles(ui, repo, isaddremove, matcher, **opts):
                     name = m.rel(f)
                 ui.status(_('removing %s\n') % name)
 
-            if not opts.get(r'dry_run'):
+            if not dryrun:
                 if not after:
                     repo.wvfs.unlinkpath(f, ignoremissing=True)
 
-        if opts.get(r'dry_run'):
+        if dryrun:
             return result
 
         remove = [lfutil.standin(f) for f in remove]
@@ -270,10 +271,12 @@ def cmdutiladd(orig, ui, repo, matcher, prefix, explicitonly, **opts):
     bad.extend(f for f in lbad)
     return bad
 
-def cmdutilremove(orig, ui, repo, matcher, prefix, after, force, subrepos):
+def cmdutilremove(orig, ui, repo, matcher, prefix, after, force, subrepos,
+                  dryrun):
     normalmatcher = composenormalfilematcher(matcher, repo[None].manifest())
-    result = orig(ui, repo, normalmatcher, prefix, after, force, subrepos)
-    return removelargefiles(ui, repo, False, matcher, after=after,
+    result = orig(ui, repo, normalmatcher, prefix, after, force, subrepos,
+                  dryrun)
+    return removelargefiles(ui, repo, False, matcher, dryrun, after=after,
                             force=force) or result
 
 def overridestatusfn(orig, repo, rev2, **opts):
@@ -388,20 +391,20 @@ def overridelog(orig, ui, repo, *pats, **opts):
     # (2) to determine what files to print out diffs for.
     # The magic matchandpats override should be used for case (1) but not for
     # case (2).
-    def overridemakelogfilematcher(repo, pats, opts, badfn=None):
+    def overridemakefilematcher(repo, pats, opts, badfn=None):
         wctx = repo[None]
         match, pats = oldmatchandpats(wctx, pats, opts, badfn=badfn)
-        return lambda rev: match
+        return lambda ctx: match
 
     oldmatchandpats = installmatchandpatsfn(overridematchandpats)
-    oldmakelogfilematcher = cmdutil._makenofollowlogfilematcher
-    setattr(cmdutil, '_makenofollowlogfilematcher', overridemakelogfilematcher)
+    oldmakefilematcher = logcmdutil._makenofollowfilematcher
+    setattr(logcmdutil, '_makenofollowfilematcher', overridemakefilematcher)
 
     try:
         return orig(ui, repo, *pats, **opts)
     finally:
         restorematchandpatsfn()
-        setattr(cmdutil, '_makenofollowlogfilematcher', oldmakelogfilematcher)
+        setattr(logcmdutil, '_makenofollowfilematcher', oldmakefilematcher)
 
 def overrideverify(orig, ui, repo, *pats, **opts):
     large = opts.pop(r'large', False)
@@ -597,7 +600,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
     try:
         result = orig(ui, repo, pats, opts, rename)
     except error.Abort as e:
-        if str(e) != _('no files to copy'):
+        if pycompat.bytestr(e) != _('no files to copy'):
             raise e
         else:
             nonormalfiles = True
@@ -666,7 +669,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
         try:
             origcopyfile = util.copyfile
             copiedfiles = []
-            def overridecopyfile(src, dest):
+            def overridecopyfile(src, dest, *args, **kwargs):
                 if (lfutil.shortname in src and
                     dest.startswith(repo.wjoin(lfutil.shortname))):
                     destlfile = dest.replace(lfutil.shortname, '')
@@ -674,7 +677,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                         raise IOError('',
                             _('destination largefile already exists'))
                 copiedfiles.append((src, dest))
-                origcopyfile(src, dest)
+                origcopyfile(src, dest, *args, **kwargs)
 
             util.copyfile = overridecopyfile
             result += orig(ui, repo, listpats, opts, rename)
@@ -704,7 +707,7 @@ def overridecopy(orig, ui, repo, pats, opts, rename=False):
                 lfdirstate.add(destlfile)
         lfdirstate.write()
     except error.Abort as e:
-        if str(e) != _('no files to copy'):
+        if pycompat.bytestr(e) != _('no files to copy'):
             raise e
         else:
             nolfiles = True
@@ -811,7 +814,7 @@ def overridepull(orig, ui, repo, source=None, **opts):
         repo.firstpulled = revsprepull # for pulled() revset expression
         try:
             for rev in scmutil.revrange(repo, lfrevs):
-                ui.note(_('pulling largefiles for revision %s\n') % rev)
+                ui.note(_('pulling largefiles for revision %d\n') % rev)
                 (cached, missing) = lfcommands.cachelfiles(ui, repo, rev)
                 numcached += len(cached)
         finally:
@@ -823,7 +826,7 @@ def overridepush(orig, ui, repo, *args, **kwargs):
     """Override push command and store --lfrev parameters in opargs"""
     lfrevs = kwargs.pop(r'lfrev', None)
     if lfrevs:
-        opargs = kwargs.setdefault('opargs', {})
+        opargs = kwargs.setdefault(r'opargs', {})
         opargs['lfrevs'] = scmutil.revrange(repo, lfrevs)
     return orig(ui, repo, *args, **kwargs)
 
@@ -894,7 +897,7 @@ def hgclone(orig, ui, opts, *args, **kwargs):
         # Caching is implicitly limited to 'rev' option, since the dest repo was
         # truncated at that point.  The user may expect a download count with
         # this option, so attempt whether or not this is a largefile repo.
-        if opts.get(r'all_largefiles'):
+        if opts.get('all_largefiles'):
             success, missing = lfcommands.downloadlfiles(ui, repo, None)
 
             if missing != 0:
@@ -931,11 +934,11 @@ def overridearchivecmd(orig, ui, repo, dest, **opts):
     finally:
         repo.unfiltered().lfstatus = False
 
-def hgwebarchive(orig, web, req, tmpl):
+def hgwebarchive(orig, web):
     web.repo.lfstatus = True
 
     try:
-        return orig(web, req, tmpl)
+        return orig(web)
     finally:
         web.repo.lfstatus = False
 
@@ -1076,9 +1079,11 @@ def postcommitstatus(orig, repo, *args, **kwargs):
     finally:
         repo.lfstatus = False
 
-def cmdutilforget(orig, ui, repo, match, prefix, explicitonly):
+def cmdutilforget(orig, ui, repo, match, prefix, explicitonly, dryrun,
+                  interactive):
     normalmatcher = composenormalfilematcher(match, repo[None].manifest())
-    bad, forgot = orig(ui, repo, normalmatcher, prefix, explicitonly)
+    bad, forgot = orig(ui, repo, normalmatcher, prefix, explicitonly, dryrun,
+                       interactive)
     m = composelargefilematcher(match, repo[None].manifest())
 
     try:
@@ -1211,12 +1216,11 @@ def overridesummary(orig, ui, repo, *pats, **opts):
     finally:
         repo.lfstatus = False
 
-def scmutiladdremove(orig, repo, matcher, prefix, opts=None, dry_run=None,
-                     similarity=None):
+def scmutiladdremove(orig, repo, matcher, prefix, opts=None):
     if opts is None:
         opts = {}
     if not lfutil.islfilesrepo(repo):
-        return orig(repo, matcher, prefix, opts, dry_run, similarity)
+        return orig(repo, matcher, prefix, opts)
     # Get the list of missing largefiles so we can remove them
     lfdirstate = lfutil.openlfdirstate(repo.ui, repo)
     unsure, s = lfdirstate.status(matchmod.always(repo.root, repo.getcwd()),
@@ -1237,15 +1241,17 @@ def scmutiladdremove(orig, repo, matcher, prefix, opts=None, dry_run=None,
         matchfn = m.matchfn
         m.matchfn = lambda f: f in s.deleted and matchfn(f)
 
-        removelargefiles(repo.ui, repo, True, m, **opts)
+        removelargefiles(repo.ui, repo, True, m, opts.get('dry_run'),
+                         **pycompat.strkwargs(opts))
     # Call into the normal add code, and any files that *should* be added as
     # largefiles will be
-    added, bad = addlargefiles(repo.ui, repo, True, matcher, **opts)
+    added, bad = addlargefiles(repo.ui, repo, True, matcher,
+                               **pycompat.strkwargs(opts))
     # Now that we've handled largefiles, hand off to the original addremove
     # function to take care of the rest.  Make sure it doesn't do anything with
     # largefiles by passing a matcher that will ignore them.
     matcher = composenormalfilematcher(matcher, repo[None].manifest(), added)
-    return orig(repo, matcher, prefix, opts, dry_run, similarity)
+    return orig(repo, matcher, prefix, opts)
 
 # Calling purge with --all will cause the largefiles to be deleted.
 # Override repo.status to prevent this from happening.
@@ -1358,8 +1364,7 @@ def overridecat(orig, ui, repo, file1, *pats, **opts):
     m.visitdir = lfvisitdirfn
 
     for f in ctx.walk(m):
-        with cmdutil.makefileobj(repo, opts.get('output'), ctx.node(),
-                                 pathname=f) as fp:
+        with cmdutil.makefileobj(ctx, opts.get('output'), pathname=f) as fp:
             lf = lfutil.splitstandin(f)
             if lf is None or origmatchfn(f):
                 # duplicating unreachable code from commands.cat

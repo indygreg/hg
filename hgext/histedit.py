@@ -209,6 +209,9 @@ from mercurial import (
     scmutil,
     util,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 pickle = util.pickle
 release = lock.release
@@ -221,7 +224,7 @@ configitem('experimental', 'histedit.autoverb',
     default=False,
 )
 configitem('histedit', 'defaultrev',
-    default=configitem.dynamicdefault,
+    default=None,
 )
 configitem('histedit', 'dropmissing',
     default=False,
@@ -344,7 +347,7 @@ class histeditstate(object):
         fp.write('v1\n')
         fp.write('%s\n' % node.hex(self.parentctxnode))
         fp.write('%s\n' % node.hex(self.topmost))
-        fp.write('%s\n' % self.keep)
+        fp.write('%s\n' % ('True' if self.keep else 'False'))
         fp.write('%d\n' % len(self.actions))
         for action in self.actions:
             fp.write('%s\n' % action.tostate())
@@ -422,24 +425,28 @@ class histeditaction(object):
     def fromrule(cls, state, rule):
         """Parses the given rule, returning an instance of the histeditaction.
         """
-        rulehash = rule.strip().split(' ', 1)[0]
+        ruleid = rule.strip().split(' ', 1)[0]
+        # ruleid can be anything from rev numbers, hashes, "bookmarks" etc
+        # Check for validation of rule ids and get the rulehash
         try:
-            rev = node.bin(rulehash)
+            rev = node.bin(ruleid)
         except TypeError:
-            raise error.ParseError("invalid changeset %s" % rulehash)
+            try:
+                _ctx = scmutil.revsingle(state.repo, ruleid)
+                rulehash = _ctx.hex()
+                rev = node.bin(rulehash)
+            except error.RepoLookupError:
+                raise error.ParseError(_("invalid changeset %s") % ruleid)
         return cls(state, rev)
 
     def verify(self, prev, expected, seen):
         """ Verifies semantic correctness of the rule"""
         repo = self.repo
         ha = node.hex(self.node)
-        try:
-            self.node = repo[ha].node()
-        except error.RepoError:
-            raise error.ParseError(_('unknown changeset %s listed')
-                              % ha[:12])
-        if self.node is not None:
-            self._verifynodeconstraints(prev, expected, seen)
+        self.node = scmutil.resolvehexnodeidprefix(repo, ha)
+        if self.node is None:
+            raise error.ParseError(_('unknown changeset %s listed') % ha[:12])
+        self._verifynodeconstraints(prev, expected, seen)
 
     def _verifynodeconstraints(self, prev, expected, seen):
         # by default command need a node in the edited list
@@ -465,7 +472,7 @@ class histeditaction(object):
         # (the 5 more are left for verb)
         maxlen = self.repo.ui.configint('histedit', 'linelen')
         maxlen = max(maxlen, 22) # avoid truncating hash
-        return util.ellipsis(line, maxlen)
+        return stringutil.ellipsis(line, maxlen)
 
     def tostate(self):
         """Print an action in format used by histedit state files
@@ -489,9 +496,9 @@ class histeditaction(object):
         hg.update(repo, self.state.parentctxnode, quietempty=True)
         stats = applychanges(repo.ui, repo, rulectx, {})
         repo.dirstate.setbranch(rulectx.branch())
-        if stats and stats[3] > 0:
+        if stats.unresolvedcount:
             buf = repo.ui.popbuffer()
-            repo.ui.write(*buf)
+            repo.ui.write(buf)
             raise error.InterventionRequired(
                 _('Fix up the change (%s %s)') %
                 (self.verb, node.short(self.node)),
@@ -556,7 +563,7 @@ def applychanges(ui, repo, ctx, opts):
         # edits are "in place" we do not need to make any merge,
         # just applies changes on parent for editing
         cmdutil.revert(ui, repo, ctx, (wcpar, node.nullid), all=True)
-        stats = None
+        stats = mergemod.updateresult(0, 0, 0, 0)
     else:
         try:
             # ui.forcemerge is an internal variable, do not document
@@ -567,7 +574,7 @@ def applychanges(ui, repo, ctx, opts):
             repo.ui.setconfig('ui', 'forcemerge', '', 'histedit')
     return stats
 
-def collapse(repo, first, last, commitopts, skipprompt=False):
+def collapse(repo, firstctx, lastctx, commitopts, skipprompt=False):
     """collapse the set of revisions from first to last as new one.
 
     Expected commit options are:
@@ -577,14 +584,14 @@ def collapse(repo, first, last, commitopts, skipprompt=False):
     Commit message is edited in all cases.
 
     This function works in memory."""
-    ctxs = list(repo.set('%d::%d', first, last))
+    ctxs = list(repo.set('%d::%d', firstctx.rev(), lastctx.rev()))
     if not ctxs:
         return None
     for c in ctxs:
         if not c.mutable():
             raise error.ParseError(
                 _("cannot fold into public change %s") % node.short(c.node()))
-    base = first.parents()[0]
+    base = firstctx.parents()[0]
 
     # commit a new version of the old changeset, including the update
     # collect all files which might be affected
@@ -593,15 +600,15 @@ def collapse(repo, first, last, commitopts, skipprompt=False):
         files.update(ctx.files())
 
     # Recompute copies (avoid recording a -> b -> a)
-    copied = copies.pathcopies(base, last)
+    copied = copies.pathcopies(base, lastctx)
 
     # prune files which were reverted by the updates
-    files = [f for f in files if not cmdutil.samefile(f, last, base)]
+    files = [f for f in files if not cmdutil.samefile(f, lastctx, base)]
     # commit version of these files as defined by head
-    headmf = last.manifest()
+    headmf = lastctx.manifest()
     def filectxfn(repo, ctx, path):
         if path in headmf:
-            fctx = last[path]
+            fctx = lastctx[path]
             flags = fctx.flags()
             mctx = context.memfilectx(repo, ctx,
                                       fctx.path(), fctx.data(),
@@ -614,12 +621,12 @@ def collapse(repo, first, last, commitopts, skipprompt=False):
     if commitopts.get('message'):
         message = commitopts['message']
     else:
-        message = first.description()
+        message = firstctx.description()
     user = commitopts.get('user')
     date = commitopts.get('date')
     extra = commitopts.get('extra')
 
-    parents = (first.p1().node(), first.p2().node())
+    parents = (firstctx.p1().node(), firstctx.p2().node())
     editor = None
     if not skipprompt:
         editor = cmdutil.getcommiteditor(edit=True, editform='histedit.fold')
@@ -730,8 +737,9 @@ class fold(histeditaction):
             return ctx, [(self.node, (parentctxnode,))]
 
         parentctx = repo[parentctxnode]
-        newcommits = set(c.node() for c in repo.set('(%d::. - %d)', parentctx,
-                                                 parentctx))
+        newcommits = set(c.node() for c in repo.set('(%d::. - %d)',
+                                                    parentctx.rev(),
+                                                    parentctx.rev()))
         if not newcommits:
             repo.ui.warn(_('%s: cannot fold - working copy is not a '
                            'descendant of previous commit %s\n') %
@@ -888,10 +896,10 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
     if opts is None:
         opts = {}
     dest = ui.expandpath(remote or 'default-push', remote or 'default')
-    dest, revs = hg.parseurl(dest, None)[:2]
+    dest, branches = hg.parseurl(dest, None)[:2]
     ui.status(_('comparing with %s\n') % util.hidepassword(dest))
 
-    revs, checkout = hg.addbranchrevs(repo, repo, revs, None)
+    revs, checkout = hg.addbranchrevs(repo, repo, branches, None)
     other = hg.peer(repo, opts, dest)
 
     if revs:
@@ -905,7 +913,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
         msg = _('there are ambiguous outgoing revisions')
         hint = _("see 'hg help histedit' for more detail")
         raise error.Abort(msg, hint=hint)
-    return repo.lookup(roots[0])
+    return repo[roots[0]].node()
 
 @command('histedit',
     [('', 'commands', '',
@@ -1316,8 +1324,8 @@ def _newhistedit(ui, repo, state, revs, freeargs, opts):
     # Create a backup so we can always abort completely.
     backupfile = None
     if not obsolete.isenabled(repo, obsolete.createmarkersopt):
-        backupfile = repair._bundle(repo, [parentctxnode], [topmost], root,
-                                    'histedit')
+        backupfile = repair.backupbundle(repo, [parentctxnode],
+                                         [topmost], root, 'histedit')
     state.backupfile = backupfile
 
 def _getsummary(ctx):
@@ -1353,19 +1361,19 @@ def between(repo, old, new, keep):
     """select and validate the set of revision to edit
 
     When keep is false, the specified set can't have children."""
-    ctxs = list(repo.set('%n::%n', old, new))
-    if ctxs and not keep:
+    revs = repo.revs('%n::%n', old, new)
+    if revs and not keep:
         if (not obsolete.isenabled(repo, obsolete.allowunstableopt) and
-            repo.revs('(%ld::) - (%ld)', ctxs, ctxs)):
+            repo.revs('(%ld::) - (%ld)', revs, revs)):
             raise error.Abort(_('can only histedit a changeset together '
                                 'with all its descendants'))
-        if repo.revs('(%ld) and merge()', ctxs):
+        if repo.revs('(%ld) and merge()', revs):
             raise error.Abort(_('cannot edit history that contains merges'))
-        root = ctxs[0] # list is already sorted by repo.set
+        root = repo[revs.first()]  # list is already sorted by repo.revs()
         if not root.mutable():
             raise error.Abort(_('cannot edit public changeset: %s') % root,
                              hint=_("see 'hg help phases' for details"))
-    return [c.node() for c in ctxs]
+    return pycompat.maplist(repo.changelog.node, revs)
 
 def ruleeditor(repo, ui, actions, editcomment=""):
     """open an editor to edit rules
@@ -1415,9 +1423,8 @@ def ruleeditor(repo, ui, actions, editcomment=""):
     # Save edit rules in .hg/histedit-last-edit.txt in case
     # the user needs to ask for help after something
     # surprising happens.
-    f = open(repo.vfs.join('histedit-last-edit.txt'), 'w')
-    f.write(rules)
-    f.close()
+    with repo.vfs('histedit-last-edit.txt', 'wb') as f:
+        f.write(rules)
 
     return rules
 

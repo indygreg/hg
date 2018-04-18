@@ -22,21 +22,17 @@ from .node import (
     nullid,
     nullrev,
     short,
+    wdirfilenodeids,
     wdirid,
-    wdirnodes,
     wdirrev,
 )
-from .thirdparty import (
-    attr,
-)
 from . import (
+    dagop,
     encoding,
     error,
     fileset,
     match as matchmod,
-    mdiff,
     obsolete as obsmod,
-    obsutil,
     patch,
     pathutil,
     phases,
@@ -46,12 +42,17 @@ from . import (
     scmutil,
     sparse,
     subrepo,
+    subrepoutil,
     util,
+)
+from .utils import (
+    dateutil,
+    stringutil,
 )
 
 propertycache = util.propertycache
 
-nonascii = re.compile(r'[^\x21-\x7f]').search
+nonascii = re.compile(br'[^\x21-\x7f]').search
 
 class basectx(object):
     """A basectx object represents the common logic for its children:
@@ -60,25 +61,14 @@ class basectx(object):
                 be committed,
     memctx: a context that represents changes in-memory and can also
             be committed."""
-    def __new__(cls, repo, changeid='', *args, **kwargs):
-        if isinstance(changeid, basectx):
-            return changeid
 
-        o = super(basectx, cls).__new__(cls)
-
-        o._repo = repo
-        o._rev = nullrev
-        o._node = nullid
-
-        return o
+    def __init__(self, repo):
+        self._repo = repo
 
     def __bytes__(self):
         return short(self.node())
 
     __str__ = encoding.strmethod(__bytes__)
-
-    def __int__(self):
-        return self.rev()
 
     def __repr__(self):
         return r"<%s %s>" % (type(self).__name__, str(self))
@@ -148,7 +138,7 @@ class basectx(object):
                 removed.append(fn)
             elif flag1 != flag2:
                 modified.append(fn)
-            elif node2 not in wdirnodes:
+            elif node2 not in wdirfilenodeids:
                 # When comparing files between two commits, we save time by
                 # not comparing the file contents when the nodeids differ.
                 # Note that this means we incorrectly report a reverted change
@@ -173,7 +163,7 @@ class basectx(object):
 
     @propertycache
     def substate(self):
-        return subrepo.state(self, self._repo.ui)
+        return subrepoutil.state(self, self._repo.ui)
 
     def subrev(self, subpath):
         return self.substate[subpath][1]
@@ -206,21 +196,9 @@ class basectx(object):
         """True if the changeset is extinct"""
         return self.rev() in obsmod.getrevs(self._repo, 'extinct')
 
-    def unstable(self):
-        msg = ("'context.unstable' is deprecated, "
-               "use 'context.orphan'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.orphan()
-
     def orphan(self):
         """True if the changeset is not obsolete but it's ancestor are"""
         return self.rev() in obsmod.getrevs(self._repo, 'orphan')
-
-    def bumped(self):
-        msg = ("'context.bumped' is deprecated, "
-               "use 'context.phasedivergent'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.phasedivergent()
 
     def phasedivergent(self):
         """True if the changeset try to be a successor of a public changeset
@@ -229,12 +207,6 @@ class basectx(object):
         """
         return self.rev() in obsmod.getrevs(self._repo, 'phasedivergent')
 
-    def divergent(self):
-        msg = ("'context.divergent' is deprecated, "
-               "use 'context.contentdivergent'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.contentdivergent()
-
     def contentdivergent(self):
         """Is a successors of a changeset with multiple possible successors set
 
@@ -242,32 +214,9 @@ class basectx(object):
         """
         return self.rev() in obsmod.getrevs(self._repo, 'contentdivergent')
 
-    def troubled(self):
-        msg = ("'context.troubled' is deprecated, "
-               "use 'context.isunstable'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-        return self.isunstable()
-
     def isunstable(self):
         """True if the changeset is either unstable, bumped or divergent"""
         return self.orphan() or self.phasedivergent() or self.contentdivergent()
-
-    def troubles(self):
-        """Keep the old version around in order to avoid breaking extensions
-        about different return values.
-        """
-        msg = ("'context.troubles' is deprecated, "
-               "use 'context.instabilities'")
-        self._repo.ui.deprecwarn(msg, '4.4')
-
-        troubles = []
-        if self.orphan():
-            troubles.append('orphan')
-        if self.phasedivergent():
-            troubles.append('bumped')
-        if self.contentdivergent():
-            troubles.append('divergent')
-        return troubles
 
     def instabilities(self):
         """return the list of instabilities affecting this changeset.
@@ -428,54 +377,44 @@ class basectx(object):
 
         return r
 
-def _filterederror(repo, changeid):
-    """build an exception to be raised about a filtered changeid
-
-    This is extracted in a function to help extensions (eg: evolve) to
-    experiment with various message variants."""
-    if repo.filtername.startswith('visible'):
-
-        # Check if the changeset is obsolete
-        unfilteredrepo = repo.unfiltered()
-        ctx = unfilteredrepo[changeid]
-
-        # If the changeset is obsolete, enrich the message with the reason
-        # that made this changeset not visible
-        if ctx.obsolete():
-            msg = obsutil._getfilteredreason(repo, changeid, ctx)
-        else:
-            msg = _("hidden revision '%s'") % changeid
-
-        hint = _('use --hidden to access hidden revisions')
-
-        return error.FilteredRepoLookupError(msg, hint=hint)
-    msg = _("filtered revision '%s' (not in '%s' subset)")
-    msg %= (changeid, repo.filtername)
-    return error.FilteredRepoLookupError(msg)
+def changectxdeprecwarn(repo):
+    # changectx's constructor will soon lose support for these forms of
+    # changeids:
+    #  * stringinfied ints
+    #  * bookmarks, tags, branches, and other namespace identifiers
+    #  * hex nodeid prefixes
+    #
+    # Depending on your use case, replace repo[x] by one of these:
+    #  * If you want to support general revsets, use scmutil.revsingle(x)
+    #  * If you know that "x" is a stringified int, use repo[int(x)]
+    #  * If you know that "x" is a bookmark, use repo._bookmarks.changectx(x)
+    #  * If you know that "x" is a tag, use repo[repo.tags()[x]]
+    #  * If you know that "x" is a branch or in some other namespace,
+    #    use the appropriate mechanism for that namespace
+    #  * If you know that "x" is a hex nodeid prefix, use
+    #    repo[scmutil.resolvehexnodeidprefix(repo, x)]
+    #  * If "x" is a string that can be any of the above, but you don't want
+    #    to allow general revsets (perhaps because "x" may come from a remote
+    #    user and the revset may be too costly), use scmutil.revsymbol(repo, x)
+    #  * If "x" can be a mix of the above, you'll have to figure it out
+    #    yourself
+    repo.ui.deprecwarn("changectx.__init__ is getting more limited, see "
+                       "context.changectxdeprecwarn() for details", "4.6",
+                       stacklevel=4)
 
 class changectx(basectx):
     """A changecontext object makes access to data related to a particular
     changeset convenient. It represents a read-only context already present in
     the repo."""
-    def __init__(self, repo, changeid=''):
+    def __init__(self, repo, changeid='.'):
         """changeid is a revision number, node, or tag"""
-
-        # since basectx.__new__ already took care of copying the object, we
-        # don't need to do anything in __init__, so we just exit here
-        if isinstance(changeid, basectx):
-            return
-
-        if changeid == '':
-            changeid = '.'
-        self._repo = repo
+        super(changectx, self).__init__(repo)
 
         try:
             if isinstance(changeid, int):
                 self._node = repo.changelog.node(changeid)
                 self._rev = changeid
                 return
-            if not pycompat.ispy3 and isinstance(changeid, long):
-                changeid = str(changeid)
             if changeid == 'null':
                 self._node = nullid
                 self._rev = nullrev
@@ -496,7 +435,7 @@ class changectx(basectx):
                     self._node = changeid
                     self._rev = repo.changelog.rev(changeid)
                     return
-                except error.FilteredRepoLookupError:
+                except error.FilteredLookupError:
                     raise
                 except LookupError:
                     pass
@@ -512,6 +451,7 @@ class changectx(basectx):
                     raise ValueError
                 self._rev = r
                 self._node = repo.changelog.node(r)
+                changectxdeprecwarn(repo)
                 return
             except error.FilteredIndexError:
                 raise
@@ -532,17 +472,15 @@ class changectx(basectx):
             try:
                 self._node = repo.names.singlenode(repo, changeid)
                 self._rev = repo.changelog.rev(self._node)
+                changectxdeprecwarn(repo)
                 return
             except KeyError:
                 pass
-            except error.FilteredRepoLookupError:
-                raise
-            except error.RepoLookupError:
-                pass
 
-            self._node = repo.unfiltered().changelog._partialmatch(changeid)
+            self._node = scmutil.resolvehexnodeidprefix(repo, changeid)
             if self._node is not None:
                 self._rev = repo.changelog.rev(self._node)
+                changectxdeprecwarn(repo)
                 return
 
             # lookup failed
@@ -561,7 +499,7 @@ class changectx(basectx):
                 pass
         except (error.FilteredIndexError, error.FilteredLookupError,
                 error.FilteredRepoLookupError):
-            raise _filterederror(repo, changeid)
+            raise
         except IndexError:
             pass
         raise error.RepoLookupError(
@@ -691,7 +629,7 @@ class changectx(basectx):
             # experimental config: merge.preferancestor
             for r in self._repo.ui.configlist('merge', 'preferancestor'):
                 try:
-                    ctx = changectx(self._repo, r)
+                    ctx = scmutil.revsymbol(self._repo, r)
                 except error.RepoLookupError:
                     continue
                 anc = ctx.node()
@@ -790,7 +728,7 @@ class basefilectx(object):
     __str__ = encoding.strmethod(__bytes__)
 
     def __repr__(self):
-        return "<%s %s>" % (type(self).__name__, str(self))
+        return r"<%s %s>" % (type(self).__name__, str(self))
 
     def __hash__(self):
         try:
@@ -863,7 +801,7 @@ class basefilectx(object):
 
     def isbinary(self):
         try:
-            return util.binary(self.data())
+            return stringutil.binary(self.data())
         except IOError:
             return False
     def isexec(self):
@@ -954,7 +892,7 @@ class basefilectx(object):
         """
         lkr = self.linkrev()
         attrs = vars(self)
-        noctx = not ('_changeid' in attrs or '_changectx' in attrs)
+        noctx = not (r'_changeid' in attrs or r'_changectx' in attrs)
         if noctx or self.rev() == lkr:
             return self.linkrev()
         return self._adjustlinkrev(self.rev(), inclusive=True)
@@ -970,14 +908,14 @@ class basefilectx(object):
     def _parentfilectx(self, path, fileid, filelog):
         """create parent filectx keeping ancestry info for _adjustlinkrev()"""
         fctx = filectx(self._repo, path, fileid=fileid, filelog=filelog)
-        if '_changeid' in vars(self) or '_changectx' in vars(self):
+        if r'_changeid' in vars(self) or r'_changectx' in vars(self):
             # If self is associated with a changeset (probably explicitly
             # fed), ensure the created filectx is associated with a
             # changeset that is an ancestor of self.changectx.
             # This lets us later use _adjustlinkrev to get a correct link.
             fctx._descendantrev = self.rev()
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)
-        elif '_descendantrev' in vars(self):
+        elif r'_descendantrev' in vars(self):
             # Otherwise propagate _descendantrev if we have one associated.
             fctx._descendantrev = self._descendantrev
             fctx._ancestrycontext = getattr(self, '_ancestrycontext', None)
@@ -1012,28 +950,14 @@ class basefilectx(object):
             return p[1]
         return filectx(self._repo, self._path, fileid=-1, filelog=self._filelog)
 
-    def annotate(self, follow=False, linenumber=False, skiprevs=None,
-                 diffopts=None):
-        '''returns a list of tuples of ((ctx, number), line) for each line
-        in the file, where ctx is the filectx of the node where
-        that line was last changed; if linenumber parameter is true, number is
-        the line number at the first appearance in the managed file, otherwise,
-        number has a fixed value of False.
-        '''
+    def annotate(self, follow=False, skiprevs=None, diffopts=None):
+        """Returns a list of annotateline objects for each line in the file
 
-        def lines(text):
-            if text.endswith("\n"):
-                return text.count("\n")
-            return text.count("\n") + int(bool(text))
-
-        if linenumber:
-            def decorate(text, rev):
-                return ([annotateline(fctx=rev, lineno=i)
-                         for i in xrange(1, lines(text) + 1)], text)
-        else:
-            def decorate(text, rev):
-                return ([annotateline(fctx=rev)] * lines(text), text)
-
+        - line.fctx is the filectx of the node where that line was last changed
+        - line.lineno is the line number at the first appearance in the managed
+          file
+        - line.text is the data on that line (including newline character)
+        """
         getlog = util.lrucachefunc(lambda x: self._repo.file(x))
 
         def parents(f):
@@ -1051,7 +975,7 @@ class basefilectx(object):
             # renamed filectx won't have a filelog yet, so set it
             # from the cache to save time
             for p in pl:
-                if not '_filelog' in p.__dict__:
+                if not r'_filelog' in p.__dict__:
                     p._filelog = getlog(p.path())
 
             return pl
@@ -1069,60 +993,8 @@ class basefilectx(object):
                 ac = cl.ancestors([base.rev()], inclusive=True)
             base._ancestrycontext = ac
 
-        # This algorithm would prefer to be recursive, but Python is a
-        # bit recursion-hostile. Instead we do an iterative
-        # depth-first search.
-
-        # 1st DFS pre-calculates pcache and needed
-        visit = [base]
-        pcache = {}
-        needed = {base: 1}
-        while visit:
-            f = visit.pop()
-            if f in pcache:
-                continue
-            pl = parents(f)
-            pcache[f] = pl
-            for p in pl:
-                needed[p] = needed.get(p, 0) + 1
-                if p not in pcache:
-                    visit.append(p)
-
-        # 2nd DFS does the actual annotate
-        visit[:] = [base]
-        hist = {}
-        while visit:
-            f = visit[-1]
-            if f in hist:
-                visit.pop()
-                continue
-
-            ready = True
-            pl = pcache[f]
-            for p in pl:
-                if p not in hist:
-                    ready = False
-                    visit.append(p)
-            if ready:
-                visit.pop()
-                curr = decorate(f.data(), f)
-                skipchild = False
-                if skiprevs is not None:
-                    skipchild = f._changeid in skiprevs
-                curr = _annotatepair([hist[p] for p in pl], f, curr, skipchild,
-                                     diffopts)
-                for p in pl:
-                    if needed[p] == 1:
-                        del hist[p]
-                        del needed[p]
-                    else:
-                        needed[p] -= 1
-
-                hist[f] = curr
-                del pcache[f]
-
-        lineattrs, text = hist[base]
-        return pycompat.ziplist(lineattrs, mdiff.splitnewlines(text))
+        return dagop.annotate(base, parents, skiprevs=skiprevs,
+                              diffopts=diffopts)
 
     def ancestors(self, followfirst=False):
         visit = {}
@@ -1146,74 +1018,6 @@ class basefilectx(object):
         This is often equivalent to how the data would be expressed on disk.
         """
         return self._repo.wwritedata(self.path(), self.data())
-
-@attr.s(slots=True, frozen=True)
-class annotateline(object):
-    fctx = attr.ib()
-    lineno = attr.ib(default=False)
-    # Whether this annotation was the result of a skip-annotate.
-    skip = attr.ib(default=False)
-
-def _annotatepair(parents, childfctx, child, skipchild, diffopts):
-    r'''
-    Given parent and child fctxes and annotate data for parents, for all lines
-    in either parent that match the child, annotate the child with the parent's
-    data.
-
-    Additionally, if `skipchild` is True, replace all other lines with parent
-    annotate data as well such that child is never blamed for any lines.
-
-    See test-annotate.py for unit tests.
-    '''
-    pblocks = [(parent, mdiff.allblocks(parent[1], child[1], opts=diffopts))
-               for parent in parents]
-
-    if skipchild:
-        # Need to iterate over the blocks twice -- make it a list
-        pblocks = [(p, list(blocks)) for (p, blocks) in pblocks]
-    # Mercurial currently prefers p2 over p1 for annotate.
-    # TODO: change this?
-    for parent, blocks in pblocks:
-        for (a1, a2, b1, b2), t in blocks:
-            # Changed blocks ('!') or blocks made only of blank lines ('~')
-            # belong to the child.
-            if t == '=':
-                child[0][b1:b2] = parent[0][a1:a2]
-
-    if skipchild:
-        # Now try and match up anything that couldn't be matched,
-        # Reversing pblocks maintains bias towards p2, matching above
-        # behavior.
-        pblocks.reverse()
-
-        # The heuristics are:
-        # * Work on blocks of changed lines (effectively diff hunks with -U0).
-        # This could potentially be smarter but works well enough.
-        # * For a non-matching section, do a best-effort fit. Match lines in
-        #   diff hunks 1:1, dropping lines as necessary.
-        # * Repeat the last line as a last resort.
-
-        # First, replace as much as possible without repeating the last line.
-        remaining = [(parent, []) for parent, _blocks in pblocks]
-        for idx, (parent, blocks) in enumerate(pblocks):
-            for (a1, a2, b1, b2), _t in blocks:
-                if a2 - a1 >= b2 - b1:
-                    for bk in xrange(b1, b2):
-                        if child[0][bk].fctx == childfctx:
-                            ak = min(a1 + (bk - b1), a2 - 1)
-                            child[0][bk] = attr.evolve(parent[0][ak], skip=True)
-                else:
-                    remaining[idx][1].append((a1, a2, b1, b2))
-
-        # Then, look at anything left, which might involve repeating the last
-        # line.
-        for parent, blocks in remaining:
-            for a1, a2, b1, b2 in blocks:
-                for bk in xrange(b1, b2):
-                    if child[0][bk].fctx == childfctx:
-                        ak = min(a1 + (bk - b1), a2 - 1)
-                        child[0][bk] = attr.evolve(parent[0][ak], skip=True)
-    return child
 
 class filectx(basefilectx):
     """A filecontext object makes access to data related to a particular
@@ -1326,12 +1130,12 @@ class committablectx(basectx):
     wants the ability to commit, e.g. workingctx or memctx."""
     def __init__(self, repo, text="", user=None, date=None, extra=None,
                  changes=None):
-        self._repo = repo
+        super(committablectx, self).__init__(repo)
         self._rev = None
         self._node = None
         self._text = text
         if date:
-            self._date = util.parsedate(date)
+            self._date = dateutil.parsedate(date)
         if user:
             self._user = user
         if changes:
@@ -1408,7 +1212,7 @@ class committablectx(basectx):
         ui = self._repo.ui
         date = ui.configdate('devel', 'default-date')
         if date is None:
-            date = util.makedate()
+            date = dateutil.makedate()
         return date
 
     def subrev(self, subpath):
@@ -1554,6 +1358,11 @@ class workingctx(committablectx):
             p = p[:-1]
         return [changectx(self._repo, x) for x in p]
 
+    def _fileinfo(self, path):
+        # populate __dict__['_manifest'] as workingctx has no _manifestdelta
+        self._manifest
+        return super(workingctx, self)._fileinfo(path)
+
     def filectx(self, path, filelog=None):
         """get a file context from the working directory"""
         return workingfilectx(self._repo, path, workingctx=self,
@@ -1679,7 +1488,8 @@ class workingctx(committablectx):
         for f in files:
             if self.flags(f) == 'l':
                 d = self[f].data()
-                if d == '' or len(d) >= 1024 or '\n' in d or util.binary(d):
+                if (d == '' or len(d) >= 1024 or '\n' in d
+                    or stringutil.binary(d)):
                     self._repo.ui.debug('ignoring suspect symlink placeholder'
                                         ' "%s"\n' % f)
                     continue
@@ -1935,7 +1745,7 @@ class workingfilectx(committablefilectx):
     def date(self):
         t, tz = self._changectx.date()
         try:
-            return (self._repo.wvfs.lstat(self._path).st_mtime, tz)
+            return (self._repo.wvfs.lstat(self._path)[stat.ST_MTIME], tz)
         except OSError as err:
             if err.errno != errno.ENOENT:
                 raise
@@ -1983,10 +1793,11 @@ class workingfilectx(committablefilectx):
         wvfs.audit(f)
         if wvfs.isdir(f) and not wvfs.islink(f):
             wvfs.rmtree(f, forcibly=True)
-        for p in reversed(list(util.finddirs(f))):
-            if wvfs.isfileorlink(p):
-                wvfs.unlink(p)
-                break
+        if self._repo.ui.configbool('experimental', 'merge.checkpathconflicts'):
+            for p in reversed(list(util.finddirs(f))):
+                if wvfs.isfileorlink(p):
+                    wvfs.unlink(p)
+                    break
 
     def setflags(self, l, x):
         self._repo.wvfs.setflags(self._path, l, x)
@@ -2008,7 +1819,6 @@ class overlayworkingctx(committablectx):
 
     def __init__(self, repo):
         super(overlayworkingctx, self).__init__(repo)
-        self._repo = repo
         self.clean()
 
     def setbase(self, wrappedctx):
@@ -2155,11 +1965,11 @@ class overlayworkingctx(committablectx):
         if data is None:
             raise error.ProgrammingError("data must be non-None")
         self._auditconflicts(path)
-        self._markdirty(path, exists=True, data=data, date=util.makedate(),
+        self._markdirty(path, exists=True, data=data, date=dateutil.makedate(),
                         flags=flags)
 
     def setflags(self, path, l, x):
-        self._markdirty(path, exists=True, date=util.makedate(),
+        self._markdirty(path, exists=True, date=dateutil.makedate(),
                         flags=(l and 'l' or '') + (x and 'x' or ''))
 
     def remove(self, path):
@@ -2448,7 +2258,7 @@ class memctx(committablectx):
 
     user receives the committer name and defaults to current
     repository username, date is the commit date in any format
-    supported by util.parsedate() and defaults to current date, extra
+    supported by dateutil.parsedate() and defaults to current date, extra
     is a dictionary of metadata or is left empty.
     """
 
@@ -2464,7 +2274,7 @@ class memctx(committablectx):
         self._node = None
         parents = [(p or nullid) for p in parents]
         p1, p2 = parents
-        self._parents = [changectx(self._repo, p) for p in (p1, p2)]
+        self._parents = [self._repo[p] for p in (p1, p2)]
         files = sorted(set(files))
         self._files = files
         if branch is not None:
@@ -2663,12 +2473,9 @@ class metadataonlyctx(committablectx):
 
     user receives the committer name and defaults to current repository
     username, date is the commit date in any format supported by
-    util.parsedate() and defaults to current date, extra is a dictionary of
+    dateutil.parsedate() and defaults to current date, extra is a dictionary of
     metadata or is left empty.
     """
-    def __new__(cls, repo, originalctx, *args, **kwargs):
-        return super(metadataonlyctx, cls).__new__(cls, repo)
-
     def __init__(self, repo, originalctx, parents=None, text=None, user=None,
                  date=None, extra=None, editor=False):
         if text is None:

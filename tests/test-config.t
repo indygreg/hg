@@ -88,7 +88,7 @@ Test empty config source:
 
   $ cat <<EOF > emptysource.py
   > def reposetup(ui, repo):
-  >     ui.setconfig('empty', 'source', 'value')
+  >     ui.setconfig(b'empty', b'source', b'value')
   > EOF
   $ cp .hg/hgrc .hg/hgrc.orig
   $ cat <<EOF >> .hg/hgrc

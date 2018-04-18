@@ -13,13 +13,13 @@ from mercurial import (
     extensions,
     policy,
     registrar,
-    util,
 )
+from mercurial.utils import dateutil
 
 configtable = {}
 configitem = registrar.configitem(configtable)
 
-configitem('fakedirstatewritetime', 'fakenow',
+configitem(b'fakedirstatewritetime', b'fakenow',
     default=None,
 )
 
@@ -29,7 +29,7 @@ def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
     # execute what original parsers.pack_dirstate should do actually
     # for consistency
     actualnow = int(now)
-    for f, e in dmap.iteritems():
+    for f, e in dmap.items():
         if e[0] == 'n' and e[3] == actualnow:
             e = parsers.dirstatetuple(e[0], e[1], e[2], -1)
             dmap[f] = e
@@ -39,7 +39,7 @@ def pack_dirstate(fakenow, orig, dmap, copymap, pl, now):
 def fakewrite(ui, func):
     # fake "now" of 'pack_dirstate' only if it is invoked while 'func'
 
-    fakenow = ui.config('fakedirstatewritetime', 'fakenow')
+    fakenow = ui.config(b'fakedirstatewritetime', b'fakenow')
     if not fakenow:
         # Execute original one, if fakenow isn't configured. This is
         # useful to prevent subrepos from executing replaced one,
@@ -49,7 +49,7 @@ def fakewrite(ui, func):
 
     # parsing 'fakenow' in YYYYmmddHHMM format makes comparison between
     # 'fakenow' value and 'touch -t YYYYmmddHHMM' argument easy
-    fakenow = util.parsedate(fakenow, ['%Y%m%d%H%M'])[0]
+    fakenow = dateutil.parsedate(fakenow, [b'%Y%m%d%H%M'])[0]
 
     orig_pack_dirstate = parsers.pack_dirstate
     orig_dirstate_getfsnow = dirstate._getfsnow

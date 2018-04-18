@@ -214,6 +214,8 @@ Never crash on internal resource not available:
   abort: template resource not available: ctx
   [255]
 
+  $ hg config -T '{author}'
+
 Quoting for ui.logtemplate
 
   $ hg tip --config "ui.logtemplate={rev}\n"
@@ -282,7 +284,8 @@ Test templates and style maps in files:
 
  so it can be included in hgrc
 
-  $ cat <<'EOF' > myhgrc
+  $ cat <<EOF > myhgrc
+  > %include $HGRCPATH
   > %include map-simple
   > [templates]
   > foo = "{changeset}"
@@ -850,32 +853,33 @@ Test xml styles:
 Test JSON style:
 
   $ hg log -k nosuch -Tjson
-  []
+  [
+  ]
 
   $ hg log -qr . -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a"
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "rev": 8
    }
   ]
 
   $ hg log -vpr . -Tjson --stat
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
-    "files": ["fourth", "second", "third"],
+    "diff": "diff -r 29114dbae42b -r 95c24699272e fourth\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/fourth\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+second\ndiff -r 29114dbae42b -r 95c24699272e second\n--- a/second\tMon Jan 12 13:46:40 1970 +0000\n+++ /dev/null\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +0,0 @@\n-second\ndiff -r 29114dbae42b -r 95c24699272e third\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/third\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+third\n",
     "diffstat": " fourth |  1 +\n second |  1 -\n third  |  1 +\n 3 files changed, 2 insertions(+), 1 deletions(-)\n",
-    "diff": "diff -r 29114dbae42b -r 95c24699272e fourth\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/fourth\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+second\ndiff -r 29114dbae42b -r 95c24699272e second\n--- a/second\tMon Jan 12 13:46:40 1970 +0000\n+++ /dev/null\tThu Jan 01 00:00:00 1970 +0000\n@@ -1,1 +0,0 @@\n-second\ndiff -r 29114dbae42b -r 95c24699272e third\n--- /dev/null\tThu Jan 01 00:00:00 1970 +0000\n+++ b/third\tWed Jan 01 10:01:00 2020 +0000\n@@ -0,0 +1,1 @@\n+third\n"
+    "files": ["fourth", "second", "third"],
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    }
   ]
 
@@ -883,330 +887,330 @@ honor --git but not format-breaking diffopts
   $ hg --config diff.noprefix=True log --git -vpr . -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "diff": "diff --git a/second b/fourth\nrename from second\nrename to fourth\ndiff --git a/third b/third\nnew file mode 100644\n--- /dev/null\n+++ b/third\n@@ -0,0 +1,1 @@\n+third\n",
     "files": ["fourth", "second", "third"],
-    "diff": "diff --git a/second b/fourth\nrename from second\nrename to fourth\ndiff --git a/third b/third\nnew file mode 100644\n--- /dev/null\n+++ b/third\n@@ -0,0 +1,1 @@\n+third\n"
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    }
   ]
 
   $ hg log -T json
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "rev": 8,
     "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"]
+    "user": "test"
    },
    {
-    "rev": 7,
-    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "second",
-    "bookmarks": [],
+    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 7,
     "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"]
+    "user": "User Name <user@hostname>"
    },
    {
-    "rev": 6,
-    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500001, 0],
     "desc": "merge",
-    "bookmarks": [],
+    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
+    "phase": "draft",
+    "rev": 6,
     "tags": [],
-    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"]
+    "user": "person"
    },
    {
-    "rev": 5,
-    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500000, 0],
     "desc": "new head",
-    "bookmarks": [],
+    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "rev": 5,
     "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"]
+    "user": "person"
    },
    {
-    "rev": 4,
-    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "bookmarks": [],
     "branch": "foo",
-    "phase": "draft",
-    "user": "person",
     "date": [1400000, 0],
     "desc": "new branch",
-    "bookmarks": [],
+    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "rev": 4,
     "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"]
+    "user": "person"
    },
    {
-    "rev": 3,
-    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1300000, 0],
     "desc": "no user, no domain",
-    "bookmarks": [],
+    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "parents": ["97054abb4ab824450e9164180baf491ae0078465"],
+    "phase": "draft",
+    "rev": 3,
     "tags": [],
-    "parents": ["97054abb4ab824450e9164180baf491ae0078465"]
+    "user": "person"
    },
    {
-    "rev": 2,
-    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "other@place",
     "date": [1200000, 0],
     "desc": "no person",
-    "bookmarks": [],
+    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"],
+    "phase": "draft",
+    "rev": 2,
     "tags": [],
-    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"]
+    "user": "other@place"
    },
    {
-    "rev": 1,
-    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "A. N. Other <other@place>",
     "date": [1100000, 0],
     "desc": "other 1\nother 2\n\nother 3",
-    "bookmarks": [],
+    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"],
+    "phase": "draft",
+    "rev": 1,
     "tags": [],
-    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"]
+    "user": "A. N. Other <other@place>"
    },
    {
-    "rev": 0,
-    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "line 1\nline 2",
-    "bookmarks": [],
+    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
     "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"]
+    "user": "User Name <user@hostname>"
    }
   ]
 
   $ hg heads -v -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
+    "files": ["fourth", "second", "third"],
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
     "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
-    "files": ["fourth", "second", "third"]
+    "phase": "draft",
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    },
    {
-    "rev": 6,
-    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500001, 0],
     "desc": "merge",
-    "bookmarks": [],
-    "tags": [],
+    "files": [],
+    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
     "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
-    "files": []
+    "phase": "draft",
+    "rev": 6,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 4,
-    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "bookmarks": [],
     "branch": "foo",
-    "phase": "draft",
-    "user": "person",
     "date": [1400000, 0],
     "desc": "new branch",
-    "bookmarks": [],
-    "tags": [],
+    "files": [],
+    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
     "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
-    "files": []
+    "phase": "draft",
+    "rev": 4,
+    "tags": [],
+    "user": "person"
    }
   ]
 
   $ hg log --debug -Tjson
   [
    {
-    "rev": 8,
-    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "added": ["fourth", "third"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [1577872860, 0],
     "desc": "third",
-    "bookmarks": [],
-    "tags": ["tip"],
-    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
-    "manifest": "94961b75a2da554b4df6fb599e5bfc7d48de0c64",
     "extra": {"branch": "default"},
+    "manifest": "94961b75a2da554b4df6fb599e5bfc7d48de0c64",
     "modified": [],
-    "added": ["fourth", "third"],
-    "removed": ["second"]
+    "node": "95c24699272ef57d062b8bccc32c878bf841784a",
+    "parents": ["29114dbae42b9f078cf2714dbe3a86bba8ec7453"],
+    "phase": "draft",
+    "removed": ["second"],
+    "rev": 8,
+    "tags": ["tip"],
+    "user": "test"
    },
    {
-    "rev": 7,
-    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "added": ["second"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "second",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"],
-    "manifest": "f2dbc354b94e5ec0b4f10680ee0cee816101d0bf",
     "extra": {"branch": "default"},
+    "manifest": "f2dbc354b94e5ec0b4f10680ee0cee816101d0bf",
     "modified": [],
-    "added": ["second"],
-    "removed": []
+    "node": "29114dbae42b9f078cf2714dbe3a86bba8ec7453",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 7,
+    "tags": [],
+    "user": "User Name <user@hostname>"
    },
    {
-    "rev": 6,
-    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "added": [],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500001, 0],
     "desc": "merge",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
-    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "extra": {"branch": "default"},
+    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "modified": [],
-    "added": [],
-    "removed": []
+    "node": "d41e714fe50d9e4a5f11b4d595d543481b5f980b",
+    "parents": ["13207e5a10d9fd28ec424934298e176197f2c67f", "bbe44766e73d5f11ed2177f1838de10c53ef3e74"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 6,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 5,
-    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "added": ["d"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1500000, 0],
     "desc": "new head",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
-    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "extra": {"branch": "default"},
+    "manifest": "4dc3def4f9b4c6e8de820f6ee74737f91e96a216",
     "modified": [],
-    "added": ["d"],
-    "removed": []
+    "node": "13207e5a10d9fd28ec424934298e176197f2c67f",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 5,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 4,
-    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "added": [],
+    "bookmarks": [],
     "branch": "foo",
-    "phase": "draft",
-    "user": "person",
     "date": [1400000, 0],
     "desc": "new branch",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
-    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "extra": {"branch": "foo"},
+    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "modified": [],
-    "added": [],
-    "removed": []
+    "node": "bbe44766e73d5f11ed2177f1838de10c53ef3e74",
+    "parents": ["10e46f2dcbf4823578cf180f33ecf0b957964c47"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 4,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 3,
-    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "added": [],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "person",
     "date": [1300000, 0],
     "desc": "no user, no domain",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["97054abb4ab824450e9164180baf491ae0078465"],
-    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "extra": {"branch": "default"},
+    "manifest": "cb5a1327723bada42f117e4c55a303246eaf9ccc",
     "modified": ["c"],
-    "added": [],
-    "removed": []
+    "node": "10e46f2dcbf4823578cf180f33ecf0b957964c47",
+    "parents": ["97054abb4ab824450e9164180baf491ae0078465"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 3,
+    "tags": [],
+    "user": "person"
    },
    {
-    "rev": 2,
-    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "added": ["c"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "other@place",
     "date": [1200000, 0],
     "desc": "no person",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"],
-    "manifest": "6e0e82995c35d0d57a52aca8da4e56139e06b4b1",
     "extra": {"branch": "default"},
+    "manifest": "6e0e82995c35d0d57a52aca8da4e56139e06b4b1",
     "modified": [],
-    "added": ["c"],
-    "removed": []
+    "node": "97054abb4ab824450e9164180baf491ae0078465",
+    "parents": ["b608e9d1a3f0273ccf70fb85fd6866b3482bf965"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 2,
+    "tags": [],
+    "user": "other@place"
    },
    {
-    "rev": 1,
-    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "added": ["b"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "A. N. Other <other@place>",
     "date": [1100000, 0],
     "desc": "other 1\nother 2\n\nother 3",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"],
-    "manifest": "4e8d705b1e53e3f9375e0e60dc7b525d8211fe55",
     "extra": {"branch": "default"},
+    "manifest": "4e8d705b1e53e3f9375e0e60dc7b525d8211fe55",
     "modified": [],
-    "added": ["b"],
-    "removed": []
+    "node": "b608e9d1a3f0273ccf70fb85fd6866b3482bf965",
+    "parents": ["1e4e1b8f71e05681d422154f5421e385fec3454f"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 1,
+    "tags": [],
+    "user": "A. N. Other <other@place>"
    },
    {
-    "rev": 0,
-    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "added": ["a"],
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "User Name <user@hostname>",
     "date": [1000000, 0],
     "desc": "line 1\nline 2",
-    "bookmarks": [],
-    "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"],
-    "manifest": "a0c8bcbbb45c63b90b70ad007bf38961f64f2af0",
     "extra": {"branch": "default"},
+    "manifest": "a0c8bcbbb45c63b90b70ad007bf38961f64f2af0",
     "modified": [],
-    "added": ["a"],
-    "removed": []
+    "node": "1e4e1b8f71e05681d422154f5421e385fec3454f",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "removed": [],
+    "rev": 0,
+    "tags": [],
+    "user": "User Name <user@hostname>"
    }
   ]
 
@@ -2215,9 +2219,9 @@ Age filter:
 
   >>> from __future__ import absolute_import
   >>> import datetime
-  >>> fp = open('a', 'w')
+  >>> fp = open('a', 'wb')
   >>> n = datetime.datetime.now() + datetime.timedelta(366 * 7)
-  >>> fp.write('%d-%d-%d 00:00' % (n.year, n.month, n.day))
+  >>> fp.write(b'%d-%d-%d 00:00' % (n.year, n.month, n.day)) and None
   >>> fp.close()
   $ hg add a
   $ hg commit -m future -d "`cat a`"
@@ -2232,6 +2236,10 @@ Filename filters:
 
   $ hg debugtemplate '{"foo/bar"|basename}|{"foo/"|basename}|{"foo"|basename}|\n'
   bar||foo|
+  $ hg debugtemplate '{"foo/bar"|dirname}|{"foo/"|dirname}|{"foo"|dirname}|\n'
+  foo|foo||
+  $ hg debugtemplate '{"foo/bar"|stripdir}|{"foo/"|stripdir}|{"foo"|stripdir}|\n'
+  foo|foo|foo|
 
 Add a dummy commit to make up for the instability of the above:
 
@@ -2271,6 +2279,11 @@ Count filter:
   o  0: children: 1, tags: 0, file_adds: 1, ancestors: 1
   
 
+  $ hg log -l1 -T '{termwidth|count}\n'
+  hg: parse error: not countable
+  (template filter 'count' is not compatible with keyword 'termwidth')
+  [255]
+
 Upper/lower filters:
 
   $ hg log -r0 --template '{branch|upper}\n'
@@ -2278,8 +2291,7 @@ Upper/lower filters:
   $ hg log -r0 --template '{author|lower}\n'
   user name <user@hostname>
   $ hg log -r0 --template '{date|upper}\n'
-  abort: template filter 'upper' is not compatible with keyword 'date'
-  [255]
+  1000000.00
 
 Add a commit that does all possible modifications at once
 
@@ -2760,19 +2772,29 @@ Error on syntax:
 
   $ hg log -T '{date'
   hg: parse error at 1: unterminated template expansion
+  ({date
+    ^ here)
   [255]
   $ hg log -T '{date(}'
-  hg: parse error at 7: not a prefix: end
+  hg: parse error at 6: not a prefix: end
+  ({date(}
+         ^ here)
   [255]
   $ hg log -T '{date)}'
   hg: parse error at 5: invalid token
+  ({date)}
+        ^ here)
   [255]
   $ hg log -T '{date date}'
   hg: parse error at 6: invalid token
+  ({date date}
+         ^ here)
   [255]
 
   $ hg log -T '{}'
-  hg: parse error at 2: not a prefix: end
+  hg: parse error at 1: not a prefix: end
+  ({}
+    ^ here)
   [255]
   $ hg debugtemplate -v '{()}'
   (template
@@ -2781,23 +2803,26 @@ Error on syntax:
   hg: parse error: missing argument
   [255]
 
-Behind the scenes, this will throw TypeError
+Behind the scenes, this would throw TypeError without intype=bytes
 
   $ hg log -l 3 --template '{date|obfuscate}\n'
-  abort: template filter 'obfuscate' is not compatible with keyword 'date'
-  [255]
+  &#48;&#46;&#48;&#48;
+  &#48;&#46;&#48;&#48;
+  &#49;&#53;&#55;&#55;&#56;&#55;&#50;&#56;&#54;&#48;&#46;&#48;&#48;
 
 Behind the scenes, this will throw a ValueError
 
   $ hg log -l 3 --template 'line: {desc|shortdate}\n'
-  abort: template filter 'shortdate' is not compatible with keyword 'desc'
+  hg: parse error: invalid date: 'Modify, add, remove, rename'
+  (template filter 'shortdate' is not compatible with keyword 'desc')
   [255]
 
-Behind the scenes, this will throw AttributeError
+Behind the scenes, this would throw AttributeError without intype=bytes
 
   $ hg log -l 3 --template 'line: {date|escape}\n'
-  abort: template filter 'escape' is not compatible with keyword 'date'
-  [255]
+  line: 0.00
+  line: 0.00
+  line: 1577872860.00
 
   $ hg log -l 3 --template 'line: {extras|localdate}\n'
   hg: parse error: localdate expects a date information
@@ -2810,21 +2835,27 @@ Behind the scenes, this will throw ValueError
   [255]
 
   $ hg tip -T '{author|email|shortdate}\n'
-  abort: template filter 'shortdate' is not compatible with keyword 'author'
+  hg: parse error: invalid date: 'test'
+  (template filter 'shortdate' is not compatible with keyword 'author')
   [255]
 
   $ hg tip -T '{get(extras, "branch")|shortdate}\n'
-  abort: incompatible use of template filter 'shortdate'
+  hg: parse error: invalid date: 'default'
+  (incompatible use of template filter 'shortdate')
   [255]
 
 Error in nested template:
 
   $ hg log -T '{"date'
   hg: parse error at 2: unterminated string
+  ({"date
+     ^ here)
   [255]
 
   $ hg log -T '{"foo{date|?}"}'
   hg: parse error at 11: syntax error
+  ({"foo{date|?}"}
+              ^ here)
   [255]
 
 Thrown an error if a template function doesn't exist
@@ -3181,10 +3212,13 @@ Test new-style inline templating:
   
 
   $ hg log -R latesttag -r tip -T '{rev % "a"}\n'
-  hg: parse error: keyword 'rev' is not iterable
+  hg: parse error: keyword 'rev' is not iterable of mappings
   [255]
   $ hg log -R latesttag -r tip -T '{get(extras, "unknown") % "a"}\n'
-  hg: parse error: None is not iterable
+  hg: parse error: None is not iterable of mappings
+  [255]
+  $ hg log -R latesttag -r tip -T '{extras % "{key}\n" % "{key}\n"}'
+  hg: parse error: list of strings is not mappable
   [255]
 
 Test new-style inline templating of non-list/dict type:
@@ -3199,7 +3233,7 @@ Test new-style inline templating of non-list/dict type:
   $ hg log -R latesttag -r tip -T '{get(extras, "branch") % "{key}: {value}\n"}'
   branch: default
   $ hg log -R latesttag -r tip -T '{get(extras, "unknown") % "{key}\n"}'
-  hg: parse error: None is not iterable
+  hg: parse error: None is not iterable of mappings
   [255]
   $ hg log -R latesttag -r tip -T '{min(extras) % "{key}: {value}\n"}'
   branch: default
@@ -3221,6 +3255,43 @@ Test min/max of integers
   9
   $ hg log -R latesttag -l1 -T '{max(revset("9:10"))}\n'
   10
+
+Test min/max over map operation:
+
+  $ hg log -R latesttag -r3 -T '{min(tags % "{tag}")}\n'
+  at3
+  $ hg log -R latesttag -r3 -T '{max(tags % "{tag}")}\n'
+  t3
+
+Test min/max of if() result
+
+  $ cd latesttag
+  $ hg log -l1 -T '{min(if(true, revset("9:10"), ""))}\n'
+  9
+  $ hg log -l1 -T '{max(if(false, "", revset("9:10")))}\n'
+  10
+  $ hg log -l1 -T '{min(ifcontains("a", "aa", revset("9:10"), ""))}\n'
+  9
+  $ hg log -l1 -T '{max(ifcontains("a", "bb", "", revset("9:10")))}\n'
+  10
+  $ hg log -l1 -T '{min(ifeq(0, 0, revset("9:10"), ""))}\n'
+  9
+  $ hg log -l1 -T '{max(ifeq(0, 1, "", revset("9:10")))}\n'
+  10
+  $ cd ..
+
+Test laziness of if() then/else clause
+
+  $ hg debugtemplate '{count(0)}'
+  hg: parse error: not countable
+  (incompatible use of template filter 'count')
+  [255]
+  $ hg debugtemplate '{if(true, "", count(0))}'
+  $ hg debugtemplate '{if(false, count(0), "")}'
+  $ hg debugtemplate '{ifcontains("a", "aa", "", count(0))}'
+  $ hg debugtemplate '{ifcontains("a", "bb", count(0), "")}'
+  $ hg debugtemplate '{ifeq(0, 0, "", count(0))}'
+  $ hg debugtemplate '{ifeq(0, 1, count(0), "")}'
 
 Test dot operator precedence:
 
@@ -3356,6 +3427,8 @@ Test integer literal:
   -4
   $ hg debugtemplate '{(-)}\n'
   hg: parse error at 3: not a prefix: )
+  ({(-)}\n
+      ^ here)
   [255]
   $ hg debugtemplate '{(-a)}\n'
   hg: parse error: negation needs an integer argument
@@ -3521,6 +3594,8 @@ escaped single quotes and errors:
   foo
   $ hg log -r 2 -T '{if(rev, "{if(rev, \")}")}\n'
   hg: parse error at 21: unterminated string
+  ({if(rev, "{if(rev, \")}")}\n
+                        ^ here)
   [255]
   $ hg log -r 2 -T '{if(rev, \"\\"")}\n'
   hg: parse error: trailing \ in string
@@ -3775,6 +3850,11 @@ Test json filter applied to hybrid object:
   $ hg log -r0 -T '{extras|json}\n'
   {"branch": "default"}
 
+Test json filter applied to map result:
+
+  $ hg log -r0 -T '{json(extras % "{key}")}\n'
+  ["branch"]
+
 Test localdate(date, tz) function:
 
   $ TZ=JST-09 hg log -r0 -T '{date|localdate|isodate}\n'
@@ -3820,6 +3900,21 @@ Test shortest(node) function:
 
   $ hg log -r 'wdir()' -T '{node|shortest}\n'
   ffff
+
+  $ hg log --template '{shortest("f")}\n' -l1
+  f
+
+  $ hg log --template '{shortest("0123456789012345678901234567890123456789")}\n' -l1
+  0123456789012345678901234567890123456789
+
+  $ hg log --template '{shortest("01234567890123456789012345678901234567890123456789")}\n' -l1
+  01234567890123456789012345678901234567890123456789
+
+  $ hg log --template '{shortest("not a hex string")}\n' -l1
+  not a hex string
+
+  $ hg log --template '{shortest("not a hex string, but it'\''s 40 bytes long")}\n' -l1
+  not a hex string, but it's 40 bytes long
 
   $ cd ..
 
@@ -4146,6 +4241,13 @@ Invalid arguments passed to revset()
   hg: parse error: invalid argument for revspec
   [255]
 
+Test 'originalnode'
+
+  $ hg log -r 1 -T '{revset("null") % "{node|short} {originalnode|short}"}\n'
+  000000000000 bcc7ff960b8e
+  $ hg log -r 0 -T '{manifest % "{node} {originalnode}"}\n'
+  a0c8bcbbb45c63b90b70ad007bf38961f64f2af0 f7769ec2ab975ad19684098ad1ffd9b81ecc71a1
+
 Test files function
 
   $ hg log -T "{rev}\n{join(files('*'), '\n')}\n"
@@ -4432,7 +4534,7 @@ Test broken string escapes:
   hg: parse error: trailing \ in string
   [255]
   $ hg log -T "\\xy" -R a
-  hg: parse error: invalid \x escape
+  hg: parse error: invalid \x escape* (glob)
   [255]
 
 json filter should escape HTML tags so that the output can be embedded in hgweb:
@@ -4567,8 +4669,8 @@ Set up repository for non-ascii encoding tests:
   $ hg init nonascii
   $ cd nonascii
   $ $PYTHON <<EOF
-  > open('latin1', 'w').write('\xe9')
-  > open('utf-8', 'w').write('\xc3\xa9')
+  > open('latin1', 'wb').write(b'\xe9')
+  > open('utf-8', 'wb').write(b'\xc3\xa9')
   > EOF
   $ HGENCODING=utf-8 hg branch -q `cat utf-8`
   $ HGENCODING=utf-8 hg ci -qAm "non-ascii branch: `cat utf-8`" utf-8
@@ -4596,9 +4698,8 @@ utf8 filter:
   $ HGENCODING=ascii hg log -T "replaced: {'`cat latin1`'|utf8|hex}\n" -l1
   abort: decoding near * (glob)
   [255]
-  $ hg log -T "invalid type: {rev|utf8}\n" -r0
-  abort: template filter 'utf8' is not compatible with keyword 'rev'
-  [255]
+  $ hg log -T "coerced to string: {rev|utf8}\n" -r0
+  coerced to string: 0
 
 pad width:
 
@@ -4616,9 +4717,9 @@ Test that template function in extension is registered as expected
   > 
   > templatefunc = registrar.templatefunc()
   > 
-  > @templatefunc('custom()')
+  > @templatefunc(b'custom()')
   > def custom(context, mapping, args):
-  >     return 'custom'
+  >     return b'custom'
   > EOF
   $ cat <<EOF > .hg/hgrc
   > [extensions]

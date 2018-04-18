@@ -16,6 +16,11 @@ from mercurial import (
     util,
     vfs as vfsmod,
 )
+from mercurial.utils import (
+    dateutil,
+    procutil,
+    stringutil,
+)
 
 from . import common
 
@@ -146,10 +151,10 @@ def get_log_child(fp, url, paths, start, end, limit=0,
         # Caller may interrupt the iteration
         pickle.dump(None, fp, protocol)
     except Exception as inst:
-        pickle.dump(str(inst), fp, protocol)
+        pickle.dump(stringutil.forcebytestr(inst), fp, protocol)
     else:
         pickle.dump(None, fp, protocol)
-    fp.close()
+    fp.flush()
     # With large history, cleanup process goes crazy and suddenly
     # consumes *huge* amount of memory. The output file being closed,
     # there is no need for clean termination.
@@ -231,7 +236,7 @@ def filecheck(ui, path, proto):
 def httpcheck(ui, path, proto):
     try:
         opener = urlreq.buildopener()
-        rsp = opener.open('%s://%s/!svn/ver/0/.svn' % (proto, path))
+        rsp = opener.open('%s://%s/!svn/ver/0/.svn' % (proto, path), 'rb')
         data = rsp.read()
     except urlerr.httperror as inst:
         if inst.code != 404:
@@ -384,7 +389,7 @@ class svn_source(converter_source):
 
     def setrevmap(self, revmap):
         lastrevs = {}
-        for revid in revmap.iterkeys():
+        for revid in revmap:
             uuid, module, revnum = revsplit(revid)
             lastrevnum = lastrevs.setdefault(module, revnum)
             if revnum > lastrevnum:
@@ -639,8 +644,9 @@ class svn_source(converter_source):
             return
         if self.convertfp is None:
             self.convertfp = open(os.path.join(self.wc, '.svn', 'hg-shamap'),
-                                  'a')
-        self.convertfp.write('%s %d\n' % (destrev, self.revnum(rev)))
+                                  'ab')
+        self.convertfp.write(util.tonativeeol('%s %d\n'
+                                              % (destrev, self.revnum(rev))))
         self.convertfp.flush()
 
     def revid(self, revnum, module=None):
@@ -890,7 +896,7 @@ class svn_source(converter_source):
             # Example SVN datetime. Includes microseconds.
             # ISO-8601 conformant
             # '2007-01-04T17:35:00.902377Z'
-            date = util.parsedate(date[:19] + " UTC", ["%Y-%m-%dT%H:%M:%S"])
+            date = dateutil.parsedate(date[:19] + " UTC", ["%Y-%m-%dT%H:%M:%S"])
             if self.ui.configbool('convert', 'localtimezone'):
                 date = makedatetimestamp(date[0])
 
@@ -912,7 +918,7 @@ class svn_source(converter_source):
                 branch = None
 
             cset = commit(author=author,
-                          date=util.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
+                          date=dateutil.datestr(date, '%Y-%m-%d %H:%M:%S %1%2'),
                           desc=log,
                           parents=parents,
                           branch=branch,
@@ -1064,9 +1070,9 @@ class svn_source(converter_source):
         if not self.ui.configbool('convert', 'svn.debugsvnlog'):
             return directlogstream(*args)
         arg = encodeargs(args)
-        hgexe = util.hgexecutable()
-        cmd = '%s debugsvnlog' % util.shellquote(hgexe)
-        stdin, stdout = util.popen2(util.quotecommand(cmd))
+        hgexe = procutil.hgexecutable()
+        cmd = '%s debugsvnlog' % procutil.shellquote(hgexe)
+        stdin, stdout = procutil.popen2(procutil.quotecommand(cmd))
         stdin.write(arg)
         try:
             stdin.close()
@@ -1128,7 +1134,7 @@ class svn_sink(converter_sink, commandline):
             self.wc = os.path.realpath(path)
             self.run0('update')
         else:
-            if not re.search(r'^(file|http|https|svn|svn\+ssh)\://', path):
+            if not re.search(br'^(file|http|https|svn|svn\+ssh)\://', path):
                 path = os.path.realpath(path)
                 if os.path.isdir(os.path.dirname(path)):
                     if not os.path.exists(os.path.join(path, 'db', 'fs-type')):
@@ -1158,7 +1164,7 @@ class svn_sink(converter_sink, commandline):
 
         if created:
             hook = os.path.join(created, 'hooks', 'pre-revprop-change')
-            fp = open(hook, 'w')
+            fp = open(hook, 'wb')
             fp.write(pre_revprop_change)
             fp.close()
             util.setflags(hook, False, True)
@@ -1308,12 +1314,12 @@ class svn_sink(converter_sink, commandline):
             self.setexec = []
 
         fd, messagefile = tempfile.mkstemp(prefix='hg-convert-')
-        fp = os.fdopen(fd, pycompat.sysstr('w'))
-        fp.write(commit.desc)
+        fp = os.fdopen(fd, r'wb')
+        fp.write(util.tonativeeol(commit.desc))
         fp.close()
         try:
             output = self.run0('commit',
-                               username=util.shortuser(commit.author),
+                               username=stringutil.shortuser(commit.author),
                                file=messagefile,
                                encoding='utf-8')
             try:

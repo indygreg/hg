@@ -5,6 +5,7 @@ from __future__ import absolute_import
 from mercurial import (
     error,
     patch,
+    pycompat,
     registrar,
     scmutil,
 )
@@ -16,6 +17,7 @@ command = registrar.command(cmdtable)
     [(b'', b'git', b'', b'git upgrade mode (yes/no/auto/warn/abort)')],
     b'[OPTION]... [FILE]...')
 def autodiff(ui, repo, *pats, **opts):
+    opts = pycompat.byteskwargs(opts)
     diffopts = patch.difffeatureopts(ui, opts)
     git = opts.get(b'git', b'no')
     brokenfiles = set()
@@ -40,9 +42,9 @@ def autodiff(ui, repo, *pats, **opts):
     else:
         raise error.Abort(b'--git must be yes, no or auto')
 
-    node1, node2 = scmutil.revpair(repo, [])
-    m = scmutil.match(repo[node2], pats, opts)
-    it = patch.diff(repo, node1, node2, match=m, opts=diffopts,
+    ctx1, ctx2 = scmutil.revpair(repo, [])
+    m = scmutil.match(ctx2, pats, opts)
+    it = patch.diff(repo, ctx1.node(), ctx2.node(), match=m, opts=diffopts,
                     losedatafn=losedatafn)
     for chunk in it:
         ui.write(chunk)

@@ -106,7 +106,7 @@ def _takequicksample(dag, nodes, size):
     :nodes: set of nodes to discover
     :size: the maximum size of the sample"""
     sample = dag.headsetofconnecteds(nodes)
-    if size <= len(sample):
+    if len(sample) >= size:
         return _limitsample(sample, size)
     _updatesample(dag, None, sample, quicksamplesize=size)
     return sample
@@ -155,11 +155,14 @@ def findcommonheads(ui, local, remote,
     sample = _limitsample(ownheads, initialsamplesize)
     # indices between sample and externalized version must match
     sample = list(sample)
-    batch = remote.iterbatch()
-    batch.heads()
-    batch.known(dag.externalizeall(sample))
-    batch.submit()
-    srvheadhashes, yesno = batch.results()
+
+    with remote.commandexecutor() as e:
+        fheads = e.callcommand('heads', {})
+        fknown = e.callcommand('known', {
+            'nodes': dag.externalizeall(sample),
+        })
+
+    srvheadhashes, yesno = fheads.result(), fknown.result()
 
     if cl.tip() == nullid:
         if srvheadhashes != [nullid]:
@@ -175,7 +178,7 @@ def findcommonheads(ui, local, remote,
         ui.debug("all remote heads known locally\n")
         return (srvheadhashes, False, srvheadhashes,)
 
-    if sample and len(ownheads) <= initialsamplesize and all(yesno):
+    if len(sample) == len(ownheads) and all(yesno):
         ui.note(_("all local heads known remotely\n"))
         ownheadhashes = dag.externalizeall(ownheads)
         return (ownheadhashes, True, srvheadhashes,)
@@ -221,7 +224,6 @@ def findcommonheads(ui, local, remote,
             sample = list(undecided)
         else:
             sample = samplefunc(dag, undecided, targetsize)
-            sample = _limitsample(sample, targetsize)
 
         roundtrips += 1
         ui.progress(_('searching'), roundtrips, unit=_('queries'))
@@ -229,7 +231,12 @@ def findcommonheads(ui, local, remote,
                  % (roundtrips, len(undecided), len(sample)))
         # indices between sample and externalized version must match
         sample = list(sample)
-        yesno = remote.known(dag.externalizeall(sample))
+
+        with remote.commandexecutor() as e:
+            yesno = e.callcommand('known', {
+                'nodes': dag.externalizeall(sample),
+            }).result()
+
         full = True
 
         if sample:

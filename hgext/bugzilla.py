@@ -300,12 +300,16 @@ import time
 from mercurial.i18n import _
 from mercurial.node import short
 from mercurial import (
-    cmdutil,
     error,
+    logcmdutil,
     mail,
     registrar,
     url,
     util,
+)
+from mercurial.utils import (
+    procutil,
+    stringutil,
 )
 
 xmlrpclib = util.xmlrpclib
@@ -524,13 +528,13 @@ class bzmysql(bzaccess):
             except TypeError:
                 cmd = cmdfmt % {'bzdir': bzdir, 'id': id, 'user': user}
             self.ui.note(_('running notify command %s\n') % cmd)
-            fp = util.popen('(%s) 2>&1' % cmd)
-            out = fp.read()
+            fp = procutil.popen('(%s) 2>&1' % cmd, 'rb')
+            out = util.fromnativeeol(fp.read())
             ret = fp.close()
             if ret:
                 self.ui.warn(out)
                 raise error.Abort(_('bugzilla notify command %s') %
-                                 util.explainexit(ret)[0])
+                                  procutil.explainexit(ret))
         self.ui.status(_('done\n'))
 
     def get_user_id(self, user):
@@ -1090,9 +1094,8 @@ class bugzilla(object):
         if not mapfile and not tmpl:
             tmpl = _('changeset {node|short} in repo {root} refers '
                      'to bug {bug}.\ndetails:\n\t{desc|tabindent}')
-        spec = cmdutil.logtemplatespec(tmpl, mapfile)
-        t = cmdutil.changeset_templater(self.ui, self.repo, spec,
-                                        False, None, False)
+        spec = logcmdutil.templatespec(tmpl, mapfile)
+        t = logcmdutil.changesettemplater(self.ui, self.repo, spec)
         self.ui.pushbuffer()
         t.show(ctx, changes=ctx.changeset(),
                bug=str(bugid),
@@ -1100,7 +1103,8 @@ class bugzilla(object):
                root=self.repo.root,
                webroot=webroot(self.repo.root))
         data = self.ui.popbuffer()
-        self.bzdriver.updatebug(bugid, newstate, data, util.email(ctx.user()))
+        self.bzdriver.updatebug(bugid, newstate, data,
+                                stringutil.email(ctx.user()))
 
     def notify(self, bugs, committer):
         '''ensure Bugzilla users are notified of bug change.'''
@@ -1120,6 +1124,6 @@ def hook(ui, repo, hooktype, node=None, **kwargs):
         if bugs:
             for bug in bugs:
                 bz.update(bug, bugs[bug], ctx)
-            bz.notify(bugs, util.email(ctx.user()))
+            bz.notify(bugs, stringutil.email(ctx.user()))
     except Exception as e:
         raise error.Abort(_('Bugzilla error: %s') % e)

@@ -19,8 +19,10 @@ from __future__ import absolute_import
 from mercurial.i18n import _
 from mercurial import (
     cmdutil,
+    logcmdutil,
     pycompat,
     registrar,
+    scmutil,
 )
 
 templateopts = cmdutil.templateopts
@@ -34,7 +36,7 @@ command = registrar.command(cmdtable)
 testedwith = 'ships-with-hg-core'
 
 @command('children',
-    [('r', 'rev', '',
+    [('r', 'rev', '.',
      _('show children of the specified revision'), _('REV')),
     ] + templateopts,
     _('hg children [-r REV] [FILE]'),
@@ -58,14 +60,14 @@ def children(ui, repo, file_=None, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     rev = opts.get('rev')
+    ctx = scmutil.revsingle(repo, rev)
     if file_:
-        fctx = repo.filectx(file_, changeid=rev)
+        fctx = repo.filectx(file_, changeid=ctx.rev())
         childctxs = [fcctx.changectx() for fcctx in fctx.children()]
     else:
-        ctx = repo[rev]
         childctxs = ctx.children()
 
-    displayer = cmdutil.show_changeset(ui, repo, opts)
+    displayer = logcmdutil.changesetdisplayer(ui, repo, opts)
     for cctx in childctxs:
         displayer.show(cctx)
     displayer.close()

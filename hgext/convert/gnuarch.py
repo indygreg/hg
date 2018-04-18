@@ -17,7 +17,10 @@ from mercurial.i18n import _
 from mercurial import (
     encoding,
     error,
-    util,
+)
+from mercurial.utils import (
+    dateutil,
+    procutil,
 )
 from . import common
 
@@ -45,10 +48,10 @@ class gnuarch_source(common.converter_source, common.commandline):
 
         # Could use checktool, but we want to check for baz or tla.
         self.execmd = None
-        if util.findexe('baz'):
+        if procutil.findexe('baz'):
             self.execmd = 'baz'
         else:
-            if util.findexe('tla'):
+            if procutil.findexe('tla'):
                 self.execmd = 'tla'
             else:
                 raise error.Abort(_('cannot find a GNU Arch tool'))
@@ -194,9 +197,9 @@ class gnuarch_source(common.converter_source, common.commandline):
     def _execute(self, cmd, *args, **kwargs):
         cmdline = [self.execmd, cmd]
         cmdline += args
-        cmdline = [util.shellquote(arg) for arg in cmdline]
+        cmdline = [procutil.shellquote(arg) for arg in cmdline]
         cmdline += ['>', os.devnull, '2>', os.devnull]
-        cmdline = util.quotecommand(' '.join(cmdline))
+        cmdline = procutil.quotecommand(' '.join(cmdline))
         self.ui.debug(cmdline, '\n')
         return os.system(cmdline)
 
@@ -280,8 +283,8 @@ class gnuarch_source(common.converter_source, common.commandline):
             catlog = self.catlogparser.parsestr(data)
 
             # Commit date
-            self.changes[rev].date = util.datestr(
-                util.strdate(catlog['Standard-date'],
+            self.changes[rev].date = dateutil.datestr(
+                dateutil.strdate(catlog['Standard-date'],
                              '%Y-%m-%d %H:%M:%S'))
 
             # Commit author

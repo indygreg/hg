@@ -1,5 +1,6 @@
 Create a repository:
 
+#if no-extraextensions
   $ hg config
   devel.all-warnings=true
   devel.default-date=0 0
@@ -12,6 +13,9 @@ Create a repository:
   ui.promptecho=True
   web.address=localhost
   web\.ipv6=(?:True|False) (re)
+  web.server-header=testing stub value
+#endif
+
   $ hg init t
   $ cd t
 
@@ -59,7 +63,7 @@ Verify that updating to revision 0 via commands.update() works properly
   $ cat <<EOF > update_to_rev0.py
   > from mercurial import ui, hg, commands
   > myui = ui.ui.load()
-  > repo = hg.repository(myui, path='.')
+  > repo = hg.repository(myui, path=b'.')
   > commands.update(myui, repo, rev=0)
   > EOF
   $ hg up null
@@ -86,6 +90,13 @@ Verify should succeed:
   crosschecking files in changesets and manifests
   checking files
   1 files, 1 changesets, 1 total revisions
+
+Repository root:
+
+  $ hg root
+  $TESTTMP/t
+  $ hg log -l1 -T '{reporoot}\n'
+  $TESTTMP/t
 
 At the end...
 

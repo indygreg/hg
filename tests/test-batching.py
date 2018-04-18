@@ -7,11 +7,12 @@
 
 from __future__ import absolute_import, print_function
 
+import contextlib
+
 from mercurial import (
-    error,
-    peer,
-    util,
-    wireproto,
+    localrepo,
+    wireprotov1peer,
+
 )
 
 # equivalent of repo.repository
@@ -29,9 +30,14 @@ class localthing(thing):
         return "%s und %s" % (b, a,)
     def greet(self, name=None):
         return "Hello, %s" % name
-    def batchiter(self):
-        '''Support for local batching.'''
-        return peer.localiterbatcher(self)
+
+    @contextlib.contextmanager
+    def commandexecutor(self):
+        e = localrepo.localcommandexecutor(self)
+        try:
+            yield e
+        finally:
+            e.close()
 
 # usage of "thing" interface
 def use(it):
@@ -44,52 +50,15 @@ def use(it):
     print(it.bar("Eins", "Zwei"))
 
     # Batched call to a couple of proxied methods.
-    batch = it.batchiter()
-    # The calls return futures to eventually hold results.
-    foo = batch.foo(one="One", two="Two")
-    bar = batch.bar("Eins", "Zwei")
-    bar2 = batch.bar(b="Uno", a="Due")
 
-    # Future shouldn't be set until we submit().
-    assert isinstance(foo, peer.future)
-    assert not util.safehasattr(foo, 'value')
-    assert not util.safehasattr(bar, 'value')
-    batch.submit()
-    # Call results() to obtain results as a generator.
-    results = batch.results()
+    with it.commandexecutor() as e:
+        ffoo = e.callcommand('foo', {'one': 'One', 'two': 'Two'})
+        fbar = e.callcommand('bar', {'b': 'Eins', 'a': 'Zwei'})
+        fbar2 = e.callcommand('bar', {'b': 'Uno', 'a': 'Due'})
 
-    # Future results shouldn't be set until we consume a value.
-    assert not util.safehasattr(foo, 'value')
-    foovalue = next(results)
-    assert util.safehasattr(foo, 'value')
-    assert foovalue == foo.value
-    print(foo.value)
-    next(results)
-    print(bar.value)
-    next(results)
-    print(bar2.value)
-
-    # We should be at the end of the results generator.
-    try:
-        next(results)
-    except StopIteration:
-        print('proper end of results generator')
-    else:
-        print('extra emitted element!')
-
-    # Attempting to call a non-batchable method inside a batch fails.
-    batch = it.batchiter()
-    try:
-        batch.greet(name='John Smith')
-    except error.ProgrammingError as e:
-        print(e)
-
-    # Attempting to call a local method inside a batch fails.
-    batch = it.batchiter()
-    try:
-        batch.hello()
-    except error.ProgrammingError as e:
-        print(e)
+    print(ffoo.result())
+    print(fbar.result())
+    print(fbar2.result())
 
 # local usage
 mylocal = localthing()
@@ -176,19 +145,24 @@ class remotething(thing):
         for r in res.split(';'):
             yield r
 
-    def batchiter(self):
-        return wireproto.remoteiterbatcher(self)
+    @contextlib.contextmanager
+    def commandexecutor(self):
+        e = wireprotov1peer.peerexecutor(self)
+        try:
+            yield e
+        finally:
+            e.close()
 
-    @peer.batchable
+    @wireprotov1peer.batchable
     def foo(self, one, two=None):
         encargs = [('one', mangle(one),), ('two', mangle(two),)]
-        encresref = peer.future()
+        encresref = wireprotov1peer.future()
         yield encargs, encresref
         yield unmangle(encresref.value)
 
-    @peer.batchable
+    @wireprotov1peer.batchable
     def bar(self, b, a):
-        encresref = peer.future()
+        encresref = wireprotov1peer.future()
         yield [('b', mangle(b),), ('a', mangle(a),)], encresref
         yield unmangle(encresref.value)
 

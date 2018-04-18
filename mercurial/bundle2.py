@@ -147,6 +147,7 @@ preserve.
 
 from __future__ import absolute_import, division
 
+import collections
 import errno
 import os
 import re
@@ -158,6 +159,7 @@ from .i18n import _
 from . import (
     bookmarks,
     changegroup,
+    encoding,
     error,
     node as nodemod,
     obsolete,
@@ -168,6 +170,9 @@ from . import (
     tags,
     url,
     util,
+)
+from .utils import (
+    stringutil,
 )
 
 urlerr = util.urlerr
@@ -294,7 +299,7 @@ class bundleoperation(object):
     * a way to construct a bundle response when applicable.
     """
 
-    def __init__(self, repo, transactiongetter, captureoutput=True):
+    def __init__(self, repo, transactiongetter, captureoutput=True, source=''):
         self.repo = repo
         self.ui = repo.ui
         self.records = unbundlerecords()
@@ -304,6 +309,7 @@ class bundleoperation(object):
         self._gettransaction = transactiongetter
         # carries value that can modify part behavior
         self.modes = {}
+        self.source = source
 
     def gettransaction(self):
         transaction = self._gettransaction()
@@ -336,7 +342,7 @@ def _notransaction():
     to be created"""
     raise TransactionUnavailable()
 
-def applybundle(repo, unbundler, tr, source=None, url=None, **kwargs):
+def applybundle(repo, unbundler, tr, source, url=None, **kwargs):
     # transform me into unbundler.apply() as soon as the freeze is lifted
     if isinstance(unbundler, unbundle20):
         tr.hookargs['bundle2'] = '1'
@@ -344,10 +350,10 @@ def applybundle(repo, unbundler, tr, source=None, url=None, **kwargs):
             tr.hookargs['source'] = source
         if url is not None and 'url' not in tr.hookargs:
             tr.hookargs['url'] = url
-        return processbundle(repo, unbundler, lambda: tr)
+        return processbundle(repo, unbundler, lambda: tr, source=source)
     else:
         # the transactiongetter won't be used, but we might as well set it
-        op = bundleoperation(repo, lambda: tr)
+        op = bundleoperation(repo, lambda: tr, source=source)
         _processchangegroup(op, unbundler, tr, source, url, **kwargs)
         return op
 
@@ -419,7 +425,7 @@ class partiterator(object):
         self.repo.ui.debug('bundle2-input-bundle: %i parts total\n' %
                            self.count)
 
-def processbundle(repo, unbundler, transactiongetter=None, op=None):
+def processbundle(repo, unbundler, transactiongetter=None, op=None, source=''):
     """This function process a bundle, apply effect to/from a repo
 
     It iterates over each part then searches for and uses the proper handling
@@ -435,7 +441,7 @@ def processbundle(repo, unbundler, transactiongetter=None, op=None):
     if op is None:
         if transactiongetter is None:
             transactiongetter = _notransaction
-        op = bundleoperation(repo, transactiongetter)
+        op = bundleoperation(repo, transactiongetter, source=source)
     # todo:
     # - replace this is a init function soon.
     # - exception catching
@@ -1089,7 +1095,7 @@ class bundlepart(object):
             ui.debug('bundle2-generatorexit\n')
             raise
         except BaseException as exc:
-            bexc = util.forcebytestr(exc)
+            bexc = stringutil.forcebytestr(exc)
             # backup exception data for later
             ui.debug('bundle2-input-stream-interrupt: encoding exception %s'
                      % bexc)
@@ -1490,6 +1496,7 @@ capabilities = {'HG20': (),
                 'digests': tuple(sorted(util.DIGESTS.keys())),
                 'remote-changegroup': ('http', 'https'),
                 'hgtagsfnodes': (),
+                'rev-branch-cache': (),
                 'phases': ('heads',),
                 'stream': ('v2',),
                }
@@ -1574,21 +1581,30 @@ def _addpartsfromopts(ui, repo, bundler, source, outgoing, opts):
     # different right now. So we keep them separated for now for the sake of
     # simplicity.
 
-    # we always want a changegroup in such bundle
-    cgversion = opts.get('cg.version')
-    if cgversion is None:
-        cgversion = changegroup.safeversion(repo)
-    cg = changegroup.makechangegroup(repo, outgoing, cgversion, source)
-    part = bundler.newpart('changegroup', data=cg.getchunks())
-    part.addparam('version', cg.version)
-    if 'clcount' in cg.extras:
-        part.addparam('nbchanges', '%d' % cg.extras['clcount'],
-                      mandatory=False)
-    if opts.get('phases') and repo.revs('%ln and secret()',
-                                        outgoing.missingheads):
-        part.addparam('targetphase', '%d' % phases.secret, mandatory=False)
+    # we might not always want a changegroup in such bundle, for example in
+    # stream bundles
+    if opts.get('changegroup', True):
+        cgversion = opts.get('cg.version')
+        if cgversion is None:
+            cgversion = changegroup.safeversion(repo)
+        cg = changegroup.makechangegroup(repo, outgoing, cgversion, source)
+        part = bundler.newpart('changegroup', data=cg.getchunks())
+        part.addparam('version', cg.version)
+        if 'clcount' in cg.extras:
+            part.addparam('nbchanges', '%d' % cg.extras['clcount'],
+                          mandatory=False)
+        if opts.get('phases') and repo.revs('%ln and secret()',
+                                            outgoing.missingheads):
+            part.addparam('targetphase', '%d' % phases.secret, mandatory=False)
 
-    addparttagsfnodescache(repo, bundler, outgoing)
+    if opts.get('streamv2', False):
+        addpartbundlestream2(bundler, repo, stream=True)
+
+    if opts.get('tagsfnodescache', True):
+        addparttagsfnodescache(repo, bundler, outgoing)
+
+    if opts.get('revbranchcache', True):
+        addpartrevbranchcache(repo, bundler, outgoing)
 
     if opts.get('obsolescence', False):
         obsmarkers = repo.obsstore.relevantmarkers(outgoing.missing)
@@ -1622,6 +1638,59 @@ def addparttagsfnodescache(repo, bundler, outgoing):
 
     if chunks:
         bundler.newpart('hgtagsfnodes', data=''.join(chunks))
+
+def addpartrevbranchcache(repo, bundler, outgoing):
+    # we include the rev branch cache for the bundle changeset
+    # (as an optional parts)
+    cache = repo.revbranchcache()
+    cl = repo.unfiltered().changelog
+    branchesdata = collections.defaultdict(lambda: (set(), set()))
+    for node in outgoing.missing:
+        branch, close = cache.branchinfo(cl.rev(node))
+        branchesdata[branch][close].add(node)
+
+    def generate():
+        for branch, (nodes, closed) in sorted(branchesdata.items()):
+            utf8branch = encoding.fromlocal(branch)
+            yield rbcstruct.pack(len(utf8branch), len(nodes), len(closed))
+            yield utf8branch
+            for n in sorted(nodes):
+                yield n
+            for n in sorted(closed):
+                yield n
+
+    bundler.newpart('cache:rev-branch-cache', data=generate())
+
+def _formatrequirementsspec(requirements):
+    return urlreq.quote(','.join(sorted(requirements)))
+
+def _formatrequirementsparams(requirements):
+    requirements = _formatrequirementsspec(requirements)
+    params = "%s%s" % (urlreq.quote("requirements="), requirements)
+    return params
+
+def addpartbundlestream2(bundler, repo, **kwargs):
+    if not kwargs.get('stream', False):
+        return
+
+    if not streamclone.allowservergeneration(repo):
+        raise error.Abort(_('stream data requested but server does not allow '
+                            'this feature'),
+                          hint=_('well-behaved clients should not be '
+                                 'requesting stream data from servers not '
+                                 'advertising it; the client may be buggy'))
+
+    # Stream clones don't compress well. And compression undermines a
+    # goal of stream clones, which is to be fast. Communicate the desire
+    # to avoid compression to consumers of the bundle.
+    bundler.prefercompressed = False
+
+    filecount, bytecount, it = streamclone.generatev2(repo)
+    requirements = _formatrequirementsspec(repo.requirements)
+    part = bundler.newpart('stream2', data=it)
+    part.addparam('bytecount', '%d' % bytecount, mandatory=True)
+    part.addparam('filecount', '%d' % filecount, mandatory=True)
+    part.addparam('requirements', requirements, mandatory=True)
 
 def buildobsmarkerspart(bundler, markers):
     """add an obsmarker part to the bundler with <markers>
@@ -1729,7 +1798,7 @@ def handlechangegroup(op, inpart):
     extrakwargs = {}
     targetphase = inpart.params.get('targetphase')
     if targetphase is not None:
-        extrakwargs['targetphase'] = int(targetphase)
+        extrakwargs[r'targetphase'] = int(targetphase)
     ret = _processchangegroup(op, cg, tr, 'bundle2', 'bundle2',
                               expectedtotal=nbchangesets, **extrakwargs)
     if op.reply is not None:
@@ -1946,7 +2015,8 @@ def handleerrorpushkey(op, inpart):
         value = inpart.params.get(name)
         if value is not None:
             kwargs[name] = value
-    raise error.PushkeyFailed(inpart.params['in-reply-to'], **kwargs)
+    raise error.PushkeyFailed(inpart.params['in-reply-to'],
+                              **pycompat.strkwargs(kwargs))
 
 @parthandler('error:unsupportedcontent', ('parttype', 'params'))
 def handleerrorunsupportedcontent(op, inpart):
@@ -1959,7 +2029,7 @@ def handleerrorunsupportedcontent(op, inpart):
     if params is not None:
         kwargs['params'] = params.split('\0')
 
-    raise error.BundleUnknownFeatureError(**kwargs)
+    raise error.BundleUnknownFeatureError(**pycompat.strkwargs(kwargs))
 
 @parthandler('error:pushraced', ('message',))
 def handleerrorpushraced(op, inpart):
@@ -2001,7 +2071,8 @@ def handlepushkey(op, inpart):
         for key in ('namespace', 'key', 'new', 'old', 'ret'):
             if key in inpart.params:
                 kwargs[key] = inpart.params[key]
-        raise error.PushkeyFailed(partid=str(inpart.id), **kwargs)
+        raise error.PushkeyFailed(partid='%d' % inpart.id,
+                                  **pycompat.strkwargs(kwargs))
 
 @parthandler('bookmarks')
 def handlebookmark(op, inpart):
@@ -2040,14 +2111,15 @@ def handlebookmark(op, inpart):
                 allhooks.append(hookargs)
 
             for hookargs in allhooks:
-                op.repo.hook('prepushkey', throw=True, **hookargs)
+                op.repo.hook('prepushkey', throw=True,
+                             **pycompat.strkwargs(hookargs))
 
         bookstore.applychanges(op.repo, op.gettransaction(), changes)
 
         if pushkeycompat:
             def runhook():
                 for hookargs in allhooks:
-                    op.repo.hook('pushkey', **hookargs)
+                    op.repo.hook('pushkey', **pycompat.strkwargs(hookargs))
             op.repo._afterlock(runhook)
 
     elif bookmarksmode == 'records':
@@ -2125,6 +2197,40 @@ def handlehgtagsfnodes(op, inpart):
 
     cache.write()
     op.ui.debug('applied %i hgtags fnodes cache entries\n' % count)
+
+rbcstruct = struct.Struct('>III')
+
+@parthandler('cache:rev-branch-cache')
+def handlerbc(op, inpart):
+    """receive a rev-branch-cache payload and update the local cache
+
+    The payload is a series of data related to each branch
+
+    1) branch name length
+    2) number of open heads
+    3) number of closed heads
+    4) open heads nodes
+    5) closed heads nodes
+    """
+    total = 0
+    rawheader = inpart.read(rbcstruct.size)
+    cache = op.repo.revbranchcache()
+    cl = op.repo.unfiltered().changelog
+    while rawheader:
+        header = rbcstruct.unpack(rawheader)
+        total += header[1] + header[2]
+        utf8branch = inpart.read(header[0])
+        branch = encoding.tolocal(utf8branch)
+        for x in xrange(header[1]):
+            node = inpart.read(20)
+            rev = cl.rev(node)
+            cache.setdata(branch, rev, node, False)
+        for x in xrange(header[2]):
+            node = inpart.read(20)
+            rev = cl.rev(node)
+            cache.setdata(branch, rev, node, True)
+        rawheader = inpart.read(rbcstruct.size)
+    cache.write()
 
 @parthandler('pushvars')
 def bundle2getvars(op, part):

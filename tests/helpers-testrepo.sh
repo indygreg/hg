@@ -9,6 +9,13 @@
 # The mercurial source repository was typically orignally cloned with the
 # system mercurial installation, and may require extensions or settings from
 # the system installation.
+
+if [ -n "$HGTESTEXTRAEXTENSIONS" ]; then
+    for extension in $HGTESTEXTRAEXTENSIONS; do
+        extraoptions="$extraoptions --config extensions.$extension=!"
+    done
+fi
+
 syshg () {
     (
         syshgenv
@@ -48,6 +55,6 @@ if [ -n "`hg id -R "$TESTDIR/.." 2>&1 >/dev/null`" ]; then
     alias testrepohg=syshg
     alias testrepohgenv=syshgenv
 else
-    alias testrepohg=hg
+    alias testrepohg="hg $extraoptions"
     alias testrepohgenv=:
 fi

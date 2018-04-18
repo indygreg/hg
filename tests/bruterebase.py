@@ -65,7 +65,7 @@ def debugbruterebase(ui, repo, source, dest):
                             desc += getdesc(prev)
                     descs.append(desc)
                 descs.sort()
-                summary = ' '.join(descs)
+                summary = b' '.join(descs)
             ui.popbuffer()
             repo.vfs.tryunlink(b'rebasestate')
 

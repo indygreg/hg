@@ -954,14 +954,14 @@ Testing rebase being called inside another transaction
   > def _rebase(orig, ui, repo, *args, **kwargs):
   >     with repo.wlock():
   >         with repo.lock():
-  >             with repo.transaction('wrappedrebase'):
+  >             with repo.transaction(b'wrappedrebase'):
   >                 return orig(ui, repo, *args, **kwargs)
   > def wraprebase(loaded):
   >     assert loaded
-  >     rebasemod = extensions.find('rebase')
-  >     extensions.wrapcommand(rebasemod.cmdtable, 'rebase', _rebase)
+  >     rebasemod = extensions.find(b'rebase')
+  >     extensions.wrapcommand(rebasemod.cmdtable, b'rebase', _rebase)
   > def extsetup(ui):
-  >     extensions.afterloaded('rebase', wraprebase)
+  >     extensions.afterloaded(b'rebase', wraprebase)
   > EOF
 
   $ cat >> .hg/hgrc <<EOF

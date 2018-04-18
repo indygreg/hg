@@ -420,7 +420,7 @@ test that chained `or` operations never eat up stack (issue4624)
 test that repeated `-r` options never eat up stack (issue4565)
 (uses `-r 0::1` to avoid possible optimization at old-style parser)
 
-  $ hg log -T '{rev}\n' `$PYTHON -c "for i in xrange(500): print '-r 0::1 ',"`
+  $ hg log -T '{rev}\n' `$PYTHON -c "for i in range(500): print '-r 0::1 ',"`
   0
   1
 
@@ -575,6 +575,15 @@ invalid function call should not be optimized to only()
   hg: parse error: not a symbol
   [255]
 
+test empty string
+
+  $ log ''
+  hg: parse error: empty query
+  [255]
+  $ log 'parents("")'
+  hg: parse error: empty string is not a valid revision
+  [255]
+
 we can use patterns when searching for tags
 
   $ log 'tag("1..*")'
@@ -690,6 +699,8 @@ issue2654: report a parse error if the revset was not completely parsed
 
   $ log '1 OR 2'
   hg: parse error at 2: invalid token
+  (1 OR 2
+     ^ here)
   [255]
 
 or operator should preserve ordering:
@@ -1562,6 +1573,8 @@ test in problematic encoding
 test error message of bad revset
   $ hg log -r 'foo\\'
   hg: parse error at 3: syntax error in revset 'foo\\'
+  (foo\\
+      ^ here)
   [255]
 
   $ cd ..

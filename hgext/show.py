@@ -29,7 +29,6 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial.node import (
-    hex,
     nullrev,
 )
 from mercurial import (
@@ -39,11 +38,13 @@ from mercurial import (
     error,
     formatter,
     graphmod,
+    logcmdutil,
     phases,
     pycompat,
     registrar,
     revset,
     revsetlang,
+    scmutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -125,7 +126,7 @@ def show(ui, repo, view=None, template=None):
         ui.write('\n')
 
         for name, func in sorted(views.items()):
-            ui.write(('%s\n') % func.__doc__)
+            ui.write(('%s\n') % pycompat.sysbytes(func.__doc__))
 
         ui.write('\n')
         raise error.Abort(_('no view requested'),
@@ -148,7 +149,7 @@ def show(ui, repo, view=None, template=None):
     elif fn._csettopic:
         ref = 'show%s' % fn._csettopic
         spec = formatter.lookuptemplate(ui, ref, template)
-        displayer = cmdutil.changeset_templater(ui, repo, spec, buffered=True)
+        displayer = logcmdutil.changesettemplater(ui, repo, spec, buffered=True)
         return fn(ui, repo, displayer)
     else:
         return fn(ui, repo)
@@ -259,7 +260,7 @@ def showstack(ui, repo, displayer):
     shortesttmpl = formatter.maketemplater(ui, '{shortest(node, %d)}' % nodelen,
                                            resources=tres)
     def shortest(ctx):
-        return shortesttmpl.render({'ctx': ctx, 'node': ctx.hex()})
+        return shortesttmpl.renderdefault({'ctx': ctx, 'node': ctx.hex()})
 
     # We write out new heads to aid in DAG awareness and to help with decision
     # making on how the stack should be reconciled with commits made since the
@@ -409,8 +410,8 @@ def showwork(ui, repo, displayer):
     revdag = graphmod.dagwalker(repo, revs)
 
     ui.setconfig('experimental', 'graphshorten', True)
-    cmdutil.displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges,
-                         props={'nodelen': nodelen})
+    logcmdutil.displaygraph(ui, repo, revdag, displayer, graphmod.asciiedges,
+                            props={'nodelen': nodelen})
 
 def extsetup(ui):
     # Alias `hg <prefix><view>` to `hg show <view>`.
@@ -426,7 +427,7 @@ def extsetup(ui):
                 continue
 
             # Same for aliases.
-            if ui.config('alias', name):
+            if ui.config('alias', name, None):
                 continue
 
             ui.setconfig('alias', name, 'show %s' % view, source='show')
@@ -445,9 +446,9 @@ def longestshortest(repo, revs, minlen=4):
     """
     if not revs:
         return minlen
-    # don't use filtered repo because it's slow. see templater.shortest().
-    cl = repo.unfiltered().changelog
-    return max(len(cl.shortest(hex(cl.node(r)), minlen)) for r in revs)
+    cl = repo.changelog
+    return max(len(scmutil.shortesthexnodeidprefix(repo, cl.node(r), minlen))
+               for r in revs)
 
 # Adjust the docstring of the show command so it shows all registered views.
 # This is a bit hacky because it runs at the end of module load. When moved

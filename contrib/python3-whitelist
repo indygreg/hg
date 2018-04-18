@@ -146,6 +146,7 @@ test-extdiff.t
 test-extra-filelog-entry.t
 test-filebranch.t
 test-fileset-generated.t
+test-fix-topology.t
 test-flags.t
 test-generaldelta.t
 test-getbundle.t
@@ -161,6 +162,7 @@ test-hgweb-bundle.t
 test-hgweb-descend-empties.t
 test-hgweb-empty.t
 test-hgweb-removed.t
+test-hgwebdirsym.t
 test-histedit-arguments.t
 test-histedit-base.t
 test-histedit-bookmark-motion.t
@@ -257,6 +259,7 @@ test-mq-header-date.t
 test-mq-header-from.t
 test-mq-merge.t
 test-mq-pull-from-bundle.t
+test-mq-qclone-http.t
 test-mq-qdelete.t
 test-mq-qdiff.t
 test-mq-qfold.t
@@ -392,6 +395,7 @@ test-revlog-group-emptyiter.t
 test-revlog-mmapindex.t
 test-revlog-packentry.t
 test-revset-dirstate-parents.t
+test-revset-legacy-lookup.t
 test-revset-outgoing.t
 test-rollback.t
 test-run-tests.py
@@ -422,6 +426,8 @@ test-strip-cross.t
 test-strip.t
 test-subrepo-deep-nested-change.t
 test-subrepo-missing.t
+test-subrepo-recursion.t
+test-subrepo-relative-path.t
 test-subrepo.t
 test-symlinks.t
 test-tag.t

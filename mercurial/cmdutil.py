@@ -2058,9 +2058,9 @@ def addwebdirpath(repo, serverpath, webconf):
         for subpath in ctx.substate:
             ctx.sub(subpath).addwebdirpath(serverpath, webconf)
 
-def forget(ui, repo, match, prefix, explicitonly, dryrun, confirm):
-    if dryrun and confirm:
-        raise error.Abort(_("cannot specify both --dry-run and --confirm"))
+def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
+    if dryrun and interactive:
+        raise error.Abort(_("cannot specify both --dry-run and --interactive"))
     join = lambda f: os.path.join(prefix, f)
     bad = []
     badfn = lambda x, y: bad.append(x) or match.bad(x, y)
@@ -2076,8 +2076,8 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, confirm):
         sub = wctx.sub(subpath)
         try:
             submatch = matchmod.subdirmatcher(subpath, match)
-            subbad, subforgot = sub.forget(submatch, prefix,
-                                           dryrun=dryrun, confirm=confirm)
+            subbad, subforgot = sub.forget(submatch, prefix, dryrun=dryrun,
+                                           interactive=interactive)
             bad.extend([subpath + '/' + f for f in subbad])
             forgot.extend([subpath + '/' + f for f in subforgot])
         except error.LookupError:
@@ -2100,7 +2100,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, confirm):
                                 % match.rel(f))
                     bad.append(f)
 
-    if confirm:
+    if interactive:
         responses = _('[Ynsa?]'
                       '$$ &Yes, forget this file'
                       '$$ &No, skip this file'
@@ -2127,7 +2127,7 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, confirm):
                 break
 
     for f in forget:
-        if ui.verbose or not match.exact(f) or confirm:
+        if ui.verbose or not match.exact(f) or interactive:
             ui.status(_('removing %s\n') % match.rel(f))
 
     if not dryrun:

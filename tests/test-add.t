@@ -273,19 +273,19 @@ test --dry-run mode in forget
 
   $ cd ..
 
-test --confirm option in forget
+test --interactive mode in forget
 
-  $ hg init forgetconfirm
-  $ cd forgetconfirm
+  $ hg init interactiveforget
+  $ cd interactiveforget
   $ echo foo > foo
   $ hg commit -qAm "foo"
   $ echo bar > bar
   $ hg commit -qAm "bar"
-  $ hg forget foo --dry-run --confirm
-  abort: cannot specify both --dry-run and --confirm
+  $ hg forget foo --dry-run -i
+  abort: cannot specify both --dry-run and --interactive
   [255]
 
-  $ hg forget foo --config ui.interactive=True --confirm << EOF
+  $ hg forget foo --config ui.interactive=True -i << EOF
   > ?
   > n
   > EOF
@@ -297,7 +297,7 @@ test --confirm option in forget
   ? - ? (display help)
   forget foo [Ynsa?] n
 
-  $ hg forget foo bar --config ui.interactive=True --confirm << EOF
+  $ hg forget foo bar --config ui.interactive=True -i << EOF
   > y
   > n
   > EOF
@@ -308,14 +308,14 @@ test --confirm option in forget
   R bar
   $ hg up -qC .
 
-  $ hg forget foo bar --config ui.interactive=True --confirm << EOF
+  $ hg forget foo bar --config ui.interactive=True -i << EOF
   > s
   > EOF
   forget bar [Ynsa?] s
   $ hg st
   $ hg up -qC .
 
-  $ hg forget foo bar --config ui.interactive=True --confirm << EOF
+  $ hg forget foo bar --config ui.interactive=True -i << EOF
   > a
   > EOF
   forget bar [Ynsa?] a

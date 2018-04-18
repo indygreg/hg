@@ -112,7 +112,6 @@ globalopts = [
 ]
 
 dryrunopts = cmdutil.dryrunopts
-confirmopts = cmdutil.confirmopts
 remoteopts = cmdutil.remoteopts
 walkopts = cmdutil.walkopts
 commitopts = cmdutil.commitopts
@@ -2062,7 +2061,8 @@ def files(ui, repo, *pats, **opts):
 
 @command(
     '^forget',
-    walkopts + dryrunopts + confirmopts,
+    [('i', 'interactive', None, _('use interactive mode')),
+    ] + walkopts + dryrunopts,
     _('[OPTION]... FILE...'), inferrepo=True)
 def forget(ui, repo, *pats, **opts):
     """forget the specified files on the next commit
@@ -2098,10 +2098,10 @@ def forget(ui, repo, *pats, **opts):
         raise error.Abort(_('no files specified'))
 
     m = scmutil.match(repo[None], pats, opts)
-    dryrun, confirm = opts.get('dry_run'), opts.get('confirm')
+    dryrun, interactive = opts.get('dry_run'), opts.get('interactive')
     rejected = cmdutil.forget(ui, repo, m, prefix="",
                               explicitonly=False, dryrun=dryrun,
-                              confirm=confirm)[0]
+                              interactive=interactive)[0]
     return rejected and 1 or 0
 
 @command(

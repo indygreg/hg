@@ -113,6 +113,13 @@ def extdata(context, mapping, args):
         raise error.ParseError(_('extdata expects one argument'))
 
     source = evalstring(context, mapping, args['source'])
+    if not source:
+        sym = templateutil.findsymbolicname(args['source'])
+        if sym:
+            raise error.ParseError(_('empty data source specified'),
+                                   hint=_("did you mean extdata('%s')?") % sym)
+        else:
+            raise error.ParseError(_('empty data source specified'))
     cache = context.resource(mapping, 'cache').setdefault('extdata', {})
     ctx = context.resource(mapping, 'ctx')
     if source in cache:

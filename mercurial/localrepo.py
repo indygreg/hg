@@ -850,8 +850,7 @@ class localrepository(object):
         try:
             self[changeid]
             return True
-        except (error.RepoLookupError, error.FilteredIndexError,
-                error.FilteredLookupError):
+        except error.RepoLookupError:
             return False
 
     def __nonzero__(self):

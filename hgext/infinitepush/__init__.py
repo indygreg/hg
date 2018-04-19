@@ -1067,7 +1067,7 @@ def storebundle(op, params, bundlefile):
         bookmarknode = nodesctx[-1].hex() if nodesctx else None
         key = None
         if newheadscount:
-            with open(bundlefile, 'r') as f:
+            with open(bundlefile, 'rb') as f:
                 bundledata = f.read()
                 with logservicecall(log, 'bundlestore',
                                     bundlesize=len(bundledata)):

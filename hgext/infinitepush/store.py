@@ -86,11 +86,10 @@ class filebundlestore(object):
 
     def read(self, key):
         try:
-            f = open(self._filepath(key), 'rb')
+            with open(self._filepath(key), 'rb') as f:
+                return f.read()
         except IOError:
             return None
-
-        return f.read()
 
 class externalbundlestore(abstractbundlestore):
     def __init__(self, put_binary, put_args, get_binary, get_args):

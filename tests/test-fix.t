@@ -493,11 +493,11 @@ write back to the file, so for example the mtime shouldn't change.
   $ printf "NO FIX NEEDED\n" > foo.whole
   $ hg add
   adding foo.whole
-  $ cp foo.whole foo.whole.orig
+  $ cp -p foo.whole foo.whole.orig
   $ sleep 2 # mtime has a resolution of one or two seconds.
   $ hg fix --working-dir
-  $ f foo.whole --newer foo.whole.orig
-  foo.whole: older than foo.whole.orig
+  $ f foo.whole.orig --newer foo.whole
+  foo.whole.orig: newer than foo.whole
 
   $ cd ..
 

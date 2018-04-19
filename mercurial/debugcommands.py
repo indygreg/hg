@@ -629,6 +629,8 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     opts = pycompat.byteskwargs(opts)
     r = cmdutil.openrevlog(repo, 'debugdeltachain', file_, opts)
     index = r.index
+    start = r.start
+    length = r.length
     generaldelta = r.version & revlog.FLAG_GENERALDELTA
     withsparseread = getattr(r, '_withsparseread', False)
 
@@ -676,8 +678,6 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         comp, uncomp, deltatype, chain, chainsize = revinfo(rev)
         chainbase = chain[0]
         chainid = chainbases.setdefault(chainbase, len(chainbases) + 1)
-        start = r.start
-        length = r.length
         basestart = start(chainbase)
         revstart = start(rev)
         lineardist = revstart + comp - basestart

@@ -28,7 +28,7 @@ from .node import (
 )
 from . import (
     copies,
-    diffhelpers,
+    diffhelper,
     encoding,
     error,
     mail,
@@ -800,7 +800,7 @@ class patchfile(object):
         # if there's skew we want to emit the "(offset %d lines)" even
         # when the hunk cleanly applies at start + skew, so skip the
         # fast case code
-        if self.skew == 0 and diffhelpers.testhunk(old, self.lines, oldstart):
+        if self.skew == 0 and diffhelper.testhunk(old, self.lines, oldstart):
             if self.remove:
                 self.backend.unlink(self.fname)
             else:
@@ -827,7 +827,7 @@ class patchfile(object):
                     cand = [oldstart]
 
                 for l in cand:
-                    if not old or diffhelpers.testhunk(old, self.lines, l):
+                    if not old or diffhelper.testhunk(old, self.lines, l):
                         self.lines[l : l + len(old)] = new
                         self.offset += len(new) - len(old)
                         self.skew = l - orig_start
@@ -1259,8 +1259,8 @@ class hunk(object):
         self.starta = int(self.starta)
         self.startb = int(self.startb)
         try:
-            diffhelpers.addlines(lr, self.hunk, self.lena, self.lenb,
-                                 self.a, self.b)
+            diffhelper.addlines(lr, self.hunk, self.lena, self.lenb,
+                                self.a, self.b)
         except error.ParseError as e:
             raise PatchError(_("bad hunk #%d: %s") % (self.number, e))
         # if we hit eof before finishing out the hunk, the last line will
@@ -1379,7 +1379,7 @@ class hunk(object):
     def _fixnewline(self, lr):
         l = lr.readline()
         if l.startswith('\ '):
-            diffhelpers.fixnewline(self.hunk, self.a, self.b)
+            diffhelper.fixnewline(self.hunk, self.a, self.b)
         else:
             lr.push(l)
 

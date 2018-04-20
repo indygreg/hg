@@ -1,4 +1,4 @@
-# diffhelpers.py - helper routines for patch
+# diffhelper.py - helper routines for patch
 #
 # Copyright 2009 Matt Mackall <mpm@selenic.com> and others
 #

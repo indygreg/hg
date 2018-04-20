@@ -189,8 +189,9 @@ def load(ui, name, path, log=lambda *a: None, loadingtime=None):
     # of Mercurial.
     minver = getattr(mod, 'minimumhgversion', None)
     if minver and util.versiontuple(minver, 2) > util.versiontuple(n=2):
-        ui.warn(_('(third party extension %s requires version %s or newer '
-                  'of Mercurial; disabling)\n') % (shortname, minver))
+        msg = _('(third party extension %s requires version %s or newer '
+                'of Mercurial (current: %s); disabling)\n')
+        ui.warn(msg % (shortname, minver, util.version()))
         return
     log('    - validating extension tables: %s\n', shortname)
     _validatetables(ui, mod)

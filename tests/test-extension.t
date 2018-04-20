@@ -1510,7 +1510,7 @@ Refuse to load extensions with minimum version requirements
   > minimumhgversion = b'3.6'
   > EOF
   $ hg --config extensions.minversion=minversion1.py version
-  (third party extension minversion requires version 3.6 or newer of Mercurial; disabling)
+  (third party extension minversion requires version 3.6 or newer of Mercurial (current: 3.5.2); disabling)
   Mercurial Distributed SCM (version 3.5.2)
   (see https://mercurial-scm.org for more information)
   
@@ -1524,7 +1524,7 @@ Refuse to load extensions with minimum version requirements
   > minimumhgversion = b'3.7'
   > EOF
   $ hg --config extensions.minversion=minversion2.py version 2>&1 | egrep '\(third'
-  (third party extension minversion requires version 3.7 or newer of Mercurial; disabling)
+  (third party extension minversion requires version 3.7 or newer of Mercurial (current: 3.6); disabling)
 
 Can load version that is only off by point release
 

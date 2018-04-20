@@ -87,7 +87,7 @@ configured but fails the minimum version check
   $ echo "foo = $basepath/foo.py" >> .hg/hgrc
   $ echo "bar = $basepath/minvers.py" >> .hg/hgrc
   $ hg log -r. -T'{rev}\n'
-  (third party extension bar requires version 9999.9999 or newer of Mercurial; disabling)
+  (third party extension bar requires version 9999.9999 or newer of Mercurial (current: *); disabling) (glob)
   foo.uisetup
   foo: bar loaded: False
   0
@@ -107,7 +107,7 @@ for the two extensions.
   $ echo "bar = $basepath/minvers.py" >> .hg/hgrc
   $ echo "foo = $basepath/foo.py" >> .hg/hgrc
   $ hg log -r. -T'{rev}\n'
-  (third party extension bar requires version 9999.9999 or newer of Mercurial; disabling)
+  (third party extension bar requires version 9999.9999 or newer of Mercurial (current: *); disabling) (glob)
   foo.uisetup
   foo: bar loaded: False
   0

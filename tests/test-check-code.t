@@ -51,3 +51,15 @@ Prevent adding new files in the root directory accidentally.
   hgeditor
   hgweb.cgi
   setup.py
+
+Prevent adding modules which could be shadowed by ancient .so/.dylib.
+
+  $ testrepohg files \
+  > mercurial/base85.py \
+  > mercurial/bdiff.py \
+  > mercurial/diffhelpers.py \
+  > mercurial/mpatch.py \
+  > mercurial/osutil.py \
+  > mercurial/parsers.py \
+  > mercurial/zstd.py
+  [1]

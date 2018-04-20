@@ -1037,14 +1037,27 @@ def versiontuple(v=None, n=4):
     (3, 9, None)
     >>> versiontuple(v, 4)
     (3, 9, None, 'rc+2-02a8fea4289b')
+
+    >>> versiontuple(b'4.6rc0')
+    (4, 6, None, 'rc0')
+    >>> versiontuple(b'4.6rc0+12-425d55e54f98')
+    (4, 6, None, 'rc0+12-425d55e54f98')
+    >>> versiontuple(b'.1.2.3')
+    (None, None, None, '.1.2.3')
+    >>> versiontuple(b'12.34..5')
+    (12, 34, None, '..5')
+    >>> versiontuple(b'1.2.3.4.5.6')
+    (1, 2, 3, '.4.5.6')
     """
     if not v:
         v = version()
-    parts = remod.split('[\+-]', v, 1)
-    if len(parts) == 1:
-        vparts, extra = parts[0], None
+    m = remod.match(br'(\d+(?:\.\d+){,2})[\+-]?(.*)', v)
+    if not m:
+        vparts, extra = '', v
+    elif m.group(2):
+        vparts, extra = m.groups()
     else:
-        vparts, extra = parts
+        vparts, extra = m.group(1), None
 
     vints = []
     for i in vparts.split('.'):

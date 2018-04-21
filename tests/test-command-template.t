@@ -3249,6 +3249,17 @@ Test manifest/get() can be join()-ed as before, though it's silly:
   $ hg log -R latesttag -r tip -T '{join(get(extras, "branch"), "")}\n'
   default
 
+Test join() over string
+
+  $ hg log -R latesttag -r tip -T '{join(rev|stringify, ".")}\n'
+  1.1
+
+Test join() over uniterable
+
+  $ hg log -R latesttag -r tip -T '{join(rev, "")}\n'
+  hg: parse error: 11 is not iterable
+  [255]
+
 Test min/max of integers
 
   $ hg log -R latesttag -l1 -T '{min(revset("9:10"))}\n'

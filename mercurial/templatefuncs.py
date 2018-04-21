@@ -36,6 +36,7 @@ from .utils import (
 )
 
 evalrawexp = templateutil.evalrawexp
+evalwrapped = templateutil.evalwrapped
 evalfuncarg = templateutil.evalfuncarg
 evalboolean = templateutil.evalboolean
 evaldate = templateutil.evaldate
@@ -327,17 +328,11 @@ def join(context, mapping, args):
         # i18n: "join" is a keyword
         raise error.ParseError(_("join expects one or two arguments"))
 
-    joinset = evalrawexp(context, mapping, args[0])
+    joinset = evalwrapped(context, mapping, args[0])
     joiner = " "
     if len(args) > 1:
         joiner = evalstring(context, mapping, args[1])
-    if isinstance(joinset, templateutil.wrapped):
-        return joinset.join(context, mapping, joiner)
-    # TODO: rethink about join() of a byte string, which had no defined
-    # behavior since a string may be either a bytes or a generator.
-    # TODO: fix type error on join() of non-iterable
-    joinset = templateutil.unwrapvalue(context, mapping, joinset)
-    return templateutil.joinitems(pycompat.maybebytestr(joinset), joiner)
+    return joinset.join(context, mapping, joiner)
 
 @templatefunc('label(label, expr)')
 def label(context, mapping, args):

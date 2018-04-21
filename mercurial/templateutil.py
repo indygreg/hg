@@ -666,14 +666,16 @@ def runmember(context, mapping, data):
     if util.safehasattr(d, 'tomap'):
         lm = context.overlaymap(mapping, d.tomap())
         return runsymbol(context, lm, memb)
-    if util.safehasattr(d, 'get'):
-        return getdictitem(d, memb)
-
-    sym = findsymbolicname(darg)
-    if sym:
-        raise error.ParseError(_("keyword '%s' has no member") % sym)
-    else:
-        raise error.ParseError(_("%r has no member") % pycompat.bytestr(d))
+    try:
+        if util.safehasattr(d, 'get'):
+            return getdictitem(d, memb)
+        raise error.ParseError
+    except error.ParseError:
+        sym = findsymbolicname(darg)
+        if sym:
+            raise error.ParseError(_("keyword '%s' has no member") % sym)
+        else:
+            raise error.ParseError(_("%r has no member") % pycompat.bytestr(d))
 
 def runnegate(context, mapping, data):
     data = evalinteger(context, mapping, data,

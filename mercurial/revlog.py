@@ -877,10 +877,11 @@ class revlog(object):
             return base
 
         index = self.index
-        base = index[rev][3]
-        while base != rev:
-            rev = base
-            base = index[rev][3]
+        iterrev = rev
+        base = index[iterrev][3]
+        while base != iterrev:
+            iterrev = base
+            base = index[iterrev][3]
 
         self._chainbasecache[rev] = base
         return base

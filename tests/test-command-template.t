@@ -3242,12 +3242,12 @@ Test new-style inline templating of non-list/dict type:
   $ hg log -R latesttag -l1 -T '{max(revset("0:9")) % "{rev}:{node|short}\n"}'
   9:fbc7cd862e9c
 
-Test manifest/get() can be join()-ed as before, though it's silly:
+Test manifest/get() can be join()-ed as string, though it's silly:
 
-  $ hg log -R latesttag -r tip -T '{join(manifest, "")}\n'
-  11:2bc6e9006ce2
-  $ hg log -R latesttag -r tip -T '{join(get(extras, "branch"), "")}\n'
-  default
+  $ hg log -R latesttag -r tip -T '{join(manifest, ".")}\n'
+  1.1.:.2.b.c.6.e.9.0.0.6.c.e.2
+  $ hg log -R latesttag -r tip -T '{join(get(extras, "branch"), ".")}\n'
+  d.e.f.a.u.l.t
 
 Test join() over string
 

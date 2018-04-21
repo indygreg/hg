@@ -189,12 +189,8 @@ class mappable(wrapped):
         yield self.tomap()
 
     def join(self, context, mapping, sep):
-        # TODO: just copies the old behavior where a value was a generator
-        # yielding one item, but reconsider about it. join() over a string
-        # has no consistent result because a string may be a bytes, or a
-        # generator yielding an item, or a generator yielding multiple items.
-        # Preserving all of the current behaviors wouldn't make any sense.
-        return self.show(context, mapping)
+        w = makewrapped(context, mapping, self._value)
+        return w.join(context, mapping, sep)
 
     def show(self, context, mapping):
         # TODO: switch gen to (context, mapping) API?

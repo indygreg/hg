@@ -91,6 +91,16 @@ class wrapped(object):
         A returned value must be serializable by templaterfilters.json().
         """
 
+class mappable(object):
+    """Object which can be converted to a single template mapping"""
+
+    def itermaps(self, context):
+        yield self.tomap(context)
+
+    @abc.abstractmethod
+    def tomap(self, context):
+        """Create a single template mapping representing this"""
+
 class wrappedbytes(wrapped):
     """Wrapper for byte string"""
 
@@ -243,7 +253,7 @@ class hybrid(wrapped):
                     for k, v in xs.iteritems()}
         return [unwrapvalue(context, mapping, x) for x in xs]
 
-class hybriditem(wrapped):
+class hybriditem(mappable, wrapped):
     """Wrapper for non-list/dict object to support map operation
 
     This class allows us to handle both:
@@ -258,7 +268,7 @@ class hybriditem(wrapped):
         self._value = value  # may be generator of strings
         self._makemap = makemap
 
-    def tomap(self):
+    def tomap(self, context):
         return self._makemap(self._key)
 
     def contains(self, context, mapping, item):
@@ -276,9 +286,6 @@ class hybriditem(wrapped):
     def getmax(self, context, mapping):
         w = makewrapped(context, mapping, self._value)
         return w.getmax(context, mapping)
-
-    def itermaps(self, context):
-        yield self.tomap()
 
     def join(self, context, mapping, sep):
         w = makewrapped(context, mapping, self._value)
@@ -775,8 +782,8 @@ def runmap(context, mapping, data):
 def runmember(context, mapping, data):
     darg, memb = data
     d = evalwrapped(context, mapping, darg)
-    if util.safehasattr(d, 'tomap'):
-        lm = context.overlaymap(mapping, d.tomap())
+    if isinstance(d, mappable):
+        lm = context.overlaymap(mapping, d.tomap(context))
         return runsymbol(context, lm, memb)
     try:
         return d.getmember(context, mapping, memb)

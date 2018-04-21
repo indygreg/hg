@@ -1097,6 +1097,7 @@ def filelog(web):
                 'file': path,
                 'diff': diffs,
                 'linerange': webutil.formatlinerange(*lr),
+                'rename': templateutil.mappinglist([]),
             })
             entries.append(lm)
             if i == revcount:

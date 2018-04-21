@@ -3212,7 +3212,7 @@ Test new-style inline templating:
   
 
   $ hg log -R latesttag -r tip -T '{rev % "a"}\n'
-  hg: parse error: keyword 'rev' is not iterable of mappings
+  hg: parse error: 11 is not iterable of mappings
   [255]
   $ hg log -R latesttag -r tip -T '{get(extras, "unknown") % "a"}\n'
   hg: parse error: None is not iterable of mappings

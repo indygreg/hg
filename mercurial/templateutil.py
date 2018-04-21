@@ -643,20 +643,6 @@ def _formatfiltererror(arg, filt):
     return (_("template filter '%s' is not compatible with keyword '%s'")
             % (fn, sym))
 
-def _checkeditermaps(darg, d):
-    try:
-        for v in d:
-            if not isinstance(v, dict):
-                raise TypeError
-            yield v
-    except TypeError:
-        sym = findsymbolicname(darg)
-        if sym:
-            raise error.ParseError(_("keyword '%s' is not iterable of mappings")
-                                   % sym)
-        else:
-            raise error.ParseError(_("%r is not iterable of mappings") % d)
-
 def _iteroverlaymaps(context, origmapping, newmappings):
     """Generate combined mappings from the original mapping and an iterable
     of partial mappings to override the original"""
@@ -665,23 +651,14 @@ def _iteroverlaymaps(context, origmapping, newmappings):
         lm['index'] = i
         yield lm
 
-def _applymap(context, mapping, diter, targ):
-    for lm in _iteroverlaymaps(context, mapping, diter):
+def _applymap(context, mapping, d, targ):
+    for lm in _iteroverlaymaps(context, mapping, d.itermaps(context)):
         yield evalrawexp(context, lm, targ)
 
 def runmap(context, mapping, data):
     darg, targ = data
-    d = evalrawexp(context, mapping, darg)
-    # TODO: a generator should be rejected because it is a thunk of lazy
-    # string, but we can't because hgweb abuses generator as a keyword
-    # that returns a list of dicts.
-    # TODO: drop _checkeditermaps() and pass 'd' to mappedgenerator so it
-    # can be restarted.
-    if isinstance(d, wrapped):
-        diter = d.itermaps(context)
-    else:
-        diter = _checkeditermaps(darg, d)
-    return mappedgenerator(_applymap, args=(mapping, diter, targ))
+    d = evalwrapped(context, mapping, darg)
+    return mappedgenerator(_applymap, args=(mapping, d, targ))
 
 def runmember(context, mapping, data):
     darg, memb = data

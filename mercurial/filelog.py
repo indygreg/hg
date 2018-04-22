@@ -7,16 +7,16 @@
 
 from __future__ import absolute_import
 
-from .thirdparty.zope import (
-    interface as zi,
-)
 from . import (
     error,
     repository,
     revlog,
 )
+from .utils import (
+    interfaceutil,
+)
 
-@zi.implementer(repository.ifilestorage)
+@interfaceutil.implementer(repository.ifilestorage)
 class filelog(object):
     def __init__(self, opener, path):
         self._revlog = revlog.revlog(opener,

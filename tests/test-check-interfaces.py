@@ -2,6 +2,9 @@
 
 from __future__ import absolute_import, print_function
 
+from mercurial import encoding
+encoding.environ[b'HGREALINTERFACES'] = b'1'
+
 import os
 
 from mercurial.thirdparty.zope import (

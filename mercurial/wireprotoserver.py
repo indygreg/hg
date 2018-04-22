@@ -15,9 +15,6 @@ from .i18n import _
 from .thirdparty import (
     cbor,
 )
-from .thirdparty.zope import (
-    interface as zi,
-)
 from . import (
     encoding,
     error,
@@ -29,6 +26,7 @@ from . import (
     wireprotov2server,
 )
 from .utils import (
+    interfaceutil,
     procutil,
 )
 
@@ -62,7 +60,7 @@ def decodevaluefromheaders(req, headerprefix):
 
     return ''.join(chunks)
 
-@zi.implementer(wireprototypes.baseprotocolhandler)
+@interfaceutil.implementer(wireprototypes.baseprotocolhandler)
 class httpv1protocolhandler(object):
     def __init__(self, req, ui, checkperm):
         self._req = req
@@ -489,7 +487,7 @@ def _sshv1respondooberror(fout, ferr, rsp):
     fout.write(b'\n')
     fout.flush()
 
-@zi.implementer(wireprototypes.baseprotocolhandler)
+@interfaceutil.implementer(wireprototypes.baseprotocolhandler)
 class sshv1protocolhandler(object):
     """Handler for requests services via version 1 of SSH protocol."""
     def __init__(self, ui, fin, fout):

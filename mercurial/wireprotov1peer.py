@@ -15,9 +15,6 @@ from .i18n import _
 from .node import (
     bin,
 )
-from .thirdparty.zope import (
-    interface as zi,
-)
 from . import (
     bundle2,
     changegroup as changegroupmod,
@@ -28,6 +25,9 @@ from . import (
     repository,
     util,
     wireprototypes,
+)
+from .utils import (
+    interfaceutil,
 )
 
 urlreq = util.urlreq
@@ -110,7 +110,7 @@ class unsentfuture(pycompat.futures.Future):
         # on that.
         return self.result(timeout)
 
-@zi.implementer(repository.ipeercommandexecutor)
+@interfaceutil.implementer(repository.ipeercommandexecutor)
 class peerexecutor(object):
     def __init__(self, peer):
         self._peer = peer
@@ -308,7 +308,8 @@ class peerexecutor(object):
             else:
                 f.set_result(result)
 
-@zi.implementer(repository.ipeercommands, repository.ipeerlegacycommands)
+@interfaceutil.implementer(repository.ipeercommands,
+                           repository.ipeerlegacycommands)
 class wirepeer(repository.peer):
     """Client-side interface for communicating with a peer repository.
 

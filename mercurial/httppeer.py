@@ -20,9 +20,6 @@ from .i18n import _
 from .thirdparty import (
     cbor,
 )
-from .thirdparty.zope import (
-    interface as zi,
-)
 from . import (
     bundle2,
     error,
@@ -37,6 +34,9 @@ from . import (
     wireprotov1peer,
     wireprotov2peer,
     wireprotov2server,
+)
+from .utils import (
+    interfaceutil,
 )
 
 httplib = util.httplib
@@ -582,7 +582,7 @@ class queuedcommandfuture(pycompat.futures.Future):
         # will resolve to Future.result.
         return self.result(timeout)
 
-@zi.implementer(repository.ipeercommandexecutor)
+@interfaceutil.implementer(repository.ipeercommandexecutor)
 class httpv2executor(object):
     def __init__(self, ui, opener, requestbuilder, apiurl, descriptor):
         self._ui = ui
@@ -731,8 +731,9 @@ class httpv2executor(object):
             pass
 
 # TODO implement interface for version 2 peers
-@zi.implementer(repository.ipeerconnection, repository.ipeercapabilities,
-                repository.ipeerrequests)
+@interfaceutil.implementer(repository.ipeerconnection,
+                           repository.ipeercapabilities,
+                           repository.ipeerrequests)
 class httpv2peer(object):
     def __init__(self, ui, repourl, apipath, opener, requestbuilder,
                  apidescriptor):

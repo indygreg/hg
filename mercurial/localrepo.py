@@ -21,9 +21,6 @@ from .node import (
     nullid,
     short,
 )
-from .thirdparty.zope import (
-    interface as zi,
-)
 from . import (
     bookmarks,
     branchmap,
@@ -68,6 +65,7 @@ from . import (
     vfs as vfsmod,
 )
 from .utils import (
+    interfaceutil,
     procutil,
     stringutil,
 )
@@ -153,7 +151,7 @@ moderncaps = {'lookup', 'branchmap', 'pushkey', 'known', 'getbundle',
               'unbundle'}
 legacycaps = moderncaps.union({'changegroupsubset'})
 
-@zi.implementer(repository.ipeercommandexecutor)
+@interfaceutil.implementer(repository.ipeercommandexecutor)
 class localcommandexecutor(object):
     def __init__(self, peer):
         self._peer = peer
@@ -196,7 +194,7 @@ class localcommandexecutor(object):
     def close(self):
         self._closed = True
 
-@zi.implementer(repository.ipeercommands)
+@interfaceutil.implementer(repository.ipeercommands)
 class localpeer(repository.peer):
     '''peer for a local repo; reflects only the most recent API'''
 
@@ -324,7 +322,7 @@ class localpeer(repository.peer):
 
     # End of peer interface.
 
-@zi.implementer(repository.ipeerlegacycommands)
+@interfaceutil.implementer(repository.ipeerlegacycommands)
 class locallegacypeer(localpeer):
     '''peer extension which implements legacy methods too; used for tests with
     restricted capabilities'''
@@ -365,7 +363,7 @@ REVLOGV2_REQUIREMENT = 'exp-revlogv2.0'
 # set to reflect that the extension knows how to handle that requirements.
 featuresetupfuncs = set()
 
-@zi.implementer(repository.completelocalrepository)
+@interfaceutil.implementer(repository.completelocalrepository)
 class localrepository(object):
 
     # obsolete experimental requirements:

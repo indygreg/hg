@@ -9,13 +9,13 @@ from .node import (
     bin,
     hex,
 )
-from .thirdparty.zope import (
-    interface as zi,
-)
 from .i18n import _
 from . import (
     error,
     util,
+)
+from .utils import (
+    interfaceutil,
 )
 
 # Names of the SSH protocol implementations.
@@ -179,7 +179,7 @@ GETBUNDLE_ARGUMENTS = {
     'stream': 'boolean',
 }
 
-class baseprotocolhandler(zi.Interface):
+class baseprotocolhandler(interfaceutil.Interface):
     """Abstract base class for wire protocol handlers.
 
     A wire protocol handler serves as an interface between protocol command
@@ -188,7 +188,7 @@ class baseprotocolhandler(zi.Interface):
     the request, handle response types, etc.
     """
 
-    name = zi.Attribute(
+    name = interfaceutil.Attribute(
         """The name of the protocol implementation.
 
         Used for uniquely identifying the transport type.

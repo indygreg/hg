@@ -504,11 +504,13 @@ def toutf8b(s):
     internal surrogate encoding as a UTF-8 string.)
     '''
 
-    if not isinstance(s, localstr) and isasciistr(s):
+    if isinstance(s, localstr):
+        # assume that the original UTF-8 sequence would never contain
+        # invalid characters in U+DCxx range
+        return s._utf8
+    elif isasciistr(s):
         return s
     if "\xed" not in s:
-        if isinstance(s, localstr):
-            return s._utf8
         try:
             s.decode('utf-8', _utf8strict)
             return s

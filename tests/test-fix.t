@@ -494,6 +494,7 @@ write back to the file, so for example the mtime shouldn't change.
   $ hg add
   adding foo.whole
   $ cp -p foo.whole foo.whole.orig
+  $ cp -p foo.whole.orig foo.whole
   $ sleep 2 # mtime has a resolution of one or two seconds.
   $ hg fix --working-dir
   $ f foo.whole.orig --newer foo.whole

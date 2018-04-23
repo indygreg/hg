@@ -490,10 +490,9 @@ debug output
   pulling from ssh://user@dummy/remote
   running .* ".*/dummyssh" ['"]user@dummy['"] ('|")hg -R remote serve --stdio('|") (re)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob) (sshv2 !)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 413 (sshv1 !)
   protocol upgraded to exp-ssh-v2-0001 (sshv2 !)

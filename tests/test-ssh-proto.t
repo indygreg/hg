@@ -58,10 +58,9 @@ Test a normal behaving server, for sanity
   $ hg --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 413
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -170,10 +169,9 @@ SSH banner is not printed by default, ignored by clients
   $ SSHSERVERMODE=banner hg --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: banner: line 0
   remote: banner: line 1
@@ -262,10 +260,9 @@ servers.
   $ SSHSERVERMODE=no-hello hg --debug debugpeer ssh://user@dummy/server
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 0
   remote: 1
@@ -310,10 +307,9 @@ Sending an unknown command to the server results in an empty response to that co
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending no-args command
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 0
   remote: 413
@@ -383,10 +379,9 @@ Send multiple unknown commands before hello
   sending unknown1 command
   sending unknown2 command
   sending unknown3 command
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 0
   remote: 0
@@ -958,10 +953,9 @@ Send an upgrade request to a server that doesn't support that command
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 0
   remote: 413
@@ -1017,10 +1011,9 @@ Send an upgrade request to a server that supports upgrade
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   protocol upgraded to exp-ssh-v2-0001
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
@@ -1037,10 +1030,9 @@ Verify the peer has capabilities
   running * "*/tests/dummyssh" 'user@dummy' 'hg -R server serve --stdio' (glob) (no-windows !)
   running * "*\tests/dummyssh" "user@dummy" "hg -R server serve --stdio" (glob) (windows !)
   sending upgrade request: * proto=exp-ssh-v2-0001 (glob)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   protocol upgraded to exp-ssh-v2-0001
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash

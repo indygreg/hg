@@ -411,10 +411,9 @@ Test debugpeer
   $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" --debug debugpeer ssh://user@dummy/debugrevlog
   running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob) (no-windows !)
   running "*" "*\tests/dummyssh" "user@dummy" "hg -R debugrevlog serve --stdio" (glob) (windows !)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 413
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash

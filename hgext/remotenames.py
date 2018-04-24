@@ -6,7 +6,7 @@
 # This software may be used and distributed according to the terms of the
 # GNU General Public License version 2 or any later version.
 
-""" showing remotebookmarks and remotebranches in UI
+""" showing remotebookmarks and remotebranches in UI (EXPERIMENTAL)
 
 By default both remotebookmarks and remotebranches are turned on. Config knob to
 control the individually are as follows.

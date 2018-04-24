@@ -734,6 +734,42 @@ Test fuzziness (ambiguous patch location, fuzz=2)
   $ hg revert -a
   reverting a
 
+Test --exact failure
+
+  $ sed 's/^# Parent .*/# Parent '"`hg log -r. -T '{node}'`"'/' \
+  > < fuzzy-tip.patch > fuzzy-reparent.patch
+  $ hg import --config patch.fuzz=0 --exact fuzzy-reparent.patch
+  applying fuzzy-reparent.patch
+  patching file a
+  Hunk #1 FAILED at 0
+  1 out of 1 hunks FAILED -- saving rejects to file a.rej
+  abort: patch failed to apply
+  [255]
+  $ hg up -qC
+  $ hg import --config patch.fuzz=2 --exact fuzzy-reparent.patch
+  applying fuzzy-reparent.patch
+  patching file a
+  Hunk #1 succeeded at 2 with fuzz 1 (offset 0 lines).
+  transaction abort!
+  rollback completed
+  abort: patch is damaged or loses information
+  [255]
+  $ hg up -qC
+
+  $ grep '^#' fuzzy-tip.patch > empty.patch
+  $ cat <<'EOF' >> empty.patch
+  > change
+  > 
+  > diff -r bb90ef1daa38 -r 0e9b883378d4 a
+  > --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  > --- b/a	Thu Jan 01 00:00:00 1970 +0000
+  > EOF
+  $ hg import --exact empty.patch
+  applying empty.patch
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  abort: patch is damaged or loses information
+  [255]
+  $ hg up -qC
 
 import with --no-commit should have written .hg/last-message.txt
 

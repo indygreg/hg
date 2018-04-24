@@ -124,7 +124,7 @@ class parsedrequest(object):
     # WSGI environment dict, unmodified.
     rawenv = attr.ib()
 
-def parserequestfromenv(env, reponame=None, altbaseurl=None):
+def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     """Parse URL components from environment variables.
 
     WSGI defines request attributes via environment variables. This function
@@ -144,6 +144,9 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None):
     if the request were to ``http://myserver:9000/prefix/rev/@``. In other
     words, ``wsgi.url_scheme``, ``SERVER_NAME``, ``SERVER_PORT``, and
     ``SCRIPT_NAME`` are all effectively replaced by components from this URL.
+
+    ``bodyfh`` can be used to specify a file object to read the request body
+    from. If not defined, ``wsgi.input`` from the environment dict is used.
     """
     # PEP 3333 defines the WSGI spec and is a useful reference for this code.
 
@@ -307,9 +310,10 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None):
     if 'CONTENT_TYPE' in env and 'HTTP_CONTENT_TYPE' not in env:
         headers['Content-Type'] = env['CONTENT_TYPE']
 
-    bodyfh = env['wsgi.input']
-    if 'Content-Length' in headers:
-        bodyfh = util.cappedreader(bodyfh, int(headers['Content-Length']))
+    if bodyfh is None:
+        bodyfh = env['wsgi.input']
+        if 'Content-Length' in headers:
+            bodyfh = util.cappedreader(bodyfh, int(headers['Content-Length']))
 
     return parsedrequest(method=env['REQUEST_METHOD'],
                          url=fullurl, baseurl=baseurl,

@@ -380,3 +380,47 @@ Make phases updates work
 #endif
 
   $ cd ..
+
+Pushing via hgwebdir works
+
+  $ hg init hgwebdir
+  $ cd hgwebdir
+  $ echo 0 > a
+  $ hg -q commit -A -m initial
+  $ cd ..
+
+  $ cat > web.conf << EOF
+  > [paths]
+  > / = *
+  > [web]
+  > push_ssl = false
+  > allow_push = *
+  > EOF
+
+  $ hg serve --web-conf web.conf -p $HGPORT -d --pid-file hg.pid
+  $ cat hg.pid > $DAEMON_PIDS
+
+  $ hg clone http://localhost:$HGPORT/hgwebdir hgwebdir-local
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets 98a3f8f02ba7
+  updating to branch default
+  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd hgwebdir-local
+  $ echo commit > a
+  $ hg commit -m 'local commit'
+
+  $ hg push
+  pushing to http://localhost:$HGPORT/hgwebdir
+  searching for changes
+  remote: adding changesets
+  remote: adding manifests
+  remote: adding file changes
+  remote: added 1 changesets with 1 changes to 1 files
+
+  $ killdaemons.py
+
+  $ cd ..

@@ -15,6 +15,8 @@ from __future__ import absolute_import
 
 import os
 
+from mercurial import util
+
 from mercurial.utils import stringutil
 
 from . import indexapi
@@ -82,6 +84,7 @@ class fileindexapi(indexapi.indexapi):
         for dirpath, _, books in self._repo.vfs.walk(self._bookmarkmap):
             for book in books:
                 bookmark = os.path.join(dirpath, book)[prefixlen:]
+                bookmark = util.pconvert(bookmark)
                 if not matcher(bookmark):
                     continue
                 yield bookmark, self._read(os.path.join(dirpath, book))

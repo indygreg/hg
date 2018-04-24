@@ -6,6 +6,13 @@ from mercurial import encoding
 encoding.environ[b'HGREALINTERFACES'] = b'1'
 
 import os
+import subprocess
+import sys
+
+# Only run if tests are run in a repo
+if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'],
+                    'test-repo']):
+    sys.exit(80)
 
 from mercurial.thirdparty.zope import (
     interface as zi,

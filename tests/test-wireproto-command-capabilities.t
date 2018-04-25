@@ -21,7 +21,7 @@ A normal capabilities request is serviced for version 1
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 458\r\n
+  s>     Content-Length: *\r\n (glob)
   s>     \r\n
   s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
@@ -46,7 +46,7 @@ A proper request without the API server enabled returns the legacy response
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 458\r\n
+  s>     Content-Length: *\r\n (glob)
   s>     \r\n
   s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
@@ -82,7 +82,7 @@ X-HgUpgrade-<N> without CBOR advertisement uses legacy response
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 458\r\n
+  s>     Content-Length: *\r\n (glob)
   s>     \r\n
   s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
@@ -107,7 +107,7 @@ X-HgUpgrade-<N> without known serialization in X-HgProto-<N> uses legacy respons
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 458\r\n
+  s>     Content-Length: *\r\n (glob)
   s>     \r\n
   s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
 
@@ -132,7 +132,7 @@ X-HgUpgrade-<N> + X-HgProto-<N> headers trigger new response format
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: 496\r\n
+  s>     Content-Length: *\r\n (glob)
   s>     \r\n
   s>     \xa3Dapis\xa0GapibaseDapi/Nv1capabilitiesY\x01\xcabatch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   cbor> {b'apibase': b'api/', b'apis': {}, b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'}
@@ -165,7 +165,7 @@ Only requested API services are returned
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-cbor\r\n
-  s>     Content-Length: 496\r\n
+  s>     Content-Length: *\r\n (glob)
   s>     \r\n
   s>     \xa3Dapis\xa0GapibaseDapi/Nv1capabilitiesY\x01\xcabatch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   cbor> {b'apibase': b'api/', b'apis': {}, b'v1capabilities': b'batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash'}

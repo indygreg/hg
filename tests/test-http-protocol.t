@@ -257,7 +257,7 @@ Client with HTTPv2 enabled advertises that and gets old capabilities response fr
   s>     Server: testing stub value\r\n
   s>     Date: $HTTP_DATE$\r\n
   s>     Content-Type: application/mercurial-0.1\r\n
-  s>     Content-Length: 458\r\n
+  s>     Content-Length: *\r\n (glob)
   s>     \r\n
   s>     batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending heads command

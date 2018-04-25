@@ -1466,7 +1466,7 @@ class revlog(object):
         if id in self._pcache:
             return self._pcache[id]
 
-        if len(id) < 40:
+        if len(id) <= 40:
             try:
                 # hex(node)[:...]
                 l = len(id) // 2  # grab an even number of digits

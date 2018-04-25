@@ -281,7 +281,7 @@ Client with HTTPv2 enabled advertises that and gets old capabilities response fr
 
   $ killdaemons.py
   $ enablehttpv2 empty
-  $ hg -R empty serve -p $HGPORT -d --pid-file hg.pid
+  $ hg --config server.compressionengines=zlib -R empty serve -p $HGPORT -d --pid-file hg.pid
   $ cat hg.pid > $DAEMON_PIDS
 
 Client with HTTPv2 enabled automatically upgrades if the server supports it
@@ -305,7 +305,7 @@ Client with HTTPv2 enabled automatically upgrades if the server supports it
   s>     Content-Type: application/mercurial-cbor\r\n
   s>     Content-Length: *\r\n (glob)
   s>     \r\n
-  s>     \xa3Dapis\xa1Pexp-http-v2-0001\xa4Hcommands\xa7Eheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyCnewCnewColdColdInamespaceBnsKpermissions\x81DpushHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullKcompression\x82\xa1DnameDzstd\xa1DnameDzlibNrawrepoformats\x82LgeneraldeltaHrevlogv1Qframingmediatypes\x81X&application/mercurial-exp-framing-0005GapibaseDapi/Nv1capabilitiesY\x01\xcabatch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
+  s>     \xa3Dapis\xa1Pexp-http-v2-0001\xa4Hcommands\xa7Eheads\xa2Dargs\xa1Jpubliconly\xf4Kpermissions\x81DpullEknown\xa2Dargs\xa1Enodes\x81HdeadbeefKpermissions\x81DpullFlookup\xa2Dargs\xa1CkeyCfooKpermissions\x81DpullGpushkey\xa2Dargs\xa4CkeyCkeyCnewCnewColdColdInamespaceBnsKpermissions\x81DpushHlistkeys\xa2Dargs\xa1InamespaceBnsKpermissions\x81DpullIbranchmap\xa2Dargs\xa0Kpermissions\x81DpullLcapabilities\xa2Dargs\xa0Kpermissions\x81DpullKcompression\x81\xa1DnameDzlibNrawrepoformats\x82LgeneraldeltaHrevlogv1Qframingmediatypes\x81X&application/mercurial-exp-framing-0005GapibaseDapi/Nv1capabilitiesY\x01\xc5batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset compression=$BUNDLE2_COMPRESSIONS$ getbundle httpheader=1024 httpmediatype=0.1rx,0.1tx,0.2tx known lookup pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash
   sending heads command
   s>     POST /api/exp-http-v2-0001/ro/heads HTTP/1.1\r\n
   s>     Accept-Encoding: identity\r\n

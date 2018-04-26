@@ -2646,16 +2646,31 @@ class TestRunner(object):
                 expanded_args.append(arg)
         args = expanded_args
 
+        testcasepattern = re.compile(r'([\w-]+\.t|py)( \(case ([\w-])+\))')
         tests = []
         for t in args:
+            case = None
+
             if not (os.path.basename(t).startswith(b'test-')
                     and (t.endswith(b'.py') or t.endswith(b'.t'))):
-                continue
+
+                m = testcasepattern.match(t)
+                if m is not None:
+                    t, _, case = m.groups()
+                else:
+                    continue
+
             if t.endswith(b'.t'):
                 # .t file may contain multiple test cases
                 cases = sorted(parsettestcases(t))
                 if cases:
-                    tests += [{'path': t, 'case': c} for c in sorted(cases)]
+                    if case is not None and case in cases:
+                        tests += [{'path': t, 'case': case}]
+                    elif case is not None and case not in cases:
+                        # Ignore invalid cases
+                        pass
+                    else:
+                        tests += [{'path': t, 'case': c} for c in sorted(cases)]
                 else:
                     tests.append({'path': t})
             else:

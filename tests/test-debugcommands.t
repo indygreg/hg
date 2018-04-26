@@ -333,6 +333,19 @@ Test cache warming command
   .hg/cache/rbc-names-v1
   .hg/cache/branch2-served
 
+Test debugcolor
+
+#if no-windows
+  $ hg debugcolor --style --color always | egrep 'mode|style|log\.'
+  color mode: ansi
+  available style:
+  \x1b[0;33mlog.changeset\x1b[0m:                      \x1b[0;33myellow\x1b[0m (esc)
+#endif
+
+  $ hg debugcolor --style --color never
+  color mode: None
+  available style:
+
   $ cd ..
 
 Test internal debugstacktrace command

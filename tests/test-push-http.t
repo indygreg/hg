@@ -398,7 +398,7 @@ Pushing via hgwebdir works
   > EOF
 
   $ hg serve --web-conf web.conf -p $HGPORT -d --pid-file hg.pid
-  $ cat hg.pid > $DAEMON_PIDS
+  $ cat hg.pid >> $DAEMON_PIDS
 
   $ hg clone http://localhost:$HGPORT/hgwebdir hgwebdir-local
   requesting all changes

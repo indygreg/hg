@@ -110,25 +110,25 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     log = []      # list of logentry objects containing the CVS state
 
     # patterns to match in CVS (r)log output, by state of use
-    re_00 = re.compile('RCS file: (.+)$')
-    re_01 = re.compile('cvs \\[r?log aborted\\]: (.+)$')
-    re_02 = re.compile('cvs (r?log|server): (.+)\n$')
-    re_03 = re.compile("(Cannot access.+CVSROOT)|"
-                       "(can't create temporary directory.+)$")
-    re_10 = re.compile('Working file: (.+)$')
-    re_20 = re.compile('symbolic names:')
-    re_30 = re.compile('\t(.+): ([\\d.]+)$')
-    re_31 = re.compile('----------------------------$')
-    re_32 = re.compile('======================================='
-                       '======================================$')
-    re_50 = re.compile('revision ([\\d.]+)(\s+locked by:\s+.+;)?$')
-    re_60 = re.compile(r'date:\s+(.+);\s+author:\s+(.+);\s+state:\s+(.+?);'
-                       r'(\s+lines:\s+(\+\d+)?\s+(-\d+)?;)?'
-                       r'(\s+commitid:\s+([^;]+);)?'
-                       r'(.*mergepoint:\s+([^;]+);)?')
-    re_70 = re.compile('branches: (.+);$')
+    re_00 = re.compile(b'RCS file: (.+)$')
+    re_01 = re.compile(b'cvs \\[r?log aborted\\]: (.+)$')
+    re_02 = re.compile(b'cvs (r?log|server): (.+)\n$')
+    re_03 = re.compile(b"(Cannot access.+CVSROOT)|"
+                       b"(can't create temporary directory.+)$")
+    re_10 = re.compile(b'Working file: (.+)$')
+    re_20 = re.compile(b'symbolic names:')
+    re_30 = re.compile(b'\t(.+): ([\\d.]+)$')
+    re_31 = re.compile(b'----------------------------$')
+    re_32 = re.compile(b'======================================='
+                       b'======================================$')
+    re_50 = re.compile(b'revision ([\\d.]+)(\s+locked by:\s+.+;)?$')
+    re_60 = re.compile(br'date:\s+(.+);\s+author:\s+(.+);\s+state:\s+(.+?);'
+                       br'(\s+lines:\s+(\+\d+)?\s+(-\d+)?;)?'
+                       br'(\s+commitid:\s+([^;]+);)?'
+                       br'(.*mergepoint:\s+([^;]+);)?')
+    re_70 = re.compile(b'branches: (.+);$')
 
-    file_added_re = re.compile(r'file [^/]+ was (initially )?added on branch')
+    file_added_re = re.compile(br'file [^/]+ was (initially )?added on branch')
 
     prefix = ''   # leading path to strip of what we get from CVS
 
@@ -729,12 +729,12 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     # {{mergefrombranch BRANCHNAME}} by setting two parents.
 
     if mergeto is None:
-        mergeto = r'{{mergetobranch ([-\w]+)}}'
+        mergeto = br'{{mergetobranch ([-\w]+)}}'
     if mergeto:
         mergeto = re.compile(mergeto)
 
     if mergefrom is None:
-        mergefrom = r'{{mergefrombranch ([-\w]+)}}'
+        mergefrom = br'{{mergefrombranch ([-\w]+)}}'
     if mergefrom:
         mergefrom = re.compile(mergefrom)
 

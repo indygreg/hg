@@ -13,10 +13,10 @@ from mercurial import (
 )
 
 # TESTTMP is optional. This makes it convenient to run without run-tests.py
-tvfs = vfs.vfs(encoding.environ.get('TESTTMP', b'/tmp'))
+tvfs = vfs.vfs(encoding.environ.get(b'TESTTMP', b'/tmp'))
 
 # Enable generaldelta otherwise revlog won't use delta as expected by the test
-tvfs.options = {'generaldelta': True, 'revlogv1': True}
+tvfs.options = {b'generaldelta': True, b'revlogv1': True}
 
 # The test wants to control whether to use delta explicitly, based on
 # "storedeltachains".
@@ -116,21 +116,21 @@ def addgroupcopy(rlog, tr, destname=b'_destrevlog.i', optimaldelta=True):
                 deltaparent = min(0, parentrev)
             if not rlog.candelta(deltaparent, r):
                 deltaparent = -1
-            return {'node': rlog.node(r), 'p1': pnode, 'p2': node.nullid,
-                    'cs': rlog.node(rlog.linkrev(r)), 'flags': rlog.flags(r),
-                    'deltabase': rlog.node(deltaparent),
-                    'delta': rlog.revdiff(deltaparent, r)}
+            return {b'node': rlog.node(r), b'p1': pnode, b'p2': node.nullid,
+                    b'cs': rlog.node(rlog.linkrev(r)), b'flags': rlog.flags(r),
+                    b'deltabase': rlog.node(deltaparent),
+                    b'delta': rlog.revdiff(deltaparent, r)}
 
         def deltaiter(self):
             chain = None
             for chunkdata in iter(lambda: self.deltachunk(chain), {}):
-                node = chunkdata['node']
-                p1 = chunkdata['p1']
-                p2 = chunkdata['p2']
-                cs = chunkdata['cs']
-                deltabase = chunkdata['deltabase']
-                delta = chunkdata['delta']
-                flags = chunkdata['flags']
+                node = chunkdata[b'node']
+                p1 = chunkdata[b'p1']
+                p2 = chunkdata[b'p2']
+                cs = chunkdata[b'cs']
+                deltabase = chunkdata[b'deltabase']
+                delta = chunkdata[b'delta']
+                flags = chunkdata[b'flags']
 
                 chain = node
 
@@ -166,9 +166,9 @@ def lowlevelcopy(rlog, tr, destname=b'_destrevlog.i'):
         flags = rlog.flags(r)
         ifh = dfh = None
         try:
-            ifh = dlog.opener(dlog.indexfile, 'a+')
+            ifh = dlog.opener(dlog.indexfile, b'a+')
             if not dlog._inline:
-                dfh = dlog.opener(dlog.datafile, 'a+')
+                dfh = dlog.opener(dlog.datafile, b'a+')
             dlog._addrevision(rlog.node(r), text, tr, r, p1, p2, flags,
                               cachedelta, ifh, dfh)
         finally:
@@ -305,7 +305,7 @@ def maintest():
         checkrevlog(rl2, expected)
         print('addgroupcopy test passed')
         # Copy via revlog.clone
-        rl3 = newrevlog(name='_destrevlog3.i', recreate=True)
+        rl3 = newrevlog(name=b'_destrevlog3.i', recreate=True)
         rl.clone(tr, rl3)
         checkrevlog(rl3, expected)
         print('clone test passed')

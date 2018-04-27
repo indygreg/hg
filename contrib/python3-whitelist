@@ -182,6 +182,7 @@ test-http-branchmap.t
 test-http-bundle1.t
 test-http-clone-r.t
 test-http.t
+test-hybridencode.py
 test-identify.t
 test-import-unknown.t
 test-import.t

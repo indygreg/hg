@@ -46,6 +46,8 @@ def pprint(o, bprefix=True):
         return '%d' % o
     elif isinstance(o, float):
         return '%f' % o
+    elif isinstance(o, tuple):
+        return '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     elif o is None:
         return b'None'
     else:

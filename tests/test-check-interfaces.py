@@ -25,6 +25,7 @@ from mercurial import (
     filelog,
     httppeer,
     localrepo,
+    pycompat,
     repository,
     sshpeer,
     statichttprepo,
@@ -37,7 +38,8 @@ from mercurial import (
     wireprotov2server,
 )
 
-rootdir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
+rootdir = pycompat.fsencode(
+    os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 
 def checkzobject(o, allowextra=False):
     """Verify an object with a zope interface."""
@@ -106,7 +108,7 @@ def main():
                          httppeer.httpv2peer)
     ziverify.verifyClass(repository.ipeercapabilities,
                          httppeer.httpv2peer)
-    checkzobject(httppeer.httpv2peer(None, '', None, None, None, None))
+    checkzobject(httppeer.httpv2peer(None, b'', b'', None, None, None))
 
     ziverify.verifyClass(repository.ipeerbase,
                          localrepo.localpeer)
@@ -121,11 +123,11 @@ def main():
     checkzobject(wireprotov1peer.peerexecutor(None))
 
     ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv1peer)
-    checkzobject(sshpeer.sshv1peer(ui, 'ssh://localhost/foo', None, dummypipe(),
+    checkzobject(sshpeer.sshv1peer(ui, b'ssh://localhost/foo', b'', dummypipe(),
                                    dummypipe(), None, None))
 
     ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv2peer)
-    checkzobject(sshpeer.sshv2peer(ui, 'ssh://localhost/foo', None, dummypipe(),
+    checkzobject(sshpeer.sshv2peer(ui, b'ssh://localhost/foo', b'', dummypipe(),
                                    dummypipe(), None, None))
 
     ziverify.verifyClass(repository.ipeerbase, bundlerepo.bundlepeer)
@@ -163,8 +165,8 @@ def main():
 
     ziverify.verifyClass(repository.ifilestorage, filelog.filelog)
 
-    vfs = vfsmod.vfs('.')
-    fl = filelog.filelog(vfs, 'dummy.i')
+    vfs = vfsmod.vfs(b'.')
+    fl = filelog.filelog(vfs, b'dummy.i')
     checkzobject(fl, allowextra=True)
 
 main()

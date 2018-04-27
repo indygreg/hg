@@ -150,6 +150,7 @@ test-execute-bit.t
 test-export.t
 test-extdata.t
 test-extdiff.t
+test-extensions-wrapfunction.py
 test-extra-filelog-entry.t
 test-filebranch.t
 test-filecache.py

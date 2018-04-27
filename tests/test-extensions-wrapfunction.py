@@ -35,7 +35,7 @@ def batchunwrap(wrappers):
         print('unwrap %s: %s: %s' % (getid(w), getid(result), msg))
 
 batchwrap(wrappers + [wrappers[0]])
-batchunwrap([(wrappers[i] if i >= 0 else None)
+batchunwrap([(wrappers[i] if i is not None and i >= 0 else None)
              for i in [3, None, 0, 4, 0, 2, 1, None]])
 
 wrap0 = extensions.wrappedfunction(dummy, 'getstack', wrappers[0])

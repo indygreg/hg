@@ -798,7 +798,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
                 except KeyError:
                     ui.warn(_("warning: CVS commit message references "
                               "non-existent branch %r:\n%s\n")
-                            % (m, c.comment))
+                            % (pycompat.bytestr(m), c.comment))
                 if m in branches and c.branch != m and not candidate.synthetic:
                     c.parents.append(candidate)
 

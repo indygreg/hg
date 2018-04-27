@@ -471,5 +471,6 @@ test-win32text.t
 test-wireproto-clientreactor.py
 test-wireproto-framing.py
 test-wireproto-serverreactor.py
+test-wireproto.py
 test-wsgirequest.py
 test-xdg.t

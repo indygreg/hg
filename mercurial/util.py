@@ -2717,7 +2717,7 @@ class url(object):
                   'query', 'fragment'):
             v = getattr(self, a)
             if v is not None:
-                attrs.append('%s: %r' % (a, v))
+                attrs.append('%s: %r' % (a, pycompat.bytestr(v)))
         return '<url %s>' % ', '.join(attrs)
 
     def __bytes__(self):

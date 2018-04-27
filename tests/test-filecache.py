@@ -8,6 +8,16 @@ if subprocess.call(['python', '%s/hghave' % os.environ['TESTDIR'],
                     'cacheable']):
     sys.exit(80)
 
+print_ = print
+def print(*args, **kwargs):
+    """print() wrapper that flushes stdout buffers to avoid py3 buffer issues
+
+    We could also just write directly to sys.stdout.buffer the way the
+    ui object will, but this was easier for porting the test.
+    """
+    print_(*args, **kwargs)
+    sys.stdout.flush()
+
 from mercurial import (
     extensions,
     hg,
@@ -46,7 +56,7 @@ class fakerepo(object):
     def invalidate(self):
         for k in self._filecache:
             try:
-                delattr(self, k)
+                delattr(self, pycompat.sysstr(k))
             except AttributeError:
                 pass
 
@@ -84,8 +94,8 @@ def basic(repo):
     # atomic replace file, size doesn't change
     # hopefully st_mtime doesn't change as well so this doesn't use the cache
     # because of inode change
-    f = vfsmod.vfs('.')('x', 'w', atomictemp=True)
-    f.write('b')
+    f = vfsmod.vfs(b'.')(b'x', b'w', atomictemp=True)
+    f.write(b'b')
     f.close()
 
     repo.invalidate()
@@ -108,19 +118,19 @@ def basic(repo):
     # should recreate the object
     repo.cached
 
-    f = vfsmod.vfs('.')('y', 'w', atomictemp=True)
-    f.write('B')
+    f = vfsmod.vfs(b'.')(b'y', b'w', atomictemp=True)
+    f.write(b'B')
     f.close()
 
     repo.invalidate()
     print("* file y changed inode")
     repo.cached
 
-    f = vfsmod.vfs('.')('x', 'w', atomictemp=True)
-    f.write('c')
+    f = vfsmod.vfs(b'.')(b'x', b'w', atomictemp=True)
+    f.write(b'c')
     f.close()
-    f = vfsmod.vfs('.')('y', 'w', atomictemp=True)
-    f.write('C')
+    f = vfsmod.vfs(b'.')(b'y', b'w', atomictemp=True)
+    f.write(b'C')
     f.close()
 
     repo.invalidate()
@@ -155,14 +165,14 @@ def test_filecache_synced():
     repo = hg.repository(uimod.ui.load())
     # first rollback clears the filecache, but changelog to stays in __dict__
     repo.rollback()
-    repo.commit('.')
+    repo.commit(b'.')
     # second rollback comes along and touches the changelog externally
     # (file is moved)
     repo.rollback()
     # but since changelog isn't under the filecache control anymore, we don't
     # see that it changed, and return the old changelog without reconstructing
     # it
-    repo.commit('.')
+    repo.commit(b'.')
 
 def setbeforeget(repo):
     os.remove('x')

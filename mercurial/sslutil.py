@@ -640,9 +640,9 @@ def _verifycert(cert, hostname):
         return _('no certificate received')
 
     dnsnames = []
-    san = cert.get('subjectAltName', [])
+    san = cert.get(r'subjectAltName', [])
     for key, value in san:
-        if key == 'DNS':
+        if key == r'DNS':
             try:
                 if _dnsnamematch(value, hostname):
                     return
@@ -672,6 +672,7 @@ def _verifycert(cert, hostname):
 
                     dnsnames.append(value)
 
+    dnsnames = [pycompat.bytesurl(d) for d in dnsnames]
     if len(dnsnames) > 1:
         return _('certificate is for %s') % ', '.join(dnsnames)
     elif len(dnsnames) == 1:

@@ -44,11 +44,11 @@ class testsimplekeyvaluefile(unittest.TestCase):
         self.vfs = mockvfs()
 
     def testbasicwritingiandreading(self):
-        dw = {'key1': 'value1', 'Key2': 'value2'}
-        scmutil.simplekeyvaluefile(self.vfs, 'kvfile').write(dw)
-        self.assertEqual(sorted(self.vfs.read('kvfile').split('\n')),
-                         ['', 'Key2=value2', 'key1=value1'])
-        dr = scmutil.simplekeyvaluefile(self.vfs, 'kvfile').read()
+        dw = {b'key1': b'value1', b'Key2': b'value2'}
+        scmutil.simplekeyvaluefile(self.vfs, b'kvfile').write(dw)
+        self.assertEqual(sorted(self.vfs.read(b'kvfile').split(b'\n')),
+                         [b'', b'Key2=value2', b'key1=value1'])
+        dr = scmutil.simplekeyvaluefile(self.vfs, b'kvfile').read()
         self.assertEqual(dr, dw)
 
     if not getattr(unittest.TestCase, 'assertRaisesRegex', False):
@@ -58,33 +58,33 @@ class testsimplekeyvaluefile(unittest.TestCase):
             unittest.TestCase.assertRaisesRegexp)
 
     def testinvalidkeys(self):
-        d = {'0key1': 'value1', 'Key2': 'value2'}
+        d = {b'0key1': b'value1', b'Key2': b'value2'}
         with self.assertRaisesRegex(error.ProgrammingError,
                                      'keys must start with a letter.*'):
-            scmutil.simplekeyvaluefile(self.vfs, 'kvfile').write(d)
+            scmutil.simplekeyvaluefile(self.vfs, b'kvfile').write(d)
 
-        d = {'key1@': 'value1', 'Key2': 'value2'}
+        d = {b'key1@': b'value1', b'Key2': b'value2'}
         with self.assertRaisesRegex(error.ProgrammingError, 'invalid key.*'):
-            scmutil.simplekeyvaluefile(self.vfs, 'kvfile').write(d)
+            scmutil.simplekeyvaluefile(self.vfs, b'kvfile').write(d)
 
     def testinvalidvalues(self):
-        d = {'key1': 'value1', 'Key2': 'value2\n'}
+        d = {b'key1': b'value1', b'Key2': b'value2\n'}
         with self.assertRaisesRegex(error.ProgrammingError,  'invalid val.*'):
-            scmutil.simplekeyvaluefile(self.vfs, 'kvfile').write(d)
+            scmutil.simplekeyvaluefile(self.vfs, b'kvfile').write(d)
 
     def testcorruptedfile(self):
-        self.vfs.contents['badfile'] = 'ababagalamaga\n'
+        self.vfs.contents[b'badfile'] = b'ababagalamaga\n'
         with self.assertRaisesRegex(error.CorruptedState,
                                      'dictionary.*element.*'):
-            scmutil.simplekeyvaluefile(self.vfs, 'badfile').read()
+            scmutil.simplekeyvaluefile(self.vfs, b'badfile').read()
 
     def testfirstline(self):
-        dw = {'key1': 'value1'}
-        scmutil.simplekeyvaluefile(self.vfs, 'fl').write(dw, firstline='1.0')
-        self.assertEqual(self.vfs.read('fl'), '1.0\nkey1=value1\n')
-        dr = scmutil.simplekeyvaluefile(self.vfs, 'fl')\
+        dw = {b'key1': b'value1'}
+        scmutil.simplekeyvaluefile(self.vfs, b'fl').write(dw, firstline=b'1.0')
+        self.assertEqual(self.vfs.read(b'fl'), b'1.0\nkey1=value1\n')
+        dr = scmutil.simplekeyvaluefile(self.vfs, b'fl')\
                     .read(firstlinenonkeyval=True)
-        self.assertEqual(dr, {'__firstline': '1.0', 'key1': 'value1'})
+        self.assertEqual(dr, {b'__firstline': b'1.0', b'key1': b'value1'})
 
 if __name__ == "__main__":
     silenttestrunner.main(__name__)

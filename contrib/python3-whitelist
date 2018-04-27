@@ -153,6 +153,7 @@ test-extdiff.t
 test-extra-filelog-entry.t
 test-filebranch.t
 test-filecache.py
+test-filelog.py
 test-fileset-generated.t
 test-fix-topology.t
 test-flags.t

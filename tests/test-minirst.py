@@ -1,7 +1,9 @@
 from __future__ import absolute_import, print_function
-import pprint
 from mercurial import (
     minirst,
+)
+from mercurial.utils import (
+    stringutil,
 )
 
 def debugformat(text, form, **kwargs):
@@ -16,7 +18,7 @@ def debugformat(text, form, **kwargs):
     if type(out) == tuple:
         print(out[0][:-1])
         print("-" * 70)
-        pprint.pprint(out[1])
+        print(stringutil.pprint(out[1], bprefix=False))
     else:
         print(out[:-1])
     print("-" * 70)
@@ -264,4 +266,3 @@ table = b''.join(rst)
 print(table)
 
 debugformats(b'table+nl', table)
-

@@ -11,6 +11,7 @@ from .i18n import _
 from . import (
     error,
     fileset,
+    pycompat,
 )
 
 def _compile(tree):
@@ -21,14 +22,15 @@ def _compile(tree):
         name = fileset.getpattern(tree, {'path'}, _('invalid file pattern'))
         if name.startswith('**'): # file extension test, ex. "**.tar.gz"
             ext = name[2:]
-            for c in ext:
+            for c in pycompat.bytestr(ext):
                 if c in '*{}[]?/\\':
                     raise error.ParseError(_('reserved character: %s') % c)
             return lambda n, s: n.endswith(ext)
         elif name.startswith('path:'): # directory or full path test
             p = name[5:] # prefix
             pl = len(p)
-            f = lambda n, s: n.startswith(p) and (len(n) == pl or n[pl] == '/')
+            f = lambda n, s: n.startswith(p) and (len(n) == pl
+                                                  or n[pl:pl + 1] == '/')
             return f
         raise error.ParseError(_("unsupported file pattern: %s") % name,
                                hint=_('paths must be prefixed with "path:"'))

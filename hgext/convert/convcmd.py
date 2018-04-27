@@ -234,7 +234,7 @@ class converter(object):
     def walktree(self, heads):
         '''Return a mapping that identifies the uncommitted parents of every
         uncommitted changeset.'''
-        visit = heads
+        visit = list(heads)
         known = set()
         parents = {}
         numcommits = self.source.numcommits()

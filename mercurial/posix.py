@@ -287,7 +287,7 @@ def checklink(path):
                 return True
             except OSError as inst:
                 # link creation might race, try again
-                if inst[0] == errno.EEXIST:
+                if inst.errno == errno.EEXIST:
                     continue
                 raise
             finally:
@@ -297,7 +297,7 @@ def checklink(path):
             return False
         except OSError as inst:
             # sshfs might report failure while successfully creating the link
-            if inst[0] == errno.EIO and os.path.exists(name):
+            if inst.errno == errno.EIO and os.path.exists(name):
                 unlink(name)
             return False
 

@@ -941,7 +941,8 @@ def debugcvsps(ui, *args, **opts):
                 if fn.startswith(opts["prefix"]):
                     fn = fn[len(opts["prefix"]):]
                 ui.write('\t%s:%s->%s%s \n' % (
-                        fn, '.'.join([str(x) for x in f.parent]) or 'INITIAL',
+                        fn,
+                        '.'.join([b"%d" % x for x in f.parent]) or 'INITIAL',
                         '.'.join([(b"%d" % x) for x in f.revision]),
                         ['', '(DEAD)'][f.dead]))
             ui.write('\n')

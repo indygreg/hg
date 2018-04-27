@@ -65,17 +65,19 @@ class gitlfspointer(dict):
         for k, v in self.iteritems():
             if k in self._requiredre:
                 if not self._requiredre[k].match(v):
-                    raise InvalidPointer(_('unexpected value: %s=%s')
-                                         % (k, stringutil.pprint(v)))
+                    raise InvalidPointer(
+                        _('unexpected lfs pointer value: %s=%s')
+                        % (k, stringutil.pprint(v)))
                 requiredcount += 1
             elif not self._keyre.match(k):
-                raise InvalidPointer(_('unexpected key: %s') % k)
+                raise InvalidPointer(_('unexpected lfs pointer key: %s') % k)
             if not self._valuere.match(v):
-                raise InvalidPointer(_('unexpected value: %s=%s')
+                raise InvalidPointer(_('unexpected lfs pointer value: %s=%s')
                                      % (k, stringutil.pprint(v)))
         if len(self._requiredre) != requiredcount:
             miss = sorted(set(self._requiredre.keys()).difference(self.keys()))
-            raise InvalidPointer(_('missed keys: %s') % ', '.join(miss))
+            raise InvalidPointer(_('missing lfs pointer keys: %s')
+                                 % ', '.join(miss))
         return self
 
 deserialize = gitlfspointer.deserialize

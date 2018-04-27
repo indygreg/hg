@@ -163,6 +163,7 @@ test-hgweb-bundle.t
 test-hgweb-descend-empties.t
 test-hgweb-empty.t
 test-hgweb-removed.t
+test-hgwebdir-paths.py
 test-hgwebdirsym.t
 test-histedit-arguments.t
 test-histedit-base.t

@@ -10,30 +10,30 @@ from mercurial.hgweb import (
 )
 hgwebdir = hgwebdir_mod.hgwebdir
 
-os.mkdir('webdir')
-os.chdir('webdir')
+os.mkdir(b'webdir')
+os.chdir(b'webdir')
 
-webdir = os.path.realpath('.')
+webdir = os.path.realpath(b'.')
 
 u = uimod.ui.load()
-hg.repository(u, 'a', create=1)
-hg.repository(u, 'b', create=1)
-os.chdir('b')
-hg.repository(u, 'd', create=1)
-os.chdir('..')
-hg.repository(u, 'c', create=1)
-os.chdir('..')
+hg.repository(u, b'a', create=1)
+hg.repository(u, b'b', create=1)
+os.chdir(b'b')
+hg.repository(u, b'd', create=1)
+os.chdir(b'..')
+hg.repository(u, b'c', create=1)
+os.chdir(b'..')
 
-paths = {'t/a/': '%s/a' % webdir,
-         'b': '%s/b' % webdir,
-         'coll': '%s/*' % webdir,
-         'rcoll': '%s/**' % webdir}
+paths = {b't/a/': b'%s/a' % webdir,
+         b'b': b'%s/b' % webdir,
+         b'coll': b'%s/*' % webdir,
+         b'rcoll': b'%s/**' % webdir}
 
-config = os.path.join(webdir, 'hgwebdir.conf')
-configfile = open(config, 'w')
-configfile.write('[paths]\n')
+config = os.path.join(webdir, b'hgwebdir.conf')
+configfile = open(config, 'wb')
+configfile.write(b'[paths]\n')
 for k, v in paths.items():
-    configfile.write('%s = %s\n' % (k, v))
+    configfile.write(b'%s = %s\n' % (k, v))
 configfile.close()
 
 confwd = hgwebdir(config)

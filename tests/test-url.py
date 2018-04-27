@@ -236,7 +236,8 @@ check(_verifycert({'subject': (((u'commonName', u'a*b*.com'),),)},
 
 def test_url():
     """
-    >>> from mercurial.util import url
+    >>> from mercurial import error, pycompat
+    >>> from mercurial.util import forcebytestr, url
 
     This tests for edge cases in url.URL's parsing algorithm. Most of
     these aren't useful for documentation purposes, so they aren't
@@ -349,10 +350,11 @@ def test_url():
 
     Non-localhost file URL:
 
-    >>> u = url('file://mercurial-scm.org/foo')
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    Abort: file:// URLs can only refer to localhost
+    >>> try:
+    ...   u = url(b'file://mercurial-scm.org/foo')
+    ... except error.Abort as e:
+    ...   forcebytestr(e)
+    'file:// URLs can only refer to localhost'
 
     Empty URL:
 

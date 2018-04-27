@@ -449,6 +449,7 @@ test-update-reverse.t
 test-upgrade-repo.t
 test-url-download.t
 test-url-rev.t
+test-url.py
 test-username-newline.t
 test-verify.t
 test-websub.t

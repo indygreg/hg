@@ -256,6 +256,7 @@ test-merge6.t
 test-merge7.t
 test-merge8.t
 test-merge9.t
+test-minifileset.py
 test-mq-git.t
 test-mq-header-date.t
 test-mq-header-from.t

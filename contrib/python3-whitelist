@@ -415,6 +415,7 @@ test-show-stack.t
 test-show-work.t
 test-show.t
 test-simple-update.t
+test-simplemerge.py
 test-single-head.t
 test-sparse-clear.t
 test-sparse-import.t

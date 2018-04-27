@@ -67,6 +67,9 @@ test-contrib-check-code.t
 test-contrib-check-commit.t
 test-convert-authormap.t
 test-convert-clonebranches.t
+test-convert-cvs-branch.t
+test-convert-cvs-detectmerge.t
+test-convert-cvs.t
 test-convert-datesort.t
 test-convert-filemap.t
 test-convert-hg-sink.t

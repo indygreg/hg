@@ -225,6 +225,7 @@ test-largefiles-small-disk.t
 test-largefiles-update.t
 test-largefiles.t
 test-lfs-largefiles.t
+test-lfs-pointer.py
 test-linerange.py
 test-locate.t
 test-lock-badness.t

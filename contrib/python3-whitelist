@@ -315,6 +315,7 @@ test-obsolete-tag-cache.t
 test-parents.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t
+test-pathencode.py
 test-pending.t
 test-permissions.t
 test-phases.t

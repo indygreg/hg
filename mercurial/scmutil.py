@@ -1142,7 +1142,8 @@ class filecache(object):
 
     def __call__(self, func):
         self.func = func
-        self.name = func.__name__.encode('ascii')
+        self.sname = func.__name__
+        self.name = pycompat.sysbytes(self.sname)
         return self
 
     def __get__(self, obj, type=None):
@@ -1150,9 +1151,9 @@ class filecache(object):
         if obj is None:
             return self
         # do we need to check if the file changed?
-        if self.name in obj.__dict__:
+        if self.sname in obj.__dict__:
             assert self.name in obj._filecache, self.name
-            return obj.__dict__[self.name]
+            return obj.__dict__[self.sname]
 
         entry = obj._filecache.get(self.name)
 
@@ -1169,7 +1170,7 @@ class filecache(object):
 
             obj._filecache[self.name] = entry
 
-        obj.__dict__[self.name] = entry.obj
+        obj.__dict__[self.sname] = entry.obj
         return entry.obj
 
     def __set__(self, obj, value):
@@ -1183,13 +1184,13 @@ class filecache(object):
             ce = obj._filecache[self.name]
 
         ce.obj = value # update cached copy
-        obj.__dict__[self.name] = value # update copy returned by obj.x
+        obj.__dict__[self.sname] = value # update copy returned by obj.x
 
     def __delete__(self, obj):
         try:
-            del obj.__dict__[self.name]
+            del obj.__dict__[self.sname]
         except KeyError:
-            raise AttributeError(self.name)
+            raise AttributeError(self.sname)
 
 def extdatasource(repo, source):
     """Gather a map of rev -> value dict from the specified source

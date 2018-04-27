@@ -215,7 +215,7 @@ def parselist(value):
             parts.append('')
         if s[offset:offset + 1] == '"' and not parts[-1]:
             return _parse_quote, parts, offset + 1
-        elif s[offset:offset + 1] == '"' and parts[-1][-1] == '\\':
+        elif s[offset:offset + 1] == '"' and parts[-1][-1:] == '\\':
             parts[-1] = parts[-1][:-1] + s[offset:offset + 1]
             return _parse_plain, parts, offset + 1
         parts[-1] += s[offset:offset + 1]

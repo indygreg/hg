@@ -447,6 +447,7 @@ test-subrepo-missing.t
 test-subrepo-recursion.t
 test-subrepo-relative-path.t
 test-subrepo.t
+test-symlink-os-yes-fs-no.py
 test-symlinks.t
 test-tag.t
 test-tags.t

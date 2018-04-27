@@ -6,6 +6,7 @@ import time
 from mercurial import (
     commands,
     hg,
+    pycompat,
     ui as uimod,
     util,
 )
@@ -19,13 +20,13 @@ if not getattr(os, "symlink", False):
 
 u = uimod.ui.load()
 # hide outer repo
-hg.peer(u, {}, '.', create=True)
+hg.peer(u, {}, b'.', create=True)
 
 # unbundle with symlink support
-hg.peer(u, {}, 'test0', create=True)
+hg.peer(u, {}, b'test0', create=True)
 
-repo = hg.repository(u, 'test0')
-commands.unbundle(u, repo, BUNDLEPATH, update=True)
+repo = hg.repository(u, b'test0')
+commands.unbundle(u, repo, pycompat.fsencode(BUNDLEPATH), update=True)
 
 # wait a bit, or the status call wont update the dirstate
 time.sleep(1)
@@ -42,7 +43,7 @@ os.path.islink = islink_failure
 
 # dereference links as if a Samba server has exported this to a
 # Windows client
-for f in 'test0/a.lnk', 'test0/d/b.lnk':
+for f in b'test0/a.lnk', b'test0/d/b.lnk':
     os.unlink(f)
     fp = open(f, 'wb')
     fp.write(util.readfile(f[:-4]))
@@ -50,11 +51,11 @@ for f in 'test0/a.lnk', 'test0/d/b.lnk':
 
 # reload repository
 u = uimod.ui.load()
-repo = hg.repository(u, 'test0')
+repo = hg.repository(u, b'test0')
 commands.status(u, repo)
 
 # try unbundling a repo which contains symlinks
 u = uimod.ui.load()
 
-repo = hg.repository(u, 'test1', create=True)
-commands.unbundle(u, repo, BUNDLEPATH, update=True)
+repo = hg.repository(u, b'test1', create=True)
+commands.unbundle(u, repo, pycompat.fsencode(BUNDLEPATH), update=True)

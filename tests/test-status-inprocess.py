@@ -1,11 +1,23 @@
 #!/usr/bin/env python
 from __future__ import absolute_import, print_function
 
+import sys
+
 from mercurial import (
     commands,
     localrepo,
     ui as uimod,
 )
+
+print_ = print
+def print(*args, **kwargs):
+    """print() wrapper that flushes stdout buffers to avoid py3 buffer issues
+
+    We could also just write directly to sys.stdout.buffer the way the
+    ui object will, but this was easier for porting the test.
+    """
+    print_(*args, **kwargs)
+    sys.stdout.flush()
 
 u = uimod.ui.load()
 

@@ -430,6 +430,7 @@ test-ssh-clone-r.t
 test-ssh-proto.t
 test-sshserver.py
 test-stack.t
+test-status-inprocess.py
 test-status-rev.t
 test-status-terse.t
 test-strip-cross.t

@@ -140,12 +140,15 @@ def streamencodearrayfromiter(it):
 
     yield BREAK
 
+def _mixedtypesortkey(v):
+    return type(v).__name__, v
+
 def streamencodeset(s):
     # https://www.iana.org/assignments/cbor-tags/cbor-tags.xhtml defines
     # semantic tag 258 for finite sets.
     yield encodelength(MAJOR_TYPE_SEMANTIC, 258)
 
-    for chunk in streamencodearray(sorted(s)):
+    for chunk in streamencodearray(sorted(s, key=_mixedtypesortkey)):
         yield chunk
 
 def streamencodemap(d):
@@ -155,7 +158,8 @@ def streamencodemap(d):
     """
     yield encodelength(MAJOR_TYPE_MAP, len(d))
 
-    for key, value in sorted(d.iteritems()):
+    for key, value in sorted(d.iteritems(),
+                             key=lambda x: _mixedtypesortkey(x[0])):
         for chunk in streamencode(key):
             yield chunk
         for chunk in streamencode(value):

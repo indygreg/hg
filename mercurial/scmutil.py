@@ -104,8 +104,10 @@ class status(tuple):
         return self[6]
 
     def __repr__(self, *args, **kwargs):
-        return (('<status modified=%r, added=%r, removed=%r, deleted=%r, '
-                 'unknown=%r, ignored=%r, clean=%r>') % self)
+        return ((r'<status modified=%s, added=%s, removed=%s, deleted=%s, '
+                 r'unknown=%s, ignored=%s, clean=%s>') %
+                tuple(pycompat.sysstr(stringutil.pprint(
+                    v, bprefix=False)) for v in self))
 
 def itersubrepos(ctx1, ctx2):
     """find subrepos in ctx1 or ctx2"""

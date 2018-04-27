@@ -454,6 +454,7 @@ test-tags.t
 test-template-engine.t
 test-treemanifest.t
 test-ui-color.py
+test-ui-config.py
 test-ui-verbosity.py
 test-unamend.t
 test-uncommit.t

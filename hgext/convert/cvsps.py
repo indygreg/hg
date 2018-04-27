@@ -510,7 +510,8 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             comment = entry.comment
             for e in encodings:
                 try:
-                    entry.comment = comment.decode(e).encode('utf-8')
+                    entry.comment = comment.decode(
+                        pycompat.sysstr(e)).encode('utf-8')
                     if ui.debugflag:
                         ui.debug("transcoding by %s: %s of %s\n" %
                                  (e, revstr(entry.revision), entry.file))

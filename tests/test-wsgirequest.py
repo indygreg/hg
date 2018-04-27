@@ -206,18 +206,18 @@ class ParseRequestTests(unittest.TestCase):
         """repository path components get stripped from URL."""
 
         with self.assertRaisesRegex(error.ProgrammingError,
-                                     b'reponame requires PATH_INFO'):
+                                    'reponame requires PATH_INFO'):
             parse(DEFAULT_ENV, reponame=b'repo')
 
         with self.assertRaisesRegex(error.ProgrammingError,
-                                     b'PATH_INFO does not begin with repo '
-                                     b'name'):
+                                    'PATH_INFO does not begin with repo '
+                                    'name'):
             parse(DEFAULT_ENV, reponame=b'repo', extra={
                 r'PATH_INFO': r'/pathinfo',
             })
 
         with self.assertRaisesRegex(error.ProgrammingError,
-                                     b'reponame prefix of PATH_INFO'):
+                                    'reponame prefix of PATH_INFO'):
             parse(DEFAULT_ENV, reponame=b'repo', extra={
                 r'PATH_INFO': r'/repoextra/path',
             })
@@ -251,7 +251,7 @@ class ParseRequestTests(unittest.TestCase):
 
     def testaltbaseurl(self):
         # Simple hostname remap.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver')
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver')
 
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
@@ -264,7 +264,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # With a custom port.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver:8000')
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver:8000')
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
         self.assertEqual(r.advertisedurl, b'http://altserver:8000')
@@ -276,7 +276,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # With a changed protocol.
-        r = parse(DEFAULT_ENV, altbaseurl='https://altserver')
+        r = parse(DEFAULT_ENV, altbaseurl=b'https://altserver')
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
         self.assertEqual(r.advertisedurl, b'https://altserver')
@@ -289,7 +289,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # Need to specify explicit port number for proper https:// alt URLs.
-        r = parse(DEFAULT_ENV, altbaseurl='https://altserver:443')
+        r = parse(DEFAULT_ENV, altbaseurl=b'https://altserver:443')
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
         self.assertEqual(r.advertisedurl, b'https://altserver')
@@ -301,7 +301,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # With only PATH_INFO defined.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver', extra={
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver', extra={
             r'PATH_INFO': r'/path1/path2',
         })
         self.assertEqual(r.url, b'http://testserver/path1/path2')
@@ -315,7 +315,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # Path on alt URL.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath')
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver/altpath')
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
         self.assertEqual(r.advertisedurl, b'http://altserver/altpath')
@@ -327,7 +327,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # With a trailing slash.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath/')
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver/altpath/')
         self.assertEqual(r.url, b'http://testserver')
         self.assertEqual(r.baseurl, b'http://testserver')
         self.assertEqual(r.advertisedurl, b'http://altserver/altpath/')
@@ -339,7 +339,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # PATH_INFO + path on alt URL.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath', extra={
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver/altpath', extra={
             r'PATH_INFO': r'/path1/path2',
         })
         self.assertEqual(r.url, b'http://testserver/path1/path2')
@@ -354,7 +354,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # PATH_INFO + path on alt URL with trailing slash.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altpath/', extra={
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver/altpath/', extra={
             r'PATH_INFO': r'/path1/path2',
         })
         self.assertEqual(r.url, b'http://testserver/path1/path2')
@@ -369,7 +369,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # Local SCRIPT_NAME is ignored.
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver', extra={
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver', extra={
             r'SCRIPT_NAME': r'/script',
             r'PATH_INFO': r'/path1/path2',
         })
@@ -384,7 +384,7 @@ class ParseRequestTests(unittest.TestCase):
         self.assertIsNone(r.reponame)
 
         # Use remote's path for script name, app path
-        r = parse(DEFAULT_ENV, altbaseurl='http://altserver/altroot', extra={
+        r = parse(DEFAULT_ENV, altbaseurl=b'http://altserver/altroot', extra={
             r'SCRIPT_NAME': r'/script',
             r'PATH_INFO': r'/path1/path2',
         })
@@ -401,7 +401,7 @@ class ParseRequestTests(unittest.TestCase):
 
         # reponame is factored in properly.
         r = parse(DEFAULT_ENV, reponame=b'repo',
-                  altbaseurl='http://altserver/altroot',
+                  altbaseurl=b'http://altserver/altroot',
                   extra={
                 r'SCRIPT_NAME': r'/script',
                 r'PATH_INFO': r'/repo/path1/path2',

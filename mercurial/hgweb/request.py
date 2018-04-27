@@ -313,7 +313,8 @@ def parserequestfromenv(env, reponame=None, altbaseurl=None, bodyfh=None):
     if bodyfh is None:
         bodyfh = env['wsgi.input']
         if 'Content-Length' in headers:
-            bodyfh = util.cappedreader(bodyfh, int(headers['Content-Length']))
+            bodyfh = util.cappedreader(bodyfh,
+                                       int(headers['Content-Length'] or '0'))
 
     return parsedrequest(method=env['REQUEST_METHOD'],
                          url=fullurl, baseurl=baseurl,

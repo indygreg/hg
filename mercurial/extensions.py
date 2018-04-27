@@ -727,7 +727,7 @@ def moduleversion(module):
     else:
         version = ''
     if isinstance(version, (list, tuple)):
-        version = '.'.join(str(o) for o in version)
+        version = '.'.join(pycompat.bytestr(o) for o in version)
     return version
 
 def ismoduleinternal(module):

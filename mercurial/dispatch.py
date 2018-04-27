@@ -1028,7 +1028,7 @@ def _exceptionwarning(ui):
                      '** which supports versions %s of Mercurial.\n'
                      '** Please disable %s and try your action again.\n'
                      '** If that fixes the bug please report it to %s\n')
-                   % (name, testedwith, name, report))
+                   % (name, testedwith, name, stringutil.forcebytestr(report)))
     else:
         bugtracker = ui.config('ui', 'supportcontact')
         if bugtracker is None:

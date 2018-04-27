@@ -69,7 +69,7 @@ class BytestringTests(unittest.TestCase):
 
         dest = b''.join(cborutil.streamencodeindefinitebytestring(
             source, chunksize=42))
-        self.assertEqual(cbor.loads(dest), b''.join(source))
+        self.assertEqual(cbor.loads(dest), source)
 
     def testreadtoiter(self):
         source = io.BytesIO(b'\x5f\x44\xaa\xbb\xcc\xdd\x43\xee\xff\x99\xff')

@@ -36,6 +36,7 @@ test-bundle2-multiple-changegroups.t
 test-cappedreader.py
 test-casecollision.t
 test-cat.t
+test-cbor.py
 test-censor.t
 test-changelog-exec.t
 test-check-commit.t

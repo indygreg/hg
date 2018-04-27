@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
+import functools
 import os
 import re
 
@@ -653,7 +654,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
         return 0
 
     for c in changesets:
-        c.entries.sort(entitycompare)
+        c.entries.sort(key=functools.cmp_to_key(entitycompare))
 
     # Sort changesets by date
 
@@ -706,7 +707,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             d = c(len(l.branchpoints), len(r.branchpoints))
         return d
 
-    changesets.sort(cscmp)
+    changesets.sort(key=functools.cmp_to_key(cscmp))
 
     # Collect tags
 

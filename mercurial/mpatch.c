@@ -197,7 +197,9 @@ int mpatch_decode(const char *bin, ssize_t len, struct mpatch_flist **res)
 
 	lt = l->tail;
 
-	while (pos >= 0 && pos < len) {
+	/* We check against len-11 to ensure we have at least 12 bytes
+	   left in the patch so we can read our three be32s out of it. */
+	while (pos >= 0 && pos < (len - 11)) {
 		lt->start = getbe32(bin + pos);
 		lt->end = getbe32(bin + pos + 4);
 		lt->len = getbe32(bin + pos + 8);

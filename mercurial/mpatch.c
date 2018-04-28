@@ -248,7 +248,7 @@ int mpatch_apply(char *buf, const char *orig, ssize_t len,
 	char *p = buf;
 
 	while (f != l->tail) {
-		if (f->start < last || f->end > len) {
+		if (f->start < last || f->end > len || last < 0) {
 			return MPATCH_ERR_INVALID_PATCH;
 		}
 		memcpy(p, orig + last, f->start - last);
@@ -257,6 +257,9 @@ int mpatch_apply(char *buf, const char *orig, ssize_t len,
 		last = f->end;
 		p += f->len;
 		f++;
+	}
+	if (last < 0) {
+		return MPATCH_ERR_INVALID_PATCH;
 	}
 	memcpy(p, orig + last, len - last);
 	return 0;

@@ -1851,6 +1851,16 @@ class TestResult(unittest._TextTestResult):
                 self.stream.writeln('INTERRUPTED: %s (after %d seconds)' % (
                     test.name, self.times[-1][3]))
 
+def getTestResult():
+    """
+    Returns the relevant test result
+    """
+    if "CUSTOM_TEST_RESULT" in os.environ:
+        testresultmodule = __import__(os.environ["CUSTOM_TEST_RESULT"])
+        return testresultmodule.TestResult
+    else:
+        return TestResult
+
 class TestSuite(unittest.TestSuite):
     """Custom unittest TestSuite that knows how to execute Mercurial tests."""
 
@@ -2090,8 +2100,8 @@ class TextTestRunner(unittest.TextTestRunner):
         self._runner = runner
 
     def listtests(self, test):
-        result = TestResult(self._runner.options, self.stream,
-                            self.descriptions, 0)
+        result = getTestResult()(self._runner.options, self.stream,
+                                 self.descriptions, 0)
         test = sorted(test, key=lambda t: t.name)
         for t in test:
             print(t.name)
@@ -2109,9 +2119,8 @@ class TextTestRunner(unittest.TextTestRunner):
         return result
 
     def run(self, test):
-        result = TestResult(self._runner.options, self.stream,
-                            self.descriptions, self.verbosity)
-
+        result = getTestResult()(self._runner.options, self.stream,
+                                 self.descriptions, self.verbosity)
         test(result)
 
         failed = len(result.failures)

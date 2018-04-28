@@ -1246,6 +1246,15 @@ Test globbing of local IP addresses
   $ echo dead:beef::1
   $LOCALIP (glob)
 
+Add support for external test formatter
+=======================================
+
+  $ CUSTOM_TEST_RESULT=basic_test_result $PYTHON $TESTDIR/run-tests.py --with-hg=`which hg` "$@" test-success.t test-failure.t
+  
+  # Ran 2 tests, 0 skipped, 0 failed.
+  FAILURE! test-failure.t output changed
+  SUCCESS! test-success.t
+
 Test reusability for third party tools
 ======================================
 

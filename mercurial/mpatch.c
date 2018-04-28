@@ -248,7 +248,8 @@ int mpatch_apply(char *buf, const char *orig, ssize_t len,
 	char *p = buf;
 
 	while (f != l->tail) {
-		if (f->start < last || f->end > len || last < 0) {
+		if (f->start < last || f->start > len || f->end > len ||
+		    last < 0) {
 			return MPATCH_ERR_INVALID_PATCH;
 		}
 		memcpy(p, orig + last, f->start - last);

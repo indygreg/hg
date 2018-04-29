@@ -6,8 +6,6 @@ Testing the functionality to pull remotenames
   > ssh = $PYTHON "$TESTDIR/dummyssh"
   > [alias]
   > glog = log -G -T '{rev}:{node|short}  {desc}'
-  > [experimental]
-  > remotenames = True
   > [extensions]
   > remotenames =
   > show =

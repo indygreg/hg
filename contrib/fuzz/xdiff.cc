@@ -10,6 +10,8 @@
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include "fuzzutil.h"
+
 extern "C" {
 
 int hunk_consumer(long a1, long a2, long b1, long b2, void *priv)
@@ -20,21 +22,17 @@ int hunk_consumer(long a1, long a2, long b1, long b2, void *priv)
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
-	if (!Size) {
+	auto maybe_inputs = SplitInputs(Data, Size);
+	if (!maybe_inputs) {
 		return 0;
 	}
-	// figure out a random point in [0, Size] to split our input.
-	size_t split = Data[0] / 255.0 * Size;
-
+	auto inputs = std::move(maybe_inputs.value());
 	mmfile_t a, b;
 
-	// `a` input to diff is data[1:split]
-	a.ptr = (char *)Data + 1;
-	// which has len split-1
-	a.size = split - 1;
-	// `b` starts at the next byte after `a` ends
-	b.ptr = a.ptr + a.size;
-	b.size = Size - split;
+	a.ptr = inputs.left.get();
+	a.size = inputs.left_size;
+	b.ptr = inputs.right.get();
+	b.size = inputs.right_size;
 	xpparam_t xpp = {
 	    XDF_INDENT_HEURISTIC, /* flags */
 	};

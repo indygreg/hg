@@ -24,7 +24,6 @@ from .node import (
     short,
     wdirfilenodeids,
     wdirid,
-    wdirrev,
 )
 from . import (
     dagop,
@@ -377,31 +376,6 @@ class basectx(object):
 
         return r
 
-def changectxdeprecwarn(repo):
-    # changectx's constructor will soon lose support for these forms of
-    # changeids:
-    #  * stringinfied ints
-    #  * bookmarks, tags, branches, and other namespace identifiers
-    #  * hex nodeid prefixes
-    #
-    # Depending on your use case, replace repo[x] by one of these:
-    #  * If you want to support general revsets, use scmutil.revsingle(x)
-    #  * If you know that "x" is a stringified int, use repo[int(x)]
-    #  * If you know that "x" is a bookmark, use repo._bookmarks.changectx(x)
-    #  * If you know that "x" is a tag, use repo[repo.tags()[x]]
-    #  * If you know that "x" is a branch or in some other namespace,
-    #    use the appropriate mechanism for that namespace
-    #  * If you know that "x" is a hex nodeid prefix, use
-    #    repo[scmutil.resolvehexnodeidprefix(repo, x)]
-    #  * If "x" is a string that can be any of the above, but you don't want
-    #    to allow general revsets (perhaps because "x" may come from a remote
-    #    user and the revset may be too costly), use scmutil.revsymbol(repo, x)
-    #  * If "x" can be a mix of the above, you'll have to figure it out
-    #    yourself
-    repo.ui.deprecwarn("changectx.__init__ is getting more limited, see "
-                       "context.changectxdeprecwarn() for details", "4.6",
-                       stacklevel=4)
-
 class changectx(basectx):
     """A changecontext object makes access to data related to a particular
     changeset convenient. It represents a read-only context already present in
@@ -440,24 +414,6 @@ class changectx(basectx):
                 except LookupError:
                     pass
 
-            try:
-                r = int(changeid)
-                if '%d' % r != changeid:
-                    raise ValueError
-                l = len(repo.changelog)
-                if r < 0:
-                    r += l
-                if r < 0 or r >= l and r != wdirrev:
-                    raise ValueError
-                self._rev = r
-                self._node = repo.changelog.node(r)
-                changectxdeprecwarn(repo)
-                return
-            except error.FilteredIndexError:
-                raise
-            except (ValueError, OverflowError, IndexError):
-                pass
-
             if len(changeid) == 40:
                 try:
                     self._node = bin(changeid)
@@ -467,21 +423,6 @@ class changectx(basectx):
                     raise
                 except (TypeError, LookupError):
                     pass
-
-            # lookup bookmarks through the name interface
-            try:
-                self._node = repo.names.singlenode(repo, changeid)
-                self._rev = repo.changelog.rev(self._node)
-                changectxdeprecwarn(repo)
-                return
-            except KeyError:
-                pass
-
-            self._node = scmutil.resolvehexnodeidprefix(repo, changeid)
-            if self._node is not None:
-                self._rev = repo.changelog.rev(self._node)
-                changectxdeprecwarn(repo)
-                return
 
             # lookup failed
             # check if it might have come from damaged dirstate

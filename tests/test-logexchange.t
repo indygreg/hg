@@ -2,6 +2,8 @@ Testing the functionality to pull remotenames
 =============================================
 
   $ cat >> $HGRCPATH << EOF
+  > [ui]
+  > ssh = $PYTHON "$TESTDIR/dummyssh"
   > [alias]
   > glog = log -G -T '{rev}:{node|short}  {desc}'
   > [experimental]
@@ -52,7 +54,13 @@ Making a client repo
 
   $ cd ..
 
-  $ hg clone server client
+  $ hg clone ssh://user@dummy/server client
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 9 changesets with 9 changes to 9 files (+1 heads)
+  new changesets 18d04c59bb5d:3e1487808078
   updating to branch default
   8 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

@@ -154,6 +154,7 @@ class changesetprinter(object):
         self.repo = repo
         self.buffered = buffered
         self._differ = differ or changesetdiffer()
+        self._diffopts = patch.diffallopts(ui, diffopts)
         self.diffopts = diffopts or {}
         self.header = {}
         self.hunk = {}
@@ -300,13 +301,12 @@ class changesetprinter(object):
     def _showpatch(self, ctx):
         stat = self.diffopts.get('stat')
         diff = self.diffopts.get('patch')
-        diffopts = patch.diffallopts(self.ui, self.diffopts)
         if stat:
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=True)
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
         if stat and diff:
             self.ui.write("\n")
         if diff:
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=False)
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
         if stat or diff:
             self.ui.write("\n")
 
@@ -316,6 +316,7 @@ class changesetformatter(changesetprinter):
     def __init__(self, ui, repo, fm, differ=None, diffopts=None,
                  buffered=False):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
+        self._diffopts = patch.difffeatureopts(ui, diffopts, git=True)
         self._fm = fm
 
     def close(self):
@@ -369,14 +370,13 @@ class changesetformatter(changesetprinter):
 
         stat = self.diffopts.get('stat')
         diff = self.diffopts.get('patch')
-        diffopts = patch.difffeatureopts(self.ui, self.diffopts, git=True)
         if stat:
             self.ui.pushbuffer()
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=True)
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
             fm.data(diffstat=self.ui.popbuffer())
         if diff:
             self.ui.pushbuffer()
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=False)
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
             fm.data(diff=self.ui.popbuffer())
 
 class changesettemplater(changesetprinter):

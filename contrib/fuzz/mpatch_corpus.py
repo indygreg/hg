@@ -8,11 +8,55 @@ ap = argparse.ArgumentParser()
 ap.add_argument("out", metavar="some.zip", type=str, nargs=1)
 args = ap.parse_args()
 
+class deltafrag(object):
+    def __init__(self, start, end, data):
+        self.start = start
+        self.end = end
+        self.data = data
+
+    def __str__(self):
+        return struct.pack(
+            ">lll", self.start, self.end, len(self.data)) + self.data
+
+class delta(object):
+    def __init__(self, frags):
+        self.frags = frags
+
+    def __str__(self):
+        return ''.join(str(f) for f in self.frags)
+
+class corpus(object):
+
+    def __init__(self, base, deltas):
+        self.base = base
+        self.deltas = deltas
+
+    def __str__(self):
+        deltas = [str(d) for d in self.deltas]
+        parts = (
+            [
+                struct.pack(">B", len(deltas) + 1),
+                struct.pack(">H", len(self.base)),
+            ]
+            + [struct.pack(">H", len(d)) for d in deltas]
+            + [self.base]
+            + deltas
+        )
+        return "".join(parts)
+
 with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     # Manually constructed entries
     zf.writestr(
         "one_delta_applies",
-        "\x02\x00\x01\x00\ra\x00\x00\x00\x01\x00\x00\x00\x01\x00\x00\x00\x01b",
+        str(corpus('a', [delta([deltafrag(0, 1, 'b')])]))
+    )
+    zf.writestr(
+        "one_delta_starts_late",
+        str(corpus('a', [delta([deltafrag(3, 1, 'b')])]))
+    )
+    zf.writestr(
+        "one_delta_ends_late",
+        str(corpus('a', [delta([deltafrag(0, 20, 'b')])]))
     )
 
     # Automatically discovered by running the fuzzer

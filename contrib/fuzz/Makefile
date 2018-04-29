@@ -46,6 +46,11 @@ xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-
 
 all: bdiff xdiff
 
+clean:
+	rm *.o *_fuzzer \
+	  bdiff \
+	  xdiff
+
 oss-fuzz: bdiff_fuzzer xdiff_fuzzer
 
-.PHONY: all oss-fuzz
+.PHONY: all clean oss-fuzz

@@ -155,7 +155,8 @@ class changesetprinter(object):
         self.buffered = buffered
         self._differ = differ or changesetdiffer()
         self._diffopts = patch.diffallopts(ui, diffopts)
-        self.diffopts = diffopts or {}
+        self._includestat = diffopts and diffopts.get('stat')
+        self._includediff = diffopts and diffopts.get('patch')
         self.header = {}
         self.hunk = {}
         self.lastheader = None
@@ -299,15 +300,13 @@ class changesetprinter(object):
         '''
 
     def _showpatch(self, ctx):
-        stat = self.diffopts.get('stat')
-        diff = self.diffopts.get('patch')
-        if stat:
+        if self._includestat:
             self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
-        if stat and diff:
+        if self._includestat and self._includediff:
             self.ui.write("\n")
-        if diff:
+        if self._includediff:
             self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
-        if stat or diff:
+        if self._includestat or self._includediff:
             self.ui.write("\n")
 
 class changesetformatter(changesetprinter):
@@ -368,13 +367,11 @@ class changesetformatter(changesetprinter):
                 fm.data(copies=fm.formatdict(copies,
                                              key='name', value='source'))
 
-        stat = self.diffopts.get('stat')
-        diff = self.diffopts.get('patch')
-        if stat:
+        if self._includestat:
             self.ui.pushbuffer()
             self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
             fm.data(diffstat=self.ui.popbuffer())
-        if diff:
+        if self._includediff:
             self.ui.pushbuffer()
             self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
             fm.data(diff=self.ui.popbuffer())

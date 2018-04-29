@@ -112,8 +112,8 @@ def activepath(repo, remote):
     # represent the remotepath with user defined path name if exists
     for path, url in repo.ui.configitems('paths'):
         # remove auth info from user defined url
-        url = util.removeauth(url)
-        if url == rpath:
+        noauthurl = util.removeauth(url)
+        if url == rpath or noauthurl == rpath:
             rpath = path
             break
 

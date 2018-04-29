@@ -1251,7 +1251,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &node, &nodelen))
 		return NULL;
 
-	if (nodelen < 4) {
+	if (nodelen < 1) {
 		PyErr_SetString(PyExc_ValueError, "key too short");
 		return NULL;
 	}

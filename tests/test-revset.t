@@ -1773,6 +1773,16 @@ Test explicit numeric revision
 
 Test hexadecimal revision
   $ log 'id(2)'
+  $ log 'id(5)'
+  2
+  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'id(x5)'
+  2
+  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'x5'
+  2
+  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'id(x)'
+  $ hg --config experimental.revisions.prefixhexnode=yes log --template '{rev}\n' -r 'x'
+  abort: 00changelog.i@: ambiguous identifier!
+  [255]
   $ log 'id(23268)'
   4
   $ log 'id(2785f51eece)'

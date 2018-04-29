@@ -437,6 +437,9 @@ def formatrevnode(ui, rev, node):
     return '%d:%s' % (rev, hexfunc(node))
 
 def resolvehexnodeidprefix(repo, prefix):
+    if (prefix.startswith('x') and
+        repo.ui.configbool('experimental', 'revisions.prefixhexnode')):
+        prefix = prefix[1:]
     try:
         # Uses unfiltered repo because it's faster when prefix is ambiguous/
         # This matches the shortesthexnodeidprefix() function below.

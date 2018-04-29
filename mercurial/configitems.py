@@ -587,6 +587,9 @@ coreconfigitem('experimental', 'remotenames',
 coreconfigitem('experimental', 'removeemptydirs',
     default=True,
 )
+coreconfigitem('experimental', 'revisions.prefixhexnode',
+    default=False,
+)
 coreconfigitem('experimental', 'revlogv2',
     default=None,
 )

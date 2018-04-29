@@ -1,8 +1,13 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import argparse
 import struct
 import zipfile
+
+from mercurial import (
+    hg,
+    ui as uimod,
+)
 
 ap = argparse.ArgumentParser()
 ap.add_argument("out", metavar="some.zip", type=str, nargs=1)
@@ -59,6 +64,16 @@ with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
         str(corpus('a', [delta([deltafrag(0, 20, 'b')])]))
     )
 
+    try:
+        # Generated from repo data
+        r = hg.repository(uimod.ui(), '../..')
+        fl = r.file('mercurial/manifest.py')
+        rl = getattr(fl, '_revlog', fl)
+        bins = rl._chunks(rl._deltachain(10)[0])
+        zf.writestr('manifest_py_rev_10',
+                    str(corpus(bins[0], bins[1:])))
+    except: # skip this, so no re-raises
+        print('skipping seed file from repo data')
     # Automatically discovered by running the fuzzer
     zf.writestr(
         "mpatch_decode_old_overread", "\x02\x00\x00\x00\x02\x00\x00\x00"

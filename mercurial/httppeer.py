@@ -328,13 +328,24 @@ def sendrequest(ui, opener, req):
 
     return res
 
+class RedirectedRepoError(error.RepoError):
+    def __init__(self, msg, respurl):
+        super(RedirectedRepoError, self).__init__(msg)
+        self.respurl = respurl
+
 def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
                            allowcbor=False):
     # record the url we got redirected to
+    redirected = False
     respurl = pycompat.bytesurl(resp.geturl())
     if respurl.endswith(qs):
         respurl = respurl[:-len(qs)]
+        qsdropped = False
+    else:
+        qsdropped = True
+
     if baseurl.rstrip('/') != respurl.rstrip('/'):
+        redirected = True
         if not ui.quiet:
             ui.warn(_('real URL is %s\n') % respurl)
 
@@ -351,10 +362,16 @@ def parsev1commandresponse(ui, baseurl, requrl, qs, resp, compressible,
     # application/hg-changegroup. We don't support such old servers.
     if not proto.startswith('application/mercurial-'):
         ui.debug("requested URL: '%s'\n" % util.hidepassword(requrl))
-        raise error.RepoError(
-            _("'%s' does not appear to be an hg repository:\n"
-              "---%%<--- (%s)\n%s\n---%%<---\n")
-            % (safeurl, proto or 'no content-type', resp.read(1024)))
+        msg = _("'%s' does not appear to be an hg repository:\n"
+                "---%%<--- (%s)\n%s\n---%%<---\n") % (
+            safeurl, proto or 'no content-type', resp.read(1024))
+
+        # Some servers may strip the query string from the redirect. We
+        # raise a special error type so callers can react to this specially.
+        if redirected and qsdropped:
+            raise RedirectedRepoError(msg, respurl)
+        else:
+            raise error.RepoError(msg)
 
     try:
         subtype = proto.split('-', 1)[1]
@@ -433,8 +450,6 @@ class httppeer(wireprotov1peer.wirepeer):
         return self._caps
 
     # End of ipeercommands interface.
-
-    # look up capabilities only when needed
 
     def _callstream(self, cmd, _compressible=False, **args):
         args = pycompat.byteskwargs(args)
@@ -853,12 +868,32 @@ def performhandshake(ui, url, opener, requestbuilder):
     req, requrl, qs = makev1commandrequest(ui, requestbuilder, caps,
                                            capable, url, 'capabilities',
                                            args)
-
     resp = sendrequest(ui, opener, req)
 
-    respurl, ct, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
-                                               compressible=False,
-                                               allowcbor=advertisev2)
+    # The server may redirect us to the repo root, stripping the
+    # ?cmd=capabilities query string from the URL. The server would likely
+    # return HTML in this case and ``parsev1commandresponse()`` would raise.
+    # We catch this special case and re-issue the capabilities request against
+    # the new URL.
+    #
+    # We should ideally not do this, as a redirect that drops the query
+    # string from the URL is arguably a server bug. (Garbage in, garbage out).
+    # However,  Mercurial clients for several years appeared to handle this
+    # issue without behavior degradation. And according to issue 5860, it may
+    # be a longstanding bug in some server implementations. So we allow a
+    # redirect that drops the query string to "just work."
+    try:
+        respurl, ct, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
+                                                   compressible=False,
+                                                   allowcbor=advertisev2)
+    except RedirectedRepoError as e:
+        req, requrl, qs = makev1commandrequest(ui, requestbuilder, caps,
+                                               capable, e.respurl,
+                                               'capabilities', args)
+        resp = sendrequest(ui, opener, req)
+        respurl, ct, resp = parsev1commandresponse(ui, url, requrl, qs, resp,
+                                                   compressible=False,
+                                                   allowcbor=advertisev2)
 
     try:
         rawdata = resp.read()

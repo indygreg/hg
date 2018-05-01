@@ -172,15 +172,39 @@ static int discard(struct mpatch_flist *src, int cut, int offset)
 	int postend, c, l;
 
 	while (s != src->tail) {
-		if (s->start + offset >= cut)
+		int cmpcut = s->start;
+		if (!safeadd(offset, &cmpcut)) {
+			break;
+		}
+		if (cmpcut >= cut)
 			break;
 
-		postend = offset + s->start + s->len;
+		postend = offset;
+		if (!safeadd(s->start, &postend)) {
+			break;
+		}
+		if (!safeadd(s->len, &postend)) {
+			break;
+		}
 		if (postend <= cut) {
-			offset += s->start + s->len - s->end;
+			/* do the subtraction first to avoid UB integer overflow
+			 */
+			int tmp = s->start;
+			if (!safesub(s->end, &tmp)) {
+				break;
+			}
+			if (!safeadd(s->len, &tmp)) {
+				break;
+			}
+			if (!safeadd(tmp, &offset)) {
+				break;
+			}
 			s++;
 		} else {
-			c = cut - offset;
+			c = cut;
+			if (!safesub(offset, &c)) {
+				break;
+			}
 			if (s->end < c)
 				c = s->end;
 			l = cut - offset - s->start;

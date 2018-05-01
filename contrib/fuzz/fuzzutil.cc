@@ -2,10 +2,10 @@
 
 #include <utility>
 
-std::optional<two_inputs> SplitInputs(const uint8_t *Data, size_t Size)
+contrib::optional<two_inputs> SplitInputs(const uint8_t *Data, size_t Size)
 {
 	if (!Size) {
-		return std::nullopt;
+		return contrib::nullopt;
 	}
 	// figure out a random point in [0, Size] to split our input.
 	size_t left_size = (Data[0] / 255.0) * (Size - 1);

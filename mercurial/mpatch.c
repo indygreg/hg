@@ -285,10 +285,15 @@ int mpatch_decode(const char *bin, ssize_t len, struct mpatch_flist **res)
 		lt->start = getbe32(bin + pos);
 		lt->end = getbe32(bin + pos + 4);
 		lt->len = getbe32(bin + pos + 8);
-		lt->data = bin + pos + 12;
-		pos += 12 + lt->len;
-		if (lt->start > lt->end || lt->len < 0)
+		if (lt->start < 0 || lt->start > lt->end || lt->len < 0)
 			break; /* sanity check */
+		if (!safeadd(12, &pos)) {
+			break;
+		}
+		lt->data = bin + pos;
+		if (!safeadd(lt->len, &pos)) {
+			break;
+		}
 		lt++;
 	}
 

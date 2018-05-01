@@ -247,8 +247,18 @@ static struct mpatch_flist *combine(struct mpatch_flist *a,
 
 			/* insert new hunk */
 			ct = c->tail;
-			ct->start = bh->start - offset;
-			ct->end = bh->end - post;
+			ct->start = bh->start;
+			ct->end = bh->end;
+			if (!safesub(offset, &(ct->start)) ||
+			    !safesub(post, &(ct->end))) {
+				/* It was already possible to exit
+				 * this function with a return value
+				 * of NULL before the safesub()s were
+				 * added, so this should be fine. */
+				mpatch_lfree(c);
+				c = NULL;
+				goto done;
+			}
 			ct->len = bh->len;
 			ct->data = bh->data;
 			c->tail++;
@@ -259,7 +269,7 @@ static struct mpatch_flist *combine(struct mpatch_flist *a,
 		memcpy(c->tail, a->head, sizeof(struct mpatch_frag) * lsize(a));
 		c->tail += lsize(a);
 	}
-
+done:
 	mpatch_lfree(a);
 	mpatch_lfree(b);
 	return c;

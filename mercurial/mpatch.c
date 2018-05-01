@@ -20,12 +20,22 @@
  of the GNU General Public License, incorporated herein by reference.
 */
 
+#include <limits.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "bitmanipulation.h"
 #include "compat.h"
 #include "mpatch.h"
+
+/* VC9 doesn't include bool and lacks stdbool.h based on cext/util.h */
+#if defined(_MSC_VER) || __STDC_VERSION__ < 199901L
+#define true 1
+#define false 0
+typedef unsigned char bool;
+#else
+#include <stdbool.h>
+#endif
 
 static struct mpatch_flist *lalloc(ssize_t size)
 {
@@ -58,6 +68,24 @@ void mpatch_lfree(struct mpatch_flist *a)
 static ssize_t lsize(struct mpatch_flist *a)
 {
 	return a->tail - a->head;
+}
+
+/* add helper to add src and *dest iff it won't overflow */
+static inline bool safeadd(int src, int *dest)
+{
+	if ((src > 0) == (*dest > 0)) {
+		if (*dest > 0) {
+			if (src > (INT_MAX - *dest)) {
+				return false;
+			}
+		} else {
+			if (src < (INT_MIN - *dest)) {
+				return false;
+			}
+		}
+	}
+	*dest += src;
+	return true;
 }
 
 /* move hunks in source that are less cut to dest, compensating

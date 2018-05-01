@@ -109,17 +109,36 @@ static int gather(struct mpatch_flist *dest, struct mpatch_flist *src, int cut,
 	int postend, c, l;
 
 	while (s != src->tail) {
-		if (s->start + offset >= cut)
+		int soffset = s->start;
+		if (!safeadd(offset, &soffset))
+			break; /* add would overflow, oh well */
+		if (soffset >= cut)
 			break; /* we've gone far enough */
 
-		postend = offset + s->start + s->len;
+		postend = offset;
+		if (!safeadd(s->start, &postend) ||
+		    !safeadd(s->len, &postend)) {
+			break;
+		}
 		if (postend <= cut) {
 			/* save this hunk */
-			offset += s->start + s->len - s->end;
+			int tmp = s->start;
+			if (!safesub(s->end, &tmp)) {
+				break;
+			}
+			if (!safeadd(s->len, &tmp)) {
+				break;
+			}
+			if (!safeadd(tmp, &offset)) {
+				break; /* add would overflow, oh well */
+			}
 			*d++ = *s++;
 		} else {
 			/* break up this hunk */
-			c = cut - offset;
+			c = cut;
+			if (!safesub(offset, &c)) {
+				break;
+			}
 			if (s->end < c)
 				c = s->end;
 			l = cut - offset - s->start;

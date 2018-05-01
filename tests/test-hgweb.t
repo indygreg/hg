@@ -875,4 +875,25 @@ Uncaught exception after partial content sent
   Internal Server Error (no-eol)
 
   $ killdaemons.py
+
+HTTP 304 works with hgwebdir (issue5844)
+
+  $ cat > hgweb.conf << EOF
+  > [paths]
+  > /repo = $TESTTMP/test
+  > EOF
+
+  $ hg serve --web-conf hgweb.conf -p $HGPORT -d --pid-file hg.pid -E error.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ get-with-headers.py --twice --headeronly localhost:$HGPORT 'repo/static/style.css' - date etag server
+  200 Script output follows
+  content-length: 2677
+  content-type: text/css
+  500 Internal Server Error
+  transfer-encoding: chunked
+  [1]
+
+  $ killdaemons.py
+
   $ cd ..

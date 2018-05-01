@@ -473,6 +473,7 @@ class wsgiresponse(object):
                           if k.lower() not in ('date', 'etag', 'expires',
                                                'cache-control',
                                                'content-location',
+                                               'content-security-policy',
                                                'vary')}
             if badheaders:
                 raise error.ProgrammingError(

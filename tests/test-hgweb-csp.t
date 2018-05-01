@@ -57,8 +57,8 @@ static page should send CSP when enabled
   $ get-with-headers.py --twice --headeronly localhost:$HGPORT repo1/static/style.css content-security-policy
   200 Script output follows
   content-security-policy: script-src https://example.com/ 'unsafe-inline'
-  500 Internal Server Error
-  [1]
+  304 Not Modified
+  content-security-policy: script-src https://example.com/ 'unsafe-inline'
 
 repo page should send CSP by default, include etag w/o nonce
 

@@ -890,9 +890,7 @@ HTTP 304 works with hgwebdir (issue5844)
   200 Script output follows
   content-length: 2677
   content-type: text/css
-  500 Internal Server Error
-  transfer-encoding: chunked
-  [1]
+  304 Not Modified
 
   $ killdaemons.py
 

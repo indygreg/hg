@@ -1,5 +1,3 @@
-#require killdaemons
-
 #testcases bundle1 bundle2
 
 #if bundle1

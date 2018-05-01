@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ echo "[extensions]"      >> $HGRCPATH
   $ echo "share = "          >> $HGRCPATH
 

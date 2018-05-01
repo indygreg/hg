@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ cat >> $HGRCPATH << EOF
   > [extensions]
   > phasereport=$TESTDIR/testlib/ext-phase-report.py

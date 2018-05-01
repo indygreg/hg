@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ cat > writelines.py <<EOF
   > import sys
   > path = sys.argv[1]

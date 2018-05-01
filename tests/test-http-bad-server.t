@@ -1,4 +1,4 @@
-#require killdaemons serve zstd
+#require serve zstd
 
 Client version is embedded in HTTP request and is effectively dynamic. Pin the
 version so behavior is deterministic.

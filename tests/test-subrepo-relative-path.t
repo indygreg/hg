@@ -1,5 +1,3 @@
-#require killdaemons
-
 Preparing the subrepository 'sub'
 
   $ hg init sub

@@ -1,4 +1,4 @@
-#require killdaemons serve
+#require serve
 
   $ hg init test
   $ cd test

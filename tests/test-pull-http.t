@@ -1,5 +1,3 @@
-#require killdaemons
-
 #if no-windows
 For debugging: this is a pretty simple test that is a good candidate
 for tracking down network-related bugs. Sometimes a command in this

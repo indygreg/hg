@@ -1,5 +1,3 @@
-#require killdaemons
-
 Test wire protocol unbundle with hashed heads (capability: unbundlehash)
 
   $ cat << EOF >> $HGRCPATH

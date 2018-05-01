@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ hgserve() {
   >     hg serve -a localhost -p $HGPORT1 -d --pid-file=hg.pid \
   >       -E errors.log -v $@ > startup.log

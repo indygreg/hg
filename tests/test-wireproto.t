@@ -1,5 +1,3 @@
-#require killdaemons
-
 Test wire protocol argument passing
 
 Setup repo:

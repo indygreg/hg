@@ -1,5 +1,3 @@
-#require killdaemons
-
 hide outer repo
   $ hg init
 

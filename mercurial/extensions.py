@@ -655,6 +655,28 @@ def disabledext(name):
     if name in paths:
         return _disabledhelp(paths[name])
 
+def _finddisabledcmd(ui, cmd, name, path, strict):
+    try:
+        mod = loadpath(path, 'hgext.%s' % name)
+    except Exception:
+        return
+    try:
+        aliases, entry = cmdutil.findcmd(cmd,
+            getattr(mod, 'cmdtable', {}), strict)
+    except (error.AmbiguousCommand, error.UnknownCommand):
+        return
+    except Exception:
+        ui.warn(_('warning: error finding commands in %s\n') % path)
+        ui.traceback()
+        return
+    for c in aliases:
+        if c.startswith(cmd):
+            cmd = c
+            break
+    else:
+        cmd = aliases[0]
+    return (cmd, name, mod)
+
 def disabledcmd(ui, cmd, strict=False):
     '''import disabled extensions until cmd is found.
     returns (cmdname, extname, module)'''
@@ -663,37 +685,15 @@ def disabledcmd(ui, cmd, strict=False):
     if not paths:
         raise error.UnknownCommand(cmd)
 
-    def findcmd(cmd, name, path):
-        try:
-            mod = loadpath(path, 'hgext.%s' % name)
-        except Exception:
-            return
-        try:
-            aliases, entry = cmdutil.findcmd(cmd,
-                getattr(mod, 'cmdtable', {}), strict)
-        except (error.AmbiguousCommand, error.UnknownCommand):
-            return
-        except Exception:
-            ui.warn(_('warning: error finding commands in %s\n') % path)
-            ui.traceback()
-            return
-        for c in aliases:
-            if c.startswith(cmd):
-                cmd = c
-                break
-        else:
-            cmd = aliases[0]
-        return (cmd, name, mod)
-
     ext = None
     # first, search for an extension with the same name as the command
     path = paths.pop(cmd, None)
     if path:
-        ext = findcmd(cmd, cmd, path)
+        ext = _finddisabledcmd(ui, cmd, cmd, path, strict=strict)
     if not ext:
         # otherwise, interrogate each extension until there's a match
         for name, path in paths.iteritems():
-            ext = findcmd(cmd, name, path)
+            ext = _finddisabledcmd(ui, cmd, name, path, strict=strict)
             if ext:
                 break
     if ext:

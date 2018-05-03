@@ -328,14 +328,15 @@ function process_dates(parentSelector){
 	}
 }
 
-function toggleDiffstat() {
+function toggleDiffstat(event) {
     var curdetails = document.getElementById('diffstatdetails').style.display;
     var curexpand = curdetails === 'none' ? 'inline' : 'none';
     document.getElementById('diffstatdetails').style.display = curexpand;
     document.getElementById('diffstatexpand').style.display = curdetails;
+    event.preventDefault();
 }
 
-function toggleLinewrap() {
+function toggleLinewrap(event) {
     function getLinewrap() {
         var nodes = document.getElementsByClassName('sourcelines');
         // if there are no such nodes, error is thrown here
@@ -360,6 +361,7 @@ function toggleLinewrap() {
     }
 
     setLinewrap(!getLinewrap());
+    event.preventDefault();
 }
 
 function format(str, replacements) {

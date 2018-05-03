@@ -675,11 +675,12 @@ def _finddisabledcmd(ui, cmd, name, path, strict):
             break
     else:
         cmd = aliases[0]
-    return (cmd, name, mod)
+    doc = gettext(pycompat.getdoc(mod))
+    return (cmd, name, doc)
 
 def disabledcmd(ui, cmd, strict=False):
     '''import disabled extensions until cmd is found.
-    returns (cmdname, extname, module)'''
+    returns (cmdname, extname, doc)'''
 
     paths = _disabledpaths(strip_init=True)
     if not paths:

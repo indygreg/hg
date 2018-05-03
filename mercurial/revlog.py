@@ -1542,31 +1542,22 @@ class revlog(object):
                 length = max(self.index.shortest(node), minlength)
                 return disambiguate(hexnode, length)
             except RevlogError:
-                if node == wdirid:
-                    for length in range(minlength, 41):
-                        prefix = hexnode[:length]
-                        if isvalid(prefix):
-                            return prefix
-                else:
+                if node != wdirid:
                     raise LookupError(node, self.indexfile, _('no node'))
             except AttributeError:
                 # Fall through to pure code
                 pass
 
-        shortest = hexnode
-        startlength = max(6, minlength)
-        length = startlength
-        while True:
+        if node == wdirid:
+            for length in range(minlength, 41):
+                prefix = hexnode[:length]
+                if isvalid(prefix):
+                    return prefix
+
+        for length in range(minlength, 41):
             prefix = hexnode[:length]
             if isvalid(prefix):
-                shortest = prefix
-                if length == minlength or length > startlength:
-                    return shortest
-                length -= 1
-            else:
-                length += 1
-                if len(shortest) <= length:
-                    return shortest
+                return disambiguate(hexnode, length)
 
     def cmp(self, node, text):
         """compare text with a given file revision

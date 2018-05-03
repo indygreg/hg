@@ -335,13 +335,13 @@ def annotate(ui, repo, *pats, **opts):
         formatrev = formathex = pycompat.bytestr
 
     opmap = [('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
-             ('number', ' ', lambda x: x.fctx.rev(), formatrev),
-             ('changeset', ' ', lambda x: hexfn(x.fctx.node()), formathex),
+             ('rev', ' ', lambda x: x.fctx.rev(), formatrev),
+             ('node', ' ', lambda x: hexfn(x.fctx.node()), formathex),
              ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
              ('file', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
              ('line_number', ':', lambda x: x.lineno, pycompat.bytestr),
             ]
-    fieldnamemap = {'number': 'rev', 'changeset': 'node'}
+    opnamemap = {'rev': 'number', 'node': 'changeset'}
 
     if (not opts.get('user') and not opts.get('changeset')
         and not opts.get('date') and not opts.get('file')):
@@ -359,11 +359,11 @@ def annotate(ui, repo, *pats, **opts):
     else:
         def makefunc(get, fmt):
             return get
-    funcmap = [(makefunc(get, fmt), sep) for op, sep, get, fmt in opmap
-               if opts.get(op)]
+    funcmap = [(makefunc(get, fmt), sep) for fn, sep, get, fmt in opmap
+               if opts.get(opnamemap.get(fn, fn))]
     funcmap[0] = (funcmap[0][0], '') # no separator in front of first column
-    fields = ' '.join(fieldnamemap.get(op, op) for op, sep, get, fmt in opmap
-                      if opts.get(op))
+    fields = ' '.join(fn for fn, sep, get, fmt in opmap
+                      if opts.get(opnamemap.get(fn, fn)))
 
     def bad(x, y):
         raise error.Abort("%s: %s" % (x, y))

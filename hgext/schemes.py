@@ -114,7 +114,7 @@ schemes = {
 
 def extsetup(ui):
     schemes.update(dict(ui.configitems('schemes')))
-    t = templater.engine(lambda x: x)
+    t = templater.engine(templater.parse)
     for scheme, url in schemes.items():
         if (pycompat.iswindows and len(scheme) == 1 and scheme.isalpha()
             and os.path.exists('%s:\\' % scheme)):

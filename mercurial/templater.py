@@ -597,8 +597,7 @@ class engine(object):
     filter uses function to transform value. syntax is
     {key|filter1|filter2|...}.'''
 
-    def __init__(self, loader, filters=None, defaults=None, resources=None,
-                 aliases=()):
+    def __init__(self, loader, filters=None, defaults=None, resources=None):
         self._loader = loader
         if filters is None:
             filters = {}
@@ -610,7 +609,6 @@ class engine(object):
             resources = nullresourcemapper()
         self._defaults = defaults
         self._resources = resources
-        self._aliasmap = _aliasrules.buildmap(aliases)
         self._cache = {}  # key: (func, data)
         self._tmplcache = {}  # literal template: (func, data)
 
@@ -665,9 +663,7 @@ class engine(object):
     def _load(self, t):
         '''load, parse, and cache a template'''
         if t not in self._cache:
-            x = parse(self._loader(t))
-            if self._aliasmap:
-                x = _aliasrules.expand(self._aliasmap, x)
+            x = self._loader(t)
             # put poison to cut recursion while compiling 't'
             self._cache[t] = (_runrecursivesymbol, t)
             try:
@@ -808,7 +804,7 @@ class templater(object):
         self._filters.update(filters)
         self.defaults = defaults
         self._resources = resources
-        self._aliases = aliases
+        self._aliasmap = _aliasrules.buildmap(aliases)
         self._minchunk, self._maxchunk = minchunk, maxchunk
 
     @classmethod
@@ -819,14 +815,14 @@ class templater(object):
         cache, tmap, aliases = _readmapfile(mapfile)
         t.cache.update(cache)
         t._map = tmap
-        t._aliases = aliases
+        t._aliasmap = _aliasrules.buildmap(aliases)
         return t
 
     def __contains__(self, key):
         return key in self.cache or key in self._map
 
     def load(self, t):
-        '''Get the template for the given template name. Use a local cache.'''
+        """Get parsed tree for the given template name. Use a local cache."""
         if t not in self.cache:
             try:
                 self.cache[t] = util.readfile(self._map[t])
@@ -838,7 +834,13 @@ class templater(object):
                           % (self._map[t],
                              stringutil.forcebytestr(inst.args[1])))
                 raise IOError(inst.args[0], encoding.strfromlocal(reason))
-        return self.cache[t]
+        return self._parse(self.cache[t])
+
+    def _parse(self, tmpl):
+        x = parse(tmpl)
+        if self._aliasmap:
+            x = _aliasrules.expand(self._aliasmap, x)
+        return x
 
     def renderdefault(self, mapping):
         """Render the default unnamed template and return result as string"""
@@ -851,8 +853,7 @@ class templater(object):
     def generate(self, t, mapping):
         """Return a generator that renders the specified named template and
         yields chunks"""
-        proc = engine(self.load, self._filters, self.defaults, self._resources,
-                      self._aliases)
+        proc = engine(self.load, self._filters, self.defaults, self._resources)
         stream = proc.process(t, mapping)
         if self._minchunk:
             stream = util.increasingchunks(stream, min=self._minchunk,

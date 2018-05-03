@@ -1259,6 +1259,55 @@ static int nt_partialmatch(indexObject *self, const char *node,
 	return nt_find(self, node, nodelen, 1);
 }
 
+/*
+ * Find the length of the shortest unique prefix of node.
+ *
+ * Return values:
+ *
+ *   -3: error (exception set)
+ *   -2: not found (no exception set)
+ * rest: length of shortest prefix
+ */
+static int nt_shortest(indexObject *self, const char *node)
+{
+	int level, off;
+
+	if (nt_init(self) == -1)
+		return -3;
+	if (nt_populate(self) == -1)
+		return -3;
+
+	for (level = off = 0; level < 40; level++) {
+		int k, v;
+		nodetree *n = &self->nt[off];
+		k = nt_level(node, level);
+		v = n->children[k];
+		if (v < 0) {
+			const char *n;
+			v = -(v + 1);
+			n = index_node(self, v);
+			if (memcmp(node, n, 20) != 0)
+				/*
+				 * Found a unique prefix, but it wasn't for the
+				 * requested node (i.e the requested node does
+				 * not exist).
+				 */
+				return -2;
+			return level + 1;
+		}
+		if (v == 0)
+			return -2;
+		off = v;
+	}
+	/*
+	 * The node was still not unique after 40 hex digits, so this won't
+	 * happen. Also, if we get here, then there's a programming error in
+	 * this file that made us insert a node longer than 40 hex digits.
+	 */
+	PyErr_SetString(PyExc_Exception, "broken node tree");
+	return -3;
+}
+
 static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 {
 	const char *fullnode;
@@ -1305,6 +1354,29 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		return NULL;
 	}
 	return PyBytes_FromStringAndSize(fullnode, 20);
+}
+
+static PyObject *index_shortest(indexObject *self, PyObject *args)
+{
+	Py_ssize_t nodelen;
+	PyObject *val;
+	char *node;
+	int length;
+
+	if (!PyArg_ParseTuple(args, "O", &val))
+		return NULL;
+	if (node_check(val, &node, &nodelen) == -1)
+		return NULL;
+
+	self->ntlookups++;
+	length = nt_shortest(self, node);
+	if (length == -3)
+		return NULL;
+	if (length == -2) {
+		raise_revlog_error();
+		return NULL;
+	}
+	return PyInt_FromLong(length);
 }
 
 static PyObject *index_m_get(indexObject *self, PyObject *args)
@@ -1995,6 +2067,8 @@ static PyMethodDef index_methods[] = {
 	 "insert an index entry"},
 	{"partialmatch", (PyCFunction)index_partialmatch, METH_VARARGS,
 	 "match a potentially ambiguous node ID"},
+	{"shortest", (PyCFunction)index_shortest, METH_VARARGS,
+	 "find length of shortest hex nodeid of a binary ID"},
 	{"stats", (PyCFunction)index_stats, METH_NOARGS,
 	 "stats for the index"},
 	{NULL} /* Sentinel */

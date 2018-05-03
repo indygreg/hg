@@ -1526,7 +1526,33 @@ class revlog(object):
                 raise LookupError(node, self.indexfile, _('no node'))
             return not isrev(prefix)
 
+        def maybewdir(prefix):
+            return all(c == 'f' for c in prefix)
+
         hexnode = hex(node)
+
+        def disambiguate(hexnode, minlength):
+            for length in range(minlength, 41):
+                prefix = hexnode[:length]
+                if not isrev(prefix) and not maybewdir(prefix):
+                    return prefix
+
+        if not getattr(self, 'filteredrevs', None):
+            try:
+                length = max(self.index.shortest(node), minlength)
+                return disambiguate(hexnode, length)
+            except RevlogError:
+                if node == wdirid:
+                    for length in range(minlength, 41):
+                        prefix = hexnode[:length]
+                        if isvalid(prefix):
+                            return prefix
+                else:
+                    raise LookupError(node, self.indexfile, _('no node'))
+            except AttributeError:
+                # Fall through to pure code
+                pass
+
         shortest = hexnode
         startlength = max(6, minlength)
         length = startlength

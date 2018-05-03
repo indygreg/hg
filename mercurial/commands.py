@@ -359,11 +359,12 @@ def annotate(ui, repo, *pats, **opts):
     else:
         def makefunc(get, fmt):
             return get
+    datahint = rootfm.datahint()
     funcmap = [(makefunc(get, fmt), sep) for fn, sep, get, fmt in opmap
-               if opts.get(opnamemap.get(fn, fn))]
+               if opts.get(opnamemap.get(fn, fn)) or fn in datahint]
     funcmap[0] = (funcmap[0][0], '') # no separator in front of first column
     fields = ' '.join(fn for fn, sep, get, fmt in opmap
-                      if opts.get(opnamemap.get(fn, fn)))
+                      if opts.get(opnamemap.get(fn, fn)) or fn in datahint)
 
     def bad(x, y):
         raise error.Abort("%s: %s" % (x, y))

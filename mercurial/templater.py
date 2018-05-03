@@ -842,6 +842,51 @@ class templater(object):
             x = _aliasrules.expand(self._aliasmap, x)
         return x
 
+    def _findsymbolsused(self, tree, syms):
+        if not tree:
+            return
+        op = tree[0]
+        if op == 'symbol':
+            s = tree[1]
+            if s in syms[0]:
+                return # avoid recursion: s -> cache[s] -> s
+            syms[0].add(s)
+            if s in self.cache or s in self._map:
+                # s may be a reference for named template
+                self._findsymbolsused(self.load(s), syms)
+            return
+        if op in {'integer', 'string'}:
+            return
+        # '{arg|func}' == '{func(arg)}'
+        if op == '|':
+            syms[1].add(getsymbol(tree[2]))
+            self._findsymbolsused(tree[1], syms)
+            return
+        if op == 'func':
+            syms[1].add(getsymbol(tree[1]))
+            self._findsymbolsused(tree[2], syms)
+            return
+        for x in tree[1:]:
+            self._findsymbolsused(x, syms)
+
+    def symbolsuseddefault(self):
+        """Look up (keywords, filters/functions) referenced from the default
+        unnamed template
+
+        This may load additional templates from the map file.
+        """
+        return self.symbolsused('')
+
+    def symbolsused(self, t):
+        """Look up (keywords, filters/functions) referenced from the name
+        template 't'
+
+        This may load additional templates from the map file.
+        """
+        syms = (set(), set())
+        self._findsymbolsused(self.load(t), syms)
+        return syms
+
     def renderdefault(self, mapping):
         """Render the default unnamed template and return result as string"""
         return self.render('', mapping)

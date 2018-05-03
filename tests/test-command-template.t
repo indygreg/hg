@@ -50,6 +50,8 @@ Test division:
         (integer '5')
         (integer '2')))
     (string '\n'))
+  * keywords: 
+  * functions: mod
   2 1
   $ hg debugtemplate -r0 -v '{5 / -2} {mod(5, -2)}\n'
   (template
@@ -65,6 +67,8 @@ Test division:
         (negate
           (integer '2'))))
     (string '\n'))
+  * keywords: 
+  * functions: mod
   -3 -1
   $ hg debugtemplate -r0 -v '{-5 / 2} {mod(-5, 2)}\n'
   (template
@@ -80,6 +84,8 @@ Test division:
           (integer '5'))
         (integer '2')))
     (string '\n'))
+  * keywords: 
+  * functions: mod
   -3 1
   $ hg debugtemplate -r0 -v '{-5 / -2} {mod(-5, -2)}\n'
   (template
@@ -97,6 +103,8 @@ Test division:
         (negate
           (integer '2'))))
     (string '\n'))
+  * keywords: 
+  * functions: mod
   2 -1
 
 Filters bind closer than arithmetic:
@@ -111,6 +119,8 @@ Filters bind closer than arithmetic:
         (symbol 'count'))
       (integer '1'))
     (string '\n'))
+  * keywords: 
+  * functions: count, revset
   0
 
 But negate binds closer still:
@@ -123,6 +133,8 @@ But negate binds closer still:
         (integer '3')
         (symbol 'stringify')))
     (string '\n'))
+  * keywords: 
+  * functions: stringify
   hg: parse error: arithmetic only defined on integers
   [255]
   $ hg debugtemplate -r0 -v '{-3|stringify}\n'
@@ -132,6 +144,8 @@ But negate binds closer still:
         (integer '3'))
       (symbol 'stringify'))
     (string '\n'))
+  * keywords: 
+  * functions: stringify
   -3
 
 Filters bind as close as map operator:
@@ -145,6 +159,8 @@ Filters bind as close as map operator:
       (template
         (symbol 'line')
         (string '\n'))))
+  * keywords: desc, line
+  * functions: splitlines
   line 1
   line 2
 
@@ -157,6 +173,8 @@ Keyword arguments:
       (|
         (symbol 'bar')
         (symbol 'baz'))))
+  * keywords: bar, foo
+  * functions: baz
   hg: parse error: can't use a key-value pair in this context
   [255]
 
@@ -2800,6 +2818,8 @@ Error on syntax:
   (template
     (group
       None))
+  * keywords: 
+  * functions: 
   hg: parse error: missing argument
   [255]
 
@@ -3369,6 +3389,8 @@ Test dot operator precedence:
         (symbol 'node'))
       (symbol 'short'))
     (string '\n'))
+  * keywords: manifest, node, rev
+  * functions: formatnode, short
   89f4071fec70
 
  (the following examples are invalid, but seem natural in parsing POV)
@@ -3390,6 +3412,8 @@ Test dot operator precedence:
         (symbol 'bar')
         None))
     (string '\n'))
+  * keywords: foo
+  * functions: bar
   [255]
 
 Test evaluation of dot operator:
@@ -3480,12 +3504,16 @@ Test integer literal:
     (group
       (integer '0'))
     (string '\n'))
+  * keywords: 
+  * functions: 
   0
   $ hg debugtemplate -v '{(123)}\n'
   (template
     (group
       (integer '123'))
     (string '\n'))
+  * keywords: 
+  * functions: 
   123
   $ hg debugtemplate -v '{(-4)}\n'
   (template
@@ -3493,6 +3521,8 @@ Test integer literal:
       (negate
         (integer '4')))
     (string '\n'))
+  * keywords: 
+  * functions: 
   -4
   $ hg debugtemplate '{(-)}\n'
   hg: parse error at 3: not a prefix: )
@@ -3509,6 +3539,8 @@ top-level integer literal is interpreted as symbol (i.e. variable name):
   (template
     (integer '1')
     (string '\n'))
+  * keywords: 
+  * functions: 
   one
   $ hg debugtemplate -D 1=one -v '{if("t", "{1}")}\n'
   (template
@@ -3519,6 +3551,8 @@ top-level integer literal is interpreted as symbol (i.e. variable name):
         (template
           (integer '1'))))
     (string '\n'))
+  * keywords: 
+  * functions: if
   one
   $ hg debugtemplate -D 1=one -v '{1|stringify}\n'
   (template
@@ -3526,6 +3560,8 @@ top-level integer literal is interpreted as symbol (i.e. variable name):
       (integer '1')
       (symbol 'stringify'))
     (string '\n'))
+  * keywords: 
+  * functions: stringify
   one
 
 unless explicit symbol is expected:
@@ -3543,6 +3579,8 @@ Test string literal:
   (template
     (string 'string with no template fragment')
     (string '\n'))
+  * keywords: 
+  * functions: 
   string with no template fragment
   $ hg debugtemplate -Ra -r0 -v '{"template: {rev}"}\n'
   (template
@@ -3550,11 +3588,15 @@ Test string literal:
       (string 'template: ')
       (symbol 'rev'))
     (string '\n'))
+  * keywords: rev
+  * functions: 
   template: 0
   $ hg debugtemplate -Ra -r0 -v '{r"rawstring: {rev}"}\n'
   (template
     (string 'rawstring: {rev}')
     (string '\n'))
+  * keywords: 
+  * functions: 
   rawstring: {rev}
   $ hg debugtemplate -Ra -r0 -v '{files % r"rawstring: {file}"}\n'
   (template
@@ -3562,6 +3604,8 @@ Test string literal:
       (symbol 'files')
       (string 'rawstring: {file}'))
     (string '\n'))
+  * keywords: files
+  * functions: 
   rawstring: {file}
 
 Test string escaping:
@@ -4681,6 +4725,8 @@ Templater supports aliases of symbol and func() styles:
           (string 'UTC')))
       (symbol 'isodate'))
     (string '\n'))
+  * keywords: date, node, rev
+  * functions: isodate, localdate, short
   0:1e4e1b8f71e0 1970-01-12 13:46 +0000
 
   $ hg debugtemplate -vr0 '{status("A", file_adds)}'
@@ -4699,6 +4745,8 @@ Templater supports aliases of symbol and func() styles:
         (string ' ')
         (symbol 'file')
         (string '\n'))))
+  * keywords: file, file_adds
+  * functions: 
   A a
 
 A unary function alias can be called as a filter:
@@ -4721,6 +4769,8 @@ A unary function alias can be called as a filter:
           (string 'UTC')))
       (symbol 'isodate'))
     (string '\n'))
+  * keywords: date
+  * functions: isodate, localdate
   1970-01-12 13:46 +0000
 
 Aliases should be applied only to command arguments and templates in hgrc.

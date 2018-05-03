@@ -2488,9 +2488,17 @@ def debugtemplate(ui, repo, tmpl, **opts):
     if revs is None:
         tres = formatter.templateresources(ui, repo)
         t = formatter.maketemplater(ui, tmpl, resources=tres)
+        if ui.verbose:
+            kwds, funcs = t.symbolsuseddefault()
+            ui.write(("* keywords: %s\n") % ', '.join(sorted(kwds)))
+            ui.write(("* functions: %s\n") % ', '.join(sorted(funcs)))
         ui.write(t.renderdefault(props))
     else:
         displayer = logcmdutil.maketemplater(ui, repo, tmpl)
+        if ui.verbose:
+            kwds, funcs = displayer.t.symbolsuseddefault()
+            ui.write(("* keywords: %s\n") % ', '.join(sorted(kwds)))
+            ui.write(("* functions: %s\n") % ', '.join(sorted(funcs)))
         for r in revs:
             displayer.show(repo[r], **pycompat.strkwargs(props))
         displayer.close()

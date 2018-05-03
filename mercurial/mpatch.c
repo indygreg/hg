@@ -88,6 +88,17 @@ static inline bool safeadd(int src, int *dest)
 	return true;
 }
 
+/* subtract src from dest and store result in dest */
+static inline bool safesub(int src, int *dest)
+{
+	if (((src > 0) && (*dest < INT_MIN + src)) ||
+	    ((src < 0) && (*dest > INT_MAX + src))) {
+		return false;
+	}
+	*dest -= src;
+	return true;
+}
+
 /* move hunks in source that are less cut to dest, compensating
    for changes in offset. the last hunk may be split if necessary.
 */

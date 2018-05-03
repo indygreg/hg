@@ -449,8 +449,30 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
+    cl = repo.unfiltered().changelog
+
+    def isrev(prefix):
+        try:
+            i = int(prefix)
+            # if we are a pure int, then starting with zero will not be
+            # confused as a rev; or, obviously, if the int is larger
+            # than the value of the tip rev
+            if prefix[0] == '0' or i > len(cl):
+                return False
+            return True
+        except ValueError:
+            return False
+
+    def disambiguate(prefix):
+        """Disambiguate against revnums."""
+        hexnode = hex(node)
+        for length in range(len(prefix), 41):
+            prefix = hexnode[:length]
+            if not isrev(prefix):
+                return prefix
+
     try:
-        return repo.unfiltered().changelog.shortest(node, minlength)
+        return disambiguate(cl.shortest(node, minlength))
     except error.LookupError:
         raise error.RepoLookupError()
 

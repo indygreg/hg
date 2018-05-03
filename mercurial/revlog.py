@@ -1502,18 +1502,6 @@ class revlog(object):
 
     def shortest(self, node, minlength=1):
         """Find the shortest unambiguous prefix that matches node."""
-        def isrev(prefix):
-            try:
-                i = int(prefix)
-                # if we are a pure int, then starting with zero will not be
-                # confused as a rev; or, obviously, if the int is larger
-                # than the value of the tip rev
-                if prefix[0] == '0' or i > len(self):
-                    return False
-                return True
-            except ValueError:
-                return False
-
         def isvalid(prefix):
             try:
                 node = self._partialmatch(prefix)
@@ -1532,9 +1520,10 @@ class revlog(object):
         hexnode = hex(node)
 
         def disambiguate(hexnode, minlength):
+            """Disambiguate against wdirid."""
             for length in range(minlength, 41):
                 prefix = hexnode[:length]
-                if not isrev(prefix) and not maybewdir(prefix):
+                if not maybewdir(prefix):
                     return prefix
 
         if not getattr(self, 'filteredrevs', None):

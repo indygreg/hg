@@ -540,9 +540,8 @@ def getwrapperchain(container, funcname):
         fn = getattr(fn, '_origfunc', None)
     return result
 
-def _disabledpaths(strip_init=False):
-    '''find paths of disabled extensions. returns a dict of {name: path}
-    removes /__init__.py from packages if strip_init is True'''
+def _disabledpaths():
+    '''find paths of disabled extensions. returns a dict of {name: path}'''
     import hgext
     extpath = os.path.dirname(
         os.path.abspath(pycompat.fsencode(hgext.__file__)))
@@ -561,8 +560,6 @@ def _disabledpaths(strip_init=False):
             path = os.path.join(extpath, e, '__init__.py')
             if not os.path.exists(path):
                 continue
-            if strip_init:
-                path = os.path.dirname(path)
         if name in exts or name in _order or name == '__init__':
             continue
         exts[name] = path

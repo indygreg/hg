@@ -7,6 +7,8 @@
 
 from __future__ import absolute_import
 
+import ast
+import collections
 import functools
 import imp
 import inspect
@@ -655,19 +657,52 @@ def disabledext(name):
     if name in paths:
         return _disabledhelp(paths[name])
 
+def _walkcommand(node):
+    """Scan @command() decorators in the tree starting at node"""
+    todo = collections.deque([node])
+    while todo:
+        node = todo.popleft()
+        if not isinstance(node, ast.FunctionDef):
+            todo.extend(ast.iter_child_nodes(node))
+            continue
+        for d in node.decorator_list:
+            if not isinstance(d, ast.Call):
+                continue
+            if not isinstance(d.func, ast.Name):
+                continue
+            if d.func.id != r'command':
+                continue
+            yield d
+
+def _disabledcmdtable(path):
+    """Construct a dummy command table without loading the extension module
+
+    This may raise IOError or SyntaxError.
+    """
+    with open(path, 'rb') as src:
+        root = ast.parse(src.read(), path)
+    cmdtable = {}
+    for node in _walkcommand(root):
+        if not node.args:
+            continue
+        a = node.args[0]
+        if isinstance(a, ast.Str):
+            name = pycompat.sysbytes(a.s)
+        elif pycompat.ispy3 and isinstance(a, ast.Bytes):
+            name = a.s
+        else:
+            continue
+        cmdtable[name] = (None, [], b'')
+    return cmdtable
+
 def _finddisabledcmd(ui, cmd, name, path, strict):
     try:
-        mod = loadpath(path, 'hgext.%s' % name)
-    except Exception:
+        cmdtable = _disabledcmdtable(path)
+    except (IOError, SyntaxError):
         return
     try:
-        aliases, entry = cmdutil.findcmd(cmd,
-            getattr(mod, 'cmdtable', {}), strict)
+        aliases, entry = cmdutil.findcmd(cmd, cmdtable, strict)
     except (error.AmbiguousCommand, error.UnknownCommand):
-        return
-    except Exception:
-        ui.warn(_('warning: error finding commands in %s\n') % path)
-        ui.traceback()
         return
     for c in aliases:
         if c.startswith(cmd):
@@ -675,14 +710,14 @@ def _finddisabledcmd(ui, cmd, name, path, strict):
             break
     else:
         cmd = aliases[0]
-    doc = gettext(pycompat.getdoc(mod))
+    doc = _disabledhelp(path)
     return (cmd, name, doc)
 
 def disabledcmd(ui, cmd, strict=False):
-    '''import disabled extensions until cmd is found.
+    '''find cmd from disabled extensions without importing.
     returns (cmdname, extname, doc)'''
 
-    paths = _disabledpaths(strip_init=True)
+    paths = _disabledpaths()
     if not paths:
         raise error.UnknownCommand(cmd)
 

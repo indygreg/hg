@@ -1229,9 +1229,14 @@ Broken disabled extension and command:
 
   $ cat > hgext/forest.py <<EOF
   > cmdtable = None
+  > @command()
+  > def f():
+  >     pass
+  > @command(123)
+  > def g():
+  >     pass
   > EOF
   $ hg --config extensions.path=./path.py help foo > /dev/null
-  warning: error finding commands in $TESTTMP/hgext/forest.py
   abort: no such help topic: foo
   (try 'hg help --keyword foo')
   [255]

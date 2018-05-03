@@ -107,7 +107,6 @@ baz: foo, bar
 
 from __future__ import absolute_import, print_function
 
-import collections
 import contextlib
 import itertools
 import os
@@ -116,6 +115,9 @@ from .i18n import _
 from .node import (
     hex,
     short,
+)
+from .thirdparty import (
+    attr,
 )
 
 from . import (
@@ -413,8 +415,11 @@ class templateformatter(baseformatter):
         baseformatter.end(self)
         self._renderitem('docfooter', {})
 
-templatespec = collections.namedtuple(r'templatespec',
-                                      r'ref tmpl mapfile')
+@attr.s(frozen=True)
+class templatespec(object):
+    ref = attr.ib()
+    tmpl = attr.ib()
+    mapfile = attr.ib()
 
 def lookuptemplate(ui, topic, tmpl):
     """Find the template matching the given -T/--template spec 'tmpl'

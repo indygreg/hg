@@ -122,9 +122,9 @@ revision
     <td class="diffstat">
        2 files changed, 2 insertions(+), 0 deletions(-)
   
-      <a id="diffstatexpand" href="javascript:toggleDiffstat()">[<tt>+</tt>]</a>
+      <a id="diffstatexpand" class="diffstattoggle">[<tt>+</tt>]</a>
       <div id="diffstatdetails" style="display:none;">
-        <a href="javascript:toggleDiffstat()">[<tt>-</tt>]</a>
+        <a class="diffstattoggle">[<tt>-</tt>]</a>
         <table class="diffstat-table stripes2">  <tr>
       <td class="diffstat-file"><a href="#l1.1">a</a></td>
       <td class="diffstat-total" align="right">1</td>
@@ -148,7 +148,7 @@ revision
   </table>
   
   <div class="overflow">
-  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink" href="javascript:toggleLinewrap()">on</a></div>
+  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink">on</a></div>
   <div class="sourcefirst"> line diff</div>
   <div class="stripes2 diffblocks">
   <div class="bottomline inc-lineno"><pre class="sourcelines wrap">
@@ -289,7 +289,7 @@ diff removed file
   </table>
   
   <div class="overflow">
-  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink" href="javascript:toggleLinewrap()">on</a></div>
+  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink">on</a></div>
   <div class="sourcefirst"> line diff</div>
   <div class="stripes2 diffblocks">
   <div class="bottomline inc-lineno"><pre class="sourcelines wrap">
@@ -419,9 +419,9 @@ revision
     <td class="diffstat">
        2 files changed, 2 insertions(+), 0 deletions(-)
   
-      <a id="diffstatexpand" href="javascript:toggleDiffstat()">[<tt>+</tt>]</a>
+      <a id="diffstatexpand" class="diffstattoggle">[<tt>+</tt>]</a>
       <div id="diffstatdetails" style="display:none;">
-        <a href="javascript:toggleDiffstat()">[<tt>-</tt>]</a>
+        <a class="diffstattoggle">[<tt>-</tt>]</a>
         <table class="diffstat-table stripes2">  <tr>
       <td class="diffstat-file"><a href="#l1.1">a</a></td>
       <td class="diffstat-total" align="right">1</td>
@@ -445,7 +445,7 @@ revision
   </table>
   
   <div class="overflow">
-  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink" href="javascript:toggleLinewrap()">on</a></div>
+  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink">on</a></div>
   <div class="sourcefirst"> line diff</div>
   <div class="stripes2 diffblocks">
   <div class="bottomline inc-lineno"><pre class="sourcelines wrap">
@@ -590,7 +590,7 @@ diff modified file
   </table>
   
   <div class="overflow">
-  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink" href="javascript:toggleLinewrap()">on</a></div>
+  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink">on</a></div>
   <div class="sourcefirst"> line diff</div>
   <div class="stripes2 diffblocks">
   <div class="bottomline inc-lineno"><pre class="sourcelines wrap">

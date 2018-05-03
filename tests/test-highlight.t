@@ -146,7 +146,7 @@ hgweb filerevision, html
   </table>
   
   <div class="overflow">
-  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink" href="javascript:toggleLinewrap()">on</a></div>
+  <div class="sourcefirst linewraptoggle">line wrap: <a class="linewraplink">on</a></div>
   <div class="sourcefirst"> line source</div>
   <pre class="sourcelines stripes4 wrap bottomline"
        data-logurl="/log/tip/primes.py"

@@ -551,6 +551,28 @@ function renderDiffOptsForm() {
     form.style.display = 'block';
 }
 
+function addDiffStatToggle() {
+    var els = document.getElementsByClassName("diffstattoggle");
+
+    for (var i = 0; i < els.length; i++) {
+        els[i].addEventListener("click", toggleDiffstat, false);
+    }
+}
+
+function addLineWrapToggle() {
+    var els = document.getElementsByClassName("linewraptoggle");
+
+    for (var i = 0; i < els.length; i++) {
+        var nodes = els[i].getElementsByClassName("linewraplink");
+
+        for (var j = 0; j < nodes.length; j++) {
+            nodes[j].addEventListener("click", toggleLinewrap, false);
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
    process_dates();
+   addDiffStatToggle();
+   addLineWrapToggle();
 }, false);

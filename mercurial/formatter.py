@@ -198,6 +198,9 @@ class baseformatter(object):
         assert all(k in {'ctx', 'fctx'} for k in ctxs)
         if self._converter.storecontext:
             self._item.update(ctxs)
+    def datahint(self):
+        '''set of field names to be referenced'''
+        return set()
     def data(self, **data):
         '''insert data into item that's not shown in default output'''
         data = pycompat.byteskwargs(data)
@@ -410,6 +413,14 @@ class templateformatter(baseformatter):
             return
         ref = self._parts[part]
         self._out.write(self._t.render(ref, item))
+
+    @util.propertycache
+    def _symbolsused(self):
+        return self._t.symbolsuseddefault()
+
+    def datahint(self):
+        '''set of field names to be referenced from the template'''
+        return self._symbolsused[0]
 
     def end(self):
         baseformatter.end(self)

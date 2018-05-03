@@ -696,7 +696,7 @@ def disabledcmd(ui, cmd, strict=False):
             ext = findcmd(cmd, name, path)
             if ext:
                 break
-    if ext and 'DEPRECATED' not in ext.__doc__:
+    if ext:
         return ext
 
     raise error.UnknownCommand(cmd)

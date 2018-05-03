@@ -1502,9 +1502,9 @@ class revlog(object):
 
     def shortest(self, node, minlength=1):
         """Find the shortest unambiguous prefix that matches node."""
-        def isvalid(test):
+        def isvalid(prefix):
             try:
-                if self._partialmatch(test) is None:
+                if self._partialmatch(prefix) is None:
                     return False
             except error.RevlogError:
                 return False
@@ -1512,11 +1512,11 @@ class revlog(object):
                 # single 'ff...' match
                 return True
             try:
-                i = int(test)
+                i = int(prefix)
                 # if we are a pure int, then starting with zero will not be
                 # confused as a rev; or, obviously, if the int is larger
                 # than the value of the tip rev
-                if test[0] == '0' or i > len(self):
+                if prefix[0] == '0' or i > len(self):
                     return True
                 return False
             except ValueError:
@@ -1527,9 +1527,9 @@ class revlog(object):
         startlength = max(6, minlength)
         length = startlength
         while True:
-            test = hexnode[:length]
-            if isvalid(test):
-                shortest = test
+            prefix = hexnode[:length]
+            if isvalid(prefix):
+                shortest = prefix
                 if length == minlength or length > startlength:
                     return shortest
                 length -= 1

@@ -718,8 +718,6 @@ class engine(object):
             mapping = extramapping
         return templateutil.flatten(self, mapping, func(self, mapping, data))
 
-engines = {'default': engine}
-
 def stylelist():
     paths = templatepaths()
     if not paths:
@@ -777,10 +775,7 @@ def _readmapfile(mapfile):
                                        conf.source('templates', key))
             cache[key] = unquotestring(val)
         elif key != '__base__':
-            val = 'default', val
-            if ':' in val[1]:
-                val = val[1].split(':', 1)
-            tmap[key] = val[0], os.path.join(base, val[1])
+            tmap[key] = os.path.join(base, val)
     aliases.extend(conf['templatealias'].items())
     return cache, tmap, aliases
 
@@ -815,7 +810,6 @@ class templater(object):
         self._resources = resources
         self._aliases = aliases
         self._minchunk, self._maxchunk = minchunk, maxchunk
-        self._ecache = {}
 
     @classmethod
     def frommapfile(cls, mapfile, filters=None, defaults=None, resources=None,
@@ -835,13 +829,13 @@ class templater(object):
         '''Get the template for the given template name. Use a local cache.'''
         if t not in self.cache:
             try:
-                self.cache[t] = util.readfile(self._map[t][1])
+                self.cache[t] = util.readfile(self._map[t])
             except KeyError as inst:
                 raise templateutil.TemplateNotFound(
                     _('"%s" not in template map') % inst.args[0])
             except IOError as inst:
                 reason = (_('template file %s: %s')
-                          % (self._map[t][1],
+                          % (self._map[t],
                              stringutil.forcebytestr(inst.args[1])))
                 raise IOError(inst.args[0], encoding.strfromlocal(reason))
         return self.cache[t]
@@ -857,16 +851,8 @@ class templater(object):
     def generate(self, t, mapping):
         """Return a generator that renders the specified named template and
         yields chunks"""
-        ttype = t in self._map and self._map[t][0] or 'default'
-        if ttype not in self._ecache:
-            try:
-                ecls = engines[ttype]
-            except KeyError:
-                raise error.Abort(_('invalid template engine: %s') % ttype)
-            self._ecache[ttype] = ecls(self.load, self._filters, self.defaults,
-                                       self._resources, self._aliases)
-        proc = self._ecache[ttype]
-
+        proc = engine(self.load, self._filters, self.defaults, self._resources,
+                      self._aliases)
         stream = proc.process(t, mapping)
         if self._minchunk:
             stream = util.increasingchunks(stream, min=self._minchunk,

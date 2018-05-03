@@ -665,12 +665,12 @@ class engine(object):
     def _load(self, t):
         '''load, parse, and cache a template'''
         if t not in self._cache:
+            x = parse(self._loader(t))
+            if self._aliasmap:
+                x = _aliasrules.expand(self._aliasmap, x)
             # put poison to cut recursion while compiling 't'
             self._cache[t] = (_runrecursivesymbol, t)
             try:
-                x = parse(self._loader(t))
-                if self._aliasmap:
-                    x = _aliasrules.expand(self._aliasmap, x)
                 self._cache[t] = compileexp(x, self, methods)
             except: # re-raises
                 del self._cache[t]

@@ -1524,7 +1524,7 @@ class revlog(object):
                 return True
             if node is None:
                 raise LookupError(node, self.indexfile, _('no node'))
-            return not isrev(prefix)
+            return True
 
         def maybewdir(prefix):
             return all(c == 'f' for c in prefix)

@@ -41,6 +41,7 @@ class wrapped(object):
     def getmember(self, context, mapping, key):
         """Return a member item for the specified key
 
+        The key argument may be a wrapped object.
         A returned object may be either a wrapped object or a pure value
         depending on the self type.
         """
@@ -147,6 +148,7 @@ class hybrid(wrapped):
         # TODO: maybe split hybrid list/dict types?
         if not util.safehasattr(self._values, 'get'):
             raise error.ParseError(_('not a dictionary'))
+        key = unwrapastype(context, mapping, key, self.keytype)
         return self._wrapvalue(key, self._values.get(key))
 
     def _wrapvalue(self, key, val):

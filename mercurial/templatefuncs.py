@@ -262,7 +262,7 @@ def get(context, mapping, args):
         raise error.ParseError(_("get() expects two arguments"))
 
     dictarg = evalwrapped(context, mapping, args[0])
-    key = evalfuncarg(context, mapping, args[1])
+    key = evalrawexp(context, mapping, args[1])
     try:
         return dictarg.getmember(context, mapping, key)
     except error.ParseError as err:

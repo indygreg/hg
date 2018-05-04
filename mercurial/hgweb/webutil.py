@@ -714,6 +714,7 @@ class sessionvars(templateutil.wrapped):
         return sessionvars(copy.copy(self._vars), self._start)
 
     def getmember(self, context, mapping, key):
+        key = templateutil.unwrapvalue(context, mapping, key)
         return self._vars.get(key)
 
     def itermaps(self, context):

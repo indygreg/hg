@@ -319,7 +319,7 @@ def sendrequest(ui, opener, req):
         ui.traceback()
         raise IOError(None, inst)
     finally:
-        if ui.configbool('devel', 'debug.peer-request'):
+        if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
             dbg(line % '  finished in %.4f seconds (%d)'
                 % (util.timer() - start, res.code))
 

@@ -16195,7 +16195,7 @@ msgid ""
 "    of the working directory parent without scanning uncommitted changes."
 msgstr ""
 "    リビジョン指定無しで起動された場合は、 リポジトリの状態を表示します\n"
-"     (作業領域状態含む)。 作業領域の未コミット変更等を無視する場合は、\n"
+"    (作業領域状態含む)。 作業領域の未コミット変更等を無視する場合は、\n"
 "    ``-r .`` を指定してください。"
 
 msgid ""

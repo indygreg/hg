@@ -305,6 +305,7 @@ class _deltacomputer(object):
         grouped by level of easiness.
         """
         revlog = self.revlog
+        gdelta = revlog._generaldelta
         curr = len(revlog)
         prev = curr - 1
         p1r, p2r = revlog.rev(p1), revlog.rev(p2)
@@ -316,13 +317,13 @@ class _deltacomputer(object):
             # changegroup data into a generaldelta repo. The only time it
             # isn't true is if this is the first revision in a delta chain
             # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
-            if cachedelta and revlog._generaldelta and revlog._lazydeltabase:
+            if cachedelta and gdelta and revlog._lazydeltabase:
                 # Assume what we received from the server is a good choice
                 # build delta will reuse the cache
                 yield (cachedelta[0],)
                 tested.add(cachedelta[0])
 
-            if revlog._generaldelta:
+            if gdelta:
                 # exclude already lazy tested base if any
                 parents = [p for p in (p1r, p2r)
                            if p != nullrev and p not in tested]

@@ -1151,9 +1151,9 @@ static int index_find_node(indexObject *self,
 	 */
 	if (self->ntmisses++ < 4) {
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node(self, rev);
+			const char *n = index_node_existing(self, rev);
 			if (n == NULL)
-				return -2;
+				return -3;
 			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
 				if (nt_insert(self, n, rev) == -1)
 					return -3;
@@ -1162,11 +1162,9 @@ static int index_find_node(indexObject *self,
 		}
 	} else {
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node(self, rev);
-			if (n == NULL) {
-				self->ntrev = rev + 1;
-				return -2;
-			}
+			const char *n = index_node_existing(self, rev);
+			if (n == NULL)
+				return -3;
 			if (nt_insert(self, n, rev) == -1) {
 				self->ntrev = rev + 1;
 				return -3;
@@ -1243,9 +1241,9 @@ static int nt_partialmatch(indexObject *self, const char *node,
 	if (self->ntrev > 0) {
 		/* ensure that the radix tree is fully populated */
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node(self, rev);
+			const char *n = index_node_existing(self, rev);
 			if (n == NULL)
-				return -2;
+				return -3;
 			if (nt_insert(self, n, rev) == -1)
 				return -3;
 		}

@@ -60,6 +60,7 @@ class bmstore(object):
     def __init__(self, repo):
         self._repo = repo
         self._refmap = refmap = {}  # refspec: node
+        self._nodemap = nodemap = {}  # node: sorted([refspec, ...])
         self._clean = True
         self._aclean = True
         nm = repo.changelog.nodemap
@@ -76,6 +77,14 @@ class bmstore(object):
                         if node in nm:
                             refspec = encoding.tolocal(refspec)
                             refmap[refspec] = node
+                            nrefs = nodemap.get(node)
+                            if nrefs is None:
+                                nodemap[node] = [refspec]
+                            else:
+                                nrefs.append(refspec)
+                                if nrefs[-2] > refspec:
+                                    # bookmarks weren't sorted before 4.5
+                                    nrefs.sort()
                     except (TypeError, ValueError):
                         # TypeError:
                         # - bin(...)
@@ -118,6 +127,7 @@ class bmstore(object):
         return self._refmap.keys()
 
     # TODO: maybe rename to allnodes()? but nodes would have to be deduplicated
+    # could be self._nodemap.keys()
     def values(self):
         return self._refmap.values()
 
@@ -132,19 +142,29 @@ class bmstore(object):
 
     def _set(self, mark, node):
         self._clean = False
+        if mark in self._refmap:
+            self._del(mark)
         self._refmap[mark] = node
+        nrefs = self._nodemap.get(node)
+        if nrefs is None:
+            self._nodemap[node] = [mark]
+        else:
+            nrefs.append(mark)
+            nrefs.sort()
 
     def _del(self, mark):
         self._clean = False
-        del self._refmap[mark]
+        node = self._refmap.pop(mark)
+        nrefs = self._nodemap[node]
+        if len(nrefs) == 1:
+            assert nrefs[0] == mark
+            del self._nodemap[node]
+        else:
+            nrefs.remove(mark)
 
     def names(self, node):
         """Return a sorted list of bookmarks pointing to the specified node"""
-        marks = []
-        for m, n in self._refmap.iteritems():
-            if n == node:
-                marks.append(m)
-        return sorted(marks)
+        return self._nodemap.get(node, [])
 
     def changectx(self, mark):
         node = self._refmap[mark]

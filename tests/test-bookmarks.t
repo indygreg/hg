@@ -68,6 +68,9 @@ list bookmarks
      X                         0:f7b1eb17ad24
    * X2                        0:f7b1eb17ad24
      Y                         -1:000000000000
+  $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
+  0 X
+  0 X2
 
   $ echo b > b
   $ hg add b
@@ -299,6 +302,11 @@ list bookmarks
      Y                         2:db815d6d32e6
      Z                         0:f7b1eb17ad24
    * x  y                      2:db815d6d32e6
+  $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
+  2 Y
+  2 x  y
+  1 X2
+  0 Z
 
 look up stripped bookmark name
 
@@ -445,6 +453,11 @@ list bookmarks
      Y                         2:db815d6d32e6
    * Z                         2:db815d6d32e6
      x  y                      2:db815d6d32e6
+  $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
+  2 Y
+  2 Z
+  2 x  y
+  1 X2
 
 revision but no bookmark name
 

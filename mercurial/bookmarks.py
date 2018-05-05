@@ -138,6 +138,14 @@ class bmstore(object):
         self._clean = False
         del self._refmap[key]
 
+    def names(self, node):
+        """Return a sorted list of bookmarks pointing to the specified node"""
+        marks = []
+        for m, n in self._refmap.iteritems():
+            if n == node:
+                marks.append(m)
+        return sorted(marks)
+
     def changectx(self, mark):
         node = self._refmap[mark]
         return self._repo[node]

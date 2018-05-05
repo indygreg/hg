@@ -1029,11 +1029,7 @@ class localrepository(object):
 
     def nodebookmarks(self, node):
         """return the list of bookmarks pointing to the specified node"""
-        marks = []
-        for bookmark, n in self._bookmarks.iteritems():
-            if n == node:
-                marks.append(bookmark)
-        return sorted(marks)
+        return self._bookmarks.names(node)
 
     def branchmap(self):
         '''returns a dictionary {branch: [branchheads]} with branchheads

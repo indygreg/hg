@@ -1230,25 +1230,31 @@ static PyObject *index_getitem(indexObject *self, PyObject *value)
 	return NULL;
 }
 
-static int nt_partialmatch(indexObject *self, const char *node,
-			   Py_ssize_t nodelen)
-{
+/*
+ * Fully populate the radix tree.
+ */
+static int nt_populate(indexObject *self) {
 	int rev;
-
-	if (nt_init(self) == -1)
-		return -3;
-
 	if (self->ntrev > 0) {
-		/* ensure that the radix tree is fully populated */
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
 			const char *n = index_node_existing(self, rev);
 			if (n == NULL)
-				return -3;
+				return -1;
 			if (nt_insert(self, n, rev) == -1)
-				return -3;
+				return -1;
 		}
 		self->ntrev = rev;
 	}
+	return 0;
+}
+
+static int nt_partialmatch(indexObject *self, const char *node,
+			   Py_ssize_t nodelen)
+{
+	if (nt_init(self) == -1)
+		return -3;
+	if (nt_populate(self) == -1)
+		return -3;
 
 	return nt_find(self, node, nodelen, 1);
 }

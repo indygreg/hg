@@ -130,13 +130,13 @@ class bmstore(object):
     def get(self, mark, default=None):
         return self._refmap.get(mark, default)
 
-    def _set(self, key, value):
+    def _set(self, mark, node):
         self._clean = False
-        self._refmap[key] = value
+        self._refmap[mark] = node
 
-    def _del(self, key):
+    def _del(self, mark):
         self._clean = False
-        del self._refmap[key]
+        del self._refmap[mark]
 
     def names(self, node):
         """Return a sorted list of bookmarks pointing to the specified node"""

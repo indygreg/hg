@@ -248,6 +248,20 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	return data ? data + 32 : NULL;
 }
 
+/*
+ * Return the 20-byte SHA of the node corresponding to the given rev. The
+ * rev is assumed to be existing. If not, an exception is set.
+ */
+static const char *index_node_existing(indexObject *self, Py_ssize_t pos)
+{
+	const char *node = index_node(self, pos);
+	if (node == NULL) {
+		PyErr_Format(PyExc_IndexError, "could not access rev %d",
+		             (int)pos);
+	}
+	return node;
+}
+
 static int nt_insert(indexObject *self, const char *node, int rev);
 
 static int node_check(PyObject *obj, char **node, Py_ssize_t *nodelen)
@@ -1282,10 +1296,8 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		return PyBytes_FromStringAndSize(nullid, 20);
 	}
 
-	fullnode = index_node(self, rev);
+	fullnode = index_node_existing(self, rev);
 	if (fullnode == NULL) {
-		PyErr_Format(PyExc_IndexError,
-			     "could not access rev %d", rev);
 		return NULL;
 	}
 	return PyBytes_FromStringAndSize(fullnode, 20);

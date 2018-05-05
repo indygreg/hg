@@ -1243,7 +1243,7 @@ static int nt_populate(indexObject *self) {
 			if (nt_insert(self, n, rev) == -1)
 				return -1;
 		}
-		self->ntrev = rev;
+		self->ntrev = -1;
 	}
 	return 0;
 }

@@ -43,7 +43,7 @@ def _getbkfile(repo):
     fp, pending = txnutil.trypending(repo.root, repo.vfs, 'bookmarks')
     return fp
 
-class bmstore(dict):
+class bmstore(object):
     """Storage for bookmarks.
 
     This object should do all bookmark-related reads and writes, so
@@ -58,13 +58,12 @@ class bmstore(dict):
     """
 
     def __init__(self, repo):
-        dict.__init__(self)
         self._repo = repo
+        self._refmap = refmap = {}  # refspec: node
         self._clean = True
         self._aclean = True
         nm = repo.changelog.nodemap
         tonode = bin # force local lookup
-        setitem = dict.__setitem__
         try:
             with _getbkfile(repo) as bkfile:
                 for line in bkfile:
@@ -76,7 +75,7 @@ class bmstore(dict):
                         node = tonode(sha)
                         if node in nm:
                             refspec = encoding.tolocal(refspec)
-                            setitem(self, refspec, node)
+                            refmap[refspec] = node
                     except (TypeError, ValueError):
                         # TypeError:
                         # - bin(...)
@@ -96,38 +95,59 @@ class bmstore(dict):
 
     @active.setter
     def active(self, mark):
-        if mark is not None and mark not in self:
+        if mark is not None and mark not in self._refmap:
             raise AssertionError('bookmark %s does not exist!' % mark)
 
         self._active = mark
         self._aclean = False
 
-    def __setitem__(self, *args, **kwargs):
-        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
+    def __len__(self):
+        return len(self._refmap)
+
+    def __iter__(self):
+        return iter(self._refmap)
+
+    def iteritems(self):
+        return self._refmap.iteritems()
+
+    def items(self):
+        return self._refmap.items()
+
+    # TODO: maybe rename to allnames()?
+    def keys(self):
+        return self._refmap.keys()
+
+    # TODO: maybe rename to allnodes()? but nodes would have to be deduplicated
+    def values(self):
+        return self._refmap.values()
+
+    def __contains__(self, mark):
+        return mark in self._refmap
+
+    def __getitem__(self, mark):
+        return self._refmap[mark]
+
+    def get(self, mark, default=None):
+        return self._refmap.get(mark, default)
 
     def _set(self, key, value):
         self._clean = False
-        return dict.__setitem__(self, key, value)
-
-    def __delitem__(self, key):
-        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
+        self._refmap[key] = value
 
     def _del(self, key):
         self._clean = False
-        return dict.__delitem__(self, key)
-
-    def update(self, *others):
-        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
+        del self._refmap[key]
 
     def changectx(self, mark):
-        return self._repo[self[mark]]
+        node = self._refmap[mark]
+        return self._repo[node]
 
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
         """
         bmchanges = tr.changes.get('bookmarks')
         for name, node in changes:
-            old = self.get(name)
+            old = self._refmap.get(name)
             if node is None:
                 self._del(name)
             else:
@@ -151,7 +171,7 @@ class bmstore(dict):
     def _writerepo(self, repo):
         """Factored out for extensibility"""
         rbm = repo._bookmarks
-        if rbm.active not in self:
+        if rbm.active not in self._refmap:
             rbm.active = None
             rbm._writeactive()
 
@@ -182,7 +202,7 @@ class bmstore(dict):
         self._aclean = True
 
     def _write(self, fp):
-        for name, node in sorted(self.iteritems()):
+        for name, node in sorted(self._refmap.iteritems()):
             fp.write("%s %s\n" % (hex(node), encoding.fromlocal(name)))
         self._clean = True
         self._repo.invalidatevolatilesets()
@@ -208,15 +228,15 @@ class bmstore(dict):
         If divergent bookmark are to be deleted, they will be returned as list.
         """
         cur = self._repo['.'].node()
-        if mark in self and not force:
+        if mark in self._refmap and not force:
             if target:
-                if self[mark] == target and target == cur:
+                if self._refmap[mark] == target and target == cur:
                     # re-activating a bookmark
                     return []
                 rev = self._repo[target].rev()
                 anc = self._repo.changelog.ancestors([rev])
                 bmctx = self.changectx(mark)
-                divs = [self[b] for b in self
+                divs = [self._refmap[b] for b in self._refmap
                         if b.split('@', 1)[0] == mark.split('@', 1)[0]]
 
                 # allow resolving a single divergent bookmark even if moving

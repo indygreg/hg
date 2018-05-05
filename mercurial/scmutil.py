@@ -448,7 +448,10 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    return repo.unfiltered().changelog.shortest(node, minlength)
+    try:
+        return repo.unfiltered().changelog.shortest(node, minlength)
+    except error.LookupError:
+        raise error.RepoLookupError()
 
 def isrevsymbol(repo, symbol):
     """Checks if a symbol exists in the repo.

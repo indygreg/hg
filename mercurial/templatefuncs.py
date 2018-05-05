@@ -608,7 +608,10 @@ def shortest(context, mapping, args):
             return hexnode
         if not node:
             return hexnode
-    return scmutil.shortesthexnodeidprefix(repo, node, minlength)
+    try:
+        return scmutil.shortesthexnodeidprefix(repo, node, minlength)
+    except error.RepoLookupError:
+        return hexnode
 
 @templatefunc('strip(text[, chars])')
 def strip(context, mapping, args):

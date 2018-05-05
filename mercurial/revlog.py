@@ -1516,13 +1516,14 @@ class revlog(object):
 
         def isvalid(prefix):
             try:
-                if self._partialmatch(prefix) is None:
-                    return False
+                node = self._partialmatch(prefix)
             except error.RevlogError:
                 return False
             except error.WdirUnsupported:
                 # single 'ff...' match
                 return True
+            if node is None:
+                raise LookupError(node, self.indexfile, _('no node'))
             return not isrev(prefix)
 
         hexnode = hex(node)

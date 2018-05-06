@@ -931,7 +931,7 @@ reenable for later test
   $ echo "evolution.exchange=True" >> $HGRCPATH
   $ echo "evolution.createmarkers=True" >> $HGRCPATH
 
-  $ rm hg.pid access.log errors.log
+  $ rm access.log errors.log
 #endif
 
 Several troubles on the same changeset (create an unstable and bumped changeset)

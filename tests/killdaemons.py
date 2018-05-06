@@ -124,4 +124,4 @@ if __name__ == '__main__':
     else:
         path = os.environ["DAEMON_PIDS"]
 
-    killdaemons(path)
+    killdaemons(path, remove=True)

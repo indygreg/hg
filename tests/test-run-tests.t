@@ -574,7 +574,6 @@ HGRCPATH to get a clean environment.
   # Ran 1 tests, 0 skipped, 0 failed.
   $ rm test-serve-inuse.t
   $ killdaemons.py $DAEMON_PIDS
-  $ rm $DAEMON_PIDS
 
 Running In Debug Mode
 ======================

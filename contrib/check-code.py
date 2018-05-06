@@ -340,7 +340,8 @@ pypats = [
     (r'\butil\.Abort\b', "directly use error.Abort"),
     (r'^@(\w*\.)?cachefunc', "module-level @cachefunc is risky, please avoid"),
     (r'^import atexit', "don't use atexit, use ui.atexit"),
-    (r'^import Queue', "don't use Queue, use util.queue + util.empty"),
+    (r'^import Queue', "don't use Queue, use pycompat.queue.Queue + "
+                       "pycompat.queue.Empty"),
     (r'^import cStringIO', "don't use cStringIO.StringIO, use util.stringio"),
     (r'^import urllib', "don't use urllib, use util.urlreq/util.urlerr"),
     (r'^import SocketServer', "don't use SockerServer, use util.socketserver"),

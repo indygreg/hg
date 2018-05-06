@@ -60,10 +60,8 @@ b85decode = base85.b85decode
 b85encode = base85.b85encode
 
 cookielib = pycompat.cookielib
-empty = pycompat.empty
 httplib = pycompat.httplib
 pickle = pycompat.pickle
-queue = pycompat.queue
 safehasattr = pycompat.safehasattr
 socketserver = pycompat.socketserver
 bytesio = pycompat.bytesio

@@ -23,7 +23,7 @@ if not ispy3:
     import cookielib
     import cPickle as pickle
     import httplib
-    import Queue as _queue
+    import Queue as queue
     import SocketServer as socketserver
     import xmlrpclib
 
@@ -36,15 +36,12 @@ else:
     import http.cookiejar as cookielib
     import http.client as httplib
     import pickle
-    import queue as _queue
+    import queue as queue
     import socketserver
     import xmlrpc.client as xmlrpclib
 
     def future_set_exception_info(f, exc_info):
         f.set_exception(exc_info[0])
-
-empty = _queue.Empty
-queue = _queue.Queue
 
 def identity(a):
     return a

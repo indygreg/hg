@@ -71,6 +71,16 @@ except (ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
 
+try:
+    # 4.7+
+    queue = pycompat.queue.Queue
+except (AttributeError, ImportError):
+    # <4.7.
+    try:
+        queue = pycompat.queue
+    except (AttributeError, ImportError):
+        queue = util.queue
+
 # for "historical portability":
 # define util.safehasattr forcibly, because util.safehasattr has been
 # available since 1.9.3 (or 94b200a11cf7)
@@ -1029,7 +1039,7 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
                 else:
                     mdiff.textdiff(*pair)
     else:
-        q = util.queue()
+        q = queue()
         for i in xrange(threads):
             q.put(None)
         ready = threading.Condition()

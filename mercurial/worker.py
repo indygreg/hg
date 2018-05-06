@@ -235,7 +235,7 @@ def _windowsworker(ui, func, staticargs, args):
                             # iteration.
                             if self._interrupted:
                                 return
-                    except util.empty:
+                    except pycompat.queue.Empty:
                         break
             except Exception as e:
                 # store the exception such that the main thread can resurface
@@ -262,8 +262,8 @@ def _windowsworker(ui, func, staticargs, args):
                 return
 
     workers = _numworkers(ui)
-    resultqueue = util.queue()
-    taskqueue = util.queue()
+    resultqueue = pycompat.queue.Queue()
+    taskqueue = pycompat.queue.Queue()
     # partition work to more pieces than workers to minimize the chance
     # of uneven distribution of large tasks between the workers
     for pargs in partition(args, workers * 20):

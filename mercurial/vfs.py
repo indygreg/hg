@@ -568,7 +568,7 @@ class backgroundfilecloser(object):
         ui.debug('starting %d threads for background file closing\n' %
                  threadcount)
 
-        self._queue = util.queue(maxsize=maxqueue)
+        self._queue = pycompat.queue.Queue(maxsize=maxqueue)
         self._running = True
 
         for i in range(threadcount):
@@ -600,7 +600,7 @@ class backgroundfilecloser(object):
                 except Exception as e:
                     # Stash so can re-raise from main thread later.
                     self._threadexception = e
-            except util.empty:
+            except pycompat.queue.Empty:
                 if not self._running:
                     break
 

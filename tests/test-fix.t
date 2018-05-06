@@ -493,11 +493,12 @@ write back to the file, so for example the mtime shouldn't change.
   $ printf "NO FIX NEEDED\n" > foo.whole
   $ hg add
   adding foo.whole
-  $ cp foo.whole foo.whole.orig
+  $ cp -p foo.whole foo.whole.orig
+  $ cp -p foo.whole.orig foo.whole
   $ sleep 2 # mtime has a resolution of one or two seconds.
   $ hg fix --working-dir
-  $ f foo.whole --newer foo.whole.orig
-  foo.whole: older than foo.whole.orig
+  $ f foo.whole.orig --newer foo.whole
+  foo.whole.orig: newer than foo.whole
 
   $ cd ..
 
@@ -514,8 +515,11 @@ print the filename if it is relevant.
   $ printf "hello\n" > hello.txt
   $ hg add
   adding hello.txt
-  $ hg --config "fix.fail:command=printf 'HELLO\n' ; \
-  >                               printf '{rootpath}: some\nerror' >&2" \
+  $ cat >> $TESTTMP/cmd.sh <<'EOF'
+  > printf 'HELLO\n'
+  > printf "$@: some\nerror" >&2
+  > EOF
+  $ hg --config "fix.fail:command=sh $TESTTMP/cmd.sh {rootpath}" \
   >    --config "fix.fail:fileset=hello.txt" \
   >    fix --working-dir
   [wdir] fail: hello.txt: some

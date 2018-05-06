@@ -333,6 +333,19 @@ Test cache warming command
   .hg/cache/rbc-names-v1
   .hg/cache/branch2-served
 
+Test debugcolor
+
+#if no-windows
+  $ hg debugcolor --style --color always | egrep 'mode|style|log\.'
+  color mode: ansi
+  available style:
+  \x1b[0;33mlog.changeset\x1b[0m:                      \x1b[0;33myellow\x1b[0m (esc)
+#endif
+
+  $ hg debugcolor --style --color never
+  color mode: None
+  available style:
+
   $ cd ..
 
 Test internal debugstacktrace command
@@ -411,10 +424,9 @@ Test debugpeer
   $ hg --config ui.ssh="\"$PYTHON\" \"$TESTDIR/dummyssh\"" --debug debugpeer ssh://user@dummy/debugrevlog
   running "*" "*/tests/dummyssh" 'user@dummy' 'hg -R debugrevlog serve --stdio' (glob) (no-windows !)
   running "*" "*\tests/dummyssh" "user@dummy" "hg -R debugrevlog serve --stdio" (glob) (windows !)
-  devel-peer-request: hello
-  sending hello command
-  devel-peer-request: between
+  devel-peer-request: hello+between
   devel-peer-request:   pairs: 81 bytes
+  sending hello command
   sending between command
   remote: 413
   remote: capabilities: batch branchmap $USUAL_BUNDLE2_CAPS_SERVER$ changegroupsubset getbundle known lookup protocaps pushkey streamreqs=generaldelta,revlogv1 unbundle=HG10GZ,HG10BZ,HG10UN unbundlehash

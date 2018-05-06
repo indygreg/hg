@@ -399,6 +399,12 @@ class hgweb(object):
                 tag = 'W/"%d"' % self.mtime
                 if req.headers.get('If-None-Match') == tag:
                     res.status = '304 Not Modified'
+                    # Content-Type may be defined globally. It isn't valid on a
+                    # 304, so discard it.
+                    try:
+                        del res.headers[b'Content-Type']
+                    except KeyError:
+                        pass
                     # Response body not allowed on 304.
                     res.setbodybytes('')
                     return res.sendresponse()

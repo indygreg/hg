@@ -79,18 +79,17 @@ class filebundlestore(object):
         if not os.path.exists(dirpath):
             os.makedirs(dirpath)
 
-        with open(self._filepath(filename), 'w') as f:
+        with open(self._filepath(filename), 'wb') as f:
             f.write(data)
 
         return filename
 
     def read(self, key):
         try:
-            f = open(self._filepath(key), 'r')
+            with open(self._filepath(key), 'rb') as f:
+                return f.read()
         except IOError:
             return None
-
-        return f.read()
 
 class externalbundlestore(abstractbundlestore):
     def __init__(self, put_binary, put_args, get_binary, get_args):

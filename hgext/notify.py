@@ -455,7 +455,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
     changegroup. else send one email per changeset.'''
 
     n = notifier(ui, repo, hooktype)
-    ctx = repo[node]
+    ctx = repo.unfiltered()[node]
 
     if not n.subs:
         ui.debug('notify: no subscribers to repository %s\n' % n.root)
@@ -469,8 +469,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
     count = 0
     author = ''
     if hooktype == 'changegroup' or hooktype == 'outgoing':
-        start, end = ctx.rev(), len(repo)
-        for rev in xrange(start, end):
+        for rev in repo.changelog.revs(start=ctx.rev()):
             if n.node(repo[rev]):
                 count += 1
                 if not author:
@@ -482,7 +481,7 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
                 ui.pushbuffer()
         if count:
             n.diff(ctx, repo['tip'])
-    else:
+    elif ctx.rev() in repo:
         if not n.node(ctx):
             ui.popbuffer()
             ui.note(_('notify: suppressing notification for merge %d:%s\n') %

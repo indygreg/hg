@@ -68,6 +68,7 @@ from mercurial import (
 )
 from mercurial.utils import (
     procutil,
+    stringutil,
 )
 
 cmdtable = {}
@@ -324,6 +325,19 @@ def writediffproperties(ctx, diff):
             'date': '%d %d' % ctx.date(),
             'node': ctx.hex(),
             'parent': ctx.p1().hex(),
+        }),
+    }
+    callconduit(ctx.repo(), 'differential.setdiffproperty', params)
+
+    params = {
+        'diff_id': diff[r'id'],
+        'name': 'local:commits',
+        'data': json.dumps({
+            ctx.hex(): {
+                'author': stringutil.person(ctx.user()),
+                'authorEmail': stringutil.email(ctx.user()),
+                'time': ctx.date()[0],
+            },
         }),
     }
     callconduit(ctx.repo(), 'differential.setdiffproperty', params)

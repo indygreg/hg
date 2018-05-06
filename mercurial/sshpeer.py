@@ -261,11 +261,9 @@ def _performhandshake(ui, stdin, stdout, stderr):
             handshake.insert(0, 'upgrade %s %s\n' % (token, upgradecaps))
 
         if requestlog:
-            ui.debug('devel-peer-request: hello\n')
-        ui.debug('sending hello command\n')
-        if requestlog:
-            ui.debug('devel-peer-request: between\n')
+            ui.debug('devel-peer-request: hello+between\n')
             ui.debug('devel-peer-request:   pairs: %d bytes\n' % len(pairsarg))
+        ui.debug('sending hello command\n')
         ui.debug('sending between command\n')
 
         stdin.write(''.join(handshake))

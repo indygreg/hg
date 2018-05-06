@@ -78,4 +78,24 @@ With --prefix /foo/
   listening at http://localhost/foo/ (bound to *$LOCALIP*:HGPORT1) (glob) (?)
   % errors
 
+  $ $PYTHON $RUNTESTDIR/killdaemons.py $DAEMON_PIDS
+
+With out of bounds accesses
+
+  $ rm access.log
+  $ hg serve -a localhost -p $HGPORT -d --prefix some/dir \
+  >    --pid-file=hg.pid -E errors.log
+  $ cat hg.pid >> "$DAEMON_PIDS"
+
+  $ hg id http://localhost:$HGPORT/some/dir7
+  abort: HTTP Error 404: Not Found
+  [255]
+  $ hg id http://localhost:$HGPORT/some
+  abort: HTTP Error 404: Not Found
+  [255]
+
+  $ cat access.log errors.log
+  $LOCALIP - - [$LOGDATE$] "GET /some/dir7?cmd=capabilities HTTP/1.1" 404 - (glob)
+  $LOCALIP - - [$LOGDATE$] "GET /some?cmd=capabilities HTTP/1.1" 404 - (glob)
+
   $ cd ..

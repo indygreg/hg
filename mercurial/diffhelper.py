@@ -1,4 +1,4 @@
-# diffhelpers.py - helper routines for patch
+# diffhelper.py - helper routines for patch
 #
 # Copyright 2009 Matt Mackall <mpm@selenic.com> and others
 #
@@ -69,7 +69,7 @@ def testhunk(a, b, bstart):
     """
     alen = len(a)
     blen = len(b)
-    if alen > blen - bstart:
+    if alen > blen - bstart or bstart < 0:
         return False
     for i in xrange(alen):
         if a[i][1:] != b[i + bstart]:

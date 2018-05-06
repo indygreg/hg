@@ -27,6 +27,7 @@ outputs, which should be fixed later.
   > -X i18n/posplit \
   > -X mercurial/thirdparty \
   > -X tests/hypothesishelpers.py \
+  > -X tests/test-check-interfaces.py \
   > -X tests/test-commit-interactive.t \
   > -X tests/test-contrib-check-code.t \
   > -X tests/test-demandimport.py \

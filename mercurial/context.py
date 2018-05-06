@@ -497,8 +497,10 @@ class changectx(basectx):
                     changeid = hex(changeid)
             except TypeError:
                 pass
-        except (error.FilteredIndexError, error.FilteredLookupError,
-                error.FilteredRepoLookupError):
+        except (error.FilteredIndexError, error.FilteredLookupError):
+            raise error.FilteredRepoLookupError(_("filtered revision '%s'")
+                                                % changeid)
+        except error.FilteredRepoLookupError:
             raise
         except IndexError:
             pass

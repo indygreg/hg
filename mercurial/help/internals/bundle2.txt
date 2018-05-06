@@ -61,7 +61,7 @@ options should go into a bundle2 part instead.
 
 The following stream level parameters are defined:
 
-compression
+Compression
    Compression format of payload data. ``GZ`` denotes zlib. ``BZ``
    denotes bzip2. ``ZS`` denotes zstandard.
 

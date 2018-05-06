@@ -1537,7 +1537,7 @@ def tryimportone(ui, repo, patchdata, parents, opts, msgs, updatefunc):
         # --exact with --no-commit is still useful in that it does merge
         # and branch bits
         ui.warn(_("warning: can't check exact import with --no-commit\n"))
-    elif opts.get('exact') and hex(n) != nodeid:
+    elif opts.get('exact') and (not n or hex(n) != nodeid):
         raise error.Abort(_('patch is damaged or loses information'))
     msg = _('applied to working directory')
     if n:

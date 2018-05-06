@@ -428,7 +428,10 @@ class hgwebdir(object):
                                 uenv.iteritems()}
                     req = requestmod.parserequestfromenv(
                         uenv, reponame=virtualrepo,
-                        altbaseurl=self.ui.config('web', 'baseurl'))
+                        altbaseurl=self.ui.config('web', 'baseurl'),
+                        # Reuse wrapped body file object otherwise state
+                        # tracking can get confused.
+                        bodyfh=req.bodyfh)
                     try:
                         # ensure caller gets private copy of ui
                         repo = hg.repository(self.ui.copy(), real)

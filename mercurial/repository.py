@@ -8,14 +8,14 @@
 from __future__ import absolute_import
 
 from .i18n import _
-from .thirdparty.zope import (
-    interface as zi,
-)
 from . import (
     error,
 )
+from .utils import (
+    interfaceutil,
+)
 
-class ipeerconnection(zi.Interface):
+class ipeerconnection(interfaceutil.Interface):
     """Represents a "connection" to a repository.
 
     This is the base interface for representing a connection to a repository.
@@ -24,7 +24,7 @@ class ipeerconnection(zi.Interface):
     This is not a complete interface definition and should not be used
     outside of this module.
     """
-    ui = zi.Attribute("""ui.ui instance""")
+    ui = interfaceutil.Attribute("""ui.ui instance""")
 
     def url():
         """Returns a URL string representing this peer.
@@ -61,7 +61,7 @@ class ipeerconnection(zi.Interface):
         associated with the peer should be cleaned up.
         """
 
-class ipeercapabilities(zi.Interface):
+class ipeercapabilities(interfaceutil.Interface):
     """Peer sub-interface related to capabilities."""
 
     def capable(name):
@@ -81,7 +81,7 @@ class ipeercapabilities(zi.Interface):
         Raises a ``CapabilityError`` if the capability isn't present.
         """
 
-class ipeercommands(zi.Interface):
+class ipeercommands(interfaceutil.Interface):
     """Client-side interface for communicating over the wire protocol.
 
     This interface is used as a gateway to the Mercurial wire protocol.
@@ -170,7 +170,7 @@ class ipeercommands(zi.Interface):
         Returns the integer number of heads added to the peer.
         """
 
-class ipeerlegacycommands(zi.Interface):
+class ipeerlegacycommands(interfaceutil.Interface):
     """Interface for implementing support for legacy wire protocol commands.
 
     Wire protocol commands transition to legacy status when they are no longer
@@ -202,7 +202,7 @@ class ipeerlegacycommands(zi.Interface):
     def changegroupsubset(bases, heads, source):
         pass
 
-class ipeercommandexecutor(zi.Interface):
+class ipeercommandexecutor(interfaceutil.Interface):
     """Represents a mechanism to execute remote commands.
 
     This is the primary interface for requesting that wire protocol commands
@@ -259,7 +259,7 @@ class ipeercommandexecutor(zi.Interface):
         This method may call ``sendcommands()`` if there are buffered commands.
         """
 
-class ipeerrequests(zi.Interface):
+class ipeerrequests(interfaceutil.Interface):
     """Interface for executing commands on a peer."""
 
     def commandexecutor():
@@ -290,7 +290,7 @@ class ipeerbase(ipeerconnection, ipeercapabilities, ipeerrequests):
     All peer instances must conform to this interface.
     """
 
-@zi.implementer(ipeerbase)
+@interfaceutil.implementer(ipeerbase)
 class peer(object):
     """Base class for peer repositories."""
 
@@ -314,7 +314,7 @@ class peer(object):
             _('cannot %s; remote repository does not support the %r '
               'capability') % (purpose, name))
 
-class ifilerevisionssequence(zi.Interface):
+class ifilerevisionssequence(interfaceutil.Interface):
     """Contains index data for all revisions of a file.
 
     Types implementing this behave like lists of tuples. The index
@@ -365,7 +365,7 @@ class ifilerevisionssequence(zi.Interface):
     def insert(self, i, entry):
         """Add an item to the index at specific revision."""
 
-class ifileindex(zi.Interface):
+class ifileindex(interfaceutil.Interface):
     """Storage interface for index data of a single file.
 
     File storage data is divided into index metadata and data storage.
@@ -377,7 +377,7 @@ class ifileindex(zi.Interface):
     * DAG data (storing and querying the relationship between nodes).
     * Metadata to facilitate storage.
     """
-    index = zi.Attribute(
+    index = interfaceutil.Attribute(
         """An ``ifilerevisionssequence`` instance.""")
 
     def __len__():
@@ -470,7 +470,7 @@ class ifileindex(zi.Interface):
     def candelta(baserev, rev):
         """"Whether a delta can be generated between two revisions."""
 
-class ifiledata(zi.Interface):
+class ifiledata(interfaceutil.Interface):
     """Storage interface for data storage of a specific file.
 
     This complements ``ifileindex`` and provides an interface for accessing
@@ -536,7 +536,7 @@ class ifiledata(zi.Interface):
         revision data.
         """
 
-class ifilemutation(zi.Interface):
+class ifilemutation(interfaceutil.Interface):
     """Storage interface for mutation events of a tracked file."""
 
     def add(filedata, meta, transaction, linkrev, p1, p2):
@@ -608,13 +608,13 @@ class ifilemutation(zi.Interface):
 class ifilestorage(ifileindex, ifiledata, ifilemutation):
     """Complete storage interface for a single tracked file."""
 
-    version = zi.Attribute(
+    version = interfaceutil.Attribute(
         """Version number of storage.
 
         TODO this feels revlog centric and could likely be removed.
         """)
 
-    storedeltachains = zi.Attribute(
+    storedeltachains = interfaceutil.Attribute(
         """Whether the store stores deltas.
 
         TODO deltachains are revlog centric. This can probably removed
@@ -622,7 +622,7 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         data.
         """)
 
-    _generaldelta = zi.Attribute(
+    _generaldelta = interfaceutil.Attribute(
         """Whether deltas can be against any parent revision.
 
         TODO this is used by changegroup code and it could probably be
@@ -642,59 +642,59 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         TODO this is used by verify and it should not be part of the interface.
         """
 
-class completelocalrepository(zi.Interface):
+class completelocalrepository(interfaceutil.Interface):
     """Monolithic interface for local repositories.
 
     This currently captures the reality of things - not how things should be.
     """
 
-    supportedformats = zi.Attribute(
+    supportedformats = interfaceutil.Attribute(
         """Set of requirements that apply to stream clone.
 
         This is actually a class attribute and is shared among all instances.
         """)
 
-    openerreqs = zi.Attribute(
+    openerreqs = interfaceutil.Attribute(
         """Set of requirements that are passed to the opener.
 
         This is actually a class attribute and is shared among all instances.
         """)
 
-    supported = zi.Attribute(
+    supported = interfaceutil.Attribute(
         """Set of requirements that this repo is capable of opening.""")
 
-    requirements = zi.Attribute(
+    requirements = interfaceutil.Attribute(
         """Set of requirements this repo uses.""")
 
-    filtername = zi.Attribute(
+    filtername = interfaceutil.Attribute(
         """Name of the repoview that is active on this repo.""")
 
-    wvfs = zi.Attribute(
+    wvfs = interfaceutil.Attribute(
         """VFS used to access the working directory.""")
 
-    vfs = zi.Attribute(
+    vfs = interfaceutil.Attribute(
         """VFS rooted at the .hg directory.
 
         Used to access repository data not in the store.
         """)
 
-    svfs = zi.Attribute(
+    svfs = interfaceutil.Attribute(
         """VFS rooted at the store.
 
         Used to access repository data in the store. Typically .hg/store.
         But can point elsewhere if the store is shared.
         """)
 
-    root = zi.Attribute(
+    root = interfaceutil.Attribute(
         """Path to the root of the working directory.""")
 
-    path = zi.Attribute(
+    path = interfaceutil.Attribute(
         """Path to the .hg directory.""")
 
-    origroot = zi.Attribute(
+    origroot = interfaceutil.Attribute(
         """The filesystem path that was used to construct the repo.""")
 
-    auditor = zi.Attribute(
+    auditor = interfaceutil.Attribute(
         """A pathauditor for the working directory.
 
         This checks if a path refers to a nested repository.
@@ -702,40 +702,40 @@ class completelocalrepository(zi.Interface):
         Operates on the filesystem.
         """)
 
-    nofsauditor = zi.Attribute(
+    nofsauditor = interfaceutil.Attribute(
         """A pathauditor for the working directory.
 
         This is like ``auditor`` except it doesn't do filesystem checks.
         """)
 
-    baseui = zi.Attribute(
+    baseui = interfaceutil.Attribute(
         """Original ui instance passed into constructor.""")
 
-    ui = zi.Attribute(
+    ui = interfaceutil.Attribute(
         """Main ui instance for this instance.""")
 
-    sharedpath = zi.Attribute(
+    sharedpath = interfaceutil.Attribute(
         """Path to the .hg directory of the repo this repo was shared from.""")
 
-    store = zi.Attribute(
+    store = interfaceutil.Attribute(
         """A store instance.""")
 
-    spath = zi.Attribute(
+    spath = interfaceutil.Attribute(
         """Path to the store.""")
 
-    sjoin = zi.Attribute(
+    sjoin = interfaceutil.Attribute(
         """Alias to self.store.join.""")
 
-    cachevfs = zi.Attribute(
+    cachevfs = interfaceutil.Attribute(
         """A VFS used to access the cache directory.
 
         Typically .hg/cache.
         """)
 
-    filteredrevcache = zi.Attribute(
+    filteredrevcache = interfaceutil.Attribute(
         """Holds sets of revisions to be filtered.""")
 
-    names = zi.Attribute(
+    names = interfaceutil.Attribute(
         """A ``namespaces`` instance.""")
 
     def close():
@@ -750,19 +750,19 @@ class completelocalrepository(zi.Interface):
     def filtered(name, visibilityexceptions=None):
         """Obtain a named view of this repository."""
 
-    obsstore = zi.Attribute(
+    obsstore = interfaceutil.Attribute(
         """A store of obsolescence data.""")
 
-    changelog = zi.Attribute(
+    changelog = interfaceutil.Attribute(
         """A handle on the changelog revlog.""")
 
-    manifestlog = zi.Attribute(
+    manifestlog = interfaceutil.Attribute(
         """A handle on the root manifest revlog.""")
 
-    dirstate = zi.Attribute(
+    dirstate = interfaceutil.Attribute(
         """Working directory state.""")
 
-    narrowpats = zi.Attribute(
+    narrowpats = interfaceutil.Attribute(
         """Matcher patterns for this repository's narrowspec.""")
 
     def narrowmatch():
@@ -978,7 +978,7 @@ class completelocalrepository(zi.Interface):
     def checkpush(pushop):
         pass
 
-    prepushoutgoinghooks = zi.Attribute(
+    prepushoutgoinghooks = interfaceutil.Attribute(
         """util.hooks instance.""")
 
     def pushkey(namespace, key, old, new):

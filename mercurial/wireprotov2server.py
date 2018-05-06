@@ -12,9 +12,6 @@ from .i18n import _
 from .thirdparty import (
     cbor,
 )
-from .thirdparty.zope import (
-    interface as zi,
-)
 from . import (
     encoding,
     error,
@@ -23,6 +20,9 @@ from . import (
     util,
     wireprotoframing,
     wireprototypes,
+)
+from .utils import (
+    interfaceutil,
 )
 
 FRAMINGTYPE = b'application/mercurial-exp-framing-0005'
@@ -340,7 +340,7 @@ def dispatch(repo, proto, command):
 
     return func(repo, proto, **args)
 
-@zi.implementer(wireprototypes.baseprotocolhandler)
+@interfaceutil.implementer(wireprototypes.baseprotocolhandler)
 class httpv2protocolhandler(object):
     def __init__(self, req, ui, args=None):
         self._req = req

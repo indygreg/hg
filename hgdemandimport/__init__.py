@@ -21,8 +21,9 @@ if sys.version_info[0] >= 3:
 else:
     from . import demandimportpy2 as demandimport
 
-# Extensions can add to this list if necessary.
-ignore = [
+# Full module names which can't be lazy imported.
+# Extensions can add to this set.
+IGNORES = {
     '__future__',
     '_hashlib',
     # ImportError during pkg_resources/__init__.py:fixup_namespace_package
@@ -55,17 +56,15 @@ ignore = [
     '__builtin__',
     'builtins',
     'urwid.command_map', # for pudb
-    ]
+}
 
 _pypy = '__pypy__' in sys.builtin_module_names
 
 if _pypy:
-    ignore.extend([
-        # _ctypes.pointer is shadowed by "from ... import pointer" (PyPy 5)
-        '_ctypes.pointer',
-    ])
+    # _ctypes.pointer is shadowed by "from ... import pointer" (PyPy 5)
+    IGNORES.add('_ctypes.pointer')
 
-demandimport.init(ignore)
+demandimport.init(IGNORES)
 
 # Re-export.
 isenabled = demandimport.isenabled

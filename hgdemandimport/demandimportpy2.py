@@ -162,7 +162,7 @@ class _demandmod(object):
 _pypy = '__pypy__' in sys.builtin_module_names
 
 def _demandimport(name, globals=None, locals=None, fromlist=None, level=-1):
-    if locals is None or name in ignore or fromlist == ('*',):
+    if locals is None or name in ignores or fromlist == ('*',):
         # these cases we can't really delay
         return _hgextimport(_origimport, name, globals, locals, fromlist, level)
     elif not fromlist:
@@ -209,7 +209,7 @@ def _demandimport(name, globals=None, locals=None, fromlist=None, level=-1):
                     # while processing the import statement.
                     return
                 mn = '%s.%s' % (mod.__name__, attr)
-                if mn in ignore:
+                if mn in ignores:
                     importfunc = _origimport
                 else:
                     importfunc = _demandmod
@@ -273,11 +273,11 @@ def _demandimport(name, globals=None, locals=None, fromlist=None, level=-1):
 
         return mod
 
-ignore = []
+ignores = set()
 
-def init(ignorelist):
-    global ignore
-    ignore = ignorelist
+def init(ignoreset):
+    global ignores
+    ignores = ignoreset
 
 def isenabled():
     return builtins.__import__ == _demandimport

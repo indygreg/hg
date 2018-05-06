@@ -19,7 +19,7 @@ from mercurial import (
 from . import common
 
 # these do not work with demandimport, blacklist
-demandimport.ignore.extend([
+demandimport.IGNORES.update([
         'bzrlib.transactions',
         'bzrlib.urlutils',
         'ElementPath',

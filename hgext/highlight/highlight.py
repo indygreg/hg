@@ -11,7 +11,7 @@
 from __future__ import absolute_import
 
 from mercurial import demandimport
-demandimport.ignore.extend(['pkgutil', 'pkg_resources', '__main__'])
+demandimport.IGNORES.update(['pkgutil', 'pkg_resources', '__main__'])
 
 from mercurial import (
     encoding,

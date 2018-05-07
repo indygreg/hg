@@ -1541,7 +1541,6 @@ def _getrevsfromsymbols(repo, symbols):
     unficl = unfi.changelog
     cl = repo.changelog
     tiprev = len(unficl)
-    pmatch = unficl._partialmatch
     allowrevnums = repo.ui.configbool('experimental', 'directaccess.revnums')
     for s in symbols:
         try:
@@ -1557,7 +1556,7 @@ def _getrevsfromsymbols(repo, symbols):
             pass
 
         try:
-            s = pmatch(s)
+            s = resolvehexnodeidprefix(unfi, s)
         except (error.LookupError, error.WdirUnsupported):
             s = None
 

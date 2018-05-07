@@ -1874,9 +1874,9 @@ Test short 'ff...' hash collision
   $ hg debugrevspec '0:wdir() & fffb'
   abort: 00changelog.i@fffb: ambiguous identifier!
   [255]
-BROKEN should be '2' (node lookup uses unfiltered repo since dc25ed84bee8)
+BROKEN should be '2' (node lookup uses unfiltered repo)
   $ hg debugrevspec '0:wdir() & id(fffb)'
-  2
+BROKEN should be '2' (node lookup uses unfiltered repo)
   $ hg debugrevspec '0:wdir() & ffff8'
   4
   $ hg debugrevspec '0:wdir() & fffff'

@@ -1333,7 +1333,7 @@ def node_(repo, subset, x):
     else:
         rn = None
         try:
-            pm = repo.changelog._partialmatch(n)
+            pm = scmutil.resolvehexnodeidprefix(repo, n)
             if pm is not None:
                 rn = repo.changelog.rev(pm)
         except LookupError:

@@ -933,27 +933,27 @@ def _dounshelve(ui, repo, *shelved, **opts):
         # to the original pctx.
 
         activebookmark = _backupactivebookmark(repo)
+        tmpwctx, addedbefore = _commitworkingcopychanges(ui, repo, opts,
+                                                         tmpwctx)
+        repo, shelvectx = _unshelverestorecommit(ui, repo, basename)
+        _checkunshelveuntrackedproblems(ui, repo, shelvectx)
+        branchtorestore = ''
+        if shelvectx.branch() != shelvectx.p1().branch():
+            branchtorestore = shelvectx.branch()
+
+        shelvectx = _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev,
+                                          basename, pctx, tmpwctx,
+                                          shelvectx, branchtorestore,
+                                          activebookmark)
         overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
         with ui.configoverride(overrides, 'unshelve'):
-            tmpwctx, addedbefore = _commitworkingcopychanges(ui, repo, opts,
-                                                             tmpwctx)
-            repo, shelvectx = _unshelverestorecommit(ui, repo, basename)
-            _checkunshelveuntrackedproblems(ui, repo, shelvectx)
-            branchtorestore = ''
-            if shelvectx.branch() != shelvectx.p1().branch():
-                branchtorestore = shelvectx.branch()
-
-            shelvectx = _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev,
-                                              basename, pctx, tmpwctx,
-                                              shelvectx, branchtorestore,
-                                              activebookmark)
             mergefiles(ui, repo, pctx, shelvectx)
-            restorebranch(ui, repo, branchtorestore)
-            _forgetunknownfiles(repo, shelvectx, addedbefore)
+        restorebranch(ui, repo, branchtorestore)
+        _forgetunknownfiles(repo, shelvectx, addedbefore)
 
-            shelvedstate.clear(repo)
-            _finishunshelve(repo, oldtiprev, tr, activebookmark)
-            unshelvecleanup(ui, repo, basename, opts)
+        shelvedstate.clear(repo)
+        _finishunshelve(repo, oldtiprev, tr, activebookmark)
+        unshelvecleanup(ui, repo, basename, opts)
     finally:
         if tr:
             tr.release()

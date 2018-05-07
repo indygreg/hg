@@ -12,6 +12,7 @@ import re
 from .i18n import _
 from .node import (
     bin,
+    wdirid,
 )
 from . import (
     color,
@@ -601,7 +602,9 @@ def shortest(context, mapping, args):
     else:
         try:
             node = scmutil.resolvehexnodeidprefix(repo, hexnode)
-        except (error.LookupError, error.WdirUnsupported):
+        except error.WdirUnsupported:
+            node = wdirid
+        except error.LookupError:
             return hexnode
         if not node:
             return hexnode

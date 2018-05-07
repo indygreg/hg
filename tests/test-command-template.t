@@ -3916,6 +3916,15 @@ Test shortest(node) function:
   $ hg log --template '{shortest("not a hex string, but it'\''s 40 bytes long")}\n' -l1
   not a hex string, but it's 40 bytes long
 
+  $ hg log --template '{shortest("ffffffffffffffffffffffffffffffffffffffff")}\n' -l1
+  ffff
+
+  $ hg log --template '{shortest("fffffff")}\n' -l1
+  ffff
+
+  $ hg log --template '{shortest("ff")}\n' -l1
+  ffff
+
   $ cd ..
 
 Test shortest(node) with the repo having short hash collision:

@@ -462,6 +462,19 @@ def resolvehexnodeidprefix(repo, prefix):
     repo.changelog.rev(node)  # make sure node isn't filtered
     return node
 
+def mayberevnum(repo, prefix):
+    """Checks if the given prefix may be mistaken for a revision number"""
+    try:
+        i = int(prefix)
+        # if we are a pure int, then starting with zero will not be
+        # confused as a rev; or, obviously, if the int is larger
+        # than the value of the tip rev
+        if prefix[0:1] == b'0' or i > len(repo):
+            return False
+        return True
+    except ValueError:
+        return False
+
 def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
     """Find the shortest unambiguous prefix that matches hexnode.
 
@@ -471,28 +484,16 @@ def shortesthexnodeidprefix(repo, node, minlength=1, cache=None):
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    cl = repo.unfiltered().changelog
-
-    def isrev(prefix):
-        try:
-            i = int(prefix)
-            # if we are a pure int, then starting with zero will not be
-            # confused as a rev; or, obviously, if the int is larger
-            # than the value of the tip rev
-            if prefix[0:1] == b'0' or i > len(cl):
-                return False
-            return True
-        except ValueError:
-            return False
 
     def disambiguate(prefix):
         """Disambiguate against revnums."""
         hexnode = hex(node)
         for length in range(len(prefix), len(hexnode) + 1):
             prefix = hexnode[:length]
-            if not isrev(prefix):
+            if not mayberevnum(repo, prefix):
                 return prefix
 
+    cl = repo.unfiltered().changelog
     revset = repo.ui.config('experimental', 'revisions.disambiguatewithin')
     if revset:
         revs = None

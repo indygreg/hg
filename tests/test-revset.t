@@ -1713,8 +1713,6 @@ Test explicit numeric revision
 
 Test hexadecimal revision
   $ log 'id(2)'
-  abort: 00changelog.i@2: ambiguous identifier!
-  [255]
   $ log 'id(23268)'
   4
   $ log 'id(2785f51eece)'

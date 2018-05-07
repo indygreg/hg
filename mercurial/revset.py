@@ -1336,6 +1336,8 @@ def node_(repo, subset, x):
             pm = repo.changelog._partialmatch(n)
             if pm is not None:
                 rn = repo.changelog.rev(pm)
+        except LookupError:
+            pass
         except error.WdirUnsupported:
             rn = node.wdirrev
 

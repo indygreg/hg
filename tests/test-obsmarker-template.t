@@ -75,9 +75,9 @@ Test setup
 Check templates
 ---------------
   $ hg up 'desc(A0)' --hidden
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: d004c8f274b9)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: d004c8f274b9)
 
 Predecessors template should show current revision as it is the working copy
   $ hg tlog
@@ -148,9 +148,9 @@ Predecessors template should show current revision as it is the working copy
      summary:     ROOT
   
   $ hg up 'desc(A1)' --hidden
-  updating to a hidden changeset a468dc9b3633
-  (hidden revision 'a468dc9b3633' was rewritten as: d004c8f274b9)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset a468dc9b3633
+  (hidden revision 'a468dc9b3633' was rewritten as: d004c8f274b9)
 
 Predecessors template should show current revision as it is the working copy
   $ hg tlog
@@ -417,9 +417,9 @@ Check templates
 ---------------
 
   $ hg up 'obsolete()' --hidden
-  updating to a hidden changeset 471597cad322
-  (hidden revision '471597cad322' was split as: 337fec4d2edc, f257fde29c7a)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471597cad322
+  (hidden revision '471597cad322' was split as: 337fec4d2edc, f257fde29c7a)
 
 Predecessors template should show current revision as it is the working copy
   $ hg tlog
@@ -627,9 +627,9 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
 
 Predecessors template should show current revision as it is the working copy
   $ hg tlog
@@ -653,9 +653,9 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
   $ hg up 'desc(B0)' --hidden
-  updating to a hidden changeset 0dec01379d3b
-  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
 
 Predecessors template should show both predecessors as they should be both
 displayed
@@ -820,9 +820,9 @@ Test setup
      summary:     ROOT
   
   $ hg update --hidden 'desc(A0)'
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: fdf9bde5129a)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: fdf9bde5129a)
   $ hg commit --amend -m "A2"
   2 new content-divergent changesets
   $ hg log --hidden -G
@@ -894,9 +894,9 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' has diverged)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' has diverged)
 
 Predecessors template should show current revision as it is the working copy
   $ hg tlog
@@ -1161,9 +1161,9 @@ Check templates
 ---------------
 
   $ hg up 'desc(A0)' --hidden
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
 
 Predecessors template should show current revision as it is the working copy
   $ hg tlog
@@ -1187,9 +1187,9 @@ Predecessors template should show current revision as it is the working copy
   o  ea207398892e
   
   $ hg up 'desc(B0)' --hidden
-  updating to a hidden changeset 0dec01379d3b
-  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
 
 Predecessors template should both predecessors as they are visible
   $ hg tlog
@@ -1219,9 +1219,9 @@ Predecessors template should both predecessors as they are visible
   o  ea207398892e
   
   $ hg up 'desc(B1)' --hidden
-  updating to a hidden changeset b7ea6d14e664
-  (hidden revision 'b7ea6d14e664' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset b7ea6d14e664
+  (hidden revision 'b7ea6d14e664' was rewritten as: eb5a0daa2192)
 
 Predecessors template should both predecessors as they are visible
   $ hg tlog
@@ -1623,9 +1623,9 @@ Check templates
   
 
   $ hg up -r "desc(B0)" --hidden
-  updating to a hidden changeset 0dec01379d3b
-  (hidden revision '0dec01379d3b' is pruned)
   2 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' is pruned)
   $ hg tlog
   o  f897c6137566
   |    Predecessors: 2:0dec01379d3b
@@ -2087,9 +2087,9 @@ Check templates
   o  ea207398892e
   
   $ hg up --hidden 4
-  updating to a hidden changeset 9bd10a0775e4
-  (hidden revision '9bd10a0775e4' has diverged)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 9bd10a0775e4
+  (hidden revision '9bd10a0775e4' has diverged)
   $ hg rebase -r 7 -d 8 --config extensions.rebase=
   rebasing 7:ba2ed02b0c9a "Add A,B,C"
   $ hg tlog
@@ -2333,9 +2333,9 @@ Test setup
   obsoleted 1 changesets
 
   $ hg up -r "desc(A0)" --hidden
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' is pruned)
   $ hg commit --amend -m "A2"
   $ hg debugobsolete --record-parent `getid "."`
   obsoleted 1 changesets
@@ -2344,9 +2344,9 @@ Check output
 ------------
 
   $ hg up "desc(A0)" --hidden
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' is pruned)
   $ hg tlog
   @  471f378eab4c
   |
@@ -2499,9 +2499,9 @@ Check templates
 ---------------
 
   $ hg up 'desc("A0")' --hidden
-  updating to a hidden changeset 471597cad322
-  (hidden revision '471597cad322' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471597cad322
+  (hidden revision '471597cad322' is pruned)
 
 # todo: the obsfate output is not ideal
   $ hg fatelog
@@ -2512,9 +2512,9 @@ Check templates
   o  ea207398892e
   
   $ hg up -r 'desc("A2")' --hidden
-  updating to a hidden changeset 0d0ef4bdf70e
-  (hidden revision '0d0ef4bdf70e' is pruned)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 0d0ef4bdf70e
+  (hidden revision '0d0ef4bdf70e' is pruned)
 
   $ hg fatelog --hidden
   @  0d0ef4bdf70e

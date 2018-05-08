@@ -5583,18 +5583,19 @@ def update(ui, repo, node=None, **opts):
             repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
         ctx = scmutil.revsingle(repo, rev, rev)
         rev = ctx.rev()
-        if ctx.hidden():
+        hidden = ctx.hidden()
+        repo.ui.setconfig('ui', 'forcemerge', opts.get(r'tool'), 'update')
+
+        ret = hg.updatetotally(ui, repo, rev, brev, clean=clean,
+                               updatecheck=updatecheck)
+        if hidden:
             ctxstr = ctx.hex()[:12]
-            ui.warn(_("updating to a hidden changeset %s\n") % ctxstr)
+            ui.warn(_("updated to hidden changeset %s\n") % ctxstr)
 
             if ctx.obsolete():
                 obsfatemsg = obsutil._getfilteredreason(repo, ctxstr, ctx)
                 ui.warn("(%s)\n" % obsfatemsg)
-
-        repo.ui.setconfig('ui', 'forcemerge', opts.get(r'tool'), 'update')
-
-        return hg.updatetotally(ui, repo, rev, brev, clean=clean,
-                                updatecheck=updatecheck)
+        return ret
 
 @command('verify', [])
 def verify(ui, repo):

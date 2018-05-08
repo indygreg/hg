@@ -156,9 +156,9 @@ This should not throw error
 `hg update`
 
   $ hg up 28ad74
-  updating to a hidden changeset 28ad74487de9
-  (hidden revision '28ad74487de9' was rewritten as: 2443a0e66469)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 28ad74487de9
+  (hidden revision '28ad74487de9' was rewritten as: 2443a0e66469)
 
   $ hg up 3
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

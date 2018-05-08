@@ -62,7 +62,7 @@ Killing a single changeset without replacement
   $ hg tip
   -1:000000000000 (public) [tip ] 
   $ hg up --hidden tip --quiet
-  updating to a hidden changeset 97b7c2d76b18
+  updated to hidden changeset 97b7c2d76b18
   (hidden revision '97b7c2d76b18' is pruned)
 
 Killing a single changeset with itself should fail

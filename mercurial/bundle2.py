@@ -1659,7 +1659,8 @@ def addpartrevbranchcache(repo, bundler, outgoing):
             for n in sorted(closed):
                 yield n
 
-    bundler.newpart('cache:rev-branch-cache', data=generate())
+    bundler.newpart('cache:rev-branch-cache', data=generate(),
+                    mandatory=False)
 
 def _formatrequirementsspec(requirements):
     return urlreq.quote(','.join(sorted(requirements)))

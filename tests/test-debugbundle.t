@@ -34,14 +34,14 @@ Terse output:
   changegroup -- {nbchanges: 2, version: 02} (mandatory: True)
       0e067c57feba1a5694ca4844f05588bb1bf82342
       991a3460af53952d10ec8a295d3d2cc2e5fa9690
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
 
 Quiet output
 
   $ hg debugbundle --quiet bundle2.hg
   Stream params: {}
   changegroup -- {nbchanges: 2, version: 02} (mandatory: True)
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
 
 Verbose output:
 
@@ -80,6 +80,6 @@ Verbose output:
   
       c
       b80de5d138758541c5f05265ad144ab9fa86d1db 0000000000000000000000000000000000000000 0000000000000000000000000000000000000000 991a3460af53952d10ec8a295d3d2cc2e5fa9690 0000000000000000000000000000000000000000 0
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
 
   $ cd ..

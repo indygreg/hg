@@ -68,7 +68,7 @@ test bundle types
   Stream params: {}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   none-v2
   
   % test bundle type bzip2
@@ -78,7 +78,7 @@ test bundle types
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   bzip2-v2
   
   % test bundle type gzip
@@ -88,7 +88,7 @@ test bundle types
   Stream params: {Compression: GZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   gzip-v2
   
   % test bundle type none-v2
@@ -98,7 +98,7 @@ test bundle types
   Stream params: {}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   none-v2
   
   % test bundle type v2
@@ -108,7 +108,7 @@ test bundle types
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   bzip2-v2
   
   % test bundle type v1
@@ -173,7 +173,7 @@ Compression level can be adjusted for bundle2 bundles
   Stream params: {Compression: ZS}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   zstd-v2
   
   % test bundle type zstd-v2
@@ -183,7 +183,7 @@ Compression level can be adjusted for bundle2 bundles
   Stream params: {Compression: ZS}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       c35a0f9217e65d1fdb90c936ffa7dbe679f83ddf
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   zstd-v2
   
 

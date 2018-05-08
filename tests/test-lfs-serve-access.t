@@ -93,7 +93,7 @@ Blob URIs are correct when --prefix is used
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "cache:rev-branch-cache" supported
+  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
   bundle2-input-part: total payload size 39
   bundle2-input-bundle: 3 parts total
   checking for updated bookmarks

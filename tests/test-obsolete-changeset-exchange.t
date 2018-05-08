@@ -95,12 +95,12 @@ check-that bundle can contain markers:
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       f89bcc95eba5174b1ccc3e33a82e84c96e8338ee
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   $ hg debugbundle ../f89bcc95eba5-obs.hg
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       f89bcc95eba5174b1ccc3e33a82e84c96e8338ee
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   obsmarkers -- {} (mandatory: True)
       version: 1 (70 bytes)
       9d73aac1b2ed7d53835eaeec212ed41ea47da53a f89bcc95eba5174b1ccc3e33a82e84c96e8338ee 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 'test'}
@@ -159,7 +159,7 @@ client only pulls down 1 changeset
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
   bundle2-output-part: "listkeys" (params: 1 mandatory) empty payload
   bundle2-output-part: "phase-heads" 24 bytes payload
-  bundle2-output-part: "cache:rev-branch-cache" streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
   bundle2-input-bundle: with-transaction
   bundle2-input-part: "changegroup" (params: 1 mandatory 1 advisory) supported
   adding changesets
@@ -172,7 +172,7 @@ client only pulls down 1 changeset
   bundle2-input-part: "listkeys" (params: 1 mandatory) supported
   bundle2-input-part: "phase-heads" supported
   bundle2-input-part: total payload size 24
-  bundle2-input-part: "cache:rev-branch-cache" supported
+  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
   bundle2-input-part: total payload size 39
   bundle2-input-bundle: 3 parts total
   checking for updated bookmarks

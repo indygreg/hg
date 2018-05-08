@@ -212,7 +212,7 @@
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       264128213d290d868c54642d13aeaa3675551a78
-  cache:rev-branch-cache -- {} (mandatory: True)
+  cache:rev-branch-cache -- {} (mandatory: False)
   phase-heads -- {} (mandatory: True)
       264128213d290d868c54642d13aeaa3675551a78 draft
   $ hg unbundle .hg/strip-backup/*
@@ -851,7 +851,7 @@ check strip behavior
   d8db9d1372214336d2b5570f20ee468d2c72fa8b
   bundle2-output-bundle: "HG20", (1 params) 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
-  bundle2-output-part: "cache:rev-branch-cache" streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   saved backup bundle to $TESTTMP/issue4736/.hg/strip-backup/6625a5168474-345bb43d-backup.hg
   updating the branch cache

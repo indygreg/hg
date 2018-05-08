@@ -733,3 +733,7 @@ def getwebsubs(repo):
             repo.ui.warn(_("websub: invalid regexp for %s: %s\n")
                          % (key, regexp))
     return websubtable
+
+def getgraphnode(repo, ctx):
+    return (templatekw.getgraphnodecurrent(repo, ctx) +
+            templatekw.getgraphnodesymbol(ctx))

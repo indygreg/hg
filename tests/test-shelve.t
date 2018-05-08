@@ -1122,7 +1122,7 @@ with general delta
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugbundle .hg/shelved/*.hg
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 1, version: 02}
+  changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       45993d65fe9dc3c6d8764b9c3b07fa831ee7d92d
   $ cd ..
 

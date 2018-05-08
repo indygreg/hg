@@ -38,12 +38,12 @@ Phases are restored when unbundling
   3 changesets found
   $ hg debugbundle bundle
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 3, targetphase: 2, version: 02}
+  changegroup -- {nbchanges: 3, targetphase: 2, version: 02} (mandatory: True)
       26805aba1e600a82e93661149f2313866a221a7b
       f585351a92f85104bff7c284233c338b10eb1df7
       9bc730a19041f9ec7cb33c626e811aa233efb18c
-  cache:rev-branch-cache -- {}
-  phase-heads -- {}
+  cache:rev-branch-cache -- {} (mandatory: True)
+  phase-heads -- {} (mandatory: True)
       26805aba1e600a82e93661149f2313866a221a7b draft
   $ hg strip --no-backup C
   $ hg unbundle -q bundle
@@ -228,14 +228,14 @@ Restore bundle of entire repo
   5 changesets found
   $ hg debugbundle bundle
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 5, targetphase: 2, version: 02}
+  changegroup -- {nbchanges: 5, targetphase: 2, version: 02} (mandatory: True)
       426bada5c67598ca65036d57d9e4b64b0c1ce7a0
       112478962961147124edd43549aedd1a335e44bf
       dc0947a82db884575bb76ea10ac97b08536bfa03
       4e4f9194f9f181c57f62e823e8bdfa46ab9e4ff4
       03ca77807e919db8807c3749086dc36fb478cac0
-  cache:rev-branch-cache -- {}
-  phase-heads -- {}
+  cache:rev-branch-cache -- {} (mandatory: True)
+  phase-heads -- {} (mandatory: True)
       dc0947a82db884575bb76ea10ac97b08536bfa03 public
       03ca77807e919db8807c3749086dc36fb478cac0 draft
   $ hg strip --no-backup A
@@ -257,23 +257,23 @@ Restore bundle of entire repo
   2 changesets found
   $ hg debugbundle bundle
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 2, targetphase: 2, version: 02}
+  changegroup -- {nbchanges: 2, targetphase: 2, version: 02} (mandatory: True)
       112478962961147124edd43549aedd1a335e44bf
       4e4f9194f9f181c57f62e823e8bdfa46ab9e4ff4
-  cache:rev-branch-cache -- {}
-  phase-heads -- {}
+  cache:rev-branch-cache -- {} (mandatory: True)
+  phase-heads -- {} (mandatory: True)
   $ rm bundle
 
   $ hg bundle --base A -r D bundle
   3 changesets found
   $ hg debugbundle bundle
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 3, targetphase: 2, version: 02}
+  changegroup -- {nbchanges: 3, targetphase: 2, version: 02} (mandatory: True)
       112478962961147124edd43549aedd1a335e44bf
       dc0947a82db884575bb76ea10ac97b08536bfa03
       4e4f9194f9f181c57f62e823e8bdfa46ab9e4ff4
-  cache:rev-branch-cache -- {}
-  phase-heads -- {}
+  cache:rev-branch-cache -- {} (mandatory: True)
+  phase-heads -- {} (mandatory: True)
       dc0947a82db884575bb76ea10ac97b08536bfa03 public
   $ rm bundle
 
@@ -281,10 +281,10 @@ Restore bundle of entire repo
   2 changesets found
   $ hg debugbundle bundle
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 2, targetphase: 2, version: 02}
+  changegroup -- {nbchanges: 2, targetphase: 2, version: 02} (mandatory: True)
       4e4f9194f9f181c57f62e823e8bdfa46ab9e4ff4
       03ca77807e919db8807c3749086dc36fb478cac0
-  cache:rev-branch-cache -- {}
-  phase-heads -- {}
+  cache:rev-branch-cache -- {} (mandatory: True)
+  phase-heads -- {} (mandatory: True)
       03ca77807e919db8807c3749086dc36fb478cac0 draft
   $ rm bundle

@@ -1452,10 +1452,10 @@ Test ability to pull changeset with locally applying obsolescence markers
   
   $ hg debugbundle .hg/strip-backup/e008cf283490-*-backup.hg
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 1, version: 02}
+  changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8
-  cache:rev-branch-cache -- {}
-  phase-heads -- {}
+  cache:rev-branch-cache -- {} (mandatory: True)
+  phase-heads -- {} (mandatory: True)
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8 draft
 
 #if repobundlerepo
@@ -1495,14 +1495,14 @@ Testing that strip remove markers:
   
   $ hg debugbundle .hg/strip-backup/e016b03fd86f-*-backup.hg
   Stream params: {Compression: BZ}
-  changegroup -- {nbchanges: 2, version: 02}
+  changegroup -- {nbchanges: 2, version: 02} (mandatory: True)
       e016b03fd86fcccc54817d120b90b751aaf367d6
       b0551702f918510f01ae838ab03a463054c67b46
-  cache:rev-branch-cache -- {}
-  obsmarkers -- {}
+  cache:rev-branch-cache -- {} (mandatory: True)
+  obsmarkers -- {} (mandatory: True)
       version: 1 (92 bytes)
       e008cf2834908e5d6b0f792a9d4b0e2272260fb8 b0551702f918510f01ae838ab03a463054c67b46 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '8', 'operation': 'amend', 'user': 'test'}
-  phase-heads -- {}
+  phase-heads -- {} (mandatory: True)
       b0551702f918510f01ae838ab03a463054c67b46 draft
 
   $ hg unbundle .hg/strip-backup/e016b03fd86f-*-backup.hg

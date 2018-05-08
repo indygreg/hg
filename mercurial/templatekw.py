@@ -392,12 +392,19 @@ def showgraphnode(context, mapping):
     return getgraphnode(repo, ctx)
 
 def getgraphnode(repo, ctx):
+    return getgraphnodecurrent(repo, ctx) or getgraphnodesymbol(ctx)
+
+def getgraphnodecurrent(repo, ctx):
     wpnodes = repo.dirstate.parents()
     if wpnodes[1] == nullid:
         wpnodes = wpnodes[:1]
     if ctx.node() in wpnodes:
         return '@'
-    elif ctx.obsolete():
+    else:
+        return ''
+
+def getgraphnodesymbol(ctx):
+    if ctx.obsolete():
         return 'x'
     elif ctx.isunstable():
         return '*'

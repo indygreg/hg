@@ -40,18 +40,10 @@ def pprint(o, bprefix=True):
             '%s: %s' % (pprint(k, bprefix=bprefix),
                         pprint(v, bprefix=bprefix))
             for k, v in sorted(o.items())))
-    elif isinstance(o, bool):
-        return b'True' if o else b'False'
-    elif isinstance(o, int):
-        return '%d' % o
-    elif isinstance(o, float):
-        return '%f' % o
     elif isinstance(o, tuple):
         return '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
-    elif o is None:
-        return b'None'
     else:
-        raise error.ProgrammingError('do not know how to format %r' % o)
+        return pycompat.byterepr(o)
 
 def binary(s):
     """return true if a string is binary data"""

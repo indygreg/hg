@@ -28,7 +28,7 @@ def writeauth(items):
     return ui
 
 def test(auth, urls=None):
-    print('CFG:', pycompat.sysstr(stringutil.pprint(auth)))
+    print('CFG:', pycompat.sysstr(stringutil.pprint(auth, bprefix=True)))
     prefixes = set()
     for k in auth:
         prefixes.add(k.split('.', 1)[0])

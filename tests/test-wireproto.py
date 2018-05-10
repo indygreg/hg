@@ -108,4 +108,5 @@ with clt.commandexecutor() as e:
     fgreet1 = e.callcommand(b'greet', {b'name': b'Fo, =;:<o'})
     fgreet2 = e.callcommand(b'greet', {b'name': b'Bar'})
 
-printb(stringutil.pprint([f.result() for f in (fgreet1, fgreet2)]))
+printb(stringutil.pprint([f.result() for f in (fgreet1, fgreet2)],
+                         bprefix=True))

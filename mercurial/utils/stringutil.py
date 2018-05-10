@@ -23,7 +23,7 @@ from .. import (
     pycompat,
 )
 
-def pprint(o, bprefix=True):
+def pprint(o, bprefix=False):
     """Pretty print an object."""
     if isinstance(o, bytes):
         if bprefix:

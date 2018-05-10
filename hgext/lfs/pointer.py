@@ -35,9 +35,8 @@ class gitlfspointer(dict):
         try:
             return cls(l.split(' ', 1) for l in text.splitlines()).validate()
         except ValueError: # l.split returns 1 item instead of 2
-            raise InvalidPointer(
-                _('cannot parse git-lfs text: %s') % stringutil.pprint(
-                    text, bprefix=False))
+            raise InvalidPointer(_('cannot parse git-lfs text: %s')
+                                 % stringutil.pprint(text))
 
     def serialize(self):
         sortkeyfunc = lambda x: (x[0] != 'version', x)
@@ -66,14 +65,14 @@ class gitlfspointer(dict):
         for k, v in self.iteritems():
             if k in self._requiredre:
                 if not self._requiredre[k].match(v):
-                    raise InvalidPointer(_('unexpected value: %s=%s') % (
-                        k, stringutil.pprint(v, bprefix=False)))
+                    raise InvalidPointer(_('unexpected value: %s=%s')
+                                         % (k, stringutil.pprint(v)))
                 requiredcount += 1
             elif not self._keyre.match(k):
                 raise InvalidPointer(_('unexpected key: %s') % k)
             if not self._valuere.match(v):
-                raise InvalidPointer(_('unexpected value: %s=%s') % (
-                    k, stringutil.pprint(v, bprefix=False)))
+                raise InvalidPointer(_('unexpected value: %s=%s')
+                                     % (k, stringutil.pprint(v)))
         if len(self._requiredre) != requiredcount:
             miss = sorted(set(self._requiredre.keys()).difference(self.keys()))
             raise InvalidPointer(_('missed keys: %s') % ', '.join(miss))

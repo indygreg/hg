@@ -15,7 +15,7 @@ testui.pushbuffer()
 testui.write((b'buffered\n'))
 testui.warn((b'warning\n'))
 testui.write_err(b'error\n')
-print(stringutil.pprint(testui.popbuffer()).decode('ascii'))
+print(stringutil.pprint(testui.popbuffer(), bprefix=True).decode('ascii'))
 
 # test dispatch.dispatch with the same ui object
 hgrc = open(os.environ["HGRCPATH"], 'wb')

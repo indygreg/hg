@@ -51,7 +51,7 @@ parsed = dispatch._parseconfig(testui, [
     ])
 
 def pprint(obj):
-    return stringutil.pprint(obj, bprefix=False).decode('ascii')
+    return stringutil.pprint(obj).decode('ascii')
 
 print(pprint(testui.configitems(b'values')))
 print(pprint(testui.configitems(b'lists')))

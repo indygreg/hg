@@ -18,7 +18,7 @@ def debugformat(text, form, **kwargs):
     if type(out) == tuple:
         print(out[0][:-1].decode('utf8'))
         print("-" * 70)
-        print(stringutil.pprint(out[1], bprefix=False).decode('utf8'))
+        print(stringutil.pprint(out[1]).decode('utf8'))
     else:
         print(out[:-1].decode('utf8'))
     print("-" * 70)

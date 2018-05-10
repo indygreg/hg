@@ -138,7 +138,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
         if callable(v):
             v = v()
         if isinstance(v, (dict, list)):
-            v = stringutil.pprint(v, bprefix=False)
+            v = stringutil.pprint(v)
         env['HG_' + k.upper()] = v
 
     if repo:

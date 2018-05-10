@@ -3017,10 +3017,12 @@ def debugwireproto(ui, repo, path=None, **opts):
 
                 if isinstance(res, wireprotov2peer.commandresponse):
                     val = list(res.cborobjects())
-                    ui.status(_('response: %s\n') % stringutil.pprint(val))
+                    ui.status(_('response: %s\n') %
+                              stringutil.pprint(val, bprefix=True))
 
                 else:
-                    ui.status(_('response: %s\n') % stringutil.pprint(res))
+                    ui.status(_('response: %s\n') %
+                              stringutil.pprint(res, bprefix=True))
 
         elif action == 'batchbegin':
             if batchedcommands is not None:
@@ -3092,7 +3094,8 @@ def debugwireproto(ui, repo, path=None, **opts):
                 continue
 
             if res.headers.get('Content-Type') == 'application/mercurial-cbor':
-                ui.write(_('cbor> %s\n') % stringutil.pprint(cbor.loads(body)))
+                ui.write(_('cbor> %s\n') %
+                         stringutil.pprint(cbor.loads(body), bprefix=True))
 
         elif action == 'close':
             peer.close()

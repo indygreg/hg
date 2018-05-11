@@ -1697,10 +1697,6 @@ Show deprecation warning for the use of cmdutil.command
   >     pass
   > EOF
 
-  $ hg --config extensions.nonregistrar=`pwd`/nonregistrar.py version > /dev/null
-  devel-warn: cmdutil.command is deprecated, use registrar.command to register 'foo'
-  (compatibility will be dropped after Mercurial-4.6, update your code.) * (glob)
-
 Prohibit the use of unicode strings as the default value of options
 
   $ hg init $TESTTMP/opt-unicode-default

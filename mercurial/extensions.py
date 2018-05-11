@@ -145,9 +145,6 @@ def _validatecmdtable(ui, cmdtable):
     """Check if extension commands have required attributes"""
     for c, e in cmdtable.iteritems():
         f = e[0]
-        if getattr(f, '_deprecatedregistrar', False):
-            ui.deprecwarn("cmdutil.command is deprecated, use "
-                          "registrar.command to register '%s'" % c, '4.6')
         missing = [a for a in _cmdfuncattrs if not util.safehasattr(f, a)]
         if not missing:
             continue

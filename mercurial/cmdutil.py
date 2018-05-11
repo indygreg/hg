@@ -37,7 +37,6 @@ from . import (
     patch,
     pathutil,
     pycompat,
-    registrar,
     revlog,
     rewriteutil,
     scmutil,
@@ -3150,12 +3149,6 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
     for f in actions['add'][0] + actions['undelete'][0] + actions['revert'][0]:
         if f in copied:
             repo.dirstate.copy(copied[f], f)
-
-class command(registrar.command):
-    """deprecated: used registrar.command instead"""
-    def _doregister(self, func, name, *args, **kwargs):
-        func._deprecatedregistrar = True  # flag for deprecwarn in extensions.py
-        return super(command, self)._doregister(func, name, *args, **kwargs)
 
 # a list of (ui, repo, otherpeer, opts, missing) functions called by
 # commands.outgoing.  "missing" is "missing" of the result of

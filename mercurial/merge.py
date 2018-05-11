@@ -1490,27 +1490,6 @@ class updateresult(object):
         return (not self.updatedcount and not self.mergedcount
                 and not self.removedcount and not self.unresolvedcount)
 
-    # TODO remove container emulation once consumers switch to new API.
-
-    def __getitem__(self, x):
-        util.nouideprecwarn('access merge.update() results by name instead of '
-                            'index', '4.6', 2)
-        if x == 0:
-            return self.updatedcount
-        elif x == 1:
-            return self.mergedcount
-        elif x == 2:
-            return self.removedcount
-        elif x == 3:
-            return self.unresolvedcount
-        else:
-            raise IndexError('can only access items 0-3')
-
-    def __len__(self):
-        util.nouideprecwarn('access merge.update() results by name instead of '
-                            'index', '4.6', 2)
-        return 4
-
 def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
     """apply the merge action list to the working directory
 

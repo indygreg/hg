@@ -17,7 +17,7 @@ Set up the repo
   adding da/foo
   adding foo
   $ hg tag 1.0
-  $ hg bookmark something
+  $ hg bookmark some-thing
   $ hg bookmark -r0 anotherthing
   $ echo another > foo
   $ hg branch stable
@@ -87,7 +87,7 @@ Logs and changes
       </tr>
       <tr>
        <th style="text-align:left;">bookmark</th>
-       <td>something</td>
+       <td>some-thing</td>
       </tr>
       <tr>
        <th style="text-align:left;">tag</th>
@@ -267,7 +267,7 @@ Logs and changes
               </tr>
               <tr>
                   <th style="text-align:left;">bookmark</th>
-                  <td>something</td>
+                  <td>some-thing</td>
               </tr>
               <tr>
                   <th style="text-align:left;">tag</th>
@@ -770,7 +770,7 @@ Logs and changes
     <td class="author">test</td>
     <td class="description">
      <a href="/rev/cad8025a2e87">branch commit with null character: </a>
-     <span class="phase">draft</span> <span class="branchhead">unstable</span> <span class="tag">tip</span> <span class="tag">something</span> 
+     <span class="phase">draft</span> <span class="branchhead">unstable</span> <span class="tag">tip</span> <span class="tag">some-thing</span> 
     </td>
    </tr>
    <tr>
@@ -1192,7 +1192,7 @@ Search with revset syntax
   summary:     branch commit with null character: \x00 (esc)
   branch:      unstable
   tag:         tip
-  bookmark:    something
+  bookmark:    some-thing
   
   changeset:   1d22e65f027e5a0609357e7d8e7508cd2ba5d2fe
   revision:    2
@@ -1224,6 +1224,19 @@ Search with revset syntax
   # HG changesets search
   # Node ID cad8025a2e87f88c06259790adfa15acb4080123
   # Query "user("re:test")"
+  # Mode literal keyword search
+  
+  
+
+Revset query with foo-bar bookmark (issue5879)
+
+  $ get-with-headers.py $LOCALIP:$HGPORT 'log?rev=some-thing%25anotherthing&style=raw'
+  200 Script output follows
+  
+  
+  # HG changesets search
+  # Node ID cad8025a2e87f88c06259790adfa15acb4080123
+  # Query "some-thing%anotherthing"
   # Mode literal keyword search
   
   
@@ -1515,7 +1528,7 @@ Overviews
   $ get-with-headers.py $LOCALIP:$HGPORT 'raw-bookmarks'
   200 Script output follows
   
-  something	cad8025a2e87f88c06259790adfa15acb4080123
+  some-thing	cad8025a2e87f88c06259790adfa15acb4080123
   anotherthing	2ef0ac749a14e4f57a5a822464a0902c6f7f448f
   $ get-with-headers.py $LOCALIP:$HGPORT 'summary/?style=gitweb'
   200 Script output follows
@@ -1581,7 +1594,7 @@ Overviews
   <td>
   <a class="list" href="/rev/cad8025a2e87?style=gitweb">
   <b>branch commit with null character: </b>
-  <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="something">something</span> </span>
+  <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="some-thing">some-thing</span> </span>
   </a>
   </td>
   <td class="link" nowrap>
@@ -1654,7 +1667,7 @@ Overviews
   
   <tr class="parity0">
   <td class="age"><i class="age">Thu, 01 Jan 1970 00:00:00 +0000</i></td>
-  <td><a class="list" href="/rev/something?style=gitweb"><b>something</b></a></td>
+  <td><a class="list" href="/rev/some-thing?style=gitweb"><b>some-thing</b></a></td>
   <td class="link">
   <a href="/rev/cad8025a2e87?style=gitweb">changeset</a> |
   <a href="/log/cad8025a2e87?style=gitweb">changelog</a> |
@@ -1782,7 +1795,7 @@ Overviews
     <span class="desc">
      <a class="list" href="/rev/cad8025a2e87?style=gitweb"><b>branch commit with null character: </b></a>
     </span>
-    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="something">something</span> </span>
+    <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="unstable">unstable</span> <span class="tagtag" title="tip">tip</span> <span class="bookmarktag" title="some-thing">some-thing</span> </span>
     <div class="info">1970-01-01, by test</div>
    </div>
   </li>
@@ -1871,7 +1884,7 @@ raw graph
   summary:     branch commit with null character: \x00 (esc)
   branch:      unstable
   tag:         tip
-  bookmark:    something
+  bookmark:    some-thing
   
   node:        (0, 0) (color 1)
   edge:        (0, 0) -> (0, 1) (color 1)

@@ -3799,13 +3799,6 @@ def _deprecatedfunc(func, version, modname=None):
 
 defaultdateformats = dateutil.defaultdateformats
 extendeddateformats = dateutil.extendeddateformats
-makedate = _deprecatedfunc(dateutil.makedate, '4.6')
-datestr = _deprecatedfunc(dateutil.datestr, '4.6')
-shortdate = _deprecatedfunc(dateutil.shortdate, '4.6')
-parsetimezone = _deprecatedfunc(dateutil.parsetimezone, '4.6')
-strdate = _deprecatedfunc(dateutil.strdate, '4.6')
-parsedate = _deprecatedfunc(dateutil.parsedate, '4.6')
-matchdate = _deprecatedfunc(dateutil.matchdate, '4.6')
 
 stderr = procutil.stderr
 stdin = procutil.stdin

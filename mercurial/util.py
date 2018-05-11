@@ -47,7 +47,6 @@ from . import (
     urllibcompat,
 )
 from .utils import (
-    dateutil,
     procutil,
     stringutil,
 )
@@ -2919,6 +2918,7 @@ def timed(func):
         finally:
             elapsed = timer() - start
             _timenesting[0] -= indent
+            stderr = procutil.stderr
             stderr.write('%s%s: %s\n' %
                          (' ' * _timenesting[0], func.__name__,
                           timecount(elapsed)))
@@ -3782,11 +3782,3 @@ def uvarintdecodestream(fh):
         if not (byte & 0x80):
             return result
         shift += 7
-
-defaultdateformats = dateutil.defaultdateformats
-extendeddateformats = dateutil.extendeddateformats
-
-stderr = procutil.stderr
-stdin = procutil.stdin
-stdout = procutil.stdout
-closefds = procutil.closefds

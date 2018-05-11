@@ -237,7 +237,8 @@ check(_verifycert({'subject': (((u'commonName', u'a*b*.com'),),)},
 def test_url():
     """
     >>> from mercurial import error, pycompat
-    >>> from mercurial.util import forcebytestr, url
+    >>> from mercurial.util import url
+    >>> from mercurial.utils.stringutil import forcebytestr
 
     This tests for edge cases in url.URL's parsing algorithm. Most of
     these aren't useful for documentation purposes, so they aren't

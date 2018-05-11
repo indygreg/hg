@@ -466,7 +466,7 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
     def disambiguate(prefix):
         """Disambiguate against revnums."""
         hexnode = hex(node)
-        for length in range(len(prefix), 41):
+        for length in range(len(prefix), len(hexnode) + 1):
             prefix = hexnode[:length]
             if not isrev(prefix):
                 return prefix

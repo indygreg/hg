@@ -38,34 +38,6 @@ compatdict = templateutil.compatdict
 compatlist = templateutil.compatlist
 _showcompatlist = templateutil._showcompatlist
 
-def _showlist(name, values, templ, mapping, plural=None, separator=' '):
-    ui = mapping.get('ui')
-    if ui:
-        ui.deprecwarn("templatekw._showlist() is deprecated, use "
-                      "templateutil._showcompatlist()", '4.6')
-    context = templ  # this is actually a template context, not a templater
-    return _showcompatlist(context, mapping, name, values, plural, separator)
-
-def showdict(name, data, mapping, plural=None, key='key', value='value',
-             fmt=None, separator=' '):
-    ui = mapping.get('ui')
-    if ui:
-        ui.deprecwarn("templatekw.showdict() is deprecated, use "
-                      "templateutil.compatdict()", '4.6')
-    c = [{key: k, value: v} for k, v in data.iteritems()]
-    f = _showlist(name, c, mapping['templ'], mapping, plural, separator)
-    return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
-
-def showlist(name, values, mapping, plural=None, element=None, separator=' '):
-    ui = mapping.get('ui')
-    if ui:
-        ui.deprecwarn("templatekw.showlist() is deprecated, use "
-                      "templateutil.compatlist()", '4.6')
-    if not element:
-        element = name
-    f = _showlist(name, values, mapping['templ'], mapping, plural, separator)
-    return hybridlist(values, name=element, gen=f)
-
 def getlatesttags(context, mapping, pattern=None):
     '''return date, distance and name for the latest tag of rev'''
     repo = context.resource(mapping, 'repo')

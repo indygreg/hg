@@ -1285,7 +1285,9 @@ static int nt_shortest(indexObject *self, const char *node)
 		if (v < 0) {
 			const char *n;
 			v = -(v + 1);
-			n = index_node(self, v);
+			n = index_node_existing(self, v);
+			if (n == NULL)
+				return -3;
 			if (memcmp(node, n, 20) != 0)
 				/*
 				 * Found a unique prefix, but it wasn't for the

@@ -3783,20 +3783,6 @@ def uvarintdecodestream(fh):
             return result
         shift += 7
 
-###
-# Deprecation warnings for util.py splitting
-###
-
-def _deprecatedfunc(func, version, modname=None):
-    def wrapped(*args, **kwargs):
-        fn = pycompat.sysbytes(func.__name__)
-        mn = modname or pycompat.sysbytes(func.__module__)[len('mercurial.'):]
-        msg = "'util.%s' is deprecated, use '%s.%s'" % (fn, mn, fn)
-        nouideprecwarn(msg, version, stacklevel=2)
-        return func(*args, **kwargs)
-    wrapped.__name__ = func.__name__
-    return wrapped
-
 defaultdateformats = dateutil.defaultdateformats
 extendeddateformats = dateutil.extendeddateformats
 

@@ -21,10 +21,6 @@ Config::
     # Phabricator URL
     url = https://phab.example.com/
 
-    # API token. Get it from https://$HOST/conduit/login/
-    # Deprecated: see [phabricator.auth] below
-    #token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-
     # Repo callsign. If a repo has a URL https://$HOST/diffusion/FOO, then its
     # callsign is "FOO".
     callsign = FOO
@@ -104,21 +100,6 @@ def urlencodenested(params):
     process('', params)
     return util.urlreq.urlencode(flatparams)
 
-printed_token_warning = False
-
-def readlegacytoken(repo):
-    """Transitional support for old phabricator tokens.
-
-    Remove before the 4.6 release.
-    """
-    global printed_token_warning
-    token = repo.ui.config('phabricator', 'token')
-    if token and not printed_token_warning:
-        printed_token_warning = True
-        repo.ui.warn(_('phabricator.token is deprecated - please '
-                       'migrate to the phabricator.auth section.\n'))
-    return token
-
 def readurltoken(repo):
     """return conduit url, token and make sure they exist
 
@@ -148,10 +129,8 @@ def readurltoken(repo):
             break
 
     if not token:
-        token = readlegacytoken(repo)
-        if not token:
-            raise error.Abort(_('Can\'t find conduit token associated to %s')
-                              % (url,))
+        raise error.Abort(_('Can\'t find conduit token associated to %s')
+                          % (url,))
 
     return url, token
 

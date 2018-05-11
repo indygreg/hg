@@ -1237,7 +1237,30 @@ Revset query with foo-bar bookmark (issue5879)
   # HG changesets search
   # Node ID cad8025a2e87f88c06259790adfa15acb4080123
   # Query "some-thing%anotherthing"
-  # Mode literal keyword search
+  # Mode revset expression search
+  
+  changeset:   cad8025a2e87f88c06259790adfa15acb4080123
+  revision:    3
+  user:        test
+  date:        Thu, 01 Jan 1970 00:00:00 +0000
+  summary:     branch commit with null character: \x00 (esc)
+  branch:      unstable
+  tag:         tip
+  bookmark:    some-thing
+  
+  changeset:   1d22e65f027e5a0609357e7d8e7508cd2ba5d2fe
+  revision:    2
+  user:        test
+  date:        Thu, 01 Jan 1970 00:00:00 +0000
+  summary:     branch
+  branch:      stable
+  
+  changeset:   a4f92ed23982be056b9852de5dfe873eaac7f0de
+  revision:    1
+  user:        test
+  date:        Thu, 01 Jan 1970 00:00:00 +0000
+  summary:     Added tag 1.0 for changeset 2ef0ac749a14
+  branch:      default
   
   
 

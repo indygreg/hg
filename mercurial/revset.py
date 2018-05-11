@@ -2171,7 +2171,7 @@ def lookupfn(repo):
 
 def match(ui, spec, lookup=None):
     """Create a matcher for a single revision spec"""
-    return matchany(ui, [spec], lookup=None)
+    return matchany(ui, [spec], lookup=lookup)
 
 def matchany(ui, specs, lookup=None, localalias=None):
     """Create a matcher that will include any revisions matching one of the

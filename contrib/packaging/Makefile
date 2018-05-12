@@ -47,50 +47,44 @@ deb:
 ppa:
 	./builddeb --source-only
 
-docker/debian-%: docker/debian.template
-	sed "s/__CODENAME__/$*/" $< > $@
-
 .PHONY: docker-debian-jessie
-docker-debian-jessie: docker/debian-jessie
+docker-debian-jessie:
 	./dockerdeb debian jessie
 
 .PHONY: docker-debian-stretch
-docker-debian-stretch: docker/debian-stretch
+docker-debian-stretch:
 	./dockerdeb debian stretch
 
-docker/ubuntu-%: docker/ubuntu.template
-	sed "s/__CODENAME__/$*/" $< > $@
-
 .PHONY: docker-ubuntu-trusty
-docker-ubuntu-trusty: docker/ubuntu-trusty
+docker-ubuntu-trusty:
 	./dockerdeb ubuntu trusty
 
 .PHONY: docker-ubuntu-trusty-ppa
-docker-ubuntu-trusty-ppa: docker/ubuntu-trusty
+docker-ubuntu-trusty-ppa:
 	./dockerdeb ubuntu trusty --source-only
 
 .PHONY: docker-ubuntu-xenial
-docker-ubuntu-xenial: docker/ubuntu-xenial
+docker-ubuntu-xenial:
 	./dockerdeb ubuntu xenial
 
 .PHONY: docker-ubuntu-xenial-ppa
-docker-ubuntu-xenial-ppa: docker/ubuntu-xenial
+docker-ubuntu-xenial-ppa:
 	./dockerdeb ubuntu xenial --source-only
 
 .PHONY: docker-ubuntu-artful
-docker-ubuntu-artful: docker/ubuntu-artful
+docker-ubuntu-artful:
 	./dockerdeb ubuntu artful
 
 .PHONY: docker-ubuntu-artful-ppa
-docker-ubuntu-artful-ppa: docker/ubuntu-artful
+docker-ubuntu-artful-ppa:
 	./dockerdeb ubuntu artful --source-only
 
 .PHONY: docker-ubuntu-bionic
-docker-ubuntu-bionic: docker/ubuntu-bionic
+docker-ubuntu-bionic:
 	./dockerdeb ubuntu bionic
 
 .PHONY: docker-ubuntu-bionic-ppa
-docker-ubuntu-bionic-ppa: docker/ubuntu-bionic
+docker-ubuntu-bionic-ppa:
 	./dockerdeb ubuntu bionic --source-only
 
 .PHONY: fedora20

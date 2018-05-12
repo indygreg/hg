@@ -15,7 +15,10 @@ CONTAINER=hg-docker-$PLATFORM
 
 DOCKER=$($BUILDDIR/hg-docker docker-path)
 
-$BUILDDIR/hg-docker build $BUILDDIR/docker/$PLATFORM $CONTAINER
+$BUILDDIR/hg-docker build \
+    --build-arg CODENAME=$CODENAME \
+    $BUILDDIR/docker/$DISTID.template \
+    $CONTAINER
 
 # debuild only appears to be able to save built debs etc to .., so we
 # have to share the .. of the current directory with the docker

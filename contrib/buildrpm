@@ -7,7 +7,7 @@
 # - CentOS 5
 # - centOS 6
 
-. $(dirname $0)/packagelib.sh
+. $(dirname $0)/packaging/packagelib.sh
 
 BUILD=1
 RPMBUILDDIR="$PWD/rpmbuild"

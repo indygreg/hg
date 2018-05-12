@@ -4,7 +4,7 @@
 #
 # Tested on Jessie (stable as of original script authoring.)
 
-. $(dirname $0)/packagelib.sh
+. $(dirname $0)/packaging/packagelib.sh
 
 BUILD=1
 CLEANUP=1

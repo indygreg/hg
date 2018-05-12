@@ -1,7 +1,7 @@
 #!/bin/bash -eu
 
 . $(dirname $0)/dockerlib.sh
-. $(dirname $0)/../packagelib.sh
+. $(dirname $0)/packagelib.sh
 
 BUILDDIR=$(dirname $0)
 export ROOTDIR=$(cd $BUILDDIR/../.. > /dev/null; pwd)

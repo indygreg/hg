@@ -247,7 +247,7 @@ docker-ubuntu-bionic-ppa: contrib/packaging/docker/ubuntu-bionic
 
 fedora20:
 	mkdir -p packages/fedora20
-	contrib/buildrpm
+	contrib/packaging/buildrpm
 	cp rpmbuild/RPMS/*/* packages/fedora20
 	cp rpmbuild/SRPMS/* packages/fedora20
 	rm -rf rpmbuild
@@ -258,7 +258,7 @@ docker-fedora20:
 
 fedora21:
 	mkdir -p packages/fedora21
-	contrib/buildrpm
+	contrib/packaging/buildrpm
 	cp rpmbuild/RPMS/*/* packages/fedora21
 	cp rpmbuild/SRPMS/* packages/fedora21
 	rm -rf rpmbuild
@@ -269,7 +269,7 @@ docker-fedora21:
 
 centos5:
 	mkdir -p packages/centos5
-	contrib/buildrpm --withpython
+	contrib/packaging/buildrpm --withpython
 	cp rpmbuild/RPMS/*/* packages/centos5
 	cp rpmbuild/SRPMS/* packages/centos5
 
@@ -279,7 +279,7 @@ docker-centos5:
 
 centos6:
 	mkdir -p packages/centos6
-	contrib/buildrpm --withpython
+	contrib/packaging/buildrpm --withpython
 	cp rpmbuild/RPMS/*/* packages/centos6
 	cp rpmbuild/SRPMS/* packages/centos6
 
@@ -289,7 +289,7 @@ docker-centos6:
 
 centos7:
 	mkdir -p packages/centos7
-	contrib/buildrpm
+	contrib/packaging/buildrpm
 	cp rpmbuild/RPMS/*/* packages/centos7
 	cp rpmbuild/SRPMS/* packages/centos7
 

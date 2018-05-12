@@ -1068,10 +1068,12 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 			return 0;
 		}
 		if (v < 0) {
-			const char *oldnode = index_node(self, -(v + 1));
+			const char *oldnode = index_node_existing(self, -(v + 1));
 			int noff;
 
-			if (!oldnode || !memcmp(oldnode, node, 20)) {
+			if (oldnode == NULL)
+				return -1;
+			if (!memcmp(oldnode, node, 20)) {
 				n->children[k] = -rev - 1;
 				return 0;
 			}
@@ -1850,10 +1852,11 @@ static int index_slice_del(indexObject *self, PyObject *item)
 			Py_ssize_t i;
 
 			for (i = start + 1; i < self->length - 1; i++) {
-				const char *node = index_node(self, i);
+				const char *node = index_node_existing(self, i);
+				if (node == NULL)
+					return -1;
 
-				if (node)
-					nt_insert(self, node, -1);
+				nt_insert(self, node, -1);
 			}
 			if (self->added)
 				nt_invalidate_added(self, 0);

@@ -26,17 +26,5 @@ function initcontainer() {
   [ -f "$DFILE" ] || { echo "Error: docker file $DFILE not found"; exit 1; }
 
   CONTAINER="hg-dockerrpm-$1"
-  DBUILDUSER=build
-  (
-    cat $DFILE
-    if [ $(uname) = "Darwin" ] ; then
-        # The builder is using boot2docker on OS X, so we're going to
-        # *guess* the uid of the user inside the VM that is actually
-        # running docker. This is *very likely* to fail at some point.
-        echo RUN useradd $DBUILDUSER -u 1000
-    else
-        echo RUN groupadd $DBUILDUSER -g `id -g` -o
-        echo RUN useradd $DBUILDUSER -u `id -u` -g $DBUILDUSER -o
-    fi
-  ) | $DOCKER build --build-arg http_proxy --build-arg https_proxy --tag $CONTAINER -
+  cat $DFILE | $DOCKER build --build-arg http_proxy --build-arg https_proxy --tag $CONTAINER -
 }

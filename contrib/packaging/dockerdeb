@@ -22,6 +22,8 @@ initcontainer $PLATFORM
 # container and hope it's writable. Whee.
 dn=$(basename $ROOTDIR)
 
+DBUILDUSER=build
+
 if [ $(uname) = "Darwin" ] ; then
     $DOCKER run -u $DBUILDUSER --rm -v $PWD/..:/mnt $CONTAINER \
             sh -c "cd /mnt/$dn && make clean && make local"

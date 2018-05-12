@@ -1066,16 +1066,24 @@ setup(name='mercurial',
       package_data=packagedata,
       cmdclass=cmdclass,
       distclass=hgdist,
-      options={'py2exe': {'packages': ['hgdemandimport', 'hgext', 'email',
-                                       # implicitly imported per module policy
-                                       # (cffi wouldn't be used as a frozen exe)
-                                       'mercurial.cext',
-                                       #'mercurial.cffi',
-                                       'mercurial.pure']},
-               'bdist_mpkg': {'zipdist': False,
-                              'license': 'COPYING',
-                              'readme': 'contrib/macosx/Readme.html',
-                              'welcome': 'contrib/macosx/Welcome.html',
-                              },
-               },
+      options={
+          'py2exe': {
+              'packages': [
+                  'hgdemandimport',
+                  'hgext',
+                  'email',
+                  # implicitly imported per module policy
+                  # (cffi wouldn't be used as a frozen exe)
+                  'mercurial.cext',
+                  #'mercurial.cffi',
+                  'mercurial.pure',
+              ],
+          },
+          'bdist_mpkg': {
+              'zipdist': False,
+              'license': 'COPYING',
+              'readme': 'contrib/macosx/Readme.html',
+              'welcome': 'contrib/macosx/Welcome.html',
+          },
+      },
       **extra)

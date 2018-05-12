@@ -209,40 +209,40 @@ deb:
 ppa:
 	contrib/builddeb --source-only
 
-contrib/docker/debian-%: contrib/docker/debian.template
+contrib/packaging/docker/debian-%: contrib/packaging/docker/debian.template
 	sed "s/__CODENAME__/$*/" $< > $@
 
-docker-debian-jessie: contrib/docker/debian-jessie
+docker-debian-jessie: contrib/packaging/docker/debian-jessie
 	contrib/dockerdeb debian jessie
 
-docker-debian-stretch: contrib/docker/debian-stretch
+docker-debian-stretch: contrib/packaging/docker/debian-stretch
 	contrib/dockerdeb debian stretch
 
-contrib/docker/ubuntu-%: contrib/docker/ubuntu.template
+contrib/packaging/docker/ubuntu-%: contrib/packaging/docker/ubuntu.template
 	sed "s/__CODENAME__/$*/" $< > $@
 
-docker-ubuntu-trusty: contrib/docker/ubuntu-trusty
+docker-ubuntu-trusty: contrib/packaging/docker/ubuntu-trusty
 	contrib/dockerdeb ubuntu trusty
 
-docker-ubuntu-trusty-ppa: contrib/docker/ubuntu-trusty
+docker-ubuntu-trusty-ppa: contrib/packaging/docker/ubuntu-trusty
 	contrib/dockerdeb ubuntu trusty --source-only
 
-docker-ubuntu-xenial: contrib/docker/ubuntu-xenial
+docker-ubuntu-xenial: contrib/packaging/docker/ubuntu-xenial
 	contrib/dockerdeb ubuntu xenial
 
-docker-ubuntu-xenial-ppa: contrib/docker/ubuntu-xenial
+docker-ubuntu-xenial-ppa: contrib/packaging/docker/ubuntu-xenial
 	contrib/dockerdeb ubuntu xenial --source-only
 
-docker-ubuntu-artful: contrib/docker/ubuntu-artful
+docker-ubuntu-artful: contrib/packaging/docker/ubuntu-artful
 	contrib/dockerdeb ubuntu artful
 
-docker-ubuntu-artful-ppa: contrib/docker/ubuntu-artful
+docker-ubuntu-artful-ppa: contrib/packaging/docker/ubuntu-artful
 	contrib/dockerdeb ubuntu artful --source-only
 
-docker-ubuntu-bionic: contrib/docker/ubuntu-bionic
+docker-ubuntu-bionic: contrib/packaging/docker/ubuntu-bionic
 	contrib/dockerdeb ubuntu bionic
 
-docker-ubuntu-bionic-ppa: contrib/docker/ubuntu-bionic
+docker-ubuntu-bionic-ppa: contrib/packaging/docker/ubuntu-bionic
 	contrib/dockerdeb ubuntu bionic --source-only
 
 fedora20:

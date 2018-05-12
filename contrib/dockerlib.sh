@@ -22,7 +22,7 @@ function checkdocker() {
 function initcontainer() {
   [ "$1" ] || { echo "Error: platform name must be specified"; exit 1; }
 
-  DFILE="$ROOTDIR/contrib/docker/$1"
+  DFILE="$ROOTDIR/contrib/packaging/docker/$1"
   [ -f "$DFILE" ] || { echo "Error: docker file $DFILE not found"; exit 1; }
 
   CONTAINER="hg-dockerrpm-$1"

@@ -131,6 +131,9 @@
   notify.diffstat
     Set to True to include a diffstat before diff content. Default: True.
   
+  notify.showfunc
+    If set, override "diff.showfunc" for the diff content. Default: None.
+  
   notify.merge
     If True, send notifications for merge changesets. Default: True.
   
@@ -647,3 +650,99 @@ with template (overrides style):
   To: baz@test.com, foo@bar
   
   with template
+
+showfunc diff
+  $ cat <<EOF >> $HGRCPATH
+  > showfunc = True
+  > template =
+  > maxdiff = -1
+  > EOF
+  $ cd a
+  $ cat > f1 << EOF
+  > int main() {
+  >     int a = 0;
+  >     int b = 1;
+  >     int c = 2;
+  >     int d = 3;
+  >     return a + b + c + d;
+  > }
+  > EOF
+  $ hg commit -Am addfunction
+  adding f1
+  $ hg --cwd ../b pull ../a
+  pulling from ../a
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets b86bc16ff894
+  MIME-Version: 1.0
+  Content-Type: text/plain; charset="us-ascii"
+  Content-Transfer-Encoding: 7bit
+  Date: * (glob)
+  Subject: addfunction
+  From: test@test.com
+  X-Hg-Notification: changeset b86bc16ff894
+  Message-Id: <hg.b86bc16ff894.*.*@*> (glob)
+  To: baz@test.com, foo@bar
+  
+  changeset b86bc16ff894
+  diffs (11 lines):
+  
+  diff -r 14721b538ae3 -r b86bc16ff894 f1
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/f1	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,7 @@
+  +int main() {
+  +    int a = 0;
+  +    int b = 1;
+  +    int c = 2;
+  +    int d = 3;
+  +    return a + b + c + d;
+  +}
+  (run 'hg update' to get a working copy)
+  $ cat > f1 << EOF
+  > int main() {
+  >     int a = 0;
+  >     int b = 1;
+  >     int c = 2;
+  >     int e = 3;
+  >     return a + b + c + e;
+  > }
+  > EOF
+  $ hg commit -m changefunction
+  $ hg --cwd ../b --config notify.showfunc=True pull ../a
+  pulling from ../a
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files
+  new changesets e81040e9838c
+  MIME-Version: 1.0
+  Content-Type: text/plain; charset="us-ascii"
+  Content-Transfer-Encoding: 7bit
+  Date: * (glob)
+  Subject: changefunction
+  From: test@test.com
+  X-Hg-Notification: changeset e81040e9838c
+  Message-Id: <hg.e81040e9838c.*.*@*> (glob)
+  To: baz@test.com, foo@bar
+  
+  changeset e81040e9838c
+  diffs (12 lines):
+  
+  diff -r b86bc16ff894 -r e81040e9838c f1
+  --- a/f1	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/f1	Thu Jan 01 00:00:00 1970 +0000
+  @@ -2,6 +2,6 @@ int main() {
+       int a = 0;
+       int b = 1;
+       int c = 2;
+  -    int d = 3;
+  -    return a + b + c + d;
+  +    int e = 3;
+  +    return a + b + c + e;
+   }
+  (run 'hg update' to get a working copy)

@@ -213,37 +213,37 @@ contrib/packaging/docker/debian-%: contrib/packaging/docker/debian.template
 	sed "s/__CODENAME__/$*/" $< > $@
 
 docker-debian-jessie: contrib/packaging/docker/debian-jessie
-	contrib/dockerdeb debian jessie
+	contrib/packaging/dockerdeb debian jessie
 
 docker-debian-stretch: contrib/packaging/docker/debian-stretch
-	contrib/dockerdeb debian stretch
+	contrib/packaging/dockerdeb debian stretch
 
 contrib/packaging/docker/ubuntu-%: contrib/packaging/docker/ubuntu.template
 	sed "s/__CODENAME__/$*/" $< > $@
 
 docker-ubuntu-trusty: contrib/packaging/docker/ubuntu-trusty
-	contrib/dockerdeb ubuntu trusty
+	contrib/packaging/dockerdeb ubuntu trusty
 
 docker-ubuntu-trusty-ppa: contrib/packaging/docker/ubuntu-trusty
-	contrib/dockerdeb ubuntu trusty --source-only
+	contrib/packaging/dockerdeb ubuntu trusty --source-only
 
 docker-ubuntu-xenial: contrib/packaging/docker/ubuntu-xenial
-	contrib/dockerdeb ubuntu xenial
+	contrib/packaging/dockerdeb ubuntu xenial
 
 docker-ubuntu-xenial-ppa: contrib/packaging/docker/ubuntu-xenial
-	contrib/dockerdeb ubuntu xenial --source-only
+	contrib/packaging/dockerdeb ubuntu xenial --source-only
 
 docker-ubuntu-artful: contrib/packaging/docker/ubuntu-artful
-	contrib/dockerdeb ubuntu artful
+	contrib/packaging/dockerdeb ubuntu artful
 
 docker-ubuntu-artful-ppa: contrib/packaging/docker/ubuntu-artful
-	contrib/dockerdeb ubuntu artful --source-only
+	contrib/packaging/dockerdeb ubuntu artful --source-only
 
 docker-ubuntu-bionic: contrib/packaging/docker/ubuntu-bionic
-	contrib/dockerdeb ubuntu bionic
+	contrib/packaging/dockerdeb ubuntu bionic
 
 docker-ubuntu-bionic-ppa: contrib/packaging/docker/ubuntu-bionic
-	contrib/dockerdeb ubuntu bionic --source-only
+	contrib/packaging/dockerdeb ubuntu bionic --source-only
 
 fedora20:
 	mkdir -p packages/fedora20
@@ -254,7 +254,7 @@ fedora20:
 
 docker-fedora20:
 	mkdir -p packages/fedora20
-	contrib/dockerrpm fedora20
+	contrib/packaging/dockerrpm fedora20
 
 fedora21:
 	mkdir -p packages/fedora21
@@ -265,7 +265,7 @@ fedora21:
 
 docker-fedora21:
 	mkdir -p packages/fedora21
-	contrib/dockerrpm fedora21
+	contrib/packaging/dockerrpm fedora21
 
 centos5:
 	mkdir -p packages/centos5
@@ -275,7 +275,7 @@ centos5:
 
 docker-centos5:
 	mkdir -p packages/centos5
-	contrib/dockerrpm centos5 --withpython
+	contrib/packaging/dockerrpm centos5 --withpython
 
 centos6:
 	mkdir -p packages/centos6
@@ -285,7 +285,7 @@ centos6:
 
 docker-centos6:
 	mkdir -p packages/centos6
-	contrib/dockerrpm centos6 --withpython
+	contrib/packaging/dockerrpm centos6 --withpython
 
 centos7:
 	mkdir -p packages/centos7
@@ -295,7 +295,7 @@ centos7:
 
 docker-centos7:
 	mkdir -p packages/centos7
-	contrib/dockerrpm centos7
+	contrib/packaging/dockerrpm centos7
 
 linux-wheels: linux-wheels-x86_64 linux-wheels-i686
 

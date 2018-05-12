@@ -204,10 +204,10 @@ osx:
 	  "$${OUTPUTDIR:-dist/}"/Mercurial-"$${HGVER}"-macosx"$${OSXVER}".pkg
 
 deb:
-	contrib/builddeb
+	contrib/packaging/builddeb
 
 ppa:
-	contrib/builddeb --source-only
+	contrib/packaging/builddeb --source-only
 
 contrib/packaging/docker/debian-%: contrib/packaging/docker/debian.template
 	sed "s/__CODENAME__/$*/" $< > $@

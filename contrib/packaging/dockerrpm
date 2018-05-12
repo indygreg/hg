@@ -13,7 +13,7 @@ shift # extra params are passed to buildrpm
 initcontainer $PLATFORM
 
 RPMBUILDDIR=$ROOTDIR/packages/$PLATFORM
-contrib/packaging/buildrpm --rpmbuilddir $RPMBUILDDIR --prepare $*
+$ROOTDIR/contrib/packaging/buildrpm --rpmbuilddir $RPMBUILDDIR --prepare $*
 
 DSHARED=/mnt/shared
 $DOCKER run -e http_proxy -e https_proxy -u $DBUILDUSER --rm -v $RPMBUILDDIR:$DSHARED $CONTAINER \

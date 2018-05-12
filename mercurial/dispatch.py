@@ -87,16 +87,19 @@ def run():
     req = request(pycompat.sysargv[1:])
     err = None
     try:
-        status = (dispatch(req) or 0)
+        status = dispatch(req) or 0
     except error.StdioError as e:
         err = e
         status = -1
+
+    # In all cases we try to flush stdio streams.
     if util.safehasattr(req.ui, 'fout'):
         try:
             req.ui.fout.flush()
         except IOError as e:
             err = e
             status = -1
+
     if util.safehasattr(req.ui, 'ferr'):
         try:
             if err is not None and err.errno != errno.EPIPE:

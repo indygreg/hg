@@ -1082,8 +1082,8 @@ setup(name='mercurial',
           'bdist_mpkg': {
               'zipdist': False,
               'license': 'COPYING',
-              'readme': 'contrib/macosx/Readme.html',
-              'welcome': 'contrib/macosx/Welcome.html',
+              'readme': 'contrib/packaging/macosx/Readme.html',
+              'welcome': 'contrib/packaging/macosx/Welcome.html',
           },
       },
       **extra)

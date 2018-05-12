@@ -197,10 +197,10 @@ osx:
 	  --identifier org.mercurial-scm.mercurial \
 	  --version "$${HGVER}" \
 	  build/mercurial.pkg && \
-	productbuild --distribution contrib/macosx/distribution.xml \
+	productbuild --distribution contrib/packaging/macosx/distribution.xml \
 	  --package-path build/ \
 	  --version "$${HGVER}" \
-	  --resources contrib/macosx/ \
+	  --resources contrib/packaging/macosx/ \
 	  "$${OUTPUTDIR:-dist/}"/Mercurial-"$${HGVER}"-macosx"$${OSXVER}".pkg
 
 deb:

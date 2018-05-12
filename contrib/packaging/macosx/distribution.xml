@@ -4,7 +4,7 @@
   <organization>org.mercurial-scm</organization>
   <options customize="never" require-scripts="false" rootVolumeOnly="true" />
   <welcome file="Welcome.html" mime-type="text/html" />
-  <license file="../../COPYING" mime-type="text/plain" />
+  <license file="../../../COPYING" mime-type="text/plain" />
   <readme file="Readme.html" mime-type="text/html" />
   <pkg-ref id="org.mercurial-scm.mercurial"
            version="0"

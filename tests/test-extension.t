@@ -1517,6 +1517,14 @@ Commands handling multiple repositories at a time should invoke only
   reposetup() for $TESTTMP/reposetup-test/src
   reposetup() for $TESTTMP/reposetup-test/src (chg !)
 
+  $ hg --cwd src debugextensions
+  reposetup() for $TESTTMP/reposetup-test/src
+  dodo (untested!)
+  dudu (untested!)
+  mq
+  reposetuptest (untested!)
+  strip
+
   $ hg clone -U src clone-dst1
   reposetup() for $TESTTMP/reposetup-test/src
   $ hg init push-dst1

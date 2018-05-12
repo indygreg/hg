@@ -837,8 +837,8 @@ def debugdownload(ui, repo, url, output=None, **opts):
         if output:
             dest.close()
 
-@command('debugextensions', cmdutil.formatteropts, [], norepo=True)
-def debugextensions(ui, **opts):
+@command('debugextensions', cmdutil.formatteropts, [], optionalrepo=True)
+def debugextensions(ui, repo, **opts):
     '''show information about active extensions'''
     opts = pycompat.byteskwargs(opts)
     exts = extensions.extensions(ui)

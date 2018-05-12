@@ -31,10 +31,10 @@ Config::
     # the internal library.
     curlcmd = curl --connect-timeout 2 --retry 3 --silent
 
-    [phabricator.auth]
+    [auth]
     example.url = https://phab.example.com/
     # API token. Get it from https://$HOST/conduit/login/
-    example.token = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    example.phabtoken = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 """
 
 from __future__ import absolute_import
@@ -100,17 +100,13 @@ def urlencodenested(params):
     process('', params)
     return util.urlreq.urlencode(flatparams)
 
-def readurltoken(repo):
-    """return conduit url, token and make sure they exist
+printed_token_warning = False
 
-    Currently read from [phabricator] config section. In the future, it might
-    make sense to read from .arcconfig and .arcrc as well.
+def readlegacytoken(repo, url):
+    """Transitional support for old phabricator tokens.
+
+    Remove before the 4.7 release.
     """
-    url = repo.ui.config('phabricator', 'url')
-    if not url:
-        raise error.Abort(_('config %s.%s is required')
-                          % ('phabricator', 'url'))
-
     groups = {}
     for key, val in repo.ui.configitems('phabricator.auth'):
         if '.' not in key:
@@ -128,9 +124,47 @@ def readurltoken(repo):
         if token:
             break
 
+    global printed_token_warning
+
+    if token and not printed_token_warning:
+        printed_token_warning = True
+        repo.ui.warn(_('phabricator.auth.token is deprecated - please '
+                       'migrate to auth.phabtoken.\n'))
+    return token
+
+def readurltoken(repo):
+    """return conduit url, token and make sure they exist
+
+    Currently read from [phabricator] config section. In the future, it might
+    make sense to read from .arcconfig and .arcrc as well.
+    """
+    url = repo.ui.config('phabricator', 'url')
+    if not url:
+        raise error.Abort(_('config %s.%s is required')
+                          % ('phabricator', 'url'))
+
+    groups = {}
+    for key, val in repo.ui.configitems('auth'):
+        if '.' not in key:
+            repo.ui.warn(_("ignoring invalid [auth] key '%s'\n")
+                         % key)
+            continue
+        group, setting = key.rsplit('.', 1)
+        groups.setdefault(group, {})[setting] = val
+
+    token = None
+    for group, auth in groups.iteritems():
+        if url != auth.get('url'):
+            continue
+        token = auth.get('phabtoken')
+        if token:
+            break
+
     if not token:
-        raise error.Abort(_('Can\'t find conduit token associated to %s')
-                          % (url,))
+        token = readlegacytoken(repo, url)
+        if not token:
+            raise error.Abort(_('Can\'t find conduit token associated to %s')
+                              % (url,))
 
     return url, token
 

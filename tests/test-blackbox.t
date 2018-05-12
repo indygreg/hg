@@ -206,7 +206,7 @@ log rotation
   committing changelog
   updating the branch cache
   committed changeset 0:0e46349438790c460c5c9f7546bfcd39b267bbd2
-  result: None
+  result: 0
   running: --debug commit -m commit2 -d 2000-01-02 foo
   committing files:
   foo
@@ -214,7 +214,7 @@ log rotation
   committing changelog
   updating the branch cache
   committed changeset 1:45589e459b2edfbf3dbde7e01f611d2c1e7453d7
-  result: None
+  result: 0
   running: --debug log -r 0
   changeset:   0:0e46349438790c460c5c9f7546bfcd39b267bbd2
   phase:       draft
@@ -229,7 +229,7 @@ log rotation
   commit1
   
   
-  result: None
+  result: 0
   running: --debug log -r tip
   changeset:   1:45589e459b2edfbf3dbde7e01f611d2c1e7453d7
   tag:         tip
@@ -245,7 +245,7 @@ log rotation
   commit2
   
   
-  result: None
+  result: 0
   $ hg blackbox
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updating the branch cache
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updated served branch cache in * seconds (glob)

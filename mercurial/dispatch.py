@@ -87,7 +87,7 @@ def run():
     req = request(pycompat.sysargv[1:])
     err = None
     try:
-        status = dispatch(req) or 0
+        status = dispatch(req)
     except error.StdioError as e:
         err = e
         status = -1
@@ -175,7 +175,7 @@ def _formatargs(args):
     return ' '.join(procutil.shellquote(a) for a in args)
 
 def dispatch(req):
-    "run the command specified in req.args"
+    """run the command specified in req.args; returns an integer status code"""
     if req.ferr:
         ferr = req.ferr
     elif req.ui:
@@ -208,9 +208,9 @@ def dispatch(req):
 
     msg = _formatargs(req.args)
     starttime = util.timer()
-    ret = None
+    ret = -1
     try:
-        ret = _runcatch(req)
+        ret = _runcatch(req) or 0
     except error.ProgrammingError as inst:
         req.ui.warn(_('** ProgrammingError: %s\n') % inst)
         if inst.hint:

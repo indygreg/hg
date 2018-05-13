@@ -120,7 +120,7 @@ if pygmentspresent:
         }
 
     class TestRunnerLexer(lexer.RegexLexer):
-        testpattern = r'[\w-]+\.(t|py)( \(case [\w-]+\))?'
+        testpattern = r'[\w-]+\.(t|py)(#[\w-]+)?'
         tokens = {
             'root': [
                 (r'^Skipped', token.Generic.Skipped, 'skipped'),
@@ -1247,7 +1247,7 @@ class TTest(Test):
         self._allcases = parsettestcases(path)
         super(TTest, self).__init__(path, *args, **kwds)
         if case:
-            self.name = '%s (case %s)' % (self.name, _strpath(case))
+            self.name = '%s#%s' % (self.name, _strpath(case))
             self.errpath = b'%s.%s.err' % (self.errpath[:-4], case)
             self._tmpname += b'-%s' % case
         self._have = {}
@@ -2646,7 +2646,7 @@ class TestRunner(object):
                 expanded_args.append(arg)
         args = expanded_args
 
-        testcasepattern = re.compile(r'([\w-]+\.t|py)( \(case ([\w-])+\))')
+        testcasepattern = re.compile(r'([\w-]+\.t|py)(#([\w-])+)')
         tests = []
         for t in args:
             case = None

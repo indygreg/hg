@@ -1496,9 +1496,9 @@ Test cases in .t files
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !.
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 3 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
@@ -1519,9 +1519,9 @@ Test cases in .t files
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !.
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 2 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
@@ -1544,9 +1544,9 @@ Test cases in .t files
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !.
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 2 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
@@ -1573,7 +1573,7 @@ Test TESTCASE variable
 
 Support running a specific test case
 
-  $ rt "test-cases-abc.t (case B)"
+  $ rt "test-cases-abc.t#B"
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
@@ -1587,16 +1587,16 @@ Support running a specific test case
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 1 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
 
 Support running multiple test cases in the same file
 
-  $ rt "test-cases-abc.t (case B)" "test-cases-abc.t (case C)"
+  $ rt test-cases-abc.t#B test-cases-abc.t#C
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
@@ -1610,16 +1610,16 @@ Support running multiple test cases in the same file
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !.
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 2 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
 
 Support running invalid test cases
 
-  $ rt "test-cases-abc.t (case B)" "test-cases-abc.t (case D)"
+  $ rt test-cases-abc.t#B test-cases-abc.t#D
   
   --- $TESTTMP/anothertests/cases/test-cases-abc.t
   +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
@@ -1633,9 +1633,9 @@ Support running invalid test cases
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 1 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]

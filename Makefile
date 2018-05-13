@@ -164,6 +164,37 @@ i18n/hg.pot: $(PYFILES) $(DOCFILES) i18n/posplit i18n/hggettext
 
 # Packaging targets
 
+packaging_targets := \
+  centos5 \
+  centos6 \
+  centos7 \
+  deb \
+  docker-centos5 \
+  docker-centos6 \
+  docker-centos7 \
+  docker-debian-jessie \
+  docker-debian-stretch \
+  docker-fedora20 \
+  docker-fedora21 \
+  docker-ubuntu-trusty \
+  docker-ubuntu-trusty-ppa \
+  docker-ubuntu-xenial \
+  docker-ubuntu-xenial-ppa \
+  docker-ubuntu-artful \
+  docker-ubuntu-artful-ppa \
+  docker-ubuntu-bionic \
+  docker-ubuntu-bionic-ppa \
+  fedora20 \
+  fedora21 \
+  linux-wheels \
+  linux-wheels-x86_64 \
+  linux-wheels-i686 \
+  ppa
+
+# Forward packaging targets for convenience.
+$(packaging_targets):
+	$(MAKE) -C contrib/packaging $@
+
 osx:
 	rm -rf build/mercurial
 	/usr/bin/python2.7 setup.py install --optimize=1 \
@@ -203,121 +234,8 @@ osx:
 	  --resources contrib/packaging/macosx/ \
 	  "$${OUTPUTDIR:-dist/}"/Mercurial-"$${HGVER}"-macosx"$${OSXVER}".pkg
 
-deb:
-	contrib/packaging/builddeb
-
-ppa:
-	contrib/packaging/builddeb --source-only
-
-contrib/packaging/docker/debian-%: contrib/packaging/docker/debian.template
-	sed "s/__CODENAME__/$*/" $< > $@
-
-docker-debian-jessie: contrib/packaging/docker/debian-jessie
-	contrib/packaging/dockerdeb debian jessie
-
-docker-debian-stretch: contrib/packaging/docker/debian-stretch
-	contrib/packaging/dockerdeb debian stretch
-
-contrib/packaging/docker/ubuntu-%: contrib/packaging/docker/ubuntu.template
-	sed "s/__CODENAME__/$*/" $< > $@
-
-docker-ubuntu-trusty: contrib/packaging/docker/ubuntu-trusty
-	contrib/packaging/dockerdeb ubuntu trusty
-
-docker-ubuntu-trusty-ppa: contrib/packaging/docker/ubuntu-trusty
-	contrib/packaging/dockerdeb ubuntu trusty --source-only
-
-docker-ubuntu-xenial: contrib/packaging/docker/ubuntu-xenial
-	contrib/packaging/dockerdeb ubuntu xenial
-
-docker-ubuntu-xenial-ppa: contrib/packaging/docker/ubuntu-xenial
-	contrib/packaging/dockerdeb ubuntu xenial --source-only
-
-docker-ubuntu-artful: contrib/packaging/docker/ubuntu-artful
-	contrib/packaging/dockerdeb ubuntu artful
-
-docker-ubuntu-artful-ppa: contrib/packaging/docker/ubuntu-artful
-	contrib/packaging/dockerdeb ubuntu artful --source-only
-
-docker-ubuntu-bionic: contrib/packaging/docker/ubuntu-bionic
-	contrib/packaging/dockerdeb ubuntu bionic
-
-docker-ubuntu-bionic-ppa: contrib/packaging/docker/ubuntu-bionic
-	contrib/packaging/dockerdeb ubuntu bionic --source-only
-
-fedora20:
-	mkdir -p packages/fedora20
-	contrib/packaging/buildrpm
-	cp rpmbuild/RPMS/*/* packages/fedora20
-	cp rpmbuild/SRPMS/* packages/fedora20
-	rm -rf rpmbuild
-
-docker-fedora20:
-	mkdir -p packages/fedora20
-	contrib/packaging/dockerrpm fedora20
-
-fedora21:
-	mkdir -p packages/fedora21
-	contrib/packaging/buildrpm
-	cp rpmbuild/RPMS/*/* packages/fedora21
-	cp rpmbuild/SRPMS/* packages/fedora21
-	rm -rf rpmbuild
-
-docker-fedora21:
-	mkdir -p packages/fedora21
-	contrib/packaging/dockerrpm fedora21
-
-centos5:
-	mkdir -p packages/centos5
-	contrib/packaging/buildrpm --withpython
-	cp rpmbuild/RPMS/*/* packages/centos5
-	cp rpmbuild/SRPMS/* packages/centos5
-
-docker-centos5:
-	mkdir -p packages/centos5
-	contrib/packaging/dockerrpm centos5 --withpython
-
-centos6:
-	mkdir -p packages/centos6
-	contrib/packaging/buildrpm --withpython
-	cp rpmbuild/RPMS/*/* packages/centos6
-	cp rpmbuild/SRPMS/* packages/centos6
-
-docker-centos6:
-	mkdir -p packages/centos6
-	contrib/packaging/dockerrpm centos6 --withpython
-
-centos7:
-	mkdir -p packages/centos7
-	contrib/packaging/buildrpm
-	cp rpmbuild/RPMS/*/* packages/centos7
-	cp rpmbuild/SRPMS/* packages/centos7
-
-docker-centos7:
-	mkdir -p packages/centos7
-	contrib/packaging/dockerrpm centos7
-
-linux-wheels: linux-wheels-x86_64 linux-wheels-i686
-
-linux-wheels-x86_64:
-	docker run -e "HGTEST_JOBS=$(shell nproc)" --rm -ti -v `pwd`:/src quay.io/pypa/manylinux1_x86_64 /src/contrib/packaging/build-linux-wheels.sh
-
-linux-wheels-i686:
-	docker run -e "HGTEST_JOBS=$(shell nproc)" --rm -ti -v `pwd`:/src quay.io/pypa/manylinux1_i686 linux32 /src/contrib/packaging/build-linux-wheels.sh
-
 .PHONY: help all local build doc cleanbutpackages clean install install-bin \
 	install-doc install-home install-home-bin install-home-doc \
 	dist dist-notests check tests check-code format-c update-pot \
-	osx deb ppa \
-	docker-debian-jessie \
-	docker-debian-stretch \
-	docker-ubuntu-trusty docker-ubuntu-trusty-ppa \
-	docker-ubuntu-xenial docker-ubuntu-xenial-ppa \
-	docker-ubuntu-artful docker-ubuntu-artful-ppa \
-	docker-ubuntu-bionic docker-ubuntu-bionic-ppa \
-	fedora20 docker-fedora20 \
-	fedora21 docker-fedora21 \
-	centos5 docker-centos5 \
-	centos6 docker-centos6 \
-	centos7 docker-centos7 \
-	linux-wheels
+	$(packaging_targets) \
+	osx

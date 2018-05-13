@@ -59,7 +59,7 @@ verify 7e7d56fe4833 (encoding fallback in branchmap to maintain compatibility wi
 
   $ cat <<EOF > oldhg
   > import threading
-  > from mercurial import hg, ui, wireprotoserver
+  > from mercurial import dispatch, hg, ui, wireprotoserver
   > 
   > class StdoutWrapper(object):
   >     def __init__(self, stdout):
@@ -77,6 +77,7 @@ verify 7e7d56fe4833 (encoding fallback in branchmap to maintain compatibility wi
   >     def __getattr__(self, name):
   >         return getattr(self._file, name)
   > 
+  > dispatch.initstdio()
   > myui = ui.ui.load()
   > fout = StdoutWrapper(myui.fout)
   > myui.fout = myui.ferr

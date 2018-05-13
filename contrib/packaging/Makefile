@@ -1,21 +1,44 @@
 $(eval HGROOT := $(shell cd ../..; pwd))
 
+DEBIAN_CODENAMES := \
+  jessie \
+  stretch \
+  buster
+
+UBUNTU_CODENAMES := \
+  trusty \
+  xenial \
+  artful \
+  bionic \
+
+FEDORA_RELEASES := \
+  20 \
+  21
+
+CENTOS_RELEASES := \
+  5 \
+  6 \
+  7
+
+# Build a Python for these CentOS releases.
+CENTOS_WITH_PYTHON_RELEASES := 5 6
+
 help:
 	@echo 'Packaging Make Targets'
 	@echo ''
-	@echo 'docker-centos-{5, 6, 7}'
+	@echo 'docker-centos-{$(strip $(CENTOS_RELEASES))}'
 	@echo '   Build an RPM for a specific CentOS version using Docker.'
 	@echo ''
-	@echo 'docker-debian-{jessie, stretch}'
+	@echo 'docker-debian-{$(strip $(DEBIAN_CODENAMES))}'
 	@echo '   Build Debian packages specific to a Debian distro using Docker.'
 	@echo ''
-	@echo 'docker-fedora-{20, 21}'
+	@echo 'docker-fedora-{$(strip $(FEDORA_RELEASES))}'
 	@echo '   Build an RPM for a specific Fedora version using Docker.'
 	@echo ''
-	@echo 'docker-ubuntu-{trusty, xenial, artful, bionic}'
+	@echo 'docker-ubuntu-{$(strip $(UBUNTU_CODENAMES))}'
 	@echo '   Build Debian package specific to an Ubuntu distro using Docker.'
 	@echo ''
-	@echo 'docker-ubuntu-{trusty, xenial, artful, bionic}-ppa'
+	@echo 'docker-ubuntu-{$(strip $(UBUNTU_CODENAMES))}-ppa'
 	@echo '   Build a source-only Debian package specific to an Ubuntu distro'
 	@echo '   using Docker.'
 	@echo ''
@@ -31,10 +54,10 @@ help:
 	@echo 'ppa'
 	@echo '   Build a Debian source package locally targeting the current system'
 	@echo ''
-	@echo 'centos-{5, 6, 7}'
+	@echo 'centos-{$(strip $(CENTOS_RELEASES))}'
 	@echo '   Build an RPM for a specific CentOS version locally'
 	@echo ''
-	@echo 'fedora-{20, 21}'
+	@echo 'fedora-{$(strip $(FEDORA_RELEASES))}'
 	@echo '   Build an RPM for a specific Fedora version locally'
 
 .PHONY: help
@@ -47,107 +70,66 @@ deb:
 ppa:
 	./builddeb --source-only
 
-.PHONY: docker-debian-jessie
-docker-debian-jessie:
-	./dockerdeb debian jessie
+# Debian targets.
+define debian_targets =
+.PHONY: docker-debian-$(1)
+docker-debian-$(1):
+	./dockerdeb debian $(1)
 
-.PHONY: docker-debian-stretch
-docker-debian-stretch:
-	./dockerdeb debian stretch
+endef
 
-.PHONY: docker-ubuntu-trusty
-docker-ubuntu-trusty:
-	./dockerdeb ubuntu trusty
+$(foreach codename,$(DEBIAN_CODENAMES),$(eval $(call debian_targets,$(codename))))
 
-.PHONY: docker-ubuntu-trusty-ppa
-docker-ubuntu-trusty-ppa:
-	./dockerdeb ubuntu trusty --source-only
+# Ubuntu targets.
+define ubuntu_targets =
+.PHONY: docker-ubuntu-$(1)
+docker-ubuntu-$(1):
+	./dockerdeb ubuntu $(1)
 
-.PHONY: docker-ubuntu-xenial
-docker-ubuntu-xenial:
-	./dockerdeb ubuntu xenial
+.PHONY: docker-ubuntu-$(1)-ppa
+docker-ubuntu-$(1)-ppa:
+	./dockerdeb ubuntu $(1) --source-only
 
-.PHONY: docker-ubuntu-xenial-ppa
-docker-ubuntu-xenial-ppa:
-	./dockerdeb ubuntu xenial --source-only
+endef
 
-.PHONY: docker-ubuntu-artful
-docker-ubuntu-artful:
-	./dockerdeb ubuntu artful
+$(foreach codename,$(UBUNTU_CODENAMES),$(eval $(call ubuntu_targets,$(codename))))
 
-.PHONY: docker-ubuntu-artful-ppa
-docker-ubuntu-artful-ppa:
-	./dockerdeb ubuntu artful --source-only
-
-.PHONY: docker-ubuntu-bionic
-docker-ubuntu-bionic:
-	./dockerdeb ubuntu bionic
-
-.PHONY: docker-ubuntu-bionic-ppa
-docker-ubuntu-bionic-ppa:
-	./dockerdeb ubuntu bionic --source-only
-
-.PHONY: fedora20
-fedora20:
-	mkdir -p $(HGROOT)/packages/fedora20
+# Fedora targets.
+define fedora_targets =
+.PHONY: fedora$(1)
+fedora$(1):
+	mkdir -p $$(HGROOT)/packages/fedora$(1)
 	./buildrpm
-	cp $(HGROOT)/rpmbuild/RPMS/*/* $(HGROOT)/packages/fedora20
-	cp $(HGROOT)/rpmbuild/SRPMS/* $(HGROOT)/packages/fedora20
+	cp $$(HGROOT)/rpmbuild/RPMS/*/* $$(HGROOT)/packages/fedora$(1)
+	cp $$(HGROOT)/rpmbuild/SRPMS/* $$(HGROOT)/packages/fedora$(1)
 	rm -rf $(HGROOT)/rpmbuild
 
-.PHONY: docker-fedora20
-docker-fedora20:
-	mkdir -p $(HGROOT)/packages/fedora20
-	./dockerrpm fedora20
+.PHONY: docker-fedora$(1)
+docker-fedora$(1):
+	mkdir -p $$(HGROOT)/packages/fedora($1)
+	./dockerrpm fedora$(1)
 
-.PHONY: fedora21
-fedora21:
-	mkdir -p $(HGROOT)/packages/fedora21
-	./buildrpm
-	cp $(HGROOT)/rpmbuild/RPMS/*/* $(HGROOT)/packages/fedora21
-	cp $(HGROOT)/rpmbuild/SRPMS/* $(HGROOT)/packages/fedora21
-	rm -rf $(HGROOT)/rpmbuild
+endef
 
-.PHONY: docker-fedora21
-docker-fedora21:
-	mkdir -p $(HGROOT)packages/fedora21
-	./dockerrpm fedora21
+$(foreach release,$(FEDORA_RELEASES),$(eval $(call fedora_targets,$(release))))
 
-.PHONY: centos5
-centos5:
-	mkdir -p $(HGROOT)/packages/centos5
-	./buildrpm --withpython
-	cp $(HGROOT)/rpmbuild/RPMS/*/* $(HGROOT)/packages/centos5
-	cp $(HGROOT)/rpmbuild/SRPMS/* $(HGROOT)/packages/centos5
+# CentOS targets.
+define centos_targets
+.PHONY: centos$(1)
+centos$(1):
+	mkdir -p $$(HGROOT)/packages/centos$(1)
+	./buildrpm $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
+	cp $$(HGROOT)/rpmbuild/RPMS/*/* $$(HGROOT)/packages/centos$(1)
+	cp $$(HGROOT)/rpmbuild/SRPMS/* $$(HGROOT)/packages/centos$(1)
 
-.PHONY: docker-centos5
-docker-centos5:
-	mkdir -p $(HGROOT)/packages/centos5
-	./dockerrpm centos5 --withpython
+.PHONY: docker-centos$(1)
+docker-centos$(1):
+	mkdir -p $$(HGROOT)/packages/centos$(1)
+	./dockerrpm centos$(1) $$(if $$(filter $(1),$$(CENTOS_WITH_PYTHON_RELEASES)),--withpython)
 
-.PHONY: centos6
-centos6:
-	mkdir -p $(HGROOT)/packages/centos6
-	./buildrpm --withpython
-	cp $(HGROOT)/rpmbuild/RPMS/*/* $(HGROOT)/packages/centos6
-	cp $(HGROOT)/rpmbuild/SRPMS/* $(HGROOT)/packages/centos6
+endef
 
-.PHONY: docker-centos6
-docker-centos6:
-	mkdir -p $(HGROOT)/packages/centos6
-	./dockerrpm centos6 --withpython
-
-.PHONY: centos7
-centos7:
-	mkdir -p $(HGROOT)/packages/centos7
-	./buildrpm
-	cp $(HGROOT)/rpmbuild/RPMS/*/* $(HGROOT)/packages/centos7
-	cp $(HGROOT)/rpmbuild/SRPMS/* $(HGROOT)/packages/centos7
-
-.PHONY: docker-centos7
-docker-centos7:
-	mkdir -p $(HGROOT)/packages/centos7
-	./dockerrpm centos7
+$(foreach release,$(CENTOS_RELEASES),$(eval $(call centos_targets,$(release))))
 
 .PHONY: linux-wheels
 linux-wheels: linux-wheels-x86_64 linux-wheels-i686

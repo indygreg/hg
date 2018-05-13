@@ -616,7 +616,7 @@ def has_debhelper():
        "debian build dependencies (run dpkg-checkbuilddeps in contrib/)")
 def has_debdeps():
     # just check exit status (ignoring output)
-    path = '%s/../contrib/debian/control' % os.environ['TESTDIR']
+    path = '%s/../contrib/packaging/debian/control' % os.environ['TESTDIR']
     return matchoutput('dpkg-checkbuilddeps %s' % path, br'')
 
 @check("demandimport", "demandimport enabled")

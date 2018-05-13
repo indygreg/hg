@@ -1,12 +1,9 @@
 #!/bin/bash -eu
 
-. $(dirname $0)/dockerlib.sh
 . $(dirname $0)/packagelib.sh
 
 BUILDDIR=$(dirname $0)
 export ROOTDIR=$(cd $BUILDDIR/../.. > /dev/null; pwd)
-
-checkdocker
 
 DISTID="$1"
 CODENAME="$2"
@@ -14,8 +11,11 @@ PLATFORM="$1-$2"
 shift; shift # extra params are passed to build process
 
 OUTPUTDIR=${OUTPUTDIR:=$ROOTDIR/packages/$PLATFORM}
+CONTAINER=hg-docker-$PLATFORM
 
-initcontainer $PLATFORM
+DOCKER=$($BUILDDIR/hg-docker docker-path)
+
+$BUILDDIR/hg-docker build $BUILDDIR/docker/$PLATFORM $CONTAINER
 
 # debuild only appears to be able to save built debs etc to .., so we
 # have to share the .. of the current directory with the docker

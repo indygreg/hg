@@ -50,6 +50,7 @@ from . import (
     pycompat,
     rcutil,
     registrar,
+    repair,
     revsetlang,
     rewriteutil,
     scmutil,
@@ -1895,7 +1896,9 @@ def diff(ui, repo, *pats, **opts):
                               root=opts.get('root'))
 
 @command('^export',
-    [('o', 'output', '',
+    [('B', 'bookmark', '',
+     _('export changes only reachable by given bookmark')),
+    ('o', 'output', '',
      _('print output to file with formatted name'), _('FORMAT')),
     ('', 'switch-parent', None, _('diff against the second parent')),
     ('r', 'rev', [], _('revisions to export'), _('REV')),
@@ -1938,6 +1941,9 @@ def export(ui, repo, *changesets, **opts):
     of files it detects as binary. With -a, export will generate a
     diff anyway, probably with undesirable results.
 
+    With -B/--bookmark changesets reachable by the given bookmark are
+    selected.
+
     Use the -g/--git option to generate diffs in the git extended diff
     format. See :hg:`help diffs` for more information.
 
@@ -1966,11 +1972,24 @@ def export(ui, repo, *changesets, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
+    bookmark = opts.get('bookmark')
     changesets += tuple(opts.get('rev', []))
-    if not changesets:
-        changesets = ['.']
-    repo = scmutil.unhidehashlikerevs(repo, changesets, 'nowarn')
-    revs = scmutil.revrange(repo, changesets)
+
+    if bookmark and changesets:
+        raise error.Abort(_("-r and -B are mutually exclusive"))
+
+    if bookmark:
+        if bookmark not in repo._bookmarks:
+            raise error.Abort(_("bookmark '%s' not found") % bookmark)
+
+        revs = repair.stripbmrevset(repo, bookmark)
+    else:
+        if not changesets:
+            changesets = ['.']
+
+        repo = scmutil.unhidehashlikerevs(repo, changesets, 'nowarn')
+        revs = scmutil.revrange(repo, changesets)
+
     if not revs:
         raise error.Abort(_("export requires at least one changeset"))
     if len(revs) > 1:

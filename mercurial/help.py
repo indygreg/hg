@@ -232,6 +232,7 @@ helptable = sorted([
     (['bundlespec'], _("Bundle File Formats"), loaddoc('bundlespec')),
     (['color'], _("Colorizing Outputs"), loaddoc('color')),
     (["config", "hgrc"], _("Configuration Files"), loaddoc('config')),
+    (['deprecated'], _("Deprecated Features"), loaddoc('deprecated')),
     (["dates"], _("Date Formats"), loaddoc('dates')),
     (["flags"], _("Command-line flags"), loaddoc('flags')),
     (["patterns"], _("File Name Patterns"), loaddoc('patterns')),

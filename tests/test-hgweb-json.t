@@ -1914,6 +1914,10 @@ help/ shows help topics
         "topic": "dates"
       },
       {
+        "summary": "Deprecated Features",
+        "topic": "deprecated"
+      },
+      {
         "summary": "Diff Formats",
         "topic": "diffs"
       },

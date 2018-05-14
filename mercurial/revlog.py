@@ -326,12 +326,19 @@ class _deltacomputer(object):
                 # exclude already lazy tested base if any
                 parents = [p for p in (p1r, p2r)
                            if p != nullrev and p not in tested]
-                if parents and not revlog._aggressivemergedeltas:
-                    # Pick whichever parent is closer to us (to minimize the
-                    # chance of having to build a fulltext).
-                    parents = [max(parents)]
-                tested.update(parents)
-                yield parents
+
+                if not revlog._aggressivemergedeltas and len(parents) == 2:
+                    parents.sort()
+                    # To minimize the chance of having to build a fulltext,
+                    # pick first whichever parent is closest to us (max rev)
+                    yield (parents[1],)
+                    # then the other one (min rev) if the first did not fit
+                    yield (parents[0],)
+                    tested.update(parents)
+                elif len(parents) > 0:
+                    # Test all parents (1 or 2), and keep the best candidate
+                    yield parents
+                    tested.update(parents)
 
             if prev not in tested:
                 # other approach failed try against prev to hopefully save us a

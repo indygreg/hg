@@ -1225,7 +1225,8 @@ coreconfigitem('web', 'accesslog',
 coreconfigitem('web', 'address',
     default='',
 )
-coreconfigitem('web', 'allow_archive',
+coreconfigitem('web', 'allow-archive',
+    alias=[('web', 'allow_archive')],
     default=list,
 )
 coreconfigitem('web', 'allow_read',

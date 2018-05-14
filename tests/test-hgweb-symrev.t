@@ -30,7 +30,7 @@ Set up the repo
   |
   o  0:43c799df6e75
   
-  $ hg serve --config web.allow_archive=zip -n test -p $HGPORT -d --pid-file=hg.pid -E errors.log
+  $ hg serve --config web.allow-archive=zip -n test -p $HGPORT -d --pid-file=hg.pid -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
 
   $ REVLINKS='href=[^>]+(rev=|/)(43c799df6e75|0|a7c1559b7bba|1|xyzzy|9d8c40cba617|2|tip|default)'

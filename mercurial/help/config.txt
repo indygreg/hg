@@ -2329,7 +2329,7 @@ The full set of options is:
 ``address``
     Interface address to bind to. (default: all)
 
-``allow_archive``
+``allow-archive``
     List of archive format (bz2, gz, zip) allowed for downloading.
     (default: empty)
 

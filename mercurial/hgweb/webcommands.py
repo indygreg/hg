@@ -1162,7 +1162,7 @@ def archive(web):
     """
 
     type_ = web.req.qsparams.get('type')
-    allowed = web.configlist("web", "allow_archive")
+    allowed = web.configlist("web", "allow-archive")
     key = web.req.qsparams['node']
 
     if type_ not in webutil.archivespecs:

@@ -51,7 +51,7 @@ archivespecs = util.sortdict((
 ))
 
 def archivelist(ui, nodeid, url=None):
-    allowed = ui.configlist('web', 'allow_archive', untrusted=True)
+    allowed = ui.configlist('web', 'allow-archive', untrusted=True)
     archives = []
 
     for typ, spec in archivespecs.iteritems():

@@ -19776,11 +19776,11 @@ msgstr ""
 "    Адрес прослушиваемого интерфейса. По умолчанию все интерфейсы."
 
 msgid ""
-"``allow_archive``\n"
+"``allow-archive``\n"
 "    List of archive format (bz2, gz, zip) allowed for downloading.\n"
 "    Default is empty."
 msgstr ""
-"``allow_archive``\n"
+"``allow-archive``\n"
 "    Список форматов архивов (bz2, gz, zip), которые можно скачивать.\n"
 "    По умолчанию пуст."
 

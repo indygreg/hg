@@ -4809,6 +4809,8 @@ def serve(ui, repo, **opts):
     service = server.createservice(ui, repo, opts)
     return server.runservice(opts, initfn=service.init, runfn=service.run)
 
+_NOTTERSE = 'nothing'
+
 @command('^status|st',
     [('A', 'all', None, _('show status of all files')),
     ('m', 'modified', None, _('show only modified files')),
@@ -4819,7 +4821,7 @@ def serve(ui, repo, **opts):
     ('u', 'unknown', None, _('show only unknown (not tracked) files')),
     ('i', 'ignored', None, _('show only ignored files')),
     ('n', 'no-status', None, _('hide status prefix')),
-    ('t', 'terse', '', _('show the terse output (EXPERIMENTAL)')),
+    ('t', 'terse', _NOTTERSE, _('show the terse output (EXPERIMENTAL)')),
     ('C', 'copies', None, _('show source of copied files')),
     ('0', 'print0', None, _('end filenames with NUL, for use with xargs')),
     ('', 'rev', [], _('show difference from revision'), _('REV')),
@@ -4917,6 +4919,11 @@ def status(ui, repo, *pats, **opts):
     revs = opts.get('rev')
     change = opts.get('change')
     terse = opts.get('terse')
+    if terse is _NOTTERSE:
+        if revs:
+            terse = ''
+        else:
+            terse = ui.config('commands', 'status.terse')
 
     if revs and change:
         msg = _('cannot specify --rev and --change at the same time')

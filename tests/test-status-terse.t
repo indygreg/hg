@@ -183,3 +183,55 @@ Trying with --rev
   $ hg status --terse marduic --rev 0 --rev 1
   abort: cannot use --terse with --rev
   [255]
+
+Config item to set the default terseness
+  $ cat <<EOF >> $HGRCPATH
+  > [commands]
+  > status.terse = u
+  > EOF
+  $ hg status -mu
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/
+  ? x/m/
+  ? x/n/
+  ? y/
+
+Command line flag overrides the default
+  $ hg status --terse=
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/aa
+  ? x/l/u/a/bb
+  ? x/l/u/bb
+  ? x/m/aa
+  ? x/n/aa
+  ? y/l
+  ? y/m
+  $ hg status --terse=mardu
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/
+  ? x/m/
+  ? x/n/
+  ? y/
+
+Specifying --rev should still work, with the terseness disabled.
+  $ hg status --rev 0
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/aa
+  ? x/l/u/a/bb
+  ? x/l/u/bb
+  ? x/m/aa
+  ? x/n/aa
+  ? y/l
+  ? y/m

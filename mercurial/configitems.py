@@ -193,6 +193,9 @@ coreconfigitem('commands', 'status.relative',
 coreconfigitem('commands', 'status.skipstates',
     default=[],
 )
+coreconfigitem('commands', 'status.terse',
+    default='',
+)
 coreconfigitem('commands', 'status.verbose',
     default=False,
 )

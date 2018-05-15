@@ -442,6 +442,10 @@ effect and style see :hg:`help color`.
     Make paths in :hg:`status` output relative to the current directory.
     (default: False)
 
+``status.terse``
+    Default value for the --terse flag, which condenes status output.
+    (default: empty)
+
 ``update.check``
     Determines what level of checking :hg:`update` will perform before moving
     to a destination revision. Valid values are ``abort``, ``none``,

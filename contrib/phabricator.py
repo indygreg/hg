@@ -32,7 +32,9 @@ Config::
     curlcmd = curl --connect-timeout 2 --retry 3 --silent
 
     [auth]
-    example.url = https://phab.example.com/
+    example.schemes = https
+    example.prefix = phab.example.com
+
     # API token. Get it from https://$HOST/conduit/login/
     example.phabtoken = cli-xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 """
@@ -51,6 +53,7 @@ from mercurial import (
     context,
     encoding,
     error,
+    httpconnection as httpconnectionmod,
     mdiff,
     obsutil,
     parser,
@@ -135,7 +138,7 @@ def readlegacytoken(repo, url):
 def readurltoken(repo):
     """return conduit url, token and make sure they exist
 
-    Currently read from [phabricator] config section. In the future, it might
+    Currently read from [auth] config section. In the future, it might
     make sense to read from .arcconfig and .arcrc as well.
     """
     url = repo.ui.config('phabricator', 'url')
@@ -143,22 +146,15 @@ def readurltoken(repo):
         raise error.Abort(_('config %s.%s is required')
                           % ('phabricator', 'url'))
 
-    groups = {}
-    for key, val in repo.ui.configitems('auth'):
-        if '.' not in key:
-            repo.ui.warn(_("ignoring invalid [auth] key '%s'\n")
-                         % key)
-            continue
-        group, setting = key.rsplit('.', 1)
-        groups.setdefault(group, {})[setting] = val
-
+    res = httpconnectionmod.readauthforuri(repo.ui, url, util.url(url).user)
     token = None
-    for group, auth in groups.iteritems():
-        if url != auth.get('url'):
-            continue
+
+    if res:
+        group, auth = res
+
+        repo.ui.debug("using auth.%s.* for authentication\n" % group)
+
         token = auth.get('phabtoken')
-        if token:
-            break
 
     if not token:
         token = readlegacytoken(repo, url)

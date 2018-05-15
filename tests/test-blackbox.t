@@ -1,13 +1,26 @@
 setup
+
+  $ cat > myextension.py <<EOF
+  > from mercurial import error, registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'crash', [], b'hg crash')
+  > def crash(ui, *args, **kwargs):
+  >     raise Exception("oops")
+  > EOF
+  $ abspath=`pwd`/myextension.py
+
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > blackbox=
   > mock=$TESTDIR/mockblackbox.py
   > mq=
+  > myextension=$TESTTMP/myextension.py
   > [alias]
   > confuse = log --limit 3
   > so-confusing = confuse --style compact
   > EOF
+
   $ hg init blackboxtest
   $ cd blackboxtest
 
@@ -20,6 +33,24 @@ command, exit codes, and duration
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add a
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add a exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000+ (5000)> blackbox --config *blackbox.dirty=True* (glob)
+
+failure exit code
+  $ rm ./.hg/blackbox.log
+  $ hg add non-existent
+  non-existent: $ENOENT$
+  [1]
+  $ hg blackbox
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add non-existent
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add non-existent exited 1 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+
+unhandled exception
+  $ rm ./.hg/blackbox.log
+  $ hg crash 2> /dev/null
+  [1]
+  $ hg blackbox -l 2
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> crash exited -1 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
 
 alias expansion is logged
   $ rm ./.hg/blackbox.log

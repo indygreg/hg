@@ -50,7 +50,6 @@ from . import (
     pycompat,
     rcutil,
     registrar,
-    repair,
     revsetlang,
     rewriteutil,
     scmutil,
@@ -1982,7 +1981,7 @@ def export(ui, repo, *changesets, **opts):
         if bookmark not in repo._bookmarks:
             raise error.Abort(_("bookmark '%s' not found") % bookmark)
 
-        revs = repair.stripbmrevset(repo, bookmark)
+        revs = scmutil.bookmarkrevs(repo, bookmark)
     else:
         if not changesets:
             changesets = ['.']

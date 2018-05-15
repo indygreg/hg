@@ -165,7 +165,7 @@ def stripcmd(ui, repo, *revs, **opts):
                 nodetobookmarks.setdefault(node, []).append(mark)
             for marks in nodetobookmarks.values():
                 if bookmarks.issuperset(marks):
-                    rsrevs = repair.stripbmrevset(repo, marks[0])
+                    rsrevs = scmutil.bookmarkrevs(repo, marks[0])
                     revs.update(set(rsrevs))
             if not revs:
                 with repo.lock(), repo.transaction('bookmark') as tr:

@@ -94,7 +94,6 @@ from mercurial import (
     patch,
     pycompat,
     registrar,
-    repair,
     scmutil,
     templater,
     util,
@@ -624,7 +623,7 @@ def email(ui, repo, *revs, **opts):
     elif bookmark:
         if bookmark not in repo._bookmarks:
             raise error.Abort(_("bookmark '%s' not found") % bookmark)
-        revs = repair.stripbmrevset(repo, bookmark)
+        revs = scmutil.bookmarkrevs(repo, bookmark)
 
     revs = scmutil.revrange(repo, revs)
     if outgoing:

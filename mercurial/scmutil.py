@@ -1585,3 +1585,12 @@ def _getrevsfromsymbols(repo, symbols):
                 revs.add(rev)
 
     return revs
+
+def bookmarkrevs(repo, mark):
+    """
+    Select revisions reachable by a given bookmark
+    """
+    return repo.revs("ancestors(bookmark(%s)) - "
+                     "ancestors(head() and not bookmark(%s)) - "
+                     "ancestors(bookmark() and not bookmark(%s))",
+                     mark, mark, mark)

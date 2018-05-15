@@ -1,4 +1,4 @@
-#require no-reposimplestore
+#require no-reposimplestore no-chg
 
 This tests the interaction between the largefiles and lfs extensions, and
 conversion from largefiles -> lfs.

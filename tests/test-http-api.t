@@ -1,3 +1,5 @@
+#require no-chg
+
   $ send() {
   >   hg --verbose debugwireproto --peer raw http://$LOCALIP:$HGPORT/
   > }

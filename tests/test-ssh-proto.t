@@ -1,3 +1,5 @@
+#require no-chg
+
   $ cat > hgrc-sshv2 << EOF
   > %include $HGRCPATH
   > [experimental]

@@ -1,3 +1,5 @@
+#require no-chg
+
   $ . $TESTDIR/wireprotohelpers.sh
   $ enabledummycommands
 

@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import collections
-import errno
 import hashlib
 
 from .i18n import _
@@ -513,9 +512,7 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
         pushop.trmanager = transactionmanager(pushop.repo,
                                               'push-response',
                                               pushop.remote.url())
-    except IOError as err:
-        if err.errno != errno.EACCES:
-            raise
+    except error.LockUnavailable as err:
         # source repo cannot be locked.
         # We do not abort the push, but just disable the local phase
         # synchronisation.

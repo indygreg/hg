@@ -1307,6 +1307,18 @@ server won't turn changeset public.
   [1]
   $ chmod -R +w .hg
 
+3. Test that push is prevented if lock was already acquired (not a permission
+error, but EEXIST)
+
+  $ touch .hg/store/lock
+  $ hg push ../Phi --config ui.timeout=1
+  pushing to ../Phi
+  waiting for lock on repository $TESTTMP/Upsilon held by ''
+  abort: repository $TESTTMP/Upsilon: timed out waiting for lock held by ''
+  (lock might be very busy)
+  [255]
+  $ rm .hg/store/lock
+
   $ cd ..
 
 #endif

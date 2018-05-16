@@ -24,7 +24,7 @@ from .utils import (
     stringutil,
 )
 
-def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
+def pythonhook(ui, repo, htype, hname, funcname, args, throw):
     '''call python hook. hook is callable object, looked up as
     name in python module. if callable returns "true", hook
     fails, else passes. if hook raises exception, treated as
@@ -242,7 +242,7 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
                 r = 1
                 raised = False
             elif callable(cmd):
-                r, raised = _pythonhook(ui, repo, htype, hname, cmd, args,
+                r, raised = pythonhook(ui, repo, htype, hname, cmd, args,
                                         throw)
             elif cmd.startswith('python:'):
                 if cmd.count(':') >= 2:
@@ -258,7 +258,7 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
                     hookfn = getattr(mod, cmd)
                 else:
                     hookfn = cmd[7:].strip()
-                r, raised = _pythonhook(ui, repo, htype, hname, hookfn, args,
+                r, raised = pythonhook(ui, repo, htype, hname, hookfn, args,
                                         throw)
             else:
                 r = _exthook(ui, repo, htype, hname, cmd, args, throw)

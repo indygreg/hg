@@ -329,6 +329,183 @@ and true.executable set to cat with path works:
   # hg resolve --list
   R f
 
+executable set to python script that succeeds:
+
+  $ cat > "$TESTTMP/myworkingmerge.py" <<EOF
+  > def myworkingmergefn(ui, repo, args, **kwargs):
+  >     return False
+  > EOF
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py:myworkingmergefn"
+  merging f
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
+executable set to python script that fails:
+
+  $ cat > "$TESTTMP/mybrokenmerge.py" <<EOF
+  > def mybrokenmergefn(ui, repo, args, **kwargs):
+  >     ui.write(b"some fail message\n")
+  >     return True
+  > EOF
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/mybrokenmerge.py:mybrokenmergefn"
+  merging f
+  some fail message
+  abort: $TESTTMP/mybrokenmerge.py hook failed
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  ? f.orig
+  # hg resolve --list
+  U f
+
+executable set to python script that is missing function:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py:missingFunction"
+  merging f
+  abort: $TESTTMP/myworkingmerge.py does not have function: missingFunction
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  ? f.orig
+  # hg resolve --list
+  U f
+
+executable set to missing python script:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/missingpythonscript.py:mergefn"
+  merging f
+  abort: loading python merge script failed: $TESTTMP/missingpythonscript.py
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  ? f.orig
+  # hg resolve --list
+  U f
+
+executable set to python script but callable function is missing:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py"
+  abort: invalid 'python:' syntax: python:$TESTTMP/myworkingmerge.py
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  # hg resolve --list
+  U f
+
+executable set to python script but callable function is empty string:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py:"
+  abort: invalid 'python:' syntax: python:$TESTTMP/myworkingmerge.py:
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  # hg resolve --list
+  U f
+
+executable set to python script but callable function is missing and path contains colon:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/some:dir/myworkingmerge.py"
+  abort: invalid 'python:' syntax: python:$TESTTMP/some:dir/myworkingmerge.py
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  # hg resolve --list
+  U f
+
+executable set to python script filename that contains spaces:
+
+  $ mkdir -p "$TESTTMP/my path"
+  $ cat > "$TESTTMP/my path/my working merge with spaces in filename.py" <<EOF
+  > def myworkingmergefn(ui, repo, args, **kwargs):
+  >     return False
+  > EOF
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config "merge-tools.true.executable=python:$TESTTMP/my path/my working merge with spaces in filename.py:myworkingmergefn"
+  merging f
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
 #if unix-permissions
 
 environment variables in true.executable are handled:

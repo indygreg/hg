@@ -1015,26 +1015,25 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 	return -4;
 }
 
-static int nt_new(indexObject *self)
+static int nt_new(nodetree *self)
 {
-	nodetree *nt = self->nt;
-	if (nt->length == nt->capacity) {
-		if (nt->capacity >= INT_MAX / (sizeof(nodetreenode) * 2)) {
+	if (self->length == self->capacity) {
+		if (self->capacity >= INT_MAX / (sizeof(nodetreenode) * 2)) {
 			PyErr_SetString(PyExc_MemoryError,
 					"overflow in nt_new");
 			return -1;
 		}
-		nt->capacity *= 2;
-		nt->nodes = realloc(nt->nodes,
-				    nt->capacity * sizeof(nodetreenode));
-		if (nt->nodes == NULL) {
+		self->capacity *= 2;
+		self->nodes = realloc(self->nodes,
+		                      self->capacity * sizeof(nodetreenode));
+		if (self->nodes == NULL) {
 			PyErr_SetString(PyExc_MemoryError, "out of memory");
 			return -1;
 		}
-		memset(&nt->nodes[nt->length], 0,
-		       sizeof(nodetreenode) * (nt->capacity - nt->length));
+		memset(&self->nodes[self->length], 0,
+		       sizeof(nodetreenode) * (self->capacity - self->length));
 	}
-	return nt->length++;
+	return self->length++;
 }
 
 static int nt_insert(indexObject *self, const char *node, int rev)
@@ -1064,7 +1063,7 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 				n->children[k] = -rev - 2;
 				return 0;
 			}
-			noff = nt_new(self);
+			noff = nt_new(self->nt);
 			if (noff == -1)
 				return -1;
 			/* self->nt->nodes may have been changed by realloc */

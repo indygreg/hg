@@ -49,7 +49,7 @@ unhandled exception
   $ hg crash 2> /dev/null
   [1]
   $ hg blackbox -l 2
-  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> crash exited -1 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> crash exited 1 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
 
 alias expansion is logged

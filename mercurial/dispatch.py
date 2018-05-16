@@ -208,7 +208,7 @@ def dispatch(req):
 
     msg = _formatargs(req.args)
     starttime = util.timer()
-    ret = -1
+    ret = 1  # default of Python exit code on unhandled exception
     try:
         ret = _runcatch(req) or 0
     except error.ProgrammingError as inst:
@@ -239,7 +239,7 @@ def dispatch(req):
             req.ui.log('uiblocked', 'ui blocked ms',
                        **pycompat.strkwargs(req.ui._blockedtimes))
         req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
-                   msg, ret or 0, duration)
+                   msg, ret, duration)
         try:
             req._runexithandlers()
         except: # exiting, so no re-raises

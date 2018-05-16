@@ -72,29 +72,31 @@ have this method available in narrowhg proper at the moment.
   >   for f in repo[b'.'].manifest().walk(added):
   >     repo.dirstate.normallookup(f)
   > 
-  > def makeds(ui, repo):
-  >   def wrapds(orig, self):
-  >     ds = orig(self)
-  >     class expandingdirstate(ds.__class__):
-  >       @hgutil.propertycache
-  >       def _map(self):
-  >         ret = super(expandingdirstate, self)._map
-  >         with repo.wlock(), repo.lock(), repo.transaction(
-  >             b'expandnarrowspec'):
-  >           expandnarrowspec(ui, repo,
-  >                            encoding.environ.get(b'DIRSTATEINCLUDES'))
-  >         return ret
-  >     ds.__class__ = expandingdirstate
-  >     return ds
-  >   return wrapds
+  > def wrapds(ui, repo, ds):
+  >   class expandingdirstate(ds.__class__):
+  >     @hgutil.propertycache
+  >     def _map(self):
+  >       ret = super(expandingdirstate, self)._map
+  >       with repo.wlock(), repo.lock(), repo.transaction(
+  >           b'expandnarrowspec'):
+  >         expandnarrowspec(ui, repo,
+  >                          encoding.environ.get(b'DIRSTATEINCLUDES'))
+  >       return ret
+  >   ds.__class__ = expandingdirstate
+  >   return ds
   > 
   > def reposetup(ui, repo):
-  >   extensions.wrapfilecache(localrepo.localrepository, b'dirstate',
-  >                            makeds(ui, repo))
-  >   def overridepatch(orig, *args, **kwargs):
+  >   class expandingrepo(repo.__class__):
+  >     def _makedirstate(self):
+  >       dirstate = super(expandingrepo, self)._makedirstate()
+  >       return wrapds(ui, repo, dirstate)
+  >   repo.__class__ = expandingrepo
+  > 
+  > def extsetup(unused_ui):
+  >   def overridepatch(orig, ui, repo, *args, **kwargs):
   >     with repo.wlock():
   >       expandnarrowspec(ui, repo, encoding.environ.get(b'PATCHINCLUDES'))
-  >       return orig(*args, **kwargs)
+  >       return orig(ui, repo, *args, **kwargs)
   > 
   >   extensions.wrapfunction(patch, b'patch', overridepatch)
   > EOF

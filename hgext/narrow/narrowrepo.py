@@ -15,6 +15,7 @@ from mercurial import (
 )
 
 from . import (
+    narrowdirstate,
     narrowrevlog,
 )
 
@@ -61,5 +62,9 @@ def wraprepo(repo):
             clean = list(filter(narrowmatch, s.clean))
             return scmutil.status(modified, added, removed, deleted, unknown,
                                   ignored, clean)
+
+        def _makedirstate(self):
+            dirstate = super(narrowrepository, self)._makedirstate()
+            return narrowdirstate.wrapdirstate(self, dirstate)
 
     repo.__class__ = narrowrepository

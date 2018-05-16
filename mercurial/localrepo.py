@@ -778,6 +778,9 @@ class localrepository(object):
 
     @repofilecache('dirstate')
     def dirstate(self):
+        return self._makedirstate()
+
+    def _makedirstate(self):
         sparsematchfn = lambda: sparse.matcher(self)
 
         return dirstate.dirstate(self.vfs, self.ui, self.root,

@@ -28,7 +28,6 @@ from . import (
     narrowchangegroup,
     narrowcommands,
     narrowcopies,
-    narrowdirstate,
     narrowpatch,
     narrowrepo,
     narrowrevlog,
@@ -72,10 +71,9 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    narrowrepo.wraprepo(repo)
     if changegroup.NARROW_REQUIREMENT in repo.requirements:
+        narrowrepo.wraprepo(repo)
         narrowcopies.setup(repo)
-        narrowdirstate.setup(repo)
         narrowpatch.setup(repo)
         narrowwirepeer.reposetup(repo)
 

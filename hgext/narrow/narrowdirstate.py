@@ -9,74 +9,91 @@ from __future__ import absolute_import
 
 from mercurial.i18n import _
 from mercurial import (
-    dirstate,
     error,
-    extensions,
     match as matchmod,
     narrowspec,
     util as hgutil,
 )
 
-def setup(repo):
+def wrapdirstate(repo, dirstate):
     """Add narrow spec dirstate ignore, block changes outside narrow spec."""
 
-    def walk(orig, self, match, subrepos, unknown, ignored, full=True,
-             narrowonly=True):
-        if narrowonly:
-            # hack to not exclude explicitly-specified paths so that they can
-            # be warned later on e.g. dirstate.add()
-            em = matchmod.exact(match._root, match._cwd, match.files())
-            nm = matchmod.unionmatcher([repo.narrowmatch(), em])
-            match = matchmod.intersectmatchers(match, nm)
-        return orig(self, match, subrepos, unknown, ignored, full)
-
-    extensions.wrapfunction(dirstate.dirstate, 'walk', walk)
-
-    # Prevent adding files that are outside the sparse checkout
-    editfuncs = ['normal', 'add', 'normallookup', 'copy', 'remove', 'merge']
-    for func in editfuncs:
-        def _wrapper(orig, self, *args):
+    def _editfunc(fn):
+        def _wrapper(self, *args):
             dirstate = repo.dirstate
             narrowmatch = repo.narrowmatch()
             for f in args:
                 if f is not None and not narrowmatch(f) and f not in dirstate:
                     raise error.Abort(_("cannot track '%s' - it is outside " +
                         "the narrow clone") % f)
-            return orig(self, *args)
-        extensions.wrapfunction(dirstate.dirstate, func, _wrapper)
-
-    def filterrebuild(orig, self, parent, allfiles, changedfiles=None):
-        if changedfiles is None:
-            # Rebuilding entire dirstate, let's filter allfiles to match the
-            # narrowspec.
-            allfiles = [f for f in allfiles if repo.narrowmatch()(f)]
-        orig(self, parent, allfiles, changedfiles)
-
-    extensions.wrapfunction(dirstate.dirstate, 'rebuild', filterrebuild)
+            return fn(self, *args)
+        return _wrapper
 
     def _narrowbackupname(backupname):
         assert 'dirstate' in backupname
         return backupname.replace('dirstate', narrowspec.FILENAME)
 
-    def restorebackup(orig, self, tr, backupname):
-        self._opener.rename(_narrowbackupname(backupname), narrowspec.FILENAME,
-                            checkambig=True)
-        orig(self, tr, backupname)
+    class narrowdirstate(dirstate.__class__):
+        def walk(self, match, subrepos, unknown, ignored, full=True,
+                 narrowonly=True):
+            if narrowonly:
+                # hack to not exclude explicitly-specified paths so that they
+                # can be warned later on e.g. dirstate.add()
+                em = matchmod.exact(match._root, match._cwd, match.files())
+                nm = matchmod.unionmatcher([repo.narrowmatch(), em])
+                match = matchmod.intersectmatchers(match, nm)
+            return super(narrowdirstate, self).walk(match, subrepos, unknown,
+                                                    ignored, full)
 
-    extensions.wrapfunction(dirstate.dirstate, 'restorebackup', restorebackup)
+        # Prevent adding/editing/copying/deleting files that are outside the
+        # sparse checkout
+        @_editfunc
+        def normal(self, *args):
+            return super(narrowdirstate, self).normal(*args)
 
-    def savebackup(orig, self, tr, backupname):
-        orig(self, tr, backupname)
+        @_editfunc
+        def add(self, *args):
+            return super(narrowdirstate, self).add(*args)
 
-        narrowbackupname = _narrowbackupname(backupname)
-        self._opener.tryunlink(narrowbackupname)
-        hgutil.copyfile(self._opener.join(narrowspec.FILENAME),
-                        self._opener.join(narrowbackupname), hardlink=True)
+        @_editfunc
+        def normallookup(self, *args):
+            return super(narrowdirstate, self).normallookup(*args)
 
-    extensions.wrapfunction(dirstate.dirstate, 'savebackup', savebackup)
+        @_editfunc
+        def copy(self, *args):
+            return super(narrowdirstate, self).copy(*args)
 
-    def clearbackup(orig, self, tr, backupname):
-        orig(self, tr, backupname)
-        self._opener.unlink(_narrowbackupname(backupname))
+        @_editfunc
+        def remove(self, *args):
+            return super(narrowdirstate, self).remove(*args)
 
-    extensions.wrapfunction(dirstate.dirstate, 'clearbackup', clearbackup)
+        @_editfunc
+        def merge(self, *args):
+            return super(narrowdirstate, self).merge(*args)
+
+        def rebuild(self, parent, allfiles, changedfiles=None):
+            if changedfiles is None:
+                # Rebuilding entire dirstate, let's filter allfiles to match the
+                # narrowspec.
+                allfiles = [f for f in allfiles if repo.narrowmatch()(f)]
+            super(narrowdirstate, self).rebuild(parent, allfiles, changedfiles)
+
+        def restorebackup(self, tr, backupname):
+            self._opener.rename(_narrowbackupname(backupname),
+                                narrowspec.FILENAME, checkambig=True)
+            super(narrowdirstate, self).restorebackup(tr, backupname)
+
+        def savebackup(self, tr, backupname):
+            super(narrowdirstate, self).savebackup(tr, backupname)
+
+            narrowbackupname = _narrowbackupname(backupname)
+            self._opener.tryunlink(narrowbackupname)
+            hgutil.copyfile(self._opener.join(narrowspec.FILENAME),
+                            self._opener.join(narrowbackupname), hardlink=True)
+
+        def clearbackup(self, tr, backupname):
+            super(narrowdirstate, self).clearbackup(tr, backupname)
+            self._opener.unlink(_narrowbackupname(backupname))
+
+    dirstate.__class__ = narrowdirstate
+    return dirstate

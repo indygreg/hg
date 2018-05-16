@@ -239,7 +239,7 @@ def dispatch(req):
             req.ui.log('uiblocked', 'ui blocked ms',
                        **pycompat.strkwargs(req.ui._blockedtimes))
         req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
-                   msg, ret, duration)
+                   msg, ret & 255, duration)
         try:
             req._runexithandlers()
         except: # exiting, so no re-raises

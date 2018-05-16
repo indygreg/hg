@@ -7,6 +7,9 @@ setup
   > @command(b'crash', [], b'hg crash')
   > def crash(ui, *args, **kwargs):
   >     raise Exception("oops")
+  > @command(b'abort', [], b'hg abort')
+  > def abort(ui, *args, **kwargs):
+  >     raise error.Abort(b"oops")
   > EOF
   $ abspath=`pwd`/myextension.py
 
@@ -43,6 +46,14 @@ failure exit code
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add non-existent
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add non-existent exited 1 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+
+abort exit code
+  $ rm ./.hg/blackbox.log
+  $ hg abort 2> /dev/null
+  [255]
+  $ hg blackbox -l 2
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> abort exited 255 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
 
 unhandled exception
   $ rm ./.hg/blackbox.log

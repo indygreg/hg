@@ -404,7 +404,7 @@ class patternmatcher(basematcher):
 
     @encoding.strmethod
     def __repr__(self):
-        return ('<patternmatcher patterns=%r>' % self._pats)
+        return ('<patternmatcher patterns=%r>' % pycompat.bytestr(self._pats))
 
 class includematcher(basematcher):
 

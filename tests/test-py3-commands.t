@@ -198,28 +198,28 @@ Prove the repo is valid using the Python 2 `hg`:
   $ $PYTHON3 $HGBIN log -Tjson
   [
    {
-    "rev": 1,
-    "node": "e1e9167203d450ca2f558af628955b5f5afd4489",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "message",
-    "bookmarks": [],
+    "node": "e1e9167203d450ca2f558af628955b5f5afd4489",
+    "parents": ["71c96e924262969ff0d8d3d695b0f75412ccc3d8"],
+    "phase": "draft",
+    "rev": 1,
     "tags": ["tip"],
-    "parents": ["71c96e924262969ff0d8d3d695b0f75412ccc3d8"]
+    "user": "test"
    },
    {
-    "rev": 0,
-    "node": "71c96e924262969ff0d8d3d695b0f75412ccc3d8",
+    "bookmarks": [],
     "branch": "default",
-    "phase": "draft",
-    "user": "test",
     "date": [0, 0],
     "desc": "commit performed in Python 3",
-    "bookmarks": [],
+    "node": "71c96e924262969ff0d8d3d695b0f75412ccc3d8",
+    "parents": ["0000000000000000000000000000000000000000"],
+    "phase": "draft",
+    "rev": 0,
     "tags": [],
-    "parents": ["0000000000000000000000000000000000000000"]
+    "user": "test"
    }
   ]
 

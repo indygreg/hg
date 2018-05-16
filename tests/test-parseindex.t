@@ -1,5 +1,3 @@
-#require no-chg
-
 revlog.parseindex must be able to parse the index file even if
 an index entry is split between two 64k blocks.  The ideal test
 would be to create an index file with inline data where

@@ -254,6 +254,11 @@ def _computenonoverlap(repo, c1, c2, addedinm1, addedinm2, baselabel=''):
         repo.ui.debug("%s:\n   %s\n" % (header % 'local', "\n   ".join(u1)))
     if u2:
         repo.ui.debug("%s:\n   %s\n" % (header % 'other', "\n   ".join(u2)))
+
+    narrowmatch = repo.narrowmatch()
+    if not narrowmatch.always():
+        u1 = [f for f in u1 if narrowmatch(f)]
+        u2 = [f for f in u2 if narrowmatch(f)]
     return u1, u2
 
 def _makegetfctx(ctx):

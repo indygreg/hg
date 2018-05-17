@@ -29,7 +29,6 @@ from . import (
     narrowcommands,
     narrowcopies,
     narrowdirstate,
-    narrowmerge,
     narrowpatch,
     narrowrepo,
     narrowrevlog,
@@ -64,7 +63,6 @@ def uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
     narrowrevlog.setup()
     narrowbundle2.setup()
-    narrowmerge.setup()
     narrowcommands.setup()
     narrowchangegroup.setup()
     narrowwirepeer.uisetup()

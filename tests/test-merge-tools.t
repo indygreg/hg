@@ -1,7 +1,8 @@
 test merge-tools configuration - mostly exercising filemerge.py
 
   $ unset HGMERGE # make sure HGMERGE doesn't interfere with the test
-  $ hg init
+  $ hg init repo
+  $ cd repo
 
 revision 0
 
@@ -1446,7 +1447,7 @@ premerge=keep is used and has 'detailed' markers:
   merging f
   labellocal: "working copy"
   labelother: "merge rev"
-  output (arg): "$TESTTMP/f"
+  output (arg): "$TESTTMP/repo/f"
   output (contents):
   <<<<<<< working copy: uitmpl 1
   revision 1
@@ -1485,7 +1486,7 @@ mergemarkers=detailed; labellocal and labelother also use the tool's template
   merging f
   labellocal: "working copy: tooltmpl ef83787e2614"
   labelother: "merge rev: tooltmpl 0185f4e0cf02"
-  output (arg): "$TESTTMP/f"
+  output (arg): "$TESTTMP/repo/f"
   output (contents):
   <<<<<<< working copy: tooltmpl ef83787e2614
   revision 1
@@ -1585,7 +1586,7 @@ Verify naming of temporary files and that extension is preserved:
   $ hg update -q -C 2
   $ hg merge -y -r tip --tool echo --config merge-tools.echo.args='$base $local $other $output'
   merging f and f.txt to f.txt
-  */f~base.* */f~local.*.txt */f~other.*.txt $TESTTMP/f.txt (glob)
+  */f~base.* */f~local.*.txt */f~other.*.txt $TESTTMP/repo/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
@@ -1600,7 +1601,7 @@ Verify naming of temporary files and that extension is preserved
   >    --config merge-tools.echo.args='$base $local $other $output' \
   >    --config experimental.mergetempdirprefix=$TESTTMP/hgmerge.
   merging f and f.txt to f.txt
-  $TESTTMP/hgmerge.*/f~base $TESTTMP/hgmerge.*/f~local.txt $TESTTMP/hgmerge.*/f~other.txt $TESTTMP/f.txt (glob)
+  $TESTTMP/hgmerge.*/f~base $TESTTMP/hgmerge.*/f~local.txt $TESTTMP/hgmerge.*/f~other.txt $TESTTMP/repo/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
@@ -1668,3 +1669,5 @@ specified file as expected
   couldn't find merge tool true (for pattern f)
   couldn't find merge tool true
   f = false
+
+  $ cd ..

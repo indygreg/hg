@@ -210,6 +210,15 @@ def _trimchunk(revlog, revs, startidx, endidx=None):
 
     return revs[startidx:endidx]
 
+def _segmentspan(revlog, revs):
+    """Get the byte span of a segment of revisions
+
+    revs is a sorted array of revision numbers
+    """
+    if not revs:
+        return 0
+    return revlog.end(revs[-1]) - revlog.start(revs[0])
+
 def _slicechunk(revlog, revs):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
@@ -223,9 +232,7 @@ def _slicechunk(revlog, revs):
         yield revs
         return
 
-    startbyte = start(revs[0])
-    endbyte = start(revs[-1]) + length(revs[-1])
-    readdata = deltachainspan = endbyte - startbyte
+    readdata = deltachainspan = _segmentspan(revlog, revs)
 
     if deltachainspan < revlog._srmingapsize:
         yield revs

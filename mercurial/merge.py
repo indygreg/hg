@@ -903,6 +903,23 @@ def _forgetremoved(wctx, mctx, branchmerge):
     return actions
 
 def _checkcollision(repo, wmf, actions):
+    """
+    Check for case-folding collisions.
+    """
+
+    # If the repo is narrowed, filter out files outside the narrowspec.
+    narrowmatch = repo.narrowmatch()
+    if not narrowmatch.always():
+        wmf = wmf.matches(narrowmatch)
+        if actions:
+            narrowactions = {}
+            for m, actionsfortype in actions.iteritems():
+                narrowactions[m] = []
+                for (f, args, msg) in actionsfortype:
+                    if narrowmatch(f):
+                        narrowactions[m].append((f, args, msg))
+            actions = narrowactions
+
     # build provisional merged manifest up
     pmmf = set(wmf)
 

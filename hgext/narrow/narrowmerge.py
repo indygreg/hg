@@ -10,26 +10,9 @@ from __future__ import absolute_import
 from mercurial import (
     copies,
     extensions,
-    merge,
 )
 
 def setup():
-    def _checkcollision(orig, repo, wmf, actions):
-        narrowmatch = repo.narrowmatch()
-        if not narrowmatch.always():
-            wmf = wmf.matches(narrowmatch)
-            if actions:
-                narrowactions = {}
-                for m, actionsfortype in actions.iteritems():
-                    narrowactions[m] = []
-                    for (f, args, msg) in actionsfortype:
-                        if narrowmatch(f):
-                            narrowactions[m].append((f, args, msg))
-                actions = narrowactions
-        return orig(repo, wmf, actions)
-
-    extensions.wrapfunction(merge, '_checkcollision', _checkcollision)
-
     def _computenonoverlap(orig, repo, *args, **kwargs):
         u1, u2 = orig(repo, *args, **kwargs)
         narrowmatch = repo.narrowmatch()

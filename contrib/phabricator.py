@@ -73,6 +73,30 @@ from mercurial.utils import (
 cmdtable = {}
 command = registrar.command(cmdtable)
 
+configtable = {}
+configitem = registrar.configitem(configtable)
+
+# developer config: phabricator.batchsize
+configitem('phabricator', 'batchsize',
+    default=12,
+)
+configitem('phabricator', 'callsign',
+    default=None,
+)
+configitem('phabricator', 'curlcmd',
+    default=None,
+)
+# developer config: phabricator.repophid
+configitem('phabricator', 'repophid',
+    default=None,
+)
+configitem('phabricator', 'url',
+    default=None,
+)
+configitem('phabsend', 'confirm',
+    default=False,
+)
+
 colortable = {
     'phabricator.action.created': 'green',
     'phabricator.action.skipped': 'magenta',
@@ -750,7 +774,7 @@ def querydrev(repo, spec):
     drevs, ancestordrevs = _prefetchdrevs(tree)
 
     # developer config: phabricator.batchsize
-    batchsize = repo.ui.configint('phabricator', 'batchsize', 12)
+    batchsize = repo.ui.configint('phabricator', 'batchsize')
 
     # Prefetch Differential Revisions in batch
     tofetch = set(drevs)

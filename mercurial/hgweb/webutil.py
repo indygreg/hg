@@ -457,6 +457,22 @@ def changelistentry(web, ctx):
     )
     return entry
 
+def changelistentries(web, revs, maxcount, parityfn):
+    """Emit up to N records for an iterable of revisions."""
+    repo = web.repo
+
+    count = 0
+    for rev in revs:
+        if count >= maxcount:
+            break
+
+        count += 1
+
+        entry = changelistentry(web, repo[rev])
+        entry['parity'] = next(parityfn)
+
+        yield entry
+
 def symrevorshortnode(req, ctx):
     if 'node' in req.qsparams:
         return templatefilters.revescape(req.qsparams['node'])

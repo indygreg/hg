@@ -398,14 +398,8 @@ def changelog(web, shortlog=False):
         revs = []
         if pos != -1:
             revs = web.repo.changelog.revs(pos, 0)
-        curcount = 0
-        for rev in revs:
-            curcount += 1
-            if curcount > revcount + 1:
-                break
 
-            entry = webutil.changelistentry(web, web.repo[rev])
-            entry['parity'] = next(parity)
+        for entry in webutil.changelistentries(web, revs, revcount, parity):
             yield entry
 
     if shortlog:

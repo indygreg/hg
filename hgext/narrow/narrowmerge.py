@@ -7,48 +7,13 @@
 
 from __future__ import absolute_import
 
-from mercurial.i18n import _
 from mercurial import (
     copies,
-    error,
     extensions,
     merge,
 )
 
 def setup():
-    def _manifestmerge(orig, repo, wctx, p2, pa, branchmerge, *args, **kwargs):
-        """Filter updates to only lay out files that match the narrow spec."""
-        actions, diverge, renamedelete = orig(
-            repo, wctx, p2, pa, branchmerge, *args, **kwargs)
-
-        narrowmatch = repo.narrowmatch()
-        if narrowmatch.always():
-            return actions, diverge, renamedelete
-
-        nooptypes = set(['k']) # TODO: handle with nonconflicttypes
-        nonconflicttypes = set('a am c cm f g r e'.split())
-        # We mutate the items in the dict during iteration, so iterate
-        # over a copy.
-        for f, action in list(actions.items()):
-            if narrowmatch(f):
-                pass
-            elif not branchmerge:
-                del actions[f] # just updating, ignore changes outside clone
-            elif action[0] in nooptypes:
-                del actions[f] # merge does not affect file
-            elif action[0] in nonconflicttypes:
-                raise error.Abort(_('merge affects file \'%s\' outside narrow, '
-                                    'which is not yet supported') % f,
-                                  hint=_('merging in the other direction '
-                                         'may work'))
-            else:
-                raise error.Abort(_('conflict in file \'%s\' is outside '
-                                    'narrow clone') % f)
-
-        return actions, diverge, renamedelete
-
-    extensions.wrapfunction(merge, 'manifestmerge', _manifestmerge)
-
     def _checkcollision(orig, repo, wmf, actions):
         narrowmatch = repo.narrowmatch()
         if not narrowmatch.always():

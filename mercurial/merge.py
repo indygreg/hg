@@ -1072,6 +1072,33 @@ def checkpathconflicts(repo, wctx, mctx, actions):
             repo.ui.warn(_("%s: is both a file and a directory\n") % p)
         raise error.Abort(_("destination manifest contains path conflicts"))
 
+def _filternarrowactions(narrowmatch, branchmerge, actions):
+    """
+    Filters out actions that can ignored because the repo is narrowed.
+
+    Raise an exception if the merge cannot be completed because the repo is
+    narrowed.
+    """
+    nooptypes = set(['k']) # TODO: handle with nonconflicttypes
+    nonconflicttypes = set('a am c cm f g r e'.split())
+    # We mutate the items in the dict during iteration, so iterate
+    # over a copy.
+    for f, action in list(actions.items()):
+        if narrowmatch(f):
+            pass
+        elif not branchmerge:
+            del actions[f] # just updating, ignore changes outside clone
+        elif action[0] in nooptypes:
+            del actions[f] # merge does not affect file
+        elif action[0] in nonconflicttypes:
+            raise error.Abort(_('merge affects file \'%s\' outside narrow, '
+                                'which is not yet supported') % f,
+                              hint=_('merging in the other direction '
+                                     'may work'))
+        else:
+            raise error.Abort(_('conflict in file \'%s\' is outside '
+                                'narrow clone') % f)
+
 def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
                   acceptremote, followcopies, forcefulldiff=False):
     """
@@ -1255,6 +1282,11 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
     if repo.ui.configbool('experimental', 'merge.checkpathconflicts'):
         # If we are merging, look for path conflicts.
         checkpathconflicts(repo, wctx, p2, actions)
+
+    narrowmatch = repo.narrowmatch()
+    if not narrowmatch.always():
+        # Updates "actions" in place
+        _filternarrowactions(narrowmatch, branchmerge, actions)
 
     return actions, diverge, renamedelete
 

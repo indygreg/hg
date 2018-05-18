@@ -2492,14 +2492,14 @@ def diffsinglehunk(hunklines):
         chompline = line.rstrip('\n')
         # highlight tabs and trailing whitespace
         stripline = chompline.rstrip()
-        if line[0] == '-':
+        if line.startswith('-'):
             label = 'diff.deleted'
-        elif line[0] == '+':
+        elif line.startswith('+'):
             label = 'diff.inserted'
         else:
             raise error.ProgrammingError('unexpected hunk line: %s' % line)
         for token in tabsplitter.findall(stripline):
-            if '\t' == token[0]:
+            if token.startswith('\t'):
                 yield (token, 'diff.tab')
             else:
                 yield (token, label)

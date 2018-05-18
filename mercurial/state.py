@@ -57,7 +57,7 @@ class cmdstate(object):
         we use third-party library cbor to serialize data to write in the file.
         """
         with self._repo.vfs(self.fname, 'wb', atomictemp=True) as fp:
-            cbor.dump(self.opts, fp)
+            cbor.dump(self.opts, fp, canonical=True)
 
     def _read(self):
         """reads the state file and returns a dictionary which contain

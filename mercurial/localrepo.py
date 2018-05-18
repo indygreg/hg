@@ -1693,12 +1693,15 @@ class localrepository(object):
         if wait:
             timeout = self.ui.configint("ui", "timeout")
             warntimeout = self.ui.configint("ui", "timeout.warn")
+        # internal config: ui.signal-safe-lock
+        signalsafe = self.ui.configbool('ui', 'signal-safe-lock')
 
         l = lockmod.trylock(self.ui, vfs, lockname, timeout, warntimeout,
                             releasefn=releasefn,
                             acquirefn=acquirefn, desc=desc,
                             inheritchecker=inheritchecker,
-                            parentlock=parentlock)
+                            parentlock=parentlock,
+                            signalsafe=signalsafe)
         return l
 
     def _afterlock(self, callback):

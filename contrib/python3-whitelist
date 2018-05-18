@@ -411,6 +411,7 @@ test-revlog-ancestry.py
 test-revlog-group-emptyiter.t
 test-revlog-mmapindex.t
 test-revlog-packentry.t
+test-revlog-raw.py
 test-revset-dirstate-parents.t
 test-revset-legacy-lookup.t
 test-revset-outgoing.t
@@ -474,6 +475,7 @@ test-url-rev.t
 test-url.py
 test-username-newline.t
 test-verify.t
+test-walk.t
 test-walkrepo.py
 test-websub.t
 test-win32text.t

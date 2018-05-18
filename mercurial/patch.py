@@ -51,7 +51,7 @@ stringio = util.stringio
 gitre = re.compile(br'diff --git a/(.*) b/(.*)')
 tabsplitter = re.compile(br'(\t+|[^\t]+)')
 wordsplitter = re.compile(br'(\t+| +|[a-zA-Z0-9_\x80-\xff]+|'
-                          '[^ \ta-zA-Z0-9_\x80-\xff])')
+                          b'[^ \ta-zA-Z0-9_\x80-\xff])')
 
 PatchError = error.PatchError
 

@@ -841,13 +841,59 @@ no style can be loaded from directories other than the specified paths
   
   fall back to default
 
+  $ killdaemons.py
+
+Test signal-safe-lock in web and non-web processes
+
+  $ cat <<'EOF' > disablesig.py
+  > import signal
+  > from mercurial import error, extensions
+  > def disabledsig(orig, signalnum, handler):
+  >     if signalnum == signal.SIGTERM:
+  >         raise error.Abort(b'SIGTERM cannot be replaced')
+  >     try:
+  >         return orig(signalnum, handler)
+  >     except ValueError:
+  >         raise error.Abort(b'signal.signal() called in thread?')
+  > def uisetup(ui):
+  >    extensions.wrapfunction(signal, b'signal', disabledsig)
+  > EOF
+
+ by default, signal interrupt should be disabled while making a lock file
+
+  $ hg debuglock -s --config extensions.disablesig=disablesig.py
+  abort: SIGTERM cannot be replaced
+  [255]
+
+ but in hgweb, it isn't disabled since some WSGI servers complains about
+ unsupported signal.signal() calls (see issue5889)
+
+  $ hg serve --config extensions.disablesig=disablesig.py \
+  > --config web.allow-push='*' --config web.push_ssl=False \
+  > -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ hg clone -q http://localhost:$HGPORT/ repo
+  $ hg bookmark -R repo foo
+
+ push would fail if signal.signal() were called
+
+  $ hg push -R repo -B foo
+  pushing to http://localhost:$HGPORT/
+  searching for changes
+  no changes found
+  exporting bookmark foo
+  [1]
+
+  $ rm -R repo
+  $ killdaemons.py
+
 errors
 
   $ cat errors.log
 
 Uncaught exceptions result in a logged error and canned HTTP response
 
-  $ killdaemons.py
   $ hg serve --config extensions.hgweberror=$TESTDIR/hgweberror.py -p $HGPORT -d --pid-file=hg.pid -A access.log -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
 

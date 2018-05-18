@@ -225,6 +225,12 @@ class hgweb(object):
         # resolve file patterns relative to repo root
         r.ui.setconfig('ui', 'forcecwd', r.root, 'hgweb')
         r.baseui.setconfig('ui', 'forcecwd', r.root, 'hgweb')
+        # it's unlikely that we can replace signal handlers in WSGI server,
+        # and mod_wsgi issues a big warning. a plain hgweb process (with no
+        # threading) could replace signal handlers, but we don't bother
+        # conditionally enabling it.
+        r.ui.setconfig('ui', 'signal-safe-lock', 'false', 'hgweb')
+        r.baseui.setconfig('ui', 'signal-safe-lock', 'false', 'hgweb')
         # displaying bundling progress bar while serving feel wrong and may
         # break some wsgi implementation.
         r.ui.setconfig('progress', 'disable', 'true', 'hgweb')

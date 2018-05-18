@@ -197,17 +197,21 @@ def setupwrapcolorwrite(ui):
     return oldwrite
 
 def filterchunks(ui, originalhunks, usecurses, testfile, operation=None):
-    if usecurses:
-        if testfile:
-            recordfn = crecordmod.testdecorator(testfile,
-                                                crecordmod.testchunkselector)
-        else:
-            recordfn = crecordmod.chunkselector
+    try:
+        if usecurses:
+            if testfile:
+                recordfn = crecordmod.testdecorator(
+                    testfile, crecordmod.testchunkselector)
+            else:
+                recordfn = crecordmod.chunkselector
 
-        return crecordmod.filterpatch(ui, originalhunks, recordfn, operation)
+            return crecordmod.filterpatch(ui, originalhunks, recordfn,
+                                          operation)
+    except crecordmod.fallbackerror as e:
+        ui.warn('%s\n' % e.message)
+        ui.warn(_('falling back to text mode\n'))
 
-    else:
-        return patch.filterpatch(ui, originalhunks, operation)
+    return patch.filterpatch(ui, originalhunks, operation)
 
 def recordfilter(ui, originalhunks, operation=None):
     """ Prompts the user to filter the originalhunks and return a list of

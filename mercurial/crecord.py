@@ -65,6 +65,11 @@ except ImportError:
         # compiled with curses
         curses = False
 
+class fallbackerror(error.Abort):
+    """Error that indicates the client should try to fallback to text mode."""
+    # Inherits from error.Abort so that existing behavior is preserved if the
+    # calling code does not know how to fallback.
+
 def checkcurses(ui):
     """Return True if the user wants to use curses
 
@@ -529,8 +534,8 @@ def chunkselector(ui, headerlist, operation=None):
         origsigtstp = signal.getsignal(signal.SIGTSTP)
     try:
         curses.wrapper(chunkselector.main)
-        if chunkselector.initerr is not None:
-            raise error.Abort(chunkselector.initerr)
+        if chunkselector.initexc is not None:
+            raise chunkselector.initexc
         # ncurses does not restore signal handler for SIGTSTP
     finally:
         if origsigtstp is not sentinel:
@@ -1718,7 +1723,7 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         self.stdscr = stdscr
         # error during initialization, cannot be printed in the curses
         # interface, it should be printed by the calling code
-        self.initerr = None
+        self.initexc = None
         self.yscreensize, self.xscreensize = self.stdscr.getmaxyx()
 
         curses.start_color()
@@ -1751,7 +1756,8 @@ are you sure you want to review/edit and confirm the selected changes [yn]?
         try:
             self.chunkpad = curses.newpad(self.numpadlines, self.xscreensize)
         except curses.error:
-            self.initerr = _('this diff is too large to be displayed')
+            self.initexc = fallbackerror(
+                _('this diff is too large to be displayed'))
             return
         # initialize selecteditemendline (initial start-line is 0)
         self.selecteditemendline = self.getnumlinesdisplayed(

@@ -22,6 +22,7 @@ from __future__ import absolute_import
 from .thirdparty import cbor
 
 from . import (
+    error,
     util,
 )
 
@@ -51,18 +52,28 @@ class cmdstate(object):
         """read the existing state file and return a dict of data stored"""
         return self._read()
 
-    def save(self, data):
+    def save(self, version, data):
         """write all the state data stored to .hg/<filename> file
 
         we use third-party library cbor to serialize data to write in the file.
         """
+        if not isinstance(version, int):
+            raise error.ProgrammingError("version of state file should be"
+                                         " an integer")
+
         with self._repo.vfs(self.fname, 'wb', atomictemp=True) as fp:
+            fp.write('%d\n' % iv)
             cbor.dump(self.opts, fp, canonical=True)
 
     def _read(self):
         """reads the state file and returns a dictionary which contain
         data in the same format as it was before storing"""
         with self._repo.vfs(self.fname, 'rb') as fp:
+            try:
+                version = int(fp.readline())
+            except ValueError:
+                raise error.ProgrammingError("unknown version of state file"
+                                             " found")
             return cbor.load(fp)
 
     def delete(self):

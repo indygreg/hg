@@ -655,14 +655,7 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 	PyObject *shaobj, *hashobj;
 
 	if (shafunc == NULL) {
-		PyObject *hashlib, *name = PyBytes_FromString("hashlib");
-
-		if (name == NULL)
-			return -1;
-
-		hashlib = PyImport_ImportModule("hashlib");
-		Py_DECREF(name);
-
+		PyObject *hashlib = PyImport_ImportModule("hashlib");
 		if (hashlib == NULL) {
 			PyErr_SetString(PyExc_ImportError,
 			                "pathencode failed to find hashlib");

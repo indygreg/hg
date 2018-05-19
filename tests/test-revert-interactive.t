@@ -22,16 +22,16 @@ Revert interactive tests
   $ mkdir -p a/folder1 a/folder2
   $ cd a
   $ hg init
-  >>> open('f', 'wb').write("1\n2\n3\n4\n5\n")
+  >>> open('f', 'wb').write(b"1\n2\n3\n4\n5\n") and None
   $ hg add f ; hg commit -m "adding f"
   $ cat f > folder1/g ; hg add folder1/g ; hg commit -m "adding folder1/g"
   $ cat f > folder2/h ; hg add folder2/h ; hg commit -m "adding folder2/h"
   $ cat f > folder1/i ; hg add folder1/i ; hg commit -m "adding folder1/i"
-  >>> open('f', 'wb').write("a\n1\n2\n3\n4\n5\nb\n")
+  >>> open('f', 'wb').write(b"a\n1\n2\n3\n4\n5\nb\n") and None
   $ hg commit -m "modifying f"
-  >>> open('folder1/g', 'wb').write("c\n1\n2\n3\n4\n5\nd\n")
+  >>> open('folder1/g', 'wb').write(b"c\n1\n2\n3\n4\n5\nd\n") and None
   $ hg commit -m "modifying folder1/g"
-  >>> open('folder2/h', 'wb').write("e\n1\n2\n3\n4\n5\nf\n")
+  >>> open('folder2/h', 'wb').write(b"e\n1\n2\n3\n4\n5\nf\n") and None
   $ hg commit -m "modifying folder2/h"
   $ hg tip
   changeset:   6:59dd6e4ab63a
@@ -182,7 +182,7 @@ Test --no-backup
   
   $ ls folder1/
   g
-  >>> open('folder1/g', 'wb').write("1\n2\n3\n4\n5\nd\n")
+  >>> open('folder1/g', 'wb').write(b"1\n2\n3\n4\n5\nd\n") and None
 
 
   $ hg update -C 6

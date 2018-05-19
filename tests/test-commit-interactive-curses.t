@@ -68,7 +68,7 @@ Check that commit -i works with no changes
 Committing only one file
 
   $ echo "a" >> a
-  >>> open('b', 'wb').write("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n")
+  >>> open('b', 'wb').write(b"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n") and None
   $ hg add b
   $ cat <<EOF >testModeCommands
   > TOGGLE

@@ -143,7 +143,7 @@ Test that --exact on a bad header doesn't corrupt the repo (issue3616)
   $ hg export 2 | head -7 > ../a.patch
   $ hg export tip > out
   >>> apatch = open("../a.patch", "ab")
-  >>> apatch.write("".join(open("out").readlines()[7:]))
+  >>> apatch.write(b"".join(open("out", 'rb').readlines()[7:])) and None
 
   $ cd ..
   $ hg clone -qr0 repo3 repo3-clone

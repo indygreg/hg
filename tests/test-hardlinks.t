@@ -122,7 +122,7 @@ Create a non-inlined filelog in r3:
   $ cd r3/d1
   >>> f = open('data1', 'wb')
   >>> for x in range(10000):
-  ...     f.write("%s\n" % str(x))
+  ...     f.write(b"%d\n" % x) and None
   >>> f.close()
   $ for j in 0 1 2 3 4 5 6 7 8 9; do
   >   cat data1 >> f2

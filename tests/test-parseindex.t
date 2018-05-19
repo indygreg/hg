@@ -184,7 +184,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   >     try:
   >         f()
   >         print('uncaught buffer overflow?')
-  >     except ValueError, inst:
+  >     except ValueError as inst:
   >         print(inst)
   > EOF
 

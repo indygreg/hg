@@ -15,6 +15,7 @@ from mercurial.node import (
 )
 from mercurial import (
     policy,
+    pycompat,
 )
 
 parsers = policy.importmod(r'parsers')
@@ -149,7 +150,7 @@ def testversionokay(testnumber, hexversion):
 def testversionfail(testnumber, hexversion):
     stdout, stderr = importparsers(hexversion)
     # We include versionerrortext to distinguish from other ImportErrors.
-    errtext = "ImportError: %s" % parsers.versionerrortext
+    errtext = b"ImportError: %s" % pycompat.sysbytes(parsers.versionerrortext)
     if errtext not in stdout:
         printhexfail(testnumber, hexversion, stdout,
                      expected="stdout to contain %r" % errtext)

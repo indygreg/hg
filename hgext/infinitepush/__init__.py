@@ -565,19 +565,19 @@ def _lookupwrap(orig):
         if isinstance(localkey, str) and _scratchbranchmatcher(localkey):
             scratchnode = repo.bundlestore.index.getnode(localkey)
             if scratchnode:
-                return "%s %s\n" % (1, scratchnode)
+                return "%d %s\n" % (1, scratchnode)
             else:
-                return "%s %s\n" % (0, 'scratch branch %s not found' % localkey)
+                return "%d %s\n" % (0, 'scratch branch %s not found' % localkey)
         else:
             try:
                 r = hex(repo.lookup(localkey))
-                return "%s %s\n" % (1, r)
+                return "%d %s\n" % (1, r)
             except Exception as inst:
                 if repo.bundlestore.index.getbundle(localkey):
-                    return "%s %s\n" % (1, localkey)
+                    return "%d %s\n" % (1, localkey)
                 else:
                     r = str(inst)
-                    return "%s %s\n" % (0, r)
+                    return "%d %s\n" % (0, r)
     return _lookup
 
 def _pull(orig, ui, repo, source="default", **opts):

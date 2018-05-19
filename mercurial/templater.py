@@ -253,7 +253,8 @@ def _scantemplate(tmpl, start, stop, quote='', raw=False):
     p = parser.parser(elements)
     try:
         while pos < stop:
-            n = min((tmpl.find(c, pos, stop) for c in sepchars),
+            n = min((tmpl.find(c, pos, stop)
+                     for c in pycompat.bytestr(sepchars)),
                     key=lambda n: (n < 0, n))
             if n < 0:
                 yield ('string', unescape(tmpl[pos:stop]), pos)

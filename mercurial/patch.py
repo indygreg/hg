@@ -1946,7 +1946,7 @@ def applybindelta(binchunk, data):
     """
     def deltahead(binchunk):
         i = 0
-        for c in binchunk:
+        for c in pycompat.bytestr(binchunk):
             i += 1
             if not (ord(c) & 0x80):
                 return i

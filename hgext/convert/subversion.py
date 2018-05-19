@@ -1081,7 +1081,7 @@ class svn_source(converter_source):
                                ' hg executable is in PATH'))
         return logstream(stdout)
 
-pre_revprop_change = '''#!/bin/sh
+pre_revprop_change = b'''#!/bin/sh
 
 REPOS="$1"
 REV="$2"
@@ -1098,8 +1098,8 @@ exit 1
 '''
 
 class svn_sink(converter_sink, commandline):
-    commit_re = re.compile(r'Committed revision (\d+).', re.M)
-    uuid_re = re.compile(r'Repository UUID:\s*(\S+)', re.M)
+    commit_re = re.compile(br'Committed revision (\d+).', re.M)
+    uuid_re = re.compile(br'Repository UUID:\s*(\S+)', re.M)
 
     def prerun(self):
         if self.wc:

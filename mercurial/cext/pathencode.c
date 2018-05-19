@@ -678,7 +678,7 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 		}
 	}
 
-	shaobj = PyObject_CallFunction(shafunc, "s#", str, len);
+	shaobj = PyObject_CallFunction(shafunc, PY23("s#", "y#"), str, len);
 
 	if (shaobj == NULL)
 		return -1;

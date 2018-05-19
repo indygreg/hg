@@ -60,6 +60,7 @@ def split(ui, repo, *revs, **opts):
     By default, rebase connected non-obsoleted descendants onto the new
     changeset. Use --no-rebase to avoid the rebase.
     """
+    opts = pycompat.byteskwargs(opts)
     revlist = []
     if opts.get('rev'):
         revlist.append(opts.get('rev'))

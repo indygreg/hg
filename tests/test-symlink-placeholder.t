@@ -50,13 +50,13 @@ Empty placeholder:
 
 Write binary data to the placeholder:
 
-  >>> open('b', 'w').write('this is a binary\0')
+  >>> open('b', 'w').write('this is a binary\0') and None
   $ hg --config extensions.n=$TESTTMP/nolink.py st --debug
   ignoring suspect symlink placeholder "b"
 
 Write a long string to the placeholder:
 
-  >>> open('b', 'w').write('this' * 1000)
+  >>> open('b', 'w').write('this' * 1000) and None
   $ hg --config extensions.n=$TESTTMP/nolink.py st --debug
   ignoring suspect symlink placeholder "b"
 
@@ -68,7 +68,7 @@ Commit shouldn't succeed:
 
 Write a valid string to the placeholder:
 
-  >>> open('b', 'w').write('this')
+  >>> open('b', 'w').write('this') and None
   $ hg --config extensions.n=$TESTTMP/nolink.py st --debug
   M b
   $ hg --config extensions.n=$TESTTMP/nolink.py ci -m1

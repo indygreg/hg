@@ -4,7 +4,7 @@
 Flags on revlog version 0 are rejected
 
   >>> with open('.hg/store/00changelog.i', 'wb') as fh:
-  ...     fh.write(b'\x00\x01\x00\x00')
+  ...     fh.write(b'\x00\x01\x00\x00') and None
 
   $ hg log
   abort: unknown flags (0x01) in version 0 revlog 00changelog.i!
@@ -13,7 +13,7 @@ Flags on revlog version 0 are rejected
 Unknown flags on revlog version 1 are rejected
 
   >>> with open('.hg/store/00changelog.i', 'wb') as fh:
-  ...     fh.write(b'\x00\x04\x00\x01')
+  ...     fh.write(b'\x00\x04\x00\x01') and None
 
   $ hg log
   abort: unknown flags (0x04) in version 1 revlog 00changelog.i!
@@ -22,7 +22,7 @@ Unknown flags on revlog version 1 are rejected
 Unknown version is rejected
 
   >>> with open('.hg/store/00changelog.i', 'wb') as fh:
-  ...     fh.write(b'\x00\x00\x00\x02')
+  ...     fh.write(b'\x00\x00\x00\x02') and None
 
   $ hg log
   abort: unknown version (2) in revlog 00changelog.i!

@@ -809,7 +809,7 @@ def rebase(ui, repo, **opts):
         for key in opts:
             if key != r'auto_orphans' and opts.get(key):
                 raise error.Abort(_('--auto-orphans is incompatible with %s') %
-                                  ('--' + key))
+                                  ('--' + pycompat.bytestr(key)))
         userrevs = list(repo.revs(opts.get(r'auto_orphans')))
         opts[r'rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
         opts[r'dest'] = '_destautoorphanrebase(SRC)'

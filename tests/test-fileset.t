@@ -434,7 +434,7 @@ Test detection of unintentional 'matchctx.existing()' invocation
   > from mercurial import registrar
   > 
   > filesetpredicate = registrar.filesetpredicate()
-  > @filesetpredicate('existingcaller()', callexisting=False)
+  > @filesetpredicate(b'existingcaller()', callexisting=False)
   > def existingcaller(mctx, x):
   >     # this 'mctx.existing()' invocation is unintentional
   >     return [f for f in mctx.existing()]

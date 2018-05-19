@@ -1318,16 +1318,18 @@ Test heads computation on pending index changes with obsolescence markers
   $ cat >$TESTTMP/test_extension.py  << EOF
   > from __future__ import absolute_import
   > from mercurial.i18n import _
-  > from mercurial import cmdutil, registrar
+  > from mercurial import cmdutil, pycompat, registrar
+  > from mercurial.utils import stringutil
   > 
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b"amendtransient",[], _(b'hg amendtransient [rev]'))
   > def amend(ui, repo, *pats, **opts):
-  >   opts['message'] = 'Test'
-  >   opts['logfile'] = None
-  >   cmdutil.amend(ui, repo, repo['.'], {}, pats, opts)
-  >   ui.write(b'%s\n' % repo.changelog.headrevs())
+  >   opts = pycompat.byteskwargs(opts)
+  >   opts[b'message'] = b'Test'
+  >   opts[b'logfile'] = None
+  >   cmdutil.amend(ui, repo, repo[b'.'], {}, pats, opts)
+  >   ui.write(b'%s\n' % stringutil.pprint(repo.changelog.headrevs()))
   > EOF
   $ cat >> $HGRCPATH << EOF
   > [extensions]
@@ -1365,7 +1367,7 @@ bookmarks change
   >   hidden = repoview.filterrevs(repo, b'visible')
   >   if sorted(hidden1) != sorted(hidden):
   >     print("cache inconsistency")
-  >  bkmstoreinst._repo.currenttransaction().addpostclose('test_extension', trhook)
+  >  bkmstoreinst._repo.currenttransaction().addpostclose(b'test_extension', trhook)
   >  orig(bkmstoreinst, *args, **kwargs)
   > def extsetup(ui):
   >   extensions.wrapfunction(bookmarks.bmstore, '_recordchange',

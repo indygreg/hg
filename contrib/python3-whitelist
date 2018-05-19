@@ -341,8 +341,7 @@ test-pull-permission.t
 test-pull-pull-corruption.t
 test-pull-r.t
 test-pull-update.t
-test-pull.t (case sshv1)
-test-pull.t (case sshv2)
+test-pull.t
 test-purge.t
 test-push-checkheads-partial-C1.t
 test-push-checkheads-partial-C2.t
@@ -444,8 +443,7 @@ test-sparse-merges.t
 test-sparse-profiles.t
 test-sparse-requirement.t
 test-sparse-verbose-json.t
-test-split.t (case obsstore-off)
-test-split.t (case obsstore-on)
+test-split.t
 test-ssh-clone-r.t
 test-ssh-proto.t
 test-sshserver.py

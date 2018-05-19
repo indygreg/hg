@@ -139,10 +139,10 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
 
   $ $PYTHON <<EOF
   > data = open("limit/.hg/store/00changelog.i", "rb").read()
-  > for n, p in [('limit', '\0\0\0\x02'), ('segv', '\0\x01\0\0')]:
+  > for n, p in [(b'limit', b'\0\0\0\x02'), (b'segv', b'\0\x01\0\0')]:
   >     # corrupt p1 at rev0 and p2 at rev1
   >     d = data[:24] + p + data[28:127 + 28] + p + data[127 + 32:]
-  >     open(n + "/.hg/store/00changelog.i", "wb").write(d)
+  >     open(n + b"/.hg/store/00changelog.i", "wb").write(d)
   > EOF
 
   $ hg -R limit debugindex -f1 -c

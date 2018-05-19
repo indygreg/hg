@@ -798,21 +798,21 @@ def rebase(ui, repo, **opts):
 
     """
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
-    if (opts.get('continue') or opts.get('abort') or
+    if (opts.get(r'continue') or opts.get(r'abort') or
         repo.currenttransaction() is not None):
         # in-memory rebase is not compatible with resuming rebases.
         # (Or if it is run within a transaction, since the restart logic can
         # fail the entire transaction.)
         inmemory = False
 
-    if opts.get('auto_orphans'):
+    if opts.get(r'auto_orphans'):
         for key in opts:
-            if key != 'auto_orphans' and opts.get(key):
+            if key != r'auto_orphans' and opts.get(key):
                 raise error.Abort(_('--auto-orphans is incompatible with %s') %
                                   ('--' + key))
-        userrevs = list(repo.revs(opts.get('auto_orphans')))
-        opts['rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
-        opts['dest'] = '_destautoorphanrebase(SRC)'
+        userrevs = list(repo.revs(opts.get(r'auto_orphans')))
+        opts[r'rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
+        opts[r'dest'] = '_destautoorphanrebase(SRC)'
 
     if inmemory:
         try:
@@ -824,7 +824,7 @@ def rebase(ui, repo, **opts):
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _origrebase(ui, repo, **{'abort': True})
+            _origrebase(ui, repo, **{r'abort': True})
             return _origrebase(ui, repo, inmemory=False, **opts)
     else:
         return _origrebase(ui, repo, **opts)

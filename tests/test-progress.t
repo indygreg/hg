@@ -16,10 +16,10 @@
   > time.time = incrementingtime()
   > 
   > @command(b'loop',
-  >     [('', 'total', '', 'override for total'),
-  >     ('', 'nested', False, 'show nested results'),
-  >     ('', 'parallel', False, 'show parallel sets of results')],
-  >     'hg loop LOOPS',
+  >     [(b'', b'total', b'', b'override for total'),
+  >     (b'', b'nested', False, b'show nested results'),
+  >     (b'', b'parallel', False, b'show parallel sets of results')],
+  >     b'hg loop LOOPS',
   >     norepo=True)
   > def loop(ui, loops, **opts):
   >     loops = int(loops)

@@ -846,7 +846,7 @@ class revlog(object):
     def rawsize(self, rev):
         """return the length of the uncompressed text for a given revision"""
         l = self.index[rev][2]
-        if l >= 0:
+        if l is not None and l >= 0:
             return l
 
         t = self.revision(rev, raw=True)

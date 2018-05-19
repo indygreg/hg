@@ -354,7 +354,8 @@ def grep(mctx, x):
         # i18n: "grep" is a keyword
         r = re.compile(getstring(x, _("grep requires a pattern")))
     except re.error as e:
-        raise error.ParseError(_('invalid match pattern: %s') % e)
+        raise error.ParseError(_('invalid match pattern: %s') %
+                               stringutil.forcebytestr(e))
     return [f for f in mctx.existing() if r.search(mctx.ctx[f].data())]
 
 def _sizetomax(s):

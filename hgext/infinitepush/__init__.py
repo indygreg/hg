@@ -576,7 +576,7 @@ def _lookupwrap(orig):
                 if repo.bundlestore.index.getbundle(localkey):
                     return "%d %s\n" % (1, localkey)
                 else:
-                    r = str(inst)
+                    r = stringutil.forcebytestr(inst)
                     return "%d %s\n" % (0, r)
     return _lookup
 

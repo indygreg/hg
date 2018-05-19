@@ -660,7 +660,7 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 		if (name == NULL)
 			return -1;
 
-		hashlib = PyImport_Import(name);
+		hashlib = PyImport_ImportModule("hashlib");
 		Py_DECREF(name);
 
 		if (hashlib == NULL) {

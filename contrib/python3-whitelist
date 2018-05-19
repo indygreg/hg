@@ -412,8 +412,8 @@ test-rename.t
 test-repair-strip.t
 test-repo-compengines.t
 test-resolve.t
-test-revert-interactive.t
 test-revert-flags.t
+test-revert-interactive.t
 test-revert-unknown.t
 test-revlog-ancestry.py
 test-revlog-group-emptyiter.t
@@ -457,9 +457,9 @@ test-strip-cross.t
 test-strip.t
 test-subrepo-deep-nested-change.t
 test-subrepo-missing.t
+test-subrepo-paths.t
 test-subrepo-recursion.t
 test-subrepo-relative-path.t
-test-subrepo-paths.t
 test-subrepo.t
 test-symlink-os-yes-fs-no.py
 test-symlink-placeholder.t

@@ -161,7 +161,7 @@ def churn(ui, repo, *pats, **opts):
     if not aliases and os.path.exists(repo.wjoin('.hgchurn')):
         aliases = repo.wjoin('.hgchurn')
     if aliases:
-        for l in open(aliases, "r"):
+        for l in open(aliases, "rb"):
             try:
                 alias, actual = l.rsplit('=' in l and '=' or None, 1)
                 amap[alias.strip()] = actual.strip()

@@ -664,7 +664,8 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 		Py_DECREF(name);
 
 		if (hashlib == NULL) {
-			PyErr_SetString(PyExc_ImportError, "hashlib");
+			PyErr_SetString(PyExc_ImportError,
+			                "pathencode failed to find hashlib");
 			return -1;
 		}
 		shafunc = PyObject_GetAttrString(hashlib, "sha1");
@@ -673,7 +674,7 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 		if (shafunc == NULL) {
 			PyErr_SetString(PyExc_AttributeError,
 			                "module 'hashlib' has no "
-			                "attribute 'sha1'");
+			                "attribute 'sha1' in pathencode");
 			return -1;
 		}
 	}

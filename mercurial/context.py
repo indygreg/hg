@@ -432,7 +432,7 @@ class changectx(basectx):
             # lookup failed
         except (error.FilteredIndexError, error.FilteredLookupError):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")
-                                                % changeid)
+                                                % pycompat.bytestr(changeid))
         except error.FilteredRepoLookupError:
             raise
         except IndexError:

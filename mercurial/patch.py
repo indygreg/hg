@@ -2113,6 +2113,7 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files,
         args.append('-d %s' % procutil.shellquote(cwd))
     cmd = ('%s %s -p%d < %s'
            % (patcher, ' '.join(args), strip, procutil.shellquote(patchname)))
+    ui.debug('Using external patch tool: %s\n' % cmd)
     fp = procutil.popen(cmd, 'rb')
     try:
         for line in util.iterfile(fp):

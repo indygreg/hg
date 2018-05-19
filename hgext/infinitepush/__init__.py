@@ -1023,7 +1023,8 @@ def storebundle(op, params, bundlefile):
 
     bundle = None
     try:  # guards bundle
-        bundlepath = "bundle:%s+%s" % (op.repo.root, bundlefile)
+        bundlepath = "bundle:%s+%s" % (op.repo.root,
+                                       pycompat.fsencode(bundlefile))
         bundle = hg.repository(op.repo.ui, bundlepath)
 
         bookmark = params.get('bookmark')

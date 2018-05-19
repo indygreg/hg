@@ -1958,31 +1958,31 @@ def applybindelta(binchunk, data):
     binchunk = binchunk[s:]
     i = 0
     while i < len(binchunk):
-        cmd = ord(binchunk[i])
+        cmd = ord(binchunk[i:i + 1])
         i += 1
         if (cmd & 0x80):
             offset = 0
             size = 0
             if (cmd & 0x01):
-                offset = ord(binchunk[i])
+                offset = ord(binchunk[i:i + 1])
                 i += 1
             if (cmd & 0x02):
-                offset |= ord(binchunk[i]) << 8
+                offset |= ord(binchunk[i:i + 1]) << 8
                 i += 1
             if (cmd & 0x04):
-                offset |= ord(binchunk[i]) << 16
+                offset |= ord(binchunk[i:i + 1]) << 16
                 i += 1
             if (cmd & 0x08):
-                offset |= ord(binchunk[i]) << 24
+                offset |= ord(binchunk[i:i + 1]) << 24
                 i += 1
             if (cmd & 0x10):
-                size = ord(binchunk[i])
+                size = ord(binchunk[i:i + 1])
                 i += 1
             if (cmd & 0x20):
-                size |= ord(binchunk[i]) << 8
+                size |= ord(binchunk[i:i + 1]) << 8
                 i += 1
             if (cmd & 0x40):
-                size |= ord(binchunk[i]) << 16
+                size |= ord(binchunk[i:i + 1]) << 16
                 i += 1
             if size == 0:
                 size = 0x10000

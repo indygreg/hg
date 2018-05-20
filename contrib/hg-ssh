@@ -39,6 +39,7 @@ import hgdemandimport ; hgdemandimport.enable()
 
 from mercurial import (
     dispatch,
+    pycompat,
     ui as uimod,
 )
 
@@ -69,7 +70,7 @@ def main():
         path = cmdargv[2]
         repo = os.path.normpath(os.path.join(cwd, os.path.expanduser(path)))
         if repo in allowed_paths:
-            cmd = [b'-R', repo, b'serve', b'--stdio']
+            cmd = [b'-R', pycompat.fsencode(repo), b'serve', b'--stdio']
             req = dispatch.request(cmd)
             if readonly:
                 if not req.ui:

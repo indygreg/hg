@@ -372,6 +372,7 @@ test-push-checkheads-unpushed-D6.t
 test-push-checkheads-unpushed-D7.t
 test-push-http.t
 test-push-warn.t
+test-push.t
 test-pushvars.t
 test-rebase-abort.t
 test-rebase-base-flag.t
@@ -438,11 +439,13 @@ test-simplekeyvaluefile.py
 test-simplemerge.py
 test-single-head.t
 test-sparse-clear.t
+test-sparse-clone.t
 test-sparse-import.t
 test-sparse-merges.t
 test-sparse-profiles.t
 test-sparse-requirement.t
 test-sparse-verbose-json.t
+test-sparse.t
 test-split.t
 test-ssh-clone-r.t
 test-ssh-proto.t

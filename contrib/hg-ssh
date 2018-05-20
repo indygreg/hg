@@ -69,15 +69,15 @@ def main():
         path = cmdargv[2]
         repo = os.path.normpath(os.path.join(cwd, os.path.expanduser(path)))
         if repo in allowed_paths:
-            cmd = ['-R', repo, 'serve', '--stdio']
+            cmd = [b'-R', repo, b'serve', b'--stdio']
             req = dispatch.request(cmd)
             if readonly:
                 if not req.ui:
                     req.ui = uimod.ui.load()
-                req.ui.setconfig('hooks', 'pretxnopen.hg-ssh',
-                                 'python:__main__.rejectpush', 'hg-ssh')
-                req.ui.setconfig('hooks', 'prepushkey.hg-ssh',
-                                 'python:__main__.rejectpush', 'hg-ssh')
+                req.ui.setconfig(b'hooks', b'pretxnopen.hg-ssh',
+                                 b'python:__main__.rejectpush', b'hg-ssh')
+                req.ui.setconfig(b'hooks', b'prepushkey.hg-ssh',
+                                 b'python:__main__.rejectpush', b'hg-ssh')
             dispatch.dispatch(req)
         else:
             sys.stderr.write('Illegal repository "%s"\n' % repo)
@@ -87,7 +87,7 @@ def main():
         sys.exit(255)
 
 def rejectpush(ui, **kwargs):
-    ui.warn(("Permission denied\n"))
+    ui.warn((b"Permission denied\n"))
     # mercurial hooks use unix process conventions for hook return values
     # so a truthy return means failure
     return True

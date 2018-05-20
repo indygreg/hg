@@ -288,8 +288,8 @@ def _runcatch(req):
                 req.args[2] != 'serve' or
                 req.args[3] != '--stdio'):
                 raise error.Abort(
-                    _('potentially unsafe serve --stdio invocation: %r') %
-                    (req.args,))
+                    _('potentially unsafe serve --stdio invocation: %s') %
+                    (stringutil.pprint(req.args),))
 
         try:
             debugger = 'pdb'

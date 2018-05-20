@@ -444,11 +444,11 @@ stderr from remote commands should be printed before stdout from local code (iss
   > 
   > def wrappedpush(orig, repo, *args, **kwargs):
   >     res = orig(repo, *args, **kwargs)
-  >     repo.ui.write('local stdout\n')
+  >     repo.ui.write(b'local stdout\n')
   >     return res
   > 
   > def extsetup(ui):
-  >     extensions.wrapfunction(exchange, 'push', wrappedpush)
+  >     extensions.wrapfunction(exchange, b'push', wrappedpush)
   > EOF
 
   $ cat >> .hg/hgrc << EOF
@@ -537,7 +537,7 @@ remote hook failure is attributed to remote
 
   $ cat > $TESTTMP/failhook << EOF
   > def hook(ui, repo, **kwargs):
-  >     ui.write('hook failure!\n')
+  >     ui.write(b'hook failure!\n')
   >     ui.flush()
   >     return 1
   > EOF

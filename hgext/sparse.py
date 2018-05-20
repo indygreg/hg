@@ -138,9 +138,9 @@ def _setuplog(ui):
     extensions.wrapfunction(logcmdutil, '_initialrevs', _initialrevs)
 
 def _clonesparsecmd(orig, ui, repo, *args, **opts):
-    include_pat = opts.get('include')
-    exclude_pat = opts.get('exclude')
-    enableprofile_pat = opts.get('enable_profile')
+    include_pat = opts.get(r'include')
+    exclude_pat = opts.get(r'exclude')
+    enableprofile_pat = opts.get(r'enable_profile')
     include = exclude = enableprofile = False
     if include_pat:
         pat = include_pat
@@ -178,7 +178,7 @@ def _setupadd(ui):
                     'also include directories of added files in sparse config'))
 
     def _add(orig, ui, repo, *pats, **opts):
-        if opts.get('sparse'):
+        if opts.get(r'sparse'):
             dirs = set()
             for pat in pats:
                 dirname, basename = util.split(pat)

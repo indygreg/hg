@@ -1589,11 +1589,11 @@ loading it
   > 
   > revsetpredicate = registrar.revsetpredicate()
   > 
-  > @revsetpredicate('custom1()')
+  > @revsetpredicate(b'custom1()')
   > def custom1(repo, subset, x):
   >     return revset.baseset([1])
   > 
-  > raise error.Abort('intentional failure of loading extension')
+  > raise error.Abort(b'intentional failure of loading extension')
   > EOF
   $ cat <<EOF > .hg/hgrc
   > [extensions]
@@ -1611,14 +1611,14 @@ Test repo.anyrevs with customized revset overrides
   > from mercurial import encoding, registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('printprevset')
+  > @command(b'printprevset')
   > def printprevset(ui, repo):
   >     alias = {}
-  >     p = encoding.environ.get('P')
+  >     p = encoding.environ.get(b'P')
   >     if p:
-  >         alias['P'] = p
-  >     revs = repo.anyrevs(['P'], user=True, localalias=alias)
-  >     ui.write('P=%r\n' % list(revs))
+  >         alias[b'P'] = p
+  >     revs = repo.anyrevs([b'P'], user=True, localalias=alias)
+  >     ui.write(b'P=%r\n' % list(revs))
   > EOF
 
   $ cat >> .hg/hgrc <<EOF

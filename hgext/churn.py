@@ -52,7 +52,7 @@ def countrate(ui, repo, amap, *pats, **opts):
         def getkey(ctx):
             t, tz = ctx.date()
             date = datetime.datetime(*time.gmtime(float(t) - tz)[:6])
-            return date.strftime(pycompat.sysstr(opts['dateformat']))
+            return date.strftime(encoding.strfromlocal(opts['dateformat']))
     else:
         tmpl = opts.get('oldtemplate') or opts.get('template')
         tmpl = logcmdutil.maketemplater(ui, repo, tmpl)

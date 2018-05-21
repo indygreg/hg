@@ -62,7 +62,7 @@ class cmdstate(object):
                                          " an integer")
 
         with self._repo.vfs(self.fname, 'wb', atomictemp=True) as fp:
-            fp.write('%d\n' % iv)
+            fp.write('%d\n' % version)
             cbor.dump(self.opts, fp, canonical=True)
 
     def _read(self):

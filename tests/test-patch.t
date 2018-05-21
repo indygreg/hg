@@ -97,7 +97,7 @@ Error exit (issue4746)
   > sys.exit(1)
   > EOF
 
-  $ hg import ../c/p --config ui.patch="$PYTHON '`pwd`/exit1.py'"
+  $ hg import ../c/p --config ui.patch="\"$PYTHON\" \"`pwd`/exit1.py\""
   applying ../c/p
   abort: patch command failed: exited with status 1
   [255]

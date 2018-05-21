@@ -92,7 +92,12 @@ Clone and apply patch:
 
 Error exit (issue4746)
 
-  $ hg import ../c/p --config ui.patch='sh -c "exit 1"'
+  $ cat >> exit1.py <<EOF
+  > import sys
+  > sys.exit(1)
+  > EOF
+
+  $ hg import ../c/p --config ui.patch="\"$PYTHON\" \"`pwd`/exit1.py\""
   applying ../c/p
   abort: patch command failed: exited with status 1
   [255]

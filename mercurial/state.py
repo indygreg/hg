@@ -70,7 +70,7 @@ class cmdstate(object):
         data in the same format as it was before storing"""
         with self._repo.vfs(self.fname, 'rb') as fp:
             try:
-                version = int(fp.readline())
+                int(fp.readline())
             except ValueError:
                 raise error.ProgrammingError("unknown version of state file"
                                              " found")

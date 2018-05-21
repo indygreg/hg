@@ -92,12 +92,7 @@ def computeunserved(repo, visibilityexceptions=None):
     # fast path in simple case to avoid impact of non optimised code
     hiddens = filterrevs(repo, 'visible')
     if phases.hassecret(repo):
-        cl = repo.changelog
-        secret = phases.secret
-        getphase = repo._phasecache.phase
-        first = min(cl.rev(n) for n in repo._phasecache.phaseroots[secret])
-        revs = cl.revs(start=first)
-        secrets = set(r for r in revs if getphase(repo, r) >= secret)
+        secrets = frozenset(repo._phasecache.getrevset(repo, (phases.secret,)))
         return frozenset(hiddens | secrets)
     else:
         return hiddens

@@ -77,7 +77,7 @@ print(ctxb.status(ctxa))
 
 # test performing a diff on a memctx
 
-for d in ctxb.diff(ctxa, git=True):
+for d in ctxb.diff(ctxa, opts={'git': True}):
     printb(d, end=b'')
 
 # test safeness and correctness of "ctx.status()"

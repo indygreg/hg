@@ -1802,7 +1802,7 @@ def matching(repo, subset, x):
         'phase': lambda r: repo[r].phase(),
         'substate': lambda r: repo[r].substate,
         'summary': lambda r: repo[r].description().splitlines()[0],
-        'diff': lambda r: list(repo[r].diff(git=True),)
+        'diff': lambda r: list(repo[r].diff(opts={'git': True}),)
     }
     for info in fields:
         getfield = _funcs.get(info, None)

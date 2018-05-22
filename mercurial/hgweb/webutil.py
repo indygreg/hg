@@ -658,7 +658,7 @@ def diffstatgen(ctx, basectx):
     '''Generator function that provides the diffstat data.'''
 
     stats = patch.diffstatdata(
-        util.iterlines(ctx.diff(basectx, noprefix=False)))
+        util.iterlines(ctx.diff(basectx, opts={'noprefix': False})))
     maxname, maxtotal, addtotal, removetotal, binary = patch.diffstatsum(stats)
     while True:
         yield stats, maxname, maxtotal, addtotal, removetotal, binary

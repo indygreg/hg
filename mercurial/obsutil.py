@@ -396,9 +396,9 @@ def _cmpdiff(leftctx, rightctx):
     # Leftctx or right ctx might be filtered, so we need to use the contexts
     # with an unfiltered repository to safely compute the diff
     leftunfi = leftctx._repo.unfiltered()[leftctx.rev()]
-    leftdiff = leftunfi.diff(git=1)
+    leftdiff = leftunfi.diff(opts={'git': True})
     rightunfi = rightctx._repo.unfiltered()[rightctx.rev()]
-    rightdiff = rightunfi.diff(git=1)
+    rightdiff = rightunfi.diff(opts={'git': True})
 
     left, right = (0, 0)
     while None not in (left, right):

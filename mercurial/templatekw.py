@@ -263,7 +263,8 @@ def showdiffstat(context, mapping):
     "modified files: +added/-removed lines"
     """
     ctx = context.resource(mapping, 'ctx')
-    stats = patch.diffstatdata(util.iterlines(ctx.diff(noprefix=False)))
+    diff = ctx.diff(opts={'noprefix': False})
+    stats = patch.diffstatdata(util.iterlines(diff))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%d: +%d/-%d' % (len(stats), adds, removes)
 

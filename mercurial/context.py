@@ -294,13 +294,13 @@ class basectx(object):
                               auditor=r.nofsauditor, ctx=self,
                               listsubrepos=listsubrepos, badfn=badfn)
 
-    def diff(self, ctx2=None, match=None, **opts):
+    def diff(self, ctx2=None, match=None, opts=None):
         """Returns a diff generator for the given contexts and matcher"""
         if ctx2 is None:
             ctx2 = self.p1()
         if ctx2 is not None:
             ctx2 = self._repo[ctx2]
-        diffopts = patch.diffopts(self._repo.ui, pycompat.byteskwargs(opts))
+        diffopts = patch.diffopts(self._repo.ui, opts)
         return patch.diff(self._repo, ctx2, self, match=match, opts=diffopts)
 
     def dirs(self):

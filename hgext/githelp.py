@@ -67,7 +67,7 @@ def githelp(ui, repo, *args, **kwargs):
 
     cmd = args[0]
     if not cmd in gitcommands:
-        raise error.Abort("error: unknown git command %s" % (cmd))
+        raise error.Abort(_("error: unknown git command %s") % (cmd))
 
     ui.pager('githelp')
     args = args[1:]
@@ -90,7 +90,7 @@ def parseoptions(ui, cmdoptions, args):
             elif ('-' + ex.opt) in ex.msg:
                 flag = '-' + ex.opt
             else:
-                raise error.Abort("unknown option %s" % ex.opt)
+                raise error.Abort(_("unknown option %s") % ex.opt)
             try:
                 args.remove(flag)
             except Exception:
@@ -336,7 +336,7 @@ def checkout(ui, repo, *args, **kwargs):
         cmd = Command('revert')
         cmd['--all'] = None
     else:
-        raise error.Abort("a commit must be specified")
+        raise error.Abort(_("a commit must be specified"))
 
     ui.status((bytes(cmd)), "\n")
 
@@ -386,7 +386,7 @@ def clone(ui, repo, *args, **kwargs):
     args, opts = parseoptions(ui, cmdoptions, args)
 
     if len(args) == 0:
-        raise error.Abort("a repository to clone must be specified")
+        raise error.Abort(_("a repository to clone must be specified"))
 
     cmd = Command('clone')
     cmd.append(args[0])
@@ -776,7 +776,7 @@ def rebase(ui, repo, *args, **kwargs):
             "\n\n"))
         cmd['-d'] = convert(opts.get('onto'))
         if len(args) < 2:
-            raise error.Abort("Expected format: git rebase --onto X Y Z")
+            raise error.Abort(_("Expected format: git rebase --onto X Y Z"))
         cmd['-s'] = "'::%s - ::%s'" % (convert(args[1]), convert(args[0]))
     else:
         if len(args) == 1:

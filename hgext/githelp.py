@@ -236,6 +236,8 @@ def branch(ui, repo, *args, **kwargs):
                 # shell command to output the active bookmark for the active
                 # revision
                 old = '`hg log -T"{activebookmark}" -r .`'
+        else:
+            raise error.Abort(_('missing newbranch argument'))
         new = args[0]
         cmd['-m'] = old
         cmd.append(new)
@@ -957,6 +959,8 @@ def status(ui, repo, *args, **kwargs):
     ui.status((bytes(cmd)), "\n")
 
 def svn(ui, repo, *args, **kwargs):
+    if not args:
+        raise error.Abort(_('missing svn command'))
     svncmd = args[0]
     if not svncmd in gitsvncommands:
         ui.warn(_("error: unknown git svn command %s\n") % (svncmd))
@@ -987,6 +991,9 @@ def svnfindrev(ui, repo, *args, **kwargs):
     cmdoptions = [
     ]
     args, opts = parseoptions(ui, cmdoptions, args)
+
+    if not args:
+        raise error.Abort(_('missing find-rev argument'))
 
     cmd = Command('log')
     cmd['-r'] = args[0]
@@ -1020,6 +1027,10 @@ def tag(ui, repo, *args, **kwargs):
         cmd = Command('tags')
     else:
         cmd = Command('tag')
+
+        if not args:
+            raise error.Abort(_('missing tag argument'))
+
         cmd.append(args[0])
         if len(args) > 1:
             cmd['-r'] = args[1]

@@ -963,7 +963,7 @@ def svn(ui, repo, *args, **kwargs):
         raise error.Abort(_('missing svn command'))
     svncmd = args[0]
     if not svncmd in gitsvncommands:
-        ui.warn(_("error: unknown git svn command %s\n") % (svncmd))
+        raise error.Abort(_('unknown git svn command "%s"') % (svncmd))
 
     args = args[1:]
     return gitsvncommands[svncmd](ui, repo, *args, **kwargs)

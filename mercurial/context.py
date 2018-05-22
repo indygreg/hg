@@ -623,7 +623,6 @@ class basefilectx(object):
     workingfilectx: a filecontext that represents files from the working
                     directory,
     memfilectx: a filecontext that represents files in-memory,
-    overlayfilectx: duplicate another filecontext with some fields overridden.
     """
     @propertycache
     def _filelog(self):
@@ -2370,76 +2369,6 @@ class memfilectx(committablefilectx):
         """wraps repo.wwrite"""
         self._data = data
 
-class overlayfilectx(committablefilectx):
-    """Like memfilectx but take an original filectx and optional parameters to
-    override parts of it. This is useful when fctx.data() is expensive (i.e.
-    flag processor is expensive) and raw data, flags, and filenode could be
-    reused (ex. rebase or mode-only amend a REVIDX_EXTSTORED file).
-    """
-
-    def __init__(self, originalfctx, datafunc=None, path=None, flags=None,
-                 copied=None, ctx=None):
-        """originalfctx: filecontext to duplicate
-
-        datafunc: None or a function to override data (file content). It is a
-        function to be lazy. path, flags, copied, ctx: None or overridden value
-
-        copied could be (path, rev), or False. copied could also be just path,
-        and will be converted to (path, nullid). This simplifies some callers.
-        """
-
-        if path is None:
-            path = originalfctx.path()
-        if ctx is None:
-            ctx = originalfctx.changectx()
-            ctxmatch = lambda: True
-        else:
-            ctxmatch = lambda: ctx == originalfctx.changectx()
-
-        repo = originalfctx.repo()
-        flog = originalfctx.filelog()
-        super(overlayfilectx, self).__init__(repo, path, flog, ctx)
-
-        if copied is None:
-            copied = originalfctx.renamed()
-            copiedmatch = lambda: True
-        else:
-            if copied and not isinstance(copied, tuple):
-                # repo._filecommit will recalculate copyrev so nullid is okay
-                copied = (copied, nullid)
-            copiedmatch = lambda: copied == originalfctx.renamed()
-
-        # When data, copied (could affect data), ctx (could affect filelog
-        # parents) are not overridden, rawdata, rawflags, and filenode may be
-        # reused (repo._filecommit should double check filelog parents).
-        #
-        # path, flags are not hashed in filelog (but in manifestlog) so they do
-        # not affect reusable here.
-        #
-        # If ctx or copied is overridden to a same value with originalfctx,
-        # still consider it's reusable. originalfctx.renamed() may be a bit
-        # expensive so it's not called unless necessary. Assuming datafunc is
-        # always expensive, do not call it for this "reusable" test.
-        reusable = datafunc is None and ctxmatch() and copiedmatch()
-
-        if datafunc is None:
-            datafunc = originalfctx.data
-        if flags is None:
-            flags = originalfctx.flags()
-
-        self._datafunc = datafunc
-        self._flags = flags
-        self._copied = copied
-
-        if reusable:
-            # copy extra fields from originalfctx
-            attrs = ['rawdata', 'rawflags', '_filenode', '_filerev']
-            for attr_ in attrs:
-                if util.safehasattr(originalfctx, attr_):
-                    setattr(self, attr_, getattr(originalfctx, attr_))
-
-    def data(self):
-        return self._datafunc()
 
 class metadataonlyctx(committablectx):
     """Like memctx but it's reusing the manifest of different commit.

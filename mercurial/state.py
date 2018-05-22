@@ -72,8 +72,8 @@ class cmdstate(object):
             try:
                 int(fp.readline())
             except ValueError:
-                raise error.ProgrammingError("unknown version of state file"
-                                             " found")
+                raise error.CorruptedState("unknown version of state file"
+                                           " found")
             return cbor.load(fp)
 
     def delete(self):

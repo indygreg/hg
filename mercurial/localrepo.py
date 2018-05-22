@@ -781,6 +781,7 @@ class localrepository(object):
         return self._makedirstate()
 
     def _makedirstate(self):
+        """Extension point for wrapping the dirstate per-repo."""
         sparsematchfn = lambda: sparse.matcher(self)
 
         return dirstate.dirstate(self.vfs, self.ui, self.root,

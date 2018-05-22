@@ -91,8 +91,8 @@ def computeunserved(repo, visibilityexceptions=None):
     # fast path in simple case to avoid impact of non optimised code
     hiddens = filterrevs(repo, 'visible')
     if phases.hassecret(repo):
-        secrets = frozenset(repo._phasecache.getrevset(repo, (phases.secret,)))
-        return frozenset(hiddens | secrets)
+        secrets = repo._phasecache.getrevset(repo, phases.remotehiddenphases)
+        return frozenset(hiddens | frozenset(secrets))
     else:
         return hiddens
 

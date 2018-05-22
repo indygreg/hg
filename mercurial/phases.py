@@ -127,6 +127,7 @@ allphases = public, draft, secret = range(3)
 trackedphases = allphases[1:]
 phasenames = ['public', 'draft', 'secret']
 mutablephases = tuple(allphases[1:])
+remotehiddenphases = tuple(allphases[2:])
 
 def _readroots(repo, phasedefaults=None):
     """Read phase roots from disk

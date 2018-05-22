@@ -196,7 +196,7 @@ def apply(ui, repo, *args, **kwargs):
     ui.status((bytes(cmd)), "\n")
 
 def bisect(ui, repo, *args, **kwargs):
-    ui.status(_("See 'hg help bisect' for how to use bisect.\n\n"))
+    ui.status(_("see 'hg help bisect' for how to use bisect.\n\n"))
 
 def blame(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -456,7 +456,7 @@ def commit(ui, repo, *args, **kwargs):
     ui.status((bytes(cmd)), "\n")
 
 def deprecated(ui, repo, *args, **kwargs):
-    ui.warn(_('This command has been deprecated in the git project, ' +
+    ui.warn(_('this command has been deprecated in the git project, ' +
         'thus isn\'t supported by this tool.\n\n'))
 
 def diff(ui, repo, *args, **kwargs):
@@ -656,8 +656,8 @@ def mergebase(ui, repo, *args, **kwargs):
     cmd = Command("log -T '{node}\\n' -r 'ancestor(%s,%s)'"
                   % (args[0], args[1]))
 
-    ui.status(_('NOTE: ancestors() is part of the revset language.\n'),
-              _("Learn more about revsets with 'hg help revsets'\n\n"))
+    ui.status(_('note: ancestors() is part of the revset language.\n'),
+              _("(learn more about revsets with 'hg help revsets')\n\n"))
     ui.status((bytes(cmd)), "\n")
 
 def mergetool(ui, repo, *args, **kwargs):
@@ -776,7 +776,7 @@ def rebase(ui, repo, *args, **kwargs):
             "\n\n"))
         cmd['-d'] = convert(opts.get('onto'))
         if len(args) < 2:
-            raise error.Abort(_("Expected format: git rebase --onto X Y Z"))
+            raise error.Abort(_("expected format: git rebase --onto X Y Z"))
         cmd['-s'] = "'::%s - ::%s'" % (convert(args[1]), convert(args[0]))
     else:
         if len(args) == 1:
@@ -815,10 +815,10 @@ def reset(ui, repo, *args, **kwargs):
     hard = opts.get('hard')
 
     if opts.get('mixed'):
-        ui.status(_('NOTE: --mixed has no meaning since Mercurial has no '
+        ui.status(_('note: --mixed has no meaning since Mercurial has no '
                     'staging area\n\n'))
     if opts.get('soft'):
-        ui.status(_('NOTE: --soft has no meaning since Mercurial has no '
+        ui.status(_('note: --soft has no meaning since Mercurial has no '
                     'staging area\n\n'))
 
     cmd = Command('update')

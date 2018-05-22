@@ -165,11 +165,11 @@ githelp for reset, checking ~ in git becomes ~1 in mercurial
   hg update .~3
 
   $ hg githelp -- reset --mixed HEAD
-  NOTE: --mixed has no meaning since Mercurial has no staging area
+  note: --mixed has no meaning since Mercurial has no staging area
   
   hg update .
   $ hg githelp -- reset --soft HEAD
-  NOTE: --soft has no meaning since Mercurial has no staging area
+  note: --soft has no meaning since Mercurial has no staging area
   
   hg update .
   $ hg githelp -- reset --hard HEAD
@@ -221,7 +221,7 @@ githelp for stash drop with name
 
 githelp for whatchanged should show deprecated message
   $ hg githelp -- whatchanged -p
-  This command has been deprecated in the git project, thus isn't supported by this tool.
+  this command has been deprecated in the git project, thus isn't supported by this tool.
   
 
 githelp for git branch -m renaming
@@ -259,8 +259,8 @@ githelp for apply with directory strip custom
 git merge-base
   $ hg githelp -- git merge-base --is-ancestor
   ignoring unknown option --is-ancestor
-  NOTE: ancestors() is part of the revset language.
-  Learn more about revsets with 'hg help revsets'
+  note: ancestors() is part of the revset language.
+  (learn more about revsets with 'hg help revsets')
   
   hg log -T '{node}\n' -r 'ancestor(A,B)'
 

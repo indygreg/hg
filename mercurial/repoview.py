@@ -77,8 +77,7 @@ def computehidden(repo, visibilityexceptions=None):
         if visibilityexceptions:
             hidden -= visibilityexceptions
         pfunc = repo.changelog.parentrevs
-        mutablephases = (phases.draft, phases.secret)
-        mutable = repo._phasecache.getrevset(repo, mutablephases)
+        mutable = repo._phasecache.getrevset(repo, phases.mutablephases)
 
         visible = mutable - hidden
         _revealancestors(pfunc, hidden, visible)

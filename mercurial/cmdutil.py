@@ -552,7 +552,7 @@ def tersedir(statuslist, terseargs):
     # process each sub-directory and build tersedict
     for subdir in rootobj.subdirs.values():
         for st, f in subdir.tersewalk(terseargs):
-            tersedict[st].append(f)
+            tersedict[st].append(util.pconvert(f))
 
     tersedlist = []
     for st in allst:

@@ -76,9 +76,9 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         if not ui.plain():
             width = ui.termwidth()
 
-    chunks = patch.diff(repo, node1, node2, match, changes, opts=diffopts,
-                        prefix=prefix, relroot=relroot,
-                        hunksfilterfn=hunksfilterfn)
+    chunks = repo[node2].diff(repo[node1], match, changes, opts=diffopts,
+                              prefix=prefix, relroot=relroot,
+                              hunksfilterfn=hunksfilterfn)
 
     if fp is not None or ui.canwritewithoutlabels():
         out = fp or ui

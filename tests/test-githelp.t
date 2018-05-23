@@ -43,8 +43,8 @@ githelp on a command with standalone unrecognized option should succeed with war
 
 githelp on a command with unrecognized option packed with other options should fail with error
   $ hg githelp -- commit -pv
-  abort: unknown option v packed with other options
-  Please try passing the option as it's own flag: -v
+  abort: unknown option 'v' packed with other options
+  (please try passing the option as its own flag: -v)
   [255]
 
 githelp for git rebase --skip

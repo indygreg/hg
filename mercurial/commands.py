@@ -2224,7 +2224,7 @@ def _dograft(ui, repo, *revs, **opts):
             raise error.Abort(_("can't specify --continue and revisions"))
         # read in unfinished revisions
         if graftstate.exists():
-            nodes = _readgraftstate(repo)['nodes']
+            nodes = _readgraftstate(repo, graftstate)['nodes']
             revs = [repo[node].rev() for node in nodes]
         else:
             cmdutil.wrongtooltocontinue(repo, _('graft'))
@@ -2351,8 +2351,10 @@ def _dograft(ui, repo, *revs, **opts):
             # report any conflicts
             if stats.unresolvedcount > 0:
                 # write out state for --continue
-                nodelines = [repo[rev].hex() + "\n" for rev in revs[pos:]]
-                repo.vfs.write('graftstate', ''.join(nodelines))
+                nodes = [repo[rev].hex() for rev in revs[pos:]]
+                statedata = {'nodes': nodes}
+                stateversion = 1
+                graftstate.save(stateversion, statedata)
                 extra = ''
                 if opts.get('user'):
                     extra += ' --user %s' % procutil.shellquote(opts['user'])
@@ -2381,10 +2383,13 @@ def _dograft(ui, repo, *revs, **opts):
 
     return 0
 
-def _readgraftstate(repo):
+def _readgraftstate(repo, graftstate):
     """read the graft state file and return a dict of the data stored in it"""
-    nodes = repo.vfs.read('graftstate').splitlines()
-    return {'nodes': nodes}
+    try:
+        return graftstate.read()
+    except error.CorruptedState:
+        nodes = repo.vfs.read('graftstate').splitlines()
+        return {'nodes': nodes}
 
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),

@@ -170,7 +170,7 @@ def add(ui, repo, *args, **kwargs):
             cmd.extend(args)
         else:
             ui.status(_("note: use hg addremove to remove files that have "
-                        "been deleted.\n\n"))
+                        "been deleted\n\n"))
 
     ui.status((bytes(cmd)), "\n")
 
@@ -195,7 +195,7 @@ def apply(ui, repo, *args, **kwargs):
     ui.status((bytes(cmd)), "\n")
 
 def bisect(ui, repo, *args, **kwargs):
-    ui.status(_("see 'hg help bisect' for how to use bisect.\n\n"))
+    ui.status(_("see 'hg help bisect' for how to use bisect\n\n"))
 
 def blame(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -354,7 +354,7 @@ def cherrypick(ui, repo, *args, **kwargs):
     if opts.get('continue'):
         cmd['--continue'] = None
     elif opts.get('abort'):
-        ui.status(_("note: hg graft does not have --abort.\n\n"))
+        ui.status(_("note: hg graft does not have --abort\n\n"))
         return
     else:
         cmd.extend(args)
@@ -456,7 +456,7 @@ def commit(ui, repo, *args, **kwargs):
 
 def deprecated(ui, repo, *args, **kwargs):
     ui.warn(_('this command has been deprecated in the git project, '
-              'thus isn\'t supported by this tool.\n\n'))
+              'thus isn\'t supported by this tool\n\n'))
 
 def diff(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -470,7 +470,7 @@ def diff(ui, repo, *args, **kwargs):
 
     if opts.get('cached'):
         ui.status(_('note: Mercurial has no concept of a staging area, '
-                    'so --cached does nothing.\n\n'))
+                    'so --cached does nothing\n\n'))
 
     if opts.get('reverse'):
         cmd['--reverse'] = None
@@ -560,7 +560,7 @@ def log(ui, repo, *args, **kwargs):
     ui.status(_('note: -v prints the entire commit message like Git does. To '
                 'print just the first line, drop the -v.\n\n'))
     ui.status(_("note: see hg help revset for information on how to filter "
-                "log output.\n\n"))
+                "log output\n\n"))
 
     cmd = Command('log')
     cmd['-v'] = None
@@ -655,7 +655,7 @@ def mergebase(ui, repo, *args, **kwargs):
     cmd = Command("log -T '{node}\\n' -r 'ancestor(%s,%s)'"
                   % (args[0], args[1]))
 
-    ui.status(_('note: ancestors() is part of the revset language.\n'),
+    ui.status(_('note: ancestors() is part of the revset language\n'),
               _("(learn more about revsets with 'hg help revsets')\n\n"))
     ui.status((bytes(cmd)), "\n")
 
@@ -754,7 +754,7 @@ def rebase(ui, repo, *args, **kwargs):
         cmd = Command('histedit')
         if len(args) > 0:
             ui.status(_("also note: 'hg histedit' will automatically detect"
-                      " your stack, so no second argument is necessary.\n\n"))
+                      " your stack, so no second argument is necessary\n\n"))
         ui.status((bytes(cmd)), "\n")
         return
 
@@ -800,7 +800,7 @@ def reflog(ui, repo, *args, **kwargs):
 
     ui.status(bytes(cmd), "\n\n")
     ui.status(_("note: in hg commits can be deleted from repo but we always"
-              " have backups.\n"))
+              " have backups\n"))
 
 def reset(ui, repo, *args, **kwargs):
     cmdoptions = [
@@ -932,7 +932,7 @@ def stash(ui, repo, *args, **kwargs):
     elif (action == 'branch' or action == 'show' or action == 'clear'
         or action == 'create'):
         ui.status(_("note: Mercurial doesn't have equivalents to the "
-                    "git stash branch, show, clear, or create actions.\n\n"))
+                    "git stash branch, show, clear, or create actions\n\n"))
         return
     else:
         if len(args) > 0:

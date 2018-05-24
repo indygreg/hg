@@ -221,7 +221,7 @@ githelp for stash drop with name
 
 githelp for whatchanged should show deprecated message
   $ hg githelp -- whatchanged -p
-  this command has been deprecated in the git project, thus isn't supported by this tool.
+  this command has been deprecated in the git project, thus isn't supported by this tool
   
 
 githelp for git branch -m renaming
@@ -259,7 +259,7 @@ githelp for apply with directory strip custom
 git merge-base
   $ hg githelp -- git merge-base --is-ancestor
   ignoring unknown option --is-ancestor
-  note: ancestors() is part of the revset language.
+  note: ancestors() is part of the revset language
   (learn more about revsets with 'hg help revsets')
   
   hg log -T '{node}\n' -r 'ancestor(A,B)'
@@ -279,7 +279,7 @@ githelp for add
   hg commit --interactive
 
   $ hg githelp -- git add --all
-  note: use hg addremove to remove files that have been deleted.
+  note: use hg addremove to remove files that have been deleted
   
   hg add
 
@@ -288,9 +288,9 @@ githelp for reflog
   $ hg githelp -- git reflog
   hg journal
   
-  note: in hg commits can be deleted from repo but we always have backups.
+  note: in hg commits can be deleted from repo but we always have backups
 
   $ hg githelp -- git reflog --all
   hg journal --all
   
-  note: in hg commits can be deleted from repo but we always have backups.
+  note: in hg commits can be deleted from repo but we always have backups

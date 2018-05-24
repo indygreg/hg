@@ -1482,6 +1482,24 @@ def registersummarycallback(repo, otr, txnname=''):
                 revrange = '%s:%s' % (minrev, maxrev)
             repo.ui.status(_('new changesets %s\n') % revrange)
 
+        @reportsummary
+        def reportphasechanges(repo, tr):
+            """Report statistics of phase changes for changesets pre-existing
+            pull/unbundle.
+            """
+            newrevs = tr.changes.get('revs', xrange(0, 0))
+            phasetracking = tr.changes.get('phases', {})
+            if not phasetracking:
+                return
+            published = [
+                rev for rev, (old, new) in phasetracking.iteritems()
+                if new == phases.public and rev not in newrevs
+            ]
+            if not published:
+                return
+            repo.ui.status(_('%d changesets became public\n')
+                           % len(published))
+
 def nodesummaries(repo, nodes, maxnumnodes=4):
     if len(nodes) <= maxnumnodes or repo.ui.verbose:
         return ' '.join(short(h) for h in nodes)

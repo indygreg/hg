@@ -150,6 +150,7 @@ pull empty (with phase movement)
   pulling from $TESTTMP/main
   no changes found
   pre-close-tip:24b6387c8c8c public 
+  1 changesets became public
   postclose-tip:24b6387c8c8c public 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=0 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
   file:/*/$TESTTMP/main HG_URL=file:$TESTTMP/main (glob)

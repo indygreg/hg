@@ -167,6 +167,7 @@ update must update phase of common changeset too
   pulling from ../alpha
   searching for changes
   no changes found
+  1 changesets became public
   test-debug-phase: move rev 2: 1 -> 0
   $ hgph
   o  4 public a-D - b555f63b6063
@@ -283,6 +284,7 @@ we are in nu
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets b555f63b6063
+  3 changesets became public
   test-debug-phase: move rev 0: 1 -> 0
   test-debug-phase: move rev 1: 1 -> 0
   test-debug-phase: move rev 2: 1 -> 0
@@ -331,6 +333,7 @@ pulling from Publish=False to publish=False with some public
   adding file changes
   added 2 changesets with 2 changes to 2 files
   new changesets d6bcb4f74035:145e75495359
+  4 changesets became public
   test-debug-phase: move rev 0: 1 -> 0
   test-debug-phase: move rev 1: 1 -> 0
   test-debug-phase: move rev 3: 1 -> 0
@@ -404,6 +407,7 @@ pulling back into original repo
   pulling from ../alpha
   searching for changes
   no changes found
+  3 changesets became public
   test-debug-phase: move rev 3: 1 -> 0
   test-debug-phase: move rev 5: 1 -> 0
   test-debug-phase: move rev 6: 1 -> 0

@@ -555,7 +555,7 @@ def rstdoc(context, mapping, args):
 
     return minirst.format(text, style=style, keep=['verbose'])
 
-@templatefunc('separate(sep, args)', argspec='sep *args')
+@templatefunc('separate(sep, args...)', argspec='sep *args')
 def separate(context, mapping, args):
     """Add a separator between non-empty arguments."""
     if 'sep' not in args:

@@ -94,9 +94,9 @@ def parseoptions(ui, cmdoptions, args):
             try:
                 args.remove(flag)
             except Exception:
-                msg = _("unknown option '{0}' packed with other options")
-                hint = _("please try passing the option as its own flag: -{0}")
-                raise error.Abort(msg.format(ex.opt), hint=hint.format(ex.opt))
+                msg = _("unknown option '%s' packed with other options")
+                hint = _("please try passing the option as its own flag: -%s")
+                raise error.Abort(msg % ex.opt, hint=hint % ex.opt)
 
             ui.warn(_("ignoring unknown option %s\n") % flag)
 

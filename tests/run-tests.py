@@ -1710,6 +1710,14 @@ class TestResult(unittest._TextTestResult):
         else: # 'always', for testing purposes
             self.color = pygmentspresent
 
+    def onStart(self, test):
+        """ Can be overriden by custom TestResult
+        """
+
+    def onEnd(self):
+        """ Can be overriden by custom TestResult
+        """
+
     def addFailure(self, test, reason):
         self.failures.append((test, reason))
 
@@ -2098,71 +2106,73 @@ class TextTestRunner(unittest.TextTestRunner):
         super(TextTestRunner, self).__init__(*args, **kwargs)
 
         self._runner = runner
+        self._result = getTestResult()(self._runner.options, self.stream,
+                                       self.descriptions, 0)
 
     def listtests(self, test):
-        result = getTestResult()(self._runner.options, self.stream,
-                                 self.descriptions, 0)
         test = sorted(test, key=lambda t: t.name)
+
+        self._result.onStart(test)
+
         for t in test:
             print(t.name)
-            result.addSuccess(t)
+            self._result.addSuccess(t)
 
         if self._runner.options.xunit:
             with open(self._runner.options.xunit, "wb") as xuf:
-                self._writexunit(result, xuf)
+                self._writexunit(self._result, xuf)
 
         if self._runner.options.json:
             jsonpath = os.path.join(self._runner._outputdir, b'report.json')
             with open(jsonpath, 'w') as fp:
-                self._writejson(result, fp)
+                self._writejson(self._result, fp)
 
-        return result
+        return self._result
 
     def run(self, test):
-        result = getTestResult()(self._runner.options, self.stream,
-                                 self.descriptions, self.verbosity)
-        test(result)
+        self._result.onStart(test)
+        test(self._result)
 
-        failed = len(result.failures)
-        skipped = len(result.skipped)
-        ignored = len(result.ignored)
+        failed = len(self._result.failures)
+        skipped = len(self._result.skipped)
+        ignored = len(self._result.ignored)
 
         with iolock:
             self.stream.writeln('')
 
             if not self._runner.options.noskips:
-                for test, msg in result.skipped:
+                for test, msg in self._result.skipped:
                     formatted = 'Skipped %s: %s\n' % (test.name, msg)
-                    self.stream.write(highlightmsg(formatted, result.color))
-            for test, msg in result.failures:
+                    self.stream.write(highlightmsg(formatted, self._result.color))
+            for test, msg in self._result.failures:
                 formatted = 'Failed %s: %s\n' % (test.name, msg)
-                self.stream.write(highlightmsg(formatted, result.color))
-            for test, msg in result.errors:
+                self.stream.write(highlightmsg(formatted, self._result.color))
+            for test, msg in self._result.errors:
                 self.stream.writeln('Errored %s: %s' % (test.name, msg))
 
             if self._runner.options.xunit:
                 with open(self._runner.options.xunit, "wb") as xuf:
-                    self._writexunit(result, xuf)
+                    self._writexunit(self._result, xuf)
 
             if self._runner.options.json:
                 jsonpath = os.path.join(self._runner._outputdir, b'report.json')
                 with open(jsonpath, 'w') as fp:
-                    self._writejson(result, fp)
+                    self._writejson(self._result, fp)
 
             self._runner._checkhglib('Tested')
 
-            savetimes(self._runner._outputdir, result)
+            savetimes(self._runner._outputdir, self._result)
 
             if failed and self._runner.options.known_good_rev:
-                self._bisecttests(t for t, m in result.failures)
+                self._bisecttests(t for t, m in self._result.failures)
             self.stream.writeln(
                 '# Ran %d tests, %d skipped, %d failed.'
-                % (result.testsRun, skipped + ignored, failed))
+                % (self._result.testsRun, skipped + ignored, failed))
             if failed:
                 self.stream.writeln('python hash seed: %s' %
                     os.environ['PYTHONHASHSEED'])
             if self._runner.options.time:
-                self.printtimes(result.times)
+                self.printtimes(self._result.times)
 
             if self._runner.options.exceptions:
                 exceptions = aggregateexceptions(
@@ -2185,7 +2195,7 @@ class TextTestRunner(unittest.TextTestRunner):
 
             self.stream.flush()
 
-        return result
+        return self._result
 
     def _bisecttests(self, tests):
         bisectcmd = ['hg', 'bisect']
@@ -2750,6 +2760,8 @@ class TestRunner(object):
 
             if result.failures:
                 failed = True
+
+            result.onEnd()
 
             if self.options.anycoverage:
                 self._outputcoverage()

@@ -679,6 +679,9 @@ coreconfigitem('format', 'usegeneraldelta',
 coreconfigitem('format', 'usestore',
     default=True,
 )
+coreconfigitem('format', 'internal-phase',
+    default=False,
+)
 coreconfigitem('fsmonitor', 'warn_when_unused',
     default=True,
 )

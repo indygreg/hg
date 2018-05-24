@@ -394,6 +394,7 @@ class localrepository(object):
         'relshared',
         'dotencode',
         'exp-sparse',
+        'internal-phase'
     }
     openerreqs = {
         'revlogv1',
@@ -2427,5 +2428,8 @@ def newreporequirements(repo):
         # generaldelta is implied by revlogv2.
         requirements.discard('generaldelta')
         requirements.add(REVLOGV2_REQUIREMENT)
+    # experimental config: format.internal-phase
+    if repo.ui.configbool('format', 'internal-phase'):
+        requirements.add('internal-phase')
 
     return requirements

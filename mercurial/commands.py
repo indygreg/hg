@@ -2222,7 +2222,7 @@ def _dograft(ui, repo, *revs, **opts):
             raise error.Abort(_("can't specify --continue and revisions"))
         # read in unfinished revisions
         try:
-            nodes = repo.vfs.read('graftstate').splitlines()
+            nodes = _readgraftstate(repo)['nodes']
             revs = [repo[node].rev() for node in nodes]
         except IOError as inst:
             if inst.errno != errno.ENOENT:
@@ -2380,6 +2380,11 @@ def _dograft(ui, repo, *revs, **opts):
         repo.vfs.unlinkpath('graftstate', ignoremissing=True)
 
     return 0
+
+def _readgraftstate(repo):
+    """read the graft state file and return a dict of the data stored in it"""
+    nodes = repo.vfs.read('graftstate').splitlines()
+    return {'nodes': nodes}
 
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),

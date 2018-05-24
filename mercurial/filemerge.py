@@ -574,7 +574,7 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
             try:
                 # avoid cycle cmdutil->merge->filemerge->extensions->cmdutil
                 from . import extensions
-                mod = extensions.loadpath(toolpath, 'hgmerge.%s' % scriptfn)
+                mod = extensions.loadpath(toolpath, 'hgmerge.%s' % tool)
             except Exception:
                 raise error.Abort(_("loading python merge script failed: %s") %
                                   toolpath)

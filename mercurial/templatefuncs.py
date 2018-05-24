@@ -360,7 +360,9 @@ def latesttag(context, mapping, args):
     """The global tags matching the given pattern on the
     most recent globally tagged ancestor of this changeset.
     If no such tags exist, the "{tag}" template resolves to
-    the string "null"."""
+    the string "null". See :hg:`help revisions.patterns` for the pattern
+    syntax.
+    """
     if len(args) > 1:
         # i18n: "latesttag" is a keyword
         raise error.ParseError(_("latesttag expects at most one argument"))

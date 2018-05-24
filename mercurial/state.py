@@ -40,10 +40,9 @@ class cmdstate(object):
     disk.
     """
 
-    def __init__(self, repo, fname, opts=None):
+    def __init__(self, repo, fname):
         """ repo is the repo object
         fname is the file name in which data should be stored in .hg directory
-        opts is a dictionary of data of the statefile
         """
         self._repo = repo
         self.fname = fname
@@ -63,7 +62,7 @@ class cmdstate(object):
 
         with self._repo.vfs(self.fname, 'wb', atomictemp=True) as fp:
             fp.write('%d\n' % version)
-            cbor.dump(self.opts, fp, canonical=True)
+            cbor.dump(data, fp, canonical=True)
 
     def _read(self):
         """reads the state file and returns a dictionary which contain

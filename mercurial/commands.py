@@ -54,6 +54,7 @@ from . import (
     rewriteutil,
     scmutil,
     server,
+    state as statemod,
     streamclone,
     tags as tagsmod,
     templatekw,
@@ -2216,17 +2217,16 @@ def _dograft(ui, repo, *revs, **opts):
                                      **pycompat.strkwargs(opts))
 
     cont = False
+    graftstate = statemod.cmdstate(repo, 'graftstate')
     if opts.get('continue'):
         cont = True
         if revs:
             raise error.Abort(_("can't specify --continue and revisions"))
         # read in unfinished revisions
-        try:
+        if graftstate.exists():
             nodes = _readgraftstate(repo)['nodes']
             revs = [repo[node].rev() for node in nodes]
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        else:
             cmdutil.wrongtooltocontinue(repo, _('graft'))
     else:
         if not revs:

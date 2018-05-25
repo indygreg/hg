@@ -1536,3 +1536,32 @@ Test that --date is preserved and reused in `hg graft --continue`
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     bar to b
   
+Test that --log is preserved and reused in `hg graft --continue`
+
+  $ hg up '.^^'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg graft -r 1 -r 2 --log
+  grafting 1:80e6d2c47cfe "added b"
+  merging b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue --log')
+  [255]
+
+  $ echo foobar > b
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg graft --continue
+
+  $ hg graft --continue
+  grafting 1:80e6d2c47cfe "added b"
+  grafting 2:8be98ac1a569 "added c"
+
+  $ hg log -GT "{rev}:{node|short} {desc}" -r '.^^::.'
+  @  11:7ee8d3496b19 added c
+  |
+  o  10:802f1eae3af3 added b
+  |
+  o  3:9e887f7a939c bar to b
+  |
+  ~

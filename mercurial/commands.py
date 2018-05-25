@@ -2379,7 +2379,7 @@ def _dograft(ui, repo, *revs, **opts):
 
     # remove state when we complete successfully
     if not opts.get('dry_run'):
-        repo.vfs.unlinkpath('graftstate', ignoremissing=True)
+        graftstate.delete()
 
     return 0
 

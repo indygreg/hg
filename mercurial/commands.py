@@ -2207,6 +2207,8 @@ def _dograft(ui, repo, *revs, **opts):
 
     revs = list(revs)
     revs.extend(opts.get('rev'))
+    # a dict of data to be stored in state file
+    statedata = {}
 
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
@@ -2330,9 +2332,11 @@ def _dograft(ui, repo, *revs, **opts):
         user = ctx.user()
         if opts.get('user'):
             user = opts['user']
+            statedata['user'] = user
         date = ctx.date()
         if opts.get('date'):
             date = opts['date']
+            statedata['date'] = date
         message = ctx.description()
         if opts.get('log'):
             message += '\n(grafted from %s)' % ctx.hex()
@@ -2352,7 +2356,7 @@ def _dograft(ui, repo, *revs, **opts):
             if stats.unresolvedcount > 0:
                 # write out state for --continue
                 nodes = [repo[rev].hex() for rev in revs[pos:]]
-                statedata = {'nodes': nodes}
+                statedata['nodes'] = nodes
                 stateversion = 1
                 graftstate.save(stateversion, statedata)
                 extra = ''

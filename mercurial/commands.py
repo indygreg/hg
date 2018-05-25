@@ -64,7 +64,6 @@ from . import (
 )
 from .utils import (
     dateutil,
-    procutil,
     stringutil,
 )
 
@@ -2365,10 +2364,6 @@ def _dograft(ui, repo, *revs, **opts):
                 stateversion = 1
                 graftstate.save(stateversion, statedata)
                 extra = ''
-                if opts.get('user'):
-                    extra += ' --user %s' % procutil.shellquote(opts['user'])
-                if opts.get('date'):
-                    extra += ' --date %s' % procutil.shellquote(opts['date'])
                 if opts.get('log'):
                     extra += ' --log'
                 hint=_("use 'hg resolve' and 'hg graft --continue%s'") % extra

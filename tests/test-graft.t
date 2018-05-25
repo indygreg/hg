@@ -1456,7 +1456,7 @@ running `hg graft --continue`
   merging b
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
-  (use 'hg resolve' and 'hg graft --continue --user batman')
+  (use 'hg resolve' and 'hg graft --continue')
   [255]
 
   $ echo wat > b
@@ -1506,7 +1506,7 @@ Test that --date is preserved and reused in `hg graft --continue`
   merging b
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
-  (use 'hg resolve' and 'hg graft --continue --date '1234560000 120'')
+  (use 'hg resolve' and 'hg graft --continue')
   [255]
 
   $ echo foobar > b

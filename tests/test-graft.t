@@ -213,7 +213,7 @@ Graft out of order, skipping a merge and a duplicate
   my e@1905859650ec+ other e@9c233e8e184d ancestor e@4c60f11aa304
   warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
-  (use 'hg resolve' and 'hg graft --continue --log')
+  (use 'hg resolve' and 'hg graft --continue')
   [255]
 
 Summary should mention graft:
@@ -1545,7 +1545,7 @@ Test that --log is preserved and reused in `hg graft --continue`
   merging b
   warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
   abort: unresolved conflicts, can't continue
-  (use 'hg resolve' and 'hg graft --continue --log')
+  (use 'hg resolve' and 'hg graft --continue')
   [255]
 
   $ echo foobar > b
@@ -1558,10 +1558,10 @@ Test that --log is preserved and reused in `hg graft --continue`
   grafting 2:8be98ac1a569 "added c"
 
   $ hg log -GT "{rev}:{node|short} {desc}" -r '.^^::.'
-  @  11:7ee8d3496b19 added c
-  |
-  o  10:802f1eae3af3 added b
-  |
+  @  11:30c1050a58b2 added c
+  |  (grafted from 8be98ac1a56990c2d9ca6861041b8390af7bd6f3)
+  o  10:ec7eda2313e2 added b
+  |  (grafted from 80e6d2c47cfe5b3185519568327a17a061c7efb6)
   o  3:9e887f7a939c bar to b
   |
   ~

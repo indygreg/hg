@@ -2230,6 +2230,8 @@ def _dograft(ui, repo, *revs, **opts):
                 opts['date'] = statedata['date']
             if statedata.get('user'):
                 opts['user'] = statedata['user']
+            if statedata.get('log'):
+                opts['log'] = True
             nodes = statedata['nodes']
             revs = [repo[node].rev() for node in nodes]
         else:
@@ -2344,6 +2346,7 @@ def _dograft(ui, repo, *revs, **opts):
         message = ctx.description()
         if opts.get('log'):
             message += '\n(grafted from %s)' % ctx.hex()
+            statedata['log'] = True
 
         # we don't merge the first commit when continuing
         if not cont:
@@ -2363,10 +2366,7 @@ def _dograft(ui, repo, *revs, **opts):
                 statedata['nodes'] = nodes
                 stateversion = 1
                 graftstate.save(stateversion, statedata)
-                extra = ''
-                if opts.get('log'):
-                    extra += ' --log'
-                hint=_("use 'hg resolve' and 'hg graft --continue%s'") % extra
+                hint = _("use 'hg resolve' and 'hg graft --continue'")
                 raise error.Abort(
                     _("unresolved conflicts, can't continue"),
                     hint=hint)

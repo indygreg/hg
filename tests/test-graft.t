@@ -1468,17 +1468,16 @@ running `hg graft --continue`
   grafting 1:80e6d2c47cfe "added b"
   grafting 2:8be98ac1a569 "added c"
 
-XXX: the user of 6 and 7 should be batman
   $ hg log -Gr 3::
-  @  changeset:   7:89f377552d81
+  @  changeset:   7:11a36ffaacf2
   |  tag:         tip
-  |  user:        test
+  |  user:        batman
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     added c
   |
-  o  changeset:   6:393512ff89b9
+  o  changeset:   6:76803afc6511
   |  parent:      3:9e887f7a939c
-  |  user:        test
+  |  user:        batman
   |  date:        Thu Jan 01 00:00:00 1970 +0000
   |  summary:     added b
   |
@@ -1518,18 +1517,17 @@ Test that --date is preserved and reused in `hg graft --continue`
   grafting 1:80e6d2c47cfe "added b"
   grafting 2:8be98ac1a569 "added c"
 
-XXX: 8 and 9 show have the date we passed
   $ hg log -Gr '.^^::.'
-  @  changeset:   9:7ee8d3496b19
+  @  changeset:   9:1896b76e007a
   |  tag:         tip
   |  user:        test
-  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  date:        Fri Feb 13 21:18:00 2009 -0002
   |  summary:     added c
   |
-  o  changeset:   8:802f1eae3af3
+  o  changeset:   8:ce2b4f1632af
   |  parent:      3:9e887f7a939c
   |  user:        test
-  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  date:        Fri Feb 13 21:18:00 2009 -0002
   |  summary:     added b
   |
   o  changeset:   3:9e887f7a939c

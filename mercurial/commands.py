@@ -2226,7 +2226,12 @@ def _dograft(ui, repo, *revs, **opts):
             raise error.Abort(_("can't specify --continue and revisions"))
         # read in unfinished revisions
         if graftstate.exists():
-            nodes = _readgraftstate(repo, graftstate)['nodes']
+            statedata = _readgraftstate(repo, graftstate)
+            if statedata.get('date'):
+                opts['date'] = statedata['date']
+            if statedata.get('user'):
+                opts['user'] = statedata['user']
+            nodes = statedata['nodes']
             revs = [repo[node].rev() for node in nodes]
         else:
             cmdutil.wrongtooltocontinue(repo, _('graft'))

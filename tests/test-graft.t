@@ -1670,3 +1670,218 @@ Testing the --stop flag of `hg graft` which stops the interrupted graft
   |
   o  0:9092f1db7931 added a
   
+  $ cd ..
+
+Testing the --abort flag for `hg graft` which aborts and rollback to state
+before the graft
+
+  $ hg init abortgraft
+  $ cd abortgraft
+  $ for ch in a b c d; do echo $ch > $ch; hg add $ch; hg ci -Aqm "added "$ch; done;
+
+  $ hg up '.^^'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+
+  $ echo x > x
+  $ hg ci -Aqm "added x"
+  $ hg up '.^'
+  0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ echo foo > c
+  $ hg ci -Aqm "added foo to c"
+
+  $ hg log -GT "{rev}:{node|short} {desc}"
+  @  5:36b793615f78 added foo to c
+  |
+  | o  4:863a25e1a9ea added x
+  |/
+  | o  3:9150fe93bec6 added d
+  | |
+  | o  2:155349b645be added c
+  |/
+  o  1:5f6d8a4bf34a added b
+  |
+  o  0:9092f1db7931 added a
+  
+  $ hg up 9150fe93bec6
+  2 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+  $ hg graft --abort
+  abort: no interrupted graft to abort
+  [255]
+
+when stripping is required
+  $ hg graft -r 4 -r 5
+  grafting 4:863a25e1a9ea "added x"
+  grafting 5:36b793615f78 "added foo to c" (tip)
+  merging c
+  warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+  $ hg graft --continue --abort
+  abort: cannot use '--continue' and '--abort' together
+  [255]
+
+  $ hg graft --abort --stop
+  abort: cannot use '--abort' and '--stop' together
+  [255]
+
+  $ hg graft --abort --currentuser
+  abort: cannot specify any other flag with '--abort'
+  [255]
+
+  $ hg graft --abort --edit
+  abort: cannot specify any other flag with '--abort'
+  [255]
+
+  $ hg graft --abort
+  graft aborted
+  working directory is now at 9150fe93bec6
+  $ hg log -GT "{rev}:{node|short} {desc}"
+  o  5:36b793615f78 added foo to c
+  |
+  | o  4:863a25e1a9ea added x
+  |/
+  | @  3:9150fe93bec6 added d
+  | |
+  | o  2:155349b645be added c
+  |/
+  o  1:5f6d8a4bf34a added b
+  |
+  o  0:9092f1db7931 added a
+  
+when stripping is not required
+  $ hg graft -r 5
+  grafting 5:36b793615f78 "added foo to c" (tip)
+  merging c
+  warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+  $ hg graft --abort
+  graft aborted
+  working directory is now at 9150fe93bec6
+  $ hg log -GT "{rev}:{node|short} {desc}"
+  o  5:36b793615f78 added foo to c
+  |
+  | o  4:863a25e1a9ea added x
+  |/
+  | @  3:9150fe93bec6 added d
+  | |
+  | o  2:155349b645be added c
+  |/
+  o  1:5f6d8a4bf34a added b
+  |
+  o  0:9092f1db7931 added a
+  
+when some of the changesets became public
+
+  $ hg graft -r 4 -r 5
+  grafting 4:863a25e1a9ea "added x"
+  grafting 5:36b793615f78 "added foo to c" (tip)
+  merging c
+  warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+  $ hg log -GT "{rev}:{node|short} {desc}"
+  @  6:6ec71c037d94 added x
+  |
+  | o  5:36b793615f78 added foo to c
+  | |
+  | | o  4:863a25e1a9ea added x
+  | |/
+  o |  3:9150fe93bec6 added d
+  | |
+  o |  2:155349b645be added c
+  |/
+  o  1:5f6d8a4bf34a added b
+  |
+  o  0:9092f1db7931 added a
+  
+  $ hg phase -r 6 --public
+
+  $ hg graft --abort
+  cannot clean up public changesets 6ec71c037d94
+  graft aborted
+  working directory is now at 6ec71c037d94
+
+when we created new changesets on top of existing one
+
+  $ hg up '.^^'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo y > y
+  $ hg ci -Aqm "added y"
+  $ echo z > z
+  $ hg ci -Aqm "added z"
+
+  $ hg up 3
+  1 files updated, 0 files merged, 3 files removed, 0 files unresolved
+  $ hg log -GT "{rev}:{node|short} {desc}"
+  o  8:637f9e9bbfd4 added z
+  |
+  o  7:123221671fd4 added y
+  |
+  | o  6:6ec71c037d94 added x
+  | |
+  | | o  5:36b793615f78 added foo to c
+  | | |
+  | | | o  4:863a25e1a9ea added x
+  | | |/
+  | @ |  3:9150fe93bec6 added d
+  |/ /
+  o /  2:155349b645be added c
+  |/
+  o  1:5f6d8a4bf34a added b
+  |
+  o  0:9092f1db7931 added a
+  
+  $ hg graft -r 8 -r 7 -r 5
+  grafting 8:637f9e9bbfd4 "added z" (tip)
+  grafting 7:123221671fd4 "added y"
+  grafting 5:36b793615f78 "added foo to c"
+  merging c
+  warning: conflicts while merging c! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+  $ cd ..
+  $ hg init pullrepo
+  $ cd pullrepo
+  $ cat >> .hg/hgrc <<EOF
+  > [phases]
+  > publish=False
+  > EOF
+  $ hg pull ../abortgraft --config phases.publish=False
+  pulling from ../abortgraft
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 11 changesets with 9 changes to 8 files (+4 heads)
+  new changesets 9092f1db7931:6b98ff0062dd
+  (run 'hg heads' to see heads, 'hg merge' to merge)
+  $ hg up 9
+  5 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo w > w
+  $ hg ci -Aqm "added w" --config phases.publish=False
+
+  $ cd ../abortgraft
+  $ hg pull ../pullrepo
+  pulling from ../pullrepo
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 1 changesets with 1 changes to 1 files (+1 heads)
+  new changesets 311dfc6cf3bf
+  (run 'hg heads .' to see heads, 'hg merge' to merge)
+
+  $ hg graft --abort
+  new changesets detected on destination branch, can't strip
+  graft aborted
+  working directory is now at 6b98ff0062dd

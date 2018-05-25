@@ -49,6 +49,7 @@ from . import (
     pycompat,
     rcutil,
     registrar,
+    repair,
     revsetlang,
     rewriteutil,
     scmutil,
@@ -2107,6 +2108,7 @@ def forget(ui, repo, *pats, **opts):
     [('r', 'rev', [], _('revisions to graft'), _('REV')),
      ('c', 'continue', False, _('resume interrupted graft')),
      ('', 'stop', False, _('stop interrupted graft')),
+     ('', 'abort', False, _('abort interrupted graft')),
      ('e', 'edit', False, _('invoke editor on commit messages')),
      ('', 'log', None, _('append graft info to log message')),
      ('f', 'force', False, _('force graft')),
@@ -2204,11 +2206,24 @@ def _dograft(ui, repo, *revs, **opts):
         if opts.get('continue'):
             raise error.Abort(_("cannot use '--continue' and "
                                 "'--stop' together"))
+        if opts.get('abort'):
+            raise error.Abort(_("cannot use '--abort' and '--stop' together"))
+
         if any((opts.get('edit'), opts.get('log'), opts.get('user'),
                 opts.get('date'), opts.get('currentdate'),
                 opts.get('currentuser'), opts.get('rev'))):
             raise error.Abort(_("cannot specify any other flag with '--stop'"))
         return _stopgraft(ui, repo, graftstate)
+    elif opts.get('abort'):
+        if opts.get('continue'):
+            raise error.Abort(_("cannot use '--continue' and "
+                                "'--abort' together"))
+        if any((opts.get('edit'), opts.get('log'), opts.get('user'),
+                opts.get('date'), opts.get('currentdate'),
+                opts.get('currentuser'), opts.get('rev'))):
+            raise error.Abort(_("cannot specify any other flag with '--abort'"))
+
+        return _abortgraft(ui, repo, graftstate)
     elif opts.get('continue'):
         cont = True
         if revs:
@@ -2373,6 +2388,62 @@ def _dograft(ui, repo, *revs, **opts):
     if not opts.get('dry_run'):
         graftstate.delete()
 
+    return 0
+
+def _abortgraft(ui, repo, graftstate):
+    """abort the interrupted graft and rollbacks to the state before interrupted
+    graft"""
+    if not graftstate.exists():
+        raise error.Abort(_("no interrupted graft to abort"))
+    statedata = _readgraftstate(repo, graftstate)
+    newnodes = statedata.get('newnodes')
+    if newnodes is None:
+        # and old graft state which does not have all the data required to abort
+        # the graft
+        raise error.Abort(_("cannot abort using an old graftstate"))
+
+    # changeset from which graft operation was started
+    startctx = None
+    if len(newnodes) > 0:
+        startctx = repo[newnodes[0]].p1()
+    else:
+        startctx = repo['.']
+    # whether to strip or not
+    cleanup = False
+    if newnodes:
+        newnodes = [repo[r].rev() for r in newnodes]
+        cleanup = True
+        # checking that none of the newnodes turned public or is public
+        immutable = [c for c in newnodes if not repo[c].mutable()]
+        if immutable:
+            repo.ui.warn(_("cannot clean up public changesets %s\n")
+                         % ', '.join(bytes(repo[r]) for r in immutable),
+                         hint=_("see 'hg help phases' for details"))
+            cleanup = False
+
+        # checking that no new nodes are created on top of grafted revs
+        desc = set(repo.changelog.descendants(newnodes))
+        if desc - set(newnodes):
+            repo.ui.warn(_("new changesets detected on destination "
+                           "branch, can't strip\n"))
+            cleanup = False
+
+        if cleanup:
+            with repo.wlock(), repo.lock():
+                hg.updaterepo(repo, startctx.node(), True)
+                # stripping the new nodes created
+                strippoints = [c.node() for c in repo.set("roots(%ld)",
+                                                          newnodes)]
+                repair.strip(repo.ui, repo, strippoints, backup=False)
+
+    if not cleanup:
+        # we don't update to the startnode if we can't strip
+        startctx = repo['.']
+        hg.updaterepo(repo, startctx.node(), True)
+
+    ui.status(_("graft aborted\n"))
+    ui.status(_("working directory is now at %s\n") % startctx.hex()[:12])
+    graftstate.delete()
     return 0
 
 def _readgraftstate(repo, graftstate):

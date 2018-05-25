@@ -1410,3 +1410,131 @@ Writing the nodes in old format to graftstate
   $ hg graft --continue
   grafting 1:80e6d2c47cfe "added b"
   grafting 2:8be98ac1a569 "added c"
+
+Testing that --user is preserved during conflicts and value is reused while
+running `hg graft --continue`
+
+  $ hg log -G
+  @  changeset:   5:711e9fa999f1
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added c
+  |
+  o  changeset:   4:e5ad7353b408
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added b
+  |
+  o  changeset:   3:9e887f7a939c
+  |  parent:      0:f7ad41964313
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     bar to b
+  |
+  | o  changeset:   2:8be98ac1a569
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     added c
+  | |
+  | o  changeset:   1:80e6d2c47cfe
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     added b
+  |
+  o  changeset:   0:f7ad41964313
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     added a
+  
+
+  $ hg up '.^^'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+
+  $ hg graft -r 1 -r 2 --user batman
+  grafting 1:80e6d2c47cfe "added b"
+  merging b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue --user batman')
+  [255]
+
+  $ echo wat > b
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg graft --continue
+
+  $ hg graft --continue
+  grafting 1:80e6d2c47cfe "added b"
+  grafting 2:8be98ac1a569 "added c"
+
+XXX: the user of 6 and 7 should be batman
+  $ hg log -Gr 3::
+  @  changeset:   7:89f377552d81
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added c
+  |
+  o  changeset:   6:393512ff89b9
+  |  parent:      3:9e887f7a939c
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added b
+  |
+  | o  changeset:   5:711e9fa999f1
+  | |  user:        test
+  | |  date:        Thu Jan 01 00:00:00 1970 +0000
+  | |  summary:     added c
+  | |
+  | o  changeset:   4:e5ad7353b408
+  |/   user:        test
+  |    date:        Thu Jan 01 00:00:00 1970 +0000
+  |    summary:     added b
+  |
+  o  changeset:   3:9e887f7a939c
+  |  parent:      0:f7ad41964313
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     bar to b
+  
+Test that --date is preserved and reused in `hg graft --continue`
+
+  $ hg up '.^^'
+  1 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  $ hg graft -r 1 -r 2 --date '1234560000 120'
+  grafting 1:80e6d2c47cfe "added b"
+  merging b
+  warning: conflicts while merging b! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue --date '1234560000 120'')
+  [255]
+
+  $ echo foobar > b
+  $ hg resolve -m
+  (no more unresolved files)
+  continue: hg graft --continue
+  $ hg graft --continue
+  grafting 1:80e6d2c47cfe "added b"
+  grafting 2:8be98ac1a569 "added c"
+
+XXX: 8 and 9 show have the date we passed
+  $ hg log -Gr '.^^::.'
+  @  changeset:   9:7ee8d3496b19
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added c
+  |
+  o  changeset:   8:802f1eae3af3
+  |  parent:      3:9e887f7a939c
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added b
+  |
+  o  changeset:   3:9e887f7a939c
+  |  parent:      0:f7ad41964313
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     bar to b
+  

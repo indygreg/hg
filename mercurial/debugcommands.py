@@ -21,7 +21,6 @@ import stat
 import string
 import subprocess
 import sys
-import tempfile
 import time
 
 from .i18n import _
@@ -970,7 +969,7 @@ def debugfsinfo(ui, path="."):
     ui.write(('hardlink: %s\n') % (util.checknlink(path) and 'yes' or 'no'))
     casesensitive = '(unknown)'
     try:
-        with tempfile.NamedTemporaryFile(prefix='.debugfsinfo', dir=path) as f:
+        with pycompat.namedtempfile(prefix='.debugfsinfo', dir=path) as f:
             casesensitive = util.fscasesensitive(f.name) and 'yes' or 'no'
     except OSError:
         pass

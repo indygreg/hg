@@ -392,3 +392,11 @@ def mkdtemp(suffix=b'', prefix=b'tmp', dir=None):
 # text=True is not supported; use util.from/tonativeeol() instead
 def mkstemp(suffix=b'', prefix=b'tmp', dir=None):
     return tempfile.mkstemp(suffix, prefix, dir)
+
+# mode must include 'b'ytes as encoding= is not supported
+def namedtempfile(mode=b'w+b', bufsize=-1, suffix=b'', prefix=b'tmp', dir=None,
+                  delete=True):
+    mode = sysstr(mode)
+    assert r'b' in mode
+    return tempfile.NamedTemporaryFile(mode, bufsize, suffix=suffix,
+                                       prefix=prefix, dir=dir, delete=delete)

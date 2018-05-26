@@ -386,6 +386,9 @@ def getoptb(args, shortlist, namelist):
 def gnugetoptb(args, shortlist, namelist):
     return _getoptbwrapper(getopt.gnu_getopt, args, shortlist, namelist)
 
+def mkdtemp(suffix=b'', prefix=b'tmp', dir=None):
+    return tempfile.mkdtemp(suffix, prefix, dir)
+
 # text=True is not supported; use util.from/tonativeeol() instead
 def mkstemp(suffix=b'', prefix=b'tmp', dir=None):
     return tempfile.mkstemp(suffix, prefix, dir)

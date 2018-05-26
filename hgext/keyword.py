@@ -87,7 +87,6 @@ from __future__ import absolute_import
 
 import os
 import re
-import tempfile
 import weakref
 
 from mercurial.i18n import _
@@ -434,7 +433,7 @@ def demo(ui, repo, *args, **opts):
             ui.write('%s = %s\n' % (k, v))
 
     fn = 'demo.txt'
-    tmpdir = tempfile.mkdtemp('', 'kwdemo.')
+    tmpdir = pycompat.mkdtemp('', 'kwdemo.')
     ui.note(_('creating temporary repository at %s\n') % tmpdir)
     if repo is None:
         baseui = ui

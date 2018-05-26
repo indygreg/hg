@@ -18,7 +18,6 @@ import os
 import posixpath
 import re
 import shutil
-import tempfile
 import zlib
 
 from .i18n import _
@@ -573,7 +572,7 @@ class filestore(object):
             self.size += len(data)
         else:
             if self.opener is None:
-                root = tempfile.mkdtemp(prefix='hg-patch-')
+                root = pycompat.mkdtemp(prefix='hg-patch-')
                 self.opener = vfsmod.vfs(root)
             # Avoid filename issues with these simple names
             fn = '%d' % self.created

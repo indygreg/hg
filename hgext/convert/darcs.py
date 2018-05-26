@@ -10,10 +10,11 @@ import errno
 import os
 import re
 import shutil
-import tempfile
+
 from mercurial.i18n import _
 from mercurial import (
     error,
+    pycompat,
     util,
 )
 from mercurial.utils import dateutil
@@ -76,7 +77,7 @@ class darcs_source(common.converter_source, common.commandline):
             self.ui.warn(_('failed to detect repository format!'))
 
     def before(self):
-        self.tmppath = tempfile.mkdtemp(
+        self.tmppath = pycompat.mkdtemp(
             prefix='convert-' + os.path.basename(self.path) + '-')
         output, status = self.run('init', repodir=self.tmppath)
         self.checkexit(status)

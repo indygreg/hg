@@ -71,7 +71,7 @@ import os
 import re
 import shutil
 import stat
-import tempfile
+
 from mercurial.i18n import _
 from mercurial.node import (
     nullid,
@@ -210,7 +210,7 @@ def dodiff(ui, repo, cmdline, pats, opts):
         if not common:
             return 0
 
-    tmproot = tempfile.mkdtemp(prefix='extdiff.')
+    tmproot = pycompat.mkdtemp(prefix='extdiff.')
     try:
         if not opts.get('patch'):
             # Always make a copy of node1a (and node1b, if applicable)

@@ -11,7 +11,6 @@ import contextlib
 import os
 import re
 import shutil
-import tempfile
 
 from .i18n import _
 from .node import nullid, short
@@ -713,7 +712,7 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
     tmproot = None
     tmprootprefix = repo.ui.config('experimental', 'mergetempdirprefix')
     if tmprootprefix:
-        tmproot = tempfile.mkdtemp(prefix=tmprootprefix)
+        tmproot = pycompat.mkdtemp(prefix=tmprootprefix)
 
     def maketempfrompath(prefix, path):
         fullbase, ext = os.path.splitext(path)

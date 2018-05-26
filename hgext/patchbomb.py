@@ -79,7 +79,6 @@ import email.utils as eutil
 import errno
 import os
 import socket
-import tempfile
 
 from mercurial.i18n import _
 from mercurial import (
@@ -317,7 +316,7 @@ def _getbundle(repo, dest, **opts):
     The bundle is a returned as a single in-memory binary blob.
     """
     ui = repo.ui
-    tmpdir = tempfile.mkdtemp(prefix='hg-email-bundle-')
+    tmpdir = pycompat.mkdtemp(prefix='hg-email-bundle-')
     tmpfn = os.path.join(tmpdir, 'bundle')
     btype = ui.config('patchbomb', 'bundletype')
     if btype:

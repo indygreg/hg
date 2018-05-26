@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import stat
-import tempfile
 
 from .i18n import _
 from . import (
@@ -18,6 +17,7 @@ from . import (
     hg,
     localrepo,
     manifest,
+    pycompat,
     revlog,
     scmutil,
     util,
@@ -657,7 +657,7 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
 
     ui.write(_('data fully migrated to temporary repository\n'))
 
-    backuppath = tempfile.mkdtemp(prefix='upgradebackup.', dir=srcrepo.path)
+    backuppath = pycompat.mkdtemp(prefix='upgradebackup.', dir=srcrepo.path)
     backupvfs = vfsmod.vfs(backuppath)
 
     # Make a backup of requires file first, as it is the first to be modified.
@@ -842,7 +842,7 @@ def upgraderepo(ui, repo, run=False, optimize=None):
         # data. There are less heavyweight ways to do this, but it is easier
         # to create a new repo object than to instantiate all the components
         # (like the store) separately.
-        tmppath = tempfile.mkdtemp(prefix='upgrade.', dir=repo.path)
+        tmppath = pycompat.mkdtemp(prefix='upgrade.', dir=repo.path)
         backuppath = None
         try:
             ui.write(_('creating temporary repository to stage migrated '

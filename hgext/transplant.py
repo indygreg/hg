@@ -16,7 +16,7 @@ map from a changeset hash to its hash in the source repository.
 from __future__ import absolute_import
 
 import os
-import tempfile
+
 from mercurial.i18n import _
 from mercurial import (
     bundlerepo,
@@ -215,7 +215,7 @@ class transplanter(object):
                 if skipmerge:
                     patchfile = None
                 else:
-                    fd, patchfile = tempfile.mkstemp(prefix='hg-transplant-')
+                    fd, patchfile = pycompat.mkstemp(prefix='hg-transplant-')
                     fp = os.fdopen(fd, r'wb')
                     gen = patch.diff(source, parent, node, opts=diffopts)
                     for chunk in gen:
@@ -263,7 +263,7 @@ class transplanter(object):
 
         self.ui.status(_('filtering %s\n') % patchfile)
         user, date, msg = (changelog[1], changelog[2], changelog[4])
-        fd, headerfile = tempfile.mkstemp(prefix='hg-transplant-')
+        fd, headerfile = pycompat.mkstemp(prefix='hg-transplant-')
         fp = os.fdopen(fd, r'wb')
         fp.write("# HG changeset patch\n")
         fp.write("# User %s\n" % user)

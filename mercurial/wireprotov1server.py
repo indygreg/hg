@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import os
-import tempfile
 
 from .i18n import _
 from .node import (
@@ -568,7 +567,7 @@ def unbundle(repo, proto, heads):
                             fp.close()
                         if tempname:
                             os.unlink(tempname)
-                    fd, tempname = tempfile.mkstemp(prefix='hg-unbundle-')
+                    fd, tempname = pycompat.mkstemp(prefix='hg-unbundle-')
                     repo.ui.debug('redirecting incoming bundle to %s\n' %
                         tempname)
                     fp = os.fdopen(fd, pycompat.sysstr('wb+'))

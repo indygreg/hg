@@ -216,7 +216,7 @@ def checkexec(path):
             # check directly in path and don't leave checkisexec behind
             checkdir = path
             checkisexec = None
-        fh, fn = tempfile.mkstemp(dir=checkdir, prefix='hg-checkexec-')
+        fh, fn = pycompat.mkstemp(dir=checkdir, prefix='hg-checkexec-')
         try:
             os.close(fh)
             m = os.stat(fn).st_mode

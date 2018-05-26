@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import binascii
 import os
-import tempfile
 
 from mercurial.i18n import _
 from mercurial import (
@@ -61,11 +60,11 @@ class gpg(object):
         sigfile = datafile = None
         try:
             # create temporary files
-            fd, sigfile = tempfile.mkstemp(prefix="hg-gpg-", suffix=".sig")
+            fd, sigfile = pycompat.mkstemp(prefix="hg-gpg-", suffix=".sig")
             fp = os.fdopen(fd, r'wb')
             fp.write(sig)
             fp.close()
-            fd, datafile = tempfile.mkstemp(prefix="hg-gpg-", suffix=".txt")
+            fd, datafile = pycompat.mkstemp(prefix="hg-gpg-", suffix=".txt")
             fp = os.fdopen(fd, r'wb')
             fp.write(data)
             fp.close()

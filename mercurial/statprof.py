@@ -112,7 +112,6 @@ import json
 import os
 import signal
 import sys
-import tempfile
 import threading
 import time
 
@@ -691,7 +690,7 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
               file=fp)
         return
 
-    fd, path = tempfile.mkstemp()
+    fd, path = pycompat.mkstemp()
 
     file = open(path, "w+")
 

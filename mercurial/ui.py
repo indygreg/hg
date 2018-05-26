@@ -18,7 +18,6 @@ import signal
 import socket
 import subprocess
 import sys
-import tempfile
 import traceback
 
 from .i18n import _
@@ -1446,7 +1445,7 @@ class ui(object):
         rdir = None
         if self.configbool('experimental', 'editortmpinhg'):
             rdir = repopath
-        (fd, name) = tempfile.mkstemp(prefix='hg-' + extra['prefix'] + '-',
+        (fd, name) = pycompat.mkstemp(prefix='hg-' + extra['prefix'] + '-',
                                       suffix=suffix,
                                       dir=rdir)
         try:

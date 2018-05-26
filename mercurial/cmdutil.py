@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import errno
 import os
 import re
-import tempfile
 
 from .i18n import _
 from .node import (
@@ -329,7 +328,7 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         try:
             # backup continues
             for f in tobackup:
-                fd, tmpname = tempfile.mkstemp(prefix=f.replace('/', '_')+'.',
+                fd, tmpname = pycompat.mkstemp(prefix=f.replace('/', '_') + '.',
                                                dir=backupdir)
                 os.close(fd)
                 ui.debug('backup %r as %r\n' % (f, tmpname))

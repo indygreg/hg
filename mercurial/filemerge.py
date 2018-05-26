@@ -724,7 +724,7 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
                 name += ext
             f = open(name, r"wb")
         else:
-            fd, name = tempfile.mkstemp(prefix=pre + '.', suffix=ext)
+            fd, name = pycompat.mkstemp(prefix=pre + '.', suffix=ext)
             f = os.fdopen(fd, r"wb")
         return f, name
 

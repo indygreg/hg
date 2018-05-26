@@ -13,7 +13,6 @@ import io
 import os
 import socket
 import struct
-import tempfile
 import weakref
 
 from .i18n import _
@@ -519,7 +518,7 @@ class httppeer(wireprotov1peer.wirepeer):
         filename = None
         try:
             # dump bundle to disk
-            fd, filename = tempfile.mkstemp(prefix="hg-bundle-", suffix=".hg")
+            fd, filename = pycompat.mkstemp(prefix="hg-bundle-", suffix=".hg")
             fh = os.fdopen(fd, r"wb")
             d = fp.read(4096)
             while d:

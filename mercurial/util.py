@@ -31,7 +31,6 @@ import shutil
 import socket
 import stat
 import sys
-import tempfile
 import time
 import traceback
 import warnings
@@ -1893,7 +1892,7 @@ def checknlink(testfile):
     # work around issue2543 (or testfile may get lost on Samba shares)
     f1, f2, fp = None, None, None
     try:
-        fd, f1 = tempfile.mkstemp(prefix='.%s-' % os.path.basename(testfile),
+        fd, f1 = pycompat.mkstemp(prefix='.%s-' % os.path.basename(testfile),
                                   suffix='1~', dir=os.path.dirname(testfile))
         os.close(fd)
         f2 = '%s2~' % f1[:-2]
@@ -1939,7 +1938,7 @@ def mktempcopy(name, emptyok=False, createmode=None):
     Returns the name of the temporary file.
     """
     d, fn = os.path.split(name)
-    fd, temp = tempfile.mkstemp(prefix='.%s-' % fn, suffix='~', dir=d)
+    fd, temp = pycompat.mkstemp(prefix='.%s-' % fn, suffix='~', dir=d)
     os.close(fd)
     # Temporary files are created with mode 0600, which is usually not
     # what we want.  If the original file already exists, just copy

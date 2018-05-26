@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import contextlib
 import os
 import struct
-import tempfile
 import warnings
 
 from .i18n import _
@@ -19,6 +18,7 @@ from . import (
     cacheutil,
     error,
     phases,
+    pycompat,
     store,
     util,
 )
@@ -469,7 +469,7 @@ def maketempcopies():
     files = []
     try:
         def copy(src):
-            fd, dst = tempfile.mkstemp()
+            fd, dst = pycompat.mkstemp()
             os.close(fd)
             files.append(dst)
             util.copyfiles(src, dst, hardlink=True)

@@ -11,7 +11,6 @@ import errno
 import os
 import shutil
 import stat
-import tempfile
 import threading
 
 from .i18n import _
@@ -171,7 +170,7 @@ class abstractvfs(object):
         return os.mkdir(self.join(path))
 
     def mkstemp(self, suffix='', prefix='tmp', dir=None):
-        fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix,
+        fd, name = pycompat.mkstemp(suffix=suffix, prefix=prefix,
                                     dir=self.join(dir))
         dname, fname = util.split(name)
         if dir:

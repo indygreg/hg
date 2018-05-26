@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 import os
 import re
-import tempfile
 import xml.dom.minidom
 
 from mercurial.i18n import _
@@ -1225,7 +1224,7 @@ class svn_sink(converter_sink, commandline):
         wdest = self.wjoin(dest)
         exists = os.path.lexists(wdest)
         if exists:
-            fd, tempname = tempfile.mkstemp(
+            fd, tempname = pycompat.mkstemp(
                 prefix='hg-copy-', dir=os.path.dirname(wdest))
             os.close(fd)
             os.unlink(tempname)
@@ -1313,7 +1312,7 @@ class svn_sink(converter_sink, commandline):
             self.xargs(self.setexec, 'propset', 'svn:executable', '*')
             self.setexec = []
 
-        fd, messagefile = tempfile.mkstemp(prefix='hg-convert-')
+        fd, messagefile = pycompat.mkstemp(prefix='hg-convert-')
         fp = os.fdopen(fd, r'wb')
         fp.write(util.tonativeeol(commit.desc))
         fp.close()

@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import os
-import tempfile
 
 from .i18n import _
 
@@ -72,7 +71,7 @@ def runservice(opts, parentfn=None, initfn=None, runfn=None, logfile=None,
 
     if opts['daemon'] and not opts['daemon_postexec']:
         # Signal child process startup with file removal
-        lockfd, lockpath = tempfile.mkstemp(prefix='hg-service-')
+        lockfd, lockpath = pycompat.mkstemp(prefix='hg-service-')
         os.close(lockfd)
         try:
             if not runargs:

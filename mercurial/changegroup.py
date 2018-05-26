@@ -9,7 +9,6 @@ from __future__ import absolute_import
 
 import os
 import struct
-import tempfile
 import weakref
 
 from .i18n import _
@@ -80,7 +79,7 @@ def writechunks(ui, chunks, filename, vfs=None):
                 # small (4k is common on Linux).
                 fh = open(filename, "wb", 131072)
         else:
-            fd, filename = tempfile.mkstemp(prefix="hg-bundle-", suffix=".hg")
+            fd, filename = pycompat.mkstemp(prefix="hg-bundle-", suffix=".hg")
             fh = os.fdopen(fd, r"wb")
         cleanup = filename
         for c in chunks:

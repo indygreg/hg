@@ -16,7 +16,6 @@ import os
 import signal
 import subprocess
 import sys
-import tempfile
 import time
 
 from ..i18n import _
@@ -164,11 +163,11 @@ def tempfilter(s, cmd):
     the temporary files generated.'''
     inname, outname = None, None
     try:
-        infd, inname = tempfile.mkstemp(prefix='hg-filter-in-')
+        infd, inname = pycompat.mkstemp(prefix='hg-filter-in-')
         fp = os.fdopen(infd, r'wb')
         fp.write(s)
         fp.close()
-        outfd, outname = tempfile.mkstemp(prefix='hg-filter-out-')
+        outfd, outname = pycompat.mkstemp(prefix='hg-filter-out-')
         os.close(outfd)
         cmd = cmd.replace('INFILE', inname)
         cmd = cmd.replace('OUTFILE', outname)

@@ -15,6 +15,7 @@ import inspect
 import os
 import shlex
 import sys
+import tempfile
 
 ispy3 = (sys.version_info[0] >= 3)
 ispypy = (r'__pypy__' in sys.builtin_module_names)
@@ -384,3 +385,7 @@ def getoptb(args, shortlist, namelist):
 
 def gnugetoptb(args, shortlist, namelist):
     return _getoptbwrapper(getopt.gnu_getopt, args, shortlist, namelist)
+
+# text=True is not supported; use util.from/tonativeeol() instead
+def mkstemp(suffix=b'', prefix=b'tmp', dir=None):
+    return tempfile.mkstemp(suffix, prefix, dir)

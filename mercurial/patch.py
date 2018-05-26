@@ -211,7 +211,7 @@ def extract(ui, fileobj):
     Any item can be missing from the dictionary. If filename is missing,
     fileobj did not contain a patch. Caller must unlink filename when done.'''
 
-    fd, tmpname = tempfile.mkstemp(prefix='hg-patch-')
+    fd, tmpname = pycompat.mkstemp(prefix='hg-patch-')
     tmpfp = os.fdopen(fd, r'wb')
     try:
         yield _extract(ui, fileobj, tmpname, tmpfp)
@@ -1109,7 +1109,7 @@ file will be generated: you can use that when you try again. If
 all lines of the hunk are removed, then the edit is aborted and
 the hunk is left unchanged.
 """)
-                (patchfd, patchfn) = tempfile.mkstemp(prefix="hg-editor-",
+                (patchfd, patchfn) = pycompat.mkstemp(prefix="hg-editor-",
                                                       suffix=".diff")
                 ncpatchfp = None
                 try:

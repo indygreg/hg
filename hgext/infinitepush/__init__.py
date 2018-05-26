@@ -94,7 +94,6 @@ import random
 import re
 import socket
 import subprocess
-import tempfile
 import time
 
 from mercurial.node import (
@@ -912,7 +911,7 @@ def storetobundlestore(orig, repo, op, unbundler):
 
     # storing the bundle in the bundlestore
     buf = util.chunkbuffer(bundler.getchunks())
-    fd, bundlefile = tempfile.mkstemp()
+    fd, bundlefile = pycompat.mkstemp()
     try:
         try:
             fp = os.fdopen(fd, r'wb')
@@ -998,7 +997,7 @@ def processparts(orig, repo, op, unbundler):
     # If commits were sent, store them
     if cgparams:
         buf = util.chunkbuffer(bundler.getchunks())
-        fd, bundlefile = tempfile.mkstemp()
+        fd, bundlefile = pycompat.mkstemp()
         try:
             try:
                 fp = os.fdopen(fd, r'wb')
@@ -1023,8 +1022,7 @@ def storebundle(op, params, bundlefile):
 
     bundle = None
     try:  # guards bundle
-        bundlepath = "bundle:%s+%s" % (op.repo.root,
-                                       pycompat.fsencode(bundlefile))
+        bundlepath = "bundle:%s+%s" % (op.repo.root, bundlefile)
         bundle = hg.repository(op.repo.ui, bundlepath)
 
         bookmark = params.get('bookmark')
@@ -1111,7 +1109,7 @@ def bundle2scratchbranch(op, part):
     bundler.addpart(cgpart)
     buf = util.chunkbuffer(bundler.getchunks())
 
-    fd, bundlefile = tempfile.mkstemp()
+    fd, bundlefile = pycompat.mkstemp()
     try:
         try:
             fp = os.fdopen(fd, r'wb')

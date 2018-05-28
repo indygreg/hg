@@ -1277,7 +1277,7 @@ Try again but with a corrupted shelve state file
   unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
   [1]
   $ sed 's/ae8c668541e8/123456789012/' .hg/shelvedstate > ../corrupt-shelvedstate
-  $ mv ../corrupt-shelvedstate .hg/histedit-state
+  $ mv ../corrupt-shelvedstate .hg/shelvestate
   $ hg unshelve --abort 2>&1 | grep 'aborted'
   unshelve of 'default-01' aborted
   $ hg summary

@@ -1289,8 +1289,16 @@ Try again but with a corrupted shelve state file
   [1]
   $ sed 's/ae8c668541e8/123456789012/' .hg/shelvedstate > ../corrupt-shelvedstate
   $ mv ../corrupt-shelvedstate .hg/histedit-state
-  $ hg unshelve --abort 2>&1 | grep 'rebase aborted'
+  $ hg unshelve --abort 2>&1 | grep 'aborted'
   rebase aborted
+  unshelve of 'default-01' aborted
+  $ hg summary
+  parent: 0:ae8c668541e8 tip
+   root
+  branch: default
+  commit: 1 modified, 1 unknown
+  update: (current)
+  phases: 1 draft
   $ hg up -C .
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 

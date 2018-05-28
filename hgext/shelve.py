@@ -621,14 +621,14 @@ def unshelveabort(ui, repo, state, opts):
         try:
             checkparents(repo, state)
 
-            repo.vfs.rename('unshelverebasestate', 'rebasestate')
-            try:
-                rebase.rebase(ui, repo, **{
-                    r'abort' : True
-                })
-            except Exception:
-                repo.vfs.rename('rebasestate', 'unshelverebasestate')
-                raise
+            merge.update(repo, state.pendingctx, False, True)
+            if (state.activebookmark
+                    and state.activebookmark in repo._bookmarks):
+                bookmarks.activate(repo, state.activebookmark)
+
+            if repo.vfs.exists('unshelverebasestate'):
+                repo.vfs.rename('unshelverebasestate', 'rebasestate')
+                rebase.clearstatus(repo)
 
             mergefiles(ui, repo, state.wctx, state.pendingctx)
             repair.strip(ui, repo, state.nodestoremove, backup=False,

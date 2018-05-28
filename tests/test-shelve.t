@@ -406,7 +406,6 @@ abort the unshelve and be happy
   R b/b
   ? a/a.orig
   $ hg unshelve -a
-  rebase aborted
   unshelve of 'default' aborted
   $ hg heads -q
   3:2e69b451d1ea
@@ -817,7 +816,6 @@ unshelve and conflicts with tracked and untracked files
   g
   $ hg unshelve --abort -t false
   tool option will be ignored
-  rebase aborted
   unshelve of 'default' aborted
   $ hg st
   M a
@@ -861,7 +859,6 @@ unshelve and conflicts with tracked and untracked files
   $ cat f.orig
   g
   $ hg unshelve --abort
-  rebase aborted
   unshelve of 'default' aborted
   $ hg st
   ? f.orig
@@ -1271,14 +1268,8 @@ Wreak havoc on the unshelve process
   $ rm .hg/unshelverebasestate
   $ hg unshelve --abort
   unshelve of 'default' aborted
-  abort: $ENOENT$* (glob)
-  [255]
-Can the user leave the current state?
-  $ hg up -C .
-  1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Try again but with a corrupted shelve state file
-  $ hg strip -r 406ad6fb39eb -r e22bdf25c863 -q
   $ hg up -r 0 -q
   $ echo '' > root
   $ hg shelve -q
@@ -1290,7 +1281,6 @@ Try again but with a corrupted shelve state file
   $ sed 's/ae8c668541e8/123456789012/' .hg/shelvedstate > ../corrupt-shelvedstate
   $ mv ../corrupt-shelvedstate .hg/histedit-state
   $ hg unshelve --abort 2>&1 | grep 'aborted'
-  rebase aborted
   unshelve of 'default-01' aborted
   $ hg summary
   parent: 0:ae8c668541e8 tip

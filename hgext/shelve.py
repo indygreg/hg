@@ -686,6 +686,10 @@ def unshelvecontinue(ui, repo, state, opts):
         shelvectx = repo[state.parents[1]]
         pendingctx = state.pendingctx
 
+        with repo.dirstate.parentchange():
+            repo.setparents(state.pendingctx.node(), nodemod.nullid)
+            repo.dirstate.write(repo.currenttransaction())
+
         overrides = {('phases', 'new-commit'): phases.secret}
         with repo.ui.configoverride(overrides, 'unshelve'):
             with repo.dirstate.parentchange():
@@ -761,33 +765,46 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     if tmpwctx.node() == shelvectx.parents()[0].node():
         return shelvectx
 
-    ui.status(_('rebasing shelved changes\n'))
-    try:
-        rebase.rebase(ui, repo, **{
-            r'rev': [shelvectx.rev()],
-            r'dest': "%d" % tmpwctx.rev(),
-            r'keep': True,
-            r'tool': opts.get('tool', ''),
-        })
-    except error.InterventionRequired:
-        tr.close()
+    overrides = {
+        ('ui', 'forcemerge'): opts.get('tool', ''),
+        ('phases', 'new-commit'): phases.secret,
+    }
+    with repo.ui.configoverride(overrides, 'unshelve'):
+        ui.status(_('rebasing shelved changes\n'))
+        stats = merge.graft(repo, shelvectx, shelvectx.p1(),
+                           labels=['dest', 'source'],
+                           keepconflictparent=True)
+        if stats.unresolvedcount:
+            tr.close()
 
-        nodestoremove = [repo.changelog.node(rev)
-                         for rev in xrange(oldtiprev, len(repo))]
-        shelvedstate.save(repo, basename, pctx, tmpwctx, nodestoremove,
-                          branchtorestore, opts.get('keep'), activebookmark)
+            nodestoremove = [repo.changelog.node(rev)
+                             for rev in xrange(oldtiprev, len(repo))]
+            shelvedstate.save(repo, basename, pctx, tmpwctx, nodestoremove,
+                              branchtorestore, opts.get('keep'), activebookmark)
+            raise error.InterventionRequired(
+                _("unresolved conflicts (see 'hg resolve', then "
+                  "'hg unshelve --continue')"))
 
-        repo.vfs.rename('rebasestate', 'unshelverebasestate')
-        raise error.InterventionRequired(
-            _("unresolved conflicts (see 'hg resolve', then "
-              "'hg unshelve --continue')"))
+        with repo.dirstate.parentchange():
+            repo.setparents(tmpwctx.node(), nodemod.nullid)
+            newnode = repo.commit(text=shelvectx.description(),
+                                  extra=shelvectx.extra(),
+                                  user=shelvectx.user(),
+                                  date=shelvectx.date())
 
-    # refresh ctx after rebase completes
-    shelvectx = repo['tip']
+        if newnode is None:
+            # If it ended up being a no-op commit, then the normal
+            # merge state clean-up path doesn't happen, so do it
+            # here. Fix issue5494
+            merge.mergestate.clean(repo)
+            shelvectx = tmpwctx
+            msg = _('note: unshelved changes already existed '
+                    'in the working copy\n')
+            ui.status(msg)
+        else:
+            shelvectx = repo[newnode]
+            hg.updaterepo(repo, tmpwctx.node(), False)
 
-    if tmpwctx not in shelvectx.parents():
-        # rebase was a no-op, so it produced no child commit
-        shelvectx = tmpwctx
     return shelvectx
 
 def _forgetunknownfiles(repo, shelvectx, addedbefore):

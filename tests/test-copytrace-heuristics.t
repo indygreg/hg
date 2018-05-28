@@ -583,7 +583,6 @@ Test shelve/unshelve
   $ hg unshelve
   unshelving change 'default'
   rebasing shelved changes
-  rebasing 2:45f63161acea "changes to: initial" (tip)
   merging b and a to b
   $ ls
   b

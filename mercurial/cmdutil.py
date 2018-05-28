@@ -631,7 +631,7 @@ STATES = (
     ('histedit', fileexistspredicate('histedit-state'), _histeditmsg),
     ('bisect', fileexistspredicate('bisect.state'), _bisectmsg),
     ('graft', fileexistspredicate('graftstate'), _graftmsg),
-    ('unshelve', fileexistspredicate('unshelverebasestate'), _unshelvemsg),
+    ('unshelve', fileexistspredicate('shelvedstate'), _unshelvemsg),
     ('rebase', fileexistspredicate('rebasestate'), _rebasemsg),
     # The merge state is part of a list that will be iterated over.
     # They need to be last because some of the other unfinished states may also

@@ -1262,29 +1262,17 @@ test .orig files go where the user wants them to
 
 test Abort unshelve always gets user out of the unshelved state
 ---------------------------------------------------------------
-Wreak havoc on the unshelve process
-  $ rm .hg/unshelverebasestate
-  $ hg unshelve --abort
-  unshelve of 'default' aborted
 
-Try again but with a corrupted shelve state file
-  $ hg up -r 0 -q
-  $ echo '' > root
-  $ hg shelve -q
-  $ echo 'contADDent' > root
-  $ hg unshelve -q
-  warning: conflicts while merging root! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see 'hg resolve', then 'hg unshelve --continue')
-  [1]
+with a corrupted shelve state file
   $ sed 's/ae8c668541e8/123456789012/' .hg/shelvedstate > ../corrupt-shelvedstate
   $ mv ../corrupt-shelvedstate .hg/shelvestate
   $ hg unshelve --abort 2>&1 | grep 'aborted'
-  unshelve of 'default-01' aborted
+  unshelve of 'default' aborted
   $ hg summary
   parent: 0:ae8c668541e8 tip
    root
   branch: default
-  commit: 1 modified, 1 unknown
+  commit: 1 modified
   update: (current)
   phases: 1 draft
   $ hg up -C .

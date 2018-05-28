@@ -3711,6 +3711,13 @@ def outgoing(ui, repo, dest=None, **opts):
 
     Returns 0 if there are outgoing changes, 1 otherwise.
     """
+    # hg._outgoing() needs to re-resolve the path in order to handle #branch
+    # style URLs, so don't overwrite dest.
+    path = ui.paths.getpath(dest, default=('default-push', 'default'))
+    if not path:
+        raise error.Abort(_('default repository not configured!'),
+                          hint=_("see 'hg help config.paths'"))
+
     opts = pycompat.byteskwargs(opts)
     if opts.get('graph'):
         logcmdutil.checkunsupportedgraphflags([], opts)
@@ -3728,7 +3735,7 @@ def outgoing(ui, repo, dest=None, **opts):
         return 0
 
     if opts.get('bookmarks'):
-        dest = ui.expandpath(dest or 'default-push', dest or 'default')
+        dest = path.pushloc or path.loc
         dest, branches = hg.parseurl(dest, opts.get('branch'))
         other = hg.peer(repo, opts, dest)
         if 'bookmarks' not in other.listkeys('namespaces'):
@@ -3738,7 +3745,7 @@ def outgoing(ui, repo, dest=None, **opts):
         ui.pager('outgoing')
         return bookmarks.outgoing(ui, repo, other)
 
-    repo._subtoppath = ui.expandpath(dest or 'default-push', dest or 'default')
+    repo._subtoppath = path.pushloc or path.loc
     try:
         return hg.outgoing(ui, repo, dest, opts)
     finally:

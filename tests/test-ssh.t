@@ -230,7 +230,7 @@ test pushkeys and bookmarks
   namespaces	
   phases	
   $ hg book foo -r 0
-  $ hg out -B
+  $ hg out -B --config paths.default=bogus://invalid --config paths.default:pushurl=`hg paths default`
   comparing with ssh://user@dummy/remote
   searching for changed bookmarks
      foo                       1160648e36ce

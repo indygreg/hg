@@ -2194,7 +2194,8 @@ def update(repo, node, branchmerge, force, ancestor=None,
                   error=stats.unresolvedcount)
     return stats
 
-def graft(repo, ctx, pctx, labels, keepparent=False):
+def graft(repo, ctx, pctx, labels, keepparent=False,
+          keepconflictparent=False):
     """Do a graft-like merge.
 
     This is a merge where the merge ancestor is chosen such that one
@@ -2207,6 +2208,7 @@ def graft(repo, ctx, pctx, labels, keepparent=False):
     pctx - merge base, usually ctx.p1()
     labels - merge labels eg ['local', 'graft']
     keepparent - keep second parent if any
+    keepparent - if unresolved, keep parent used for the merge
 
     """
     # If we're grafting a descendant onto an ancestor, be sure to pass
@@ -2220,11 +2222,15 @@ def graft(repo, ctx, pctx, labels, keepparent=False):
     stats = update(repo, ctx.node(), True, True, pctx.node(),
                    mergeancestor=mergeancestor, labels=labels)
 
-    pother = nullid
-    parents = ctx.parents()
-    if keepparent and len(parents) == 2 and pctx in parents:
-        parents.remove(pctx)
-        pother = parents[0].node()
+
+    if keepconflictparent and stats.unresolvedcount:
+        pother = ctx.node()
+    else:
+        pother = nullid
+        parents = ctx.parents()
+        if keepparent and len(parents) == 2 and pctx in parents:
+            parents.remove(pctx)
+            pother = parents[0].node()
 
     with repo.dirstate.parentchange():
         repo.setparents(repo['.'].node(), pother)

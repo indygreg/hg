@@ -459,7 +459,6 @@ attempt to continue
   (continue: hg unshelve --continue)
   [255]
   $ hg unshelve -c
-  rebasing 5:32c69314e062 "changes to: [mq]: second.patch" (tip)
   unshelve of 'default' complete
 
 ensure the repo is as we hope
@@ -901,8 +900,7 @@ is a no-op), works (issue4398)
   (no more unresolved files)
   continue: hg unshelve --continue
   $ hg unshelve -c
-  rebasing 5:e42a7da90865 "changes to: second" (tip)
-  note: rebase of 5:e42a7da90865 created no changes to commit
+  note: unshelved changes already existed in the working copy
   unshelve of 'default' complete
   $ hg bookmark
    * test                      4:33f7f61e6c5e
@@ -1534,7 +1532,6 @@ will be preserved.
   (no more unresolved files)
   continue: hg unshelve --continue
   $ hg unshelve --continue
-  rebasing 2:425c97ef07f3 "changes to: a" (tip)
   marked working directory as branch test
   unshelve of 'default' complete
   $ cat a
@@ -1618,7 +1615,6 @@ in previous versions) and running unshelve --continue
   (no more unresolved files)
   continue: hg unshelve --continue
   $ hg unshelve --continue
-  rebasing 2:425c97ef07f3 "changes to: a" (tip)
   unshelve of 'default' complete
   $ cat a
   aaabbbccc
@@ -1722,7 +1718,6 @@ Unshelve respects --keep even if user intervention is needed
   (no more unresolved files)
   continue: hg unshelve --continue
   $ hg unshelve --continue
-  rebasing 2:3fbe6fbb0bef "changes to: 1" (tip)
   unshelve of 'default' complete
   $ hg shelve --list
   default         (*s ago) * changes to: 1 (glob)
@@ -1795,7 +1790,6 @@ putting v1 shelvedstate file in place of a created v2
   continue: hg unshelve --continue
 mercurial does not crash
   $ hg unshelve --continue
-  rebasing 2:003d2d94241c "changes to: root" (tip)
   unshelve of 'ashelve' complete
   $ cd ..
 

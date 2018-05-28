@@ -683,22 +683,37 @@ def unshelvecontinue(ui, repo, state, opts):
                 _("unresolved conflicts, can't continue"),
                 hint=_("see 'hg resolve', then 'hg unshelve --continue'"))
 
-        repo.vfs.rename('unshelverebasestate', 'rebasestate')
-        try:
-            rebase.rebase(ui, repo, **{
-                r'continue' : True
-            })
-        except Exception:
-            repo.vfs.rename('rebasestate', 'unshelverebasestate')
-            raise
+        shelvectx = repo[state.parents[1]]
+        pendingctx = state.pendingctx
 
-        shelvectx = repo['tip']
-        if state.pendingctx not in shelvectx.parents():
-            # rebase was a no-op, so it produced no child commit
+        overrides = {('phases', 'new-commit'): phases.secret}
+        with repo.ui.configoverride(overrides, 'unshelve'):
+            with repo.dirstate.parentchange():
+                repo.setparents(state.parents[0], nodemod.nullid)
+                newnode = repo.commit(text=shelvectx.description(),
+                                      extra=shelvectx.extra(),
+                                      user=shelvectx.user(),
+                                      date=shelvectx.date())
+
+        if newnode is None:
+            # If it ended up being a no-op commit, then the normal
+            # merge state clean-up path doesn't happen, so do it
+            # here. Fix issue5494
+            merge.mergestate.clean(repo)
             shelvectx = state.pendingctx
+            msg = _('note: unshelved changes already existed '
+                    'in the working copy\n')
+            ui.status(msg)
         else:
-            # only strip the shelvectx if the rebase produced it
-            state.nodestoremove.append(shelvectx.node())
+            # only strip the shelvectx if we produced one
+            state.nodestoremove.append(newnode)
+            shelvectx = repo[newnode]
+
+        hg.updaterepo(repo, pendingctx.node(), False)
+
+        if repo.vfs.exists('unshelverebasestate'):
+            repo.vfs.rename('unshelverebasestate', 'rebasestate')
+            rebase.clearstatus(repo)
 
         mergefiles(ui, repo, state.wctx, shelvectx)
         restorebranch(ui, repo, state.branchtorestore)

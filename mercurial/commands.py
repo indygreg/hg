@@ -2126,6 +2126,7 @@ def forget(ui, repo, *pats, **opts):
     'graft',
     [('r', 'rev', [], _('revisions to graft'), _('REV')),
      ('c', 'continue', False, _('resume interrupted graft')),
+     ('', 'stop', False, _('stop interrupted graft')),
      ('e', 'edit', False, _('invoke editor on commit messages')),
      ('', 'log', None, _('append graft info to log message')),
      ('f', 'force', False, _('force graft')),
@@ -2216,6 +2217,15 @@ def _dograft(ui, repo, *revs, **opts):
 
     cont = False
     graftstate = statemod.cmdstate(repo, 'graftstate')
+    if opts.get('stop'):
+        if opts.get('continue'):
+            raise error.Abort(_("cannot use '--continue' and "
+                                "'--stop' together"))
+        if any((opts.get('edit'), opts.get('log'), opts.get('user'),
+                opts.get('date'), opts.get('currentdate'),
+                opts.get('currentuser'), opts.get('rev'))):
+            raise error.Abort(_("cannot specify any other flag with '--stop'"))
+        return _stopgraft(ui, repo, graftstate)
     if opts.get('continue'):
         cont = True
         if revs:
@@ -2391,6 +2401,17 @@ def _readgraftstate(repo, graftstate):
     except error.CorruptedState:
         nodes = repo.vfs.read('graftstate').splitlines()
         return {'nodes': nodes}
+
+def _stopgraft(ui, repo, graftstate):
+    """stop the interrupted graft"""
+    if not graftstate.exists():
+        raise error.Abort(_("no interrupted graft found"))
+    pctx = repo['.']
+    hg.updaterepo(repo, pctx.node(), True)
+    graftstate.delete()
+    ui.status(_("stopped the interrupted graft\n"))
+    ui.status(_("working directory is now at %s\n") % pctx.hex()[:12])
+    return 0
 
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),

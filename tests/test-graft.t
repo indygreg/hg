@@ -244,7 +244,7 @@ Commit while interrupted should fail:
 
   $ hg ci -m 'commit interrupted graft'
   abort: graft in progress
-  (use 'hg graft --continue' or 'hg update' to abort)
+  (use 'hg graft --continue' or 'hg graft --stop' to abort)
   [255]
 
 Abort the graft and try committing:
@@ -1565,3 +1565,108 @@ Test that --log is preserved and reused in `hg graft --continue`
   o  3:9e887f7a939c bar to b
   |
   ~
+
+  $ cd ..
+
+Testing the --stop flag of `hg graft` which stops the interrupted graft
+
+  $ hg init stopgraft
+  $ cd stopgraft
+  $ for ch in a b c d; do echo $ch > $ch; hg add $ch; hg ci -Aqm "added "$ch; done;
+
+  $ hg log -G
+  @  changeset:   3:9150fe93bec6
+  |  tag:         tip
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added d
+  |
+  o  changeset:   2:155349b645be
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added c
+  |
+  o  changeset:   1:5f6d8a4bf34a
+  |  user:        test
+  |  date:        Thu Jan 01 00:00:00 1970 +0000
+  |  summary:     added b
+  |
+  o  changeset:   0:9092f1db7931
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     added a
+  
+  $ hg up '.^^'
+  0 files updated, 0 files merged, 2 files removed, 0 files unresolved
+
+  $ echo foo > d
+  $ hg ci -Aqm "added foo to d"
+
+  $ hg graft --stop
+  abort: no interrupted graft found
+  [255]
+
+  $ hg graft -r 3
+  grafting 3:9150fe93bec6 "added d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+  $ hg graft --stop --continue
+  abort: cannot use '--continue' and '--stop' together
+  [255]
+
+  $ hg graft --stop -U
+  abort: cannot specify any other flag with '--stop'
+  [255]
+  $ hg graft --stop --rev 4
+  abort: cannot specify any other flag with '--stop'
+  [255]
+  $ hg graft --stop --log
+  abort: cannot specify any other flag with '--stop'
+  [255]
+
+  $ hg graft --stop
+  stopped the interrupted graft
+  working directory is now at a0deacecd59d
+
+  $ hg diff
+
+  $ hg log -Gr '.'
+  @  changeset:   4:a0deacecd59d
+  |  tag:         tip
+  ~  parent:      1:5f6d8a4bf34a
+     user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     added foo to d
+  
+  $ hg graft -r 2 -r 3
+  grafting 2:155349b645be "added c"
+  grafting 3:9150fe93bec6 "added d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+  $ hg graft --stop
+  stopped the interrupted graft
+  working directory is now at 75b447541a9e
+
+  $ hg diff
+
+  $ hg log -G -T "{rev}:{node|short} {desc}"
+  @  5:75b447541a9e added c
+  |
+  o  4:a0deacecd59d added foo to d
+  |
+  | o  3:9150fe93bec6 added d
+  | |
+  | o  2:155349b645be added c
+  |/
+  o  1:5f6d8a4bf34a added b
+  |
+  o  0:9092f1db7931 added a
+  

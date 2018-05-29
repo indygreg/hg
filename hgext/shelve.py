@@ -168,10 +168,10 @@ class shelvedfile(object):
         bundle2.writebundle(self.ui, cg, self.fname, btype, self.vfs,
                                 compression=compression)
 
-    def writeobsshelveinfo(self, info):
+    def writeinfo(self, info):
         scmutil.simplekeyvaluefile(self.vfs, self.fname).write(info)
 
-    def readobsshelveinfo(self):
+    def readinfo(self):
         return scmutil.simplekeyvaluefile(self.vfs, self.fname).read()
 
 class shelvedstate(object):

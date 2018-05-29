@@ -1,3 +1,5 @@
+#testcases stripbased phasebased
+
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
   > mq =
@@ -8,6 +10,15 @@
   > [shelve]
   > maxbackups = 2
   > EOF
+
+#if phasebased
+
+  $ cat <<EOF >> $HGRCPATH
+  > [format]
+  > internal-phase = yes
+  > EOF
+
+#endif
 
   $ hg init repo
   $ cd repo

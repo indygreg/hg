@@ -140,11 +140,14 @@ class shelvedfile(object):
     def applybundle(self):
         fp = self.opener()
         try:
+            targetphase = phases.internal
+            if not phases.supportinternal(self.repo):
+                targetphase = phases.secret
             gen = exchange.readbundle(self.repo.ui, fp, self.fname, self.vfs)
             bundle2.applybundle(self.repo, gen, self.repo.currenttransaction(),
                                 source='unshelve',
                                 url='bundle:' + self.vfs.join(self.fname),
-                                targetphase=phases.secret)
+                                targetphase=targetphase)
         finally:
             fp.close()
 
@@ -380,7 +383,11 @@ def getcommitfunc(extra, interactive, editor=False):
         hasmq = util.safehasattr(repo, 'mq')
         if hasmq:
             saved, repo.mq.checkapplied = repo.mq.checkapplied, False
-        overrides = {('phases', 'new-commit'): phases.secret}
+
+        targetphase = phases.internal
+        if not phases.supportinternal(repo):
+            targetphase = phases.secret
+        overrides = {('phases', 'new-commit'): targetphase}
         try:
             editor_ = False
             if editor:
@@ -702,7 +709,10 @@ def unshelvecontinue(ui, repo, state, opts):
             repo.setparents(state.pendingctx.node(), nodemod.nullid)
             repo.dirstate.write(repo.currenttransaction())
 
-        overrides = {('phases', 'new-commit'): phases.secret}
+        targetphase = phases.internal
+        if not phases.supportinternal(repo):
+            targetphase = phases.secret
+        overrides = {('phases', 'new-commit'): targetphase}
         with repo.ui.configoverride(overrides, 'unshelve'):
             with repo.dirstate.parentchange():
                 repo.setparents(state.parents[0], nodemod.nullid)

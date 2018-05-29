@@ -102,6 +102,7 @@ make sure shelve files were backed up
   $ ls .hg/shelve-backup
   default.hg
   default.patch
+  default.shelve
 
 checks to make sure we dont create a directory or
 hidden file while choosing a new shelve name
@@ -206,8 +207,10 @@ ensure shelve backups aren't overwritten
   $ ls .hg/shelve-backup/
   default-1.hg
   default-1.patch
+  default-1.shelve
   default.hg
   default.patch
+  default.shelve
 
 local edits should not prevent a shelved change from applying
 
@@ -250,10 +253,13 @@ is difficult to decide actual order of them from same timestamp)
   $ ls .hg/shelve-backup/
   default-01.hg
   default-01.patch
+  default-01.shelve
   default-1.hg
   default-1.patch
+  default-1.shelve
   default.hg
   default.patch
+  default.shelve
 
   $ hg unshelve
   abort: no shelved changes to apply!
@@ -314,8 +320,10 @@ ensure old shelve backups are being deleted automatically
   $ ls .hg/shelve-backup/
   default-01.hg
   default-01.patch
+  default-01.shelve
   wibble.hg
   wibble.patch
+  wibble.shelve
 
 cause unshelving to result in a merge with 'a' conflicting
 

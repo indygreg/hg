@@ -79,7 +79,7 @@ configitem('shelve', 'maxbackups',
 
 backupdir = 'shelve-backup'
 shelvedir = 'shelved'
-shelvefileextensions = ['hg', 'patch']
+shelvefileextensions = ['hg', 'patch', 'shelve']
 # universal extension is present in all types of shelves
 patchextension = 'patch'
 
@@ -409,6 +409,8 @@ def _nothingtoshelvemessaging(ui, repo, pats, opts):
         ui.status(_("nothing changed\n"))
 
 def _shelvecreatedcommit(repo, node, name):
+    info = {'node': nodemod.hex(node)}
+    shelvedfile(repo, name, 'shelve').writeinfo(info)
     bases = list(mutableancestors(repo[node]))
     shelvedfile(repo, name, 'hg').writebundle(bases, node)
     with shelvedfile(repo, name, patchextension).opener('wb') as fp:

@@ -136,9 +136,7 @@ when shelve has to choose itself
 cleaning the branches made for name checking tests
 
   $ hg up default -q
-  $ hg strip 3 -q
-  $ hg strip 2 -q
-  $ hg strip 1 -q
+  $ hg strip e9177275307e+6a6d231f43d+882bae7c62c2 -q
 
 create an mq patch - shelving should work fine with a patch applied
 
@@ -632,7 +630,7 @@ shelve should leave dirstate clean (issue4055)
   $ hg commit -Aqm xy
   $ echo z >> x
   $ hg commit -Aqm z
-  $ hg up 0
+  $ hg up 5c4c67fb7dce
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ printf 'a\nx\ny\nz\n' > x
   $ hg commit -Aqm xyz
@@ -640,7 +638,7 @@ shelve should leave dirstate clean (issue4055)
   $ hg shelve
   shelved as default
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
-  $ hg rebase -d 1 --config extensions.rebase=
+  $ hg rebase -d 6c103be8f4e4 --config extensions.rebase=
   rebasing 2:323bfa07f744 "xyz" (tip)
   merging x
   saved backup bundle to $TESTTMP/shelverebase/.hg/strip-backup/323bfa07f744-78114325-rebase.hg
@@ -661,7 +659,7 @@ shelve should only unshelve pending changes (issue4068)
   $ hg ci -Aqm a
   $ touch b
   $ hg ci -Aqm b
-  $ hg up -q 0
+  $ hg up -q 3903775176ed
   $ touch c
   $ hg ci -Aqm c
 
@@ -670,7 +668,7 @@ shelve should only unshelve pending changes (issue4068)
   $ hg shelve
   shelved as default
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg up -q 1
+  $ hg up -q 0e067c57feba
   $ hg unshelve
   unshelving change 'default'
   rebasing shelved changes
@@ -683,7 +681,7 @@ unshelve should work on an ancestor of the original commit
   $ hg shelve
   shelved as default
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg up 0
+  $ hg up 3903775176ed
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg unshelve
   unshelving change 'default'
@@ -701,7 +699,7 @@ test bug 4073 we need to enable obsolete markers for it
   $ hg shelve
   shelved as default
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg debugobsolete `hg --debug id -i -r 1`
+  $ hg debugobsolete `hg log -r 0e067c57feba -T '{node}'`
   obsoleted 1 changesets
   $ hg unshelve
   unshelving change 'default'
@@ -874,7 +872,7 @@ unshelve and conflicts with tracked and untracked files
 Recreate some conflict again
 
   $ cd ../repo
-  $ hg up -C -r 3
+  $ hg up -C -r 2e69b451d1ea
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (leaving bookmark test)
   $ echo y >> a/a
@@ -1204,7 +1202,7 @@ Test visibility of in-memory changes inside transaction to external hook
 
 == test visibility to external update hook
 
-  $ hg update -q -C 5
+  $ hg update -q -C 703117a2acfb
 
   $ cat >> .hg/hgrc <<EOF
   > [hooks]
@@ -1280,7 +1278,7 @@ Can the user leave the current state?
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Try again but with a corrupted shelve state file
-  $ hg strip -r 2 -r 1 -q
+  $ hg strip -r 406ad6fb39eb -r e22bdf25c863 -q
   $ hg up -r 0 -q
   $ echo '' > root
   $ hg shelve -q
@@ -1558,7 +1556,7 @@ test branch.
   $ hg shelve
   shelved as test
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
-  $ hg update -r default
+  $ hg update -r 7049e48789d7
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg unshelve
   unshelving change 'test'

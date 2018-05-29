@@ -140,6 +140,10 @@ mutablephases = tuple(allphases[1:])
 remotehiddenphases = tuple(allphases[2:])
 localhiddenphases = tuple(p for p in allphases if p & HIDEABLE_FLAG)
 
+def supportinternal(repo):
+    """True if the internal phase can be used on a repository"""
+    return 'internal-phase' in repo.requirements
+
 def _readroots(repo, phasedefaults=None):
     """Read phase roots from disk
 
@@ -442,6 +446,9 @@ class phasecache(object):
     def _retractboundary(self, repo, tr, targetphase, nodes):
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
+        if targetphase == internal and not supportinternal(repo):
+            msg = 'this repository does not support the internal phase'
+            raise error.ProgrammingError(msg)
 
         repo = repo.unfiltered()
         currentroots = self.phaseroots[targetphase]

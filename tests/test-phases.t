@@ -832,8 +832,38 @@ Try various actions. only the draft move should succeed
 Test for the "internal" phase
 =============================
 
-  $ hg init internal-phase
+Check we deny its usage on older repository
+
+  $ hg init no-internal-phase --config format.internal-phase=no
+  $ cd no-internal-phase
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  store
+  $ echo X > X
+  $ hg add X
+  $ hg status
+  A X
+  $ hg --config "phases.new-commit=internal" commit -m "my test internal commit" 2>&1 | grep ProgrammingError
+  ** ProgrammingError: this repository does not support the internal phase
+      raise error.ProgrammingError(msg)
+  mercurial.error.ProgrammingError: this repository does not support the internal phase
+
+  $ cd ..
+
+Check it works fine with repository that supports it.
+
+  $ hg init internal-phase --config format.internal-phase=yes
   $ cd internal-phase
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  internal-phase
+  revlogv1
+  store
   $ mkcommit A
   test-debug-phase: new rev 0:  x -> 1
   test-hook-close-phase: 4a2df7238c3b48766b5e22fafbb8a2f506ec8256:   -> draft

@@ -2513,7 +2513,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                     yield ('+', b[i])
 
     def display(fm, fn, ctx, pstates, states):
-        rev = ctx.rev()
+        rev = scmutil.intrev(ctx)
         if fm.isplain():
             formatuser = ui.shortuser
         else:
@@ -2526,7 +2526,10 @@ def grep(ui, repo, pattern, *pats, **opts):
         @util.cachefunc
         def binary():
             flog = getfile(fn)
-            return stringutil.binary(flog.read(ctx.filenode(fn)))
+            try:
+                return stringutil.binary(flog.read(ctx.filenode(fn)))
+            except error.WdirUnsupported:
+                return ctx[fn].isbinary()
 
         fieldnamemap = {'filename': 'file', 'linenumber': 'line_number'}
         if opts.get('all'):
@@ -2535,7 +2538,8 @@ def grep(ui, repo, pattern, *pats, **opts):
             iter = [('', l) for l in states]
         for change, l in iter:
             fm.startitem()
-            fm.data(node=fm.hexfunc(ctx.node()))
+            fm.data(node=fm.hexfunc(scmutil.binnode(ctx)))
+
             cols = [
                 ('filename', fn, True),
                 ('rev', rev, True),
@@ -2601,8 +2605,10 @@ def grep(ui, repo, pattern, *pats, **opts):
                 fnode = ctx.filenode(fn)
             except error.LookupError:
                 continue
-
-            copied = flog.renamed(fnode)
+            try:
+                copied = flog.renamed(fnode)
+            except error.WdirUnsupported:
+                copied = ctx[fn].renamed()
             copy = follow and copied and copied[0]
             if copy:
                 copies.setdefault(rev, {})[fn] = copy
@@ -2613,7 +2619,11 @@ def grep(ui, repo, pattern, *pats, **opts):
             files.append(fn)
 
             if fn not in matches[rev]:
-                grepbody(fn, rev, flog.read(fnode))
+                try:
+                    content = flog.read(fnode)
+                except error.WdirUnsupported:
+                    content = ctx[fn].data()
+                grepbody(fn, rev, content)
 
             pfn = copy or fn
             if pfn not in matches[parent]:

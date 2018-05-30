@@ -250,8 +250,11 @@ Test wdir
   $ hg stat
   M port2
   $ hg grep -r 'wdir()' port
-  abort: working directory revision cannot be specified
-  [255]
+  port2:2147483647:export
+  port2:2147483647:vaportight
+  port2:2147483647:import/export
+  port2:2147483647:deport
+  port2:2147483647:wport
 
   $ cd ..
   $ hg init t2
@@ -366,5 +369,16 @@ revisions printed, just their order.
   $ hg ci -m 'add binfile.bin'
   $ hg grep "MaCam" --all
   binfile.bin:0:+: Binary file matches
+
+  $ cd ..
+
+Fix_Wdir(): test that passing wdir() t -r flag does greps on the
+files modified in the working directory
+
+  $ cd a
+  $ echo "abracadara" >> a
+  $ hg add a
+  $ hg grep -r "wdir()" "abra"
+  a:2147483647:abracadara
 
   $ cd ..

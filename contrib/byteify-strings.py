@@ -19,7 +19,7 @@ import token
 import tokenize
 
 if True:
-    def replacetokens(tokens):
+    def replacetokens(tokens, opts):
         """Transform a stream of tokens from raw to Python 3.
 
         Returns a generator of possibly rewritten tokens.
@@ -129,16 +129,16 @@ if True:
 
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.
-                elif fn in ('iteritems', 'itervalues'):
+                elif opts['dictiter'] and fn in ('iteritems', 'itervalues'):
                     yield t._replace(string=fn[4:])
                     continue
 
             # Emit unmodified token.
             yield t
 
-def process(fin, fout):
+def process(fin, fout, opts):
     tokens = tokenize.tokenize(fin.readline)
-    tokens = replacetokens(list(tokens))
+    tokens = replacetokens(list(tokens), opts)
     fout.write(tokenize.untokenize(tokens))
 
 def tryunlink(fname):
@@ -168,17 +168,22 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('-i', '--inplace', action='store_true', default=False,
                     help='edit files in place')
+    ap.add_argument('--dictiter', action='store_true', default=False,
+                    help='rewrite iteritems() and itervalues()'),
     ap.add_argument('files', metavar='FILE', nargs='+', help='source file')
     args = ap.parse_args()
+    opts = {
+        'dictiter': args.dictiter,
+    }
     for fname in args.files:
         if args.inplace:
             with editinplace(fname) as fout:
                 with open(fname, 'rb') as fin:
-                    process(fin, fout)
+                    process(fin, fout, opts)
         else:
             with open(fname, 'rb') as fin:
                 fout = sys.stdout.buffer
-                process(fin, fout)
+                process(fin, fout, opts)
 
 if __name__ == '__main__':
     main()

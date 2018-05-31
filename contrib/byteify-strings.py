@@ -10,8 +10,12 @@
 from __future__ import absolute_import
 
 import argparse
+import contextlib
+import errno
 import io
+import os
 import sys
+import tempfile
 import token
 import tokenize
 
@@ -162,14 +166,44 @@ def process(fin, fout):
     tokens = replacetokens(list(tokens), fullname='<dummy>')
     fout.write(tokenize.untokenize(tokens))
 
+def tryunlink(fname):
+    try:
+        os.unlink(fname)
+    except OSError as err:
+        if err.errno != errno.ENOENT:
+            raise
+
+@contextlib.contextmanager
+def editinplace(fname):
+    n = os.path.basename(fname)
+    d = os.path.dirname(fname)
+    fp = tempfile.NamedTemporaryFile(prefix='.%s-' % n, suffix='~', dir=d,
+                                     delete=False)
+    try:
+        yield fp
+        fp.close()
+        if os.name == 'nt':
+            tryunlink(fname)
+        os.rename(fp.name, fname)
+    finally:
+        fp.close()
+        tryunlink(fp.name)
+
 def main():
     ap = argparse.ArgumentParser()
+    ap.add_argument('-i', '--inplace', action='store_true', default=False,
+                    help='edit files in place')
     ap.add_argument('files', metavar='FILE', nargs='+', help='source file')
     args = ap.parse_args()
     for fname in args.files:
-        with open(fname, 'rb') as fin:
-            fout = sys.stdout.buffer
-            process(fin, fout)
+        if args.inplace:
+            with editinplace(fname) as fout:
+                with open(fname, 'rb') as fin:
+                    process(fin, fout)
+        else:
+            with open(fname, 'rb') as fin:
+                fout = sys.stdout.buffer
+                process(fin, fout)
 
 if __name__ == '__main__':
     main()

@@ -72,7 +72,6 @@ Set up the repo
   <li><a href="/rev/tip?style=paper">changeset</a></li>
   <a href="/archive/tip.zip">zip</a>
    directory / @ 2:<a href="/rev/9d8c40cba617?style=paper">9d8c40cba617</a>
-    <td class="name"><a href="/file/tip/?style=paper">[up]</a></td>
   <a href="/file/tip/dir?style=paper">
   <a href="/file/tip/dir/?style=paper">
   <a href="/file/tip/foo?style=paper">
@@ -138,7 +137,6 @@ Set up the repo
   <li><a href="/rev/xyzzy?style=paper">changeset</a></li>
   <a href="/archive/xyzzy.zip">zip</a>
    directory / @ 1:<a href="/rev/a7c1559b7bba?style=paper">a7c1559b7bba</a>
-    <td class="name"><a href="/file/xyzzy/?style=paper">[up]</a></td>
   <a href="/file/xyzzy/dir?style=paper">
   <a href="/file/xyzzy/dir/?style=paper">
   <a href="/file/xyzzy/foo?style=paper">
@@ -272,7 +270,6 @@ Set up the repo
   <li><a href="/rev/tip?style=coal">changeset</a></li>
   <a href="/archive/tip.zip">zip</a>
    directory / @ 2:<a href="/rev/9d8c40cba617?style=coal">9d8c40cba617</a>
-    <td class="name"><a href="/file/tip/?style=coal">[up]</a></td>
   <a href="/file/tip/dir?style=coal">
   <a href="/file/tip/dir/?style=coal">
   <a href="/file/tip/foo?style=coal">
@@ -338,7 +335,6 @@ Set up the repo
   <li><a href="/rev/xyzzy?style=coal">changeset</a></li>
   <a href="/archive/xyzzy.zip">zip</a>
    directory / @ 1:<a href="/rev/a7c1559b7bba?style=coal">a7c1559b7bba</a>
-    <td class="name"><a href="/file/xyzzy/?style=coal">[up]</a></td>
   <a href="/file/xyzzy/dir?style=coal">
   <a href="/file/xyzzy/dir/?style=coal">
   <a href="/file/xyzzy/foo?style=coal">

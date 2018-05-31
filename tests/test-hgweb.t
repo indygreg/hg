@@ -287,11 +287,7 @@ try bad style
   </tr>
   </thead>
   <tbody class="stripes2">
-  <tr class="fileline">
-    <td class="name"><a href="/file/tip/">[up]</a></td>
-    <td class="size"></td>
-    <td class="permissions">drwxr-xr-x</td>
-  </tr>
+  
   
   <tr class="fileline">
   <td class="name">
@@ -801,6 +797,17 @@ access bookmarks
   $ get-with-headers.py localhost:$HGPORT 'rev/d%252Fe%252Ff?style=paper' | egrep '^200|changeset 0:'
   200 Script output follows
    changeset 0:<a href="/rev/2ef0ac749a14?style=paper">2ef0ac749a14</a>
+
+no '[up]' entry in file view when in root directory
+
+  $ get-with-headers.py localhost:$HGPORT 'file/tip?style=paper' | grep -F '[up]'
+  [1]
+  $ get-with-headers.py localhost:$HGPORT 'file/tip/da?style=paper' | grep -F '[up]'
+  <a href="/file/tip/?style=paper">[up]</a>
+  $ get-with-headers.py localhost:$HGPORT 'file/tip?style=coal' | grep -F '[up]'
+  [1]
+  $ get-with-headers.py localhost:$HGPORT 'file/tip/da?style=coal' | grep -F '[up]'
+  <a href="/file/tip/?style=coal">[up]</a>
 
 no style can be loaded from directories other than the specified paths
 

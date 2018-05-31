@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+#
 # byteify-strings.py - transform string literals to be Python 3 safe
 #
 # Copyright 2015 Gregory Szorc <gregory.szorc@gmail.com>
@@ -7,7 +9,9 @@
 
 from __future__ import absolute_import
 
+import argparse
 import io
+import sys
 import token
 import tokenize
 
@@ -152,3 +156,20 @@ if True:
 
             # Emit unmodified token.
             yield t
+
+def process(fin, fout):
+    tokens = tokenize.tokenize(fin.readline)
+    tokens = replacetokens(list(tokens), fullname='<dummy>')
+    fout.write(tokenize.untokenize(tokens))
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('files', metavar='FILE', nargs='+', help='source file')
+    args = ap.parse_args()
+    for fname in args.files:
+        with open(fname, 'rb') as fin:
+            fout = sys.stdout.buffer
+            process(fin, fout)
+
+if __name__ == '__main__':
+    main()

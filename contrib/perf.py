@@ -899,15 +899,17 @@ def perfmoonwalk(ui, repo, **opts):
 
 @command('perftemplating', formatteropts)
 def perftemplating(ui, repo, *revs, **opts):
+    nullui = ui.copy()
+    nullui.fout = open(os.devnull, 'wb')
+    nullui.disablepager()
+
     def format():
-        commands.log(ui, repo, rev=revs, date='', user='',
+        commands.log(nullui, repo, rev=revs, date='', user='',
                      template='{date|shortdate} [{rev}:{node|short}]'
                               ' {author|person}: {desc|firstline}\n')
 
     timer, fm = gettimer(ui, opts)
-    ui.pushbuffer()
     timer(format)
-    ui.popbuffer()
     fm.end()
 
 @command('perfcca', formatteropts)

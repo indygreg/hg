@@ -897,12 +897,14 @@ def perfmoonwalk(ui, repo, **opts):
     timer(moonwalk)
     fm.end()
 
-@command('perftemplating', formatteropts)
-def perftemplating(ui, repo, *revs, **opts):
+@command('perftemplating',
+         [('r', 'rev', [], 'revisions to run the template on'),
+         ] + formatteropts)
+def perftemplating(ui, repo, **opts):
     nullui = ui.copy()
     nullui.fout = open(os.devnull, 'wb')
     nullui.disablepager()
-
+    revs = opts.get('rev')
     def format():
         commands.log(nullui, repo, rev=revs, date='', user='',
                      template='{date|shortdate} [{rev}:{node|short}]'

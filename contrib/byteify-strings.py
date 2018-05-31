@@ -12,7 +12,6 @@ from __future__ import absolute_import
 import argparse
 import contextlib
 import errno
-import io
 import os
 import sys
 import tempfile
@@ -20,7 +19,7 @@ import token
 import tokenize
 
 if True:
-    def replacetokens(tokens, fullname):
+    def replacetokens(tokens):
         """Transform a stream of tokens from raw to Python 3.
 
         Returns a generator of possibly rewritten tokens.
@@ -28,8 +27,6 @@ if True:
         The input token list may be mutated as part of processing. However,
         its changes do not necessarily match the output token stream.
         """
-        futureimpline = False
-
         # The following utility functions access the tokens list and i index of
         # the for i, t enumerate(tokens) loop below
         def _isop(j, *o):
@@ -111,28 +108,6 @@ if True:
                 yield t._replace(string='b%s' % t.string)
                 continue
 
-            # Insert compatibility imports at "from __future__ import" line.
-            # No '\n' should be added to preserve line numbers.
-            if (t.type == token.NAME and t.string == 'import' and
-                all(u.type == token.NAME for u in tokens[i - 2:i]) and
-                [u.string for u in tokens[i - 2:i]] == ['from', '__future__']):
-                futureimpline = True
-            if t.type == token.NEWLINE and futureimpline:
-                futureimpline = False
-                if fullname == 'mercurial.pycompat':
-                    yield t
-                    continue
-                r, c = t.start
-                l = (b'; from mercurial.pycompat import '
-                     b'delattr, getattr, hasattr, setattr, xrange, '
-                     b'open, unicode\n')
-                for u in tokenize.tokenize(io.BytesIO(l).readline):
-                    if u.type in (tokenize.ENCODING, token.ENDMARKER):
-                        continue
-                    yield u._replace(
-                        start=(r, c + u.start[1]), end=(r, c + u.end[1]))
-                continue
-
             # This looks like a function call.
             if t.type == token.NAME and _isop(i + 1, '('):
                 fn = t.string
@@ -163,7 +138,7 @@ if True:
 
 def process(fin, fout):
     tokens = tokenize.tokenize(fin.readline)
-    tokens = replacetokens(list(tokens), fullname='<dummy>')
+    tokens = replacetokens(list(tokens))
     fout.write(tokenize.untokenize(tokens))
 
 def tryunlink(fname):

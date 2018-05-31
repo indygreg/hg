@@ -516,7 +516,6 @@ Set up the repo
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'file?style=gitweb' | egrep $REVLINKS
   <a href="/rev/tip?style=gitweb">changeset</a>  | <a href="/archive/tip.zip">zip</a>  |
-  <td><a href="/file/tip/?style=gitweb">[up]</a></td>
   <a href="/file/tip/dir?style=gitweb">dir</a>
   <a href="/file/tip/dir/?style=gitweb"></a>
   <a href="/file/tip/dir?style=gitweb">files</a>
@@ -590,7 +589,6 @@ Set up the repo
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'file/xyzzy?style=gitweb' | egrep $REVLINKS
   <a href="/rev/xyzzy?style=gitweb">changeset</a>  | <a href="/archive/xyzzy.zip">zip</a>  |
-  <td><a href="/file/xyzzy/?style=gitweb">[up]</a></td>
   <a href="/file/xyzzy/dir?style=gitweb">dir</a>
   <a href="/file/xyzzy/dir/?style=gitweb"></a>
   <a href="/file/xyzzy/dir?style=gitweb">files</a>

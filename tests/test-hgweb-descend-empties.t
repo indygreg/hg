@@ -425,13 +425,7 @@ manifest with descending (gitweb)
   
   <div class="title">/ <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> <span class="tagtag" title="tip">tip</span> </span></div>
   <table cellspacing="0">
-  <tr class="parity0">
-  <td style="font-family:monospace">drwxr-xr-x</td>
-  <td style="font-family:monospace"></td>
-  <td style="font-family:monospace"></td>
-  <td><a href="/file/tip/?style=gitweb">[up]</a></td>
-  <td class="link">&nbsp;</td>
-  </tr>
+  
   
   <tr class="parity1">
   <td style="font-family:monospace">drwxr-xr-x</td>

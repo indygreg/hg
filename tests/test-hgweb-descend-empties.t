@@ -532,32 +532,38 @@ manifest with descending (spartan)
   </tr>
   
   <tr class="parity1">
-  <td><tt>drwxr-xr-x</tt>&nbsp;
-  <td>&nbsp;
-  <td>&nbsp;
+  <td><tt>drwxr-xr-x</tt>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
   <td>
   <a href="/file/tip/a1?style=spartan">a1/</a>
   <a href="/file/tip/a1/a2/a3/a4?style=spartan">
   a2/a3/a4
   </a>
+  </td>
+  </tr>
   <tr class="parity0">
-  <td><tt>drwxr-xr-x</tt>&nbsp;
-  <td>&nbsp;
-  <td>&nbsp;
+  <td><tt>drwxr-xr-x</tt>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
   <td>
   <a href="/file/tip/b1?style=spartan">b1/</a>
   <a href="/file/tip/b1/b2/b3?style=spartan">
   b2/b3
   </a>
+  </td>
+  </tr>
   <tr class="parity1">
-  <td><tt>drwxr-xr-x</tt>&nbsp;
-  <td>&nbsp;
-  <td>&nbsp;
+  <td><tt>drwxr-xr-x</tt>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
   <td>
   <a href="/file/tip/d1?style=spartan">d1/</a>
   <a href="/file/tip/d1/d2?style=spartan">
   d2
   </a>
+  </td>
+  </tr>
   
   </table>
   

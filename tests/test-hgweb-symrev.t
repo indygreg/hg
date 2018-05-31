@@ -956,7 +956,6 @@ Set up the repo
   <a href="/rev/tip?style=spartan">changeset</a>
   <a href="/archive/tip.zip">zip</a> 
   <h2><a href="/">Mercurial</a>  / files for changeset <a href="/rev/9d8c40cba617">9d8c40cba617</a>: /</h2>
-    <td><a href="/file/tip/?style=spartan">[up]</a>
   <a href="/file/tip/dir?style=spartan">dir/</a>
   <a href="/file/tip/dir/?style=spartan">
   <td><a href="/file/tip/foo?style=spartan">foo</a></td>
@@ -1029,7 +1028,6 @@ Set up the repo
   <a href="/rev/xyzzy?style=spartan">changeset</a>
   <a href="/archive/xyzzy.zip">zip</a> 
   <h2><a href="/">Mercurial</a>  / files for changeset <a href="/rev/a7c1559b7bba">a7c1559b7bba</a>: /</h2>
-    <td><a href="/file/xyzzy/?style=spartan">[up]</a>
   <a href="/file/xyzzy/dir?style=spartan">dir/</a>
   <a href="/file/xyzzy/dir/?style=spartan">
   <td><a href="/file/xyzzy/foo?style=spartan">foo</a></td>

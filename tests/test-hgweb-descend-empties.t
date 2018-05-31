@@ -504,12 +504,7 @@ manifest with descending (spartan)
   <h2><a href="/">Mercurial</a>  / files for changeset <a href="/rev/c9f45f7a1659">c9f45f7a1659</a>: /</h2>
   
   <table cellpadding="0" cellspacing="0">
-  <tr class="parity0">
-    <td><tt>drwxr-xr-x</tt>&nbsp;
-    <td>&nbsp;
-    <td>&nbsp;
-    <td><a href="/file/tip/?style=spartan">[up]</a>
-  </tr>
+  
   
   <tr class="parity1">
   <td><tt>drwxr-xr-x</tt>&nbsp;</td>

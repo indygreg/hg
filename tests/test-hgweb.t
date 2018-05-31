@@ -816,6 +816,10 @@ no '[up]' entry in file view when in root directory
   [1]
   $ get-with-headers.py localhost:$HGPORT 'file/tip/da?style=monoblue' | grep -F '[up]'
   <a href="/file/tip/?style=monoblue">[up]</a>
+  $ get-with-headers.py localhost:$HGPORT 'file/tip?style=spartan' | grep -F '[up]'
+  [1]
+  $ get-with-headers.py localhost:$HGPORT 'file/tip/da?style=spartan' | grep -F '[up]'
+  <a href="/file/tip/?style=spartan">[up]</a>
 
 no style can be loaded from directories other than the specified paths
 

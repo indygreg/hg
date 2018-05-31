@@ -754,7 +754,6 @@ Set up the repo
               <li><a href="/graph/tip?style=monoblue">graph</a></li>
           <li><a href="/rev/tip?style=monoblue">changeset</a></li>
           <li><a href="/archive/tip.zip">zip</a></li>
-              <td><a href="/file/tip/?style=monoblue">[up]</a></td>
   <a href="/file/tip/dir?style=monoblue">dir</a>
   <a href="/file/tip/dir/?style=monoblue"></a>
   <td><a href="/file/tip/dir?style=monoblue">files</a></td>
@@ -817,7 +816,6 @@ Set up the repo
               <li><a href="/graph/xyzzy?style=monoblue">graph</a></li>
           <li><a href="/rev/xyzzy?style=monoblue">changeset</a></li>
           <li><a href="/archive/xyzzy.zip">zip</a></li>
-              <td><a href="/file/xyzzy/?style=monoblue">[up]</a></td>
   <a href="/file/xyzzy/dir?style=monoblue">dir</a>
   <a href="/file/xyzzy/dir/?style=monoblue"></a>
   <td><a href="/file/xyzzy/dir?style=monoblue">files</a></td>

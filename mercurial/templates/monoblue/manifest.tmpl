@@ -33,13 +33,7 @@
     <p class="files">{path|escape} {alltags}</p>
 
     <table>
-        <tr class="parity{upparity}">
-            <td>drwxr-xr-x</td>
-            <td></td>
-            <td></td>
-            <td><a href="{url|urlescape}file/{symrev}{up|urlescape}{sessionvars%urlparameter}">[up]</a></td>
-            <td class="link">&nbsp;</td>
-        </tr>
+        {ifeq(path, up, '', updirentry)}
         {dentries%direntry}
         {fentries%fileentry}
     </table>

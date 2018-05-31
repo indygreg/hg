@@ -312,13 +312,7 @@ manifest with descending (monoblue)
       <p class="files">/ <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> <span class="tagtag" title="tip">tip</span> </span></p>
   
       <table>
-          <tr class="parity0">
-              <td>drwxr-xr-x</td>
-              <td></td>
-              <td></td>
-              <td><a href="/file/tip/?style=monoblue">[up]</a></td>
-              <td class="link">&nbsp;</td>
-          </tr>
+          
           
   <tr class="parity1">
   <td>drwxr-xr-x</td>

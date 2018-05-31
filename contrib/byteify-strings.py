@@ -27,6 +27,8 @@ if True:
         The input token list may be mutated as part of processing. However,
         its changes do not necessarily match the output token stream.
         """
+        sysstrtokens = set()
+
         # The following utility functions access the tokens list and i index of
         # the for i, t enumerate(tokens) loop below
         def _isop(j, *o):
@@ -62,11 +64,11 @@ if True:
 
             return None
 
-        def _ensureunicode(j):
-            """Make sure the token at j is a unicode string
+        def _ensuresysstr(j):
+            """Make sure the token at j is a system string
 
-            This rewrites a string token to include the unicode literal prefix
-            so the string transformer won't add the byte prefix.
+            Remember the given token so the string transformer won't add
+            the byte prefix.
 
             Ignores tokens that are not strings. Assumes bounds checking has
             already been done.
@@ -74,7 +76,7 @@ if True:
             """
             st = tokens[j]
             if st.type == token.STRING and st.string.startswith(("'", '"')):
-                tokens[j] = st._replace(string='u%s' % st.string)
+                sysstrtokens.add(st)
 
         for i, t in enumerate(tokens):
             # Convert most string literals to byte literals. String literals
@@ -83,7 +85,7 @@ if True:
             # Rather than rewrite all string literals to use ``b''`` to indicate
             # byte strings, we apply this token transformer to insert the ``b``
             # prefix nearly everywhere.
-            if t.type == token.STRING:
+            if t.type == token.STRING and t not in sysstrtokens:
                 s = t.string
 
                 # Preserve docstrings as string literals. This is inconsistent
@@ -117,7 +119,7 @@ if True:
                         not _isop(i - 1, '.')):
                     arg1idx = _findargnofcall(1)
                     if arg1idx is not None:
-                        _ensureunicode(arg1idx)
+                        _ensuresysstr(arg1idx)
 
                 # .encode() and .decode() on str/bytes/unicode don't accept
                 # byte strings on Python 3.
@@ -125,7 +127,7 @@ if True:
                     for argn in range(2):
                         argidx = _findargnofcall(argn)
                         if argidx is not None:
-                            _ensureunicode(argidx)
+                            _ensuresysstr(argidx)
 
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.

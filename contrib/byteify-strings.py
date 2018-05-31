@@ -18,6 +18,11 @@ import tempfile
 import token
 import tokenize
 
+def adjusttokenpos(t, ofs):
+    """Adjust start/end column of the given token"""
+    return t._replace(start=(t.start[0], t.start[1] + ofs),
+                      end=(t.end[0], t.end[1] + ofs))
+
 if True:
     def replacetokens(tokens, opts):
         """Transform a stream of tokens from raw to Python 3.
@@ -78,7 +83,35 @@ if True:
             if st.type == token.STRING and st.string.startswith(("'", '"')):
                 sysstrtokens.add(st)
 
+        coldelta = 0  # column increment for new opening parens
+        coloffset = -1  # column offset for the current line (-1: TBD)
+        parens = [(0, 0, 0)]  # stack of (line, end-column, column-offset)
         for i, t in enumerate(tokens):
+            # Compute the column offset for the current line, such that
+            # the current line will be aligned to the last opening paren
+            # as before.
+            if coloffset < 0:
+                if t.start[1] == parens[-1][1]:
+                    coloffset = parens[-1][2]
+                elif t.start[1] + 1 == parens[-1][1]:
+                    # fix misaligned indent of s/util.Abort/error.Abort/
+                    coloffset = parens[-1][2] + (parens[-1][1] - t.start[1])
+                else:
+                    coloffset = 0
+
+            # Reset per-line attributes at EOL.
+            if t.type in (token.NEWLINE, tokenize.NL):
+                yield adjusttokenpos(t, coloffset)
+                coldelta = 0
+                coloffset = -1
+                continue
+
+            # Remember the last paren position.
+            if _isop(i, '(', '[', '{'):
+                parens.append(t.end + (coloffset + coldelta,))
+            elif _isop(i, ')', ']', '}'):
+                parens.pop()
+
             # Convert most string literals to byte literals. String literals
             # in Python 2 are bytes. String literals in Python 3 are unicode.
             # Most strings in Mercurial are bytes and unicode strings are rare.
@@ -97,17 +130,19 @@ if True:
                 # components touching docstrings need to handle unicode,
                 # unfortunately.
                 if s[0:3] in ("'''", '"""'):
-                    yield t
+                    yield adjusttokenpos(t, coloffset)
                     continue
 
                 # If the first character isn't a quote, it is likely a string
                 # prefixing character (such as 'b', 'u', or 'r'. Ignore.
                 if s[0] not in ("'", '"'):
-                    yield t
+                    yield adjusttokenpos(t, coloffset)
                     continue
 
                 # String literal. Prefix to make a b'' string.
-                yield t._replace(string='b%s' % t.string)
+                yield adjusttokenpos(t._replace(string='b%s' % t.string),
+                                     coloffset)
+                coldelta += 1
                 continue
 
             # This looks like a function call.
@@ -132,11 +167,11 @@ if True:
                 # It changes iteritems/values to items/values as they are not
                 # present in Python 3 world.
                 elif opts['dictiter'] and fn in ('iteritems', 'itervalues'):
-                    yield t._replace(string=fn[4:])
+                    yield adjusttokenpos(t._replace(string=fn[4:]), coloffset)
                     continue
 
             # Emit unmodified token.
-            yield t
+            yield adjusttokenpos(t, coloffset)
 
 def process(fin, fout, opts):
     tokens = tokenize.tokenize(fin.readline)

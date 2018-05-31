@@ -909,7 +909,8 @@ def perfmoonwalk(ui, repo, **opts):
 @command('perftemplating',
          [('r', 'rev', [], 'revisions to run the template on'),
          ] + formatteropts)
-def perftemplating(ui, repo, **opts):
+def perftemplating(ui, repo, testedtemplate=None, **opts):
+    """test the rendering time of a given template"""
     if makelogtemplater is None:
         ui.write_err('incompatible Mercurial version')
         return 1
@@ -922,9 +923,11 @@ def perftemplating(ui, repo, **opts):
         revs = ['all()']
     revs = list(scmutil.revrange(repo, revs))
 
-    template = ('{date|shortdate} [{rev}:{node|short}]'
-                ' {author|person}: {desc|firstline}\n')
-    displayer = makelogtemplater(nullui, repo, template)
+    defaulttemplate = ('{date|shortdate} [{rev}:{node|short}]'
+                       ' {author|person}: {desc|firstline}\n')
+    if testedtemplate is None:
+        testedtemplate = defaulttemplate
+    displayer = makelogtemplater(nullui, repo, testedtemplate)
     def format():
         for r in revs:
             ctx = repo[r]

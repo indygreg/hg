@@ -113,7 +113,7 @@ perfstatus
    perfstatus    (no help text available)
    perftags      (no help text available)
    perftemplating
-                 (no help text available)
+                 test the rendering time of a given template
    perfunidiff   benchmark a unified diff between revisions
    perfvolatilesets
                  benchmark the computation of various volatile set

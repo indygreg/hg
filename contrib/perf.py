@@ -81,6 +81,15 @@ except (AttributeError, ImportError):
     except (AttributeError, ImportError):
         queue = util.queue
 
+try:
+    from mercurial import logcmdutil
+    makelogtemplater = logcmdutil.maketemplater
+except (AttributeError, ImportError):
+    try:
+        makelogtemplater = cmdutil.makelogtemplater
+    except (AttributeError, ImportError):
+        makelogtemplater = None
+
 # for "historical portability":
 # define util.safehasattr forcibly, because util.safehasattr has been
 # available since 1.9.3 (or 94b200a11cf7)
@@ -901,14 +910,26 @@ def perfmoonwalk(ui, repo, **opts):
          [('r', 'rev', [], 'revisions to run the template on'),
          ] + formatteropts)
 def perftemplating(ui, repo, **opts):
+    if makelogtemplater is None:
+        ui.write_err('incompatible Mercurial version')
+        return 1
+
     nullui = ui.copy()
     nullui.fout = open(os.devnull, 'wb')
     nullui.disablepager()
     revs = opts.get('rev')
+    if not revs:
+        revs = ['all()']
+    revs = list(scmutil.revrange(repo, revs))
+
+    template = ('{date|shortdate} [{rev}:{node|short}]'
+                ' {author|person}: {desc|firstline}\n')
+    displayer = makelogtemplater(nullui, repo, template)
     def format():
-        commands.log(nullui, repo, rev=revs, date='', user='',
-                     template='{date|shortdate} [{rev}:{node|short}]'
-                              ' {author|person}: {desc|firstline}\n')
+        for r in revs:
+            ctx = repo[r]
+            displayer.show(ctx)
+            displayer.flush(ctx)
 
     timer, fm = gettimer(ui, opts)
     timer(format)

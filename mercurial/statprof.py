@@ -454,7 +454,8 @@ class DisplayFormats:
 
 def display(fp=None, format=3, data=None, **kwargs):
     '''Print statistics, either to stdout or the given file object.'''
-    data = data or state
+    if data is None:
+        data = state
 
     if fp is None:
         import sys

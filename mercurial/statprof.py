@@ -148,6 +148,7 @@ def clock():
 class ProfileState(object):
     def __init__(self, frequency=None):
         self.reset(frequency)
+        self.track = 'cpu'
 
     def reset(self, frequency=None):
         # total so far
@@ -180,7 +181,13 @@ class ProfileState(object):
         )
 
     def seconds_per_sample(self):
-        return self.accumulated_time[0] / len(self.samples)
+        return self.accumulated_time[self.timeidx] / len(self.samples)
+
+    @property
+    def timeidx(self):
+        if self.track == 'real':
+            return 1
+        return 0
 
 state = ProfileState()
 
@@ -268,7 +275,8 @@ def profile_signal_handler(signum, frame):
         now = clock()
         state.accumulate_time(now)
 
-        state.samples.append(Sample.from_frame(frame, state.accumulated_time[0]))
+        timestamp = state.accumulated_time[state.timeidx]
+        state.samples.append(Sample.from_frame(frame, timestamp))
 
         signal.setitimer(signal.ITIMER_PROF,
             state.sample_interval, 0.0)
@@ -281,7 +289,9 @@ def samplerthread(tid):
         state.accumulate_time(now)
 
         frame = sys._current_frames()[tid]
-        state.samples.append(Sample.from_frame(frame, state.accumulated_time[0]))
+
+        timestamp = state.accumulated_time[state.timeidx]
+        state.samples.append(Sample.from_frame(frame, timestamp))
 
         state.last_start_time = now
         time.sleep(state.sample_interval)
@@ -295,8 +305,9 @@ def is_active():
     return state.profile_level > 0
 
 lastmechanism = None
-def start(mechanism='thread'):
+def start(mechanism='thread', track='cpu'):
     '''Install the profiling signal handler, and start profiling.'''
+    state.track = track # note: nesting different mode won't work
     state.profile_level += 1
     if state.profile_level == 1:
         state.last_start_time = clock()

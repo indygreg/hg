@@ -1652,6 +1652,10 @@ statistical text report generated from the profiling data.
     ``inlinetime``.
     (default: inlinetime)
 
+``time-track``
+    Control if the stat profiler track ``cpu`` or ``real`` time.
+    (default: ``cpu``)
+
 ``limit``
     Number of lines to show. Specific to the ``ls`` instrumenting profiler.
     (default: 30)

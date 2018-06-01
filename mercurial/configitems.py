@@ -867,6 +867,9 @@ coreconfigitem('profiling', 'sort',
 coreconfigitem('profiling', 'statformat',
     default='hotpath',
 )
+coreconfigitem('profiling', 'time-track',
+    default='cpu',
+)
 coreconfigitem('profiling', 'type',
     default='stat',
 )

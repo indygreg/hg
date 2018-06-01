@@ -356,7 +356,7 @@ def save_data(path):
             stack = sample.stack
             sites = ['\1'.join([s.path, str(s.lineno), s.function])
                      for s in stack]
-            file.write(time + '\0' + '\0'.join(sites) + '\n')
+            file.write("%s\0%s\n" % (time, '\0'.join(sites)))
 
 def load_data(path):
     lines = open(path, 'r').read().splitlines()

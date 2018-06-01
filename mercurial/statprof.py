@@ -139,7 +139,7 @@ skips = {"util.py:check", "extensions.py:closure",
 
 def clock():
     times = os.times()
-    return times[0] + times[1]
+    return (times[0] + times[1], times[4])
 
 
 ###########################################################################
@@ -151,7 +151,7 @@ class ProfileState(object):
 
     def reset(self, frequency=None):
         # total so far
-        self.accumulated_time = 0.0
+        self.accumulated_time = (0.0, 0.0)
         # start_time when timer is active
         self.last_start_time = None
         # a float
@@ -170,10 +170,17 @@ class ProfileState(object):
         self.samples = []
 
     def accumulate_time(self, stop_time):
-        self.accumulated_time += stop_time - self.last_start_time
+        increment = (
+            stop_time[0] - self.last_start_time[0],
+            stop_time[1] - self.last_start_time[1],
+        )
+        self.accumulated_time = (
+            self.accumulated_time[0] + increment[0],
+            self.accumulated_time[1] + increment[1],
+        )
 
     def seconds_per_sample(self):
-        return self.accumulated_time / len(self.samples)
+        return self.accumulated_time[0] / len(self.samples)
 
 state = ProfileState()
 
@@ -261,7 +268,7 @@ def profile_signal_handler(signum, frame):
         now = clock()
         state.accumulate_time(now)
 
-        state.samples.append(Sample.from_frame(frame, state.accumulated_time))
+        state.samples.append(Sample.from_frame(frame, state.accumulated_time[0]))
 
         signal.setitimer(signal.ITIMER_PROF,
             state.sample_interval, 0.0)
@@ -274,7 +281,7 @@ def samplerthread(tid):
         state.accumulate_time(now)
 
         frame = sys._current_frames()[tid]
-        state.samples.append(Sample.from_frame(frame, state.accumulated_time))
+        state.samples.append(Sample.from_frame(frame, state.accumulated_time[0]))
 
         state.last_start_time = now
         time.sleep(state.sample_interval)
@@ -465,7 +472,8 @@ def display(fp=None, format=3, data=None, **kwargs):
     if format not in (DisplayFormats.Json, DisplayFormats.Chrome):
         print('---', file=fp)
         print('Sample count: %d' % len(data.samples), file=fp)
-        print('Total time: %f seconds' % data.accumulated_time, file=fp)
+        print('Total time: %f seconds (%f wall)' % data.accumulated_time,
+              file=fp)
 
 def display_by_line(data, fp):
     '''Print the profiler data with each sample line represented

@@ -3208,8 +3208,16 @@ def checkunfinished(repo, commit=False):
     if found. It's probably good to check this right before
     bailifchanged().
     '''
+    # Check for non-clearable states first, so things like rebase will take
+    # precedence over update.
     for f, clearable, allowcommit, msg, hint in unfinishedstates:
-        if commit and allowcommit:
+        if clearable or (commit and allowcommit):
+            continue
+        if repo.vfs.exists(f):
+            raise error.Abort(msg, hint=hint)
+
+    for f, clearable, allowcommit, msg, hint in unfinishedstates:
+        if not clearable or (commit and allowcommit):
             continue
         if repo.vfs.exists(f):
             raise error.Abort(msg, hint=hint)

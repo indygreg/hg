@@ -387,10 +387,9 @@ New operations are blocked with the correct state message
   .hg/undo.dirstate
   .hg/updatestate
 
-XXX: This should complain about needing to abort/continue rebase
   $ hg rebase -s 3 -d tip
-  abort: last update was interrupted
-  (use 'hg update' to get a consistent checkout)
+  abort: rebase in progress
+  (use 'hg rebase --continue' or 'hg rebase --abort')
   [255]
   $ hg up .
   abort: rebase in progress
@@ -401,10 +400,9 @@ XXX: This should complain about needing to abort/continue rebase
   (use 'hg rebase --continue' or 'hg rebase --abort')
   [255]
 
-XXX: This should complain about needing to abort/continue rebase
   $ hg graft 3
-  abort: last update was interrupted
-  (use 'hg update' to get a consistent checkout)
+  abort: rebase in progress
+  (use 'hg rebase --continue' or 'hg rebase --abort')
   [255]
 
   $ hg rebase --abort

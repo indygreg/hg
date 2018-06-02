@@ -2164,7 +2164,7 @@ def graft(ui, repo, *revs, **opts):
     .. note::
 
        The -c/--continue option does not reapply earlier options, except
-       for --force.
+       for --force, --user and --date.
 
     .. container:: verbose
 

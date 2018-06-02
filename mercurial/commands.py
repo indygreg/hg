@@ -3736,7 +3736,6 @@ def outgoing(ui, repo, dest=None, **opts):
 
     if opts.get('bookmarks'):
         dest = path.pushloc or path.loc
-        dest, branches = hg.parseurl(dest, opts.get('branch'))
         other = hg.peer(repo, opts, dest)
         if 'bookmarks' not in other.listkeys('namespaces'):
             ui.warn(_("remote doesn't support bookmarks\n"))

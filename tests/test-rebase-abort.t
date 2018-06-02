@@ -376,6 +376,37 @@ test aborting an interrupted series (issue5084)
   rebasing 4:e80b69427d80 "c"
   abort: ^C
   [255]
+
+New operations are blocked with the correct state message
+
+  $ find .hg -name '*state' -prune | sort
+  .hg/dirstate
+  .hg/merge/state
+  .hg/rebasestate
+  .hg/undo.backup.dirstate
+  .hg/undo.dirstate
+  .hg/updatestate
+
+XXX: This should complain about needing to abort/continue rebase
+  $ hg rebase -s 3 -d tip
+  abort: last update was interrupted
+  (use 'hg update' to get a consistent checkout)
+  [255]
+  $ hg up .
+  abort: rebase in progress
+  (use 'hg rebase --continue' or 'hg rebase --abort')
+  [255]
+  $ hg up -C .
+  abort: rebase in progress
+  (use 'hg rebase --continue' or 'hg rebase --abort')
+  [255]
+
+XXX: This should complain about needing to abort/continue rebase
+  $ hg graft 3
+  abort: last update was interrupted
+  (use 'hg update' to get a consistent checkout)
+  [255]
+
   $ hg rebase --abort
   saved backup bundle to $TESTTMP/interrupted/.hg/strip-backup/3d8812cf300d-93041a90-backup.hg
   rebase aborted

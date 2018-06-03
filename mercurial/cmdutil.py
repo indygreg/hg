@@ -416,7 +416,7 @@ class dirnode(object):
     Represent a directory in user working copy with information required for
     the purpose of tersing its status.
 
-    path is the path to the directory
+    path is the path to the directory, without a trailing '/'
 
     statuses is a set of statuses of all files in this directory (this includes
     all the files in all the subdirectories too)
@@ -453,7 +453,7 @@ class dirnode(object):
 
             # does the dirnode object for subdir exists
             if subdir not in self.subdirs:
-                subdirpath = os.path.join(self.path, subdir)
+                subdirpath = pathutil.join(self.path, subdir)
                 self.subdirs[subdir] = dirnode(subdirpath)
 
             # try adding the file in subdir
@@ -468,7 +468,7 @@ class dirnode(object):
     def iterfilepaths(self):
         """Yield (status, path) for files directly under this directory."""
         for f, st in self.files:
-            yield st, os.path.join(self.path, f)
+            yield st, pathutil.join(self.path, f)
 
     def tersewalk(self, terseargs):
         """
@@ -482,7 +482,7 @@ class dirnode(object):
 
         1) All the files in the directory (including all the files in its
         subdirectories) share the same status and the user has asked us to terse
-        that status. -> yield (status, dirpath)
+        that status. -> yield (status, dirpath).  dirpath will end in '/'.
 
         2) Otherwise, we do following:
 
@@ -499,7 +499,7 @@ class dirnode(object):
             # Making sure we terse only when the status abbreviation is
             # passed as terse argument
             if onlyst in terseargs:
-                yield onlyst, self.path + pycompat.ossep
+                yield onlyst, self.path + '/'
                 return
 
         # add the files to status list
@@ -551,7 +551,7 @@ def tersedir(statuslist, terseargs):
     # process each sub-directory and build tersedict
     for subdir in rootobj.subdirs.values():
         for st, f in subdir.tersewalk(terseargs):
-            tersedict[st].append(util.pconvert(f))
+            tersedict[st].append(f)
 
     tersedlist = []
     for st in allst:

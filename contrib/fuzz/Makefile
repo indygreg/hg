@@ -51,7 +51,7 @@ xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-
 	  -lFuzzingEngine -o $$OUT/xdiff_fuzzer
 
 clean:
-	rm *.o *_fuzzer \
+	$(RM) *.o *_fuzzer \
 	  bdiff \
 	  xdiff
 

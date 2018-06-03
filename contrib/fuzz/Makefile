@@ -1,6 +1,8 @@
 CC = clang
 CXX = clang++
 
+all: bdiff xdiff
+
 fuzzutil.o: fuzzutil.cc fuzzutil.h
 	$(CXX) $(CXXFLAGS) -g -O1 -fsanitize=fuzzer-no-link,address \
 	  -std=c++17 \
@@ -46,8 +48,6 @@ xdiff_fuzzer: xdiff.cc fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-
 	$(CXX) $(CXXFLAGS) -std=c++17 -I../../mercurial xdiff.cc \
 	  fuzz-xdiffi.o fuzz-xprepare.o fuzz-xutils.o fuzzutil-oss-fuzz.o \
 	  -lFuzzingEngine -o $$OUT/xdiff_fuzzer
-
-all: bdiff xdiff
 
 clean:
 	rm *.o *_fuzzer \

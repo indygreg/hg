@@ -709,6 +709,10 @@ def has_clang_libfuzzer():
         return int(mat.group(1)) > 5
     return False
 
+@check("clang-6.0", "clang 6.0 with version suffix (libfuzzer included)")
+def has_clang60():
+    return matchoutput('clang-6.0 --version', b'clang version 6\.')
+
 @check("xdiff", "xdiff algorithm")
 def has_xdiff():
     try:

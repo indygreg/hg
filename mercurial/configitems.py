@@ -201,8 +201,6 @@ coreconfigitem('commands', 'status.verbose',
 )
 coreconfigitem('commands', 'update.check',
     default=None,
-    # Deprecated, remove after 4.4 release
-    alias=[('experimental', 'updatecheck')]
 )
 coreconfigitem('commands', 'update.requiredest',
     default=False,

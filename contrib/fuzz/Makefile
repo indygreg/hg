@@ -34,6 +34,7 @@ x%.o: ../../mercurial/thirdparty/xdiff/x%.c ../../mercurial/thirdparty/xdiff/*.h
 	  -o $@ \
 	  $<
 
+xdiff: CXXFLAGS += -std=c++17
 xdiff: xdiff.cc xdiffi.o xprepare.o xutils.o fuzzutil.o
 	$(CXX) $(CXXFLAGS) -DHG_FUZZER_INCLUDE_MAIN=1 -g -O1 -fsanitize=fuzzer-no-link,address \
 	  -I../../mercurial xdiff.cc \

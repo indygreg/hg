@@ -2398,13 +2398,14 @@ class revlog(object):
         #   deltas we need to apply -- bounding it limits the amount of CPU
         #   we consume.
 
+        distance = deltainfo.distance
         textlen = revinfo.textlen
         defaultmax = textlen * 4
         maxdist = self._maxdeltachainspan
         if not maxdist:
-            maxdist = deltainfo.distance # ensure the conditional pass
+            maxdist = distance # ensure the conditional pass
         maxdist = max(maxdist, defaultmax)
-        if (deltainfo.distance > maxdist or deltainfo.deltalen > textlen or
+        if (distance > maxdist or deltainfo.deltalen > textlen or
             deltainfo.compresseddeltalen > textlen * 2 or
             (self._maxchainlen and deltainfo.chainlen > self._maxchainlen)):
             return False

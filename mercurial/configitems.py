@@ -652,6 +652,9 @@ coreconfigitem('format', 'maxchainlen',
 coreconfigitem('format', 'obsstore-version',
     default=None,
 )
+coreconfigitem('format', 'sparse-revlog',
+    default=False,
+)
 coreconfigitem('format', 'usefncache',
     default=True,
 )

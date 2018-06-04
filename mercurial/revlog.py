@@ -895,6 +895,7 @@ class revlog(object):
         self._compengine = 'zlib'
         self._maxdeltachainspan = -1
         self._withsparseread = False
+        self._sparserevlog = False
         self._srdensitythreshold = 0.50
         self._srmingapsize = 262144
 
@@ -923,7 +924,10 @@ class revlog(object):
                 self._maxdeltachainspan = opts['maxdeltachainspan']
             if mmaplargeindex and 'mmapindexthreshold' in opts:
                 mmapindexthreshold = opts['mmapindexthreshold']
-            self._withsparseread = bool(opts.get('with-sparse-read', False))
+            self._sparserevlog = bool(opts.get('sparse-revlog', False))
+            withsparseread = bool(opts.get('with-sparse-read', False))
+            # sparse-revlog forces sparse-read
+            self._withsparseread = self._sparserevlog or withsparseread
             if 'sparse-read-density-threshold' in opts:
                 self._srdensitythreshold = opts['sparse-read-density-threshold']
             if 'sparse-read-min-gap-size' in opts:

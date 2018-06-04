@@ -354,6 +354,15 @@ class locallegacypeer(localpeer):
 # clients.
 REVLOGV2_REQUIREMENT = 'exp-revlogv2.0'
 
+# A repository with the sparserevlog feature will have delta chains that
+# can spread over a larger span. Sparse reading cuts these large spans into
+# pieces, so that each piece isn't too big.
+# Without the sparserevlog capability, reading from the repository could use
+# huge amounts of memory, because the whole span would be read at once,
+# including all the intermediate revisions that aren't pertinent for the chain.
+# This is why once a repository has enabled sparse-read, it becomes required.
+SPARSEREVLOG_REQUIREMENT = 'sparserevlog'
+
 # Functions receiving (ui, features) that extensions can register to impact
 # the ability to load repositories with custom requirements. Only
 # functions defined in loaded extensions are called.
@@ -376,6 +385,7 @@ class localrepository(object):
         'generaldelta',
         'treemanifest',
         REVLOGV2_REQUIREMENT,
+        SPARSEREVLOG_REQUIREMENT,
     }
     _basesupported = supportedformats | {
         'store',
@@ -678,6 +688,8 @@ class localrepository(object):
         self.svfs.options['with-sparse-read'] = withsparseread
         self.svfs.options['sparse-read-density-threshold'] = srdensitythres
         self.svfs.options['sparse-read-min-gap-size'] = srmingapsize
+        sparserevlog = SPARSEREVLOG_REQUIREMENT in self.requirements
+        self.svfs.options['sparse-revlog'] = sparserevlog
 
         for r in self.requirements:
             if r.startswith('exp-compression-'):
@@ -2370,6 +2382,9 @@ def newreporequirements(repo):
         requirements.add('generaldelta')
     if ui.configbool('experimental', 'treemanifest'):
         requirements.add('treemanifest')
+    # experimental config: format.sparse-revlog
+    if ui.configbool('format', 'sparse-revlog'):
+        requirements.add(SPARSEREVLOG_REQUIREMENT)
 
     revlogv2 = ui.config('experimental', 'revlogv2')
     if revlogv2 == 'enable-unstable-format-and-corrupt-my-data':

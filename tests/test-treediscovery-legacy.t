@@ -354,7 +354,7 @@ Exercise pushing to server without branchmap capability
   pulling from http://localhost:$HGPORT/
   searching for changes
   no changes found
-  1 changesets became public
+  1 local changesets became public
   $ hg push $remote
   pushing to http://localhost:$HGPORT/
   searching for changes

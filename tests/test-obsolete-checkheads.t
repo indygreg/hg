@@ -80,7 +80,7 @@ setup
   pulling from $TESTTMP/remote
   searching for changes
   no changes found
-  1 changesets became public
+  1 local changesets became public
   $ hg log -G --hidden
   @  71e3228bffe1 (draft) add new
   |

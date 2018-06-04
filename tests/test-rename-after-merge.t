@@ -36,7 +36,7 @@ Merge repositories:
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets d2ae7f538514
-  1 changesets became public
+  1 local changesets became public
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ hg merge

@@ -1497,7 +1497,7 @@ def registersummarycallback(repo, otr, txnname=''):
             ]
             if not published:
                 return
-            repo.ui.status(_('%d changesets became public\n')
+            repo.ui.status(_('%d local changesets became public\n')
                            % len(published))
 
 def nodesummaries(repo, nodes, maxnumnodes=4):

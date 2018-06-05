@@ -160,10 +160,11 @@ class shelvedfile(object):
             btype = 'HG20'
             compression = 'BZ'
 
-        outgoing = discovery.outgoing(self.repo, missingroots=bases,
+        repo = self.repo.unfiltered()
+
+        outgoing = discovery.outgoing(repo, missingroots=bases,
                                       missingheads=[node])
-        cg = changegroup.makechangegroup(self.repo, outgoing, cgversion,
-                                         'shelve')
+        cg = changegroup.makechangegroup(repo, outgoing, cgversion, 'shelve')
 
         bundle2.writebundle(self.ui, cg, self.fname, btype, self.vfs,
                                 compression=compression)
@@ -762,6 +763,7 @@ def _commitworkingcopychanges(ui, repo, opts, tmpwctx):
 
 def _unshelverestorecommit(ui, repo, basename):
     """Recreate commit in the repository during the unshelve"""
+    repo = repo.unfiltered()
     with ui.configoverride({('ui', 'quiet'): True}):
         shelvedfile(repo, basename, 'hg').applybundle()
         shelvectx = repo['tip']
@@ -961,6 +963,7 @@ def _dounshelve(ui, repo, *shelved, **opts):
     if not shelvedfile(repo, basename, patchextension).exists():
         raise error.Abort(_("shelved change '%s' not found") % basename)
 
+    repo = repo.unfiltered()
     lock = tr = None
     try:
         lock = repo.lock()

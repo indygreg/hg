@@ -419,7 +419,7 @@
   pulling from ../a
   searching for changes
   no changes found
-  5 local changesets became public
+  5 local changesets published
 
 conversion to existing file should fail
 

@@ -129,7 +129,7 @@ changes. If this output changes, we could break old clients.
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets aaff8d2ffbbf
-  1 local changesets became public
+  1 local changesets published
 
 Incremental pull doesn't fetch bundle
 
@@ -202,7 +202,7 @@ by old clients.
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Feature works over SSH
 
@@ -215,7 +215,7 @@ Feature works over SSH
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Entry with unknown BUNDLESPEC is filtered and not used
 
@@ -235,7 +235,7 @@ Entry with unknown BUNDLESPEC is filtered and not used
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Automatic fallback when all entries are filtered
 
@@ -273,7 +273,7 @@ Python 2.7.9+ support SNI
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 #else
 Python <2.7.9 will filter SNI URLs
 
@@ -378,7 +378,7 @@ Preferring an undefined attribute will take first entry
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Preferring bz2 type will download first entry of that type
 
@@ -391,7 +391,7 @@ Preferring bz2 type will download first entry of that type
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Preferring multiple values of an option works
 
@@ -404,7 +404,7 @@ Preferring multiple values of an option works
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Sorting multiple values should get us back to original first entry
 
@@ -417,7 +417,7 @@ Sorting multiple values should get us back to original first entry
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Preferring multiple attributes has correct order
 
@@ -430,7 +430,7 @@ Preferring multiple attributes has correct order
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Test where attribute is missing from some entries
 
@@ -450,7 +450,7 @@ Test where attribute is missing from some entries
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published
 
 Test interaction between clone bundles and --stream
 
@@ -556,4 +556,4 @@ Test clone bundle retrieved through bundle2
   finished applying clone bundle
   searching for changes
   no changes found
-  2 local changesets became public
+  2 local changesets published

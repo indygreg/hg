@@ -31,7 +31,7 @@
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets 30aff43faee1
-  1 local changesets became public
+  1 local changesets published
   (run 'hg update' to get a working copy)
 
   $ hg verify

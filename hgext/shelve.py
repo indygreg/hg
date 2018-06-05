@@ -772,7 +772,7 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     with repo.ui.configoverride(overrides, 'unshelve'):
         ui.status(_('rebasing shelved changes\n'))
         stats = merge.graft(repo, shelvectx, shelvectx.p1(),
-                           labels=['dest', 'source'],
+                           labels=['shelve', 'working-copy'],
                            keepconflictparent=True)
         if stats.unresolvedcount:
             tr.close()

@@ -376,11 +376,11 @@ ensure that we have a merge with unresolved conflicts
   +++ b/a/a
   @@ -1,2 +1,6 @@
    a
-  +<<<<<<< dest:   * - shelve: pending changes temporary commit (glob)
+  +<<<<<<< shelve:       562f7831e574 - shelve: pending changes temporary commit
    c
   +=======
   +a
-  +>>>>>>> source: 32c69314e062 - shelve: changes to: [mq]: second.patch
+  +>>>>>>> working-copy: 32c69314e062 - shelve: changes to: [mq]: second.patch
   diff --git a/b/b b/b.rename/b
   rename from b/b
   rename to b.rename/b
@@ -798,11 +798,11 @@ unshelve and conflicts with tracked and untracked files
   M f
   ? f.orig
   $ cat f
-  <<<<<<< dest:   5f6b880e719b - shelve: pending changes temporary commit
+  <<<<<<< shelve:       5f6b880e719b - shelve: pending changes temporary commit
   g
   =======
   f
-  >>>>>>> source: 81152db69da7 - shelve: changes to: commit stuff
+  >>>>>>> working-copy: 81152db69da7 - shelve: changes to: commit stuff
   $ cat f.orig
   g
   $ hg unshelve --abort -t false
@@ -840,11 +840,11 @@ unshelve and conflicts with tracked and untracked files
   M f
   ? f.orig
   $ cat f
-  <<<<<<< dest:   * - test: intermediate other change (glob)
+  <<<<<<< shelve:       6b563750f973 - test: intermediate other change
   g
   =======
   f
-  >>>>>>> source: 81152db69da7 - shelve: changes to: commit stuff
+  >>>>>>> working-copy: 81152db69da7 - shelve: changes to: commit stuff
   $ cat f.orig
   g
   $ hg unshelve --abort

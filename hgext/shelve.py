@@ -770,6 +770,11 @@ def _unshelverestorecommit(ui, repo, basename):
         with ui.configoverride({('ui', 'quiet'): True}):
             shelvedfile(repo, basename, 'hg').applybundle()
         shelvectx = repo['tip']
+        # We might not strip the unbundled changeset, so we should keep track of
+        # the unshelve node in case we need to reuse it (eg: unshelve --keep)
+        if node is None:
+            info = {'node': nodemod.hex(node)}
+            shelvedfile(repo, basename, 'shelve').writeinfo(info)
     else:
         shelvectx = repo[node]
 

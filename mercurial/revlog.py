@@ -216,6 +216,9 @@ class _testrevlog(object):
     def length(self, rev):
         return self.end(rev) - self.start(rev)
 
+    def __len__(self):
+        return len(self._data)
+
 def _trimchunk(revlog, revs, startidx, endidx=None):
     """returns revs[startidx:endidx] without empty trailing revs
 
@@ -293,7 +296,7 @@ def _segmentspan(revlog, revs):
         return 0
     return revlog.end(revs[-1]) - revlog.start(revs[0])
 
-def _slicechunk(revlog, revs, targetsize=None):
+def _slicechunk(revlog, revs, deltainfo=None, targetsize=None):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
@@ -341,20 +344,27 @@ def _slicechunk(revlog, revs, targetsize=None):
     [[1, 2], [5, 8, 10, 11], [14]]
 
     Slicing with a maximum chunk size
-    >>> list(_slicechunk(revlog, [0, 11, 13, 15], 15))
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15], targetsize=15))
     [[0], [11], [13], [15]]
-    >>> list(_slicechunk(revlog, [0, 11, 13, 15], 20))
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15], targetsize=20))
     [[0], [11], [13, 15]]
     """
     if targetsize is not None:
         targetsize = max(targetsize, revlog._srmingapsize)
+    # targetsize should not be specified when evaluating delta candidates:
+    # * targetsize is used to ensure we stay within specification when reading,
+    # * deltainfo is used to pick are good delta chain when writing.
+    if not (deltainfo is None or targetsize is None):
+        msg = 'cannot use `targetsize` with a `deltainfo`'
+        raise error.ProgrammingError(msg)
     for chunk in _slicechunktodensity(revlog, revs,
+                                      deltainfo,
                                       revlog._srdensitythreshold,
                                       revlog._srmingapsize):
         for subchunk in _slicechunktosize(revlog, chunk, targetsize):
             yield subchunk
 
-def _slicechunktosize(revlog, revs, targetsize):
+def _slicechunktosize(revlog, revs, targetsize=None):
     """slice revs to match the target size
 
     This is intended to be used on chunk that density slicing selected by that
@@ -431,11 +441,15 @@ def _slicechunktosize(revlog, revs, targetsize):
             endrevidx = idx
     yield _trimchunk(revlog, revs, startrevidx)
 
-def _slicechunktodensity(revlog, revs, targetdensity=0.5, mingapsize=0):
+def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
+                         mingapsize=0):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
     Assume that revs are sorted.
+
+    ``deltainfo`` is a _deltainfo instance of a revision that we would append
+    to the top of the revlog.
 
     The initial chunk is sliced until the overall density (payload/chunks-span
     ratio) is above `targetdensity`. No gap smaller than `mingapsize` is
@@ -487,13 +501,21 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5, mingapsize=0):
         yield revs
         return
 
-    readdata = deltachainspan = _segmentspan(revlog, revs)
+    nextrev = len(revlog)
+    nextoffset = revlog.end(nextrev - 1)
+
+    if deltainfo is None:
+        deltachainspan = _segmentspan(revlog, revs)
+        chainpayload = sum(length(r) for r in revs)
+    else:
+        deltachainspan = deltainfo.distance
+        chainpayload = deltainfo.compresseddeltalen
 
     if deltachainspan < mingapsize:
         yield revs
         return
 
-    chainpayload = sum(length(r) for r in revs)
+    readdata = deltachainspan
 
     if deltachainspan:
         density = chainpayload / float(deltachainspan)
@@ -504,13 +526,21 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5, mingapsize=0):
         yield revs
         return
 
+    if deltainfo is not None:
+        revs = list(revs)
+        revs.append(nextrev)
+
     # Store the gaps in a heap to have them sorted by decreasing size
     gapsheap = []
     heapq.heapify(gapsheap)
     prevend = None
     for i, rev in enumerate(revs):
-        revstart = start(rev)
-        revlen = length(rev)
+        if rev < nextrev:
+            revstart = start(rev)
+            revlen = length(rev)
+        else:
+            revstart = nextoffset
+            revlen = deltainfo.deltalen
 
         # Skip empty revisions to form larger holes
         if revlen == 0:
@@ -1989,7 +2019,7 @@ class revlog(object):
         if not self._withsparseread:
             slicedchunks = (revs,)
         else:
-            slicedchunks = _slicechunk(self, revs, targetsize)
+            slicedchunks = _slicechunk(self, revs, targetsize=targetsize)
 
         for revschunk in slicedchunks:
             firstrev = revschunk[0]
@@ -2402,13 +2432,33 @@ class revlog(object):
         #   deltas we need to apply -- bounding it limits the amount of CPU
         #   we consume.
 
-        distance = deltainfo.distance
+        if self._sparserevlog:
+            # As sparse-read will be used, we can consider that the distance,
+            # instead of being the span of the whole chunk,
+            # is the span of the largest read chunk
+            base = deltainfo.base
+
+            if base != nullrev:
+                deltachain = self._deltachain(base)[0]
+            else:
+                deltachain = []
+
+            chunks = _slicechunk(self, deltachain, deltainfo)
+            distance = max(map(lambda revs:_segmentspan(self, revs), chunks))
+        else:
+            distance = deltainfo.distance
+
         textlen = revinfo.textlen
         defaultmax = textlen * 4
         maxdist = self._maxdeltachainspan
         if not maxdist:
             maxdist = distance # ensure the conditional pass
         maxdist = max(maxdist, defaultmax)
+        if self._sparserevlog and maxdist < self._srmingapsize:
+            # In multiple place, we are ignoring irrelevant data range below a
+            # certain size. Be also apply this tradeoff here and relax span
+            # constraint for small enought content.
+            maxdist = self._srmingapsize
         if (distance > maxdist or deltainfo.deltalen > textlen or
             deltainfo.compresseddeltalen > textlen * 2 or
             (self._maxchainlen and deltainfo.chainlen > self._maxchainlen)):

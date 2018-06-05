@@ -79,7 +79,7 @@ configitem('shelve', 'maxbackups',
 
 backupdir = 'shelve-backup'
 shelvedir = 'shelved'
-shelvefileextensions = ['hg', 'patch', 'oshelve']
+shelvefileextensions = ['hg', 'patch']
 # universal extension is present in all types of shelves
 patchextension = 'patch'
 

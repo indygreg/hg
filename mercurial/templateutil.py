@@ -155,6 +155,8 @@ class wrappedvalue(wrapped):
         raise error.ParseError(_('%r is not iterable') % self._value)
 
     def show(self, context, mapping):
+        if self._value is None:
+            return b''
         return pycompat.bytestr(self._value)
 
     def tovalue(self, context, mapping):

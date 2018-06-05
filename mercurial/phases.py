@@ -272,19 +272,16 @@ class phasecache(object):
         repo = repo.unfiltered()
         cl = repo.changelog
         self._phasesets = [set() for phase in allphases]
-        roots = pycompat.maplist(cl.rev, self.phaseroots[secret])
-        if roots:
-            ps = set(cl.descendants(roots))
-            for root in roots:
-                ps.add(root)
-            self._phasesets[secret] = ps
-        roots = pycompat.maplist(cl.rev, self.phaseroots[draft])
-        if roots:
-            ps = set(cl.descendants(roots))
-            for root in roots:
-                ps.add(root)
-            ps.difference_update(self._phasesets[secret])
-            self._phasesets[draft] = ps
+        lowerroots = set()
+        for phase in reversed(trackedphases):
+            roots = pycompat.maplist(cl.rev, self.phaseroots[phase])
+            if roots:
+                ps = set(cl.descendants(roots))
+                for root in roots:
+                    ps.add(root)
+                ps.difference_update(lowerroots)
+                lowerroots.update(ps)
+                self._phasesets[phase] = ps
         self._loadedrevslen = len(cl)
 
     def loadphaserevs(self, repo):

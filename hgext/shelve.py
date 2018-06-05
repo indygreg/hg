@@ -764,9 +764,15 @@ def _commitworkingcopychanges(ui, repo, opts, tmpwctx):
 def _unshelverestorecommit(ui, repo, basename):
     """Recreate commit in the repository during the unshelve"""
     repo = repo.unfiltered()
-    with ui.configoverride({('ui', 'quiet'): True}):
-        shelvedfile(repo, basename, 'hg').applybundle()
+    if shelvedfile(repo, basename, 'shelve').exists():
+        node = shelvedfile(repo, basename, 'shelve').readinfo()['node']
+    if node is None or node not in repo:
+        with ui.configoverride({('ui', 'quiet'): True}):
+            shelvedfile(repo, basename, 'hg').applybundle()
         shelvectx = repo['tip']
+    else:
+        shelvectx = repo[node]
+
     return repo, shelvectx
 
 def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,

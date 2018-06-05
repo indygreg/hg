@@ -586,7 +586,7 @@ def subsetphaseheads(repo, subset):
     headsbyphase = [[] for i in allphases]
     # No need to keep track of secret phase; any heads in the subset that
     # are not mentioned are implicitly secret.
-    for phase in allphases[:-1]:
+    for phase in allphases[:secret]:
         revset = "heads(%%ln & %s())" % phasenames[phase]
         headsbyphase[phase] = [cl.node(r) for r in repo.revs(revset, subset)]
     return headsbyphase

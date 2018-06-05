@@ -387,11 +387,11 @@ ensure that we have a merge with unresolved conflicts
   +++ b/a/a
   @@ -1,2 +1,6 @@
    a
-  +<<<<<<< shelve:       562f7831e574 - shelve: pending changes temporary commit
+  +<<<<<<< shelve:       2377350b6337 - shelve: pending changes temporary commit
    c
   +=======
   +a
-  +>>>>>>> working-copy: 32c69314e062 - shelve: changes to: [mq]: second.patch
+  +>>>>>>> working-copy: a68ec3400638 - shelve: changes to: [mq]: second.patch
   diff --git a/b/b b/b.rename/b
   rename from b/b
   rename to b.rename/b
@@ -809,11 +809,11 @@ unshelve and conflicts with tracked and untracked files
   M f
   ? f.orig
   $ cat f
-  <<<<<<< shelve:       5f6b880e719b - shelve: pending changes temporary commit
+  <<<<<<< shelve:       d44eae5c3d33 - shelve: pending changes temporary commit
   g
   =======
   f
-  >>>>>>> working-copy: 81152db69da7 - shelve: changes to: commit stuff
+  >>>>>>> working-copy: aef214a5229c - shelve: changes to: commit stuff
   $ cat f.orig
   g
   $ hg unshelve --abort -t false
@@ -855,7 +855,7 @@ unshelve and conflicts with tracked and untracked files
   g
   =======
   f
-  >>>>>>> working-copy: 81152db69da7 - shelve: changes to: commit stuff
+  >>>>>>> working-copy: aef214a5229c - shelve: changes to: commit stuff
   $ cat f.orig
   g
   $ hg unshelve --abort
@@ -1117,7 +1117,7 @@ no general delta
   shelved as default
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
   $ hg debugbundle .hg/shelved/*.hg
-  45993d65fe9dc3c6d8764b9c3b07fa831ee7d92d
+  330882a04d2ce8487636b1fb292e5beea77fa1e3
   $ cd ..
 
 with general delta
@@ -1140,7 +1140,7 @@ with general delta
   $ hg debugbundle .hg/shelved/*.hg
   Stream params: {Compression: BZ}
   changegroup -- {nbchanges: 1, version: 02} (mandatory: True)
-      45993d65fe9dc3c6d8764b9c3b07fa831ee7d92d
+      330882a04d2ce8487636b1fb292e5beea77fa1e3
   $ cd ..
 
 Test visibility of in-memory changes inside transaction to external hook
@@ -1195,15 +1195,15 @@ Test visibility of in-memory changes inside transaction to external hook
   temporarily committing pending changes (restore with 'hg unshelve --abort')
   rebasing shelved changes
   ==== preupdate:
-  VISIBLE 6:66b86db80ee4
+  VISIBLE 6:54c00d20fb3f
   ACTUAL  5:703117a2acfb
   ====
   ==== preupdate:
-  VISIBLE 8:92fdbb7b4de7
+  VISIBLE 8:8efe6f7537dc
   ACTUAL  5:703117a2acfb
   ====
   ==== preupdate:
-  VISIBLE 6:66b86db80ee4
+  VISIBLE 6:54c00d20fb3f
   ACTUAL  5:703117a2acfb
   ====
 
@@ -1239,12 +1239,12 @@ Test visibility of in-memory changes inside transaction to external hook
   temporarily committing pending changes (restore with 'hg unshelve --abort')
   rebasing shelved changes
   ==== update:
-  VISIBLE 6:66b86db80ee4
-  VISIBLE 7:206bf5d4f922
+  VISIBLE 6:54c00d20fb3f
+  VISIBLE 7:492ed9d705e5
   ACTUAL  5:703117a2acfb
   ====
   ==== update:
-  VISIBLE 6:66b86db80ee4
+  VISIBLE 6:54c00d20fb3f
   ACTUAL  5:703117a2acfb
   ====
   ==== update:
@@ -1780,8 +1780,8 @@ putting v1 shelvedstate file in place of a created v2
   > ashelve
   > 8b058dae057a5a78f393f4535d9e363dd5efac9d
   > 8b058dae057a5a78f393f4535d9e363dd5efac9d
-  > 8b058dae057a5a78f393f4535d9e363dd5efac9d 003d2d94241cc7aff0c3a148e966d6a4a377f3a7
-  > 003d2d94241cc7aff0c3a148e966d6a4a377f3a7
+  > 8b058dae057a5a78f393f4535d9e363dd5efac9d f543b27db2cdb41737e2e0008dc524c471da1446
+  > f543b27db2cdb41737e2e0008dc524c471da1446
   > 
   > nokeep
   > :no-active-bookmark

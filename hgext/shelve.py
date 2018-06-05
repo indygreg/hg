@@ -463,7 +463,7 @@ def _docreatecmd(ui, repo, pats, opts):
 
         name = getshelvename(repo, parent, opts)
         activebookmark = _backupactivebookmark(repo)
-        extra = {}
+        extra = {'internal': 'shelve'}
         if includeunknown:
             _includeunknownfiles(repo, pats, opts, extra)
 
@@ -751,7 +751,8 @@ def _commitworkingcopychanges(ui, repo, opts, tmpwctx):
         return tmpwctx, addedbefore
     ui.status(_("temporarily committing pending changes "
                 "(restore with 'hg unshelve --abort')\n"))
-    commitfunc = getcommitfunc(extra=None, interactive=False,
+    extra = {'internal': 'shelve'}
+    commitfunc = getcommitfunc(extra=extra, interactive=False,
                                editor=False)
     tempopts = {}
     tempopts['message'] = "pending changes temporary commit"

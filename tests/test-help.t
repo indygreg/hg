@@ -3045,6 +3045,110 @@ Dish up an empty repo; serve it cold.
   </html>
   
 
+  $ get-with-headers.py $LOCALIP:$HGPORT "help/pager"
+  200 Script output follows
+  
+  <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en-US">
+  <head>
+  <link rel="icon" href="/static/hgicon.png" type="image/png" />
+  <meta name="robots" content="index, nofollow" />
+  <link rel="stylesheet" href="/static/style-paper.css" type="text/css" />
+  <script type="text/javascript" src="/static/mercurial.js"></script>
+  
+  <title>Help: pager</title>
+  </head>
+  <body>
+  
+  <div class="container">
+  <div class="menu">
+  <div class="logo">
+  <a href="https://mercurial-scm.org/">
+  <img src="/static/hglogo.png" alt="mercurial" /></a>
+  </div>
+  <ul>
+  <li><a href="/shortlog">log</a></li>
+  <li><a href="/graph">graph</a></li>
+  <li><a href="/tags">tags</a></li>
+  <li><a href="/bookmarks">bookmarks</a></li>
+  <li><a href="/branches">branches</a></li>
+  </ul>
+  <ul>
+   <li class="active"><a href="/help">help</a></li>
+  </ul>
+  </div>
+  
+  <div class="main">
+  <h2 class="breadcrumb"><a href="/">Mercurial</a> </h2>
+  <h3>Help: pager</h3>
+  
+  <form class="search" action="/log">
+  
+  <p><input name="rev" id="search1" type="text" size="30" value="" /></p>
+  <div id="hint">Find changesets by keywords (author, files, the commit message), revision
+  number or hash, or <a href="/help/revsets">revset expression</a>.</div>
+  </form>
+  <div id="doc">
+  <h1>Pager Support</h1>
+  <p>
+  Some Mercurial commands can produce a lot of output, and Mercurial will
+  attempt to use a pager to make those commands more pleasant.
+  </p>
+  <p>
+  To set the pager that should be used, set the application variable:
+  </p>
+  <pre>
+  [pager]
+  pager = less -FRX
+  </pre>
+  <p>
+  If no pager is set in the user or repository configuration, Mercurial uses the
+  environment variable $PAGER. If $PAGER is not set, pager.pager from the default
+  or system configuration is used. If none of these are set, a default pager will
+  be used, typically 'less' on Unix and 'more' on Windows.
+  </p>
+  <p>
+  You can disable the pager for certain commands by adding them to the
+  pager.ignore list:
+  </p>
+  <pre>
+  [pager]
+  ignore = version, help, update
+  </pre>
+  <p>
+  To ignore global commands like 'hg version' or 'hg help', you have
+  to specify them in your user configuration file.
+  </p>
+  <p>
+  To control whether the pager is used at all for an individual command,
+  you can use --pager=&lt;value&gt;:
+  </p>
+  <ul>
+   <li> use as needed: 'auto'.
+   <li> require the pager: 'yes' or 'on'.
+   <li> suppress the pager: 'no' or 'off' (any unrecognized value   will also work).
+  </ul>
+  <p>
+  To globally turn off all attempts to use a pager, set:
+  </p>
+  <pre>
+  [ui]
+  paginate = never
+  </pre>
+  <p>
+  which will prevent the pager from running.
+  </p>
+  windows
+  </div>
+  </div>
+  </div>
+  
+  
+  
+  </body>
+  </html>
+  
+
 Sub-topic indexes rendered properly
 
   $ get-with-headers.py $LOCALIP:$HGPORT "help/internals"

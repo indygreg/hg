@@ -37,8 +37,9 @@ def allsupportedversions(orig, ui):
 def _capabilities(orig, repo, proto):
     '''Wrap server command to announce lfs server capability'''
     caps = orig(repo, proto)
-    # XXX: change to 'lfs=serve' when separate git server isn't required?
-    caps.append('lfs')
+    if util.safehasattr(repo.svfs, 'lfslocalblobstore'):
+        # XXX: change to 'lfs=serve' when separate git server isn't required?
+        caps.append('lfs')
     return caps
 
 def bypasscheckhash(self, text):
@@ -118,16 +119,18 @@ def _islfs(rlog, node=None, rev=None):
 def filelogaddrevision(orig, self, text, transaction, link, p1, p2,
                        cachedelta=None, node=None,
                        flags=revlog.REVIDX_DEFAULT_FLAGS, **kwds):
-    textlen = len(text)
-    # exclude hg rename meta from file size
-    meta, offset = revlog.parsemeta(text)
-    if offset:
-        textlen -= offset
+    # The matcher isn't available if reposetup() wasn't called.
+    lfstrack = self.opener.options.get('lfstrack')
 
-    lfstrack = self.opener.options['lfstrack']
+    if lfstrack:
+        textlen = len(text)
+        # exclude hg rename meta from file size
+        meta, offset = revlog.parsemeta(text)
+        if offset:
+            textlen -= offset
 
-    if lfstrack(self.filename, textlen):
-        flags |= revlog.REVIDX_EXTSTORED
+        if lfstrack(self.filename, textlen):
+            flags |= revlog.REVIDX_EXTSTORED
 
     return orig(self, text, transaction, link, p1, p2, cachedelta=cachedelta,
                 node=node, flags=flags, **kwds)
@@ -247,6 +250,9 @@ def hgpostshare(orig, sourcerepo, destrepo, bookmarks=True, defaultpath=None):
 def _prefetchfiles(repo, revs, match):
     """Ensure that required LFS blobs are present, fetching them as a group if
     needed."""
+    if not util.safehasattr(repo.svfs, 'lfslocalblobstore'):
+        return
+
     pointers = []
     oids = set()
     localstore = repo.svfs.lfslocalblobstore
@@ -266,10 +272,18 @@ def _prefetchfiles(repo, revs, match):
         blobstore.remote(repo).readbatch(pointers, localstore)
 
 def _canskipupload(repo):
+    # Skip if this hasn't been passed to reposetup()
+    if not util.safehasattr(repo.svfs, 'lfsremoteblobstore'):
+        return True
+
     # if remotestore is a null store, upload is a no-op and can be skipped
     return isinstance(repo.svfs.lfsremoteblobstore, blobstore._nullremote)
 
 def candownload(repo):
+    # Skip if this hasn't been passed to reposetup()
+    if not util.safehasattr(repo.svfs, 'lfsremoteblobstore'):
+        return False
+
     # if remotestore is a null store, downloads will lead to nothing
     return not isinstance(repo.svfs.lfsremoteblobstore, blobstore._nullremote)
 
@@ -389,13 +403,16 @@ def uploadblobs(repo, pointers):
 def upgradefinishdatamigration(orig, ui, srcrepo, dstrepo, requirements):
     orig(ui, srcrepo, dstrepo, requirements)
 
-    srclfsvfs = srcrepo.svfs.lfslocalblobstore.vfs
-    dstlfsvfs = dstrepo.svfs.lfslocalblobstore.vfs
+    # Skip if this hasn't been passed to reposetup()
+    if (util.safehasattr(srcrepo.svfs, 'lfslocalblobstore') and
+        util.safehasattr(dstrepo.svfs, 'lfslocalblobstore')):
+        srclfsvfs = srcrepo.svfs.lfslocalblobstore.vfs
+        dstlfsvfs = dstrepo.svfs.lfslocalblobstore.vfs
 
-    for dirpath, dirs, files in srclfsvfs.walk():
-        for oid in files:
-            ui.write(_('copying lfs blob %s\n') % oid)
-            lfutil.link(srclfsvfs.join(oid), dstlfsvfs.join(oid))
+        for dirpath, dirs, files in srclfsvfs.walk():
+            for oid in files:
+                ui.write(_('copying lfs blob %s\n') % oid)
+                lfutil.link(srclfsvfs.join(oid), dstlfsvfs.join(oid))
 
 def upgraderequirements(orig, repo):
     reqs = orig(repo)

@@ -98,8 +98,8 @@ def matchoutput(cmd, regexp, ignorestatus=False):
         if e.errno != errno.ENOENT:
             raise
         ret = -1
-    ret = p.wait()
-    s = p.stdout.read()
+    s = p.communicate()[0]
+    ret = p.returncode
     return (ignorestatus or not ret) and r.search(s)
 
 @check("baz", "GNU Arch baz client")

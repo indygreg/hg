@@ -18,6 +18,7 @@ from mercurial.hgweb import (
 
 from mercurial import (
     pycompat,
+    util,
 )
 
 from . import blobstore
@@ -38,6 +39,9 @@ def handlewsgirequest(orig, rctx, req, res, checkperm):
         return True
 
     if not rctx.repo.ui.configbool('experimental', 'lfs.serve'):
+        return False
+
+    if not util.safehasattr(rctx.repo.svfs, 'lfslocalblobstore'):
         return False
 
     if not req.dispatchpath:

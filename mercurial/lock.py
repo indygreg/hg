@@ -21,6 +21,7 @@ from . import (
     encoding,
     error,
     pycompat,
+    util,
 )
 
 from .utils import (
@@ -177,7 +178,7 @@ class lock(object):
 
     def __init__(self, vfs, fname, timeout=-1, releasefn=None, acquirefn=None,
                  desc=None, inheritchecker=None, parentlock=None,
-                 dolock=True):
+                 signalsafe=True, dolock=True):
         self.vfs = vfs
         self.f = fname
         self.held = 0
@@ -189,6 +190,10 @@ class lock(object):
         self.parentlock = parentlock
         self._parentheld = False
         self._inherited = False
+        if signalsafe:
+            self._maybedelayedinterrupt = _delayedinterrupt
+        else:
+            self._maybedelayedinterrupt = util.nullcontextmanager
         self.postrelease  = []
         self.pid = self._getpid()
         if dolock:
@@ -244,7 +249,7 @@ class lock(object):
         while not self.held and retry:
             retry -= 1
             try:
-                with _delayedinterrupt():
+                with self._maybedelayedinterrupt():
                     self.vfs.makelock(lockname, self.f)
                     self.held = 1
             except (OSError, IOError) as why:

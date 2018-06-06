@@ -298,7 +298,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   2f2496ddf49d69b5ef23ad8cf9fb2e0e4faf0ac2
   bundle2-output-bundle: "HG20", (1 params) 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
-  bundle2-output-part: "cache:rev-branch-cache" streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   saved backup bundle to $TESTTMP/issue4041/.hg/strip-backup/e31216eec445-15f7a814-rebase.hg
   3 changesets found
@@ -308,7 +308,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   2a7f09cac94c7f4b73ebd5cd1a62d3b2e8e336bf
   bundle2-output-bundle: "HG20", 3 parts total
   bundle2-output-part: "changegroup" (params: 1 mandatory 1 advisory) streamed payload
-  bundle2-output-part: "cache:rev-branch-cache" streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
   bundle2-output-part: "phase-heads" 24 bytes payload
   adding branch
   bundle2-input-bundle: with-transaction
@@ -322,7 +322,7 @@ Check that the right ancestors is used while rebasing a merge (issue4041)
   adding f1.txt revisions
   added 2 changesets with 2 changes to 1 files
   bundle2-input-part: total payload size 1686
-  bundle2-input-part: "cache:rev-branch-cache" supported
+  bundle2-input-part: "cache:rev-branch-cache" (advisory) supported
   bundle2-input-part: total payload size 74
   truncating cache/rbc-revs-v1 to 56
   bundle2-input-part: "phase-heads" supported

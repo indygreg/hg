@@ -803,7 +803,7 @@ bundle single branch
   bundling: b 1/3 files (33.33%)
   bundling: b1 2/3 files (66.67%)
   bundling: x 3/3 files (100.00%)
-  bundle2-output-part: "cache:rev-branch-cache" streamed payload
+  bundle2-output-part: "cache:rev-branch-cache" (advisory) streamed payload
 
 #if repobundlerepo
 == Test for issue3441

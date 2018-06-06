@@ -276,9 +276,9 @@ def sendrequest(ui, opener, req):
 
     Returns the response object.
     """
+    dbg = ui.debug
     if (ui.debugflag
         and ui.configbool('devel', 'debug.peer-request')):
-        dbg = ui.debug
         line = 'devel-peer-request: %s\n'
         dbg(line % '%s %s' % (pycompat.bytesurl(req.get_method()),
                               pycompat.bytesurl(req.get_full_url())))
@@ -318,7 +318,7 @@ def sendrequest(ui, opener, req):
         ui.traceback()
         raise IOError(None, inst)
     finally:
-        if ui.configbool('devel', 'debug.peer-request'):
+        if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
             dbg(line % '  finished in %.4f seconds (%d)'
                 % (util.timer() - start, res.code))
 

@@ -23,6 +23,15 @@ the extension is disabled.
 .            | E || #3  | #3  |  X  | #6  |
 .            |---++-----------------------+
 
+make command server magic visible
+
+#if windows
+  $ PYTHONPATH="$TESTDIR/../contrib;$PYTHONPATH"
+#else
+  $ PYTHONPATH="$TESTDIR/../contrib:$PYTHONPATH"
+#endif
+  $ export PYTHONPATH
+
   $ hg init server
   $ SERVER_REQUIRES="$TESTTMP/server/.hg/requires"
 
@@ -55,13 +64,76 @@ masked by the Internal Server Error message).
   $ grep 'lfs' client/.hg/requires $SERVER_REQUIRES
   [1]
 
+This trivial repo will force commandserver to load the extension, but not call
+reposetup() on another repo actually being operated on.  This gives coverage
+that wrapper functions are not assuming reposetup() was called.
+
+  $ hg init $TESTTMP/cmdservelfs
+  $ cat >> $TESTTMP/cmdservelfs/.hg/hgrc << EOF
+  > [extensions]
+  > lfs =
+  > EOF
+
 --------------------------------------------------------------------------------
 Case #1: client with non-lfs content and the extension disabled; server with
 non-lfs content, and the extension enabled.
 
   $ cd client
   $ echo 'non-lfs' > nonlfs.txt
-  $ hg ci -Aqm 'non-lfs'
+  >>> from __future__ import absolute_import
+  >>> from hgclient import check, readchannel, runcommand
+  >>> @check
+  ... def diff(server):
+  ...     readchannel(server)
+  ...     # run an arbitrary command in the repo with the extension loaded
+  ...     runcommand(server, ['id', '-R', '../cmdservelfs'])
+  ...     # now run a command in a repo without the extension to ensure that
+  ...     # files are added safely..
+  ...     runcommand(server, ['ci', '-Aqm', 'non-lfs'])
+  ...     # .. and that scmutil.prefetchfiles() safely no-ops..
+  ...     runcommand(server, ['diff', '-r', '.~1'])
+  ...     # .. and that debugupgraderepo safely no-ops.
+  ...     runcommand(server, ['debugupgraderepo', '-q', '--run'])
+  *** runcommand id -R ../cmdservelfs
+  000000000000 tip
+  *** runcommand ci -Aqm non-lfs
+  *** runcommand diff -r .~1
+  diff -r 000000000000 nonlfs.txt
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/nonlfs.txt	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +non-lfs
+  *** runcommand debugupgraderepo -q --run
+  upgrade will perform the following actions:
+  
+  requirements
+     preserved: dotencode, fncache, generaldelta, revlogv1, store
+  
+  beginning upgrade...
+  repository locked and read-only
+  creating temporary repository to stage migrated data: * (glob)
+  (it is safe to interrupt this process any time before data migration completes)
+  migrating 3 total revisions (1 in filelogs, 1 in manifests, 1 in changelog)
+  migrating 132 bytes in store; 129 bytes tracked data
+  migrating 1 filelogs containing 1 revisions (9 bytes in store; 8 bytes tracked data)
+  finished migrating 1 filelog revisions across 1 filelogs; change in size: 0 bytes
+  migrating 1 manifests containing 1 revisions (53 bytes in store; 52 bytes tracked data)
+  finished migrating 1 manifest revisions across 1 manifests; change in size: 0 bytes
+  migrating changelog containing 1 revisions (70 bytes in store; 69 bytes tracked data)
+  finished migrating 1 changelog revisions; change in size: 0 bytes
+  finished migrating 3 total revisions; total change in store size: 0 bytes
+  copying phaseroots
+  data fully migrated to temporary repository
+  marking source repository as being upgraded; clients will be unable to read from repository
+  starting in-place swap of repository data
+  replaced files will be backed up at * (glob)
+  replacing store...
+  store replacement complete; repository was inconsistent for *s (glob)
+  finalizing requirements file and making repository readable again
+  removing temporary repository * (glob)
+  copy of old repository backed up at * (glob)
+  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
+
   $ grep 'lfs' .hg/requires $SERVER_REQUIRES
   [1]
 

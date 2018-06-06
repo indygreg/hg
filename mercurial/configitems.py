@@ -1128,6 +1128,9 @@ coreconfigitem('ui', 'report_untrusted',
 coreconfigitem('ui', 'rollback',
     default=True,
 )
+coreconfigitem('ui', 'signal-safe-lock',
+    default=True,
+)
 coreconfigitem('ui', 'slash',
     default=False,
 )

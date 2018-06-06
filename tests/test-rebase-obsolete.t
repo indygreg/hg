@@ -1493,6 +1493,38 @@ Rebase merge where successor of other parent is ancestor of destination
   
   $ cd ..
 
+  $ hg init p2-succ-in-dest-c
+  $ cd p2-succ-in-dest-c
+
+The scenario here was that B::D were developed on default.  B was queued on
+stable, but amended before being push to hg-committed.  C was queued on default,
+along with unrelated J.
+
+  $ hg debugdrawdag <<EOF
+  > J
+  > |
+  > F
+  > |
+  > E
+  > | D
+  > | |
+  > | C      # replace: C -> F
+  > | |  H I # replace: B -> H -> I
+  > | B  |/
+  > |/   G
+  > A
+  > EOF
+  1 new orphan changesets
+
+This strip seems to be the key to avoid an early divergence warning.
+  $ hg --config extensions.strip= --hidden strip -qr H
+  1 new orphan changesets
+
+  $ hg rebase -b 'desc("D")' -d 'desc("J")'
+  abort: this rebase will cause divergences from: 112478962961
+  (to force the rebase please set experimental.evolution.allowdivergence=True)
+  [255]
+
 Rebase merge where both parents have successors in destination
 
   $ hg init p12-succ-in-dest

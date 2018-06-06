@@ -220,7 +220,10 @@ static void execcmdserver(const struct cmdserveropts *opts)
 
 	const char **argv = mallocx(sizeof(char *) * argsize);
 	memcpy(argv, baseargv, sizeof(baseargv));
-	memcpy(argv + baseargvsize, opts->args, sizeof(char *) * opts->argsize);
+	if (opts->args) {
+		size_t size = sizeof(char *) * opts->argsize;
+		memcpy(argv + baseargvsize, opts->args, size);
+	}
 	argv[argsize - 1] = NULL;
 
 	if (putenv("CHGINTERNALMARK=") != 0)

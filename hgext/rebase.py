@@ -1815,7 +1815,8 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
                 # If 'srcrev' has a successor in rebase set but none in
                 # destination (which would be catched above), we shall skip it
                 # and its descendants to avoid divergence.
-                if any(nodemap[s] in destmap for s in successors):
+                if any(nodemap[s] in destmap for s in successors
+                       if s in nodemap):
                     obsoletewithoutsuccessorindestination.add(srcrev)
 
     return (

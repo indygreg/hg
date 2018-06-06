@@ -434,7 +434,14 @@ def _includeunknownfiles(repo, pats, opts, extra):
         repo[None].add(s.unknown)
 
 def _finishshelve(repo):
-    _aborttransaction(repo)
+    if phases.supportinternal(repo):
+        backupname = 'dirstate.shelve'
+        tr = repo.currenttransaction()
+        repo.dirstate.savebackup(tr, backupname)
+        tr.close()
+        repo.dirstate.restorebackup(None, backupname)
+    else:
+        _aborttransaction(repo)
 
 def createcmd(ui, repo, pats, opts):
     """subcommand that creates a new shelve"""
@@ -652,8 +659,9 @@ def unshelveabort(ui, repo, state, opts):
                 rebase.clearstatus(repo)
 
             mergefiles(ui, repo, state.wctx, state.pendingctx)
-            repair.strip(ui, repo, state.nodestoremove, backup=False,
-                         topic='shelve')
+            if not phases.supportinternal(repo):
+                repair.strip(ui, repo, state.nodestoremove, backup=False,
+                             topic='shelve')
         finally:
             shelvedstate.clear(repo)
             ui.warn(_("unshelve of '%s' aborted\n") % state.name)
@@ -746,8 +754,9 @@ def unshelvecontinue(ui, repo, state, opts):
         mergefiles(ui, repo, state.wctx, shelvectx)
         restorebranch(ui, repo, state.branchtorestore)
 
-        repair.strip(ui, repo, state.nodestoremove, backup=False,
-                     topic='shelve')
+        if not phases.supportinternal(repo):
+            repair.strip(ui, repo, state.nodestoremove, backup=False,
+                         topic='shelve')
         _restoreactivebookmark(repo, state.activebookmark)
         shelvedstate.clear(repo)
         unshelvecleanup(ui, repo, state.name, opts)

@@ -3138,7 +3138,7 @@ Dish up an empty repo; serve it cold.
   <p>
   which will prevent the pager from running.
   </p>
-  windows
+  
   </div>
   </div>
   </div>

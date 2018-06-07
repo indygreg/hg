@@ -58,6 +58,11 @@ never cause crash:
   $ hg log -r 'wdir()' -T '{manifest}\n'
   
 
+Changectx-derived keywords are disabled within {manifest} as {node} changes:
+
+  $ hg log -r0 -T 'outer:{p1node} {manifest % "inner:{p1node}"}\n'
+  outer:0000000000000000000000000000000000000000 inner:
+
 Check that {phase} works correctly on parents:
 
   $ cat << EOF > parentphase

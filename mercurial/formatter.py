@@ -579,8 +579,10 @@ class templateresources(templater.resourcemapper):
         if self._hasnodespec(origmapping) and self._hasnodespec(newmapping):
             orignode = templateutil.runsymbol(context, origmapping, 'node')
             mapping['originalnode'] = orignode
-        # put marker to override 'fctx' in mapping if any, and flag
+        # put marker to override 'ctx'/'fctx' in mapping if any, and flag
         # its existence to be reported by availablekeys()
+        if 'ctx' not in newmapping and self._hasliteral(newmapping, 'node'):
+            mapping['ctx'] = _placeholder
         if 'fctx' not in newmapping and self._hasliteral(newmapping, 'path'):
             mapping['fctx'] = _placeholder
         return mapping
@@ -606,6 +608,16 @@ class templateresources(templater.resourcemapper):
         """Test if context revision is set or unset in the given mapping"""
         return 'node' in mapping or 'ctx' in mapping
 
+    def _loadctx(self, mapping):
+        repo = self._getsome(mapping, 'repo')
+        node = self._getliteral(mapping, 'node')
+        if repo is None or node is None:
+            return
+        try:
+            return repo[node]
+        except error.RepoLookupError:
+            return None # maybe hidden/non-existent node
+
     def _loadfctx(self, mapping):
         ctx = self._getsome(mapping, 'ctx')
         path = self._getliteral(mapping, 'path')
@@ -617,6 +629,7 @@ class templateresources(templater.resourcemapper):
             return None # maybe removed file?
 
     _loadermap = {
+        'ctx': _loadctx,
         'fctx': _loadfctx,
     }
 

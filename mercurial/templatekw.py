@@ -481,8 +481,6 @@ def showmanifest(context, mapping):
     mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {'rev': mrev, 'node': mhex})
     f = context.process('manifest', mapping)
-    # TODO: perhaps 'ctx' should be dropped from mapping because manifest
-    # rev and node are completely different from changeset's.
     return templateutil.hybriditem(f, None, f,
                                    lambda x: {'rev': mrev, 'node': mhex})
 

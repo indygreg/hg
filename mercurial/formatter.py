@@ -567,10 +567,9 @@ class templateresources(templater.resourcemapper):
 
     def populatemap(self, context, origmapping, newmapping):
         mapping = {}
-        if self._hasctx(newmapping):
+        if self._hasnodespec(newmapping):
             mapping['revcache'] = {}  # per-ctx cache
-        if (('node' in origmapping or self._hasctx(origmapping))
-            and ('node' in newmapping or self._hasctx(newmapping))):
+        if self._hasnodespec(origmapping) and self._hasnodespec(newmapping):
             orignode = templateutil.runsymbol(context, origmapping, 'node')
             mapping['originalnode'] = orignode
         return mapping
@@ -581,8 +580,9 @@ class templateresources(templater.resourcemapper):
             return v
         return self._resmap.get(key)
 
-    def _hasctx(self, mapping):
-        return 'ctx' in mapping
+    def _hasnodespec(self, mapping):
+        """Test if context revision is set or unset in the given mapping"""
+        return 'node' in mapping or 'ctx' in mapping
 
 def formatter(ui, out, topic, opts):
     template = opts.get("template", "")

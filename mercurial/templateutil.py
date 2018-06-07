@@ -856,7 +856,7 @@ def runsymbol(context, mapping, key, default=''):
         # old templatekw: expand all keywords and resources
         # (TODO: drop support for old-style functions. 'f._requires = ()'
         #  can be removed.)
-        props = {k: context._resources.lookup(context, mapping, k)
+        props = {k: context._resources.lookup(mapping, k)
                  for k in context._resources.knownkeys()}
         # pass context to _showcompatlist() through templatekw._showlist()
         props['templ'] = context

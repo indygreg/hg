@@ -548,18 +548,18 @@ class templateresources(templater.resourcemapper):
             'ui': ui,
         }
 
-    def availablekeys(self, context, mapping):
+    def availablekeys(self, mapping):
         return {k for k, g in self._gettermap.iteritems()
-                if g(self, context, mapping, k) is not None}
+                if g(self, mapping, k) is not None}
 
     def knownkeys(self):
         return self._knownkeys
 
-    def lookup(self, context, mapping, key):
+    def lookup(self, mapping, key):
         get = self._gettermap.get(key)
         if not get:
             return None
-        return get(self, context, mapping, key)
+        return get(self, mapping, key)
 
     def populatemap(self, context, origmapping, newmapping):
         mapping = {}
@@ -571,7 +571,7 @@ class templateresources(templater.resourcemapper):
             mapping['originalnode'] = orignode
         return mapping
 
-    def _getsome(self, context, mapping, key):
+    def _getsome(self, mapping, key):
         v = mapping.get(key)
         if v is not None:
             return v
@@ -580,7 +580,7 @@ class templateresources(templater.resourcemapper):
     def _hasctx(self, mapping):
         return 'ctx' in mapping or 'fctx' in mapping
 
-    def _getctx(self, context, mapping, key):
+    def _getctx(self, mapping, key):
         ctx = mapping.get('ctx')
         if ctx is not None:
             return ctx
@@ -588,11 +588,11 @@ class templateresources(templater.resourcemapper):
         if fctx is not None:
             return fctx.changectx()
 
-    def _getrepo(self, context, mapping, key):
-        ctx = self._getctx(context, mapping, 'ctx')
+    def _getrepo(self, mapping, key):
+        ctx = self._getctx(mapping, 'ctx')
         if ctx is not None:
             return ctx.repo()
-        return self._getsome(context, mapping, key)
+        return self._getsome(mapping, key)
 
     _gettermap = {
         'cache': _getsome,

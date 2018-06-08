@@ -610,6 +610,27 @@ to remove a tag of type X which actually only exists as a type Y:
   localtag                           0:bbd179dfa0a7 local
   globaltag                          0:bbd179dfa0a7
 
+Templated output:
+
+ (immediate values)
+
+  $ hg tags -T '{pad(tag, 9)} {rev}:{node} ({type})\n'
+  tip       1:a0b6fe111088c8c29567d3876cc466aa02927cae ()
+  localtag  0:bbd179dfa0a71671c253b3ae0aa1513b60d199fa (local)
+  globaltag 0:bbd179dfa0a71671c253b3ae0aa1513b60d199fa ()
+
+ (ctx/revcache dependent)
+
+  $ hg tags -T '{pad(tag, 9)} {rev} {file_adds}\n'
+  tip       1 .hgtags
+  localtag  0 foo
+  globaltag 0 foo
+
+  $ hg tags -T '{pad(tag, 9)} {rev}:{node|shortest}\n'
+  tip       1:a0b6
+  localtag  0:bbd1
+  globaltag 0:bbd1
+
 Test for issue3911
 
   $ hg tag -r 0 -l localtag2

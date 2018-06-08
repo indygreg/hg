@@ -753,14 +753,22 @@ def _iteroverlaymaps(context, origmapping, newmappings):
         lm['index'] = i
         yield lm
 
-def _applymap(context, mapping, d, targ):
-    for lm in _iteroverlaymaps(context, mapping, d.itermaps(context)):
+def _applymap(context, mapping, d, darg, targ):
+    try:
+        diter = d.itermaps(context)
+    except error.ParseError as err:
+        sym = findsymbolicname(darg)
+        if not sym:
+            raise
+        hint = _("keyword '%s' does not support map operation") % sym
+        raise error.ParseError(bytes(err), hint=hint)
+    for lm in _iteroverlaymaps(context, mapping, diter):
         yield evalrawexp(context, lm, targ)
 
 def runmap(context, mapping, data):
     darg, targ = data
     d = evalwrapped(context, mapping, darg)
-    return mappedgenerator(_applymap, args=(mapping, d, targ))
+    return mappedgenerator(_applymap, args=(mapping, d, darg, targ))
 
 def runmember(context, mapping, data):
     darg, memb = data

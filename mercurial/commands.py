@@ -4854,8 +4854,6 @@ def serve(ui, repo, **opts):
         raise error.Abort(_("cannot use --stdio with --cmdserver"))
     if opts["print_url"] and ui.verbose:
         raise error.Abort(_("cannot use --print-url with --verbose"))
-    if opts["print_url"]:
-        opts['daemon'] = True
 
     if opts["stdio"]:
         if repo is None:

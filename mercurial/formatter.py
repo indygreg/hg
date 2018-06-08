@@ -124,6 +124,7 @@ from . import (
     error,
     pycompat,
     templatefilters,
+    templatefuncs,
     templatekw,
     templater,
     templateutil,
@@ -192,6 +193,9 @@ class baseformatter(object):
         # name is mandatory argument for now, but it could be optional if
         # we have default template keyword, e.g. {item}
         return self._converter.formatlist(data, name, fmt, sep)
+    def contexthint(self, datafields):
+        '''set of context object keys to be required given datafields set'''
+        return set()
     def context(self, **ctxs):
         '''insert context objects to be used to render template keywords'''
         ctxs = pycompat.byteskwargs(ctxs)
@@ -417,6 +421,24 @@ class templateformatter(baseformatter):
     @util.propertycache
     def _symbolsused(self):
         return self._t.symbolsuseddefault()
+
+    def contexthint(self, datafields):
+        '''set of context object keys to be required by the template, given
+        datafields overridden by immediate values'''
+        requires = set()
+        ksyms, fsyms = self._symbolsused
+        ksyms = ksyms - set(datafields.split())  # exclude immediate fields
+        symtables = [(ksyms, templatekw.keywords),
+                     (fsyms, templatefuncs.funcs)]
+        for syms, table in symtables:
+            for k in syms:
+                f = table.get(k)
+                if not f:
+                    continue
+                requires.update(getattr(f, '_requires', ()))
+        if 'repo' in requires:
+            requires.add('ctx')  # there's no API to pass repo to formatter
+        return requires & {'ctx', 'fctx'}
 
     def datahint(self):
         '''set of field names to be referenced from the template'''

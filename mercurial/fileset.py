@@ -613,14 +613,6 @@ class matchctx(object):
     def switch(self, ctx, status=None):
         return matchctx(ctx, status, self._badfn)
 
-class fullmatchctx(matchctx):
-    """A match context where any files in any revisions should be valid"""
-
-    def __init__(self, ctx, status=None, badfn=None):
-        super(fullmatchctx, self).__init__(ctx, status, badfn)
-    def switch(self, ctx, status=None):
-        return fullmatchctx(ctx, status, self._badfn)
-
 # filesets using matchctx.switch()
 _switchcallers = [
     'revs',
@@ -643,7 +635,7 @@ def _intree(funcs, tree):
 def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""
     tree = parse(expr)
-    mctx = fullmatchctx(ctx, _buildstatus(ctx, tree), badfn=badfn)
+    mctx = matchctx(ctx, _buildstatus(ctx, tree), badfn=badfn)
     return getmatch(mctx, tree)
 
 def _buildstatus(ctx, tree, basectx=None):

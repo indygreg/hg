@@ -4151,6 +4151,10 @@ Test boolean expression/literal passed to if function
   empty string is False
   $ hg log -r 0 -T '{if(revset(r"0 - 0"), "", "empty list is False")}\n'
   empty list is False
+  $ hg log -r 0 -T '{if(revset(r"0"), "non-empty list is True")}\n'
+  non-empty list is True
+  $ hg log -r 0 -T '{if(revset(r"0") % "", "list of empty strings is True")}\n'
+  list of empty strings is True
   $ hg log -r 0 -T '{if(true, "true is True")}\n'
   true is True
   $ hg log -r 0 -T '{if(false, "", "false is False")}\n'

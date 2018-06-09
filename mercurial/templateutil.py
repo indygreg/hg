@@ -85,6 +85,10 @@ class wrapped(object):
         """
 
     @abc.abstractmethod
+    def tobool(self, context, mapping):
+        """Return a boolean representation of the inner value"""
+
+    @abc.abstractmethod
     def tovalue(self, context, mapping):
         """Move the inner value object out or create a value representation
 
@@ -136,6 +140,9 @@ class wrappedbytes(wrapped):
     def show(self, context, mapping):
         return self._value
 
+    def tobool(self, context, mapping):
+        return bool(self._value)
+
     def tovalue(self, context, mapping):
         return self._value
 
@@ -169,6 +176,14 @@ class wrappedvalue(wrapped):
             return b''
         return pycompat.bytestr(self._value)
 
+    def tobool(self, context, mapping):
+        if self._value is None:
+            return False
+        if isinstance(self._value, bool):
+            return self._value
+        # otherwise evaluate as string, which means 0 is True
+        return bool(pycompat.bytestr(self._value))
+
     def tovalue(self, context, mapping):
         return self._value
 
@@ -200,6 +215,9 @@ class date(mappable, wrapped):
 
     def tomap(self, context):
         return {'unixtime': self._unixtime, 'tzoffset': self._tzoffset}
+
+    def tobool(self, context, mapping):
+        return True
 
     def tovalue(self, context, mapping):
         return (self._unixtime, self._tzoffset)
@@ -272,6 +290,9 @@ class hybrid(wrapped):
             return gen()
         return gen
 
+    def tobool(self, context, mapping):
+        return bool(self._values)
+
     def tovalue(self, context, mapping):
         # TODO: make it non-recursive for trivial lists/dicts
         xs = self._values
@@ -326,6 +347,9 @@ class hybriditem(mappable, wrapped):
         if callable(gen):
             return gen()
         return gen
+
+    def tobool(self, context, mapping):
+        return bool(self.tovalue(context, mapping))
 
     def tovalue(self, context, mapping):
         return _unthunk(context, mapping, self._value)
@@ -396,6 +420,9 @@ class mappinggenerator(_mappingsequence):
     def itermaps(self, context):
         return self._make(context, *self._args)
 
+    def tobool(self, context, mapping):
+        return _nonempty(self.itermaps(context))
+
 class mappinglist(_mappingsequence):
     """Wrapper for list of template mappings"""
 
@@ -405,6 +432,9 @@ class mappinglist(_mappingsequence):
 
     def itermaps(self, context):
         return iter(self._mappings)
+
+    def tobool(self, context, mapping):
+        return bool(self._mappings)
 
 class mappedgenerator(wrapped):
     """Wrapper for generator of strings which acts as a list
@@ -448,6 +478,9 @@ class mappedgenerator(wrapped):
 
     def show(self, context, mapping):
         return self.join(context, mapping, '')
+
+    def tobool(self, context, mapping):
+        return _nonempty(self._gen(context))
 
     def tovalue(self, context, mapping):
         return [stringify(context, mapping, x) for x in self._gen(context)]
@@ -607,6 +640,13 @@ def findsymbolicname(arg):
         else:
             return None
 
+def _nonempty(xiter):
+    try:
+        next(xiter)
+        return True
+    except StopIteration:
+        return False
+
 def _unthunk(context, mapping, thing):
     """Evaluate a lazy byte string into value"""
     if not isinstance(thing, types.GeneratorType):
@@ -655,13 +695,7 @@ def evalboolean(context, mapping, arg):
             thing = stringutil.parsebool(data)
     else:
         thing = func(context, mapping, data)
-    if isinstance(thing, wrapped):
-        thing = thing.tovalue(context, mapping)
-    if isinstance(thing, bool):
-        return thing
-    # other objects are evaluated as strings, which means 0 is True, but
-    # empty dict/list should be False as they are expected to be ''
-    return bool(stringify(context, mapping, thing))
+    return makewrapped(context, mapping, thing).tobool(context, mapping)
 
 def evaldate(context, mapping, arg, err=None):
     """Evaluate given argument as a date tuple or a date string; returns

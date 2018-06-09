@@ -743,6 +743,9 @@ class sessionvars(templateutil.wrapped):
     def show(self, context, mapping):
         return self.join(context, '')
 
+    def tobool(self, context, mapping):
+        return bool(self._vars)
+
     def tovalue(self, context, mapping):
         return self._vars
 

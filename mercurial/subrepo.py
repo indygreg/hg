@@ -318,9 +318,9 @@ class abstractsubrepo(object):
         """return file flags"""
         return ''
 
-    def getfileset(self, expr):
+    def matchfileset(self, expr, badfn=None):
         """Resolve the fileset expression for this repo"""
-        return set()
+        return matchmod.nevermatcher(self.wvfs.base, '', badfn=badfn)
 
     def printfiles(self, ui, m, fm, fmt, subrepos):
         """handle the files command for this subrepo"""
@@ -792,24 +792,30 @@ class hgsubrepo(abstractsubrepo):
         return cmdutil.files(ui, ctx, m, fm, fmt, subrepos)
 
     @annotatesubrepoerror
-    def getfileset(self, expr):
+    def matchfileset(self, expr, badfn=None):
+        repo = self._repo
         if self._ctx.rev() is None:
-            ctx = self._repo[None]
+            ctx = repo[None]
         else:
             rev = self._state[1]
-            ctx = self._repo[rev]
+            ctx = repo[rev]
 
-        files = ctx.getfileset(expr)
+        matchers = [ctx.matchfileset(expr, badfn=badfn)]
 
         for subpath in ctx.substate:
             sub = ctx.sub(subpath)
 
             try:
-                files.extend(subpath + '/' + f for f in sub.getfileset(expr))
+                sm = sub.matchfileset(expr, badfn=badfn)
+                pm = matchmod.prefixdirmatcher(repo.root, repo.getcwd(),
+                                               subpath, sm, badfn=badfn)
+                matchers.append(pm)
             except error.LookupError:
                 self.ui.status(_("skipping missing subrepository: %s\n")
                                % self.wvfs.reljoin(reporelpath(self), subpath))
-        return files
+        if len(matchers) == 1:
+            return matchers[0]
+        return matchmod.unionmatcher(matchers)
 
     def walk(self, match):
         ctx = self._repo[None]

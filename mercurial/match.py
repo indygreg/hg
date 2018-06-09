@@ -40,9 +40,9 @@ def _rematcher(regex):
     except AttributeError:
         return m.match
 
-def _expandsets(kindpats, ctx, listsubrepos):
-    '''Returns the kindpats list with the 'set' patterns expanded.'''
-    fset = set()
+def _expandsets(root, cwd, kindpats, ctx, listsubrepos, badfn):
+    '''Returns the kindpats list with the 'set' patterns expanded to matchers'''
+    matchers = []
     other = []
 
     for kind, pat, source in kindpats:
@@ -50,17 +50,17 @@ def _expandsets(kindpats, ctx, listsubrepos):
             if not ctx:
                 raise error.ProgrammingError("fileset expression with no "
                                              "context")
-            s = ctx.getfileset(pat)
-            fset.update(s)
+            matchers.append(ctx.matchfileset(pat, badfn=badfn))
 
             if listsubrepos:
                 for subpath in ctx.substate:
-                    s = ctx.sub(subpath).getfileset(pat)
-                    fset.update(subpath + '/' + f for f in s)
+                    sm = ctx.sub(subpath).matchfileset(pat, badfn=badfn)
+                    pm = prefixdirmatcher(root, cwd, subpath, sm, badfn=badfn)
+                    matchers.append(pm)
 
             continue
         other.append((kind, pat, source))
-    return fset, other
+    return matchers, other
 
 def _expandsubinclude(kindpats, root):
     '''Returns the list of subinclude matcher args and the kindpats without the
@@ -97,16 +97,15 @@ def _kindpatsalwaysmatch(kindpats):
 
 def _buildkindpatsmatcher(matchercls, root, cwd, kindpats, ctx=None,
                           listsubrepos=False, badfn=None):
-    fset, kindpats = _expandsets(kindpats, ctx, listsubrepos)
     matchers = []
+    fms, kindpats = _expandsets(root, cwd, kindpats, ctx=ctx,
+                                listsubrepos=listsubrepos, badfn=badfn)
     if kindpats:
         m = matchercls(root, cwd, kindpats, listsubrepos=listsubrepos,
                        badfn=badfn)
         matchers.append(m)
-    if fset:
-        m = predicatematcher(root, cwd, fset.__contains__,
-                             predrepr='fileset', badfn=badfn)
-        matchers.append(m)
+    if fms:
+        matchers.extend(fms)
     if not matchers:
         return nevermatcher(root, cwd, badfn=badfn)
     if len(matchers) == 1:

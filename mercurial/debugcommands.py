@@ -903,7 +903,7 @@ def debugfileset(ui, repo, expr, **opts):
         files.update(ctx.files())
         files.update(ctx.substate)
 
-    m = scmutil.matchfiles(repo, ctx.getfileset(expr))
+    m = ctx.matchfileset(expr)
     for f in sorted(files):
         if not m(f):
             continue

@@ -181,8 +181,8 @@ class basectx(object):
     def mutable(self):
         return self.phase() > phases.public
 
-    def getfileset(self, expr):
-        return fileset.getfileset(self, expr)
+    def matchfileset(self, expr, badfn=None):
+        return fileset.match(self, expr, badfn=badfn)
 
     def obsolete(self):
         """True if the changeset is obsolete"""

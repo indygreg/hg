@@ -620,9 +620,14 @@ def _buildsubset(ctx, status):
     else:
         return list(ctx.walk(ctx.match([])))
 
-def getfileset(ctx, expr):
+def match(ctx, expr, badfn=None):
+    """Create a matcher for a single fileset expression"""
+    repo = ctx.repo()
     tree = parse(expr)
-    return getset(fullmatchctx(ctx, _buildstatus(ctx, tree)), tree)
+    fset = getset(fullmatchctx(ctx, _buildstatus(ctx, tree)), tree)
+    return matchmod.predicatematcher(repo.root, repo.getcwd(),
+                                     fset.__contains__,
+                                     predrepr='fileset', badfn=badfn)
 
 def _buildstatus(ctx, tree, basectx=None):
     # do we need status info?

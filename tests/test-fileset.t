@@ -169,8 +169,8 @@ Test files status in different revisions
   R a2
   ? c3
   $ fileset -r0 'added() and revs("wdir()", modified() or removed() or unknown())'
-  b2
   a2
+  b2
   $ fileset -r0 'added() or revs("wdir()", added())'
   a1
   a2
@@ -192,9 +192,9 @@ Test files properties
   bin
 
   $ fileset 'grep("b{1}")'
+  b1
   b2
   c1
-  b1
   $ fileset 'grep("missingparens(")'
   hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \)).* (re)
   [255]
@@ -403,21 +403,18 @@ Test with a revision
   dos
   mixed
   $ fileset 'eol(unix)'
-  mixed
   .hgsub
   .hgsubstate
   b1
   b2
   c1
+  mixed
   $ fileset 'eol(mac)'
   mac
 
 Test safety of 'encoding' on removed files
 
   $ fileset 'encoding("ascii")'
-  dos
-  mac
-  mixed
   .hgsub
   .hgsubstate
   1k
@@ -427,6 +424,9 @@ Test safety of 'encoding' on removed files
   b2link (symlink !)
   bin
   c1
+  dos
+  mac
+  mixed
 
 Test detection of unintentional 'matchctx.existing()' invocation
 
@@ -561,12 +561,12 @@ Call with revset matching multiple revs
 ---------------------------------------
 
   $ fileset "revs('0+4', added())"
+  .hgsub
+  .hgsubstate
   a1
   a2
   b1
   b2
-  .hgsub
-  .hgsubstate
 
 overlapping set
 

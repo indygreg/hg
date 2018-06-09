@@ -884,7 +884,7 @@ def debugfileset(ui, repo, expr, **opts):
         tree = fileset.parse(expr)
         ui.note(fileset.prettyformat(tree), "\n")
 
-    for f in ctx.getfileset(expr):
+    for f in sorted(ctx.getfileset(expr)):
         ui.write("%s\n" % f)
 
 @command('debugformat',

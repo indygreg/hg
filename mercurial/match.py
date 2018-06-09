@@ -375,6 +375,20 @@ class nevermatcher(basematcher):
     def __repr__(self):
         return r'<nevermatcher>'
 
+class predicatematcher(basematcher):
+    """A matcher adapter for a simple boolean function"""
+
+    def __init__(self, root, cwd, predfn, predrepr=None, badfn=None):
+        super(predicatematcher, self).__init__(root, cwd, badfn)
+        self.matchfn = predfn
+        self._predrepr = predrepr
+
+    @encoding.strmethod
+    def __repr__(self):
+        s = (stringutil.buildrepr(self._predrepr)
+             or pycompat.byterepr(self.matchfn))
+        return '<predicatenmatcher pred=%s>' % s
+
 class patternmatcher(basematcher):
 
     def __init__(self, root, cwd, kindpats, ctx=None, listsubrepos=False,

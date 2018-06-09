@@ -31,7 +31,6 @@ from .utils import (
 )
 
 _hybrid = templateutil.hybrid
-_mappable = templateutil.mappable
 hybriddict = templateutil.hybriddict
 hybridlist = templateutil.hybridlist
 compatdict = templateutil.compatdict
@@ -469,7 +468,8 @@ def showmanifest(context, mapping):
     f = context.process('manifest', mapping)
     # TODO: perhaps 'ctx' should be dropped from mapping because manifest
     # rev and node are completely different from changeset's.
-    return _mappable(f, None, f, lambda x: {'rev': mrev, 'node': mhex})
+    return templateutil.hybriditem(f, None, f,
+                                   lambda x: {'rev': mrev, 'node': mhex})
 
 @templatekeyword('obsfate', requires={'ui', 'repo', 'ctx'})
 def showobsfate(context, mapping):

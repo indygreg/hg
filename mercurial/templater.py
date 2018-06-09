@@ -42,7 +42,7 @@ hybrid
     represents a list/dict of printable values, which can also be converted
     to mappings by % operator.
 
-mappable
+hybriditem
     represents a scalar printable value, also supports % operator.
 
 mappinggenerator, mappinglist

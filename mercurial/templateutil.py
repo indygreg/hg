@@ -215,7 +215,7 @@ class hybrid(wrapped):
         if util.safehasattr(val, '_makemap'):
             # a nested hybrid list/dict, which has its own way of map operation
             return val
-        return mappable(None, key, val, self._makemap)
+        return hybriditem(None, key, val, self._makemap)
 
     def itermaps(self, context):
         makemap = self._makemap
@@ -243,7 +243,7 @@ class hybrid(wrapped):
                     for k, v in xs.iteritems()}
         return [unwrapvalue(context, mapping, x) for x in xs]
 
-class mappable(wrapped):
+class hybriditem(wrapped):
     """Wrapper for non-list/dict object to support map operation
 
     This class allows us to handle both:

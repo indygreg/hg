@@ -684,6 +684,78 @@ class subdirmatcher(basematcher):
         return ('<subdirmatcher path=%r, matcher=%r>' %
                 (self._path, self._matcher))
 
+class prefixdirmatcher(basematcher):
+    """Adapt a matcher to work on a parent directory.
+
+    The matcher's non-matching-attributes (root, cwd, bad, explicitdir,
+    traversedir) are ignored.
+
+    The prefix path should usually be the relative path from the root of
+    this matcher to the root of the wrapped matcher.
+
+    >>> m1 = match(b'root/d/e', b'f', [b'../a.txt', b'b.txt'])
+    >>> m2 = prefixdirmatcher(b'root', b'd/e/f', b'd/e', m1)
+    >>> bool(m2(b'a.txt'),)
+    False
+    >>> bool(m2(b'd/e/a.txt'))
+    True
+    >>> bool(m2(b'd/e/b.txt'))
+    False
+    >>> m2.files()
+    ['d/e/a.txt', 'd/e/f/b.txt']
+    >>> m2.exact(b'd/e/a.txt')
+    True
+    >>> m2.visitdir(b'd')
+    True
+    >>> m2.visitdir(b'd/e')
+    True
+    >>> m2.visitdir(b'd/e/f')
+    True
+    >>> m2.visitdir(b'd/e/g')
+    False
+    >>> m2.visitdir(b'd/ef')
+    False
+    """
+
+    def __init__(self, root, cwd, path, matcher, badfn=None):
+        super(prefixdirmatcher, self).__init__(root, cwd, badfn)
+        if not path:
+            raise error.ProgrammingError('prefix path must not be empty')
+        self._path = path
+        self._pathprefix = path + '/'
+        self._matcher = matcher
+
+    @propertycache
+    def _files(self):
+        return [self._pathprefix + f for f in self._matcher._files]
+
+    def matchfn(self, f):
+        if not f.startswith(self._pathprefix):
+            return False
+        return self._matcher.matchfn(f[len(self._pathprefix):])
+
+    @propertycache
+    def _pathdirs(self):
+        return set(util.finddirs(self._path)) | {'.'}
+
+    def visitdir(self, dir):
+        if dir == self._path:
+            return self._matcher.visitdir('.')
+        if dir.startswith(self._pathprefix):
+            return self._matcher.visitdir(dir[len(self._pathprefix):])
+        return dir in self._pathdirs
+
+    def isexact(self):
+        return self._matcher.isexact()
+
+    def prefix(self):
+        return self._matcher.prefix()
+
+    @encoding.strmethod
+    def __repr__(self):
+        return ('<prefixdirmatcher path=%r, matcher=%r>'
+                % (pycompat.bytestr(self._path), self._matcher))
+
 class unionmatcher(basematcher):
     """A matcher that is the union of several matchers.
 

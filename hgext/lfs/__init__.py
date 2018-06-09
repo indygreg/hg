@@ -362,8 +362,10 @@ def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword
     fileset.getargs(x, 0, 0, _("lfs takes no arguments"))
-    return [f for f in mctx.subset
-            if wrapper.pointerfromctx(mctx.ctx, f, removed=True) is not None]
+    ctx = mctx.ctx
+    def lfsfilep(f):
+        return wrapper.pointerfromctx(ctx, f, removed=True) is not None
+    return mctx.predicate(lfsfilep, predrepr='<lfs>')
 
 @templatekeyword('lfs_files', requires={'ctx'})
 def lfsfiles(context, mapping):

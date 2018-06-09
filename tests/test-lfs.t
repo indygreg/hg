@@ -523,8 +523,8 @@ absence doesn't cause an abort.)
 
   $ hg files --debug -r . 'set:eol("unix")' --config 'experimental.lfs.disableusercache=True'
   lfs: found c04b5bb1a5b2eb3e9cd4805420dba5a9d133da5b7adeeafb5474c4adae9faa80 in the local lfs store
-  lfs: found 5dde896887f6754c9b15bfe3a441ae4806df2fde94001311e08bf110622e0bbe in the local lfs store
            2   b
+  lfs: found 5dde896887f6754c9b15bfe3a441ae4806df2fde94001311e08bf110622e0bbe in the local lfs store
 
   $ hg files --debug -r . 'set:binary()' --config 'experimental.lfs.disableusercache=True'
            2   a

@@ -142,8 +142,10 @@ Test files status
   .hgignore
   c2
   $ fileset 'hgignore()'
+  .hgignore
   a2
   b2
+  c2
   $ fileset 'clean()'
   b1
   $ fileset 'copied()'
@@ -182,6 +184,7 @@ Test files properties
 
   >>> open('bin', 'wb').write(b'\0a') and None
   $ fileset 'binary()'
+  bin
   $ fileset 'binary() and unknown()'
   bin
   $ echo '^bin$' >> .hgignore
@@ -192,6 +195,7 @@ Test files properties
   bin
 
   $ fileset 'grep("b{1}")'
+  .hgignore
   b1
   b2
   c1
@@ -354,8 +358,12 @@ Test with a revision
   $ fileset -r1 'unknown()'
   $ fileset -r1 'ignored()'
   $ fileset -r1 'hgignore()'
+  .hgignore
+  a2
   b2
   bin
+  c2
+  sub2
   $ fileset -r1 'binary()'
   bin
   $ fileset -r1 'size(1k)'
@@ -403,30 +411,42 @@ Test with a revision
   dos
   mixed
   $ fileset 'eol(unix)'
+  .hgignore
   .hgsub
   .hgsubstate
   b1
   b2
+  b2.orig
   c1
+  c2
+  c3
+  con.xml
   mixed
+  unknown
   $ fileset 'eol(mac)'
   mac
 
 Test safety of 'encoding' on removed files
 
   $ fileset 'encoding("ascii")'
+  .hgignore
   .hgsub
   .hgsubstate
   1k
   2k
   b1
   b2
+  b2.orig
   b2link (symlink !)
   bin
   c1
+  c2
+  c3
+  con.xml
   dos
   mac
   mixed
+  unknown
 
 Test detection of unintentional 'matchctx.existing()' invocation
 
@@ -437,7 +457,8 @@ Test detection of unintentional 'matchctx.existing()' invocation
   > @filesetpredicate(b'existingcaller()', callexisting=False)
   > def existingcaller(mctx, x):
   >     # this 'mctx.existing()' invocation is unintentional
-  >     return [f for f in mctx.existing()]
+  >     existing = set(mctx.existing())
+  >     return mctx.predicate(existing.__contains__, cache=False)
   > EOF
 
   $ cat >> .hg/hgrc <<EOF

@@ -126,6 +126,19 @@ def getpattern(x, allkinds, err):
         return _getkindpat(x[1], x[2], allkinds, err)
     return getstring(x, err)
 
+def getlist(x):
+    if not x:
+        return []
+    if x[0] == 'list':
+        return getlist(x[1]) + [x[2]]
+    return [x]
+
+def getargs(x, min, max, err):
+    l = getlist(x)
+    if len(l) < min or len(l) > max:
+        raise error.ParseError(err)
+    return l
+
 def getset(mctx, x):
     if not x:
         raise error.ParseError(_("missing argument"))
@@ -163,6 +176,21 @@ def negateset(mctx, x):
 def listset(mctx, a, b):
     raise error.ParseError(_("can't use a list in this context"),
                            hint=_('see hg help "filesets.x or y"'))
+
+def func(mctx, a, b):
+    funcname = getsymbol(a)
+    if funcname in symbols:
+        enabled = mctx._existingenabled
+        mctx._existingenabled = funcname in _existingcallers
+        try:
+            return symbols[funcname](mctx, b)
+        finally:
+            mctx._existingenabled = enabled
+
+    keep = lambda fn: getattr(fn, '__doc__', None) is not None
+
+    syms = [s for (s, fn) in symbols.items() if keep(fn)]
+    raise error.UnknownIdentifier(funcname, syms)
 
 # symbols are callable like:
 #  fun(mctx, x)
@@ -252,34 +280,6 @@ def clean(mctx, x):
     getargs(x, 0, 0, _("clean takes no arguments"))
     s = set(mctx.status().clean)
     return [f for f in mctx.subset if f in s]
-
-def func(mctx, a, b):
-    funcname = getsymbol(a)
-    if funcname in symbols:
-        enabled = mctx._existingenabled
-        mctx._existingenabled = funcname in _existingcallers
-        try:
-            return symbols[funcname](mctx, b)
-        finally:
-            mctx._existingenabled = enabled
-
-    keep = lambda fn: getattr(fn, '__doc__', None) is not None
-
-    syms = [s for (s, fn) in symbols.items() if keep(fn)]
-    raise error.UnknownIdentifier(funcname, syms)
-
-def getlist(x):
-    if not x:
-        return []
-    if x[0] == 'list':
-        return getlist(x[1]) + [x[2]]
-    return [x]
-
-def getargs(x, min, max, err):
-    l = getlist(x)
-    if len(l) < min or len(l) > max:
-        raise error.ParseError(err)
-    return l
 
 @predicate('binary()', callexisting=True)
 def binary(mctx, x):

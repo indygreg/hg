@@ -541,9 +541,9 @@ def username(uid=None):
     if uid is None:
         uid = os.getuid()
     try:
-        return pwd.getpwuid(uid)[0]
+        return pycompat.fsencode(pwd.getpwuid(uid)[0])
     except KeyError:
-        return str(uid)
+        return b'%d' % uid
 
 def groupname(gid=None):
     """Return the name of the group with the given gid.

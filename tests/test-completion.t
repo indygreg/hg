@@ -273,7 +273,7 @@ Show all commands + options
   debugdiscovery: old, nonheads, rev, ssh, remotecmd, insecure
   debugdownload: output
   debugextensions: template
-  debugfileset: rev
+  debugfileset: rev, all-files
   debugformat: template
   debugfsinfo: 
   debuggetbundle: head, common, type

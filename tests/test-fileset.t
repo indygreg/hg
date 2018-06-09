@@ -1,5 +1,5 @@
   $ fileset() {
-  >   hg debugfileset "$@"
+  >   hg debugfileset --all-files "$@"
   > }
 
   $ hg init repo

@@ -875,16 +875,38 @@ def debugextensions(ui, repo, **opts):
     fm.end()
 
 @command('debugfileset',
-    [('r', 'rev', '', _('apply the filespec on this revision'), _('REV'))],
-    _('[-r REV] FILESPEC'))
+    [('r', 'rev', '', _('apply the filespec on this revision'), _('REV')),
+     ('', 'all-files', False,
+      _('test files from all revisions and working directory'))],
+    _('[-r REV] [--all-files] FILESPEC'))
 def debugfileset(ui, repo, expr, **opts):
     '''parse and apply a fileset specification'''
-    ctx = scmutil.revsingle(repo, opts.get(r'rev'), None)
+    opts = pycompat.byteskwargs(opts)
+    ctx = scmutil.revsingle(repo, opts.get('rev'), None)
     if ui.verbose:
         tree = fileset.parse(expr)
         ui.note(fileset.prettyformat(tree), "\n")
 
-    for f in sorted(ctx.getfileset(expr)):
+    files = set()
+    if opts['all_files']:
+        for r in repo:
+            c = repo[r]
+            files.update(c.files())
+            files.update(c.substate)
+    if opts['all_files'] or ctx.rev() is None:
+        wctx = repo[None]
+        files.update(repo.dirstate.walk(scmutil.matchall(repo),
+                                        subrepos=list(wctx.substate),
+                                        unknown=True, ignored=True))
+        files.update(wctx.substate)
+    else:
+        files.update(ctx.files())
+        files.update(ctx.substate)
+
+    m = scmutil.matchfiles(repo, ctx.getfileset(expr))
+    for f in sorted(files):
+        if not m(f):
+            continue
         ui.write("%s\n" % f)
 
 @command('debugformat',

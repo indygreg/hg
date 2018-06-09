@@ -553,9 +553,8 @@ methods = {
 }
 
 class matchctx(object):
-    def __init__(self, ctx, subset, status=None, badfn=None):
+    def __init__(self, ctx, status=None, badfn=None):
         self.ctx = ctx
-        self.subset = subset
         self._status = status
         self._badfn = badfn
 
@@ -611,19 +610,14 @@ class matchctx(object):
         return matchmod.nevermatcher(repo.root, repo.getcwd(),
                                      badfn=self._badfn)
 
-    def filter(self, files):
-        return [f for f in files if f in self.subset]
-
     def switch(self, ctx, status=None):
-        subset = self.filter(_buildsubset(ctx, status))
-        return matchctx(ctx, subset, status, self._badfn)
+        return matchctx(ctx, status, self._badfn)
 
 class fullmatchctx(matchctx):
     """A match context where any files in any revisions should be valid"""
 
     def __init__(self, ctx, status=None, badfn=None):
-        subset = _buildsubset(ctx, status)
-        super(fullmatchctx, self).__init__(ctx, subset, status, badfn)
+        super(fullmatchctx, self).__init__(ctx, status, badfn)
     def switch(self, ctx, status=None):
         return fullmatchctx(ctx, status, self._badfn)
 
@@ -645,15 +639,6 @@ def _intree(funcs, tree):
             if _intree(funcs, s):
                 return True
     return False
-
-def _buildsubset(ctx, status):
-    if status:
-        subset = []
-        for c in status:
-            subset.extend(c)
-        return subset
-    else:
-        return list(ctx.walk(ctx.match([])))
 
 def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""

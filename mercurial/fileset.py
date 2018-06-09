@@ -181,12 +181,7 @@ def listmatch(mctx, x, y):
 def func(mctx, a, b):
     funcname = getsymbol(a)
     if funcname in symbols:
-        enabled = mctx._existingenabled
-        mctx._existingenabled = funcname in _existingcallers
-        try:
-            return symbols[funcname](mctx, b)
-        finally:
-            mctx._existingenabled = enabled
+        return symbols[funcname](mctx, b)
 
     keep = lambda fn: getattr(fn, '__doc__', None) is not None
 
@@ -202,9 +197,6 @@ symbols = {}
 
 # filesets using matchctx.status()
 _statuscallers = set()
-
-# filesets using matchctx.existing()
-_existingcallers = set()
 
 predicate = registrar.filesetpredicate()
 
@@ -285,7 +277,7 @@ def tracked(mctx, x):
     getargs(x, 0, 0, _("tracked takes no arguments"))
     return mctx.predicate(mctx.ctx.__contains__, predrepr='tracked')
 
-@predicate('binary()', callexisting=True)
+@predicate('binary()')
 def binary(mctx, x):
     """File that appears to be binary (contains NUL bytes).
     """
@@ -294,7 +286,7 @@ def binary(mctx, x):
     return mctx.fpredicate(lambda fctx: fctx.isbinary(),
                            predrepr='binary', cache=True)
 
-@predicate('exec()', callexisting=True)
+@predicate('exec()')
 def exec_(mctx, x):
     """File that is marked as executable.
     """
@@ -303,7 +295,7 @@ def exec_(mctx, x):
     ctx = mctx.ctx
     return mctx.predicate(lambda f: ctx.flags(f) == 'x', predrepr='exec')
 
-@predicate('symlink()', callexisting=True)
+@predicate('symlink()')
 def symlink(mctx, x):
     """File that is marked as a symlink.
     """
@@ -354,7 +346,7 @@ def portable(mctx, x):
     return mctx.predicate(lambda f: util.checkwinfilename(f) is None,
                           predrepr='portable')
 
-@predicate('grep(regex)', callexisting=True)
+@predicate('grep(regex)')
 def grep(mctx, x):
     """File contains the given regular expression.
     """
@@ -408,7 +400,7 @@ def sizematcher(expr):
         b = _sizetomax(expr)
         return lambda x: x >= a and x <= b
 
-@predicate('size(expression)', callexisting=True)
+@predicate('size(expression)')
 def size(mctx, x):
     """File size matches the given expression. Examples:
 
@@ -423,7 +415,7 @@ def size(mctx, x):
     return mctx.fpredicate(lambda fctx: m(fctx.size()),
                            predrepr=('size(%r)', expr), cache=True)
 
-@predicate('encoding(name)', callexisting=True)
+@predicate('encoding(name)')
 def encoding(mctx, x):
     """File can be successfully decoded with the given character
     encoding. May not be useful for encodings other than ASCII and
@@ -445,7 +437,7 @@ def encoding(mctx, x):
 
     return mctx.fpredicate(encp, predrepr=('encoding(%r)', enc), cache=True)
 
-@predicate('eol(style)', callexisting=True)
+@predicate('eol(style)')
 def eol(mctx, x):
     """File contains newlines of the given style (dos, unix, mac). Binary
     files are excluded, files with mixed line endings match multiple
@@ -566,7 +558,7 @@ class matchctx(object):
         self.subset = subset
         self._status = status
         self._badfn = badfn
-        self._existingenabled = False
+
     def status(self):
         return self._status
 
@@ -621,17 +613,6 @@ class matchctx(object):
 
     def filter(self, files):
         return [f for f in files if f in self.subset]
-    def existing(self):
-        if not self._existingenabled:
-            raise error.ProgrammingError('unexpected existing() invocation')
-        if self._status is not None:
-            removed = set(self._status[3])
-            unknown = set(self._status[4] + self._status[5])
-        else:
-            removed = set()
-            unknown = set()
-        return (f for f in self.subset
-                if (f in self.ctx and f not in removed) or f in unknown)
 
     def switch(self, ctx, status=None):
         subset = self.filter(_buildsubset(ctx, status))
@@ -683,13 +664,7 @@ def match(ctx, expr, badfn=None):
 def _buildstatus(ctx, tree, basectx=None):
     # do we need status info?
 
-    # temporaty boolean to simplify the next conditional
-    purewdir = ctx.rev() is None and basectx is None
-
-    if (_intree(_statuscallers, tree) or
-        # Using matchctx.existing() on a workingctx requires us to check
-        # for deleted files.
-        (purewdir and _intree(_existingcallers, tree))):
+    if _intree(_statuscallers, tree):
         unknown = _intree(['unknown'], tree)
         ignored = _intree(['ignored'], tree)
 
@@ -711,10 +686,8 @@ def loadpredicate(ui, extname, registrarobj):
         symbols[name] = func
         if func._callstatus:
             _statuscallers.add(name)
-        if func._callexisting:
-            _existingcallers.add(name)
 
-# load built-in predicates explicitly to setup _statuscallers/_existingcallers
+# load built-in predicates explicitly to setup _statuscallers
 loadpredicate(None, None, predicate)
 
 # tell hggettext to extract docstrings from these functions:

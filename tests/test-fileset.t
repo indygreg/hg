@@ -448,27 +448,6 @@ Test safety of 'encoding' on removed files
   mixed
   unknown
 
-Test detection of unintentional 'matchctx.existing()' invocation
-
-  $ cat > $TESTTMP/existingcaller.py <<EOF
-  > from mercurial import registrar
-  > 
-  > filesetpredicate = registrar.filesetpredicate()
-  > @filesetpredicate(b'existingcaller()', callexisting=False)
-  > def existingcaller(mctx, x):
-  >     # this 'mctx.existing()' invocation is unintentional
-  >     existing = set(mctx.existing())
-  >     return mctx.predicate(existing.__contains__, cache=False)
-  > EOF
-
-  $ cat >> .hg/hgrc <<EOF
-  > [extensions]
-  > existingcaller = $TESTTMP/existingcaller.py
-  > EOF
-
-  $ fileset 'existingcaller()' 2>&1 | tail -1
-  *ProgrammingError: *unexpected existing() invocation* (glob)
-
 Test 'revs(...)'
 ================
 

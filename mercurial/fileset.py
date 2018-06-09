@@ -154,7 +154,9 @@ def kindpatset(mctx, x, y):
                                        _("pattern must be a string")))
 
 def andset(mctx, x, y):
-    return getset(mctx.narrow(getset(mctx, x)), y)
+    xl = set(getset(mctx, x))
+    yl = getset(mctx, y)
+    return [f for f in yl if f in xl]
 
 def orset(mctx, x, y):
     # needs optimizing
@@ -627,8 +629,7 @@ class matchctx(object):
             unknown = set()
         return (f for f in self.subset
                 if (f in self.ctx and f not in removed) or f in unknown)
-    def narrow(self, files):
-        return matchctx(self.ctx, self.filter(files), self._status, self._badfn)
+
     def switch(self, ctx, status=None):
         subset = self.filter(_buildsubset(ctx, status))
         return matchctx(ctx, subset, status, self._badfn)

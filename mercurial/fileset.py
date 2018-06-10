@@ -555,15 +555,16 @@ methods = {
 }
 
 class matchctx(object):
-    def __init__(self, ctx, subset, status=None):
+    def __init__(self, ctx, subset, status=None, badfn=None):
         self.ctx = ctx
         self.subset = subset
         self._status = status
+        self._badfn = badfn
         self._existingenabled = False
     def status(self):
         return self._status
     def matcher(self, patterns):
-        return self.ctx.match(patterns)
+        return self.ctx.match(patterns, badfn=self._badfn)
     def filter(self, files):
         return [f for f in files if f in self.subset]
     def existing(self):
@@ -578,19 +579,19 @@ class matchctx(object):
         return (f for f in self.subset
                 if (f in self.ctx and f not in removed) or f in unknown)
     def narrow(self, files):
-        return matchctx(self.ctx, self.filter(files), self._status)
+        return matchctx(self.ctx, self.filter(files), self._status, self._badfn)
     def switch(self, ctx, status=None):
         subset = self.filter(_buildsubset(ctx, status))
-        return matchctx(ctx, subset, status)
+        return matchctx(ctx, subset, status, self._badfn)
 
 class fullmatchctx(matchctx):
     """A match context where any files in any revisions should be valid"""
 
-    def __init__(self, ctx, status=None):
+    def __init__(self, ctx, status=None, badfn=None):
         subset = _buildsubset(ctx, status)
-        super(fullmatchctx, self).__init__(ctx, subset, status)
+        super(fullmatchctx, self).__init__(ctx, subset, status, badfn)
     def switch(self, ctx, status=None):
-        return fullmatchctx(ctx, status)
+        return fullmatchctx(ctx, status, self._badfn)
 
 # filesets using matchctx.switch()
 _switchcallers = [
@@ -624,7 +625,7 @@ def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""
     repo = ctx.repo()
     tree = parse(expr)
-    fset = getset(fullmatchctx(ctx, _buildstatus(ctx, tree)), tree)
+    fset = getset(fullmatchctx(ctx, _buildstatus(ctx, tree), badfn=badfn), tree)
     return matchmod.predicatematcher(repo.root, repo.getcwd(),
                                      fset.__contains__,
                                      predrepr='fileset', badfn=badfn)

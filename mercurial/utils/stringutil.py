@@ -90,6 +90,29 @@ def prettyrepr(o):
         p0, p1 = q0, q1
     return '\n'.join('  ' * l + s for l, s in lines)
 
+def buildrepr(r):
+    """Format an optional printable representation from unexpanded bits
+
+    ========  =================================
+    type(r)   example
+    ========  =================================
+    tuple     ('<not %r>', other)
+    bytes     '<branch closed>'
+    callable  lambda: '<branch %r>' % sorted(b)
+    object    other
+    ========  =================================
+    """
+    if r is None:
+        return ''
+    elif isinstance(r, tuple):
+        return r[0] % pycompat.rapply(pycompat.maybebytestr, r[1:])
+    elif isinstance(r, bytes):
+        return r
+    elif callable(r):
+        return r()
+    else:
+        return pycompat.byterepr(r)
+
 def binary(s):
     """return true if a string is binary data"""
     return bool(s and '\0' in s)

@@ -2543,7 +2543,7 @@ def debugwalk(ui, repo, *pats, **opts):
     opts = pycompat.byteskwargs(opts)
     m = scmutil.match(repo[None], pats, opts)
     if ui.verbose:
-        ui.write(('matcher: %r\n' % m))
+        ui.write(('* matcher:\n'), stringutil.prettyrepr(m), '\n')
     items = list(repo[None].walk(m))
     if not items:
         return

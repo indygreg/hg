@@ -524,7 +524,7 @@ small reminder of the repository state
 Test files at -r0 should be filtered by files at wdir
 -----------------------------------------------------
 
-  $ fileset -r0 '* and revs("wdir()", *)'
+  $ fileset -r0 'tracked() and revs("wdir()", tracked())'
   a1
   b1
   b2
@@ -590,12 +590,12 @@ use rev to restrict matched file
   R a2
   $ fileset "status(0, 1, removed())"
   a2
-  $ fileset "* and status(0, 1, removed())"
+  $ fileset "tracked() and status(0, 1, removed())"
   $ fileset -r 4 "status(0, 1, removed())"
   a2
-  $ fileset -r 4 "* and status(0, 1, removed())"
-  $ fileset "revs('4', * and status(0, 1, removed()))"
-  $ fileset "revs('0', * and status(0, 1, removed()))"
+  $ fileset -r 4 "tracked() and status(0, 1, removed())"
+  $ fileset "revs('4', tracked() and status(0, 1, removed()))"
+  $ fileset "revs('0', tracked() and status(0, 1, removed()))"
   a2
 
 check wdir()

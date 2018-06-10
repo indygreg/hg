@@ -284,6 +284,13 @@ def clean(mctx, x):
     s = set(mctx.status().clean)
     return [f for f in mctx.subset if f in s]
 
+@predicate('tracked()')
+def tracked(mctx, x):
+    """File that is under Mercurial control."""
+    # i18n: "tracked" is a keyword
+    getargs(x, 0, 0, _("tracked takes no arguments"))
+    return [f for f in mctx.subset if f in mctx.ctx]
+
 @predicate('binary()', callexisting=True)
 def binary(mctx, x):
     """File that appears to be binary (contains NUL bytes).

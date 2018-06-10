@@ -828,6 +828,10 @@ def _buildmatch(ctx, kindpats, globsuffix, listsubrepos, root):
     globsuffix is appended to the regexp of globs.'''
     matchfuncs = []
 
+    fset, kindpats = _expandsets(kindpats, ctx, listsubrepos)
+    if fset:
+        matchfuncs.append(fset.__contains__)
+
     subincludes, kindpats = _expandsubinclude(kindpats, root)
     if subincludes:
         submatchers = {}
@@ -843,10 +847,6 @@ def _buildmatch(ctx, kindpats, globsuffix, listsubrepos, root):
                         return True
             return False
         matchfuncs.append(matchsubinclude)
-
-    fset, kindpats = _expandsets(kindpats, ctx, listsubrepos)
-    if fset:
-        matchfuncs.append(fset.__contains__)
 
     regex = ''
     if kindpats:

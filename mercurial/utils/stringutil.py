@@ -49,15 +49,26 @@ def prettyrepr(o):
     """Pretty print a representation of a possibly-nested object"""
     lines = []
     rs = pycompat.byterepr(o)
-    p = 0
-    while p < len(rs):
-        q = rs.find('<', p + 1)
-        if q < 0:
-            q = len(rs)
-        l = rs.count('<', 0, p) - rs.count('>', 0, p)
+    p0 = p1 = 0
+    while p0 < len(rs):
+        # '... field=<type ... field=<type ...'
+        #      ~~~~~~~~~~~~~~~~
+        #      p0    p1        q0    q1
+        q0 = -1
+        q1 = rs.find('<', p1 + 1)
+        if q1 < 0:
+            q1 = len(rs)
+        elif q1 > p1 + 1 and rs.startswith('=', q1 - 1):
+            # backtrack for ' field=<'
+            q0 = rs.rfind(' ', p1 + 1, q1 - 1)
+        if q0 < 0:
+            q0 = q1
+        else:
+            q0 += 1  # skip ' '
+        l = rs.count('<', 0, p0) - rs.count('>', 0, p0)
         assert l >= 0
-        lines.append((l, rs[p:q].rstrip()))
-        p = q
+        lines.append((l, rs[p0:q0].rstrip()))
+        p0, p1 = q0, q1
     return '\n'.join('  ' * l + s for l, s in lines)
 
 def binary(s):

@@ -865,7 +865,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
                 continue
             from . import bookmarks # avoid import cycle
             repo.ui.debug('moving bookmarks %r from %s to %s\n' %
-                          (util.rapply(pycompat.maybebytestr, oldbmarks),
+                          (pycompat.rapply(pycompat.maybebytestr, oldbmarks),
                            hex(oldnode), hex(newnode)))
             # Delete divergent bookmarks being parents of related newnodes
             deleterevs = repo.revs('parents(roots(%ln & (::%n))) - parents(%n)',

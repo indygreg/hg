@@ -156,10 +156,10 @@ b"""# example system-wide hg config (see 'hg help config' for more info)
 }
 
 def _maybestrurl(maybebytes):
-    return util.rapply(pycompat.strurl, maybebytes)
+    return pycompat.rapply(pycompat.strurl, maybebytes)
 
 def _maybebytesurl(maybestr):
-    return util.rapply(pycompat.bytesurl, maybestr)
+    return pycompat.rapply(pycompat.bytesurl, maybestr)
 
 class httppasswordmgrdbproxy(object):
     """Delays loading urllib2 until it's needed."""

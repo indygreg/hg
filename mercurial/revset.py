@@ -112,7 +112,7 @@ def _getrevsource(repo, r):
     return None
 
 def _sortedb(xs):
-    return sorted(util.rapply(pycompat.maybebytestr, xs))
+    return sorted(pycompat.rapply(pycompat.maybebytestr, xs))
 
 # operator methods
 

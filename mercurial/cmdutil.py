@@ -1680,7 +1680,7 @@ def showmarker(fm, marker, index=None):
     fm.write('date', '(%s) ', fm.formatdate(marker.date()))
     meta = marker.metadata().copy()
     meta.pop('date', None)
-    smeta = util.rapply(pycompat.maybebytestr, meta)
+    smeta = pycompat.rapply(pycompat.maybebytestr, meta)
     fm.write('metadata', '{%s}', fm.formatdict(smeta, fmt='%r: %r', sep=', '))
     fm.plain('\n')
 

@@ -131,39 +131,6 @@ except AttributeError:
 
 _notset = object()
 
-def _rapply(f, xs):
-    if xs is None:
-        # assume None means non-value of optional data
-        return xs
-    if isinstance(xs, (list, set, tuple)):
-        return type(xs)(_rapply(f, x) for x in xs)
-    if isinstance(xs, dict):
-        return type(xs)((_rapply(f, k), _rapply(f, v)) for k, v in xs.items())
-    return f(xs)
-
-def rapply(f, xs):
-    """Apply function recursively to every item preserving the data structure
-
-    >>> def f(x):
-    ...     return 'f(%s)' % x
-    >>> rapply(f, None) is None
-    True
-    >>> rapply(f, 'a')
-    'f(a)'
-    >>> rapply(f, {'a'}) == {'f(a)'}
-    True
-    >>> rapply(f, ['a', 'b', None, {'c': 'd'}, []])
-    ['f(a)', 'f(b)', None, {'f(c)': 'f(d)'}, []]
-
-    >>> xs = [object()]
-    >>> rapply(pycompat.identity, xs) is xs
-    True
-    """
-    if f is pycompat.identity:
-        # fast path mainly for py2
-        return xs
-    return _rapply(f, xs)
-
 def bitsfrom(container):
     bits = 0
     for bit in container:

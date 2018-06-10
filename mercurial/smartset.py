@@ -29,7 +29,7 @@ def _formatsetrepr(r):
     if r is None:
         return ''
     elif isinstance(r, tuple):
-        return r[0] % util.rapply(pycompat.maybebytestr, r[1:])
+        return r[0] % pycompat.rapply(pycompat.maybebytestr, r[1:])
     elif isinstance(r, bytes):
         return r
     elif callable(r):

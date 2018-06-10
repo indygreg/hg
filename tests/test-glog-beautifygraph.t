@@ -2023,25 +2023,14 @@ Test "set:..." and parent revision
   $ testlog "set:copied()"
   []
   (func
-    (symbol '_matchfiles')
-    (list
-      (string 'r:')
-      (string 'd:relpath')
-      (string 'p:set:copied()')))
+    (symbol 'filelog')
+    (string 'set:copied()'))
   <filteredset
-    <spanset- 0:7>,
-    <matchfiles patterns=['set:copied()'], include=[] exclude=[], default='relpath', rev=2147483647>>
+    <spanset- 0:7>, set([])>
   $ testlog --include "set:copied()"
   []
-  (func
-    (symbol '_matchfiles')
-    (list
-      (string 'r:')
-      (string 'd:relpath')
-      (string 'i:set:copied()')))
-  <filteredset
-    <spanset- 0:7>,
-    <matchfiles patterns=[], include=['set:copied()'] exclude=[], default='relpath', rev=2147483647>>
+  []
+  <spanset- 0:7>
   $ testlog -r "sort(file('set:copied()'), -rev)"
   ["sort(file('set:copied()'), -rev)"]
   []

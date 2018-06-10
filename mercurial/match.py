@@ -95,6 +95,24 @@ def _kindpatsalwaysmatch(kindpats):
             return False
     return True
 
+def _buildkindpatsmatcher(matchercls, root, cwd, kindpats, ctx=None,
+                          listsubrepos=False, badfn=None):
+    fset, kindpats = _expandsets(kindpats, ctx, listsubrepos)
+    matchers = []
+    if kindpats:
+        m = matchercls(root, cwd, kindpats, ctx=ctx, listsubrepos=listsubrepos,
+                       badfn=badfn)
+        matchers.append(m)
+    if fset:
+        m = predicatematcher(root, cwd, fset.__contains__,
+                             predrepr='fileset', badfn=badfn)
+        matchers.append(m)
+    if not matchers:
+        return nevermatcher(root, cwd, badfn=badfn)
+    if len(matchers) == 1:
+        return matchers[0]
+    return unionmatcher(matchers)
+
 def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
           exact=False, auditor=None, ctx=None, listsubrepos=False, warn=None,
           badfn=None, icasefs=False):
@@ -159,8 +177,9 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
         if _kindpatsalwaysmatch(kindpats):
             m = alwaysmatcher(root, cwd, badfn, relativeuipath=True)
         else:
-            m = patternmatcher(root, cwd, kindpats, ctx=ctx,
-                               listsubrepos=listsubrepos, badfn=badfn)
+            m = _buildkindpatsmatcher(patternmatcher, root, cwd, kindpats,
+                                      ctx=ctx, listsubrepos=listsubrepos,
+                                      badfn=badfn)
     else:
         # It's a little strange that no patterns means to match everything.
         # Consider changing this to match nothing (probably using nevermatcher).
@@ -168,13 +187,13 @@ def match(root, cwd, patterns=None, include=None, exclude=None, default='glob',
 
     if include:
         kindpats = normalize(include, 'glob', root, cwd, auditor, warn)
-        im = includematcher(root, cwd, kindpats, ctx=ctx,
-                            listsubrepos=listsubrepos, badfn=None)
+        im = _buildkindpatsmatcher(includematcher, root, cwd, kindpats, ctx=ctx,
+                                   listsubrepos=listsubrepos, badfn=None)
         m = intersectmatchers(m, im)
     if exclude:
         kindpats = normalize(exclude, 'glob', root, cwd, auditor, warn)
-        em = includematcher(root, cwd, kindpats, ctx=ctx,
-                            listsubrepos=listsubrepos, badfn=None)
+        em = _buildkindpatsmatcher(includematcher, root, cwd, kindpats, ctx=ctx,
+                                   listsubrepos=listsubrepos, badfn=None)
         m = differencematcher(m, em)
     return m
 
@@ -827,10 +846,6 @@ def _buildmatch(ctx, kindpats, globsuffix, listsubrepos, root):
     '''Return regexp string and a matcher function for kindpats.
     globsuffix is appended to the regexp of globs.'''
     matchfuncs = []
-
-    fset, kindpats = _expandsets(kindpats, ctx, listsubrepos)
-    if fset:
-        matchfuncs.append(fset.__contains__)
 
     subincludes, kindpats = _expandsubinclude(kindpats, root)
     if subincludes:

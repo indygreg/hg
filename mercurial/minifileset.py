@@ -14,6 +14,11 @@ from . import (
     pycompat,
 )
 
+def _sizep(x):
+    # i18n: "size" is a keyword
+    expr = fileset.getstring(x, _("size requires an expression"))
+    return fileset.sizematcher(expr)
+
 def _compile(tree):
     if not tree:
         raise error.ParseError(_("missing argument"))
@@ -50,7 +55,7 @@ def _compile(tree):
         symbols = {
             'all': lambda n, s: True,
             'none': lambda n, s: False,
-            'size': lambda n, s: fileset.sizematcher(tree[2])(s),
+            'size': lambda n, s: _sizep(tree[2])(s),
         }
 
         name = fileset.getsymbol(tree[1])

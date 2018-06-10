@@ -384,11 +384,9 @@ def _sizetomax(s):
     except ValueError:
         raise error.ParseError(_("couldn't parse size: %s") % s)
 
-def sizematcher(x):
+def sizematcher(expr):
     """Return a function(size) -> bool from the ``size()`` expression"""
-
-    # i18n: "size" is a keyword
-    expr = getstring(x, _("size requires an expression")).strip()
+    expr = expr.strip()
     if '-' in expr: # do we have a range?
         a, b = expr.split('-', 1)
         a = util.sizetoint(a)
@@ -420,7 +418,9 @@ def size(mctx, x):
     - size('>= .5MB') - files at least 524288 bytes
     - size('4k - 1MB') - files from 4096 bytes to 1048576 bytes
     """
-    m = sizematcher(x)
+    # i18n: "size" is a keyword
+    expr = getstring(x, _("size requires an expression"))
+    m = sizematcher(expr)
     return [f for f in mctx.existing() if m(mctx.ctx[f].size())]
 
 @predicate('encoding(name)', callexisting=True)

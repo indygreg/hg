@@ -1129,17 +1129,3 @@ class fullreposet(_spanset):
 
         other.sort(reverse=self.isdescending())
         return other
-
-def prettyformat(revs):
-    lines = []
-    rs = pycompat.byterepr(revs)
-    p = 0
-    while p < len(rs):
-        q = rs.find('<', p + 1)
-        if q < 0:
-            q = len(rs)
-        l = rs.count('<', 0, p) - rs.count('>', 0, p)
-        assert l >= 0
-        lines.append((l, rs[p:q].rstrip()))
-        p = q
-    return '\n'.join('  ' * l + s for l, s in lines)

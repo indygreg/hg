@@ -70,7 +70,6 @@ from . import (
     scmutil,
     setdiscovery,
     simplemerge,
-    smartset,
     sshpeer,
     sslutil,
     streamclone,
@@ -2236,8 +2235,8 @@ def debugrevspec(ui, repo, expr, **opts):
         arevs = revset.makematcher(treebystage['analyzed'])(repo)
         brevs = revset.makematcher(treebystage['optimized'])(repo)
         if opts['show_set'] or (opts['show_set'] is None and ui.verbose):
-            ui.write(("* analyzed set:\n"), smartset.prettyformat(arevs), "\n")
-            ui.write(("* optimized set:\n"), smartset.prettyformat(brevs), "\n")
+            ui.write(("* analyzed set:\n"), stringutil.prettyrepr(arevs), "\n")
+            ui.write(("* optimized set:\n"), stringutil.prettyrepr(brevs), "\n")
         arevs = list(arevs)
         brevs = list(brevs)
         if arevs == brevs:
@@ -2260,7 +2259,7 @@ def debugrevspec(ui, repo, expr, **opts):
     func = revset.makematcher(tree)
     revs = func(repo)
     if opts['show_set'] or (opts['show_set'] is None and ui.verbose):
-        ui.write(("* set:\n"), smartset.prettyformat(revs), "\n")
+        ui.write(("* set:\n"), stringutil.prettyrepr(revs), "\n")
     if not opts['show_revs']:
         return
     for c in revs:

@@ -45,6 +45,21 @@ def pprint(o, bprefix=False):
     else:
         return pycompat.byterepr(o)
 
+def prettyrepr(o):
+    """Pretty print a representation of a possibly-nested object"""
+    lines = []
+    rs = pycompat.byterepr(o)
+    p = 0
+    while p < len(rs):
+        q = rs.find('<', p + 1)
+        if q < 0:
+            q = len(rs)
+        l = rs.count('<', 0, p) - rs.count('>', 0, p)
+        assert l >= 0
+        lines.append((l, rs[p:q].rstrip()))
+        p = q
+    return '\n'.join('  ' * l + s for l, s in lines)
+
 def binary(s):
     """return true if a string is binary data"""
     return bool(s and '\0' in s)

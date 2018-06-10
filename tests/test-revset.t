@@ -42,8 +42,8 @@ these predicates use '\0' as a separator:
   >     registrar,
   >     revset,
   >     revsetlang,
-  >     smartset,
   > )
+  > from mercurial.utils import stringutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'debugrevlistspec',
@@ -63,7 +63,7 @@ these predicates use '\0' as a separator:
   >     func = revset.match(ui, expr, lookup=revset.lookupfn(repo))
   >     revs = func(repo)
   >     if ui.verbose:
-  >         ui.note(b"* set:\n", smartset.prettyformat(revs), b"\n")
+  >         ui.note(b"* set:\n", stringutil.prettyrepr(revs), b"\n")
   >     for c in revs:
   >         ui.write(b"%d\n" % c)
   > EOF

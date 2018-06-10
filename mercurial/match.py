@@ -819,7 +819,9 @@ def _regex(kind, pat, globsuffix):
         if pat.startswith('^'):
             return pat
         return '.*' + pat
-    return _globre(pat) + globsuffix
+    if kind == 'glob':
+        return _globre(pat) + globsuffix
+    raise error.ProgrammingError('not a regex pattern: %s:%s' % (kind, pat))
 
 def _buildmatch(ctx, kindpats, globsuffix, listsubrepos, root):
     '''Return regexp string and a matcher function for kindpats.

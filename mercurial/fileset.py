@@ -7,6 +7,7 @@
 
 from __future__ import absolute_import
 
+import errno
 import re
 
 from .i18n import _
@@ -563,8 +564,56 @@ class matchctx(object):
         self._existingenabled = False
     def status(self):
         return self._status
+
     def matcher(self, patterns):
         return self.ctx.match(patterns, badfn=self._badfn)
+
+    def predicate(self, predfn, predrepr=None, cache=False):
+        """Create a matcher to select files by predfn(filename)"""
+        if cache:
+            predfn = util.cachefunc(predfn)
+        repo = self.ctx.repo()
+        return matchmod.predicatematcher(repo.root, repo.getcwd(), predfn,
+                                         predrepr=predrepr, badfn=self._badfn)
+
+    def fpredicate(self, predfn, predrepr=None, cache=False):
+        """Create a matcher to select files by predfn(fctx) at the current
+        revision
+
+        Missing files are ignored.
+        """
+        ctx = self.ctx
+        if ctx.rev() is None:
+            def fctxpredfn(f):
+                try:
+                    fctx = ctx[f]
+                except error.LookupError:
+                    return False
+                try:
+                    fctx.audit()
+                except error.Abort:
+                    return False
+                try:
+                    return predfn(fctx)
+                except (IOError, OSError) as e:
+                    if e.errno in (errno.ENOENT, errno.ENOTDIR, errno.EISDIR):
+                        return False
+                    raise
+        else:
+            def fctxpredfn(f):
+                try:
+                    fctx = ctx[f]
+                except error.LookupError:
+                    return False
+                return predfn(fctx)
+        return self.predicate(fctxpredfn, predrepr=predrepr, cache=cache)
+
+    def never(self):
+        """Create a matcher to select nothing"""
+        repo = self.ctx.repo()
+        return matchmod.nevermatcher(repo.root, repo.getcwd(),
+                                     badfn=self._badfn)
+
     def filter(self, files):
         return [f for f in files if f in self.subset]
     def existing(self):

@@ -2542,7 +2542,8 @@ def debugwalk(ui, repo, *pats, **opts):
     """show how files match on given patterns"""
     opts = pycompat.byteskwargs(opts)
     m = scmutil.match(repo[None], pats, opts)
-    ui.write(('matcher: %r\n' % m))
+    if ui.verbose:
+        ui.write(('matcher: %r\n' % m))
     items = list(repo[None].walk(m))
     if not items:
         return

@@ -584,6 +584,9 @@ test empty string
   hg: parse error: empty string is not a valid revision
   [255]
 
+test empty revset
+  $ hg log 'none()'
+
 we can use patterns when searching for tags
 
   $ log 'tag("1..*")'

@@ -1346,6 +1346,14 @@ def node_(repo, subset, x):
     result = baseset([rn])
     return result & subset
 
+@predicate('none()', safe=True)
+def none(repo, subset, x):
+    """No changesets.
+    """
+    # i18n: "none" is a keyword
+    getargs(x, 0, 0, _("none takes no arguments"))
+    return baseset()
+
 @predicate('obsolete()', safe=True)
 def obsolete(repo, subset, x):
     """Mutable changeset with a newer version."""

@@ -949,8 +949,7 @@ def debugfileset(ui, repo, expr, **opts):
         ui.write("%s\n" % f)
 
 @command('debugformat',
-         [] + cmdutil.formatteropts,
-        _(''))
+         [] + cmdutil.formatteropts)
 def debugformat(ui, repo, **opts):
     """display format information about the current repository
 

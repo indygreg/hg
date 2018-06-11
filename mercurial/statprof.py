@@ -350,7 +350,7 @@ def stop():
 
 def save_data(path):
     with open(path, 'w+') as file:
-        file.write(str(state.accumulated_time) + '\n')
+        file.write("%f %f\n" % state.accumulated_time)
         for sample in state.samples:
             time = str(sample.time)
             stack = sample.stack
@@ -361,7 +361,7 @@ def save_data(path):
 def load_data(path):
     lines = open(path, 'r').read().splitlines()
 
-    state.accumulated_time = float(lines[0])
+    state.accumulated_time = [float(value) for value in lines[0].split()]
     state.samples = []
     for line in lines[1:]:
         parts = line.split('\0')

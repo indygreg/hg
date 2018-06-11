@@ -912,8 +912,8 @@ def perfmoonwalk(ui, repo, **opts):
 def perftemplating(ui, repo, testedtemplate=None, **opts):
     """test the rendering time of a given template"""
     if makelogtemplater is None:
-        ui.write_err('incompatible Mercurial version')
-        return 1
+        raise error.Abort(("perftemplating not available with this Mercurial"),
+                          hint="use 4.3 or later")
 
     nullui = ui.copy()
     nullui.fout = open(os.devnull, 'wb')

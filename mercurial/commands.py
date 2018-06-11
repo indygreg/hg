@@ -2161,10 +2161,7 @@ def graft(ui, repo, *revs, **opts):
     Once all conflicts are addressed, the graft process can be
     continued with the -c/--continue option.
 
-    .. note::
-
-       The -c/--continue option does not reapply earlier options, except
-       for --force, --user and --date.
+    The -c/--continue option reapplies all the earlier options.
 
     .. container:: verbose
 

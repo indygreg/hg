@@ -2134,13 +2134,9 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
     return bad, forgot
 
 def files(ui, ctx, m, fm, fmt, subrepos):
-    rev = ctx.rev()
     ret = 1
-    ds = ctx.repo().dirstate
 
     for f in ctx.matches(m):
-        if rev is None and ds[f] == 'r':
-            continue
         fm.startitem()
         if ui.verbose:
             fc = ctx[f]

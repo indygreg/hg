@@ -1227,7 +1227,8 @@ class committablectx(basectx):
                                                unknown=True, ignored=False))
 
     def matches(self, match):
-        return sorted(self._repo.dirstate.matches(match))
+        ds = self._repo.dirstate
+        return sorted(f for f in ds.matches(match) if ds[f] != 'r')
 
     def ancestors(self):
         for p in self._parents:

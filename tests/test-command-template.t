@@ -4344,6 +4344,12 @@ Test files function
   
   0
   
+  $ hg rm a
+  $ hg log -r "wdir()" -T "{rev}\n{join(files('*'), '\n')}\n"
+  2147483647
+  aa
+  b
+  $ hg revert a
 
 Test relpath function
 

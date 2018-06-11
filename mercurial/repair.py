@@ -186,76 +186,77 @@ def strip(ui, repo, nodelist, backup=True, topic='backup'):
         tmpbundlefile = backupbundle(repo, savebases, saveheads, node, 'temp',
                                      compress=False, obsolescence=False)
 
-    try:
-        with repo.transaction("strip") as tr:
-            offset = len(tr.entries)
+    with ui.uninterruptable():
+        try:
+            with repo.transaction("strip") as tr:
+                offset = len(tr.entries)
 
-            tr.startgroup()
-            cl.strip(striprev, tr)
-            stripmanifest(repo, striprev, tr, files)
+                tr.startgroup()
+                cl.strip(striprev, tr)
+                stripmanifest(repo, striprev, tr, files)
 
-            for fn in files:
-                repo.file(fn).strip(striprev, tr)
-            tr.endgroup()
+                for fn in files:
+                    repo.file(fn).strip(striprev, tr)
+                tr.endgroup()
 
-            for i in xrange(offset, len(tr.entries)):
-                file, troffset, ignore = tr.entries[i]
-                with repo.svfs(file, 'a', checkambig=True) as fp:
-                    fp.truncate(troffset)
-                if troffset == 0:
-                    repo.store.markremoved(file)
+                for i in xrange(offset, len(tr.entries)):
+                    file, troffset, ignore = tr.entries[i]
+                    with repo.svfs(file, 'a', checkambig=True) as fp:
+                        fp.truncate(troffset)
+                    if troffset == 0:
+                        repo.store.markremoved(file)
 
-            deleteobsmarkers(repo.obsstore, stripobsidx)
-            del repo.obsstore
-            repo.invalidatevolatilesets()
-            repo._phasecache.filterunknown(repo)
+                deleteobsmarkers(repo.obsstore, stripobsidx)
+                del repo.obsstore
+                repo.invalidatevolatilesets()
+                repo._phasecache.filterunknown(repo)
 
-        if tmpbundlefile:
-            ui.note(_("adding branch\n"))
-            f = vfs.open(tmpbundlefile, "rb")
-            gen = exchange.readbundle(ui, f, tmpbundlefile, vfs)
-            if not repo.ui.verbose:
-                # silence internal shuffling chatter
-                repo.ui.pushbuffer()
-            tmpbundleurl = 'bundle:' + vfs.join(tmpbundlefile)
-            txnname = 'strip'
-            if not isinstance(gen, bundle2.unbundle20):
-                txnname = "strip\n%s" % util.hidepassword(tmpbundleurl)
-            with repo.transaction(txnname) as tr:
-                bundle2.applybundle(repo, gen, tr, source='strip',
-                                    url=tmpbundleurl)
-            if not repo.ui.verbose:
-                repo.ui.popbuffer()
-            f.close()
+            if tmpbundlefile:
+                ui.note(_("adding branch\n"))
+                f = vfs.open(tmpbundlefile, "rb")
+                gen = exchange.readbundle(ui, f, tmpbundlefile, vfs)
+                if not repo.ui.verbose:
+                    # silence internal shuffling chatter
+                    repo.ui.pushbuffer()
+                tmpbundleurl = 'bundle:' + vfs.join(tmpbundlefile)
+                txnname = 'strip'
+                if not isinstance(gen, bundle2.unbundle20):
+                    txnname = "strip\n%s" % util.hidepassword(tmpbundleurl)
+                with repo.transaction(txnname) as tr:
+                    bundle2.applybundle(repo, gen, tr, source='strip',
+                                        url=tmpbundleurl)
+                if not repo.ui.verbose:
+                    repo.ui.popbuffer()
+                f.close()
 
-        with repo.transaction('repair') as tr:
-            bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
-            bm.applychanges(repo, tr, bmchanges)
+            with repo.transaction('repair') as tr:
+                bmchanges = [(m, repo[newbmtarget].node()) for m in updatebm]
+                bm.applychanges(repo, tr, bmchanges)
 
-        # remove undo files
-        for undovfs, undofile in repo.undofiles():
-            try:
-                undovfs.unlink(undofile)
-            except OSError as e:
-                if e.errno != errno.ENOENT:
-                    ui.warn(_('error removing %s: %s\n') %
-                            (undovfs.join(undofile),
-                             stringutil.forcebytestr(e)))
+            # remove undo files
+            for undovfs, undofile in repo.undofiles():
+                try:
+                    undovfs.unlink(undofile)
+                except OSError as e:
+                    if e.errno != errno.ENOENT:
+                        ui.warn(_('error removing %s: %s\n') %
+                                (undovfs.join(undofile),
+                                 stringutil.forcebytestr(e)))
 
-    except: # re-raises
-        if backupfile:
-            ui.warn(_("strip failed, backup bundle stored in '%s'\n")
-                    % vfs.join(backupfile))
-        if tmpbundlefile:
-            ui.warn(_("strip failed, unrecovered changes stored in '%s'\n")
-                    % vfs.join(tmpbundlefile))
-            ui.warn(_("(fix the problem, then recover the changesets with "
-                      "\"hg unbundle '%s'\")\n") % vfs.join(tmpbundlefile))
-        raise
-    else:
-        if tmpbundlefile:
-            # Remove temporary bundle only if there were no exceptions
-            vfs.unlink(tmpbundlefile)
+        except: # re-raises
+            if backupfile:
+                ui.warn(_("strip failed, backup bundle stored in '%s'\n")
+                        % vfs.join(backupfile))
+            if tmpbundlefile:
+                ui.warn(_("strip failed, unrecovered changes stored in '%s'\n")
+                        % vfs.join(tmpbundlefile))
+                ui.warn(_("(fix the problem, then recover the changesets with "
+                          "\"hg unbundle '%s'\")\n") % vfs.join(tmpbundlefile))
+            raise
+        else:
+            if tmpbundlefile:
+                # Remove temporary bundle only if there were no exceptions
+                vfs.unlink(tmpbundlefile)
 
     repo.destroyed()
     # return the backup file path (or None if 'backup' was False) so

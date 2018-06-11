@@ -3333,7 +3333,13 @@ def locate(ui, repo, *pats, **opts):
                       badfn=lambda x, y: False)
 
     ui.pager('locate')
-    for abs in ctx.matches(m):
+    if ctx.rev() is None:
+        # When run on the working copy, "locate" includes removed files, so
+        # we get the list of files from the dirstate.
+        filesgen = sorted(repo.dirstate.matches(m))
+    else:
+        filesgen = ctx.matches(m)
+    for abs in filesgen:
         if opts.get('fullpath'):
             ui.write(repo.wjoin(abs), end)
         else:

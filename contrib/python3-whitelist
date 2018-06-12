@@ -454,6 +454,7 @@ test-stack.t
 test-status-inprocess.py
 test-status-rev.t
 test-status-terse.t
+test-strict.t
 test-strip-cross.t
 test-strip.t
 test-subrepo-deep-nested-change.t
@@ -468,6 +469,7 @@ test-symlinks.t
 test-tag.t
 test-tags.t
 test-template-engine.t
+test-template-filters.t
 test-treemanifest.t
 test-ui-color.py
 test-ui-config.py

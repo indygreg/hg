@@ -408,6 +408,8 @@ def _handlechangespec(op, inpart):
                                  topic='widen')
         repo._bookmarks = bmstore
         if chgrpfile:
+            op._widen_uninterr = repo.ui.uninterruptable()
+            op._widen_uninterr.__enter__()
             # presence of _widen_bundle attribute activates widen handler later
             op._widen_bundle = chgrpfile
     # Set the new narrowspec if we're widening. The setnewnarrowpats() method
@@ -455,6 +457,7 @@ def handlechangegroup_widen(op, inpart):
                         (undovfs.join(undofile), stringutil.forcebytestr(e)))
 
     # Remove partial backup only if there were no exceptions
+    op._widen_uninterr.__exit__(None, None, None)
     vfs.unlink(chgrpfile)
 
 def setup():

@@ -1643,13 +1643,13 @@ Support ignoring invalid test cases
 Support running complex test cases names
 
   $ cat > test-cases-advanced-cases.t <<'EOF'
-  > #testcases simple case-with-dashes casewith!@#$%^&*()chars
+  > #testcases simple case-with-dashes casewith_-.chars
   >   $ echo $TESTCASE
   >   simple
   > EOF
 
   $ cat test-cases-advanced-cases.t
-  #testcases simple case-with-dashes casewith!@#$%^&*()chars
+  #testcases simple case-with-dashes casewith_-.chars
     $ echo $TESTCASE
     simple
 
@@ -1658,7 +1658,7 @@ Support running complex test cases names
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
   +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.case-with-dashes.err
   @@ -1,3 +1,3 @@
-   #testcases simple case-with-dashes casewith!@#$%^&*()chars
+   #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE
   -  simple
   +  case-with-dashes
@@ -1666,17 +1666,17 @@ Support running complex test cases names
   ERROR: test-cases-advanced-cases.t#case-with-dashes output changed
   !
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
-  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith!@#$%^&*()chars.err
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith_-.chars.err
   @@ -1,3 +1,3 @@
-   #testcases simple case-with-dashes casewith!@#$%^&*()chars
+   #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE
   -  simple
-  +  casewith!@#$%^&*()chars
+  +  casewith_-.chars
   
-  ERROR: test-cases-advanced-cases.t#casewith!@#$%^&*()chars output changed
+  ERROR: test-cases-advanced-cases.t#casewith_-.chars output changed
   !.
   Failed test-cases-advanced-cases.t#case-with-dashes: output changed
-  Failed test-cases-advanced-cases.t#casewith!@#$%^&*()chars: output changed
+  Failed test-cases-advanced-cases.t#casewith_-.chars: output changed
   # Ran 3 tests, 0 skipped, 2 failed.
   python hash seed: * (glob)
   [1]
@@ -1686,7 +1686,7 @@ Support running complex test cases names
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
   +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.case-with-dashes.err
   @@ -1,3 +1,3 @@
-   #testcases simple case-with-dashes casewith!@#$%^&*()chars
+   #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE
   -  simple
   +  case-with-dashes
@@ -1698,19 +1698,19 @@ Support running complex test cases names
   python hash seed: * (glob)
   [1]
 
-  $ rt "test-cases-advanced-cases.t#casewith!@#$%^&*()chars"
+  $ rt "test-cases-advanced-cases.t#casewith_-.chars"
   
   --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
-  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith!@#$%^&*()chars.err
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith_-.chars.err
   @@ -1,3 +1,3 @@
-   #testcases simple case-with-dashes casewith!@#$%^&*()chars
+   #testcases simple case-with-dashes casewith_-.chars
      $ echo $TESTCASE
   -  simple
-  +  casewith!@#$%^&*()chars
+  +  casewith_-.chars
   
-  ERROR: test-cases-advanced-cases.t#casewith!@#$%^&*()chars output changed
+  ERROR: test-cases-advanced-cases.t#casewith_-.chars output changed
   !
-  Failed test-cases-advanced-cases.t#casewith!@#$%^&*()chars: output changed
+  Failed test-cases-advanced-cases.t#casewith_-.chars: output changed
   # Ran 1 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]

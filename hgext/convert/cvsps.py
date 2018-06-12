@@ -567,11 +567,15 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     mindate = {}
     for e in log:
         if e.commitid:
-            mindate[e.commitid] = min(e.date, mindate.get(e.commitid))
+            if e.commitid not in mindate:
+                mindate[e.commitid] = e.date
+            else:
+                mindate[e.commitid] = min(e.date, mindate[e.commitid])
 
     # Merge changesets
-    log.sort(key=lambda x: (mindate.get(x.commitid), x.commitid, x.comment,
-                            x.author, x.branch, x.date, x.branchpoints))
+    log.sort(key=lambda x: (mindate.get(x.commitid, (-1, 0)),
+                            x.commitid or '', x.comment,
+                            x.author, x.branch or '', x.date, x.branchpoints))
 
     changesets = []
     files = set()

@@ -2132,8 +2132,8 @@ class workingcommitctx(workingctx):
     """
     def __init__(self, repo, changes,
                  text="", user=None, date=None, extra=None):
-        super(workingctx, self).__init__(repo, text, user, date, extra,
-                                         changes)
+        super(workingcommitctx, self).__init__(repo, text, user, date, extra,
+                                               changes)
 
     def _dirstatestatus(self, match, ignored=False, clean=False, unknown=False):
         """Return matched files only in ``self._status``

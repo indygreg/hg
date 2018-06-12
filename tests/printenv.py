@@ -26,6 +26,7 @@ except ImportError:
 
 exitcode = 0
 out = sys.stdout
+out = getattr(out, 'buffer', out)
 
 name = sys.argv[1]
 if len(sys.argv) > 2:

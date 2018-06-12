@@ -100,7 +100,7 @@ def _buildkindpatsmatcher(matchercls, root, cwd, kindpats, ctx=None,
     fset, kindpats = _expandsets(kindpats, ctx, listsubrepos)
     matchers = []
     if kindpats:
-        m = matchercls(root, cwd, kindpats, ctx=ctx, listsubrepos=listsubrepos,
+        m = matchercls(root, cwd, kindpats, listsubrepos=listsubrepos,
                        badfn=badfn)
         matchers.append(m)
     if fset:
@@ -410,13 +410,12 @@ class predicatematcher(basematcher):
 
 class patternmatcher(basematcher):
 
-    def __init__(self, root, cwd, kindpats, ctx=None, listsubrepos=False,
-                 badfn=None):
+    def __init__(self, root, cwd, kindpats, listsubrepos=False, badfn=None):
         super(patternmatcher, self).__init__(root, cwd, badfn)
 
         self._files = _explicitfiles(kindpats)
         self._prefix = _prefix(kindpats)
-        self._pats, self.matchfn = _buildmatch(ctx, kindpats, '$', listsubrepos,
+        self._pats, self.matchfn = _buildmatch(kindpats, '$', listsubrepos,
                                                root)
 
     @propertycache
@@ -441,11 +440,10 @@ class patternmatcher(basematcher):
 
 class includematcher(basematcher):
 
-    def __init__(self, root, cwd, kindpats, ctx=None, listsubrepos=False,
-                 badfn=None):
+    def __init__(self, root, cwd, kindpats, listsubrepos=False, badfn=None):
         super(includematcher, self).__init__(root, cwd, badfn)
 
-        self._pats, self.matchfn = _buildmatch(ctx, kindpats, '(?:/|$)',
+        self._pats, self.matchfn = _buildmatch(kindpats, '(?:/|$)',
                                                listsubrepos, root)
         self._prefix = _prefix(kindpats)
         roots, dirs = _rootsanddirs(kindpats)
@@ -842,7 +840,7 @@ def _regex(kind, pat, globsuffix):
         return _globre(pat) + globsuffix
     raise error.ProgrammingError('not a regex pattern: %s:%s' % (kind, pat))
 
-def _buildmatch(ctx, kindpats, globsuffix, listsubrepos, root):
+def _buildmatch(kindpats, globsuffix, listsubrepos, root):
     '''Return regexp string and a matcher function for kindpats.
     globsuffix is appended to the regexp of globs.'''
     matchfuncs = []

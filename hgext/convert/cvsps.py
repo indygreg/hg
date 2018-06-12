@@ -51,8 +51,8 @@ class logentry(object):
         self.__dict__.update(entries)
 
     def __repr__(self):
-        items = ("%s=%r"%(k, self.__dict__[k]) for k in sorted(self.__dict__))
-        return "%s(%s)"%(type(self).__name__, ", ".join(items))
+        items = (r"%s=%r"%(k, self.__dict__[k]) for k in sorted(self.__dict__))
+        return r"%s(%s)"%(type(self).__name__, r", ".join(items))
 
 class logerror(Exception):
     pass

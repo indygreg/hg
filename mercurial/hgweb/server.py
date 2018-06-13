@@ -215,6 +215,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         self.sent_headers = True
 
     def _start_response(self, http_status, headers, exc_info=None):
+        assert isinstance(http_status, str)
         code, msg = http_status.split(None, 1)
         code = int(code)
         self.saved_status = http_status

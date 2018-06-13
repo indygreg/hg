@@ -78,6 +78,10 @@ with zipfile.ZipFile(args.out[0], "w", zipfile.ZIP_STORED) as zf:
     zf.writestr(
         "mpatch_decode_old_overread", "\x02\x00\x00\x00\x02\x00\x00\x00"
     )
+    # https://bugs.chromium.org/p/oss-fuzz/issues/detail?id=8876
+    zf.writestr(
+        "mpatch_ossfuzz_getbe32_ubsan",
+        "\x02\x00\x00\x00\x0c    \xff\xff\xff\xff    ")
     zf.writestr(
         "mpatch_apply_over_memcpy",
         '\x13\x01\x00\x05\xd0\x00\x00\x00\x00\x00\x00\x00\x00\n \x00\x00\x00'

@@ -99,8 +99,8 @@ def basename(path):
     """
     return os.path.basename(path)
 
-@templatefilter('commonprefix')
-def commonprefix(filelist):
+@templatefilter('commondir')
+def commondir(filelist):
     """List of text. Treats each list item as file name with /
     as path separator and returns the longest common directory
     prefix shared by all list items.

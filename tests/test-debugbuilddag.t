@@ -42,29 +42,29 @@ tip
   000000000000
 glog
   $ hg log -G --template '{rev}: {desc} [{branches}] @ {date}\n'
-  o  11: r11 [] @ 11 0
+  o  11: r11 [] @ 11.00
   |
-  o  10: r10 [] @ 10 0
+  o  10: r10 [] @ 10.00
   |
-  o    9: r9 [] @ 9 0
+  o    9: r9 [] @ 9.00
   |\
-  | o  8: r8 [temp] @ 8 0
+  | o  8: r8 [temp] @ 8.00
   | |
-  | o  7: r7 [temp] @ 7 0
+  | o  7: r7 [temp] @ 7.00
   | |
-  | o  6: r6 [temp] @ 6 0
+  | o  6: r6 [temp] @ 6.00
   | |
-  | o  5: r5 [temp] @ 5 0
+  | o  5: r5 [temp] @ 5.00
   | |
-  o |  4: r4 [] @ 4 0
+  o |  4: r4 [] @ 4.00
   | |
-  o |  3: r3 [] @ 3 0
+  o |  3: r3 [] @ 3.00
   | |
-  o |  2: r2 [] @ 2 0
+  o |  2: r2 [] @ 2.00
   |/
-  o  1: r1 [] @ 1 0
+  o  1: r1 [] @ 1.00
   |
-  o  0: r0 [] @ 0 0
+  o  0: r0 [] @ 0.00
   
 
 overwritten files, starting on a non-default branch
@@ -88,29 +88,29 @@ tip
   000000000000
 glog
   $ hg log -G --template '{rev}: {desc} [{branches}] @ {date}\n'
-  o  11: r11 [] @ 11 0
+  o  11: r11 [] @ 11.00
   |
-  o  10: r10 [] @ 10 0
+  o  10: r10 [] @ 10.00
   |
-  o    9: r9 [] @ 9 0
+  o    9: r9 [] @ 9.00
   |\
-  | o  8: r8 [temp] @ 8 0
+  | o  8: r8 [temp] @ 8.00
   | |
-  | o  7: r7 [temp] @ 7 0
+  | o  7: r7 [temp] @ 7.00
   | |
-  | o  6: r6 [temp] @ 6 0
+  | o  6: r6 [temp] @ 6.00
   | |
-  | o  5: r5 [temp] @ 5 0
+  | o  5: r5 [temp] @ 5.00
   | |
-  o |  4: r4 [] @ 4 0
+  o |  4: r4 [] @ 4.00
   | |
-  o |  3: r3 [] @ 3 0
+  o |  3: r3 [] @ 3.00
   | |
-  o |  2: r2 [] @ 2 0
+  o |  2: r2 [] @ 2.00
   |/
-  o  1: r1 [] @ 1 0
+  o  1: r1 [] @ 1.00
   |
-  o  0: r0 [start] @ 0 0
+  o  0: r0 [start] @ 0.00
   
 glog of
   $ hg log -G --template '{rev}: {desc} [{branches}]\n' of
@@ -164,29 +164,29 @@ tip
   000000000000
 glog
   $ hg log -G --template '{rev}: {desc} [{branches}] @ {date}\n'
-  o  11: r11 [] @ 11 0
+  o  11: r11 [] @ 11.00
   |
-  o  10: r10 [] @ 10 0
+  o  10: r10 [] @ 10.00
   |
-  o    9: r9 [] @ 9 0
+  o    9: r9 [] @ 9.00
   |\
-  | o  8: r8 [temp] @ 8 0
+  | o  8: r8 [temp] @ 8.00
   | |
-  | o  7: r7 [temp] @ 7 0
+  | o  7: r7 [temp] @ 7.00
   | |
-  | o  6: r6 [temp] @ 6 0
+  | o  6: r6 [temp] @ 6.00
   | |
-  | o  5: r5 [temp] @ 5 0
+  | o  5: r5 [temp] @ 5.00
   | |
-  o |  4: r4 [] @ 4 0
+  o |  4: r4 [] @ 4.00
   | |
-  o |  3: r3 [] @ 3 0
+  o |  3: r3 [] @ 3.00
   | |
-  o |  2: r2 [] @ 2 0
+  o |  2: r2 [] @ 2.00
   |/
-  o  1: r1 [] @ 1 0
+  o  1: r1 [] @ 1.00
   |
-  o  0: r0 [] @ 0 0
+  o  0: r0 [] @ 0.00
   
 glog mf
   $ hg log -G --template '{rev}: {desc} [{branches}]\n' mf

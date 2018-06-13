@@ -190,10 +190,11 @@ class wrappedvalue(wrapped):
 class date(mappable, wrapped):
     """Wrapper for date tuple"""
 
-    def __init__(self, value):
+    def __init__(self, value, showfmt='%d %d'):
         # value may be (float, int), but public interface shouldn't support
         # floating-point timestamp
         self._unixtime, self._tzoffset = map(int, value)
+        self._showfmt = showfmt
 
     def contains(self, context, mapping, item):
         raise error.ParseError(_('date is not iterable'))
@@ -211,7 +212,7 @@ class date(mappable, wrapped):
         raise error.ParseError(_("date is not iterable"))
 
     def show(self, context, mapping):
-        return '%d %d' % (self._unixtime, self._tzoffset)
+        return self._showfmt % (self._unixtime, self._tzoffset)
 
     def tomap(self, context):
         return {'unixtime': self._unixtime, 'tzoffset': self._tzoffset}

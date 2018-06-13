@@ -107,7 +107,7 @@ Matcher and metadata options
   $ hg amend -d '2000 1000' -u 'Foo <foo@example.com>' -A C D
   saved backup bundle to $TESTTMP/repo1/.hg/strip-backup/c7ba14d9075b-b3e76daa-amend.hg (obsstore-off !)
   $ hg log -r . -T '{node|short} {desc} {files} {author} {date}\n'
-  14f6c4bcc865 NEWMESSAGE B D Foo <foo@example.com> 2000 1000
+  14f6c4bcc865 NEWMESSAGE B D Foo <foo@example.com> 2000.01000
 
 Amend with editor
 

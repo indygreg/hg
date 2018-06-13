@@ -240,7 +240,9 @@ def showactivebookmark(context, mapping):
 def showdate(context, mapping):
     """Date information. The date when the changeset was committed."""
     ctx = context.resource(mapping, 'ctx')
-    return templateutil.date(ctx.date())
+    # the default string format is '<float(unixtime)><tzoffset>' because
+    # python-hglib splits date at decimal separator.
+    return templateutil.date(ctx.date(), showfmt='%d.0%d')
 
 @templatekeyword('desc', requires={'ctx'})
 def showdescription(context, mapping):

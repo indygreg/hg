@@ -190,10 +190,8 @@ static void lazymanifest_dealloc(lazymanifest *self)
 			free(self->lines[i].start);
 		}
 	}
-	if (self->lines) {
-		free(self->lines);
-		self->lines = NULL;
-	}
+	free(self->lines);
+	self->lines = NULL;
 	if (self->pydata) {
 		Py_DECREF(self->pydata);
 		self->pydata = NULL;

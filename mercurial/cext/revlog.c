@@ -319,10 +319,8 @@ static void _index_clearcaches(indexObject *self)
 		PyMem_Free(self->offsets);
 		self->offsets = NULL;
 	}
-	if (self->nt) {
-		free(self->nt);
-		self->nt = NULL;
-	}
+	free(self->nt);
+	self->nt = NULL;
 	Py_CLEAR(self->headrevs);
 }
 

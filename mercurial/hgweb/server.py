@@ -125,8 +125,9 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         # Ensure the slicing of path below is valid
         if (path != self.server.prefix
             and not path.startswith(self.server.prefix + b'/')):
-            self._start_response(common.statusmessage(404), [])
-            self._write("Not Found")
+            self._start_response(pycompat.strurl(common.statusmessage(404)),
+                                 [])
+            self._write(b"Not Found")
             self._done()
             return
 

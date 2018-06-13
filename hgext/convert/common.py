@@ -214,7 +214,7 @@ class converter_source(object):
         if not encoding:
             encoding = self.encoding or 'utf-8'
 
-        if isinstance(s, unicode):
+        if isinstance(s, pycompat.unicode):
             return s.encode("utf-8")
         try:
             return s.decode(pycompat.sysstr(encoding)).encode("utf-8")

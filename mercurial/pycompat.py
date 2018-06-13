@@ -302,6 +302,7 @@ if ispy3:
 else:
     import cStringIO
 
+    unicode = unicode
     bytechr = chr
     byterepr = repr
     bytestr = str

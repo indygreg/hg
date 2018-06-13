@@ -104,7 +104,7 @@ class darcs_source(common.converter_source, common.commandline):
         shutil.rmtree(self.tmppath, ignore_errors=True)
 
     def recode(self, s, encoding=None):
-        if isinstance(s, unicode):
+        if isinstance(s, pycompat.unicode):
             # XMLParser returns unicode objects for anything it can't
             # encode into ASCII. We convert them back to str to get
             # recode's normal conversion behavior.

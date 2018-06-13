@@ -55,7 +55,7 @@ svn_source = subversion.svn_source
 orig_encoding = 'ascii'
 
 def recode(s):
-    if isinstance(s, unicode):
+    if isinstance(s, pycompat.unicode):
         return s.encode(pycompat.sysstr(orig_encoding), 'replace')
     else:
         return s.decode('utf-8').encode(

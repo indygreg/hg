@@ -241,7 +241,7 @@ def hexfilter(text):
 @templatefilter('hgdate', intype=templateutil.date)
 def hgdate(text):
     """Date. Returns the date as a pair of numbers: "1157407993
-    25200" (Unix timestamp, timezone offset). (DEPRECATED)
+    25200" (Unix timestamp, timezone offset).
     """
     return "%d %d" % text
 

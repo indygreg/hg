@@ -1881,10 +1881,13 @@ def walkchangerevs(repo, match, opts, prepare):
     yielding each context, the iterator will first call the prepare
     function on each context in the window in forward order.'''
 
+    allfiles = opts.get('allfiles')
     follow = opts.get('follow') or opts.get('follow_first')
     revs = _walkrevs(repo, opts)
     if not revs:
         return []
+    if allfiles and len(revs) > 1:
+        raise error.Abort(_("multiple revisions not supported with --allfiles"))
     wanted = set()
     slowpath = match.anypats() or (not match.always() and opts.get('removed'))
     fncache = {}
@@ -1990,7 +1993,11 @@ def walkchangerevs(repo, match, opts, prepare):
                 ctx = change(rev)
                 if not fns:
                     def fns_generator():
-                        for f in ctx.files():
+                        if allfiles:
+                            fiter = iter(ctx)
+                        else:
+                            fiter = ctx.files()
+                        for f in fiter:
                             if match(f):
                                 yield f
                     fns = fns_generator()

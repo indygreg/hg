@@ -2403,6 +2403,8 @@ def _stopgraft(ui, repo, graftstate):
     ('n', 'line-number', None, _('print matching line numbers')),
     ('r', 'rev', [],
      _('only search files changed within revision range'), _('REV')),
+    ('', 'allfiles', False,
+     _('include all files in the changeset while grepping (EXPERIMENTAL)')),
     ('u', 'user', None, _('list the author (long with -v)')),
     ('d', 'date', None, _('list the date (short with -q)')),
     ] + formatteropts + walkopts,

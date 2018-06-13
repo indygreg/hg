@@ -372,6 +372,23 @@ revisions printed, just their order.
 
   $ cd ..
 
+Test for showing working of allfiles flag
+
+  $ hg init sng
+  $ cd sng
+  $ echo "unmod" >> um
+  $ hg ci -A -m "adds unmod to um"
+  adding um
+  $ echo "something else" >> new
+  $ hg ci -A -m "second commit"
+  adding new
+  $ hg grep -r "." "unmod"
+  [1]
+  $ hg grep -r "." "unmod" --allfiles
+  um:1:unmod
+
+  $ cd ..
+
 Fix_Wdir(): test that passing wdir() t -r flag does greps on the
 files modified in the working directory
 

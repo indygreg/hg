@@ -354,8 +354,8 @@ force a conflicted merge to occur
   # 
   # To mark files as resolved:  hg resolve --mark FILE
   
-  # To continue:                hg unshelve --continue
-  # To abort:                   hg unshelve --abort
+  # To continue:    hg unshelve --continue
+  # To abort:       hg unshelve --abort
   
 
 ensure that we have a merge with unresolved conflicts

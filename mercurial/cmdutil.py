@@ -588,8 +588,8 @@ To mark files as resolved:  hg resolve --mark FILE''') % mergeliststr
     return _commentlines(msg)
 
 def _helpmessage(continuecmd, abortcmd):
-    msg = _('To continue:                %s\n'
-            'To abort:                   %s') % (continuecmd, abortcmd)
+    msg = _('To continue:    %s\n'
+            'To abort:       %s') % (continuecmd, abortcmd)
     return _commentlines(msg)
 
 def _rebasemsg():
@@ -603,7 +603,7 @@ def _unshelvemsg():
 
 def _updatecleanmsg(dest=None):
     warning = _('warning: this will discard uncommitted changes')
-    return 'hg update --clean %s    (%s)' % (dest or '.', warning)
+    return 'hg update --clean %s (%s)' % (dest or '.', warning)
 
 def _graftmsg():
     # tweakdefaults requires `update` to have a rev hence the `.`

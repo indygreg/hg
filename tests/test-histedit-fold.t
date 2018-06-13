@@ -306,8 +306,8 @@ should effectively drop the changes from +6.
   # 
   # To mark files as resolved:  hg resolve --mark FILE
   
-  # To continue:                hg histedit --continue
-  # To abort:                   hg histedit --abort
+  # To continue:    hg histedit --continue
+  # To abort:       hg histedit --abort
   
   $ hg resolve -l
   U file

@@ -560,13 +560,8 @@ def backout(ui, repo, node=None, rev=None, **opts):
     Returns 0 on success, 1 if nothing to backout or there are unresolved
     files.
     '''
-    wlock = lock = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
+    with repo.wlock(), repo.lock():
         return _dobackout(ui, repo, node, rev, **opts)
-    finally:
-        release(lock, wlock)
 
 def _dobackout(ui, repo, node=None, rev=None, **opts):
     opts = pycompat.byteskwargs(opts)

@@ -579,7 +579,11 @@ def phabsend(ui, repo, *revs, **opts):
                     new = context.metadataonlyctx(
                         repo, old, parents=parents, text=newdesc,
                         user=old.user(), date=old.date(), extra=old.extra())
-                    newnode = new.commit()
+
+                    overrides = {('phases', 'new-commit'): old.phase()}
+                    with ui.configoverride(overrides, 'phabsend'):
+                        newnode = new.commit()
+
                     mapping[old.node()] = [newnode]
                     # Update diff property
                     writediffproperties(unfi[newnode], diffmap[old.node()])

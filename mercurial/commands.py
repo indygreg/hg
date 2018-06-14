@@ -1523,13 +1523,8 @@ def commit(ui, repo, *pats, **opts):
 
           hg commit --amend --date now
     """
-    wlock = lock = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
+    with repo.wlock(), repo.lock():
         return _docommit(ui, repo, *pats, **opts)
-    finally:
-        release(lock, wlock)
 
 def _docommit(ui, repo, *pats, **opts):
     if opts.get(r'interactive'):

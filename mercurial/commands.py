@@ -617,20 +617,16 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
     bheads = repo.branchheads(branch)
     rctx = scmutil.revsingle(repo, hex(parent))
     if not opts.get('merge') and op1 != node:
-        dsguard = dirstateguard.dirstateguard(repo, 'backout')
-        try:
+        with dirstateguard.dirstateguard(repo, 'backout'):
             overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
             with ui.configoverride(overrides, 'backout'):
                 stats = mergemod.update(repo, parent, True, True, node, False)
             repo.setparents(op1, op2)
-            dsguard.close()
-            hg._showstats(repo, stats)
-            if stats.unresolvedcount:
-                repo.ui.status(_("use 'hg resolve' to retry unresolved "
-                                 "file merges\n"))
-                return 1
-        finally:
-            lockmod.release(dsguard)
+        hg._showstats(repo, stats)
+        if stats.unresolvedcount:
+            repo.ui.status(_("use 'hg resolve' to retry unresolved "
+                             "file merges\n"))
+            return 1
     else:
         hg.clean(repo, node, show_stats=False)
         repo.dirstate.setbranch(branch)

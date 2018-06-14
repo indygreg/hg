@@ -229,7 +229,7 @@ Internal resources shouldn't be exposed (issue5699):
 Never crash on internal resource not available:
 
   $ hg --cwd .. debugtemplate '{"c0bebeef"|shortest}\n'
-  abort: template resource not available: ctx
+  abort: template resource not available: repo
   [255]
 
   $ hg config -T '{author}'

@@ -512,7 +512,7 @@ def relpath(context, mapping, args):
         # i18n: "relpath" is a keyword
         raise error.ParseError(_("relpath expects one argument"))
 
-    repo = context.resource(mapping, 'ctx').repo()
+    repo = context.resource(mapping, 'repo')
     path = evalstring(context, mapping, args[0])
     return repo.pathto(path)
 
@@ -525,8 +525,7 @@ def revset(context, mapping, args):
         raise error.ParseError(_("revset expects one or more arguments"))
 
     raw = evalstring(context, mapping, args[0])
-    ctx = context.resource(mapping, 'ctx')
-    repo = ctx.repo()
+    repo = context.resource(mapping, 'repo')
 
     def query(expr):
         m = revsetmod.match(repo.ui, expr, lookup=revsetmod.lookupfn(repo))
@@ -594,7 +593,7 @@ def shortest(context, mapping, args):
                                 # i18n: "shortest" is a keyword
                                 _("shortest() expects an integer minlength"))
 
-    repo = context.resource(mapping, 'ctx')._repo
+    repo = context.resource(mapping, 'repo')
     if len(hexnode) > 40:
         return hexnode
     elif len(hexnode) == 40:

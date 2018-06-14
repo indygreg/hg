@@ -244,7 +244,7 @@ Commit while interrupted should fail:
 
   $ hg ci -m 'commit interrupted graft'
   abort: graft in progress
-  (use 'hg graft --continue' or 'hg graft --stop' to abort)
+  (use 'hg graft --continue' or 'hg graft --stop' to stop)
   [255]
 
 Abort the graft and try committing:

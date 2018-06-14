@@ -5356,10 +5356,7 @@ def tag(ui, repo, name1, *names, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    wlock = lock = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
+    with repo.wlock(), repo.lock():
         rev_ = "."
         names = [t.strip() for t in (name1,) + names]
         if len(names) != len(set(names)):
@@ -5430,8 +5427,6 @@ def tag(ui, repo, name1, *names, **opts):
 
         tagsmod.tag(repo, names, node, message, opts.get('local'),
                     opts.get('user'), date, editor=editor)
-    finally:
-        release(lock, wlock)
 
 @command('tags', formatteropts, '', intents={INTENT_READONLY})
 def tags(ui, repo, **opts):

@@ -310,6 +310,7 @@ int bdiff_diff(struct bdiff_line *a, int an, struct bdiff_line *b, int bn,
 	return count;
 }
 
+/* deallocate list of hunks; l may be NULL */
 void bdiff_freehunks(struct bdiff_hunk *l)
 {
 	struct bdiff_hunk *n;

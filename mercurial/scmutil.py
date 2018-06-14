@@ -1522,9 +1522,9 @@ def registersummarycallback(repo, otr, txnname=''):
             for instability, revset in instabilitytypes:
                 delta = (newinstabilitycounts[instability] -
                          oldinstabilitycounts[instability])
-                if delta > 0:
-                    repo.ui.warn(_('%i new %s changesets\n') %
-                                 (delta, instability))
+                msg = getinstabilitymessage(delta, instability)
+                if msg:
+                    repo.ui.warn(msg)
 
     if txmatch(_reportnewcssource):
         @reportsummary
@@ -1565,6 +1565,14 @@ def registersummarycallback(repo, otr, txnname=''):
                 return
             repo.ui.status(_('%d local changesets published\n')
                            % len(published))
+
+def getinstabilitymessage(delta, instability):
+    """function to return the message to show warning about new instabilities
+
+    exists as a separate function so that extension can wrap to show more
+    information like how to fix instabilities"""
+    if delta > 0:
+        return _('%i new %s changesets\n') % (delta, instability)
 
 def nodesummaries(repo, nodes, maxnumnodes=4):
     if len(nodes) <= maxnumnodes or repo.ui.verbose:

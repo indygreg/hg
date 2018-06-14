@@ -5657,10 +5657,10 @@ def update(ui, repo, node=None, **opts):
         ctx = scmutil.revsingle(repo, rev, rev)
         rev = ctx.rev()
         hidden = ctx.hidden()
-        repo.ui.setconfig('ui', 'forcemerge', opts.get(r'tool'), 'update')
-
-        ret = hg.updatetotally(ui, repo, rev, brev, clean=clean,
-                               updatecheck=updatecheck)
+        overrides = {('ui', 'forcemerge'): opts.get(r'tool', '')}
+        with ui.configoverride(overrides, 'update'):
+            ret = hg.updatetotally(ui, repo, rev, brev, clean=clean,
+                                   updatecheck=updatecheck)
         if hidden:
             ctxstr = ctx.hex()[:12]
             ui.warn(_("updated to hidden changeset %s\n") % ctxstr)

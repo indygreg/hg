@@ -40,7 +40,6 @@ from . import (
     hbisect,
     help,
     hg,
-    lock as lockmod,
     logcmdutil,
     merge as mergemod,
     obsolete,
@@ -66,8 +65,6 @@ from .utils import (
     dateutil,
     stringutil,
 )
-
-release = lockmod.release
 
 table = {}
 table.update(debugcommandsmod.command._table)
@@ -3111,22 +3108,24 @@ def import_(ui, repo, patch1=None, *patches, **opts):
             raise error.Abort(_('cannot use --exact with --prefix'))
 
     base = opts["base"]
-    dsguard = lock = tr = None
     msgs = []
     ret = 0
 
     with repo.wlock():
-        try:
-            if update:
-                cmdutil.checkunfinished(repo)
-                if (exact or not opts.get('force')):
-                    cmdutil.bailifchanged(repo)
+        if update:
+            cmdutil.checkunfinished(repo)
+            if (exact or not opts.get('force')):
+                cmdutil.bailifchanged(repo)
 
-            if not opts.get('no_commit'):
-                lock = repo.lock()
-                tr = repo.transaction('import')
-            else:
-                dsguard = dirstateguard.dirstateguard(repo, 'import')
+        if not opts.get('no_commit'):
+            lock = repo.lock
+            tr = lambda: repo.transaction('import')
+            dsguard = util.nullcontextmanager
+        else:
+            lock = util.nullcontextmanager
+            tr = util.nullcontextmanager
+            dsguard = lambda: dirstateguard.dirstateguard(repo, 'import')
+        with lock(), tr(), dsguard():
             parents = repo[None].parents()
             for patchurl in patches:
                 if patchurl == '-':
@@ -3162,17 +3161,9 @@ def import_(ui, repo, patch1=None, *patches, **opts):
                 if not haspatch:
                     raise error.Abort(_('%s: no diffs found') % patchurl)
 
-            if tr:
-                tr.close()
             if msgs:
                 repo.savecommitmessage('\n* * *\n'.join(msgs))
-            if dsguard:
-                dsguard.close()
-            return ret
-        finally:
-            if tr:
-                tr.release()
-            release(lock, dsguard)
+        return ret
 
 @command('incoming|in',
     [('f', 'force', None,

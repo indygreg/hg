@@ -2199,6 +2199,7 @@ def _dograft(ui, repo, *revs, **opts):
 
     cont = False
     graftstate = statemod.cmdstate(repo, 'graftstate')
+
     if opts.get('stop'):
         if opts.get('continue'):
             raise error.Abort(_("cannot use '--continue' and "
@@ -2208,7 +2209,7 @@ def _dograft(ui, repo, *revs, **opts):
                 opts.get('currentuser'), opts.get('rev'))):
             raise error.Abort(_("cannot specify any other flag with '--stop'"))
         return _stopgraft(ui, repo, graftstate)
-    if opts.get('continue'):
+    elif opts.get('continue'):
         cont = True
         if revs:
             raise error.Abort(_("can't specify --continue and revisions"))

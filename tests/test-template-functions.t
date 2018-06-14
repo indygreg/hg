@@ -435,6 +435,48 @@ latesttag() function:
 
   $ cd ..
 
+Test filter() empty values:
+
+  $ hg log -R a -r 1 -T '{filter(desc|splitlines) % "{line}\n"}'
+  other 1
+  other 2
+  other 3
+  $ hg log -R a -r 0 -T '{filter(dict(a=0, b=1) % "{ifeq(key, "a", "{value}\n")}")}'
+  0
+
+ 0 should not be falsy
+
+  $ hg log -R a -r 0 -T '{filter(revset("0:2"))}\n'
+  0 1 2
+
+Test filter() shouldn't crash:
+
+  $ hg log -R a -r 0 -T '{filter(extras)}\n'
+  branch=default
+  $ hg log -R a -r 0 -T '{filter(files)}\n'
+  a
+
+Test filter() unsupported arguments:
+
+  $ hg log -R a -r 0 -T '{filter()}\n'
+  hg: parse error: filter expects one argument
+  [255]
+  $ hg log -R a -r 0 -T '{filter(date)}\n'
+  hg: parse error: date is not iterable
+  [255]
+  $ hg log -R a -r 0 -T '{filter(rev)}\n'
+  hg: parse error: 0 is not iterable
+  [255]
+  $ hg log -R a -r 0 -T '{filter(desc|firstline)}\n'
+  hg: parse error: 'line 1' is not filterable
+  [255]
+  $ hg log -R a -r 0 -T '{filter(manifest)}\n'
+  hg: parse error: '0:a0c8bcbbb45c' is not filterable
+  [255]
+  $ hg log -R a -r 0 -T '{filter(succsandmarkers)}\n'
+  hg: parse error: not filterable without template
+  [255]
+
 Test manifest/get() can be join()-ed as string, though it's silly:
 
   $ hg log -R latesttag -r tip -T '{join(manifest, ".")}\n'

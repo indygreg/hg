@@ -166,6 +166,17 @@ def fill(context, mapping, args):
 
     return templatefilters.fill(text, width, initindent, hangindent)
 
+@templatefunc('filter(iterable)')
+def filter_(context, mapping, args):
+    """Remove empty elements from a list or a dict."""
+    if len(args) != 1:
+        # i18n: "filter" is a keyword
+        raise error.ParseError(_("filter expects one argument"))
+    iterable = evalwrapped(context, mapping, args[0])
+    def select(w):
+        return w.tobool(context, mapping)
+    return iterable.filter(context, mapping, select)
+
 @templatefunc('formatnode(node)', requires={'ui'})
 def formatnode(context, mapping, args):
     """Obtain the preferred form of a changeset hash. (DEPRECATED)"""

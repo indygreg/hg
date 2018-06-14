@@ -727,6 +727,10 @@ class sessionvars(templateutil.wrapped):
     def getmax(self, context, mapping):
         raise error.ParseError(_('not comparable'))
 
+    def filter(self, context, mapping, select):
+        # implement if necessary
+        raise error.ParseError(_('not filterable'))
+
     def itermaps(self, context):
         separator = self._start
         for key, value in sorted(self._vars.iteritems()):

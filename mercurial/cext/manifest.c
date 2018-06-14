@@ -185,15 +185,13 @@ static void lazymanifest_dealloc(lazymanifest *self)
 {
 	/* free any extra lines we had to allocate */
 	int i;
-	for (i = 0; i < self->numlines; i++) {
+	for (i = 0; self->lines && (i < self->numlines); i++) {
 		if (self->lines[i].from_malloc) {
 			free(self->lines[i].start);
 		}
 	}
-	if (self->lines) {
-		free(self->lines);
-		self->lines = NULL;
-	}
+	free(self->lines);
+	self->lines = NULL;
 	if (self->pydata) {
 		Py_DECREF(self->pydata);
 		self->pydata = NULL;

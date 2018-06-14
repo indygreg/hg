@@ -567,7 +567,7 @@ def showpredecessors(context, mapping):
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
     predecessors = sorted(obsutil.closestpredecessors(repo, ctx.node()))
-    predecessors = map(hex, predecessors)
+    predecessors = pycompat.maplist(hex, predecessors)
 
     return _hybrid(None, predecessors,
                    lambda x: {'ctx': repo[x]},

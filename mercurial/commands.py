@@ -2186,6 +2186,8 @@ def _dograft(ui, repo, *revs, **opts):
     revs.extend(opts.get('rev'))
     # a dict of data to be stored in state file
     statedata = {}
+    # list of new nodes created by ongoing graft
+    statedata['newnodes'] = []
 
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
@@ -2362,6 +2364,9 @@ def _dograft(ui, repo, *revs, **opts):
             ui.warn(
                 _('note: graft of %d:%s created no changes to commit\n') %
                 (ctx.rev(), ctx))
+        # checking that newnodes exist because old state files won't have it
+        elif statedata.get('newnodes') is not None:
+            statedata['newnodes'].append(node)
 
     # remove state when we complete successfully
     if not opts.get('dry_run'):

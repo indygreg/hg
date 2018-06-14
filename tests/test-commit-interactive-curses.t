@@ -214,6 +214,14 @@ Amend option works
   @@ -0,0 +1,1 @@
   +hello world
 
+Make file empty
+  $ echo -n > x
+  $ cat <<EOF >testModeCommands
+  > X
+  > EOF
+  $ hg ci -i -m emptify -d "0 0"
+  $ hg update -C '.^' -q
+
 Editing a hunk puts you back on that hunk when done editing (issue5041)
 To do that, we change two lines in a file, pretend to edit the second line,
 exit, toggle the line selected at the end of the edit and commit.
@@ -236,7 +244,7 @@ of the edit.
   > X
   > EOF
   $ printf "printf 'editor ran\n'; exit 0" > editor.sh
-  $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit  -i -m "edit hunk" -d "0 0"
+  $ HGEDITOR="\"sh\" \"`pwd`/editor.sh\"" hg commit  -i -m "edit hunk" -d "0 0" -q
   editor ran
   $ hg cat -r . x
   foo

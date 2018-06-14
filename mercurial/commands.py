@@ -3684,15 +3684,13 @@ def merge(ui, repo, node=None, **opts):
         displayer.close()
         return 0
 
-    try:
-        # ui.forcemerge is an internal variable, do not document
-        repo.ui.setconfig('ui', 'forcemerge', opts.get('tool', ''), 'merge')
+    # ui.forcemerge is an internal variable, do not document
+    overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+    with ui.configoverride(overrides, 'merge'):
         force = opts.get('force')
         labels = ['working copy', 'merge rev']
         return hg.merge(repo, node, force=force, mergeforce=force,
                         labels=labels, abort=abort)
-    finally:
-        ui.setconfig('ui', 'forcemerge', '', 'merge')
 
 @command('outgoing|out',
     [('f', 'force', None, _('run even when the destination is unrelated')),

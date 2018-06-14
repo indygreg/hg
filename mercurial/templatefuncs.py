@@ -166,15 +166,23 @@ def fill(context, mapping, args):
 
     return templatefilters.fill(text, width, initindent, hangindent)
 
-@templatefunc('filter(iterable)')
+@templatefunc('filter(iterable[, expr])')
 def filter_(context, mapping, args):
-    """Remove empty elements from a list or a dict."""
-    if len(args) != 1:
+    """Remove empty elements from a list or a dict. If expr specified, it's
+    applied to each element to test emptiness."""
+    if not (1 <= len(args) <= 2):
         # i18n: "filter" is a keyword
-        raise error.ParseError(_("filter expects one argument"))
+        raise error.ParseError(_("filter expects one or two arguments"))
     iterable = evalwrapped(context, mapping, args[0])
-    def select(w):
-        return w.tobool(context, mapping)
+    if len(args) == 1:
+        def select(w):
+            return w.tobool(context, mapping)
+    else:
+        def select(w):
+            if not isinstance(w, templateutil.mappable):
+                raise error.ParseError(_("not filterable by expression"))
+            lm = context.overlaymap(mapping, w.tomap(context))
+            return evalboolean(context, lm, args[1])
     return iterable.filter(context, mapping, select)
 
 @templatefunc('formatnode(node)', requires={'ui'})

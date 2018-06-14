@@ -449,6 +449,13 @@ Test filter() empty values:
   $ hg log -R a -r 0 -T '{filter(revset("0:2"))}\n'
   0 1 2
 
+Test filter() by expression:
+
+  $ hg log -R a -r 1 -T '{filter(desc|splitlines, ifcontains("1", line, "t"))}\n'
+  other 1
+  $ hg log -R a -r 0 -T '{filter(dict(a=0, b=1), ifeq(key, "b", "t"))}\n'
+  b=1
+
 Test filter() shouldn't crash:
 
   $ hg log -R a -r 0 -T '{filter(extras)}\n'
@@ -459,7 +466,7 @@ Test filter() shouldn't crash:
 Test filter() unsupported arguments:
 
   $ hg log -R a -r 0 -T '{filter()}\n'
-  hg: parse error: filter expects one argument
+  hg: parse error: filter expects one or two arguments
   [255]
   $ hg log -R a -r 0 -T '{filter(date)}\n'
   hg: parse error: date is not iterable
@@ -475,6 +482,9 @@ Test filter() unsupported arguments:
   [255]
   $ hg log -R a -r 0 -T '{filter(succsandmarkers)}\n'
   hg: parse error: not filterable without template
+  [255]
+  $ hg log -R a -r 0 -T '{filter(desc|splitlines % "{line}", "")}\n'
+  hg: parse error: not filterable by expression
   [255]
 
 Test manifest/get() can be join()-ed as string, though it's silly:

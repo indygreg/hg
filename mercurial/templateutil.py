@@ -415,6 +415,7 @@ class _mappingsequence(wrapped):
         raise error.ParseError(_('not comparable'))
 
     def filter(self, context, mapping, select):
+        # implement if necessary; we'll need a wrapped type for a mapping dict
         raise error.ParseError(_('not filterable without template'))
 
     def join(self, context, mapping, sep):

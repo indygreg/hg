@@ -782,6 +782,13 @@ class fileobjectobserver(baseproxyobserver):
         if res is None:
             res = ''
 
+        if size == -1 and res == '':
+            # Suppress pointless read(-1) calls that return
+            # nothing. These happen _a lot_ on Python 3, and there
+            # doesn't seem to be a better workaround to have matching
+            # Python 2 and 3 behavior. :(
+            return
+
         if self.logdataapis:
             self.fh.write('%s> read(%d) -> %d' % (self.name, size, len(res)))
 

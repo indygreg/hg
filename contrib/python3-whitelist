@@ -450,6 +450,7 @@ test-sparse-verbose-json.t
 test-sparse.t
 test-split.t
 test-ssh-clone-r.t
+test-ssh-proto-unbundle.t
 test-ssh-proto.t
 test-sshserver.py
 test-stack.t

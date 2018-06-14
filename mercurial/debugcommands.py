@@ -2289,7 +2289,13 @@ def debugserve(ui, repo, **opts):
 
     if opts['logiofd']:
         # Line buffered because output is line based.
-        logfh = os.fdopen(int(opts['logiofd']), r'ab', 1)
+        try:
+            logfh = os.fdopen(int(opts['logiofd']), r'ab', 1)
+        except OSError as e:
+            if e.errno != errno.ESPIPE:
+                raise
+            # can't seek a pipe, so `ab` mode fails on py3
+            logfh = os.fdopen(int(opts['logiofd']), r'wb', 1)
     elif opts['logiofile']:
         logfh = open(opts['logiofile'], 'ab', 1)
 

@@ -3108,69 +3108,68 @@ def import_(ui, repo, patch1=None, *patches, **opts):
             raise error.Abort(_('cannot use --exact with --prefix'))
 
     base = opts["base"]
-    wlock = dsguard = lock = tr = None
+    dsguard = lock = tr = None
     msgs = []
     ret = 0
 
+    with repo.wlock():
+        try:
+            if update:
+                cmdutil.checkunfinished(repo)
+                if (exact or not opts.get('force')):
+                    cmdutil.bailifchanged(repo)
 
-    try:
-        wlock = repo.wlock()
-
-        if update:
-            cmdutil.checkunfinished(repo)
-            if (exact or not opts.get('force')):
-                cmdutil.bailifchanged(repo)
-
-        if not opts.get('no_commit'):
-            lock = repo.lock()
-            tr = repo.transaction('import')
-        else:
-            dsguard = dirstateguard.dirstateguard(repo, 'import')
-        parents = repo[None].parents()
-        for patchurl in patches:
-            if patchurl == '-':
-                ui.status(_('applying patch from stdin\n'))
-                patchfile = ui.fin
-                patchurl = 'stdin'      # for error message
+            if not opts.get('no_commit'):
+                lock = repo.lock()
+                tr = repo.transaction('import')
             else:
-                patchurl = os.path.join(base, patchurl)
-                ui.status(_('applying %s\n') % patchurl)
-                patchfile = hg.openpath(ui, patchurl)
-
-            haspatch = False
-            for hunk in patch.split(patchfile):
-                with patch.extract(ui, hunk) as patchdata:
-                    msg, node, rej = cmdutil.tryimportone(ui, repo, patchdata,
-                                                          parents, opts,
-                                                          msgs, hg.clean)
-                if msg:
-                    haspatch = True
-                    ui.note(msg + '\n')
-                if update or exact:
-                    parents = repo[None].parents()
+                dsguard = dirstateguard.dirstateguard(repo, 'import')
+            parents = repo[None].parents()
+            for patchurl in patches:
+                if patchurl == '-':
+                    ui.status(_('applying patch from stdin\n'))
+                    patchfile = ui.fin
+                    patchurl = 'stdin'      # for error message
                 else:
-                    parents = [repo[node]]
-                if rej:
-                    ui.write_err(_("patch applied partially\n"))
-                    ui.write_err(_("(fix the .rej files and run "
-                                   "`hg commit --amend`)\n"))
-                    ret = 1
-                    break
+                    patchurl = os.path.join(base, patchurl)
+                    ui.status(_('applying %s\n') % patchurl)
+                    patchfile = hg.openpath(ui, patchurl)
 
-            if not haspatch:
-                raise error.Abort(_('%s: no diffs found') % patchurl)
+                haspatch = False
+                for hunk in patch.split(patchfile):
+                    with patch.extract(ui, hunk) as patchdata:
+                        msg, node, rej = cmdutil.tryimportone(ui, repo,
+                                                              patchdata,
+                                                              parents, opts,
+                                                              msgs, hg.clean)
+                    if msg:
+                        haspatch = True
+                        ui.note(msg + '\n')
+                    if update or exact:
+                        parents = repo[None].parents()
+                    else:
+                        parents = [repo[node]]
+                    if rej:
+                        ui.write_err(_("patch applied partially\n"))
+                        ui.write_err(_("(fix the .rej files and run "
+                                       "`hg commit --amend`)\n"))
+                        ret = 1
+                        break
 
-        if tr:
-            tr.close()
-        if msgs:
-            repo.savecommitmessage('\n* * *\n'.join(msgs))
-        if dsguard:
-            dsguard.close()
-        return ret
-    finally:
-        if tr:
-            tr.release()
-        release(lock, dsguard, wlock)
+                if not haspatch:
+                    raise error.Abort(_('%s: no diffs found') % patchurl)
+
+            if tr:
+                tr.close()
+            if msgs:
+                repo.savecommitmessage('\n* * *\n'.join(msgs))
+            if dsguard:
+                dsguard.close()
+            return ret
+        finally:
+            if tr:
+                tr.release()
+            release(lock, dsguard)
 
 @command('incoming|in',
     [('f', 'force', None,

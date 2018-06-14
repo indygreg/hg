@@ -351,7 +351,8 @@ class templatefunc(_templateregistrarbase):
 
         templatefunc = registrar.templatefunc()
 
-        @templatefunc('myfunc(arg1, arg2[, arg3])', argspec='arg1 arg2 arg3')
+        @templatefunc('myfunc(arg1, arg2[, arg3])', argspec='arg1 arg2 arg3',
+                      requires={'ctx'})
         def myfuncfunc(context, mapping, args):
             '''Explanation of this template function ....
             '''
@@ -362,6 +363,9 @@ class templatefunc(_templateregistrarbase):
     If optional 'argspec' is defined, the function will receive 'args' as
     a dict of named arguments. Otherwise 'args' is a list of positional
     arguments.
+
+    Optional argument 'requires' should be a collection of resource names
+    which the template function depends on.
 
     'templatefunc' instance in example above can be used to
     decorate multiple functions.
@@ -374,8 +378,9 @@ class templatefunc(_templateregistrarbase):
     """
     _getname = _funcregistrarbase._parsefuncdecl
 
-    def _extrasetup(self, name, func, argspec=None):
+    def _extrasetup(self, name, func, argspec=None, requires=()):
         func._argspec = argspec
+        func._requires = requires
 
 class internalmerge(_funcregistrarbase):
     """Decorator to register in-process merge tool

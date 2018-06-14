@@ -85,7 +85,7 @@ def dict_(context, mapping, args):
                 for k, v in args['kwargs'].iteritems())
     return templateutil.hybriddict(data)
 
-@templatefunc('diff([includepattern [, excludepattern]])')
+@templatefunc('diff([includepattern [, excludepattern]])', requires={'ctx'})
 def diff(context, mapping, args):
     """Show a diff, optionally
     specifying files to include or exclude."""
@@ -105,7 +105,7 @@ def diff(context, mapping, args):
 
     return ''.join(chunks)
 
-@templatefunc('extdata(source)', argspec='source')
+@templatefunc('extdata(source)', argspec='source', requires={'ctx', 'cache'})
 def extdata(context, mapping, args):
     """Show a text read from the specified extdata source. (EXPERIMENTAL)"""
     if 'source' not in args:
@@ -128,7 +128,7 @@ def extdata(context, mapping, args):
         data = cache[source] = scmutil.extdatasource(ctx.repo(), source)
     return data.get(ctx.rev(), '')
 
-@templatefunc('files(pattern)')
+@templatefunc('files(pattern)', requires={'ctx'})
 def files(context, mapping, args):
     """All files of the current changeset matching the pattern. See
     :hg:`help patterns`."""
@@ -166,7 +166,7 @@ def fill(context, mapping, args):
 
     return templatefilters.fill(text, width, initindent, hangindent)
 
-@templatefunc('formatnode(node)')
+@templatefunc('formatnode(node)', requires={'ui'})
 def formatnode(context, mapping, args):
     """Obtain the preferred form of a changeset hash. (DEPRECATED)"""
     if len(args) != 1:
@@ -179,7 +179,7 @@ def formatnode(context, mapping, args):
         return node
     return templatefilters.short(node)
 
-@templatefunc('mailmap(author)')
+@templatefunc('mailmap(author)', requires={'repo', 'cache'})
 def mailmap(context, mapping, args):
     """Return the author, updated according to the value
     set in the .mailmap file"""
@@ -331,7 +331,7 @@ def join(context, mapping, args):
         joiner = evalstring(context, mapping, args[1])
     return joinset.join(context, mapping, joiner)
 
-@templatefunc('label(label, expr)')
+@templatefunc('label(label, expr)', requires={'ui'})
 def label(context, mapping, args):
     """Apply a label to generated content. Content with
     a label applied can result in additional post-processing, such as
@@ -504,7 +504,7 @@ def obsfateverb(context, mapping, args):
         errmsg = _("obsfateverb first argument should be countable")
         raise error.ParseError(errmsg)
 
-@templatefunc('relpath(path)')
+@templatefunc('relpath(path)', requires={'repo'})
 def relpath(context, mapping, args):
     """Convert a repository-absolute path into a filesystem path relative to
     the current working directory."""
@@ -516,7 +516,7 @@ def relpath(context, mapping, args):
     path = evalstring(context, mapping, args[0])
     return repo.pathto(path)
 
-@templatefunc('revset(query[, formatargs...])')
+@templatefunc('revset(query[, formatargs...])', requires={'repo', 'cache'})
 def revset(context, mapping, args):
     """Execute a revision set query. See
     :hg:`help revset`."""
@@ -577,7 +577,7 @@ def separate(context, mapping, args):
             yield sep
         yield argstr
 
-@templatefunc('shortest(node, minlength=4)')
+@templatefunc('shortest(node, minlength=4)', requires={'repo'})
 def shortest(context, mapping, args):
     """Obtain the shortest representation of
     a node."""

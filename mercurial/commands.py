@@ -619,9 +619,9 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
     if not opts.get('merge') and op1 != node:
         dsguard = dirstateguard.dirstateguard(repo, 'backout')
         try:
-            ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                         'backout')
-            stats = mergemod.update(repo, parent, True, True, node, False)
+            overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+            with ui.configoverride(overrides, 'backout'):
+                stats = mergemod.update(repo, parent, True, True, node, False)
             repo.setparents(op1, op2)
             dsguard.close()
             hg._showstats(repo, stats)
@@ -630,7 +630,6 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
                                  "file merges\n"))
                 return 1
         finally:
-            ui.setconfig('ui', 'forcemerge', '', '')
             lockmod.release(dsguard)
     else:
         hg.clean(repo, node, show_stats=False)
@@ -667,12 +666,9 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         hg.clean(repo, op1, show_stats=False)
         ui.status(_('merging with changeset %s\n')
                   % nice(repo.changelog.tip()))
-        try:
-            ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                         'backout')
+        overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+        with ui.configoverride(overrides, 'backout'):
             return hg.merge(repo, hex(repo.changelog.tip()))
-        finally:
-            ui.setconfig('ui', 'forcemerge', '', '')
     return 0
 
 @command('bisect',

@@ -2358,14 +2358,9 @@ def _dograft(ui, repo, *revs, **opts):
         # we don't merge the first commit when continuing
         if not cont:
             # perform the graft merge with p1(rev) as 'ancestor'
-            try:
-                # ui.forcemerge is an internal variable, do not document
-                repo.ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                                  'graft')
-                stats = mergemod.graft(repo, ctx, ctx.p1(),
-                                       ['local', 'graft'])
-            finally:
-                repo.ui.setconfig('ui', 'forcemerge', '', 'graft')
+            overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+            with ui.configoverride(overrides, 'graft'):
+                stats = mergemod.graft(repo, ctx, ctx.p1(), ['local', 'graft'])
             # report any conflicts
             if stats.unresolvedcount > 0:
                 # write out state for --continue

@@ -4553,15 +4553,14 @@ def resolve(ui, repo, *pats, **opts):
 
                 try:
                     # preresolve file
-                    ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                                 'resolve')
-                    complete, r = ms.preresolve(f, wctx)
+                    overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+                    with ui.configoverride(overrides, 'resolve'):
+                        complete, r = ms.preresolve(f, wctx)
                     if not complete:
                         tocomplete.append(f)
                     elif r:
                         ret = 1
                 finally:
-                    ui.setconfig('ui', 'forcemerge', '', 'resolve')
                     ms.commit()
 
                 # replace filemerge's .orig file with our resolve file, but only
@@ -4577,13 +4576,12 @@ def resolve(ui, repo, *pats, **opts):
         for f in tocomplete:
             try:
                 # resolve file
-                ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                             'resolve')
-                r = ms.resolve(f, wctx)
+                overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+                with ui.configoverride(overrides, 'resolve'):
+                    r = ms.resolve(f, wctx)
                 if r:
                     ret = 1
             finally:
-                ui.setconfig('ui', 'forcemerge', '', 'resolve')
                 ms.commit()
 
             # replace filemerge's .orig file with our resolve file

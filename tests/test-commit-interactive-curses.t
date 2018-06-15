@@ -215,7 +215,7 @@ Amend option works
   +hello world
 
 Make file empty
-  $ echo -n > x
+  $ printf "" > x
   $ cat <<EOF >testModeCommands
   > X
   > EOF

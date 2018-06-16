@@ -566,7 +566,8 @@ class matchctx(object):
     def filter(self, files):
         return [f for f in files if f in self.subset]
     def existing(self):
-        assert self._existingenabled, 'unexpected existing() invocation'
+        if not self._existingenabled:
+            raise error.ProgrammingError('unexpected existing() invocation')
         if self._status is not None:
             removed = set(self._status[3])
             unknown = set(self._status[4] + self._status[5])

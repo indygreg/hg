@@ -20,6 +20,7 @@ from . import (
     error,
     mdiff,
     policy,
+    pycompat,
     revlog,
     util,
 )
@@ -635,7 +636,8 @@ def _checkforbidden(l):
     for f in l:
         if '\n' in f or '\r' in f:
             raise error.RevlogError(
-                _("'\\n' and '\\r' disallowed in filenames: %r") % f)
+                _("'\\n' and '\\r' disallowed in filenames: %r")
+                % pycompat.bytestr(f))
 
 
 # apply the changes collected during the bisect loop to our addlist

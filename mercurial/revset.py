@@ -309,7 +309,6 @@ def ancestor(repo, subset, x):
     Will return empty list when passed no args.
     Greatest common ancestor of a single changeset is that changeset.
     """
-    # i18n: "ancestor" is a keyword
     l = getlist(x)
     rl = fullreposet(repo)
     anc = None

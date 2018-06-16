@@ -427,7 +427,7 @@ def encoding(mctx, x):
     for f in mctx.existing():
         d = mctx.ctx[f].data()
         try:
-            d.decode(enc)
+            d.decode(pycompat.sysstr(enc))
         except LookupError:
             raise error.Abort(_("unknown encoding '%s'") % enc)
         except UnicodeDecodeError:

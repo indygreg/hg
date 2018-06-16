@@ -1588,7 +1588,6 @@ def abort(repo, originalwd, destmap, state, activebookmark=None):
 
             # Strip from the first rebased revision
             if rebased:
-                # no backup of rebased cset versions needed
                 repair.strip(repo.ui, repo, strippoints)
 
         if activebookmark and activebookmark in repo._bookmarks:

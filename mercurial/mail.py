@@ -11,6 +11,8 @@ import email
 import email.charset
 import email.header
 import email.message
+import email.parser
+import io
 import os
 import smtplib
 import socket
@@ -321,6 +323,23 @@ def mimeencode(ui, s, charsets=None, display=False):
     if not display:
         s, cs = _encode(ui, s, charsets)
     return mimetextqp(s, 'plain', cs)
+
+if pycompat.ispy3:
+    def parse(fp):
+        ep = email.parser.Parser()
+        # disable the "universal newlines" mode, which isn't binary safe.
+        # I have no idea if ascii/surrogateescape is correct, but that's
+        # what the standard Python email parser does.
+        fp = io.TextIOWrapper(fp, encoding=r'ascii',
+                              errors=r'surrogateescape', newline=chr(10))
+        try:
+            return ep.parse(fp)
+        finally:
+            fp.detach()
+else:
+    def parse(fp):
+        ep = email.parser.Parser()
+        return ep.parse(fp)
 
 def headdecode(s):
     '''Decodes RFC-2047 header'''

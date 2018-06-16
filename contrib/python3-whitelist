@@ -203,6 +203,7 @@ test-http.t
 test-hybridencode.py
 test-identify.t
 test-import-bypass.t
+test-import-eol.t
 test-import-merge.t
 test-import-unknown.t
 test-import.t

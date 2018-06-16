@@ -112,7 +112,7 @@ def split(stream):
             cur.append(line)
         c = chunk(cur)
 
-        m = pycompat.emailparser().parse(c)
+        m = mail.parse(c)
         if not m.is_multipart():
             yield msgfp(m)
         else:
@@ -230,7 +230,7 @@ def _extract(ui, fileobj, tmpname, tmpfp):
 
     data = {}
 
-    msg = pycompat.emailparser().parse(fileobj)
+    msg = mail.parse(fileobj)
 
     subject = msg[r'Subject'] and mail.headdecode(msg[r'Subject'])
     data['user'] = msg[r'From'] and mail.headdecode(msg[r'From'])

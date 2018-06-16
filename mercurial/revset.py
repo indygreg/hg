@@ -311,14 +311,15 @@ def ancestor(repo, subset, x):
     Will return empty list when passed no args.
     Greatest common ancestor of a single changeset is that changeset.
     """
-    anc = None
-    for r in orset(repo, fullreposet(repo), x, order=anyorder):
-        if anc is None:
-            anc = repo[r]
-        else:
-            anc = anc.ancestor(repo[r])
+    reviter = iter(orset(repo, fullreposet(repo), x, order=anyorder))
+    try:
+        anc = repo[next(reviter)]
+    except StopIteration:
+        return baseset()
+    for r in reviter:
+        anc = anc.ancestor(repo[r])
 
-    if anc is not None and anc.rev() in subset:
+    if anc.rev() in subset:
         return baseset([anc.rev()])
     return baseset()
 

@@ -155,4 +155,170 @@ Rebase the working copy parent
   |/
   o  0: b173517d0057 'a'
   
+Test dry-run rebasing
+  $ hg init skrepo
+  $ cd skrepo
+  $ echo a>a
+  $ hg ci -Aqma
+  $ echo b>b
+  $ hg ci -Aqmb
+  $ echo c>c
+  $ hg ci -Aqmc
+  $ echo d>d
+  $ hg ci -Aqmd
+  $ echo e>e
+  $ hg ci -Aqme
 
+  $ hg up 1 -q
+  $ echo f>f
+  $ hg ci -Amf
+  adding f
+  created new head
+  $ echo g>g
+  $ hg ci -Aqmg
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Make sure it throws error while passing --continue or --abort with --dry-run
+  $ hg rebase -s 2 -d 6 -n --continue
+  abort: cannot specify both --dry-run and --continue
+  [255]
+  $ hg rebase -s 2 -d 6 -n --abort
+  abort: cannot specify both --dry-run and --abort
+  [255]
+
+Check dryrun gives correct results when there is no conflict in rebasing
+  $ hg rebase -s 2 -d 6 -n
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  there will be no conflict, you can rebase
+  saved backup bundle to $TESTTMP/repo1/repo2/skrepo/.hg/strip-backup/c83b1da5b1ae-f1e0beb9-backup.hg
+  rebase aborted
+
+  $ hg diff
+  $ hg status
+
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Check dryrun working with --collapse when there is no conflict
+  $ hg rebase -s 2 -d 6 -n --collapse
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  there will be no conflict, you can rebase
+  rebase aborted
+
+Check dryrun gives correct results when there is conflict in rebasing
+Make a conflict:
+  $ hg up 6 -q
+  $ echo conflict>e
+  $ hg ci -Aqm "conflict with e"
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  7:d2c195b28050 test
+  |  conflict with e
+  |
+  o  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 2 -d 7 -n
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  transaction abort!
+  rollback completed
+  hit a merge conflict
+  rebase aborted
+  $ hg diff
+  $ hg status
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  7:d2c195b28050 test
+  |  conflict with e
+  |
+  o  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Check dryrun working with --collapse when there is conflicts
+  $ hg rebase -s 2 -d 7 -n --collapse
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  merging e
+  hit a merge conflict
+  rebase aborted

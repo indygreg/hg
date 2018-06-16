@@ -673,8 +673,7 @@ class rebaseruntime(object):
     ('a', 'abort', False, _('abort an interrupted rebase')),
     ('', 'auto-orphans', '', _('automatically rebase orphan revisions '
                                'in the specified revset (EXPERIMENTAL)')),
-     ] +
-    cmdutil.formatteropts,
+     ] + cmdutil.dryrunopts + cmdutil.formatteropts,
     _('[-s REV | -b REV] [-d REV] [OPTION]'))
 def rebase(ui, repo, **opts):
     """move changeset (and descendants) to a different branch
@@ -798,6 +797,13 @@ def rebase(ui, repo, **opts):
 
     """
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
+    dryrun = opts.get(r'dry_run')
+    if dryrun:
+        if opts.get(r'abort'):
+            raise error.Abort(_('cannot specify both --dry-run and --abort'))
+        if opts.get(r'continue'):
+            raise error.Abort(_('cannot specify both --dry-run and --continue'))
+
     if (opts.get(r'continue') or opts.get(r'abort') or
         repo.currenttransaction() is not None):
         # in-memory rebase is not compatible with resuming rebases.
@@ -814,7 +820,19 @@ def rebase(ui, repo, **opts):
         opts[r'rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
         opts[r'dest'] = '_destautoorphanrebase(SRC)'
 
-    if inmemory:
+    if dryrun:
+        try:
+            overrides = {('rebase', 'singletransaction'): True}
+            with ui.configoverride(overrides, 'rebase'):
+                _origrebase(ui, repo, inmemory=True, leaveunfinished=True,
+                            **opts)
+        except error.InMemoryMergeConflictsError:
+            ui.status(_('hit a merge conflict\n'))
+        else:
+            ui.status(_('there will be no conflict, you can rebase\n'))
+        finally:
+            _origrebase(ui, repo, abort=True)
+    elif inmemory:
         try:
             # in-memory merge doesn't support conflicts, so if we hit any, abort
             # and re-run as an on-disk merge.
@@ -824,12 +842,12 @@ def rebase(ui, repo, **opts):
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _origrebase(ui, repo, **{r'abort': True})
+            _origrebase(ui, repo, abort=True)
             return _origrebase(ui, repo, inmemory=False, **opts)
     else:
         return _origrebase(ui, repo, **opts)
 
-def _origrebase(ui, repo, inmemory=False, **opts):
+def _origrebase(ui, repo, inmemory=False, leaveunfinished=False, **opts):
     opts = pycompat.byteskwargs(opts)
     rbsrt = rebaseruntime(repo, ui, inmemory, opts)
 
@@ -902,7 +920,8 @@ def _origrebase(ui, repo, inmemory=False, **opts):
                 dsguard = dirstateguard.dirstateguard(repo, 'rebase')
             with util.acceptintervention(dsguard):
                 rbsrt._performrebase(tr)
-                rbsrt._finishrebase()
+                if not leaveunfinished:
+                    rbsrt._finishrebase()
 
 def _definedestmap(ui, repo, inmemory, destf=None, srcf=None, basef=None,
                    revf=None, destspace=None):

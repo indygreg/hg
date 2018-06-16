@@ -313,16 +313,15 @@ def generatebundlev1(repo, compression='UN'):
         # This is where we'll add compression in the future.
         assert compression == 'UN'
 
-        seen = 0
-        repo.ui.progress(_('bundle'), 0, total=bytecount, unit=_('bytes'))
+        progress = repo.ui.makeprogress(_('bundle'), total=bytecount,
+                                        unit=_('bytes'))
+        progress.update(0)
 
         for chunk in it:
-            seen += len(chunk)
-            repo.ui.progress(_('bundle'), seen, total=bytecount,
-                             unit=_('bytes'))
+            progress.increment(step=len(chunk))
             yield chunk
 
-        repo.ui.progress(_('bundle'), None)
+        progress.update(None)
 
     return requirements, gen()
 
@@ -338,8 +337,9 @@ def consumev1(repo, fp, filecount, bytecount):
     with repo.lock():
         repo.ui.status(_('%d files to transfer, %s of data\n') %
                        (filecount, util.bytecount(bytecount)))
-        handled_bytes = 0
-        repo.ui.progress(_('clone'), 0, total=bytecount, unit=_('bytes'))
+        progress = repo.ui.makeprogress(_('clone'), total=bytecount,
+                                        unit=_('bytes'))
+        progress.update(0)
         start = util.timer()
 
         # TODO: get rid of (potential) inconsistency
@@ -374,9 +374,7 @@ def consumev1(repo, fp, filecount, bytecount):
                     path = store.decodedir(name)
                     with repo.svfs(path, 'w', backgroundclose=True) as ofp:
                         for chunk in util.filechunkiter(fp, limit=size):
-                            handled_bytes += len(chunk)
-                            repo.ui.progress(_('clone'), handled_bytes,
-                                             total=bytecount, unit=_('bytes'))
+                            progress.increment(step=len(chunk))
                             ofp.write(chunk)
 
             # force @filecache properties to be reloaded from
@@ -386,7 +384,7 @@ def consumev1(repo, fp, filecount, bytecount):
         elapsed = util.timer() - start
         if elapsed <= 0:
             elapsed = 0.001
-        repo.ui.progress(_('clone'), None)
+        progress.update(None)
         repo.ui.status(_('transferred %s in %.1f seconds (%s/sec)\n') %
                        (util.bytecount(bytecount), elapsed,
                         util.bytecount(bytecount / elapsed)))
@@ -494,8 +492,9 @@ def _makemap(repo):
 def _emit2(repo, entries, totalfilesize):
     """actually emit the stream bundle"""
     vfsmap = _makemap(repo)
-    progress = repo.ui.progress
-    progress(_('bundle'), 0, total=totalfilesize, unit=_('bytes'))
+    progress = repo.ui.makeprogress(_('bundle'), total=totalfilesize,
+                                    unit=_('bytes'))
+    progress.update(0)
     with maketempcopies() as copy:
         try:
             # copy is delayed until we are in the try
@@ -522,13 +521,12 @@ def _emit2(repo, entries, totalfilesize):
                         chunks = util.filechunkiter(fp, limit=size)
                     for chunk in chunks:
                         seen += len(chunk)
-                        progress(_('bundle'), seen, total=totalfilesize,
-                                 unit=_('bytes'))
+                        progress.update(seen)
                         yield chunk
                 finally:
                     fp.close()
         finally:
-            progress(_('bundle'), None)
+            progress.update(None)
 
 def generatev2(repo):
     """Emit content for version 2 of a streaming clone.
@@ -589,10 +587,9 @@ def consumev2(repo, fp, filecount, filesize):
                        (filecount, util.bytecount(filesize)))
 
         start = util.timer()
-        handledbytes = 0
-        progress = repo.ui.progress
-
-        progress(_('clone'), handledbytes, total=filesize, unit=_('bytes'))
+        progress = repo.ui.makeprogress(_('clone'), total=filesize,
+                                        unit=_('bytes'))
+        progress.update(0)
 
         vfsmap = _makemap(repo)
 
@@ -614,9 +611,7 @@ def consumev2(repo, fp, filecount, filesize):
 
                     with vfs(name, 'w') as ofp:
                         for chunk in util.filechunkiter(fp, limit=datalen):
-                            handledbytes += len(chunk)
-                            progress(_('clone'), handledbytes, total=filesize,
-                                     unit=_('bytes'))
+                            progress.increment(step=len(chunk))
                             ofp.write(chunk)
 
             # force @filecache properties to be reloaded from
@@ -626,10 +621,10 @@ def consumev2(repo, fp, filecount, filesize):
         elapsed = util.timer() - start
         if elapsed <= 0:
             elapsed = 0.001
-        progress(_('clone'), None)
+        progress.update(None)
         repo.ui.status(_('transferred %s in %.1f seconds (%s/sec)\n') %
-                       (util.bytecount(handledbytes), elapsed,
-                        util.bytecount(handledbytes / elapsed)))
+                       (util.bytecount(progress.pos), elapsed,
+                        util.bytecount(progress.pos / elapsed)))
 
 def applybundlev2(repo, fp, filecount, filesize, requirements):
     missingreqs = [r for r in requirements if r not in repo.supported]

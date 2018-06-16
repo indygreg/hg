@@ -126,6 +126,7 @@ test-eol-hook.t
 test-eol-patch.t
 test-eol-tag.t
 test-eol-update.t
+test-eol.t
 test-excessive-merge.t
 test-exchange-obsmarkers-case-A1.t
 test-exchange-obsmarkers-case-A2.t

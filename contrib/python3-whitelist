@@ -158,6 +158,7 @@ test-extdiff.t
 test-extensions-afterloaded.t
 test-extensions-wrapfunction.py
 test-extra-filelog-entry.t
+test-fetch.t
 test-filebranch.t
 test-filecache.py
 test-filelog.py
@@ -326,6 +327,8 @@ test-narrow-shallow-merges.t
 test-narrow-shallow.t
 test-narrow-strip.t
 test-narrow-update.t
+test-narrow-widen.t
+test-narrow.t
 test-nested-repo.t
 test-newbranch.t
 test-obshistory.t
@@ -339,6 +342,7 @@ test-obsolete-tag-cache.t
 test-pager.t
 test-parents.t
 test-parseindex2.py
+test-patch.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t
 test-pathencode.py
@@ -488,6 +492,7 @@ test-ui-color.py
 test-ui-config.py
 test-ui-verbosity.py
 test-unamend.t
+test-unbundlehash.t
 test-uncommit.t
 test-unified-test.t
 test-unionrepo.t

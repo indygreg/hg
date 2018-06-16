@@ -205,6 +205,7 @@ test-import.t
 test-imports-checker.t
 test-incoming-outgoing.t
 test-inherit-mode.t
+test-init.t
 test-issue1089.t
 test-issue1102.t
 test-issue1175.t
@@ -227,6 +228,7 @@ test-issue842.t
 test-journal-exists.t
 test-journal-share.t
 test-journal.t
+test-known.t
 test-largefiles-cache.t
 test-largefiles-misc.t
 test-largefiles-small-disk.t
@@ -450,9 +452,11 @@ test-sparse-requirement.t
 test-sparse-verbose-json.t
 test-sparse.t
 test-split.t
+test-ssh-bundle1.t
 test-ssh-clone-r.t
 test-ssh-proto-unbundle.t
 test-ssh-proto.t
+test-ssh.t
 test-sshserver.py
 test-stack.t
 test-status-inprocess.py

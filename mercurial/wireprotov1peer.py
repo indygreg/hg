@@ -355,7 +355,7 @@ class wirepeer(repository.peer):
         yield {'nodes': wireprototypes.encodelist(nodes)}, f
         d = f.value
         try:
-            yield [bool(int(b)) for b in d]
+            yield [bool(int(b)) for b in pycompat.iterbytestr(d)]
         except ValueError:
             self._abort(error.ResponseError(_("unexpected response:"), d))
 

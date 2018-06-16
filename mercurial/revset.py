@@ -203,6 +203,8 @@ def _orsetlist(repo, subset, xs, order):
 
 def orset(repo, subset, x, order):
     xs = getlist(x)
+    if not xs:
+        return baseset()
     if order == followorder:
         # slow path to take the subset order
         return subset & _orsetlist(repo, fullreposet(repo), xs, anyorder)
@@ -309,17 +311,12 @@ def ancestor(repo, subset, x):
     Will return empty list when passed no args.
     Greatest common ancestor of a single changeset is that changeset.
     """
-    l = getlist(x)
-    rl = fullreposet(repo)
     anc = None
-
-    # (getset(repo, rl, i) for i in l) generates a list of lists
-    for revs in (getset(repo, rl, i) for i in l):
-        for r in revs:
-            if anc is None:
-                anc = repo[r]
-            else:
-                anc = anc.ancestor(repo[r])
+    for r in orset(repo, fullreposet(repo), x, order=anyorder):
+        if anc is None:
+            anc = repo[r]
+        else:
+            anc = anc.ancestor(repo[r])
 
     if anc is not None and anc.rev() in subset:
         return baseset([anc.rev()])

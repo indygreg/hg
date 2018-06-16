@@ -237,10 +237,8 @@ class cg1unpacker(object):
                     pos = next
             yield closechunk()
 
-    def _unpackmanifests(self, repo, revmap, trp, prog, numchanges):
-        # We know that we'll never have more manifests than we had
-        # changesets.
-        self.callback = prog(_('manifests'), numchanges)
+    def _unpackmanifests(self, repo, revmap, trp, prog):
+        self.callback = prog.increment
         # no need to check for empty manifest group here:
         # if the result of the merge of 1 and 2 is the same in 3 and 4,
         # no new manifest will be created and the manifest group will
@@ -248,7 +246,7 @@ class cg1unpacker(object):
         self.manifestheader()
         deltas = self.deltaiter()
         repo.manifestlog._revlog.addgroup(deltas, revmap, trp)
-        repo.ui.progress(_('manifests'), None)
+        prog.update(None)
         self.callback = None
 
     def apply(self, repo, tr, srctype, url, targetphase=phases.draft,
@@ -293,16 +291,9 @@ class cg1unpacker(object):
             # pull off the changeset group
             repo.ui.status(_("adding changesets\n"))
             clstart = len(cl)
-            class prog(object):
-                def __init__(self, step, total):
-                    self._step = step
-                    self._total = total
-                    self._count = 1
-                def __call__(self):
-                    repo.ui.progress(self._step, self._count, unit=_('chunks'),
-                                     total=self._total)
-                    self._count += 1
-            self.callback = prog(_('changesets'), expectedtotal)
+            progress = repo.ui.makeprogress(_('changesets'), unit=_('chunks'),
+                                            total=expectedtotal)
+            self.callback = progress.increment
 
             efiles = set()
             def onchangelog(cl, node):
@@ -318,12 +309,16 @@ class cg1unpacker(object):
                                   config='warn-empty-changegroup')
             clend = len(cl)
             changesets = clend - clstart
-            repo.ui.progress(_('changesets'), None)
+            progress.update(None)
             self.callback = None
 
             # pull off the manifest group
             repo.ui.status(_("adding manifests\n"))
-            self._unpackmanifests(repo, revmap, trp, prog, changesets)
+            # We know that we'll never have more manifests than we had
+            # changesets.
+            progress = repo.ui.makeprogress(_('manifests'), unit=_('chunks'),
+                                            total=changesets)
+            self._unpackmanifests(repo, revmap, trp, progress)
 
             needfiles = {}
             if repo.ui.configbool('server', 'validate'):
@@ -475,9 +470,8 @@ class cg3unpacker(cg2unpacker):
         node, p1, p2, deltabase, cs, flags = headertuple
         return node, p1, p2, deltabase, cs, flags
 
-    def _unpackmanifests(self, repo, revmap, trp, prog, numchanges):
-        super(cg3unpacker, self)._unpackmanifests(repo, revmap, trp, prog,
-                                                  numchanges)
+    def _unpackmanifests(self, repo, revmap, trp, prog):
+        super(cg3unpacker, self)._unpackmanifests(repo, revmap, trp, prog)
         for chunkdata in iter(self.filelogheader, {}):
             # If we get here, there are directory manifests in the changegroup
             d = chunkdata["filename"]

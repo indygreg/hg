@@ -707,7 +707,7 @@ class patchfile(object):
         if self.eolmode != 'strict' and eol and eol != '\n':
             rawlines = []
             for l in lines:
-                if l and l[-1] == '\n':
+                if l and l.endswith('\n'):
                     l = l[:-1] + eol
                 rawlines.append(l)
             lines = rawlines

@@ -142,7 +142,7 @@ def tolf(s, params, ui, **kwargs):
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
     if (ui.configbool('eol', 'fix-trailing-newline')
-        and s and s[-1] != '\n'):
+        and s and not s.endswith('\n')):
         s = s + '\n'
     return util.tolf(s)
 
@@ -153,7 +153,7 @@ def tocrlf(s, params, ui, **kwargs):
     if ui.configbool('eol', 'only-consistent') and inconsistenteol(s):
         return s
     if (ui.configbool('eol', 'fix-trailing-newline')
-        and s and s[-1] != '\n'):
+        and s and not s.endswith('\n')):
         s = s + '\n'
     return util.tocrlf(s)
 

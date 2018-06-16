@@ -123,6 +123,7 @@ test-encoding.t
 test-eol-add.t
 test-eol-clone.t
 test-eol-hook.t
+test-eol-patch.t
 test-eol-tag.t
 test-eol-update.t
 test-excessive-merge.t
@@ -199,6 +200,7 @@ test-http-clone-r.t
 test-http.t
 test-hybridencode.py
 test-identify.t
+test-import-bypass.t
 test-import-merge.t
 test-import-unknown.t
 test-import.t

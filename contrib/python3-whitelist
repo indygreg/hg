@@ -159,6 +159,7 @@ test-filebranch.t
 test-filecache.py
 test-filelog.py
 test-fileset-generated.t
+test-fileset.t
 test-fix-topology.t
 test-flags.t
 test-generaldelta.t

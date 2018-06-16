@@ -68,7 +68,7 @@ Test operators and basic patterns
   a2
   $ fileset 'a_b'
   $ fileset '"\xy"'
-  hg: parse error: invalid \x escape
+  hg: parse error: invalid \x escape* (glob)
   [255]
 
 Test invalid syntax
@@ -196,7 +196,7 @@ Test files properties
   c1
   b1
   $ fileset 'grep("missingparens(")'
-  hg: parse error: invalid match pattern: unbalanced parenthesis
+  hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \)).* (re)
   [255]
 
 #if execbit

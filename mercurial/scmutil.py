@@ -1285,6 +1285,27 @@ def wlocksub(repo, cmd, *args, **kwargs):
     return _locksub(repo, repo.currentwlock(), 'HG_WLOCK_LOCKER', cmd, *args,
                     **kwargs)
 
+class progress(object):
+    def __init__(self, ui, topic, unit="", total=None):
+        self.ui = ui
+        self.pos = 0
+        self.topic = topic
+        self.unit = unit
+        self.total = total
+
+    def update(self, pos, item="", total=None):
+        if total:
+            self.total = total
+        self.pos = pos
+        self._print(item)
+
+    def increment(self, step=1, item="", total=None):
+        self.update(self.pos + step, item, total)
+
+    def _print(self, item):
+        self.ui.progress(self.topic, self.pos, item, self.unit,
+                         self.total)
+
 def gdinitconfig(ui):
     """helper function to know if a repo should be created as general delta
     """

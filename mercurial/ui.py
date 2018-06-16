@@ -1596,6 +1596,10 @@ class ui(object):
         else:
             self.debug('%s:%s %d%s\n' % (topic, item, pos, unit))
 
+    def makeprogress(self, topic, unit="", total=None):
+        '''exists only so low-level modules won't need to import scmutil'''
+        return scmutil.progress(self, topic, unit, total)
+
     def log(self, service, *msg, **opts):
         '''hook for logging facility extensions
 

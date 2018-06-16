@@ -51,7 +51,6 @@ test-clone-cgi.t
 test-clone-pull-corruption.t
 test-clone-r.t
 test-clone-update-order.t
-test-command-template.t
 test-commit-amend.t
 test-commit-interactive.t
 test-commit-multiple.t
@@ -489,6 +488,7 @@ test-symlink-placeholder.t
 test-symlinks.t
 test-tag.t
 test-tags.t
+test-template-basic.t
 test-template-functions.t
 test-template-keywords.t
 test-template-map.t

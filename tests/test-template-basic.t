@@ -1,3 +1,6 @@
+Test template syntax and basic functionality
+============================================
+
   $ hg init a
   $ cd a
   $ echo a > a

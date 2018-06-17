@@ -281,6 +281,11 @@ Test wdir
   color:2:-:orange
   color:1:+:orange
 
+  $ hg grep --diff orange
+  color:3:+:orange
+  color:2:-:orange
+  color:1:+:orange
+
 test substring match: '^' should only match at the beginning
 
   $ hg grep '^.' --config extensions.color= --color debug
@@ -349,6 +354,10 @@ of just using revision numbers.
   color:3:-:red
   color:1:+:red
 
+  $ hg grep --diff red
+  color:3:-:red
+  color:1:+:red
+
 Issue3885: test that changing revision order does not alter the
 revisions printed, just their order.
 
@@ -360,6 +369,14 @@ revisions printed, just their order.
   color:3:-:red
   color:1:+:red
 
+  $ hg grep --diff red -r "all()"
+  color:1:+:red
+  color:3:-:red
+
+  $ hg grep --diff red -r "reverse(all())"
+  color:3:-:red
+  color:1:+:red
+
   $ cd ..
 
   $ hg init a
@@ -368,6 +385,9 @@ revisions printed, just their order.
   $ hg add binfile.bin
   $ hg ci -m 'add binfile.bin'
   $ hg grep "MaCam" --all
+  binfile.bin:0:+: Binary file matches
+
+  $ hg grep "MaCam" --diff
   binfile.bin:0:+: Binary file matches
 
   $ cd ..

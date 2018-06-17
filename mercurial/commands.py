@@ -2391,6 +2391,8 @@ def _stopgraft(ui, repo, graftstate):
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),
     ('', 'all', None, _('print all revisions that match')),
+    ('', 'diff', None, _('print all revisions when the term was introduced '
+                         'or removed')),
     ('a', 'text', None, _('treat all files as text')),
     ('f', 'follow', None,
      _('follow changeset history,'
@@ -2419,7 +2421,7 @@ def grep(ui, repo, pattern, *pats, **opts):
     file in which it finds a match. To get it to print every revision
     that contains a change in match status ("-" for a match that becomes
     a non-match, or "+" for a non-match that becomes a match), use the
-    --all flag.
+    --diff/--all flag.
 
     PATTERN can be any Python (roughly Perl-compatible) regular
     expression.
@@ -2431,6 +2433,7 @@ def grep(ui, repo, pattern, *pats, **opts):
     Returns 0 if a match is found, 1 otherwise.
     """
     opts = pycompat.byteskwargs(opts)
+    diff = opts.get('all') or opts.get('diff')
     reflags = re.M
     if opts.get('ignore_case'):
         reflags |= re.I
@@ -2527,7 +2530,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                 return ctx[fn].isbinary()
 
         fieldnamemap = {'filename': 'file', 'linenumber': 'line_number'}
-        if opts.get('all'):
+        if diff:
             iter = difflinestates(pstates, states)
         else:
             iter = [('', l) for l in states]
@@ -2540,7 +2543,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                 ('rev', rev, True),
                 ('linenumber', l.linenum, opts.get('line_number')),
             ]
-            if opts.get('all'):
+            if diff:
                 cols.append(('change', change, True))
             cols.extend([
                 ('user', formatuser(ctx.user()), opts.get('user')),
@@ -2644,7 +2647,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             if pstates or states:
                 r = display(fm, fn, ctx, pstates, states)
                 found = found or r
-                if r and not opts.get('all'):
+                if r and not diff:
                     skip[fn] = True
                     if copy:
                         skip[copy] = True

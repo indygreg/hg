@@ -495,38 +495,35 @@ def _emit2(repo, entries, totalfilesize):
     progress = repo.ui.makeprogress(_('bundle'), total=totalfilesize,
                                     unit=_('bytes'))
     progress.update(0)
-    with maketempcopies() as copy:
-        try:
-            # copy is delayed until we are in the try
-            entries = [_filterfull(e, copy, vfsmap) for e in entries]
-            yield None # this release the lock on the repository
-            seen = 0
+    with maketempcopies() as copy, progress:
+        # copy is delayed until we are in the try
+        entries = [_filterfull(e, copy, vfsmap) for e in entries]
+        yield None # this release the lock on the repository
+        seen = 0
 
-            for src, name, ftype, data in entries:
-                vfs = vfsmap[src]
-                yield src
-                yield util.uvarintencode(len(name))
-                if ftype == _fileappend:
-                    fp = vfs(name)
-                    size = data
-                elif ftype == _filefull:
-                    fp = open(data, 'rb')
-                    size = util.fstat(fp).st_size
-                try:
-                    yield util.uvarintencode(size)
-                    yield name
-                    if size <= 65536:
-                        chunks = (fp.read(size),)
-                    else:
-                        chunks = util.filechunkiter(fp, limit=size)
-                    for chunk in chunks:
-                        seen += len(chunk)
-                        progress.update(seen)
-                        yield chunk
-                finally:
-                    fp.close()
-        finally:
-            progress.complete()
+        for src, name, ftype, data in entries:
+            vfs = vfsmap[src]
+            yield src
+            yield util.uvarintencode(len(name))
+            if ftype == _fileappend:
+                fp = vfs(name)
+                size = data
+            elif ftype == _filefull:
+                fp = open(data, 'rb')
+                size = util.fstat(fp).st_size
+            try:
+                yield util.uvarintencode(size)
+                yield name
+                if size <= 65536:
+                    chunks = (fp.read(size),)
+                else:
+                    chunks = util.filechunkiter(fp, limit=size)
+                for chunk in chunks:
+                    seen += len(chunk)
+                    progress.update(seen)
+                    yield chunk
+            finally:
+                fp.close()
 
 def generatev2(repo):
     """Emit content for version 2 of a streaming clone.

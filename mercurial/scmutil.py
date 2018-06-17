@@ -1293,6 +1293,12 @@ class progress(object):
         self.unit = unit
         self.total = total
 
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.complete()
+
     def update(self, pos, item="", total=None):
         if total:
             self.total = total

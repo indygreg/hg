@@ -605,12 +605,10 @@ def _moduledoc(file):
 def _disabledhelp(path):
     '''retrieve help synopsis of a disabled extension (without importing)'''
     try:
-        file = open(path, 'rb')
+        with open(path, 'rb') as src:
+            doc = _moduledoc(src)
     except IOError:
         return
-    else:
-        doc = _moduledoc(file)
-        file.close()
 
     if doc: # extracting localized synopsis
         return gettext(doc)

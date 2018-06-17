@@ -605,7 +605,7 @@ def _moduledoc(file):
 def _disabledhelp(path):
     '''retrieve help synopsis of a disabled extension (without importing)'''
     try:
-        file = open(path)
+        file = open(path, 'rb')
     except IOError:
         return
     else:

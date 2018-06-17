@@ -932,6 +932,8 @@ Test boolean expression/literal passed to if function
   rev 0 is True
   $ hg log -r 0 -T '{if(0, "literal 0 is True as well")}\n'
   literal 0 is True as well
+  $ hg log -r 0 -T '{if(min(revset(r"0")), "0 of hybriditem is also True")}\n'
+  0 of hybriditem is also True
   $ hg log -r 0 -T '{if("", "", "empty string is False")}\n'
   empty string is False
   $ hg log -r 0 -T '{if(revset(r"0 - 0"), "", "empty list is False")}\n'

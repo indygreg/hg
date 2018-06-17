@@ -350,7 +350,8 @@ class hybriditem(mappable, wrapped):
         return gen
 
     def tobool(self, context, mapping):
-        return bool(self.tovalue(context, mapping))
+        w = makewrapped(context, mapping, self._value)
+        return w.tobool(context, mapping)
 
     def tovalue(self, context, mapping):
         return _unthunk(context, mapping, self._value)

@@ -61,7 +61,8 @@ def countrate(ui, repo, amap, *pats, **opts):
             tmpl.show(ctx)
             return ui.popbuffer()
 
-    state = {'count': 0}
+    progress = ui.makeprogress(_('analyzing'), unit=_('revisions'),
+                               total=len(repo))
     rate = {}
     df = False
     if opts.get('date'):
@@ -87,14 +88,12 @@ def countrate(ui, repo, amap, *pats, **opts):
             lines = changedlines(ui, repo, ctx1, ctx, fns)
             rate[key] = [r + l for r, l in zip(rate.get(key, (0, 0)), lines)]
 
-        state['count'] += 1
-        ui.progress(_('analyzing'), state['count'], total=len(repo),
-                    unit=_('revisions'))
+        progress.increment()
 
     for ctx in cmdutil.walkchangerevs(repo, m, opts, prep):
         continue
 
-    ui.progress(_('analyzing'), None)
+    progress.complete()
 
     return rate
 

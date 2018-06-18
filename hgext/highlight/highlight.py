@@ -44,7 +44,8 @@ SYNTAX_CSS = ('\n<link rel="stylesheet" href="{url}highlightcss" '
 def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
 
     # append a <link ...> to the syntax highlighting css
-    old_header = tmpl.load('header')
+    tmpl.load('header')
+    old_header = tmpl.cache['header']
     if SYNTAX_CSS not in old_header:
         new_header = old_header + SYNTAX_CSS
         tmpl.cache['header'] = new_header

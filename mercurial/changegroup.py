@@ -975,12 +975,13 @@ def makestream(repo, outgoing, version, source, fastpath=False,
 def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
     revisions = 0
     files = 0
+    progress = repo.ui.makeprogress(_('files'), unit=_('files'),
+                                    total=expectedfiles)
     for chunkdata in iter(source.filelogheader, {}):
         files += 1
         f = chunkdata["filename"]
         repo.ui.debug("adding %s revisions\n" % f)
-        repo.ui.progress(_('files'), files, unit=_('files'),
-                         total=expectedfiles)
+        progress.increment()
         fl = repo.file(f)
         o = len(fl)
         try:
@@ -1001,7 +1002,7 @@ def _addchangegroupfiles(repo, source, revmap, trp, expectedfiles, needfiles):
                         _("received spurious file revlog entry"))
             if not needs:
                 del needfiles[f]
-    repo.ui.progress(_('files'), None)
+    progress.complete()
 
     for f, needs in needfiles.iteritems():
         fl = repo.file(f)

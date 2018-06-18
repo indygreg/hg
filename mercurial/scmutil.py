@@ -1302,6 +1302,9 @@ class progress(object):
     def increment(self, step=1, item="", total=None):
         self.update(self.pos + step, item, total)
 
+    def complete(self):
+        self.update(None)
+
     def _print(self, item):
         self.ui.progress(self.topic, self.pos, item, self.unit,
                          self.total)

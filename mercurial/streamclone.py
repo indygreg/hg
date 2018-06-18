@@ -321,7 +321,7 @@ def generatebundlev1(repo, compression='UN'):
             progress.increment(step=len(chunk))
             yield chunk
 
-        progress.update(None)
+        progress.complete()
 
     return requirements, gen()
 
@@ -384,7 +384,7 @@ def consumev1(repo, fp, filecount, bytecount):
         elapsed = util.timer() - start
         if elapsed <= 0:
             elapsed = 0.001
-        progress.update(None)
+        progress.complete()
         repo.ui.status(_('transferred %s in %.1f seconds (%s/sec)\n') %
                        (util.bytecount(bytecount), elapsed,
                         util.bytecount(bytecount / elapsed)))
@@ -526,7 +526,7 @@ def _emit2(repo, entries, totalfilesize):
                 finally:
                     fp.close()
         finally:
-            progress.update(None)
+            progress.complete()
 
 def generatev2(repo):
     """Emit content for version 2 of a streaming clone.
@@ -624,7 +624,7 @@ def consumev2(repo, fp, filecount, filesize):
         repo.ui.status(_('transferred %s in %.1f seconds (%s/sec)\n') %
                        (util.bytecount(progress.pos), elapsed,
                         util.bytecount(progress.pos / elapsed)))
-        progress.update(None)
+        progress.complete()
 
 def applybundlev2(repo, fp, filecount, filesize, requirements):
     missingreqs = [r for r in requirements if r not in repo.supported]

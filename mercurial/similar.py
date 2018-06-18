@@ -44,7 +44,7 @@ def _findexactmatches(repo, added, removed):
                 break
 
     # Done
-    progress.update(None)
+    progress.complete()
 
 def _ctxdata(fctx):
     # lazily load text

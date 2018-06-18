@@ -1785,7 +1785,7 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
         actions[ACTION_MERGE] = [a for a in actions[ACTION_MERGE]
                                  if a[0] in mfiles]
 
-    progress.update(None)
+    progress.complete()
     return updateresult(updated, merged, removed, unresolved)
 
 def recordupdates(repo, actions, branchmerge):

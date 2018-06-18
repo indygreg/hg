@@ -2195,7 +2195,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
             except error.LookupError:
                 warnings.append(_("skipping missing subrepository: %s\n")
                                % join(subpath))
-    progress.update(None)
+    progress.complete()
 
     # warn about failure to delete explicit files/dirs
     deleteddirs = util.dirs(deleted)
@@ -2224,7 +2224,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                         % m.rel(f))
         # missing files will generate a warning elsewhere
         ret = 1
-    progress.update(None)
+    progress.complete()
 
     if force:
         list = modified + deleted + clean + added
@@ -2239,7 +2239,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                 warnings.append(_('not removing %s: file still exists\n')
                                 % m.rel(f))
             ret = 1
-        progress.update(None)
+        progress.complete()
     else:
         list = deleted + clean
         progress = ui.makeprogress(_('skipping'),
@@ -2255,7 +2255,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
             warnings.append(_("not removing %s: file has been marked for add"
                       " (use 'hg forget' to undo add)\n") % m.rel(f))
             ret = 1
-        progress.update(None)
+        progress.complete()
 
     list = sorted(list)
     progress = ui.makeprogress(_('deleting'), total=len(list),
@@ -2264,7 +2264,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
         if ui.verbose or not m.exact(f):
             progress.increment()
             ui.status(_('removing %s\n') % m.rel(f))
-    progress.update(None)
+    progress.complete()
 
     if not dryrun:
         with repo.wlock():

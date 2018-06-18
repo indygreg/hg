@@ -252,7 +252,7 @@ def findcommonheads(ui, local, remote,
     # return any heads in that case, so discard that
     result.discard(nullrev)
     elapsed = util.timer() - start
-    progress.update(None)
+    progress.complete()
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
     msg = ('found %d common and %d unknown server heads,'
            ' %d roundtrips in %.4fs\n')

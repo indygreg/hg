@@ -246,7 +246,7 @@ class cg1unpacker(object):
         self.manifestheader()
         deltas = self.deltaiter()
         repo.manifestlog._revlog.addgroup(deltas, revmap, trp)
-        prog.update(None)
+        prog.complete()
         self.callback = None
 
     def apply(self, repo, tr, srctype, url, targetphase=phases.draft,
@@ -309,7 +309,7 @@ class cg1unpacker(object):
                                   config='warn-empty-changegroup')
             clend = len(cl)
             changesets = clend - clstart
-            progress.update(None)
+            progress.complete()
             self.callback = None
 
             # pull off the manifest group

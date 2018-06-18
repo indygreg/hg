@@ -61,6 +61,7 @@ def findcommonincoming(repo, remote, heads=None, force=False):
 
     req = set(unknown)
     reqcnt = 0
+    progress = repo.ui.makeprogress(_('searching'), unit=_('queries'))
 
     # search through remote branches
     # a 'branch' here is a linear segment of history, with four parts:
@@ -107,7 +108,7 @@ def findcommonincoming(repo, remote, heads=None, force=False):
 
         if r:
             reqcnt += 1
-            repo.ui.progress(_('searching'), reqcnt, unit=_('queries'))
+            progress.increment()
             repo.ui.debug("request %d: %s\n" %
                         (reqcnt, " ".join(map(short, r))))
             for p in xrange(0, len(r), 10):
@@ -125,7 +126,7 @@ def findcommonincoming(repo, remote, heads=None, force=False):
     while search:
         newsearch = []
         reqcnt += 1
-        repo.ui.progress(_('searching'), reqcnt, unit=_('queries'))
+        progress.increment()
 
         with remote.commandexecutor() as e:
             between = e.callcommand('between', {'pairs': search}).result()
@@ -166,7 +167,7 @@ def findcommonincoming(repo, remote, heads=None, force=False):
     repo.ui.debug("found new changesets starting at " +
                  " ".join([short(f) for f in fetch]) + "\n")
 
-    repo.ui.progress(_('searching'), None)
+    progress.complete()
     repo.ui.debug("%d total queries\n" % reqcnt)
 
     return base, list(fetch), heads

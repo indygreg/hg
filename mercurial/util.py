@@ -1631,31 +1631,30 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
         except shutil.Error as inst:
             raise error.Abort(str(inst))
 
-def copyfiles(src, dst, hardlink=None, progress=lambda t, pos: None):
+def copyfiles(src, dst, hardlink=None, progress=None):
     """Copy a directory tree using hardlinks if possible."""
     num = 0
 
-    gettopic = lambda: hardlink and _('linking') or _('copying')
+    def settopic():
+        if progress:
+            progress.topic = _('linking') if hardlink else _('copying')
 
     if os.path.isdir(src):
         if hardlink is None:
             hardlink = (os.stat(src).st_dev ==
                         os.stat(os.path.dirname(dst)).st_dev)
-        topic = gettopic()
+        settopic()
         os.mkdir(dst)
         for name, kind in listdir(src):
             srcname = os.path.join(src, name)
             dstname = os.path.join(dst, name)
-            def nprog(t, pos):
-                if pos is not None:
-                    return progress(t, pos + num)
-            hardlink, n = copyfiles(srcname, dstname, hardlink, progress=nprog)
+            hardlink, n = copyfiles(srcname, dstname, hardlink, progress)
             num += n
     else:
         if hardlink is None:
             hardlink = (os.stat(os.path.dirname(src)).st_dev ==
                         os.stat(os.path.dirname(dst)).st_dev)
-        topic = gettopic()
+        settopic()
 
         if hardlink:
             try:
@@ -1666,8 +1665,8 @@ def copyfiles(src, dst, hardlink=None, progress=lambda t, pos: None):
         else:
             shutil.copy(src, dst)
         num += 1
-        progress(topic, num)
-    progress(topic, None)
+        if progress:
+            progress.increment()
 
     return hardlink, num
 

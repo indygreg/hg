@@ -750,9 +750,10 @@ class svn_source(converter_source):
             self.module = new_module
             self.reparent(self.module)
 
+        progress = self.ui.makeprogress(_('scanning paths'), unit=_('paths'),
+                                        total=len(paths))
         for i, (path, ent) in enumerate(paths):
-            self.ui.progress(_('scanning paths'), i, item=path,
-                             total=len(paths), unit=_('paths'))
+            progress.update(i, item=path)
             entrypath = self.getrelpath(path)
 
             kind = self._checkpath(entrypath, revnum)
@@ -838,7 +839,7 @@ class svn_source(converter_source):
                     copytopath = self.getrelpath(copytopath)
                     copies[self.recode(copytopath)] = self.recode(childpath)
 
-        self.ui.progress(_('scanning paths'), None)
+        progress.complete()
         changed.update(removed)
         return (list(changed), removed, copies)
 

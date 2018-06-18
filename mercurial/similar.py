@@ -75,10 +75,10 @@ def _findsimilarmatches(repo, added, removed, threshold):
     (before, after, score) tuples of partial matches.
     '''
     copies = {}
-    for i, r in enumerate(removed):
-        repo.ui.progress(_('searching for similar files'), i,
-                         total=len(removed), unit=_('files'))
-
+    progress = repo.ui.makeprogress(_('searching for similar files'),
+                         unit=_('files'), total=len(removed))
+    for r in removed:
+        progress.increment()
         data = None
         for a in added:
             bestscore = copies.get(a, (None, threshold))[1]
@@ -87,7 +87,7 @@ def _findsimilarmatches(repo, added, removed, threshold):
             myscore = _score(a, data)
             if myscore > bestscore:
                 copies[a] = (r, myscore)
-    repo.ui.progress(_('searching'), None)
+    progress.complete()
 
     for dest, v in copies.iteritems():
         source, bscore = v

@@ -405,7 +405,8 @@ class _gitlfsremote(object):
         if len(objects) > 1:
             self.ui.note(_('lfs: need to transfer %d objects (%s)\n')
                          % (len(objects), util.bytecount(total)))
-        self.ui.progress(topic, 0, total=total)
+        progress = self.ui.makeprogress(topic, total=total)
+        progress.update(0)
         def transfer(chunk):
             for obj in chunk:
                 objsize = obj.get('size', 0)
@@ -443,9 +444,9 @@ class _gitlfsremote(object):
         for _one, oid in oids:
             processed += sizes[oid]
             blobs += 1
-            self.ui.progress(topic, processed, total=total)
+            progress.update(processed)
             self.ui.note(_('lfs: processed: %s\n') % oid)
-        self.ui.progress(topic, pos=None, total=total)
+        progress.complete()
 
         if blobs > 0:
             if action == 'upload':

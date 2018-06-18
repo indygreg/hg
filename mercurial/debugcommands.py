@@ -181,15 +181,9 @@ def debugbuilddag(ui, repo, text=None,
         initialmergedlines.append("")
 
     tags = []
-
-    wlock = lock = tr = None
     progress = ui.makeprogress(_('building'), unit=_('revisions'),
                                total=total)
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
-        tr = repo.transaction("builddag")
-
+    with progress, repo.wlock(), repo.lock(), repo.transaction("builddag"):
         at = -1
         atbranch = 'default'
         nodeids = []
@@ -268,13 +262,9 @@ def debugbuilddag(ui, repo, text=None,
                 ui.note(('branch %s\n' % data))
                 atbranch = data
             progress.update(id)
-        tr.close()
 
         if tags:
             repo.vfs.write("localtags", "".join(tags))
-    finally:
-        progress.complete()
-        release(tr, lock, wlock)
 
 def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
     indent_string = ' ' * indent

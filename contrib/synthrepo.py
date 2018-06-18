@@ -219,6 +219,7 @@ def analyze(ui, repo, *revs, **opts):
             filesadded[fileadds] += 1
             dirsadded[diradds] += 1
             filesremoved[fileremoves] += 1
+        progress.complete()
 
     invchildren = zerodict()
 
@@ -483,6 +484,7 @@ def synthesize(ui, repo, descpath, **opts):
         heads.add(repo.changelog.rev(newnode))
         heads.discard(r1)
         heads.discard(r2)
+    progress.complete()
 
     lock.release()
     wlock.release()

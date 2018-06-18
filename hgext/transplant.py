@@ -682,7 +682,7 @@ def _dotransplant(ui, repo, *revs, **opts):
     sourcerepo = opts.get('source')
     if sourcerepo:
         peer = hg.peer(repo, opts, ui.expandpath(sourcerepo))
-        heads = map(peer.lookup, opts.get('branch', ()))
+        heads = pycompat.maplist(peer.lookup, opts.get('branch', ()))
         target = set(heads)
         for r in revs:
             try:
@@ -693,7 +693,7 @@ def _dotransplant(ui, repo, *revs, **opts):
                                     onlyheads=sorted(target), force=True)
     else:
         source = repo
-        heads = map(source.lookup, opts.get('branch', ()))
+        heads = pycompat.maplist(source.lookup, opts.get('branch', ()))
         cleanupfn = None
 
     try:
@@ -708,7 +708,7 @@ def _dotransplant(ui, repo, *revs, **opts):
             matchfn = lambda x: tf(x) and x not in prune
         else:
             matchfn = tf
-        merges = map(source.lookup, opts.get('merge', ()))
+        merges = pycompat.maplist(source.lookup, opts.get('merge', ()))
         revmap = {}
         if revs:
             for r in scmutil.revrange(source, revs):

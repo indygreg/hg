@@ -80,6 +80,9 @@ log-like templating
 
   $ hg annotate -T'{lines % "{rev}:{line_number}: {line}"}' a
   0:1: a
+  $ hg annotate -Ta a \
+  > --config templates.a='"{lines % "{rev}:{line_number}: {line}"}"'
+  0:1: a
 
   $ cat <<EOF >>a
   > a

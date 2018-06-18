@@ -420,7 +420,7 @@ class templateformatter(baseformatter):
 
     @util.propertycache
     def _symbolsused(self):
-        return self._t.symbolsuseddefault()
+        return self._t.symbolsused(self._tref)
 
     def contexthint(self, datafields):
         '''set of context object keys to be required by the template, given

@@ -751,6 +751,7 @@ def email(ui, repo, *revs, **opts):
     sender = mail.addressencode(ui, sender, _charsets, opts.get('test'))
     sendmail = None
     firstpatch = None
+    progress = ui.makeprogress(_('sending'), unit=_('emails'), total=len(msgs))
     for i, (m, subj, ds) in enumerate(msgs):
         try:
             m['Message-Id'] = genmsgid(m['X-Mercurial-Node'])
@@ -791,8 +792,7 @@ def email(ui, repo, *revs, **opts):
             if not sendmail:
                 sendmail = mail.connect(ui, mbox=mbox)
             ui.status(_('sending '), subj, ' ...\n')
-            ui.progress(_('sending'), i, item=subj, total=len(msgs),
-                        unit=_('emails'))
+            progress.update(i, item=subj)
             if not mbox:
                 # Exim does not remove the Bcc field
                 del m['Bcc']
@@ -801,4 +801,4 @@ def email(ui, repo, *revs, **opts):
             generator.flatten(m, 0)
             sendmail(sender_addr, to + bcc + cc, fp.getvalue())
 
-    ui.progress(_('sending'), None)
+    progress.complete()

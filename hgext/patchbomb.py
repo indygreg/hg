@@ -801,5 +801,4 @@ def email(ui, repo, *revs, **opts):
             generator.flatten(m, 0)
             sendmail(sender_addr, to + bcc + cc, fp.getvalue())
 
-    ui.progress(_('writing'), None)
     ui.progress(_('sending'), None)

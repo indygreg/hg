@@ -490,6 +490,7 @@ test-symlinks.t
 test-tag.t
 test-tags.t
 test-template-filters.t
+test-transplant.t
 test-treemanifest.t
 test-ui-color.py
 test-ui-config.py

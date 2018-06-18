@@ -1695,7 +1695,7 @@ class gitsubrepo(abstractsubrepo):
             tab = line.find('\t')
             if tab == -1:
                 continue
-            status, f = line[tab - 1], line[tab + 1:]
+            status, f = line[tab - 1:tab], line[tab + 1:]
             if status == 'M':
                 modified.append(f)
             elif status == 'A':

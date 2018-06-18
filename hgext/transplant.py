@@ -523,7 +523,8 @@ def browserevs(ui, repo, nodes, opts):
         displayer.show(repo[node])
         action = None
         while not action:
-            action = 'ynmpcq?'[ui.promptchoice(prompt)]
+            choice = ui.promptchoice(prompt)
+            action = 'ynmpcq?'[choice:choice + 1]
             if action == '?':
                 for c, t in ui.extractchoices(prompt)[1]:
                     ui.write('%s: %s\n' % (c, t))

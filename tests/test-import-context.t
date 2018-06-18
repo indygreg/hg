@@ -10,7 +10,7 @@ Test applying context diffs
   > fp = open(path, 'wb')
   > for i, pattern in enumerate(patterns):
   >     count = int(pattern[0:-1])
-  >     char = pattern[-1] + '\n'
+  >     char = pattern[-1].encode('utf8') + b'\n'
   >     if not lasteol and i == len(patterns) - 1:
   >         fp.write((char*count)[:-1])
   >     else:

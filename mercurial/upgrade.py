@@ -498,10 +498,9 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
              (util.bytecount(srcsize), util.bytecount(srcrawsize))))
 
     # Used to keep track of progress.
-    progress = []
+    progress = None
     def oncopiedrevision(rl, rev, node):
-        progress[1] += 1
-        srcrepo.ui.progress(progress[0], progress[1], total=progress[2])
+        progress.increment()
 
     # Do the actual copying.
     # FUTURE this operation can be farmed off to worker processes.
@@ -523,7 +522,8 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
                      (crevcount, util.bytecount(csrcsize),
                       util.bytecount(crawsize)))
             seen.add('c')
-            progress[:] = [_('changelog revisions'), 0, crevcount]
+            progress = srcrepo.ui.makeprogress(_('changelog revisions'),
+                                               total=crevcount)
         elif isinstance(oldrl, manifest.manifestrevlog) and 'm' not in seen:
             ui.write(_('finished migrating %d filelog revisions across %d '
                        'filelogs; change in size: %s\n') %
@@ -535,8 +535,9 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
                       util.bytecount(mrawsize)))
             seen.add('m')
             if progress:
-                ui.progress(progress[0], None)
-            progress[:] = [_('manifest revisions'), 0, mrevcount]
+                progress.complete()
+            progress = srcrepo.ui.makeprogress(_('manifest revisions'),
+                                               total=mrevcount)
         elif 'f' not in seen:
             ui.write(_('migrating %d filelogs containing %d revisions '
                        '(%s in store; %s tracked data)\n') %
@@ -544,10 +545,10 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
                       util.bytecount(frawsize)))
             seen.add('f')
             if progress:
-                ui.progress(progress[0], None)
-            progress[:] = [_('file revisions'), 0, frevcount]
+                progress.complete()
+            progress = srcrepo.ui.makeprogress(_('file revisions'),
+                                               total=frevcount)
 
-        ui.progress(progress[0], progress[1], total=progress[2])
 
         ui.note(_('cloning %d revisions from %s\n') % (len(oldrl), unencoded))
         oldrl.clone(tr, newrl, addrevisioncb=oncopiedrevision,
@@ -568,7 +569,7 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
         else:
             fdstsize += datasize
 
-    ui.progress(progress[0], None)
+    progress.complete()
 
     ui.write(_('finished migrating %d changelog revisions; change in size: '
                '%s\n') % (crevcount, util.bytecount(cdstsize - csrcsize)))

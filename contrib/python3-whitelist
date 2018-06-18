@@ -203,6 +203,7 @@ test-http-clone-r.t
 test-http.t
 test-hybridencode.py
 test-identify.t
+test-impexp-branch.t
 test-import-bypass.t
 test-import-eol.t
 test-import-merge.t
@@ -342,6 +343,7 @@ test-obsolete-tag-cache.t
 test-pager.t
 test-parents.t
 test-parseindex2.py
+test-patch-offset.t
 test-patch.t
 test-pathconflicts-merge.t
 test-pathconflicts-update.t
@@ -388,6 +390,7 @@ test-push-http.t
 test-push-warn.t
 test-push.t
 test-pushvars.t
+test-qrecord.t
 test-rebase-abort.t
 test-rebase-base-flag.t
 test-rebase-bookmarks.t
@@ -434,6 +437,7 @@ test-revlog-group-emptyiter.t
 test-revlog-mmapindex.t
 test-revlog-packentry.t
 test-revlog-raw.py
+test-revlog-v2.t
 test-revset-dirstate-parents.t
 test-revset-legacy-lookup.t
 test-revset-outgoing.t

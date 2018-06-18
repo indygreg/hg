@@ -534,6 +534,8 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
                      (mcount, mrevcount, util.bytecount(msrcsize),
                       util.bytecount(mrawsize)))
             seen.add('m')
+            if progress:
+                ui.progress(progress[0], None)
             progress[:] = [_('manifest revisions'), 0, mrevcount]
         elif 'f' not in seen:
             ui.write(_('migrating %d filelogs containing %d revisions '
@@ -541,6 +543,8 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
                      (fcount, frevcount, util.bytecount(fsrcsize),
                       util.bytecount(frawsize)))
             seen.add('f')
+            if progress:
+                ui.progress(progress[0], None)
             progress[:] = [_('file revisions'), 0, frevcount]
 
         ui.progress(progress[0], progress[1], total=progress[2])

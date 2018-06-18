@@ -94,6 +94,7 @@ def collect(src, ui):
     # mozilla-central as of 2010-06-10 had a ratio of just over 7:5.
     total = live * 3 // 2
     src = src.store.path
+    progress = ui.makeprogress(_('collecting'), unit=_('files'), total=total)
     pos = 0
     ui.status(_("tip has %d files, estimated total number of files: %d\n")
               % (live, total))
@@ -108,9 +109,9 @@ def collect(src, ui):
                 continue
             pos += 1
             candidates.append((os.path.join(relpath, filename), st))
-            ui.progress(_('collecting'), pos, filename, _('files'), total)
+            progress.update(pos, item=filename)
 
-    ui.progress(_('collecting'), None)
+    progress.complete()
     ui.status(_('collected %d candidate storage files\n') % len(candidates))
     return candidates
 
@@ -132,7 +133,8 @@ def prune(candidates, src, dst, ui):
         return st
 
     targets = []
-    total = len(candidates)
+    progress = ui.makeprogress(_('pruning'), unit=_('files'),
+                               total=len(candidates))
     pos = 0
     for fn, st in candidates:
         pos += 1
@@ -143,9 +145,9 @@ def prune(candidates, src, dst, ui):
             ui.debug('not linkable: %s\n' % fn)
             continue
         targets.append((fn, ts.st_size))
-        ui.progress(_('pruning'), pos, fn, _('files'), total)
+        progress.update(pos, item=fn)
 
-    ui.progress(_('pruning'), None)
+    progress.complete()
     ui.status(_('pruned down to %d probably relinkable files\n') % len(targets))
     return targets
 
@@ -164,8 +166,9 @@ def do_relink(src, dst, files, ui):
     relinked = 0
     savedbytes = 0
 
+    progress = ui.makeprogress(_('relinking'), unit=_('files'),
+                               total=len(files))
     pos = 0
-    total = len(files)
     for f, sz in files:
         pos += 1
         source = os.path.join(src, f)
@@ -186,13 +189,13 @@ def do_relink(src, dst, files, ui):
             continue
         try:
             relinkfile(source, tgt)
-            ui.progress(_('relinking'), pos, f, _('files'), total)
+            progress.update(pos, item=f)
             relinked += 1
             savedbytes += sz
         except OSError as inst:
             ui.warn('%s: %s\n' % (tgt, stringutil.forcebytestr(inst)))
 
-    ui.progress(_('relinking'), None)
+    progress.complete()
 
     ui.status(_('relinked %d files (%s reclaimed)\n') %
               (relinked, util.bytecount(savedbytes)))

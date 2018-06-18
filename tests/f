@@ -84,7 +84,7 @@ def visit(opts, filenames, outfile):
             if opts.mode and not islink:
                 facts.append(b'mode=%o' % (stat.st_mode & 0o777))
             if opts.links:
-                facts.append(b'links=%s' % stat.st_nlink)
+                facts.append(b'links=%d' % stat.st_nlink)
             if opts.newer:
                 # mtime might be in whole seconds so newer file might be same
                 if stat.st_mtime >= os.stat(opts.newer).st_mtime:

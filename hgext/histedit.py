@@ -1149,8 +1149,6 @@ def _continuehistedit(ui, repo, state):
     # even if there's an exception before the first transaction serialize.
     state.write()
 
-    total = len(state.actions)
-    pos = 0
     tr = None
     # Don't use singletransaction by default since it rolls the entire
     # transaction back if an unexpected exception happens (like a
@@ -1160,13 +1158,13 @@ def _continuehistedit(ui, repo, state):
         # and reopen a transaction. For example, if the action executes an
         # external process it may choose to commit the transaction first.
         tr = repo.transaction('histedit')
-    with util.acceptintervention(tr):
+    progress = ui.makeprogress(_("editing"), unit=_('changes'),
+                               total=len(state.actions))
+    with progress, util.acceptintervention(tr):
         while state.actions:
             state.write(tr=tr)
             actobj = state.actions[0]
-            pos += 1
-            ui.progress(_("editing"), pos, actobj.torule(),
-                        _('changes'), total)
+            progress.increment(item=actobj.torule())
             ui.debug('histedit: processing %s %s\n' % (actobj.verb,\
                                                        actobj.torule()))
             parentctx, replacement_ = actobj.run()
@@ -1175,7 +1173,6 @@ def _continuehistedit(ui, repo, state):
             state.actions.pop(0)
 
     state.write()
-    ui.progress(_("editing"), None)
 
 def _finishhistedit(ui, repo, state, fm):
     """This action runs when histedit is finishing its session"""

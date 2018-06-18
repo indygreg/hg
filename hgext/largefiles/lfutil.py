@@ -501,9 +501,10 @@ def getlfilestoupdate(oldstandins, newstandins):
     return filelist
 
 def getlfilestoupload(repo, missing, addfunc):
+    progress = repo.ui.makeprogress(_('finding outgoing largefiles'),
+                                    unit=_('revisions'), total=len(missing))
     for i, n in enumerate(missing):
-        repo.ui.progress(_('finding outgoing largefiles'), i,
-            unit=_('revisions'), total=len(missing))
+        progress.update(i)
         parents = [p for p in repo[n].parents() if p != node.nullid]
 
         oldlfstatus = repo.lfstatus
@@ -530,7 +531,7 @@ def getlfilestoupload(repo, missing, addfunc):
         for fn in files:
             if isstandin(fn) and fn in ctx:
                 addfunc(fn, readasstandin(ctx[fn]))
-    repo.ui.progress(_('finding outgoing largefiles'), None)
+    progress.complete()
 
 def updatestandinsbymatch(repo, match):
     '''Update standins in the working directory according to specified match

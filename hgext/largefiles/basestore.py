@@ -62,9 +62,10 @@ class basestore(object):
 
         at = 0
         available = self.exists(set(hash for (_filename, hash) in files))
+        progress = ui.makeprogress(_('getting largefiles'), unit=_('files'),
+                                   total=len(files))
         for filename, hash in files:
-            ui.progress(_('getting largefiles'), at, unit=_('files'),
-                total=len(files))
+            progress.update(at)
             at += 1
             ui.note(_('getting %s:%s\n') % (filename, hash))
 
@@ -79,7 +80,7 @@ class basestore(object):
             else:
                 missing.append(filename)
 
-        ui.progress(_('getting largefiles'), None)
+        progress.complete()
         return (success, missing)
 
     def _gethash(self, filename, hash):

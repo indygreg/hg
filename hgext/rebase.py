@@ -433,13 +433,10 @@ class rebaseruntime(object):
             self.storestatus(tr)
 
         cands = [k for k, v in self.state.iteritems() if v == revtodo]
-        total = len(cands)
-        posholder = [0]
+        p = repo.ui.makeprogress(_("rebasing"), unit=_('changesets'),
+                                 total=len(cands))
         def progress(ctx):
-            posholder[0] += 1
-            self.repo.ui.progress(_("rebasing"), posholder[0],
-                                  ("%d:%s" % (ctx.rev(), ctx)),
-                                  _('changesets'), total)
+            p.increment(item=("%d:%s" % (ctx.rev(), ctx)))
         allowdivergence = self.ui.configbool(
             'experimental', 'evolution.allowdivergence')
         for subset in sortsource(self.destmap):
@@ -452,7 +449,7 @@ class rebaseruntime(object):
                 )
             for rev in sortedrevs:
                 self._rebasenode(tr, rev, allowdivergence, progress)
-        ui.progress(_('rebasing'), None)
+        p.complete()
         ui.note(_('rebase merging completed\n'))
 
     def _concludenode(self, rev, p1, p2, editor, commitmsg=None):

@@ -178,9 +178,10 @@ class verifier(object):
         filelinkrevs = {}
         seen = {}
         self.checklog(cl, "changelog", 0)
-        total = len(repo)
+        progress = ui.makeprogress(_('checking'), unit=_('changesets'),
+                                   total=len(repo))
         for i in repo:
-            ui.progress(_('checking'), i, total=total, unit=_('changesets'))
+            progress.update(i)
             n = cl.node(i)
             self.checkentry(cl, i, n, seen, [i], "changelog")
 
@@ -195,7 +196,7 @@ class verifier(object):
             except Exception as inst:
                 self.refersmf = True
                 self.exc(i, _("unpacking changeset %s") % short(n), inst)
-        ui.progress(_('checking'), None)
+        progress.complete()
         return mflinkrevs, filelinkrevs
 
     def _verifymanifest(self, mflinkrevs, dir="", storefiles=None,
@@ -223,10 +224,11 @@ class verifier(object):
             # Do not check manifest if there are only changelog entries with
             # null manifests.
             self.checklog(mf, label, 0)
-        total = len(mf)
+        progress = ui.makeprogress(_('checking'), unit=_('manifests'),
+                                   total=len(mf))
         for i in mf:
             if not dir:
-                ui.progress(_('checking'), i, total=total, unit=_('manifests'))
+                progress.update(i)
             n = mf.node(i)
             lr = self.checkentry(mf, i, n, seen, mflinkrevs.get(n, []), label)
             if n in mflinkrevs:
@@ -257,7 +259,7 @@ class verifier(object):
             except Exception as inst:
                 self.exc(lr, _("reading delta %s") % short(n), inst, label)
         if not dir:
-            ui.progress(_('checking'), None)
+            progress.complete()
 
         if self.havemf:
             for c, m in sorted([(c, m) for m in mflinkrevs
@@ -303,19 +305,17 @@ class verifier(object):
         ui.status(_("crosschecking files in changesets and manifests\n"))
 
         total = len(filelinkrevs) + len(filenodes)
-        count = 0
+        progress = ui.makeprogress(_('crosschecking'), total=total)
         if self.havemf:
             for f in sorted(filelinkrevs):
-                count += 1
-                ui.progress(_('crosschecking'), count, total=total)
+                progress.increment()
                 if f not in filenodes:
                     lr = filelinkrevs[f][0]
                     self.err(lr, _("in changeset but not in manifest"), f)
 
         if self.havecl:
             for f in sorted(filenodes):
-                count += 1
-                ui.progress(_('crosschecking'), count, total=total)
+                progress.increment()
                 if f not in filelinkrevs:
                     try:
                         fl = repo.file(f)
@@ -324,7 +324,7 @@ class verifier(object):
                         lr = None
                     self.err(lr, _("in manifest but not in changeset"), f)
 
-        ui.progress(_('crosschecking'), None)
+        progress.complete()
 
     def _verifyfiles(self, filenodes, filelinkrevs):
         repo = self.repo
@@ -342,10 +342,11 @@ class verifier(object):
                 storefiles.add(_normpath(f))
 
         files = sorted(set(filenodes) | set(filelinkrevs))
-        total = len(files)
         revisions = 0
+        progress = ui.makeprogress(_('checking'), unit=_('files'),
+                                   total=len(files))
         for i, f in enumerate(files):
-            ui.progress(_('checking'), i, item=f, total=total, unit=_('files'))
+            progress.update(i, item=f)
             try:
                 linkrevs = filelinkrevs[f]
             except KeyError:
@@ -479,7 +480,7 @@ class verifier(object):
                 for lr, node in sorted(fns):
                     self.err(lr, _("manifest refers to unknown revision %s") %
                              short(node), f)
-        ui.progress(_('checking'), None)
+        progress.complete()
 
         if self.warnorphanstorefiles:
             for f in sorted(storefiles):

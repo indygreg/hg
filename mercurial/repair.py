@@ -355,10 +355,10 @@ def rebuildfncache(ui, repo):
         newentries = set()
         seenfiles = set()
 
-        repolen = len(repo)
+        progress = ui.makeprogress(_('rebuilding'), unit=_('changesets'),
+                                   total=len(repo))
         for rev in repo:
-            ui.progress(_('rebuilding'), rev, total=repolen,
-                        unit=_('changesets'))
+            progress.update(rev)
 
             ctx = repo[rev]
             for f in ctx.files():
@@ -375,7 +375,7 @@ def rebuildfncache(ui, repo):
                 if repo.store._exists(d):
                     newentries.add(d)
 
-        ui.progress(_('rebuilding'), None)
+        progress.complete()
 
         if 'treemanifest' in repo.requirements: # safe but unnecessary otherwise
             for dir in util.dirs(seenfiles):

@@ -199,7 +199,7 @@ class verifier(object):
         return mflinkrevs, filelinkrevs
 
     def _verifymanifest(self, mflinkrevs, dir="", storefiles=None,
-                        progress=None):
+                        subdirprogress=None):
         repo = self.repo
         ui = self.ui
         match = self.match
@@ -217,8 +217,8 @@ class verifier(object):
             label = dir
             revlogfiles = mf.files()
             storefiles.difference_update(revlogfiles)
-            if progress: # should be true since we're in a subdirectory
-                progress()
+            if subdirprogress: # should be true since we're in a subdirectory
+                subdirprogress.increment()
         if self.refersmf:
             # Do not check manifest if there are only changelog entries with
             # null manifests.
@@ -280,21 +280,17 @@ class verifier(object):
                 elif (size > 0 or not revlogv1) and f.startswith('meta/'):
                     storefiles.add(_normpath(f))
                     subdirs.add(os.path.dirname(f))
-            subdircount = len(subdirs)
-            currentsubdir = [0]
-            def progress():
-                currentsubdir[0] += 1
-                ui.progress(_('checking'), currentsubdir[0], total=subdircount,
-                            unit=_('manifests'))
+            subdirprogress = ui.makeprogress(_('checking'), unit=_('manifests'),
+                                             total=len(subdirs))
 
         for subdir, linkrevs in subdirnodes.iteritems():
             subdirfilenodes = self._verifymanifest(linkrevs, subdir, storefiles,
-                                                   progress)
+                                                   subdirprogress)
             for f, onefilenodes in subdirfilenodes.iteritems():
                 filenodes.setdefault(f, {}).update(onefilenodes)
 
         if not dir and subdirnodes:
-            ui.progress(_('checking'), None)
+            subdirprogress.complete()
             if self.warnorphanstorefiles:
                 for f in sorted(storefiles):
                     self.warn(_("warning: orphan data file '%s'") % f)

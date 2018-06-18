@@ -183,6 +183,8 @@ def debugbuilddag(ui, repo, text=None,
     tags = []
 
     wlock = lock = tr = None
+    progress = ui.makeprogress(_('building'), unit=_('revisions'),
+                               total=total)
     try:
         wlock = repo.wlock()
         lock = repo.lock()
@@ -192,7 +194,7 @@ def debugbuilddag(ui, repo, text=None,
         atbranch = 'default'
         nodeids = []
         id = 0
-        ui.progress(_('building'), id, unit=_('revisions'), total=total)
+        progress.update(id)
         for type, data in dagparser.parsedag(text):
             if type == 'n':
                 ui.note(('node %s\n' % pycompat.bytestr(data)))
@@ -265,13 +267,13 @@ def debugbuilddag(ui, repo, text=None,
             elif type == 'a':
                 ui.note(('branch %s\n' % data))
                 atbranch = data
-            ui.progress(_('building'), id, unit=_('revisions'), total=total)
+            progress.update(id)
         tr.close()
 
         if tags:
             repo.vfs.write("localtags", "".join(tags))
     finally:
-        ui.progress(_('building'), None)
+        progress.complete()
         release(tr, lock, wlock)
 
 def _debugchangegroup(ui, gen, all=None, indent=0, **opts):

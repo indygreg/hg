@@ -516,7 +516,6 @@ class cg1packer(object):
             reorder = stringutil.parsebool(reorder)
         self._repo = repo
         self._reorder = reorder
-        self._progress = repo.ui.progress
         if self._repo.ui.verbose and not self._repo.ui.debugflag:
             self._verbosenote = self._repo.ui.note
         else:
@@ -565,18 +564,20 @@ class cg1packer(object):
         revs.insert(0, p)
 
         # build deltas
-        total = len(revs) - 1
-        msgbundling = _('bundling')
+        progress = None
+        if units is not None:
+            progress = self._repo.ui.makeprogress(_('bundling'), unit=units,
+                                                  total=(len(revs) - 1))
         for r in xrange(len(revs) - 1):
-            if units is not None:
-                self._progress(msgbundling, r + 1, unit=units, total=total)
+            if progress:
+                progress.update(r + 1)
             prev, curr = revs[r], revs[r + 1]
             linknode = lookup(revlog.node(curr))
             for c in self.revchunk(revlog, curr, prev, linknode):
                 yield c
 
-        if units is not None:
-            self._progress(msgbundling, None)
+        if progress:
+            progress.complete()
         yield self.close()
 
     # filter any nodes that claim to be part of the known set
@@ -742,12 +743,8 @@ class cg1packer(object):
     # The 'source' parameter is useful for extensions
     def generatefiles(self, changedfiles, linknodes, commonrevs, source):
         repo = self._repo
-        progress = self._progress
-        msgbundling = _('bundling')
-
-        total = len(changedfiles)
-        # for progress output
-        msgfiles = _('files')
+        progress = repo.ui.makeprogress(_('bundling'), unit=_('files'),
+                                        total=len(changedfiles))
         for i, fname in enumerate(sorted(changedfiles)):
             filerevlog = repo.file(fname)
             if not filerevlog:
@@ -762,8 +759,7 @@ class cg1packer(object):
 
             filenodes = self.prune(filerevlog, linkrevnodes, commonrevs)
             if filenodes:
-                progress(msgbundling, i + 1, item=fname, unit=msgfiles,
-                         total=total)
+                progress.update(i + 1, item=fname)
                 h = self.fileheader(fname)
                 size = len(h)
                 yield h
@@ -771,7 +767,7 @@ class cg1packer(object):
                     size += len(chunk)
                     yield chunk
                 self._verbosenote(_('%8.i  %s\n') % (size, fname))
-        progress(msgbundling, None)
+        progress.complete()
 
     def deltaparent(self, revlog, rev, p1, p2, prev):
         if not revlog.candelta(prev, rev):

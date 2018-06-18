@@ -621,10 +621,10 @@ def consumev2(repo, fp, filecount, filesize):
         elapsed = util.timer() - start
         if elapsed <= 0:
             elapsed = 0.001
-        progress.update(None)
         repo.ui.status(_('transferred %s in %.1f seconds (%s/sec)\n') %
                        (util.bytecount(progress.pos), elapsed,
                         util.bytecount(progress.pos / elapsed)))
+        progress.update(None)
 
 def applybundlev2(repo, fp, filecount, filesize, requirements):
     missingreqs = [r for r in requirements if r not in repo.supported]

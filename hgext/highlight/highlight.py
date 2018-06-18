@@ -89,7 +89,7 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
     coloriter = (s.encode(encoding.encoding, 'replace')
                  for s in colorized.splitlines())
 
-    tmpl.filters['colorize'] = lambda x: next(coloriter)
+    tmpl._filters['colorize'] = lambda x: next(coloriter)
 
     oldl = tmpl.cache[field]
     newl = oldl.replace('line|escape', 'line|colorize')

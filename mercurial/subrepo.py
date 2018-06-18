@@ -333,17 +333,17 @@ class abstractsubrepo(object):
             files = self.files()
         total = len(files)
         relpath = subrelpath(self)
-        self.ui.progress(_('archiving (%s)') % relpath, 0,
-                         unit=_('files'), total=total)
-        for i, name in enumerate(files):
+        progress = self.ui.makeprogress(_('archiving (%s)') % relpath,
+                                        unit=_('files'), total=total)
+        progress.update(0)
+        for name in files:
             flags = self.fileflags(name)
             mode = 'x' in flags and 0o755 or 0o644
             symlink = 'l' in flags
             archiver.addfile(prefix + self._path + '/' + name,
                              mode, symlink, self.filedata(name, decode))
-            self.ui.progress(_('archiving (%s)') % relpath, i + 1,
-                             unit=_('files'), total=total)
-        self.ui.progress(_('archiving (%s)') % relpath, None)
+            progress.increment()
+        progress.complete()
         return total
 
     def walk(self, match):
@@ -1640,8 +1640,10 @@ class gitsubrepo(abstractsubrepo):
         tarstream = self._gitcommand(['archive', revision], stream=True)
         tar = tarfile.open(fileobj=tarstream, mode=r'r|')
         relpath = subrelpath(self)
-        self.ui.progress(_('archiving (%s)') % relpath, 0, unit=_('files'))
-        for i, info in enumerate(tar):
+        progress = self.ui.makeprogress(_('archiving (%s)') % relpath,
+                                        unit=_('files'))
+        progress.update(0)
+        for info in tar:
             if info.isdir():
                 continue
             if match and not match(info.name):
@@ -1653,9 +1655,8 @@ class gitsubrepo(abstractsubrepo):
             archiver.addfile(prefix + self._path + '/' + info.name,
                              info.mode, info.issym(), data)
             total += 1
-            self.ui.progress(_('archiving (%s)') % relpath, i + 1,
-                             unit=_('files'))
-        self.ui.progress(_('archiving (%s)') % relpath, None)
+            progress.increment()
+        progress.complete()
         return total
 
 

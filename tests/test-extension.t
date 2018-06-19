@@ -9,7 +9,9 @@ Test basic extension support
   > configitem = registrar.configitem(configtable)
   > configitem(b'tests', b'foo', default=b"Foo")
   > def uisetup(ui):
+  >     ui.debug(b"uisetup called [debug]\\n")
   >     ui.write(b"uisetup called\\n")
+  >     ui.status(b"uisetup called [status]\\n")
   >     ui.flush()
   > def reposetup(ui, repo):
   >     ui.write(b"reposetup called for %s\\n" % os.path.basename(repo.root))
@@ -40,15 +42,29 @@ Test basic extension support
   $ echo "foobar = $abspath" >> $HGRCPATH
   $ hg foo
   uisetup called
+  uisetup called [status]
   reposetup called for a
   ui == repo.ui
   reposetup called for a (chg !)
   ui == repo.ui (chg !)
   Foo
+  $ hg foo --quiet
+  uisetup called (no-chg !)
+  reposetup called for a (chg !)
+  ui == repo.ui
+  Foo
+  $ hg foo --debug
+  uisetup called [debug] (no-chg !)
+  uisetup called (no-chg !)
+  uisetup called [status] (no-chg !)
+  reposetup called for a (chg !)
+  ui == repo.ui
+  Foo
 
   $ cd ..
   $ hg clone a b
   uisetup called (no-chg !)
+  uisetup called [status] (no-chg !)
   reposetup called for a
   ui == repo.ui
   reposetup called for b
@@ -58,6 +74,7 @@ Test basic extension support
 
   $ hg bar
   uisetup called (no-chg !)
+  uisetup called [status] (no-chg !)
   Bar
   $ echo 'foobar = !' >> $HGRCPATH
 
@@ -67,6 +84,7 @@ module/__init__.py-style
   $ cd a
   $ hg foo
   uisetup called
+  uisetup called [status]
   reposetup called for a
   ui == repo.ui
   reposetup called for a (chg !)

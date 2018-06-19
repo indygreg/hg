@@ -811,6 +811,13 @@ def _dispatch(req):
     if req.repo:
         uis.add(req.repo.ui)
 
+    if (req.earlyoptions['verbose'] or req.earlyoptions['debug']
+            or req.earlyoptions['quiet']):
+        for opt in ('verbose', 'debug', 'quiet'):
+            val = pycompat.bytestr(bool(req.earlyoptions[opt]))
+            for ui_ in uis:
+                ui_.setconfig('ui', opt, val, '--' + opt)
+
     if req.earlyoptions['profile']:
         for ui_ in uis:
             ui_.setconfig('profiling', 'enabled', 'true', '--profile')
@@ -876,8 +883,11 @@ def _dispatch(req):
         if options["profile"]:
             profiler.start()
 
+        # if abbreviated version of this were used, take them in account, now
         if options['verbose'] or options['debug'] or options['quiet']:
             for opt in ('verbose', 'debug', 'quiet'):
+                if options[opt] == req.earlyoptions[opt]:
+                    continue
                 val = pycompat.bytestr(bool(options[opt]))
                 for ui_ in uis:
                     ui_.setconfig('ui', opt, val, '--' + opt)

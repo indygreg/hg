@@ -91,12 +91,7 @@ def _commitfiltered(repo, ctx, match, keepcommit):
                          user=ctx.user(),
                          date=ctx.date(),
                          extra=ctx.extra())
-    # phase handling
-    commitphase = ctx.phase()
-    overrides = {('phases', 'new-commit'): commitphase}
-    with repo.ui.configoverride(overrides, 'uncommit'):
-        newid = repo.commitctx(new)
-    return newid
+    return repo.commitctx(new)
 
 def _fixdirstate(repo, oldctx, newctx, status):
     """ fix the dirstate after switching the working directory from oldctx to
@@ -183,7 +178,7 @@ def uncommit(ui, repo, *pats, **opts):
                 # Fully removed the old commit
                 mapping[old.node()] = ()
 
-            scmutil.cleanupnodes(repo, mapping, 'uncommit')
+            scmutil.cleanupnodes(repo, mapping, 'uncommit', fixphase=True)
 
             with repo.dirstate.parentchange():
                 repo.dirstate.setparents(newid, node.nullid)
@@ -242,12 +237,7 @@ def unamend(ui, repo, **opts):
                                 user=predctx.user(),
                                 date=predctx.date(),
                                 extra=extras)
-        # phase handling
-        commitphase = curctx.phase()
-        overrides = {('phases', 'new-commit'): commitphase}
-        with repo.ui.configoverride(overrides, 'uncommit'):
-            newprednode = repo.commitctx(newctx)
-
+        newprednode = repo.commitctx(newctx)
         newpredctx = repo[newprednode]
         dirstate = repo.dirstate
 
@@ -257,4 +247,4 @@ def unamend(ui, repo, **opts):
             _fixdirstate(repo, curctx, newpredctx, s)
 
         mapping = {curctx.node(): (newprednode,)}
-        scmutil.cleanupnodes(repo, mapping, 'unamend')
+        scmutil.cleanupnodes(repo, mapping, 'unamend', fixphase=True)

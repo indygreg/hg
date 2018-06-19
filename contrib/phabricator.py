@@ -580,9 +580,7 @@ def phabsend(ui, repo, *revs, **opts):
                         repo, old, parents=parents, text=newdesc,
                         user=old.user(), date=old.date(), extra=old.extra())
 
-                    overrides = {(b'phases', b'new-commit'): old.phase()}
-                    with ui.configoverride(overrides, b'phabsend'):
-                        newnode = new.commit()
+                    newnode = new.commit()
 
                     mapping[old.node()] = [newnode]
                     # Update diff property
@@ -592,7 +590,7 @@ def phabsend(ui, repo, *revs, **opts):
                 if tagname in repo.tags():
                     tags.tag(repo, tagname, nullid, message=None, user=None,
                              date=None, local=True)
-            scmutil.cleanupnodes(repo, mapping, b'phabsend')
+            scmutil.cleanupnodes(repo, mapping, b'phabsend', fixphase=True)
             if wnode in mapping:
                 unfi.setparents(mapping[wnode][0])
 

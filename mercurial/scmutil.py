@@ -779,7 +779,8 @@ class _containsnode(object):
     def __contains__(self, node):
         return self._revcontains(self._torev(node))
 
-def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
+def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
+                 fixphase=False, targetphase=None):
     """do common cleanups when old nodes are replaced by new nodes
 
     That includes writing obsmarkers or stripping nodes, and moving bookmarks.
@@ -795,6 +796,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
     metadata is dictionary containing metadata to be stored in obsmarker if
     obsolescence is enabled.
     """
+    assert fixphase or targetphase is None
     if not replacements and not moves:
         return
 
@@ -825,11 +827,38 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
             newnode = newnodes[0]
         moves[oldnode] = newnode
 
+    allnewnodes = [n for ns in replacements.values() for n in ns]
+    toretract = {}
+    toadvance = {}
+    if fixphase:
+        precursors = {}
+        for oldnode, newnodes in replacements.items():
+            for newnode in newnodes:
+                precursors.setdefault(newnode, []).append(oldnode)
+
+        allnewnodes.sort(key=lambda n: unfi[n].rev())
+        newphases = {}
+        def phase(ctx):
+            return newphases.get(ctx.node(), ctx.phase())
+        for newnode in allnewnodes:
+            ctx = unfi[newnode]
+            if targetphase is None:
+                oldphase = max(unfi[oldnode].phase()
+                               for oldnode in precursors[newnode])
+                parentphase = max(phase(p) for p in ctx.parents())
+                newphase = max(oldphase, parentphase)
+            else:
+                newphase = targetphase
+            newphases[newnode] = newphase
+            if newphase > ctx.phase():
+                toretract.setdefault(newphase, []).append(newnode)
+            elif newphase < ctx.phase():
+                toadvance.setdefault(newphase, []).append(newnode)
+
     with repo.transaction('cleanup') as tr:
         # Move bookmarks
         bmarks = repo._bookmarks
         bmarkchanges = []
-        allnewnodes = [n for ns in replacements.values() for n in ns]
         for oldnode, newnode in moves.items():
             oldbmarks = repo.nodebookmarks(oldnode)
             if not oldbmarks:
@@ -849,6 +878,11 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
 
         if bmarkchanges:
             bmarks.applychanges(repo, tr, bmarkchanges)
+
+        for phase, nodes in toretract.items():
+            phases.retractboundary(repo, tr, phase, nodes)
+        for phase, nodes in toadvance.items():
+            phases.advanceboundary(repo, tr, phase, nodes)
 
         # Obsolete or strip nodes
         if obsolete.isenabled(repo, obsolete.createmarkersopt):

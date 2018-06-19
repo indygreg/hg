@@ -158,7 +158,7 @@ def fix(ui, repo, *pats, **opts):
                 del filedata[rev]
 
         replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
-        scmutil.cleanupnodes(repo, replacements, 'fix')
+        scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)
 
 def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     """"Constructs the list of files to be fixed at specific revisions
@@ -484,25 +484,23 @@ def replacerev(ui, repo, ctx, filedata, replacements):
             isexec=fctx.isexec(),
             copied=copied)
 
-    overrides = {('phases', 'new-commit'): ctx.phase()}
-    with ui.configoverride(overrides, source='fix'):
-        memctx = context.memctx(
-            repo,
-            parents=(newp1node, newp2node),
-            text=ctx.description(),
-            files=set(ctx.files()) | set(filedata.keys()),
-            filectxfn=filectxfn,
-            user=ctx.user(),
-            date=ctx.date(),
-            extra=ctx.extra(),
-            branch=ctx.branch(),
-            editor=None)
-        sucnode = memctx.commit()
-        prenode = ctx.node()
-        if prenode == sucnode:
-            ui.debug('node %s already existed\n' % (ctx.hex()))
-        else:
-            replacements[ctx.node()] = sucnode
+    memctx = context.memctx(
+        repo,
+        parents=(newp1node, newp2node),
+        text=ctx.description(),
+        files=set(ctx.files()) | set(filedata.keys()),
+        filectxfn=filectxfn,
+        user=ctx.user(),
+        date=ctx.date(),
+        extra=ctx.extra(),
+        branch=ctx.branch(),
+        editor=None)
+    sucnode = memctx.commit()
+    prenode = ctx.node()
+    if prenode == sucnode:
+        ui.debug('node %s already existed\n' % (ctx.hex()))
+    else:
+        replacements[ctx.node()] = sucnode
 
 def getfixers(ui):
     """Returns a map of configured fixer tools indexed by their names

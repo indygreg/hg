@@ -35,6 +35,7 @@ from . import (
     obsolete,
     patch,
     pathutil,
+    phases,
     pycompat,
     revlog,
     rewriteutil,
@@ -784,16 +785,12 @@ def changebranch(ui, repo, revs, label):
                                 extra=extra,
                                 branch=label)
 
-            commitphase = ctx.phase()
-            overrides = {('phases', 'new-commit'): commitphase}
-            with repo.ui.configoverride(overrides, 'branch-change'):
-                newnode = repo.commitctx(mc)
-
+            newnode = repo.commitctx(mc)
             replacements[ctx.node()] = (newnode,)
             ui.debug('new node id is %s\n' % hex(newnode))
 
         # create obsmarkers and move bookmarks
-        scmutil.cleanupnodes(repo, replacements, 'branch-change')
+        scmutil.cleanupnodes(repo, replacements, 'branch-change', fixphase=True)
 
         # move the working copy too
         wctx = repo[None]
@@ -2536,13 +2533,10 @@ def amend(ui, repo, old, extra, pats, opts):
             # This not what we expect from amend.
             return old.node()
 
+        commitphase = None
         if opts.get('secret'):
-            commitphase = 'secret'
-        else:
-            commitphase = old.phase()
-        overrides = {('phases', 'new-commit'): commitphase}
-        with ui.configoverride(overrides, 'amend'):
-            newid = repo.commitctx(new)
+            commitphase = phases.secret
+        newid = repo.commitctx(new)
 
         # Reroute the working copy parent to the new changeset
         repo.setparents(newid, nullid)
@@ -2550,7 +2544,8 @@ def amend(ui, repo, old, extra, pats, opts):
         obsmetadata = None
         if opts.get('note'):
             obsmetadata = {'note': opts['note']}
-        scmutil.cleanupnodes(repo, mapping, 'amend', metadata=obsmetadata)
+        scmutil.cleanupnodes(repo, mapping, 'amend', metadata=obsmetadata,
+                             fixphase=True, targetphase=commitphase)
 
         # Fixing the dirstate because localrepo.commitctx does not update
         # it. This is rather convenient because we did not need to update

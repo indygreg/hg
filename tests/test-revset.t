@@ -1041,6 +1041,28 @@ test ancestors
   2
   3
 
+test common ancestors
+
+  $ hg log -T '{rev}\n' -r 'commonancestors(7 + 9)'
+  0
+  1
+  2
+  4
+
+  $ hg log -T '{rev}\n' -r 'commonancestors(head())'
+  0
+  1
+  2
+  4
+
+  $ hg log -T '{rev}\n' -r 'commonancestors(9)'
+  0
+  1
+  2
+  4
+  8
+  9
+
 test ancestors with depth limit
 
  (depth=0 selects the node itself)

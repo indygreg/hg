@@ -608,6 +608,22 @@ def closed(repo, subset, x):
     return subset.filter(lambda r: repo[r].closesbranch(),
                          condrepr='<branch closed>')
 
+@predicate('commonancestors(set)', safe=True)
+def commonancestors(repo, subset, x):
+    """Returns all common ancestors of the set.
+
+    This method is for calculating "::x and ::y" (i.e. all the ancestors that
+    are common to both x and y) in an easy and optimized way. We can't quite
+    use "::head()" because that revset returns "::x + ::y + ..." for each head
+    in the repo (whereas we want "::x *and* ::y").
+
+    """
+    # only wants the heads of the set passed in
+    for r in heads(repo, fullreposet(repo), x, defineorder):
+        subset &= dagop.revancestors(repo, baseset([r]))
+
+    return subset
+
 @predicate('contains(pattern)', weight=100)
 def contains(repo, subset, x):
     """The revision's manifest contains a file matching pattern (but might not

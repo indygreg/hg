@@ -532,3 +532,36 @@ Split a non-head with obsoleted descendants
   o  0:426bada5c675 A
   
 #endif
+
+Preserve secret phase in split
+
+  $ cp -R $TESTTMP/clean $TESTTMP/phases1
+  $ cd $TESTTMP/phases1
+  $ hg phase --secret -fr tip
+  $ hg log -T '{short(node)} {phase}\n'
+  1df0d5c5a3ab secret
+  a61bcde8c529 draft
+  $ runsplit tip >/dev/null
+  $ hg log -T '{short(node)} {phase}\n'
+  00eebaf8d2e2 secret
+  a09ad58faae3 secret
+  e704349bd21b secret
+  a61bcde8c529 draft
+
+Do not move things to secret even if phases.new-commit=secret
+
+  $ cp -R $TESTTMP/clean $TESTTMP/phases2
+  $ cd $TESTTMP/phases2
+  $ cat >> .hg/hgrc <<EOF
+  > [phases]
+  > new-commit=secret
+  > EOF
+  $ hg log -T '{short(node)} {phase}\n'
+  1df0d5c5a3ab draft
+  a61bcde8c529 draft
+  $ runsplit tip >/dev/null
+  $ hg log -T '{short(node)} {phase}\n'
+  00eebaf8d2e2 draft
+  a09ad58faae3 draft
+  e704349bd21b draft
+  a61bcde8c529 draft

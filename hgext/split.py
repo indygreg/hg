@@ -170,7 +170,7 @@ def dosplit(ui, repo, tr, ctx, opts):
         raise error.Abort(_('cannot split an empty revision'))
 
     scmutil.cleanupnodes(repo, {ctx.node(): [c.node() for c in committed]},
-                         operation='split')
+                         operation='split', fixphase=True)
 
     return committed[-1]
 

@@ -936,16 +936,16 @@ coreconfigitem('server', 'concurrent-push-mode',
 coreconfigitem('server', 'disablefullbundle',
     default=False,
 )
-coreconfigitem('server', 'streamunbundle',
-    default=False,
+coreconfigitem('server', 'maxhttpheaderlen',
+    default=1024,
 )
 coreconfigitem('server', 'pullbundle',
     default=False,
 )
-coreconfigitem('server', 'maxhttpheaderlen',
-    default=1024,
-)
 coreconfigitem('server', 'preferuncompressed',
+    default=False,
+)
+coreconfigitem('server', 'streamunbundle',
     default=False,
 )
 coreconfigitem('server', 'uncompressed',

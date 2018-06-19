@@ -234,6 +234,10 @@ def _slicechunk(revlog, revs):
     else:
         density = 1.0
 
+    if density >= revlog._srdensitythreshold:
+        yield revs
+        return
+
     # Store the gaps in a heap to have them sorted by decreasing size
     gapsheap = []
     heapq.heapify(gapsheap)

@@ -671,6 +671,7 @@ class curseschunkselector(object):
             nextitem = currentitem
 
         self.currentselecteditem = nextitem
+        self.recenterdisplayedarea()
 
     def downarrowevent(self):
         """
@@ -710,6 +711,7 @@ class curseschunkselector(object):
             nextitem = currentitem
 
         self.currentselecteditem = nextitem
+        self.recenterdisplayedarea()
 
     def rightarrowevent(self):
         """

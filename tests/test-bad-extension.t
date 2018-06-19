@@ -75,7 +75,7 @@ names of extensions failed to load can be accessed via extensions.notloaded()
 show traceback for ImportError of hgext.name if debug is set
 (note that --debug option isn't applied yet when loading extensions)
 
-  $ (hg -q help help --traceback --config ui.debug=True 2>&1) \
+  $ (hg help help --traceback --config ui.debug=yes 2>&1) \
   > | grep -v '^ ' \
   > | egrep 'extension..[^p]|^Exception|Traceback|ImportError|not import'
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow

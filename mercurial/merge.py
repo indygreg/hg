@@ -1106,8 +1106,10 @@ def manifestmerge(repo, wctx, p2, pa, branchmerge, force, matcher,
     copied = set(copy.values())
     copied.update(movewithdir.values())
 
-    if '.hgsubstate' in m1:
-        # check whether sub state is modified
+    if '.hgsubstate' in m1 and wctx.rev() is None:
+        # Check whether sub state is modified, and overwrite the manifest
+        # to flag the change. If wctx is a committed revision, we shouldn't
+        # care for the dirty state of the working directory.
         if any(wctx.sub(s).dirty() for s in wctx.substate):
             m1['.hgsubstate'] = modifiednodeid
 

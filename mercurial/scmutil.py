@@ -1300,6 +1300,7 @@ class progress(object):
         self.complete()
 
     def update(self, pos, item="", total=None):
+        assert pos is not None
         if total:
             self.total = total
         self.pos = pos
@@ -1309,7 +1310,7 @@ class progress(object):
         self.update(self.pos + step, item, total)
 
     def complete(self):
-        self.update(None)
+        self.ui.progress(self.topic, None)
 
     def _print(self, item):
         self.ui.progress(self.topic, self.pos, item, self.unit,

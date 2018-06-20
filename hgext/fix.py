@@ -133,7 +133,7 @@ def fix(ui, repo, *pats, **opts):
             raise error.Abort(_('cannot specify both "--rev" and "--all"'))
         opts['rev'] = ['not public() and not obsolete()']
         opts['working_dir'] = True
-    with repo.wlock(), repo.lock():
+    with repo.wlock(), repo.lock(), repo.transaction('fix'):
         revstofix = getrevstofix(ui, repo, opts)
         basectxs = getbasectxs(repo, opts, revstofix)
         workqueue, numitems = getworkqueue(ui, repo, pats, opts, revstofix,

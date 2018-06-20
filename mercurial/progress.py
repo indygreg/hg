@@ -265,8 +265,7 @@ class progbar(object):
 
     def progress(self, topic, pos, item='', unit='', total=None):
         now = time.time()
-        self._refreshlock.acquire()
-        try:
+        with self._refreshlock:
             if pos is None:
                 self.starttimes.pop(topic, None)
                 self.startvals.pop(topic, None)
@@ -298,5 +297,3 @@ class progbar(object):
                     if self._oktoprint(now):
                         self.lastprint = now
                         self.show(now, topic, *self.topicstates[topic])
-        finally:
-            self._refreshlock.release()

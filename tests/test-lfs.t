@@ -526,6 +526,10 @@ absence doesn't cause an abort.)
   lfs: found 5dde896887f6754c9b15bfe3a441ae4806df2fde94001311e08bf110622e0bbe in the local lfs store
            2   b
 
+  $ hg files --debug -r . 'set:binary()' --config 'experimental.lfs.disableusercache=True'
+           2   a
+           3   c
+
   $ cd ..
 
 # Test fctx.cmp fastpath - diff without LFS blobs

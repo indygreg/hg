@@ -863,17 +863,11 @@ class templater(object):
         self.cache may be updated later to register additional template
         fragments.
         """
-        if filters is None:
-            filters = {}
-        if defaults is None:
-            defaults = {}
-        self._filters = templatefilters.filters.copy()
-        self._filters.update(filters)
-        self.defaults = defaults
-        self._resources = resources
+        allfilters = templatefilters.filters.copy()
+        if filters:
+            allfilters.update(filters)
         self._loader = loader(cache, aliases)
-        self._proc = engine(self._loader.load, self._filters, self.defaults,
-                            self._resources)
+        self._proc = engine(self._loader.load, allfilters, defaults, resources)
         self._minchunk, self._maxchunk = minchunk, maxchunk
 
     @classmethod
@@ -893,6 +887,15 @@ class templater(object):
     @property
     def cache(self):
         return self._loader.cache
+
+    # for highlight extension to insert one-time 'colorize' filter
+    @property
+    def _filters(self):
+        return self._proc._filters
+
+    @property
+    def defaults(self):
+        return self._proc._defaults
 
     def load(self, t):
         """Get parsed tree for the given template name. Use a local cache."""

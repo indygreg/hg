@@ -1404,7 +1404,8 @@ class revlog(object):
 
         The implementation of this is trivial but the use of
         commonancestorsheads is not."""
-        return a in self.commonancestorsheads(a, b)
+        a, b = self.rev(a), self.rev(b)
+        return self.descendant(a, b)
 
     def ancestor(self, a, b):
         """calculate the "best" common ancestor of nodes a and b"""

@@ -615,7 +615,7 @@ class revlog(object):
         # How much data to read and cache into the raw revlog data cache.
         self._chunkcachesize = 65536
         self._maxchainlen = None
-        self._aggressivemergedeltas = False
+        self._aggressivemergedeltas = True
         self.index = []
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}

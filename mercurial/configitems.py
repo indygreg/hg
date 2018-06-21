@@ -629,7 +629,7 @@ coreconfigitem('extdata', '.*',
     generic=True,
 )
 coreconfigitem('format', 'aggressivemergedeltas',
-    default=False,
+    default=True,
 )
 coreconfigitem('format', 'chunkcachesize',
     default=None,

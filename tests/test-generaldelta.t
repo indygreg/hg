@@ -139,7 +139,7 @@ Test format.aggressivemergedeltas
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         59        215         59   0.27442        59         0    0.00000
         1       1        2        0    prev         61         86        120   1.39535       120         0    0.00000
-        2       1        3        1      p1         65        301        185   0.61462       185         0    0.00000
+        2       1        2        0      p2         62        301        121   0.40199       182        61    0.50413
 
   $ hg strip -q -r . --config extensions.strip=
 

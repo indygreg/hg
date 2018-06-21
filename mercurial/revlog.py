@@ -1378,6 +1378,8 @@ class revlog(object):
     def descendant(self, start, end):
         if start == nullrev:
             return True
+        elif start == end:
+            return True
         for i in self.descendants([start]):
             if i == end:
                 return True

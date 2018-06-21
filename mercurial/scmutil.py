@@ -842,13 +842,13 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             return newphases.get(ctx.node(), ctx.phase())
         for newnode in allnewnodes:
             ctx = unfi[newnode]
+            parentphase = max(phase(p) for p in ctx.parents())
             if targetphase is None:
                 oldphase = max(unfi[oldnode].phase()
                                for oldnode in precursors[newnode])
-                parentphase = max(phase(p) for p in ctx.parents())
                 newphase = max(oldphase, parentphase)
             else:
-                newphase = targetphase
+                newphase = max(targetphase, parentphase)
             newphases[newnode] = newphase
             if newphase > ctx.phase():
                 toretract.setdefault(newphase, []).append(newnode)

@@ -448,9 +448,10 @@ def eol(mctx, x):
 
     s = []
     for f in mctx.existing():
-        d = mctx.ctx[f].data()
-        if stringutil.binary(d):
+        fctx = mctx.ctx[f]
+        if fctx.isbinary():
             continue
+        d = fctx.data()
         if (enc == 'dos' or enc == 'win') and '\r\n' in d:
             s.append(f)
         elif enc == 'unix' and re.search('(?<!\r)\n', d):

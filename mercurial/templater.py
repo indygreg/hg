@@ -775,48 +775,15 @@ def _readmapfile(mapfile):
     aliases.extend(conf['templatealias'].items())
     return cache, tmap, aliases
 
-class templater(object):
+class loader(object):
+    """Load template fragments optionally from a map file"""
 
-    def __init__(self, filters=None, defaults=None, resources=None,
-                 cache=None, aliases=(), minchunk=1024, maxchunk=65536):
-        """Create template engine optionally with preloaded template fragments
-
-        - ``filters``: a dict of functions to transform a value into another.
-        - ``defaults``: a dict of symbol values/functions; may be overridden
-          by a ``mapping`` dict.
-        - ``resources``: a resourcemapper object to look up internal data
-          (e.g. cache), inaccessible from user template.
-        - ``cache``: a dict of preloaded template fragments.
-        - ``aliases``: a list of alias (name, replacement) pairs.
-
-        self.cache may be updated later to register additional template
-        fragments.
-        """
-        if filters is None:
-            filters = {}
-        if defaults is None:
-            defaults = {}
+    def __init__(self, cache, aliases):
         if cache is None:
             cache = {}
         self.cache = cache.copy()
         self._map = {}
-        self._filters = templatefilters.filters.copy()
-        self._filters.update(filters)
-        self.defaults = defaults
-        self._resources = resources
         self._aliasmap = _aliasrules.buildmap(aliases)
-        self._minchunk, self._maxchunk = minchunk, maxchunk
-
-    @classmethod
-    def frommapfile(cls, mapfile, filters=None, defaults=None, resources=None,
-                    cache=None, minchunk=1024, maxchunk=65536):
-        """Create templater from the specified map file"""
-        t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
-        cache, tmap, aliases = _readmapfile(mapfile)
-        t.cache.update(cache)
-        t._map = tmap
-        t._aliasmap = _aliasrules.buildmap(aliases)
-        return t
 
     def __contains__(self, key):
         return key in self.cache or key in self._map
@@ -869,6 +836,66 @@ class templater(object):
         for x in tree[1:]:
             self._findsymbolsused(x, syms)
 
+    def symbolsused(self, t):
+        """Look up (keywords, filters/functions) referenced from the name
+        template 't'
+
+        This may load additional templates from the map file.
+        """
+        syms = (set(), set())
+        self._findsymbolsused(self.load(t), syms)
+        return syms
+
+class templater(object):
+
+    def __init__(self, filters=None, defaults=None, resources=None,
+                 cache=None, aliases=(), minchunk=1024, maxchunk=65536):
+        """Create template engine optionally with preloaded template fragments
+
+        - ``filters``: a dict of functions to transform a value into another.
+        - ``defaults``: a dict of symbol values/functions; may be overridden
+          by a ``mapping`` dict.
+        - ``resources``: a resourcemapper object to look up internal data
+          (e.g. cache), inaccessible from user template.
+        - ``cache``: a dict of preloaded template fragments.
+        - ``aliases``: a list of alias (name, replacement) pairs.
+
+        self.cache may be updated later to register additional template
+        fragments.
+        """
+        if filters is None:
+            filters = {}
+        if defaults is None:
+            defaults = {}
+        self._filters = templatefilters.filters.copy()
+        self._filters.update(filters)
+        self.defaults = defaults
+        self._resources = resources
+        self._loader = loader(cache, aliases)
+        self._minchunk, self._maxchunk = minchunk, maxchunk
+
+    @classmethod
+    def frommapfile(cls, mapfile, filters=None, defaults=None, resources=None,
+                    cache=None, minchunk=1024, maxchunk=65536):
+        """Create templater from the specified map file"""
+        t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
+        cache, tmap, aliases = _readmapfile(mapfile)
+        t._loader.cache.update(cache)
+        t._loader._map = tmap
+        t._loader._aliasmap = _aliasrules.buildmap(aliases)
+        return t
+
+    def __contains__(self, key):
+        return key in self._loader
+
+    @property
+    def cache(self):
+        return self._loader.cache
+
+    def load(self, t):
+        """Get parsed tree for the given template name. Use a local cache."""
+        return self._loader.load(t)
+
     def symbolsuseddefault(self):
         """Look up (keywords, filters/functions) referenced from the default
         unnamed template
@@ -883,9 +910,7 @@ class templater(object):
 
         This may load additional templates from the map file.
         """
-        syms = (set(), set())
-        self._findsymbolsused(self.load(t), syms)
-        return syms
+        return self._loader.symbolsused(t)
 
     def renderdefault(self, mapping):
         """Render the default unnamed template and return result as string"""

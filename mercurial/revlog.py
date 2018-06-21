@@ -1376,16 +1376,14 @@ class revlog(object):
         return c
 
     def descendant(self, start, end):
+        """True if revision 'end' is an descendant of revision 'start'
+
+        A revision is considered as a descendant of itself."""
         if start == nullrev:
             return True
         elif start == end:
             return True
-        for i in self.descendants([start]):
-            if i == end:
-                return True
-            elif i > end:
-                break
-        return False
+        return start in self._commonancestorsheads(start, end)
 
     def commonancestorsheads(self, a, b):
         """calculate all the heads of the common ancestors of nodes a and b"""

@@ -1390,11 +1390,16 @@ class revlog(object):
     def commonancestorsheads(self, a, b):
         """calculate all the heads of the common ancestors of nodes a and b"""
         a, b = self.rev(a), self.rev(b)
-        try:
-            ancs = self.index.commonancestorsheads(a, b)
-        except (AttributeError, OverflowError): # C implementation failed
-            ancs = ancestor.commonancestorsheads(self.parentrevs, a, b)
+        ancs = self._commonancestorsheads(a, b)
         return pycompat.maplist(self.node, ancs)
+
+    def _commonancestorsheads(self, *revs):
+        """calculate all the heads of the common ancestors of revs"""
+        try:
+            ancs = self.index.commonancestorsheads(*revs)
+        except (AttributeError, OverflowError): # C implementation failed
+            ancs = ancestor.commonancestorsheads(self.parentrevs, *revs)
+        return ancs
 
     def isancestor(self, a, b):
         """return True if node a is an ancestor of node b

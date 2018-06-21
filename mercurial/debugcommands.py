@@ -678,8 +678,15 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         except IndexError:
             prevrev = -1
 
-        chainratio = float(chainsize) / float(uncomp)
-        extraratio = float(extradist) / float(chainsize)
+        if uncomp != 0:
+            chainratio = float(chainsize) / float(uncomp)
+        else:
+            chainratio = chainsize
+
+        if chainsize != 0:
+            extraratio = float(extradist) / float(chainsize)
+        else:
+            extraratio = extradist
 
         fm.startitem()
         fm.write('rev chainid chainlen prevrev deltatype compsize '

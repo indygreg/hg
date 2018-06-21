@@ -61,7 +61,9 @@ def supportremovedrequirements(repo):
     the dropped requirement must appear in the returned set for the upgrade
     to be allowed.
     """
-    return set()
+    return {
+        localrepo.SPARSEREVLOG_REQUIREMENT,
+    }
 
 def supporteddestrequirements(repo):
     """Obtain requirements that upgrade supports in the destination.
@@ -77,6 +79,7 @@ def supporteddestrequirements(repo):
         'generaldelta',
         'revlogv1',
         'store',
+        localrepo.SPARSEREVLOG_REQUIREMENT,
     }
 
 def allowednewrequirements(repo):
@@ -93,6 +96,7 @@ def allowednewrequirements(repo):
         'dotencode',
         'fncache',
         'generaldelta',
+        localrepo.SPARSEREVLOG_REQUIREMENT,
     }
 
 def preservedrequirements(repo):

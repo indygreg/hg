@@ -129,9 +129,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
   
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
-  
   additional optimizations are available by specifying "--optimize <name>":
   
   redeltaparent
@@ -155,9 +152,6 @@ An upgrade of a repository created with recommended settings only suggests optim
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
-  
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   redeltaparent
      deltas within internal storage will choose a new base revision if needed
@@ -241,9 +235,6 @@ Various sub-optimal detections work
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
   
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
-  
   additional optimizations are available by specifying "--optimize <name>":
   
   redeltaparent
@@ -286,9 +277,6 @@ Various sub-optimal detections work
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
   
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
-  
   additional optimizations are available by specifying "--optimize <name>":
   
   redeltaparent
@@ -314,9 +302,6 @@ Upgrading a repository that is already modern essentially no-ops
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
-  
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   beginning upgrade...
   repository locked and read-only
@@ -354,9 +339,6 @@ Upgrading a repository to generaldelta works
   
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
-  
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   beginning upgrade...
   repository locked and read-only
@@ -455,9 +437,6 @@ store files with special filenames aren't encoded during copy
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
   
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
-  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
@@ -488,9 +467,6 @@ store files with special filenames aren't encoded during copy
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
-  
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   redeltafulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
@@ -550,9 +526,6 @@ Check upgrading a large file repository
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, revlogv1, store
   
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
-  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
@@ -604,9 +577,6 @@ Check upgrading a large file repository
   
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, lfs, revlogv1, store
-  
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   beginning upgrade...
   repository locked and read-only
@@ -703,9 +673,6 @@ repository config is taken in account
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
   
-  sparserevlog
-     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
-  
   redeltaall
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time
   
@@ -744,3 +711,42 @@ repository config is taken in account
   > [format]
   > maxchainlen = 9001
   > EOF
+
+Check upgrading a sparse-revlog repository
+---------------------------------------
+
+  $ hg init sparserevlogrepo
+  $ cd sparserevlogrepo
+  $ touch foo
+  $ hg add foo
+  $ hg -q commit -m "foo"
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  store
+
+Check that we can add the sparse-revlog format requirement
+  $ hg --config format.sparse-revlog=yes debugupgraderepo --run >/dev/null
+  copy of old repository backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+
+Check that we can remove the sparse-revlog format requirement
+  $ hg --config format.sparse-revlog=no debugupgraderepo --run >/dev/null
+  copy of old repository backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  store
+  $ cd ..

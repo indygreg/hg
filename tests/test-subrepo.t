@@ -1941,3 +1941,43 @@ and bad usernames:
   updating to branch default
   abort: potentially unsafe url: 'ssh://-oProxyCommand=touch owned@example.com/path' (in subrepository "s")
   [255]
+
+Test convert subrepositories including merge (issue5526):
+
+  $ hg init tconv
+  $ hg convert --config extensions.convert= -q t/s tconv/s
+  $ hg convert --config extensions.convert= -q t/s/ss tconv/s/ss
+  $ hg convert --config extensions.convert= -q t/t tconv/t
+
+ convert shouldn't fail because of pseudo filenode:
+
+  $ hg convert --config extensions.convert= t tconv
+  scanning source...
+  sorting...
+  converting...
+  17 0
+  16 1
+  15 2
+  14 3
+  13 4
+  12 5
+  11 6
+  10 7
+  9 8
+  8 9
+  7 10
+  6 11
+  5 12
+  4 13
+  3 rm2
+  2 phasecheck4
+  1 16
+  0 branch before subrepo add
+
+ converted .hgsubstate should point to valid nodes:
+
+  $ hg up -R tconv 9
+  3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cat tconv/.hgsubstate
+  fc627a69481fcbe5f1135069e8a3881c023e4cf5 s
+  60ca1237c19474e7a3978b0dc1ca4e6f36d51382 t

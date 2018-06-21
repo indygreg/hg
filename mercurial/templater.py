@@ -872,6 +872,8 @@ class templater(object):
         self.defaults = defaults
         self._resources = resources
         self._loader = loader(cache, aliases)
+        self._proc = engine(self._loader.load, self._filters, self.defaults,
+                            self._resources)
         self._minchunk, self._maxchunk = minchunk, maxchunk
 
     @classmethod
@@ -923,8 +925,7 @@ class templater(object):
     def generate(self, t, mapping):
         """Return a generator that renders the specified named template and
         yields chunks"""
-        proc = engine(self.load, self._filters, self.defaults, self._resources)
-        stream = proc.process(t, mapping)
+        stream = self._proc.process(t, mapping)
         if self._minchunk:
             stream = util.increasingchunks(stream, min=self._minchunk,
                                            max=self._maxchunk)

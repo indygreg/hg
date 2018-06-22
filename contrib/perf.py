@@ -178,6 +178,9 @@ try:
     configitem('perf', 'parentscount',
         default=mercurial.configitems.dynamicdefault,
     )
+    configitem('perf', 'all-timing',
+        default=mercurial.configitems.dynamicdefault,
+    )
 except (ImportError, AttributeError):
     pass
 
@@ -247,12 +250,15 @@ def gettimer(ui, opts=None):
     # experimental config: perf.stub
     if ui.configbool("perf", "stub", False):
         return functools.partial(stub_timer, fm), fm
-    return functools.partial(_timer, fm), fm
+
+    # experimental config: perf.all-timing
+    displayall = ui.configbool("perf", "all-timing", False)
+    return functools.partial(_timer, fm, displayall=displayall), fm
 
 def stub_timer(fm, func, title=None):
     func()
 
-def _timer(fm, func, title=None):
+def _timer(fm, func, title=None, displayall=False):
     gc.collect()
     results = []
     begin = util.timer()
@@ -277,14 +283,27 @@ def _timer(fm, func, title=None):
         fm.write('title', '! %s\n', title)
     if r:
         fm.write('result', '! result: %s\n', r)
-    m = min(results)
-    fm.plain('!')
-    fm.write('wall', ' wall %f', m[0])
-    fm.write('comb', ' comb %f', m[1] + m[2])
-    fm.write('user', ' user %f', m[1])
-    fm.write('sys',  ' sys %f', m[2])
-    fm.write('count',  ' (best of %d)', count)
-    fm.plain('\n')
+    def display(role, entry):
+        prefix = ''
+        if role != 'best':
+            prefix = '%s.' % role
+        fm.plain('!')
+        fm.write(prefix + 'wall', ' wall %f', entry[0])
+        fm.write(prefix + 'comb', ' comb %f', entry[1] + entry[2])
+        fm.write(prefix + 'user', ' user %f', entry[1])
+        fm.write(prefix + 'sys',  ' sys %f', entry[2])
+        fm.write(prefix + 'count',  ' (%s of %d)', role, count)
+        fm.plain('\n')
+    results.sort()
+    min_val = results[0]
+    display('best', min_val)
+    if displayall:
+        max_val = results[-1]
+        display('max', max_val)
+        avg = tuple([sum(x) / count for x in zip(*results)])
+        display('avg', avg)
+        median = results[len(results) // 2]
+        display('median', median)
 
 # utilities for historical portability
 

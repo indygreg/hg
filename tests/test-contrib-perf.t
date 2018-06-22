@@ -176,7 +176,24 @@ perfstatus
   $ hg perfwalk
   $ hg perfparents
 
+test actual output
+------------------
+
+normal output:
+
+  $ hg perfheads --config perf.stub=no
+  ! wall * comb * user * sys * (best of *) (glob)
+
+detailed output:
+
+  $ hg perfheads --config perf.all-timing=yes --config perf.stub=no
+  ! wall * comb * user * sys * (best of *) (glob)
+  ! wall * comb * user * sys * (max of *) (glob)
+  ! wall * comb * user * sys * (avg of *) (glob)
+  ! wall * comb * user * sys * (median of *) (glob)
+
 Check perf.py for historical portability
+----------------------------------------
 
   $ cd "$TESTDIR/.."
 

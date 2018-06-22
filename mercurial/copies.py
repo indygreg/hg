@@ -816,11 +816,10 @@ def _checkcopies(srcctx, dstctx, f, base, tca, remotebase, limit, data):
     of = None
     seen = {f}
     for oc in getsrcfctx(f, msrc[f]).ancestors():
-        ocr = oc.linkrev()
         of = oc.path()
         if of in seen:
             # check limit late - grab last rename before
-            if ocr < limit:
+            if oc.linkrev() < limit:
                 break
             continue
         seen.add(of)

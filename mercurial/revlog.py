@@ -625,7 +625,7 @@ class revlog(object):
         self._compengine = 'zlib'
         self._maxdeltachainspan = -1
         self._withsparseread = False
-        self._srdensitythreshold = 0.25
+        self._srdensitythreshold = 0.50
         self._srmingapsize = 262144
 
         mmapindexthreshold = None

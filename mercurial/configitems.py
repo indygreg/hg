@@ -594,7 +594,7 @@ coreconfigitem('experimental', 'sparse-read',
     default=False,
 )
 coreconfigitem('experimental', 'sparse-read.density-threshold',
-    default=0.25,
+    default=0.50,
 )
 coreconfigitem('experimental', 'sparse-read.min-gap-size',
     default='256K',

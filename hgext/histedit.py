@@ -925,6 +925,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
       _("don't strip old nodes after edit is complete")),
      ('', 'abort', False, _('abort an edit in progress')),
      ('o', 'outgoing', False, _('changesets not found in destination')),
+     ('', 'no-backup', False, _('no backup')),
      ('f', 'force', False,
       _('force outgoing even for unrelated repositories')),
      ('r', 'rev', [], _('first revision to be edited'), _('REV'))] +
@@ -1110,6 +1111,7 @@ def _histedit(ui, repo, state, *freeargs, **opts):
     fm.startitem()
     goal = _getgoal(opts)
     revs = opts.get('rev', [])
+    nobackup = opts.get('no_backup')
     rules = opts.get('commands', '')
     state.keep = opts.get('keep', False)
 
@@ -1123,7 +1125,7 @@ def _histedit(ui, repo, state, *freeargs, **opts):
         _edithisteditplan(ui, repo, state, rules)
         return
     elif goal == goalabort:
-        _aborthistedit(ui, repo, state)
+        _aborthistedit(ui, repo, state, nobackup=nobackup)
         return
     else:
         # goal == goalnew
@@ -1221,7 +1223,7 @@ def _finishhistedit(ui, repo, state, fm):
     if repo.vfs.exists('histedit-last-edit.txt'):
         repo.vfs.unlink('histedit-last-edit.txt')
 
-def _aborthistedit(ui, repo, state):
+def _aborthistedit(ui, repo, state, nobackup=False):
     try:
         state.read()
         __, leafs, tmpnodes, __ = processreplacement(state)
@@ -1243,8 +1245,8 @@ def _aborthistedit(ui, repo, state):
         if repo.unfiltered().revs('parents() and (%n  or %ln::)',
                                 state.parentctxnode, leafs | tmpnodes):
             hg.clean(repo, state.topmost, show_stats=True, quietempty=True)
-        cleanupnode(ui, repo, tmpnodes)
-        cleanupnode(ui, repo, leafs)
+        cleanupnode(ui, repo, tmpnodes, nobackup=nobackup)
+        cleanupnode(ui, repo, leafs, nobackup=nobackup)
     except Exception:
         if state.inprogress():
             ui.warn(_('warning: encountered an exception during histedit '
@@ -1601,7 +1603,7 @@ def movetopmostbookmarks(repo, oldtopmost, newtopmost):
                 changes.append((name, newtopmost))
             marks.applychanges(repo, tr, changes)
 
-def cleanupnode(ui, repo, nodes):
+def cleanupnode(ui, repo, nodes, nobackup=False):
     """strip a group of nodes from the repository
 
     The set of node to strip may contains unknown nodes."""
@@ -1616,7 +1618,8 @@ def cleanupnode(ui, repo, nodes):
         nodes = sorted(n for n in nodes if n in nm)
         roots = [c.node() for c in repo.set("roots(%ln)", nodes)]
         if roots:
-            repair.strip(ui, repo, roots)
+            backup = not nobackup
+            repair.strip(ui, repo, roots, backup=backup)
 
 def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
     if isinstance(nodelist, str):

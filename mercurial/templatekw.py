@@ -27,6 +27,7 @@ from . import (
     util,
 )
 from .utils import (
+    diffutil,
     stringutil,
 )
 
@@ -263,7 +264,8 @@ def showdiffstat(context, mapping):
     "modified files: +added/-removed lines"
     """
     ctx = context.resource(mapping, 'ctx')
-    diff = ctx.diff(opts={'noprefix': False})
+    diffopts = diffutil.diffopts(ctx._repo.ui, {'noprefix': False})
+    diff = ctx.diff(opts=diffopts)
     stats = patch.diffstatdata(util.iterlines(diff))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%d: +%d/-%d' % (len(stats), adds, removes)

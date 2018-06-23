@@ -126,8 +126,7 @@ class darcs_source(common.converter_source, common.commandline):
         return etree.getroot()
 
     def format(self):
-        output, status = self.run('show', 'repo', no_files=True,
-                                  repodir=self.path)
+        output, status = self.run('show', 'repo', repodir=self.path)
         self.checkexit(status)
         m = re.search(r'^\s*Format:\s*(.*)$', output, re.MULTILINE)
         if not m:

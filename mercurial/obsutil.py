@@ -15,7 +15,10 @@ from . import (
     phases,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+    diffutil,
+)
 
 ### obsolescence marker flag
 
@@ -392,13 +395,13 @@ def _cmpdiff(leftctx, rightctx):
 
     This is a first and basic implementation, with many shortcoming.
     """
-
+    diffopts = diffutil.diffopts(leftctx._repo.ui, {'git': True})
     # Leftctx or right ctx might be filtered, so we need to use the contexts
     # with an unfiltered repository to safely compute the diff
     leftunfi = leftctx._repo.unfiltered()[leftctx.rev()]
-    leftdiff = leftunfi.diff(opts={'git': True})
+    leftdiff = leftunfi.diff(opts=diffopts)
     rightunfi = rightctx._repo.unfiltered()[rightctx.rev()]
-    rightdiff = rightunfi.diff(opts={'git': True})
+    rightdiff = rightunfi.diff(opts=diffopts)
 
     left, right = (0, 0)
     while None not in (left, right):

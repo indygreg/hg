@@ -825,8 +825,10 @@ def rebase(ui, repo, **opts):
                             **opts)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
+            return 1
         else:
             ui.status(_('there will be no conflict, you can rebase\n'))
+            return 0
         finally:
             _origrebase(ui, repo, abort=True)
     elif inmemory:

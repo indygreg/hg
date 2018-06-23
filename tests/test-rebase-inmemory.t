@@ -287,6 +287,7 @@ Make a conflict:
   rollback completed
   hit a merge conflict
   rebase aborted
+  [1]
   $ hg diff
   $ hg status
   $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
@@ -322,3 +323,4 @@ Check dryrun working with --collapse when there is conflicts
   merging e
   hit a merge conflict
   rebase aborted
+  [1]

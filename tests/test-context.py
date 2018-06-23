@@ -10,6 +10,7 @@ from mercurial import (
     scmutil,
     ui as uimod,
 )
+from mercurial.utils import diffutil
 
 print_ = print
 def print(*args, **kwargs):
@@ -76,8 +77,8 @@ ctxb = context.memctx(repo, [ctxa.node(), None], b"test diff", [b"foo"],
 print(ctxb.status(ctxa))
 
 # test performing a diff on a memctx
-
-for d in ctxb.diff(ctxa, opts={'git': True}):
+diffopts = diffutil.diffopts(repo.ui, {'git': True})
+for d in ctxb.diff(ctxa, opts=diffopts):
     printb(d, end=b'')
 
 # test safeness and correctness of "ctx.status()"

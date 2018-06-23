@@ -30,6 +30,7 @@ from . import (
     error,
     fileset,
     match as matchmod,
+    mdiff,
     obsolete as obsmod,
     patch,
     pathutil,
@@ -302,7 +303,11 @@ class basectx(object):
             ctx2 = self.p1()
         if ctx2 is not None:
             ctx2 = self._repo[ctx2]
-        diffopts = patch.diffopts(self._repo.ui, opts)
+
+        if isinstance(opts, mdiff.diffopts):
+            diffopts = opts
+        else:
+            diffopts = patch.diffopts(self._repo.ui, opts)
         return patch.diff(self._repo, ctx2, self, match=match, changes=changes,
                           opts=diffopts, losedatafn=losedatafn, prefix=prefix,
                           relroot=relroot, copy=copy,

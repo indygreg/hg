@@ -41,6 +41,7 @@ from .. import (
 )
 
 from ..utils import (
+    diffutil,
     stringutil,
 )
 
@@ -206,8 +207,8 @@ def _siblings(siblings=None, hiderev=None):
     return templateutil.mappinggenerator(_ctxsgen, args=(siblings,))
 
 def difffeatureopts(req, ui, section):
-    diffopts = patch.difffeatureopts(ui, untrusted=True,
-                                     section=section, whitespace=True)
+    diffopts = diffutil.difffeatureopts(ui, untrusted=True,
+                                        section=section, whitespace=True)
 
     for k in ('ignorews', 'ignorewsamount', 'ignorewseol', 'ignoreblanklines'):
         v = req.qsparams.get(k)
@@ -657,8 +658,9 @@ def compare(contextnum, leftlines, rightlines):
 def diffstatgen(ctx, basectx):
     '''Generator function that provides the diffstat data.'''
 
+    diffopts = patch.diffopts(ctx._repo.ui, {'noprefix': False})
     stats = patch.diffstatdata(
-        util.iterlines(ctx.diff(basectx, opts={'noprefix': False})))
+        util.iterlines(ctx.diff(basectx, opts=diffopts)))
     maxname, maxtotal, addtotal, removetotal, binary = patch.diffstatsum(stats)
     while True:
         yield stats, maxname, maxtotal, addtotal, removetotal, binary

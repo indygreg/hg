@@ -427,7 +427,7 @@ def debugcheckstate(ui, repo):
         'hg debugcolor')
 def debugcolor(ui, repo, **opts):
     """show available color, effects or style"""
-    ui.write(('color mode: %s\n') % ui._colormode)
+    ui.write(('color mode: %s\n') % stringutil.pprint(ui._colormode))
     if opts.get(r'style'):
         return _debugdisplaystyle(ui)
     else:

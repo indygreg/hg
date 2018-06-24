@@ -337,7 +337,7 @@ Test debugcolor
 
 #if no-windows
   $ hg debugcolor --style --color always | egrep 'mode|style|log\.'
-  color mode: ansi
+  color mode: 'ansi'
   available style:
   \x1b[0;33mlog.changeset\x1b[0m:                      \x1b[0;33myellow\x1b[0m (esc)
 #endif

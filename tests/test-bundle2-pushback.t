@@ -20,18 +20,18 @@
   >     It issues an additional pushkey part to send a new
   >     bookmark back to the client"""
   >     result = bundle2.handlechangegroup(op, inpart)
-  >     if 'pushback' in op.reply.capabilities:
-  >         params = {'namespace': 'bookmarks',
-  >                   'key': 'new-server-mark',
-  >                   'old': '',
-  >                   'new': 'tip'}
+  >     if b'pushback' in op.reply.capabilities:
+  >         params = {b'namespace': b'bookmarks',
+  >                   b'key': b'new-server-mark',
+  >                   b'old': b'',
+  >                   b'new': b'tip'}
   >         encodedparams = [(k, pushkey.encode(v)) for (k,v) in params.items()]
-  >         op.reply.newpart('pushkey', mandatoryparams=encodedparams)
+  >         op.reply.newpart(b'pushkey', mandatoryparams=encodedparams)
   >     else:
-  >         op.reply.newpart('output', data='pushback not enabled')
+  >         op.reply.newpart(b'output', data=b'pushback not enabled')
   >     return result
   > _newhandlechangegroup.params = bundle2.handlechangegroup.params
-  > bundle2.parthandlermapping['changegroup'] = _newhandlechangegroup
+  > bundle2.parthandlermapping[b'changegroup'] = _newhandlechangegroup
   > EOF
 
   $ cat >> $HGRCPATH <<EOF

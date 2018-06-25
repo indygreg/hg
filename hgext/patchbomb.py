@@ -75,6 +75,7 @@ from __future__ import absolute_import
 
 import email as emailmod
 import email.generator as emailgen
+import email.mime.multipart as emimemultipart
 import email.utils as eutil
 import errno
 import os
@@ -254,7 +255,7 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
         body += '\n'.join(patchlines)
 
     if addattachment:
-        msg = emailmod.MIMEMultipart.MIMEMultipart()
+        msg = emimemultipart.MIMEMultipart()
         if body:
             msg.attach(mail.mimeencode(ui, body, _charsets, opts.get('test')))
         p = mail.mimetextpatch('\n'.join(patchlines), 'x-patch',
@@ -365,7 +366,7 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
             or prompt(ui, 'Subject:', 'A bundle for your repository'))
 
     body = _getdescription(repo, '', sender, **opts)
-    msg = emailmod.MIMEMultipart.MIMEMultipart()
+    msg = emimemultipart.MIMEMultipart()
     if body:
         msg.attach(mail.mimeencode(ui, body, _charsets, opts.get(r'test')))
     datapart = emailmod.MIMEBase.MIMEBase('application', 'x-mercurial-bundle')

@@ -5067,7 +5067,8 @@ def status(ui, repo, *pats, **opts):
         # we need to compute clean and unknown to terse
         stat = repo.status(ctx1.node(), ctx2.node(), m,
                            'ignored' in show or 'i' in terse,
-                            True, True, opts.get('subrepos'))
+                            clean=True, unknown=True,
+                            listsubrepos=opts.get('subrepos'))
 
         stat = cmdutil.tersedir(stat, terse)
     else:

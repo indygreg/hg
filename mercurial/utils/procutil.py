@@ -42,9 +42,13 @@ def isatty(fp):
 
 # glibc determines buffering on first write to stdout - if we replace a TTY
 # destined stdout with a pipe destined stdout (e.g. pager), we want line
-# buffering
+# buffering (or unbuffered, on Windows)
 if isatty(stdout):
-    stdout = os.fdopen(stdout.fileno(), r'wb', 1)
+    if pycompat.iswindows:
+        # Windows doesn't support line buffering
+        stdout = os.fdopen(stdout.fileno(), r'wb', 0)
+    else:
+        stdout = os.fdopen(stdout.fileno(), r'wb', 1)
 
 if pycompat.iswindows:
     from .. import windows as platform

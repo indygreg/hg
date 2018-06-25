@@ -67,6 +67,48 @@ Adding more files
   ? x/
   ? y/
 
+Run from subdirectory
+  $ hg status --terse u --cwd x/l
+  ? .hgignore
+  ? a
+  ? b
+  ? x/
+  ? y/
+  $ relstatus() {
+  >   hg status --terse u --config commands.status.relative=1 "$@";
+  > }
+This should probably have {"l/", "m/", "n/"} instead of {"."}. They should
+probably come after "../y/".
+  $ relstatus --cwd x
+  ? ../.hgignore
+  ? ../a
+  ? ../b
+  ? .
+  ? ../y/
+This should probably have {"u/", "../m/", "../n/"} instead of {"../"}.
+  $ relstatus --cwd x/l
+  ? ../../.hgignore
+  ? ../../a
+  ? ../../b
+  ? ../
+  ? ../../y/
+This should probably have {"a/", "bb", "../aa", "../../m/", "../../n/"}
+instead of {"../../"}.
+  $ relstatus --cwd x/l/u
+  ? ../../../.hgignore
+  ? ../../../a
+  ? ../../../b
+  ? ../../
+  ? ../../../y/
+This should probably have {"bb", "../bb", "../../aa", "../../../m/",
+"../../../n/"} instead of {"../../../"}.
+  $ relstatus --cwd x/l/u/a
+  ? ../../../../.hgignore
+  ? ../../../../a
+  ? ../../../../b
+  ? ../../../
+  ? ../../../../y/
+
   $ hg add x/aa x/bb .hgignore
   $ hg status --terse au
   A .hgignore

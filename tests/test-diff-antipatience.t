@@ -11,9 +11,9 @@
 Test case that makes use of the weakness of patience diff algorithm
 
   $ hg init
-  >>> open('a', 'wb').write(b'\n'.join(list(b'a' + b'x' * 10 + b'u' + b'x' * 30 + b'a\n')))
+  >>> open('a', 'wb').write(('\n'.join(list('a' + 'x' * 10 + 'u' + 'x' * 30 + 'a\n'))).encode('ascii')) and None
   $ hg commit -m 1 -A a
-  >>> open('a', 'wb').write(b'\n'.join(list(b'b' + b'x' * 30 + b'u' + b'x' * 10 + b'b\n')))
+  >>> open('a', 'wb').write(('\n'.join(list('b' + 'x' * 30 + 'u' + 'x' * 10 + 'b\n'))).encode('ascii')) and None
 #if xdiff
   $ hg diff
   diff -r f0aeecb49805 a

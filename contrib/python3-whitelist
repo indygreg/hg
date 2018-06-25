@@ -338,6 +338,7 @@ test-obsolete-bundle-strip.t
 test-obsolete-changeset-exchange.t
 test-obsolete-checkheads.t
 test-obsolete-distributed.t
+test-obsolete-divergent.t
 test-obsolete-tag-cache.t
 test-pager.t
 test-parents.t

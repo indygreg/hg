@@ -704,16 +704,16 @@ Use scmutil.cleanupnodes API to create divergence
   > from mercurial import registrar, scmutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command('cleanup')
+  > @command(b'cleanup')
   > def cleanup(ui, repo):
   >     def node(expr):
   >         unfi = repo.unfiltered()
   >         rev = unfi.revs(expr).first()
   >         return unfi.changelog.node(rev)
-  >     with repo.wlock(), repo.lock(), repo.transaction('delayedstrip'):
-  >         mapping = {node('desc(B1)'): [node('desc(B3)')],
-  >                    node('desc(B3)'): [node('desc(B4)')]}
-  >         scmutil.cleanupnodes(repo, mapping, 'test')
+  >     with repo.wlock(), repo.lock(), repo.transaction(b'delayedstrip'):
+  >         mapping = {node(b'desc(B1)'): [node(b'desc(B3)')],
+  >                    node(b'desc(B3)'): [node(b'desc(B4)')]}
+  >         scmutil.cleanupnodes(repo, mapping, b'test')
   > EOF
 
   $ rm .hg/localtags

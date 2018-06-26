@@ -2111,6 +2111,8 @@ def forget(ui, repo, *pats, **opts):
      ('', 'abort', False, _('abort interrupted graft')),
      ('e', 'edit', False, _('invoke editor on commit messages')),
      ('', 'log', None, _('append graft info to log message')),
+     ('', 'no-commit', None,
+      _("don't commit, just apply the changes in working directory")),
      ('f', 'force', False, _('force graft')),
      ('D', 'currentdate', False,
       _('record the current date as commit date')),
@@ -2200,6 +2202,20 @@ def _dograft(ui, repo, *revs, **opts):
                                      **pycompat.strkwargs(opts))
 
     cont = False
+    if opts.get('no_commit'):
+        if opts.get('edit'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--edit together"))
+        if opts.get('currentuser'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--currentuser together"))
+        if opts.get('currentdate'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--currentdate together"))
+        if opts.get('log'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--log together"))
+
     graftstate = statemod.cmdstate(repo, 'graftstate')
 
     if opts.get('stop'):
@@ -2237,6 +2253,8 @@ def _dograft(ui, repo, *revs, **opts):
                 opts['user'] = statedata['user']
             if statedata.get('log'):
                 opts['log'] = True
+            if statedata.get('no_commit'):
+                opts['no_commit'] = statedata.get('no_commit')
             nodes = statedata['nodes']
             revs = [repo[node].rev() for node in nodes]
         else:
@@ -2323,6 +2341,8 @@ def _dograft(ui, repo, *revs, **opts):
         if not revs:
             return -1
 
+    if opts.get('no_commit'):
+        statedata['no_commit'] = True
     for pos, ctx in enumerate(repo.set("%ld", revs)):
         desc = '%d:%s "%s"' % (ctx.rev(), ctx,
                                ctx.description().split('\n', 1)[0])
@@ -2373,16 +2393,17 @@ def _dograft(ui, repo, *revs, **opts):
         else:
             cont = False
 
-        # commit
-        node = repo.commit(text=message, user=user,
-                    date=date, extra=extra, editor=editor)
-        if node is None:
-            ui.warn(
-                _('note: graft of %d:%s created no changes to commit\n') %
-                (ctx.rev(), ctx))
-        # checking that newnodes exist because old state files won't have it
-        elif statedata.get('newnodes') is not None:
-            statedata['newnodes'].append(node)
+        # commit if --no-commit is false
+        if not opts.get('no_commit'):
+            node = repo.commit(text=message, user=user, date=date, extra=extra,
+                               editor=editor)
+            if node is None:
+                ui.warn(
+                    _('note: graft of %d:%s created no changes to commit\n') %
+                    (ctx.rev(), ctx))
+            # checking that newnodes exist because old state files won't have it
+            elif statedata.get('newnodes') is not None:
+                statedata['newnodes'].append(node)
 
     # remove state when we complete successfully
     if not opts.get('dry_run'):

@@ -1885,3 +1885,246 @@ when we created new changesets on top of existing one
   new changesets detected on destination branch, can't strip
   graft aborted
   working directory is now at 6b98ff0062dd
+
+  $ cd ..
+
+============================
+Testing --no-commit option:|
+============================
+
+  $ hg init nocommit
+  $ cd nocommit
+  $ echo a > a
+  $ hg ci -qAma
+  $ echo b > b
+  $ hg ci -qAmb
+  $ hg up -q 0
+  $ echo c > c
+  $ hg ci -qAmc
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  @  2:d36c0562f908 c
+  |
+  | o  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+
+Check reporting when --no-commit used with non-applicable options:
+
+  $ hg graft 1 --no-commit -e
+  abort: cannot specify --no-commit and --edit together
+  [255]
+
+  $ hg graft 1 --no-commit --log
+  abort: cannot specify --no-commit and --log together
+  [255]
+
+  $ hg graft 1 --no-commit -D
+  abort: cannot specify --no-commit and --currentdate together
+  [255]
+
+Test --no-commit is working:
+  $ hg graft 1 --no-commit
+  grafting 1:d2ae7f538514 "b"
+
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  @  2:d36c0562f908 c
+  |
+  | o  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+
+  $ hg diff
+  diff -r d36c0562f908 b
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +b
+
+Prepare wrdir to check --no-commit is resepected after --continue:
+
+  $ hg up -qC
+  $ echo A>a
+  $ hg ci -qm "A in file a"
+  $ hg up -q 1
+  $ echo B>a
+  $ hg ci -qm "B in file a"
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  @  4:2aa9ad1006ff B in file a
+  |
+  | o  3:09e253b87e17 A in file a
+  | |
+  | o  2:d36c0562f908 c
+  | |
+  o |  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+
+  $ hg graft 3 --no-commit
+  grafting 3:09e253b87e17 "A in file a"
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+Resolve conflict:
+  $ echo A>a
+  $ hg resolve --mark
+  (no more unresolved files)
+  continue: hg graft --continue
+
+  $ hg graft --continue
+  grafting 3:09e253b87e17 "A in file a"
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  @  4:2aa9ad1006ff B in file a
+  |
+  | o  3:09e253b87e17 A in file a
+  | |
+  | o  2:d36c0562f908 c
+  | |
+  o |  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+  $ hg diff
+  diff -r 2aa9ad1006ff a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -B
+  +A
+
+  $ hg up -qC
+
+Check --no-commit is resepected when passed with --continue:
+
+  $ hg graft 3
+  grafting 3:09e253b87e17 "A in file a"
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+Resolve conflict:
+  $ echo A>a
+  $ hg resolve --mark
+  (no more unresolved files)
+  continue: hg graft --continue
+
+  $ hg graft --continue --no-commit
+  grafting 3:09e253b87e17 "A in file a"
+  $ hg diff
+  diff -r 2aa9ad1006ff a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -B
+  +A
+
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  @  4:2aa9ad1006ff B in file a
+  |
+  | o  3:09e253b87e17 A in file a
+  | |
+  | o  2:d36c0562f908 c
+  | |
+  o |  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+  $ hg up -qC
+
+Test --no-commit when graft multiple revisions:
+When there is conflict:
+  $ hg graft -r "2::3" --no-commit
+  grafting 2:d36c0562f908 "c"
+  grafting 3:09e253b87e17 "A in file a"
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  abort: unresolved conflicts, can't continue
+  (use 'hg resolve' and 'hg graft --continue')
+  [255]
+
+  $ echo A>a
+  $ hg resolve --mark
+  (no more unresolved files)
+  continue: hg graft --continue
+  $ hg graft --continue
+  grafting 3:09e253b87e17 "A in file a"
+  $ hg diff
+  diff -r 2aa9ad1006ff a
+  --- a/a	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/a	Thu Jan 01 00:00:00 1970 +0000
+  @@ -1,1 +1,1 @@
+  -B
+  +A
+  diff -r 2aa9ad1006ff c
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/c	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +c
+
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  @  4:2aa9ad1006ff B in file a
+  |
+  | o  3:09e253b87e17 A in file a
+  | |
+  | o  2:d36c0562f908 c
+  | |
+  o |  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+  $ hg up -qC
+
+When there is no conflict:
+  $ echo d>d
+  $ hg add d -q
+  $ hg ci -qmd
+  $ hg up 3 -q
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  o  5:baefa8927fc0 d
+  |
+  o  4:2aa9ad1006ff B in file a
+  |
+  | @  3:09e253b87e17 A in file a
+  | |
+  | o  2:d36c0562f908 c
+  | |
+  o |  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+
+  $ hg graft -r 1 -r 5 --no-commit
+  grafting 1:d2ae7f538514 "b"
+  grafting 5:baefa8927fc0 "d" (tip)
+  $ hg diff
+  diff -r 09e253b87e17 b
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/b	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +b
+  diff -r 09e253b87e17 d
+  --- /dev/null	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/d	Thu Jan 01 00:00:00 1970 +0000
+  @@ -0,0 +1,1 @@
+  +d
+  $ hg log -GT "{rev}:{node|short} {desc}\n"
+  o  5:baefa8927fc0 d
+  |
+  o  4:2aa9ad1006ff B in file a
+  |
+  | @  3:09e253b87e17 A in file a
+  | |
+  | o  2:d36c0562f908 c
+  | |
+  o |  1:d2ae7f538514 b
+  |/
+  o  0:cb9a9f314b8b a
+  
+  $ cd ..

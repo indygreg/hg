@@ -162,22 +162,25 @@ def fix(ui, repo, *pats, **opts):
         filedata = collections.defaultdict(dict)
         replacements = {}
         commitorder = sorted(revstofix, reverse=True)
-        for rev, path, newdata in results:
-            if newdata is not None:
-                filedata[rev][path] = newdata
-            numitems[rev] -= 1
-            # Apply the fixes for this and any other revisions that are ready
-            # and sitting at the front of the queue. Using a loop here prevents
-            # the queue from being blocked by the first revision to be ready out
-            # of order.
-            while commitorder and not numitems[commitorder[-1]]:
-                rev = commitorder.pop()
-                ctx = repo[rev]
-                if rev == wdirrev:
-                    writeworkingdir(repo, ctx, filedata[rev], replacements)
-                else:
-                    replacerev(ui, repo, ctx, filedata[rev], replacements)
-                del filedata[rev]
+        with ui.makeprogress(topic=_('fixing'), unit=_('files'),
+                             total=sum(numitems.values())) as progress:
+            for rev, path, newdata in results:
+                progress.increment(item=path)
+                if newdata is not None:
+                    filedata[rev][path] = newdata
+                numitems[rev] -= 1
+                # Apply the fixes for this and any other revisions that are
+                # ready and sitting at the front of the queue. Using a loop here
+                # prevents the queue from being blocked by the first revision to
+                # be ready out of order.
+                while commitorder and not numitems[commitorder[-1]]:
+                    rev = commitorder.pop()
+                    ctx = repo[rev]
+                    if rev == wdirrev:
+                        writeworkingdir(repo, ctx, filedata[rev], replacements)
+                    else:
+                        replacerev(ui, repo, ctx, filedata[rev], replacements)
+                    del filedata[rev]
 
         replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
         scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)

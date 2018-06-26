@@ -618,14 +618,14 @@ def _dnsnamematch(dn, hostname, maxwildcards=1):
         # The client SHOULD NOT attempt to match a presented identifier
         # where the wildcard character is embedded within an A-label or
         # U-label of an internationalized domain name.
-        pats.append(re.escape(leftmost))
+        pats.append(stringutil.reescape(leftmost))
     else:
         # Otherwise, '*' matches any dotless string, e.g. www*
-        pats.append(re.escape(leftmost).replace(br'\*', '[^.]*'))
+        pats.append(stringutil.reescape(leftmost).replace(br'\*', '[^.]*'))
 
     # add the remaining fragments, ignore any wildcards
     for frag in remainder:
-        pats.append(re.escape(frag))
+        pats.append(stringutil.reescape(frag))
 
     pat = re.compile(br'\A' + br'\.'.join(pats) + br'\Z', re.IGNORECASE)
     return pat.match(hostname) is not None

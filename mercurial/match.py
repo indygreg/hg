@@ -714,7 +714,7 @@ def _globre(pat):
     >>> bprint(_globre(br'**/a'))
     (?:.*/)?a
     >>> bprint(_globre(br'a/**/b'))
-    a\/(?:.*/)?b
+    a/(?:.*/)?b
     >>> bprint(_globre(br'[a*?!^][^b][!c]'))
     [a*?!^][\^b][^c]
     >>> bprint(_globre(br'{a,b}'))
@@ -725,7 +725,7 @@ def _globre(pat):
     i, n = 0, len(pat)
     res = ''
     group = 0
-    escape = util.re.escape
+    escape = util.stringutil.reescape
     def peek():
         return i < n and pat[i:i + 1]
     while i < n:
@@ -790,13 +790,13 @@ def _regex(kind, pat, globsuffix):
     if kind in ('path', 'relpath'):
         if pat == '.':
             return ''
-        return util.re.escape(pat) + '(?:/|$)'
+        return util.stringutil.reescape(pat) + '(?:/|$)'
     if kind == 'rootfilesin':
         if pat == '.':
             escaped = ''
         else:
             # Pattern is a directory name.
-            escaped = util.re.escape(pat) + '/'
+            escaped = util.stringutil.reescape(pat) + '/'
         # Anything after the pattern must be a non-directory.
         return escaped + '[^/]+$'
     if kind == 'relglob':

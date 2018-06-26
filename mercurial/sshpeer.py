@@ -22,6 +22,7 @@ from . import (
 )
 from .utils import (
     procutil,
+    stringutil,
 )
 
 def _serverquote(s):
@@ -273,7 +274,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     # Assume version 1 of wire protocol by default.
     protoname = wireprototypes.SSHV1
-    reupgraded = re.compile(b'^upgraded %s (.*)$' % re.escape(token))
+    reupgraded = re.compile(b'^upgraded %s (.*)$' % stringutil.reescape(token))
 
     lines = ['', 'dummy']
     max_noise = 500

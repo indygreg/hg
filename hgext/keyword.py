@@ -245,7 +245,7 @@ class kwtemplater(object):
     @util.propertycache
     def escape(self):
         '''Returns bar-separated and escaped keywords.'''
-        return '|'.join(map(re.escape, self.templates.keys()))
+        return '|'.join(map(stringutil.reescape, self.templates.keys()))
 
     @util.propertycache
     def rekw(self):

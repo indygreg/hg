@@ -766,7 +766,7 @@ def getwebsubs(repo):
     for key, pattern in websubdefs:
         # grab the delimiter from the character after the "s"
         unesc = pattern[1:2]
-        delim = re.escape(unesc)
+        delim = stringutil.reescape(unesc)
 
         # identify portions of the pattern, taking care to avoid escaped
         # delimiters. the replace format and flags are optional, but

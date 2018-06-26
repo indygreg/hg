@@ -56,7 +56,7 @@ class gitlfspointer(dict):
     _requiredre = {
         'size': re.compile(br'\A[0-9]+\Z'),
         'oid': re.compile(br'\Asha256:[0-9a-f]{64}\Z'),
-        'version': re.compile(br'\A%s\Z' % re.escape(VERSION)),
+        'version': re.compile(br'\A%s\Z' % stringutil.reescape(VERSION)),
     }
 
     def validate(self):

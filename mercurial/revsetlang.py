@@ -459,6 +459,12 @@ def _optimize(x):
         f = getsymbol(x[1])
         wa, ta = _optimize(x[2])
         w = getattr(symbols.get(f), '_weight', 1)
+        m = _match('commonancestors(_)', ta)
+
+        # Optimize heads(commonancestors(_)) because we have a fast version
+        if f == 'heads' and m:
+            return w + wa, _build('_commonancestorheads(_)', m[1])
+
         return w + wa, (op, x[1], ta)
     raise ValueError('invalid operator %r' % op)
 

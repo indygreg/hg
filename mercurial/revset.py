@@ -608,6 +608,19 @@ def closed(repo, subset, x):
     return subset.filter(lambda r: repo[r].closesbranch(),
                          condrepr='<branch closed>')
 
+# for internal use
+@predicate('_commonancestorheads(set)', safe=True)
+def _commonancestorheads(repo, subset, x):
+    # This is an internal method is for quickly calculating "heads(::x and
+    # ::y)"
+
+    # These greatest common ancestors are the same ones that the consesus bid
+    # merge will find.
+    h = heads(repo, fullreposet(repo), x, defineorder)
+
+    ancs = repo.changelog._commonancestorsheads(*list(h))
+    return subset & baseset(ancs)
+
 @predicate('commonancestors(set)', safe=True)
 def commonancestors(repo, subset, x):
     """Returns all common ancestors of the set.

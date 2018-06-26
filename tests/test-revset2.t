@@ -1834,3 +1834,21 @@ Test `draft() & ::x` optimization
         (keyvalue
           (symbol 'depth')
           (symbol '1')))))
+
+test commonancestors and its optimization
+
+  $ hg debugrevspec --verify -p analyzed -p optimized 'heads(commonancestors(head()))'
+  * analyzed:
+  (func
+    (symbol 'heads')
+    (func
+      (symbol 'commonancestors')
+      (func
+        (symbol 'head')
+        None)))
+  * optimized:
+  (func
+    (symbol '_commonancestorheads')
+    (func
+      (symbol 'head')
+      None))

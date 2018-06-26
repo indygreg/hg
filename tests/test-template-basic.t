@@ -835,11 +835,11 @@ Test leading backslashes in "if" expression (issue4714):
   -o perso-
   $ hg log -R a -r 2 --template '{sub(r"\\x6e", "-", desc)}\n'
   no person
-  $ hg log -R a -r 2 --template '{sub("n", r"\x2d", desc)}\n'
+  $ hg log -R a -r 2 --template '{sub("n", r"\\x2d", desc)}\n'
   \x2do perso\x2d
   $ hg log -R a -r 2 --template '{sub("n", "\x2d", "no perso\x6e")}\n'
   -o perso-
-  $ hg log -R a -r 2 --template '{sub("n", r"\x2d", r"no perso\x6e")}\n'
+  $ hg log -R a -r 2 --template '{sub("n", r"\\x2d", r"no perso\x6e")}\n'
   \x2do perso\x6e
 
   $ hg log -R a -r 8 --template '{files % "{file}\n"}'

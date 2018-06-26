@@ -23,6 +23,25 @@ from .. import (
     pycompat,
 )
 
+# regex special chars pulled from https://bugs.python.org/issue29995
+# which was part of Python 3.7.
+_respecial = pycompat.bytestr(b'()[]{}?*+-|^$\\.# \t\n\r\v\f')
+_regexescapemap = {ord(i): (b'\\' + i).decode('latin1') for i in _respecial}
+
+def reescape(pat):
+    """Drop-in replacement for re.escape."""
+    # NOTE: it is intentional that this works on unicodes and not
+    # bytes, as it's only possible to do the escaping with
+    # unicode.translate, not bytes.translate. Sigh.
+    wantuni = True
+    if isinstance(pat, bytes):
+        wantuni = False
+        pat = pat.decode('latin1')
+    pat = pat.translate(_regexescapemap)
+    if wantuni:
+        return pat
+    return pat.encode('latin1')
+
 def pprint(o, bprefix=False):
     """Pretty print an object."""
     if isinstance(o, bytes):

@@ -818,11 +818,14 @@ def rebase(ui, repo, **opts):
         opts[r'dest'] = '_destautoorphanrebase(SRC)'
 
     if dryrun:
+        leaveunfinished = True
+        inmemory = True
+        rbsrt = rebaseruntime(repo, ui, inmemory, opts)
         try:
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                _origrebase(ui, repo, inmemory=True, leaveunfinished=True,
-                            **opts)
+                _origrebase(ui, repo, inmemory=True, rbsrt=rbsrt,
+                            leaveunfinished=leaveunfinished, **opts)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
             return 1
@@ -830,7 +833,8 @@ def rebase(ui, repo, **opts):
             ui.status(_('there will be no conflict, you can rebase\n'))
             return 0
         finally:
-            _origrebase(ui, repo, abort=True)
+            with repo.wlock(), repo.lock():
+                rbsrt._prepareabortorcontinue(isabort=True)
     elif inmemory:
         try:
             # in-memory merge doesn't support conflicts, so if we hit any, abort
@@ -846,9 +850,11 @@ def rebase(ui, repo, **opts):
     else:
         return _origrebase(ui, repo, **opts)
 
-def _origrebase(ui, repo, inmemory=False, leaveunfinished=False, **opts):
+def _origrebase(ui, repo, inmemory=False, leaveunfinished=False, rbsrt=None,
+                **opts):
     opts = pycompat.byteskwargs(opts)
-    rbsrt = rebaseruntime(repo, ui, inmemory, opts)
+    if not rbsrt:
+        rbsrt = rebaseruntime(repo, ui, inmemory, opts)
 
     with repo.wlock(), repo.lock():
         # Validate input and define rebasing points

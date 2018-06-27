@@ -64,7 +64,7 @@ Verify that updating to revision 0 via commands.update() works properly
   > from mercurial import ui, hg, commands
   > myui = ui.ui.load()
   > repo = hg.repository(myui, path=b'.')
-  > commands.update(myui, repo, rev=0)
+  > commands.update(myui, repo, rev=b"0")
   > EOF
   $ hg up null
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved

@@ -25,7 +25,7 @@ from .. import (
 
 # regex special chars pulled from https://bugs.python.org/issue29995
 # which was part of Python 3.7.
-_respecial = pycompat.bytestr(b'()[]{}?*+-|^$\\.# \t\n\r\v\f')
+_respecial = pycompat.bytestr(b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f')
 _regexescapemap = {ord(i): (b'\\' + i).decode('latin1') for i in _respecial}
 
 def reescape(pat):

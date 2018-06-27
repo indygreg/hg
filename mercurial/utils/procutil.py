@@ -415,3 +415,36 @@ def rundetached(args, condfn):
     finally:
         if prevhandler is not None:
             signal.signal(signal.SIGCHLD, prevhandler)
+
+@contextlib.contextmanager
+def uninterruptable(warn):
+    """Inhibit SIGINT handling on a region of code.
+
+    Note that if this is called in a non-main thread, it turns into a no-op.
+
+    Args:
+      warn: A callable which takes no arguments, and returns True if the
+            previous signal handling should be restored.
+    """
+
+    oldsiginthandler = [signal.getsignal(signal.SIGINT)]
+    shouldbail = []
+
+    def disabledsiginthandler(*args):
+        if warn():
+            signal.signal(signal.SIGINT, oldsiginthandler[0])
+            del oldsiginthandler[0]
+        shouldbail.append(True)
+
+    try:
+        try:
+            signal.signal(signal.SIGINT, disabledsiginthandler)
+        except ValueError:
+            # wrong thread, oh well, we tried
+            del oldsiginthandler[0]
+        yield
+    finally:
+        if oldsiginthandler:
+            signal.signal(signal.SIGINT, oldsiginthandler[0])
+        if shouldbail:
+            raise KeyboardInterrupt

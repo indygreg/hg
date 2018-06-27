@@ -560,6 +560,9 @@ coreconfigitem('experimental', 'httppostargs',
 coreconfigitem('experimental', 'mergedriver',
     default=None,
 )
+coreconfigitem('experimental', 'nointerrupt', default=False)
+coreconfigitem('experimental', 'nointerrupt-interactiveonly', default=True)
+
 coreconfigitem('experimental', 'obsmarkers-exchange-debug',
     default=False,
 )

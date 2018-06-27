@@ -224,6 +224,7 @@ class ui(object):
         self._colormode = None
         self._terminfoparams = {}
         self._styles = {}
+        self._uninterruptible = False
 
         if src:
             self.fout = src.fout
@@ -333,6 +334,37 @@ class ui(object):
         finally:
             self._blockedtimes[key + '_blocked'] += \
                 (util.timer() - starttime) * 1000
+
+    @contextlib.contextmanager
+    def uninterruptable(self):
+        """Mark an operation as unsafe.
+
+        Most operations on a repository are safe to interrupt, but a
+        few are risky (for example repair.strip). This context manager
+        lets you advise Mercurial that something risky is happening so
+        that control-C etc can be blocked if desired.
+        """
+        enabled = self.configbool('experimental', 'nointerrupt')
+        if (enabled and
+            self.configbool('experimental', 'nointerrupt-interactiveonly')):
+            enabled = self.interactive()
+        if self._uninterruptible or not enabled:
+            # if nointerrupt support is turned off, the process isn't
+            # interactive, or we're already in an uninterruptable
+            # block, do nothing.
+            yield
+            return
+        def warn():
+            self.warn(_("shutting down cleanly\n"))
+            self.warn(
+                _("press ^C again to terminate immediately (dangerous)\n"))
+            return True
+        with procutil.uninterruptable(warn):
+            try:
+                self._uninterruptible = True
+                yield
+            finally:
+                self._uninterruptible = False
 
     def formatter(self, topic, opts):
         return formatter.formatter(self, self, topic, opts)

@@ -1376,20 +1376,20 @@ Test heads
         <baseset [9]>, set([0, 1, 2, 3, 4, 5, 6, 8])>>>
   9
 
- BROKEN: but should follow the order of the subset
+ but should follow the order of the subset
 
   $ log 'heads(all())'
   7
   9
   $ log 'heads(tip:0)'
-  9
   7
+  9
   $ log 'tip:0 & heads(all())'
   9
   7
   $ log 'tip:0 & heads(0:tip)'
-  7
   9
+  7
 
   $ log 'keyword(issue)'
   6

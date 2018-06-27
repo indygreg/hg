@@ -1129,11 +1129,14 @@ def head(repo, subset, x):
         hs.update(cl.rev(h) for h in ls)
     return subset & baseset(hs)
 
-@predicate('heads(set)', safe=True)
-def heads(repo, subset, x):
+@predicate('heads(set)', safe=True, takeorder=True)
+def heads(repo, subset, x, order):
     """Members of set with no children in set.
     """
-    s = getset(repo, subset, x)
+    # argument set should never define order
+    if order == defineorder:
+        order = followorder
+    s = getset(repo, subset, x, order=order)
     ps = parents(repo, subset, x)
     return s - ps
 

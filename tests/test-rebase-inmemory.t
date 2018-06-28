@@ -208,10 +208,11 @@ Make sure it throws error while passing --continue or --abort with --dry-run
 
 Check dryrun gives correct results when there is no conflict in rebasing
   $ hg rebase -s 2 -d 6 -n
+  starting dry-run rebase; repository will not be changed
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
-  there will be no conflict, you can rebase
+  dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase
 
   $ hg diff
   $ hg status
@@ -240,10 +241,11 @@ Check dryrun gives correct results when there is no conflict in rebasing
   
 Check dryrun working with --collapse when there is no conflict
   $ hg rebase -s 2 -d 6 -n --collapse
+  starting dry-run rebase; repository will not be changed
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
-  there will be no conflict, you can rebase
+  dry-run rebase completed successfully; run without -n/--dry-run to perform this rebase
 
 Check dryrun gives correct results when there is conflict in rebasing
 Make a conflict:
@@ -276,6 +278,7 @@ Make a conflict:
      a
   
   $ hg rebase -s 2 -d 7 -n
+  starting dry-run rebase; repository will not be changed
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
@@ -313,6 +316,7 @@ Make a conflict:
   
 Check dryrun working with --collapse when there is conflicts
   $ hg rebase -s 2 -d 7 -n --collapse
+  starting dry-run rebase; repository will not be changed
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"

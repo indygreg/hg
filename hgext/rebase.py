@@ -844,6 +844,7 @@ def rebase(ui, repo, **opts):
 
 def _dryrunrebase(ui, repo, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
+    ui.status(_('starting dry-run rebase; repository will not be changed\n'))
     with repo.wlock(), repo.lock():
         try:
             overrides = {('rebase', 'singletransaction'): True}
@@ -854,7 +855,8 @@ def _dryrunrebase(ui, repo, opts):
             ui.status(_('hit a merge conflict\n'))
             return 1
         else:
-            ui.status(_('there will be no conflict, you can rebase\n'))
+            ui.status(_('dry-run rebase completed successfully; run without '
+                        '-n/--dry-run to perform this rebase\n'))
             return 0
         finally:
             # no need to store backup in case of dryrun

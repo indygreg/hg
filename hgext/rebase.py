@@ -325,7 +325,7 @@ class rebaseruntime(object):
         skippedset.update(obsoleteextinctsuccessors)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
 
-    def _prepareabortorcontinue(self, isabort):
+    def _prepareabortorcontinue(self, isabort, backup=True):
         try:
             self.restorestatus()
             self.collapsemsg = restorecollapsemsg(self.repo, isabort)
@@ -341,8 +341,8 @@ class rebaseruntime(object):
                 hint = _('use "hg rebase --abort" to clear broken state')
                 raise error.Abort(msg, hint=hint)
         if isabort:
-            return abort(self.repo, self.originalwd, self.destmap,
-                         self.state, activebookmark=self.activebookmark)
+            return abort(self.repo, self.originalwd, self.destmap, self.state,
+                         activebookmark=self.activebookmark, backup=backup)
 
     def _preparenewrebase(self, destmap):
         if not destmap:
@@ -850,7 +850,8 @@ def _dryrunrebase(ui, repo, **opts):
             ui.status(_('there will be no conflict, you can rebase\n'))
             return 0
         finally:
-            rbsrt._prepareabortorcontinue(isabort=True)
+            # no need to store backup in case of dryrun
+            rbsrt._prepareabortorcontinue(isabort=True, backup=False)
 
 def _dorebase(ui, repo, inmemory=False, **opts):
     rbsrt = rebaseruntime(repo, ui, inmemory, pycompat.byteskwargs(opts))
@@ -1553,7 +1554,7 @@ def needupdate(repo, state):
 
     return False
 
-def abort(repo, originalwd, destmap, state, activebookmark=None):
+def abort(repo, originalwd, destmap, state, activebookmark=None, backup=True):
     '''Restore the repository to its original state.  Additional args:
 
     activebookmark: the name of the bookmark that should be active after the
@@ -1598,7 +1599,7 @@ def abort(repo, originalwd, destmap, state, activebookmark=None):
 
             # Strip from the first rebased revision
             if rebased:
-                repair.strip(repo.ui, repo, strippoints)
+                repair.strip(repo.ui, repo, strippoints, backup=backup)
 
         if activebookmark and activebookmark in repo._bookmarks:
             bookmarks.activate(repo, activebookmark)

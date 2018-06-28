@@ -212,7 +212,6 @@ Check dryrun gives correct results when there is no conflict in rebasing
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   there will be no conflict, you can rebase
-  saved backup bundle to $TESTTMP/repo1/repo2/skrepo/.hg/strip-backup/c83b1da5b1ae-f1e0beb9-backup.hg
   rebase aborted
 
   $ hg diff

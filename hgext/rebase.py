@@ -825,14 +825,14 @@ def rebase(ui, repo, **opts):
             # and re-run as an on-disk merge.
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                return _origrebase(ui, repo, inmemory=inmemory, **opts)
+                return _dorebase(ui, repo, inmemory=inmemory, **opts)
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _origrebase(ui, repo, abort=True)
-            return _origrebase(ui, repo, inmemory=False, **opts)
+            _dorebase(ui, repo, abort=True)
+            return _dorebase(ui, repo, inmemory=False, **opts)
     else:
-        return _origrebase(ui, repo, **opts)
+        return _dorebase(ui, repo, **opts)
 
 def _dryrunrebase(ui, repo, **opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True,
@@ -841,7 +841,7 @@ def _dryrunrebase(ui, repo, **opts):
         try:
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                _origrebase(ui, repo, inmemory=True, rbsrt=rbsrt,
+                _origrebase(ui, repo, rbsrt, inmemory=True,
                             leaveunfinished=True, **opts)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
@@ -852,12 +852,12 @@ def _dryrunrebase(ui, repo, **opts):
         finally:
             rbsrt._prepareabortorcontinue(isabort=True)
 
-def _origrebase(ui, repo, inmemory=False, leaveunfinished=False, rbsrt=None,
-                **opts):
-    opts = pycompat.byteskwargs(opts)
-    if not rbsrt:
-        rbsrt = rebaseruntime(repo, ui, inmemory, opts)
+def _dorebase(ui, repo, inmemory=False, **opts):
+    rbsrt = rebaseruntime(repo, ui, inmemory, pycompat.byteskwargs(opts))
+    return _origrebase(ui, repo, rbsrt, inmemory=inmemory, **opts)
 
+def _origrebase(ui, repo, rbsrt, inmemory=False, leaveunfinished=False, **opts):
+    opts = pycompat.byteskwargs(opts)
     with repo.wlock(), repo.lock():
         # Validate input and define rebasing points
         destf = opts.get('dest', None)

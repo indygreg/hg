@@ -820,7 +820,7 @@ def rebase(ui, repo, **opts):
     if dryrun:
         leaveunfinished = True
         inmemory = True
-        rbsrt = rebaseruntime(repo, ui, inmemory, opts)
+        rbsrt = rebaseruntime(repo, ui, inmemory, pycompat.byteskwargs(opts))
         try:
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):

@@ -2488,7 +2488,7 @@ def _stopgraft(ui, repo, graftstate):
 
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),
-    ('', 'all', None, _('print all revisions that match')),
+    ('', 'all', None, _('print all revisions that match (DEPRECATED) ')),
     ('', 'diff', None, _('print all revisions when the term was introduced '
                          'or removed')),
     ('a', 'text', None, _('treat all files as text')),
@@ -2519,7 +2519,7 @@ def grep(ui, repo, pattern, *pats, **opts):
     file in which it finds a match. To get it to print every revision
     that contains a change in match status ("-" for a match that becomes
     a non-match, or "+" for a non-match that becomes a match), use the
-    --diff/--all flag.
+    --diff flag.
 
     PATTERN can be any Python (roughly Perl-compatible) regular
     expression.

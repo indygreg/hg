@@ -325,7 +325,7 @@ class rebaseruntime(object):
         skippedset.update(obsoleteextinctsuccessors)
         _checkobsrebase(self.repo, self.ui, obsoleteset, skippedset)
 
-    def _prepareabortorcontinue(self, isabort, backup=True):
+    def _prepareabortorcontinue(self, isabort, backup=True, suppwarns=False):
         try:
             self.restorestatus()
             self.collapsemsg = restorecollapsemsg(self.repo, isabort)
@@ -342,7 +342,8 @@ class rebaseruntime(object):
                 raise error.Abort(msg, hint=hint)
         if isabort:
             return abort(self.repo, self.originalwd, self.destmap, self.state,
-                         activebookmark=self.activebookmark, backup=backup)
+                         activebookmark=self.activebookmark, backup=backup,
+                         suppwarns=suppwarns)
 
     def _preparenewrebase(self, destmap):
         if not destmap:
@@ -851,7 +852,8 @@ def _dryrunrebase(ui, repo, **opts):
             return 0
         finally:
             # no need to store backup in case of dryrun
-            rbsrt._prepareabortorcontinue(isabort=True, backup=False)
+            rbsrt._prepareabortorcontinue(isabort=True, backup=False,
+                                          suppwarns=True)
 
 def _dorebase(ui, repo, inmemory=False, **opts):
     rbsrt = rebaseruntime(repo, ui, inmemory, pycompat.byteskwargs(opts))
@@ -1554,7 +1556,8 @@ def needupdate(repo, state):
 
     return False
 
-def abort(repo, originalwd, destmap, state, activebookmark=None, backup=True):
+def abort(repo, originalwd, destmap, state, activebookmark=None, backup=True,
+          suppwarns=False):
     '''Restore the repository to its original state.  Additional args:
 
     activebookmark: the name of the bookmark that should be active after the
@@ -1607,7 +1610,8 @@ def abort(repo, originalwd, destmap, state, activebookmark=None, backup=True):
     finally:
         clearstatus(repo)
         clearcollapsemsg(repo)
-        repo.ui.warn(_('rebase aborted\n'))
+        if not suppwarns:
+            repo.ui.warn(_('rebase aborted\n'))
     return 0
 
 def sortsource(destmap):

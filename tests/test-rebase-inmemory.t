@@ -212,7 +212,6 @@ Check dryrun gives correct results when there is no conflict in rebasing
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   there will be no conflict, you can rebase
-  rebase aborted
 
   $ hg diff
   $ hg status
@@ -245,7 +244,6 @@ Check dryrun working with --collapse when there is no conflict
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
   there will be no conflict, you can rebase
-  rebase aborted
 
 Check dryrun gives correct results when there is conflict in rebasing
 Make a conflict:
@@ -285,7 +283,6 @@ Make a conflict:
   transaction abort!
   rollback completed
   hit a merge conflict
-  rebase aborted
   [1]
   $ hg diff
   $ hg status
@@ -321,5 +318,4 @@ Check dryrun working with --collapse when there is conflicts
   rebasing 4:e860deea161a "e"
   merging e
   hit a merge conflict
-  rebase aborted
   [1]

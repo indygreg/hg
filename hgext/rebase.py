@@ -818,22 +818,7 @@ def rebase(ui, repo, **opts):
         opts[r'dest'] = '_destautoorphanrebase(SRC)'
 
     if dryrun:
-        rbsrt = rebaseruntime(repo, ui, inmemory=True,
-                              opts=pycompat.byteskwargs(opts))
-        with repo.wlock(), repo.lock():
-            try:
-                overrides = {('rebase', 'singletransaction'): True}
-                with ui.configoverride(overrides, 'rebase'):
-                    _origrebase(ui, repo, inmemory=True, rbsrt=rbsrt,
-                                leaveunfinished=True, **opts)
-            except error.InMemoryMergeConflictsError:
-                ui.status(_('hit a merge conflict\n'))
-                return 1
-            else:
-                ui.status(_('there will be no conflict, you can rebase\n'))
-                return 0
-            finally:
-                rbsrt._prepareabortorcontinue(isabort=True)
+        return _dryrunrebase(ui, repo, **opts)
     elif inmemory:
         try:
             # in-memory merge doesn't support conflicts, so if we hit any, abort
@@ -848,6 +833,24 @@ def rebase(ui, repo, **opts):
             return _origrebase(ui, repo, inmemory=False, **opts)
     else:
         return _origrebase(ui, repo, **opts)
+
+def _dryrunrebase(ui, repo, **opts):
+    rbsrt = rebaseruntime(repo, ui, inmemory=True,
+                          opts=pycompat.byteskwargs(opts))
+    with repo.wlock(), repo.lock():
+        try:
+            overrides = {('rebase', 'singletransaction'): True}
+            with ui.configoverride(overrides, 'rebase'):
+                _origrebase(ui, repo, inmemory=True, rbsrt=rbsrt,
+                            leaveunfinished=True, **opts)
+        except error.InMemoryMergeConflictsError:
+            ui.status(_('hit a merge conflict\n'))
+            return 1
+        else:
+            ui.status(_('there will be no conflict, you can rebase\n'))
+            return 0
+        finally:
+            rbsrt._prepareabortorcontinue(isabort=True)
 
 def _origrebase(ui, repo, inmemory=False, leaveunfinished=False, rbsrt=None,
                 **opts):

@@ -263,6 +263,9 @@ Some tests for hgweb in an empty repository
   <li><a href="/file/tip">browse</a></li>
   </ul>
   <ul>
+  
+  </ul>
+  <ul>
    <li><a href="/help">help</a></li>
   </ul>
   <div class="atom-logo">

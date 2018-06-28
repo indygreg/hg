@@ -1370,6 +1370,7 @@ def graph(web):
         jsdata=templateutil.mappinggenerator(jsdata),
         nodes=templateutil.mappinggenerator(nodes),
         node=ctx.hex(),
+        archives=web.archivelist('tip'),
         changenav=changenav)
 
 def _getdoc(e):

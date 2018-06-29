@@ -306,6 +306,7 @@ def sendrequest(ui, opener, req):
 
         start = util.timer()
 
+    res = None
     try:
         res = opener.open(req)
     except urlerr.httperror as inst:
@@ -319,8 +320,9 @@ def sendrequest(ui, opener, req):
         raise IOError(None, inst)
     finally:
         if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
+            code = res.code if res else -1
             dbg(line % '  finished in %.4f seconds (%d)'
-                % (util.timer() - start, res.code))
+                % (util.timer() - start, code))
 
     # Insert error handlers for common I/O failures.
     _wraphttpresponse(res)

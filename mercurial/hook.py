@@ -139,9 +139,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
             v = stringutil.pprint(v)
         env['HG_' + k.upper()] = v
 
-    if pycompat.iswindows:
-        environ = procutil.shellenviron(env)
-        cmd = util.platform.shelltocmdexe(cmd, environ)
+    cmd = procutil.shelltonative(cmd, env)
 
     ui.note(_("running hook %s: %s\n") % (name, cmd))
 

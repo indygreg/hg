@@ -317,6 +317,13 @@ def shellenviron(environ=None):
     env['HG'] = hgexecutable()
     return env
 
+if pycompat.iswindows:
+    def shelltonative(cmd, env):
+        return platform.shelltocmdexe(cmd, shellenviron(env))
+else:
+    def shelltonative(cmd, env):
+        return cmd
+
 def system(cmd, environ=None, cwd=None, out=None):
     '''enhanced shell command execution.
     run with environment maybe modified, maybe in different dir.

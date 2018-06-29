@@ -1813,6 +1813,16 @@ Test working-directory revision
   6
   7
   2147483647
+  $ hg debugrevspec '0:wdir() & ancestor(wdir())'
+  2147483647
+  $ hg debugrevspec '0:wdir() & ancestor(.:wdir())'
+  4
+  $ hg debugrevspec '0:wdir() & ancestor(wdir(), wdir())'
+  2147483647
+  $ hg debugrevspec '0:wdir() & ancestor(wdir(), tip)'
+  4
+  $ hg debugrevspec 'null:wdir() & ancestor(wdir(), null)'
+  -1
   $ hg debugrevspec 'wdir()~0'
   2147483647
   $ hg debugrevspec 'p1(wdir())'

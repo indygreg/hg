@@ -319,8 +319,9 @@ def ancestor(repo, subset, x):
     for r in reviter:
         anc = anc.ancestor(repo[r])
 
-    if anc.rev() in subset:
-        return baseset([anc.rev()])
+    r = scmutil.intrev(anc)
+    if r in subset:
+        return baseset([r])
     return baseset()
 
 def _ancestors(repo, subset, x, followfirst=False, startdepth=None,

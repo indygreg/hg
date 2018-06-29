@@ -120,6 +120,52 @@ test churn with globs
   python hash seed: * (glob)
   [1]
 
+test how multiple globs gets matched with lines in output
+  $ cat > test-failure-globs.t <<EOF
+  >   $ echo "context"; echo "context"; \
+  >     echo "key: 1"; echo "value: not a"; \
+  >     echo "key: 2"; echo "value: not b"; \
+  >     echo "key: 3"; echo "value: c"; \
+  >     echo "key: 4"; echo "value: d"
+  >   context
+  >   context
+  >   key: 1
+  >   value: a
+  >   key: 2
+  >   value: b
+  >   key: 3
+  >   value: * (glob)
+  >   key: 4
+  >   value: * (glob)
+  > EOF
+  $ rt test-failure-globs.t
+  
+  --- $TESTTMP/test-failure-globs.t
+  +++ $TESTTMP/test-failure-globs.t.err
+  @@ -2,10 +2,10 @@
+     context
+     context
+     key: 1
+  -  value: a
+  +  value: * (glob)
+     key: 2
+  -  value: b
+  +  value: * (glob)
+     key: 3
+  -  value: * (glob)
+  +  value: c
+     key: 4
+  -  value: * (glob)
+  +  value: d
+  
+  ERROR: test-failure-globs.t output changed
+  !
+  Failed test-failure-globs.t: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+  $ rm test-failure-globs.t
+
 test diff colorisation
 
 #if no-windows pygments
@@ -374,6 +420,7 @@ test --xunit support
 
   $ cat .testtimes
   test-empty.t * (glob)
+  test-failure-globs.t * (glob)
   test-failure-unicode.t * (glob)
   test-failure.t * (glob)
   test-success.t * (glob)

@@ -1328,7 +1328,7 @@ class progress(object):
         self.total = total
 
     def __enter__(self):
-        pass
+        return self
 
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.complete()

@@ -246,8 +246,9 @@ class abstractvfs(object):
         """Attempt to remove a file, ignoring missing file errors."""
         util.tryunlink(self.join(path))
 
-    def unlinkpath(self, path=None, ignoremissing=False):
-        return util.unlinkpath(self.join(path), ignoremissing=ignoremissing)
+    def unlinkpath(self, path=None, ignoremissing=False, rmdir=True):
+        return util.unlinkpath(self.join(path), ignoremissing=ignoremissing,
+                               rmdir=rmdir)
 
     def utime(self, path=None, t=None):
         return os.utime(self.join(path), t)

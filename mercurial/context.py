@@ -1707,7 +1707,9 @@ class workingfilectx(committablefilectx):
 
     def remove(self, ignoremissing=False):
         """wraps unlink for a repo's working directory"""
-        self._repo.wvfs.unlinkpath(self._path, ignoremissing=ignoremissing)
+        rmdir = self._repo.ui.configbool('experimental', 'removeemptydirs')
+        self._repo.wvfs.unlinkpath(self._path, ignoremissing=ignoremissing,
+                                   rmdir=rmdir)
 
     def write(self, data, flags, backgroundclose=False, **kwargs):
         """wraps repo.wwrite"""

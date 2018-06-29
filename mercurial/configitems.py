@@ -566,6 +566,9 @@ coreconfigitem('experimental', 'obsmarkers-exchange-debug',
 coreconfigitem('experimental', 'remotenames',
     default=False,
 )
+coreconfigitem('experimental', 'removeemptydirs',
+    default=True,
+)
 coreconfigitem('experimental', 'revlogv2',
     default=None,
 )

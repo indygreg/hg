@@ -2139,17 +2139,18 @@ class atomictempfile(object):
         else:
             self.close()
 
-def unlinkpath(f, ignoremissing=False):
+def unlinkpath(f, ignoremissing=False, rmdir=True):
     """unlink and remove the directory if it is empty"""
     if ignoremissing:
         tryunlink(f)
     else:
         unlink(f)
-    # try removing directories that might now be empty
-    try:
-        removedirs(os.path.dirname(f))
-    except OSError:
-        pass
+    if rmdir:
+        # try removing directories that might now be empty
+        try:
+            removedirs(os.path.dirname(f))
+        except OSError:
+            pass
 
 def tryunlink(f):
     """Attempt to remove a file, ignoring ENOENT errors."""

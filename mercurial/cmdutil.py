@@ -1242,7 +1242,8 @@ def copy(ui, repo, pats, opts, rename=False):
                              dryrun=dryrun, cwd=cwd)
         if rename and not dryrun:
             if not after and srcexists and not samefile:
-                repo.wvfs.unlinkpath(abssrc)
+                rmdir = repo.ui.configbool('experimental', 'removeemptydirs')
+                repo.wvfs.unlinkpath(abssrc, rmdir=rmdir)
             wctx.forget([abssrc])
 
     # pat: ossep
@@ -2269,7 +2270,9 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                 for f in list:
                     if f in added:
                         continue # we never unlink added files on remove
-                    repo.wvfs.unlinkpath(f, ignoremissing=True)
+                    rmdir = repo.ui.configbool('experimental',
+                                               'removeemptydirs')
+                    repo.wvfs.unlinkpath(f, ignoremissing=True, rmdir=rmdir)
             repo[None].forget(list)
 
     if warn:
@@ -3029,7 +3032,8 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
 
     def doremove(f):
         try:
-            repo.wvfs.unlinkpath(f)
+            rmdir = repo.ui.configbool('experimental', 'removeemptydirs')
+            repo.wvfs.unlinkpath(f, rmdir=rmdir)
         except OSError:
             pass
         repo.dirstate.remove(f)

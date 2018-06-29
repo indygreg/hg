@@ -497,7 +497,8 @@ class fsbackend(abstractbackend):
                 self.opener.setflags(fname, False, True)
 
     def unlink(self, fname):
-        self.opener.unlinkpath(fname, ignoremissing=True)
+        rmdir = self.ui.configbool('experimental', 'removeemptydirs')
+        self.opener.unlinkpath(fname, ignoremissing=True, rmdir=rmdir)
 
     def writerej(self, fname, failed, total, lines):
         fname = fname + ".rej"

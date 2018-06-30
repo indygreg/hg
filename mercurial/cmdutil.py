@@ -62,6 +62,11 @@ dryrunopts = [
      _('do not perform actions, just print output')),
 ]
 
+confirmopts = [
+    ('', 'confirm', None,
+     _('ask before applying actions')),
+]
+
 remoteopts = [
     ('e', 'ssh', '',
      _('specify ssh command to use'), _('CMD')),

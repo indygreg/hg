@@ -4,6 +4,7 @@
   > amend=
   > rebase=
   > debugdrawdag=$TESTDIR/drawdag.py
+  > strip=
   > [rebase]
   > experimental.inmemory=1
   > [diff]
@@ -156,8 +157,8 @@ Rebase the working copy parent
   o  0: b173517d0057 'a'
   
 Test dry-run rebasing
-  $ hg init skrepo
-  $ cd skrepo
+  $ hg init repo3
+  $ cd repo3
   $ echo a>a
   $ hg ci -Aqma
   $ echo b>b
@@ -323,3 +324,246 @@ Check dryrun working with --collapse when there is conflicts
   merging e
   hit a merge conflict
   [1]
+
+==========================
+Test for --confirm option|
+==========================
+  $ cd ..
+  $ hg clone repo3 repo4 -q
+  $ cd repo4
+  $ hg strip 7 -q
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Check it gives error when both --dryrun and --confirm is used:
+  $ hg rebase -s 2 -d . --confirm --dry-run
+  abort: cannot specify both --confirm and --dry-run
+  [255]
+  $ hg rebase -s 2 -d . --confirm --abort
+  abort: cannot specify both --confirm and --abort
+  [255]
+  $ hg rebase -s 2 -d . --confirm --continue
+  abort: cannot specify both --confirm and --continue
+  [255]
+
+Test --confirm option when there are no conflicts:
+  $ hg rebase -s 2 -d . --keep --config ui.interactive=True --confirm << EOF
+  > n
+  > EOF
+  starting rebase...
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  rebase completed successfully
+  apply changes (yn)? n
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 2 -d . --keep --config ui.interactive=True --confirm << EOF
+  > y
+  > EOF
+  starting rebase...
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  rebasing 4:e860deea161a "e"
+  rebase completed successfully
+  apply changes (yn)? y
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  9:9fd28f55f6dc test
+  |  e
+  |
+  o  8:12cbf031f469 test
+  |  d
+  |
+  o  7:c83b1da5b1ae test
+  |  c
+  |
+  @  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Test --confirm option when there is a conflict
+  $ hg up tip -q
+  $ echo ee>e
+  $ hg ci --amend -m "conflict with e" -q
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  9:906d72f66a59 test
+  |  conflict with e
+  |
+  o  8:12cbf031f469 test
+  |  d
+  |
+  o  7:c83b1da5b1ae test
+  |  c
+  |
+  o  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 4 -d . --keep --config ui.interactive=True --confirm << EOF
+  > n
+  > EOF
+  starting rebase...
+  rebasing 4:e860deea161a "e"
+  merging e
+  hit a merge conflict
+  apply changes (yn)? n
+  [1]
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  @  9:906d72f66a59 test
+  |  conflict with e
+  |
+  o  8:12cbf031f469 test
+  |  d
+  |
+  o  7:c83b1da5b1ae test
+  |  c
+  |
+  o  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+
+  $ hg rebase -s 4 -d . --keep --config ui.interactive=True --confirm << EOF
+  > y
+  > EOF
+  starting rebase...
+  rebasing 4:e860deea161a "e"
+  merging e
+  hit a merge conflict
+  apply changes (yn)? y
+  rebasing 4:e860deea161a "e"
+  merging e
+  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+
+  $ echo e>e
+  $ hg resolve --mark --all
+  (no more unresolved files)
+  continue: hg rebase --continue
+  $ hg rebase --continue
+  rebasing 4:e860deea161a "e"
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  10:9fa3731dd6df test
+  |  e
+  |
+  @  9:906d72f66a59 test
+  |  conflict with e
+  |
+  o  8:12cbf031f469 test
+  |  d
+  |
+  o  7:c83b1da5b1ae test
+  |  c
+  |
+  o  6:baf10c5166d4 test
+  |  g
+  |
+  o  5:6343ca3eff20 test
+  |  f
+  |
+  | o  4:e860deea161a test
+  | |  e
+  | |
+  | o  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  |/   c
+  |
+  o  1:d2ae7f538514 test
+  |  b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  

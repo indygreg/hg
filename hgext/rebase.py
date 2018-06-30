@@ -677,7 +677,7 @@ class rebaseruntime(object):
     ('a', 'abort', False, _('abort an interrupted rebase')),
     ('', 'auto-orphans', '', _('automatically rebase orphan revisions '
                                'in the specified revset (EXPERIMENTAL)')),
-     ] + cmdutil.dryrunopts + cmdutil.formatteropts,
+     ] + cmdutil.dryrunopts + cmdutil.formatteropts + cmdutil.confirmopts,
     _('[-s REV | -b REV] [-d REV] [OPTION]'))
 def rebase(ui, repo, **opts):
     """move changeset (and descendants) to a different branch
@@ -808,6 +808,14 @@ def rebase(ui, repo, **opts):
             raise error.Abort(_('cannot specify both --dry-run and --abort'))
         if opts.get('continue'):
             raise error.Abort(_('cannot specify both --dry-run and --continue'))
+    if opts.get('confirm'):
+        dryrun = True
+        if opts.get('dry_run'):
+            raise error.Abort(_('cannot specify both --confirm and --dry-run'))
+        if opts.get('abort'):
+            raise error.Abort(_('cannot specify both --confirm and --abort'))
+        if opts.get('continue'):
+            raise error.Abort(_('cannot specify both --confirm and --continue'))
 
     if (opts.get('continue') or opts.get('abort') or
         repo.currenttransaction() is not None):
@@ -844,8 +852,14 @@ def rebase(ui, repo, **opts):
 
 def _dryrunrebase(ui, repo, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
-    ui.status(_('starting dry-run rebase; repository will not be changed\n'))
+    confirm = opts.get('confirm')
+    if confirm:
+        ui.status(_('starting rebase...\n'))
+    else:
+        ui.status(_('starting dry-run rebase; repository will not be '
+                    'changed\n'))
     with repo.wlock(), repo.lock():
+        needsabort = True
         try:
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
@@ -853,15 +867,35 @@ def _dryrunrebase(ui, repo, opts):
                             leaveunfinished=True)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
+            if confirm:
+                # abort as in-memory merge doesn't support conflict
+                rbsrt._prepareabortorcontinue(isabort=True, backup=False,
+                                              suppwarns=True)
+                needsabort = False
+                if not ui.promptchoice(_(b'apply changes (yn)?'
+                                         b'$$ &Yes $$ &No')):
+                    _dorebase(ui, repo, opts, inmemory=False)
             return 1
         else:
-            ui.status(_('dry-run rebase completed successfully; run without '
-                        '-n/--dry-run to perform this rebase\n'))
+            if confirm:
+                ui.status(_('rebase completed successfully\n'))
+                if not ui.promptchoice(_(b'apply changes (yn)?'
+                                         b'$$ &Yes $$ &No')):
+                    # finish unfinished rebase
+                    rbsrt._finishrebase()
+                else:
+                    rbsrt._prepareabortorcontinue(isabort=True, backup=False,
+                                                  suppwarns=True)
+                needsabort = False
+            else:
+                ui.status(_('dry-run rebase completed successfully; run without'
+                            ' -n/--dry-run to perform this rebase\n'))
             return 0
         finally:
-            # no need to store backup in case of dryrun
-            rbsrt._prepareabortorcontinue(isabort=True, backup=False,
-                                          suppwarns=True)
+            if needsabort:
+                # no need to store backup in case of dryrun
+                rbsrt._prepareabortorcontinue(isabort=True, backup=False,
+                                              suppwarns=True)
 
 def _dorebase(ui, repo, opts, inmemory=False):
     rbsrt = rebaseruntime(repo, ui, inmemory, opts)

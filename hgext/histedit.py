@@ -318,22 +318,29 @@ class histeditstate(object):
                 raise
             cmdutil.wrongtooltocontinue(self.repo, _('histedit'))
 
-        if state.startswith('v1\n'):
+        data = self._read(state)
+
+        self.parentctxnode = data['parentctxnode']
+        actions = parserules(data['rules'], self)
+        self.actions = actions
+        self.keep = data['keep']
+        self.topmost = data['topmost']
+        self.replacements = data['replacements']
+        self.backupfile = data['backupfile']
+
+    def _read(self, fp):
+        if fp.startswith('v1\n'):
             data = self._load()
             parentctxnode, rules, keep, topmost, replacements, backupfile = data
         else:
-            data = pickle.loads(state)
+            data = pickle.loads(fp)
             parentctxnode, rules, keep, topmost, replacements = data
             backupfile = None
-
-        self.parentctxnode = parentctxnode
         rules = "\n".join(["%s %s" % (verb, rest) for [verb, rest] in rules])
-        actions = parserules(rules, self)
-        self.actions = actions
-        self.keep = keep
-        self.topmost = topmost
-        self.replacements = replacements
-        self.backupfile = backupfile
+
+        return {'parentctxnode': parentctxnode, "rules": rules, "keep": keep,
+                "topmost": topmost, "replacements": replacements,
+                "backupfile": backupfile}
 
     def write(self, tr=None):
         if tr:

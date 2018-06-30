@@ -227,6 +227,9 @@ class rebaseruntime(object):
 
     def restorestatus(self):
         """Restore a previously stored status"""
+        if not self.stateobj.exists():
+            cmdutil.wrongtooltocontinue(self.repo, _('rebase'))
+
         data = self._read()
         self.repo.ui.debug('rebase status resumed\n')
 
@@ -250,9 +253,7 @@ class rebaseruntime(object):
         state = {}
         destmap = {}
 
-        if not self.stateobj.exists():
-            cmdutil.wrongtooltocontinue(repo, _('rebase'))
-        else:
+        if True:
             f = repo.vfs("rebasestate")
             for i, l in enumerate(f.read().splitlines()):
                 if i == 0:

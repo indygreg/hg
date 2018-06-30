@@ -794,29 +794,30 @@ def rebase(ui, repo, **opts):
     unresolved conflicts.
 
     """
+    opts = pycompat.byteskwargs(opts)
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
-    dryrun = opts.get(r'dry_run')
+    dryrun = opts.get('dry_run')
     if dryrun:
-        if opts.get(r'abort'):
+        if opts.get('abort'):
             raise error.Abort(_('cannot specify both --dry-run and --abort'))
-        if opts.get(r'continue'):
+        if opts.get('continue'):
             raise error.Abort(_('cannot specify both --dry-run and --continue'))
 
-    if (opts.get(r'continue') or opts.get(r'abort') or
+    if (opts.get('continue') or opts.get('abort') or
         repo.currenttransaction() is not None):
         # in-memory rebase is not compatible with resuming rebases.
         # (Or if it is run within a transaction, since the restart logic can
         # fail the entire transaction.)
         inmemory = False
 
-    if opts.get(r'auto_orphans'):
+    if opts.get('auto_orphans'):
         for key in opts:
-            if key != r'auto_orphans' and opts.get(key):
+            if key != 'auto_orphans' and opts.get(key):
                 raise error.Abort(_('--auto-orphans is incompatible with %s') %
-                                  ('--' + pycompat.bytestr(key)))
-        userrevs = list(repo.revs(opts.get(r'auto_orphans')))
-        opts[r'rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
-        opts[r'dest'] = '_destautoorphanrebase(SRC)'
+                                  ('--' + key))
+        userrevs = list(repo.revs(opts.get('auto_orphans')))
+        opts['rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
+        opts['dest'] = '_destautoorphanrebase(SRC)'
 
     if dryrun:
         return _dryrunrebase(ui, repo, opts)
@@ -830,14 +831,13 @@ def rebase(ui, repo, **opts):
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _dorebase(ui, repo, {r'abort': True})
+            _dorebase(ui, repo, {'abort': True})
             return _dorebase(ui, repo, opts, inmemory=False)
     else:
         return _dorebase(ui, repo, opts)
 
 def _dryrunrebase(ui, repo, opts):
-    rbsrt = rebaseruntime(repo, ui, inmemory=True,
-                          opts=pycompat.byteskwargs(opts))
+    rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
     with repo.wlock(), repo.lock():
         try:
             overrides = {('rebase', 'singletransaction'): True}
@@ -856,11 +856,10 @@ def _dryrunrebase(ui, repo, opts):
                                           suppwarns=True)
 
 def _dorebase(ui, repo, opts, inmemory=False):
-    rbsrt = rebaseruntime(repo, ui, inmemory, pycompat.byteskwargs(opts))
+    rbsrt = rebaseruntime(repo, ui, inmemory, opts)
     return _origrebase(ui, repo, opts, rbsrt, inmemory=inmemory)
 
 def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
-    opts = pycompat.byteskwargs(opts)
     with repo.wlock(), repo.lock():
         # Validate input and define rebasing points
         destf = opts.get('dest', None)

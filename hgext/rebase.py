@@ -250,7 +250,9 @@ class rebaseruntime(object):
         state = {}
         destmap = {}
 
-        try:
+        if not self.stateobj.exists():
+            cmdutil.wrongtooltocontinue(repo, _('rebase'))
+        else:
             f = repo.vfs("rebasestate")
             for i, l in enumerate(f.read().splitlines()):
                 if i == 0:
@@ -289,11 +291,6 @@ class rebaseruntime(object):
                         # Legacy compat special case
                     else:
                         state[oldrev] = repo[newrev].rev()
-
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
-            cmdutil.wrongtooltocontinue(repo, _('rebase'))
 
         if data['keepbranches'] is None:
             raise error.Abort(_('.hg/rebasestate is incomplete'))

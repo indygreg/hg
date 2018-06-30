@@ -48,6 +48,7 @@ from mercurial import (
     revsetlang,
     scmutil,
     smartset,
+    state as statemod,
     util,
 )
 
@@ -184,6 +185,7 @@ class rebaseruntime(object):
         self.obsoletenotrebased = {}
         self.obsoletewithoutsuccessorindestination = set()
         self.inmemory = inmemory
+        self.stateobj = statemod.cmdstate(repo, 'rebasestate')
 
     @property
     def repo(self):

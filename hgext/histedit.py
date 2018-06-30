@@ -207,6 +207,7 @@ from mercurial import (
     registrar,
     repair,
     scmutil,
+    state as statemod,
     util,
 )
 from mercurial.utils import (
@@ -304,6 +305,7 @@ class histeditstate(object):
         self.lock = lock
         self.wlock = wlock
         self.backupfile = None
+        self.stateobj = statemod.cmdstate(repo, 'histedit-state')
         if replacements is None:
             self.replacements = []
         else:

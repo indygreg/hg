@@ -183,7 +183,6 @@ unexpectedly::
 
 from __future__ import absolute_import
 
-import errno
 import os
 
 from mercurial.i18n import _
@@ -313,14 +312,10 @@ class histeditstate(object):
 
     def read(self):
         """Load histedit state from disk and set fields appropriately."""
-        try:
-            state = self.repo.vfs.read('histedit-state')
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        if not self.stateobj.exists():
             cmdutil.wrongtooltocontinue(self.repo, _('histedit'))
 
-        data = self._read(state)
+        data = self._read()
 
         self.parentctxnode = data['parentctxnode']
         actions = parserules(data['rules'], self)
@@ -330,7 +325,8 @@ class histeditstate(object):
         self.replacements = data['replacements']
         self.backupfile = data['backupfile']
 
-    def _read(self, fp):
+    def _read(self):
+        fp = self.repo.vfs.read('histedit-state')
         if fp.startswith('v1\n'):
             data = self._load()
             parentctxnode, rules, keep, topmost, replacements, backupfile = data

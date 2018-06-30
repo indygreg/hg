@@ -225,14 +225,26 @@ class rebaseruntime(object):
 
     def restorestatus(self):
         """Restore a previously stored status"""
+        data = self._read()
+        self.repo.ui.debug('rebase status resumed\n')
+
+        self.originalwd = data['originalwd']
+        self.destmap = data['destmap']
+        self.state = data['state']
+        self.skipped = data['skipped']
+        self.collapsef = data['collapse']
+        self.keepf = data['keep']
+        self.keepbranchesf = data['keepbranches']
+        self.external = data['external']
+        self.activebookmark = data['activebookmark']
+
+    def _read(self):
         self.prepared = True
         repo = self.repo
         assert repo.filtername is None
-        keepbranches = None
+        data = {'keepbranches': None, 'collapse': None, 'activebookmark': None,
+                'external': nullrev, 'keep': None, 'originalwd': None}
         legacydest = None
-        collapse = False
-        external = nullrev
-        activebookmark = None
         state = {}
         destmap = {}
 
@@ -240,25 +252,25 @@ class rebaseruntime(object):
             f = repo.vfs("rebasestate")
             for i, l in enumerate(f.read().splitlines()):
                 if i == 0:
-                    originalwd = repo[l].rev()
+                    data['originalwd'] = repo[l].rev()
                 elif i == 1:
                     # this line should be empty in newer version. but legacy
                     # clients may still use it
                     if l:
                         legacydest = repo[l].rev()
                 elif i == 2:
-                    external = repo[l].rev()
+                    data['external'] = repo[l].rev()
                 elif i == 3:
-                    collapse = bool(int(l))
+                    data['collapse'] = bool(int(l))
                 elif i == 4:
-                    keep = bool(int(l))
+                    data['keep'] = bool(int(l))
                 elif i == 5:
-                    keepbranches = bool(int(l))
+                    data['keepbranches'] = bool(int(l))
                 elif i == 6 and not (len(l) == 81 and ':' in l):
                     # line 6 is a recent addition, so for backwards
                     # compatibility check that the line doesn't look like the
                     # oldrev:newrev lines
-                    activebookmark = l
+                    data['activebookmark'] = l
                 else:
                     args = l.split(':')
                     oldrev = repo[args[0]].rev()
@@ -281,30 +293,24 @@ class rebaseruntime(object):
                 raise
             cmdutil.wrongtooltocontinue(repo, _('rebase'))
 
-        if keepbranches is None:
+        if data['keepbranches'] is None:
             raise error.Abort(_('.hg/rebasestate is incomplete'))
 
+        data['destmap'] = destmap
+        data['state'] = state
         skipped = set()
         # recompute the set of skipped revs
-        if not collapse:
+        if not data['collapse']:
             seen = set(destmap.values())
             for old, new in sorted(state.items()):
                 if new != revtodo and new in seen:
                     skipped.add(old)
                 seen.add(new)
+        data['skipped'] = skipped
         repo.ui.debug('computed skipped revs: %s\n' %
                         (' '.join('%d' % r for r in sorted(skipped)) or ''))
-        repo.ui.debug('rebase status resumed\n')
 
-        self.originalwd = originalwd
-        self.destmap = destmap
-        self.state = state
-        self.skipped = skipped
-        self.collapsef = collapse
-        self.keepf = keep
-        self.keepbranchesf = keepbranches
-        self.external = external
-        self.activebookmark = activebookmark
+        return data
 
     def _handleskippingobsolete(self, obsoleterevs, destmap):
         """Compute structures necessary for skipping obsolete revisions

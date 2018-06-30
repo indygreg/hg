@@ -819,31 +819,31 @@ def rebase(ui, repo, **opts):
         opts[r'dest'] = '_destautoorphanrebase(SRC)'
 
     if dryrun:
-        return _dryrunrebase(ui, repo, **opts)
+        return _dryrunrebase(ui, repo, opts)
     elif inmemory:
         try:
             # in-memory merge doesn't support conflicts, so if we hit any, abort
             # and re-run as an on-disk merge.
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                return _dorebase(ui, repo, inmemory=inmemory, **opts)
+                return _dorebase(ui, repo, opts, inmemory=inmemory)
         except error.InMemoryMergeConflictsError:
             ui.warn(_('hit merge conflicts; re-running rebase without in-memory'
                       ' merge\n'))
-            _dorebase(ui, repo, abort=True)
-            return _dorebase(ui, repo, inmemory=False, **opts)
+            _dorebase(ui, repo, {r'abort': True})
+            return _dorebase(ui, repo, opts, inmemory=False)
     else:
-        return _dorebase(ui, repo, **opts)
+        return _dorebase(ui, repo, opts)
 
-def _dryrunrebase(ui, repo, **opts):
+def _dryrunrebase(ui, repo, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True,
                           opts=pycompat.byteskwargs(opts))
     with repo.wlock(), repo.lock():
         try:
             overrides = {('rebase', 'singletransaction'): True}
             with ui.configoverride(overrides, 'rebase'):
-                _origrebase(ui, repo, rbsrt, inmemory=True,
-                            leaveunfinished=True, **opts)
+                _origrebase(ui, repo, opts, rbsrt, inmemory=True,
+                            leaveunfinished=True)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
             return 1
@@ -855,11 +855,11 @@ def _dryrunrebase(ui, repo, **opts):
             rbsrt._prepareabortorcontinue(isabort=True, backup=False,
                                           suppwarns=True)
 
-def _dorebase(ui, repo, inmemory=False, **opts):
+def _dorebase(ui, repo, opts, inmemory=False):
     rbsrt = rebaseruntime(repo, ui, inmemory, pycompat.byteskwargs(opts))
-    return _origrebase(ui, repo, rbsrt, inmemory=inmemory, **opts)
+    return _origrebase(ui, repo, opts, rbsrt, inmemory=inmemory)
 
-def _origrebase(ui, repo, rbsrt, inmemory=False, leaveunfinished=False, **opts):
+def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
     opts = pycompat.byteskwargs(opts)
     with repo.wlock(), repo.lock():
         # Validate input and define rebasing points

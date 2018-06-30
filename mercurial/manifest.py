@@ -1287,7 +1287,7 @@ class manifestlog(object):
         self._dirmancache = {}
         self._dirmancache[''] = util.lrucachedict(cachesize)
 
-        self.cachesize = cachesize
+        self._cachesize = cachesize
 
     def __getitem__(self, node):
         """Retrieves the manifest instance for the given node. Throws a
@@ -1333,7 +1333,7 @@ class manifestlog(object):
         if node != revlog.nullid:
             mancache = self._dirmancache.get(dir)
             if not mancache:
-                mancache = util.lrucachedict(self.cachesize)
+                mancache = util.lrucachedict(self._cachesize)
                 self._dirmancache[dir] = mancache
             mancache[node] = m
         return m

@@ -863,7 +863,10 @@ class completelocalrepository(interfaceutil.Interface):
         """Calls self.vfs.reljoin(self.root, f, *insidef)"""
 
     def file(f):
-        """Obtain a filelog for a tracked path."""
+        """Obtain a filelog for a tracked path.
+
+        The returned type conforms to the ``ifilestorage`` interface.
+        """
 
     def setparents(p1, p2):
         """Set the parent nodes of the working directory."""

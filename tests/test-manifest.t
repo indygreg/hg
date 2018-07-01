@@ -37,6 +37,10 @@ The next call is expected to return nothing:
   $ hg files -r . -X b
   a
   l
+  $ hg files -T '{path} {size} {flags}\n'
+  a 2 
+  b/a 2 x
+  l 1 l
 
   $ hg manifest -v
   644   a

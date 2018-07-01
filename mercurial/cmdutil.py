@@ -2141,9 +2141,10 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
 def files(ui, ctx, m, fm, fmt, subrepos):
     ret = 1
 
+    needsfctx = ui.verbose or {'size', 'flags'} & fm.datahint()
     for f in ctx.matches(m):
         fm.startitem()
-        if ui.verbose:
+        if needsfctx:
             fc = ctx[f]
             fm.write('size flags', '% 10d % 1s ', fc.size(), fc.flags())
         fm.data(abspath=f)

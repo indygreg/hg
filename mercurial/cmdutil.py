@@ -2144,6 +2144,7 @@ def files(ui, ctx, m, fm, fmt, subrepos):
     needsfctx = ui.verbose or {'size', 'flags'} & fm.datahint()
     for f in ctx.matches(m):
         fm.startitem()
+        fm.context(ctx=ctx)
         if needsfctx:
             fc = ctx[f]
             fm.write('size flags', '% 10d % 1s ', fc.size(), fc.flags())

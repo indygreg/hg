@@ -41,6 +41,10 @@ The next call is expected to return nothing:
   a 2 
   b/a 2 x
   l 1 l
+  $ hg files -T '{path} {node|shortest}\n' -r.
+  a 5bdc
+  b/a 5bdc
+  l 5bdc
 
   $ hg manifest -v
   644   a

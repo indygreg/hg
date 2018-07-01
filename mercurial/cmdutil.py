@@ -2290,6 +2290,7 @@ def _updatecatformatter(fm, ctx, matcher, path, decode):
     if decode:
         data = ctx.repo().wwritedata(path, data)
     fm.startitem()
+    fm.context(ctx=ctx)
     fm.write('data', '%s', data)
     fm.data(abspath=path, path=matcher.rel(path))
 

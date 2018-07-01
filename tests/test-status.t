@@ -213,6 +213,16 @@ hg status -A:
   C .hgignore
   C modified
 
+  $ hg status -A -T '{status} {path} {node|shortest}\n'
+  A added ffff
+  A copied ffff
+  R removed ffff
+  ! deleted ffff
+  ? unknown ffff
+  I ignored ffff
+  C .hgignore ffff
+  C modified ffff
+
   $ hg status -A -Tjson
   [
    {

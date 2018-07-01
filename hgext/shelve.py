@@ -709,7 +709,7 @@ def unshelvecontinue(ui, repo, state, opts):
             state.nodestoremove.append(newnode)
             shelvectx = repo[newnode]
 
-        hg.updaterepo(repo, pendingctx.node(), False)
+        hg.updaterepo(repo, pendingctx.node(), overwrite=False)
 
         if repo.vfs.exists('unshelverebasestate'):
             repo.vfs.rename('unshelverebasestate', 'rebasestate')

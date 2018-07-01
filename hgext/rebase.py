@@ -623,7 +623,7 @@ class rebaseruntime(object):
             newwd = self.originalwd
         if newwd not in [c.rev() for c in repo[None].parents()]:
             ui.note(_("update back to initial working directory parent\n"))
-            hg.updaterepo(repo, newwd, False)
+            hg.updaterepo(repo, newwd, overwrite=False)
 
         collapsedas = None
         if self.collapsef and not self.keepf:

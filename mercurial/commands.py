@@ -2451,7 +2451,7 @@ def _abortgraft(ui, repo, graftstate):
 
         if cleanup:
             with repo.wlock(), repo.lock():
-                hg.updaterepo(repo, startctx.node(), True)
+                hg.updaterepo(repo, startctx.node(), overwrite=True)
                 # stripping the new nodes created
                 strippoints = [c.node() for c in repo.set("roots(%ld)",
                                                           newnodes)]
@@ -2460,7 +2460,7 @@ def _abortgraft(ui, repo, graftstate):
     if not cleanup:
         # we don't update to the startnode if we can't strip
         startctx = repo['.']
-        hg.updaterepo(repo, startctx.node(), True)
+        hg.updaterepo(repo, startctx.node(), overwrite=True)
 
     ui.status(_("graft aborted\n"))
     ui.status(_("working directory is now at %s\n") % startctx.hex()[:12])
@@ -2480,7 +2480,7 @@ def _stopgraft(ui, repo, graftstate):
     if not graftstate.exists():
         raise error.Abort(_("no interrupted graft found"))
     pctx = repo['.']
-    hg.updaterepo(repo, pctx.node(), True)
+    hg.updaterepo(repo, pctx.node(), overwrite=True)
     graftstate.delete()
     ui.status(_("stopped the interrupted graft\n"))
     ui.status(_("working directory is now at %s\n") % pctx.hex()[:12])

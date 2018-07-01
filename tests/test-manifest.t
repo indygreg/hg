@@ -50,6 +50,10 @@ The next call is expected to return nothing:
   644   a
   755 * b/a
   644 @ l
+  $ hg manifest -T '{path} {rev}\n'
+  a 1
+  b/a 1
+  l 1
 
   $ hg manifest --debug
   b789fdd96dc2f3bd229c1dd8eedf0fc60e2b68e3 644   a

@@ -3683,6 +3683,7 @@ def manifest(ui, repo, node=None, rev=None, **opts):
     ui.pager('manifest')
     for f in ctx:
         fm.startitem()
+        fm.context(ctx=ctx)
         fl = ctx[f].flags()
         fm.condwrite(ui.debugflag, 'hash', '%s ', hex(mf[f]))
         fm.condwrite(ui.verbose, 'mode type', '%s %1s ', mode[fl], char[fl])

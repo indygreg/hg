@@ -923,11 +923,14 @@ def _printbookmarks(ui, repo, bmarks, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     fm = ui.formatter('bookmarks', opts)
+    contexthint = fm.contexthint('bookmark rev node active')
     hexfn = fm.hexfunc
     if len(bmarks) == 0 and fm.isplain():
         ui.status(_("no bookmarks set\n"))
     for bmark, (n, prefix, label) in sorted(bmarks.iteritems()):
         fm.startitem()
+        if 'ctx' in contexthint:
+            fm.context(ctx=repo[n])
         if not ui.quiet:
             fm.plain(' %s ' % prefix, label=label)
         fm.write('bookmark', '%s', bmark, label=label)

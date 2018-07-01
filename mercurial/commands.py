@@ -2634,6 +2634,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             iter = [('', l) for l in states]
         for change, l in iter:
             fm.startitem()
+            fm.context(ctx=ctx)
             fm.data(node=fm.hexfunc(scmutil.binnode(ctx)))
 
             cols = [

@@ -53,6 +53,11 @@ simple templated
   port:4:vaportight
   port:4:import/export
 
+  $ hg grep port -T '{file}:{tags}:{texts}\n'
+  port:tip:export
+  port:tip:vaportight
+  port:tip:import/export
+
 simple JSON (no "change" field)
 
   $ hg grep -Tjson port

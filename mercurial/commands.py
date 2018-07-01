@@ -4534,7 +4534,8 @@ def resolve(ui, repo, *pats, **opts):
         ui.pager('resolve')
         fm = ui.formatter('resolve', opts)
         ms = mergemod.mergestate.read(repo)
-        m = scmutil.match(repo[None], pats, opts)
+        wctx = repo[None]
+        m = scmutil.match(wctx, pats, opts)
 
         # Labels and keys based on merge state.  Unresolved path conflicts show
         # as 'P'.  Resolved path conflicts show as 'R', the same as normal
@@ -4554,6 +4555,7 @@ def resolve(ui, repo, *pats, **opts):
 
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
+            fm.context(ctx=wctx)
             fm.condwrite(not nostatus, 'status', '%s ', key, label=label)
             fm.write('path', '%s\n', f, label=label)
         fm.end()

@@ -162,6 +162,10 @@ resolve -l should show resolved file as resolved
    }
   ]
 
+  $ hg resolve -l -T '{path} {status} {p1rev} {p2rev}\n'
+  file1 R 2 1
+  file2 U 2 1
+
 resolve -m without paths should mark all resolved
 
   $ hg resolve -m

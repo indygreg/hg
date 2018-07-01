@@ -642,6 +642,286 @@ class ifilestorage(ifileindex, ifiledata, ifilemutation):
         TODO this is used by verify and it should not be part of the interface.
         """
 
+class idirs(interfaceutil.Interface):
+    """Interface representing a collection of directories from paths.
+
+    This interface is essentially a derived data structure representing
+    directories from a collection of paths.
+    """
+
+    def addpath(path):
+        """Add a path to the collection.
+
+        All directories in the path will be added to the collection.
+        """
+
+    def delpath(path):
+        """Remove a path from the collection.
+
+        If the removal was the last path in a particular directory, the
+        directory is removed from the collection.
+        """
+
+    def __iter__():
+        """Iterate over the directories in this collection of paths."""
+
+    def __contains__(path):
+        """Whether a specific directory is in this collection."""
+
+class imanifestdict(interfaceutil.Interface):
+    """Interface representing a manifest data structure.
+
+    A manifest is effectively a dict mapping paths to entries. Each entry
+    consists of a binary node and extra flags affecting that entry.
+    """
+
+    def __getitem__(path):
+        """Returns the binary node value for a path in the manifest.
+
+        Raises ``KeyError`` if the path does not exist in the manifest.
+
+        Equivalent to ``self.find(path)[0]``.
+        """
+
+    def find(path):
+        """Returns the entry for a path in the manifest.
+
+        Returns a 2-tuple of (node, flags).
+
+        Raises ``KeyError`` if the path does not exist in the manifest.
+        """
+
+    def __len__():
+        """Return the number of entries in the manifest."""
+
+    def __nonzero__():
+        """Returns True if the manifest has entries, False otherwise."""
+
+    __bool__ = __nonzero__
+
+    def __setitem__(path, node):
+        """Define the node value for a path in the manifest.
+
+        If the path is already in the manifest, its flags will be copied to
+        the new entry.
+        """
+
+    def __contains__(path):
+        """Whether a path exists in the manifest."""
+
+    def __delitem__(path):
+        """Remove a path from the manifest.
+
+        Raises ``KeyError`` if the path is not in the manifest.
+        """
+
+    def __iter__():
+        """Iterate over paths in the manifest."""
+
+    def iterkeys():
+        """Iterate over paths in the manifest."""
+
+    def keys():
+        """Obtain a list of paths in the manifest."""
+
+    def filesnotin(other, match=None):
+        """Obtain the set of paths in this manifest but not in another.
+
+        ``match`` is an optional matcher function to be applied to both
+        manifests.
+
+        Returns a set of paths.
+        """
+
+    def dirs():
+        """Returns an object implementing the ``idirs`` interface."""
+
+    def hasdir(dir):
+        """Returns a bool indicating if a directory is in this manifest."""
+
+    def matches(match):
+        """Generate a new manifest filtered through a matcher.
+
+        Returns an object conforming to the ``imanifestdict`` interface.
+        """
+
+    def walk(match):
+        """Generator of paths in manifest satisfying a matcher.
+
+        This is equivalent to ``self.matches(match).iterkeys()`` except a new
+        manifest object is not created.
+
+        If the matcher has explicit files listed and they don't exist in
+        the manifest, ``match.bad()`` is called for each missing file.
+        """
+
+    def diff(other, match=None, clean=False):
+        """Find differences between this manifest and another.
+
+        This manifest is compared to ``other``.
+
+        If ``match`` is provided, the two manifests are filtered against this
+        matcher and only entries satisfying the matcher are compared.
+
+        If ``clean`` is True, unchanged files are included in the returned
+        object.
+
+        Returns a dict with paths as keys and values of 2-tuples of 2-tuples of
+        the form ``((node1, flag1), (node2, flag2))`` where ``(node1, flag1)``
+        represents the node and flags for this manifest and ``(node2, flag2)``
+        are the same for the other manifest.
+        """
+
+    def setflag(path, flag):
+        """Set the flag value for a given path.
+
+        Raises ``KeyError`` if the path is not already in the manifest.
+        """
+
+    def get(path, default=None):
+        """Obtain the node value for a path or a default value if missing."""
+
+    def flags(path, default=''):
+        """Return the flags value for a path or a default value if missing."""
+
+    def copy():
+        """Return a copy of this manifest."""
+
+    def items():
+        """Returns an iterable of (path, node) for items in this manifest."""
+
+    def iteritems():
+        """Identical to items()."""
+
+    def iterentries():
+        """Returns an iterable of (path, node, flags) for this manifest.
+
+        Similar to ``iteritems()`` except items are a 3-tuple and include
+        flags.
+        """
+
+    def text():
+        """Obtain the raw data representation for this manifest.
+
+        Result is used to create a manifest revision.
+        """
+
+    def fastdelta(base, changes):
+        """Obtain a delta between this manifest and another given changes.
+
+        ``base`` in the raw data representation for another manifest.
+
+        ``changes`` is an iterable of ``(path, to_delete)``.
+
+        Returns a 2-tuple containing ``bytearray(self.text())`` and the
+        delta between ``base`` and this manifest.
+        """
+
+class imanifestrevisionbase(interfaceutil.Interface):
+    """Base interface representing a single revision of a manifest.
+
+    Should not be used as a primary interface: should always be inherited
+    as part of a larger interface.
+    """
+
+    def new():
+        """Obtain a new manifest instance.
+
+        Returns an object conforming to the ``imanifestrevisionwritable``
+        interface. The instance will be associated with the same
+        ``imanifestlog`` collection as this instance.
+        """
+
+    def copy():
+        """Obtain a copy of this manifest instance.
+
+        Returns an object conforming to the ``imanifestrevisionwritable``
+        interface. The instance will be associated with the same
+        ``imanifestlog`` collection as this instance.
+        """
+
+    def read():
+        """Obtain the parsed manifest data structure.
+
+        The returned object conforms to the ``imanifestdict`` interface.
+        """
+
+class imanifestrevisionstored(imanifestrevisionbase):
+    """Interface representing a manifest revision committed to storage."""
+
+    def node():
+        """The binary node for this manifest."""
+
+    parents = interfaceutil.Attribute(
+        """List of binary nodes that are parents for this manifest revision."""
+    )
+
+    def readdelta(shallow=False):
+        """Obtain the manifest data structure representing changes from parent.
+
+        This manifest is compared to its 1st parent. A new manifest representing
+        those differences is constructed.
+
+        The returned object conforms to the ``imanifestdict`` interface.
+        """
+
+    def readfast(shallow=False):
+        """Calls either ``read()`` or ``readdelta()``.
+
+        The faster of the two options is called.
+        """
+
+    def find(key):
+        """Calls self.read().find(key)``.
+
+        Returns a 2-tuple of ``(node, flags)`` or raises ``KeyError``.
+        """
+
+class imanifestrevisionwritable(imanifestrevisionbase):
+    """Interface representing a manifest revision that can be committed."""
+
+    def write(transaction, linkrev, p1node, p2node, added, removed):
+        """Add this revision to storage.
+
+        Takes a transaction object, the changeset revision number it will
+        be associated with, its parent nodes, and lists of added and
+        removed paths.
+
+        Returns the binary node of the created revision.
+        """
+
+class imanifestlog(interfaceutil.Interface):
+    """Interface representing a collection of manifest snapshots."""
+
+    def __getitem__(node):
+        """Obtain a manifest instance for a given binary node.
+
+        Equivalent to calling ``self.get('', node)``.
+
+        The returned object conforms to the ``imanifestrevisionstored``
+        interface.
+        """
+
+    def get(dir, node, verify=True):
+        """Retrieve the manifest instance for a given directory and binary node.
+
+        ``node`` always refers to the node of the root manifest (which will be
+        the only manifest if flat manifests are being used).
+
+        If ``dir`` is the empty string, the root manifest is returned. Otherwise
+        the manifest for the specified directory will be returned (requires
+        tree manifests).
+
+        If ``verify`` is True, ``LookupError`` is raised if the node is not
+        known.
+
+        The returned object conforms to the ``imanifestrevisionstored``
+        interface.
+        """
+
+    def clearcaches():
+        """Clear caches associated with this collection."""
+
 class completelocalrepository(interfaceutil.Interface):
     """Monolithic interface for local repositories.
 
@@ -757,7 +1037,10 @@ class completelocalrepository(interfaceutil.Interface):
         """A handle on the changelog revlog.""")
 
     manifestlog = interfaceutil.Attribute(
-        """A handle on the root manifest revlog.""")
+        """An instance conforming to the ``imanifestlog`` interface.
+
+        Provides access to manifests for the repository.
+        """)
 
     dirstate = interfaceutil.Attribute(
         """Working directory state.""")

@@ -25,6 +25,7 @@ from mercurial import (
     filelog,
     httppeer,
     localrepo,
+    manifest,
     pycompat,
     repository,
     sshpeer,
@@ -164,9 +165,35 @@ def main():
     checkzobject(httpv2)
 
     ziverify.verifyClass(repository.ifilestorage, filelog.filelog)
+    ziverify.verifyClass(repository.imanifestdict, manifest.manifestdict)
+    ziverify.verifyClass(repository.imanifestrevisionstored,
+                         manifest.manifestctx)
+    ziverify.verifyClass(repository.imanifestrevisionwritable,
+                         manifest.memmanifestctx)
+    ziverify.verifyClass(repository.imanifestrevisionstored,
+                         manifest.treemanifestctx)
+    ziverify.verifyClass(repository.imanifestrevisionwritable,
+                         manifest.memtreemanifestctx)
+    ziverify.verifyClass(repository.imanifestlog, manifest.manifestlog)
 
     vfs = vfsmod.vfs(b'.')
     fl = filelog.filelog(vfs, b'dummy.i')
     checkzobject(fl, allowextra=True)
+
+    # Conforms to imanifestlog.
+    ml = manifest.manifestlog(vfs, repo)
+    checkzobject(ml)
+    checkzobject(repo.manifestlog)
+
+    # Conforms to imanifestrevision.
+    mctx = ml[repo[0].manifestnode()]
+    checkzobject(mctx)
+
+    # Conforms to imanifestrevisionwritable.
+    checkzobject(mctx.new())
+    checkzobject(mctx.copy())
+
+    # Conforms to imanifestdict.
+    checkzobject(mctx.read())
 
 main()

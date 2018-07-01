@@ -21,8 +21,12 @@ from . import (
     mdiff,
     policy,
     pycompat,
+    repository,
     revlog,
     util,
+)
+from .utils import (
+    interfaceutil,
 )
 
 parsers = policy.importmod(r'parsers')
@@ -363,6 +367,7 @@ try:
 except AttributeError:
     pass
 
+@interfaceutil.implementer(repository.imanifestdict)
 class manifestdict(object):
     def __init__(self, data=''):
         self._lm = _lazymanifest(data)
@@ -1262,6 +1267,7 @@ class manifestrevlog(revlog.revlog):
         m.setnode(n)
         return n
 
+@interfaceutil.implementer(repository.imanifestlog)
 class manifestlog(object):
     """A collection class representing the collection of manifest snapshots
     referenced by commits in the repository.
@@ -1342,6 +1348,7 @@ class manifestlog(object):
         self._dirmancache.clear()
         self._revlog.clearcaches()
 
+@interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memmanifestctx(object):
     def __init__(self, manifestlog):
         self._manifestlog = manifestlog
@@ -1365,6 +1372,7 @@ class memmanifestctx(object):
         return self._revlog().add(self._manifestdict, transaction, link, p1, p2,
                                   added, removed)
 
+@interfaceutil.implementer(repository.imanifestrevisionstored)
 class manifestctx(object):
     """A class representing a single revision of a manifest, including its
     contents, its parent revs, and its linkrev.
@@ -1441,6 +1449,7 @@ class manifestctx(object):
     def find(self, key):
         return self.read().find(key)
 
+@interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memtreemanifestctx(object):
     def __init__(self, manifestlog, dir=''):
         self._manifestlog = manifestlog
@@ -1467,6 +1476,7 @@ class memtreemanifestctx(object):
         return self._revlog().add(self._treemanifest, transaction, link, p1, p2,
                                   added, removed, readtree=readtree)
 
+@interfaceutil.implementer(repository.imanifestrevisionstored)
 class treemanifestctx(object):
     def __init__(self, manifestlog, dir, node):
         self._manifestlog = manifestlog

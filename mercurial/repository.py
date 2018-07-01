@@ -928,6 +928,22 @@ class imanifestlog(interfaceutil.Interface):
         Raises ``error.LookupError`` if the node is not known.
         """
 
+    def addgroup(deltas, linkmapper, transaction):
+        """Process a series of deltas for storage.
+
+        ``deltas`` is an iterable of 7-tuples of
+        (node, p1, p2, linknode, deltabase, delta, flags) defining revisions
+        to add.
+
+        The ``delta`` field contains ``mpatch`` data to apply to a base
+        revision, identified by ``deltabase``. The base node can be
+        ``nullid``, in which case the header from the delta can be ignored
+        and the delta used as the fulltext.
+
+        Returns a list of nodes that were processed. A node will be in the list
+        even if it existed in the store previously.
+        """
+
 class completelocalrepository(interfaceutil.Interface):
     """Monolithic interface for local repositories.
 

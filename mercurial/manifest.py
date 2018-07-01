@@ -1351,6 +1351,9 @@ class manifestlog(object):
     def rev(self, node):
         return self._revlog.rev(node)
 
+    def addgroup(self, deltas, linkmapper, transaction):
+        return self._revlog.addgroup(deltas, linkmapper, transaction)
+
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memmanifestctx(object):
     def __init__(self, manifestlog):

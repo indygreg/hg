@@ -1490,8 +1490,6 @@ class TTest(Test):
                             r = '' # Warn only this line.
                         elif r == "retry":
                             postout.append(b'  ' + el)
-                            els.pop(i)
-                            break
                         else:
                             log('\ninfo, unknown linematch result: %r\n' % r)
                             r = False

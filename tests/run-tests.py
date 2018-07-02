@@ -1480,10 +1480,8 @@ class TTest(Test):
                 if expected.get(pos, None):
                     els = expected[pos]
 
-                i = 0
                 optional = []
-                while i < len(els):
-                    el = els[i]
+                for i, el in enumerate(els):
 
                     r = self.linematch(el, lout)
                     if isinstance(r, str):
@@ -1511,8 +1509,6 @@ class TTest(Test):
 
                                 if not self._iftest(conditions):
                                     optional.append(i)
-
-                    i += 1
 
                 if r:
                     if r == "retry":

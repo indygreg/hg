@@ -142,21 +142,18 @@ test how multiple globs gets matched with lines in output
   
   --- $TESTTMP/test-failure-globs.t
   +++ $TESTTMP/test-failure-globs.t.err
-  @@ -2,10 +2,10 @@
+  @@ -2,9 +2,9 @@
      context
      context
      key: 1
   -  value: a
-  +  value: * (glob)
+  +  value: not a
      key: 2
   -  value: b
-  +  value: * (glob)
+  +  value: not b
      key: 3
-  -  value: * (glob)
-  +  value: c
+     value: * (glob)
      key: 4
-  -  value: * (glob)
-  +  value: d
   
   ERROR: test-failure-globs.t output changed
   !

@@ -1484,7 +1484,7 @@ class TTest(Test):
                 for i, el in enumerate(els):
                     r = False
                     if el:
-                        r = self.linematch(el, lout)
+                        r, exact = self.linematch(el, lout)
                     if isinstance(r, str):
                         if r == '-glob':
                             lout = ''.join(el.rsplit(' (glob)', 1))
@@ -1508,6 +1508,11 @@ class TTest(Test):
 
                                 if not self._iftest(conditions):
                                     optional.append(i)
+                        if exact:
+                            # Don't allow line to be matches against a later
+                            # line in the output
+                            els.pop(i)
+                            break
 
                 if r:
                     if r == "retry":
@@ -1608,7 +1613,7 @@ class TTest(Test):
 
     def linematch(self, el, l):
         if el == l: # perfect match (fast)
-            return True
+            return True, True
         retry = False
         if el.endswith(b" (?)\n"):
             retry = "retry"
@@ -1629,19 +1634,19 @@ class TTest(Test):
             else:
                 el = el[:-7].decode('string-escape') + '\n'
         if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:
-            return True
+            return True, True
         if el.endswith(b" (re)\n"):
-            return TTest.rematch(el[:-6], l) or retry
+            return (TTest.rematch(el[:-6], l) or retry), False
         if el.endswith(b" (glob)\n"):
             # ignore '(glob)' added to l by 'replacements'
             if l.endswith(b" (glob)\n"):
                 l = l[:-8] + b"\n"
-            return TTest.globmatch(el[:-8], l) or retry
+            return (TTest.globmatch(el[:-8], l) or retry), False
         if os.altsep:
             _l = l.replace(b'\\', b'/')
             if el == _l or os.name == 'nt' and el[:-1] + b'\r\n' == _l:
-                return True
-        return retry
+                return True, True
+        return retry, True
 
     @staticmethod
     def parsehghaveoutput(lines):

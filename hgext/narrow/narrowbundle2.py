@@ -7,7 +7,6 @@
 
 from __future__ import absolute_import
 
-import collections
 import errno
 import struct
 
@@ -15,12 +14,10 @@ from mercurial.i18n import _
 from mercurial.node import (
     bin,
     nullid,
-    nullrev,
 )
 from mercurial import (
     bundle2,
     changegroup,
-    dagutil,
     error,
     exchange,
     extensions,
@@ -51,131 +48,6 @@ def getrepocaps_narrow(orig, repo, **kwargs):
     caps = orig(repo, **kwargs)
     caps[NARROWCAP] = ['v0']
     return caps
-
-def _computeellipsis(repo, common, heads, known, match, depth=None):
-    """Compute the shape of a narrowed DAG.
-
-    Args:
-      repo: The repository we're transferring.
-      common: The roots of the DAG range we're transferring.
-              May be just [nullid], which means all ancestors of heads.
-      heads: The heads of the DAG range we're transferring.
-      match: The narrowmatcher that allows us to identify relevant changes.
-      depth: If not None, only consider nodes to be full nodes if they are at
-             most depth changesets away from one of heads.
-
-    Returns:
-      A tuple of (visitnodes, relevant_nodes, ellipsisroots) where:
-
-        visitnodes: The list of nodes (either full or ellipsis) which
-                    need to be sent to the client.
-        relevant_nodes: The set of changelog nodes which change a file inside
-                 the narrowspec. The client needs these as non-ellipsis nodes.
-        ellipsisroots: A dict of {rev: parents} that is used in
-                       narrowchangegroup to produce ellipsis nodes with the
-                       correct parents.
-    """
-    cl = repo.changelog
-    mfl = repo.manifestlog
-
-    cldag = dagutil.revlogdag(cl)
-    # dagutil does not like nullid/nullrev
-    commonrevs = cldag.internalizeall(common - set([nullid])) | set([nullrev])
-    headsrevs = cldag.internalizeall(heads)
-    if depth:
-        revdepth = {h: 0 for h in headsrevs}
-
-    ellipsisheads = collections.defaultdict(set)
-    ellipsisroots = collections.defaultdict(set)
-
-    def addroot(head, curchange):
-        """Add a root to an ellipsis head, splitting heads with 3 roots."""
-        ellipsisroots[head].add(curchange)
-        # Recursively split ellipsis heads with 3 roots by finding the
-        # roots' youngest common descendant which is an elided merge commit.
-        # That descendant takes 2 of the 3 roots as its own, and becomes a
-        # root of the head.
-        while len(ellipsisroots[head]) > 2:
-            child, roots = splithead(head)
-            splitroots(head, child, roots)
-            head = child  # Recurse in case we just added a 3rd root
-
-    def splitroots(head, child, roots):
-        ellipsisroots[head].difference_update(roots)
-        ellipsisroots[head].add(child)
-        ellipsisroots[child].update(roots)
-        ellipsisroots[child].discard(child)
-
-    def splithead(head):
-        r1, r2, r3 = sorted(ellipsisroots[head])
-        for nr1, nr2 in ((r2, r3), (r1, r3), (r1, r2)):
-            mid = repo.revs('sort(merge() & %d::%d & %d::%d, -rev)',
-                            nr1, head, nr2, head)
-            for j in mid:
-                if j == nr2:
-                    return nr2, (nr1, nr2)
-                if j not in ellipsisroots or len(ellipsisroots[j]) < 2:
-                    return j, (nr1, nr2)
-        raise error.Abort('Failed to split up ellipsis node! head: %d, '
-                          'roots: %d %d %d' % (head, r1, r2, r3))
-
-    missing = list(cl.findmissingrevs(common=commonrevs, heads=headsrevs))
-    visit = reversed(missing)
-    relevant_nodes = set()
-    visitnodes = [cl.node(m) for m in missing]
-    required = set(headsrevs) | known
-    for rev in visit:
-        clrev = cl.changelogrevision(rev)
-        ps = cldag.parents(rev)
-        if depth is not None:
-            curdepth = revdepth[rev]
-            for p in ps:
-                revdepth[p] = min(curdepth + 1, revdepth.get(p, depth + 1))
-        needed = False
-        shallow_enough = depth is None or revdepth[rev] <= depth
-        if shallow_enough:
-            curmf = mfl[clrev.manifest].read()
-            if ps:
-                # We choose to not trust the changed files list in
-                # changesets because it's not always correct. TODO: could
-                # we trust it for the non-merge case?
-                p1mf = mfl[cl.changelogrevision(ps[0]).manifest].read()
-                needed = bool(curmf.diff(p1mf, match))
-                if not needed and len(ps) > 1:
-                    # For merge changes, the list of changed files is not
-                    # helpful, since we need to emit the merge if a file
-                    # in the narrow spec has changed on either side of the
-                    # merge. As a result, we do a manifest diff to check.
-                    p2mf = mfl[cl.changelogrevision(ps[1]).manifest].read()
-                    needed = bool(curmf.diff(p2mf, match))
-            else:
-                # For a root node, we need to include the node if any
-                # files in the node match the narrowspec.
-                needed = any(curmf.walk(match))
-
-        if needed:
-            for head in ellipsisheads[rev]:
-                addroot(head, rev)
-            for p in ps:
-                required.add(p)
-            relevant_nodes.add(cl.node(rev))
-        else:
-            if not ps:
-                ps = [nullrev]
-            if rev in required:
-                for head in ellipsisheads[rev]:
-                    addroot(head, rev)
-                for p in ps:
-                    ellipsisheads[p].add(rev)
-            else:
-                for p in ps:
-                    ellipsisheads[p] |= ellipsisheads[rev]
-
-    # add common changesets as roots of their reachable ellipsis heads
-    for c in commonrevs:
-        for head in ellipsisheads[c]:
-            addroot(head, c)
-    return visitnodes, relevant_nodes, ellipsisroots
 
 def _packellipsischangegroup(repo, common, match, relevant_nodes,
                              ellipsisroots, visitnodes, depth, source, version):
@@ -300,7 +172,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
                 yield repo.changelog.node(r)
             yield _DONESIGNAL
         bundler.newpart(_CHANGESPECPART, data=genkills())
-        newvisit, newfull, newellipsis = _computeellipsis(
+        newvisit, newfull, newellipsis = exchange._computeellipsis(
             repo, set(), common, known, newmatch)
         if newvisit:
             cg = _packellipsischangegroup(
@@ -311,7 +183,7 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
             if 'treemanifest' in repo.requirements:
                 part.addparam('treemanifest', '1')
 
-    visitnodes, relevant_nodes, ellipsisroots = _computeellipsis(
+    visitnodes, relevant_nodes, ellipsisroots = exchange._computeellipsis(
         repo, common, heads, set(), newmatch, depth=depth)
 
     repo.ui.debug('Found %d relevant revs\n' % len(relevant_nodes))

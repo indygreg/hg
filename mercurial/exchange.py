@@ -2096,30 +2096,34 @@ def _getbundlestream2(bundler, repo, *args, **kwargs):
 def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
                               b2caps=None, heads=None, common=None, **kwargs):
     """add a changegroup part to the requested bundle"""
-    cgstream = None
-    if kwargs.get(r'cg', True):
-        # build changegroup bundle here.
-        version = '01'
-        cgversions = b2caps.get('changegroup')
-        if cgversions:  # 3.1 and 3.2 ship with an empty value
-            cgversions = [v for v in cgversions
-                          if v in changegroup.supportedoutgoingversions(repo)]
-            if not cgversions:
-                raise ValueError(_('no common changegroup version'))
-            version = max(cgversions)
-        outgoing = _computeoutgoing(repo, heads, common)
-        if outgoing.missing:
-            cgstream = changegroup.makestream(repo, outgoing, version, source,
-                                              bundlecaps=bundlecaps)
+    if not kwargs.get(r'cg', True):
+        return
 
-    if cgstream:
-        part = bundler.newpart('changegroup', data=cgstream)
-        if cgversions:
-            part.addparam('version', version)
-        part.addparam('nbchanges', '%d' % len(outgoing.missing),
-                      mandatory=False)
-        if 'treemanifest' in repo.requirements:
-            part.addparam('treemanifest', '1')
+    version = '01'
+    cgversions = b2caps.get('changegroup')
+    if cgversions:  # 3.1 and 3.2 ship with an empty value
+        cgversions = [v for v in cgversions
+                      if v in changegroup.supportedoutgoingversions(repo)]
+        if not cgversions:
+            raise ValueError(_('no common changegroup version'))
+        version = max(cgversions)
+
+    outgoing = _computeoutgoing(repo, heads, common)
+    if not outgoing.missing:
+        return
+
+    cgstream = changegroup.makestream(repo, outgoing, version, source,
+                                      bundlecaps=bundlecaps)
+
+    part = bundler.newpart('changegroup', data=cgstream)
+    if cgversions:
+        part.addparam('version', version)
+
+    part.addparam('nbchanges', '%d' % len(outgoing.missing),
+                  mandatory=False)
+
+    if 'treemanifest' in repo.requirements:
+        part.addparam('treemanifest', '1')
 
 @getbundle2partsgenerator('bookmarks')
 def _getbundlebookmarkpart(bundler, repo, source, bundlecaps=None,

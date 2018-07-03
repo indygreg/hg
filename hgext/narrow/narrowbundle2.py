@@ -324,42 +324,6 @@ def getbundlechangegrouppart_narrow(bundler, repo, source,
         if 'treemanifest' in repo.requirements:
             part.addparam('treemanifest', '1')
 
-def applyacl_narrow(repo, kwargs):
-    ui = repo.ui
-    username = ui.shortuser(ui.environ.get('REMOTE_USER') or ui.username())
-    user_includes = ui.configlist(
-        _NARROWACL_SECTION, username + '.includes',
-        ui.configlist(_NARROWACL_SECTION, 'default.includes'))
-    user_excludes = ui.configlist(
-        _NARROWACL_SECTION, username + '.excludes',
-        ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
-    if not user_includes:
-        raise error.Abort(_("{} configuration for user {} is empty")
-                          .format(_NARROWACL_SECTION, username))
-
-    user_includes = [
-        'path:.' if p == '*' else 'path:' + p for p in user_includes]
-    user_excludes = [
-        'path:.' if p == '*' else 'path:' + p for p in user_excludes]
-
-    req_includes = set(kwargs.get(r'includepats', []))
-    req_excludes = set(kwargs.get(r'excludepats', []))
-
-    req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
-        req_includes, req_excludes, user_includes, user_excludes)
-
-    if invalid_includes:
-        raise error.Abort(
-            _("The following includes are not accessible for {}: {}")
-            .format(username, invalid_includes))
-
-    new_args = {}
-    new_args.update(kwargs)
-    new_args['includepats'] = req_includes
-    if req_excludes:
-        new_args['excludepats'] = req_excludes
-    return new_args
-
 @bundle2.parthandler(_SPECPART, (_SPECPART_INCLUDE, _SPECPART_EXCLUDE))
 def _handlechangespec_2(op, inpart):
     includepats = set(inpart.params.get(_SPECPART_INCLUDE, '').splitlines())
@@ -480,7 +444,7 @@ def setup():
         repo = args[1]
         if repo.ui.has_section(_NARROWACL_SECTION):
             getbundlechangegrouppart_narrow(
-                *args, **applyacl_narrow(repo, kwargs))
+                *args, **exchange.applynarrowacl(repo, kwargs))
         elif kwargs.get(r'narrow', False):
             getbundlechangegrouppart_narrow(*args, **kwargs)
         else:

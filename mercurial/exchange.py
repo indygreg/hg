@@ -27,6 +27,7 @@ from . import (
     error,
     lock as lockmod,
     logexchange,
+    narrowspec,
     obsolete,
     phases,
     pushkey,
@@ -1831,6 +1832,48 @@ def _pullobsolete(pullop):
                 pullop.repo.obsstore.add(tr, markers)
             pullop.repo.invalidatevolatilesets()
     return tr
+
+def applynarrowacl(repo, kwargs):
+    """Apply narrow fetch access control.
+
+    This massages the named arguments for getbundle wire protocol commands
+    so requested data is filtered through access control rules.
+    """
+    ui = repo.ui
+    # TODO this assumes existence of HTTP and is a layering violation.
+    username = ui.shortuser(ui.environ.get('REMOTE_USER') or ui.username())
+    user_includes = ui.configlist(
+        _NARROWACL_SECTION, username + '.includes',
+        ui.configlist(_NARROWACL_SECTION, 'default.includes'))
+    user_excludes = ui.configlist(
+        _NARROWACL_SECTION, username + '.excludes',
+        ui.configlist(_NARROWACL_SECTION, 'default.excludes'))
+    if not user_includes:
+        raise error.Abort(_("{} configuration for user {} is empty")
+                          .format(_NARROWACL_SECTION, username))
+
+    user_includes = [
+        'path:.' if p == '*' else 'path:' + p for p in user_includes]
+    user_excludes = [
+        'path:.' if p == '*' else 'path:' + p for p in user_excludes]
+
+    req_includes = set(kwargs.get(r'includepats', []))
+    req_excludes = set(kwargs.get(r'excludepats', []))
+
+    req_includes, req_excludes, invalid_includes = narrowspec.restrictpatterns(
+        req_includes, req_excludes, user_includes, user_excludes)
+
+    if invalid_includes:
+        raise error.Abort(
+            _("The following includes are not accessible for {}: {}")
+            .format(username, invalid_includes))
+
+    new_args = {}
+    new_args.update(kwargs)
+    new_args['includepats'] = req_includes
+    if req_excludes:
+        new_args['excludepats'] = req_excludes
+    return new_args
 
 def caps20to10(repo, role):
     """return a set with appropriate options to use bundle20 during getbundle"""

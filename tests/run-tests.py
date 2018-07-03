@@ -1482,8 +1482,9 @@ class TTest(Test):
 
                 optional = []
                 for i, el in enumerate(els):
-
-                    r = self.linematch(el, lout)
+                    r = False
+                    if el:
+                        r = self.linematch(el, lout)
                     if isinstance(r, str):
                         if r == '-glob':
                             lout = ''.join(el.rsplit(' (glob)', 1))
@@ -1606,41 +1607,40 @@ class TTest(Test):
         return TTest.rematch(res, l)
 
     def linematch(self, el, l):
-        retry = False
         if el == l: # perfect match (fast)
             return True
-        if el:
-            if el.endswith(b" (?)\n"):
-                retry = "retry"
-                el = el[:-5] + b"\n"
+        retry = False
+        if el.endswith(b" (?)\n"):
+            retry = "retry"
+            el = el[:-5] + b"\n"
+        else:
+            m = optline.match(el)
+            if m:
+                conditions = [c for c in m.group(2).split(b' ')]
+
+                el = m.group(1) + b"\n"
+                if not self._iftest(conditions):
+                    retry = "retry"    # Not required by listed features
+
+        if el.endswith(b" (esc)\n"):
+            if PYTHON3:
+                el = el[:-7].decode('unicode_escape') + '\n'
+                el = el.encode('utf-8')
             else:
-                m = optline.match(el)
-                if m:
-                    conditions = [c for c in m.group(2).split(b' ')]
-
-                    el = m.group(1) + b"\n"
-                    if not self._iftest(conditions):
-                        retry = "retry"    # Not required by listed features
-
-            if el.endswith(b" (esc)\n"):
-                if PYTHON3:
-                    el = el[:-7].decode('unicode_escape') + '\n'
-                    el = el.encode('utf-8')
-                else:
-                    el = el[:-7].decode('string-escape') + '\n'
-            if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:
+                el = el[:-7].decode('string-escape') + '\n'
+        if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:
+            return True
+        if el.endswith(b" (re)\n"):
+            return TTest.rematch(el[:-6], l) or retry
+        if el.endswith(b" (glob)\n"):
+            # ignore '(glob)' added to l by 'replacements'
+            if l.endswith(b" (glob)\n"):
+                l = l[:-8] + b"\n"
+            return TTest.globmatch(el[:-8], l) or retry
+        if os.altsep:
+            _l = l.replace(b'\\', b'/')
+            if el == _l or os.name == 'nt' and el[:-1] + b'\r\n' == _l:
                 return True
-            if el.endswith(b" (re)\n"):
-                return TTest.rematch(el[:-6], l) or retry
-            if el.endswith(b" (glob)\n"):
-                # ignore '(glob)' added to l by 'replacements'
-                if l.endswith(b" (glob)\n"):
-                    l = l[:-8] + b"\n"
-                return TTest.globmatch(el[:-8], l) or retry
-            if os.altsep:
-                _l = l.replace(b'\\', b'/')
-                if el == _l or os.name == 'nt' and el[:-1] + b'\r\n' == _l:
-                    return True
         return retry
 
     @staticmethod

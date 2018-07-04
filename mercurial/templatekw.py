@@ -465,7 +465,7 @@ def showmanifest(context, mapping):
     if mnode is None:
         # just avoid crash, we might want to use the 'ff...' hash in future
         return
-    mrev = repo.manifestlog._revlog.rev(mnode)
+    mrev = repo.manifestlog.rev(mnode)
     mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {'rev': mrev, 'node': mhex})
     f = context.process('manifest', mapping)

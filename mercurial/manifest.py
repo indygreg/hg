@@ -1348,6 +1348,9 @@ class manifestlog(object):
         self._dirmancache.clear()
         self._revlog.clearcaches()
 
+    def rev(self, node):
+        return self._revlog.rev(node)
+
 @interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memmanifestctx(object):
     def __init__(self, manifestlog):

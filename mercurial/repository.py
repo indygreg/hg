@@ -922,6 +922,12 @@ class imanifestlog(interfaceutil.Interface):
     def clearcaches():
         """Clear caches associated with this collection."""
 
+    def rev(node):
+        """Obtain the revision number for a binary node.
+
+        Raises ``error.LookupError`` if the node is not known.
+        """
+
 class completelocalrepository(interfaceutil.Interface):
     """Monolithic interface for local repositories.
 

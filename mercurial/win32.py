@@ -44,6 +44,7 @@ _ERROR_NO_MORE_FILES = 18
 _ERROR_INVALID_PARAMETER = 87
 _ERROR_BROKEN_PIPE = 109
 _ERROR_INSUFFICIENT_BUFFER = 122
+_ERROR_NO_DATA = 232
 
 # WPARAM is defined as UINT_PTR (unsigned type)
 # LPARAM is defined as LONG_PTR (signed type)
@@ -405,6 +406,12 @@ def peekpipe(pipe):
         raise ctypes.WinError(err)
 
     return avail.value
+
+def lasterrorwaspipeerror(err):
+    if err.errno != errno.EINVAL:
+        return False
+    err = _kernel32.GetLastError()
+    return err == _ERROR_BROKEN_PIPE or err == _ERROR_NO_DATA
 
 def testpid(pid):
     '''return True if pid is still running or unable to

@@ -100,8 +100,8 @@ define fedora_targets
 fedora$(1):
 	mkdir -p $$(HGROOT)/packages/fedora$(1)
 	./buildrpm
-	cp $$(HGROOT)/rpmbuild/RPMS/*/* $$(HGROOT)/packages/fedora$(1)
-	cp $$(HGROOT)/rpmbuild/SRPMS/* $$(HGROOT)/packages/fedora$(1)
+	cp $$(HGROOT)/contrib/packaging/rpmbuild/RPMS/*/* $$(HGROOT)/packages/fedora$(1)
+	cp $$(HGROOT)/contrib/packaging/rpmbuild/SRPMS/* $$(HGROOT)/packages/fedora$(1)
 	rm -rf $(HGROOT)/rpmbuild
 
 .PHONY: docker-fedora$(1)

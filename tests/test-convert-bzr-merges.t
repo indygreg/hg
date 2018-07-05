@@ -69,4 +69,76 @@ test multiple merges at once
   644   file-branch2
   644   file-parent
 
+  $ hg convert source-hg hg2hg
+  initializing destination hg2hg repository
+  scanning source...
+  sorting...
+  converting...
+  5 Initial add
+  4 Added branch1 file
+  3 Added parent file
+  2 Added brach2 file
+  1 Merged branches
+  0 (octopus merge fixup)
+  $ hg -R hg2hg out source-hg -T compact
+  comparing with source-hg
+  searching for changes
+  5[tip]:4,3   6bd55e826939   2009-10-10 08:00 +0100   foo
+    (octopus merge fixup)
+  
+XXX: The manifest lines should probably agree, to avoid changing the hash when
+converting hg -> hg
+
+  $ hg -R source-hg log --debug -r tip
+  changeset:   5:b209510f11b2c987f920749cd8e352aa4b3230f2
+  branch:      source
+  tag:         tip
+  phase:       draft
+  parent:      4:1dc38c377bb35eeea4fa955056fbe4440d54a743
+  parent:      3:4aaba1bfb426b8941bbf63f9dd52301152695164
+  manifest:    5:1109e42bdcbd1f51baa69bc91079011d77057dbb
+  user:        Foo Bar <foo.bar@example.com>
+  date:        Sat Oct 10 08:00:04 2009 +0100
+  extra:       branch=source
+  description:
+  (octopus merge fixup)
+  
+  
+  $ hg -R hg2hg log --debug -r tip
+  changeset:   5:6bd55e8269392769783345686faf7ff7b3b0215d
+  branch:      source
+  tag:         tip
+  phase:       draft
+  parent:      4:1dc38c377bb35eeea4fa955056fbe4440d54a743
+  parent:      3:4aaba1bfb426b8941bbf63f9dd52301152695164
+  manifest:    4:daa315d56a98ba20811fdd0d9d575861f65cfa8c
+  user:        Foo Bar <foo.bar@example.com>
+  date:        Sat Oct 10 08:00:04 2009 +0100
+  extra:       branch=source
+  description:
+  (octopus merge fixup)
+  
+  
+  $ hg -R source-hg manifest --debug -r tip
+  cdf31ed9242b209cd94697112160e2c5b37a667d 644   file
+  5108144f585149b29779d7c7e51d61dd22303ffe 644   file-branch1
+  80753c4a9ac3806858405b96b24a907b309e3616 644   file-branch2
+  7108421418404a937c684d2479a34a24d2ce4757 644   file-parent
+  $ hg -R source-hg manifest --debug -r 'tip^'
+  cdf31ed9242b209cd94697112160e2c5b37a667d 644   file
+  5108144f585149b29779d7c7e51d61dd22303ffe 644   file-branch1
+  80753c4a9ac3806858405b96b24a907b309e3616 644   file-branch2
+  7108421418404a937c684d2479a34a24d2ce4757 644   file-parent
+
+  $ hg -R hg2hg manifest --debug -r tip
+  cdf31ed9242b209cd94697112160e2c5b37a667d 644   file
+  5108144f585149b29779d7c7e51d61dd22303ffe 644   file-branch1
+  80753c4a9ac3806858405b96b24a907b309e3616 644   file-branch2
+  7108421418404a937c684d2479a34a24d2ce4757 644   file-parent
+  $ hg -R hg2hg manifest --debug -r 'tip^'
+  cdf31ed9242b209cd94697112160e2c5b37a667d 644   file
+  5108144f585149b29779d7c7e51d61dd22303ffe 644   file-branch1
+  80753c4a9ac3806858405b96b24a907b309e3616 644   file-branch2
+  7108421418404a937c684d2479a34a24d2ce4757 644   file-parent
+
   $ cd ..

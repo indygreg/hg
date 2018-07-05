@@ -2515,11 +2515,12 @@ def grep(ui, repo, pattern, *pats, **opts):
     Search revision history for a regular expression in the specified
     files or the entire project.
 
-    By default, grep prints the most recent revision number for each
-    file in which it finds a match. To get it to print every revision
-    that contains a change in match status ("-" for a match that becomes
-    a non-match, or "+" for a non-match that becomes a match), use the
-    --diff flag.
+    By default, grep searches the expression on the working directory.
+    To search history and show the most recent revision number for each
+    file in which it finds a match, use :hg:`grep -r tip:0`.
+    To get it to print every revision that contains a change in match status
+    ("-" for a match that becomes a non-match, or "+" for a non-match that
+    becomes a match), use the --diff flag.
 
     PATTERN can be any Python (roughly Perl-compatible) regular
     expression.
@@ -2543,6 +2544,10 @@ def grep(ui, repo, pattern, *pats, **opts):
     sep, eol = ':', '\n'
     if opts.get('print0'):
         sep = eol = '\0'
+
+    if not opts.get('rev') and not diff:
+        opts['rev'] = ["wdir()"]
+        opts['allfiles'] = True
 
     getfile = util.lrucachefunc(repo.file)
 

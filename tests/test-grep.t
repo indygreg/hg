@@ -23,11 +23,11 @@ pattern error
 
 simple
 
-  $ hg grep '.*'
+  $ hg grep -r tip:0 '.*'
   port:4:export
   port:4:vaportight
   port:4:import/export
-  $ hg grep port port
+  $ hg grep -r tip:0 port port
   port:4:export
   port:4:vaportight
   port:4:import/export
@@ -35,32 +35,32 @@ simple
 simple with color
 
   $ hg --config extensions.color= grep --config color.mode=ansi \
-  >     --color=always port port
+  >     --color=always port port -r tip:0
   \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mex\x1b[0;31;1mport\x1b[0m (esc)
   \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mva\x1b[0;31;1mport\x1b[0might (esc)
   \x1b[0;35mport\x1b[0m\x1b[0;36m:\x1b[0m\x1b[0;32m4\x1b[0m\x1b[0;36m:\x1b[0mim\x1b[0;31;1mport\x1b[0m/ex\x1b[0;31;1mport\x1b[0m (esc)
 
 simple templated
 
-  $ hg grep port \
+  $ hg grep port -r tip:0 \
   > -T '{file}:{rev}:{node|short}:{texts % "{if(matched, text|upper, text)}"}\n'
   port:4:914fa752cdea:exPORT
   port:4:914fa752cdea:vaPORTight
   port:4:914fa752cdea:imPORT/exPORT
 
-  $ hg grep port -T '{file}:{rev}:{texts}\n'
+  $ hg grep port -r tip:0 -T '{file}:{rev}:{texts}\n'
   port:4:export
   port:4:vaportight
   port:4:import/export
 
-  $ hg grep port -T '{file}:{tags}:{texts}\n'
+  $ hg grep port -r tip:0 -T '{file}:{tags}:{texts}\n'
   port:tip:export
   port:tip:vaportight
   port:tip:import/export
 
 simple JSON (no "change" field)
 
-  $ hg grep -Tjson port
+  $ hg grep -r tip:0 -Tjson port
   [
    {
     "date": [4, 0],
@@ -93,7 +93,7 @@ simple JSON (no "change" field)
 
 simple JSON without matching lines
 
-  $ hg grep -Tjson -l port
+  $ hg grep -r tip:0 -Tjson -l port
   [
    {
     "date": [4, 0],
@@ -216,9 +216,9 @@ all JSON
 
 other
 
-  $ hg grep -l port port
+  $ hg grep -r tip:0 -l port port
   port:4
-  $ hg grep import port
+  $ hg grep -r tip:0 import port
   port:4:import/export
 
   $ hg cp port port2
@@ -226,7 +226,7 @@ other
 
 follow
 
-  $ hg grep --traceback -f 'import\n\Z' port2
+  $ hg grep -r tip:0 --traceback -f 'import\n\Z' port2
   port:0:import
   
   $ echo deport >> port2
@@ -244,8 +244,8 @@ follow
   port:0:1:+:spam:import
 
   $ hg up -q null
-  $ hg grep -f port
-  [1]
+  $ hg grep -r 'reverse(:.)' -f port
+  port:0:import
 
 Test wdir
 (at least, this shouldn't crash)
@@ -264,9 +264,9 @@ Test wdir
   $ cd ..
   $ hg init t2
   $ cd t2
-  $ hg grep foobar foo
+  $ hg grep -r tip:0 foobar foo
   [1]
-  $ hg grep foobar
+  $ hg grep -r tip:0 foobar
   [1]
   $ echo blue >> color
   $ echo black >> color
@@ -279,7 +279,7 @@ Test wdir
   $ echo orange >> color
   $ echo blue >> color
   $ hg ci -m 3
-  $ hg grep orange
+  $ hg grep -r tip:0 orange
   color:3:orange
   $ hg grep --all orange
   color:3:+:orange
@@ -293,7 +293,7 @@ Test wdir
 
 test substring match: '^' should only match at the beginning
 
-  $ hg grep '^.' --config extensions.color= --color debug
+  $ hg grep -r tip:0 '^.' --config extensions.color= --color debug
   [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.match|b]lack
   [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.match|o]range
   [grep.filename|color][grep.sep|:][grep.rev|3][grep.sep|:][grep.match|b]lue
@@ -303,7 +303,7 @@ match in last "line" without newline
   $ $PYTHON -c 'fp = open("noeol", "wb"); fp.write(b"no infinite loop"); fp.close();'
   $ hg ci -Amnoeol
   adding noeol
-  $ hg grep loop
+  $ hg grep -r tip:0 loop
   noeol:4:no infinite loop
 
   $ cd ..
@@ -320,7 +320,7 @@ revision with renamed files.
   adding color
   $ hg rename color colour
   $ hg ci -Am rename
-  $ hg grep octarine
+  $ hg grep -r tip:0 octarine
   colour:1:octarine
   color:0:octarine
 
@@ -424,3 +424,14 @@ files modified in the working directory
   a:2147483647:abracadara
 
   $ cd ..
+
+Change Default of grep, that is, the files not in current working directory
+should not be grepp-ed on
+  $ hg init ab
+  $ cd ab
+  $ echo "some text">>file1
+  $ hg add file1
+  $ hg commit -m "adds file1"
+  $ hg mv file1 file2
+  $ hg grep "some"
+  file2:2147483647:some text

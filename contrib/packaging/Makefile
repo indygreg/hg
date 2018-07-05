@@ -95,7 +95,7 @@ endef
 $(foreach codename,$(UBUNTU_CODENAMES),$(eval $(call ubuntu_targets,$(codename))))
 
 # Fedora targets.
-define fedora_targets =
+define fedora_targets
 .PHONY: fedora$(1)
 fedora$(1):
 	mkdir -p $$(HGROOT)/packages/fedora$(1)

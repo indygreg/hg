@@ -298,24 +298,24 @@ class stripcallback(object):
         if roots:
             strip(self.ui, self.repo, roots, self.backup, self.topic)
 
-def delayedstrip(ui, repo, nodelist, topic=None):
+def delayedstrip(ui, repo, nodelist, topic=None, backup=True):
     """like strip, but works inside transaction and won't strip irreverent revs
 
     nodelist must explicitly contain all descendants. Otherwise a warning will
     be printed that some nodes are not stripped.
 
-    Always do a backup. The last non-None "topic" will be used as the backup
-    topic name. The default backup topic name is "backup".
+    Will do a backup if `backup` is True. The last non-None "topic" will be
+    used as the backup topic name. The default backup topic name is "backup".
     """
     tr = repo.currenttransaction()
     if not tr:
         nodes = safestriproots(ui, repo, nodelist)
-        return strip(ui, repo, nodes, True, topic)
+        return strip(ui, repo, nodes, backup=backup, topic=topic)
     # transaction postclose callbacks are called in alphabet order.
     # use '\xff' as prefix so we are likely to be called last.
     callback = tr.getpostclose('\xffstrip')
     if callback is None:
-        callback = stripcallback(ui, repo, True, topic)
+        callback = stripcallback(ui, repo, backup=backup, topic=topic)
         tr.addpostclose('\xffstrip', callback)
     if topic:
         callback.topic = topic

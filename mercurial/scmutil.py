@@ -780,7 +780,7 @@ class _containsnode(object):
         return self._revcontains(self._torev(node))
 
 def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
-                 fixphase=False, targetphase=None):
+                 fixphase=False, targetphase=None, backup=True):
     """do common cleanups when old nodes are replaced by new nodes
 
     That includes writing obsmarkers or stripping nodes, and moving bookmarks.
@@ -905,7 +905,8 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
             from . import repair # avoid import cycle
             tostrip = list(replacements)
             if tostrip:
-                repair.delayedstrip(repo.ui, repo, tostrip, operation)
+                repair.delayedstrip(repo.ui, repo, tostrip, operation,
+                                    backup=backup)
 
 def addremove(repo, matcher, prefix, opts=None):
     if opts is None:

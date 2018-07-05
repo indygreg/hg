@@ -585,7 +585,11 @@ class rebaseruntime(object):
             # case and realize that the commit was in progress.
             self.storestatus()
 
-    def _finishrebase(self):
+    def _finishrebase(self, backup=True):
+        """
+        backup:   if False, no backup will be stored when stripping rebased
+                  revisions
+        """
         repo, ui, opts = self.repo, self.ui, self.opts
         fm = ui.formatter('rebase', opts)
         fm.startitem()
@@ -632,7 +636,7 @@ class rebaseruntime(object):
         if self.collapsef and not self.keepf:
             collapsedas = newnode
         clearrebased(ui, repo, self.destmap, self.state, self.skipped,
-                     collapsedas, self.keepf, fm=fm)
+                     collapsedas, self.keepf, fm=fm, backup=backup)
 
         clearstatus(repo)
         clearcollapsemsg(repo)
@@ -829,6 +833,8 @@ def rebase(ui, repo, **opts):
         userrevs = list(repo.revs(opts.get('auto_orphans')))
         opts['rev'] = [revsetlang.formatspec('%ld and orphan()', userrevs)]
         opts['dest'] = '_destautoorphanrebase(SRC)'
+    backup = ui.configbool('ui', 'history-editing-backup')
+    opts['backup'] = backup
 
     if dryrun:
         return _dryrunrebase(ui, repo, opts)
@@ -850,6 +856,7 @@ def rebase(ui, repo, **opts):
 def _dryrunrebase(ui, repo, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
     confirm = opts.get('confirm')
+    backup = opts.get('backup')
     if confirm:
         ui.status(_('starting in-memory rebase\n'))
     else:
@@ -871,7 +878,7 @@ def _dryrunrebase(ui, repo, opts):
                 if not ui.promptchoice(_(b'apply changes (yn)?'
                                          b'$$ &Yes $$ &No')):
                     # finish unfinished rebase
-                    rbsrt._finishrebase()
+                    rbsrt._finishrebase(backup=backup)
                 else:
                     rbsrt._prepareabortorcontinue(isabort=True, backup=False,
                                                   suppwarns=True)
@@ -902,6 +909,7 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
         destspace = opts.get('_destspace')
         contf = opts.get('continue')
         abortf = opts.get('abort')
+        backup = opts.get('backup')
         if opts.get('interactive'):
             try:
                 if extensions.find('histedit'):
@@ -932,7 +940,7 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
                 ms = mergemod.mergestate.read(repo)
                 mergeutil.checkunresolved(ms)
 
-            retcode = rbsrt._prepareabortorcontinue(abortf)
+            retcode = rbsrt._prepareabortorcontinue(abortf, backup=backup)
             if retcode is not None:
                 return retcode
         else:
@@ -961,7 +969,7 @@ def _origrebase(ui, repo, opts, rbsrt, inmemory=False, leaveunfinished=False):
             with util.acceptintervention(dsguard):
                 rbsrt._performrebase(tr)
                 if not leaveunfinished:
-                    rbsrt._finishrebase()
+                    rbsrt._finishrebase(backup=backup)
 
 def _definedestmap(ui, repo, inmemory, destf=None, srcf=None, basef=None,
                    revf=None, destspace=None):
@@ -1728,7 +1736,7 @@ def buildstate(repo, destmap, collapse):
     return originalwd, destmap, state
 
 def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
-                 keepf=False, fm=None):
+                 keepf=False, fm=None, backup=True):
     """dispose of rebased revision at the end of the rebase
 
     If `collapsedas` is not None, the rebase was a collapse whose result if the
@@ -1736,6 +1744,9 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
 
     If `keepf` is not True, the rebase has --keep set and no nodes should be
     removed (but bookmarks still need to be moved).
+
+    If `backup` is False, no backup will be stored when stripping rebased
+    revisions.
     """
     tonode = repo.changelog.node
     replacements = {}
@@ -1751,7 +1762,7 @@ def clearrebased(ui, repo, destmap, state, skipped, collapsedas=None,
                 else:
                     succs = (newnode,)
                 replacements[oldnode] = succs
-    scmutil.cleanupnodes(repo, replacements, 'rebase', moves)
+    scmutil.cleanupnodes(repo, replacements, 'rebase', moves, backup=backup)
     if fm:
         hf = fm.hexfunc
         fl = fm.formatlist

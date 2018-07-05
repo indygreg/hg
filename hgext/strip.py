@@ -103,8 +103,9 @@ def strip(ui, repo, revs, update=True, backup=True, force=None, bookmarks=None):
                                'option)'), _('REV')),
           ('f', 'force', None, _('force removal of changesets, discard '
                                  'uncommitted changes (no backup)')),
-          ('', 'no-backup', None, _('no backups')),
-          ('', 'nobackup', None, _('no backups (DEPRECATED)')),
+          ('', 'no-backup', None, _('do not save backup bundle')),
+          ('', 'nobackup', None, _('do not save backup bundle '
+                                   '(DEPRECATED)')),
           ('n', '', None, _('ignored  (DEPRECATED)')),
           ('k', 'keep', None, _("do not modify working directory during "
                                 "strip")),

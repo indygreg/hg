@@ -106,7 +106,7 @@ fedora$(1):
 
 .PHONY: docker-fedora$(1)
 docker-fedora$(1):
-	mkdir -p $$(HGROOT)/packages/fedora($1)
+	mkdir -p $$(HGROOT)/packages/fedora$(1)
 	./dockerrpm fedora$(1)
 
 endef

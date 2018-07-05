@@ -13,7 +13,8 @@ UBUNTU_CODENAMES := \
 
 FEDORA_RELEASES := \
   20 \
-  21
+  21 \
+  28
 
 CENTOS_RELEASES := \
   5 \

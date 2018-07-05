@@ -176,6 +176,7 @@ packaging_targets := \
   docker-debian-stretch \
   docker-fedora20 \
   docker-fedora21 \
+  docker-fedora28 \
   docker-ubuntu-trusty \
   docker-ubuntu-trusty-ppa \
   docker-ubuntu-xenial \
@@ -186,6 +187,7 @@ packaging_targets := \
   docker-ubuntu-bionic-ppa \
   fedora20 \
   fedora21 \
+  fedora28 \
   linux-wheels \
   linux-wheels-x86_64 \
   linux-wheels-i686 \

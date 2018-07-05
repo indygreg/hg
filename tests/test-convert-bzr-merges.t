@@ -39,7 +39,7 @@ test multiple merges at once
   $ bzr merge -q --force ../source-branch2
   $ bzr commit -q -m 'Merged branches' '--commit-time=2009-10-10 08:00:04 +0100'
   $ cd ..
-  $ hg convert --datesort source source-hg
+  $ hg convert --datesort --config convert.bzr.saverev=False source source-hg
   initializing destination source-hg repository
   scanning source...
   sorting...

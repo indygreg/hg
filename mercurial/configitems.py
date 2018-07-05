@@ -209,6 +209,9 @@ coreconfigitem('committemplate', '.*',
     default=None,
     generic=True,
 )
+coreconfigitem('convert', 'bzr.saverev',
+    default=True,
+)
 coreconfigitem('convert', 'cvsps.cache',
     default=True,
 )

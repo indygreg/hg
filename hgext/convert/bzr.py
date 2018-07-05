@@ -65,6 +65,7 @@ class bzr_source(common.converter_source):
             raise common.NoRepo(_('%s does not look like a Bazaar repository')
                               % path)
         self._parentids = {}
+        self._saverev = ui.configbool('convert', 'bzr.saverev')
 
     def _checkrepotype(self, path):
         # Lightweight checkouts detection is informational but probably
@@ -175,7 +176,8 @@ class bzr_source(common.converter_source):
                 author=self.recode(rev.committer),
                 desc=self.recode(rev.message),
                 branch=branch,
-                rev=version)
+                rev=version,
+                saverev=self._saverev)
 
     def gettags(self):
         bytetags = {}

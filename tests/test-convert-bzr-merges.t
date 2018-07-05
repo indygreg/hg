@@ -14,30 +14,30 @@ test multiple merges at once
   $ cd source
   $ echo content > file
   $ bzr add -q file
-  $ bzr commit -q -m 'Initial add'
+  $ bzr commit -q -m 'Initial add' '--commit-time=2009-10-10 08:00:00 +0100'
   $ cd ..
   $ bzr branch -q source source-branch1
   $ cd source-branch1
   $ echo morecontent >> file
   $ echo evenmorecontent > file-branch1
   $ bzr add -q file-branch1
-  $ bzr commit -q -m 'Added branch1 file'
+  $ bzr commit -q -m 'Added branch1 file' '--commit-time=2009-10-10 08:00:01 +0100'
   $ cd ../source
   $ sleep 1
   $ echo content > file-parent
   $ bzr add -q file-parent
-  $ bzr commit -q -m 'Added parent file'
+  $ bzr commit -q -m 'Added parent file' '--commit-time=2009-10-10 08:00:02 +0100'
   $ cd ..
   $ bzr branch -q source source-branch2
   $ cd source-branch2
   $ echo somecontent > file-branch2
   $ bzr add -q file-branch2
-  $ bzr commit -q -m 'Added brach2 file'
+  $ bzr commit -q -m 'Added brach2 file' '--commit-time=2009-10-10 08:00:03 +0100'
   $ sleep 1
   $ cd ../source
   $ bzr merge -q ../source-branch1
   $ bzr merge -q --force ../source-branch2
-  $ bzr commit -q -m 'Merged branches'
+  $ bzr commit -q -m 'Merged branches' '--commit-time=2009-10-10 08:00:04 +0100'
   $ cd ..
   $ hg convert --datesort source source-hg
   initializing destination source-hg repository

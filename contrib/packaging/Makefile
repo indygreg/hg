@@ -26,13 +26,13 @@ CENTOS_WITH_PYTHON_RELEASES := 5 6
 help:
 	@echo 'Packaging Make Targets'
 	@echo ''
-	@echo 'docker-centos-{$(strip $(CENTOS_RELEASES))}'
+	@echo 'docker-centos{$(strip $(CENTOS_RELEASES))}'
 	@echo '   Build an RPM for a specific CentOS version using Docker.'
 	@echo ''
 	@echo 'docker-debian-{$(strip $(DEBIAN_CODENAMES))}'
 	@echo '   Build Debian packages specific to a Debian distro using Docker.'
 	@echo ''
-	@echo 'docker-fedora-{$(strip $(FEDORA_RELEASES))}'
+	@echo 'docker-fedora{$(strip $(FEDORA_RELEASES))}'
 	@echo '   Build an RPM for a specific Fedora version using Docker.'
 	@echo ''
 	@echo 'docker-ubuntu-{$(strip $(UBUNTU_CODENAMES))}'
@@ -54,10 +54,10 @@ help:
 	@echo 'ppa'
 	@echo '   Build a Debian source package locally targeting the current system'
 	@echo ''
-	@echo 'centos-{$(strip $(CENTOS_RELEASES))}'
+	@echo 'centos{$(strip $(CENTOS_RELEASES))}'
 	@echo '   Build an RPM for a specific CentOS version locally'
 	@echo ''
-	@echo 'fedora-{$(strip $(FEDORA_RELEASES))}'
+	@echo 'fedora{$(strip $(FEDORA_RELEASES))}'
 	@echo '   Build an RPM for a specific Fedora version locally'
 
 .PHONY: help

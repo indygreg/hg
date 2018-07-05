@@ -925,7 +925,7 @@ def findoutgoing(ui, repo, remote=None, force=False, opts=None):
       _("don't strip old nodes after edit is complete")),
      ('', 'abort', False, _('abort an edit in progress')),
      ('o', 'outgoing', False, _('changesets not found in destination')),
-     ('', 'no-backup', False, _('no backup')),
+     ('', 'no-backup', False, _('do not save backup copies of files')),
      ('f', 'force', False,
       _('force outgoing even for unrelated repositories')),
      ('r', 'rev', [], _('first revision to be edited'), _('REV'))] +

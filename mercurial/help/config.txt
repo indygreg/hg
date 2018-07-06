@@ -2138,6 +2138,11 @@ User interface controls.
     Possible values are 'text' and 'curses'.
     This config overrides the interface specified by ui.interface.
 
+``large-file-limit``
+    Largest file size that gives no memory use warning.
+    Possible values are integers or 0 to disable the check.
+    (default: 10000000)
+
 ``logtemplate``
     Template string for commands that print changesets.
 

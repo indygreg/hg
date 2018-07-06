@@ -1860,6 +1860,8 @@ Test --normal flag
   $ hg add --normal new-largefile
   new-largefile: up to 69 MB of RAM may be required to manage this file
   (use 'hg revert new-largefile' to cancel the pending addition)
+  $ hg revert new-largefile
+  $ hg --config ui.large-file-limit=22M add --normal new-largefile
 
 Test explicit commit of switch between normal and largefile - make sure both
 the add and the remove is committed.

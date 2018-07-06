@@ -1090,6 +1090,9 @@ coreconfigitem('ui', 'interface',
 coreconfigitem('ui', 'interface.chunkselector',
     default=None,
 )
+coreconfigitem('ui', 'large-file-limit',
+    default=10000000,
+)
 coreconfigitem('ui', 'logblockedtimes',
     default=False,
 )

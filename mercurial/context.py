@@ -1341,7 +1341,8 @@ class workingctx(committablectx):
                     ui.warn(_("%s does not exist!\n") % uipath(f))
                     rejected.append(f)
                     continue
-                if st.st_size > 10000000:
+                limit = ui.configbytes('ui', 'large-file-limit')
+                if limit != 0 and st.st_size > limit:
                     ui.warn(_("%s: up to %d MB of RAM may be required "
                               "to manage this file\n"
                               "(use 'hg revert %s' to cancel the "

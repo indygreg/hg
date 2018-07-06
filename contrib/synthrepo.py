@@ -196,7 +196,7 @@ def analyze(ui, repo, *revs, **opts):
             if lastctx.rev() != nullrev:
                 timedelta = ctx.date()[0] - lastctx.date()[0]
                 interarrival[roundto(timedelta, 300)] += 1
-            diffopts = diffutil.diffopts(ctx._repo.ui, {'git': True})
+            diffopts = diffutil.diffopts(ui, {'git': True})
             diff = sum((d.splitlines()
                        for d in ctx.diff(pctx, opts=diffopts)), [])
             fileadds, diradds, fileremoves, filechanges = 0, 0, 0, 0

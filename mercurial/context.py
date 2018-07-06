@@ -432,6 +432,10 @@ class changectx(basectx):
                     raise
                 except (TypeError, LookupError):
                     pass
+            else:
+                raise error.ProgrammingError(
+                        "unsupported changeid '%s' of type %s" %
+                        (changeid, type(changeid)))
 
             # lookup failed
         except (error.FilteredIndexError, error.FilteredLookupError):

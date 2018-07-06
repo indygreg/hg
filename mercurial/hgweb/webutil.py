@@ -509,7 +509,7 @@ def changesetentry(web, ctx):
     diff = diffs(web, ctx, basectx, None, style)
 
     parity = paritygen(web.stripecount)
-    diffstatsgen = diffstatgen(ctx, basectx)
+    diffstatsgen = diffstatgen(web.repo.ui, ctx, basectx)
     diffstats = diffstat(ctx, diffstatsgen, parity)
 
     return dict(
@@ -655,10 +655,10 @@ def compare(contextnum, leftlines, rightlines):
     return templateutil.mappinggenerator(_comparegen, args=args,
                                          name='comparisonblock')
 
-def diffstatgen(ctx, basectx):
+def diffstatgen(ui, ctx, basectx):
     '''Generator function that provides the diffstat data.'''
 
-    diffopts = patch.diffopts(ctx._repo.ui, {'noprefix': False})
+    diffopts = patch.diffopts(ui, {'noprefix': False})
     stats = patch.diffstatdata(
         util.iterlines(ctx.diff(basectx, opts=diffopts)))
     maxname, maxtotal, addtotal, removetotal, binary = patch.diffstatsum(stats)

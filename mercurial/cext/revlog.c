@@ -42,6 +42,7 @@ typedef struct {
  * Zero is empty
  */
 typedef struct {
+	PyObject_HEAD
 	indexObject *index;
 	nodetreenode *nodes;
 	unsigned length;     /* # nodes in use */
@@ -1064,7 +1065,11 @@ static int nt_delete_node(nodetree *self, const char *node)
 
 static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 {
+	/* Initialize before argument-checking to avoid nt_dealloc() crash. */
+	self->nodes = NULL;
+
 	self->index = index;
+	Py_INCREF(index);
 	/* The input capacity is in terms of revisions, while the field is in
 	 * terms of nodetree nodes. */
 	self->capacity = (capacity < 4 ? 4 : capacity / 2);
@@ -1081,6 +1086,17 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 	}
 	self->length = 1;
 	return 0;
+}
+
+static PyTypeObject indexType;
+
+static int nt_init_py(nodetree *self, PyObject *args)
+{
+	PyObject *index;
+	unsigned capacity;
+	if (!PyArg_ParseTuple(args, "O!I", &indexType, &index, &capacity))
+		return -1;
+	return nt_init(self, (indexObject*)index, capacity);
 }
 
 static int nt_partialmatch(nodetree *self, const char *node,
@@ -1135,21 +1151,68 @@ static int nt_shortest(nodetree *self, const char *node)
 	return -3;
 }
 
+static void nt_dealloc(nodetree *self)
+{
+	Py_XDECREF(self->index);
+	free(self->nodes);
+	self->nodes = NULL;
+	PyObject_Del(self);
+}
+
+static PyTypeObject nodetreeType = {
+	PyVarObject_HEAD_INIT(NULL, 0) /* header */
+	"parsers.nodetree",        /* tp_name */
+	sizeof(nodetree) ,         /* tp_basicsize */
+	0,                         /* tp_itemsize */
+	(destructor)nt_dealloc,    /* tp_dealloc */
+	0,                         /* tp_print */
+	0,                         /* tp_getattr */
+	0,                         /* tp_setattr */
+	0,                         /* tp_compare */
+	0,                         /* tp_repr */
+	0,                         /* tp_as_number */
+	0,                         /* tp_as_sequence */
+	0,                         /* tp_as_mapping */
+	0,                         /* tp_hash */
+	0,                         /* tp_call */
+	0,                         /* tp_str */
+	0,                         /* tp_getattro */
+	0,                         /* tp_setattro */
+	0,                         /* tp_as_buffer */
+	Py_TPFLAGS_DEFAULT,        /* tp_flags */
+	"nodetree",                /* tp_doc */
+	0,                         /* tp_traverse */
+	0,                         /* tp_clear */
+	0,                         /* tp_richcompare */
+	0,                         /* tp_weaklistoffset */
+	0,                         /* tp_iter */
+	0,                         /* tp_iternext */
+	0,                         /* tp_methods */
+	0,                         /* tp_members */
+	0,                         /* tp_getset */
+	0,                         /* tp_base */
+	0,                         /* tp_dict */
+	0,                         /* tp_descr_get */
+	0,                         /* tp_descr_set */
+	0,                         /* tp_dictoffset */
+	(initproc)nt_init_py,      /* tp_init */
+	0,                         /* tp_alloc */
+};
+
 static int index_init_nt(indexObject *self)
 {
 	if (self->nt == NULL) {
-		self->nt = PyMem_Malloc(sizeof(nodetree));
+		self->nt = PyObject_New(nodetree, &nodetreeType);
 		if (self->nt == NULL) {
-			PyErr_NoMemory();
 			return -1;
 		}
 		if (nt_init(self->nt, self, self->raw_length) == -1) {
-			PyMem_Free(self->nt);
+			nt_dealloc(self->nt);
 			self->nt = NULL;
 			return -1;
 		}
 		if (nt_insert(self->nt, nullid, -1) == -1) {
-			PyMem_Free(self->nt);
+			nt_dealloc(self->nt);
 			self->nt = NULL;
 			return -1;
 		}
@@ -2009,8 +2072,7 @@ static void _index_clearcaches(indexObject *self)
 		self->offsets = NULL;
 	}
 	if (self->nt != NULL) {
-		free(self->nt->nodes);
-		PyMem_Free(self->nt);
+		nt_dealloc(self->nt);
 	}
 	self->nt = NULL;
 	Py_CLEAR(self->headrevs);
@@ -2034,6 +2096,7 @@ static void index_dealloc(indexObject *self)
 	}
 	Py_XDECREF(self->data);
 	Py_XDECREF(self->added);
+	Py_XDECREF(self->nt);
 	PyObject_Del(self);
 }
 
@@ -2182,6 +2245,12 @@ void revlog_module_init(PyObject *mod)
 		return;
 	Py_INCREF(&indexType);
 	PyModule_AddObject(mod, "index", (PyObject *)&indexType);
+
+	nodetreeType.tp_new = PyType_GenericNew;
+	if (PyType_Ready(&nodetreeType) < 0)
+		return;
+	Py_INCREF(&nodetreeType);
+	PyModule_AddObject(mod, "nodetree", (PyObject *)&nodetreeType);
 
 	nullentry = Py_BuildValue(PY23("iiiiiiis#", "iiiiiiiy#"), 0, 0, 0,
 				  -1, -1, -1, -1, nullid, 20);

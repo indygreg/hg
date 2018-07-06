@@ -302,10 +302,8 @@ class basectx(object):
             ctx2 = self.p1()
         if ctx2 is not None:
             ctx2 = self._repo[ctx2]
-
-        diffopts = opts
         return patch.diff(self._repo, ctx2, self, match=match, changes=changes,
-                          opts=diffopts, losedatafn=losedatafn, prefix=prefix,
+                          opts=opts, losedatafn=losedatafn, prefix=prefix,
                           relroot=relroot, copy=copy,
                           hunksfilterfn=hunksfilterfn)
 

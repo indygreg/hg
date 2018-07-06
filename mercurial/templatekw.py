@@ -14,6 +14,7 @@ from .node import (
 )
 
 from . import (
+    diffutil,
     encoding,
     error,
     hbisect,
@@ -27,7 +28,6 @@ from . import (
     util,
 )
 from .utils import (
-    diffutil,
     stringutil,
 )
 

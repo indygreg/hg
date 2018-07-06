@@ -13,6 +13,7 @@ from .i18n import _
 from . import (
     dagop,
     destutil,
+    diffutil,
     encoding,
     error,
     hbisect,
@@ -33,7 +34,6 @@ from . import (
 )
 from .utils import (
     dateutil,
-    diffutil,
     stringutil,
 )
 

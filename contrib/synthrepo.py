@@ -54,6 +54,7 @@ from mercurial.node import (
 )
 from mercurial import (
     context,
+    diffutil,
     error,
     hg,
     patch,
@@ -62,7 +63,6 @@ from mercurial import (
 )
 from mercurial.utils import (
     dateutil,
-    diffutil,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for

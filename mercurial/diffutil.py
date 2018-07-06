@@ -9,9 +9,9 @@
 
 from __future__ import absolute_import
 
-from ..i18n import _
+from .i18n import _
 
-from .. import (
+from . import (
     mdiff,
     pycompat,
 )

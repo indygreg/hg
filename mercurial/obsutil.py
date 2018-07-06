@@ -11,13 +11,13 @@ import re
 
 from .i18n import _
 from . import (
+    diffutil,
     node as nodemod,
     phases,
     util,
 )
 from .utils import (
     dateutil,
-    diffutil,
 )
 
 ### obsolescence marker flag

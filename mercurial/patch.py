@@ -28,6 +28,7 @@ from .node import (
 from . import (
     copies,
     diffhelper,
+    diffutil,
     encoding,
     error,
     mail,
@@ -41,7 +42,6 @@ from . import (
 )
 from .utils import (
     dateutil,
-    diffutil,
     procutil,
     stringutil,
 )

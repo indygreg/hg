@@ -25,6 +25,7 @@ from .common import (
 
 from .. import (
     context,
+    diffutil,
     error,
     match,
     mdiff,
@@ -41,7 +42,6 @@ from .. import (
 )
 
 from ..utils import (
-    diffutil,
     stringutil,
 )
 

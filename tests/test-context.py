@@ -5,12 +5,12 @@ import sys
 from mercurial.node import hex
 from mercurial import (
     context,
+    diffutil,
     encoding,
     hg,
     scmutil,
     ui as uimod,
 )
-from mercurial.utils import diffutil
 
 print_ = print
 def print(*args, **kwargs):

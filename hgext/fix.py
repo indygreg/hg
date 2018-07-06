@@ -385,7 +385,9 @@ def getbasectxs(repo, opts, revstofix):
     """Returns a map of the base contexts for each revision
 
     The base contexts determine which lines are considered modified when we
-    attempt to fix just the modified lines in a file.
+    attempt to fix just the modified lines in a file. It also determines which
+    files we attempt to fix, so it is important to compute this even when
+    --whole is used.
     """
     # The --base flag overrides the usual logic, and we give every revision
     # exactly the set of baserevs that the user specified.

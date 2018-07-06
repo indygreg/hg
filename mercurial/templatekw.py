@@ -265,7 +265,7 @@ def showdiffstat(context, mapping):
     """
     ui = context.resource(mapping, 'ui')
     ctx = context.resource(mapping, 'ctx')
-    diffopts = diffutil.diffopts(ui, {'noprefix': False})
+    diffopts = diffutil.diffallopts(ui, {'noprefix': False})
     diff = ctx.diff(opts=diffopts)
     stats = patch.diffstatdata(util.iterlines(diff))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)

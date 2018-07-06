@@ -1805,7 +1805,7 @@ def matching(repo, subset, x):
         'substate': lambda r: repo[r].substate,
         'summary': lambda r: repo[r].description().splitlines()[0],
         'diff': lambda r: list(repo[r].diff(
-            opts=diffutil.diffopts(repo.ui, {'git': True}))),
+            opts=diffutil.diffallopts(repo.ui, {'git': True}))),
     }
     for info in fields:
         getfield = _funcs.get(info, None)

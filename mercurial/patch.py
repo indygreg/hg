@@ -2233,7 +2233,7 @@ def changedfiles(ui, repo, patchpath, strip=1, prefix=''):
 class GitDiffRequired(Exception):
     pass
 
-diffopts = diffutil.diffopts
+diffopts = diffutil.diffallopts
 diffallopts = diffutil.diffallopts
 difffeatureopts = diffutil.difffeatureopts
 

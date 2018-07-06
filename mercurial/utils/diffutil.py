@@ -21,8 +21,6 @@ def diffallopts(ui, opts=None, untrusted=False, section='diff'):
     return difffeatureopts(ui, opts=opts, untrusted=untrusted, section=section,
                            git=True, whitespace=True, formatchanging=True)
 
-diffopts = diffallopts
-
 def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
                     whitespace=False, formatchanging=False):
     '''return diffopts with only opted-in features parsed

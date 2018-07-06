@@ -77,7 +77,7 @@ ctxb = context.memctx(repo, [ctxa.node(), None], b"test diff", [b"foo"],
 print(ctxb.status(ctxa))
 
 # test performing a diff on a memctx
-diffopts = diffutil.diffopts(repo.ui, {'git': True})
+diffopts = diffutil.diffallopts(repo.ui, {'git': True})
 for d in ctxb.diff(ctxa, opts=diffopts):
     printb(d, end=b'')
 

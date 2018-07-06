@@ -258,13 +258,14 @@ def showdescription(context, mapping):
     else:
         return s.strip()
 
-@templatekeyword('diffstat', requires={'ctx'})
+@templatekeyword('diffstat', requires={'ui', 'ctx'})
 def showdiffstat(context, mapping):
     """String. Statistics of changes with the following format:
     "modified files: +added/-removed lines"
     """
+    ui = context.resource(mapping, 'ui')
     ctx = context.resource(mapping, 'ctx')
-    diffopts = diffutil.diffopts(ctx._repo.ui, {'noprefix': False})
+    diffopts = diffutil.diffopts(ui, {'noprefix': False})
     diff = ctx.diff(opts=diffopts)
     stats = patch.diffstatdata(util.iterlines(diff))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)

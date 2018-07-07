@@ -2052,6 +2052,7 @@ class localrepository(object):
 
             if ctx.manifestnode():
                 # reuse an existing manifest revision
+                self.ui.debug('reusing known manifest\n')
                 mn = ctx.manifestnode()
                 files = ctx.files()
             elif ctx.files():
@@ -2100,6 +2101,7 @@ class localrepository(object):
                                 added, drop)
                 files = changed + removed
             else:
+                self.ui.debug('reusing manifest from p1 (no file change)\n')
                 mn = p1.manifestnode()
                 files = []
 

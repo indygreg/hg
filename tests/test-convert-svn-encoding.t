@@ -52,6 +52,7 @@ Convert while testing all possible outputs
   5 init projA
   source: svn:afeb9c47-92ff-4c0c-9f72-e1f6eb8ac9af/trunk@1
   converting: 0/6 revisions (0.00%)
+  reusing manifest from p1 (no file change)
   committing changelog
   updating the branch cache
   4 hello
@@ -118,6 +119,7 @@ Convert while testing all possible outputs
   converting: 4/6 revisions (66.67%)
   reparent to file:/*/$TESTTMP/svn-repo/branches/branch%C3%A9 (glob)
   scanning paths: /branches/branch\xc3\xa9 0/1 paths (0.00%) (esc)
+  reusing manifest from p1 (no file change)
   committing changelog
   updating the branch cache
   0 branch to branch?e
@@ -125,6 +127,7 @@ Convert while testing all possible outputs
   converting: 5/6 revisions (83.33%)
   reparent to file:/*/$TESTTMP/svn-repo/branches/branch%C3%A9e (glob)
   scanning paths: /branches/branch\xc3\xa9e 0/1 paths (0.00%) (esc)
+  reusing manifest from p1 (no file change)
   committing changelog
   updating the branch cache
   reparent to file:/*/$TESTTMP/svn-repo (glob)

@@ -83,20 +83,17 @@ test multiple merges at once
   $ hg -R hg2hg out source-hg -T compact
   comparing with source-hg
   searching for changes
-  5[tip]:4,3   6bd55e826939   2009-10-10 08:00 +0100   foo
-    (octopus merge fixup)
-  
-XXX: The manifest lines should probably agree, to avoid changing the hash when
-converting hg -> hg
+  no changes found
+  [1]
 
   $ hg -R source-hg log --debug -r tip
-  changeset:   5:b209510f11b2c987f920749cd8e352aa4b3230f2
+  changeset:   5:6bd55e8269392769783345686faf7ff7b3b0215d
   branch:      source
   tag:         tip
   phase:       draft
   parent:      4:1dc38c377bb35eeea4fa955056fbe4440d54a743
   parent:      3:4aaba1bfb426b8941bbf63f9dd52301152695164
-  manifest:    5:1109e42bdcbd1f51baa69bc91079011d77057dbb
+  manifest:    4:daa315d56a98ba20811fdd0d9d575861f65cfa8c
   user:        Foo Bar <foo.bar@example.com>
   date:        Sat Oct 10 08:00:04 2009 +0100
   extra:       branch=source

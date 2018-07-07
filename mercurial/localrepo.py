@@ -2039,6 +2039,11 @@ class localrepository(object):
     def commitctx(self, ctx, error=False):
         """Add a new revision to current repository.
         Revision information is passed via the context argument.
+
+        ctx.files() should list all files involved in this commit, i.e.
+        modified/added/removed files. On merge, it may be wider than the
+        ctx.files() to be committed, since any file nodes derived directly
+        from p1 or p2 are excluded from the committed ctx.files().
         """
 
         tr = None
@@ -2091,15 +2096,29 @@ class localrepository(object):
                         raise
 
                 # update manifest
-                self.ui.note(_("committing manifest\n"))
                 removed = [f for f in sorted(removed) if f in m1 or f in m2]
                 drop = [f for f in removed if f in m]
                 for f in drop:
                     del m[f]
-                mn = mctx.write(trp, linkrev,
-                                p1.manifestnode(), p2.manifestnode(),
-                                added, drop)
                 files = changed + removed
+                md = None
+                if not files:
+                    # if no "files" actually changed in terms of the changelog,
+                    # try hard to detect unmodified manifest entry so that the
+                    # exact same commit can be reproduced later on convert.
+                    md = m1.diff(m, scmutil.matchfiles(self, ctx.files()))
+                if not files and md:
+                    self.ui.debug('not reusing manifest (no file change in '
+                                  'changelog, but manifest differs)\n')
+                if files or md:
+                    self.ui.note(_("committing manifest\n"))
+                    mn = mctx.write(trp, linkrev,
+                                    p1.manifestnode(), p2.manifestnode(),
+                                    added, drop)
+                else:
+                    self.ui.debug('reusing manifest form p1 (listed files '
+                                  'actually unchanged)\n')
+                    mn = p1.manifestnode()
             else:
                 self.ui.debug('reusing manifest from p1 (no file change)\n')
                 mn = p1.manifestnode()

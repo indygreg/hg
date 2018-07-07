@@ -851,9 +851,9 @@ no ancestors that are replaced.
   
   $ hg fix -r 0:2
   $ hg log --graph --template '{node|shortest} {files}'
-  o  3801 bar.whole
+  o  b4e2 bar.whole
   |
-  o  38cc
+  o  59f4
   |
   | @  bc05 bar.whole
   | |

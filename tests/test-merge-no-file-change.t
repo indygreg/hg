@@ -30,6 +30,7 @@ Files added at both parents:
   $ hg ci --debug -m merge
   committing files:
   b
+  not reusing manifest (no file change in changelog, but manifest differs)
   committing manifest
   committing changelog
   updating the branch cache
@@ -136,12 +137,12 @@ An identical file added at both parents, but the flag differs. Take local:
   $ hg ci --debug -m merge
   committing files:
   b
-  committing manifest
+  reusing manifest form p1 (listed files actually unchanged)
   committing changelog
   updating the branch cache
-  committed changeset 3:4bfaad7f925b7f17f60524dc5d4e605f7bfbba3f
+  committed changeset 3:c8d50407916ef8a5a97cb6e36ca9bc844a6ee13e
   $ hg log -GTl
-  @    3:4bfaad7f925b p=2,1 m=3:a3a9fe23a5b8 f=[]
+  @    3:c8d50407916e p=2,1 m=2:36b69ba4b24b f=[]
   |\
   | o  2:99451f16b3f5 p=0,-1 m=2:36b69ba4b24b f=["b"]
   | |
@@ -155,16 +156,6 @@ An identical file added at both parents, but the flag differs. Take local:
 
   $ cd ..
   $ check_convert_identity flag-change-take-p1
-  3:c8d50407916e
-  *** BUG: hash changes on convert ***
-  o    3:c8d50407916e p=2,1 m=2:36b69ba4b24b f=[]
-  |\
-  | o  2:99451f16b3f5 p=0,-1 m=2:36b69ba4b24b f=["b"]
-  | |
-  o |  1:64d01526d4c2 p=0,-1 m=1:686dbf0aeca4 f=["b"]
-  |/
-  o  0:487a0a245cea p=-1,-1 m=0:8515d4bfda76 f=["a"]
-  
 
 An identical file added at both parents, but the flag differs. Take other:
 
@@ -226,6 +217,7 @@ An identical file added at both parents, one more file added at p2:
   $ hg ci --debug -m merge
   committing files:
   c
+  not reusing manifest (no file change in changelog, but manifest differs)
   committing manifest
   committing changelog
   updating the branch cache
@@ -299,6 +291,7 @@ A file added at p2, a named branch created at p1:
   $ hg ci --debug -m merge
   committing files:
   b
+  not reusing manifest (no file change in changelog, but manifest differs)
   committing manifest
   committing changelog
   updating the branch cache

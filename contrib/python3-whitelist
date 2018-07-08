@@ -32,8 +32,10 @@ test-branch-option.t
 test-branch-tag-confict.t
 test-branches.t
 test-bundle-phases.t
+test-bundle-r.t
 test-bundle-type.t
 test-bundle-vs-outgoing.t
+test-bundle.t
 test-bundle2-multiple-changegroups.t
 test-bundle2-pushback.t
 test-cappedreader.py

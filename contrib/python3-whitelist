@@ -15,6 +15,7 @@ test-audit-subrepo.t
 test-automv.t
 test-backout.t
 test-backwards-remove.t
+test-bad-pull.t
 test-basic.t
 test-bheads.t
 test-bisect.t
@@ -53,6 +54,7 @@ test-clone-cgi.t
 test-clone-pull-corruption.t
 test-clone-r.t
 test-clone-update-order.t
+test-clonebundles.t
 test-commit-amend.t
 test-commit-interactive.t
 test-commit-multiple.t

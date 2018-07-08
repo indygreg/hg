@@ -91,8 +91,8 @@ Create an extension to test bundle2 API
   >         p = p.split(b'=', 1)
   >         try:
   >             bundler.addparam(*p)
-  >         except ValueError as exc:
-  >             raise error.Abort('%s' % exc)
+  >         except error.ProgrammingError as exc:
+  >             raise error.Abort(b'%s' % exc)
   > 
   >     if opts['compress']:
   >         bundler.setcompression(opts['compress'])

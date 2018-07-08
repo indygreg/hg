@@ -628,9 +628,10 @@ class bundle20(object):
     def addparam(self, name, value=None):
         """add a stream level parameter"""
         if not name:
-            raise ValueError(r'empty parameter name')
+            raise error.ProgrammingError(b'empty parameter name')
         if name[0:1] not in pycompat.bytestr(string.ascii_letters):
-            raise ValueError(r'non letter first character: %s' % name)
+            raise error.ProgrammingError(b'non letter first character: %s'
+                                         % name)
         self._params.append((name, value))
 
     def addpart(self, part):

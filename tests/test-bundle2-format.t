@@ -184,9 +184,9 @@ Create an extension to test bundle2 API
   >             op = bundle2.processbundle(repo, unbundler, lambda: tr)
   >             tr.close()
   >         except error.BundleValueError as exc:
-  >             raise error.Abort('missing support for %s' % exc)
+  >             raise error.Abort(b'missing support for %s' % exc)
   >         except error.PushRaced as exc:
-  >             raise error.Abort('push race: %s' % exc)
+  >             raise error.Abort(b'push race: %s' % exc)
   >     finally:
   >         if tr is not None:
   >             tr.release()

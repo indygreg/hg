@@ -2,6 +2,7 @@ test-abort-checkin.t
 test-add.t
 test-addremove-similar.t
 test-addremove.t
+test-alias.t
 test-amend-subrepo.t
 test-amend.t
 test-ancestor.py

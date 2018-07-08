@@ -226,7 +226,7 @@ def canonpath(root, cwd, myname, auditor=None):
             if cwd != root:
                 canonpath(root, root, myname, auditor)
                 relpath = util.pathto(root, cwd, '')
-                if relpath[-1] == pycompat.ossep:
+                if relpath.endswith(pycompat.ossep):
                     relpath = relpath[:-1]
                 hint = (_("consider using '--cwd %s'") % relpath)
         except error.Abort:

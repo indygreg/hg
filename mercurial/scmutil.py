@@ -201,7 +201,7 @@ def callcatch(ui, func):
         elif not msg:
             ui.warn(_(" empty string\n"))
         else:
-            ui.warn("\n%r\n" % stringutil.ellipsis(msg))
+            ui.warn("\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
         ui.warn(_("abort: file censored %s!\n") % inst)
     except error.RevlogError as inst:

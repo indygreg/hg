@@ -339,20 +339,20 @@ transaction)
   > from __future__ import absolute_import
   > 
   > def showtip(ui, repo, hooktype, **kwargs):
-  >     ui.warn('%s: %s\n' % (hooktype, repo['tip'].hex()[:12]))
+  >     ui.warn(b'%s: %s\n' % (hooktype, repo[b'tip'].hex()[:12]))
   > 
   > def reposetup(ui, repo):
   >     # this confirms (and ensures) that (empty) 00changelog.i
   >     # before streamclone is already cached as repo.changelog
-  >     ui.setconfig('hooks', 'pretxnopen.showtip', showtip)
+  >     ui.setconfig(b'hooks', b'pretxnopen.showtip', showtip)
   > 
   >     # this confirms that streamclone-ed changes are visible to
   >     # in-process procedures before closing transaction
-  >     ui.setconfig('hooks', 'pretxnclose.showtip', showtip)
+  >     ui.setconfig(b'hooks', b'pretxnclose.showtip', showtip)
   > 
   >     # this confirms that streamclone-ed changes are still visible
   >     # after closing transaction
-  >     ui.setconfig('hooks', 'txnclose.showtip', showtip)
+  >     ui.setconfig(b'hooks', b'txnclose.showtip', showtip)
   > EOF
   $ cat >> $HGRCPATH <<EOF
   > [extensions]

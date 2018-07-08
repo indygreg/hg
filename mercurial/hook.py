@@ -181,7 +181,7 @@ def _hookitems(ui, _untrusted=False):
     """return all hooks items ready to be sorted"""
     hooks = {}
     for name, cmd in ui.configitems('hooks', untrusted=_untrusted):
-        if not name.startswith('priority'):
+        if not name.startswith('priority.'):
             priority = ui.configint('hooks', 'priority.%s' % name, 0)
             hooks[name] = (-priority, len(hooks), name, cmd)
     return hooks

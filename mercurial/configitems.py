@@ -147,6 +147,9 @@ coreconfigitem('annotate', 'nobinary',
 coreconfigitem('annotate', 'noprefix',
     default=False,
 )
+coreconfigitem('annotate', 'word-diff',
+    default=False,
+)
 coreconfigitem('auth', 'cookiefile',
     default=None,
 )
@@ -399,6 +402,9 @@ coreconfigitem('diff', 'nobinary',
 coreconfigitem('diff', 'noprefix',
     default=False,
 )
+coreconfigitem('diff', 'word-diff',
+    default=False,
+)
 coreconfigitem('email', 'bcc',
     default=None,
 )
@@ -511,9 +517,6 @@ coreconfigitem('experimental', 'evolution.report-instabilities',
 )
 coreconfigitem('experimental', 'evolution.track-operation',
     default=True,
-)
-coreconfigitem('experimental', 'worddiff',
-    default=False,
 )
 coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,

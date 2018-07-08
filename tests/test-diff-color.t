@@ -304,7 +304,7 @@ test inline color diff
   > three of those lines have
   > collapsed onto one
   > EOF
-  $ hg diff --config experimental.worddiff=False --color=debug
+  $ hg diff --config diff.word-diff=False --color=debug
   [diff.diffline|diff --git a/file1 b/file1]
   [diff.file_a|--- a/file1]
   [diff.file_b|+++ b/file1]
@@ -337,7 +337,7 @@ test inline color diff
   [diff.deleted|-(to see if it works)]
   [diff.inserted|+three of those lines have]
   [diff.inserted|+collapsed onto one]
-  $ hg diff --config experimental.worddiff=True --color=debug
+  $ hg diff --config diff.word-diff=True --color=debug
   [diff.diffline|diff --git a/file1 b/file1]
   [diff.file_a|--- a/file1]
   [diff.file_b|+++ b/file1]
@@ -384,7 +384,7 @@ multibyte character shouldn't be broken up in word diff:
   > EOF
   $ hg ci -m 'slightly change utf8 char' utf8
 
-  $ hg diff --config experimental.worddiff=True --color=debug -c.
+  $ hg diff --config diff.word-diff=True --color=debug -c.
   [diff.diffline|diff --git a/utf8 b/utf8]
   [diff.file_a|--- a/utf8]
   [diff.file_b|+++ b/utf8]

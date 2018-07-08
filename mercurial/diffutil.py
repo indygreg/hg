@@ -53,7 +53,6 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
         'showfunc': get('show_function', 'showfunc'),
         'context': get('unified', getter=ui.config),
     }
-    buildopts['worddiff'] = ui.configbool('experimental', 'worddiff')
     buildopts['xdiff'] = ui.configbool('experimental', 'xdiff')
 
     if git:
@@ -101,5 +100,6 @@ def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
         buildopts['nobinary'] = (not binary if binary is not None
                                  else get('nobinary', forceplain=False))
         buildopts['noprefix'] = get('noprefix', forceplain=False)
+        buildopts['worddiff'] = get('word_diff', 'word-diff', forceplain=False)
 
     return mdiff.diffopts(**pycompat.strkwargs(buildopts))

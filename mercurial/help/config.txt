@@ -702,6 +702,9 @@ for related options for the annotate command.
 ``unified``
     Number of lines of context to show.
 
+``word-diff``
+    Highlight changed words.
+
 ``email``
 ---------
 

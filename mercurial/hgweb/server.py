@@ -246,7 +246,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
 
     def version_string(self):
         if self.server.serverheader:
-            return self.server.serverheader
+            return encoding.strfromlocal(self.server.serverheader)
         return httpservermod.basehttprequesthandler.version_string(self)
 
 class _httprequesthandlerssl(_httprequesthandler):

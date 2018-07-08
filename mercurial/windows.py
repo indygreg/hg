@@ -269,9 +269,10 @@ def shelltocmdexe(path, env):
     >>> # Single quote prevents expansion, as does \$ escaping
     >>> shelltocmdexe(b"cmd '$var1 ${var2} %var3%' \$var1 \${var2} \\", e)
     "cmd '$var1 ${var2} %var3%' $var1 ${var2} \\"
-    >>> # $$ -> $, %% is not special, but can be the end and start of variables
+    >>> # $$ is not special. %% is not special either, but can be the end and
+    >>> # start of consecutive variables
     >>> shelltocmdexe(b"cmd $$ %% %var1%%var2%", e)
-    'cmd $ %% %var1%%var2%'
+    'cmd $$ %% %var1%%var2%'
     >>> # No double substitution
     >>> shelltocmdexe(b"$var1 %var1%", {b'var1': b'%var2%', b'var2': b'boom'})
     '%var1% %var1%'
@@ -306,11 +307,8 @@ def shelltocmdexe(path, env):
             else:
                 var = path[:index]
                 res += b'%' + var + b'%'
-        elif c == b'$':  # variable or '$$'
-            if path[index + 1:index + 2] == b'$':
-                res += c
-                index += 1
-            elif path[index + 1:index + 2] == b'{':
+        elif c == b'$':  # variable
+            if path[index + 1:index + 2] == b'{':
                 path = path[index + 2:]
                 pathlen = len(path)
                 try:

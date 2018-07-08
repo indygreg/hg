@@ -41,6 +41,7 @@ test-bundle2-exchange.t
 test-bundle2-format.t
 test-bundle2-multiple-changegroups.t
 test-bundle2-pushback.t
+test-bundle2-remote-changegroup.t
 test-cappedreader.py
 test-casecollision.t
 test-cat.t

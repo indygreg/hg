@@ -1878,7 +1878,7 @@ def handleremotechangegroup(op, inpart):
         real_part.validate()
     except error.Abort as e:
         raise error.Abort(_('bundle at %s is corrupted:\n%s') %
-            (util.hidepassword(raw_url), str(e)))
+                          (util.hidepassword(raw_url), bytes(e)))
     assert not inpart.read()
 
 @parthandler('reply:changegroup', ('return', 'in-reply-to'))

@@ -16,7 +16,14 @@ Create an extension to test bundle2 remote-changegroup parts
   > Current bundle2 implementation doesn't provide a way to generate those
   > parts, so they must be created by extensions.
   > """
-  > from mercurial import bundle2, changegroup, discovery, exchange, util
+  > from mercurial import (
+  >     bundle2,
+  >     changegroup,
+  >     discovery,
+  >     exchange,
+  >     pycompat,
+  >     util,
+  > )
   > 
   > def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
   >                               b2caps=None, heads=None, common=None,
@@ -60,13 +67,13 @@ Create an extension to test bundle2 remote-changegroup parts
   >            d = util.digester([digest], bundledata)
   >            part = newpart(b'remote-changegroup')
   >            part.addparam(b'url', url)
-  >            part.addparam(b'size', str(len(bundledata)))
+  >            part.addparam(b'size', b'%d' % len(bundledata))
   >            part.addparam(b'digests', digest)
   >            part.addparam(b'digest:%s' % digest, d[digest])
   >         elif verb == b'raw-remote-changegroup':
   >            part = newpart(b'remote-changegroup')
   >            for k, v in eval(args).items():
-  >                part.addparam(k, str(v))
+  >                part.addparam(pycompat.sysbytes(k), pycompat.bytestr(v))
   >         elif verb == b'changegroup':
   >             _common, heads = args.split()
   >             common.extend(repo[r].node() for r in repo.revs(_common))

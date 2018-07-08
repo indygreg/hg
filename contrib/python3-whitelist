@@ -24,6 +24,7 @@ test-bisect3.t
 test-blackbox.t
 test-bookmarks-current.t
 test-bookmarks-merge.t
+test-bookmarks-pushpull.t
 test-bookmarks-rebase.t
 test-bookmarks-strip.t
 test-bookmarks.t

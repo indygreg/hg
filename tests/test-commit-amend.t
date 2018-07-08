@@ -205,6 +205,7 @@ at first, test saving last-message.txt
   a
   committing manifest
   committing changelog
+  converting hook "pretxncommit.test-saving-last-message" to native (windows !)
   running hook pretxncommit.test-saving-last-message: false
   transaction abort!
   rollback completed
@@ -230,6 +231,7 @@ at first, test saving last-message.txt
   a
   committing manifest
   committing changelog
+  converting hook "pretxncommit.test-saving-last-message" to native (windows !)
   running hook pretxncommit.test-saving-last-message: false
   transaction abort!
   rollback completed

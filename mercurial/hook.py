@@ -139,7 +139,9 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
             v = stringutil.pprint(v)
         env['HG_' + k.upper()] = v
 
-    cmd = procutil.shelltonative(cmd, env)
+    if ui.configbool('hooks', 'tonative.%s' % name, pycompat.iswindows):
+        ui.note(_('converting hook "%s" to native\n') % name)
+        cmd = procutil.shelltonative(cmd, env)
 
     ui.note(_("running hook %s: %s\n") % (name, cmd))
 
@@ -181,9 +183,11 @@ def _hookitems(ui, _untrusted=False):
     """return all hooks items ready to be sorted"""
     hooks = {}
     for name, cmd in ui.configitems('hooks', untrusted=_untrusted):
-        if not name.startswith('priority.'):
-            priority = ui.configint('hooks', 'priority.%s' % name, 0)
-            hooks[name] = (-priority, len(hooks), name, cmd)
+        if name.startswith('priority.') or name.startswith('tonative.'):
+            continue
+
+        priority = ui.configint('hooks', 'priority.%s' % name, 0)
+        hooks[name] = (-priority, len(hooks), name, cmd)
     return hooks
 
 _redirect = False

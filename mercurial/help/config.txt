@@ -893,7 +893,14 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
 
   Some basic Unix syntax is supported for portability, including ``$VAR``
   and ``${VAR}`` style variables.  To use a literal ``$``, it must be
-  escaped with a back slash or inside of a strong quote.
+  escaped with a back slash or inside of a strong quote.  This can be
+  disabled by adding a prefix of ``tonative.`` to the hook name on a new
+  line, and setting it to ``False``.  For example::
+
+    [hooks]
+    incoming.autobuild = /my/build/hook
+    # disable translation to cmd.exe syntax for autobuild hook
+    tonative.incoming.autobuild = False
 
 ``changegroup``
   Run after a changegroup has been added via push, pull or unbundle.  The ID of

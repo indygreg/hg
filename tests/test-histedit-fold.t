@@ -494,6 +494,7 @@ Test unix -> windows style variable substitution in external hooks.
   $ cat > $TESTTMP/tmp.hgrc <<'EOF'
   > [hooks]
   > pre-add = echo no variables
+  > tonative.pre-add = False
   > post-add = echo ran $HG_ARGS, literal \$non-var, 'also $non-var', $HG_RESULT
   > EOF
 
@@ -503,6 +504,7 @@ TODO: Windows should output double quotes around "also $non-var"
   running hook pre-add: echo no variables
   no variables
   adding amended.txt
+  converting hook "post-add" to native (windows !)
   running hook post-add: echo ran %HG_ARGS%, literal $non-var, 'also $non-var', %HG_RESULT% (windows !)
   running hook post-add: echo ran $HG_ARGS, literal \$non-var, 'also $non-var', $HG_RESULT (no-windows !)
   ran add -v amended.txt, literal $non-var, 'also $non-var', 0 (windows !)

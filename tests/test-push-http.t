@@ -90,10 +90,13 @@ expect success
   remote: adding a revisions
   remote: added 1 changesets with 1 changes to 1 files
   remote: updating the branch cache
+  remote: converting hook "txnclose-phase.test" to native (windows !)
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: converting hook "txnclose-phase.test" to native (windows !)
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
+  remote: converting hook "changegroup" to native (windows !)
   remote: running hook changegroup: sh -c "printenv.py changegroup 0"
   remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
   % serve errors
@@ -110,10 +113,13 @@ expect success
   remote: adding a revisions
   remote: added 1 changesets with 1 changes to 1 files
   remote: updating the branch cache
+  remote: converting hook "txnclose-phase.test" to native (windows !)
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: cb9a9f314b8b07ba71012fcdbc544b5a4d82ff5b:  draft -> public
+  remote: converting hook "txnclose-phase.test" to native (windows !)
   remote: running hook txnclose-phase.test: sh $TESTTMP/hook.sh
   remote: phase-move: ba677d0156c1196c1a699fa53f390dcfc3ce3872:   -> public
+  remote: converting hook "changegroup" to native (windows !)
   remote: running hook changegroup: sh -c "printenv.py changegroup 0"
   remote: changegroup hook: HG_HOOKNAME=changegroup HG_HOOKTYPE=changegroup HG_NODE=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_NODE_LAST=ba677d0156c1196c1a699fa53f390dcfc3ce3872 HG_SOURCE=serve HG_TXNID=TXN:$ID$ HG_URL=remote:http:$LOCALIP: (glob)
   % serve errors

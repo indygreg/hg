@@ -994,9 +994,6 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 	if (nodelen == 20 && node[0] == '\0' && memcmp(node, nullid, 20) == 0)
 		return -1;
 
-	if (self->nt == NULL)
-		return -2;
-
 	if (hex)
 		maxlevel = nodelen > 40 ? 40 : (int)nodelen;
 	else
@@ -1133,13 +1130,13 @@ static int index_find_node(indexObject *self,
 {
 	int rev;
 
+	if (nt_init(self) == -1)
+		return -3;
+
 	self->ntlookups++;
 	rev = nt_find(self, node, nodelen, 0);
 	if (rev >= -1)
 		return rev;
-
-	if (nt_init(self) == -1)
-		return -3;
 
 	/*
 	 * For the first handful of lookups, we scan the entire index,

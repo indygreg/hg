@@ -71,6 +71,7 @@ status.terse = u
 [diff]
 git = 1
 showfunc = 1
+word-diff = 1
 """
 
 samplehgrcs = {

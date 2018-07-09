@@ -173,7 +173,7 @@ class winstdout(object):
                 self.fp.write(s[start:end])
                 start = end
         except IOError as inst:
-            if inst.errno != 0:
+            if inst.errno != 0 and not win32.lasterrorwaspipeerror(inst):
                 raise
             self.close()
             raise IOError(errno.EPIPE, 'Broken pipe')
@@ -182,7 +182,7 @@ class winstdout(object):
         try:
             return self.fp.flush()
         except IOError as inst:
-            if inst.errno != errno.EINVAL:
+            if not win32.lasterrorwaspipeerror(inst):
                 raise
             raise IOError(errno.EPIPE, 'Broken pipe')
 

@@ -109,13 +109,13 @@ MERGED_RESULT = split_lines(b"""\
        so we may see their result.
      The two are the same,
      But after they are produced,
-       they have different names.
-<<<<<<< LAO
-=======
+       they have different names.\
+\n<<<<<<< LAO\
+\n=======
 
        -- The Way of Lao-Tzu, tr. Wing-tsit Chan
-
->>>>>>> TAO
+\
+\n>>>>>>> TAO
 """)
 
 class TestMerge3(TestCase):

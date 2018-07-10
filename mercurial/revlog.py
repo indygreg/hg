@@ -298,6 +298,40 @@ def _slicechunk(revlog, revs):
 
     ``revs`` is sliced into groups that should be read in one time.
     Assume that revs are sorted.
+
+    The initial chunk is sliced until the overall density (payload/chunks-span
+    ratio) is above `revlog._srdensitythreshold`. No gap smaller than
+    `revlog._srmingapsize` is skipped.
+
+    >>> revlog = _testrevlog([
+    ...  5,  #00 (5)
+    ...  10, #01 (5)
+    ...  12, #02 (2)
+    ...  12, #03 (empty)
+    ...  27, #04 (15)
+    ...  31, #05 (4)
+    ...  31, #06 (empty)
+    ...  42, #07 (11)
+    ...  47, #08 (5)
+    ...  47, #09 (empty)
+    ...  48, #10 (1)
+    ...  51, #11 (3)
+    ...  74, #12 (23)
+    ...  85, #13 (11)
+    ...  86, #14 (1)
+    ...  91, #15 (5)
+    ... ])
+
+    >>> list(_slicechunk(revlog, range(16)))
+    [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+    >>> list(_slicechunk(revlog, [0, 15]))
+    [[0], [15]]
+    >>> list(_slicechunk(revlog, [0, 11, 15]))
+    [[0], [11], [15]]
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15]))
+    [[0], [11, 13, 15]]
+    >>> list(_slicechunk(revlog, [1, 2, 3, 5, 8, 10, 11, 14]))
+    [[1, 2], [5, 8, 10, 11], [14]]
     """
     start = revlog.start
     length = revlog.length

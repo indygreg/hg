@@ -196,6 +196,26 @@ def hash(text, p1, p2):
     s.update(text)
     return s.digest()
 
+class _testrevlog(object):
+    """minimalist fake revlog to use in doctests"""
+
+    def __init__(self, data, density=0.5, mingap=0):
+        """data is an list of revision payload boundaries"""
+        self._data = data
+        self._srdensitythreshold = density
+        self._srmingapsize = mingap
+
+    def start(self, rev):
+        if rev == 0:
+            return 0
+        return self._data[rev - 1]
+
+    def end(self, rev):
+        return self._data[rev]
+
+    def length(self, rev):
+        return self.end(rev) - self.start(rev)
+
 def _trimchunk(revlog, revs, startidx, endidx=None):
     """returns revs[startidx:endidx] without empty trailing revs
     """

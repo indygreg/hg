@@ -1949,7 +1949,7 @@ class revlog(object):
         """
         return self.decompress(self._getsegmentforrevs(rev, rev, df=df)[1])
 
-    def _chunks(self, revs, df=None):
+    def _chunks(self, revs, df=None, targetsize=None):
         """Obtain decompressed chunks for the specified revisions.
 
         Accepts an iterable of numeric revisions that are assumed to be in
@@ -1976,7 +1976,7 @@ class revlog(object):
         if not self._withsparseread:
             slicedchunks = (revs,)
         else:
-            slicedchunks = _slicechunk(self, revs)
+            slicedchunks = _slicechunk(self, revs, targetsize)
 
         for revschunk in slicedchunks:
             firstrev = revschunk[0]
@@ -2079,7 +2079,12 @@ class revlog(object):
             # drop cache to save memory
             self._cache = None
 
-            bins = self._chunks(chain, df=_df)
+            targetsize = None
+            rawsize = self.index[rev][2]
+            if 0 <= rawsize:
+                targetsize = 4 * rawsize
+
+            bins = self._chunks(chain, df=_df, targetsize=targetsize)
             if rawtext is None:
                 rawtext = bytes(bins[0])
                 bins = bins[1:]

@@ -1093,6 +1093,9 @@ coreconfigitem('ui', 'formatted',
 coreconfigitem('ui', 'graphnodetemplate',
     default=None,
 )
+coreconfigitem('ui', 'history-editing-backup',
+    default=True,
+)
 coreconfigitem('ui', 'interactive',
     default=None,
 )

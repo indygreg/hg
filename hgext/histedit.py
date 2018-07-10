@@ -1111,7 +1111,9 @@ def _histedit(ui, repo, state, *freeargs, **opts):
     fm.startitem()
     goal = _getgoal(opts)
     revs = opts.get('rev', [])
-    nobackup = opts.get('no_backup')
+    # experimental config: ui.history-editing-backup
+    nobackup = (opts.get('no_backup') or
+                not ui.configbool('ui', 'history-editing-backup'))
     rules = opts.get('commands', '')
     state.keep = opts.get('keep', False)
 

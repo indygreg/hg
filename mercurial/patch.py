@@ -2405,7 +2405,7 @@ def diffsinglehunk(hunklines):
     """yield tokens for a list of lines in a single hunk"""
     for line in hunklines:
         # chomp
-        chompline = line.rstrip('\n')
+        chompline = line.rstrip('\r\n')
         # highlight tabs and trailing whitespace
         stripline = chompline.rstrip()
         if line.startswith('-'):
@@ -2473,6 +2473,9 @@ def diffsinglehunkinline(hunklines):
             isendofline = token.endswith('\n')
             if isendofline:
                 chomp = token[:-1] # chomp
+                if chomp.endswith('\r'):
+                    chomp = chomp[:-1]
+                endofline = token[len(chomp):]
                 token = chomp.rstrip() # detect spaces at the end
                 endspaces = chomp[len(token):]
             # scan tabs
@@ -2488,7 +2491,7 @@ def diffsinglehunkinline(hunklines):
             if isendofline:
                 if endspaces:
                     yield (endspaces, 'diff.trailingwhitespace')
-                yield ('\n', '')
+                yield (endofline, '')
                 nextisnewline = True
 
 def difflabel(func, *args, **kw):

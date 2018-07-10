@@ -227,6 +227,10 @@ def _slicechunk(revlog, revs):
     endbyte = start(revs[-1]) + length(revs[-1])
     readdata = deltachainspan = endbyte - startbyte
 
+    if deltachainspan < revlog._srmingapsize:
+        yield revs
+        return
+
     chainpayload = sum(length(r) for r in revs)
 
     if deltachainspan:

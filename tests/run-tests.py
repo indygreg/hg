@@ -2106,8 +2106,9 @@ class TextTestRunner(unittest.TextTestRunner):
         super(TextTestRunner, self).__init__(*args, **kwargs)
 
         self._runner = runner
+
         self._result = getTestResult()(self._runner.options, self.stream,
-                                       self.descriptions, 0)
+                                       self.descriptions, self.verbosity)
 
     def listtests(self, test):
         test = sorted(test, key=lambda t: t.name)
@@ -2740,7 +2741,9 @@ class TestRunner(object):
                               showchannels=self.options.showchannels,
                               tests=tests, loadtest=_reloadtest)
             verbosity = 1
-            if self.options.verbose:
+            if self.options.list_tests:
+                verbosity = 0
+            elif self.options.verbose:
                 verbosity = 2
             runner = TextTestRunner(self, verbosity=verbosity)
 

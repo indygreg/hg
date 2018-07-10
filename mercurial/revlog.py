@@ -333,6 +333,60 @@ def _slicechunk(revlog, revs):
     >>> list(_slicechunk(revlog, [1, 2, 3, 5, 8, 10, 11, 14]))
     [[1, 2], [5, 8, 10, 11], [14]]
     """
+    for chunk in _slicechunktodensity(revlog, revs,
+                                      revlog._srdensitythreshold,
+                                      revlog._srmingapsize):
+        yield chunk
+
+def _slicechunktodensity(revlog, revs, targetdensity=0.5, mingapsize=0):
+    """slice revs to reduce the amount of unrelated data to be read from disk.
+
+    ``revs`` is sliced into groups that should be read in one time.
+    Assume that revs are sorted.
+
+    The initial chunk is sliced until the overall density (payload/chunks-span
+    ratio) is above `targetdensity`. No gap smaller than `mingapsize` is
+    skipped.
+
+    >>> revlog = _testrevlog([
+    ...  5,  #00 (5)
+    ...  10, #01 (5)
+    ...  12, #02 (2)
+    ...  12, #03 (empty)
+    ...  27, #04 (15)
+    ...  31, #05 (4)
+    ...  31, #06 (empty)
+    ...  42, #07 (11)
+    ...  47, #08 (5)
+    ...  47, #09 (empty)
+    ...  48, #10 (1)
+    ...  51, #11 (3)
+    ...  74, #12 (23)
+    ...  85, #13 (11)
+    ...  86, #14 (1)
+    ...  91, #15 (5)
+    ... ])
+
+    >>> list(_slicechunktodensity(revlog, range(16)))
+    [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+    >>> list(_slicechunktodensity(revlog, [0, 15]))
+    [[0], [15]]
+    >>> list(_slicechunktodensity(revlog, [0, 11, 15]))
+    [[0], [11], [15]]
+    >>> list(_slicechunktodensity(revlog, [0, 11, 13, 15]))
+    [[0], [11, 13, 15]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14]))
+    [[1, 2], [5, 8, 10, 11], [14]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14],
+    ...                           mingapsize=20))
+    [[1, 2, 3, 5, 8, 10, 11], [14]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14],
+    ...                           targetdensity=0.95))
+    [[1, 2], [5], [8, 10, 11], [14]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14],
+    ...                           targetdensity=0.95, mingapsize=12))
+    [[1, 2], [5, 8, 10, 11], [14]]
+    """
     start = revlog.start
     length = revlog.length
 
@@ -342,7 +396,7 @@ def _slicechunk(revlog, revs):
 
     readdata = deltachainspan = _segmentspan(revlog, revs)
 
-    if deltachainspan < revlog._srmingapsize:
+    if deltachainspan < mingapsize:
         yield revs
         return
 
@@ -353,7 +407,7 @@ def _slicechunk(revlog, revs):
     else:
         density = 1.0
 
-    if density >= revlog._srdensitythreshold:
+    if density >= targetdensity:
         yield revs
         return
 
@@ -372,7 +426,7 @@ def _slicechunk(revlog, revs):
         if prevend is not None:
             gapsize = revstart - prevend
             # only consider holes that are large enough
-            if gapsize > revlog._srmingapsize:
+            if gapsize > mingapsize:
                 heapq.heappush(gapsheap, (-gapsize, i))
 
         prevend = revstart + revlen
@@ -380,7 +434,7 @@ def _slicechunk(revlog, revs):
     # Collect the indices of the largest holes until the density is acceptable
     indicesheap = []
     heapq.heapify(indicesheap)
-    while gapsheap and density < revlog._srdensitythreshold:
+    while gapsheap and density < targetdensity:
         oppgapsize, gapidx = heapq.heappop(gapsheap)
 
         heapq.heappush(indicesheap, gapidx)

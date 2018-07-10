@@ -293,7 +293,7 @@ def _segmentspan(revlog, revs):
         return 0
     return revlog.end(revs[-1]) - revlog.start(revs[0])
 
-def _slicechunk(revlog, revs):
+def _slicechunk(revlog, revs, targetsize=None):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
@@ -302,6 +302,13 @@ def _slicechunk(revlog, revs):
     The initial chunk is sliced until the overall density (payload/chunks-span
     ratio) is above `revlog._srdensitythreshold`. No gap smaller than
     `revlog._srmingapsize` is skipped.
+
+    If `targetsize` is set, no chunk larger than `targetsize` will be yield.
+    For consistency with other slicing choice, this limit won't go lower than
+    `revlog._srmingapsize`.
+
+    If individual revisions chunk are larger than this limit, they will still
+    be raised individually.
 
     >>> revlog = _testrevlog([
     ...  5,  #00 (5)
@@ -332,11 +339,20 @@ def _slicechunk(revlog, revs):
     [[0], [11, 13, 15]]
     >>> list(_slicechunk(revlog, [1, 2, 3, 5, 8, 10, 11, 14]))
     [[1, 2], [5, 8, 10, 11], [14]]
+
+    Slicing with a maximum chunk size
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15], 15))
+    [[0], [11], [13], [15]]
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15], 20))
+    [[0], [11], [13, 15]]
     """
+    if targetsize is not None:
+        targetsize = max(targetsize, revlog._srmingapsize)
     for chunk in _slicechunktodensity(revlog, revs,
                                       revlog._srdensitythreshold,
                                       revlog._srmingapsize):
-        yield chunk
+        for subchunk in _slicechunktosize(revlog, chunk, targetsize):
+            yield subchunk
 
 def _slicechunktosize(revlog, revs, targetsize):
     """slice revs to match the target size

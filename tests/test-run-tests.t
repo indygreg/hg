@@ -1252,8 +1252,10 @@ Add support for external test formatter
   $ CUSTOM_TEST_RESULT=basic_test_result $PYTHON $TESTDIR/run-tests.py --with-hg=`which hg` "$@" test-success.t test-failure.t
   
   # Ran 2 tests, 0 skipped, 0 failed.
+  ON_START! <__main__.TestSuite tests=[<__main__.TTest testMethod=test-failure.t>, <__main__.TTest testMethod=test-success.t>]>
   FAILURE! test-failure.t output changed
   SUCCESS! test-success.t
+  ON_END!
 
 Test reusability for third party tools
 ======================================

@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import absolute_import, print_function
 
 import unittest
 
@@ -38,6 +38,12 @@ class TestResult(unittest._TextTestResult):
 
     def addIgnore(self, test, reason):
         print("IGNORE!", test, reason)
+
+    def onStart(self, test):
+        print("ON_START!", test)
+
+    def onEnd(self):
+        print("ON_END!")
 
     def addOutputMismatch(self, test, ret, got, expected):
         return False

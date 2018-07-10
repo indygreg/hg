@@ -2538,7 +2538,8 @@ def grep(ui, repo, pattern, *pats, **opts):
     if opts.get('all_files') is None and not opts.get('rev') and not diff:
         # experimental config: commands.grep.all-files
         opts['all_files'] = ui.configbool('commands', 'grep.all-files')
-    if opts.get('all_files') and not opts.get('rev'):
+    plaingrep = opts.get('all_files') and not opts.get('rev')
+    if plaingrep:
         opts['rev'] = ['wdir()']
 
     reflags = re.M
@@ -2648,7 +2649,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
             cols = [
                 ('filename', fn, True),
-                ('rev', rev, True),
+                ('rev', rev, not plaingrep),
                 ('linenumber', l.linenum, opts.get('line_number')),
             ]
             if diff:

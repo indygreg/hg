@@ -416,8 +416,8 @@ With --all-files, the working directory is searched by default
 
   $ echo modified >> new
   $ hg grep --all-files mod
-  new:2147483647:modified
-  um:2147483647:unmod
+  new:modified
+  um:unmod
 
  which can be overridden by -rREV
 
@@ -427,8 +427,8 @@ With --all-files, the working directory is searched by default
 commands.all-files can be negated by --no-all-files
 
   $ hg grep --config commands.grep.all-files=True mod
-  new:2147483647:modified
-  um:2147483647:unmod
+  new:modified
+  um:unmod
   $ hg grep --config commands.grep.all-files=True --no-all-files mod
   um:0:unmod
 
@@ -469,5 +469,25 @@ working directory should not be grepp-ed on
   $ hg add file1
   $ hg commit -m "adds file1"
   $ hg mv file1 file2
+
+wdir revision is hidden by default:
+
   $ hg grep "some"
-  file2:2147483647:some text
+  file2:some text
+
+but it should be available in template dict:
+
+  $ hg grep "some" -Tjson
+  [
+   {
+    "date": [0, 0],
+    "file": "file2",
+    "line_number": 1,
+    "node": "ffffffffffffffffffffffffffffffffffffffff",
+    "rev": 2147483647,
+    "texts": [{"matched": true, "text": "some"}, {"matched": false, "text": " text"}],
+    "user": "test"
+   }
+  ]
+
+  $ cd ..

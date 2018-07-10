@@ -269,6 +269,25 @@ def _segmentspan(revlog, revs):
     """Get the byte span of a segment of revisions
 
     revs is a sorted array of revision numbers
+
+    >>> revlog = _testrevlog([
+    ...  5,  #0
+    ...  10, #1
+    ...  12, #2
+    ...  12, #3 (empty)
+    ...  17, #4
+    ... ])
+
+    >>> _segmentspan(revlog, [0, 1, 2, 3, 4])
+    17
+    >>> _segmentspan(revlog, [0, 4])
+    17
+    >>> _segmentspan(revlog, [3, 4])
+    5
+    >>> _segmentspan(revlog, [1, 2, 3,])
+    7
+    >>> _segmentspan(revlog, [1, 3])
+    7
     """
     if not revs:
         return 0

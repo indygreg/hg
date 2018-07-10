@@ -616,7 +616,7 @@ def _commonancestorheads(repo, subset, x):
 
     # These greatest common ancestors are the same ones that the consesus bid
     # merge will find.
-    h = heads(repo, fullreposet(repo), x, defineorder)
+    h = heads(repo, fullreposet(repo), x, anyorder)
 
     ancs = repo.changelog._commonancestorsheads(*list(h))
     return subset & baseset(ancs)
@@ -632,7 +632,7 @@ def commonancestors(repo, subset, x):
 
     """
     # only wants the heads of the set passed in
-    for r in heads(repo, fullreposet(repo), x, defineorder):
+    for r in heads(repo, fullreposet(repo), x, anyorder):
         subset &= dagop.revancestors(repo, baseset([r]))
 
     return subset

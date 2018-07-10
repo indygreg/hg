@@ -2144,7 +2144,8 @@ class TextTestRunner(unittest.TextTestRunner):
             if not self._runner.options.noskips:
                 for test, msg in self._result.skipped:
                     formatted = 'Skipped %s: %s\n' % (test.name, msg)
-                    self.stream.write(highlightmsg(formatted, self._result.color))
+                    msg = highlightmsg(formatted, self._result.color)
+                    self.stream.write(msg)
             for test, msg in self._result.failures:
                 formatted = 'Failed %s: %s\n' % (test.name, msg)
                 self.stream.write(highlightmsg(formatted, self._result.color))

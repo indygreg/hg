@@ -218,6 +218,41 @@ class _testrevlog(object):
 
 def _trimchunk(revlog, revs, startidx, endidx=None):
     """returns revs[startidx:endidx] without empty trailing revs
+
+    Doctest Setup
+    >>> revlog = _testrevlog([
+    ...  5,  #0
+    ...  10, #1
+    ...  12, #2
+    ...  12, #3 (empty)
+    ...  17, #4
+    ...  21, #5
+    ...  21, #6 (empty)
+    ... ])
+
+    Contiguous cases:
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 0)
+    [0, 1, 2, 3, 4, 5]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 0, 5)
+    [0, 1, 2, 3, 4]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 0, 4)
+    [0, 1, 2]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 2, 4)
+    [2]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 3)
+    [3, 4, 5]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 3, 5)
+    [3, 4]
+
+    Discontiguous cases:
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 0)
+    [1, 3, 5]
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 0, 2)
+    [1]
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 1, 3)
+    [3, 5]
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 1)
+    [3, 5]
     """
     length = revlog.length
 

@@ -59,6 +59,8 @@ statuscopies = yes
 interface = curses
 
 [commands]
+# Grep working directory by default.
+grep.all-files = True
 # Make `hg status` emit cwd-relative paths by default.
 status.relative = yes
 # Refuse to perform an `hg update` that would cause a file content merge

@@ -456,10 +456,15 @@ files modified in the working directory
 
   $ cd ..
 
-Change Default of grep, that is, the files not in current working directory
-should not be grepp-ed on
+Change Default of grep by ui.tweakdefaults, that is, the files not in current
+working directory should not be grepp-ed on
+
   $ hg init ab
   $ cd ab
+  $ cat <<'EOF' >> .hg/hgrc
+  > [ui]
+  > tweakdefaults = True
+  > EOF
   $ echo "some text">>file1
   $ hg add file1
   $ hg commit -m "adds file1"

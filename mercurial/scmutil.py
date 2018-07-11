@@ -458,7 +458,7 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
             # if we are a pure int, then starting with zero will not be
             # confused as a rev; or, obviously, if the int is larger
             # than the value of the tip rev
-            if prefix[0] == '0' or i > len(cl):
+            if prefix[0:1] == b'0' or i > len(cl):
                 return False
             return True
         except ValueError:

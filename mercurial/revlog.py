@@ -1679,6 +1679,12 @@ class revlog(object):
 
         A revision is considered an ancestor of itself."""
         a, b = self.rev(a), self.rev(b)
+        return self.isancestorrev(a, b)
+
+    def isancestorrev(self, a, b):
+        """return True if revision a is an ancestor of revision b
+
+        A revision is considered an ancestor of itself."""
         return self.isdescendantrev(b, a)
 
     def ancestor(self, a, b):

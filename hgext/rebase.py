@@ -1291,13 +1291,7 @@ def defineparents(repo, rev, destmap, state, skipped, obsskipped):
     # use unfiltered changelog since successorrevs may return filtered nodes
     assert repo.filtername is None
     cl = repo.changelog
-    def isancestor(a, b):
-        # take revision numbers instead of nodes
-        if a == b:
-            return True
-        elif a > b:
-            return False
-        return cl.isancestor(cl.node(a), cl.node(b))
+    isancestor = cl.isancestorrev
 
     dest = destmap[rev]
     oldps = repo.changelog.parentrevs(rev) # old parents

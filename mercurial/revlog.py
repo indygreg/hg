@@ -1656,6 +1656,8 @@ class revlog(object):
             return True
         elif a == b:
             return True
+        elif a < b:
+            return False
         return b in self._commonancestorsheads(a, b)
 
     def commonancestorsheads(self, a, b):

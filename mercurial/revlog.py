@@ -338,6 +338,83 @@ def _slicechunk(revlog, revs):
                                       revlog._srmingapsize):
         yield chunk
 
+def _slicechunktosize(revlog, revs, targetsize):
+    """slice revs to match the target size
+
+    This is intended to be used on chunk that density slicing selected by that
+    are still too large compared to the read garantee of revlog. This might
+    happens when "minimal gap size" interrupted the slicing or when chain are
+    built in a way that create large blocks next to each other.
+
+    >>> revlog = _testrevlog([
+    ...  3,  #0 (3)
+    ...  5,  #1 (2)
+    ...  6,  #2 (1)
+    ...  8,  #3 (2)
+    ...  8,  #4 (empty)
+    ...  11, #5 (3)
+    ...  12, #6 (1)
+    ...  13, #7 (1)
+    ...  14, #8 (1)
+    ... ])
+
+    Cases where chunk is already small enough
+    >>> list(_slicechunktosize(revlog, [0], 3))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], 3))
+    [[6, 7]]
+    >>> list(_slicechunktosize(revlog, [0], None))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], None))
+    [[6, 7]]
+
+    cases where we need actual slicing
+    >>> list(_slicechunktosize(revlog, [0, 1], 3))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 3))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [1, 2, 3], 3))
+    [[1, 2], [3]]
+    >>> list(_slicechunktosize(revlog, [3, 5], 3))
+    [[3], [5]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 3))
+    [[3], [5]]
+    >>> list(_slicechunktosize(revlog, [5, 6, 7, 8], 3))
+    [[5], [6, 7, 8]]
+    >>> list(_slicechunktosize(revlog, [0, 1, 2, 3, 4, 5, 6, 7, 8], 3))
+    [[0], [1, 2], [3], [5], [6, 7, 8]]
+
+    Case with too large individual chunk (must return valid chunk)
+    >>> list(_slicechunktosize(revlog, [0, 1], 2))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 1))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 2))
+    [[3], [5]]
+    """
+    assert targetsize is None or 0 <= targetsize
+    if targetsize is None or _segmentspan(revlog, revs) <= targetsize:
+        yield revs
+        return
+
+    startrevidx = 0
+    startdata = revlog.start(revs[0])
+    endrevidx = 0
+    iterrevs = enumerate(revs)
+    next(iterrevs) # skip first rev.
+    for idx, r in iterrevs:
+        span = revlog.end(r) - startdata
+        if span <= targetsize:
+            endrevidx = idx
+        else:
+            chunk = _trimchunk(revlog, revs, startrevidx, endrevidx + 1)
+            if chunk:
+                yield chunk
+            startrevidx = idx
+            startdata = revlog.start(r)
+            endrevidx = idx
+    yield _trimchunk(revlog, revs, startrevidx)
+
 def _slicechunktodensity(revlog, revs, targetdensity=0.5, mingapsize=0):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 

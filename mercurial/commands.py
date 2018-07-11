@@ -2535,6 +2535,8 @@ def grep(ui, repo, pattern, *pats, **opts):
     diff = opts.get('all') or opts.get('diff')
     if diff and opts.get('all_files'):
         raise error.Abort(_('--diff and --all-files are mutually exclusive'))
+    if opts.get('all_files') and not opts.get('rev'):
+        opts['rev'] = ['wdir()']
 
     reflags = re.M
     if opts.get('ignore_case'):

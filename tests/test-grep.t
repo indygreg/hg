@@ -412,6 +412,18 @@ Test for showing working of allfiles flag
   $ hg grep -r "." "unmod" --all-files
   um:1:unmod
 
+With --all-files, the working directory is searched by default
+
+  $ echo modified >> new
+  $ hg grep --all-files mod
+  new:2147483647:modified
+  um:2147483647:unmod
+
+ which can be overridden by -rREV
+
+  $ hg grep --all-files -r. mod
+  um:1:unmod
+
 --diff --all-files makes no sense since --diff is the option to grep history
 
   $ hg grep --diff --all-files um

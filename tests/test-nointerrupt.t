@@ -1,10 +1,10 @@
 Dummy extension simulating unsafe long running command
   $ cat > sleepext.py <<EOF
-  > import time
   > import itertools
+  > import time
   > 
-  > from mercurial import registrar
   > from mercurial.i18n import _
+  > from mercurial import registrar
   > 
   > cmdtable = {}
   > command = registrar.command(cmdtable)

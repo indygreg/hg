@@ -329,7 +329,7 @@ def _slicechunk(revlog, revs, targetsize=None):
     ...  91, #15 (5)
     ... ])
 
-    >>> list(_slicechunk(revlog, range(16)))
+    >>> list(_slicechunk(revlog, list(range(16))))
     [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
     >>> list(_slicechunk(revlog, [0, 15]))
     [[0], [15]]
@@ -460,7 +460,7 @@ def _slicechunktodensity(revlog, revs, targetdensity=0.5, mingapsize=0):
     ...  91, #15 (5)
     ... ])
 
-    >>> list(_slicechunktodensity(revlog, range(16)))
+    >>> list(_slicechunktodensity(revlog, list(range(16))))
     [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
     >>> list(_slicechunktodensity(revlog, [0, 15]))
     [[0], [15]]

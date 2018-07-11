@@ -8,33 +8,41 @@
   $ echo a > a
   $ hg ci -Am adda
   adding a
+  $ hg rm .
+  removing a
+  $ hg ci -Am make-it-empty
+  $ hg revert --all -r 0
+  adding a
+  $ hg ci -Am make-it-full
 #if reporevlogstore
   $ hg debugrevlog -m
   format : 1
   flags  : inline, generaldelta
   
-  revisions     :  1
+  revisions     :  3
       merges    :  0 ( 0.00%)
-      normal    :  1 (100.00%)
-  revisions     :  1
-      full      :  1 (100.00%)
+      normal    :  3 (100.00%)
+  revisions     :  3
+      full      :  3 (100.00%)
       deltas    :  0 ( 0.00%)
-  revision size : 44
-      full      : 44 (100.00%)
+  revision size : 88
+      full      : 88 (100.00%)
       deltas    :  0 ( 0.00%)
   
-  chunks        :  1
-      0x75 (u)  :  1 (100.00%)
-  chunks size   : 44
-      0x75 (u)  : 44 (100.00%)
+  chunks        :  3
+      empty     :  1 (33.33%)
+      0x75 (u)  :  2 (66.67%)
+  chunks size   : 88
+      empty     :  0 ( 0.00%)
+      0x75 (u)  : 88 (100.00%)
   
   avg chain length  :  0
   max chain length  :  0
   max chain reach   : 44
   compression ratio :  0
   
-  uncompressed data size (min/max/avg) : 43 / 43 / 43
-  full revision size (min/max/avg)     : 44 / 44 / 44
+  uncompressed data size (min/max/avg) : 0 / 43 / 28
+  full revision size (min/max/avg)     : 0 / 44 / 29
   delta size (min/max/avg)             : 0 / 0 / 0
 #endif
 
@@ -73,9 +81,13 @@ debugdelta chain basic output
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000
+        1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000
+        2       3        1       -1    base         44         43         44   1.02326        44         0    0.00000
 
   $ hg debugdeltachain -m -T '{rev} {chainid} {chainlen}\n'
   0 1 1
+  1 2 1
+  2 3 1
 
   $ hg debugdeltachain -m -Tjson
   [
@@ -92,6 +104,34 @@ debugdelta chain basic output
     "prevrev": -1,
     "rev": 0,
     "uncompsize": 43
+   },
+   {
+    "chainid": 2,
+    "chainlen": 1,
+    "chainratio": 0,
+    "chainsize": 0,
+    "compsize": 0,
+    "deltatype": "base",
+    "extradist": 0,
+    "extraratio": 0,
+    "lindist": 0,
+    "prevrev": -1,
+    "rev": 1,
+    "uncompsize": 0
+   },
+   {
+    "chainid": 3,
+    "chainlen": 1,
+    "chainratio": 1.02325581395,
+    "chainsize": 44,
+    "compsize": 44,
+    "deltatype": "base",
+    "extradist": 0,
+    "extraratio": 0.0,
+    "lindist": 44,
+    "prevrev": -1,
+    "rev": 2,
+    "uncompsize": 43
    }
   ]
 
@@ -104,9 +144,13 @@ debugdelta chain with sparse read enabled
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio   readsize largestblk rddensity srchunks
         0       1        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
+        1       2        1       -1    base          0          0          0   0.00000         0         0    0.00000          0          0   1.00000        1
+        2       3        1       -1    base         44         43         44   1.02326        44         0    0.00000         44         44   1.00000        1
 
   $ hg debugdeltachain -m -T '{rev} {chainid} {chainlen} {readsize} {largestblock} {readdensity}\n'
   0 1 1 44 44 1.0
+  1 2 1 0 0 1
+  2 3 1 44 44 1.0
 
   $ hg debugdeltachain -m -Tjson
   [
@@ -125,6 +169,42 @@ debugdelta chain with sparse read enabled
     "readdensity": 1.0,
     "readsize": 44,
     "rev": 0,
+    "srchunks": 1,
+    "uncompsize": 43
+   },
+   {
+    "chainid": 2,
+    "chainlen": 1,
+    "chainratio": 0,
+    "chainsize": 0,
+    "compsize": 0,
+    "deltatype": "base",
+    "extradist": 0,
+    "extraratio": 0,
+    "largestblock": 0,
+    "lindist": 0,
+    "prevrev": -1,
+    "readdensity": 1,
+    "readsize": 0,
+    "rev": 1,
+    "srchunks": 1,
+    "uncompsize": 0
+   },
+   {
+    "chainid": 3,
+    "chainlen": 1,
+    "chainratio": 1.02325581395,
+    "chainsize": 44,
+    "compsize": 44,
+    "deltatype": "base",
+    "extradist": 0,
+    "extraratio": 0.0,
+    "largestblock": 44,
+    "lindist": 44,
+    "prevrev": -1,
+    "readdensity": 1.0,
+    "readsize": 44,
+    "rev": 2,
     "srchunks": 1,
     "uncompsize": 43
    }

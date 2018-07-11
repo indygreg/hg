@@ -715,7 +715,10 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                 if largestblock < blksize:
                     largestblock = blksize
 
-            readdensity = float(chainsize) / float(readsize)
+            if readsize:
+                readdensity = float(chainsize) / float(readsize)
+            else:
+                readdensity = 1
 
             fm.write('readsize largestblock readdensity srchunks',
                      ' %10d %10d %9.5f %8d',

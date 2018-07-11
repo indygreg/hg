@@ -591,7 +591,7 @@ class changectx(basectx):
 
     def descendant(self, other):
         """True if other is descendant of this changeset"""
-        return self._repo.changelog.descendant(self._rev, other._rev)
+        return self._repo.changelog.isdescendantrev(other._rev, self._rev)
 
     def walk(self, match):
         '''Generates matching file names.'''

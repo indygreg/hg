@@ -2533,6 +2533,9 @@ def grep(ui, repo, pattern, *pats, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     diff = opts.get('all') or opts.get('diff')
+    if diff and opts.get('all_files'):
+        raise error.Abort(_('--diff and --all-files are mutually exclusive'))
+
     reflags = re.M
     if opts.get('ignore_case'):
         reflags |= re.I

@@ -412,6 +412,12 @@ Test for showing working of allfiles flag
   $ hg grep -r "." "unmod" --all-files
   um:1:unmod
 
+--diff --all-files makes no sense since --diff is the option to grep history
+
+  $ hg grep --diff --all-files um
+  abort: --diff and --all-files are mutually exclusive
+  [255]
+
   $ cd ..
 
 Fix_Wdir(): test that passing wdir() t -r flag does greps on the

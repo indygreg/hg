@@ -1,5 +1,6 @@
   $ cat >> $HGRCPATH << EOF
   > [extensions]
+  > drawdag=$TESTDIR/drawdag.py
   > phasereport=$TESTDIR/testlib/ext-phase-report.py
   > EOF
 
@@ -1174,6 +1175,8 @@ check that secret local on both side are not synced to public
   $ hg phase f54f1bb90ff3
   2: draft
 
+  $ killdaemons.py
+
 put the changeset in the draft state again
 (first test after this one expect to be able to copy)
 
@@ -1379,3 +1382,178 @@ above.
   o  9 draft a-G - 3e27b6f1eee1
   |
   ~
+
+Test phases exchange when a phaseroot is on a merge
+
+  $ hg init mergetest
+  $ cd mergetest
+  > cat > .hg/hgrc << EOF
+  > [phases]
+  > publish = false
+  > EOF
+
+  $ hg debugdrawdag << EOF
+  > E Z
+  > |\|
+  > D Y
+  > | |
+  > C X
+  > |/
+  > B
+  > |
+  > A
+  > EOF
+  test-debug-phase: new rev 0:  x -> 1
+  test-debug-phase: new rev 1:  x -> 1
+  test-debug-phase: new rev 2:  x -> 1
+  test-debug-phase: new rev 3:  x -> 1
+  test-debug-phase: new rev 4:  x -> 1
+  test-debug-phase: new rev 5:  x -> 1
+  test-debug-phase: new rev 6:  x -> 1
+  test-debug-phase: new rev 7:  x -> 1
+
+  $ hg phase --public -r D
+  test-debug-phase: move rev 0: 1 -> 0
+  test-debug-phase: move rev 1: 1 -> 0
+  test-debug-phase: move rev 2: 1 -> 0
+  test-debug-phase: move rev 4: 1 -> 0
+
+  $ hg log -G -T '{shortest(node, 5)} {phase}'
+  o  bb947 draft
+  |
+  | o  5ac28 draft
+  |/|
+  o |  13b7b draft
+  | |
+  | o  f5853 public
+  | |
+  o |  c67c4 draft
+  | |
+  | o  26805 public
+  |/
+  o  11247 public
+  |
+  o  426ba public
+  
+  $ cd ..
+
+Works with default settings
+
+  $ hg -R mergetest serve -p $HGPORT -d --pid-file=hg.pid
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ hg clone -U http://localhost:$HGPORT mergetest-normal
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 8 changesets with 7 changes to 7 files (+1 heads)
+  new changesets 426bada5c675:bb94757e651a
+  test-debug-phase: new rev 0:  x -> 0
+  test-debug-phase: new rev 1:  x -> 0
+  test-debug-phase: new rev 2:  x -> 0
+  test-debug-phase: new rev 3:  x -> 1
+  test-debug-phase: new rev 4:  x -> 0
+  test-debug-phase: new rev 5:  x -> 1
+  test-debug-phase: new rev 6:  x -> 1
+  test-debug-phase: new rev 7:  x -> 1
+
+  $ hg -R mergetest-normal log -G -T '{shortest(node, 5)} {phase}'
+  o  bb947 draft
+  |
+  | o  5ac28 draft
+  |/|
+  o |  13b7b draft
+  | |
+  | o  f5853 public
+  | |
+  o |  c67c4 draft
+  | |
+  | o  26805 public
+  |/
+  o  11247 public
+  |
+  o  426ba public
+  
+  $ killdaemons.py
+
+With legacy listkeys over bundle2
+TODO issue 5939: public phase lost on 26805 and f5853
+
+  $ hg -R mergetest --config devel.legacy.exchange=phases serve -p $HGPORT -d --pid-file=hg.pid
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ hg clone -U http://localhost:$HGPORT mergetest-nobinarypart
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 8 changesets with 7 changes to 7 files (+1 heads)
+  new changesets 426bada5c675:bb94757e651a
+  test-debug-phase: new rev 0:  x -> 0
+  test-debug-phase: new rev 1:  x -> 0
+  test-debug-phase: new rev 2:  x -> 1
+  test-debug-phase: new rev 3:  x -> 1
+  test-debug-phase: new rev 4:  x -> 1
+  test-debug-phase: new rev 5:  x -> 1
+  test-debug-phase: new rev 6:  x -> 1
+  test-debug-phase: new rev 7:  x -> 1
+
+  $ hg -R mergetest-nobinarypart log -G -T '{shortest(node, 5)} {phase}'
+  o  bb947 draft
+  |
+  | o  5ac28 draft
+  |/|
+  o |  13b7b draft
+  | |
+  | o  f5853 draft
+  | |
+  o |  c67c4 draft
+  | |
+  | o  26805 draft
+  |/
+  o  11247 public
+  |
+  o  426ba public
+  
+  $ killdaemons.py
+
+Without bundle2
+TODO issue 5939: public phase lost on 26805 and f5853
+
+  $ hg -R mergetest serve -p $HGPORT -d --pid-file=hg.pid
+  $ cat hg.pid >> $DAEMON_PIDS
+
+  $ hg --config devel.legacy.exchange=bundle1 clone -U http://localhost:$HGPORT mergetest-bundle1
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 8 changesets with 7 changes to 7 files (+1 heads)
+  new changesets 426bada5c675:bb94757e651a
+  test-debug-phase: new rev 0:  x -> 0
+  test-debug-phase: new rev 1:  x -> 0
+  test-debug-phase: new rev 2:  x -> 1
+  test-debug-phase: new rev 3:  x -> 1
+  test-debug-phase: new rev 4:  x -> 1
+  test-debug-phase: new rev 5:  x -> 1
+  test-debug-phase: new rev 6:  x -> 1
+  test-debug-phase: new rev 7:  x -> 1
+
+  $ hg -R mergetest-bundle1 log -G -T '{shortest(node, 5)} {phase}'
+  o  bb947 draft
+  |
+  | o  5ac28 draft
+  |/|
+  o |  13b7b draft
+  | |
+  | o  f5853 draft
+  | |
+  o |  c67c4 draft
+  | |
+  | o  26805 draft
+  |/
+  o  11247 public
+  |
+  o  426ba public
+  

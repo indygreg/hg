@@ -534,7 +534,8 @@ class manifestdict(object):
     def items(self):
         return (x[:2] for x in self._lm.iterentries())
 
-    iteritems = items
+    def iteritems(self):
+        return (x[:2] for x in self._lm.iterentries())
 
     def iterentries(self):
         return self._lm.iterentries()

@@ -1869,19 +1869,17 @@ def _computeobsoletenotrebased(repo, rebaseobsrevs, destmap):
             # no successor
             obsoletenotrebased[srcrev] = None
         else:
-            destnode = cl.node(destmap[srcrev])
-            for succnode in successors:
-                if succnode not in nodemap:
-                    continue
-                if cl.isancestor(succnode, destnode):
-                    obsoletenotrebased[srcrev] = nodemap[succnode]
+            dstrev = destmap[srcrev]
+            succrevs = [nodemap[s] for s in successors if s in nodemap]
+            for succrev in succrevs:
+                if cl.isancestorrev(succrev, dstrev):
+                    obsoletenotrebased[srcrev] = succrev
                     break
             else:
                 # If 'srcrev' has a successor in rebase set but none in
                 # destination (which would be catched above), we shall skip it
                 # and its descendants to avoid divergence.
-                if any(nodemap[s] in destmap for s in successors
-                       if s in nodemap):
+                if any(s in destmap for s in succrevs):
                     obsoletewithoutsuccessorindestination.add(srcrev)
 
     return (

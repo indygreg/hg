@@ -1648,7 +1648,10 @@ class revlog(object):
     def descendant(self, start, end):
         """True if revision 'end' is an descendant of revision 'start'
 
-        A revision is considered as a descendant of itself."""
+        A revision is considered as a descendant of itself.
+
+        The implementation of this is trivial but the use of
+        commonancestorsheads is not."""
         if start == nullrev:
             return True
         elif start == end:
@@ -1670,10 +1673,7 @@ class revlog(object):
         return ancs
 
     def isancestor(self, a, b):
-        """return True if node a is an ancestor of node b
-
-        The implementation of this is trivial but the use of
-        commonancestorsheads is not."""
+        """return True if node a is an ancestor of node b"""
         a, b = self.rev(a), self.rev(b)
         return self.descendant(a, b)
 

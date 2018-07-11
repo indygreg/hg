@@ -88,7 +88,8 @@ perfstatus
    perflookup    (no help text available)
    perflrucachedict
                  (no help text available)
-   perfmanifest  (no help text available)
+   perfmanifest  benchmark the time to read a manifest from disk and return a
+                 usable
    perfmergecalculate
                  (no help text available)
    perfmoonwalk  benchmark walking the changelog backwards

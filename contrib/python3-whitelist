@@ -200,6 +200,7 @@ test-histedit-drop.t
 test-histedit-edit.t
 test-histedit-fold-non-commute.t
 test-histedit-fold.t
+test-histedit-no-backup.t
 test-histedit-no-change.t
 test-histedit-non-commute-abort.t
 test-histedit-non-commute.t
@@ -341,6 +342,7 @@ test-narrow-widen.t
 test-narrow.t
 test-nested-repo.t
 test-newbranch.t
+test-nointerrupt.t
 test-obshistory.t
 test-obsmarker-template.t
 test-obsmarkers-effectflag.t
@@ -432,6 +434,7 @@ test-rebuildstate.t
 test-record.t
 test-relink.t
 test-remove.t
+test-removeemptydirs.t
 test-rename-after-merge.t
 test-rename-dir-merge.t
 test-rename-merge1.t

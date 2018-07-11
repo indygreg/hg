@@ -187,6 +187,9 @@ coreconfigitem('color', 'mode',
 coreconfigitem('color', 'pagermode',
     default=dynamicdefault,
 )
+coreconfigitem('commands', 'grep.all-files',
+    default=True,
+)
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,
 )

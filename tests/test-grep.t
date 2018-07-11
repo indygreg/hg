@@ -424,11 +424,24 @@ With --all-files, the working directory is searched by default
   $ hg grep --all-files -r. mod
   um:1:unmod
 
+commands.all-files can be negated by --no-all-files
+
+  $ hg grep --config commands.grep.all-files=True mod
+  new:2147483647:modified
+  um:2147483647:unmod
+  $ hg grep --config commands.grep.all-files=True --no-all-files mod
+  um:0:unmod
+
 --diff --all-files makes no sense since --diff is the option to grep history
 
   $ hg grep --diff --all-files um
   abort: --diff and --all-files are mutually exclusive
   [255]
+
+but --diff should precede the commands.grep.all-files option
+
+  $ hg grep --config commands.grep.all-files=True --diff mod
+  um:0:+:unmod
 
   $ cd ..
 

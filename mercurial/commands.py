@@ -2501,7 +2501,7 @@ def _stopgraft(ui, repo, graftstate):
     ('n', 'line-number', None, _('print matching line numbers')),
     ('r', 'rev', [],
      _('only search files changed within revision range'), _('REV')),
-    ('', 'all-files', False,
+    ('', 'all-files', None,
      _('include all files in the changeset while grepping (EXPERIMENTAL)')),
     ('u', 'user', None, _('list the author (long with -v)')),
     ('d', 'date', None, _('list the date (short with -q)')),
@@ -2535,6 +2535,10 @@ def grep(ui, repo, pattern, *pats, **opts):
     diff = opts.get('all') or opts.get('diff')
     if diff and opts.get('all_files'):
         raise error.Abort(_('--diff and --all-files are mutually exclusive'))
+    # TODO: remove "not opts.get('rev')" if --all-files -rMULTIREV gets working
+    if opts.get('all_files') is None and not opts.get('rev') and not diff:
+        # experimental config: commands.grep.all-files
+        opts['all_files'] = ui.configbool('commands', 'grep.all-files')
     if opts.get('all_files') and not opts.get('rev'):
         opts['rev'] = ['wdir()']
 
@@ -2549,10 +2553,6 @@ def grep(ui, repo, pattern, *pats, **opts):
     sep, eol = ':', '\n'
     if opts.get('print0'):
         sep = eol = '\0'
-
-    if not opts.get('rev') and not diff:
-        opts['rev'] = ["wdir()"]
-        opts['all_files'] = True
 
     getfile = util.lrucachefunc(repo.file)
 

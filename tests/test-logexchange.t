@@ -289,6 +289,7 @@ Testing the revsets provided by remotenames extension
   ~
 
 Updating to revision using hoisted name
+---------------------------------------
 
 Deleting local bookmark to make sure we update to hoisted name only
 
@@ -393,3 +394,187 @@ After the push, default/foo should move to rev 8
      default/bar               6:87d6d6676308
      default/foo               8:3e1487808078
    * foo                       8:3e1487808078
+
+Testing the names argument to remotenames, remotebranches and remotebookmarks revsets
+--------------------------------------------------------------------------------------
+
+  $ cd ..
+  $ hg clone ssh://user@dummy/server client2
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 9 changesets with 9 changes to 9 files (+1 heads)
+  new changesets 18d04c59bb5d:3e1487808078
+  updating to branch default
+  8 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ cd server2
+  $ hg up wat
+  6 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ echo foo > watwat
+  $ hg ci -Aqm "added watwat"
+  $ hg bookmark bar
+  abort: bookmark 'bar' already exists (use -f to force)
+  [255]
+  $ hg up ec24
+  3 files updated, 0 files merged, 2 files removed, 0 files unresolved
+  $ echo i > i
+  $ hg ci -Aqm "added i"
+
+  $ cd ../client2
+  $ echo "[paths]" >> .hg/hgrc
+  $ echo "server2 = $TESTTMP/server2" >> .hg/hgrc
+  $ hg pull server2
+  pulling from $TESTTMP/server2
+  searching for changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 2 changesets with 2 changes to 2 files
+  new changesets f34adec73c21:bf433e48adea
+  (run 'hg update' to get a working copy)
+
+  $ hg log -Gr 'remotenames()' -T '{rev}:{node|short} {desc}\n({remotebranches})  [{remotebookmarks}]\n\n'
+  o  10:bf433e48adea added i
+  |  (server2/default)  []
+  |
+  | o  9:f34adec73c21 added watwat
+  | |  (server2/wat)  []
+  | |
+  | o  8:3e1487808078 added bar
+  | :  (default/wat)  [default/foo]
+  | :
+  @ :  7:ec2426147f0e Added h
+  | :  (default/default)  []
+  | :
+  o :  6:87d6d6676308 Added g
+  :/   ()  [default/bar server2/bar]
+  :
+  o  3:62615734edd5 Added d
+  |  ()  [server2/foo]
+  ~
+
+Testing for a single remote name which exists
+
+  $ hg log -r 'remotebranches("default/wat")' -GT "{rev}:{node|short} {remotebranches}\n"
+  o  8:3e1487808078 default/wat
+  |
+  ~
+
+  $ hg log -r 'remotebookmarks("server2/foo")' -GT "{rev}:{node|short} {remotebookmarks}\n"
+  o  3:62615734edd5 server2/foo
+  |
+  ~
+
+  $ hg log -r 'remotenames("re:default")' -GT "{rev}:{node|short} {remotenames}\n"
+  o  10:bf433e48adea server2/default
+  |
+  | o  8:3e1487808078 default/foo default/wat
+  | |
+  | ~
+  @  7:ec2426147f0e default/default
+  |
+  o  6:87d6d6676308 default/bar server2/bar
+  |
+  ~
+
+Testing for a single name which does not exists
+
+  $ hg log -r 'remotebranches(def)' -GT "{rev}:{node|short} {remotenames}\n"
+
+  $ hg log -r 'remotebookmarks("server3")' -GT "{rev}:{node|short} {remotenames}\n"
+
+  $ hg log -r 'remotenames("server3")' -GT "{rev}:{node|short} {remotenames}\n"
+
+Testing for multiple names where all of them exists
+
+  $ hg log -r 'remotenames("re:default", "re:server2")' -GT "{rev}:{node|short} {remotenames}\n"
+  o  10:bf433e48adea server2/default
+  |
+  | o  9:f34adec73c21 server2/wat
+  | |
+  | o  8:3e1487808078 default/foo default/wat
+  | :
+  @ :  7:ec2426147f0e default/default
+  | :
+  o :  6:87d6d6676308 default/bar server2/bar
+  :/
+  o  3:62615734edd5 server2/foo
+  |
+  ~
+
+  $ hg log -r 'remotebranches("default/wat", "server2/wat")' -GT "{rev}:{node|short} {remotebranches}\n"
+  o  9:f34adec73c21 server2/wat
+  |
+  o  8:3e1487808078 default/wat
+  |
+  ~
+
+  $ hg log -r 'remotebookmarks("default/foo", "server2/foo")' -GT "{rev}:{node|short} {remotebookmarks}\n"
+  o  8:3e1487808078 default/foo
+  :
+  o  3:62615734edd5 server2/foo
+  |
+  ~
+
+Testing for multipe names where some exists and some not
+
+  $ hg log -r 'remotenames(def, "re:server2")' -GT "{rev}:{node|short} {remotenames}\n"
+  o  10:bf433e48adea server2/default
+  :
+  : o  9:f34adec73c21 server2/wat
+  : :
+  o :  6:87d6d6676308 default/bar server2/bar
+  :/
+  o  3:62615734edd5 server2/foo
+  |
+  ~
+
+  $ hg log -r 'remotebranches("default/default", server)' -GT "{rev}:{node|short} {remotebranches}\n"
+  @  7:ec2426147f0e default/default
+  |
+  ~
+
+  $ hg log -r 'remotebookmarks("default/foo", serv)' -GT "{rev}:{node|short} {remotebookmarks}\n"
+  o  8:3e1487808078 default/foo
+  |
+  ~
+
+Where multiple names specified and None of them exists
+
+  $ hg log -r 'remotenames(def, serv2)' -GT "{rev}:{node|short} {remotenames}\n"
+
+  $ hg log -r 'remotebranches(defu, server)' -GT "{rev}:{node|short} {remotebranches}\n"
+
+  $ hg log -r 'remotebookmarks(delt, serv)' -GT "{rev}:{node|short} {remotebookmarks}\n"
+
+Testing pattern matching
+
+  $ hg log -r 'remotenames("re:def")' -GT "{rev}:{node|short} {remotenames}\n"
+  o  10:bf433e48adea server2/default
+  |
+  | o  8:3e1487808078 default/foo default/wat
+  | |
+  | ~
+  @  7:ec2426147f0e default/default
+  |
+  o  6:87d6d6676308 default/bar server2/bar
+  |
+  ~
+
+  $ hg log -r 'remotebranches("re:ser.*2")' -GT "{rev}:{node|short} {remotebranches}\n"
+  o  10:bf433e48adea server2/default
+  |
+  ~
+  o  9:f34adec73c21 server2/wat
+  |
+  ~
+
+  $ hg log -r 'remotebookmarks("re:def", "re:.*2")' -GT "{rev}:{node|short} {remotebookmarks}\n"
+  o  8:3e1487808078 default/foo
+  :
+  : o  6:87d6d6676308 default/bar server2/bar
+  :/
+  o  3:62615734edd5 server2/foo
+  |
+  ~

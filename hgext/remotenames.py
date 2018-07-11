@@ -43,6 +43,10 @@ from mercurial import (
     templateutil,
 )
 
+from mercurial.utils import (
+    stringutil,
+)
+
 if pycompat.ispy3:
     import collections.abc
     mutablemapping = collections.abc.MutableMapping
@@ -343,34 +347,91 @@ def remotebrancheskw(context, mapping):
     return templateutil.compatlist(context, mapping, 'remotebranch',
                                    remotebranches, plural='remotebranches')
 
-def _revsetutil(repo, subset, x, rtypes):
+def _revsetutil(repo, subset, x, rtypes, args):
     """utility function to return a set of revs based on the rtypes"""
 
     revs = set()
     cl = repo.changelog
+    literals, matchers = args
+    # whether arguments were passed or not
+    argspassed = bool(literals or matchers)
     for rtype in rtypes:
         if rtype in repo.names:
             ns = repo.names[rtype]
             for name in ns.listnames(repo):
-                revs.update(ns.nodes(repo, name))
+                if argspassed:
+                    if name in literals:
+                        revs.update(ns.nodes(repo, name))
+                        continue
+                    for matcher in matchers:
+                        if matcher(name):
+                            revs.update(ns.nodes(repo, name))
+                            break
+                else:
+                    revs.update(ns.nodes(repo, name))
 
     results = (cl.rev(n) for n in revs if cl.hasnode(n))
     return subset & smartset.baseset(sorted(results))
 
-@revsetpredicate('remotenames()')
+def _parseargs(x):
+    """parses the argument passed in revsets
+
+    returns (literals, matchers) where,
+        literals is a set of literals passed by user
+        matchers is a list of matcher objects for patterns passed by user
+    """
+
+    # set of paths passed as literals
+    literals = set()
+    # list of matcher to match the patterns passed as names
+    matchers = []
+
+    if not x:
+        return literals, matchers
+
+    args = set()
+    lx = revsetlang.getlist(x)
+    err = _('the argument must be a string')
+    for entry in lx:
+        args.add(revsetlang.getstring(entry, err))
+    for p in args:
+        kind, pattern, matcher = stringutil.stringmatcher(p)
+        if kind == 'literal':
+            literals.add(pattern)
+        else:
+            matchers.append(matcher)
+    return literals, matchers
+
+@revsetpredicate('remotenames([name, ...])')
 def remotenamesrevset(repo, subset, x):
-    """All changesets which have a remotename on them."""
-    revsetlang.getargs(x, 0, 0, _("remotenames takes no arguments"))
-    return _revsetutil(repo, subset, x, ('remotebookmarks', 'remotebranches'))
+    """All changesets which have a remotename on them. If paths are specified,
+    remotenames of those remote paths are only considered.
 
-@revsetpredicate('remotebranches()')
+    Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
+    """
+
+    args = _parseargs(x)
+    return _revsetutil(repo, subset, x, ('remotebookmarks', 'remotebranches'),
+                       args)
+
+@revsetpredicate('remotebranches([name, ...])')
 def remotebranchesrevset(repo, subset, x):
-    """All changesets which are branch heads on remotes."""
-    revsetlang.getargs(x, 0, 0, _("remotebranches takes no arguments"))
-    return _revsetutil(repo, subset, x, ('remotebranches',))
+    """All changesets which are branch heads on remotes. If paths are specified,
+    only those remotes paths are considered.
 
-@revsetpredicate('remotebookmarks()')
+    Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
+    """
+
+    args = _parseargs(x)
+    return _revsetutil(repo, subset, x, ('remotebranches',), args)
+
+@revsetpredicate('remotebookmarks([name, ...])')
 def remotebmarksrevset(repo, subset, x):
-    """All changesets which have bookmarks on remotes."""
-    revsetlang.getargs(x, 0, 0, _("remotebookmarks takes no arguments"))
-    return _revsetutil(repo, subset, x, ('remotebookmarks',))
+    """All changesets which have bookmarks on remotes. If paths are specified,
+    only those remote paths are considered.
+
+    Pattern matching is supported for `name`. See :hg:`help revisions.patterns`.
+    """
+
+    args = _parseargs(x)
+    return _revsetutil(repo, subset, x, ('remotebookmarks',), args)

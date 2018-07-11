@@ -436,3 +436,73 @@ Try a simple variation without dotencode to ensure fncache is ignorant of encodi
   $ cat .hg/store/fncache | sort
   data/.bar.i
   data/foo.i
+
+  $ cd ..
+
+In repositories that have accumulated a large number of files over time, the
+fncache file is going to be large. If we possibly can avoid loading it, so much the better.
+The cache should not loaded when committing changes to existing files, or when unbundling
+changesets that only contain changes to existing files:
+
+  $ cat > fncacheloadwarn.py << EOF
+  > from __future__ import absolute_import
+  > from mercurial import extensions, store
+  > 
+  > def extsetup(ui):
+  >     def wrapstore(orig, requirements, *args):
+  >         store = orig(requirements, *args)
+  >         if 'store' in requirements and 'fncache' in requirements:
+  >             instrumentfncachestore(store, ui)
+  >         return store
+  >     extensions.wrapfunction(store, 'store', wrapstore)
+  > 
+  > def instrumentfncachestore(fncachestore, ui):
+  >     class instrumentedfncache(type(fncachestore.fncache)):
+  >         def _load(self):
+  >             ui.warn('fncache load triggered!\n')
+  >             super(instrumentedfncache, self)._load()
+  >     fncachestore.fncache.__class__ = instrumentedfncache
+  > EOF
+
+  $ fncachextpath=`pwd`/fncacheloadwarn.py
+  $ hg init nofncacheload
+  $ cd nofncacheload
+  $ printf "[extensions]\nfncacheloadwarn=$fncachextpath\n" >> .hg/hgrc
+
+A new file should trigger a load, as we'd want to update the fncache set in that case:
+
+  $ touch foo
+  $ hg ci -qAm foo
+  fncache load triggered!
+
+But modifying that file should not:
+
+  $ echo bar >> foo
+  $ hg ci -qm foo
+
+If a transaction has been aborted, the zero-size truncated index file will
+not prevent the fncache from being loaded; rather than actually abort
+a transaction, we simulate the situation by creating a zero-size index file:
+
+  $ touch .hg/store/data/bar.i
+  $ touch bar
+  $ hg ci -qAm bar
+  fncache load triggered!
+
+Unbundling should follow the same rules; existing files should not cause a load:
+
+  $ hg clone -q . tobundle
+  $ echo 'new line' > tobundle/bar
+  $ hg -R tobundle ci -qm bar
+  $ hg -R tobundle bundle -q barupdated.hg
+  $ hg unbundle -q barupdated.hg
+
+but adding new files should:
+
+  $ touch tobundle/newfile
+  $ hg -R tobundle ci -qAm newfile
+  $ hg -R tobundle bundle -q newfile.hg
+  $ hg unbundle -q newfile.hg
+  fncache load triggered!
+
+  $ cd ..

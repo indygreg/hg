@@ -489,10 +489,20 @@ class _fncachevfs(vfsmod.abstractvfs, vfsmod.proxyvfs):
         self.encode = encode
 
     def __call__(self, path, mode='r', *args, **kw):
+        encoded = self.encode(path)
         if mode not in ('r', 'rb') and (path.startswith('data/') or
                                         path.startswith('meta/')):
-            self.fncache.add(path)
-        return self.vfs(self.encode(path), mode, *args, **kw)
+            # do not trigger a fncache load when adding a file that already is
+            # known to exist.
+            notload = self.fncache.entries is None and self.vfs.exists(encoded)
+            if notload and 'a' in mode and not self.vfs.stat(encoded).st_size:
+                # when appending to an existing file, if the file has size zero,
+                # it should be considered as missing. Such zero-size files are
+                # the result of truncation when a transaction is aborted.
+                notload = False
+            if not notload:
+                self.fncache.add(path)
+        return self.vfs(encoded, mode, *args, **kw)
 
     def join(self, path):
         if path:

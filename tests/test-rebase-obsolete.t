@@ -1511,6 +1511,28 @@ Rebase merge where successor of other parent is ancestor of destination
   
   $ cd ..
 
+Rebase merge where extinct node has successor that is not an ancestor of
+destination
+
+  $ hg init extinct-with-succ-not-in-dest
+  $ cd extinct-with-succ-not-in-dest
+
+  $ hg debugdrawdag <<EOF
+  > E C # replace: C -> E
+  > | |
+  > D B
+  > |/
+  > A
+  > EOF
+
+TODO: There doesn't seem to be much reason to fail this rebase. Make it pass?
+  $ hg rebase -d D -s B
+  abort: this rebase will cause divergences from: 26805aba1e60
+  (to force the rebase please set experimental.evolution.allowdivergence=True)
+  [255]
+
+  $ cd ..
+
   $ hg init p2-succ-in-dest-c
   $ cd p2-succ-in-dest-c
 

@@ -2501,7 +2501,7 @@ def _stopgraft(ui, repo, graftstate):
     ('n', 'line-number', None, _('print matching line numbers')),
     ('r', 'rev', [],
      _('only search files changed within revision range'), _('REV')),
-    ('', 'allfiles', False,
+    ('', 'all-files', False,
      _('include all files in the changeset while grepping (EXPERIMENTAL)')),
     ('u', 'user', None, _('list the author (long with -v)')),
     ('d', 'date', None, _('list the date (short with -q)')),
@@ -2547,7 +2547,7 @@ def grep(ui, repo, pattern, *pats, **opts):
 
     if not opts.get('rev') and not diff:
         opts['rev'] = ["wdir()"]
-        opts['allfiles'] = True
+        opts['all_files'] = True
 
     getfile = util.lrucachefunc(repo.file)
 

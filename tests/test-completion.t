@@ -313,7 +313,7 @@ Show all commands + options
   debugwireproto: localssh, peer, noreadstderr, nologhandshake, ssh, remotecmd, insecure
   files: rev, print0, include, exclude, template, subrepos
   graft: rev, continue, stop, abort, edit, log, no-commit, force, currentdate, currentuser, date, user, tool, dry-run
-  grep: print0, all, diff, text, follow, ignore-case, files-with-matches, line-number, rev, allfiles, user, date, template, include, exclude
+  grep: print0, all, diff, text, follow, ignore-case, files-with-matches, line-number, rev, all-files, user, date, template, include, exclude
   heads: rev, topo, active, closed, style, template
   help: extension, command, keyword, system
   identify: rev, num, id, branch, tags, bookmarks, ssh, remotecmd, insecure, template

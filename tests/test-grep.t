@@ -409,7 +409,7 @@ Test for showing working of allfiles flag
   adding new
   $ hg grep -r "." "unmod"
   [1]
-  $ hg grep -r "." "unmod" --allfiles
+  $ hg grep -r "." "unmod" --all-files
   um:1:unmod
 
   $ cd ..

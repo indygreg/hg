@@ -149,7 +149,8 @@ This is essentially the exact test from issue5826, just cleaned up a little:
   $ hg init issue5826_withrm
   $ cd issue5826_withrm
 
-  $ cat >> $HGRCPATH <<EOF
+Let's only turn this on for this repo so that we don't contaminate later tests.
+  $ cat >> .hg/hgrc <<EOF
   > [extensions]
   > histedit =
   > EOF
@@ -199,7 +200,8 @@ Now test that again with experimental.removeemptydirs=false:
   $ hg init issue5826_norm
   $ cd issue5826_norm
 
-  $ cat >> $HGRCPATH <<EOF
+Let's only turn this on for this repo so that we don't contaminate later tests.
+  $ cat >> .hg/hgrc <<EOF
   > [extensions]
   > histedit =
   > [experimental]
@@ -240,3 +242,89 @@ Note the lack of a 'cd' being necessary here, and we don't need to 'histedit
   ***
   add baz
   0:d17db4b0303a add bar
+
+  $ cd $TESTTMP
+
+Testing `hg split` being run from inside of a directory that was created in the
+commit being split:
+
+  $ hg init hgsplit
+  $ cd hgsplit
+  $ cat >> .hg/hgrc << EOF
+  > [ui]
+  > interactive = 1
+  > [extensions]
+  > split =
+  > EOF
+  $ echo anchor > anchor.txt
+  $ hg ci -qAm anchor
+
+Create a changeset with '/otherfile_in_root' and 'somedir/foo', then try to
+split it.
+  $ echo otherfile > otherfile_in_root
+  $ mkdir somedir
+  $ cd somedir
+  $ echo hi > foo
+  $ hg ci -qAm split_me
+(Note: need to make this file not in this directory, or else the bug doesn't
+reproduce; we're using a separate file due to concerns of portability on
+`echo -e`)
+  $ cat > ../split_commands << EOF
+  > n
+  > y
+  > y
+  > a
+  > EOF
+  $ cat ../split_commands | hg split
+  current directory was removed
+  (consider changing to repo root: $TESTTMP/hgsplit)
+  diff --git a/otherfile_in_root b/otherfile_in_root
+  new file mode 100644
+  examine changes to 'otherfile_in_root'? [Ynesfdaq?] n
+  
+  diff --git a/somedir/foo b/somedir/foo
+  new file mode 100644
+  examine changes to 'somedir/foo'? [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +hi
+  record change 2/2 to 'somedir/foo'? [Ynesfdaq?] y
+  
+  abort: $ENOENT$
+  [255]
+
+Let's try that again without the rmdir
+  $ cd $TESTTMP/hgsplit/somedir
+Show that the previous split didn't do anything
+  $ hg log -T '{rev}:{node|short} {desc}\n'
+  1:e26b22a4f0b7 split_me
+  0:7e53273730c0 anchor
+  $ hg status
+  ? split_commands
+Try again
+  $ cat ../split_commands | hg $NO_RM split
+  diff --git a/otherfile_in_root b/otherfile_in_root
+  new file mode 100644
+  examine changes to 'otherfile_in_root'? [Ynesfdaq?] n
+  
+  diff --git a/somedir/foo b/somedir/foo
+  new file mode 100644
+  examine changes to 'somedir/foo'? [Ynesfdaq?] y
+  
+  @@ -0,0 +1,1 @@
+  +hi
+  record change 2/2 to 'somedir/foo'? [Ynesfdaq?] y
+  
+  created new head
+  diff --git a/otherfile_in_root b/otherfile_in_root
+  new file mode 100644
+  examine changes to 'otherfile_in_root'? [Ynesfdaq?] a
+  
+  saved backup bundle to $TESTTMP/hgsplit/.hg/strip-backup/*-split.hg (glob)
+Show that this split did something
+  $ hg log -T '{rev}:{node|short} {desc}\n'
+  2:a440f24fca4f split_me
+  1:c994f20276ab split_me
+  0:7e53273730c0 anchor
+  $ hg status
+  ? split_commands

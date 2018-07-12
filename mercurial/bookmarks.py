@@ -813,7 +813,7 @@ def validdest(repo, old, new):
         return new.node() in obsutil.foreground(repo, [old.node()])
     else:
         # still an independent clause as it is lazier (and therefore faster)
-        return old.descendant(new)
+        return old.isancestorof(new)
 
 def checkformat(repo, mark):
     """return a valid version of a potential bookmark name

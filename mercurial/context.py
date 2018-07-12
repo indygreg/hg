@@ -589,8 +589,8 @@ class changectx(basectx):
                             short(n) for n in sorted(cahs) if n != anc))
         return changectx(self._repo, anc)
 
-    def descendant(self, other):
-        """True if other is descendant of this changeset"""
+    def isancestorof(self, other):
+        """True if this changeset is an ancestor of other"""
         return self._repo.changelog.isancestorrev(self._rev, other._rev)
 
     def walk(self, match):

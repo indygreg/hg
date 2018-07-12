@@ -99,6 +99,17 @@ class doublepipe(object):
             _forwardoutput(self._ui, self._side)
         return r
 
+    def unbufferedread(self, size):
+        r = self._call('unbufferedread', size)
+        if size != 0 and not r:
+            # We've observed a condition that indicates the
+            # stdout closed unexpectedly. Check stderr one
+            # more time and snag anything that's there before
+            # letting anyone know the main part of the pipe
+            # closed prematurely.
+            _forwardoutput(self._ui, self._side)
+        return r
+
     def readline(self):
         return self._call('readline')
 

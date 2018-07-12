@@ -1645,21 +1645,6 @@ class revlog(object):
                 c.append(self.node(r))
         return c
 
-    def isdescendantrev(self, a, b):
-        """True if revision a is a descendant of revision b
-
-        A revision is considered a descendant of itself.
-
-        The implementation of this is trivial but the use of
-        commonancestorsheads is not."""
-        if b == nullrev:
-            return True
-        elif a == b:
-            return True
-        elif a < b:
-            return False
-        return b in self._commonancestorsheads(a, b)
-
     def commonancestorsheads(self, a, b):
         """calculate all the heads of the common ancestors of nodes a and b"""
         a, b = self.rev(a), self.rev(b)
@@ -1684,8 +1669,17 @@ class revlog(object):
     def isancestorrev(self, a, b):
         """return True if revision a is an ancestor of revision b
 
-        A revision is considered an ancestor of itself."""
-        return self.isdescendantrev(b, a)
+        A revision is considered an ancestor of itself.
+
+        The implementation of this is trivial but the use of
+        commonancestorsheads is not."""
+        if a == nullrev:
+            return True
+        elif a == b:
+            return True
+        elif a > b:
+            return False
+        return a in self._commonancestorsheads(a, b)
 
     def ancestor(self, a, b):
         """calculate the "best" common ancestor of nodes a and b"""

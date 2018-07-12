@@ -416,14 +416,14 @@ def _fullcopytracing(repo, c1, c2, base):
     # common ancestor or not without explicitly checking it, it's better to
     # determine that here.
     #
-    # base.descendant(wc) and base.descendant(base) are False, work around that
+    # base.descendant(wc) is False, work around that
     _c1 = c1.p1() if c1.rev() is None else c1
     _c2 = c2.p1() if c2.rev() is None else c2
     # an endpoint is "dirty" if it isn't a descendant of the merge base
     # if we have a dirty endpoint, we need to trigger graft logic, and also
     # keep track of which endpoint is dirty
-    dirtyc1 = not (base == _c1 or base.descendant(_c1))
-    dirtyc2 = not (base == _c2 or base.descendant(_c2))
+    dirtyc1 = not base.descendant(_c1)
+    dirtyc2 = not base.descendant(_c2)
     graft = dirtyc1 or dirtyc2
     tca = base
     if graft:

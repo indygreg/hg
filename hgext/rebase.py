@@ -874,7 +874,7 @@ def _dryrunrebase(ui, repo, opts):
                 needsabort = False
                 if not ui.promptchoice(_(b'apply changes (yn)?'
                                          b'$$ &Yes $$ &No')):
-                    _dorebase(ui, repo, opts, inmemory=False)
+                    return _dorebase(ui, repo, opts, inmemory=False)
             return 1
         else:
             if confirm:

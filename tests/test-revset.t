@@ -1063,6 +1063,12 @@ test common ancestors
   8
   9
 
+test ancestor variants of empty revision
+
+  $ log 'ancestor(none())'
+  $ log 'ancestors(none())'
+  $ log 'commonancestors(none())'
+
 test ancestors with depth limit
 
  (depth=0 selects the node itself)

@@ -632,7 +632,10 @@ def commonancestors(repo, subset, x):
 
     """
     # only wants the heads of the set passed in
-    for r in heads(repo, fullreposet(repo), x, anyorder):
+    h = heads(repo, fullreposet(repo), x, anyorder)
+    if not h:
+        return baseset()
+    for r in h:
         subset &= dagop.revancestors(repo, baseset([r]))
 
     return subset

@@ -369,7 +369,7 @@ Test --confirm option when there are no conflicts:
   $ hg rebase -s 2 -d . --keep --config ui.interactive=True --confirm << EOF
   > n
   > EOF
-  starting rebase...
+  starting in-memory rebase
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
@@ -400,7 +400,7 @@ Test --confirm option when there are no conflicts:
   $ hg rebase -s 2 -d . --keep --config ui.interactive=True --confirm << EOF
   > y
   > EOF
-  starting rebase...
+  starting in-memory rebase
   rebasing 2:177f92b77385 "c"
   rebasing 3:055a42cdd887 "d"
   rebasing 4:e860deea161a "e"
@@ -475,7 +475,7 @@ Test --confirm option when there is a conflict
   $ hg rebase -s 4 -d . --keep --config ui.interactive=True --confirm << EOF
   > n
   > EOF
-  starting rebase...
+  starting in-memory rebase
   rebasing 4:e860deea161a "e"
   merging e
   hit a merge conflict
@@ -516,7 +516,7 @@ Test --confirm option when there is a conflict
   $ hg rebase -s 4 -d . --keep --config ui.interactive=True --confirm << EOF
   > y
   > EOF
-  starting rebase...
+  starting in-memory rebase
   rebasing 4:e860deea161a "e"
   merging e
   hit a merge conflict

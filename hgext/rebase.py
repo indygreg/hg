@@ -854,7 +854,7 @@ def _dryrunrebase(ui, repo, opts):
     rbsrt = rebaseruntime(repo, ui, inmemory=True, opts=opts)
     confirm = opts.get('confirm')
     if confirm:
-        ui.status(_('starting rebase...\n'))
+        ui.status(_('starting in-memory rebase\n'))
     else:
         ui.status(_('starting dry-run rebase; repository will not be '
                     'changed\n'))

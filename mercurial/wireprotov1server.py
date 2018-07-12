@@ -353,7 +353,9 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
     common_anc = cl.ancestors([cl.rev(rev) for rev in common], inclusive=True)
     compformats = clientcompressionsupport(proto)
     for entry in res:
-        if 'COMPRESSION' in entry and entry['COMPRESSION'] not in compformats:
+        comp = entry.get('COMPRESSION')
+        altcomp = util.compengines._bundlenames.get(comp)
+        if comp and comp not in compformats and altcomp not in compformats:
             continue
         # No test yet for VERSION, since V2 is supported by any client
         # that advertises partial pulls

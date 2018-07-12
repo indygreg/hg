@@ -1525,11 +1525,9 @@ destination
   > A
   > EOF
 
-TODO: There doesn't seem to be much reason to fail this rebase. Make it pass?
   $ hg rebase -d D -s B
-  abort: this rebase will cause divergences from: 26805aba1e60
-  (to force the rebase please set experimental.evolution.allowdivergence=True)
-  [255]
+  rebasing 1:112478962961 "B" (B)
+  note: not rebasing 3:26805aba1e60 "C" (C) and its descendants as this would cause divergence
 
   $ cd ..
 

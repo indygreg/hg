@@ -6,7 +6,7 @@ echo 'convert = ' >> $HGRCPATH
 
 glog()
 {
-    hg log -G --template '{rev}@{branch} "{desc|firstline}" files: {files}\n' "$@"
+    hg log -G --template '{rev}@{branch} "{desc|firstline}" files+: [{file_adds}], files-: [{file_dels}], files: [{file_mods}]\n' "$@"
 }
 
 manifest()

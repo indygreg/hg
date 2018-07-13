@@ -39,6 +39,8 @@ test multiple merges at once
   $ bzr merge -q --force ../source-branch2
   $ bzr commit -q -m 'Merged branches' '--commit-time=2009-10-10 08:00:04 +0100'
   $ cd ..
+
+BUG: file-branch2 should not be added in rev 4
   $ hg convert --datesort --config convert.bzr.saverev=False source source-hg
   initializing destination source-hg repository
   scanning source...
@@ -50,17 +52,17 @@ test multiple merges at once
   1 Added brach2 file
   0 Merged branches
   $ glog -R source-hg
-  o    5@source "(octopus merge fixup)" files:
+  o    5@source "(octopus merge fixup)" files+: [], files-: [], files: []
   |\
-  | o    4@source "Merged branches" files: file-branch2
+  | o    4@source "Merged branches" files+: [file-branch1 file-branch2], files-: [], files: [file]
   | |\
-  o---+  3@source-branch2 "Added brach2 file" files: file-branch2
+  o---+  3@source-branch2 "Added brach2 file" files+: [file-branch2], files-: [], files: []
    / /
-  | o  2@source "Added parent file" files: file-parent
+  | o  2@source "Added parent file" files+: [file-parent], files-: [], files: []
   | |
-  o |  1@source-branch1 "Added branch1 file" files: file file-branch1
+  o |  1@source-branch1 "Added branch1 file" files+: [file-branch1], files-: [], files: [file]
   |/
-  o  0@source "Initial add" files: file
+  o  0@source "Initial add" files+: [file], files-: [], files: []
   
   $ manifest source-hg tip
   % manifest of tip

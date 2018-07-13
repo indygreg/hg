@@ -1166,21 +1166,32 @@ class filecacheentry(object):
             entry.refresh()
 
 class filecache(object):
-    '''A property like decorator that tracks files under .hg/ for updates.
+    """A property like decorator that tracks files under .hg/ for updates.
 
-    Records stat info when called in _filecache.
+    On first access, the files defined as arguments are stat()ed and the
+    results cached. The decorated function is called. The results are stashed
+    away in a ``_filecache`` dict on the object whose method is decorated.
 
-    On subsequent calls, compares old stat info with new info, and recreates the
-    object when any of the files changes, updating the new stat info in
-    _filecache.
+    On subsequent access, the cached result is returned.
 
-    Mercurial either atomic renames or appends for files under .hg,
-    so to ensure the cache is reliable we need the filesystem to be able
-    to tell us if a file has been replaced. If it can't, we fallback to
-    recreating the object on every call (essentially the same behavior as
-    propertycache).
+    On external property set operations, stat() calls are performed and the new
+    value is cached.
 
-    '''
+    On property delete operations, cached data is removed.
+
+    When using the property API, cached data is always returned, if available:
+    no stat() is performed to check if the file has changed and if the function
+    needs to be called to reflect file changes.
+
+    Others can muck about with the state of the ``_filecache`` dict. e.g. they
+    can populate an entry before the property's getter is called. In this case,
+    entries in ``_filecache`` will be used during property operations,
+    if available. If the underlying file changes, it is up to external callers
+    to reflect this by e.g. calling ``delattr(obj, attr)`` to remove the cached
+    method result as well as possibly calling ``del obj._filecache[attr]`` to
+    remove the ``filecacheentry``.
+    """
+
     def __init__(self, *paths):
         self.paths = paths
 

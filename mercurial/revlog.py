@@ -2287,7 +2287,7 @@ class revlog(object):
     DELTAREUSEALL = {'always', 'samerevs', 'never', 'fulladd'}
 
     def clone(self, tr, destrevlog, addrevisioncb=None,
-              deltareuse=DELTAREUSESAMEREVS, deltabothparents=None):
+              deltareuse=DELTAREUSESAMEREVS, forcedeltabothparents=None):
         """Copy this revlog to another, possibly with format changes.
 
         The destination revlog will contain the same revisions and nodes.
@@ -2321,9 +2321,9 @@ class revlog(object):
         deltas will be recomputed if the delta's parent isn't a parent of the
         revision.
 
-        In addition to the delta policy, the ``deltabothparents`` argument
-        controls whether to compute deltas against both parents for merges.
-        By default, the current default is used.
+        In addition to the delta policy, the ``forcedeltabothparents``
+        argument controls whether to force compute deltas against both parents
+        for merges. By default, the current default is used.
         """
         if deltareuse not in self.DELTAREUSEALL:
             raise ValueError(_('value for deltareuse invalid: %s') % deltareuse)
@@ -2346,7 +2346,7 @@ class revlog(object):
             elif deltareuse == self.DELTAREUSESAMEREVS:
                 destrevlog._lazydeltabase = False
 
-            destrevlog._deltabothparents = deltabothparents or oldamd
+            destrevlog._deltabothparents = forcedeltabothparents or oldamd
 
             populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
                                                 self.DELTAREUSESAMEREVS)

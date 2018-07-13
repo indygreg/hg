@@ -1011,11 +1011,14 @@ def _dounshelve(ui, repo, *shelved, **opts):
           ('n', 'name', '',
            _('use the given name for the shelved commit'), _('NAME')),
           ('p', 'patch', None,
-           _('show patch')),
+           _('output patches for changes (provide the names of the shelved '
+             'changes as positional arguments)')),
           ('i', 'interactive', None,
            _('interactive mode, only works while creating a shelve')),
           ('', 'stat', None,
-           _('output diffstat-style summary of changes'))] + cmdutil.walkopts,
+           _('output diffstat-style summary of changes (provide the names of '
+             'the shelved changes as positional arguments)')
+           )] + cmdutil.walkopts,
          _('hg shelve [OPTION]... [FILE]...'))
 def shelvecmd(ui, repo, *pats, **opts):
     '''save and set aside changes from the working directory

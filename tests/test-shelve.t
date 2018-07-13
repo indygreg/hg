@@ -68,9 +68,12 @@ shelve has a help message
    -l --list                list current shelves
    -m --message TEXT        use text as shelve message
    -n --name NAME           use the given name for the shelved commit
-   -p --patch               show patch
+   -p --patch               output patches for changes (provide the names of the
+                            shelved changes as positional arguments)
    -i --interactive         interactive mode, only works while creating a shelve
-      --stat                output diffstat-style summary of changes
+      --stat                output diffstat-style summary of changes (provide
+                            the names of the shelved changes as positional
+                            arguments)
    -I --include PATTERN [+] include names matching the given patterns
    -X --exclude PATTERN [+] exclude names matching the given patterns
       --mq                  operate on patch repository

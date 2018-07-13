@@ -497,6 +497,11 @@ store files with special filenames aren't encoded during copy
   copy of old repository backed up at $TESTTMP/store-filenames/.hg/upgradebackup.* (glob)
   the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
 
+fncache is valid after upgrade
+
+  $ hg debugrebuildfncache
+  fncache already up to date
+
   $ cd ..
 
 Check upgrading a large file repository

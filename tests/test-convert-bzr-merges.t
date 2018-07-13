@@ -88,6 +88,20 @@ BUG: file-branch2 should not be added in rev 4
   no changes found
   [1]
 
+  $ glog -R hg2hg
+  o    5@source "(octopus merge fixup)" files+: [], files-: [], files: []
+  |\
+  | o    4@source "Merged branches" files+: [file-branch1 file-branch2], files-: [], files: [file]
+  | |\
+  o---+  3@source-branch2 "Added brach2 file" files+: [file-branch2], files-: [], files: []
+   / /
+  | o  2@source "Added parent file" files+: [file-parent], files-: [], files: []
+  | |
+  o |  1@source-branch1 "Added branch1 file" files+: [file-branch1], files-: [], files: [file]
+  |/
+  o  0@source "Initial add" files+: [file], files-: [], files: []
+  
+
   $ hg -R source-hg log --debug -r tip
   changeset:   5:6bd55e8269392769783345686faf7ff7b3b0215d
   branch:      source

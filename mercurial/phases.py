@@ -665,8 +665,7 @@ def newheads(repo, heads, roots):
     * `heads`: define the first subset
     * `roots`: define the second we subtract from the first"""
     repo = repo.unfiltered()
-    revset = repo.set('heads((%ln + parents(%ln)) - (%ln::%ln))',
-                      heads, roots, roots, heads)
+    revset = repo.set('heads(::%ln - (%ln::%ln))', heads, roots, heads)
     return [c.node() for c in revset]
 
 

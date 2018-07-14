@@ -1478,7 +1478,8 @@ Works with default settings
   $ killdaemons.py
 
 With legacy listkeys over bundle2
-TODO issue 5939: public phase lost on 26805 and f5853
+(issue 5939: public phase was lost on 26805 and f5853 before, due to a bug
+of phase heads computation)
 
   $ hg -R mergetest --config devel.legacy.exchange=phases serve -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid >> $DAEMON_PIDS
@@ -1492,9 +1493,9 @@ TODO issue 5939: public phase lost on 26805 and f5853
   new changesets 426bada5c675:bb94757e651a
   test-debug-phase: new rev 0:  x -> 0
   test-debug-phase: new rev 1:  x -> 0
-  test-debug-phase: new rev 2:  x -> 1
+  test-debug-phase: new rev 2:  x -> 0
   test-debug-phase: new rev 3:  x -> 1
-  test-debug-phase: new rev 4:  x -> 1
+  test-debug-phase: new rev 4:  x -> 0
   test-debug-phase: new rev 5:  x -> 1
   test-debug-phase: new rev 6:  x -> 1
   test-debug-phase: new rev 7:  x -> 1
@@ -1506,11 +1507,11 @@ TODO issue 5939: public phase lost on 26805 and f5853
   |/|
   o |  13b7b draft
   | |
-  | o  f5853 draft
+  | o  f5853 public
   | |
   o |  c67c4 draft
   | |
-  | o  26805 draft
+  | o  26805 public
   |/
   o  11247 public
   |
@@ -1519,7 +1520,8 @@ TODO issue 5939: public phase lost on 26805 and f5853
   $ killdaemons.py
 
 Without bundle2
-TODO issue 5939: public phase lost on 26805 and f5853
+(issue 5939: public phase was lost on 26805 and f5853 before, due to a bug
+of phase heads computation)
 
   $ hg -R mergetest serve -p $HGPORT -d --pid-file=hg.pid
   $ cat hg.pid >> $DAEMON_PIDS
@@ -1533,9 +1535,9 @@ TODO issue 5939: public phase lost on 26805 and f5853
   new changesets 426bada5c675:bb94757e651a
   test-debug-phase: new rev 0:  x -> 0
   test-debug-phase: new rev 1:  x -> 0
-  test-debug-phase: new rev 2:  x -> 1
+  test-debug-phase: new rev 2:  x -> 0
   test-debug-phase: new rev 3:  x -> 1
-  test-debug-phase: new rev 4:  x -> 1
+  test-debug-phase: new rev 4:  x -> 0
   test-debug-phase: new rev 5:  x -> 1
   test-debug-phase: new rev 6:  x -> 1
   test-debug-phase: new rev 7:  x -> 1
@@ -1547,11 +1549,11 @@ TODO issue 5939: public phase lost on 26805 and f5853
   |/|
   o |  13b7b draft
   | |
-  | o  f5853 draft
+  | o  f5853 public
   | |
   o |  c67c4 draft
   | |
-  | o  26805 draft
+  | o  26805 public
   |/
   o  11247 public
   |

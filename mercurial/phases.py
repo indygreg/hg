@@ -665,9 +665,8 @@ def newheads(repo, heads, roots):
     * `heads`: define the first subset
     * `roots`: define the second we subtract from the first"""
     repo = repo.unfiltered()
-    revset = repo.set('heads(::%ln - (%ln::%ln))', heads, roots, heads)
-    return [c.node() for c in revset]
-
+    revs = repo.revs('heads(::%ln - (%ln::%ln))', heads, roots, heads)
+    return pycompat.maplist(repo.changelog.node, revs)
 
 def newcommitphase(ui):
     """helper to get the target phase of new commit

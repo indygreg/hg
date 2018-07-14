@@ -980,9 +980,10 @@ def perffncacheload(ui, repo, **opts):
 def perffncachewrite(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     s = repo.store
-    s.fncache._load()
     lock = repo.lock()
+    s.fncache._load()
     tr = repo.transaction('perffncachewrite')
+    tr.addbackup('fncache')
     def d():
         s.fncache._dirty = True
         s.fncache.write(tr)

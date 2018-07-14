@@ -146,7 +146,11 @@ perfstatus
 #if repofncache
   $ hg perffncacheencode
   $ hg perffncacheload
+  $ hg debugrebuildfncache
+  fncache already up to date
   $ hg perffncachewrite
+  $ hg debugrebuildfncache
+  fncache already up to date
 #endif
   $ hg perfheads
   $ hg perfindex

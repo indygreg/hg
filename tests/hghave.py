@@ -452,8 +452,9 @@ def has_pylint():
 
 @check("clang-format", "clang-format C code formatter")
 def has_clang_format():
-    return matchoutput("clang-format --help",
-                       br"^OVERVIEW: A tool to format C/C\+\+[^ ]+ code.")
+    m = matchoutput('clang-format --version', br'clang-format version (\d)')
+    # style changed somewhere between 4.x and 6.x
+    return m and int(m.group(1)) >= 6
 
 @check("jshint", "JSHint static code analysis tool")
 def has_jshint():

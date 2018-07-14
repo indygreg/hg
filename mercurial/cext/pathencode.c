@@ -474,7 +474,10 @@ static Py_ssize_t basicencode(char *dest, size_t destsize, const char *src,
 	static const uint32_t twobytes[8] = {0, 0, 0x87fffffe};
 
 	static const uint32_t onebyte[8] = {
-	    1, 0x2bff3bfa, 0x68000001, 0x2fffffff,
+	    1,
+	    0x2bff3bfa,
+	    0x68000001,
+	    0x2fffffff,
 	};
 
 	Py_ssize_t destlen = 0;

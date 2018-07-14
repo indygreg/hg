@@ -867,11 +867,6 @@ def _dryrunrebase(ui, repo, opts):
                             leaveunfinished=True)
         except error.InMemoryMergeConflictsError:
             ui.status(_('hit a merge conflict\n'))
-            if confirm:
-                # abort as in-memory merge doesn't support conflict
-                rbsrt._prepareabortorcontinue(isabort=True, backup=False,
-                                              suppwarns=True)
-                needsabort = False
             return 1
         else:
             if confirm:

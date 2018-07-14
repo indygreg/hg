@@ -872,9 +872,6 @@ def _dryrunrebase(ui, repo, opts):
                 rbsrt._prepareabortorcontinue(isabort=True, backup=False,
                                               suppwarns=True)
                 needsabort = False
-                if not ui.promptchoice(_(b'apply changes (yn)?'
-                                         b'$$ &Yes $$ &No')):
-                    return _dorebase(ui, repo, opts, inmemory=False)
             return 1
         else:
             if confirm:

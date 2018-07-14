@@ -472,71 +472,13 @@ Test --confirm option when there is a conflict
   o  0:cb9a9f314b8b test
      a
   
-  $ hg rebase -s 4 -d . --keep --config ui.interactive=True --confirm << EOF
-  > n
-  > EOF
+  $ hg rebase -s 4 -d . --keep --confirm
   starting in-memory rebase
   rebasing 4:e860deea161a "e"
   merging e
   hit a merge conflict
-  apply changes (yn)? n
   [1]
   $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
-  @  9:906d72f66a59 test
-  |  conflict with e
-  |
-  o  8:12cbf031f469 test
-  |  d
-  |
-  o  7:c83b1da5b1ae test
-  |  c
-  |
-  o  6:baf10c5166d4 test
-  |  g
-  |
-  o  5:6343ca3eff20 test
-  |  f
-  |
-  | o  4:e860deea161a test
-  | |  e
-  | |
-  | o  3:055a42cdd887 test
-  | |  d
-  | |
-  | o  2:177f92b77385 test
-  |/   c
-  |
-  o  1:d2ae7f538514 test
-  |  b
-  |
-  o  0:cb9a9f314b8b test
-     a
-  
-
-  $ hg rebase -s 4 -d . --keep --config ui.interactive=True --confirm << EOF
-  > y
-  > EOF
-  starting in-memory rebase
-  rebasing 4:e860deea161a "e"
-  merging e
-  hit a merge conflict
-  apply changes (yn)? y
-  rebasing 4:e860deea161a "e"
-  merging e
-  warning: conflicts while merging e! (edit, then use 'hg resolve --mark')
-  unresolved conflicts (see hg resolve, then hg rebase --continue)
-  [1]
-
-  $ echo e>e
-  $ hg resolve --mark --all
-  (no more unresolved files)
-  continue: hg rebase --continue
-  $ hg rebase --continue
-  rebasing 4:e860deea161a "e"
-  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
-  o  10:9fa3731dd6df test
-  |  e
-  |
   @  9:906d72f66a59 test
   |  conflict with e
   |

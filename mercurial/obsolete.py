@@ -74,6 +74,7 @@ import struct
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     node,
     obsutil,
@@ -526,7 +527,7 @@ class obsstore(object):
     # prec:    nodeid, predecessors changesets
     # succs:   tuple of nodeid, successor changesets (0-N length)
     # flag:    integer, flag field carrying modifier for the markers (see doc)
-    # meta:    binary blob, encoded metadata dictionary
+    # meta:    binary blob in UTF-8, encoded metadata dictionary
     # date:    (float, int) tuple, date of marker creation
     # parents: (tuple of nodeid) or None, parents of predecessors
     #          None is used when no data has been recorded
@@ -950,7 +951,8 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     <relations> must be an iterable of (<old>, (<new>, ...)[,{metadata}])
     tuple. `old` and `news` are changectx. metadata is an optional dictionary
     containing metadata for this marker only. It is merged with the global
-    metadata specified through the `metadata` argument of this function,
+    metadata specified through the `metadata` argument of this function.
+    Any string values in metadata must be UTF-8 bytes.
 
     Trying to obsolete a public changeset will raise an exception.
 
@@ -964,11 +966,8 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     if metadata is None:
         metadata = {}
     if 'user' not in metadata:
-        develuser = repo.ui.config('devel', 'user.obsmarker')
-        if develuser:
-            metadata['user'] = develuser
-        else:
-            metadata['user'] = repo.ui.username()
+        luser = repo.ui.config('devel', 'user.obsmarker') or repo.ui.username()
+        metadata['user'] = encoding.fromlocal(luser)
 
     # Operation metadata handling
     useoperation = repo.ui.configbool('experimental',

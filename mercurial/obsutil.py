@@ -12,6 +12,7 @@ import re
 from .i18n import _
 from . import (
     diffutil,
+    encoding,
     node as nodemod,
     phases,
     util,
@@ -822,7 +823,8 @@ def markersusers(markers):
     """ Returns a sorted list of markers users without duplicates
     """
     markersmeta = [dict(m[3]) for m in markers]
-    users = set(meta['user'] for meta in markersmeta if meta.get('user'))
+    users = set(encoding.tolocal(meta['user']) for meta in markersmeta
+                if meta.get('user'))
 
     return sorted(users)
 

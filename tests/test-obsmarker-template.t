@@ -2581,3 +2581,61 @@ Check other fatelog implementations
      date:        Thu Jan 01 00:00:00 1970 +0000
      summary:     ROOT
   
+
+Test metadata encoding (issue5754)
+==================================
+
+  $ hg init $TESTTMP/metadata-encoding
+  $ cd $TESTTMP/metadata-encoding
+  $ cat <<'EOF' >> .hg/hgrc
+  > [extensions]
+  > amend =
+  > EOF
+  $ $PYTHON <<'EOF'
+  > with open('test1', 'wb') as f:
+  >    f.write(b't\xe8st1') and None
+  > with open('test2', 'wb') as f:
+  >    f.write(b't\xe8st2') and None
+  > EOF
+  $ mkcommit ROOT
+  $ HGENCODING=latin-1 HGUSER="`cat test1`" mkcommit A0
+  $ echo 42 >> A0
+  $ hg amend -m "A1" --note "`cat test2`"
+  $ HGENCODING=latin-1 hg amend -m "A2" \
+  > --config devel.user.obsmarker="`cat test2`"
+  $ mkcommit B0
+  $ HGENCODING=latin-1 hg debugobsolete -u "`cat test2`" "`getid 'desc(B0)'`"
+  obsoleted 1 changesets
+
+metadata should be stored in UTF-8, and debugobsolete doesn't decode it to
+local encoding since the command is supposed to show unmodified content:
+
+  $ HGENCODING=latin-1 hg debugobsolete
+  5f66a482f0bb2fcaccfc215554ad5eb9f40b50f5 718c0d00cee1429bdb73064e0d88908c601507a8 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '9', 'note': 't\xc3\xa8st2', 'operation': 'amend', 'user': 't\xc3\xa8st1'}
+  718c0d00cee1429bdb73064e0d88908c601507a8 1132562159b35bb27e1d6b80c80ee94a1659a4da 0 (Thu Jan 01 00:00:00 1970 +0000) {'ef1': '1', 'operation': 'amend', 'user': 't\xc3\xa8st2'}
+  e1724525bc3bec4472d7915a02811b938004a7a2 0 (Thu Jan 01 00:00:00 1970 +0000) {'user': 't\xc3\xa8st2'}
+
+metadata should be converted back to local encoding when displaying:
+
+  $ HGENCODING=latin-1 hg fatelog --hidden
+  @  e1724525bc3b
+  |    Obsfate: pruned by t\xe8st2 (at 1970-01-01 00:00 +0000); (esc)
+  o  1132562159b3
+  |
+  | x  718c0d00cee1
+  |/     Obsfate: rewritten using amend as 3:1132562159b3 by t\xe8st2 (at 1970-01-01 00:00 +0000); (esc)
+  | x  5f66a482f0bb
+  |/     Obsfate: rewritten using amend as 2:718c0d00cee1 by t\xe8st1 (at 1970-01-01 00:00 +0000); (esc)
+  o  ea207398892e
+  
+  $ HGENCODING=utf-8 hg fatelog --hidden
+  @  e1724525bc3b
+  |    Obsfate: pruned by t\xc3\xa8st2 (at 1970-01-01 00:00 +0000); (esc)
+  o  1132562159b3
+  |
+  | x  718c0d00cee1
+  |/     Obsfate: rewritten using amend as 3:1132562159b3 by t\xc3\xa8st2 (at 1970-01-01 00:00 +0000); (esc)
+  | x  5f66a482f0bb
+  |/     Obsfate: rewritten using amend as 2:718c0d00cee1 by t\xc3\xa8st1 (at 1970-01-01 00:00 +0000); (esc)
+  o  ea207398892e
+  

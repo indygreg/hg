@@ -1619,7 +1619,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
         if opts['rev']:
             raise error.Abort('cannot select revision when creating marker')
         metadata = {}
-        metadata['user'] = opts['user'] or ui.username()
+        metadata['user'] = encoding.fromlocal(opts['user'] or ui.username())
         succs = tuple(parsenodeid(succ) for succ in successors)
         l = repo.lock()
         try:

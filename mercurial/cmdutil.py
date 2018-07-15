@@ -2555,7 +2555,7 @@ def amend(ui, repo, old, extra, pats, opts):
         mapping = {old.node(): (newid,)}
         obsmetadata = None
         if opts.get('note'):
-            obsmetadata = {'note': opts['note']}
+            obsmetadata = {'note': encoding.fromlocal(opts['note'])}
         scmutil.cleanupnodes(repo, mapping, 'amend', metadata=obsmetadata,
                              fixphase=True, targetphase=commitphase)
 

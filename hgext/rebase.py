@@ -34,7 +34,6 @@ from mercurial import (
     error,
     extensions,
     hg,
-    lock,
     merge as mergemod,
     mergeutil,
     obsolete,
@@ -51,8 +50,6 @@ from mercurial import (
     state as statemod,
     util,
 )
-
-release = lock.release
 
 # The following constants are used throughout the rebase module. The ordering of
 # their values must be maintained.

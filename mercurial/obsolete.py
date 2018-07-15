@@ -80,6 +80,7 @@ from . import (
     obsutil,
     phases,
     policy,
+    pycompat,
     util,
 )
 from .utils import dateutil
@@ -600,6 +601,16 @@ class obsstore(object):
             raise ValueError(_('in-marker cycle with %s') % node.hex(prec))
 
         metadata = tuple(sorted(metadata.iteritems()))
+        for k, v in metadata:
+            try:
+                # might be better to reject non-ASCII keys
+                k.decode('utf-8')
+                v.decode('utf-8')
+            except UnicodeDecodeError:
+                raise error.ProgrammingError(
+                    'obsstore metadata must be valid UTF-8 sequence '
+                    '(key = %r, value = %r)'
+                    % (pycompat.bytestr(k), pycompat.bytestr(v)))
 
         marker = (bytes(prec), tuple(succs), int(flag), metadata, date, parents)
         return bool(self.add(transaction, [marker]))

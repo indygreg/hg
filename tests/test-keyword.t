@@ -183,7 +183,6 @@ Commit with several checks
   overwriting a expanding keywords
   updating the branch cache
   committed changeset 1:ef63ca68695bc9495032c6fda1350c71e6d256e9
-  converting hook "commit.test" to native (windows !)
   running hook commit.test: cp a hooktest
   $ hg status
   ? hooktest

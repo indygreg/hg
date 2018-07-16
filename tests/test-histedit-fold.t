@@ -478,7 +478,8 @@ This is an excuse to test hook with histedit temporary commit (issue4422)
   1:199b6bb90248 b
   0:6c795aa153cb a
 
-  $ hg histedit 6c795aa153cb --config hooks.commit='echo commit $HG_NODE' --commands - 2>&1 << EOF | fixbundle
+  $ hg histedit 6c795aa153cb --config hooks.commit='echo commit $HG_NODE' --config hooks.tonative.commit=True \
+  >     --commands - 2>&1 << EOF | fixbundle
   > pick 199b6bb90248 b
   > fold a1a953ffb4b0 c
   > pick 6c795aa153cb a
@@ -494,8 +495,8 @@ Test unix -> windows style variable substitution in external hooks.
   $ cat > $TESTTMP/tmp.hgrc <<'EOF'
   > [hooks]
   > pre-add = echo no variables
-  > tonative.pre-add = False
   > post-add = echo ran $HG_ARGS, literal \$non-var, 'also $non-var', $HG_RESULT
+  > tonative.post-add = True
   > EOF
 
 TODO: Windows should output double quotes around "also $non-var"

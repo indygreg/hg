@@ -194,7 +194,6 @@ delete a remote bookmark
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
   bundle2-input-bundle: 3 parts total
-  converting hook "txnclose-bookmark.test" to native (windows !)
   running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
   test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
   bundle2-output-bundle: "HG20", 1 parts total
@@ -309,7 +308,6 @@ delete a remote bookmark
   bundle2-input: part header size: 0
   bundle2-input: end of bundle2 stream
   bundle2-input-bundle: 3 parts total
-  converting hook "txnclose-bookmark.test" to native (windows !)
   running hook txnclose-bookmark.test: sh $TESTTMP/hook.sh
   test-hook-bookmark: W:  0000000000000000000000000000000000000000 -> 
   bundle2-output-bundle: "HG20", 0 parts total

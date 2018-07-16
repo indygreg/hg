@@ -139,7 +139,7 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
             v = stringutil.pprint(v)
         env['HG_' + k.upper()] = v
 
-    if ui.configbool('hooks', 'tonative.%s' % name, pycompat.iswindows):
+    if ui.configbool('hooks', 'tonative.%s' % name, False):
         ui.note(_('converting hook "%s" to native\n') % name)
         cmd = procutil.shelltonative(cmd, env)
 

@@ -1214,7 +1214,7 @@ class ui(object):
                 "Feature %s does not handle all default interfaces" %
                 feature)
 
-        if self.plain():
+        if self.plain() or encoding.environ.get('TERM') == 'dumb':
             return "text"
 
         # Default interface for all the features

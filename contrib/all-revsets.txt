@@ -137,4 +137,4 @@ draft()
 secret()
 
 # test finding common ancestors
-heads(commonancestors(46879 + ae7f))
+heads(commonancestors(last(head(), 2)))

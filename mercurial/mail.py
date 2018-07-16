@@ -82,6 +82,15 @@ class SMTPS(smtplib.SMTP):
         self.file = smtplib.SSLFakeFile(new_socket)
         return new_socket
 
+def _pyhastls():
+    """Returns true iff Python has TLS support, false otherwise."""
+    try:
+        import ssl
+        getattr(ssl, 'HAS_TLS', False)
+        return True
+    except ImportError:
+        return False
+
 def _smtp(ui):
     '''build an smtp connection and return a function to send mail'''
     local_hostname = ui.config('smtp', 'local_hostname')
@@ -89,7 +98,7 @@ def _smtp(ui):
     # backward compatible: when tls = true, we use starttls.
     starttls = tls == 'starttls' or stringutil.parsebool(tls)
     smtps = tls == 'smtps'
-    if (starttls or smtps) and not util.safehasattr(socket, 'ssl'):
+    if (starttls or smtps) and not _pyhastls():
         raise error.Abort(_("can't use TLS: Python SSL support not installed"))
     mailhost = ui.config('smtp', 'host')
     if not mailhost:

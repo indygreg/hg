@@ -499,16 +499,15 @@ Test unix -> windows style variable substitution in external hooks.
   > tonative.post-add = True
   > EOF
 
-TODO: Windows should output double quotes around "also $non-var"
   $ echo "foo" > amended.txt
   $ HGRCPATH=$TESTTMP/tmp.hgrc hg add -v amended.txt
   running hook pre-add: echo no variables
   no variables
   adding amended.txt
   converting hook "post-add" to native (windows !)
-  running hook post-add: echo ran %HG_ARGS%, literal $non-var, 'also $non-var', %HG_RESULT% (windows !)
+  running hook post-add: echo ran %HG_ARGS%, literal $non-var, "also $non-var", %HG_RESULT% (windows !)
   running hook post-add: echo ran $HG_ARGS, literal \$non-var, 'also $non-var', $HG_RESULT (no-windows !)
-  ran add -v amended.txt, literal $non-var, 'also $non-var', 0 (windows !)
+  ran add -v amended.txt, literal $non-var, "also $non-var", 0 (windows !)
   ran add -v amended.txt, literal $non-var, also $non-var, 0 (no-windows !)
   $ hg ci -q --config extensions.largefiles= --amend -I amended.txt
   The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)

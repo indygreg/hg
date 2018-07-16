@@ -268,7 +268,7 @@ def shelltocmdexe(path, env):
     'cmd %var1% %var2% %var3% $missing ${missing} %missing%'
     >>> # Single quote prevents expansion, as does \$ escaping
     >>> shelltocmdexe(b"cmd '$var1 ${var2} %var3%' \$var1 \${var2} \\", e)
-    "cmd '$var1 ${var2} %var3%' $var1 ${var2} \\"
+    'cmd "$var1 ${var2} %var3%" $var1 ${var2} \\'
     >>> # $$ is not special. %% is not special either, but can be the end and
     >>> # start of consecutive variables
     >>> shelltocmdexe(b"cmd $$ %% %var1%%var2%", e)
@@ -277,7 +277,7 @@ def shelltocmdexe(path, env):
     >>> shelltocmdexe(b"$var1 %var1%", {b'var1': b'%var2%', b'var2': b'boom'})
     '%var1% %var1%'
     """
-    if b'$' not in path:
+    if not any(c in path for c in b"$'"):
         return path
 
     varchars = pycompat.sysbytes(string.ascii_letters + string.digits) + b'_-'
@@ -292,7 +292,7 @@ def shelltocmdexe(path, env):
             pathlen = len(path)
             try:
                 index = path.index(b'\'')
-                res += b'\'' + path[:index + 1]
+                res += b'"' + path[:index] + b'"'
             except ValueError:
                 res += c + path
                 index = pathlen - 1

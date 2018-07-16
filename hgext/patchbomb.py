@@ -780,6 +780,16 @@ def email(ui, repo, *revs, **opts):
             m['Bcc'] = ', '.join(bcc)
         if replyto:
             m['Reply-To'] = ', '.join(replyto)
+        # Fix up all headers to be native strings.
+        # TODO(durin42): this should probably be cleaned up above in the future.
+        if pycompat.ispy3:
+            for hdr, val in list(m.items()):
+                if isinstance(hdr, bytes):
+                    del m[hdr]
+                    hdr = pycompat.strurl(hdr)
+                if isinstance(val, bytes):
+                    val = pycompat.strurl(val)
+                m[hdr] = val
         if opts.get('test'):
             ui.status(_('displaying '), subj, ' ...\n')
             ui.pager('email')

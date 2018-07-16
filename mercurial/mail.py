@@ -252,10 +252,27 @@ def _encode(ui, s, charsets):
     order. Tries both encoding and fallbackencoding for input. Only as
     last resort send as is in fake ascii.
     Caveat: Do not use for mail parts containing patches!'''
+    sendcharsets = charsets or _charsets(ui)
+    if not isinstance(s, bytes):
+        # We have unicode data, which we need to try and encode to
+        # some reasonable-ish encoding. Try the encodings the user
+        # wants, and fall back to garbage-in-ascii.
+        for ocs in sendcharsets:
+            try:
+                return s.encode(pycompat.sysstr(ocs)), ocs
+            except UnicodeEncodeError:
+                pass
+            except LookupError:
+                ui.warn(_('ignoring invalid sendcharset: %s\n') % ocs)
+        else:
+            # Everything failed, ascii-armor what we've got and send it.
+            return s.encode('ascii', 'backslashreplace')
+    # We have a bytes of unknown encoding. We'll try and guess a valid
+    # encoding, falling back to pretending we had ascii even though we
+    # know that's wrong.
     try:
         s.decode('ascii')
     except UnicodeDecodeError:
-        sendcharsets = charsets or _charsets(ui)
         for ics in (encoding.encoding, encoding.fallbackencoding):
             try:
                 u = s.decode(ics)
@@ -263,7 +280,7 @@ def _encode(ui, s, charsets):
                 continue
             for ocs in sendcharsets:
                 try:
-                    return u.encode(ocs), ocs
+                    return u.encode(pycompat.sysstr(ocs)), ocs
                 except UnicodeEncodeError:
                     pass
                 except LookupError:

@@ -1057,8 +1057,33 @@ shelve --patch and shelve --stat should work with valid shelfnames
   $ hg shelve --patch default nonexistentshelf
   abort: cannot find shelf nonexistentshelf
   [255]
+
+when the user asks for a patch, we assume they want the most recent shelve if
+they don't provide a shelve name
+
   $ hg shelve --patch
-  abort: --patch expects at least one shelf
+  default-01      (*)* changes to: create conflict (glob)
+  
+  diff --git a/shelf-patch-b b/shelf-patch-b
+  new file mode 100644
+  --- /dev/null
+  +++ b/shelf-patch-b
+  @@ -0,0 +1,1 @@
+  +patch b
+
+  $ cd ..
+
+you shouldn't be able to ask for the patch/stats of the most recent shelve if
+there are no shelves
+
+  $ hg init noshelves
+  $ cd noshelves
+
+  $ hg shelve --patch
+  abort: there are no shelves to show
+  [255]
+  $ hg shelve --stat
+  abort: there are no shelves to show
   [255]
 
   $ cd ..

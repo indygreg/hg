@@ -594,10 +594,15 @@ def listcmd(ui, repo, pats, opts):
                 for chunk, label in patch.diffstatui(difflines, width=width):
                     ui.write(chunk, label=label)
 
-def patchcmds(ui, repo, pats, opts, subcommand):
+def patchcmds(ui, repo, pats, opts):
     """subcommand that displays shelves"""
     if len(pats) == 0:
-        raise error.Abort(_("--%s expects at least one shelf") % subcommand)
+        shelves = listshelves(repo)
+        if not shelves:
+            raise error.Abort(_("there are no shelves to show"))
+        mtime, name = shelves[0]
+        sname = util.split(name)[1]
+        pats = [sname]
 
     for shelfname in pats:
         if not shelvedfile(repo, shelfname, patchextension).exists():
@@ -1082,10 +1087,8 @@ def shelvecmd(ui, repo, *pats, **opts):
         return deletecmd(ui, repo, pats)
     elif checkopt('list'):
         return listcmd(ui, repo, pats, opts)
-    elif checkopt('patch'):
-        return patchcmds(ui, repo, pats, opts, subcommand='patch')
-    elif checkopt('stat'):
-        return patchcmds(ui, repo, pats, opts, subcommand='stat')
+    elif checkopt('patch') or checkopt('stat'):
+        return patchcmds(ui, repo, pats, opts)
     else:
         return createcmd(ui, repo, pats, opts)
 

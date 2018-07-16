@@ -818,6 +818,8 @@ def email(ui, repo, *revs, **opts):
             generator = emailgen.Generator(_bytesgenerator(fp),
                                            mangle_from_=False)
             generator.flatten(m, 0)
-            sendmail(sender_addr, to + bcc + cc, fp.getvalue())
+            alldests = to + bcc + cc
+            alldests = [encoding.strfromlocal(d) for d in alldests]
+            sendmail(sender_addr, alldests, fp.getvalue())
 
     progress.complete()

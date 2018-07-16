@@ -1666,6 +1666,11 @@ class revlog(object):
         a, b = self.rev(a), self.rev(b)
         return self.isancestorrev(a, b)
 
+    def descendant(self, a, b):
+        msg = (b'revlog.descendant is deprecated, use revlog.isancestorrev')
+        self._repo.ui.deprecwarn(msg, b'4.7')
+        return self.isancestorrev(a, b)
+
     def isancestorrev(self, a, b):
         """return True if revision a is an ancestor of revision b
 

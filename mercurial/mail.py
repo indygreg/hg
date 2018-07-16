@@ -79,7 +79,7 @@ class SMTPS(smtplib.SMTP):
                                         self.keyfile, self.certfile,
                                         ui=self._ui,
                                         serverhostname=self._host)
-        self.file = smtplib.SSLFakeFile(new_socket)
+        self.file = new_socket.makefile(r'rb')
         return new_socket
 
 def _pyhastls():

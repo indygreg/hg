@@ -892,9 +892,11 @@ be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
 .. container:: windows
 
   Some basic Unix syntax can be enabled for portability, including ``$VAR``
-  and ``${VAR}`` style variables.  To use a literal ``$``, it must be
-  escaped with a back slash or inside of a strong quote.  Strong quotes
-  will be replaced by double quotes after processing.
+  and ``${VAR}`` style variables.  A ``~`` followed by ``\`` or ``/`` will
+  be expanded to ``%USERPROFILE%`` to simulate a subset of tilde expansion
+  on Unix.  To use a literal ``$`` or ``~``, it must be escaped with a back
+  slash or inside of a strong quote.  Strong quotes will be replaced by
+  double quotes after processing.
 
   This feature is enabled by adding a prefix of ``tonative.`` to the hook
   name on a new line, and setting it to ``True``.  For example::

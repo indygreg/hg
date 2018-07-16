@@ -276,8 +276,11 @@ def shelltocmdexe(path, env):
     >>> # No double substitution
     >>> shelltocmdexe(b"$var1 %var1%", {b'var1': b'%var2%', b'var2': b'boom'})
     '%var1% %var1%'
+    >>> # Tilde expansion
+    >>> shelltocmdexe(b"~/dir ~\dir2 ~tmpfile \~/", {})
+    '%USERPROFILE%/dir %USERPROFILE%\\dir2 ~tmpfile ~/'
     """
-    if not any(c in path for c in b"$'"):
+    if not any(c in path for c in b"$'~"):
         return path
 
     varchars = pycompat.sysbytes(string.ascii_letters + string.digits) + b'_-'
@@ -344,9 +347,13 @@ def shelltocmdexe(path, env):
 
                 if c != '':
                     index -= 1
-        elif c == b'\\' and index + 1 < pathlen and path[index + 1] == b'$':
-            # Skip '\', but only if it is escaping $
-            res += b'$'
+        elif (c == b'~' and index + 1 < pathlen
+              and path[index + 1] in (b'\\', b'/')):
+            res += "%USERPROFILE%"
+        elif (c == b'\\' and index + 1 < pathlen
+              and path[index + 1] in (b'$', b'~')):
+            # Skip '\', but only if it is escaping $ or ~
+            res += path[index + 1]
             index += 1
         else:
             res += c

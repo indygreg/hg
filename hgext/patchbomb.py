@@ -139,6 +139,11 @@ configitem('patchbomb', 'to',
     default=None,
 )
 
+if pycompat.ispy3:
+    _bytesgenerator = emailgen.BytesGenerator
+else:
+    _bytesgenerator = lambda f: f
+
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
 # be specifying the version(s) of Mercurial they are tested with, or
@@ -793,7 +798,8 @@ def email(ui, repo, *revs, **opts):
         if opts.get('test'):
             ui.status(_('displaying '), subj, ' ...\n')
             ui.pager('email')
-            generator = emailgen.Generator(ui, mangle_from_=False)
+            generator = emailgen.Generator(_bytesgenerator(ui),
+                                           mangle_from_=False)
             try:
                 generator.flatten(m, 0)
                 ui.write('\n')
@@ -809,7 +815,8 @@ def email(ui, repo, *revs, **opts):
                 # Exim does not remove the Bcc field
                 del m['Bcc']
             fp = stringio()
-            generator = emailgen.Generator(fp, mangle_from_=False)
+            generator = emailgen.Generator(_bytesgenerator(fp),
+                                           mangle_from_=False)
             generator.flatten(m, 0)
             sendmail(sender_addr, to + bcc + cc, fp.getvalue())
 

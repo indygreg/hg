@@ -46,3 +46,4 @@ parents(20000)
 (20000::) - (20000)
 # The one below is used by rebase
 (children(ancestor(tip~5, tip)) and ::(tip~5))::
+heads(commonancestors(last(head(), 2)))

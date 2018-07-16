@@ -138,3 +138,4 @@ secret()
 
 # test finding common ancestors
 heads(commonancestors(last(head(), 2)))
+heads(commonancestors(head()))

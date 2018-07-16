@@ -140,8 +140,10 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
         env['HG_' + k.upper()] = v
 
     if ui.configbool('hooks', 'tonative.%s' % name, False):
-        ui.note(_('converting hook "%s" to native\n') % name)
+        oldcmd = cmd
         cmd = procutil.shelltonative(cmd, env)
+        if cmd != oldcmd:
+            ui.note(_('converting hook "%s" to native\n') % name)
 
     ui.note(_("running hook %s: %s\n") % (name, cmd))
 

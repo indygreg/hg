@@ -589,6 +589,12 @@ class changectx(basectx):
                             short(n) for n in sorted(cahs) if n != anc))
         return changectx(self._repo, anc)
 
+    def descendant(self, other):
+        msg = (b'ctx.descendant(other) is deprecated, '
+               'use ctx.isancestorof(other)')
+        self._repo.ui.deprecwarn(msg, b'4.7')
+        return self.isancestorof(other)
+
     def isancestorof(self, other):
         """True if this changeset is an ancestor of other"""
         return self._repo.changelog.isancestorrev(self._rev, other._rev)

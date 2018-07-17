@@ -62,16 +62,16 @@ def _numworkers(ui):
     return min(max(countcpus(), 4), 32)
 
 if pycompat.isposix or pycompat.iswindows:
-    _startupcost = 0.01
+    _STARTUP_COST = 0.01
 else:
-    _startupcost = 1e30
+    _STARTUP_COST = 1e30
 
 def worthwhile(ui, costperop, nops):
     '''try to determine whether the benefit of multiple processes can
     outweigh the cost of starting them'''
     linear = costperop * nops
     workers = _numworkers(ui)
-    benefit = linear - (_startupcost * workers + linear / workers)
+    benefit = linear - (_STARTUP_COST * workers + linear / workers)
     return benefit >= 0.15
 
 def worker(ui, costperarg, func, staticargs, args):

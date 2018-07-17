@@ -15,6 +15,7 @@ Enable obsolete
   > [extensions]
   > rebase=
   > drawdag=$TESTDIR/drawdag.py
+  > strip=
   > EOF
 
 Setup rebase canonical repo
@@ -1787,4 +1788,218 @@ Also test --continue for the above case
   o  2:b18e25de2cf5 D
   |
   o  0:426bada5c675 A
+  
+====================
+Test --stop option |
+====================
+  $ cd ..
+  $ hg init rbstop
+  $ cd rbstop
+  $ echo a>a
+  $ hg ci -Aqma
+  $ echo b>b
+  $ hg ci -Aqmb
+  $ echo c>c
+  $ hg ci -Aqmc
+  $ echo d>d
+  $ hg ci -Aqmd
+  $ hg up 0 -q
+  $ echo f>f
+  $ hg ci -Aqmf
+  $ echo D>d
+  $ hg ci -Aqm "conflict with d"
+  $ hg up 3 -q
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 1 -d 5
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  1 new orphan changesets
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  7:7fffad344617 test
+  |  c
+  |
+  o  6:b15528633407 test
+  |  b
+  |
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | x  2:177f92b77385 test
+  | |  c
+  | |
+  | x  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Test it aborts if unstable csets is not allowed:
+===============================================
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution.allowunstable=False
+  > EOF
+
+  $ hg strip 6 --no-backup -q
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 1 -d 5
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  abort: cannot remove original changesets with unrebased descendants
+  (either enable obsmarkers to allow unstable revisions or use --keep to keep original changesets)
+  [255]
+  $ hg rebase --abort
+  saved backup bundle to $TESTTMP/rbstop/.hg/strip-backup/b15528633407-6eb72b6f-backup.hg
+  rebase aborted
+
+Test --stop when --keep is passed:
+==================================
+  $ hg rebase -s 1 -d 5 --keep
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  7:7fffad344617 test
+  |  c
+  |
+  o  6:b15528633407 test
+  |  b
+  |
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+Test --stop aborts when --collapse was passed:
+=============================================
+  $ cat >> $HGRCPATH << EOF
+  > [experimental]
+  > evolution.allowunstable=True
+  > EOF
+
+  $ hg strip 6
+  saved backup bundle to $TESTTMP/rbstop/.hg/strip-backup/b15528633407-6eb72b6f-backup.hg
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
+  
+  $ hg rebase -s 1 -d 5 --collapse -m "collapsed b c d"
+  rebasing 1:d2ae7f538514 "b"
+  rebasing 2:177f92b77385 "c"
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop
+  abort: cannot stop in --collapse session
+  [255]
+  $ hg rebase --abort
+  rebase aborted
+  $ hg diff
+  $ hg log -G --template "{rev}:{short(node)} {person(author)}\n{firstline(desc)} {topic}\n\n"
+  o  5:00bfc9898aeb test
+  |  conflict with d
+  |
+  o  4:dafd40200f93 test
+  |  f
+  |
+  | @  3:055a42cdd887 test
+  | |  d
+  | |
+  | o  2:177f92b77385 test
+  | |  c
+  | |
+  | o  1:d2ae7f538514 test
+  |/   b
+  |
+  o  0:cb9a9f314b8b test
+     a
   

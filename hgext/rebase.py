@@ -673,6 +673,7 @@ class rebaseruntime(object):
     ('D', 'detach', False, _('(DEPRECATED)')),
     ('i', 'interactive', False, _('(DEPRECATED)')),
     ('t', 'tool', '', _('specify merge tool')),
+    ('', 'stop', False, _('stop interrupted rebase')),
     ('c', 'continue', False, _('continue an interrupted rebase')),
     ('a', 'abort', False, _('abort an interrupted rebase')),
     ('', 'auto-orphans', '', _('automatically rebase orphan revisions '
@@ -803,6 +804,7 @@ def rebase(ui, repo, **opts):
     opts = pycompat.byteskwargs(opts)
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
     dryrun = opts.get('dry_run')
+    stop = opts.get('stop')
     if dryrun:
         if opts.get('abort'):
             raise error.Abort(_('cannot specify both --dry-run and --abort'))
@@ -835,6 +837,27 @@ def rebase(ui, repo, **opts):
 
     if dryrun:
         return _dryrunrebase(ui, repo, opts)
+    elif stop:
+        rbsrt = rebaseruntime(repo, ui)
+        rbsrt.restorestatus()
+
+        #todo: raise error for conflicting options
+        if rbsrt.collapsef:
+            raise error.Abort(_("cannot stop in --collapse session"))
+        allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)
+        if not (rbsrt.keepf or allowunstable):
+            raise error.Abort(_("cannot remove original changesets with"
+                                " unrebased descendants"),
+                hint=_('either enable obsmarkers to allow unstable '
+                       'revisions or use --keep to keep original '
+                       'changesets'))
+        with repo.wlock(), repo.lock():
+            if needupdate(repo, rbsrt.state):
+                # update to the current working revision
+                # to clear interrupted merge
+                hg.updaterepo(repo, rbsrt.originalwd, overwrite=True)
+            rbsrt._finishrebase()
+            return 0
     elif inmemory:
         try:
             # in-memory merge doesn't support conflicts, so if we hit any, abort

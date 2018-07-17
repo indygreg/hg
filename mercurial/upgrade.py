@@ -259,6 +259,28 @@ class generaldelta(requirementformatvariant):
                        'faster')
 
 @registerformatvariant
+class sparserevlog(requirementformatvariant):
+    name = 'sparserevlog'
+
+    _requirement = localrepo.SPARSEREVLOG_REQUIREMENT
+
+    default = False
+
+    description = _('in order to limit disk reading and memory usage on older '
+                    'version, the span of a delta chain from its root to its '
+                    'end is limited, whatever the relevant data in this span. '
+                    'This can severly limit Mercurial ability to build good '
+                    'chain of delta resulting is much more storage space being '
+                    'taken and limit reusability of on disk delta during '
+                    'exchange.'
+                   )
+
+    upgrademessage = _('Revlog supports delta chain with more unused data '
+                       'between payload. These gaps will be skipped at read '
+                       'time. This allows for better delta chains, making a '
+                       'better compression and faster exchange with server.')
+
+@registerformatvariant
 class removecldeltachain(formatvariant):
     name = 'plain-cl-delta'
 

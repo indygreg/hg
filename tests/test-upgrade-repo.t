@@ -56,6 +56,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes
   dotencode:      yes
   generaldelta:   yes
+  sparserevlog:    no
   plain-cl-delta: yes
   compression:    zlib
   $ hg debugformat --verbose
@@ -63,6 +64,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes    yes     yes
   dotencode:      yes    yes     yes
   generaldelta:   yes    yes     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegfncache=no
@@ -70,6 +72,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes    yes     yes
   dotencode:      yes    yes     yes
   generaldelta:   yes    yes     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegfncache=no --color=debug
@@ -77,6 +80,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.uptodate|fncache:       ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|dotencode:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:  ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   $ hg debugformat -Tjson
@@ -100,6 +104,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "repo": true
    },
    {
+    "config": false,
+    "default": false,
+    "name": "sparserevlog",
+    "repo": false
+   },
+   {
     "config": true,
     "default": true,
     "name": "plain-cl-delta",
@@ -118,6 +128,9 @@ An upgrade of a repository created with recommended settings only suggests optim
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   additional optimizations are available by specifying "--optimize <name>":
   
@@ -142,6 +155,9 @@ An upgrade of a repository created with recommended settings only suggests optim
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   redeltaparent
      deltas within internal storage will choose a new base revision if needed
@@ -170,6 +186,7 @@ Various sub-optimal detections work
   fncache:         no
   dotencode:       no
   generaldelta:    no
+  sparserevlog:    no
   plain-cl-delta: yes
   compression:    zlib
   $ hg debugformat --verbose
@@ -177,6 +194,7 @@ Various sub-optimal detections work
   fncache:         no    yes     yes
   dotencode:       no    yes     yes
   generaldelta:    no    yes     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegeneraldelta=no
@@ -184,6 +202,7 @@ Various sub-optimal detections work
   fncache:         no    yes     yes
   dotencode:       no    yes     yes
   generaldelta:    no     no     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegeneraldelta=no --color=debug
@@ -191,6 +210,7 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchconfig|fncache:       ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchconfig|dotencode:     ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|generaldelta:  ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   $ hg debugupgraderepo
@@ -220,6 +240,9 @@ Various sub-optimal detections work
   
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   additional optimizations are available by specifying "--optimize <name>":
   
@@ -263,6 +286,9 @@ Various sub-optimal detections work
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
   
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
   additional optimizations are available by specifying "--optimize <name>":
   
   redeltaparent
@@ -288,6 +314,9 @@ Upgrading a repository that is already modern essentially no-ops
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   beginning upgrade...
   repository locked and read-only
@@ -325,6 +354,9 @@ Upgrading a repository to generaldelta works
   
   generaldelta
      repository storage will be able to create optimal deltas; new repository data will be smaller and read times should decrease; interacting with other repositories using this storage model should require less network and CPU resources, making "hg push" and "hg pull" faster
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   beginning upgrade...
   repository locked and read-only
@@ -423,6 +455,9 @@ store files with special filenames aren't encoded during copy
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
   
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/store-filenames/.hg/upgrade.* (glob)
@@ -453,6 +488,9 @@ store files with special filenames aren't encoded during copy
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   redeltafulladd
      each revision will be added as new content to the internal storage; this will likely drastically slow down execution time, but some extensions might need it
@@ -512,6 +550,9 @@ Check upgrading a large file repository
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, revlogv1, store
   
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
+  
   beginning upgrade...
   repository locked and read-only
   creating temporary repository to stage migrated data: $TESTTMP/largefilesrepo/.hg/upgrade.* (glob)
@@ -563,6 +604,9 @@ Check upgrading a large file repository
   
   requirements
      preserved: dotencode, fncache, generaldelta, largefiles, lfs, revlogv1, store
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   beginning upgrade...
   repository locked and read-only
@@ -658,6 +702,9 @@ repository config is taken in account
   
   requirements
      preserved: dotencode, fncache, generaldelta, revlogv1, store
+  
+  sparserevlog
+     Revlog supports delta chain with more unused data between payload. These gaps will be skipped at read time. This allows for better delta chains, making a better compression and faster exchange with server.
   
   redeltaall
      deltas within internal storage will be fully recomputed; this will likely drastically slow down execution time

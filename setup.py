@@ -74,7 +74,7 @@ if sys.version_info[0] != 2:
     badpython = True
 
     # Allow Python 3 from source checkouts.
-    if os.path.isdir('.hg'):
+    if os.path.isdir('.hg') or 'HGPYTHON3' in os.environ:
         badpython = False
 
     if badpython:
@@ -369,7 +369,7 @@ try:
     from mercurial import __version__
     version = __version__.version
 except ImportError:
-    version = 'unknown'
+    version = b'unknown'
 finally:
     if oldpolicy is None:
         del os.environ['HGMODULEPOLICY']

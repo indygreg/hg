@@ -1095,11 +1095,30 @@ static int nt_delete_node(nodetree *self, const char *node)
 	return nt_insert(self, node, -2);
 }
 
-static int nt_init(indexObject *self)
+static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
+{
+	self->index = index;
+	self->capacity = capacity;
+	self->depth = 0;
+	self->splits = 0;
+	self->nodes = calloc(self->capacity, sizeof(nodetreenode));
+	if (self->nodes == NULL) {
+		PyErr_NoMemory();
+		return -1;
+	}
+	self->length = 1;
+	if (nt_insert(self, nullid, -1) == -1) {
+		free(self->nodes);
+		return -1;
+	}
+	return 0;
+}
+
+static int index_init_nt(indexObject *self)
 {
 	if (self->nt == NULL) {
 		if ((size_t)self->raw_length > INT_MAX / sizeof(nodetreenode)) {
-			PyErr_SetString(PyExc_ValueError, "overflow in nt_init");
+			PyErr_SetString(PyExc_ValueError, "overflow in index_init_nt");
 			return -1;
 		}
 		self->nt = PyMem_Malloc(sizeof(nodetree));
@@ -1107,29 +1126,15 @@ static int nt_init(indexObject *self)
 			PyErr_NoMemory();
 			return -1;
 		}
-		self->nt->capacity = self->raw_length < 4
-			? 4 : (int)self->raw_length / 2;
-
-		self->nt->nodes = calloc(self->nt->capacity, sizeof(nodetreenode));
-		if (self->nt->nodes == NULL) {
+		unsigned capacity = (self->raw_length < 4 ? 4 : (int)self->raw_length / 2);
+		if (nt_init(self->nt, self, capacity) == -1) {
 			PyMem_Free(self->nt);
 			self->nt = NULL;
-			PyErr_NoMemory();
 			return -1;
 		}
 		self->ntrev = (int)index_length(self);
 		self->ntlookups = 1;
 		self->ntmisses = 0;
-		self->nt->depth = 0;
-		self->nt->splits = 0;
-		self->nt->length = 1;
-		self->nt->index = self;
-		if (nt_insert(self->nt, nullid, -1) == -1) {
-			free(self->nt->nodes);
-			PyMem_Free(self->nt);
-			self->nt = NULL;
-			return -1;
-		}
 	}
 	return 0;
 }
@@ -1146,7 +1151,7 @@ static int index_find_node(indexObject *self,
 {
 	int rev;
 
-	if (nt_init(self) == -1)
+	if (index_init_nt(self) == -1)
 		return -3;
 
 	self->ntlookups++;
@@ -1341,7 +1346,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		Py_RETURN_NONE;
 	}
 
-	if (nt_init(self) == -1)
+	if (index_init_nt(self) == -1)
 		return NULL;
 	if (nt_populate(self) == -1)
 		return NULL;
@@ -1376,7 +1381,7 @@ static PyObject *index_shortest(indexObject *self, PyObject *args)
 		return NULL;
 
 	self->ntlookups++;
-	if (nt_init(self) == -1)
+	if (index_init_nt(self) == -1)
 		return NULL;
 	if (nt_populate(self) == -1)
 		return NULL;
@@ -1921,7 +1926,7 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 		return -1;
 	}
 
-	if (nt_init(self) == -1)
+	if (index_init_nt(self) == -1)
 		return -1;
 	return nt_insert(self->nt, node, (int)rev);
 }

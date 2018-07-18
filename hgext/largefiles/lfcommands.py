@@ -209,6 +209,10 @@ def _lfconvert_addchangeset(rsrc, rdst, ctx, revmap, lfiles, normalfiles,
             if f in ctx.manifest():
                 fctx = ctx.filectx(f)
                 renamed = fctx.renamed()
+                if renamed is None:
+                    # the code below assumes renamed to be a boolean or a list
+                    # and won't quite work with the value None
+                    renamed = False
                 renamedlfile = renamed and renamed[0] in lfiles
                 islfile |= renamedlfile
                 if 'l' in fctx.flags():

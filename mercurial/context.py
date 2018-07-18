@@ -1052,7 +1052,7 @@ class filectx(basefilectx):
 
         renamed = self._filelog.renamed(self._filenode)
         if not renamed:
-            return renamed
+            return None
 
         if self.rev() == self.linkrev():
             return renamed

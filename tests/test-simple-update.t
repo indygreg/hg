@@ -65,7 +65,7 @@ update with worker processes
 
   $ cat <<EOF > forceworker.py
   > from mercurial import extensions, worker
-  > def nocost(orig, ui, costperop, nops):
+  > def nocost(orig, ui, costperop, nops, threadsafe=True):
   >     return worker._numworkers(ui) > 1
   > def uisetup(ui):
   >     extensions.wrapfunction(worker, 'worthwhile', nocost)

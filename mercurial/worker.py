@@ -63,18 +63,27 @@ def _numworkers(ui):
 
 if pycompat.isposix or pycompat.iswindows:
     _STARTUP_COST = 0.01
+    # The Windows worker is thread based. If tasks are CPU bound, threads
+    # in the presence of the GIL result in excessive context switching and
+    # this overhead can slow down execution.
+    _DISALLOW_THREAD_UNSAFE = pycompat.iswindows
 else:
     _STARTUP_COST = 1e30
+    _DISALLOW_THREAD_UNSAFE = False
 
-def worthwhile(ui, costperop, nops):
+def worthwhile(ui, costperop, nops, threadsafe=True):
     '''try to determine whether the benefit of multiple processes can
     outweigh the cost of starting them'''
+
+    if not threadsafe and _DISALLOW_THREAD_UNSAFE:
+        return False
+
     linear = costperop * nops
     workers = _numworkers(ui)
     benefit = linear - (_STARTUP_COST * workers + linear / workers)
     return benefit >= 0.15
 
-def worker(ui, costperarg, func, staticargs, args):
+def worker(ui, costperarg, func, staticargs, args, threadsafe=True):
     '''run a function, possibly in parallel in multiple worker
     processes.
 
@@ -88,9 +97,13 @@ def worker(ui, costperarg, func, staticargs, args):
 
     args - arguments to split into chunks, to pass to individual
     workers
+
+    threadsafe - whether work items are thread safe and can be executed using
+    a thread-based worker. Should be disabled for CPU heavy tasks that don't
+    release the GIL.
     '''
     enabled = ui.configbool('worker', 'enabled')
-    if enabled and worthwhile(ui, costperarg, len(args)):
+    if enabled and worthwhile(ui, costperarg, len(args), threadsafe=threadsafe):
         return _platformworker(ui, func, staticargs, args)
     return func(*staticargs + (args,))
 

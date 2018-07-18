@@ -1637,9 +1637,12 @@ def applyupdates(repo, actions, wctx, mctx, overwrite, labels=None):
             wctx[f0].remove()
         progress.increment(item=f)
 
-    # get in parallel
+    # get in parallel.
+    threadsafe = repo.ui.configbool('experimental',
+                                    'worker.wdir-get-thread-safe')
     prog = worker.worker(repo.ui, cost, batchget, (repo, mctx, wctx),
-                         actions[ACTION_GET])
+                         actions[ACTION_GET],
+                         threadsafe=threadsafe)
     for i, item in prog:
         progress.increment(step=i, item=item)
     updated = len(actions[ACTION_GET])

@@ -623,6 +623,9 @@ coreconfigitem('experimental', 'web.api.http-v2',
 coreconfigitem('experimental', 'web.api.debugreflect',
     default=False,
 )
+coreconfigitem('experimental', 'worker.wdir-get-thread-safe',
+    default=False,
+)
 coreconfigitem('experimental', 'xdiff',
     default=False,
 )

@@ -1112,8 +1112,11 @@ static int nt_init(indexObject *self)
 		self->ntrev = (int)index_length(self) - 1;
 		self->ntlookups = 1;
 		self->ntmisses = 0;
-		if (nt_insert(self, nullid, INT_MAX) == -1)
+		if (nt_insert(self, nullid, INT_MAX) == -1) {
+			free(self->nt);
+			self->nt = NULL;
 			return -1;
+		}
 	}
 	return 0;
 }

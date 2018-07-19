@@ -28,6 +28,8 @@
 #define PyInt_AsLong PyLong_AsLong
 #endif
 
+typedef struct indexObjectStruct indexObject;
+
 typedef struct {
 	int children[16];
 } nodetreenode;
@@ -40,6 +42,7 @@ typedef struct {
  * Zero is empty
  */
 typedef struct {
+	indexObject *index;
 	nodetreenode *nodes;
 	unsigned length;     /* # nodes in use */
 	unsigned capacity;   /* # nodes allocated */
@@ -59,7 +62,7 @@ typedef struct {
  * With string keys, we lazily perform a reverse mapping from node to
  * rev, using a base-16 trie.
  */
-typedef struct {
+struct indexObjectStruct {
 	PyObject_HEAD
 	/* Type-specific fields go here. */
 	PyObject *data;        /* raw bytes of index */
@@ -76,7 +79,7 @@ typedef struct {
 	int ntlookups;         /* # lookups */
 	int ntmisses;          /* # lookups that miss the cache */
 	int inlined;
-} indexObject;
+};
 
 static Py_ssize_t index_length(const indexObject *self)
 {
@@ -1120,6 +1123,7 @@ static int nt_init(indexObject *self)
 		self->nt->depth = 0;
 		self->nt->splits = 0;
 		self->nt->length = 1;
+		self->nt->index = self;
 		if (nt_insert(self, nullid, -1) == -1) {
 			free(self->nt->nodes);
 			PyMem_Free(self->nt);

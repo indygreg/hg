@@ -215,12 +215,12 @@ class filelog(object):
         self._revlog._lazydeltabase = value
 
     @property
-    def _aggressivemergedeltas(self):
-        return self._revlog._aggressivemergedeltas
+    def _deltabothparents(self):
+        return self._revlog._deltabothparents
 
-    @_aggressivemergedeltas.setter
-    def _aggressivemergedeltas(self, value):
-        self._revlog._aggressivemergedeltas = value
+    @_deltabothparents.setter
+    def _deltabothparents(self, value):
+        self._revlog._deltabothparents = value
 
     @property
     def _inline(self):

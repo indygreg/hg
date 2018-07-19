@@ -455,7 +455,7 @@ def _revlogfrompath(repo, path):
         #reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])
 
-def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
+def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
     """Copy revlogs between 2 repos."""
     revcount = 0
     srcsize = 0
@@ -579,7 +579,7 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
         ui.note(_('cloning %d revisions from %s\n') % (len(oldrl), unencoded))
         oldrl.clone(tr, newrl, addrevisioncb=oncopiedrevision,
                     deltareuse=deltareuse,
-                    aggressivemergedeltas=aggressivemergedeltas)
+                    deltabothparents=deltabothparents)
 
         datasize = 0
         idx = newrl.index

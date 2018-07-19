@@ -628,7 +628,7 @@ class _deltacomputer(object):
                 parents = [p for p in (p1r, p2r)
                            if p != nullrev and p not in tested]
 
-                if not revlog._aggressivemergedeltas and len(parents) == 2:
+                if not revlog._deltabothparents and len(parents) == 2:
                     parents.sort()
                     # To minimize the chance of having to build a fulltext,
                     # pick first whichever parent is closest to us (max rev)
@@ -915,7 +915,7 @@ class revlog(object):
         # How much data to read and cache into the raw revlog data cache.
         self._chunkcachesize = 65536
         self._maxchainlen = None
-        self._aggressivemergedeltas = True
+        self._deltabothparents = True
         self.index = []
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
@@ -945,8 +945,8 @@ class revlog(object):
                 self._chunkcachesize = opts['chunkcachesize']
             if 'maxchainlen' in opts:
                 self._maxchainlen = opts['maxchainlen']
-            if 'aggressivemergedeltas' in opts:
-                self._aggressivemergedeltas = opts['aggressivemergedeltas']
+            if 'deltabothparents' in opts:
+                self._deltabothparents = opts['deltabothparents']
             self._lazydeltabase = bool(opts.get('lazydeltabase', False))
             if 'compengine' in opts:
                 self._compengine = opts['compengine']
@@ -2843,7 +2843,7 @@ class revlog(object):
     DELTAREUSEALL = {'always', 'samerevs', 'never', 'fulladd'}
 
     def clone(self, tr, destrevlog, addrevisioncb=None,
-              deltareuse=DELTAREUSESAMEREVS, aggressivemergedeltas=None):
+              deltareuse=DELTAREUSESAMEREVS, deltabothparents=None):
         """Copy this revlog to another, possibly with format changes.
 
         The destination revlog will contain the same revisions and nodes.
@@ -2877,7 +2877,7 @@ class revlog(object):
         deltas will be recomputed if the delta's parent isn't a parent of the
         revision.
 
-        In addition to the delta policy, the ``aggressivemergedeltas`` argument
+        In addition to the delta policy, the ``deltabothparents`` argument
         controls whether to compute deltas against both parents for merges.
         By default, the current default is used.
         """
@@ -2894,7 +2894,7 @@ class revlog(object):
 
         # lazydeltabase controls whether to reuse a cached delta, if possible.
         oldlazydeltabase = destrevlog._lazydeltabase
-        oldamd = destrevlog._aggressivemergedeltas
+        oldamd = destrevlog._deltabothparents
 
         try:
             if deltareuse == self.DELTAREUSEALWAYS:
@@ -2902,7 +2902,7 @@ class revlog(object):
             elif deltareuse == self.DELTAREUSESAMEREVS:
                 destrevlog._lazydeltabase = False
 
-            destrevlog._aggressivemergedeltas = aggressivemergedeltas or oldamd
+            destrevlog._deltabothparents = deltabothparents or oldamd
 
             populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
                                                 self.DELTAREUSESAMEREVS)
@@ -2957,4 +2957,4 @@ class revlog(object):
                     addrevisioncb(self, rev, node)
         finally:
             destrevlog._lazydeltabase = oldlazydeltabase
-            destrevlog._aggressivemergedeltas = oldamd
+            destrevlog._deltabothparents = oldamd

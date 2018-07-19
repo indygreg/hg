@@ -1251,7 +1251,7 @@ static PyObject *index_getitem(indexObject *self, PyObject *value)
 /*
  * Fully populate the radix tree.
  */
-static int nt_populate(indexObject *self) {
+static int index_populate_nt(indexObject *self) {
 	int rev;
 	if (self->ntrev > 0) {
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
@@ -1348,7 +1348,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 
 	if (index_init_nt(self) == -1)
 		return NULL;
-	if (nt_populate(self) == -1)
+	if (index_populate_nt(self) == -1)
 		return NULL;
 	rev = nt_partialmatch(self->nt, node, nodelen);
 
@@ -1383,7 +1383,7 @@ static PyObject *index_shortest(indexObject *self, PyObject *args)
 	self->ntlookups++;
 	if (index_init_nt(self) == -1)
 		return NULL;
-	if (nt_populate(self) == -1)
+	if (index_populate_nt(self) == -1)
 		return NULL;
 	length = nt_shortest(self->nt, node);
 	if (length == -3)
@@ -1799,7 +1799,7 @@ static PyObject *index_ancestors(indexObject *self, PyObject *args)
 /*
  * Invalidate any trie entries introduced by added revs.
  */
-static void nt_invalidate_added(indexObject *self, Py_ssize_t start)
+static void index_invalidate_added(indexObject *self, Py_ssize_t start)
 {
 	Py_ssize_t i, len = PyList_GET_SIZE(self->added);
 
@@ -1869,7 +1869,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 				nt_delete_node(self->nt, node);
 			}
 			if (self->added)
-				nt_invalidate_added(self, 0);
+				index_invalidate_added(self, 0);
 			if (self->ntrev > start)
 				self->ntrev = (int)start;
 		}
@@ -1886,7 +1886,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 	}
 
 	if (self->nt) {
-		nt_invalidate_added(self, start - self->length + 1);
+		index_invalidate_added(self, start - self->length + 1);
 		if (self->ntrev > start)
 			self->ntrev = (int)start;
 	}

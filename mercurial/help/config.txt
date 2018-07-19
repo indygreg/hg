@@ -790,6 +790,14 @@ Example for ``~/.hgrc``::
 ``format``
 ----------
 
+Configuration that controls the repository format. Newer format options are more
+powerful but incompatible with some older versions of Mercurial. Format options
+are considered at repository initialization only. You need to make a new clone
+for config change to be taken into account.
+
+For more details about repository format and version compatibility, see
+https://www.mercurial-scm.org/wiki/MissingRequirement
+
 ``usegeneraldelta``
     Enable or disable the "generaldelta" repository format which improves
     repository compression by allowing "revlog" to store delta against arbitrary

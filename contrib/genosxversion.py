@@ -117,9 +117,9 @@ def main(argv):
         return
     with open(opts.versionfile) as f:
         for l in f:
-            if l.startswith('version = '):
+            if l.startswith('version = b'):
                 # version number is entire line minus the quotes
-                ver = l[len('version = ') + 1:-2]
+                ver = l[len('version = b') + 1:-2]
                 break
     if opts.paranoid:
         print(paranoidver(ver))

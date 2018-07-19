@@ -118,7 +118,7 @@ delta coming from the server base delta server are not recompressed.
         2       1        2        0      p1         57        135        161   1.19259       218        57    0.35404
         3       1        2        0      p1         57        135        161   1.19259       275       114    0.70807
 
-Test format.aggressivemergedeltas
+Test revlog.optimize-delta-parent-choice
 
   $ hg init --config format.generaldelta=1 aggressive
   $ cd aggressive
@@ -146,7 +146,7 @@ Test format.aggressivemergedeltas
 - Verify aggressive merge uses p2 (commit 0) as delta parent
   $ hg up -q -C 1
   $ hg merge -q 0
-  $ hg commit -q -m merge --config format.aggressivemergedeltas=True
+  $ hg commit -q -m merge --config revlog.optimize-delta-parent-choice=yes
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         59        215         59   0.27442        59         0    0.00000

@@ -668,9 +668,8 @@ class localrepository(object):
         manifestcachesize = self.ui.configint('format', 'manifestcachesize')
         if manifestcachesize is not None:
             self.svfs.options['manifestcachesize'] = manifestcachesize
-        # experimental config: format.aggressivemergedeltas
-        deltabothparents = self.ui.configbool('format',
-                                              'aggressivemergedeltas')
+        deltabothparents = self.ui.configbool('revlog',
+                                              'optimize-delta-parent-choice')
         self.svfs.options['deltabothparents'] = deltabothparents
         self.svfs.options['lazydeltabase'] = not scmutil.gddeltaconfig(self.ui)
         chainspan = self.ui.configbytes('experimental', 'maxdeltachainspan')

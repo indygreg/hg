@@ -637,9 +637,6 @@ coreconfigitem('extdata', '.*',
     default=None,
     generic=True,
 )
-coreconfigitem('format', 'aggressivemergedeltas',
-    default=True,
-)
 coreconfigitem('format', 'chunkcachesize',
     default=None,
 )
@@ -929,6 +926,10 @@ coreconfigitem('progress', 'width',
 )
 coreconfigitem('push', 'pushvars.server',
     default=False,
+)
+coreconfigitem('revlog', 'optimize-delta-parent-choice',
+    default=True,
+    # formely an experimental option: format.aggressivemergedeltas
 )
 coreconfigitem('server', 'bookmarks-pushkey-compat',
     default=True,

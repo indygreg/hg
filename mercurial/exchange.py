@@ -531,6 +531,9 @@ def push(repo, remote, force=False, revs=None, newbranch=False, bookmarks=(),
         _pushobsolete(pushop)
         _pushbookmark(pushop)
 
+    if repo.ui.configbool('experimental', 'remotenames'):
+        logexchange.pullremotenames(repo, remote)
+
     return pushop
 
 # list of steps to perform discovery before push
@@ -658,7 +661,7 @@ def _pushdiscoverybookmarks(pushop):
     ui.debug("checking for updated bookmarks\n")
     ancestors = ()
     if pushop.revs:
-        revnums = map(repo.changelog.rev, pushop.revs)
+        revnums = pycompat.maplist(repo.changelog.rev, pushop.revs)
         ancestors = repo.changelog.ancestors(revnums, inclusive=True)
 
     remotebookmark = listkeys(remote, 'bookmarks')

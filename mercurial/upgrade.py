@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import stat
-import tempfile
 
 from .i18n import _
 from . import (
@@ -18,6 +17,7 @@ from . import (
     hg,
     localrepo,
     manifest,
+    pycompat,
     revlog,
     scmutil,
     util,
@@ -61,7 +61,9 @@ def supportremovedrequirements(repo):
     the dropped requirement must appear in the returned set for the upgrade
     to be allowed.
     """
-    return set()
+    return {
+        localrepo.SPARSEREVLOG_REQUIREMENT,
+    }
 
 def supporteddestrequirements(repo):
     """Obtain requirements that upgrade supports in the destination.
@@ -77,6 +79,7 @@ def supporteddestrequirements(repo):
         'generaldelta',
         'revlogv1',
         'store',
+        localrepo.SPARSEREVLOG_REQUIREMENT,
     }
 
 def allowednewrequirements(repo):
@@ -93,6 +96,7 @@ def allowednewrequirements(repo):
         'dotencode',
         'fncache',
         'generaldelta',
+        localrepo.SPARSEREVLOG_REQUIREMENT,
     }
 
 def preservedrequirements(repo):
@@ -257,6 +261,28 @@ class generaldelta(requirementformatvariant):
                        'storage model should require less network and '
                        'CPU resources, making "hg push" and "hg pull" '
                        'faster')
+
+@registerformatvariant
+class sparserevlog(requirementformatvariant):
+    name = 'sparserevlog'
+
+    _requirement = localrepo.SPARSEREVLOG_REQUIREMENT
+
+    default = False
+
+    description = _('in order to limit disk reading and memory usage on older '
+                    'version, the span of a delta chain from its root to its '
+                    'end is limited, whatever the relevant data in this span. '
+                    'This can severly limit Mercurial ability to build good '
+                    'chain of delta resulting is much more storage space being '
+                    'taken and limit reusability of on disk delta during '
+                    'exchange.'
+                   )
+
+    upgrademessage = _('Revlog supports delta chain with more unused data '
+                       'between payload. These gaps will be skipped at read '
+                       'time. This allows for better delta chains, making a '
+                       'better compression and faster exchange with server.')
 
 @registerformatvariant
 class removecldeltachain(formatvariant):
@@ -429,7 +455,7 @@ def _revlogfrompath(repo, path):
         #reverse of "/".join(("data", path + ".i"))
         return filelog.filelog(repo.svfs, path[5:-2])
 
-def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
+def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, deltabothparents):
     """Copy revlogs between 2 repos."""
     revcount = 0
     srcsize = 0
@@ -498,10 +524,9 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
              (util.bytecount(srcsize), util.bytecount(srcrawsize))))
 
     # Used to keep track of progress.
-    progress = []
+    progress = None
     def oncopiedrevision(rl, rev, node):
-        progress[1] += 1
-        srcrepo.ui.progress(progress[0], progress[1], total=progress[2])
+        progress.increment()
 
     # Do the actual copying.
     # FUTURE this operation can be farmed off to worker processes.
@@ -523,7 +548,8 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
                      (crevcount, util.bytecount(csrcsize),
                       util.bytecount(crawsize)))
             seen.add('c')
-            progress[:] = [_('changelog revisions'), 0, crevcount]
+            progress = srcrepo.ui.makeprogress(_('changelog revisions'),
+                                               total=crevcount)
         elif isinstance(oldrl, manifest.manifestrevlog) and 'm' not in seen:
             ui.write(_('finished migrating %d filelog revisions across %d '
                        'filelogs; change in size: %s\n') %
@@ -534,21 +560,26 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
                      (mcount, mrevcount, util.bytecount(msrcsize),
                       util.bytecount(mrawsize)))
             seen.add('m')
-            progress[:] = [_('manifest revisions'), 0, mrevcount]
+            if progress:
+                progress.complete()
+            progress = srcrepo.ui.makeprogress(_('manifest revisions'),
+                                               total=mrevcount)
         elif 'f' not in seen:
             ui.write(_('migrating %d filelogs containing %d revisions '
                        '(%s in store; %s tracked data)\n') %
                      (fcount, frevcount, util.bytecount(fsrcsize),
                       util.bytecount(frawsize)))
             seen.add('f')
-            progress[:] = [_('file revisions'), 0, frevcount]
+            if progress:
+                progress.complete()
+            progress = srcrepo.ui.makeprogress(_('file revisions'),
+                                               total=frevcount)
 
-        ui.progress(progress[0], progress[1], total=progress[2])
 
         ui.note(_('cloning %d revisions from %s\n') % (len(oldrl), unencoded))
         oldrl.clone(tr, newrl, addrevisioncb=oncopiedrevision,
                     deltareuse=deltareuse,
-                    aggressivemergedeltas=aggressivemergedeltas)
+                    deltabothparents=deltabothparents)
 
         datasize = 0
         idx = newrl.index
@@ -564,7 +595,7 @@ def _copyrevlogs(ui, srcrepo, dstrepo, tr, deltareuse, aggressivemergedeltas):
         else:
             fdstsize += datasize
 
-    ui.progress(progress[0], None)
+    progress.complete()
 
     ui.write(_('finished migrating %d changelog revisions; change in size: '
                '%s\n') % (crevcount, util.bytecount(cdstsize - csrcsize)))
@@ -657,7 +688,7 @@ def _upgraderepo(ui, srcrepo, dstrepo, requirements, actions):
 
     ui.write(_('data fully migrated to temporary repository\n'))
 
-    backuppath = tempfile.mkdtemp(prefix='upgradebackup.', dir=srcrepo.path)
+    backuppath = pycompat.mkdtemp(prefix='upgradebackup.', dir=srcrepo.path)
     backupvfs = vfsmod.vfs(backuppath)
 
     # Make a backup of requires file first, as it is the first to be modified.
@@ -842,7 +873,7 @@ def upgraderepo(ui, repo, run=False, optimize=None):
         # data. There are less heavyweight ways to do this, but it is easier
         # to create a new repo object than to instantiate all the components
         # (like the store) separately.
-        tmppath = tempfile.mkdtemp(prefix='upgrade.', dir=repo.path)
+        tmppath = pycompat.mkdtemp(prefix='upgrade.', dir=repo.path)
         backuppath = None
         try:
             ui.write(_('creating temporary repository to stage migrated '

@@ -27,6 +27,7 @@ Should respect config to disable dirty update
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 107cefe13e42
+  1 local changesets published
   abort: uncommitted changes
   [255]
   $ hg --config extensions.strip= strip --no-backup tip
@@ -58,6 +59,7 @@ Should not update to the other branch:
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 800c91d5bfc1
+  1 local changesets published
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   updated to "107cefe13e42: m"
   1 other heads for branch "default"
@@ -80,6 +82,7 @@ Should work:
   adding file changes
   added 1 changesets with 1 changes to 1 files (-1 heads)
   new changesets 483b76ad4309
+  1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
 Similarity between "hg update" and "hg pull -u" in handling bookmark
@@ -108,6 +111,7 @@ explicit destination of the update.
   added 1 changesets with 1 changes to 1 files
   adding remote bookmark active-after-pull
   new changesets f815b3da6163
+  1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (activating bookmark active-after-pull)
 
@@ -137,6 +141,7 @@ explicit destination of the update.
   added 1 changesets with 1 changes to 1 files
   adding remote bookmark active-after-pull
   new changesets f815b3da6163
+  1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (activating bookmark active-after-pull)
 
@@ -175,6 +180,7 @@ match with the name of any existing bookmarks.
   adding file changes
   added 2 changesets with 1 changes to 1 files
   new changesets f815b3da6163:b5e4babfaaa7
+  1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (leaving bookmark active-before-pull)
 
@@ -202,6 +208,7 @@ match with the name of any existing bookmarks.
   adding file changes
   added 2 changesets with 1 changes to 1 files
   new changesets f815b3da6163:b5e4babfaaa7
+  1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (leaving bookmark active-before-pull)
 
@@ -229,6 +236,7 @@ match with the name of any existing bookmarks.
   adding file changes
   added 2 changesets with 1 changes to 1 files
   new changesets f815b3da6163:b5e4babfaaa7
+  1 local changesets published
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (leaving bookmark active-before-pull)
 

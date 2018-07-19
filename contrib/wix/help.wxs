@@ -19,6 +19,7 @@
           <File Name="color.txt" />
           <File Name="config.txt" KeyPath="yes" />
           <File Name="dates.txt" />
+          <File Name="deprecated.txt" />
           <File Name="diffs.txt" />
           <File Name="environment.txt" />
           <File Name="extensions.txt" />

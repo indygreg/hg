@@ -95,21 +95,16 @@ class namespaces(object):
 
     def singlenode(self, repo, name):
         """
-        Return the 'best' node for the given name. Best means the first node
-        in the first nonempty list returned by a name-to-nodes mapping function
-        in the defined precedence order.
+        Return the 'best' node for the given name. What's best is defined
+        by the namespace's singlenode() function. The first match returned by
+        a namespace in the defined precedence order is used.
 
         Raises a KeyError if there is no such node.
         """
         for ns, v in self._names.iteritems():
-            n = v.namemap(repo, name)
+            n = v.singlenode(repo, name)
             if n:
-                # return max revision number
-                if len(n) > 1:
-                    cl = repo.changelog
-                    maxrev = max(cl.rev(node) for node in n)
-                    return cl.node(maxrev)
-                return n[0]
+                return n
         raise KeyError(_('no such name: %s') % name)
 
 class namespace(object):
@@ -142,7 +137,7 @@ class namespace(object):
 
     def __init__(self, name, templatename=None, logname=None, colorname=None,
                  logfmt=None, listnames=None, namemap=None, nodemap=None,
-                 deprecated=None, builtin=False):
+                 deprecated=None, builtin=False, singlenode=None):
         """create a namespace
 
         name: the namespace to be registered (in plural form)
@@ -158,6 +153,7 @@ class namespace(object):
         nodemap: function that inputs a node, output name(s)
         deprecated: set of names to be masked for ordinary use
         builtin: whether namespace is implemented by core Mercurial
+        singlenode: function that inputs a name, output best node (or None)
         """
         self.name = name
         self.templatename = templatename
@@ -167,6 +163,8 @@ class namespace(object):
         self.listnames = listnames
         self.namemap = namemap
         self.nodemap = nodemap
+        if singlenode:
+            self.singlenode = singlenode
 
         # if logname is not specified, use the template name as backup
         if self.logname is None:
@@ -199,3 +197,18 @@ class namespace(object):
 
         """
         return sorted(self.namemap(repo, name))
+
+    def singlenode(self, repo, name):
+        """returns the best node for the given name
+
+        By default, the best node is the node from nodes() with the highest
+        revision number. It can be overriden by the namespace."""
+        n = self.namemap(repo, name)
+        if n:
+            # return max revision number
+            if len(n) > 1:
+                cl = repo.changelog
+                maxrev = max(cl.rev(node) for node in n)
+                return cl.node(maxrev)
+            return n[0]
+        return None

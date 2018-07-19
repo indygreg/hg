@@ -110,6 +110,7 @@ the extension is unknown.
    color         Colorizing Outputs
    config        Configuration Files
    dates         Date Formats
+   deprecated    Deprecated Features
    diffs         Diff Formats
    environment   Environment Variables
    extensions    Using Additional Features
@@ -189,6 +190,7 @@ the extension is unknown.
    color         Colorizing Outputs
    config        Configuration Files
    dates         Date Formats
+   deprecated    Deprecated Features
    diffs         Diff Formats
    environment   Environment Variables
    extensions    Using Additional Features
@@ -889,6 +891,7 @@ Test that default list of commands omits extension commands
    color         Colorizing Outputs
    config        Configuration Files
    dates         Date Formats
+   deprecated    Deprecated Features
    diffs         Diff Formats
    environment   Environment Variables
    extensions    Using Additional Features
@@ -2030,6 +2033,13 @@ Dish up an empty repo; serve it cold.
   </a>
   </td><td>
   Date Formats
+  </td></tr>
+  <tr><td>
+  <a href="/help/deprecated">
+  deprecated
+  </a>
+  </td><td>
+  Deprecated Features
   </td></tr>
   <tr><td>
   <a href="/help/diffs">

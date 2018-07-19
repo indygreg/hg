@@ -18,7 +18,6 @@ import signal
 import socket
 import subprocess
 import sys
-import tempfile
 import traceback
 
 from .i18n import _
@@ -60,18 +59,21 @@ statuscopies = yes
 interface = curses
 
 [commands]
+# Grep working directory by default.
+grep.all-files = True
 # Make `hg status` emit cwd-relative paths by default.
 status.relative = yes
 # Refuse to perform an `hg update` that would cause a file content merge
 update.check = noconflict
 # Show conflicts information in `hg status`
 status.verbose = True
-# Skip the bisect state in conflicts information in `hg status`
-status.skipstates = bisect
+# Collapse entire directories that contain only unknown files
+status.terse = u
 
 [diff]
 git = 1
 showfunc = 1
+word-diff = 1
 """
 
 samplehgrcs = {
@@ -157,10 +159,10 @@ b"""# example system-wide hg config (see 'hg help config' for more info)
 }
 
 def _maybestrurl(maybebytes):
-    return util.rapply(pycompat.strurl, maybebytes)
+    return pycompat.rapply(pycompat.strurl, maybebytes)
 
 def _maybebytesurl(maybestr):
-    return util.rapply(pycompat.bytesurl, maybestr)
+    return pycompat.rapply(pycompat.bytesurl, maybestr)
 
 class httppasswordmgrdbproxy(object):
     """Delays loading urllib2 until it's needed."""
@@ -225,6 +227,7 @@ class ui(object):
         self._colormode = None
         self._terminfoparams = {}
         self._styles = {}
+        self._uninterruptible = False
 
         if src:
             self.fout = src.fout
@@ -334,6 +337,37 @@ class ui(object):
         finally:
             self._blockedtimes[key + '_blocked'] += \
                 (util.timer() - starttime) * 1000
+
+    @contextlib.contextmanager
+    def uninterruptable(self):
+        """Mark an operation as unsafe.
+
+        Most operations on a repository are safe to interrupt, but a
+        few are risky (for example repair.strip). This context manager
+        lets you advise Mercurial that something risky is happening so
+        that control-C etc can be blocked if desired.
+        """
+        enabled = self.configbool('experimental', 'nointerrupt')
+        if (enabled and
+            self.configbool('experimental', 'nointerrupt-interactiveonly')):
+            enabled = self.interactive()
+        if self._uninterruptible or not enabled:
+            # if nointerrupt support is turned off, the process isn't
+            # interactive, or we're already in an uninterruptable
+            # block, do nothing.
+            yield
+            return
+        def warn():
+            self.warn(_("shutting down cleanly\n"))
+            self.warn(
+                _("press ^C again to terminate immediately (dangerous)\n"))
+            return True
+        with procutil.uninterruptable(warn):
+            try:
+                self._uninterruptible = True
+                yield
+            finally:
+                self._uninterruptible = False
 
     def formatter(self, topic, opts):
         return formatter.formatter(self, self, topic, opts)
@@ -1180,7 +1214,7 @@ class ui(object):
                 "Feature %s does not handle all default interfaces" %
                 feature)
 
-        if self.plain():
+        if self.plain() or encoding.environ.get('TERM') == 'dumb':
             return "text"
 
         # Default interface for all the features
@@ -1446,7 +1480,7 @@ class ui(object):
         rdir = None
         if self.configbool('experimental', 'editortmpinhg'):
             rdir = repopath
-        (fd, name) = tempfile.mkstemp(prefix='hg-' + extra['prefix'] + '-',
+        (fd, name) = pycompat.mkstemp(prefix='hg-' + extra['prefix'] + '-',
                                       suffix=suffix,
                                       dir=rdir)
         try:
@@ -1596,6 +1630,10 @@ class ui(object):
                      % (topic, item, pos, total, unit, pct))
         else:
             self.debug('%s:%s %d%s\n' % (topic, item, pos, unit))
+
+    def makeprogress(self, topic, unit="", total=None):
+        '''exists only so low-level modules won't need to import scmutil'''
+        return scmutil.progress(self, topic, unit, total)
 
     def log(self, service, *msg, **opts):
         '''hook for logging facility extensions

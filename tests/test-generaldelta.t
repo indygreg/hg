@@ -118,7 +118,7 @@ delta coming from the server base delta server are not recompressed.
         2       1        2        0      p1         57        135        161   1.19259       218        57    0.35404
         3       1        2        0      p1         57        135        161   1.19259       275       114    0.70807
 
-Test format.aggressivemergedeltas
+Test revlog.optimize-delta-parent-choice
 
   $ hg init --config format.generaldelta=1 aggressive
   $ cd aggressive
@@ -139,14 +139,14 @@ Test format.aggressivemergedeltas
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         59        215         59   0.27442        59         0    0.00000
         1       1        2        0    prev         61         86        120   1.39535       120         0    0.00000
-        2       1        3        1      p1         65        301        185   0.61462       185         0    0.00000
+        2       1        2        0      p2         62        301        121   0.40199       182        61    0.50413
 
   $ hg strip -q -r . --config extensions.strip=
 
 - Verify aggressive merge uses p2 (commit 0) as delta parent
   $ hg up -q -C 1
   $ hg merge -q 0
-  $ hg commit -q -m merge --config format.aggressivemergedeltas=True
+  $ hg commit -q -m merge --config revlog.optimize-delta-parent-choice=yes
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         59        215         59   0.27442        59         0    0.00000
@@ -172,6 +172,44 @@ test maxdeltachainspan
   $ hg init source-repo
   $ cd source-repo
   $ hg debugbuilddag --new-file '.+5:brancha$.+11:branchb$.+30:branchc<brancha+2<branchb+2'
+# add an empty revision somewhere
+  $ hg up tip
+  14 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  $ hg rm .
+  removing nf10
+  removing nf11
+  removing nf12
+  removing nf13
+  removing nf14
+  removing nf15
+  removing nf16
+  removing nf17
+  removing nf51
+  removing nf52
+  removing nf6
+  removing nf7
+  removing nf8
+  removing nf9
+  $ hg commit -m 'empty all'
+  $ hg revert --all --rev 'p1(.)'
+  adding nf10
+  adding nf11
+  adding nf12
+  adding nf13
+  adding nf14
+  adding nf15
+  adding nf16
+  adding nf17
+  adding nf51
+  adding nf52
+  adding nf6
+  adding nf7
+  adding nf8
+  adding nf9
+  $ hg commit -m 'restore all'
+  $ hg up null
+  0 files updated, 0 files merged, 14 files removed, 0 files unresolved
+  $ 
   $ cd ..
   $ hg -R source-repo debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
@@ -228,13 +266,15 @@ test maxdeltachainspan
        50       4        2       49      p1         58        362        255   0.70442       255         0    0.00000
        51       4        3       50    prev        356        594        611   1.02862       611         0    0.00000
        52       4        4       51      p1         58        640        669   1.04531       669         0    0.00000
+       53       5        1       -1    base          0          0          0   0.00000         0         0    0.00000
+       54       5        2       53      p1        376        640        376   0.58750       376         0    0.00000
   $ hg clone --pull source-repo --config experimental.maxdeltachainspan=2800 relax-chain --config format.generaldelta=yes
   requesting all changes
   adding changesets
   adding manifests
   adding file changes
-  added 53 changesets with 53 changes to 53 files (+2 heads)
-  new changesets 61246295ee1e:99cae3713489
+  added 55 changesets with 53 changes to 53 files (+2 heads)
+  new changesets 61246295ee1e:c930ac4a5b32
   updating to branch default
   14 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R relax-chain debugdeltachain -m
@@ -292,13 +332,15 @@ test maxdeltachainspan
        50       4        2       49      p1         58        362        255   0.70442       255         0    0.00000
        51       2       13       17      p1         58        594        739   1.24411      2781      2042    2.76319
        52       5        1       -1    base        369        640        369   0.57656       369         0    0.00000
+       53       6        1       -1    base          0          0          0   0.00000         0         0    0.00000
+       54       6        2       53      p1        376        640        376   0.58750       376         0    0.00000
   $ hg clone --pull source-repo --config experimental.maxdeltachainspan=0 noconst-chain --config format.generaldelta=yes
   requesting all changes
   adding changesets
   adding manifests
   adding file changes
-  added 53 changesets with 53 changes to 53 files (+2 heads)
-  new changesets 61246295ee1e:99cae3713489
+  added 55 changesets with 53 changes to 53 files (+2 heads)
+  new changesets 61246295ee1e:c930ac4a5b32
   updating to branch default
   14 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg -R noconst-chain debugdeltachain -m
@@ -356,3 +398,5 @@ test maxdeltachainspan
        50       1        8       49      p1         58        362        447   1.23481      2915      2468    5.52125
        51       2       13       17      p1         58        594        739   1.24411      2642      1903    2.57510
        52       2       14       51      p1         58        640        797   1.24531      2700      1903    2.38770
+       53       4        1       -1    base          0          0          0   0.00000         0         0    0.00000
+       54       4        2       53      p1        376        640        376   0.58750       376         0    0.00000

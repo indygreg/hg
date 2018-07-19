@@ -75,8 +75,8 @@ Test --exact and patch header separators (issue3356)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
   >>> import re
   >>> p = open('../r1.patch', 'rb').read()
-  >>> p = re.sub(r'Parent\s+', 'Parent ', p)
-  >>> open('../r1-ws.patch', 'wb').write(p)
+  >>> p = re.sub(br'Parent\s+', b'Parent ', p)
+  >>> open('../r1-ws.patch', 'wb').write(p) and None
   $ hg import --exact ../r1-ws.patch
   applying ../r1-ws.patch
 

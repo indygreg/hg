@@ -109,12 +109,12 @@ MSYS changes 'file:' into 'file;'
 It's tricky to make file:// URLs working on every platform with
 regular shell commands.
 
-  $ URL=`$PYTHON -c "import os; print 'file://foobar' + ('/' + os.getcwd().replace(os.sep, '/')).replace('//', '/') + '/../test'"`
+  $ URL=`$PYTHON -c "from __future__ import print_function; import os; print('file://foobar' + ('/' + os.getcwd().replace(os.sep, '/')).replace('//', '/') + '/../test')"`
   $ hg pull -q "$URL"
   abort: file:// URLs can only refer to localhost
   [255]
 
-  $ URL=`$PYTHON -c "import os; print 'file://localhost' + ('/' + os.getcwd().replace(os.sep, '/')).replace('//', '/') + '/../test'"`
+  $ URL=`$PYTHON -c "from __future__ import print_function; import os; print('file://localhost' + ('/' + os.getcwd().replace(os.sep, '/')).replace('//', '/') + '/../test')"`
   $ hg pull -q "$URL"
 
 SEC: check for unsafe ssh url

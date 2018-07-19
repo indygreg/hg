@@ -70,6 +70,7 @@ from mercurial import (
     registrar,
     scmutil,
     util,
+    worker,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -133,32 +134,56 @@ def fix(ui, repo, *pats, **opts):
             raise error.Abort(_('cannot specify both "--rev" and "--all"'))
         opts['rev'] = ['not public() and not obsolete()']
         opts['working_dir'] = True
-    with repo.wlock(), repo.lock():
+    with repo.wlock(), repo.lock(), repo.transaction('fix'):
         revstofix = getrevstofix(ui, repo, opts)
         basectxs = getbasectxs(repo, opts, revstofix)
         workqueue, numitems = getworkqueue(ui, repo, pats, opts, revstofix,
                                            basectxs)
+        fixers = getfixers(ui)
+
+        # There are no data dependencies between the workers fixing each file
+        # revision, so we can use all available parallelism.
+        def getfixes(items):
+            for rev, path in items:
+                ctx = repo[rev]
+                olddata = ctx[path].data()
+                newdata = fixfile(ui, opts, fixers, ctx, path, basectxs[rev])
+                # Don't waste memory/time passing unchanged content back, but
+                # produce one result per item either way.
+                yield (rev, path, newdata if newdata != olddata else None)
+        results = worker.worker(ui, 1.0, getfixes, tuple(), workqueue)
+
+        # We have to hold on to the data for each successor revision in memory
+        # until all its parents are committed. We ensure this by committing and
+        # freeing memory for the revisions in some topological order. This
+        # leaves a little bit of memory efficiency on the table, but also makes
+        # the tests deterministic. It might also be considered a feature since
+        # it makes the results more easily reproducible.
         filedata = collections.defaultdict(dict)
         replacements = {}
-        fixers = getfixers(ui)
-        # Some day this loop can become a worker pool, but for now it's easier
-        # to fix everything serially in topological order.
-        for rev, path in sorted(workqueue):
-            ctx = repo[rev]
-            olddata = ctx[path].data()
-            newdata = fixfile(ui, opts, fixers, ctx, path, basectxs[rev])
-            if newdata != olddata:
-                filedata[rev][path] = newdata
-            numitems[rev] -= 1
-            if not numitems[rev]:
-                if rev == wdirrev:
-                    writeworkingdir(repo, ctx, filedata[rev], replacements)
-                else:
-                    replacerev(ui, repo, ctx, filedata[rev], replacements)
-                del filedata[rev]
+        commitorder = sorted(revstofix, reverse=True)
+        with ui.makeprogress(topic=_('fixing'), unit=_('files'),
+                             total=sum(numitems.values())) as progress:
+            for rev, path, newdata in results:
+                progress.increment(item=path)
+                if newdata is not None:
+                    filedata[rev][path] = newdata
+                numitems[rev] -= 1
+                # Apply the fixes for this and any other revisions that are
+                # ready and sitting at the front of the queue. Using a loop here
+                # prevents the queue from being blocked by the first revision to
+                # be ready out of order.
+                while commitorder and not numitems[commitorder[-1]]:
+                    rev = commitorder.pop()
+                    ctx = repo[rev]
+                    if rev == wdirrev:
+                        writeworkingdir(repo, ctx, filedata[rev], replacements)
+                    else:
+                        replacerev(ui, repo, ctx, filedata[rev], replacements)
+                    del filedata[rev]
 
         replacements = {prec: [succ] for prec, succ in replacements.iteritems()}
-        scmutil.cleanupnodes(repo, replacements, 'fix')
+        scmutil.cleanupnodes(repo, replacements, 'fix', fixphase=True)
 
 def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     """"Constructs the list of files to be fixed at specific revisions
@@ -168,11 +193,19 @@ def getworkqueue(ui, repo, pats, opts, revstofix, basectxs):
     topological order. Each work item represents a file in the working copy or
     in some revision that should be fixed and written back to the working copy
     or into a replacement revision.
+
+    Work items for the same revision are grouped together, so that a worker
+    pool starting with the first N items in parallel is likely to finish the
+    first revision's work before other revisions. This can allow us to write
+    the result to disk and reduce memory footprint. At time of writing, the
+    partition strategy in worker.py seems favorable to this. We also sort the
+    items by ascending revision number to match the order in which we commit
+    the fixes later.
     """
     workqueue = []
     numitems = collections.defaultdict(int)
     maxfilesize = ui.configbytes('fix', 'maxfilesize')
-    for rev in revstofix:
+    for rev in sorted(revstofix):
         fixctx = repo[rev]
         match = scmutil.match(fixctx, pats, opts)
         for path in pathstofix(ui, repo, pats, opts, match, basectxs[rev],
@@ -352,7 +385,9 @@ def getbasectxs(repo, opts, revstofix):
     """Returns a map of the base contexts for each revision
 
     The base contexts determine which lines are considered modified when we
-    attempt to fix just the modified lines in a file.
+    attempt to fix just the modified lines in a file. It also determines which
+    files we attempt to fix, so it is important to compute this even when
+    --whole is used.
     """
     # The --base flag overrides the usual logic, and we give every revision
     # exactly the set of baserevs that the user specified.
@@ -484,25 +519,23 @@ def replacerev(ui, repo, ctx, filedata, replacements):
             isexec=fctx.isexec(),
             copied=copied)
 
-    overrides = {('phases', 'new-commit'): ctx.phase()}
-    with ui.configoverride(overrides, source='fix'):
-        memctx = context.memctx(
-            repo,
-            parents=(newp1node, newp2node),
-            text=ctx.description(),
-            files=set(ctx.files()) | set(filedata.keys()),
-            filectxfn=filectxfn,
-            user=ctx.user(),
-            date=ctx.date(),
-            extra=ctx.extra(),
-            branch=ctx.branch(),
-            editor=None)
-        sucnode = memctx.commit()
-        prenode = ctx.node()
-        if prenode == sucnode:
-            ui.debug('node %s already existed\n' % (ctx.hex()))
-        else:
-            replacements[ctx.node()] = sucnode
+    memctx = context.memctx(
+        repo,
+        parents=(newp1node, newp2node),
+        text=ctx.description(),
+        files=set(ctx.files()) | set(filedata.keys()),
+        filectxfn=filectxfn,
+        user=ctx.user(),
+        date=ctx.date(),
+        extra=ctx.extra(),
+        branch=ctx.branch(),
+        editor=None)
+    sucnode = memctx.commit()
+    prenode = ctx.node()
+    if prenode == sucnode:
+        ui.debug('node %s already existed\n' % (ctx.hex()))
+    else:
+        replacements[ctx.node()] = sucnode
 
 def getfixers(ui):
     """Returns a map of configured fixer tools indexed by their names

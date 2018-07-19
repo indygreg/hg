@@ -248,6 +248,20 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	return data ? data + 32 : NULL;
 }
 
+/*
+ * Return the 20-byte SHA of the node corresponding to the given rev. The
+ * rev is assumed to be existing. If not, an exception is set.
+ */
+static const char *index_node_existing(indexObject *self, Py_ssize_t pos)
+{
+	const char *node = index_node(self, pos);
+	if (node == NULL) {
+		PyErr_Format(PyExc_IndexError, "could not access rev %d",
+		             (int)pos);
+	}
+	return node;
+}
+
 static int nt_insert(indexObject *self, const char *node, int rev);
 
 static int node_check(PyObject *obj, char **node, Py_ssize_t *nodelen)
@@ -1052,10 +1066,12 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 			return 0;
 		}
 		if (v < 0) {
-			const char *oldnode = index_node(self, -(v + 1));
+			const char *oldnode = index_node_existing(self, -(v + 1));
 			int noff;
 
-			if (!oldnode || !memcmp(oldnode, node, 20)) {
+			if (oldnode == NULL)
+				return -1;
+			if (!memcmp(oldnode, node, 20)) {
 				n->children[k] = -rev - 1;
 				return 0;
 			}
@@ -1135,9 +1151,9 @@ static int index_find_node(indexObject *self,
 	 */
 	if (self->ntmisses++ < 4) {
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node(self, rev);
+			const char *n = index_node_existing(self, rev);
 			if (n == NULL)
-				return -2;
+				return -3;
 			if (memcmp(node, n, nodelen > 20 ? 20 : nodelen) == 0) {
 				if (nt_insert(self, n, rev) == -1)
 					return -3;
@@ -1146,11 +1162,9 @@ static int index_find_node(indexObject *self,
 		}
 	} else {
 		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node(self, rev);
-			if (n == NULL) {
-				self->ntrev = rev + 1;
-				return -2;
-			}
+			const char *n = index_node_existing(self, rev);
+			if (n == NULL)
+				return -3;
 			if (nt_insert(self, n, rev) == -1) {
 				self->ntrev = rev + 1;
 				return -3;
@@ -1216,27 +1230,84 @@ static PyObject *index_getitem(indexObject *self, PyObject *value)
 	return NULL;
 }
 
+/*
+ * Fully populate the radix tree.
+ */
+static int nt_populate(indexObject *self) {
+	int rev;
+	if (self->ntrev > 0) {
+		for (rev = self->ntrev - 1; rev >= 0; rev--) {
+			const char *n = index_node_existing(self, rev);
+			if (n == NULL)
+				return -1;
+			if (nt_insert(self, n, rev) == -1)
+				return -1;
+		}
+		self->ntrev = -1;
+	}
+	return 0;
+}
+
 static int nt_partialmatch(indexObject *self, const char *node,
 			   Py_ssize_t nodelen)
 {
-	int rev;
+	if (nt_init(self) == -1)
+		return -3;
+	if (nt_populate(self) == -1)
+		return -3;
+
+	return nt_find(self, node, nodelen, 1);
+}
+
+/*
+ * Find the length of the shortest unique prefix of node.
+ *
+ * Return values:
+ *
+ *   -3: error (exception set)
+ *   -2: not found (no exception set)
+ * rest: length of shortest prefix
+ */
+static int nt_shortest(indexObject *self, const char *node)
+{
+	int level, off;
 
 	if (nt_init(self) == -1)
 		return -3;
+	if (nt_populate(self) == -1)
+		return -3;
 
-	if (self->ntrev > 0) {
-		/* ensure that the radix tree is fully populated */
-		for (rev = self->ntrev - 1; rev >= 0; rev--) {
-			const char *n = index_node(self, rev);
+	for (level = off = 0; level < 40; level++) {
+		int k, v;
+		nodetree *n = &self->nt[off];
+		k = nt_level(node, level);
+		v = n->children[k];
+		if (v < 0) {
+			const char *n;
+			v = -(v + 1);
+			n = index_node_existing(self, v);
 			if (n == NULL)
-				return -2;
-			if (nt_insert(self, n, rev) == -1)
 				return -3;
+			if (memcmp(node, n, 20) != 0)
+				/*
+				 * Found a unique prefix, but it wasn't for the
+				 * requested node (i.e the requested node does
+				 * not exist).
+				 */
+				return -2;
+			return level + 1;
 		}
-		self->ntrev = rev;
+		if (v == 0)
+			return -2;
+		off = v;
 	}
-
-	return nt_find(self, node, nodelen, 1);
+	/*
+	 * The node was still not unique after 40 hex digits, so this won't
+	 * happen. Also, if we get here, then there's a programming error in
+	 * this file that made us insert a node longer than 40 hex digits.
+	 */
+	PyErr_SetString(PyExc_Exception, "broken node tree");
+	return -3;
 }
 
 static PyObject *index_partialmatch(indexObject *self, PyObject *args)
@@ -1249,7 +1320,7 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 	if (!PyArg_ParseTuple(args, PY23("s#", "y#"), &node, &nodelen))
 		return NULL;
 
-	if (nodelen < 4) {
+	if (nodelen < 1) {
 		PyErr_SetString(PyExc_ValueError, "key too short");
 		return NULL;
 	}
@@ -1280,13 +1351,34 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		return PyBytes_FromStringAndSize(nullid, 20);
 	}
 
-	fullnode = index_node(self, rev);
+	fullnode = index_node_existing(self, rev);
 	if (fullnode == NULL) {
-		PyErr_Format(PyExc_IndexError,
-			     "could not access rev %d", rev);
 		return NULL;
 	}
 	return PyBytes_FromStringAndSize(fullnode, 20);
+}
+
+static PyObject *index_shortest(indexObject *self, PyObject *args)
+{
+	Py_ssize_t nodelen;
+	PyObject *val;
+	char *node;
+	int length;
+
+	if (!PyArg_ParseTuple(args, "O", &val))
+		return NULL;
+	if (node_check(val, &node, &nodelen) == -1)
+		return NULL;
+
+	self->ntlookups++;
+	length = nt_shortest(self, node);
+	if (length == -3)
+		return NULL;
+	if (length == -2) {
+		raise_revlog_error();
+		return NULL;
+	}
+	return PyInt_FromLong(length);
 }
 
 static PyObject *index_m_get(indexObject *self, PyObject *args)
@@ -1758,10 +1850,11 @@ static int index_slice_del(indexObject *self, PyObject *item)
 			Py_ssize_t i;
 
 			for (i = start + 1; i < self->length - 1; i++) {
-				const char *node = index_node(self, i);
+				const char *node = index_node_existing(self, i);
+				if (node == NULL)
+					return -1;
 
-				if (node)
-					nt_insert(self, node, -1);
+				nt_insert(self, node, -1);
 			}
 			if (self->added)
 				nt_invalidate_added(self, 0);
@@ -1977,6 +2070,8 @@ static PyMethodDef index_methods[] = {
 	 "insert an index entry"},
 	{"partialmatch", (PyCFunction)index_partialmatch, METH_VARARGS,
 	 "match a potentially ambiguous node ID"},
+	{"shortest", (PyCFunction)index_shortest, METH_VARARGS,
+	 "find length of shortest hex nodeid of a binary ID"},
 	{"stats", (PyCFunction)index_stats, METH_NOARGS,
 	 "stats for the index"},
 	{NULL} /* Sentinel */

@@ -2,10 +2,10 @@ Testing the functionality to pull remotenames
 =============================================
 
   $ cat >> $HGRCPATH << EOF
+  > [ui]
+  > ssh = $PYTHON "$TESTDIR/dummyssh"
   > [alias]
   > glog = log -G -T '{rev}:{node|short}  {desc}'
-  > [experimental]
-  > remotenames = True
   > [extensions]
   > remotenames =
   > show =
@@ -52,7 +52,13 @@ Making a client repo
 
   $ cd ..
 
-  $ hg clone server client
+  $ hg clone ssh://user@dummy/server client
+  requesting all changes
+  adding changesets
+  adding manifests
+  adding file changes
+  added 9 changesets with 9 changes to 9 files (+1 heads)
+  new changesets 18d04c59bb5d:3e1487808078
   updating to branch default
   8 files updated, 0 files merged, 0 files removed, 0 files unresolved
 
@@ -332,4 +338,60 @@ Local bookmark should take precedence over hoisted name
      $TESTTMP/server2/foo 3:62615734edd5
      default/bar               6:87d6d6676308
      default/foo               3:62615734edd5
+   * foo                       8:3e1487808078
+
+Testing the remotenames sychronization during `hg push`
+-------------------------------------------------------
+
+  $ cd ../server/
+  $ hg bookmark foo
+  moving bookmark 'foo' forward from 62615734edd5
+
+After the push, default/foo should move to rev 8
+  $ cd ../client/
+  $ hg push
+  pushing to ssh://user@dummy/server
+  searching for changes
+  no changes found
+  [1]
+  $ hg log -Gr 'remotenames()'
+  @  changeset:   8:3e1487808078
+  :  branch:      wat
+  :  bookmark:    foo
+  :  tag:         tip
+  :  remote bookmark:  default/foo
+  :  hoisted name:  foo
+  :  remote branch:  $TESTTMP/server2/wat
+  :  remote branch:  default/wat
+  :  parent:      4:aa98ab95a928
+  :  user:        test
+  :  date:        Thu Jan 01 00:00:00 1970 +0000
+  :  summary:     added bar
+  :
+  : o  changeset:   7:ec2426147f0e
+  : |  remote branch:  $TESTTMP/server2/default
+  : |  remote branch:  default/default
+  : |  user:        test
+  : |  date:        Thu Jan 01 00:00:00 1970 +0000
+  : |  summary:     Added h
+  : |
+  : o  changeset:   6:87d6d6676308
+  :/   remote bookmark:  $TESTTMP/server2/bar
+  :    remote bookmark:  default/bar
+  :    hoisted name:  bar
+  :    user:        test
+  :    date:        Thu Jan 01 00:00:00 1970 +0000
+  :    summary:     Added g
+  :
+  o  changeset:   3:62615734edd5
+  |  remote bookmark:  $TESTTMP/server2/foo
+  ~  user:        test
+     date:        Thu Jan 01 00:00:00 1970 +0000
+     summary:     Added d
+  
+  $ hg bookmarks
+     $TESTTMP/server2/bar 6:87d6d6676308
+     $TESTTMP/server2/foo 3:62615734edd5
+     default/bar               6:87d6d6676308
+     default/foo               8:3e1487808078
    * foo                       8:3e1487808078

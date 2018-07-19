@@ -43,7 +43,7 @@ def _getbkfile(repo):
     fp, pending = txnutil.trypending(repo.root, repo.vfs, 'bookmarks')
     return fp
 
-class bmstore(dict):
+class bmstore(object):
     """Storage for bookmarks.
 
     This object should do all bookmark-related reads and writes, so
@@ -58,13 +58,13 @@ class bmstore(dict):
     """
 
     def __init__(self, repo):
-        dict.__init__(self)
         self._repo = repo
+        self._refmap = refmap = {}  # refspec: node
+        self._nodemap = nodemap = {}  # node: sorted([refspec, ...])
         self._clean = True
         self._aclean = True
         nm = repo.changelog.nodemap
         tonode = bin # force local lookup
-        setitem = dict.__setitem__
         try:
             with _getbkfile(repo) as bkfile:
                 for line in bkfile:
@@ -76,7 +76,15 @@ class bmstore(dict):
                         node = tonode(sha)
                         if node in nm:
                             refspec = encoding.tolocal(refspec)
-                            setitem(self, refspec, node)
+                            refmap[refspec] = node
+                            nrefs = nodemap.get(node)
+                            if nrefs is None:
+                                nodemap[node] = [refspec]
+                            else:
+                                nrefs.append(refspec)
+                                if nrefs[-2] > refspec:
+                                    # bookmarks weren't sorted before 4.5
+                                    nrefs.sort()
                     except (TypeError, ValueError):
                         # TypeError:
                         # - bin(...)
@@ -96,38 +104,78 @@ class bmstore(dict):
 
     @active.setter
     def active(self, mark):
-        if mark is not None and mark not in self:
+        if mark is not None and mark not in self._refmap:
             raise AssertionError('bookmark %s does not exist!' % mark)
 
         self._active = mark
         self._aclean = False
 
-    def __setitem__(self, *args, **kwargs):
-        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
+    def __len__(self):
+        return len(self._refmap)
 
-    def _set(self, key, value):
+    def __iter__(self):
+        return iter(self._refmap)
+
+    def iteritems(self):
+        return self._refmap.iteritems()
+
+    def items(self):
+        return self._refmap.items()
+
+    # TODO: maybe rename to allnames()?
+    def keys(self):
+        return self._refmap.keys()
+
+    # TODO: maybe rename to allnodes()? but nodes would have to be deduplicated
+    # could be self._nodemap.keys()
+    def values(self):
+        return self._refmap.values()
+
+    def __contains__(self, mark):
+        return mark in self._refmap
+
+    def __getitem__(self, mark):
+        return self._refmap[mark]
+
+    def get(self, mark, default=None):
+        return self._refmap.get(mark, default)
+
+    def _set(self, mark, node):
         self._clean = False
-        return dict.__setitem__(self, key, value)
+        if mark in self._refmap:
+            self._del(mark)
+        self._refmap[mark] = node
+        nrefs = self._nodemap.get(node)
+        if nrefs is None:
+            self._nodemap[node] = [mark]
+        else:
+            nrefs.append(mark)
+            nrefs.sort()
 
-    def __delitem__(self, key):
-        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
-
-    def _del(self, key):
+    def _del(self, mark):
         self._clean = False
-        return dict.__delitem__(self, key)
+        node = self._refmap.pop(mark)
+        nrefs = self._nodemap[node]
+        if len(nrefs) == 1:
+            assert nrefs[0] == mark
+            del self._nodemap[node]
+        else:
+            nrefs.remove(mark)
 
-    def update(self, *others):
-        raise error.ProgrammingError("use 'bookmarks.applychanges' instead")
+    def names(self, node):
+        """Return a sorted list of bookmarks pointing to the specified node"""
+        return self._nodemap.get(node, [])
 
     def changectx(self, mark):
-        return self._repo[self[mark]]
+        node = self._refmap[mark]
+        return self._repo[node]
 
     def applychanges(self, repo, tr, changes):
         """Apply a list of changes to bookmarks
         """
         bmchanges = tr.changes.get('bookmarks')
         for name, node in changes:
-            old = self.get(name)
+            old = self._refmap.get(name)
             if node is None:
                 self._del(name)
             else:
@@ -151,7 +199,7 @@ class bmstore(dict):
     def _writerepo(self, repo):
         """Factored out for extensibility"""
         rbm = repo._bookmarks
-        if rbm.active not in self:
+        if rbm.active not in self._refmap:
             rbm.active = None
             rbm._writeactive()
 
@@ -182,7 +230,7 @@ class bmstore(dict):
         self._aclean = True
 
     def _write(self, fp):
-        for name, node in sorted(self.iteritems()):
+        for name, node in sorted(self._refmap.iteritems()):
             fp.write("%s %s\n" % (hex(node), encoding.fromlocal(name)))
         self._clean = True
         self._repo.invalidatevolatilesets()
@@ -208,15 +256,15 @@ class bmstore(dict):
         If divergent bookmark are to be deleted, they will be returned as list.
         """
         cur = self._repo['.'].node()
-        if mark in self and not force:
+        if mark in self._refmap and not force:
             if target:
-                if self[mark] == target and target == cur:
+                if self._refmap[mark] == target and target == cur:
                     # re-activating a bookmark
                     return []
                 rev = self._repo[target].rev()
                 anc = self._repo.changelog.ancestors([rev])
                 bmctx = self.changectx(mark)
-                divs = [self[b] for b in self
+                divs = [self._refmap[b] for b in self._refmap
                         if b.split('@', 1)[0] == mark.split('@', 1)[0]]
 
                 # allow resolving a single divergent bookmark even if moving
@@ -765,7 +813,7 @@ def validdest(repo, old, new):
         return new.node() in obsutil.foreground(repo, [old.node()])
     else:
         # still an independent clause as it is lazier (and therefore faster)
-        return old.descendant(new)
+        return old.isancestorof(new)
 
 def checkformat(repo, mark):
     """return a valid version of a potential bookmark name
@@ -875,11 +923,14 @@ def _printbookmarks(ui, repo, bmarks, **opts):
     """
     opts = pycompat.byteskwargs(opts)
     fm = ui.formatter('bookmarks', opts)
+    contexthint = fm.contexthint('bookmark rev node active')
     hexfn = fm.hexfunc
     if len(bmarks) == 0 and fm.isplain():
         ui.status(_("no bookmarks set\n"))
     for bmark, (n, prefix, label) in sorted(bmarks.iteritems()):
         fm.startitem()
+        if 'ctx' in contexthint:
+            fm.context(ctx=repo[n])
         if not ui.quiet:
             fm.plain(' %s ' % prefix, label=label)
         fm.write('bookmark', '%s', bmark, label=label)

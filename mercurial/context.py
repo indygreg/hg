@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import errno
 import filecmp
 import os
-import re
 import stat
 
 from .i18n import _
@@ -24,7 +23,6 @@ from .node import (
     short,
     wdirfilenodeids,
     wdirid,
-    wdirrev,
 )
 from . import (
     dagop,
@@ -51,8 +49,6 @@ from .utils import (
 )
 
 propertycache = util.propertycache
-
-nonascii = re.compile(br'[^\x21-\x7f]').search
 
 class basectx(object):
     """A basectx object represents the common logic for its children:
@@ -185,8 +181,8 @@ class basectx(object):
     def mutable(self):
         return self.phase() > phases.public
 
-    def getfileset(self, expr):
-        return fileset.getfileset(self, expr)
+    def matchfileset(self, expr, badfn=None):
+        return fileset.match(self, expr, badfn=badfn)
 
     def obsolete(self):
         """True if the changeset is obsolete"""
@@ -298,14 +294,18 @@ class basectx(object):
                               auditor=r.nofsauditor, ctx=self,
                               listsubrepos=listsubrepos, badfn=badfn)
 
-    def diff(self, ctx2=None, match=None, **opts):
+    def diff(self, ctx2=None, match=None, changes=None, opts=None,
+             losedatafn=None, prefix='', relroot='', copy=None,
+             hunksfilterfn=None):
         """Returns a diff generator for the given contexts and matcher"""
         if ctx2 is None:
             ctx2 = self.p1()
         if ctx2 is not None:
             ctx2 = self._repo[ctx2]
-        diffopts = patch.diffopts(self._repo.ui, pycompat.byteskwargs(opts))
-        return patch.diff(self._repo, ctx2, self, match=match, opts=diffopts)
+        return patch.diff(self._repo, ctx2, self, match=match, changes=changes,
+                          opts=opts, losedatafn=losedatafn, prefix=prefix,
+                          relroot=relroot, copy=copy,
+                          hunksfilterfn=hunksfilterfn)
 
     def dirs(self):
         return self._manifest.dirs()
@@ -377,31 +377,6 @@ class basectx(object):
 
         return r
 
-def changectxdeprecwarn(repo):
-    # changectx's constructor will soon lose support for these forms of
-    # changeids:
-    #  * stringinfied ints
-    #  * bookmarks, tags, branches, and other namespace identifiers
-    #  * hex nodeid prefixes
-    #
-    # Depending on your use case, replace repo[x] by one of these:
-    #  * If you want to support general revsets, use scmutil.revsingle(x)
-    #  * If you know that "x" is a stringified int, use repo[int(x)]
-    #  * If you know that "x" is a bookmark, use repo._bookmarks.changectx(x)
-    #  * If you know that "x" is a tag, use repo[repo.tags()[x]]
-    #  * If you know that "x" is a branch or in some other namespace,
-    #    use the appropriate mechanism for that namespace
-    #  * If you know that "x" is a hex nodeid prefix, use
-    #    repo[scmutil.resolvehexnodeidprefix(repo, x)]
-    #  * If "x" is a string that can be any of the above, but you don't want
-    #    to allow general revsets (perhaps because "x" may come from a remote
-    #    user and the revset may be too costly), use scmutil.revsymbol(repo, x)
-    #  * If "x" can be a mix of the above, you'll have to figure it out
-    #    yourself
-    repo.ui.deprecwarn("changectx.__init__ is getting more limited, see "
-                       "context.changectxdeprecwarn() for details", "4.6",
-                       stacklevel=4)
-
 class changectx(basectx):
     """A changecontext object makes access to data related to a particular
     changeset convenient. It represents a read-only context already present in
@@ -415,22 +390,22 @@ class changectx(basectx):
                 self._node = repo.changelog.node(changeid)
                 self._rev = changeid
                 return
-            if changeid == 'null':
+            elif changeid == 'null':
                 self._node = nullid
                 self._rev = nullrev
                 return
-            if changeid == 'tip':
+            elif changeid == 'tip':
                 self._node = repo.changelog.tip()
                 self._rev = repo.changelog.rev(self._node)
                 return
-            if (changeid == '.'
-                or repo.local() and changeid == repo.dirstate.p1()):
+            elif (changeid == '.'
+                  or repo.local() and changeid == repo.dirstate.p1()):
                 # this is a hack to delay/avoid loading obsmarkers
                 # when we know that '.' won't be hidden
                 self._node = repo.dirstate.p1()
                 self._rev = repo.unfiltered().changelog.rev(self._node)
                 return
-            if len(changeid) == 20:
+            elif len(changeid) == 20:
                 try:
                     self._node = changeid
                     self._rev = repo.changelog.rev(changeid)
@@ -438,27 +413,17 @@ class changectx(basectx):
                 except error.FilteredLookupError:
                     raise
                 except LookupError:
-                    pass
+                    # check if it might have come from damaged dirstate
+                    #
+                    # XXX we could avoid the unfiltered if we had a recognizable
+                    # exception for filtered changeset access
+                    if (repo.local()
+                        and changeid in repo.unfiltered().dirstate.parents()):
+                        msg = _("working directory has unknown parent '%s'!")
+                        raise error.Abort(msg % short(changeid))
+                    changeid = hex(changeid) # for the error message
 
-            try:
-                r = int(changeid)
-                if '%d' % r != changeid:
-                    raise ValueError
-                l = len(repo.changelog)
-                if r < 0:
-                    r += l
-                if r < 0 or r >= l and r != wdirrev:
-                    raise ValueError
-                self._rev = r
-                self._node = repo.changelog.node(r)
-                changectxdeprecwarn(repo)
-                return
-            except error.FilteredIndexError:
-                raise
-            except (ValueError, OverflowError, IndexError):
-                pass
-
-            if len(changeid) == 40:
+            elif len(changeid) == 40:
                 try:
                     self._node = bin(changeid)
                     self._rev = repo.changelog.rev(self._node)
@@ -467,39 +432,15 @@ class changectx(basectx):
                     raise
                 except (TypeError, LookupError):
                     pass
-
-            # lookup bookmarks through the name interface
-            try:
-                self._node = repo.names.singlenode(repo, changeid)
-                self._rev = repo.changelog.rev(self._node)
-                changectxdeprecwarn(repo)
-                return
-            except KeyError:
-                pass
-
-            self._node = scmutil.resolvehexnodeidprefix(repo, changeid)
-            if self._node is not None:
-                self._rev = repo.changelog.rev(self._node)
-                changectxdeprecwarn(repo)
-                return
+            else:
+                raise error.ProgrammingError(
+                        "unsupported changeid '%s' of type %s" %
+                        (changeid, type(changeid)))
 
             # lookup failed
-            # check if it might have come from damaged dirstate
-            #
-            # XXX we could avoid the unfiltered if we had a recognizable
-            # exception for filtered changeset access
-            if (repo.local()
-                and changeid in repo.unfiltered().dirstate.parents()):
-                msg = _("working directory has unknown parent '%s'!")
-                raise error.Abort(msg % short(changeid))
-            try:
-                if len(changeid) == 20 and nonascii(changeid):
-                    changeid = hex(changeid)
-            except TypeError:
-                pass
         except (error.FilteredIndexError, error.FilteredLookupError):
             raise error.FilteredRepoLookupError(_("filtered revision '%s'")
-                                                % changeid)
+                                                % pycompat.bytestr(changeid))
         except error.FilteredRepoLookupError:
             raise
         except IndexError:
@@ -649,8 +590,14 @@ class changectx(basectx):
         return changectx(self._repo, anc)
 
     def descendant(self, other):
-        """True if other is descendant of this changeset"""
-        return self._repo.changelog.descendant(self._rev, other._rev)
+        msg = (b'ctx.descendant(other) is deprecated, '
+               'use ctx.isancestorof(other)')
+        self._repo.ui.deprecwarn(msg, b'4.7')
+        return self.isancestorof(other)
+
+    def isancestorof(self, other):
+        """True if this changeset is an ancestor of other"""
+        return self._repo.changelog.isancestorrev(self._rev, other._rev)
 
     def walk(self, match):
         '''Generates matching file names.'''
@@ -1294,7 +1241,8 @@ class committablectx(basectx):
                                                unknown=True, ignored=False))
 
     def matches(self, match):
-        return sorted(self._repo.dirstate.matches(match))
+        ds = self._repo.dirstate
+        return sorted(f for f in ds.matches(match) if ds[f] != 'r')
 
     def ancestors(self):
         for p in self._parents:
@@ -1399,7 +1347,8 @@ class workingctx(committablectx):
                     ui.warn(_("%s does not exist!\n") % uipath(f))
                     rejected.append(f)
                     continue
-                if st.st_size > 10000000:
+                limit = ui.configbytes('ui', 'large-file-limit')
+                if limit != 0 and st.st_size > limit:
                     ui.warn(_("%s: up to %d MB of RAM may be required "
                               "to manage this file\n"
                               "(use 'hg revert %s' to cancel the "
@@ -1773,7 +1722,9 @@ class workingfilectx(committablefilectx):
 
     def remove(self, ignoremissing=False):
         """wraps unlink for a repo's working directory"""
-        self._repo.wvfs.unlinkpath(self._path, ignoremissing=ignoremissing)
+        rmdir = self._repo.ui.configbool('experimental', 'removeemptydirs')
+        self._repo.wvfs.unlinkpath(self._path, ignoremissing=ignoremissing,
+                                   rmdir=rmdir)
 
     def write(self, data, flags, backgroundclose=False, **kwargs):
         """wraps repo.wwrite"""

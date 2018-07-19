@@ -1,13 +1,29 @@
 setup
+
+  $ cat > myextension.py <<EOF
+  > from mercurial import error, registrar
+  > cmdtable = {}
+  > command = registrar.command(cmdtable)
+  > @command(b'crash', [], b'hg crash')
+  > def crash(ui, *args, **kwargs):
+  >     raise Exception("oops")
+  > @command(b'abort', [], b'hg abort')
+  > def abort(ui, *args, **kwargs):
+  >     raise error.Abort(b"oops")
+  > EOF
+  $ abspath=`pwd`/myextension.py
+
   $ cat >> $HGRCPATH <<EOF
   > [extensions]
   > blackbox=
   > mock=$TESTDIR/mockblackbox.py
   > mq=
+  > myextension=$TESTTMP/myextension.py
   > [alias]
   > confuse = log --limit 3
   > so-confusing = confuse --style compact
   > EOF
+
   $ hg init blackboxtest
   $ cd blackboxtest
 
@@ -20,6 +36,32 @@ command, exit codes, and duration
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add a
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add a exited 0 after * seconds (glob)
   1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000+ (5000)> blackbox --config *blackbox.dirty=True* (glob)
+
+failure exit code
+  $ rm ./.hg/blackbox.log
+  $ hg add non-existent
+  non-existent: $ENOENT$
+  [1]
+  $ hg blackbox
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add non-existent
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> add non-existent exited 1 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox
+
+abort exit code
+  $ rm ./.hg/blackbox.log
+  $ hg abort 2> /dev/null
+  [255]
+  $ hg blackbox -l 2
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> abort exited 255 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
+
+unhandled exception
+  $ rm ./.hg/blackbox.log
+  $ hg crash 2> /dev/null
+  [1]
+  $ hg blackbox -l 2
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> crash exited 1 after * seconds (glob)
+  1970/01/01 00:00:00 bob @0000000000000000000000000000000000000000 (5000)> blackbox -l 2
 
 alias expansion is logged
   $ rm ./.hg/blackbox.log
@@ -206,7 +248,7 @@ log rotation
   committing changelog
   updating the branch cache
   committed changeset 0:0e46349438790c460c5c9f7546bfcd39b267bbd2
-  result: None
+  result: 0
   running: --debug commit -m commit2 -d 2000-01-02 foo
   committing files:
   foo
@@ -214,7 +256,7 @@ log rotation
   committing changelog
   updating the branch cache
   committed changeset 1:45589e459b2edfbf3dbde7e01f611d2c1e7453d7
-  result: None
+  result: 0
   running: --debug log -r 0
   changeset:   0:0e46349438790c460c5c9f7546bfcd39b267bbd2
   phase:       draft
@@ -229,7 +271,7 @@ log rotation
   commit1
   
   
-  result: None
+  result: 0
   running: --debug log -r tip
   changeset:   1:45589e459b2edfbf3dbde7e01f611d2c1e7453d7
   tag:         tip
@@ -245,7 +287,7 @@ log rotation
   commit2
   
   
-  result: None
+  result: 0
   $ hg blackbox
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updating the branch cache
   1970/01/01 00:00:00 bob @45589e459b2edfbf3dbde7e01f611d2c1e7453d7 (5000)> updated served branch cache in * seconds (glob)

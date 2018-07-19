@@ -318,9 +318,9 @@ class abstractsubrepo(object):
         """return file flags"""
         return ''
 
-    def getfileset(self, expr):
+    def matchfileset(self, expr, badfn=None):
         """Resolve the fileset expression for this repo"""
-        return set()
+        return matchmod.nevermatcher(self.wvfs.base, '', badfn=badfn)
 
     def printfiles(self, ui, m, fm, fmt, subrepos):
         """handle the files command for this subrepo"""
@@ -333,17 +333,17 @@ class abstractsubrepo(object):
             files = self.files()
         total = len(files)
         relpath = subrelpath(self)
-        self.ui.progress(_('archiving (%s)') % relpath, 0,
-                         unit=_('files'), total=total)
-        for i, name in enumerate(files):
+        progress = self.ui.makeprogress(_('archiving (%s)') % relpath,
+                                        unit=_('files'), total=total)
+        progress.update(0)
+        for name in files:
             flags = self.fileflags(name)
             mode = 'x' in flags and 0o755 or 0o644
             symlink = 'l' in flags
             archiver.addfile(prefix + self._path + '/' + name,
                              mode, symlink, self.filedata(name, decode))
-            self.ui.progress(_('archiving (%s)') % relpath, i + 1,
-                             unit=_('files'), total=total)
-        self.ui.progress(_('archiving (%s)') % relpath, None)
+            progress.increment()
+        progress.complete()
         return total
 
     def walk(self, match):
@@ -792,24 +792,30 @@ class hgsubrepo(abstractsubrepo):
         return cmdutil.files(ui, ctx, m, fm, fmt, subrepos)
 
     @annotatesubrepoerror
-    def getfileset(self, expr):
+    def matchfileset(self, expr, badfn=None):
+        repo = self._repo
         if self._ctx.rev() is None:
-            ctx = self._repo[None]
+            ctx = repo[None]
         else:
             rev = self._state[1]
-            ctx = self._repo[rev]
+            ctx = repo[rev]
 
-        files = ctx.getfileset(expr)
+        matchers = [ctx.matchfileset(expr, badfn=badfn)]
 
         for subpath in ctx.substate:
             sub = ctx.sub(subpath)
 
             try:
-                files.extend(subpath + '/' + f for f in sub.getfileset(expr))
+                sm = sub.matchfileset(expr, badfn=badfn)
+                pm = matchmod.prefixdirmatcher(repo.root, repo.getcwd(),
+                                               subpath, sm, badfn=badfn)
+                matchers.append(pm)
             except error.LookupError:
                 self.ui.status(_("skipping missing subrepository: %s\n")
                                % self.wvfs.reljoin(reporelpath(self), subpath))
-        return files
+        if len(matchers) == 1:
+            return matchers[0]
+        return matchmod.unionmatcher(matchers)
 
     def walk(self, match):
         ctx = self._repo[None]
@@ -1640,8 +1646,10 @@ class gitsubrepo(abstractsubrepo):
         tarstream = self._gitcommand(['archive', revision], stream=True)
         tar = tarfile.open(fileobj=tarstream, mode=r'r|')
         relpath = subrelpath(self)
-        self.ui.progress(_('archiving (%s)') % relpath, 0, unit=_('files'))
-        for i, info in enumerate(tar):
+        progress = self.ui.makeprogress(_('archiving (%s)') % relpath,
+                                        unit=_('files'))
+        progress.update(0)
+        for info in tar:
             if info.isdir():
                 continue
             if match and not match(info.name):
@@ -1653,9 +1661,8 @@ class gitsubrepo(abstractsubrepo):
             archiver.addfile(prefix + self._path + '/' + info.name,
                              info.mode, info.issym(), data)
             total += 1
-            self.ui.progress(_('archiving (%s)') % relpath, i + 1,
-                             unit=_('files'))
-        self.ui.progress(_('archiving (%s)') % relpath, None)
+            progress.increment()
+        progress.complete()
         return total
 
 
@@ -1695,7 +1702,7 @@ class gitsubrepo(abstractsubrepo):
             tab = line.find('\t')
             if tab == -1:
                 continue
-            status, f = line[tab - 1], line[tab + 1:]
+            status, f = line[tab - 1:tab], line[tab + 1:]
             if status == 'M':
                 modified.append(f)
             elif status == 'A':

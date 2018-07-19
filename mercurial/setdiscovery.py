@@ -197,6 +197,7 @@ def findcommonheads(ui, local, remote,
     missing = set()
 
     full = False
+    progress = ui.makeprogress(_('searching'), unit=_('queries'))
     while undecided:
 
         if sample:
@@ -226,7 +227,7 @@ def findcommonheads(ui, local, remote,
             sample = samplefunc(dag, undecided, targetsize)
 
         roundtrips += 1
-        ui.progress(_('searching'), roundtrips, unit=_('queries'))
+        progress.update(roundtrips)
         ui.debug("query %i; still undecided: %i, sample size is: %i\n"
                  % (roundtrips, len(undecided), len(sample)))
         # indices between sample and externalized version must match
@@ -251,7 +252,7 @@ def findcommonheads(ui, local, remote,
     # return any heads in that case, so discard that
     result.discard(nullrev)
     elapsed = util.timer() - start
-    ui.progress(_('searching'), None)
+    progress.complete()
     ui.debug("%d total queries in %.4fs\n" % (roundtrips, elapsed))
     msg = ('found %d common and %d unknown server heads,'
            ' %d roundtrips in %.4fs\n')

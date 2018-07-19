@@ -6,13 +6,13 @@
 from __future__ import absolute_import
 
 import os
-import tempfile
 
 from mercurial.node import hex
 
 from mercurial import (
     error,
     extensions,
+    pycompat,
 )
 
 def isremotebooksenabled(ui):
@@ -30,7 +30,7 @@ def downloadbundle(repo, unknownbinhead):
 
 def _makebundlefromraw(data):
     fp = None
-    fd, bundlefile = tempfile.mkstemp()
+    fd, bundlefile = pycompat.mkstemp()
     try:  # guards bundlefile
         try:  # guards fp
             fp = os.fdopen(fd, 'wb')

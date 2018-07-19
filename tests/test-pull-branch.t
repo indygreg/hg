@@ -170,6 +170,7 @@ Pull branchC from tt
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 7d8ffa4c0b22
+  13 local changesets published
   (run 'hg heads' to see heads)
 
 Make changes on default and branchC on tt
@@ -183,6 +184,7 @@ Make changes on default and branchC on tt
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 2b94b54b6b5f
+  1 local changesets published
   (run 'hg heads' to see heads)
   $ hg up -C default
   2 files updated, 0 files merged, 0 files removed, 0 files unresolved
@@ -219,6 +221,7 @@ Pull from tt
   adding file changes
   added 2 changesets with 2 changes to 2 files (+2 heads)
   new changesets eed40c14b407:e634733b0309
+  1 local changesets published
   (run 'hg heads .' to see heads, 'hg merge' to merge)
 
   $ cd ..

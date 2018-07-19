@@ -379,7 +379,7 @@ Test relative path printing + subrepos
   $ touch bar/abc
   $ hg addremove -S ..
   \r (no-eol) (esc)
-  searching for exact renames [                         ] 0/1\r (no-eol) (esc)
+  searching for exact renames [========================>] 1/1\r (no-eol) (esc)
                                                               \r (no-eol) (esc)
   adding ../sub1/sub2/folder/test.txt
   removing ../sub1/sub2/test.txt

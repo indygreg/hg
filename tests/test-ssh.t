@@ -230,7 +230,7 @@ test pushkeys and bookmarks
   namespaces	
   phases	
   $ hg book foo -r 0
-  $ hg out -B
+  $ hg out -B --config paths.default=bogus://invalid --config paths.default:pushurl=`hg paths default`
   comparing with ssh://user@dummy/remote
   searching for changed bookmarks
      foo                       1160648e36ce
@@ -272,12 +272,14 @@ a bad, evil hook that prints to stdout
   $ cat <<EOF > $TESTTMP/badhook
   > import sys
   > sys.stdout.write("KABOOM\n")
+  > sys.stdout.flush()
   > EOF
 
   $ cat <<EOF > $TESTTMP/badpyhook.py
   > import sys
   > def hook(ui, repo, hooktype, **kwargs):
   >     sys.stdout.write("KABOOM IN PROCESS\n")
+  >     sys.stdout.flush()
   > EOF
 
   $ cat <<EOF >> ../remote/.hg/hgrc
@@ -455,11 +457,12 @@ stderr from remote commands should be printed before stdout from local code (iss
   > 
   > def wrappedpush(orig, repo, *args, **kwargs):
   >     res = orig(repo, *args, **kwargs)
-  >     repo.ui.write('local stdout\n')
+  >     repo.ui.write(b'local stdout\n')
+  >     repo.ui.flush()
   >     return res
   > 
   > def extsetup(ui):
-  >     extensions.wrapfunction(exchange, 'push', wrappedpush)
+  >     extensions.wrapfunction(exchange, b'push', wrappedpush)
   > EOF
 
   $ cat >> .hg/hgrc << EOF
@@ -569,7 +572,7 @@ remote hook failure is attributed to remote
 
   $ cat > $TESTTMP/failhook << EOF
   > def hook(ui, repo, **kwargs):
-  >     ui.write('hook failure!\n')
+  >     ui.write(b'hook failure!\n')
   >     ui.flush()
   >     return 1
   > EOF

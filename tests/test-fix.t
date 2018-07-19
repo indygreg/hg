@@ -1027,3 +1027,29 @@ an orphan. We must respect experimental.evolution.allowunstable.
 
   $ cd ..
 
+The --base flag affects the set of files being fixed. So while the --whole flag
+makes the base irrelevant for changed line ranges, it still changes the
+meaning and effect of the command. In this example, no files or lines are fixed
+until we specify the base, but then we do fix unchanged lines.
+
+  $ hg init basewhole
+  $ cd basewhole
+  $ printf "foo1\n" > foo.changed
+  $ hg commit -Aqm "first"
+  $ printf "foo2\n" >> foo.changed
+  $ printf "bar\n" > bar.changed
+  $ hg commit -Aqm "second"
+
+  $ hg fix --working-dir --whole
+  $ cat *.changed
+  bar
+  foo1
+  foo2
+
+  $ hg fix --working-dir --base 0 --whole
+  $ cat *.changed
+  BAR
+  FOO1
+  FOO2
+
+  $ cd ..

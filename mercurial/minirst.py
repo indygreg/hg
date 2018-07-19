@@ -169,7 +169,7 @@ def splitparagraphs(blocks):
         if not itemre.match(line1):
             return False
         if singleline:
-            return line2 == '' or line2[0] == ' ' or itemre.match(line2)
+            return line2 == '' or line2[0:1] == ' ' or itemre.match(line2)
         else:
             return line2.startswith(' ')
 

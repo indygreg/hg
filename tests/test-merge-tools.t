@@ -1,7 +1,8 @@
 test merge-tools configuration - mostly exercising filemerge.py
 
   $ unset HGMERGE # make sure HGMERGE doesn't interfere with the test
-  $ hg init
+  $ hg init repo
+  $ cd repo
 
 revision 0
 
@@ -317,6 +318,183 @@ and true.executable set to cat with path works:
   space
   revision 2
   space
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
+executable set to python script that succeeds:
+
+  $ cat > "$TESTTMP/myworkingmerge.py" <<EOF
+  > def myworkingmergefn(ui, repo, args, **kwargs):
+  >     return False
+  > EOF
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py:myworkingmergefn"
+  merging f
+  0 files updated, 1 files merged, 0 files removed, 0 files unresolved
+  (branch merge, don't forget to commit)
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  M f
+  # hg resolve --list
+  R f
+
+executable set to python script that fails:
+
+  $ cat > "$TESTTMP/mybrokenmerge.py" <<EOF
+  > def mybrokenmergefn(ui, repo, args, **kwargs):
+  >     ui.write(b"some fail message\n")
+  >     return True
+  > EOF
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/mybrokenmerge.py:mybrokenmergefn"
+  merging f
+  some fail message
+  abort: $TESTTMP/mybrokenmerge.py hook failed
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  ? f.orig
+  # hg resolve --list
+  U f
+
+executable set to python script that is missing function:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py:missingFunction"
+  merging f
+  abort: $TESTTMP/myworkingmerge.py does not have function: missingFunction
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  ? f.orig
+  # hg resolve --list
+  U f
+
+executable set to missing python script:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/missingpythonscript.py:mergefn"
+  merging f
+  abort: loading python merge script failed: $TESTTMP/missingpythonscript.py
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  ? f.orig
+  # hg resolve --list
+  U f
+
+executable set to python script but callable function is missing:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py"
+  abort: invalid 'python:' syntax: python:$TESTTMP/myworkingmerge.py
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  # hg resolve --list
+  U f
+
+executable set to python script but callable function is empty string:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/myworkingmerge.py:"
+  abort: invalid 'python:' syntax: python:$TESTTMP/myworkingmerge.py:
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  # hg resolve --list
+  U f
+
+executable set to python script but callable function is missing and path contains colon:
+
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config merge-tools.true.executable="python:$TESTTMP/some:dir/myworkingmerge.py"
+  abort: invalid 'python:' syntax: python:$TESTTMP/some:dir/myworkingmerge.py
+  [255]
+  $ aftermerge
+  # cat f
+  revision 1
+  space
+  # hg stat
+  # hg resolve --list
+  U f
+
+executable set to python script filename that contains spaces:
+
+  $ mkdir -p "$TESTTMP/my path"
+  $ cat > "$TESTTMP/my path/my working merge with spaces in filename.py" <<EOF
+  > def myworkingmergefn(ui, repo, args, **kwargs):
+  >     return False
+  > EOF
+  $ beforemerge
+  [merge-tools]
+  false.whatever=
+  true.priority=1
+  true.executable=cat
+  # hg update -C 1
+  $ hg merge -r 2 --config "merge-tools.true.executable=python:$TESTTMP/my path/my working merge with spaces in filename.py:myworkingmergefn"
+  merging f
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
   $ aftermerge
@@ -1446,7 +1624,7 @@ premerge=keep is used and has 'detailed' markers:
   merging f
   labellocal: "working copy"
   labelother: "merge rev"
-  output (arg): "$TESTTMP/f"
+  output (arg): "$TESTTMP/repo/f"
   output (contents):
   <<<<<<< working copy: uitmpl 1
   revision 1
@@ -1485,7 +1663,7 @@ mergemarkers=detailed; labellocal and labelother also use the tool's template
   merging f
   labellocal: "working copy: tooltmpl ef83787e2614"
   labelother: "merge rev: tooltmpl 0185f4e0cf02"
-  output (arg): "$TESTTMP/f"
+  output (arg): "$TESTTMP/repo/f"
   output (contents):
   <<<<<<< working copy: tooltmpl ef83787e2614
   revision 1
@@ -1585,7 +1763,7 @@ Verify naming of temporary files and that extension is preserved:
   $ hg update -q -C 2
   $ hg merge -y -r tip --tool echo --config merge-tools.echo.args='$base $local $other $output'
   merging f and f.txt to f.txt
-  */f~base.* */f~local.*.txt */f~other.*.txt $TESTTMP/f.txt (glob)
+  */f~base.* */f~local.*.txt */f~other.*.txt $TESTTMP/repo/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
@@ -1600,7 +1778,7 @@ Verify naming of temporary files and that extension is preserved
   >    --config merge-tools.echo.args='$base $local $other $output' \
   >    --config experimental.mergetempdirprefix=$TESTTMP/hgmerge.
   merging f and f.txt to f.txt
-  $TESTTMP/hgmerge.*/f~base $TESTTMP/hgmerge.*/f~local.txt $TESTTMP/hgmerge.*/f~other.txt $TESTTMP/f.txt (glob)
+  $TESTTMP/hgmerge.*/f~base $TESTTMP/hgmerge.*/f~local.txt $TESTTMP/hgmerge.*/f~other.txt $TESTTMP/repo/f.txt (glob)
   0 files updated, 1 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
@@ -1668,3 +1846,5 @@ specified file as expected
   couldn't find merge tool true (for pattern f)
   couldn't find merge tool true
   f = false
+
+  $ cd ..

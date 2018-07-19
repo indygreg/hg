@@ -103,8 +103,9 @@ def strip(ui, repo, revs, update=True, backup=True, force=None, bookmarks=None):
                                'option)'), _('REV')),
           ('f', 'force', None, _('force removal of changesets, discard '
                                  'uncommitted changes (no backup)')),
-          ('', 'no-backup', None, _('no backups')),
-          ('', 'nobackup', None, _('no backups (DEPRECATED)')),
+          ('', 'no-backup', None, _('do not save backup bundle')),
+          ('', 'nobackup', None, _('do not save backup bundle '
+                                   '(DEPRECATED)')),
           ('n', '', None, _('ignored  (DEPRECATED)')),
           ('k', 'keep', None, _("do not modify working directory during "
                                 "strip")),
@@ -165,7 +166,7 @@ def stripcmd(ui, repo, *revs, **opts):
                 nodetobookmarks.setdefault(node, []).append(mark)
             for marks in nodetobookmarks.values():
                 if bookmarks.issuperset(marks):
-                    rsrevs = repair.stripbmrevset(repo, marks[0])
+                    rsrevs = scmutil.bookmarkrevs(repo, marks[0])
                     revs.update(set(rsrevs))
             if not revs:
                 with repo.lock(), repo.transaction('bookmark') as tr:

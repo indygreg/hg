@@ -1,0 +1,111 @@
+#!/usr/bin/env python3
+#
+# Copyright 2018 Gregory Szorc <gregory.szorc@gmail.com>
+#
+# This software may be used and distributed according to the terms of the
+# GNU General Public License version 2 or any later version.
+
+import argparse
+import pathlib
+import shutil
+import subprocess
+import sys
+
+def get_docker() -> str:
+    docker = shutil.which('docker.io') or shutil.which('docker')
+    if not docker:
+        print('could not find docker executable')
+        return 1
+
+    try:
+        out = subprocess.check_output([docker, '-h'], stderr=subprocess.STDOUT)
+
+        if b'Jansens' in out:
+            print('%s is the Docking System Tray; try installing docker.io' %
+                  docker)
+            sys.exit(1)
+    except subprocess.CalledProcessError as e:
+        print('error calling `%s -h`: %s' % (docker, e.output))
+        sys.exit(1)
+
+    out = subprocess.check_output([docker, 'version'],
+                                  stderr=subprocess.STDOUT)
+
+    lines = out.splitlines()
+    if not any(l.startswith((b'Client:', b'Client version:')) for l in lines):
+        print('`%s version` does not look like Docker' % docker)
+        sys.exit(1)
+
+    if not any(l.startswith((b'Server:', b'Server version:')) for l in lines):
+        print('`%s version` does not look like Docker' % docker)
+        sys.exit(1)
+
+    return docker
+
+def get_dockerfile(path: pathlib.Path, args: list) -> bytes:
+    with path.open('rb') as fh:
+        df = fh.read()
+
+    for k, v in args:
+        df = df.replace(b'%%%s%%' % k, v)
+
+    return df
+
+def build_docker_image(dockerfile: pathlib.Path, params: list, tag: str):
+    """Build a Docker image from a templatized Dockerfile."""
+    docker = get_docker()
+
+    dockerfile_path = pathlib.Path(dockerfile)
+
+    dockerfile = get_dockerfile(dockerfile_path, params)
+
+    print('building Dockerfile:')
+    print(dockerfile.decode('utf-8', 'replace'))
+
+    args = [
+        docker,
+        'build',
+        '--build-arg', 'http_proxy',
+        '--build-arg', 'https_proxy',
+        '--tag', tag,
+        '-',
+    ]
+
+    print('executing: %r' % args)
+    subprocess.run(args, input=dockerfile, check=True)
+
+def command_build(args):
+    build_args = []
+    for arg in args.build_arg:
+        k, v = arg.split('=', 1)
+        build_args.append((k.encode('utf-8'), v.encode('utf-8')))
+
+    build_docker_image(pathlib.Path(args.dockerfile),
+                       build_args,
+                       args.tag)
+
+def command_docker(args):
+    print(get_docker())
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+
+    subparsers = parser.add_subparsers(title='subcommands')
+
+    build = subparsers.add_parser('build', help='Build a Docker image')
+    build.set_defaults(func=command_build)
+    build.add_argument('--build-arg', action='append', default=[],
+                        help='Substitution to perform in Dockerfile; '
+                             'format: key=value')
+    build.add_argument('dockerfile', help='path to Dockerfile to use')
+    build.add_argument('tag', help='Tag to apply to created image')
+
+    docker = subparsers.add_parser('docker-path', help='Resolve path to Docker')
+    docker.set_defaults(func=command_docker)
+
+    args = parser.parse_args()
+
+    return args.func(args)
+
+if __name__ == '__main__':
+    sys.exit(main())

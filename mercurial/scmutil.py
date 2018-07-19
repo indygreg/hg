@@ -104,8 +104,9 @@ class status(tuple):
         return self[6]
 
     def __repr__(self, *args, **kwargs):
-        return (('<status modified=%r, added=%r, removed=%r, deleted=%r, '
-                 'unknown=%r, ignored=%r, clean=%r>') % self)
+        return ((r'<status modified=%s, added=%s, removed=%s, deleted=%s, '
+                 r'unknown=%s, ignored=%s, clean=%s>') %
+                tuple(pycompat.sysstr(stringutil.pprint(v)) for v in self))
 
 def itersubrepos(ctx1, ctx2):
     """find subrepos in ctx1 or ctx2"""
@@ -200,7 +201,7 @@ def callcatch(ui, func):
         elif not msg:
             ui.warn(_(" empty string\n"))
         else:
-            ui.warn("\n%r\n" % stringutil.ellipsis(msg))
+            ui.warn("\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
         ui.warn(_("abort: file censored %s!\n") % inst)
     except error.RevlogError as inst:
@@ -232,7 +233,7 @@ def callcatch(ui, func):
             except (AttributeError, IndexError):
                 # it might be anything, for example a string
                 reason = inst.reason
-            if isinstance(reason, unicode):
+            if isinstance(reason, pycompat.unicode):
                 # SSLError of Python 2.7.9 contains a unicode
                 reason = encoding.unitolocal(reason)
             ui.warn(_("abort: error: %s\n") % reason)
@@ -286,7 +287,8 @@ def checknewlabel(repo, lbl, kind):
 def checkfilename(f):
     '''Check that the filename f is an acceptable filename for a tracked file'''
     if '\r' in f or '\n' in f:
-        raise error.Abort(_("'\\n' and '\\r' disallowed in filenames: %r") % f)
+        raise error.Abort(_("'\\n' and '\\r' disallowed in filenames: %r")
+                          % pycompat.bytestr(f))
 
 def checkportable(ui, f):
     '''Check if filename f is portable and warn or abort depending on config'''
@@ -448,7 +450,32 @@ def shortesthexnodeidprefix(repo, node, minlength=1):
     # _partialmatch() of filtered changelog could take O(len(repo)) time,
     # which would be unacceptably slow. so we look for hash collision in
     # unfiltered space, which means some hashes may be slightly longer.
-    return repo.unfiltered().changelog.shortest(node, minlength)
+    cl = repo.unfiltered().changelog
+
+    def isrev(prefix):
+        try:
+            i = int(prefix)
+            # if we are a pure int, then starting with zero will not be
+            # confused as a rev; or, obviously, if the int is larger
+            # than the value of the tip rev
+            if prefix[0:1] == b'0' or i > len(cl):
+                return False
+            return True
+        except ValueError:
+            return False
+
+    def disambiguate(prefix):
+        """Disambiguate against revnums."""
+        hexnode = hex(node)
+        for length in range(len(prefix), len(hexnode) + 1):
+            prefix = hexnode[:length]
+            if not isrev(prefix):
+                return prefix
+
+    try:
+        return disambiguate(cl.shortest(node, minlength))
+    except error.LookupError:
+        raise error.RepoLookupError()
 
 def isrevsymbol(repo, symbol):
     """Checks if a symbol exists in the repo.
@@ -560,11 +587,6 @@ def revsingle(repo, revspec, default='.', localalias=None):
 def _pairspec(revspec):
     tree = revsetlang.parse(revspec)
     return tree and tree[0] in ('range', 'rangepre', 'rangepost', 'rangeall')
-
-def revpairnodes(repo, revs):
-    repo.ui.deprecwarn("revpairnodes is deprecated, please use revpair", "4.6")
-    ctx1, ctx2 = revpair(repo, revs)
-    return ctx1.node(), ctx2.node()
 
 def revpair(repo, revs):
     if not revs:
@@ -757,7 +779,8 @@ class _containsnode(object):
     def __contains__(self, node):
         return self._revcontains(self._torev(node))
 
-def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
+def cleanupnodes(repo, replacements, operation, moves=None, metadata=None,
+                 fixphase=False, targetphase=None):
     """do common cleanups when old nodes are replaced by new nodes
 
     That includes writing obsmarkers or stripping nodes, and moving bookmarks.
@@ -773,6 +796,7 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
     metadata is dictionary containing metadata to be stored in obsmarker if
     obsolescence is enabled.
     """
+    assert fixphase or targetphase is None
     if not replacements and not moves:
         return
 
@@ -803,18 +827,45 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
             newnode = newnodes[0]
         moves[oldnode] = newnode
 
+    allnewnodes = [n for ns in replacements.values() for n in ns]
+    toretract = {}
+    toadvance = {}
+    if fixphase:
+        precursors = {}
+        for oldnode, newnodes in replacements.items():
+            for newnode in newnodes:
+                precursors.setdefault(newnode, []).append(oldnode)
+
+        allnewnodes.sort(key=lambda n: unfi[n].rev())
+        newphases = {}
+        def phase(ctx):
+            return newphases.get(ctx.node(), ctx.phase())
+        for newnode in allnewnodes:
+            ctx = unfi[newnode]
+            parentphase = max(phase(p) for p in ctx.parents())
+            if targetphase is None:
+                oldphase = max(unfi[oldnode].phase()
+                               for oldnode in precursors[newnode])
+                newphase = max(oldphase, parentphase)
+            else:
+                newphase = max(targetphase, parentphase)
+            newphases[newnode] = newphase
+            if newphase > ctx.phase():
+                toretract.setdefault(newphase, []).append(newnode)
+            elif newphase < ctx.phase():
+                toadvance.setdefault(newphase, []).append(newnode)
+
     with repo.transaction('cleanup') as tr:
         # Move bookmarks
         bmarks = repo._bookmarks
         bmarkchanges = []
-        allnewnodes = [n for ns in replacements.values() for n in ns]
         for oldnode, newnode in moves.items():
             oldbmarks = repo.nodebookmarks(oldnode)
             if not oldbmarks:
                 continue
             from . import bookmarks # avoid import cycle
             repo.ui.debug('moving bookmarks %r from %s to %s\n' %
-                          (util.rapply(pycompat.maybebytestr, oldbmarks),
+                          (pycompat.rapply(pycompat.maybebytestr, oldbmarks),
                            hex(oldnode), hex(newnode)))
             # Delete divergent bookmarks being parents of related newnodes
             deleterevs = repo.revs('parents(roots(%ln & (::%n))) - parents(%n)',
@@ -827,6 +878,11 @@ def cleanupnodes(repo, replacements, operation, moves=None, metadata=None):
 
         if bmarkchanges:
             bmarks.applychanges(repo, tr, bmarkchanges)
+
+        for phase, nodes in toretract.items():
+            phases.retractboundary(repo, tr, phase, nodes)
+        for phase, nodes in toadvance.items():
+            phases.advanceboundary(repo, tr, phase, nodes)
 
         # Obsolete or strip nodes
         if obsolete.isenabled(repo, obsolete.createmarkersopt):
@@ -1110,21 +1166,32 @@ class filecacheentry(object):
             entry.refresh()
 
 class filecache(object):
-    '''A property like decorator that tracks files under .hg/ for updates.
+    """A property like decorator that tracks files under .hg/ for updates.
 
-    Records stat info when called in _filecache.
+    On first access, the files defined as arguments are stat()ed and the
+    results cached. The decorated function is called. The results are stashed
+    away in a ``_filecache`` dict on the object whose method is decorated.
 
-    On subsequent calls, compares old stat info with new info, and recreates the
-    object when any of the files changes, updating the new stat info in
-    _filecache.
+    On subsequent access, the cached result is returned.
 
-    Mercurial either atomic renames or appends for files under .hg,
-    so to ensure the cache is reliable we need the filesystem to be able
-    to tell us if a file has been replaced. If it can't, we fallback to
-    recreating the object on every call (essentially the same behavior as
-    propertycache).
+    On external property set operations, stat() calls are performed and the new
+    value is cached.
 
-    '''
+    On property delete operations, cached data is removed.
+
+    When using the property API, cached data is always returned, if available:
+    no stat() is performed to check if the file has changed and if the function
+    needs to be called to reflect file changes.
+
+    Others can muck about with the state of the ``_filecache`` dict. e.g. they
+    can populate an entry before the property's getter is called. In this case,
+    entries in ``_filecache`` will be used during property operations,
+    if available. If the underlying file changes, it is up to external callers
+    to reflect this by e.g. calling ``delattr(obj, attr)`` to remove the cached
+    method result as well as possibly calling ``del obj._filecache[attr]`` to
+    remove the ``filecacheentry``.
+    """
+
     def __init__(self, *paths):
         self.paths = paths
 
@@ -1139,7 +1206,8 @@ class filecache(object):
 
     def __call__(self, func):
         self.func = func
-        self.name = func.__name__.encode('ascii')
+        self.sname = func.__name__
+        self.name = pycompat.sysbytes(self.sname)
         return self
 
     def __get__(self, obj, type=None):
@@ -1147,9 +1215,9 @@ class filecache(object):
         if obj is None:
             return self
         # do we need to check if the file changed?
-        if self.name in obj.__dict__:
+        if self.sname in obj.__dict__:
             assert self.name in obj._filecache, self.name
-            return obj.__dict__[self.name]
+            return obj.__dict__[self.sname]
 
         entry = obj._filecache.get(self.name)
 
@@ -1166,7 +1234,7 @@ class filecache(object):
 
             obj._filecache[self.name] = entry
 
-        obj.__dict__[self.name] = entry.obj
+        obj.__dict__[self.sname] = entry.obj
         return entry.obj
 
     def __set__(self, obj, value):
@@ -1180,13 +1248,13 @@ class filecache(object):
             ce = obj._filecache[self.name]
 
         ce.obj = value # update cached copy
-        obj.__dict__[self.name] = value # update copy returned by obj.x
+        obj.__dict__[self.sname] = value # update copy returned by obj.x
 
     def __delete__(self, obj):
         try:
-            del obj.__dict__[self.name]
+            del obj.__dict__[self.sname]
         except KeyError:
-            raise AttributeError(self.name)
+            raise AttributeError(self.sname)
 
 def extdatasource(repo, source):
     """Gather a map of rev -> value dict from the specified source
@@ -1261,6 +1329,37 @@ def wlocksub(repo, cmd, *args, **kwargs):
     subprocess."""
     return _locksub(repo, repo.currentwlock(), 'HG_WLOCK_LOCKER', cmd, *args,
                     **kwargs)
+
+class progress(object):
+    def __init__(self, ui, topic, unit="", total=None):
+        self.ui = ui
+        self.pos = 0
+        self.topic = topic
+        self.unit = unit
+        self.total = total
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.complete()
+
+    def update(self, pos, item="", total=None):
+        assert pos is not None
+        if total:
+            self.total = total
+        self.pos = pos
+        self._print(item)
+
+    def increment(self, step=1, item="", total=None):
+        self.update(self.pos + step, item, total)
+
+    def complete(self):
+        self.ui.progress(self.topic, None)
+
+    def _print(self, item):
+        self.ui.progress(self.topic, self.pos, item, self.unit,
+                         self.total)
 
 def gdinitconfig(ui):
     """helper function to know if a repo should be created as general delta
@@ -1434,9 +1533,9 @@ def registersummarycallback(repo, otr, txnname=''):
             for instability, revset in instabilitytypes:
                 delta = (newinstabilitycounts[instability] -
                          oldinstabilitycounts[instability])
-                if delta > 0:
-                    repo.ui.warn(_('%i new %s changesets\n') %
-                                 (delta, instability))
+                msg = getinstabilitymessage(delta, instability)
+                if msg:
+                    repo.ui.warn(msg)
 
     if txmatch(_reportnewcssource):
         @reportsummary
@@ -1459,6 +1558,32 @@ def registersummarycallback(repo, otr, txnname=''):
             else:
                 revrange = '%s:%s' % (minrev, maxrev)
             repo.ui.status(_('new changesets %s\n') % revrange)
+
+        @reportsummary
+        def reportphasechanges(repo, tr):
+            """Report statistics of phase changes for changesets pre-existing
+            pull/unbundle.
+            """
+            newrevs = tr.changes.get('revs', xrange(0, 0))
+            phasetracking = tr.changes.get('phases', {})
+            if not phasetracking:
+                return
+            published = [
+                rev for rev, (old, new) in phasetracking.iteritems()
+                if new == phases.public and rev not in newrevs
+            ]
+            if not published:
+                return
+            repo.ui.status(_('%d local changesets published\n')
+                           % len(published))
+
+def getinstabilitymessage(delta, instability):
+    """function to return the message to show warning about new instabilities
+
+    exists as a separate function so that extension can wrap to show more
+    information like how to fix instabilities"""
+    if delta > 0:
+        return _('%i new %s changesets\n') % (delta, instability)
 
 def nodesummaries(repo, nodes, maxnumnodes=4):
     if len(nodes) <= maxnumnodes or repo.ui.verbose:
@@ -1538,7 +1663,6 @@ def _getrevsfromsymbols(repo, symbols):
     unficl = unfi.changelog
     cl = repo.changelog
     tiprev = len(unficl)
-    pmatch = unficl._partialmatch
     allowrevnums = repo.ui.configbool('experimental', 'directaccess.revnums')
     for s in symbols:
         try:
@@ -1554,7 +1678,7 @@ def _getrevsfromsymbols(repo, symbols):
             pass
 
         try:
-            s = pmatch(s)
+            s = resolvehexnodeidprefix(unfi, s)
         except (error.LookupError, error.WdirUnsupported):
             s = None
 
@@ -1564,3 +1688,12 @@ def _getrevsfromsymbols(repo, symbols):
                 revs.add(rev)
 
     return revs
+
+def bookmarkrevs(repo, mark):
+    """
+    Select revisions reachable by a given bookmark
+    """
+    return repo.revs("ancestors(bookmark(%s)) - "
+                     "ancestors(head() and not bookmark(%s)) - "
+                     "ancestors(bookmark() and not bookmark(%s))",
+                     mark, mark, mark)

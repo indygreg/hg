@@ -16,6 +16,7 @@ import random
 import sys
 import time
 from mercurial import (
+    pycompat,
     store,
 )
 
@@ -24,15 +25,15 @@ try:
 except NameError:
     xrange = range
 
-validchars = set(map(chr, range(0, 256)))
+validchars = set(map(pycompat.bytechr, range(0, 256)))
 alphanum = range(ord('A'), ord('Z'))
 
-for c in '\0/':
+for c in (b'\0', b'/'):
     validchars.remove(c)
 
-winreserved = ('aux con prn nul'.split() +
-               ['com%d' % i for i in xrange(1, 10)] +
-               ['lpt%d' % i for i in xrange(1, 10)])
+winreserved = (b'aux con prn nul'.split() +
+               [b'com%d' % i for i in xrange(1, 10)] +
+               [b'lpt%d' % i for i in xrange(1, 10)])
 
 def casecombinations(names):
     '''Build all case-diddled combinations of names.'''
@@ -44,7 +45,7 @@ def casecombinations(names):
             for c in itertools.combinations(xrange(len(r)), i):
                 d = r
                 for j in c:
-                    d = ''.join((d[:j], d[j].upper(), d[j + 1:]))
+                    d = b''.join((d[:j], d[j:j + 1].upper(), d[j + 1:]))
                 combos.add(d)
     return sorted(combos)
 
@@ -78,19 +79,19 @@ def buildprobtable(fp, cmd='hg manifest tip'):
 # looking at filelog names from a real-world, very large repo.
 
 probtable = (
-    ('t', 9.828), ('e', 9.042), ('s', 8.011), ('a', 6.801), ('i', 6.618),
-    ('g', 5.053), ('r', 5.030), ('o', 4.887), ('p', 4.363), ('n', 4.258),
-    ('l', 3.830), ('h', 3.693), ('_', 3.659), ('.', 3.377), ('m', 3.194),
-    ('u', 2.364), ('d', 2.296), ('c', 2.163), ('b', 1.739), ('f', 1.625),
-    ('6', 0.666), ('j', 0.610), ('y', 0.554), ('x', 0.487), ('w', 0.477),
-    ('k', 0.476), ('v', 0.473), ('3', 0.336), ('1', 0.335), ('2', 0.326),
-    ('4', 0.310), ('5', 0.305), ('9', 0.302), ('8', 0.300), ('7', 0.299),
-    ('q', 0.298), ('0', 0.250), ('z', 0.223), ('-', 0.118), ('C', 0.095),
-    ('T', 0.087), ('F', 0.085), ('B', 0.077), ('S', 0.076), ('P', 0.076),
-    ('L', 0.059), ('A', 0.058), ('N', 0.051), ('D', 0.049), ('M', 0.046),
-    ('E', 0.039), ('I', 0.035), ('R', 0.035), ('G', 0.028), ('U', 0.026),
-    ('W', 0.025), ('O', 0.017), ('V', 0.015), ('H', 0.013), ('Q', 0.011),
-    ('J', 0.007), ('K', 0.005), ('+', 0.004), ('X', 0.003), ('Y', 0.001),
+    (b't', 9.828), (b'e', 9.042), (b's', 8.011), (b'a', 6.801), (b'i', 6.618),
+    (b'g', 5.053), (b'r', 5.030), (b'o', 4.887), (b'p', 4.363), (b'n', 4.258),
+    (b'l', 3.830), (b'h', 3.693), (b'_', 3.659), (b'.', 3.377), (b'm', 3.194),
+    (b'u', 2.364), (b'd', 2.296), (b'c', 2.163), (b'b', 1.739), (b'f', 1.625),
+    (b'6', 0.666), (b'j', 0.610), (b'y', 0.554), (b'x', 0.487), (b'w', 0.477),
+    (b'k', 0.476), (b'v', 0.473), (b'3', 0.336), (b'1', 0.335), (b'2', 0.326),
+    (b'4', 0.310), (b'5', 0.305), (b'9', 0.302), (b'8', 0.300), (b'7', 0.299),
+    (b'q', 0.298), (b'0', 0.250), (b'z', 0.223), (b'-', 0.118), (b'C', 0.095),
+    (b'T', 0.087), (b'F', 0.085), (b'B', 0.077), (b'S', 0.076), (b'P', 0.076),
+    (b'L', 0.059), (b'A', 0.058), (b'N', 0.051), (b'D', 0.049), (b'M', 0.046),
+    (b'E', 0.039), (b'I', 0.035), (b'R', 0.035), (b'G', 0.028), (b'U', 0.026),
+    (b'W', 0.025), (b'O', 0.017), (b'V', 0.015), (b'H', 0.013), (b'Q', 0.011),
+    (b'J', 0.007), (b'K', 0.005), (b'+', 0.004), (b'X', 0.003), (b'Y', 0.001),
     )
 
 for c, _ in probtable:
@@ -121,12 +122,12 @@ resttable = firsttable[:-1]
 
 # Special suffixes.
 
-internalsuffixcombos = casecombinations('.hg .i .d'.split())
+internalsuffixcombos = casecombinations(b'.hg .i .d'.split())
 
 # The last component of a path, before a slash or at the end of a name.
 
 lasttable = resttable + (
-    (lambda rng: '', 95),
+    (lambda rng: b'', 95),
     (lambda rng: rng.choice(internalsuffixcombos), 5),
     )
 
@@ -142,13 +143,13 @@ def makepart(rng, k):
         l += len(p)
         ps.append(p)
     ps.append(pickfrom(rng, lasttable)(rng))
-    return ''.join(ps)
+    return b''.join(ps)
 
 def makepath(rng, j, k):
     '''Construct a complete pathname.'''
 
-    return ('data/' + '/'.join(makepart(rng, k) for _ in xrange(j)) +
-            rng.choice(['.d', '.i']))
+    return (b'data/' + b'/'.join(makepart(rng, k) for _ in xrange(j)) +
+            rng.choice([b'.d', b'.i']))
 
 def genpath(rng, count):
     '''Generate random pathnames with gradually increasing lengths.'''

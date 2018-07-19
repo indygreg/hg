@@ -93,7 +93,6 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 115:
   e>     abort: incompatible Mercurial client; bundle2 required\n
   e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
@@ -144,7 +143,6 @@ Test pushing bundle1 payload to a server with bundle1 disabled
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 115:
   e>     abort: incompatible Mercurial client; bundle2 required\n
   e>     (see https://www.mercurial-scm.org/wiki/IncompatibleClient)\n
@@ -161,10 +159,12 @@ Test pushing to a server that has a pretxnchangegroup Python hook that fails
   > import sys
   > def hook1line(ui, repo, **kwargs):
   >     ui.write(b'ui.write 1 line\n')
+  >     ui.flush()
   >     return 1
   > def hook2lines(ui, repo, **kwargs):
   >     ui.write(b'ui.write 2 lines 1\n')
   >     ui.write(b'ui.write 2 lines 2\n')
+  >     ui.flush()
   >     return 1
   > def hook1lineflush(ui, repo, **kwargs):
   >     ui.write(b'ui.write 1 line flush\n')
@@ -181,21 +181,31 @@ Test pushing to a server that has a pretxnchangegroup Python hook that fails
   >     ui.write_err(b'ui.write_err 1\n')
   >     ui.write(b'ui.write 2\n')
   >     ui.write_err(b'ui.write_err 2\n')
+  >     ui.flush()
   >     return 1
   > def hookprintstdout(ui, repo, **kwargs):
   >     print('printed line')
+  >     sys.stdout.flush()
   >     return 1
   > def hookprintandwrite(ui, repo, **kwargs):
   >     print('print 1')
+  >     sys.stdout.flush()
   >     ui.write(b'ui.write 1\n')
+  >     ui.flush()
   >     print('print 2')
+  >     sys.stdout.flush()
   >     ui.write(b'ui.write 2\n')
+  >     ui.flush()
   >     return 1
   > def hookprintstderrandstdout(ui, repo, **kwargs):
   >     print('stdout 1')
+  >     sys.stdout.flush()
   >     print('stderr 1', file=sys.stderr)
+  >     sys.stderr.flush()
   >     print('stdout 2')
+  >     sys.stdout.flush()
   >     print('stderr 2', file=sys.stderr)
+  >     sys.stderr.flush()
   >     return 1
   > EOF
 
@@ -262,7 +272,6 @@ ui.write() in hook is redirected to stderr
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 196:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -319,7 +328,6 @@ ui.write() in hook is redirected to stderr
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 196:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -390,7 +398,6 @@ And a variation that writes multiple lines using ui.write
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -448,7 +455,6 @@ And a variation that writes multiple lines using ui.write
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -520,7 +526,6 @@ And a variation that does a ui.flush() after writing output
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 202:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -577,7 +582,6 @@ And a variation that does a ui.flush() after writing output
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 202:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -648,7 +652,6 @@ Multiple writes + flush
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 206:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -706,7 +709,6 @@ Multiple writes + flush
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 206:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -778,7 +780,6 @@ ui.write() + ui.write_err() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 232:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -838,7 +839,6 @@ ui.write() + ui.write_err() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 232:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -912,7 +912,6 @@ print() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 193:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -969,7 +968,6 @@ print() output is captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 193:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1040,16 +1038,15 @@ Mixed print() and ui.write() are both captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     ui.write 1\n
-  e>     ui.write 2\n
   e>     print 1\n
+  e>     ui.write 1\n
   e>     print 2\n
+  e>     ui.write 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1100,16 +1097,15 @@ Mixed print() and ui.write() are both captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 218:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     ui.write 1\n
-  e>     ui.write 2\n
   e>     print 1\n
+  e>     ui.write 1\n
   e>     print 2\n
+  e>     ui.write 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1174,16 +1170,15 @@ print() to stdout and stderr both get captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 216:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1234,16 +1229,15 @@ print() to stdout and stderr both get captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 216:
   e>     adding changesets\n
   e>     adding manifests\n
   e>     adding file changes\n
   e>     added 1 changesets with 1 changes to 1 files\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.fail hook failed\n
@@ -1314,7 +1308,6 @@ Shell hook writing to stdout has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1372,7 +1365,6 @@ Shell hook writing to stdout has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1445,7 +1437,6 @@ Shell hook writing to stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1503,7 +1494,6 @@ Shell hook writing to stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 212:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1578,7 +1568,6 @@ Shell hook writing to stdout and stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 230:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1638,7 +1627,6 @@ Shell hook writing to stdout and stderr has output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 230:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1721,7 +1709,6 @@ Shell and Python hooks writing to stdout and stderr have output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 273:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1731,10 +1718,10 @@ Shell and Python hooks writing to stdout and stderr have output captured
   e>     shell stderr 1\n
   e>     shell stdout 2\n
   e>     shell stderr 2\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.b hook failed\n
@@ -1785,7 +1772,6 @@ Shell and Python hooks writing to stdout and stderr have output captured
   o> read(1) -> 1: 0
   result: 0
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 273:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1795,10 +1781,10 @@ Shell and Python hooks writing to stdout and stderr have output captured
   e>     shell stderr 1\n
   e>     shell stdout 2\n
   e>     shell stderr 2\n
-  e>     stderr 1\n
-  e>     stderr 2\n
   e>     stdout 1\n
+  e>     stderr 1\n
   e>     stdout 2\n
+  e>     stderr 2\n
   e>     transaction abort!\n
   e>     rollback completed\n
   e>     abort: pretxnchangegroup.b hook failed\n
@@ -1863,7 +1849,6 @@ Pushing a bundle1 with no output
   o> read(1) -> 1: 1
   result: 1
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 100:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1916,7 +1901,6 @@ Pushing a bundle1 with no output
   o> read(1) -> 1: 1
   result: 1
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 100:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -1995,7 +1979,6 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   o> read(1) -> 1: 1
   result: 1
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 152:
   e>     adding changesets\n
   e>     adding manifests\n
@@ -2052,7 +2035,6 @@ Pushing a bundle1 with ui.write() and ui.write_err()
   o> read(1) -> 1: 1
   result: 1
   remote output: 
-  o> read(-1) -> 0: 
   e> read(-1) -> 152:
   e>     adding changesets\n
   e>     adding manifests\n

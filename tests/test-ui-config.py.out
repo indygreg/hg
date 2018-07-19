@@ -6,7 +6,7 @@
 'false'
 None
 ---
-values.string is not a boolean ('string value')
+'values.string is not a boolean (\'string value\')'
 True
 False
 False

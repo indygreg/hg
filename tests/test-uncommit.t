@@ -278,6 +278,13 @@ Uncommit with draft parent
   12: draft
   $ hg commit -m 'update ab again'
 
+Phase is preserved
+
+  $ hg uncommit --keep --config phases.new-commit=secret
+  $ hg phase -r .
+  15: draft
+  $ hg commit --amend -m 'update ab again'
+
 Uncommit with public parent
 
   $ hg phase -p "::.^"
@@ -294,7 +301,7 @@ Partial uncommit with public parent
   $ hg status
   A xyz
   $ hg phase -r .
-  16: draft
+  18: draft
   $ hg phase -r ".^"
   12: public
 

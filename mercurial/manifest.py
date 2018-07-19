@@ -20,8 +20,13 @@ from . import (
     error,
     mdiff,
     policy,
+    pycompat,
+    repository,
     revlog,
     util,
+)
+from .utils import (
+    interfaceutil,
 )
 
 parsers = policy.importmod(r'parsers')
@@ -362,6 +367,7 @@ try:
 except AttributeError:
     pass
 
+@interfaceutil.implementer(repository.imanifestdict)
 class manifestdict(object):
     def __init__(self, data=''):
         self._lm = _lazymanifest(data)
@@ -528,7 +534,8 @@ class manifestdict(object):
     def items(self):
         return (x[:2] for x in self._lm.iterentries())
 
-    iteritems = items
+    def iteritems(self):
+        return (x[:2] for x in self._lm.iterentries())
 
     def iterentries(self):
         return self._lm.iterentries()
@@ -635,7 +642,8 @@ def _checkforbidden(l):
     for f in l:
         if '\n' in f or '\r' in f:
             raise error.RevlogError(
-                _("'\\n' and '\\r' disallowed in filenames: %r") % f)
+                _("'\\n' and '\\r' disallowed in filenames: %r")
+                % pycompat.bytestr(f))
 
 
 # apply the changes collected during the bisect loop to our addlist
@@ -1260,6 +1268,7 @@ class manifestrevlog(revlog.revlog):
         m.setnode(n)
         return n
 
+@interfaceutil.implementer(repository.imanifestlog)
 class manifestlog(object):
     """A collection class representing the collection of manifest snapshots
     referenced by commits in the repository.
@@ -1285,7 +1294,7 @@ class manifestlog(object):
         self._dirmancache = {}
         self._dirmancache[''] = util.lrucachedict(cachesize)
 
-        self.cachesize = cachesize
+        self._cachesize = cachesize
 
     def __getitem__(self, node):
         """Retrieves the manifest instance for the given node. Throws a
@@ -1331,7 +1340,7 @@ class manifestlog(object):
         if node != revlog.nullid:
             mancache = self._dirmancache.get(dir)
             if not mancache:
-                mancache = util.lrucachedict(self.cachesize)
+                mancache = util.lrucachedict(self._cachesize)
                 self._dirmancache[dir] = mancache
             mancache[node] = m
         return m
@@ -1340,6 +1349,13 @@ class manifestlog(object):
         self._dirmancache.clear()
         self._revlog.clearcaches()
 
+    def rev(self, node):
+        return self._revlog.rev(node)
+
+    def addgroup(self, deltas, linkmapper, transaction):
+        return self._revlog.addgroup(deltas, linkmapper, transaction)
+
+@interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memmanifestctx(object):
     def __init__(self, manifestlog):
         self._manifestlog = manifestlog
@@ -1363,6 +1379,7 @@ class memmanifestctx(object):
         return self._revlog().add(self._manifestdict, transaction, link, p1, p2,
                                   added, removed)
 
+@interfaceutil.implementer(repository.imanifestrevisionstored)
 class manifestctx(object):
     """A class representing a single revision of a manifest, including its
     contents, its parent revs, and its linkrev.
@@ -1439,6 +1456,7 @@ class manifestctx(object):
     def find(self, key):
         return self.read().find(key)
 
+@interfaceutil.implementer(repository.imanifestrevisionwritable)
 class memtreemanifestctx(object):
     def __init__(self, manifestlog, dir=''):
         self._manifestlog = manifestlog
@@ -1465,6 +1483,7 @@ class memtreemanifestctx(object):
         return self._revlog().add(self._treemanifest, transaction, link, p1, p2,
                                   added, removed, readtree=readtree)
 
+@interfaceutil.implementer(repository.imanifestrevisionstored)
 class treemanifestctx(object):
     def __init__(self, manifestlog, dir, node):
         self._manifestlog = manifestlog

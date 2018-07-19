@@ -3,16 +3,16 @@ Test the extensions.afterloaded() function
   $ cat > foo.py <<EOF
   > from mercurial import extensions
   > def uisetup(ui):
-  >     ui.write("foo.uisetup\\n")
+  >     ui.write(b"foo.uisetup\\n")
   >     ui.flush()
   >     def bar_loaded(loaded):
-  >         ui.write("foo: bar loaded: %r\\n" % (loaded,))
+  >         ui.write(b"foo: bar loaded: %r\\n" % (loaded,))
   >         ui.flush()
-  >     extensions.afterloaded('bar', bar_loaded)
+  >     extensions.afterloaded(b'bar', bar_loaded)
   > EOF
   $ cat > bar.py <<EOF
   > def uisetup(ui):
-  >     ui.write("bar.uisetup\\n")
+  >     ui.write(b"bar.uisetup\\n")
   >     ui.flush()
   > EOF
   $ basepath=`pwd`
@@ -72,9 +72,9 @@ configured but fails the minimum version check
 
   $ cd ..
   $ cat > minvers.py <<EOF
-  > minimumhgversion = '9999.9999'
+  > minimumhgversion = b'9999.9999'
   > def uisetup(ui):
-  >     ui.write("minvers.uisetup\\n")
+  >     ui.write(b"minvers.uisetup\\n")
   >     ui.flush()
   > EOF
   $ hg init minversion

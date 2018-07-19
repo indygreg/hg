@@ -618,14 +618,14 @@ def _dnsnamematch(dn, hostname, maxwildcards=1):
         # The client SHOULD NOT attempt to match a presented identifier
         # where the wildcard character is embedded within an A-label or
         # U-label of an internationalized domain name.
-        pats.append(re.escape(leftmost))
+        pats.append(stringutil.reescape(leftmost))
     else:
         # Otherwise, '*' matches any dotless string, e.g. www*
-        pats.append(re.escape(leftmost).replace(br'\*', '[^.]*'))
+        pats.append(stringutil.reescape(leftmost).replace(br'\*', '[^.]*'))
 
     # add the remaining fragments, ignore any wildcards
     for frag in remainder:
-        pats.append(re.escape(frag))
+        pats.append(stringutil.reescape(frag))
 
     pat = re.compile(br'\A' + br'\.'.join(pats) + br'\Z', re.IGNORECASE)
     return pat.match(hostname) is not None
@@ -640,9 +640,9 @@ def _verifycert(cert, hostname):
         return _('no certificate received')
 
     dnsnames = []
-    san = cert.get('subjectAltName', [])
+    san = cert.get(r'subjectAltName', [])
     for key, value in san:
-        if key == 'DNS':
+        if key == r'DNS':
             try:
                 if _dnsnamematch(value, hostname):
                     return
@@ -672,6 +672,7 @@ def _verifycert(cert, hostname):
 
                     dnsnames.append(value)
 
+    dnsnames = [pycompat.bytesurl(d) for d in dnsnames]
     if len(dnsnames) > 1:
         return _('certificate is for %s') % ', '.join(dnsnames)
     elif len(dnsnames) == 1:

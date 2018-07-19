@@ -6,10 +6,11 @@
   >        | sed -e "s/:$HGPORT1\\([^0-9]\\)/:HGPORT1\1/g" \
   >              -e "s/:$HGPORT2\\([^0-9]\\)/:HGPORT2\1/g" \
   >              -e 's/http:\/\/[^/]*\//http:\/\/localhost\//'
-  >    cat hg.pid >> "$DAEMON_PIDS"
+  >    if [ -f hg.pid ]; then
+  >        killdaemons.py hg.pid
+  >    fi
   >    echo % errors
   >    cat errors.log
-  >    killdaemons.py hg.pid
   > }
 
   $ hg init test

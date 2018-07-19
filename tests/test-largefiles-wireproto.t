@@ -26,7 +26,7 @@ of largefiles.
   > patterns=glob:**.dat
   > usercache=${USERCACHE}
   > [web]
-  > allow_archive = zip
+  > allow-archive = zip
   > [hooks]
   > precommit=sh -c "echo \\"Invoking status precommit hook\\"; hg status"
   > EOF

@@ -15,6 +15,7 @@ import inspect
 import os
 import shlex
 import sys
+import tempfile
 
 ispy3 = (sys.version_info[0] >= 3)
 ispypy = (r'__pypy__' in sys.builtin_module_names)
@@ -23,7 +24,7 @@ if not ispy3:
     import cookielib
     import cPickle as pickle
     import httplib
-    import Queue as _queue
+    import Queue as queue
     import SocketServer as socketserver
     import xmlrpclib
 
@@ -36,18 +37,48 @@ else:
     import http.cookiejar as cookielib
     import http.client as httplib
     import pickle
-    import queue as _queue
+    import queue as queue
     import socketserver
     import xmlrpc.client as xmlrpclib
 
     def future_set_exception_info(f, exc_info):
         f.set_exception(exc_info[0])
 
-empty = _queue.Empty
-queue = _queue.Queue
-
 def identity(a):
     return a
+
+def _rapply(f, xs):
+    if xs is None:
+        # assume None means non-value of optional data
+        return xs
+    if isinstance(xs, (list, set, tuple)):
+        return type(xs)(_rapply(f, x) for x in xs)
+    if isinstance(xs, dict):
+        return type(xs)((_rapply(f, k), _rapply(f, v)) for k, v in xs.items())
+    return f(xs)
+
+def rapply(f, xs):
+    """Apply function recursively to every item preserving the data structure
+
+    >>> def f(x):
+    ...     return 'f(%s)' % x
+    >>> rapply(f, None) is None
+    True
+    >>> rapply(f, 'a')
+    'f(a)'
+    >>> rapply(f, {'a'}) == {'f(a)'}
+    True
+    >>> rapply(f, ['a', 'b', None, {'c': 'd'}, []])
+    ['f(a)', 'f(b)', None, {'f(c)': 'f(d)'}, []]
+
+    >>> xs = [object()]
+    >>> rapply(identity, xs) is xs
+    True
+    """
+    if f is identity:
+        # fast path mainly for py2
+        return xs
+    return _rapply(f, xs)
 
 if ispy3:
     import builtins
@@ -297,13 +328,10 @@ if ispy3:
         ret = shlex.split(s.decode('latin-1'), comments, posix)
         return [a.encode('latin-1') for a in ret]
 
-    def emailparser(*args, **kwargs):
-        import email.parser
-        return email.parser.BytesParser(*args, **kwargs)
-
 else:
     import cStringIO
 
+    unicode = unicode
     bytechr = chr
     byterepr = repr
     bytestr = str
@@ -372,10 +400,6 @@ else:
     rawinput = raw_input
     getargspec = inspect.getargspec
 
-    def emailparser(*args, **kwargs):
-        import email.parser
-        return email.parser.Parser(*args, **kwargs)
-
 isjython = sysplatform.startswith('java')
 
 isdarwin = sysplatform == 'darwin'
@@ -387,3 +411,18 @@ def getoptb(args, shortlist, namelist):
 
 def gnugetoptb(args, shortlist, namelist):
     return _getoptbwrapper(getopt.gnu_getopt, args, shortlist, namelist)
+
+def mkdtemp(suffix=b'', prefix=b'tmp', dir=None):
+    return tempfile.mkdtemp(suffix, prefix, dir)
+
+# text=True is not supported; use util.from/tonativeeol() instead
+def mkstemp(suffix=b'', prefix=b'tmp', dir=None):
+    return tempfile.mkstemp(suffix, prefix, dir)
+
+# mode must include 'b'ytes as encoding= is not supported
+def namedtempfile(mode=b'w+b', bufsize=-1, suffix=b'', prefix=b'tmp', dir=None,
+                  delete=True):
+    mode = sysstr(mode)
+    assert r'b' in mode
+    return tempfile.NamedTemporaryFile(mode, bufsize, suffix=suffix,
+                                       prefix=prefix, dir=dir, delete=delete)

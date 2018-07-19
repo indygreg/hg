@@ -101,7 +101,7 @@
   
 
   $ echo '[web]' >> .hg/hgrc
-  $ echo 'allow_archive = bz2' >> .hg/hgrc
+  $ echo 'allow-archive = bz2' >> .hg/hgrc
   $ hg serve -p $HGPORT -d --pid-file=hg.pid -A access.log -E error.log
   $ cat hg.pid >> $DAEMON_PIDS
 
@@ -1912,6 +1912,10 @@ help/ shows help topics
       {
         "summary": "Date Formats",
         "topic": "dates"
+      },
+      {
+        "summary": "Deprecated Features",
+        "topic": "deprecated"
       },
       {
         "summary": "Diff Formats",

@@ -31,11 +31,44 @@ class wrapped(object):
     """Object requiring extra conversion prior to displaying or processing
     as value
 
-    Use unwrapvalue(), unwrapastype(), or unwraphybrid() to obtain the inner
-    object.
+    Use unwrapvalue() or unwrapastype() to obtain the inner object.
     """
 
     __metaclass__ = abc.ABCMeta
+
+    @abc.abstractmethod
+    def contains(self, context, mapping, item):
+        """Test if the specified item is in self
+
+        The item argument may be a wrapped object.
+        """
+
+    @abc.abstractmethod
+    def getmember(self, context, mapping, key):
+        """Return a member item for the specified key
+
+        The key argument may be a wrapped object.
+        A returned object may be either a wrapped object or a pure value
+        depending on the self type.
+        """
+
+    @abc.abstractmethod
+    def getmin(self, context, mapping):
+        """Return the smallest item, which may be either a wrapped or a pure
+        value depending on the self type"""
+
+    @abc.abstractmethod
+    def getmax(self, context, mapping):
+        """Return the largest item, which may be either a wrapped or a pure
+        value depending on the self type"""
+
+    @abc.abstractmethod
+    def filter(self, context, mapping, select):
+        """Return new container of the same type which includes only the
+        selected elements
+
+        select() takes each item as a wrapped object and returns True/False.
+        """
 
     @abc.abstractmethod
     def itermaps(self, context):
@@ -60,16 +93,153 @@ class wrapped(object):
         """
 
     @abc.abstractmethod
+    def tobool(self, context, mapping):
+        """Return a boolean representation of the inner value"""
+
+    @abc.abstractmethod
     def tovalue(self, context, mapping):
         """Move the inner value object out or create a value representation
 
         A returned value must be serializable by templaterfilters.json().
         """
 
-# stub for representing a date type; may be a real date type that can
-# provide a readable string value
-class date(object):
-    pass
+class mappable(object):
+    """Object which can be converted to a single template mapping"""
+
+    def itermaps(self, context):
+        yield self.tomap(context)
+
+    @abc.abstractmethod
+    def tomap(self, context):
+        """Create a single template mapping representing this"""
+
+class wrappedbytes(wrapped):
+    """Wrapper for byte string"""
+
+    def __init__(self, value):
+        self._value = value
+
+    def contains(self, context, mapping, item):
+        item = stringify(context, mapping, item)
+        return item in self._value
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('%r is not a dictionary')
+                               % pycompat.bytestr(self._value))
+
+    def getmin(self, context, mapping):
+        return self._getby(context, mapping, min)
+
+    def getmax(self, context, mapping):
+        return self._getby(context, mapping, max)
+
+    def _getby(self, context, mapping, func):
+        if not self._value:
+            raise error.ParseError(_('empty string'))
+        return func(pycompat.iterbytestr(self._value))
+
+    def filter(self, context, mapping, select):
+        raise error.ParseError(_('%r is not filterable')
+                               % pycompat.bytestr(self._value))
+
+    def itermaps(self, context):
+        raise error.ParseError(_('%r is not iterable of mappings')
+                               % pycompat.bytestr(self._value))
+
+    def join(self, context, mapping, sep):
+        return joinitems(pycompat.iterbytestr(self._value), sep)
+
+    def show(self, context, mapping):
+        return self._value
+
+    def tobool(self, context, mapping):
+        return bool(self._value)
+
+    def tovalue(self, context, mapping):
+        return self._value
+
+class wrappedvalue(wrapped):
+    """Generic wrapper for pure non-list/dict/bytes value"""
+
+    def __init__(self, value):
+        self._value = value
+
+    def contains(self, context, mapping, item):
+        raise error.ParseError(_("%r is not iterable") % self._value)
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('%r is not a dictionary') % self._value)
+
+    def getmin(self, context, mapping):
+        raise error.ParseError(_("%r is not iterable") % self._value)
+
+    def getmax(self, context, mapping):
+        raise error.ParseError(_("%r is not iterable") % self._value)
+
+    def filter(self, context, mapping, select):
+        raise error.ParseError(_("%r is not iterable") % self._value)
+
+    def itermaps(self, context):
+        raise error.ParseError(_('%r is not iterable of mappings')
+                               % self._value)
+
+    def join(self, context, mapping, sep):
+        raise error.ParseError(_('%r is not iterable') % self._value)
+
+    def show(self, context, mapping):
+        if self._value is None:
+            return b''
+        return pycompat.bytestr(self._value)
+
+    def tobool(self, context, mapping):
+        if self._value is None:
+            return False
+        if isinstance(self._value, bool):
+            return self._value
+        # otherwise evaluate as string, which means 0 is True
+        return bool(pycompat.bytestr(self._value))
+
+    def tovalue(self, context, mapping):
+        return self._value
+
+class date(mappable, wrapped):
+    """Wrapper for date tuple"""
+
+    def __init__(self, value, showfmt='%d %d'):
+        # value may be (float, int), but public interface shouldn't support
+        # floating-point timestamp
+        self._unixtime, self._tzoffset = map(int, value)
+        self._showfmt = showfmt
+
+    def contains(self, context, mapping, item):
+        raise error.ParseError(_('date is not iterable'))
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('date is not a dictionary'))
+
+    def getmin(self, context, mapping):
+        raise error.ParseError(_('date is not iterable'))
+
+    def getmax(self, context, mapping):
+        raise error.ParseError(_('date is not iterable'))
+
+    def filter(self, context, mapping, select):
+        raise error.ParseError(_('date is not iterable'))
+
+    def join(self, context, mapping, sep):
+        raise error.ParseError(_("date is not iterable"))
+
+    def show(self, context, mapping):
+        return self._showfmt % (self._unixtime, self._tzoffset)
+
+    def tomap(self, context):
+        return {'unixtime': self._unixtime, 'tzoffset': self._tzoffset}
+
+    def tobool(self, context, mapping):
+        return True
+
+    def tovalue(self, context, mapping):
+        return (self._unixtime, self._tzoffset)
 
 class hybrid(wrapped):
     """Wrapper for list or dict to support legacy template
@@ -88,7 +258,46 @@ class hybrid(wrapped):
         self._values = values
         self._makemap = makemap
         self._joinfmt = joinfmt
-        self.keytype = keytype  # hint for 'x in y' where type(x) is unresolved
+        self._keytype = keytype  # hint for 'x in y' where type(x) is unresolved
+
+    def contains(self, context, mapping, item):
+        item = unwrapastype(context, mapping, item, self._keytype)
+        return item in self._values
+
+    def getmember(self, context, mapping, key):
+        # TODO: maybe split hybrid list/dict types?
+        if not util.safehasattr(self._values, 'get'):
+            raise error.ParseError(_('not a dictionary'))
+        key = unwrapastype(context, mapping, key, self._keytype)
+        return self._wrapvalue(key, self._values.get(key))
+
+    def getmin(self, context, mapping):
+        return self._getby(context, mapping, min)
+
+    def getmax(self, context, mapping):
+        return self._getby(context, mapping, max)
+
+    def _getby(self, context, mapping, func):
+        if not self._values:
+            raise error.ParseError(_('empty sequence'))
+        val = func(self._values)
+        return self._wrapvalue(val, val)
+
+    def _wrapvalue(self, key, val):
+        if val is None:
+            return
+        if util.safehasattr(val, '_makemap'):
+            # a nested hybrid list/dict, which has its own way of map operation
+            return val
+        return hybriditem(None, key, val, self._makemap)
+
+    def filter(self, context, mapping, select):
+        if util.safehasattr(self._values, 'get'):
+            values = {k: v for k, v in self._values.iteritems()
+                      if select(self._wrapvalue(k, v))}
+        else:
+            values = [v for v in self._values if select(self._wrapvalue(v, v))]
+        return hybrid(None, values, self._makemap, self._joinfmt, self._keytype)
 
     def itermaps(self, context):
         makemap = self._makemap
@@ -108,34 +317,24 @@ class hybrid(wrapped):
             return gen()
         return gen
 
+    def tobool(self, context, mapping):
+        return bool(self._values)
+
     def tovalue(self, context, mapping):
-        # TODO: return self._values and get rid of proxy methods
-        return self
+        # TODO: make it non-recursive for trivial lists/dicts
+        xs = self._values
+        if util.safehasattr(xs, 'get'):
+            return {k: unwrapvalue(context, mapping, v)
+                    for k, v in xs.iteritems()}
+        return [unwrapvalue(context, mapping, x) for x in xs]
 
-    def __contains__(self, x):
-        return x in self._values
-    def __getitem__(self, key):
-        return self._values[key]
-    def __len__(self):
-        return len(self._values)
-    def __iter__(self):
-        return iter(self._values)
-    def __getattr__(self, name):
-        if name not in (r'get', r'items', r'iteritems', r'iterkeys',
-                        r'itervalues', r'keys', r'values'):
-            raise AttributeError(name)
-        return getattr(self._values, name)
-
-class mappable(wrapped):
+class hybriditem(mappable, wrapped):
     """Wrapper for non-list/dict object to support map operation
 
     This class allows us to handle both:
     - "{manifest}"
     - "{manifest % '{rev}:{node}'}"
     - "{manifest.rev}"
-
-    Unlike a hybrid, this does not simulate the behavior of the underling
-    value.
     """
 
     def __init__(self, gen, key, value, makemap):
@@ -144,19 +343,32 @@ class mappable(wrapped):
         self._value = value  # may be generator of strings
         self._makemap = makemap
 
-    def tomap(self):
+    def tomap(self, context):
         return self._makemap(self._key)
 
-    def itermaps(self, context):
-        yield self.tomap()
+    def contains(self, context, mapping, item):
+        w = makewrapped(context, mapping, self._value)
+        return w.contains(context, mapping, item)
+
+    def getmember(self, context, mapping, key):
+        w = makewrapped(context, mapping, self._value)
+        return w.getmember(context, mapping, key)
+
+    def getmin(self, context, mapping):
+        w = makewrapped(context, mapping, self._value)
+        return w.getmin(context, mapping)
+
+    def getmax(self, context, mapping):
+        w = makewrapped(context, mapping, self._value)
+        return w.getmax(context, mapping)
+
+    def filter(self, context, mapping, select):
+        w = makewrapped(context, mapping, self._value)
+        return w.filter(context, mapping, select)
 
     def join(self, context, mapping, sep):
-        # TODO: just copies the old behavior where a value was a generator
-        # yielding one item, but reconsider about it. join() over a string
-        # has no consistent result because a string may be a bytes, or a
-        # generator yielding an item, or a generator yielding multiple items.
-        # Preserving all of the current behaviors wouldn't make any sense.
-        return self.show(context, mapping)
+        w = makewrapped(context, mapping, self._value)
+        return w.join(context, mapping, sep)
 
     def show(self, context, mapping):
         # TODO: switch gen to (context, mapping) API?
@@ -166,6 +378,10 @@ class mappable(wrapped):
         if callable(gen):
             return gen()
         return gen
+
+    def tobool(self, context, mapping):
+        w = makewrapped(context, mapping, self._value)
+        return w.tobool(context, mapping)
 
     def tovalue(self, context, mapping):
         return _unthunk(context, mapping, self._value)
@@ -185,6 +401,22 @@ class _mappingsequence(wrapped):
         self._name = name
         self._tmpl = tmpl
         self._defaultsep = sep
+
+    def contains(self, context, mapping, item):
+        raise error.ParseError(_('not comparable'))
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('not a dictionary'))
+
+    def getmin(self, context, mapping):
+        raise error.ParseError(_('not comparable'))
+
+    def getmax(self, context, mapping):
+        raise error.ParseError(_('not comparable'))
+
+    def filter(self, context, mapping, select):
+        # implement if necessary; we'll need a wrapped type for a mapping dict
+        raise error.ParseError(_('not filterable without template'))
 
     def join(self, context, mapping, sep):
         mapsiter = _iteroverlaymaps(context, mapping, self.itermaps(context))
@@ -224,6 +456,9 @@ class mappinggenerator(_mappingsequence):
     def itermaps(self, context):
         return self._make(context, *self._args)
 
+    def tobool(self, context, mapping):
+        return _nonempty(self.itermaps(context))
+
 class mappinglist(_mappingsequence):
     """Wrapper for list of template mappings"""
 
@@ -233,6 +468,9 @@ class mappinglist(_mappingsequence):
 
     def itermaps(self, context):
         return iter(self._mappings)
+
+    def tobool(self, context, mapping):
+        return bool(self._mappings)
 
 class mappedgenerator(wrapped):
     """Wrapper for generator of strings which acts as a list
@@ -246,8 +484,38 @@ class mappedgenerator(wrapped):
         self._make = make
         self._args = args
 
+    def contains(self, context, mapping, item):
+        item = stringify(context, mapping, item)
+        return item in self.tovalue(context, mapping)
+
     def _gen(self, context):
         return self._make(context, *self._args)
+
+    def getmember(self, context, mapping, key):
+        raise error.ParseError(_('not a dictionary'))
+
+    def getmin(self, context, mapping):
+        return self._getby(context, mapping, min)
+
+    def getmax(self, context, mapping):
+        return self._getby(context, mapping, max)
+
+    def _getby(self, context, mapping, func):
+        xs = self.tovalue(context, mapping)
+        if not xs:
+            raise error.ParseError(_('empty sequence'))
+        return func(xs)
+
+    @staticmethod
+    def _filteredgen(context, mapping, make, args, select):
+        for x in make(context, *args):
+            s = stringify(context, mapping, x)
+            if select(wrappedbytes(s)):
+                yield s
+
+    def filter(self, context, mapping, select):
+        args = (mapping, self._make, self._args, select)
+        return mappedgenerator(self._filteredgen, args)
 
     def itermaps(self, context):
         raise error.ParseError(_('list of strings is not mappable'))
@@ -257,6 +525,9 @@ class mappedgenerator(wrapped):
 
     def show(self, context, mapping):
         return self.join(context, mapping, '')
+
+    def tobool(self, context, mapping):
+        return _nonempty(self._gen(context))
 
     def tovalue(self, context, mapping):
         return [stringify(context, mapping, x) for x in self._gen(context)]
@@ -277,33 +548,6 @@ def hybridlist(data, name, fmt=None, gen=None):
         fmt = '%s'
         prefmt = pycompat.bytestr
     return hybrid(gen, data, lambda x: {name: x}, lambda x: fmt % prefmt(x))
-
-def unwraphybrid(context, mapping, thing):
-    """Return an object which can be stringified possibly by using a legacy
-    template"""
-    if not isinstance(thing, wrapped):
-        return thing
-    return thing.show(context, mapping)
-
-def unwrapvalue(context, mapping, thing):
-    """Move the inner value object out of the wrapper"""
-    if not isinstance(thing, wrapped):
-        return thing
-    return thing.tovalue(context, mapping)
-
-def wraphybridvalue(container, key, value):
-    """Wrap an element of hybrid container to be mappable
-
-    The key is passed to the makemap function of the given container, which
-    should be an item generated by iter(container).
-    """
-    makemap = getattr(container, '_makemap', None)
-    if makemap is None:
-        return value
-    if util.safehasattr(value, '_makemap'):
-        # a nested hybrid list/dict, which has its own way of map operation
-        return value
-    return mappable(None, key, value, makemap)
 
 def compatdict(context, mapping, name, data, key='key', value='value',
                fmt=None, plural=None, separator=' '):
@@ -398,7 +642,8 @@ def _showcompatlist(context, mapping, name, values, plural=None, separator=' '):
 
 def flatten(context, mapping, thing):
     """Yield a single stream from a possibly nested set of iterators"""
-    thing = unwraphybrid(context, mapping, thing)
+    if isinstance(thing, wrapped):
+        thing = thing.show(context, mapping)
     if isinstance(thing, bytes):
         yield thing
     elif isinstance(thing, str):
@@ -412,7 +657,8 @@ def flatten(context, mapping, thing):
         yield pycompat.bytestr(thing)
     else:
         for i in thing:
-            i = unwraphybrid(context, mapping, i)
+            if isinstance(i, wrapped):
+                i = i.show(context, mapping)
             if isinstance(i, bytes):
                 yield i
             elif i is None:
@@ -441,6 +687,13 @@ def findsymbolicname(arg):
         else:
             return None
 
+def _nonempty(xiter):
+    try:
+        next(xiter)
+        return True
+    except StopIteration:
+        return False
+
 def _unthunk(context, mapping, thing):
     """Evaluate a lazy byte string into value"""
     if not isinstance(thing, types.GeneratorType):
@@ -453,15 +706,28 @@ def evalrawexp(context, mapping, arg):
     func, data = arg
     return func(context, mapping, data)
 
+def evalwrapped(context, mapping, arg):
+    """Evaluate given argument to wrapped object"""
+    thing = evalrawexp(context, mapping, arg)
+    return makewrapped(context, mapping, thing)
+
+def makewrapped(context, mapping, thing):
+    """Lift object to a wrapped type"""
+    if isinstance(thing, wrapped):
+        return thing
+    thing = _unthunk(context, mapping, thing)
+    if isinstance(thing, bytes):
+        return wrappedbytes(thing)
+    return wrappedvalue(thing)
+
 def evalfuncarg(context, mapping, arg):
     """Evaluate given argument as value type"""
-    return _unwrapvalue(context, mapping, evalrawexp(context, mapping, arg))
+    return unwrapvalue(context, mapping, evalrawexp(context, mapping, arg))
 
-# TODO: unify this with unwrapvalue() once the bug of templatefunc.join()
-# is fixed. we can't do that right now because join() has to take a generator
-# of byte strings as it is, not a lazy byte string.
-def _unwrapvalue(context, mapping, thing):
-    thing = unwrapvalue(context, mapping, thing)
+def unwrapvalue(context, mapping, thing):
+    """Move the inner value object out of the wrapper"""
+    if isinstance(thing, wrapped):
+        return thing.tovalue(context, mapping)
     # evalrawexp() may return string, generator of strings or arbitrary object
     # such as date tuple, but filter does not want generator.
     return _unthunk(context, mapping, thing)
@@ -476,12 +742,7 @@ def evalboolean(context, mapping, arg):
             thing = stringutil.parsebool(data)
     else:
         thing = func(context, mapping, data)
-    thing = unwrapvalue(context, mapping, thing)
-    if isinstance(thing, bool):
-        return thing
-    # other objects are evaluated as strings, which means 0 is True, but
-    # empty dict/list should be False as they are expected to be ''
-    return bool(stringify(context, mapping, thing))
+    return makewrapped(context, mapping, thing).tobool(context, mapping)
 
 def evaldate(context, mapping, arg, err=None):
     """Evaluate given argument as a date tuple or a date string; returns
@@ -490,7 +751,10 @@ def evaldate(context, mapping, arg, err=None):
     return unwrapdate(context, mapping, thing, err)
 
 def unwrapdate(context, mapping, thing, err=None):
-    thing = _unwrapvalue(context, mapping, thing)
+    if isinstance(thing, date):
+        return thing.tovalue(context, mapping)
+    # TODO: update hgweb to not return bare tuple; then just stringify 'thing'
+    thing = unwrapvalue(context, mapping, thing)
     try:
         return dateutil.parsedate(thing)
     except AttributeError:
@@ -505,7 +769,7 @@ def evalinteger(context, mapping, arg, err=None):
     return unwrapinteger(context, mapping, thing, err)
 
 def unwrapinteger(context, mapping, thing, err=None):
-    thing = _unwrapvalue(context, mapping, thing)
+    thing = unwrapvalue(context, mapping, thing)
     try:
         return int(thing)
     except (TypeError, ValueError):
@@ -525,7 +789,7 @@ def evalstringliteral(context, mapping, arg):
     return stringify(context, mapping, thing)
 
 _unwrapfuncbytype = {
-    None: _unwrapvalue,
+    None: unwrapvalue,
     bytes: stringify,
     date: unwrapdate,
     int: unwrapinteger,
@@ -601,20 +865,6 @@ def _formatfiltererror(arg, filt):
     return (_("template filter '%s' is not compatible with keyword '%s'")
             % (fn, sym))
 
-def _checkeditermaps(darg, d):
-    try:
-        for v in d:
-            if not isinstance(v, dict):
-                raise TypeError
-            yield v
-    except TypeError:
-        sym = findsymbolicname(darg)
-        if sym:
-            raise error.ParseError(_("keyword '%s' is not iterable of mappings")
-                                   % sym)
-        else:
-            raise error.ParseError(_("%r is not iterable of mappings") % d)
-
 def _iteroverlaymaps(context, origmapping, newmappings):
     """Generate combined mappings from the original mapping and an iterable
     of partial mappings to override the original"""
@@ -623,38 +873,37 @@ def _iteroverlaymaps(context, origmapping, newmappings):
         lm['index'] = i
         yield lm
 
-def _applymap(context, mapping, diter, targ):
+def _applymap(context, mapping, d, darg, targ):
+    try:
+        diter = d.itermaps(context)
+    except error.ParseError as err:
+        sym = findsymbolicname(darg)
+        if not sym:
+            raise
+        hint = _("keyword '%s' does not support map operation") % sym
+        raise error.ParseError(bytes(err), hint=hint)
     for lm in _iteroverlaymaps(context, mapping, diter):
         yield evalrawexp(context, lm, targ)
 
 def runmap(context, mapping, data):
     darg, targ = data
-    d = evalrawexp(context, mapping, darg)
-    # TODO: a generator should be rejected because it is a thunk of lazy
-    # string, but we can't because hgweb abuses generator as a keyword
-    # that returns a list of dicts.
-    # TODO: drop _checkeditermaps() and pass 'd' to mappedgenerator so it
-    # can be restarted.
-    if isinstance(d, wrapped):
-        diter = d.itermaps(context)
-    else:
-        diter = _checkeditermaps(darg, d)
-    return mappedgenerator(_applymap, args=(mapping, diter, targ))
+    d = evalwrapped(context, mapping, darg)
+    return mappedgenerator(_applymap, args=(mapping, d, darg, targ))
 
 def runmember(context, mapping, data):
     darg, memb = data
-    d = evalrawexp(context, mapping, darg)
-    if util.safehasattr(d, 'tomap'):
-        lm = context.overlaymap(mapping, d.tomap())
+    d = evalwrapped(context, mapping, darg)
+    if isinstance(d, mappable):
+        lm = context.overlaymap(mapping, d.tomap(context))
         return runsymbol(context, lm, memb)
-    if util.safehasattr(d, 'get'):
-        return getdictitem(d, memb)
-
-    sym = findsymbolicname(darg)
-    if sym:
-        raise error.ParseError(_("keyword '%s' has no member") % sym)
-    else:
-        raise error.ParseError(_("%r has no member") % pycompat.bytestr(d))
+    try:
+        return d.getmember(context, mapping, memb)
+    except error.ParseError as err:
+        sym = findsymbolicname(darg)
+        if not sym:
+            raise
+        hint = _("keyword '%s' does not support member operation") % sym
+        raise error.ParseError(bytes(err), hint=hint)
 
 def runnegate(context, mapping, data):
     data = evalinteger(context, mapping, data,
@@ -671,12 +920,6 @@ def runarithmetic(context, mapping, data):
         return func(left, right)
     except ZeroDivisionError:
         raise error.Abort(_('division by zero is not defined'))
-
-def getdictitem(dictarg, key):
-    val = dictarg.get(key)
-    if val is None:
-        return
-    return wraphybridvalue(dictarg, key, val)
 
 def joinitems(itemiter, sep):
     """Join items with the separator; Returns generator of bytes"""

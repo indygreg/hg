@@ -30,7 +30,7 @@ Set up the repo
   |
   o  0:43c799df6e75
   
-  $ hg serve --config web.allow_archive=zip -n test -p $HGPORT -d --pid-file=hg.pid -E errors.log
+  $ hg serve --config web.allow-archive=zip -n test -p $HGPORT -d --pid-file=hg.pid -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
 
   $ REVLINKS='href=[^>]+(rev=|/)(43c799df6e75|0|a7c1559b7bba|1|xyzzy|9d8c40cba617|2|tip|default)'
@@ -56,6 +56,7 @@ Set up the repo
   <li><a href="/shortlog/tip?style=paper">log</a></li>
   <li><a href="/rev/tip?style=paper">changeset</a></li>
   <li><a href="/file/tip?style=paper">browse</a></li>
+  <a href="/archive/tip.zip">zip</a>
   <a href="/graph/tip?revcount=30&style=paper">less</a>
   <a href="/graph/tip?revcount=120&style=paper">more</a>
   | rev 2: <a href="/graph/43c799df6e75?style=paper">(0)</a> <a href="/graph/tip?style=paper">tip</a> 
@@ -72,7 +73,6 @@ Set up the repo
   <li><a href="/rev/tip?style=paper">changeset</a></li>
   <a href="/archive/tip.zip">zip</a>
    directory / @ 2:<a href="/rev/9d8c40cba617?style=paper">9d8c40cba617</a>
-    <td class="name"><a href="/file/tip/?style=paper">[up]</a></td>
   <a href="/file/tip/dir?style=paper">
   <a href="/file/tip/dir/?style=paper">
   <a href="/file/tip/foo?style=paper">
@@ -123,6 +123,7 @@ Set up the repo
   <li><a href="/shortlog/xyzzy?style=paper">log</a></li>
   <li><a href="/rev/xyzzy?style=paper">changeset</a></li>
   <li><a href="/file/xyzzy?style=paper">browse</a></li>
+  <a href="/archive/xyzzy.zip">zip</a>
   <a href="/graph/xyzzy?revcount=30&style=paper">less</a>
   <a href="/graph/xyzzy?revcount=120&style=paper">more</a>
   | rev 1: <a href="/graph/43c799df6e75?style=paper">(0)</a> <a href="/graph/tip?style=paper">tip</a> 
@@ -138,7 +139,6 @@ Set up the repo
   <li><a href="/rev/xyzzy?style=paper">changeset</a></li>
   <a href="/archive/xyzzy.zip">zip</a>
    directory / @ 1:<a href="/rev/a7c1559b7bba?style=paper">a7c1559b7bba</a>
-    <td class="name"><a href="/file/xyzzy/?style=paper">[up]</a></td>
   <a href="/file/xyzzy/dir?style=paper">
   <a href="/file/xyzzy/dir/?style=paper">
   <a href="/file/xyzzy/foo?style=paper">
@@ -256,6 +256,7 @@ Set up the repo
   <li><a href="/shortlog/tip?style=coal">log</a></li>
   <li><a href="/rev/tip?style=coal">changeset</a></li>
   <li><a href="/file/tip?style=coal">browse</a></li>
+  <a href="/archive/tip.zip">zip</a>
   <a href="/graph/tip?revcount=30&style=coal">less</a>
   <a href="/graph/tip?revcount=120&style=coal">more</a>
   | rev 2: <a href="/graph/43c799df6e75?style=coal">(0)</a> <a href="/graph/tip?style=coal">tip</a> 
@@ -272,7 +273,6 @@ Set up the repo
   <li><a href="/rev/tip?style=coal">changeset</a></li>
   <a href="/archive/tip.zip">zip</a>
    directory / @ 2:<a href="/rev/9d8c40cba617?style=coal">9d8c40cba617</a>
-    <td class="name"><a href="/file/tip/?style=coal">[up]</a></td>
   <a href="/file/tip/dir?style=coal">
   <a href="/file/tip/dir/?style=coal">
   <a href="/file/tip/foo?style=coal">
@@ -323,6 +323,7 @@ Set up the repo
   <li><a href="/shortlog/xyzzy?style=coal">log</a></li>
   <li><a href="/rev/xyzzy?style=coal">changeset</a></li>
   <li><a href="/file/xyzzy?style=coal">browse</a></li>
+  <a href="/archive/xyzzy.zip">zip</a>
   <a href="/graph/xyzzy?revcount=30&style=coal">less</a>
   <a href="/graph/xyzzy?revcount=120&style=coal">more</a>
   | rev 1: <a href="/graph/43c799df6e75?style=coal">(0)</a> <a href="/graph/tip?style=coal">tip</a> 
@@ -338,7 +339,6 @@ Set up the repo
   <li><a href="/rev/xyzzy?style=coal">changeset</a></li>
   <a href="/archive/xyzzy.zip">zip</a>
    directory / @ 1:<a href="/rev/a7c1559b7bba?style=coal">a7c1559b7bba</a>
-    <td class="name"><a href="/file/xyzzy/?style=coal">[up]</a></td>
   <a href="/file/xyzzy/dir?style=coal">
   <a href="/file/xyzzy/dir/?style=coal">
   <a href="/file/xyzzy/foo?style=coal">
@@ -489,7 +489,7 @@ Set up the repo
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'graph?style=gitweb' | egrep $REVLINKS
   <a href="/shortlog/tip?style=gitweb">shortlog</a> |
   <a href="/log/tip?style=gitweb">changelog</a> |
-  <a href="/file/tip?style=gitweb">files</a> |
+  <a href="/file/tip?style=gitweb">files</a> | <a href="/archive/tip.zip">zip</a>  |
   <a href="/graph/tip?revcount=30&style=gitweb">less</a>
   <a href="/graph/tip?revcount=120&style=gitweb">more</a>
   | <a href="/graph/43c799df6e75?style=gitweb">(0)</a> <a href="/graph/tip?style=gitweb">tip</a> 
@@ -520,7 +520,6 @@ Set up the repo
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'file?style=gitweb' | egrep $REVLINKS
   <a href="/rev/tip?style=gitweb">changeset</a>  | <a href="/archive/tip.zip">zip</a>  |
-  <td><a href="/file/tip/?style=gitweb">[up]</a></td>
   <a href="/file/tip/dir?style=gitweb">dir</a>
   <a href="/file/tip/dir/?style=gitweb"></a>
   <a href="/file/tip/dir?style=gitweb">files</a>
@@ -582,7 +581,7 @@ Set up the repo
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'graph/xyzzy?style=gitweb' | egrep $REVLINKS
   <a href="/shortlog/xyzzy?style=gitweb">shortlog</a> |
   <a href="/log/xyzzy?style=gitweb">changelog</a> |
-  <a href="/file/xyzzy?style=gitweb">files</a> |
+  <a href="/file/xyzzy?style=gitweb">files</a> | <a href="/archive/xyzzy.zip">zip</a>  |
   <a href="/graph/xyzzy?revcount=30&style=gitweb">less</a>
   <a href="/graph/xyzzy?revcount=120&style=gitweb">more</a>
   | <a href="/graph/43c799df6e75?style=gitweb">(0)</a> <a href="/graph/tip?style=gitweb">tip</a> 
@@ -594,7 +593,6 @@ Set up the repo
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'file/xyzzy?style=gitweb' | egrep $REVLINKS
   <a href="/rev/xyzzy?style=gitweb">changeset</a>  | <a href="/archive/xyzzy.zip">zip</a>  |
-  <td><a href="/file/xyzzy/?style=gitweb">[up]</a></td>
   <a href="/file/xyzzy/dir?style=gitweb">dir</a>
   <a href="/file/xyzzy/dir/?style=gitweb"></a>
   <a href="/file/xyzzy/dir?style=gitweb">files</a>
@@ -731,6 +729,7 @@ Set up the repo
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'graph?style=monoblue' | egrep $REVLINKS
               <li><a href="/file/tip?style=monoblue">files</a></li>
+              <li><a href="/archive/tip.zip">zip</a></li>
               <a href="/rev/9d8c40cba617?style=monoblue">third</a>
               <a href="/rev/a7c1559b7bba?style=monoblue">second</a>
               <a href="/rev/43c799df6e75?style=monoblue">first</a>
@@ -760,7 +759,6 @@ Set up the repo
               <li><a href="/graph/tip?style=monoblue">graph</a></li>
           <li><a href="/rev/tip?style=monoblue">changeset</a></li>
           <li><a href="/archive/tip.zip">zip</a></li>
-              <td><a href="/file/tip/?style=monoblue">[up]</a></td>
   <a href="/file/tip/dir?style=monoblue">dir</a>
   <a href="/file/tip/dir/?style=monoblue"></a>
   <td><a href="/file/tip/dir?style=monoblue">files</a></td>
@@ -813,6 +811,7 @@ Set up the repo
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'graph/xyzzy?style=monoblue' | egrep $REVLINKS
               <li><a href="/file/xyzzy?style=monoblue">files</a></li>
+              <li><a href="/archive/xyzzy.zip">zip</a></li>
               <a href="/rev/a7c1559b7bba?style=monoblue">second</a>
               <a href="/rev/43c799df6e75?style=monoblue">first</a>
           <a href="/graph/xyzzy?revcount=30&style=monoblue">less</a>
@@ -823,7 +822,6 @@ Set up the repo
               <li><a href="/graph/xyzzy?style=monoblue">graph</a></li>
           <li><a href="/rev/xyzzy?style=monoblue">changeset</a></li>
           <li><a href="/archive/xyzzy.zip">zip</a></li>
-              <td><a href="/file/xyzzy/?style=monoblue">[up]</a></td>
   <a href="/file/xyzzy/dir?style=monoblue">dir</a>
   <a href="/file/xyzzy/dir/?style=monoblue"></a>
   <td><a href="/file/xyzzy/dir?style=monoblue">files</a></td>
@@ -964,10 +962,9 @@ Set up the repo
   <a href="/rev/tip?style=spartan">changeset</a>
   <a href="/archive/tip.zip">zip</a> 
   <h2><a href="/">Mercurial</a>  / files for changeset <a href="/rev/9d8c40cba617">9d8c40cba617</a>: /</h2>
-    <td><a href="/file/tip/?style=spartan">[up]</a>
   <a href="/file/tip/dir?style=spartan">dir/</a>
   <a href="/file/tip/dir/?style=spartan">
-  <td><a href="/file/tip/foo?style=spartan">foo</a>
+  <td><a href="/file/tip/foo?style=spartan">foo</a></td>
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'shortlog?style=spartan&rev=all()' | egrep $REVLINKS
   <a href="/archive/tip.zip">zip</a> 
@@ -1037,10 +1034,9 @@ Set up the repo
   <a href="/rev/xyzzy?style=spartan">changeset</a>
   <a href="/archive/xyzzy.zip">zip</a> 
   <h2><a href="/">Mercurial</a>  / files for changeset <a href="/rev/a7c1559b7bba">a7c1559b7bba</a>: /</h2>
-    <td><a href="/file/xyzzy/?style=spartan">[up]</a>
   <a href="/file/xyzzy/dir?style=spartan">dir/</a>
   <a href="/file/xyzzy/dir/?style=spartan">
-  <td><a href="/file/xyzzy/foo?style=spartan">foo</a>
+  <td><a href="/file/xyzzy/foo?style=spartan">foo</a></td>
 
   $ "$TESTDIR/get-with-headers.py" $LOCALIP:$HGPORT 'file/xyzzy/foo?style=spartan' | egrep $REVLINKS
   <a href="/log/xyzzy?style=spartan">changelog</a>

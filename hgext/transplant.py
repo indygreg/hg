@@ -16,7 +16,7 @@ map from a changeset hash to its hash in the source repository.
 from __future__ import absolute_import
 
 import os
-import tempfile
+
 from mercurial.i18n import _
 from mercurial import (
     bundlerepo,
@@ -215,7 +215,7 @@ class transplanter(object):
                 if skipmerge:
                     patchfile = None
                 else:
-                    fd, patchfile = tempfile.mkstemp(prefix='hg-transplant-')
+                    fd, patchfile = pycompat.mkstemp(prefix='hg-transplant-')
                     fp = os.fdopen(fd, r'wb')
                     gen = patch.diff(source, parent, node, opts=diffopts)
                     for chunk in gen:
@@ -263,7 +263,7 @@ class transplanter(object):
 
         self.ui.status(_('filtering %s\n') % patchfile)
         user, date, msg = (changelog[1], changelog[2], changelog[4])
-        fd, headerfile = tempfile.mkstemp(prefix='hg-transplant-')
+        fd, headerfile = pycompat.mkstemp(prefix='hg-transplant-')
         fp = os.fdopen(fd, r'wb')
         fp.write("# HG changeset patch\n")
         fp.write("# User %s\n" % user)
@@ -523,7 +523,8 @@ def browserevs(ui, repo, nodes, opts):
         displayer.show(repo[node])
         action = None
         while not action:
-            action = 'ynmpcq?'[ui.promptchoice(prompt)]
+            choice = ui.promptchoice(prompt)
+            action = 'ynmpcq?'[choice:choice + 1]
             if action == '?':
                 for c, t in ui.extractchoices(prompt)[1]:
                     ui.write('%s: %s\n' % (c, t))
@@ -682,7 +683,7 @@ def _dotransplant(ui, repo, *revs, **opts):
     sourcerepo = opts.get('source')
     if sourcerepo:
         peer = hg.peer(repo, opts, ui.expandpath(sourcerepo))
-        heads = map(peer.lookup, opts.get('branch', ()))
+        heads = pycompat.maplist(peer.lookup, opts.get('branch', ()))
         target = set(heads)
         for r in revs:
             try:
@@ -693,7 +694,7 @@ def _dotransplant(ui, repo, *revs, **opts):
                                     onlyheads=sorted(target), force=True)
     else:
         source = repo
-        heads = map(source.lookup, opts.get('branch', ()))
+        heads = pycompat.maplist(source.lookup, opts.get('branch', ()))
         cleanupfn = None
 
     try:
@@ -708,7 +709,7 @@ def _dotransplant(ui, repo, *revs, **opts):
             matchfn = lambda x: tf(x) and x not in prune
         else:
             matchfn = tf
-        merges = map(source.lookup, opts.get('merge', ()))
+        merges = pycompat.maplist(source.lookup, opts.get('merge', ()))
         revmap = {}
         if revs:
             for r in scmutil.revrange(source, revs):

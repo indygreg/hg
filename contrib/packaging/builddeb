@@ -6,6 +6,8 @@
 
 . $(dirname $0)/packagelib.sh
 
+ROOTDIR=$(cd $(dirname $0)/../.. > /dev/null; pwd)
+
 BUILD=1
 CLEANUP=1
 DISTID=`(lsb_release -is 2> /dev/null | tr '[:upper:]' '[:lower:]') || echo debian`
@@ -73,7 +75,7 @@ if [ "$BUILD" ]; then
         exit 1
     fi
 
-    cp -r "$PWD"/contrib/debian debian
+    cp -r "$ROOTDIR"/contrib/packaging/debian debian
 
     sed -i.tmp "s/__VERSION__/$debver/" $changelog
     sed -i.tmp "s/__DATE__/$(date --rfc-2822)/" $changelog
@@ -82,7 +84,7 @@ if [ "$BUILD" ]; then
 
     # remove the node from the version string
     SRCFILE="mercurial_$(echo $debver | sed "s,-$node,,").orig.tar.gz"
-    "$PWD/hg" archive $SRCFILE
+    "$ROOTDIR/hg" archive $SRCFILE
     mv $SRCFILE ..
     debuild -us -uc -i -I $DEBFLAGS
     if [ $? != 0 ]; then

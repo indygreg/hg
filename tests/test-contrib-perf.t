@@ -88,7 +88,8 @@ perfstatus
    perflookup    (no help text available)
    perflrucachedict
                  (no help text available)
-   perfmanifest  (no help text available)
+   perfmanifest  benchmark the time to read a manifest from disk and return a
+                 usable
    perfmergecalculate
                  (no help text available)
    perfmoonwalk  benchmark walking the changelog backwards
@@ -113,7 +114,7 @@ perfstatus
    perfstatus    (no help text available)
    perftags      (no help text available)
    perftemplating
-                 (no help text available)
+                 test the rendering time of a given template
    perfunidiff   benchmark a unified diff between revisions
    perfvolatilesets
                  benchmark the computation of various volatile set
@@ -145,7 +146,11 @@ perfstatus
 #if repofncache
   $ hg perffncacheencode
   $ hg perffncacheload
+  $ hg debugrebuildfncache
+  fncache already up to date
   $ hg perffncachewrite
+  $ hg debugrebuildfncache
+  fncache already up to date
 #endif
   $ hg perfheads
   $ hg perfindex
@@ -175,7 +180,24 @@ perfstatus
   $ hg perfwalk
   $ hg perfparents
 
+test actual output
+------------------
+
+normal output:
+
+  $ hg perfheads --config perf.stub=no
+  ! wall * comb * user * sys * (best of *) (glob)
+
+detailed output:
+
+  $ hg perfheads --config perf.all-timing=yes --config perf.stub=no
+  ! wall * comb * user * sys * (best of *) (glob)
+  ! wall * comb * user * sys * (max of *) (glob)
+  ! wall * comb * user * sys * (avg of *) (glob)
+  ! wall * comb * user * sys * (median of *) (glob)
+
 Check perf.py for historical portability
+----------------------------------------
 
   $ cd "$TESTDIR/.."
 

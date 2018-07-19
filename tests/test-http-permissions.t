@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ cat > fakeremoteuser.py << EOF
   > import os
   > from mercurial.hgweb import hgweb_mod

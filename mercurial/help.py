@@ -232,6 +232,7 @@ helptable = sorted([
     (['bundlespec'], _("Bundle File Formats"), loaddoc('bundlespec')),
     (['color'], _("Colorizing Outputs"), loaddoc('color')),
     (["config", "hgrc"], _("Configuration Files"), loaddoc('config')),
+    (['deprecated'], _("Deprecated Features"), loaddoc('deprecated')),
     (["dates"], _("Date Formats"), loaddoc('dates')),
     (["flags"], _("Command-line flags"), loaddoc('flags')),
     (["patterns"], _("File Name Patterns"), loaddoc('patterns')),
@@ -574,9 +575,9 @@ def help_(ui, commands, name, unknowncmd=False, full=True, subtopic=None,
         return rst
 
     def helpextcmd(name, subtopic=None):
-        cmd, ext, mod = extensions.disabledcmd(ui, name,
+        cmd, ext, doc = extensions.disabledcmd(ui, name,
                                                ui.configbool('ui', 'strict'))
-        doc = gettext(pycompat.getdoc(mod)).splitlines()[0]
+        doc = doc.splitlines()[0]
 
         rst = listexts(_("'%s' is provided by the following "
                               "extension:") % cmd, {ext: doc}, indent=4,

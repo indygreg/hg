@@ -15,7 +15,7 @@
   >     #  LOGNAME=$user hg --cws a --debug push ../b
   >     # fails with "This variable is read only."
   >     # Use env to work around this.
-  >     env LOGNAME=$user hg --cwd a --debug push ../b
+  >     env LOGNAME=$user hg --cwd a --debug push ../b $*
   >     hg --cwd b rollback
   >     hg --cwd b --quiet tip
   >     echo
@@ -47,6 +47,7 @@
   >     cat > $config <<EOF
   > [hooks]
   > pretxnchangegroup.acl = python:hgext.acl.hook
+  > prepushkey.acl = python:hgext.acl.hook
   > [acl]
   > sources = push
   > [extensions]
@@ -148,6 +149,7 @@ Extension disabled for lack of a hook
 
   $ echo '[hooks]' >> $config
   $ echo 'pretxnchangegroup.acl = python:hgext.acl.hook' >> $config
+  $ echo 'prepushkey.acl = python:hgext.acl.hook' >> $config
 
 Extension disabled for lack of acl.sources
 
@@ -156,6 +158,7 @@ Extension disabled for lack of acl.sources
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   """
   pushing to ../b
   query 1; heads
@@ -220,6 +223,7 @@ No [acl.allow]/[acl.deny]
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   """
@@ -295,6 +299,7 @@ Empty [acl.allow]
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -362,6 +367,7 @@ fred is allowed inside foo/
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -434,6 +440,7 @@ Empty [acl.deny]
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -503,6 +510,7 @@ fred is allowed inside foo/, but not foo/bar/ (case matters)
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -577,6 +585,7 @@ fred is allowed inside foo/, but not foo/Bar/
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -649,6 +658,7 @@ fred is allowed inside foo/, but not foo/Bar/
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -712,6 +722,178 @@ fred is allowed inside foo/, but not foo/Bar/
   0:6675d58eff77
   
 
+fred is not blocked from moving bookmarks
+
+  $ hg -R a book -q moving-bookmark -r 1
+  $ hg -R b book -q moving-bookmark -r 0
+  $ cp $config normalconfig
+  $ do_push fred -r 1
+  Pushing as user fred
+  hgrc = """
+  [hooks]
+  pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
+  [acl]
+  sources = push
+  [acl.allow]
+  foo/** = fred
+  [acl.deny]
+  foo/bar/** = fred
+  foo/Bar/** = fred
+  """
+  pushing to ../b
+  query 1; heads
+  searching for changes
+  all remote heads known locally
+  listing keys for "phases"
+  checking for updated bookmarks
+  listing keys for "bookmarks"
+  listing keys for "bookmarks"
+  1 changesets found
+  list of changesets:
+  ef1ea85a6374b77d6da9dcda9541f498f2d17df7
+  bundle2-output-bundle: "HG20", 7 parts total
+  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "check:bookmarks" 37 bytes payload
+  bundle2-output-part: "check:phases" 24 bytes payload
+  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
+  bundle2-output-part: "phase-heads" 24 bytes payload
+  bundle2-output-part: "bookmarks" 37 bytes payload
+  bundle2-input-bundle: with-transaction
+  bundle2-input-part: "replycaps" supported
+  bundle2-input-part: total payload size 205
+  bundle2-input-part: "check:bookmarks" supported
+  bundle2-input-part: total payload size 37
+  bundle2-input-part: "check:phases" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: total payload size 20
+  bundle2-input-part: "changegroup" (params: 1 mandatory) supported
+  adding changesets
+  add changeset ef1ea85a6374
+  adding manifests
+  adding file changes
+  adding foo/file.txt revisions
+  added 1 changesets with 1 changes to 1 files
+  calling hook pretxnchangegroup.acl: hgext.acl.hook
+  acl: checking access for user "fred"
+  acl: acl.allow.branches not enabled
+  acl: acl.deny.branches not enabled
+  acl: acl.allow enabled, 1 entries for user fred
+  acl: acl.deny enabled, 2 entries for user fred
+  acl: branch access granted: "ef1ea85a6374" on branch "default"
+  acl: path access granted: "ef1ea85a6374"
+  bundle2-input-part: total payload size 520
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-part: "bookmarks" supported
+  bundle2-input-part: total payload size 37
+  calling hook prepushkey.acl: hgext.acl.hook
+  acl: checking access for user "fred"
+  acl: acl.allow.bookmarks not enabled
+  acl: acl.deny.bookmarks not enabled
+  acl: bookmark access granted: "ef1ea85a6374b77d6da9dcda9541f498f2d17df7" on bookmark "moving-bookmark"
+  bundle2-input-bundle: 6 parts total
+  updating the branch cache
+  bundle2-output-bundle: "HG20", 1 parts total
+  bundle2-output-part: "reply:changegroup" (advisory) (params: 0 advisory) empty payload
+  bundle2-input-bundle: no-transaction
+  bundle2-input-part: "reply:changegroup" (advisory) (params: 0 advisory) supported
+  bundle2-input-bundle: 0 parts total
+  updating bookmark moving-bookmark
+  listing keys for "phases"
+  repository tip rolled back to revision 0 (undo push)
+  0:6675d58eff77
+  
+
+fred is not allowed to move bookmarks
+
+  $ echo '[acl.deny.bookmarks]' >> $config
+  $ echo '* = fred' >> $config
+  $ do_push fred -r 1
+  Pushing as user fred
+  hgrc = """
+  [hooks]
+  pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
+  [acl]
+  sources = push
+  [acl.allow]
+  foo/** = fred
+  [acl.deny]
+  foo/bar/** = fred
+  foo/Bar/** = fred
+  [acl.deny.bookmarks]
+  * = fred
+  """
+  pushing to ../b
+  query 1; heads
+  searching for changes
+  all remote heads known locally
+  listing keys for "phases"
+  checking for updated bookmarks
+  listing keys for "bookmarks"
+  listing keys for "bookmarks"
+  1 changesets found
+  list of changesets:
+  ef1ea85a6374b77d6da9dcda9541f498f2d17df7
+  bundle2-output-bundle: "HG20", 7 parts total
+  bundle2-output-part: "replycaps" 205 bytes payload
+  bundle2-output-part: "check:bookmarks" 37 bytes payload
+  bundle2-output-part: "check:phases" 24 bytes payload
+  bundle2-output-part: "check:heads" streamed payload
+  bundle2-output-part: "changegroup" (params: 1 mandatory) streamed payload
+  bundle2-output-part: "phase-heads" 24 bytes payload
+  bundle2-output-part: "bookmarks" 37 bytes payload
+  bundle2-input-bundle: with-transaction
+  bundle2-input-part: "replycaps" supported
+  bundle2-input-part: total payload size 205
+  bundle2-input-part: "check:bookmarks" supported
+  bundle2-input-part: total payload size 37
+  bundle2-input-part: "check:phases" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-part: "check:heads" supported
+  bundle2-input-part: total payload size 20
+  bundle2-input-part: "changegroup" (params: 1 mandatory) supported
+  adding changesets
+  add changeset ef1ea85a6374
+  adding manifests
+  adding file changes
+  adding foo/file.txt revisions
+  added 1 changesets with 1 changes to 1 files
+  calling hook pretxnchangegroup.acl: hgext.acl.hook
+  acl: checking access for user "fred"
+  acl: acl.allow.branches not enabled
+  acl: acl.deny.branches not enabled
+  acl: acl.allow enabled, 1 entries for user fred
+  acl: acl.deny enabled, 2 entries for user fred
+  acl: branch access granted: "ef1ea85a6374" on branch "default"
+  acl: path access granted: "ef1ea85a6374"
+  bundle2-input-part: total payload size 520
+  bundle2-input-part: "phase-heads" supported
+  bundle2-input-part: total payload size 24
+  bundle2-input-part: "bookmarks" supported
+  bundle2-input-part: total payload size 37
+  calling hook prepushkey.acl: hgext.acl.hook
+  acl: checking access for user "fred"
+  acl: acl.allow.bookmarks not enabled
+  acl: acl.deny.bookmarks enabled, 1 entries for user fred
+  error: prepushkey.acl hook failed: acl: user "fred" denied on bookmark "moving-bookmark" (changeset "ef1ea85a6374b77d6da9dcda9541f498f2d17df7")
+  bundle2-input-bundle: 6 parts total
+  transaction abort!
+  rollback completed
+  abort: acl: user "fred" denied on bookmark "moving-bookmark" (changeset "ef1ea85a6374b77d6da9dcda9541f498f2d17df7")
+  no rollback information available
+  0:6675d58eff77
+  
+
+cleanup bookmark stuff
+
+  $ hg book -R a -d moving-bookmark
+  $ hg book -R b -d moving-bookmark
+  $ cp normalconfig $config
+
 barney is allowed everywhere
 
   $ echo '[acl.allow]' >> $config
@@ -721,6 +903,7 @@ barney is allowed everywhere
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -803,6 +986,7 @@ wilma can change files with a .txt extension
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -882,6 +1066,7 @@ file specified by acl.config does not exist
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -954,6 +1139,7 @@ betty is allowed inside foo/ by a acl.config file
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -1039,6 +1225,7 @@ acl.config can set only [acl.allow]/[acl.deny]
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [acl.allow]
@@ -1138,6 +1325,7 @@ fred is always allowed
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1219,6 +1407,7 @@ no one is allowed inside foo/Bar/
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1301,6 +1490,7 @@ OS-level groups
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1383,6 +1573,7 @@ OS-level groups
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1507,6 +1698,7 @@ No branch acls specified
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1590,6 +1782,7 @@ Branch acl deny test
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1669,6 +1862,7 @@ Branch acl empty allow test
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1742,6 +1936,7 @@ Branch acl allow other
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1810,6 +2005,7 @@ Branch acl allow other
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1899,6 +2095,7 @@ push foobar into the remote
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -1987,6 +2184,7 @@ Branch acl conflicting deny
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -2062,6 +2260,7 @@ User 'astro' must not be denied
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]
@@ -2145,6 +2344,7 @@ Non-astro users must be denied
   hgrc = """
   [hooks]
   pretxnchangegroup.acl = python:hgext.acl.hook
+  prepushkey.acl = python:hgext.acl.hook
   [acl]
   sources = push
   [extensions]

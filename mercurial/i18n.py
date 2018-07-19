@@ -23,11 +23,6 @@ if getattr(sys, 'frozen', None) is not None:
 else:
     module = pycompat.fsencode(__file__)
 
-try:
-    unicode
-except NameError:
-    unicode = str
-
 _languages = None
 if (pycompat.iswindows
     and 'LANGUAGE' not in encoding.environ
@@ -76,7 +71,7 @@ def gettext(message):
 
     cache = _msgcache.setdefault(encoding.encoding, {})
     if message not in cache:
-        if type(message) is unicode:
+        if type(message) is pycompat.unicode:
             # goofy unicode docstrings in test
             paragraphs = message.split(u'\n\n')
         else:

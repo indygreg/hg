@@ -32,8 +32,9 @@ test issue352
   abort: '\n' and '\r' disallowed in filenames: 'hell\no'
   [255]
   $ echo foo > "$A"
-  $ hg debugwalk
-  matcher: <alwaysmatcher>
+  $ hg debugwalk -v
+  * matcher:
+  <alwaysmatcher>
   f  he\r (no-eol) (esc)
   llo  he\r (no-eol) (esc)
   llo

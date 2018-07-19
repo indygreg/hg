@@ -23,7 +23,26 @@ from .. import (
     pycompat,
 )
 
-def pprint(o, bprefix=True):
+# regex special chars pulled from https://bugs.python.org/issue29995
+# which was part of Python 3.7.
+_respecial = pycompat.bytestr(b'()[]{}?*+-|^$\\.&~# \t\n\r\v\f')
+_regexescapemap = {ord(i): (b'\\' + i).decode('latin1') for i in _respecial}
+
+def reescape(pat):
+    """Drop-in replacement for re.escape."""
+    # NOTE: it is intentional that this works on unicodes and not
+    # bytes, as it's only possible to do the escaping with
+    # unicode.translate, not bytes.translate. Sigh.
+    wantuni = True
+    if isinstance(pat, bytes):
+        wantuni = False
+        pat = pat.decode('latin1')
+    pat = pat.translate(_regexescapemap)
+    if wantuni:
+        return pat
+    return pat.encode('latin1')
+
+def pprint(o, bprefix=False):
     """Pretty print an object."""
     if isinstance(o, bytes):
         if bprefix:
@@ -40,16 +59,59 @@ def pprint(o, bprefix=True):
             '%s: %s' % (pprint(k, bprefix=bprefix),
                         pprint(v, bprefix=bprefix))
             for k, v in sorted(o.items())))
-    elif isinstance(o, bool):
-        return b'True' if o else b'False'
-    elif isinstance(o, int):
-        return '%d' % o
-    elif isinstance(o, float):
-        return '%f' % o
-    elif o is None:
-        return b'None'
+    elif isinstance(o, tuple):
+        return '(%s)' % (b', '.join(pprint(a, bprefix=bprefix) for a in o))
     else:
-        raise error.ProgrammingError('do not know how to format %r' % o)
+        return pycompat.byterepr(o)
+
+def prettyrepr(o):
+    """Pretty print a representation of a possibly-nested object"""
+    lines = []
+    rs = pycompat.byterepr(o)
+    p0 = p1 = 0
+    while p0 < len(rs):
+        # '... field=<type ... field=<type ...'
+        #      ~~~~~~~~~~~~~~~~
+        #      p0    p1        q0    q1
+        q0 = -1
+        q1 = rs.find('<', p1 + 1)
+        if q1 < 0:
+            q1 = len(rs)
+        elif q1 > p1 + 1 and rs.startswith('=', q1 - 1):
+            # backtrack for ' field=<'
+            q0 = rs.rfind(' ', p1 + 1, q1 - 1)
+        if q0 < 0:
+            q0 = q1
+        else:
+            q0 += 1  # skip ' '
+        l = rs.count('<', 0, p0) - rs.count('>', 0, p0)
+        assert l >= 0
+        lines.append((l, rs[p0:q0].rstrip()))
+        p0, p1 = q0, q1
+    return '\n'.join('  ' * l + s for l, s in lines)
+
+def buildrepr(r):
+    """Format an optional printable representation from unexpanded bits
+
+    ========  =================================
+    type(r)   example
+    ========  =================================
+    tuple     ('<not %r>', other)
+    bytes     '<branch closed>'
+    callable  lambda: '<branch %r>' % sorted(b)
+    object    other
+    ========  =================================
+    """
+    if r is None:
+        return ''
+    elif isinstance(r, tuple):
+        return r[0] % pycompat.rapply(pycompat.maybebytestr, r[1:])
+    elif isinstance(r, bytes):
+        return r
+    elif callable(r):
+        return r()
+    else:
+        return pycompat.byterepr(r)
 
 def binary(s):
     """return true if a string is binary data"""

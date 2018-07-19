@@ -76,9 +76,9 @@ def diffordiffstat(ui, repo, diffopts, node1, node2, match,
         if not ui.plain():
             width = ui.termwidth()
 
-    chunks = patch.diff(repo, node1, node2, match, changes, opts=diffopts,
-                        prefix=prefix, relroot=relroot,
-                        hunksfilterfn=hunksfilterfn)
+    chunks = repo[node2].diff(repo[node1], match, changes, opts=diffopts,
+                              prefix=prefix, relroot=relroot,
+                              hunksfilterfn=hunksfilterfn)
 
     if fp is not None or ui.canwritewithoutlabels():
         out = fp or ui
@@ -154,7 +154,9 @@ class changesetprinter(object):
         self.repo = repo
         self.buffered = buffered
         self._differ = differ or changesetdiffer()
-        self.diffopts = diffopts or {}
+        self._diffopts = patch.diffallopts(ui, diffopts)
+        self._includestat = diffopts and diffopts.get('stat')
+        self._includediff = diffopts and diffopts.get('patch')
         self.header = {}
         self.hunk = {}
         self.lastheader = None
@@ -226,7 +228,7 @@ class changesetprinter(object):
 
         if self.ui.debugflag and rev is not None:
             mnode = ctx.manifestnode()
-            mrev = self.repo.manifestlog._revlog.rev(mnode)
+            mrev = self.repo.manifestlog.rev(mnode)
             self.ui.write(columns['manifest']
                           % scmutil.formatrevnode(self.ui, mrev, mnode),
                           label='ui.debug log.manifest')
@@ -298,16 +300,13 @@ class changesetprinter(object):
         '''
 
     def _showpatch(self, ctx):
-        stat = self.diffopts.get('stat')
-        diff = self.diffopts.get('patch')
-        diffopts = patch.diffallopts(self.ui, self.diffopts)
-        if stat:
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=True)
-        if stat and diff:
+        if self._includestat:
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
+        if self._includestat and self._includediff:
             self.ui.write("\n")
-        if diff:
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=False)
-        if stat or diff:
+        if self._includediff:
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
+        if self._includestat or self._includediff:
             self.ui.write("\n")
 
 class changesetformatter(changesetprinter):
@@ -316,6 +315,7 @@ class changesetformatter(changesetprinter):
     def __init__(self, ui, repo, fm, differ=None, diffopts=None,
                  buffered=False):
         changesetprinter.__init__(self, ui, repo, differ, diffopts, buffered)
+        self._diffopts = patch.difffeatureopts(ui, diffopts, git=True)
         self._fm = fm
 
     def close(self):
@@ -367,16 +367,13 @@ class changesetformatter(changesetprinter):
                 fm.data(copies=fm.formatdict(copies,
                                              key='name', value='source'))
 
-        stat = self.diffopts.get('stat')
-        diff = self.diffopts.get('patch')
-        diffopts = patch.difffeatureopts(self.ui, self.diffopts, git=True)
-        if stat:
+        if self._includestat:
             self.ui.pushbuffer()
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=True)
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=True)
             fm.data(diffstat=self.ui.popbuffer())
-        if diff:
+        if self._includediff:
             self.ui.pushbuffer()
-            self._differ.showdiff(self.ui, ctx, diffopts, stat=False)
+            self._differ.showdiff(self.ui, ctx, self._diffopts, stat=False)
             fm.data(diff=self.ui.popbuffer())
 
 class changesettemplater(changesetprinter):
@@ -868,7 +865,7 @@ def displaygraph(ui, repo, dag, displayer, edgefn, getrenamed=None, props=None):
             for fn in ctx.files():
                 rename = getrenamed(fn, ctx.rev())
                 if rename:
-                    copies.append((fn, rename[0]))
+                    copies.append((fn, rename))
         edges = edgefn(type, char, state, rev, parents)
         firstedge = next(edges)
         width = firstedge[2]
@@ -896,7 +893,7 @@ def displayrevs(ui, repo, revs, displayer, getrenamed):
             for fn in ctx.files():
                 rename = getrenamed(fn, rev)
                 if rename:
-                    copies.append((fn, rename[0]))
+                    copies.append((fn, rename))
         displayer.show(ctx, copies=copies)
         displayer.flush(ctx)
     displayer.close()

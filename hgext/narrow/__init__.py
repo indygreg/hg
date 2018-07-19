@@ -28,8 +28,6 @@ from . import (
     narrowchangegroup,
     narrowcommands,
     narrowcopies,
-    narrowdirstate,
-    narrowmerge,
     narrowpatch,
     narrowrepo,
     narrowrevlog,
@@ -64,7 +62,6 @@ def uisetup(ui):
     localrepo.featuresetupfuncs.add(featuresetup)
     narrowrevlog.setup()
     narrowbundle2.setup()
-    narrowmerge.setup()
     narrowcommands.setup()
     narrowchangegroup.setup()
     narrowwirepeer.uisetup()
@@ -74,10 +71,9 @@ def reposetup(ui, repo):
     if not repo.local():
         return
 
-    narrowrepo.wraprepo(repo)
     if changegroup.NARROW_REQUIREMENT in repo.requirements:
+        narrowrepo.wraprepo(repo)
         narrowcopies.setup(repo)
-        narrowdirstate.setup(repo)
         narrowpatch.setup(repo)
         narrowwirepeer.reposetup(repo)
 

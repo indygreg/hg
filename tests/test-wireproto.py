@@ -1,5 +1,7 @@
 from __future__ import absolute_import, print_function
 
+import sys
+
 from mercurial import (
     error,
     pycompat,
@@ -8,6 +10,9 @@ from mercurial import (
     wireprototypes,
     wireprotov1peer,
     wireprotov1server,
+)
+from mercurial.utils import (
+    stringutil,
 )
 stringio = util.stringio
 
@@ -92,10 +97,16 @@ wireprotov1server.commands[b'greet'] = (greet, b'name')
 srv = serverrepo()
 clt = clientpeer(srv, uimod.ui())
 
-print(clt.greet(b"Foobar"))
+def printb(data, end=b'\n'):
+    out = getattr(sys.stdout, 'buffer', sys.stdout)
+    out.write(data + end)
+    out.flush()
+
+printb(clt.greet(b"Foobar"))
 
 with clt.commandexecutor() as e:
     fgreet1 = e.callcommand(b'greet', {b'name': b'Fo, =;:<o'})
     fgreet2 = e.callcommand(b'greet', {b'name': b'Bar'})
 
-print([f.result() for f in (fgreet1, fgreet2)])
+printb(stringutil.pprint([f.result() for f in (fgreet1, fgreet2)],
+                         bprefix=True))

@@ -26,6 +26,7 @@ except ImportError:
 
 exitcode = 0
 out = sys.stdout
+out = getattr(out, 'buffer', out)
 
 name = sys.argv[1]
 if len(sys.argv) > 2:
@@ -39,14 +40,15 @@ env = [(k, v) for k, v in os.environ.items()
        if k.startswith("HG_") and v]
 env.sort()
 
-out.write("%s hook: " % name)
+out.write(b"%s hook: " % name.encode('ascii'))
 if os.name == 'nt':
     filter = lambda x: x.replace('\\', '/')
 else:
     filter = lambda x: x
-vars = ["%s=%s" % (k, filter(v)) for k, v in env]
-out.write(" ".join(vars))
-out.write("\n")
+vars = [b"%s=%s" % (k.encode('ascii'), filter(v).encode('ascii'))
+        for k, v in env]
+out.write(b" ".join(vars))
+out.write(b"\n")
 out.close()
 
 sys.exit(exitcode)

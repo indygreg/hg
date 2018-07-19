@@ -148,6 +148,15 @@
       convert.hg.revs
                     revset specifying the source revisions to convert.
   
+      Bazaar Source
+      #############
+  
+      The following options can be used with "--config":
+  
+      convert.bzr.saverev
+                    whether to store the original Bazaar commit ID in the
+                    metadata of the destination commit. The default is True.
+  
       CVS Source
       ##########
   
@@ -419,6 +428,7 @@
   pulling from ../a
   searching for changes
   no changes found
+  5 local changesets published
 
 conversion to existing file should fail
 

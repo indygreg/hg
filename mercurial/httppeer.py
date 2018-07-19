@@ -13,7 +13,6 @@ import io
 import os
 import socket
 import struct
-import tempfile
 import weakref
 
 from .i18n import _
@@ -307,6 +306,7 @@ def sendrequest(ui, opener, req):
 
         start = util.timer()
 
+    res = None
     try:
         res = opener.open(req)
     except urlerr.httperror as inst:
@@ -320,8 +320,9 @@ def sendrequest(ui, opener, req):
         raise IOError(None, inst)
     finally:
         if ui.debugflag and ui.configbool('devel', 'debug.peer-request'):
+            code = res.code if res else -1
             dbg(line % '  finished in %.4f seconds (%d)'
-                % (util.timer() - start, res.code))
+                % (util.timer() - start, code))
 
     # Insert error handlers for common I/O failures.
     _wraphttpresponse(res)
@@ -519,7 +520,7 @@ class httppeer(wireprotov1peer.wirepeer):
         filename = None
         try:
             # dump bundle to disk
-            fd, filename = tempfile.mkstemp(prefix="hg-bundle-", suffix=".hg")
+            fd, filename = pycompat.mkstemp(prefix="hg-bundle-", suffix=".hg")
             fh = os.fdopen(fd, r"wb")
             d = fp.read(4096)
             while d:

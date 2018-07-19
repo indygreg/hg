@@ -26,6 +26,7 @@ We approximate that by reducing the read buffer to 1 byte.
   summary:     change foo
   
   $ cat >> test.py << EOF
+  > from __future__ import print_function
   > from mercurial import changelog, vfs
   > from mercurial.node import *
   > 
@@ -56,9 +57,9 @@ We approximate that by reducing the read buffer to 1 byte.
   >     return wrapper
   > 
   > cl = changelog.changelog(opener('.hg/store'))
-  > print len(cl), 'revisions:'
+  > print(len(cl), 'revisions:')
   > for r in cl:
-  >     print short(cl.node(r))
+  >     print(short(cl.node(r)))
   > EOF
   $ $PYTHON test.py
   2 revisions:
@@ -74,33 +75,34 @@ Test SEGV caused by bad revision passed to reachableroots() (issue4775):
   $ cd a
 
   $ $PYTHON <<EOF
+  > from __future__ import print_function
   > from mercurial import changelog, vfs
   > cl = changelog.changelog(vfs.vfs('.hg/store'))
-  > print 'good heads:'
+  > print('good heads:')
   > for head in [0, len(cl) - 1, -1]:
-  >     print'%s: %r' % (head, cl.reachableroots(0, [head], [0]))
-  > print 'bad heads:'
+  >     print('%s: %r' % (head, cl.reachableroots(0, [head], [0])))
+  > print('bad heads:')
   > for head in [len(cl), 10000, -2, -10000, None]:
-  >     print '%s:' % head,
+  >     print('%s:' % head, end=' ')
   >     try:
   >         cl.reachableroots(0, [head], [0])
-  >         print 'uncaught buffer overflow?'
+  >         print('uncaught buffer overflow?')
   >     except (IndexError, TypeError) as inst:
-  >         print inst
-  > print 'good roots:'
+  >         print(inst)
+  > print('good roots:')
   > for root in [0, len(cl) - 1, -1]:
-  >     print '%s: %r' % (root, cl.reachableroots(root, [len(cl) - 1], [root]))
-  > print 'out-of-range roots are ignored:'
+  >     print('%s: %r' % (root, cl.reachableroots(root, [len(cl) - 1], [root])))
+  > print('out-of-range roots are ignored:')
   > for root in [len(cl), 10000, -2, -10000]:
-  >     print '%s: %r' % (root, cl.reachableroots(root, [len(cl) - 1], [root]))
-  > print 'bad roots:'
+  >     print('%s: %r' % (root, cl.reachableroots(root, [len(cl) - 1], [root])))
+  > print('bad roots:')
   > for root in [None]:
-  >     print '%s:' % root,
+  >     print('%s:' % root, end=' ')
   >     try:
   >         cl.reachableroots(root, [len(cl) - 1], [root])
-  >         print 'uncaught error?'
+  >         print('uncaught error?')
   >     except TypeError as inst:
-  >         print inst
+  >         print(inst)
   > EOF
   good heads:
   0: [0]
@@ -137,10 +139,10 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
 
   $ $PYTHON <<EOF
   > data = open("limit/.hg/store/00changelog.i", "rb").read()
-  > for n, p in [('limit', '\0\0\0\x02'), ('segv', '\0\x01\0\0')]:
+  > for n, p in [(b'limit', b'\0\0\0\x02'), (b'segv', b'\0\x01\0\0')]:
   >     # corrupt p1 at rev0 and p2 at rev1
   >     d = data[:24] + p + data[28:127 + 28] + p + data[127 + 32:]
-  >     open(n + "/.hg/store/00changelog.i", "wb").write(d)
+  >     open(n + b"/.hg/store/00changelog.i", "wb").write(d)
   > EOF
 
   $ hg -R limit debugindex -f1 -c
@@ -164,6 +166,7 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
         1       2        1       -1    base         66         65         66   1.01538        66         0    0.00000
 
   $ cat <<EOF > test.py
+  > from __future__ import print_function
   > import sys
   > from mercurial import changelog, vfs
   > cl = changelog.changelog(vfs.vfs(sys.argv[1]))
@@ -177,12 +180,12 @@ Test corrupted p1/p2 fields that could cause SEGV at parsers.c:
   >     ('find_deepest', lambda: cl.ancestor(n0, n1)),
   >     ]
   > for l, f in ops:
-  >     print l + ':',
+  >     print(l + ':', end=' ')
   >     try:
   >         f()
-  >         print 'uncaught buffer overflow?'
-  >     except ValueError, inst:
-  >         print inst
+  >         print('uncaught buffer overflow?')
+  >     except ValueError as inst:
+  >         print(inst)
   > EOF
 
   $ $PYTHON test.py limit/.hg/store

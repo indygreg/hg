@@ -77,8 +77,7 @@ def computehidden(repo, visibilityexceptions=None):
         if visibilityexceptions:
             hidden -= visibilityexceptions
         pfunc = repo.changelog.parentrevs
-        mutablephases = (phases.draft, phases.secret)
-        mutable = repo._phasecache.getrevset(repo, mutablephases)
+        mutable = repo._phasecache.getrevset(repo, phases.mutablephases)
 
         visible = mutable - hidden
         _revealancestors(pfunc, hidden, visible)
@@ -92,13 +91,8 @@ def computeunserved(repo, visibilityexceptions=None):
     # fast path in simple case to avoid impact of non optimised code
     hiddens = filterrevs(repo, 'visible')
     if phases.hassecret(repo):
-        cl = repo.changelog
-        secret = phases.secret
-        getphase = repo._phasecache.phase
-        first = min(cl.rev(n) for n in repo._phasecache.phaseroots[secret])
-        revs = cl.revs(start=first)
-        secrets = set(r for r in revs if getphase(repo, r) >= secret)
-        return frozenset(hiddens | secrets)
+        secrets = repo._phasecache.getrevset(repo, phases.remotehiddenphases)
+        return frozenset(hiddens | frozenset(secrets))
     else:
         return hiddens
 

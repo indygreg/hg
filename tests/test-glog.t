@@ -91,6 +91,7 @@ o  (0) root
   >   revsetlang,
   >   smartset,
   > )
+  > from mercurial.utils import stringutil
   > 
   > def logrevset(repo, pats, opts):
   >     revs = logcmdutil._initialrevs(repo, opts)
@@ -112,7 +113,7 @@ o  (0) root
   >             ui = repo.ui
   >             ui.write(b'%r\n' % (opts.get(b'rev', []),))
   >             ui.write(revsetlang.prettyformat(tree) + b'\n')
-  >             ui.write(smartset.prettyformat(revs) + b'\n')
+  >             ui.write(stringutil.prettyrepr(revs) + b'\n')
   >             revs = smartset.baseset()  # display no revisions
   >         return revs, filematcher
   >     extensions.wrapfunction(logcmdutil, 'getrevs', printrevset)

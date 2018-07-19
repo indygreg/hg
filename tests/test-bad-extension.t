@@ -72,10 +72,9 @@ names of extensions failed to load can be accessed via extensions.notloaded()
   $ hg --config extensions.badexts=showbadexts.py showbadexts 2>&1 | grep '^BADEXTS'
   BADEXTS: badext badext2
 
-show traceback for ImportError of hgext.name if debug is set
-(note that --debug option isn't applied yet when loading extensions)
+show traceback for ImportError of hgext.name if devel.debug.extensions is set
 
-  $ (hg -q help help --traceback --config ui.debug=True 2>&1) \
+  $ (hg help help --traceback --debug --config devel.debug.extensions=yes 2>&1) \
   > | grep -v '^ ' \
   > | egrep 'extension..[^p]|^Exception|Traceback|ImportError|not import'
   *** failed to import extension badext from $TESTTMP/badext.py: bit bucket overflow

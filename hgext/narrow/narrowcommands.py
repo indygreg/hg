@@ -203,50 +203,51 @@ def _narrow(ui, repo, remote, commoninc, oldincludes, oldexcludes,
                               hint=_('use --force-delete-local-changes to '
                                      'ignore'))
 
-    if revstostrip:
-        tostrip = [unfi.changelog.node(r) for r in revstostrip]
-        if repo['.'].node() in tostrip:
-            # stripping working copy, so move to a different commit first
-            urev = max(repo.revs('(::%n) - %ln + null',
-                                 repo['.'].node(), visibletostrip))
-            hg.clean(repo, urev)
-        repair.strip(ui, unfi, tostrip, topic='narrow')
+    with ui.uninterruptable():
+        if revstostrip:
+            tostrip = [unfi.changelog.node(r) for r in revstostrip]
+            if repo['.'].node() in tostrip:
+                # stripping working copy, so move to a different commit first
+                urev = max(repo.revs('(::%n) - %ln + null',
+                                     repo['.'].node(), visibletostrip))
+                hg.clean(repo, urev)
+            repair.strip(ui, unfi, tostrip, topic='narrow')
 
-    todelete = []
-    for f, f2, size in repo.store.datafiles():
-        if f.startswith('data/'):
-            file = f[5:-2]
-            if not newmatch(file):
-                todelete.append(f)
-        elif f.startswith('meta/'):
-            dir = f[5:-13]
-            dirs = ['.'] + sorted(util.dirs({dir})) + [dir]
-            include = True
-            for d in dirs:
-                visit = newmatch.visitdir(d)
-                if not visit:
-                    include = False
-                    break
-                if visit == 'all':
-                    break
-            if not include:
-                todelete.append(f)
+        todelete = []
+        for f, f2, size in repo.store.datafiles():
+            if f.startswith('data/'):
+                file = f[5:-2]
+                if not newmatch(file):
+                    todelete.append(f)
+            elif f.startswith('meta/'):
+                dir = f[5:-13]
+                dirs = ['.'] + sorted(util.dirs({dir})) + [dir]
+                include = True
+                for d in dirs:
+                    visit = newmatch.visitdir(d)
+                    if not visit:
+                        include = False
+                        break
+                    if visit == 'all':
+                        break
+                if not include:
+                    todelete.append(f)
 
-    repo.destroying()
+        repo.destroying()
 
-    with repo.transaction("narrowing"):
-        for f in todelete:
-            ui.status(_('deleting %s\n') % f)
-            util.unlinkpath(repo.svfs.join(f))
-            repo.store.markremoved(f)
+        with repo.transaction("narrowing"):
+            for f in todelete:
+                ui.status(_('deleting %s\n') % f)
+                util.unlinkpath(repo.svfs.join(f))
+                repo.store.markremoved(f)
 
-        for f in repo.dirstate:
-            if not newmatch(f):
-                repo.dirstate.drop(f)
-                repo.wvfs.unlinkpath(f)
-        repo.setnarrowpats(newincludes, newexcludes)
+            for f in repo.dirstate:
+                if not newmatch(f):
+                    repo.dirstate.drop(f)
+                    repo.wvfs.unlinkpath(f)
+            repo.setnarrowpats(newincludes, newexcludes)
 
-    repo.destroyed()
+        repo.destroyed()
 
 def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
     newmatch = narrowspec.match(repo.root, newincludes, newexcludes)
@@ -269,28 +270,29 @@ def _widen(ui, repo, remote, commoninc, newincludes, newexcludes):
         repo.setnarrowpats(newincludes, newexcludes)
     repo.setnewnarrowpats = setnewnarrowpats
 
-    ds = repo.dirstate
-    p1, p2 = ds.p1(), ds.p2()
-    with ds.parentchange():
-        ds.setparents(node.nullid, node.nullid)
-    common = commoninc[0]
-    with wrappedextraprepare:
-        exchange.pull(repo, remote, heads=common)
-    with ds.parentchange():
-        ds.setparents(p1, p2)
+    with ui.uninterruptable():
+        ds = repo.dirstate
+        p1, p2 = ds.p1(), ds.p2()
+        with ds.parentchange():
+            ds.setparents(node.nullid, node.nullid)
+        common = commoninc[0]
+        with wrappedextraprepare:
+            exchange.pull(repo, remote, heads=common)
+        with ds.parentchange():
+            ds.setparents(p1, p2)
 
-    actions = {k: [] for k in 'a am f g cd dc r dm dg m e k p pr'.split()}
-    addgaction = actions['g'].append
+        actions = {k: [] for k in 'a am f g cd dc r dm dg m e k p pr'.split()}
+        addgaction = actions['g'].append
 
-    mf = repo['.'].manifest().matches(newmatch)
-    for f, fn in mf.iteritems():
-        if f not in repo.dirstate:
-            addgaction((f, (mf.flags(f), False),
-                        "add from widened narrow clone"))
+        mf = repo['.'].manifest().matches(newmatch)
+        for f, fn in mf.iteritems():
+            if f not in repo.dirstate:
+                addgaction((f, (mf.flags(f), False),
+                            "add from widened narrow clone"))
 
-    merge.applyupdates(repo, actions, wctx=repo[None],
-                       mctx=repo['.'], overwrite=False)
-    merge.recordupdates(repo, actions, branchmerge=False)
+        merge.applyupdates(repo, actions, wctx=repo[None],
+                           mctx=repo['.'], overwrite=False)
+        merge.recordupdates(repo, actions, branchmerge=False)
 
 # TODO(rdamazio): Make new matcher format and update description
 @command('tracked',

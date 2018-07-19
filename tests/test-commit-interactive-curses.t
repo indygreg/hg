@@ -68,7 +68,7 @@ Check that commit -i works with no changes
 Committing only one file
 
   $ echo "a" >> a
-  >>> open('b', 'wb').write("1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n")
+  >>> open('b', 'wb').write(b"1\n2\n3\n4\n5\n6\n7\n8\n9\n10\n") and None
   $ hg add b
   $ cat <<EOF >testModeCommands
   > TOGGLE
@@ -366,6 +366,16 @@ If only the default is set, we'll use that for the feature, too
   > interface = curses
   > EOF
   $ chunkselectorinterface
+  curses
+
+If TERM=dumb, we use text, even if the config says curses
+  $ chunkselectorinterface
+  curses
+  $ TERM=dumb chunkselectorinterface
+  text
+(Something is keeping TERM=dumb in the environment unless I do this, it's not
+scoped to just that previous command like in many shells)
+  $ TERM=xterm chunkselectorinterface
   curses
 
 It is possible to override the default interface with a feature specific

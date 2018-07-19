@@ -452,8 +452,9 @@ def has_pylint():
 
 @check("clang-format", "clang-format C code formatter")
 def has_clang_format():
-    return matchoutput("clang-format --help",
-                       br"^OVERVIEW: A tool to format C/C\+\+[^ ]+ code.")
+    m = matchoutput('clang-format --version', br'clang-format version (\d)')
+    # style changed somewhere between 4.x and 6.x
+    return m and int(m.group(1)) >= 6
 
 @check("jshint", "JSHint static code analysis tool")
 def has_jshint():
@@ -616,7 +617,7 @@ def has_debhelper():
        "debian build dependencies (run dpkg-checkbuilddeps in contrib/)")
 def has_debdeps():
     # just check exit status (ignoring output)
-    path = '%s/../contrib/debian/control' % os.environ['TESTDIR']
+    path = '%s/../contrib/packaging/debian/control' % os.environ['TESTDIR']
     return matchoutput('dpkg-checkbuilddeps %s' % path, br'')
 
 @check("demandimport", "demandimport enabled")
@@ -708,6 +709,10 @@ def has_clang_libfuzzer():
         # libfuzzer is new in clang 6
         return int(mat.group(1)) > 5
     return False
+
+@check("clang-6.0", "clang 6.0 with version suffix (libfuzzer included)")
+def has_clang60():
+    return matchoutput('clang-6.0 --version', b'clang version 6\.')
 
 @check("xdiff", "xdiff algorithm")
 def has_xdiff():

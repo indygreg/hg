@@ -249,6 +249,10 @@ def extsetup(ui):
     extensions.wrapfunction(bookmarks, '_printbookmarks', wrapprintbookmarks)
 
 def reposetup(ui, repo):
+
+    # set the config option to store remotenames
+    repo.ui.setconfig('experimental', 'remotenames', True, 'remotenames-ext')
+
     if not repo.local():
         return
 

@@ -12,6 +12,7 @@ import msvcrt
 import os
 import re
 import stat
+import string
 import sys
 
 from .i18n import _
@@ -252,6 +253,113 @@ normcasefallback = encoding.upperfallback
 
 def samestat(s1, s2):
     return False
+
+def shelltocmdexe(path, env):
+    r"""Convert shell variables in the form $var and ${var} inside ``path``
+    to %var% form.  Existing Windows style variables are left unchanged.
+
+    The variables are limited to the given environment.  Unknown variables are
+    left unchanged.
+
+    >>> e = {b'var1': b'v1', b'var2': b'v2', b'var3': b'v3'}
+    >>> # Only valid values are expanded
+    >>> shelltocmdexe(b'cmd $var1 ${var2} %var3% $missing ${missing} %missing%',
+    ...               e)
+    'cmd %var1% %var2% %var3% $missing ${missing} %missing%'
+    >>> # Single quote prevents expansion, as does \$ escaping
+    >>> shelltocmdexe(b"cmd '$var1 ${var2} %var3%' \$var1 \${var2} \\", e)
+    'cmd "$var1 ${var2} %var3%" $var1 ${var2} \\'
+    >>> # $$ is not special. %% is not special either, but can be the end and
+    >>> # start of consecutive variables
+    >>> shelltocmdexe(b"cmd $$ %% %var1%%var2%", e)
+    'cmd $$ %% %var1%%var2%'
+    >>> # No double substitution
+    >>> shelltocmdexe(b"$var1 %var1%", {b'var1': b'%var2%', b'var2': b'boom'})
+    '%var1% %var1%'
+    >>> # Tilde expansion
+    >>> shelltocmdexe(b"~/dir ~\dir2 ~tmpfile \~/", {})
+    '%USERPROFILE%/dir %USERPROFILE%\\dir2 ~tmpfile ~/'
+    """
+    if not any(c in path for c in b"$'~"):
+        return path
+
+    varchars = pycompat.sysbytes(string.ascii_letters + string.digits) + b'_-'
+
+    res = b''
+    index = 0
+    pathlen = len(path)
+    while index < pathlen:
+        c = path[index]
+        if c == b'\'':   # no expansion within single quotes
+            path = path[index + 1:]
+            pathlen = len(path)
+            try:
+                index = path.index(b'\'')
+                res += b'"' + path[:index] + b'"'
+            except ValueError:
+                res += c + path
+                index = pathlen - 1
+        elif c == b'%':  # variable
+            path = path[index + 1:]
+            pathlen = len(path)
+            try:
+                index = path.index(b'%')
+            except ValueError:
+                res += b'%' + path
+                index = pathlen - 1
+            else:
+                var = path[:index]
+                res += b'%' + var + b'%'
+        elif c == b'$':  # variable
+            if path[index + 1:index + 2] == b'{':
+                path = path[index + 2:]
+                pathlen = len(path)
+                try:
+                    index = path.index(b'}')
+                    var = path[:index]
+
+                    # See below for why empty variables are handled specially
+                    if env.get(var, '') != '':
+                        res += b'%' + var + b'%'
+                    else:
+                        res += b'${' + var + b'}'
+                except ValueError:
+                    res += b'${' + path
+                    index = pathlen - 1
+            else:
+                var = b''
+                index += 1
+                c = path[index:index + 1]
+                while c != b'' and c in varchars:
+                    var += c
+                    index += 1
+                    c = path[index:index + 1]
+                # Some variables (like HG_OLDNODE) may be defined, but have an
+                # empty value.  Those need to be skipped because when spawning
+                # cmd.exe to run the hook, it doesn't replace %VAR% for an empty
+                # VAR, and that really confuses things like revset expressions.
+                # OTOH, if it's left in Unix format and the hook runs sh.exe, it
+                # will substitute to an empty string, and everything is happy.
+                if env.get(var, '') != '':
+                    res += b'%' + var + b'%'
+                else:
+                    res += b'$' + var
+
+                if c != '':
+                    index -= 1
+        elif (c == b'~' and index + 1 < pathlen
+              and path[index + 1] in (b'\\', b'/')):
+            res += "%USERPROFILE%"
+        elif (c == b'\\' and index + 1 < pathlen
+              and path[index + 1] in (b'$', b'~')):
+            # Skip '\', but only if it is escaping $ or ~
+            res += path[index + 1]
+            index += 1
+        else:
+            res += c
+
+        index += 1
+    return res
 
 # A sequence of backslashes is special iff it precedes a double quote:
 # - if there's an even number of backslashes, the double quote is not

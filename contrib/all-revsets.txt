@@ -135,3 +135,7 @@ head() and author("mpm")
 # testing the mutable phases set
 draft()
 secret()
+
+# test finding common ancestors
+heads(commonancestors(last(head(), 2)))
+heads(commonancestors(head()))

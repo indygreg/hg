@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ hgserve() {
   >     hg serve -a localhost -p $HGPORT1 -d --pid-file=hg.pid \
   >       -E errors.log -v $@ > startup.log
@@ -60,8 +58,8 @@
 verify 7e7d56fe4833 (encoding fallback in branchmap to maintain compatibility with 1.3.x)
 
   $ cat <<EOF > oldhg
-  > import sys
-  > from mercurial import ui, hg, commands
+  > import threading
+  > from mercurial import dispatch, hg, ui, wireprotoserver
   > 
   > class StdoutWrapper(object):
   >     def __init__(self, stdout):
@@ -79,12 +77,12 @@ verify 7e7d56fe4833 (encoding fallback in branchmap to maintain compatibility wi
   >     def __getattr__(self, name):
   >         return getattr(self._file, name)
   > 
-  > sys.stdout = StdoutWrapper(getattr(sys.stdout, 'buffer', sys.stdout))
-  > sys.stderr = StdoutWrapper(getattr(sys.stderr, 'buffer', sys.stderr))
-  > 
+  > dispatch.initstdio()
   > myui = ui.ui.load()
+  > fout = StdoutWrapper(myui.fout)
+  > myui.fout = myui.ferr
   > repo = hg.repository(myui, b'a')
-  > commands.serve(myui, repo, stdio=True, cmdserver=False)
+  > wireprotoserver._runsshserver(myui, repo, myui.fin, fout, threading.Event())
   > EOF
   $ echo baz >> b/foo
   $ hg -R b ci -m baz

@@ -55,7 +55,7 @@ svn_source = subversion.svn_source
 orig_encoding = 'ascii'
 
 def recode(s):
-    if isinstance(s, unicode):
+    if isinstance(s, pycompat.unicode):
         return s.encode(pycompat.sysstr(orig_encoding), 'replace')
     else:
         return s.decode('utf-8').encode(
@@ -123,7 +123,7 @@ def convertsource(ui, path, type, revs):
             exceptions.append(inst)
     if not ui.quiet:
         for inst in exceptions:
-            ui.write("%s\n" % inst)
+            ui.write("%s\n" % pycompat.bytestr(inst))
     raise error.Abort(_('%s: missing or unsupported repository') % path)
 
 def convertsink(ui, path, type):
@@ -143,13 +143,11 @@ class progresssource(object):
     def __init__(self, ui, source, filecount):
         self.ui = ui
         self.source = source
-        self.filecount = filecount
-        self.retrieved = 0
+        self.progress = ui.makeprogress(_('getting files'), unit=_('files'),
+                                        total=filecount)
 
     def getfile(self, file, rev):
-        self.retrieved += 1
-        self.ui.progress(_('getting files'), self.retrieved,
-                         item=file, total=self.filecount, unit=_('files'))
+        self.progress.increment(item=file)
         return self.source.getfile(file, rev)
 
     def targetfilebelongstosource(self, targetfilename):
@@ -159,7 +157,7 @@ class progresssource(object):
         return self.source.lookuprev(rev)
 
     def close(self):
-        self.ui.progress(_('getting files'), None)
+        self.progress.complete()
 
 class converter(object):
     def __init__(self, ui, source, dest, revmapfile, opts):
@@ -234,10 +232,12 @@ class converter(object):
     def walktree(self, heads):
         '''Return a mapping that identifies the uncommitted parents of every
         uncommitted changeset.'''
-        visit = heads
+        visit = list(heads)
         known = set()
         parents = {}
         numcommits = self.source.numcommits()
+        progress = self.ui.makeprogress(_('scanning'), unit=_('revisions'),
+                                        total=numcommits)
         while visit:
             n = visit.pop(0)
             if n in known:
@@ -247,14 +247,13 @@ class converter(object):
                 if m == SKIPREV or self.dest.hascommitfrommap(m):
                     continue
             known.add(n)
-            self.ui.progress(_('scanning'), len(known), unit=_('revisions'),
-                             total=numcommits)
+            progress.update(len(known))
             commit = self.cachecommit(n)
             parents[n] = []
             for p in commit.parents:
                 parents[n].append(p)
                 visit.append(p)
-        self.ui.progress(_('scanning'), None)
+        progress.complete()
 
         return parents
 
@@ -510,6 +509,8 @@ class converter(object):
             c = None
 
             self.ui.status(_("converting...\n"))
+            progress = self.ui.makeprogress(_('converting'),
+                                            unit=_('revisions'), total=len(t))
             for i, c in enumerate(t):
                 num -= 1
                 desc = self.commitcache[c].desc
@@ -520,10 +521,9 @@ class converter(object):
                 # uses is 'utf-8'
                 self.ui.status("%d %s\n" % (num, recode(desc)))
                 self.ui.note(_("source: %s\n") % recode(c))
-                self.ui.progress(_('converting'), i, unit=_('revisions'),
-                                 total=len(t))
+                progress.update(i)
                 self.copy(c)
-            self.ui.progress(_('converting'), None)
+            progress.complete()
 
             if not self.ui.configbool('convert', 'skiptags'):
                 tags = self.source.gettags()

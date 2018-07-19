@@ -93,11 +93,7 @@ manifest with descending (paper)
   </tr>
   </thead>
   <tbody class="stripes2">
-  <tr class="fileline">
-    <td class="name"><a href="/file/tip/">[up]</a></td>
-    <td class="size"></td>
-    <td class="permissions">drwxr-xr-x</td>
-  </tr>
+  
   
   <tr class="fileline">
   <td class="name">
@@ -213,11 +209,7 @@ manifest with descending (coal)
   </tr>
   </thead>
   <tbody class="stripes2">
-  <tr class="fileline">
-    <td class="name"><a href="/file/tip/?style=coal">[up]</a></td>
-    <td class="size"></td>
-    <td class="permissions">drwxr-xr-x</td>
-  </tr>
+  
   
   <tr class="fileline">
   <td class="name">
@@ -320,13 +312,7 @@ manifest with descending (monoblue)
       <p class="files">/ <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> <span class="tagtag" title="tip">tip</span> </span></p>
   
       <table>
-          <tr class="parity0">
-              <td>drwxr-xr-x</td>
-              <td></td>
-              <td></td>
-              <td><a href="/file/tip/?style=monoblue">[up]</a></td>
-              <td class="link">&nbsp;</td>
-          </tr>
+          
           
   <tr class="parity1">
   <td>drwxr-xr-x</td>
@@ -433,13 +419,7 @@ manifest with descending (gitweb)
   
   <div class="title">/ <span class="logtags"><span class="phasetag" title="draft">draft</span> <span class="branchtag" title="default">default</span> <span class="tagtag" title="tip">tip</span> </span></div>
   <table cellspacing="0">
-  <tr class="parity0">
-  <td style="font-family:monospace">drwxr-xr-x</td>
-  <td style="font-family:monospace"></td>
-  <td style="font-family:monospace"></td>
-  <td><a href="/file/tip/?style=gitweb">[up]</a></td>
-  <td class="link">&nbsp;</td>
-  </tr>
+  
   
   <tr class="parity1">
   <td style="font-family:monospace">drwxr-xr-x</td>
@@ -524,40 +504,41 @@ manifest with descending (spartan)
   <h2><a href="/">Mercurial</a>  / files for changeset <a href="/rev/c9f45f7a1659">c9f45f7a1659</a>: /</h2>
   
   <table cellpadding="0" cellspacing="0">
-  <tr class="parity0">
-    <td><tt>drwxr-xr-x</tt>&nbsp;
-    <td>&nbsp;
-    <td>&nbsp;
-    <td><a href="/file/tip/?style=spartan">[up]</a>
-  </tr>
+  
   
   <tr class="parity1">
-  <td><tt>drwxr-xr-x</tt>&nbsp;
-  <td>&nbsp;
-  <td>&nbsp;
+  <td><tt>drwxr-xr-x</tt>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
   <td>
   <a href="/file/tip/a1?style=spartan">a1/</a>
   <a href="/file/tip/a1/a2/a3/a4?style=spartan">
   a2/a3/a4
   </a>
+  </td>
+  </tr>
   <tr class="parity0">
-  <td><tt>drwxr-xr-x</tt>&nbsp;
-  <td>&nbsp;
-  <td>&nbsp;
+  <td><tt>drwxr-xr-x</tt>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
   <td>
   <a href="/file/tip/b1?style=spartan">b1/</a>
   <a href="/file/tip/b1/b2/b3?style=spartan">
   b2/b3
   </a>
+  </td>
+  </tr>
   <tr class="parity1">
-  <td><tt>drwxr-xr-x</tt>&nbsp;
-  <td>&nbsp;
-  <td>&nbsp;
+  <td><tt>drwxr-xr-x</tt>&nbsp;</td>
+  <td>&nbsp;</td>
+  <td>&nbsp;</td>
   <td>
   <a href="/file/tip/d1?style=spartan">d1/</a>
   <a href="/file/tip/d1/d2?style=spartan">
   d2
   </a>
+  </td>
+  </tr>
   
   </table>
   

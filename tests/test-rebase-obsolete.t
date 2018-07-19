@@ -281,7 +281,7 @@ a working copy parent. We should be moved back to the starting commit as usual
 even though it is hidden (until we're moved there).
 
   $ hg --hidden up -qr 'first(hidden())'
-  updating to a hidden changeset 42ccdea3bb16
+  updated to hidden changeset 42ccdea3bb16
   (hidden revision '42ccdea3bb16' is pruned)
   $ hg rebase --rev 13 --dest 15
   rebasing 13:98f6af4ee953 "C"
@@ -642,9 +642,9 @@ test on rebase dropping a merge
 Test hidden changesets in the rebase set (issue4504)
 
   $ hg up --hidden 9
-  updating to a hidden changeset 4bde274eefcf
-  (hidden revision '4bde274eefcf' was rewritten as: acd174b7ab39)
   3 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset 4bde274eefcf
+  (hidden revision '4bde274eefcf' was rewritten as: acd174b7ab39)
   $ echo J > J
   $ hg add J
   $ hg commit -m J
@@ -764,9 +764,9 @@ setup
   $ hg commit --amend -m B1
   $ hg commit --amend -m B2
   $ hg up --hidden 'desc(B0)'
-  updating to a hidden changeset a8b11f55fb19
-  (hidden revision 'a8b11f55fb19' was rewritten as: 261e70097290)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset a8b11f55fb19
+  (hidden revision 'a8b11f55fb19' was rewritten as: 261e70097290)
   $ echo C > C
   $ hg add C
   $ hg commit -m C
@@ -790,9 +790,9 @@ Rebase finds its way in a chain of marker
 Even when the chain include missing node
 
   $ hg up --hidden 'desc(B0)'
-  updating to a hidden changeset a8b11f55fb19
-  (hidden revision 'a8b11f55fb19' was rewritten as: 261e70097290)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset a8b11f55fb19
+  (hidden revision 'a8b11f55fb19' was rewritten as: 261e70097290)
   $ echo D > D
   $ hg add D
   $ hg commit -m D
@@ -909,9 +909,9 @@ If a rebase is going to create divergence, it should abort
   $ hg add bar
   $ hg commit --amend -m "10'"
   $ hg up 10 --hidden
-  updating to a hidden changeset 121d9e3bc4c6
-  (hidden revision '121d9e3bc4c6' was rewritten as: 77d874d096a2)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset 121d9e3bc4c6
+  (hidden revision '121d9e3bc4c6' was rewritten as: 77d874d096a2)
   $ echo "bar" > foo
   $ hg add foo
   $ hg commit -m "bar foo"
@@ -1738,7 +1738,7 @@ rebasestate may contain hidden hashes. "rebase --abort" should work regardless.
   $ rm .hg/localtags
 
   $ hg update -q $C --hidden
-  updating to a hidden changeset 7829726be4dc
+  updated to hidden changeset 7829726be4dc
   (hidden revision '7829726be4dc' is pruned)
   $ hg rebase -s $B -d $D
   rebasing 1:2ec65233581b "B"

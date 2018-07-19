@@ -306,8 +306,8 @@ should effectively drop the changes from +6.
   # 
   # To mark files as resolved:  hg resolve --mark FILE
   
-  # To continue:                hg histedit --continue
-  # To abort:                   hg histedit --abort
+  # To continue:    hg histedit --continue
+  # To abort:       hg histedit --abort
   
   $ hg resolve -l
   U file
@@ -478,14 +478,8 @@ This is an excuse to test hook with histedit temporary commit (issue4422)
   1:199b6bb90248 b
   0:6c795aa153cb a
 
-Setup the proper environment variable symbol for the platform, to be subbed
-into the hook command.
-#if windows
-  $ NODE="%HG_NODE%"
-#else
-  $ NODE="\$HG_NODE"
-#endif
-  $ hg histedit 6c795aa153cb --config hooks.commit="echo commit $NODE" --commands - 2>&1 << EOF | fixbundle
+  $ hg histedit 6c795aa153cb --config hooks.commit='echo commit $HG_NODE' --config hooks.tonative.commit=True \
+  >     --commands - 2>&1 << EOF | fixbundle
   > pick 199b6bb90248 b
   > fold a1a953ffb4b0 c
   > pick 6c795aa153cb a
@@ -496,8 +490,25 @@ into the hook command.
   1:9599899f62c0 a
   0:79b99e9c8e49 b
 
+Test unix -> windows style variable substitution in external hooks.
+
+  $ cat > $TESTTMP/tmp.hgrc <<'EOF'
+  > [hooks]
+  > pre-add = echo no variables
+  > post-add = echo ran $HG_ARGS, literal \$non-var, 'also $non-var', $HG_RESULT
+  > tonative.post-add = True
+  > EOF
+
   $ echo "foo" > amended.txt
-  $ hg add amended.txt
+  $ HGRCPATH=$TESTTMP/tmp.hgrc hg add -v amended.txt
+  running hook pre-add: echo no variables
+  no variables
+  adding amended.txt
+  converting hook "post-add" to native (windows !)
+  running hook post-add: echo ran %HG_ARGS%, literal $non-var, "also $non-var", %HG_RESULT% (windows !)
+  running hook post-add: echo ran $HG_ARGS, literal \$non-var, 'also $non-var', $HG_RESULT (no-windows !)
+  ran add -v amended.txt, literal $non-var, "also $non-var", 0 (windows !)
+  ran add -v amended.txt, literal $non-var, also $non-var, 0 (no-windows !)
   $ hg ci -q --config extensions.largefiles= --amend -I amended.txt
   The fsmonitor extension is incompatible with the largefiles extension and has been disabled. (fsmonitor !)
 

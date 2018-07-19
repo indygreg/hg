@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ cat << EOF >> $HGRCPATH
   > [ui]
   > ssh=$PYTHON "$TESTDIR/dummyssh"

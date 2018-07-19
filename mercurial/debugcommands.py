@@ -21,7 +21,6 @@ import stat
 import string
 import subprocess
 import sys
-import tempfile
 import time
 
 from .i18n import _
@@ -71,7 +70,6 @@ from . import (
     scmutil,
     setdiscovery,
     simplemerge,
-    smartset,
     sshpeer,
     sslutil,
     streamclone,
@@ -183,18 +181,14 @@ def debugbuilddag(ui, repo, text=None,
         initialmergedlines.append("")
 
     tags = []
-
-    wlock = lock = tr = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
-        tr = repo.transaction("builddag")
-
+    progress = ui.makeprogress(_('building'), unit=_('revisions'),
+                               total=total)
+    with progress, repo.wlock(), repo.lock(), repo.transaction("builddag"):
         at = -1
         atbranch = 'default'
         nodeids = []
         id = 0
-        ui.progress(_('building'), id, unit=_('revisions'), total=total)
+        progress.update(id)
         for type, data in dagparser.parsedag(text):
             if type == 'n':
                 ui.note(('node %s\n' % pycompat.bytestr(data)))
@@ -267,14 +261,10 @@ def debugbuilddag(ui, repo, text=None,
             elif type == 'a':
                 ui.note(('branch %s\n' % data))
                 atbranch = data
-            ui.progress(_('building'), id, unit=_('revisions'), total=total)
-        tr.close()
+            progress.update(id)
 
         if tags:
             repo.vfs.write("localtags", "".join(tags))
-    finally:
-        ui.progress(_('building'), None)
-        release(tr, lock, wlock)
 
 def _debugchangegroup(ui, gen, all=None, indent=0, **opts):
     indent_string = ' ' * indent
@@ -437,7 +427,7 @@ def debugcheckstate(ui, repo):
         'hg debugcolor')
 def debugcolor(ui, repo, **opts):
     """show available color, effects or style"""
-    ui.write(('color mode: %s\n') % ui._colormode)
+    ui.write(('color mode: %s\n') % stringutil.pprint(ui._colormode))
     if opts.get(r'style'):
         return _debugdisplaystyle(ui)
     else:
@@ -630,6 +620,8 @@ def debugdeltachain(ui, repo, file_=None, **opts):
     opts = pycompat.byteskwargs(opts)
     r = cmdutil.openrevlog(repo, 'debugdeltachain', file_, opts)
     index = r.index
+    start = r.start
+    length = r.length
     generaldelta = r.version & revlog.FLAG_GENERALDELTA
     withsparseread = getattr(r, '_withsparseread', False)
 
@@ -677,8 +669,6 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         comp, uncomp, deltatype, chain, chainsize = revinfo(rev)
         chainbase = chain[0]
         chainid = chainbases.setdefault(chainbase, len(chainbases) + 1)
-        start = r.start
-        length = r.length
         basestart = start(chainbase)
         revstart = start(rev)
         lineardist = revstart + comp - basestart
@@ -688,8 +678,15 @@ def debugdeltachain(ui, repo, file_=None, **opts):
         except IndexError:
             prevrev = -1
 
-        chainratio = float(chainsize) / float(uncomp)
-        extraratio = float(extradist) / float(chainsize)
+        if uncomp != 0:
+            chainratio = float(chainsize) / float(uncomp)
+        else:
+            chainratio = chainsize
+
+        if chainsize != 0:
+            extraratio = float(extradist) / float(chainsize)
+        else:
+            extraratio = extradist
 
         fm.startitem()
         fm.write('rev chainid chainlen prevrev deltatype compsize '
@@ -718,7 +715,10 @@ def debugdeltachain(ui, repo, file_=None, **opts):
                 if largestblock < blksize:
                     largestblock = blksize
 
-            readdensity = float(chainsize) / float(readsize)
+            if readsize:
+                readdensity = float(chainsize) / float(readsize)
+            else:
+                readdensity = 1
 
             fm.write('readsize largestblock readdensity srchunks',
                      ' %10d %10d %9.5f %8d',
@@ -838,8 +838,8 @@ def debugdownload(ui, repo, url, output=None, **opts):
         if output:
             dest.close()
 
-@command('debugextensions', cmdutil.formatteropts, [], norepo=True)
-def debugextensions(ui, **opts):
+@command('debugextensions', cmdutil.formatteropts, [], optionalrepo=True)
+def debugextensions(ui, repo, **opts):
     '''show information about active extensions'''
     opts = pycompat.byteskwargs(opts)
     exts = extensions.extensions(ui)
@@ -885,16 +885,38 @@ def debugextensions(ui, **opts):
     fm.end()
 
 @command('debugfileset',
-    [('r', 'rev', '', _('apply the filespec on this revision'), _('REV'))],
-    _('[-r REV] FILESPEC'))
+    [('r', 'rev', '', _('apply the filespec on this revision'), _('REV')),
+     ('', 'all-files', False,
+      _('test files from all revisions and working directory'))],
+    _('[-r REV] [--all-files] FILESPEC'))
 def debugfileset(ui, repo, expr, **opts):
     '''parse and apply a fileset specification'''
-    ctx = scmutil.revsingle(repo, opts.get(r'rev'), None)
+    opts = pycompat.byteskwargs(opts)
+    ctx = scmutil.revsingle(repo, opts.get('rev'), None)
     if ui.verbose:
         tree = fileset.parse(expr)
         ui.note(fileset.prettyformat(tree), "\n")
 
-    for f in ctx.getfileset(expr):
+    files = set()
+    if opts['all_files']:
+        for r in repo:
+            c = repo[r]
+            files.update(c.files())
+            files.update(c.substate)
+    if opts['all_files'] or ctx.rev() is None:
+        wctx = repo[None]
+        files.update(repo.dirstate.walk(scmutil.matchall(repo),
+                                        subrepos=list(wctx.substate),
+                                        unknown=True, ignored=True))
+        files.update(wctx.substate)
+    else:
+        files.update(ctx.files())
+        files.update(ctx.substate)
+
+    m = ctx.matchfileset(expr)
+    for f in sorted(files):
+        if not m(f):
+            continue
         ui.write("%s\n" % f)
 
 @command('debugformat',
@@ -971,7 +993,7 @@ def debugfsinfo(ui, path="."):
     ui.write(('hardlink: %s\n') % (util.checknlink(path) and 'yes' or 'no'))
     casesensitive = '(unknown)'
     try:
-        with tempfile.NamedTemporaryFile(prefix='.debugfsinfo', dir=path) as f:
+        with pycompat.namedtempfile(prefix='.debugfsinfo', dir=path) as f:
             casesensitive = util.fscasesensitive(f.name) and 'yes' or 'no'
     except OSError:
         pass
@@ -1143,7 +1165,7 @@ def debuginstall(ui, **opts):
     opts = pycompat.byteskwargs(opts)
 
     def writetemp(contents):
-        (fd, name) = tempfile.mkstemp(prefix="hg-debuginstall-")
+        (fd, name) = pycompat.mkstemp(prefix="hg-debuginstall-")
         f = os.fdopen(fd, r"wb")
         f.write(contents)
         f.close()
@@ -1597,7 +1619,7 @@ def debugobsolete(ui, repo, precursor=None, *successors, **opts):
         if opts['rev']:
             raise error.Abort('cannot select revision when creating marker')
         metadata = {}
-        metadata['user'] = opts['user'] or ui.username()
+        metadata['user'] = encoding.fromlocal(opts['user'] or ui.username())
         succs = tuple(parsenodeid(succ) for succ in successors)
         l = repo.lock()
         try:
@@ -2237,8 +2259,8 @@ def debugrevspec(ui, repo, expr, **opts):
         arevs = revset.makematcher(treebystage['analyzed'])(repo)
         brevs = revset.makematcher(treebystage['optimized'])(repo)
         if opts['show_set'] or (opts['show_set'] is None and ui.verbose):
-            ui.write(("* analyzed set:\n"), smartset.prettyformat(arevs), "\n")
-            ui.write(("* optimized set:\n"), smartset.prettyformat(brevs), "\n")
+            ui.write(("* analyzed set:\n"), stringutil.prettyrepr(arevs), "\n")
+            ui.write(("* optimized set:\n"), stringutil.prettyrepr(brevs), "\n")
         arevs = list(arevs)
         brevs = list(brevs)
         if arevs == brevs:
@@ -2261,7 +2283,7 @@ def debugrevspec(ui, repo, expr, **opts):
     func = revset.makematcher(tree)
     revs = func(repo)
     if opts['show_set'] or (opts['show_set'] is None and ui.verbose):
-        ui.write(("* set:\n"), smartset.prettyformat(revs), "\n")
+        ui.write(("* set:\n"), stringutil.prettyrepr(revs), "\n")
     if not opts['show_revs']:
         return
     for c in revs:
@@ -2291,7 +2313,13 @@ def debugserve(ui, repo, **opts):
 
     if opts['logiofd']:
         # Line buffered because output is line based.
-        logfh = os.fdopen(int(opts['logiofd']), r'ab', 1)
+        try:
+            logfh = os.fdopen(int(opts['logiofd']), r'ab', 1)
+        except OSError as e:
+            if e.errno != errno.ESPIPE:
+                raise
+            # can't seek a pipe, so `ab` mode fails on py3
+            logfh = os.fdopen(int(opts['logiofd']), r'wb', 1)
     elif opts['logiofile']:
         logfh = open(opts['logiofile'], 'ab', 1)
 
@@ -2484,9 +2512,17 @@ def debugtemplate(ui, repo, tmpl, **opts):
     if revs is None:
         tres = formatter.templateresources(ui, repo)
         t = formatter.maketemplater(ui, tmpl, resources=tres)
+        if ui.verbose:
+            kwds, funcs = t.symbolsuseddefault()
+            ui.write(("* keywords: %s\n") % ', '.join(sorted(kwds)))
+            ui.write(("* functions: %s\n") % ', '.join(sorted(funcs)))
         ui.write(t.renderdefault(props))
     else:
         displayer = logcmdutil.maketemplater(ui, repo, tmpl)
+        if ui.verbose:
+            kwds, funcs = displayer.t.symbolsuseddefault()
+            ui.write(("* keywords: %s\n") % ', '.join(sorted(kwds)))
+            ui.write(("* functions: %s\n") % ', '.join(sorted(funcs)))
         for r in revs:
             displayer.show(repo[r], **pycompat.strkwargs(props))
         displayer.close()
@@ -2544,7 +2580,8 @@ def debugwalk(ui, repo, *pats, **opts):
     """show how files match on given patterns"""
     opts = pycompat.byteskwargs(opts)
     m = scmutil.match(repo[None], pats, opts)
-    ui.write(('matcher: %r\n' % m))
+    if ui.verbose:
+        ui.write(('* matcher:\n'), stringutil.prettyrepr(m), '\n')
     items = list(repo[None].walk(m))
     if not items:
         return
@@ -3018,10 +3055,12 @@ def debugwireproto(ui, repo, path=None, **opts):
 
                 if isinstance(res, wireprotov2peer.commandresponse):
                     val = list(res.cborobjects())
-                    ui.status(_('response: %s\n') % stringutil.pprint(val))
+                    ui.status(_('response: %s\n') %
+                              stringutil.pprint(val, bprefix=True))
 
                 else:
-                    ui.status(_('response: %s\n') % stringutil.pprint(res))
+                    ui.status(_('response: %s\n') %
+                              stringutil.pprint(res, bprefix=True))
 
         elif action == 'batchbegin':
             if batchedcommands is not None:
@@ -3093,7 +3132,8 @@ def debugwireproto(ui, repo, path=None, **opts):
                 continue
 
             if res.headers.get('Content-Type') == 'application/mercurial-cbor':
-                ui.write(_('cbor> %s\n') % stringutil.pprint(cbor.loads(body)))
+                ui.write(_('cbor> %s\n') %
+                         stringutil.pprint(cbor.loads(body), bprefix=True))
 
         elif action == 'close':
             peer.close()

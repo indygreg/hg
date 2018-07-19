@@ -57,6 +57,28 @@ access control. Keys in these sections accept a subtree pattern (with
 a glob syntax by default). The corresponding values follow the same
 syntax as the other sections above.
 
+Bookmark-based Access Control
+-----------------------------
+Use the ``acl.deny.bookmarks`` and ``acl.allow.bookmarks`` sections to
+have bookmark-based access control. Keys in these sections can be
+either:
+
+- a bookmark name, or
+- an asterisk, to match any bookmark;
+
+The corresponding values can be either:
+
+- a comma-separated list containing users and groups, or
+- an asterisk, to match anyone;
+
+You can add the "!" prefix to a user or group name to invert the sense
+of the match.
+
+Note: for interactions between clients and servers using Mercurial 3.6+
+a rejection will generally reject the entire push, for interactions
+involving older clients, the commit transactions will already be accepted,
+and only the bookmark movement will be rejected.
+
 Groups
 ------
 
@@ -326,9 +348,10 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
 
     ensureenabled(ui)
 
-    if hooktype not in ['pretxnchangegroup', 'pretxncommit']:
-        raise error.Abort(_('config error - hook type "%s" cannot stop '
-                           'incoming changesets nor commits') % hooktype)
+    if hooktype not in ['pretxnchangegroup', 'pretxncommit', 'prepushkey']:
+        raise error.Abort(
+            _('config error - hook type "%s" cannot stop '
+              'incoming changesets, commits, nor bookmarks') % hooktype)
     if (hooktype == 'pretxnchangegroup' and
         source not in ui.configlist('acl', 'sources')):
         ui.debug('acl: changes have source "%s" - skipping\n' % source)
@@ -345,6 +368,30 @@ def hook(ui, repo, hooktype, node=None, source=None, **kwargs):
 
     ui.debug('acl: checking access for user "%s"\n' % user)
 
+    if hooktype == 'prepushkey':
+        _pkhook(ui, repo, hooktype, node, source, user, **kwargs)
+    else:
+        _txnhook(ui, repo, hooktype, node, source, user, **kwargs)
+
+def _pkhook(ui, repo, hooktype, node, source, user, **kwargs):
+    if kwargs['namespace'] == 'bookmarks':
+        bookmark = kwargs['key']
+        ctx = kwargs['new']
+        allowbookmarks = buildmatch(ui, None, user, 'acl.allow.bookmarks')
+        denybookmarks = buildmatch(ui, None, user, 'acl.deny.bookmarks')
+
+        if denybookmarks and denybookmarks(bookmark):
+            raise error.Abort(_('acl: user "%s" denied on bookmark "%s"'
+                               ' (changeset "%s")')
+                               % (user, bookmark, ctx))
+        if allowbookmarks and not allowbookmarks(bookmark):
+            raise error.Abort(_('acl: user "%s" not allowed on bookmark "%s"'
+                               ' (changeset "%s")')
+                               % (user, bookmark, ctx))
+        ui.debug('acl: bookmark access granted: "%s" on bookmark "%s"\n'
+                 % (ctx, bookmark))
+
+def _txnhook(ui, repo, hooktype, node, source, user, **kwargs):
     # deprecated config: acl.config
     cfg = ui.config('acl', 'config')
     if cfg:

@@ -8,7 +8,6 @@
 from __future__ import absolute_import
 
 import os
-import tempfile
 
 from .i18n import _
 from .node import (
@@ -354,7 +353,9 @@ def find_pullbundle(repo, proto, opts, clheads, heads, common):
     common_anc = cl.ancestors([cl.rev(rev) for rev in common], inclusive=True)
     compformats = clientcompressionsupport(proto)
     for entry in res:
-        if 'COMPRESSION' in entry and entry['COMPRESSION'] not in compformats:
+        comp = entry.get('COMPRESSION')
+        altcomp = util.compengines._bundlenames.get(comp)
+        if comp and comp not in compformats and altcomp not in compformats:
             continue
         # No test yet for VERSION, since V2 is supported by any client
         # that advertises partial pulls
@@ -568,7 +569,7 @@ def unbundle(repo, proto, heads):
                             fp.close()
                         if tempname:
                             os.unlink(tempname)
-                    fd, tempname = tempfile.mkstemp(prefix='hg-unbundle-')
+                    fd, tempname = pycompat.mkstemp(prefix='hg-unbundle-')
                     repo.ui.debug('redirecting incoming bundle to %s\n' %
                         tempname)
                     fp = os.fdopen(fd, pycompat.sysstr('wb+'))

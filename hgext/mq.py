@@ -492,7 +492,8 @@ class queue(object):
                     n, name = entry
                     yield statusentry(bin(n), name)
                 elif l.strip():
-                    self.ui.warn(_('malformated mq status line: %s\n') % entry)
+                    self.ui.warn(_('malformated mq status line: %s\n') %
+                                 stringutil.pprint(entry))
                 # else we ignore empty lines
         try:
             lines = self.opener.read(self.statuspath).splitlines()
@@ -2872,7 +2873,7 @@ def guard(ui, repo, *args, **opts):
     patch = None
     args = list(args)
     if opts.get(r'list'):
-        if args or opts.get('none'):
+        if args or opts.get(r'none'):
             raise error.Abort(_('cannot mix -l/--list with options or '
                                'arguments'))
         for i in xrange(len(q.series)):
@@ -2886,7 +2887,7 @@ def guard(ui, repo, *args, **opts):
         patch = args.pop(0)
     if patch is None:
         raise error.Abort(_('no patch to work with'))
-    if args or opts.get('none'):
+    if args or opts.get(r'none'):
         idx = q.findseries(patch)
         if idx is None:
             raise error.Abort(_('no patch named %s') % patch)

@@ -42,8 +42,8 @@ these predicates use '\0' as a separator:
   >     registrar,
   >     revset,
   >     revsetlang,
-  >     smartset,
   > )
+  > from mercurial.utils import stringutil
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'debugrevlistspec',
@@ -63,7 +63,7 @@ these predicates use '\0' as a separator:
   >     func = revset.match(ui, expr, lookup=revset.lookupfn(repo))
   >     revs = func(repo)
   >     if ui.verbose:
-  >         ui.note(b"* set:\n", smartset.prettyformat(revs), b"\n")
+  >         ui.note(b"* set:\n", stringutil.prettyrepr(revs), b"\n")
   >     for c in revs:
   >         ui.write(b"%d\n" % c)
   > EOF
@@ -1041,6 +1041,34 @@ test ancestors
   2
   3
 
+test common ancestors
+
+  $ hg log -T '{rev}\n' -r 'commonancestors(7 + 9)'
+  0
+  1
+  2
+  4
+
+  $ hg log -T '{rev}\n' -r 'commonancestors(head())'
+  0
+  1
+  2
+  4
+
+  $ hg log -T '{rev}\n' -r 'commonancestors(9)'
+  0
+  1
+  2
+  4
+  8
+  9
+
+test ancestor variants of empty revision
+
+  $ log 'ancestor(none())'
+  $ log 'ancestors(none())'
+  $ log 'commonancestors(none())'
+
 test ancestors with depth limit
 
  (depth=0 selects the node itself)
@@ -1357,8 +1385,40 @@ test author
   6
   7
   9
+
+Test heads
+
   $ log 'heads(6::)'
   7
+
+ heads() can be computed in subset '9:'
+
+  $ hg debugrevspec -s '9: & heads(all())'
+  * set:
+  <filteredset
+    <filteredset
+      <baseset [9]>,
+      <spanset+ 0:10>>,
+    <not
+      <filteredset
+        <baseset [9]>, set([0, 1, 2, 3, 4, 5, 6, 8])>>>
+  9
+
+ but should follow the order of the subset
+
+  $ log 'heads(all())'
+  7
+  9
+  $ log 'heads(tip:0)'
+  7
+  9
+  $ log 'tip:0 & heads(all())'
+  9
+  7
+  $ log 'tip:0 & heads(0:tip)'
+  9
+  7
+
   $ log 'keyword(issue)'
   6
   $ log 'keyword("test a")'
@@ -1713,8 +1773,6 @@ Test explicit numeric revision
 
 Test hexadecimal revision
   $ log 'id(2)'
-  abort: 00changelog.i@2: ambiguous identifier!
-  [255]
   $ log 'id(23268)'
   4
   $ log 'id(2785f51eece)'
@@ -1783,6 +1841,16 @@ Test working-directory revision
   6
   7
   2147483647
+  $ hg debugrevspec '0:wdir() & ancestor(wdir())'
+  2147483647
+  $ hg debugrevspec '0:wdir() & ancestor(.:wdir())'
+  4
+  $ hg debugrevspec '0:wdir() & ancestor(wdir(), wdir())'
+  2147483647
+  $ hg debugrevspec '0:wdir() & ancestor(wdir(), tip)'
+  4
+  $ hg debugrevspec 'null:wdir() & ancestor(wdir(), null)'
+  -1
   $ hg debugrevspec 'wdir()~0'
   2147483647
   $ hg debugrevspec 'p1(wdir())'
@@ -1876,9 +1944,9 @@ Test short 'ff...' hash collision
   $ hg debugrevspec '0:wdir() & fffb'
   abort: 00changelog.i@fffb: ambiguous identifier!
   [255]
-BROKEN should be '2' (node lookup uses unfiltered repo since dc25ed84bee8)
+BROKEN should be '2' (node lookup uses unfiltered repo)
   $ hg debugrevspec '0:wdir() & id(fffb)'
-  2
+BROKEN should be '2' (node lookup uses unfiltered repo)
   $ hg debugrevspec '0:wdir() & ffff8'
   4
   $ hg debugrevspec '0:wdir() & fffff'

@@ -57,7 +57,9 @@ class httpservice(object):
         procutil.setsignalhandler()
         self.httpd = server.create_server(self.ui, self.app)
 
-        if self.opts['port'] and not self.ui.verbose:
+        if (self.opts['port'] and
+            not self.ui.verbose and
+            not self.opts['print_url']):
             return
 
         if self.httpd.prefix:
@@ -78,13 +80,18 @@ class httpservice(object):
         fqaddr = self.httpd.fqaddr
         if r':' in fqaddr:
             fqaddr = r'[%s]' % fqaddr
-        if self.opts['port']:
-            write = self.ui.status
+
+        url = 'http://%s%s/%s' % (
+            pycompat.sysbytes(fqaddr), pycompat.sysbytes(port), prefix)
+        if self.opts['print_url']:
+            self.ui.write('%s\n' % url)
         else:
-            write = self.ui.write
-        write(_('listening at http://%s%s/%s (bound to %s:%d)\n') %
-              (pycompat.sysbytes(fqaddr), pycompat.sysbytes(port),
-               prefix, pycompat.sysbytes(bindaddr), self.httpd.port))
+            if self.opts['port']:
+                write = self.ui.status
+            else:
+                write = self.ui.write
+            write(_('listening at %s (bound to %s:%d)\n') %
+                  (url, pycompat.sysbytes(bindaddr), self.httpd.port))
         self.ui.flush()  # avoid buffering of status message
 
     def run(self):

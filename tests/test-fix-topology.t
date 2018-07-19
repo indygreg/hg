@@ -322,7 +322,6 @@ replacing anything that isn't public.
   
 
   $ hg fix --all
-  1 new orphan changesets
 
   $ hg log --graph --template '{rev} {desc}\n' -r 'sort(all(), topo)' --hidden
   o  11 fifth

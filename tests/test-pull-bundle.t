@@ -1,3 +1,5 @@
+#require no-chg
+
   $ hg init repo
   $ cd repo
   $ echo foo > foo
@@ -44,9 +46,9 @@ Test pullbundle functionality
   $ hg bundle --base 1 -r 2 .hg/2.hg
   1 changesets found
   $ cat <<EOF > .hg/pullbundles.manifest
-  > 2.hg heads=effea6de0384e684f44435651cb7bd70b8735bd4 bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
-  > 1.hg heads=ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
-  > 0.hg heads=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
+  > 2.hg BUNDLESPEC=none-v2 heads=effea6de0384e684f44435651cb7bd70b8735bd4 bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
+  > 1.hg BUNDLESPEC=bzip2-v2 heads=ed1b79f46b9a29f5a6efa59cf12fcfca43bead5a bases=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
+  > 0.hg BUNDLESPEC=gzip-v2 heads=bbd179dfa0a71671c253b3ae0aa1513b60d199fa
   > EOF
   $ hg --config blackbox.track=debug --debug serve -p $HGPORT2 -d --pid-file=../repo.pid
   listening at http://*:$HGPORT2/ (bound to $LOCALIP:$HGPORT2) (glob) (?)

@@ -36,7 +36,6 @@ from mercurial.hgweb import (
 
 from mercurial import (
     extensions,
-    fileset,
 )
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
@@ -51,9 +50,8 @@ def pygmentize(web, field, fctx, tmpl):
     filenameonly = web.configbool('web', 'highlightonlymatchfilename', False)
 
     ctx = fctx.changectx()
-    tree = fileset.parse(expr)
-    mctx = fileset.matchctx(ctx, subset=[fctx.path()], status=None)
-    if fctx.path() in fileset.getset(mctx, tree):
+    m = ctx.matchfileset(expr)
+    if m(fctx.path()):
         highlight.pygmentize(field, fctx, style, tmpl,
                 guessfilenameonly=filenameonly)
 

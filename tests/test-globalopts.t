@@ -353,6 +353,7 @@ Testing -h/--help:
    color         Colorizing Outputs
    config        Configuration Files
    dates         Date Formats
+   deprecated    Deprecated Features
    diffs         Diff Formats
    environment   Environment Variables
    extensions    Using Additional Features
@@ -436,6 +437,7 @@ Testing -h/--help:
    color         Colorizing Outputs
    config        Configuration Files
    dates         Date Formats
+   deprecated    Deprecated Features
    diffs         Diff Formats
    environment   Environment Variables
    extensions    Using Additional Features

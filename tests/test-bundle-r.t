@@ -156,6 +156,7 @@
   adding file changes
   added 4 changesets with 2 changes to 3 files (+1 heads)
   new changesets c70afb1ee985:faa2e4234c7a
+  1 local changesets published
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg verify
   checking changesets

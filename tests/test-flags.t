@@ -46,6 +46,7 @@ the changelog should mention file a:
   adding file changes
   added 1 changesets with 0 changes to 0 files (+1 heads)
   new changesets 7f4313b42a34
+  1 local changesets published
   (run 'hg heads' to see heads, 'hg merge' to merge)
   $ hg heads
   changeset:   2:7f4313b42a34

@@ -28663,11 +28663,11 @@ msgstr ""
 "    (padrão: usa todos os endereços)"
 
 msgid ""
-"``allow_archive``\n"
+"``allow-archive``\n"
 "    List of archive format (bz2, gz, zip) allowed for downloading.\n"
 "    (default: empty)"
 msgstr ""
-"``allow_archive``\n"
+"``allow-archive``\n"
 "    Lista de formatos de pacote (bz2, gz, zip) permitidos para download.\n"
 "    (padrão: lista vazia)"
 

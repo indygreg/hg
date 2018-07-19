@@ -26,23 +26,23 @@ generator
     values of any printable types, and  will be folded by ``stringify()``
     or ``flatten()``.
 
-    BUG: hgweb overloads this type for mappings (i.e. some hgweb keywords
-    returns a generator of dicts.)
-
 None
     sometimes represents an empty value, which can be stringified to ''.
 
 True, False, int, float
     can be stringified as such.
 
-date tuple
-    a (unixtime, offset) tuple, which produces no meaningful output by itself.
+wrappedbytes, wrappedvalue
+    a wrapper for the above printable types.
+
+date
+    represents a (unixtime, offset) tuple.
 
 hybrid
     represents a list/dict of printable values, which can also be converted
     to mappings by % operator.
 
-mappable
+hybriditem
     represents a scalar printable value, also supports % operator.
 
 mappinggenerator, mappinglist
@@ -253,7 +253,8 @@ def _scantemplate(tmpl, start, stop, quote='', raw=False):
     p = parser.parser(elements)
     try:
         while pos < stop:
-            n = min((tmpl.find(c, pos, stop) for c in sepchars),
+            n = min((tmpl.find(c, pos, stop)
+                     for c in pycompat.bytestr(sepchars)),
                     key=lambda n: (n < 0, n))
             if n < 0:
                 yield ('string', unescape(tmpl[pos:stop]), pos)
@@ -596,8 +597,7 @@ class engine(object):
     filter uses function to transform value. syntax is
     {key|filter1|filter2|...}.'''
 
-    def __init__(self, loader, filters=None, defaults=None, resources=None,
-                 aliases=()):
+    def __init__(self, loader, filters=None, defaults=None, resources=None):
         self._loader = loader
         if filters is None:
             filters = {}
@@ -609,7 +609,6 @@ class engine(object):
             resources = nullresourcemapper()
         self._defaults = defaults
         self._resources = resources
-        self._aliasmap = _aliasrules.buildmap(aliases)
         self._cache = {}  # key: (func, data)
         self._tmplcache = {}  # literal template: (func, data)
 
@@ -664,12 +663,10 @@ class engine(object):
     def _load(self, t):
         '''load, parse, and cache a template'''
         if t not in self._cache:
+            x = self._loader(t)
             # put poison to cut recursion while compiling 't'
             self._cache[t] = (_runrecursivesymbol, t)
             try:
-                x = parse(self._loader(t))
-                if self._aliasmap:
-                    x = _aliasrules.expand(self._aliasmap, x)
                 self._cache[t] = compileexp(x, self, methods)
             except: # re-raises
                 del self._cache[t]
@@ -716,8 +713,6 @@ class engine(object):
             extramapping.update(mapping)
             mapping = extramapping
         return templateutil.flatten(self, mapping, func(self, mapping, data))
-
-engines = {'default': engine}
 
 def stylelist():
     paths = templatepaths()
@@ -776,12 +771,80 @@ def _readmapfile(mapfile):
                                        conf.source('templates', key))
             cache[key] = unquotestring(val)
         elif key != '__base__':
-            val = 'default', val
-            if ':' in val[1]:
-                val = val[1].split(':', 1)
-            tmap[key] = val[0], os.path.join(base, val[1])
+            tmap[key] = os.path.join(base, val)
     aliases.extend(conf['templatealias'].items())
     return cache, tmap, aliases
+
+class loader(object):
+    """Load template fragments optionally from a map file"""
+
+    def __init__(self, cache, aliases):
+        if cache is None:
+            cache = {}
+        self.cache = cache.copy()
+        self._map = {}
+        self._aliasmap = _aliasrules.buildmap(aliases)
+
+    def __contains__(self, key):
+        return key in self.cache or key in self._map
+
+    def load(self, t):
+        """Get parsed tree for the given template name. Use a local cache."""
+        if t not in self.cache:
+            try:
+                self.cache[t] = util.readfile(self._map[t])
+            except KeyError as inst:
+                raise templateutil.TemplateNotFound(
+                    _('"%s" not in template map') % inst.args[0])
+            except IOError as inst:
+                reason = (_('template file %s: %s')
+                          % (self._map[t],
+                             stringutil.forcebytestr(inst.args[1])))
+                raise IOError(inst.args[0], encoding.strfromlocal(reason))
+        return self._parse(self.cache[t])
+
+    def _parse(self, tmpl):
+        x = parse(tmpl)
+        if self._aliasmap:
+            x = _aliasrules.expand(self._aliasmap, x)
+        return x
+
+    def _findsymbolsused(self, tree, syms):
+        if not tree:
+            return
+        op = tree[0]
+        if op == 'symbol':
+            s = tree[1]
+            if s in syms[0]:
+                return # avoid recursion: s -> cache[s] -> s
+            syms[0].add(s)
+            if s in self.cache or s in self._map:
+                # s may be a reference for named template
+                self._findsymbolsused(self.load(s), syms)
+            return
+        if op in {'integer', 'string'}:
+            return
+        # '{arg|func}' == '{func(arg)}'
+        if op == '|':
+            syms[1].add(getsymbol(tree[2]))
+            self._findsymbolsused(tree[1], syms)
+            return
+        if op == 'func':
+            syms[1].add(getsymbol(tree[1]))
+            self._findsymbolsused(tree[2], syms)
+            return
+        for x in tree[1:]:
+            self._findsymbolsused(x, syms)
+
+    def symbolsused(self, t):
+        """Look up (keywords, filters/functions) referenced from the name
+        template 't'
+
+        This may load additional templates from the map file.
+        """
+        syms = (set(), set())
+        self._findsymbolsused(self.load(t), syms)
+        return syms
 
 class templater(object):
 
@@ -800,21 +863,12 @@ class templater(object):
         self.cache may be updated later to register additional template
         fragments.
         """
-        if filters is None:
-            filters = {}
-        if defaults is None:
-            defaults = {}
-        if cache is None:
-            cache = {}
-        self.cache = cache.copy()
-        self.map = {}
-        self.filters = templatefilters.filters.copy()
-        self.filters.update(filters)
-        self.defaults = defaults
-        self._resources = resources
-        self._aliases = aliases
-        self.minchunk, self.maxchunk = minchunk, maxchunk
-        self.ecache = {}
+        allfilters = templatefilters.filters.copy()
+        if filters:
+            allfilters.update(filters)
+        self._loader = loader(cache, aliases)
+        self._proc = engine(self._loader.load, allfilters, defaults, resources)
+        self._minchunk, self._maxchunk = minchunk, maxchunk
 
     @classmethod
     def frommapfile(cls, mapfile, filters=None, defaults=None, resources=None,
@@ -822,28 +876,46 @@ class templater(object):
         """Create templater from the specified map file"""
         t = cls(filters, defaults, resources, cache, [], minchunk, maxchunk)
         cache, tmap, aliases = _readmapfile(mapfile)
-        t.cache.update(cache)
-        t.map = tmap
-        t._aliases = aliases
+        t._loader.cache.update(cache)
+        t._loader._map = tmap
+        t._loader._aliasmap = _aliasrules.buildmap(aliases)
         return t
 
     def __contains__(self, key):
-        return key in self.cache or key in self.map
+        return key in self._loader
+
+    @property
+    def cache(self):
+        return self._loader.cache
+
+    # for highlight extension to insert one-time 'colorize' filter
+    @property
+    def _filters(self):
+        return self._proc._filters
+
+    @property
+    def defaults(self):
+        return self._proc._defaults
 
     def load(self, t):
-        '''Get the template for the given template name. Use a local cache.'''
-        if t not in self.cache:
-            try:
-                self.cache[t] = util.readfile(self.map[t][1])
-            except KeyError as inst:
-                raise templateutil.TemplateNotFound(
-                    _('"%s" not in template map') % inst.args[0])
-            except IOError as inst:
-                reason = (_('template file %s: %s')
-                          % (self.map[t][1],
-                             stringutil.forcebytestr(inst.args[1])))
-                raise IOError(inst.args[0], encoding.strfromlocal(reason))
-        return self.cache[t]
+        """Get parsed tree for the given template name. Use a local cache."""
+        return self._loader.load(t)
+
+    def symbolsuseddefault(self):
+        """Look up (keywords, filters/functions) referenced from the default
+        unnamed template
+
+        This may load additional templates from the map file.
+        """
+        return self.symbolsused('')
+
+    def symbolsused(self, t):
+        """Look up (keywords, filters/functions) referenced from the name
+        template 't'
+
+        This may load additional templates from the map file.
+        """
+        return self._loader.symbolsused(t)
 
     def renderdefault(self, mapping):
         """Render the default unnamed template and return result as string"""
@@ -856,20 +928,10 @@ class templater(object):
     def generate(self, t, mapping):
         """Return a generator that renders the specified named template and
         yields chunks"""
-        ttype = t in self.map and self.map[t][0] or 'default'
-        if ttype not in self.ecache:
-            try:
-                ecls = engines[ttype]
-            except KeyError:
-                raise error.Abort(_('invalid template engine: %s') % ttype)
-            self.ecache[ttype] = ecls(self.load, self.filters, self.defaults,
-                                      self._resources, self._aliases)
-        proc = self.ecache[ttype]
-
-        stream = proc.process(t, mapping)
-        if self.minchunk:
-            stream = util.increasingchunks(stream, min=self.minchunk,
-                                           max=self.maxchunk)
+        stream = self._proc.process(t, mapping)
+        if self._minchunk:
+            stream = util.increasingchunks(stream, min=self._minchunk,
+                                           max=self._maxchunk)
         return stream
 
 def templatepaths():

@@ -75,11 +75,12 @@ from __future__ import absolute_import
 
 import email as emailmod
 import email.generator as emailgen
+import email.mime.base as emimebase
+import email.mime.multipart as emimemultipart
 import email.utils as eutil
 import errno
 import os
 import socket
-import tempfile
 
 from mercurial.i18n import _
 from mercurial import (
@@ -94,7 +95,6 @@ from mercurial import (
     patch,
     pycompat,
     registrar,
-    repair,
     scmutil,
     templater,
     util,
@@ -256,7 +256,7 @@ def makepatch(ui, repo, rev, patchlines, opts, _charsets, idx, total, numbered,
         body += '\n'.join(patchlines)
 
     if addattachment:
-        msg = emailmod.MIMEMultipart.MIMEMultipart()
+        msg = emimemultipart.MIMEMultipart()
         if body:
             msg.attach(mail.mimeencode(ui, body, _charsets, opts.get('test')))
         p = mail.mimetextpatch('\n'.join(patchlines), 'x-patch',
@@ -318,7 +318,7 @@ def _getbundle(repo, dest, **opts):
     The bundle is a returned as a single in-memory binary blob.
     """
     ui = repo.ui
-    tmpdir = tempfile.mkdtemp(prefix='hg-email-bundle-')
+    tmpdir = pycompat.mkdtemp(prefix='hg-email-bundle-')
     tmpfn = os.path.join(tmpdir, 'bundle')
     btype = ui.config('patchbomb', 'bundletype')
     if btype:
@@ -367,10 +367,10 @@ def _getbundlemsgs(repo, sender, bundle, **opts):
             or prompt(ui, 'Subject:', 'A bundle for your repository'))
 
     body = _getdescription(repo, '', sender, **opts)
-    msg = emailmod.MIMEMultipart.MIMEMultipart()
+    msg = emimemultipart.MIMEMultipart()
     if body:
         msg.attach(mail.mimeencode(ui, body, _charsets, opts.get(r'test')))
-    datapart = emailmod.MIMEBase.MIMEBase('application', 'x-mercurial-bundle')
+    datapart = emimebase.MIMEBase('application', 'x-mercurial-bundle')
     datapart.set_payload(bundle)
     bundlename = '%s.hg' % opts.get(r'bundlename', 'bundle')
     datapart.add_header('Content-Disposition', 'attachment',
@@ -624,7 +624,7 @@ def email(ui, repo, *revs, **opts):
     elif bookmark:
         if bookmark not in repo._bookmarks:
             raise error.Abort(_("bookmark '%s' not found") % bookmark)
-        revs = repair.stripbmrevset(repo, bookmark)
+        revs = scmutil.bookmarkrevs(repo, bookmark)
 
     revs = scmutil.revrange(repo, revs)
     if outgoing:
@@ -753,6 +753,7 @@ def email(ui, repo, *revs, **opts):
     sender = mail.addressencode(ui, sender, _charsets, opts.get('test'))
     sendmail = None
     firstpatch = None
+    progress = ui.makeprogress(_('sending'), unit=_('emails'), total=len(msgs))
     for i, (m, subj, ds) in enumerate(msgs):
         try:
             m['Message-Id'] = genmsgid(m['X-Mercurial-Node'])
@@ -793,8 +794,7 @@ def email(ui, repo, *revs, **opts):
             if not sendmail:
                 sendmail = mail.connect(ui, mbox=mbox)
             ui.status(_('sending '), subj, ' ...\n')
-            ui.progress(_('sending'), i, item=subj, total=len(msgs),
-                        unit=_('emails'))
+            progress.update(i, item=subj)
             if not mbox:
                 # Exim does not remove the Bcc field
                 del m['Bcc']
@@ -803,5 +803,4 @@ def email(ui, repo, *revs, **opts):
             generator.flatten(m, 0)
             sendmail(sender_addr, to + bcc + cc, fp.getvalue())
 
-    ui.progress(_('writing'), None)
-    ui.progress(_('sending'), None)
+    progress.complete()

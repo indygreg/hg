@@ -67,6 +67,48 @@ Adding more files
   ? x/
   ? y/
 
+Run from subdirectory
+  $ hg status --terse u --cwd x/l
+  ? .hgignore
+  ? a
+  ? b
+  ? x/
+  ? y/
+  $ relstatus() {
+  >   hg status --terse u --config commands.status.relative=1 "$@";
+  > }
+This should probably have {"l/", "m/", "n/"} instead of {"."}. They should
+probably come after "../y/".
+  $ relstatus --cwd x
+  ? ../.hgignore
+  ? ../a
+  ? ../b
+  ? .
+  ? ../y/
+This should probably have {"u/", "../m/", "../n/"} instead of {"../"}.
+  $ relstatus --cwd x/l
+  ? ../../.hgignore
+  ? ../../a
+  ? ../../b
+  ? ../
+  ? ../../y/
+This should probably have {"a/", "bb", "../aa", "../../m/", "../../n/"}
+instead of {"../../"}.
+  $ relstatus --cwd x/l/u
+  ? ../../../.hgignore
+  ? ../../../a
+  ? ../../../b
+  ? ../../
+  ? ../../../y/
+This should probably have {"bb", "../bb", "../../aa", "../../../m/",
+"../../../n/"} instead of {"../../../"}.
+  $ relstatus --cwd x/l/u/a
+  ? ../../../../.hgignore
+  ? ../../../../a
+  ? ../../../../b
+  ? ../../../
+  ? ../../../../y/
+
   $ hg add x/aa x/bb .hgignore
   $ hg status --terse au
   A .hgignore
@@ -183,3 +225,55 @@ Trying with --rev
   $ hg status --terse marduic --rev 0 --rev 1
   abort: cannot use --terse with --rev
   [255]
+
+Config item to set the default terseness
+  $ cat <<EOF >> $HGRCPATH
+  > [commands]
+  > status.terse = u
+  > EOF
+  $ hg status -mu
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/
+  ? x/m/
+  ? x/n/
+  ? y/
+
+Command line flag overrides the default
+  $ hg status --terse=
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/aa
+  ? x/l/u/a/bb
+  ? x/l/u/bb
+  ? x/m/aa
+  ? x/n/aa
+  ? y/l
+  ? y/m
+  $ hg status --terse=mardu
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/
+  ? x/m/
+  ? x/n/
+  ? y/
+
+Specifying --rev should still work, with the terseness disabled.
+  $ hg status --rev 0
+  M x/aa
+  M x/bb
+  ? a
+  ? b
+  ? x/l/aa
+  ? x/l/u/a/bb
+  ? x/l/u/bb
+  ? x/m/aa
+  ? x/n/aa
+  ? y/l
+  ? y/m

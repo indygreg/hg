@@ -40,7 +40,7 @@ class _lazyloaderex(importlib.util.LazyLoader):
     """
     def exec_module(self, module):
         """Make the module load lazily."""
-        if _deactivated or module.__name__ in ignore:
+        if _deactivated or module.__name__ in ignores:
             self.loader.exec_module(module)
         else:
             super().exec_module(module)
@@ -62,11 +62,11 @@ def _makefinder(path):
         (_bytecode_loader, importlib.machinery.BYTECODE_SUFFIXES),
     )
 
-ignore = []
+ignores = set()
 
-def init(ignorelist):
-    global ignore
-    ignore = ignorelist
+def init(ignoreset):
+    global ignores
+    ignores = ignoreset
 
 def isenabled():
     return _makefinder in sys.path_hooks and not _deactivated

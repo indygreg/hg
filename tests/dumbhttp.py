@@ -13,6 +13,7 @@ import socket
 import sys
 
 from mercurial import (
+    encoding,
     pycompat,
     server,
     util,
@@ -66,7 +67,8 @@ if __name__ == '__main__':
 
     opts = {b'pid_file': options.pid,
             b'daemon': not options.foreground,
-            b'daemon_postexec': options.daemon_postexec}
+            b'daemon_postexec': pycompat.rapply(encoding.strtolocal,
+                                                options.daemon_postexec)}
     service = simplehttpservice(options.host, options.port)
     runargs = [sys.executable, __file__] + sys.argv[1:]
     runargs = [pycompat.fsencode(a) for a in runargs]

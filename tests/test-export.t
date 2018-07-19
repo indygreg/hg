@@ -101,6 +101,44 @@ Doing it again clobbers the files rather than appending:
   $ grep HG foo-foo_3.patch | wc -l
   \s*1 (re)
 
+Using bookmarks:
+
+  $ hg book -f -r 9 @
+  $ hg book -f -r 11 test
+  $ hg export -B test
+  # HG changeset patch
+  # User test
+  # Date 0 0
+  #      Thu Jan 01 00:00:00 1970 +0000
+  # Node ID 5f17a83f5fbd9414006a5e563eab4c8a00729efd
+  # Parent  747d3c68f8ec44bb35816bfcd59aeb50b9654c2f
+  foo-10
+  
+  diff -r 747d3c68f8ec -r 5f17a83f5fbd foo
+  --- a/foo	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
+  @@ -8,3 +8,4 @@
+   foo-7
+   foo-8
+   foo-9
+  +foo-10
+  # HG changeset patch
+  # User test
+  # Date 0 0
+  #      Thu Jan 01 00:00:00 1970 +0000
+  # Node ID f3acbafac161ec68f1598af38f794f28847ca5d3
+  # Parent  5f17a83f5fbd9414006a5e563eab4c8a00729efd
+  foo-11
+  
+  diff -r 5f17a83f5fbd -r f3acbafac161 foo
+  --- a/foo	Thu Jan 01 00:00:00 1970 +0000
+  +++ b/foo	Thu Jan 01 00:00:00 1970 +0000
+  @@ -9,3 +9,4 @@
+   foo-8
+   foo-9
+   foo-10
+  +foo-11
+
 Exporting 4 changesets to a file:
 
   $ hg export -o export_internal 1 2 3 4

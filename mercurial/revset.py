@@ -13,6 +13,7 @@ from .i18n import _
 from . import (
     dagop,
     destutil,
+    diffutil,
     encoding,
     error,
     hbisect,
@@ -111,7 +112,7 @@ def _getrevsource(repo, r):
     return None
 
 def _sortedb(xs):
-    return sorted(util.rapply(pycompat.maybebytestr, xs))
+    return sorted(pycompat.rapply(pycompat.maybebytestr, xs))
 
 # operator methods
 
@@ -203,6 +204,8 @@ def _orsetlist(repo, subset, xs, order):
 
 def orset(repo, subset, x, order):
     xs = getlist(x)
+    if not xs:
+        return baseset()
     if order == followorder:
         # slow path to take the subset order
         return subset & _orsetlist(repo, fullreposet(repo), xs, anyorder)
@@ -309,21 +312,17 @@ def ancestor(repo, subset, x):
     Will return empty list when passed no args.
     Greatest common ancestor of a single changeset is that changeset.
     """
-    # i18n: "ancestor" is a keyword
-    l = getlist(x)
-    rl = fullreposet(repo)
-    anc = None
+    reviter = iter(orset(repo, fullreposet(repo), x, order=anyorder))
+    try:
+        anc = repo[next(reviter)]
+    except StopIteration:
+        return baseset()
+    for r in reviter:
+        anc = anc.ancestor(repo[r])
 
-    # (getset(repo, rl, i) for i in l) generates a list of lists
-    for revs in (getset(repo, rl, i) for i in l):
-        for r in revs:
-            if anc is None:
-                anc = repo[r]
-            else:
-                anc = anc.ancestor(repo[r])
-
-    if anc is not None and anc.rev() in subset:
-        return baseset([anc.rev()])
+    r = scmutil.intrev(anc)
+    if r in subset:
+        return baseset([r])
     return baseset()
 
 def _ancestors(repo, subset, x, followfirst=False, startdepth=None,
@@ -608,6 +607,38 @@ def closed(repo, subset, x):
     getargs(x, 0, 0, _("closed takes no arguments"))
     return subset.filter(lambda r: repo[r].closesbranch(),
                          condrepr='<branch closed>')
+
+# for internal use
+@predicate('_commonancestorheads(set)', safe=True)
+def _commonancestorheads(repo, subset, x):
+    # This is an internal method is for quickly calculating "heads(::x and
+    # ::y)"
+
+    # These greatest common ancestors are the same ones that the consesus bid
+    # merge will find.
+    h = heads(repo, fullreposet(repo), x, anyorder)
+
+    ancs = repo.changelog._commonancestorsheads(*list(h))
+    return subset & baseset(ancs)
+
+@predicate('commonancestors(set)', safe=True)
+def commonancestors(repo, subset, x):
+    """Returns all common ancestors of the set.
+
+    This method is for calculating "::x and ::y" (i.e. all the ancestors that
+    are common to both x and y) in an easy and optimized way. We can't quite
+    use "::head()" because that revset returns "::x + ::y + ..." for each head
+    in the repo (whereas we want "::x *and* ::y").
+
+    """
+    # only wants the heads of the set passed in
+    h = heads(repo, fullreposet(repo), x, anyorder)
+    if not h:
+        return baseset()
+    for r in h:
+        subset &= dagop.revancestors(repo, baseset([r]))
+
+    return subset
 
 @predicate('contains(pattern)', weight=100)
 def contains(repo, subset, x):
@@ -1129,11 +1160,14 @@ def head(repo, subset, x):
         hs.update(cl.rev(h) for h in ls)
     return subset & baseset(hs)
 
-@predicate('heads(set)', safe=True)
-def heads(repo, subset, x):
+@predicate('heads(set)', safe=True, takeorder=True)
+def heads(repo, subset, x, order):
     """Members of set with no children in set.
     """
-    s = getset(repo, subset, x)
+    # argument set should never define order
+    if order == defineorder:
+        order = followorder
+    s = getset(repo, subset, x, order=order)
     ps = parents(repo, subset, x)
     return s - ps
 
@@ -1333,9 +1367,11 @@ def node_(repo, subset, x):
     else:
         rn = None
         try:
-            pm = repo.changelog._partialmatch(n)
+            pm = scmutil.resolvehexnodeidprefix(repo, n)
             if pm is not None:
                 rn = repo.changelog.rev(pm)
+        except LookupError:
+            pass
         except error.WdirUnsupported:
             rn = node.wdirrev
 
@@ -1343,6 +1379,14 @@ def node_(repo, subset, x):
         return baseset()
     result = baseset([rn])
     return result & subset
+
+@predicate('none()', safe=True)
+def none(repo, subset, x):
+    """No changesets.
+    """
+    # i18n: "none" is a keyword
+    getargs(x, 0, 0, _("none takes no arguments"))
+    return baseset()
 
 @predicate('obsolete()', safe=True)
 def obsolete(repo, subset, x):
@@ -1792,7 +1836,8 @@ def matching(repo, subset, x):
         'phase': lambda r: repo[r].phase(),
         'substate': lambda r: repo[r].substate,
         'summary': lambda r: repo[r].description().splitlines()[0],
-        'diff': lambda r: list(repo[r].diff(git=True),)
+        'diff': lambda r: list(repo[r].diff(
+            opts=diffutil.diffallopts(repo.ui, {'git': True}))),
     }
     for info in fields:
         getfield = _funcs.get(info, None)

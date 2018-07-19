@@ -71,6 +71,25 @@ except (ImportError, AttributeError):
     import inspect
     getargspec = inspect.getargspec
 
+try:
+    # 4.7+
+    queue = pycompat.queue.Queue
+except (AttributeError, ImportError):
+    # <4.7.
+    try:
+        queue = pycompat.queue
+    except (AttributeError, ImportError):
+        queue = util.queue
+
+try:
+    from mercurial import logcmdutil
+    makelogtemplater = logcmdutil.maketemplater
+except (AttributeError, ImportError):
+    try:
+        makelogtemplater = cmdutil.makelogtemplater
+    except (AttributeError, ImportError):
+        makelogtemplater = None
+
 # for "historical portability":
 # define util.safehasattr forcibly, because util.safehasattr has been
 # available since 1.9.3 (or 94b200a11cf7)
@@ -159,6 +178,9 @@ try:
     configitem('perf', 'parentscount',
         default=mercurial.configitems.dynamicdefault,
     )
+    configitem('perf', 'all-timing',
+        default=mercurial.configitems.dynamicdefault,
+    )
 except (ImportError, AttributeError):
     pass
 
@@ -228,12 +250,15 @@ def gettimer(ui, opts=None):
     # experimental config: perf.stub
     if ui.configbool("perf", "stub", False):
         return functools.partial(stub_timer, fm), fm
-    return functools.partial(_timer, fm), fm
+
+    # experimental config: perf.all-timing
+    displayall = ui.configbool("perf", "all-timing", False)
+    return functools.partial(_timer, fm, displayall=displayall), fm
 
 def stub_timer(fm, func, title=None):
     func()
 
-def _timer(fm, func, title=None):
+def _timer(fm, func, title=None, displayall=False):
     gc.collect()
     results = []
     begin = util.timer()
@@ -258,14 +283,27 @@ def _timer(fm, func, title=None):
         fm.write('title', '! %s\n', title)
     if r:
         fm.write('result', '! result: %s\n', r)
-    m = min(results)
-    fm.plain('!')
-    fm.write('wall', ' wall %f', m[0])
-    fm.write('comb', ' comb %f', m[1] + m[2])
-    fm.write('user', ' user %f', m[1])
-    fm.write('sys',  ' sys %f', m[2])
-    fm.write('count',  ' (best of %d)', count)
-    fm.plain('\n')
+    def display(role, entry):
+        prefix = ''
+        if role != 'best':
+            prefix = '%s.' % role
+        fm.plain('!')
+        fm.write(prefix + 'wall', ' wall %f', entry[0])
+        fm.write(prefix + 'comb', ' comb %f', entry[1] + entry[2])
+        fm.write(prefix + 'user', ' user %f', entry[1])
+        fm.write(prefix + 'sys',  ' sys %f', entry[2])
+        fm.write(prefix + 'count',  ' (%s of %d)', role, count)
+        fm.plain('\n')
+    results.sort()
+    min_val = results[0]
+    display('best', min_val)
+    if displayall:
+        max_val = results[-1]
+        display('max', max_val)
+        avg = tuple([sum(x) / count for x in zip(*results)])
+        display('avg', avg)
+        median = results[len(results) // 2]
+        display('median', median)
 
 # utilities for historical portability
 
@@ -755,6 +793,10 @@ def perfphases(ui, repo, **opts):
 
 @command('perfmanifest', [], 'REV')
 def perfmanifest(ui, repo, rev, **opts):
+    """benchmark the time to read a manifest from disk and return a usable
+    dict-like object
+
+    Manifest caches are cleared before retrieval."""
     timer, fm = gettimer(ui, opts)
     ctx = scmutil.revsingle(repo, rev, rev)
     t = ctx.manifestnode()
@@ -887,16 +929,36 @@ def perfmoonwalk(ui, repo, **opts):
     timer(moonwalk)
     fm.end()
 
-@command('perftemplating', formatteropts)
-def perftemplating(ui, repo, rev=None, **opts):
-    if rev is None:
-        rev=[]
+@command('perftemplating',
+         [('r', 'rev', [], 'revisions to run the template on'),
+         ] + formatteropts)
+def perftemplating(ui, repo, testedtemplate=None, **opts):
+    """test the rendering time of a given template"""
+    if makelogtemplater is None:
+        raise error.Abort(("perftemplating not available with this Mercurial"),
+                          hint="use 4.3 or later")
+
+    nullui = ui.copy()
+    nullui.fout = open(os.devnull, 'wb')
+    nullui.disablepager()
+    revs = opts.get('rev')
+    if not revs:
+        revs = ['all()']
+    revs = list(scmutil.revrange(repo, revs))
+
+    defaulttemplate = ('{date|shortdate} [{rev}:{node|short}]'
+                       ' {author|person}: {desc|firstline}\n')
+    if testedtemplate is None:
+        testedtemplate = defaulttemplate
+    displayer = makelogtemplater(nullui, repo, testedtemplate)
+    def format():
+        for r in revs:
+            ctx = repo[r]
+            displayer.show(ctx)
+            displayer.flush(ctx)
+
     timer, fm = gettimer(ui, opts)
-    ui.pushbuffer()
-    timer(lambda: commands.log(ui, repo, rev=rev, date='', user='',
-                               template='{date|shortdate} [{rev}:{node|short}]'
-                               ' {author|person}: {desc|firstline}\n'))
-    ui.popbuffer()
+    timer(format)
     fm.end()
 
 @command('perfcca', formatteropts)
@@ -918,9 +980,10 @@ def perffncacheload(ui, repo, **opts):
 def perffncachewrite(ui, repo, **opts):
     timer, fm = gettimer(ui, opts)
     s = repo.store
-    s.fncache._load()
     lock = repo.lock()
+    s.fncache._load()
     tr = repo.transaction('perffncachewrite')
+    tr.addbackup('fncache')
     def d():
         s.fncache._dirty = True
         s.fncache.write(tr)
@@ -1029,7 +1092,7 @@ def perfbdiff(ui, repo, file_, rev=None, count=None, threads=0, **opts):
                 else:
                     mdiff.textdiff(*pair)
     else:
-        q = util.queue()
+        q = queue()
         for i in xrange(threads):
             q.put(None)
         ready = threading.Condition()

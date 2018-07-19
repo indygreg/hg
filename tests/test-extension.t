@@ -9,7 +9,9 @@ Test basic extension support
   > configitem = registrar.configitem(configtable)
   > configitem(b'tests', b'foo', default=b"Foo")
   > def uisetup(ui):
+  >     ui.debug(b"uisetup called [debug]\\n")
   >     ui.write(b"uisetup called\\n")
+  >     ui.status(b"uisetup called [status]\\n")
   >     ui.flush()
   > def reposetup(ui, repo):
   >     ui.write(b"reposetup called for %s\\n" % os.path.basename(repo.root))
@@ -40,15 +42,29 @@ Test basic extension support
   $ echo "foobar = $abspath" >> $HGRCPATH
   $ hg foo
   uisetup called
+  uisetup called [status]
   reposetup called for a
   ui == repo.ui
   reposetup called for a (chg !)
   ui == repo.ui (chg !)
   Foo
+  $ hg foo --quiet
+  uisetup called (no-chg !)
+  reposetup called for a (chg !)
+  ui == repo.ui
+  Foo
+  $ hg foo --debug
+  uisetup called [debug] (no-chg !)
+  uisetup called (no-chg !)
+  uisetup called [status] (no-chg !)
+  reposetup called for a (chg !)
+  ui == repo.ui
+  Foo
 
   $ cd ..
   $ hg clone a b
   uisetup called (no-chg !)
+  uisetup called [status] (no-chg !)
   reposetup called for a
   ui == repo.ui
   reposetup called for b
@@ -58,6 +74,7 @@ Test basic extension support
 
   $ hg bar
   uisetup called (no-chg !)
+  uisetup called [status] (no-chg !)
   Bar
   $ echo 'foobar = !' >> $HGRCPATH
 
@@ -67,6 +84,7 @@ module/__init__.py-style
   $ cd a
   $ hg foo
   uisetup called
+  uisetup called [status]
   reposetup called for a
   ui == repo.ui
   reposetup called for a (chg !)
@@ -460,7 +478,7 @@ Setup main procedure of extension.
   >     result.append(absdetail)
   >     result.append(legacydetail)
   >     result.append(proxied.detail)
-  >     ui.write('LIB: %s\n' % '\nLIB: '.join(result))
+  >     ui.write(b'LIB: %s\n' % '\nLIB: '.join(result))
   > EOF
 
 Examine module importing.
@@ -1229,9 +1247,14 @@ Broken disabled extension and command:
 
   $ cat > hgext/forest.py <<EOF
   > cmdtable = None
+  > @command()
+  > def f():
+  >     pass
+  > @command(123)
+  > def g():
+  >     pass
   > EOF
   $ hg --config extensions.path=./path.py help foo > /dev/null
-  warning: error finding commands in $TESTTMP/hgext/forest.py
   abort: no such help topic: foo
   (try 'hg help --keyword foo')
   [255]
@@ -1283,7 +1306,7 @@ If the extension specifies a buglink, show that:
 
 If the extensions declare outdated versions, accuse the older extension first:
   $ echo "from mercurial import util" >> older.py
-  $ echo "util.version = lambda:'2.2'" >> older.py
+  $ echo "util.version = lambda:b'2.2'" >> older.py
   $ echo "testedwith = b'1.9.3'" >> older.py
   $ echo "testedwith = b'2.1.1'" >> throw.py
   $ rm -f throw.pyc throw.pyo
@@ -1388,7 +1411,7 @@ Test version number support in 'hg version':
   Enabled extensions:
   
     throw  external  1.2.3
-  $ echo 'getversion = lambda: "1.twentythree"' >> throw.py
+  $ echo 'getversion = lambda: b"1.twentythree"' >> throw.py
   $ rm -f throw.pyc throw.pyo
   $ rm -Rf __pycache__
   $ hg version -v --config extensions.throw=throw.py --config extensions.strip=
@@ -1516,6 +1539,14 @@ Commands handling multiple repositories at a time should invoke only
   $ hg -R src status
   reposetup() for $TESTTMP/reposetup-test/src
   reposetup() for $TESTTMP/reposetup-test/src (chg !)
+
+  $ hg --cwd src debugextensions
+  reposetup() for $TESTTMP/reposetup-test/src
+  dodo (untested!)
+  dudu (untested!)
+  mq
+  reposetuptest (untested!)
+  strip
 
   $ hg clone -U src clone-dst1
   reposetup() for $TESTTMP/reposetup-test/src
@@ -1670,7 +1701,7 @@ Test synopsis and docstring extending
   > def exbookmarks(orig, *args, **opts):
   >     return orig(*args, **opts)
   > def uisetup(ui):
-  >     synopsis = ' GREPME [--foo] [-x]'
+  >     synopsis = b' GREPME [--foo] [-x]'
   >     docstring = '''
   >     GREPME make sure that this is in the help!
   >     '''
@@ -1697,10 +1728,6 @@ Show deprecation warning for the use of cmdutil.command
   >     pass
   > EOF
 
-  $ hg --config extensions.nonregistrar=`pwd`/nonregistrar.py version > /dev/null
-  devel-warn: cmdutil.command is deprecated, use registrar.command to register 'foo'
-  (compatibility will be dropped after Mercurial-4.6, update your code.) * (glob)
-
 Prohibit the use of unicode strings as the default value of options
 
   $ hg init $TESTTMP/opt-unicode-default
@@ -1709,9 +1736,9 @@ Prohibit the use of unicode strings as the default value of options
   > from mercurial import registrar
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'dummy', [('', 'opt', u'value', u'help')], 'ext [OPTIONS]')
+  > @command(b'dummy', [(b'', b'opt', u'value', u'help')], 'ext [OPTIONS]')
   > def ext(*args, **opts):
-  >     print(opts['opt'])
+  >     print(opts[b'opt'])
   > EOF
   $ cat > $TESTTMP/opt-unicode-default/.hg/hgrc << EOF
   > [extensions]

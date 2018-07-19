@@ -74,11 +74,13 @@ import struct
 
 from .i18n import _
 from . import (
+    encoding,
     error,
     node,
     obsutil,
     phases,
     policy,
+    pycompat,
     util,
 )
 from .utils import dateutil
@@ -526,7 +528,7 @@ class obsstore(object):
     # prec:    nodeid, predecessors changesets
     # succs:   tuple of nodeid, successor changesets (0-N length)
     # flag:    integer, flag field carrying modifier for the markers (see doc)
-    # meta:    binary blob, encoded metadata dictionary
+    # meta:    binary blob in UTF-8, encoded metadata dictionary
     # date:    (float, int) tuple, date of marker creation
     # parents: (tuple of nodeid) or None, parents of predecessors
     #          None is used when no data has been recorded
@@ -599,6 +601,16 @@ class obsstore(object):
             raise ValueError(_('in-marker cycle with %s') % node.hex(prec))
 
         metadata = tuple(sorted(metadata.iteritems()))
+        for k, v in metadata:
+            try:
+                # might be better to reject non-ASCII keys
+                k.decode('utf-8')
+                v.decode('utf-8')
+            except UnicodeDecodeError:
+                raise error.ProgrammingError(
+                    'obsstore metadata must be valid UTF-8 sequence '
+                    '(key = %r, value = %r)'
+                    % (pycompat.bytestr(k), pycompat.bytestr(v)))
 
         marker = (bytes(prec), tuple(succs), int(flag), metadata, date, parents)
         return bool(self.add(transaction, [marker]))
@@ -853,7 +865,7 @@ def clearobscaches(repo):
 
 def _mutablerevs(repo):
     """the set of mutable revision in the repository"""
-    return repo._phasecache.getrevset(repo, (phases.draft, phases.secret))
+    return repo._phasecache.getrevset(repo, phases.mutablephases)
 
 @cachefor('obsolete')
 def _computeobsoleteset(repo):
@@ -950,7 +962,8 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     <relations> must be an iterable of (<old>, (<new>, ...)[,{metadata}])
     tuple. `old` and `news` are changectx. metadata is an optional dictionary
     containing metadata for this marker only. It is merged with the global
-    metadata specified through the `metadata` argument of this function,
+    metadata specified through the `metadata` argument of this function.
+    Any string values in metadata must be UTF-8 bytes.
 
     Trying to obsolete a public changeset will raise an exception.
 
@@ -964,11 +977,8 @@ def createmarkers(repo, relations, flag=0, date=None, metadata=None,
     if metadata is None:
         metadata = {}
     if 'user' not in metadata:
-        develuser = repo.ui.config('devel', 'user.obsmarker')
-        if develuser:
-            metadata['user'] = develuser
-        else:
-            metadata['user'] = repo.ui.username()
+        luser = repo.ui.config('devel', 'user.obsmarker') or repo.ui.username()
+        metadata['user'] = encoding.fromlocal(luser)
 
     # Operation metadata handling
     useoperation = repo.ui.configbool('experimental',

@@ -5,6 +5,9 @@ from mercurial import (
     dispatch,
     ui as uimod,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 # ensure errors aren't buffered
 testui = uimod.ui()
@@ -12,7 +15,7 @@ testui.pushbuffer()
 testui.write((b'buffered\n'))
 testui.warn((b'warning\n'))
 testui.write_err(b'error\n')
-print(repr(testui.popbuffer()))
+print(stringutil.pprint(testui.popbuffer(), bprefix=True).decode('ascii'))
 
 # test dispatch.dispatch with the same ui object
 hgrc = open(os.environ["HGRCPATH"], 'wb')
@@ -35,4 +38,3 @@ runcmd()
 print("colored? %s" % (ui_._colormode is not None))
 runcmd()
 print("colored? %s" % (ui_._colormode is not None))
-

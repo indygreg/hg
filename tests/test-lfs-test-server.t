@@ -1,4 +1,4 @@
-#require no-reposimplestore
+#require no-reposimplestore no-chg
 #testcases git-server hg-server
 
 #if git-server
@@ -880,7 +880,6 @@ Check error message when object does not exist:
   $LOCALIP - - [$LOGDATE$] "POST /.git/info/lfs/objects/batch HTTP/1.1" 200 - (glob)
 #endif
 
-  $ rm $DAEMON_PIDS
   $ mkdir $TESTTMP/lfs-server2
   $ cd $TESTTMP/lfs-server2
 #if no-windows git-server

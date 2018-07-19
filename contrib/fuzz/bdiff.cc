@@ -6,30 +6,25 @@
  * This software may be used and distributed according to the terms of
  * the GNU General Public License, incorporated herein by reference.
  */
+#include <memory>
 #include <stdlib.h>
+
+#include "fuzzutil.h"
 
 extern "C" {
 #include "bdiff.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
 {
-	if (!Size) {
+	auto maybe_inputs = SplitInputs(Data, Size);
+	if (!maybe_inputs) {
 		return 0;
 	}
-	// figure out a random point in [0, Size] to split our input.
-	size_t split = Data[0] / 255.0 * Size;
-
-	// left input to diff is data[1:split]
-	const uint8_t *left = Data + 1;
-	// which has len split-1
-	size_t left_size = split - 1;
-	// right starts at the next byte after left ends
-	const uint8_t *right = left + left_size;
-	size_t right_size = Size - split;
+	auto inputs = std::move(maybe_inputs.value());
 
 	struct bdiff_line *a, *b;
-	int an = bdiff_splitlines((const char *)left, split - 1, &a);
-	int bn = bdiff_splitlines((const char *)right, right_size, &b);
+	int an = bdiff_splitlines(inputs.left.get(), inputs.left_size, &a);
+	int bn = bdiff_splitlines(inputs.right.get(), inputs.right_size, &b);
 	struct bdiff_hunk l;
 	bdiff_diff(a, an, b, bn, &l);
 	free(a);

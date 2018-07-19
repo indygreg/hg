@@ -1034,7 +1034,8 @@ Pushing a really long bookmark should work fine (issue5165)
 ===============================================
 
 #if b2-binary
-  >>> open('longname', 'w').write('wat' * 100)
+  >>> with open('longname', 'w') as f:
+  ...     f.write('wat' * 100) and None
   $ hg book `cat longname`
   $ hg push -B `cat longname` ../unchanged-b
   pushing to ../unchanged-b

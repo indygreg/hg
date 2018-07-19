@@ -241,7 +241,7 @@ class BundleUnknownFeatureError(BundleValueError):
                 if val is None:
                     entries.append(val)
                 else:
-                    entries.append("%s=%r" % (par, val))
+                    entries.append("%s=%r" % (par, pycompat.maybebytestr(val)))
         if entries:
             msg = '%s - %s' % (msg, ', '.join(entries))
         ValueError.__init__(self, msg)

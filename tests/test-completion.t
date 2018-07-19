@@ -191,6 +191,7 @@ Show the options for the "serve" command
   --pid-file
   --port
   --prefix
+  --print-url
   --profile
   --quiet
   --repository
@@ -231,7 +232,7 @@ Show all commands + options
   clone: noupdate, updaterev, rev, branch, pull, uncompressed, stream, ssh, remotecmd, insecure
   commit: addremove, close-branch, amend, secret, edit, interactive, include, exclude, message, logfile, date, user, subrepos
   diff: rev, change, text, git, binary, nodates, noprefix, show-function, reverse, ignore-all-space, ignore-space-change, ignore-blank-lines, ignore-space-at-eol, unified, stat, root, include, exclude, subrepos
-  export: output, switch-parent, rev, text, git, binary, nodates, template
+  export: bookmark, output, switch-parent, rev, text, git, binary, nodates, template
   forget: interactive, include, exclude, dry-run
   init: ssh, remotecmd, insecure
   log: follow, follow-first, date, copies, keyword, rev, line-range, removed, only-merges, user, only-branch, branch, prune, patch, git, limit, no-merges, stat, graph, style, template, include, exclude
@@ -239,7 +240,7 @@ Show all commands + options
   pull: update, force, rev, bookmark, branch, ssh, remotecmd, insecure
   push: force, rev, bookmark, branch, new-branch, pushvars, ssh, remotecmd, insecure
   remove: after, force, subrepos, include, exclude, dry-run
-  serve: accesslog, daemon, daemon-postexec, errorlog, port, address, prefix, name, web-conf, webdir-conf, pid-file, stdio, cmdserver, templates, style, ipv6, certificate, subrepos
+  serve: accesslog, daemon, daemon-postexec, errorlog, port, address, prefix, name, web-conf, webdir-conf, pid-file, stdio, cmdserver, templates, style, ipv6, certificate, print-url, subrepos
   status: all, modified, added, removed, deleted, clean, unknown, ignored, no-status, terse, copies, print0, rev, change, include, exclude, subrepos, template
   summary: remote
   update: clean, check, merge, date, rev, tool
@@ -272,7 +273,7 @@ Show all commands + options
   debugdiscovery: old, nonheads, rev, ssh, remotecmd, insecure
   debugdownload: output
   debugextensions: template
-  debugfileset: rev
+  debugfileset: rev, all-files
   debugformat: template
   debugfsinfo: 
   debuggetbundle: head, common, type
@@ -311,8 +312,8 @@ Show all commands + options
   debugwireargs: three, four, five, ssh, remotecmd, insecure
   debugwireproto: localssh, peer, noreadstderr, nologhandshake, ssh, remotecmd, insecure
   files: rev, print0, include, exclude, template, subrepos
-  graft: rev, continue, edit, log, force, currentdate, currentuser, date, user, tool, dry-run
-  grep: print0, all, text, follow, ignore-case, files-with-matches, line-number, rev, user, date, template, include, exclude
+  graft: rev, continue, stop, abort, edit, log, no-commit, force, currentdate, currentuser, date, user, tool, dry-run
+  grep: print0, all, diff, text, follow, ignore-case, files-with-matches, line-number, rev, all-files, user, date, template, include, exclude
   heads: rev, topo, active, closed, style, template
   help: extension, command, keyword, system
   identify: rev, num, id, branch, tags, bookmarks, ssh, remotecmd, insecure, template

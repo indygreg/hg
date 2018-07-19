@@ -22,6 +22,7 @@ from . import (
 )
 from .utils import (
     procutil,
+    stringutil,
 )
 
 def _serverquote(s):
@@ -89,6 +90,17 @@ class doublepipe(object):
 
     def read(self, size):
         r = self._call('read', size)
+        if size != 0 and not r:
+            # We've observed a condition that indicates the
+            # stdout closed unexpectedly. Check stderr one
+            # more time and snag anything that's there before
+            # letting anyone know the main part of the pipe
+            # closed prematurely.
+            _forwardoutput(self._ui, self._side)
+        return r
+
+    def unbufferedread(self, size):
+        r = self._call('unbufferedread', size)
         if size != 0 and not r:
             # We've observed a condition that indicates the
             # stdout closed unexpectedly. Check stderr one
@@ -273,7 +285,7 @@ def _performhandshake(ui, stdin, stdout, stderr):
 
     # Assume version 1 of wire protocol by default.
     protoname = wireprototypes.SSHV1
-    reupgraded = re.compile(b'^upgraded %s (.*)$' % re.escape(token))
+    reupgraded = re.compile(b'^upgraded %s (.*)$' % stringutil.reescape(token))
 
     lines = ['', 'dummy']
     max_noise = 500

@@ -25,6 +25,8 @@ from mercurial import (
     filelog,
     httppeer,
     localrepo,
+    manifest,
+    pycompat,
     repository,
     sshpeer,
     statichttprepo,
@@ -37,7 +39,8 @@ from mercurial import (
     wireprotov2server,
 )
 
-rootdir = os.path.normpath(os.path.join(os.path.dirname(__file__), '..'))
+rootdir = pycompat.fsencode(
+    os.path.normpath(os.path.join(os.path.dirname(__file__), '..')))
 
 def checkzobject(o, allowextra=False):
     """Verify an object with a zope interface."""
@@ -106,7 +109,7 @@ def main():
                          httppeer.httpv2peer)
     ziverify.verifyClass(repository.ipeercapabilities,
                          httppeer.httpv2peer)
-    checkzobject(httppeer.httpv2peer(None, '', None, None, None, None))
+    checkzobject(httppeer.httpv2peer(None, b'', b'', None, None, None))
 
     ziverify.verifyClass(repository.ipeerbase,
                          localrepo.localpeer)
@@ -121,11 +124,11 @@ def main():
     checkzobject(wireprotov1peer.peerexecutor(None))
 
     ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv1peer)
-    checkzobject(sshpeer.sshv1peer(ui, 'ssh://localhost/foo', None, dummypipe(),
+    checkzobject(sshpeer.sshv1peer(ui, b'ssh://localhost/foo', b'', dummypipe(),
                                    dummypipe(), None, None))
 
     ziverify.verifyClass(repository.ipeerbase, sshpeer.sshv2peer)
-    checkzobject(sshpeer.sshv2peer(ui, 'ssh://localhost/foo', None, dummypipe(),
+    checkzobject(sshpeer.sshv2peer(ui, b'ssh://localhost/foo', b'', dummypipe(),
                                    dummypipe(), None, None))
 
     ziverify.verifyClass(repository.ipeerbase, bundlerepo.bundlepeer)
@@ -162,9 +165,35 @@ def main():
     checkzobject(httpv2)
 
     ziverify.verifyClass(repository.ifilestorage, filelog.filelog)
+    ziverify.verifyClass(repository.imanifestdict, manifest.manifestdict)
+    ziverify.verifyClass(repository.imanifestrevisionstored,
+                         manifest.manifestctx)
+    ziverify.verifyClass(repository.imanifestrevisionwritable,
+                         manifest.memmanifestctx)
+    ziverify.verifyClass(repository.imanifestrevisionstored,
+                         manifest.treemanifestctx)
+    ziverify.verifyClass(repository.imanifestrevisionwritable,
+                         manifest.memtreemanifestctx)
+    ziverify.verifyClass(repository.imanifestlog, manifest.manifestlog)
 
-    vfs = vfsmod.vfs('.')
-    fl = filelog.filelog(vfs, 'dummy.i')
+    vfs = vfsmod.vfs(b'.')
+    fl = filelog.filelog(vfs, b'dummy.i')
     checkzobject(fl, allowextra=True)
+
+    # Conforms to imanifestlog.
+    ml = manifest.manifestlog(vfs, repo)
+    checkzobject(ml)
+    checkzobject(repo.manifestlog)
+
+    # Conforms to imanifestrevision.
+    mctx = ml[repo[0].manifestnode()]
+    checkzobject(mctx)
+
+    # Conforms to imanifestrevisionwritable.
+    checkzobject(mctx.new())
+    checkzobject(mctx.copy())
+
+    # Conforms to imanifestdict.
+    checkzobject(mctx.read())
 
 main()

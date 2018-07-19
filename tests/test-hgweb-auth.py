@@ -3,9 +3,13 @@ from __future__ import absolute_import, print_function
 from mercurial import demandimport; demandimport.enable()
 from mercurial import (
     error,
+    pycompat,
     ui as uimod,
     url,
     util,
+)
+from mercurial.utils import (
+    stringutil,
 )
 
 urlerr = util.urlerr
@@ -23,12 +27,8 @@ def writeauth(items):
         ui.setconfig('auth', name, value)
     return ui
 
-def dumpdict(dict):
-    return '{' + ', '.join(['%s: %s' % (k, dict[k])
-                            for k in sorted(dict)]) + '}'
-
 def test(auth, urls=None):
-    print('CFG:', dumpdict(auth))
+    print('CFG:', pycompat.sysstr(stringutil.pprint(auth, bprefix=True)))
     prefixes = set()
     for k in auth:
         prefixes.add(k.split('.', 1)[0])

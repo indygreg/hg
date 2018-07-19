@@ -199,10 +199,10 @@ plain mode with exceptions
   $ cat > plain.py <<EOF
   > from mercurial import commands, extensions
   > def _config(orig, ui, repo, *values, **opts):
-  >     ui.write('plain: %r\n' % ui.plain())
+  >     ui.write(b'plain: %r\n' % ui.plain())
   >     return orig(ui, repo, *values, **opts)
   > def uisetup(ui):
-  >     extensions.wrapcommand(commands.table, 'config', _config)
+  >     extensions.wrapcommand(commands.table, b'config', _config)
   > EOF
   $ echo "[extensions]" >> $HGRC
   $ echo "plain=./plain.py" >> $HGRC

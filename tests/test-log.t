@@ -1943,7 +1943,7 @@ enable obsolete to test hidden feature
 test that parent prevent a changeset to be hidden
 
   $ hg up 1 -q --hidden
-  updating to a hidden changeset a765632148dc
+  updated to hidden changeset a765632148dc
   (hidden revision 'a765632148dc' is pruned)
   $ hg log --template='{rev}:{node}\n'
   1:a765632148dc55d38c35c4f247c618701886cb2f

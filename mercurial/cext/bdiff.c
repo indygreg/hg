@@ -157,9 +157,7 @@ cleanup:
 	PyBuffer_Release(&bb);
 	free(al);
 	free(bl);
-	if (l.next) {
-		bdiff_freehunks(l.next);
-	}
+	bdiff_freehunks(l.next);
 	return result;
 }
 

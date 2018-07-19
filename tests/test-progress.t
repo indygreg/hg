@@ -16,10 +16,10 @@
   > time.time = incrementingtime()
   > 
   > @command(b'loop',
-  >     [('', 'total', '', 'override for total'),
-  >     ('', 'nested', False, 'show nested results'),
-  >     ('', 'parallel', False, 'show parallel sets of results')],
-  >     'hg loop LOOPS',
+  >     [(b'', b'total', b'', b'override for total'),
+  >     (b'', b'nested', False, b'show nested results'),
+  >     (b'', b'parallel', False, b'show parallel sets of results')],
+  >     b'hg loop LOOPS',
   >     norepo=True)
   > def loop(ui, loops, **opts):
   >     loops = int(loops)
@@ -33,20 +33,22 @@
   >         nested = True
   >     loops = abs(loops)
   > 
+  >     progress = ui.makeprogress(topiclabel, unit='loopnum', total=total)
+  >     other = ui.makeprogress('other', unit='othernum', total=total)
   >     for i in range(loops):
-  >         ui.progress(topiclabel, i, getloopitem(i), 'loopnum', total)
+  >         progress.update(i, item=getloopitem(i))
   >         if opts.get('parallel'):
-  >             ui.progress('other', i, 'other.%d' % i, 'othernum', total)
+  >             other.update(i, item='other.%d' % i)
   >         if nested:
   >             nested_steps = 2
   >             if i and i % 4 == 0:
   >                 nested_steps = 5
+  >             nested = ui.makeprogress('nested', unit='nestnum',
+  >                                      total=nested_steps)
   >             for j in range(nested_steps):
-  >                 ui.progress(
-  >                   'nested', j, 'nested.%d' % j, 'nestnum', nested_steps)
-  >             ui.progress(
-  >               'nested', None, 'nested.done', 'nestnum', nested_steps)
-  >     ui.progress(topiclabel, None, 'loop.done', 'loopnum', total)
+  >                 nested.update(j, item='nested.%d' % j)
+  >             nested.complete()
+  >     progress.complete()
   > 
   > topiclabel = 'loop'
   > def getloopitem(i):

@@ -11,7 +11,7 @@
 from __future__ import absolute_import
 
 from mercurial import demandimport
-demandimport.ignore.extend(['pkgutil', 'pkg_resources', '__main__'])
+demandimport.IGNORES.update(['pkgutil', 'pkg_resources', '__main__'])
 
 from mercurial import (
     encoding,
@@ -44,7 +44,8 @@ SYNTAX_CSS = ('\n<link rel="stylesheet" href="{url}highlightcss" '
 def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
 
     # append a <link ...> to the syntax highlighting css
-    old_header = tmpl.load('header')
+    tmpl.load('header')
+    old_header = tmpl.cache['header']
     if SYNTAX_CSS not in old_header:
         new_header = old_header + SYNTAX_CSS
         tmpl.cache['header'] = new_header
@@ -89,7 +90,7 @@ def pygmentize(field, fctx, style, tmpl, guessfilenameonly=False):
     coloriter = (s.encode(encoding.encoding, 'replace')
                  for s in colorized.splitlines())
 
-    tmpl.filters['colorize'] = lambda x: next(coloriter)
+    tmpl._filters['colorize'] = lambda x: next(coloriter)
 
     oldl = tmpl.cache[field]
     newl = oldl.replace('line|escape', 'line|colorize')

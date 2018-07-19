@@ -13,7 +13,7 @@ import os
 import re
 
 from ..i18n import _
-from ..node import hex, nullid, short
+from ..node import hex, short
 
 from .common import (
     ErrorResponse,
@@ -149,7 +149,7 @@ def _filerevision(web, fctx):
         mt = mimetypes.guess_type(f)[0] or 'application/octet-stream'
         text = '(binary:%s)' % mt
 
-    def lines():
+    def lines(context):
         for lineno, t in enumerate(text.splitlines(True)):
             yield {"line": t,
                    "lineid": "l%d" % (lineno + 1),
@@ -160,7 +160,7 @@ def _filerevision(web, fctx):
         'filerevision',
         file=f,
         path=webutil.up(f),
-        text=lines(),
+        text=templateutil.mappinggenerator(lines),
         symrev=webutil.symrevorshortnode(web.req, fctx),
         rename=webutil.renamelink(fctx),
         permissions=fctx.manifest().flags(f),
@@ -295,9 +295,8 @@ def _search(web):
         for ctx in searchfunc[0](funcarg):
             count += 1
             n = ctx.node()
-            showtags = webutil.showtag(web.repo, web.tmpl, 'changelogtag', n)
-            files = webutil.listfilediffs(web.tmpl, ctx.files(), n,
-                                          web.maxfiles)
+            showtags = webutil.showtag(web.repo, 'changelogtag', n)
+            files = webutil.listfilediffs(ctx.files(), n, web.maxfiles)
 
             lm = webutil.commonentry(web.repo, ctx)
             lm.update({
@@ -399,14 +398,8 @@ def changelog(web, shortlog=False):
         revs = []
         if pos != -1:
             revs = web.repo.changelog.revs(pos, 0)
-        curcount = 0
-        for rev in revs:
-            curcount += 1
-            if curcount > revcount + 1:
-                break
 
-            entry = webutil.changelistentry(web, web.repo[rev])
-            entry['parity'] = next(parity)
+        for entry in webutil.changelistentries(web, revs, revcount, parity):
             yield entry
 
     if shortlog:
@@ -448,9 +441,9 @@ def changelog(web, shortlog=False):
         rev=pos,
         symrev=symrev,
         changesets=count,
-        entries=entries,
-        latestentry=latestentry,
-        nextentry=nextentry,
+        entries=templateutil.mappinglist(entries),
+        latestentry=templateutil.mappinglist(latestentry),
+        nextentry=templateutil.mappinglist(nextentry),
         archives=web.archivelist('tip'),
         revcount=revcount,
         morevars=morevars,
@@ -563,7 +556,7 @@ def manifest(web):
     if mf and not files and not dirs:
         raise ErrorResponse(HTTP_NOT_FOUND, 'path not found: ' + path)
 
-    def filelist(**map):
+    def filelist(context):
         for f in sorted(files):
             full = files[f]
 
@@ -575,7 +568,7 @@ def manifest(web):
                    "size": fctx.size(),
                    "permissions": mf.flags(full)}
 
-    def dirlist(**map):
+    def dirlist(context):
         for d in sorted(dirs):
 
             emptydirs = []
@@ -598,8 +591,8 @@ def manifest(web):
         path=abspath,
         up=webutil.up(abspath),
         upparity=next(parity),
-        fentries=filelist,
-        dentries=dirlist,
+        fentries=templateutil.mappinggenerator(filelist),
+        dentries=templateutil.mappinggenerator(dirlist),
         archives=web.archivelist(hex(node)),
         **pycompat.strkwargs(webutil.commonentry(web.repo, ctx)))
 
@@ -618,7 +611,7 @@ def tags(web):
     i = list(reversed(web.repo.tagslist()))
     parity = paritygen(web.stripecount)
 
-    def entries(notip, latestonly, **map):
+    def entries(context, notip, latestonly):
         t = i
         if notip:
             t = [(k, n) for k, n in i if k != "tip"]
@@ -633,9 +626,10 @@ def tags(web):
     return web.sendtemplate(
         'tags',
         node=hex(web.repo.changelog.tip()),
-        entries=lambda **x: entries(False, False, **x),
-        entriesnotip=lambda **x: entries(True, False, **x),
-        latestentry=lambda **x: entries(True, True, **x))
+        entries=templateutil.mappinggenerator(entries, args=(False, False)),
+        entriesnotip=templateutil.mappinggenerator(entries,
+                                                   args=(True, False)),
+        latestentry=templateutil.mappinggenerator(entries, args=(True, True)))
 
 @webcommand('bookmarks')
 def bookmarks(web):
@@ -654,7 +648,7 @@ def bookmarks(web):
     i = sorted(i, key=sortkey, reverse=True)
     parity = paritygen(web.stripecount)
 
-    def entries(latestonly, **map):
+    def entries(context, latestonly):
         t = i
         if latestonly:
             t = i[:1]
@@ -668,13 +662,14 @@ def bookmarks(web):
         latestrev = i[0][1]
     else:
         latestrev = -1
+    lastdate = web.repo[latestrev].date()
 
     return web.sendtemplate(
         'bookmarks',
         node=hex(web.repo.changelog.tip()),
-        lastchange=[{'date': web.repo[latestrev].date()}],
-        entries=lambda **x: entries(latestonly=False, **x),
-        latestentry=lambda **x: entries(latestonly=True, **x))
+        lastchange=templateutil.mappinglist([{'date': lastdate}]),
+        entries=templateutil.mappinggenerator(entries, args=(False,)),
+        latestentry=templateutil.mappinggenerator(entries, args=(True,)))
 
 @webcommand('branches')
 def branches(web):
@@ -732,7 +727,7 @@ def summary(web):
                 'date': web.repo[n].date(),
             }
 
-    def bookmarks(**map):
+    def bookmarks(context):
         parity = paritygen(web.stripecount)
         marks = [b for b in web.repo._bookmarks.items() if b[1] in web.repo]
         sortkey = lambda b: (web.repo[b[1]].rev(), b[0])
@@ -774,7 +769,7 @@ def summary(web):
         owner=get_contact(web.config) or 'unknown',
         lastchange=tip.date(),
         tags=templateutil.mappinggenerator(tagentries, name='tagentry'),
-        bookmarks=bookmarks,
+        bookmarks=templateutil.mappinggenerator(bookmarks),
         branches=webutil.branchentries(web.repo, web.stripecount, 10),
         shortlog=templateutil.mappinggenerator(changelist,
                                                name='shortlogentry'),
@@ -819,7 +814,7 @@ def filediff(web):
         rename = webutil.renamelink(fctx)
         ctx = fctx
     else:
-        rename = []
+        rename = templateutil.mappinglist([])
         ctx = ctx
 
     return web.sendtemplate(
@@ -887,12 +882,12 @@ def comparison(web):
         pfctx = ctx.parents()[0][path]
         leftlines = filelines(pfctx)
 
-    comparison = webutil.compare(web.tmpl, context, leftlines, rightlines)
+    comparison = webutil.compare(context, leftlines, rightlines)
     if fctx is not None:
         rename = webutil.renamelink(fctx)
         ctx = fctx
     else:
-        rename = []
+        rename = templateutil.mappinglist([])
         ctx = ctx
 
     return web.sendtemplate(
@@ -934,7 +929,7 @@ def annotate(web):
     # TODO there are still redundant operations within basefilectx.parents()
     # and from the fctx.annotate() call itself that could be cached.
     parentscache = {}
-    def parents(f):
+    def parents(context, f):
         rev = f.rev()
         if rev not in parentscache:
             parentscache[rev] = []
@@ -948,7 +943,7 @@ def annotate(web):
         for p in parentscache[rev]:
             yield p
 
-    def annotate(**map):
+    def annotate(context):
         if fctx.isbinary():
             mt = (mimetypes.guess_type(fctx.path())[0]
                   or 'application/octet-stream')
@@ -972,7 +967,7 @@ def annotate(web):
                    "node": f.hex(),
                    "rev": rev,
                    "author": f.user(),
-                   "parents": parents(f),
+                   "parents": templateutil.mappinggenerator(parents, args=(f,)),
                    "desc": f.description(),
                    "extra": f.extra(),
                    "file": f.path(),
@@ -991,13 +986,13 @@ def annotate(web):
     return web.sendtemplate(
         'fileannotate',
         file=f,
-        annotate=annotate,
+        annotate=templateutil.mappinggenerator(annotate),
         path=webutil.up(f),
         symrev=webutil.symrevorshortnode(web.req, fctx),
         rename=webutil.renamelink(fctx),
         permissions=fctx.manifest().flags(f),
         ishead=int(ishead),
-        diffopts=diffopts,
+        diffopts=templateutil.hybriddict(diffopts),
         **pycompat.strkwargs(webutil.commonentry(web.repo, fctx)))
 
 @webcommand('filelog')
@@ -1095,13 +1090,16 @@ def filelog(web):
                 diffs = diff(c, linerange=lr)
             # follow renames accross filtered (not in range) revisions
             path = c.path()
-            entries.append(dict(
-                parity=next(parity),
-                filerev=c.rev(),
-                file=path,
-                diff=diffs,
-                linerange=webutil.formatlinerange(*lr),
-                **pycompat.strkwargs(webutil.commonentry(repo, c))))
+            lm = webutil.commonentry(repo, c)
+            lm.update({
+                'parity': next(parity),
+                'filerev': c.rev(),
+                'file': path,
+                'diff': diffs,
+                'linerange': webutil.formatlinerange(*lr),
+                'rename': templateutil.mappinglist([]),
+            })
+            entries.append(lm)
             if i == revcount:
                 break
         lessvars['linerange'] = webutil.formatlinerange(*lrange)
@@ -1112,13 +1110,15 @@ def filelog(web):
             diffs = None
             if patch:
                 diffs = diff(iterfctx)
-            entries.append(dict(
-                parity=next(parity),
-                filerev=i,
-                file=f,
-                diff=diffs,
-                rename=webutil.renamelink(iterfctx),
-                **pycompat.strkwargs(webutil.commonentry(repo, iterfctx))))
+            lm = webutil.commonentry(repo, iterfctx)
+            lm.update({
+                'parity': next(parity),
+                'filerev': i,
+                'file': f,
+                'diff': diffs,
+                'rename': webutil.renamelink(iterfctx),
+            })
+            entries.append(lm)
         entries.reverse()
         revnav = webutil.filerevnav(web.repo, fctx.path())
         nav = revnav.gen(end - 1, revcount, count)
@@ -1130,10 +1130,10 @@ def filelog(web):
         file=f,
         nav=nav,
         symrev=webutil.symrevorshortnode(web.req, fctx),
-        entries=entries,
+        entries=templateutil.mappinglist(entries),
         descend=descend,
         patch=patch,
-        latestentry=latestentry,
+        latestentry=templateutil.mappinglist(latestentry),
         linerange=linerange,
         revcount=revcount,
         morevars=morevars,
@@ -1162,7 +1162,7 @@ def archive(web):
     """
 
     type_ = web.req.qsparams.get('type')
-    allowed = web.configlist("web", "allow_archive")
+    allowed = web.configlist("web", "allow-archive")
     key = web.req.qsparams['node']
 
     if type_ not in webutil.archivespecs:
@@ -1314,24 +1314,6 @@ def graph(web):
         tree = list(item for item in graphmod.colored(dag, web.repo)
                     if item[1] == graphmod.CHANGESET)
 
-    def nodecurrent(ctx):
-        wpnodes = web.repo.dirstate.parents()
-        if wpnodes[1] == nullid:
-            wpnodes = wpnodes[:1]
-        if ctx.node() in wpnodes:
-            return '@'
-        return ''
-
-    def nodesymbol(ctx):
-        if ctx.obsolete():
-            return 'x'
-        elif ctx.isunstable():
-            return '*'
-        elif ctx.closesbranch():
-            return '_'
-        else:
-            return 'o'
-
     def fulltree():
         pos = web.repo[graphtop].rev()
         tree = []
@@ -1342,14 +1324,14 @@ def graph(web):
                         if item[1] == graphmod.CHANGESET)
         return tree
 
-    def jsdata():
-        return [{'node': pycompat.bytestr(ctx),
-                 'graphnode': nodecurrent(ctx) + nodesymbol(ctx),
-                 'vertex': vtx,
-                 'edges': edges}
-                for (id, type, ctx, vtx, edges) in fulltree()]
+    def jsdata(context):
+        for (id, type, ctx, vtx, edges) in fulltree():
+            yield {'node': pycompat.bytestr(ctx),
+                   'graphnode': webutil.getgraphnode(web.repo, ctx),
+                   'vertex': vtx,
+                   'edges': edges}
 
-    def nodes():
+    def nodes(context):
         parity = paritygen(web.stripecount)
         for row, (id, type, ctx, vtx, edges) in enumerate(tree):
             entry = webutil.commonentry(web.repo, ctx)
@@ -1363,7 +1345,7 @@ def graph(web):
             entry.update({'col': vtx[0],
                           'color': (vtx[1] - 1) % 6 + 1,
                           'parity': next(parity),
-                          'edges': edgedata,
+                          'edges': templateutil.mappinglist(edgedata),
                           'row': row,
                           'nextrow': row + 1})
 
@@ -1384,10 +1366,11 @@ def graph(web):
         rows=rows,
         bg_height=bg_height,
         changesets=count,
-        nextentry=nextentry,
-        jsdata=lambda **x: jsdata(),
-        nodes=lambda **x: nodes(),
+        nextentry=templateutil.mappinglist(nextentry),
+        jsdata=templateutil.mappinggenerator(jsdata),
+        nodes=templateutil.mappinggenerator(nodes),
         node=ctx.hex(),
+        archives=web.archivelist('tip'),
         changenav=changenav)
 
 def _getdoc(e):
@@ -1417,7 +1400,7 @@ def help(web):
 
     topicname = web.req.qsparams.get('node')
     if not topicname:
-        def topics(**map):
+        def topics(context):
             for entries, summary, _doc in helpmod.helptable:
                 yield {'topic': entries[0], 'summary': summary}
 
@@ -1436,19 +1419,19 @@ def help(web):
         early.sort()
         other.sort()
 
-        def earlycommands(**map):
+        def earlycommands(context):
             for c, doc in early:
                 yield {'topic': c, 'summary': doc}
 
-        def othercommands(**map):
+        def othercommands(context):
             for c, doc in other:
                 yield {'topic': c, 'summary': doc}
 
         return web.sendtemplate(
             'helptopics',
-            topics=topics,
-            earlycommands=earlycommands,
-            othercommands=othercommands,
+            topics=templateutil.mappinggenerator(topics),
+            earlycommands=templateutil.mappinggenerator(earlycommands),
+            othercommands=templateutil.mappinggenerator(othercommands),
             title='Index')
 
     # Render an index of sub-topics.
@@ -1463,7 +1446,7 @@ def help(web):
 
         return web.sendtemplate(
             'helptopics',
-            topics=topics,
+            topics=templateutil.mappinglist(topics),
             title=topicname,
             subindex=True)
 

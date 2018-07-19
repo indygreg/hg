@@ -11,7 +11,6 @@ import contextlib
 import os
 import re
 import shutil
-import tempfile
 
 from .i18n import _
 from .node import nullid, short
@@ -114,7 +113,15 @@ class absentfilectx(object):
 def _findtool(ui, tool):
     if tool in internals:
         return tool
+    cmd = _toolstr(ui, tool, "executable", tool)
+    if cmd.startswith('python:'):
+        return cmd
     return findexternaltool(ui, tool)
+
+def _quotetoolpath(cmd):
+    if cmd.startswith('python:'):
+        return cmd
+    return procutil.shellquote(cmd)
 
 def findexternaltool(ui, tool):
     for kn in ("regkey", "regkeyalt"):
@@ -165,7 +172,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
             return ":prompt", None
         else:
             if toolpath:
-                return (force, procutil.shellquote(toolpath))
+                return (force, _quotetoolpath(toolpath))
             else:
                 # mimic HGMERGE if given tool not found
                 return (force, force)
@@ -183,7 +190,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
         mf = match.match(repo.root, '', [pat])
         if mf(path) and check(tool, pat, symlink, False, changedelete):
             toolpath = _findtool(ui, tool)
-            return (tool, procutil.shellquote(toolpath))
+            return (tool, _quotetoolpath(toolpath))
 
     # then merge tools
     tools = {}
@@ -208,7 +215,7 @@ def _picktool(repo, ui, path, binary, symlink, changedelete):
     for p, t in tools:
         if check(t, None, symlink, binary, changedelete):
             toolpath = _findtool(ui, t)
-            return (t, procutil.shellquote(toolpath))
+            return (t, _quotetoolpath(toolpath))
 
     # internal merge or prompt as last resort
     if symlink or binary or changedelete:
@@ -325,7 +332,7 @@ def _underlyingfctxifabsent(filectx):
         return filectx
 
 def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
-    tool, toolpath, binary, symlink = toolconf
+    tool, toolpath, binary, symlink, scriptfn = toolconf
     if symlink or fcd.isabsent() or fco.isabsent():
         return 1
     unused, unused, unused, back = files
@@ -361,7 +368,7 @@ def _premerge(repo, fcd, fco, fca, toolconf, files, labels=None):
     return 1 # continue merging
 
 def _mergecheck(repo, mynode, orig, fcd, fco, fca, toolconf):
-    tool, toolpath, binary, symlink = toolconf
+    tool, toolpath, binary, symlink, scriptfn = toolconf
     if symlink:
         repo.ui.warn(_('warning: internal %s cannot merge symlinks '
                        'for %s\n') % (tool, fcd.path()))
@@ -430,7 +437,7 @@ def _imergeauto(repo, mynode, orig, fcd, fco, fca, toolconf, files,
     Generic driver for _imergelocal and _imergeother
     """
     assert localorother is not None
-    tool, toolpath, binary, symlink = toolconf
+    tool, toolpath, binary, symlink, scriptfn = toolconf
     r = simplemerge.simplemerge(repo.ui, fcd, fca, fco, label=labels,
                                 localorother=localorother)
     return True, r
@@ -510,7 +517,7 @@ def _xmergeimm(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
                                             'external merge tools')
 
 def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
-    tool, toolpath, binary, symlink = toolconf
+    tool, toolpath, binary, symlink, scriptfn = toolconf
     if fcd.isabsent() or fco.isabsent():
         repo.ui.warn(_('warning: %s cannot merge change/delete conflict '
                        'for %s\n') % (tool, fcd.path()))
@@ -551,12 +558,36 @@ def _xmerge(repo, mynode, orig, fcd, fco, fca, toolconf, files, labels=None):
         args = util.interpolate(
             br'\$', replace, args,
             lambda s: procutil.shellquote(util.localpath(s)))
-        cmd = toolpath + ' ' + args
         if _toolbool(ui, tool, "gui"):
             repo.ui.status(_('running merge tool %s for file %s\n') %
                            (tool, fcd.path()))
-        repo.ui.debug('launching merge tool: %s\n' % cmd)
-        r = ui.system(cmd, cwd=repo.root, environ=env, blockedtag='mergetool')
+        if scriptfn is None:
+            cmd = toolpath + ' ' + args
+            repo.ui.debug('launching merge tool: %s\n' % cmd)
+            r = ui.system(cmd, cwd=repo.root, environ=env,
+                          blockedtag='mergetool')
+        else:
+            repo.ui.debug('launching python merge script: %s:%s\n' %
+                          (toolpath, scriptfn))
+            r = 0
+            try:
+                # avoid cycle cmdutil->merge->filemerge->extensions->cmdutil
+                from . import extensions
+                mod = extensions.loadpath(toolpath, 'hgmerge.%s' % tool)
+            except Exception:
+                raise error.Abort(_("loading python merge script failed: %s") %
+                                  toolpath)
+            mergefn = getattr(mod, scriptfn, None)
+            if mergefn is None:
+                raise error.Abort(_("%s does not have function: %s") %
+                                  (toolpath, scriptfn))
+            argslist = procutil.shellsplit(args)
+            # avoid cycle cmdutil->merge->filemerge->hook->extensions->cmdutil
+            from . import hook
+            ret, raised = hook.pythonhook(ui, repo, "merge", toolpath,
+                                          mergefn, {'args': argslist}, True)
+            if raised:
+                r = 1
         repo.ui.debug('merge tool returned: %d\n' % r)
         return True, r, False
 
@@ -681,7 +712,7 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
     tmproot = None
     tmprootprefix = repo.ui.config('experimental', 'mergetempdirprefix')
     if tmprootprefix:
-        tmproot = tempfile.mkdtemp(prefix=tmprootprefix)
+        tmproot = pycompat.mkdtemp(prefix=tmprootprefix)
 
     def maketempfrompath(prefix, path):
         fullbase, ext = os.path.splitext(path)
@@ -692,7 +723,7 @@ def _maketempfiles(repo, fco, fca, localpath, uselocalpath):
                 name += ext
             f = open(name, r"wb")
         else:
-            fd, name = tempfile.mkstemp(prefix=pre + '.', suffix=ext)
+            fd, name = pycompat.mkstemp(prefix=pre + '.', suffix=ext)
             f = os.fdopen(fd, r"wb")
         return f, name
 
@@ -751,9 +782,24 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
     symlink = 'l' in fcd.flags() + fco.flags()
     changedelete = fcd.isabsent() or fco.isabsent()
     tool, toolpath = _picktool(repo, ui, fd, binary, symlink, changedelete)
+    scriptfn = None
     if tool in internals and tool.startswith('internal:'):
         # normalize to new-style names (':merge' etc)
         tool = tool[len('internal'):]
+    if toolpath and toolpath.startswith('python:'):
+        invalidsyntax = False
+        if toolpath.count(':') >= 2:
+            script, scriptfn = toolpath[7:].rsplit(':', 1)
+            if not scriptfn:
+                invalidsyntax = True
+            # missing :callable can lead to spliting on windows drive letter
+            if '\\' in scriptfn or '/' in scriptfn:
+                invalidsyntax = True
+        else:
+            invalidsyntax = True
+        if invalidsyntax:
+            raise error.Abort(_("invalid 'python:' syntax: %s") % toolpath)
+        toolpath = script
     ui.debug("picked tool '%s' for %s (binary %s symlink %s changedelete %s)\n"
              % (tool, fd, pycompat.bytestr(binary), pycompat.bytestr(symlink),
                     pycompat.bytestr(changedelete)))
@@ -774,7 +820,7 @@ def _filemerge(premerge, repo, wctx, mynode, orig, fcd, fco, fca, labels=None):
         precheck = None
         isexternal = True
 
-    toolconf = tool, toolpath, binary, symlink
+    toolconf = tool, toolpath, binary, symlink, scriptfn
 
     if mergetype == nomerge:
         r, deleted = func(repo, mynode, orig, fcd, fco, fca, toolconf, labels)

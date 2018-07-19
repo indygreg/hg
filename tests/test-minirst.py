@@ -1,11 +1,13 @@
 from __future__ import absolute_import, print_function
-import pprint
 from mercurial import (
     minirst,
 )
+from mercurial.utils import (
+    stringutil,
+)
 
 def debugformat(text, form, **kwargs):
-    if form == 'html':
+    if form == b'html':
         print("html format:")
         out = minirst.format(text, style=form, **kwargs)
     else:
@@ -14,11 +16,11 @@ def debugformat(text, form, **kwargs):
 
     print("-" * 70)
     if type(out) == tuple:
-        print(out[0][:-1])
+        print(out[0][:-1].decode('utf8'))
         print("-" * 70)
-        pprint.pprint(out[1])
+        print(stringutil.pprint(out[1]).decode('utf8'))
     else:
-        print(out[:-1])
+        print(out[:-1].decode('utf8'))
     print("-" * 70)
     print()
 
@@ -26,7 +28,7 @@ def debugformats(title, text, **kwargs):
     print("== %s ==" % title)
     debugformat(text, 60, **kwargs)
     debugformat(text, 30, **kwargs)
-    debugformat(text, 'html', **kwargs)
+    debugformat(text, b'html', **kwargs)
 
 paragraphs = b"""
 This is some text in the first paragraph.
@@ -37,7 +39,7 @@ This is some text in the first paragraph.
  \n  \n   \nThe third and final paragraph.
 """
 
-debugformats(b'paragraphs', paragraphs)
+debugformats('paragraphs', paragraphs)
 
 definitions = b"""
 A Term
@@ -52,7 +54,7 @@ Another Term
     Definition.
 """
 
-debugformats(b'definitions', definitions)
+debugformats('definitions', definitions)
 
 literals = br"""
 The fully minimized form is the most
@@ -76,7 +78,7 @@ simply ends with space-double-colon. ::
       with '::' disappears in the final output.
 """
 
-debugformats(b'literals', literals)
+debugformats('literals', literals)
 
 lists = b"""
 - This is the first list item.
@@ -127,7 +129,7 @@ Bullet lists are also detected:
 * This is the third bullet
 """
 
-debugformats(b'lists', lists)
+debugformats('lists', lists)
 
 options = b"""
 There is support for simple option lists,
@@ -153,7 +155,7 @@ marker after the option. It is treated as a normal paragraph:
 --foo bar baz
 """
 
-debugformats(b'options', options)
+debugformats('options', options)
 
 fields = b"""
 :a: First item.
@@ -166,7 +168,7 @@ Next list:
 :much too large: This key is big enough to get its own line.
 """
 
-debugformats(b'fields', fields)
+debugformats('fields', fields)
 
 containers = b"""
 Normal output.
@@ -184,14 +186,14 @@ Normal output.
       Debug output.
 """
 
-debugformats(b'containers (normal)', containers)
-debugformats(b'containers (verbose)', containers, keep=['verbose'])
-debugformats(b'containers (debug)', containers, keep=['debug'])
-debugformats(b'containers (verbose debug)', containers,
-            keep=['verbose', 'debug'])
+debugformats('containers (normal)', containers)
+debugformats('containers (verbose)', containers, keep=[b'verbose'])
+debugformats('containers (debug)', containers, keep=[b'debug'])
+debugformats('containers (verbose debug)', containers,
+            keep=[b'verbose', b'debug'])
 
 roles = b"""Please see :hg:`add`."""
-debugformats(b'roles', roles)
+debugformats('roles', roles)
 
 
 sections = b"""
@@ -207,7 +209,7 @@ Subsection
 Markup: ``foo`` and :hg:`help`
 ------------------------------
 """
-debugformats(b'sections', sections)
+debugformats('sections', sections)
 
 
 admonitions = b"""
@@ -225,7 +227,7 @@ admonitions = b"""
    This is danger
 """
 
-debugformats(b'admonitions', admonitions)
+debugformats('admonitions', admonitions)
 
 comments = b"""
 Some text.
@@ -241,7 +243,7 @@ Some text.
 Empty comment above
 """
 
-debugformats(b'comments', comments)
+debugformats('comments', comments)
 
 
 data = [[b'a', b'b', b'c'],
@@ -251,9 +253,9 @@ data = [[b'a', b'b', b'c'],
 rst = minirst.maketable(data, 2, True)
 table = b''.join(rst)
 
-print(table)
+print(table.decode('utf8'))
 
-debugformats(b'table', table)
+debugformats('table', table)
 
 data = [[b's', b'long', b'line\ngoes on here'],
         [b'', b'xy', b'tried to fix here\n        by indenting']]
@@ -261,7 +263,6 @@ data = [[b's', b'long', b'line\ngoes on here'],
 rst = minirst.maketable(data, 1, False)
 table = b''.join(rst)
 
-print(table)
+print(table.decode('utf8'))
 
-debugformats(b'table+nl', table)
-
+debugformats('table+nl', table)

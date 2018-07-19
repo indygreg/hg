@@ -12,6 +12,7 @@ import re
 from .i18n import _
 from .node import (
     bin,
+    wdirid,
 )
 from . import (
     color,
@@ -19,7 +20,6 @@ from . import (
     error,
     minirst,
     obsutil,
-    pycompat,
     registrar,
     revset as revsetmod,
     revsetlang,
@@ -35,6 +35,7 @@ from .utils import (
 )
 
 evalrawexp = templateutil.evalrawexp
+evalwrapped = templateutil.evalwrapped
 evalfuncarg = templateutil.evalfuncarg
 evalboolean = templateutil.evalboolean
 evaldate = templateutil.evaldate
@@ -84,7 +85,7 @@ def dict_(context, mapping, args):
                 for k, v in args['kwargs'].iteritems())
     return templateutil.hybriddict(data)
 
-@templatefunc('diff([includepattern [, excludepattern]])')
+@templatefunc('diff([includepattern [, excludepattern]])', requires={'ctx'})
 def diff(context, mapping, args):
     """Show a diff, optionally
     specifying files to include or exclude."""
@@ -104,7 +105,7 @@ def diff(context, mapping, args):
 
     return ''.join(chunks)
 
-@templatefunc('extdata(source)', argspec='source')
+@templatefunc('extdata(source)', argspec='source', requires={'ctx', 'cache'})
 def extdata(context, mapping, args):
     """Show a text read from the specified extdata source. (EXPERIMENTAL)"""
     if 'source' not in args:
@@ -112,6 +113,13 @@ def extdata(context, mapping, args):
         raise error.ParseError(_('extdata expects one argument'))
 
     source = evalstring(context, mapping, args['source'])
+    if not source:
+        sym = templateutil.findsymbolicname(args['source'])
+        if sym:
+            raise error.ParseError(_('empty data source specified'),
+                                   hint=_("did you mean extdata('%s')?") % sym)
+        else:
+            raise error.ParseError(_('empty data source specified'))
     cache = context.resource(mapping, 'cache').setdefault('extdata', {})
     ctx = context.resource(mapping, 'ctx')
     if source in cache:
@@ -120,7 +128,7 @@ def extdata(context, mapping, args):
         data = cache[source] = scmutil.extdatasource(ctx.repo(), source)
     return data.get(ctx.rev(), '')
 
-@templatefunc('files(pattern)')
+@templatefunc('files(pattern)', requires={'ctx'})
 def files(context, mapping, args):
     """All files of the current changeset matching the pattern. See
     :hg:`help patterns`."""
@@ -158,7 +166,26 @@ def fill(context, mapping, args):
 
     return templatefilters.fill(text, width, initindent, hangindent)
 
-@templatefunc('formatnode(node)')
+@templatefunc('filter(iterable[, expr])')
+def filter_(context, mapping, args):
+    """Remove empty elements from a list or a dict. If expr specified, it's
+    applied to each element to test emptiness."""
+    if not (1 <= len(args) <= 2):
+        # i18n: "filter" is a keyword
+        raise error.ParseError(_("filter expects one or two arguments"))
+    iterable = evalwrapped(context, mapping, args[0])
+    if len(args) == 1:
+        def select(w):
+            return w.tobool(context, mapping)
+    else:
+        def select(w):
+            if not isinstance(w, templateutil.mappable):
+                raise error.ParseError(_("not filterable by expression"))
+            lm = context.overlaymap(mapping, w.tomap(context))
+            return evalboolean(context, lm, args[1])
+    return iterable.filter(context, mapping, select)
+
+@templatefunc('formatnode(node)', requires={'ui'})
 def formatnode(context, mapping, args):
     """Obtain the preferred form of a changeset hash. (DEPRECATED)"""
     if len(args) != 1:
@@ -171,7 +198,7 @@ def formatnode(context, mapping, args):
         return node
     return templatefilters.short(node)
 
-@templatefunc('mailmap(author)')
+@templatefunc('mailmap(author)', requires={'repo', 'cache'})
 def mailmap(context, mapping, args):
     """Return the author, updated according to the value
     set in the .mailmap file"""
@@ -252,13 +279,14 @@ def get(context, mapping, args):
         # i18n: "get" is a keyword
         raise error.ParseError(_("get() expects two arguments"))
 
-    dictarg = evalfuncarg(context, mapping, args[0])
-    if not util.safehasattr(dictarg, 'get'):
+    dictarg = evalwrapped(context, mapping, args[0])
+    key = evalrawexp(context, mapping, args[1])
+    try:
+        return dictarg.getmember(context, mapping, key)
+    except error.ParseError as err:
         # i18n: "get" is a keyword
-        raise error.ParseError(_("get() expects a dict as first argument"))
-
-    key = evalfuncarg(context, mapping, args[1])
-    return templateutil.getdictitem(dictarg, key)
+        hint = _("get() expects a dict as first argument")
+        raise error.ParseError(bytes(err), hint=hint)
 
 @templatefunc('if(expr, then[, else])')
 def if_(context, mapping, args):
@@ -282,13 +310,10 @@ def ifcontains(context, mapping, args):
         # i18n: "ifcontains" is a keyword
         raise error.ParseError(_("ifcontains expects three or four arguments"))
 
-    haystack = evalfuncarg(context, mapping, args[1])
-    keytype = getattr(haystack, 'keytype', None)
+    haystack = evalwrapped(context, mapping, args[1])
     try:
         needle = evalrawexp(context, mapping, args[0])
-        needle = templateutil.unwrapastype(context, mapping, needle,
-                                           keytype or bytes)
-        found = (needle in haystack)
+        found = haystack.contains(context, mapping, needle)
     except error.ParseError:
         found = False
 
@@ -319,18 +344,13 @@ def join(context, mapping, args):
         # i18n: "join" is a keyword
         raise error.ParseError(_("join expects one or two arguments"))
 
-    joinset = evalrawexp(context, mapping, args[0])
+    joinset = evalwrapped(context, mapping, args[0])
     joiner = " "
     if len(args) > 1:
         joiner = evalstring(context, mapping, args[1])
-    if isinstance(joinset, templateutil.wrapped):
-        return joinset.join(context, mapping, joiner)
-    # TODO: perhaps a generator should be stringify()-ed here, but we can't
-    # because hgweb abuses it as a keyword that returns a list of dicts.
-    joinset = templateutil.unwrapvalue(context, mapping, joinset)
-    return templateutil.joinitems(pycompat.maybebytestr(joinset), joiner)
+    return joinset.join(context, mapping, joiner)
 
-@templatefunc('label(label, expr)')
+@templatefunc('label(label, expr)', requires={'ui'})
 def label(context, mapping, args):
     """Apply a label to generated content. Content with
     a label applied can result in additional post-processing, such as
@@ -352,7 +372,9 @@ def latesttag(context, mapping, args):
     """The global tags matching the given pattern on the
     most recent globally tagged ancestor of this changeset.
     If no such tags exist, the "{tag}" template resolves to
-    the string "null"."""
+    the string "null". See :hg:`help revisions.patterns` for the pattern
+    syntax.
+    """
     if len(args) > 1:
         # i18n: "latesttag" is a keyword
         raise error.ParseError(_("latesttag expects at most one argument"))
@@ -388,7 +410,7 @@ def localdate(context, mapping, args):
                 raise error.ParseError(_("localdate expects a timezone"))
     else:
         tzoffset = dateutil.makedate()[1]
-    return (date[0], tzoffset)
+    return templateutil.date((date[0], tzoffset))
 
 @templatefunc('max(iterable)')
 def max_(context, mapping, args, **kwargs):
@@ -397,13 +419,13 @@ def max_(context, mapping, args, **kwargs):
         # i18n: "max" is a keyword
         raise error.ParseError(_("max expects one argument"))
 
-    iterable = evalfuncarg(context, mapping, args[0])
+    iterable = evalwrapped(context, mapping, args[0])
     try:
-        x = max(pycompat.maybebytestr(iterable))
-    except (TypeError, ValueError):
+        return iterable.getmax(context, mapping)
+    except error.ParseError as err:
         # i18n: "max" is a keyword
-        raise error.ParseError(_("max first argument should be an iterable"))
-    return templateutil.wraphybridvalue(iterable, x, x)
+        hint = _("max first argument should be an iterable")
+        raise error.ParseError(bytes(err), hint=hint)
 
 @templatefunc('min(iterable)')
 def min_(context, mapping, args, **kwargs):
@@ -412,13 +434,13 @@ def min_(context, mapping, args, **kwargs):
         # i18n: "min" is a keyword
         raise error.ParseError(_("min expects one argument"))
 
-    iterable = evalfuncarg(context, mapping, args[0])
+    iterable = evalwrapped(context, mapping, args[0])
     try:
-        x = min(pycompat.maybebytestr(iterable))
-    except (TypeError, ValueError):
+        return iterable.getmin(context, mapping)
+    except error.ParseError as err:
         # i18n: "min" is a keyword
-        raise error.ParseError(_("min first argument should be an iterable"))
-    return templateutil.wraphybridvalue(iterable, x, x)
+        hint = _("min first argument should be an iterable")
+        raise error.ParseError(bytes(err), hint=hint)
 
 @templatefunc('mod(a, b)')
 def mod(context, mapping, args):
@@ -458,6 +480,7 @@ def obsfatedate(context, mapping, args):
     markers = evalfuncarg(context, mapping, args[0])
 
     try:
+        # TODO: maybe this has to be a wrapped list of date wrappers?
         data = obsutil.markersdates(markers)
         return templateutil.hybridlist(data, name='date', fmt='%d %d')
     except (TypeError, KeyError):
@@ -500,7 +523,7 @@ def obsfateverb(context, mapping, args):
         errmsg = _("obsfateverb first argument should be countable")
         raise error.ParseError(errmsg)
 
-@templatefunc('relpath(path)')
+@templatefunc('relpath(path)', requires={'repo'})
 def relpath(context, mapping, args):
     """Convert a repository-absolute path into a filesystem path relative to
     the current working directory."""
@@ -508,11 +531,11 @@ def relpath(context, mapping, args):
         # i18n: "relpath" is a keyword
         raise error.ParseError(_("relpath expects one argument"))
 
-    repo = context.resource(mapping, 'ctx').repo()
+    repo = context.resource(mapping, 'repo')
     path = evalstring(context, mapping, args[0])
     return repo.pathto(path)
 
-@templatefunc('revset(query[, formatargs...])')
+@templatefunc('revset(query[, formatargs...])', requires={'repo', 'cache'})
 def revset(context, mapping, args):
     """Execute a revision set query. See
     :hg:`help revset`."""
@@ -521,8 +544,7 @@ def revset(context, mapping, args):
         raise error.ParseError(_("revset expects one or more arguments"))
 
     raw = evalstring(context, mapping, args[0])
-    ctx = context.resource(mapping, 'ctx')
-    repo = ctx.repo()
+    repo = context.resource(mapping, 'repo')
 
     def query(expr):
         m = revsetmod.match(repo.ui, expr, lookup=revsetmod.lookupfn(repo))
@@ -574,7 +596,7 @@ def separate(context, mapping, args):
             yield sep
         yield argstr
 
-@templatefunc('shortest(node, minlength=4)')
+@templatefunc('shortest(node, minlength=4)', requires={'repo'})
 def shortest(context, mapping, args):
     """Obtain the shortest representation of
     a node."""
@@ -590,7 +612,7 @@ def shortest(context, mapping, args):
                                 # i18n: "shortest" is a keyword
                                 _("shortest() expects an integer minlength"))
 
-    repo = context.resource(mapping, 'ctx')._repo
+    repo = context.resource(mapping, 'repo')
     if len(hexnode) > 40:
         return hexnode
     elif len(hexnode) == 40:
@@ -601,11 +623,16 @@ def shortest(context, mapping, args):
     else:
         try:
             node = scmutil.resolvehexnodeidprefix(repo, hexnode)
-        except (error.LookupError, error.WdirUnsupported):
+        except error.WdirUnsupported:
+            node = wdirid
+        except error.LookupError:
             return hexnode
         if not node:
             return hexnode
-    return scmutil.shortesthexnodeidprefix(repo, node, minlength)
+    try:
+        return scmutil.shortesthexnodeidprefix(repo, node, minlength)
+    except error.RepoLookupError:
+        return hexnode
 
 @templatefunc('strip(text[, chars])')
 def strip(context, mapping, args):

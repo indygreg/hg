@@ -516,11 +516,33 @@ the bookmark (issue4015)
   $ hg bookmarks
    * bm                        5:ff252e8273df
 
+Test that we abort before we warn about the hidden commit if the working
+directory is dirty
+  $ echo conflict > a
+  $ hg up --hidden 3
+  abort: uncommitted changes
+  (commit or update --clean to discard changes)
+  [255]
+
+Test that we still warn also when there are conflicts
+  $ hg up -m --hidden 3
+  merging a
+  warning: conflicts while merging a! (edit, then use 'hg resolve --mark')
+  0 files updated, 0 files merged, 0 files removed, 1 files unresolved
+  use 'hg resolve' to retry unresolved file merges
+  (leaving bookmark bm)
+  updated to hidden changeset 6efa171f091b
+  (hidden revision '6efa171f091b' was rewritten as: d047485b3896)
+  [1]
+  $ hg revert -r . a
+  $ hg resolve -m
+  (no more unresolved files)
+
 Test that 4 is detected as the no-argument destination from 3 and also moves
 the bookmark with it
   $ hg up --quiet 0          # we should be able to update to 3 directly
   $ hg up --quiet --hidden 3 # but not implemented yet.
-  updating to a hidden changeset 6efa171f091b
+  updated to hidden changeset 6efa171f091b
   (hidden revision '6efa171f091b' was rewritten as: d047485b3896)
   $ hg book -f bm
   $ hg up
@@ -532,7 +554,7 @@ the bookmark with it
 Test that 5 is detected as a valid destination from 1
   $ hg up --quiet 0          # we should be able to update to 3 directly
   $ hg up --quiet --hidden 3 # but not implemented yet.
-  updating to a hidden changeset 6efa171f091b
+  updated to hidden changeset 6efa171f091b
   (hidden revision '6efa171f091b' was rewritten as: d047485b3896)
   $ hg up 5
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved

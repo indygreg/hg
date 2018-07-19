@@ -120,6 +120,49 @@ test churn with globs
   python hash seed: * (glob)
   [1]
 
+test how multiple globs gets matched with lines in output
+  $ cat > test-failure-globs.t <<EOF
+  >   $ echo "context"; echo "context"; \
+  >     echo "key: 1"; echo "value: not a"; \
+  >     echo "key: 2"; echo "value: not b"; \
+  >     echo "key: 3"; echo "value: c"; \
+  >     echo "key: 4"; echo "value: d"
+  >   context
+  >   context
+  >   key: 1
+  >   value: a
+  >   key: 2
+  >   value: b
+  >   key: 3
+  >   value: * (glob)
+  >   key: 4
+  >   value: * (glob)
+  > EOF
+  $ rt test-failure-globs.t
+  
+  --- $TESTTMP/test-failure-globs.t
+  +++ $TESTTMP/test-failure-globs.t.err
+  @@ -2,9 +2,9 @@
+     context
+     context
+     key: 1
+  -  value: a
+  +  value: not a
+     key: 2
+  -  value: b
+  +  value: not b
+     key: 3
+     value: * (glob)
+     key: 4
+  
+  ERROR: test-failure-globs.t output changed
+  !
+  Failed test-failure-globs.t: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+  $ rm test-failure-globs.t
+
 test diff colorisation
 
 #if no-windows pygments
@@ -374,6 +417,7 @@ test --xunit support
 
   $ cat .testtimes
   test-empty.t * (glob)
+  test-failure-globs.t * (glob)
   test-failure-unicode.t * (glob)
   test-failure.t * (glob)
   test-success.t * (glob)
@@ -574,7 +618,6 @@ HGRCPATH to get a clean environment.
   # Ran 1 tests, 0 skipped, 0 failed.
   $ rm test-serve-inuse.t
   $ killdaemons.py $DAEMON_PIDS
-  $ rm $DAEMON_PIDS
 
 Running In Debug Mode
 ======================
@@ -1203,6 +1246,17 @@ Test globbing of local IP addresses
   $ echo dead:beef::1
   $LOCALIP (glob)
 
+Add support for external test formatter
+=======================================
+
+  $ CUSTOM_TEST_RESULT=basic_test_result $PYTHON $TESTDIR/run-tests.py --with-hg=`which hg` "$@" test-success.t test-failure.t
+  
+  # Ran 2 tests, 0 skipped, 0 failed.
+  ON_START! <__main__.TestSuite tests=[<__main__.TTest testMethod=test-failure.t>, <__main__.TTest testMethod=test-success.t>]>
+  FAILURE! test-failure.t output changed
+  SUCCESS! test-success.t
+  ON_END!
+
 Test reusability for third party tools
 ======================================
 
@@ -1497,9 +1551,9 @@ Test cases in .t files
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !.
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 3 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
@@ -1520,9 +1574,9 @@ Test cases in .t files
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !.
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 2 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
@@ -1545,9 +1599,9 @@ Test cases in .t files
      $ [ $V = C ]
    #endif
   
-  ERROR: test-cases-abc.t (case B) output changed
+  ERROR: test-cases-abc.t#B output changed
   !.
-  Failed test-cases-abc.t (case B): output changed
+  Failed test-cases-abc.t#B: output changed
   # Ran 2 tests, 0 skipped, 1 failed.
   python hash seed: * (glob)
   [1]
@@ -1572,7 +1626,152 @@ Test TESTCASE variable
   ..
   # Ran 2 tests, 0 skipped, 0 failed.
 
+Support running a specific test case
+
+  $ rt "test-cases-abc.t#B"
+  
+  --- $TESTTMP/anothertests/cases/test-cases-abc.t
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  @@ -7,7 +7,7 @@
+     $ V=C
+   #endif
+     $ echo $V | sed 's/A/C/'
+  -  C
+  +  B
+   #if C
+     $ [ $V = C ]
+   #endif
+  
+  ERROR: test-cases-abc.t#B output changed
+  !
+  Failed test-cases-abc.t#B: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+
+Support running multiple test cases in the same file
+
+  $ rt test-cases-abc.t#B test-cases-abc.t#C
+  
+  --- $TESTTMP/anothertests/cases/test-cases-abc.t
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  @@ -7,7 +7,7 @@
+     $ V=C
+   #endif
+     $ echo $V | sed 's/A/C/'
+  -  C
+  +  B
+   #if C
+     $ [ $V = C ]
+   #endif
+  
+  ERROR: test-cases-abc.t#B output changed
+  !.
+  Failed test-cases-abc.t#B: output changed
+  # Ran 2 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+
+Support ignoring invalid test cases
+
+  $ rt test-cases-abc.t#B test-cases-abc.t#D
+  
+  --- $TESTTMP/anothertests/cases/test-cases-abc.t
+  +++ $TESTTMP/anothertests/cases/test-cases-abc.t.B.err
+  @@ -7,7 +7,7 @@
+     $ V=C
+   #endif
+     $ echo $V | sed 's/A/C/'
+  -  C
+  +  B
+   #if C
+     $ [ $V = C ]
+   #endif
+  
+  ERROR: test-cases-abc.t#B output changed
+  !
+  Failed test-cases-abc.t#B: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+
+Support running complex test cases names
+
+  $ cat > test-cases-advanced-cases.t <<'EOF'
+  > #testcases simple case-with-dashes casewith_-.chars
+  >   $ echo $TESTCASE
+  >   simple
+  > EOF
+
+  $ cat test-cases-advanced-cases.t
+  #testcases simple case-with-dashes casewith_-.chars
+    $ echo $TESTCASE
+    simple
+
+  $ rt test-cases-advanced-cases.t
+  
+  --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.case-with-dashes.err
+  @@ -1,3 +1,3 @@
+   #testcases simple case-with-dashes casewith_-.chars
+     $ echo $TESTCASE
+  -  simple
+  +  case-with-dashes
+  
+  ERROR: test-cases-advanced-cases.t#case-with-dashes output changed
+  !
+  --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith_-.chars.err
+  @@ -1,3 +1,3 @@
+   #testcases simple case-with-dashes casewith_-.chars
+     $ echo $TESTCASE
+  -  simple
+  +  casewith_-.chars
+  
+  ERROR: test-cases-advanced-cases.t#casewith_-.chars output changed
+  !.
+  Failed test-cases-advanced-cases.t#case-with-dashes: output changed
+  Failed test-cases-advanced-cases.t#casewith_-.chars: output changed
+  # Ran 3 tests, 0 skipped, 2 failed.
+  python hash seed: * (glob)
+  [1]
+
+  $ rt "test-cases-advanced-cases.t#case-with-dashes"
+  
+  --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.case-with-dashes.err
+  @@ -1,3 +1,3 @@
+   #testcases simple case-with-dashes casewith_-.chars
+     $ echo $TESTCASE
+  -  simple
+  +  case-with-dashes
+  
+  ERROR: test-cases-advanced-cases.t#case-with-dashes output changed
+  !
+  Failed test-cases-advanced-cases.t#case-with-dashes: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+
+  $ rt "test-cases-advanced-cases.t#casewith_-.chars"
+  
+  --- $TESTTMP/anothertests/cases/test-cases-advanced-cases.t
+  +++ $TESTTMP/anothertests/cases/test-cases-advanced-cases.t.casewith_-.chars.err
+  @@ -1,3 +1,3 @@
+   #testcases simple case-with-dashes casewith_-.chars
+     $ echo $TESTCASE
+  -  simple
+  +  casewith_-.chars
+  
+  ERROR: test-cases-advanced-cases.t#casewith_-.chars output changed
+  !
+  Failed test-cases-advanced-cases.t#casewith_-.chars: output changed
+  # Ran 1 tests, 0 skipped, 1 failed.
+  python hash seed: * (glob)
+  [1]
+
 Test automatic pattern replacement
+==================================
 
   $ cat << EOF >> common-pattern.py
   > substitutions = [

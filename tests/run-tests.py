@@ -120,7 +120,7 @@ if pygmentspresent:
         }
 
     class TestRunnerLexer(lexer.RegexLexer):
-        testpattern = r'[\w-]+\.(t|py)( \(case [\w-]+\))?'
+        testpattern = r'[\w-]+\.(t|py)(#[a-zA-Z0-9_\-\.]+)?'
         tokens = {
             'root': [
                 (r'^Skipped', token.Generic.Skipped, 'skipped'),
@@ -1247,7 +1247,7 @@ class TTest(Test):
         self._allcases = parsettestcases(path)
         super(TTest, self).__init__(path, *args, **kwds)
         if case:
-            self.name = '%s (case %s)' % (self.name, _strpath(case))
+            self.name = '%s#%s' % (self.name, _strpath(case))
             self.errpath = b'%s.%s.err' % (self.errpath[:-4], case)
             self._tmpname += b'-%s' % case
         self._have = {}
@@ -1480,20 +1480,17 @@ class TTest(Test):
                 if expected.get(pos, None):
                     els = expected[pos]
 
-                i = 0
                 optional = []
-                while i < len(els):
-                    el = els[i]
-
-                    r = self.linematch(el, lout)
+                for i, el in enumerate(els):
+                    r = False
+                    if el:
+                        r, exact = self.linematch(el, lout)
                     if isinstance(r, str):
                         if r == '-glob':
                             lout = ''.join(el.rsplit(' (glob)', 1))
                             r = '' # Warn only this line.
                         elif r == "retry":
                             postout.append(b'  ' + el)
-                            els.pop(i)
-                            break
                         else:
                             log('\ninfo, unknown linematch result: %r\n' % r)
                             r = False
@@ -1511,8 +1508,11 @@ class TTest(Test):
 
                                 if not self._iftest(conditions):
                                     optional.append(i)
-
-                    i += 1
+                        if exact:
+                            # Don't allow line to be matches against a later
+                            # line in the output
+                            els.pop(i)
+                            break
 
                 if r:
                     if r == "retry":
@@ -1612,42 +1612,41 @@ class TTest(Test):
         return TTest.rematch(res, l)
 
     def linematch(self, el, l):
-        retry = False
         if el == l: # perfect match (fast)
-            return True
-        if el:
-            if el.endswith(b" (?)\n"):
-                retry = "retry"
-                el = el[:-5] + b"\n"
+            return True, True
+        retry = False
+        if el.endswith(b" (?)\n"):
+            retry = "retry"
+            el = el[:-5] + b"\n"
+        else:
+            m = optline.match(el)
+            if m:
+                conditions = [c for c in m.group(2).split(b' ')]
+
+                el = m.group(1) + b"\n"
+                if not self._iftest(conditions):
+                    retry = "retry"    # Not required by listed features
+
+        if el.endswith(b" (esc)\n"):
+            if PYTHON3:
+                el = el[:-7].decode('unicode_escape') + '\n'
+                el = el.encode('utf-8')
             else:
-                m = optline.match(el)
-                if m:
-                    conditions = [c for c in m.group(2).split(b' ')]
-
-                    el = m.group(1) + b"\n"
-                    if not self._iftest(conditions):
-                        retry = "retry"    # Not required by listed features
-
-            if el.endswith(b" (esc)\n"):
-                if PYTHON3:
-                    el = el[:-7].decode('unicode_escape') + '\n'
-                    el = el.encode('utf-8')
-                else:
-                    el = el[:-7].decode('string-escape') + '\n'
-            if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:
-                return True
-            if el.endswith(b" (re)\n"):
-                return TTest.rematch(el[:-6], l) or retry
-            if el.endswith(b" (glob)\n"):
-                # ignore '(glob)' added to l by 'replacements'
-                if l.endswith(b" (glob)\n"):
-                    l = l[:-8] + b"\n"
-                return TTest.globmatch(el[:-8], l) or retry
-            if os.altsep:
-                _l = l.replace(b'\\', b'/')
-                if el == _l or os.name == 'nt' and el[:-1] + b'\r\n' == _l:
-                    return True
-        return retry
+                el = el[:-7].decode('string-escape') + '\n'
+        if el == l or os.name == 'nt' and el[:-1] + b'\r\n' == l:
+            return True, True
+        if el.endswith(b" (re)\n"):
+            return (TTest.rematch(el[:-6], l) or retry), False
+        if el.endswith(b" (glob)\n"):
+            # ignore '(glob)' added to l by 'replacements'
+            if l.endswith(b" (glob)\n"):
+                l = l[:-8] + b"\n"
+            return (TTest.globmatch(el[:-8], l) or retry), False
+        if os.altsep:
+            _l = l.replace(b'\\', b'/')
+            if el == _l or os.name == 'nt' and el[:-1] + b'\r\n' == _l:
+                return True, True
+        return retry, True
 
     @staticmethod
     def parsehghaveoutput(lines):
@@ -1710,6 +1709,14 @@ class TestResult(unittest._TextTestResult):
             self.color = False
         else: # 'always', for testing purposes
             self.color = pygmentspresent
+
+    def onStart(self, test):
+        """ Can be overriden by custom TestResult
+        """
+
+    def onEnd(self):
+        """ Can be overriden by custom TestResult
+        """
 
     def addFailure(self, test, reason):
         self.failures.append((test, reason))
@@ -1851,6 +1858,16 @@ class TestResult(unittest._TextTestResult):
             with iolock:
                 self.stream.writeln('INTERRUPTED: %s (after %d seconds)' % (
                     test.name, self.times[-1][3]))
+
+def getTestResult():
+    """
+    Returns the relevant test result
+    """
+    if "CUSTOM_TEST_RESULT" in os.environ:
+        testresultmodule = __import__(os.environ["CUSTOM_TEST_RESULT"])
+        return testresultmodule.TestResult
+    else:
+        return TestResult
 
 class TestSuite(unittest.TestSuite):
     """Custom unittest TestSuite that knows how to execute Mercurial tests."""
@@ -2090,71 +2107,74 @@ class TextTestRunner(unittest.TextTestRunner):
 
         self._runner = runner
 
+        self._result = getTestResult()(self._runner.options, self.stream,
+                                       self.descriptions, self.verbosity)
+
     def listtests(self, test):
-        result = TestResult(self._runner.options, self.stream,
-                            self.descriptions, 0)
         test = sorted(test, key=lambda t: t.name)
+
+        self._result.onStart(test)
+
         for t in test:
             print(t.name)
-            result.addSuccess(t)
+            self._result.addSuccess(t)
 
         if self._runner.options.xunit:
             with open(self._runner.options.xunit, "wb") as xuf:
-                self._writexunit(result, xuf)
+                self._writexunit(self._result, xuf)
 
         if self._runner.options.json:
             jsonpath = os.path.join(self._runner._outputdir, b'report.json')
             with open(jsonpath, 'w') as fp:
-                self._writejson(result, fp)
+                self._writejson(self._result, fp)
 
-        return result
+        return self._result
 
     def run(self, test):
-        result = TestResult(self._runner.options, self.stream,
-                            self.descriptions, self.verbosity)
+        self._result.onStart(test)
+        test(self._result)
 
-        test(result)
-
-        failed = len(result.failures)
-        skipped = len(result.skipped)
-        ignored = len(result.ignored)
+        failed = len(self._result.failures)
+        skipped = len(self._result.skipped)
+        ignored = len(self._result.ignored)
 
         with iolock:
             self.stream.writeln('')
 
             if not self._runner.options.noskips:
-                for test, msg in result.skipped:
+                for test, msg in self._result.skipped:
                     formatted = 'Skipped %s: %s\n' % (test.name, msg)
-                    self.stream.write(highlightmsg(formatted, result.color))
-            for test, msg in result.failures:
+                    msg = highlightmsg(formatted, self._result.color)
+                    self.stream.write(msg)
+            for test, msg in self._result.failures:
                 formatted = 'Failed %s: %s\n' % (test.name, msg)
-                self.stream.write(highlightmsg(formatted, result.color))
-            for test, msg in result.errors:
+                self.stream.write(highlightmsg(formatted, self._result.color))
+            for test, msg in self._result.errors:
                 self.stream.writeln('Errored %s: %s' % (test.name, msg))
 
             if self._runner.options.xunit:
                 with open(self._runner.options.xunit, "wb") as xuf:
-                    self._writexunit(result, xuf)
+                    self._writexunit(self._result, xuf)
 
             if self._runner.options.json:
                 jsonpath = os.path.join(self._runner._outputdir, b'report.json')
                 with open(jsonpath, 'w') as fp:
-                    self._writejson(result, fp)
+                    self._writejson(self._result, fp)
 
             self._runner._checkhglib('Tested')
 
-            savetimes(self._runner._outputdir, result)
+            savetimes(self._runner._outputdir, self._result)
 
             if failed and self._runner.options.known_good_rev:
-                self._bisecttests(t for t, m in result.failures)
+                self._bisecttests(t for t, m in self._result.failures)
             self.stream.writeln(
                 '# Ran %d tests, %d skipped, %d failed.'
-                % (result.testsRun, skipped + ignored, failed))
+                % (self._result.testsRun, skipped + ignored, failed))
             if failed:
                 self.stream.writeln('python hash seed: %s' %
                     os.environ['PYTHONHASHSEED'])
             if self._runner.options.time:
-                self.printtimes(result.times)
+                self.printtimes(self._result.times)
 
             if self._runner.options.exceptions:
                 exceptions = aggregateexceptions(
@@ -2177,7 +2197,7 @@ class TextTestRunner(unittest.TextTestRunner):
 
             self.stream.flush()
 
-        return result
+        return self._result
 
     def _bisecttests(self, tests):
         bisectcmd = ['hg', 'bisect']
@@ -2646,16 +2666,31 @@ class TestRunner(object):
                 expanded_args.append(arg)
         args = expanded_args
 
+        testcasepattern = re.compile(br'([\w-]+\.t|py)(#([a-zA-Z0-9_\-\.]+))')
         tests = []
         for t in args:
+            case = None
+
             if not (os.path.basename(t).startswith(b'test-')
                     and (t.endswith(b'.py') or t.endswith(b'.t'))):
-                continue
+
+                m = testcasepattern.match(t)
+                if m is not None:
+                    t, _, case = m.groups()
+                else:
+                    continue
+
             if t.endswith(b'.t'):
                 # .t file may contain multiple test cases
                 cases = sorted(parsettestcases(t))
                 if cases:
-                    tests += [{'path': t, 'case': c} for c in sorted(cases)]
+                    if case is not None and case in cases:
+                        tests += [{'path': t, 'case': case}]
+                    elif case is not None and case not in cases:
+                        # Ignore invalid cases
+                        pass
+                    else:
+                        tests += [{'path': t, 'case': c} for c in sorted(cases)]
                 else:
                     tests.append({'path': t})
             else:
@@ -2707,7 +2742,9 @@ class TestRunner(object):
                               showchannels=self.options.showchannels,
                               tests=tests, loadtest=_reloadtest)
             verbosity = 1
-            if self.options.verbose:
+            if self.options.list_tests:
+                verbosity = 0
+            elif self.options.verbose:
                 verbosity = 2
             runner = TextTestRunner(self, verbosity=verbosity)
 
@@ -2727,6 +2764,8 @@ class TestRunner(object):
 
             if result.failures:
                 failed = True
+
+            result.onEnd()
 
             if self.options.anycoverage:
                 self._outputcoverage()

@@ -219,6 +219,7 @@ Second scenario with two repos:
   adding file changes
   added 1 changesets with 1 changes to 1 files (+1 heads)
   new changesets 7d51ed18da25
+  1 local changesets published
   (run 'hg heads' to see heads, 'hg merge' to merge)
 
   $ hg merge

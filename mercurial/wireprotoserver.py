@@ -18,7 +18,6 @@ from .thirdparty import (
 from . import (
     encoding,
     error,
-    hook,
     pycompat,
     util,
     wireprototypes,
@@ -785,8 +784,7 @@ class sshserver(object):
     def __init__(self, ui, repo, logfh=None):
         self._ui = ui
         self._repo = repo
-        self._fin = ui.fin
-        self._fout = ui.fout
+        self._fin, self._fout = procutil.protectstdio(ui.fin, ui.fout)
 
         # Log write I/O to stdout and stderr if configured.
         if logfh:
@@ -795,15 +793,10 @@ class sshserver(object):
             ui.ferr = util.makeloggingfileobject(
                 logfh, ui.ferr, 'e', logdata=True)
 
-        hook.redirect(True)
-        ui.fout = repo.ui.fout = ui.ferr
-
-        # Prevent insertion/deletion of CRs
-        procutil.setbinary(self._fin)
-        procutil.setbinary(self._fout)
-
     def serve_forever(self):
         self.serveuntil(threading.Event())
+        procutil.restorestdio(self._ui.fin, self._ui.fout,
+                              self._fin, self._fout)
         sys.exit(0)
 
     def serveuntil(self, ev):

@@ -1,5 +1,5 @@
 warning
 error
-'buffered\n'
+b'buffered\n'
 colored? True
 colored? True

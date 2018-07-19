@@ -23,7 +23,7 @@ Tests about metadataonlyctx
   >         old = repo[b'.']
   >         kwargs = dict(s.split(b'=', 1) for s in arg.split(b';'))
   >         if 'parents' in kwargs:
-  >             kwargs[b'parents'] = kwargs[b'parents'].split(b',')
+  >             kwargs[b'parents'] = map(int, kwargs[b'parents'].split(b','))
   >         new = context.metadataonlyctx(repo, old,
   >                                       **pycompat.strkwargs(kwargs))
   >         new.commit()

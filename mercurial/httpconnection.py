@@ -38,21 +38,21 @@ class httpsendfile(object):
         self.write = self._data.write
         self.length = os.fstat(self._data.fileno()).st_size
         self._pos = 0
-        self._total = self.length // 1024 * 2
-
-    def read(self, *args, **kwargs):
-        ret = self._data.read(*args, **kwargs)
-        if not ret:
-            self.ui.progress(_('sending'), None)
-            return ret
-        self._pos += len(ret)
         # We pass double the max for total because we currently have
         # to send the bundle twice in the case of a server that
         # requires authentication. Since we can't know until we try
         # once whether authentication will be required, just lie to
         # the user and maybe the push succeeds suddenly at 50%.
-        self.ui.progress(_('sending'), self._pos // 1024,
-                         unit=_('kb'), total=self._total)
+        self._progress = ui.makeprogress(_('sending'), unit=_('kb'),
+                                         total=(self.length // 1024 * 2))
+
+    def read(self, *args, **kwargs):
+        ret = self._data.read(*args, **kwargs)
+        if not ret:
+            self._progress.complete()
+            return ret
+        self._pos += len(ret)
+        self._progress.update(self._pos // 1024)
         return ret
 
     def __enter__(self):

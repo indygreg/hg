@@ -196,8 +196,66 @@ def hash(text, p1, p2):
     s.update(text)
     return s.digest()
 
+class _testrevlog(object):
+    """minimalist fake revlog to use in doctests"""
+
+    def __init__(self, data, density=0.5, mingap=0):
+        """data is an list of revision payload boundaries"""
+        self._data = data
+        self._srdensitythreshold = density
+        self._srmingapsize = mingap
+
+    def start(self, rev):
+        if rev == 0:
+            return 0
+        return self._data[rev - 1]
+
+    def end(self, rev):
+        return self._data[rev]
+
+    def length(self, rev):
+        return self.end(rev) - self.start(rev)
+
+    def __len__(self):
+        return len(self._data)
+
 def _trimchunk(revlog, revs, startidx, endidx=None):
     """returns revs[startidx:endidx] without empty trailing revs
+
+    Doctest Setup
+    >>> revlog = _testrevlog([
+    ...  5,  #0
+    ...  10, #1
+    ...  12, #2
+    ...  12, #3 (empty)
+    ...  17, #4
+    ...  21, #5
+    ...  21, #6 (empty)
+    ... ])
+
+    Contiguous cases:
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 0)
+    [0, 1, 2, 3, 4, 5]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 0, 5)
+    [0, 1, 2, 3, 4]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 0, 4)
+    [0, 1, 2]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 2, 4)
+    [2]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 3)
+    [3, 4, 5]
+    >>> _trimchunk(revlog, [0, 1, 2, 3, 4, 5, 6], 3, 5)
+    [3, 4]
+
+    Discontiguous cases:
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 0)
+    [1, 3, 5]
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 0, 2)
+    [1]
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 1, 3)
+    [3, 5]
+    >>> _trimchunk(revlog, [1, 3, 5, 6], 1)
+    [3, 5]
     """
     length = revlog.length
 
@@ -210,11 +268,231 @@ def _trimchunk(revlog, revs, startidx, endidx=None):
 
     return revs[startidx:endidx]
 
-def _slicechunk(revlog, revs):
+def _segmentspan(revlog, revs):
+    """Get the byte span of a segment of revisions
+
+    revs is a sorted array of revision numbers
+
+    >>> revlog = _testrevlog([
+    ...  5,  #0
+    ...  10, #1
+    ...  12, #2
+    ...  12, #3 (empty)
+    ...  17, #4
+    ... ])
+
+    >>> _segmentspan(revlog, [0, 1, 2, 3, 4])
+    17
+    >>> _segmentspan(revlog, [0, 4])
+    17
+    >>> _segmentspan(revlog, [3, 4])
+    5
+    >>> _segmentspan(revlog, [1, 2, 3,])
+    7
+    >>> _segmentspan(revlog, [1, 3])
+    7
+    """
+    if not revs:
+        return 0
+    return revlog.end(revs[-1]) - revlog.start(revs[0])
+
+def _slicechunk(revlog, revs, deltainfo=None, targetsize=None):
     """slice revs to reduce the amount of unrelated data to be read from disk.
 
     ``revs`` is sliced into groups that should be read in one time.
     Assume that revs are sorted.
+
+    The initial chunk is sliced until the overall density (payload/chunks-span
+    ratio) is above `revlog._srdensitythreshold`. No gap smaller than
+    `revlog._srmingapsize` is skipped.
+
+    If `targetsize` is set, no chunk larger than `targetsize` will be yield.
+    For consistency with other slicing choice, this limit won't go lower than
+    `revlog._srmingapsize`.
+
+    If individual revisions chunk are larger than this limit, they will still
+    be raised individually.
+
+    >>> revlog = _testrevlog([
+    ...  5,  #00 (5)
+    ...  10, #01 (5)
+    ...  12, #02 (2)
+    ...  12, #03 (empty)
+    ...  27, #04 (15)
+    ...  31, #05 (4)
+    ...  31, #06 (empty)
+    ...  42, #07 (11)
+    ...  47, #08 (5)
+    ...  47, #09 (empty)
+    ...  48, #10 (1)
+    ...  51, #11 (3)
+    ...  74, #12 (23)
+    ...  85, #13 (11)
+    ...  86, #14 (1)
+    ...  91, #15 (5)
+    ... ])
+
+    >>> list(_slicechunk(revlog, list(range(16))))
+    [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+    >>> list(_slicechunk(revlog, [0, 15]))
+    [[0], [15]]
+    >>> list(_slicechunk(revlog, [0, 11, 15]))
+    [[0], [11], [15]]
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15]))
+    [[0], [11, 13, 15]]
+    >>> list(_slicechunk(revlog, [1, 2, 3, 5, 8, 10, 11, 14]))
+    [[1, 2], [5, 8, 10, 11], [14]]
+
+    Slicing with a maximum chunk size
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15], targetsize=15))
+    [[0], [11], [13], [15]]
+    >>> list(_slicechunk(revlog, [0, 11, 13, 15], targetsize=20))
+    [[0], [11], [13, 15]]
+    """
+    if targetsize is not None:
+        targetsize = max(targetsize, revlog._srmingapsize)
+    # targetsize should not be specified when evaluating delta candidates:
+    # * targetsize is used to ensure we stay within specification when reading,
+    # * deltainfo is used to pick are good delta chain when writing.
+    if not (deltainfo is None or targetsize is None):
+        msg = 'cannot use `targetsize` with a `deltainfo`'
+        raise error.ProgrammingError(msg)
+    for chunk in _slicechunktodensity(revlog, revs,
+                                      deltainfo,
+                                      revlog._srdensitythreshold,
+                                      revlog._srmingapsize):
+        for subchunk in _slicechunktosize(revlog, chunk, targetsize):
+            yield subchunk
+
+def _slicechunktosize(revlog, revs, targetsize=None):
+    """slice revs to match the target size
+
+    This is intended to be used on chunk that density slicing selected by that
+    are still too large compared to the read garantee of revlog. This might
+    happens when "minimal gap size" interrupted the slicing or when chain are
+    built in a way that create large blocks next to each other.
+
+    >>> revlog = _testrevlog([
+    ...  3,  #0 (3)
+    ...  5,  #1 (2)
+    ...  6,  #2 (1)
+    ...  8,  #3 (2)
+    ...  8,  #4 (empty)
+    ...  11, #5 (3)
+    ...  12, #6 (1)
+    ...  13, #7 (1)
+    ...  14, #8 (1)
+    ... ])
+
+    Cases where chunk is already small enough
+    >>> list(_slicechunktosize(revlog, [0], 3))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], 3))
+    [[6, 7]]
+    >>> list(_slicechunktosize(revlog, [0], None))
+    [[0]]
+    >>> list(_slicechunktosize(revlog, [6, 7], None))
+    [[6, 7]]
+
+    cases where we need actual slicing
+    >>> list(_slicechunktosize(revlog, [0, 1], 3))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 3))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [1, 2, 3], 3))
+    [[1, 2], [3]]
+    >>> list(_slicechunktosize(revlog, [3, 5], 3))
+    [[3], [5]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 3))
+    [[3], [5]]
+    >>> list(_slicechunktosize(revlog, [5, 6, 7, 8], 3))
+    [[5], [6, 7, 8]]
+    >>> list(_slicechunktosize(revlog, [0, 1, 2, 3, 4, 5, 6, 7, 8], 3))
+    [[0], [1, 2], [3], [5], [6, 7, 8]]
+
+    Case with too large individual chunk (must return valid chunk)
+    >>> list(_slicechunktosize(revlog, [0, 1], 2))
+    [[0], [1]]
+    >>> list(_slicechunktosize(revlog, [1, 3], 1))
+    [[1], [3]]
+    >>> list(_slicechunktosize(revlog, [3, 4, 5], 2))
+    [[3], [5]]
+    """
+    assert targetsize is None or 0 <= targetsize
+    if targetsize is None or _segmentspan(revlog, revs) <= targetsize:
+        yield revs
+        return
+
+    startrevidx = 0
+    startdata = revlog.start(revs[0])
+    endrevidx = 0
+    iterrevs = enumerate(revs)
+    next(iterrevs) # skip first rev.
+    for idx, r in iterrevs:
+        span = revlog.end(r) - startdata
+        if span <= targetsize:
+            endrevidx = idx
+        else:
+            chunk = _trimchunk(revlog, revs, startrevidx, endrevidx + 1)
+            if chunk:
+                yield chunk
+            startrevidx = idx
+            startdata = revlog.start(r)
+            endrevidx = idx
+    yield _trimchunk(revlog, revs, startrevidx)
+
+def _slicechunktodensity(revlog, revs, deltainfo=None, targetdensity=0.5,
+                         mingapsize=0):
+    """slice revs to reduce the amount of unrelated data to be read from disk.
+
+    ``revs`` is sliced into groups that should be read in one time.
+    Assume that revs are sorted.
+
+    ``deltainfo`` is a _deltainfo instance of a revision that we would append
+    to the top of the revlog.
+
+    The initial chunk is sliced until the overall density (payload/chunks-span
+    ratio) is above `targetdensity`. No gap smaller than `mingapsize` is
+    skipped.
+
+    >>> revlog = _testrevlog([
+    ...  5,  #00 (5)
+    ...  10, #01 (5)
+    ...  12, #02 (2)
+    ...  12, #03 (empty)
+    ...  27, #04 (15)
+    ...  31, #05 (4)
+    ...  31, #06 (empty)
+    ...  42, #07 (11)
+    ...  47, #08 (5)
+    ...  47, #09 (empty)
+    ...  48, #10 (1)
+    ...  51, #11 (3)
+    ...  74, #12 (23)
+    ...  85, #13 (11)
+    ...  86, #14 (1)
+    ...  91, #15 (5)
+    ... ])
+
+    >>> list(_slicechunktodensity(revlog, list(range(16))))
+    [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]]
+    >>> list(_slicechunktodensity(revlog, [0, 15]))
+    [[0], [15]]
+    >>> list(_slicechunktodensity(revlog, [0, 11, 15]))
+    [[0], [11], [15]]
+    >>> list(_slicechunktodensity(revlog, [0, 11, 13, 15]))
+    [[0], [11, 13, 15]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14]))
+    [[1, 2], [5, 8, 10, 11], [14]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14],
+    ...                           mingapsize=20))
+    [[1, 2, 3, 5, 8, 10, 11], [14]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14],
+    ...                           targetdensity=0.95))
+    [[1, 2], [5], [8, 10, 11], [14]]
+    >>> list(_slicechunktodensity(revlog, [1, 2, 3, 5, 8, 10, 11, 14],
+    ...                           targetdensity=0.95, mingapsize=12))
+    [[1, 2], [5, 8, 10, 11], [14]]
     """
     start = revlog.start
     length = revlog.length
@@ -223,24 +501,46 @@ def _slicechunk(revlog, revs):
         yield revs
         return
 
-    startbyte = start(revs[0])
-    endbyte = start(revs[-1]) + length(revs[-1])
-    readdata = deltachainspan = endbyte - startbyte
+    nextrev = len(revlog)
+    nextoffset = revlog.end(nextrev - 1)
 
-    chainpayload = sum(length(r) for r in revs)
+    if deltainfo is None:
+        deltachainspan = _segmentspan(revlog, revs)
+        chainpayload = sum(length(r) for r in revs)
+    else:
+        deltachainspan = deltainfo.distance
+        chainpayload = deltainfo.compresseddeltalen
+
+    if deltachainspan < mingapsize:
+        yield revs
+        return
+
+    readdata = deltachainspan
 
     if deltachainspan:
         density = chainpayload / float(deltachainspan)
     else:
         density = 1.0
 
+    if density >= targetdensity:
+        yield revs
+        return
+
+    if deltainfo is not None:
+        revs = list(revs)
+        revs.append(nextrev)
+
     # Store the gaps in a heap to have them sorted by decreasing size
     gapsheap = []
     heapq.heapify(gapsheap)
     prevend = None
     for i, rev in enumerate(revs):
-        revstart = start(rev)
-        revlen = length(rev)
+        if rev < nextrev:
+            revstart = start(rev)
+            revlen = length(rev)
+        else:
+            revstart = nextoffset
+            revlen = deltainfo.deltalen
 
         # Skip empty revisions to form larger holes
         if revlen == 0:
@@ -249,7 +549,7 @@ def _slicechunk(revlog, revs):
         if prevend is not None:
             gapsize = revstart - prevend
             # only consider holes that are large enough
-            if gapsize > revlog._srmingapsize:
+            if gapsize > mingapsize:
                 heapq.heappush(gapsheap, (-gapsize, i))
 
         prevend = revstart + revlen
@@ -257,7 +557,7 @@ def _slicechunk(revlog, revs):
     # Collect the indices of the largest holes until the density is acceptable
     indicesheap = []
     heapq.heapify(indicesheap)
-    while gapsheap and density < revlog._srdensitythreshold:
+    while gapsheap and density < targetdensity:
         oppgapsize, gapidx = heapq.heappop(gapsheap)
 
         heapq.heappush(indicesheap, gapidx)
@@ -305,6 +605,7 @@ class _deltacomputer(object):
         grouped by level of easiness.
         """
         revlog = self.revlog
+        gdelta = revlog._generaldelta
         curr = len(revlog)
         prev = curr - 1
         p1r, p2r = revlog.rev(p1), revlog.rev(p2)
@@ -316,27 +617,35 @@ class _deltacomputer(object):
             # changegroup data into a generaldelta repo. The only time it
             # isn't true is if this is the first revision in a delta chain
             # or if ``format.generaldelta=true`` disabled ``lazydeltabase``.
-            if cachedelta and revlog._generaldelta and revlog._lazydeltabase:
+            if cachedelta and gdelta and revlog._lazydeltabase:
                 # Assume what we received from the server is a good choice
                 # build delta will reuse the cache
                 yield (cachedelta[0],)
                 tested.add(cachedelta[0])
 
-            if revlog._generaldelta:
+            if gdelta:
                 # exclude already lazy tested base if any
                 parents = [p for p in (p1r, p2r)
                            if p != nullrev and p not in tested]
-                if parents and not revlog._aggressivemergedeltas:
-                    # Pick whichever parent is closer to us (to minimize the
-                    # chance of having to build a fulltext).
-                    parents = [max(parents)]
-                tested.update(parents)
-                yield parents
+
+                if not revlog._deltabothparents and len(parents) == 2:
+                    parents.sort()
+                    # To minimize the chance of having to build a fulltext,
+                    # pick first whichever parent is closest to us (max rev)
+                    yield (parents[1],)
+                    # then the other one (min rev) if the first did not fit
+                    yield (parents[0],)
+                    tested.update(parents)
+                elif len(parents) > 0:
+                    # Test all parents (1 or 2), and keep the best candidate
+                    yield parents
+                    tested.update(parents)
 
             if prev not in tested:
                 # other approach failed try against prev to hopefully save us a
                 # fulltext.
                 yield (prev,)
+                tested.add(prev)
 
     def buildtext(self, revinfo, fh):
         """Builds a fulltext version of a revision
@@ -441,7 +750,7 @@ class _deltacomputer(object):
                 if revlog.flags(candidaterev) & REVIDX_RAWTEXT_CHANGING_FLAGS:
                     continue
                 candidatedelta = self._builddeltainfo(revinfo, candidaterev, fh)
-                if revlog._isgooddeltainfo(candidatedelta, revinfo.textlen):
+                if revlog._isgooddeltainfo(candidatedelta, revinfo):
                     nominateddeltas.append(candidatedelta)
             if nominateddeltas:
                 deltainfo = min(nominateddeltas, key=lambda x: x.deltalen)
@@ -606,7 +915,7 @@ class revlog(object):
         # How much data to read and cache into the raw revlog data cache.
         self._chunkcachesize = 65536
         self._maxchainlen = None
-        self._aggressivemergedeltas = False
+        self._deltabothparents = True
         self.index = []
         # Mapping of partial identifiers to full nodes.
         self._pcache = {}
@@ -616,7 +925,8 @@ class revlog(object):
         self._compengine = 'zlib'
         self._maxdeltachainspan = -1
         self._withsparseread = False
-        self._srdensitythreshold = 0.25
+        self._sparserevlog = False
+        self._srdensitythreshold = 0.50
         self._srmingapsize = 262144
 
         mmapindexthreshold = None
@@ -635,8 +945,8 @@ class revlog(object):
                 self._chunkcachesize = opts['chunkcachesize']
             if 'maxchainlen' in opts:
                 self._maxchainlen = opts['maxchainlen']
-            if 'aggressivemergedeltas' in opts:
-                self._aggressivemergedeltas = opts['aggressivemergedeltas']
+            if 'deltabothparents' in opts:
+                self._deltabothparents = opts['deltabothparents']
             self._lazydeltabase = bool(opts.get('lazydeltabase', False))
             if 'compengine' in opts:
                 self._compengine = opts['compengine']
@@ -644,7 +954,10 @@ class revlog(object):
                 self._maxdeltachainspan = opts['maxdeltachainspan']
             if mmaplargeindex and 'mmapindexthreshold' in opts:
                 mmapindexthreshold = opts['mmapindexthreshold']
-            self._withsparseread = bool(opts.get('with-sparse-read', False))
+            self._sparserevlog = bool(opts.get('sparse-revlog', False))
+            withsparseread = bool(opts.get('with-sparse-read', False))
+            # sparse-revlog forces sparse-read
+            self._withsparseread = self._sparserevlog or withsparseread
             if 'sparse-read-density-threshold' in opts:
                 self._srdensitythreshold = opts['sparse-read-density-threshold']
             if 'sparse-read-min-gap-size' in opts:
@@ -868,10 +1181,11 @@ class revlog(object):
             return base
 
         index = self.index
-        base = index[rev][3]
-        while base != rev:
-            rev = base
-            base = index[rev][3]
+        iterrev = rev
+        base = index[iterrev][3]
+        while base != iterrev:
+            iterrev = base
+            base = index[iterrev][3]
 
         self._chainbasecache[rev] = base
         return base
@@ -1365,31 +1679,46 @@ class revlog(object):
                 c.append(self.node(r))
         return c
 
-    def descendant(self, start, end):
-        if start == nullrev:
-            return True
-        for i in self.descendants([start]):
-            if i == end:
-                return True
-            elif i > end:
-                break
-        return False
-
     def commonancestorsheads(self, a, b):
         """calculate all the heads of the common ancestors of nodes a and b"""
         a, b = self.rev(a), self.rev(b)
-        try:
-            ancs = self.index.commonancestorsheads(a, b)
-        except (AttributeError, OverflowError): # C implementation failed
-            ancs = ancestor.commonancestorsheads(self.parentrevs, a, b)
+        ancs = self._commonancestorsheads(a, b)
         return pycompat.maplist(self.node, ancs)
+
+    def _commonancestorsheads(self, *revs):
+        """calculate all the heads of the common ancestors of revs"""
+        try:
+            ancs = self.index.commonancestorsheads(*revs)
+        except (AttributeError, OverflowError): # C implementation failed
+            ancs = ancestor.commonancestorsheads(self.parentrevs, *revs)
+        return ancs
 
     def isancestor(self, a, b):
         """return True if node a is an ancestor of node b
 
+        A revision is considered an ancestor of itself."""
+        a, b = self.rev(a), self.rev(b)
+        return self.isancestorrev(a, b)
+
+    def descendant(self, a, b):
+        msg = (b'revlog.descendant is deprecated, use revlog.isancestorrev')
+        self._repo.ui.deprecwarn(msg, b'4.7')
+        return self.isancestorrev(a, b)
+
+    def isancestorrev(self, a, b):
+        """return True if revision a is an ancestor of revision b
+
+        A revision is considered an ancestor of itself.
+
         The implementation of this is trivial but the use of
         commonancestorsheads is not."""
-        return a in self.commonancestorsheads(a, b)
+        if a == nullrev:
+            return True
+        elif a == b:
+            return True
+        elif a > b:
+            return False
+        return a in self._commonancestorsheads(a, b)
 
     def ancestor(self, a, b):
         """calculate the "best" common ancestor of nodes a and b"""
@@ -1502,42 +1831,51 @@ class revlog(object):
 
     def shortest(self, node, minlength=1):
         """Find the shortest unambiguous prefix that matches node."""
-        def isvalid(test):
+        def isvalid(prefix):
             try:
-                if self._partialmatch(test) is None:
-                    return False
-
-                try:
-                    i = int(test)
-                    # if we are a pure int, then starting with zero will not be
-                    # confused as a rev; or, obviously, if the int is larger
-                    # than the value of the tip rev
-                    if test[0] == '0' or i > len(self):
-                        return True
-                    return False
-                except ValueError:
-                    return True
+                node = self._partialmatch(prefix)
             except error.RevlogError:
                 return False
             except error.WdirUnsupported:
                 # single 'ff...' match
                 return True
+            if node is None:
+                raise LookupError(node, self.indexfile, _('no node'))
+            return True
+
+        def maybewdir(prefix):
+            return all(c == 'f' for c in prefix)
 
         hexnode = hex(node)
-        shortest = hexnode
-        startlength = max(6, minlength)
-        length = startlength
-        while True:
-            test = hexnode[:length]
-            if isvalid(test):
-                shortest = test
-                if length == minlength or length > startlength:
-                    return shortest
-                length -= 1
-            else:
-                length += 1
-                if len(shortest) <= length:
-                    return shortest
+
+        def disambiguate(hexnode, minlength):
+            """Disambiguate against wdirid."""
+            for length in range(minlength, 41):
+                prefix = hexnode[:length]
+                if not maybewdir(prefix):
+                    return prefix
+
+        if not getattr(self, 'filteredrevs', None):
+            try:
+                length = max(self.index.shortest(node), minlength)
+                return disambiguate(hexnode, length)
+            except RevlogError:
+                if node != wdirid:
+                    raise LookupError(node, self.indexfile, _('no node'))
+            except AttributeError:
+                # Fall through to pure code
+                pass
+
+        if node == wdirid:
+            for length in range(minlength, 41):
+                prefix = hexnode[:length]
+                if isvalid(prefix):
+                    return prefix
+
+        for length in range(minlength, 41):
+            prefix = hexnode[:length]
+            if isvalid(prefix):
+                return disambiguate(hexnode, length)
 
     def cmp(self, node, text):
         """compare text with a given file revision
@@ -1654,7 +1992,7 @@ class revlog(object):
         """
         return self.decompress(self._getsegmentforrevs(rev, rev, df=df)[1])
 
-    def _chunks(self, revs, df=None):
+    def _chunks(self, revs, df=None, targetsize=None):
         """Obtain decompressed chunks for the specified revisions.
 
         Accepts an iterable of numeric revisions that are assumed to be in
@@ -1681,7 +2019,7 @@ class revlog(object):
         if not self._withsparseread:
             slicedchunks = (revs,)
         else:
-            slicedchunks = _slicechunk(self, revs)
+            slicedchunks = _slicechunk(self, revs, targetsize=targetsize)
 
         for revschunk in slicedchunks:
             firstrev = revschunk[0]
@@ -1784,7 +2122,12 @@ class revlog(object):
             # drop cache to save memory
             self._cache = None
 
-            bins = self._chunks(chain, df=_df)
+            targetsize = None
+            rawsize = self.index[rev][2]
+            if 0 <= rawsize:
+                targetsize = 4 * rawsize
+
+            bins = self._chunks(chain, df=_df, targetsize=targetsize)
             if rawtext is None:
                 rawtext = bytes(bins[0])
                 bins = bins[1:]
@@ -2076,26 +2419,49 @@ class revlog(object):
 
         return compressor.decompress(data)
 
-    def _isgooddeltainfo(self, d, textlen):
+    def _isgooddeltainfo(self, deltainfo, revinfo):
         """Returns True if the given delta is good. Good means that it is within
         the disk span, disk size, and chain length bounds that we know to be
         performant."""
-        if d is None:
+        if deltainfo is None:
             return False
 
-        # - 'd.distance' is the distance from the base revision -- bounding it
-        #   limits the amount of I/O we need to do.
-        # - 'd.compresseddeltalen' is the sum of the total size of deltas we
-        #   need to apply -- bounding it limits the amount of CPU we consume.
+        # - 'deltainfo.distance' is the distance from the base revision --
+        #   bounding it limits the amount of I/O we need to do.
+        # - 'deltainfo.compresseddeltalen' is the sum of the total size of
+        #   deltas we need to apply -- bounding it limits the amount of CPU
+        #   we consume.
 
+        if self._sparserevlog:
+            # As sparse-read will be used, we can consider that the distance,
+            # instead of being the span of the whole chunk,
+            # is the span of the largest read chunk
+            base = deltainfo.base
+
+            if base != nullrev:
+                deltachain = self._deltachain(base)[0]
+            else:
+                deltachain = []
+
+            chunks = _slicechunk(self, deltachain, deltainfo)
+            distance = max(map(lambda revs:_segmentspan(self, revs), chunks))
+        else:
+            distance = deltainfo.distance
+
+        textlen = revinfo.textlen
         defaultmax = textlen * 4
         maxdist = self._maxdeltachainspan
         if not maxdist:
-            maxdist = d.distance # ensure the conditional pass
+            maxdist = distance # ensure the conditional pass
         maxdist = max(maxdist, defaultmax)
-        if (d.distance > maxdist or d.deltalen > textlen or
-            d.compresseddeltalen > textlen * 2 or
-            (self._maxchainlen and d.chainlen > self._maxchainlen)):
+        if self._sparserevlog and maxdist < self._srmingapsize:
+            # In multiple place, we are ignoring irrelevant data range below a
+            # certain size. Be also apply this tradeoff here and relax span
+            # constraint for small enought content.
+            maxdist = self._srmingapsize
+        if (distance > maxdist or deltainfo.deltalen > textlen or
+            deltainfo.compresseddeltalen > textlen * 2 or
+            (self._maxchainlen and deltainfo.chainlen > self._maxchainlen)):
             return False
 
         return True
@@ -2477,7 +2843,7 @@ class revlog(object):
     DELTAREUSEALL = {'always', 'samerevs', 'never', 'fulladd'}
 
     def clone(self, tr, destrevlog, addrevisioncb=None,
-              deltareuse=DELTAREUSESAMEREVS, aggressivemergedeltas=None):
+              deltareuse=DELTAREUSESAMEREVS, deltabothparents=None):
         """Copy this revlog to another, possibly with format changes.
 
         The destination revlog will contain the same revisions and nodes.
@@ -2511,7 +2877,7 @@ class revlog(object):
         deltas will be recomputed if the delta's parent isn't a parent of the
         revision.
 
-        In addition to the delta policy, the ``aggressivemergedeltas`` argument
+        In addition to the delta policy, the ``deltabothparents`` argument
         controls whether to compute deltas against both parents for merges.
         By default, the current default is used.
         """
@@ -2528,7 +2894,7 @@ class revlog(object):
 
         # lazydeltabase controls whether to reuse a cached delta, if possible.
         oldlazydeltabase = destrevlog._lazydeltabase
-        oldamd = destrevlog._aggressivemergedeltas
+        oldamd = destrevlog._deltabothparents
 
         try:
             if deltareuse == self.DELTAREUSEALWAYS:
@@ -2536,7 +2902,7 @@ class revlog(object):
             elif deltareuse == self.DELTAREUSESAMEREVS:
                 destrevlog._lazydeltabase = False
 
-            destrevlog._aggressivemergedeltas = aggressivemergedeltas or oldamd
+            destrevlog._deltabothparents = deltabothparents or oldamd
 
             populatecachedelta = deltareuse in (self.DELTAREUSEALWAYS,
                                                 self.DELTAREUSESAMEREVS)
@@ -2591,4 +2957,4 @@ class revlog(object):
                     addrevisioncb(self, rev, node)
         finally:
             destrevlog._lazydeltabase = oldlazydeltabase
-            destrevlog._aggressivemergedeltas = oldamd
+            destrevlog._deltabothparents = oldamd

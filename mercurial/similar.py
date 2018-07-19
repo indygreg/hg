@@ -18,14 +18,14 @@ def _findexactmatches(repo, added, removed):
     Takes a list of new filectxs and a list of removed filectxs, and yields
     (before, after) tuples of exact matches.
     '''
-    numfiles = len(added) + len(removed)
-
     # Build table of removed files: {hash(fctx.data()): [fctx, ...]}.
     # We use hash() to discard fctx.data() from memory.
     hashes = {}
-    for i, fctx in enumerate(removed):
-        repo.ui.progress(_('searching for exact renames'), i, total=numfiles,
-                         unit=_('files'))
+    progress = repo.ui.makeprogress(_('searching for exact renames'),
+                                    total=(len(added) + len(removed)),
+                                    unit=_('files'))
+    for fctx in removed:
+        progress.increment()
         h = hash(fctx.data())
         if h not in hashes:
             hashes[h] = [fctx]
@@ -33,9 +33,8 @@ def _findexactmatches(repo, added, removed):
             hashes[h].append(fctx)
 
     # For each added file, see if it corresponds to a removed file.
-    for i, fctx in enumerate(added):
-        repo.ui.progress(_('searching for exact renames'), i + len(removed),
-                total=numfiles, unit=_('files'))
+    for fctx in added:
+        progress.increment()
         adata = fctx.data()
         h = hash(adata)
         for rfctx in hashes.get(h, []):
@@ -45,7 +44,7 @@ def _findexactmatches(repo, added, removed):
                 break
 
     # Done
-    repo.ui.progress(_('searching for exact renames'), None)
+    progress.complete()
 
 def _ctxdata(fctx):
     # lazily load text
@@ -76,10 +75,10 @@ def _findsimilarmatches(repo, added, removed, threshold):
     (before, after, score) tuples of partial matches.
     '''
     copies = {}
-    for i, r in enumerate(removed):
-        repo.ui.progress(_('searching for similar files'), i,
-                         total=len(removed), unit=_('files'))
-
+    progress = repo.ui.makeprogress(_('searching for similar files'),
+                         unit=_('files'), total=len(removed))
+    for r in removed:
+        progress.increment()
         data = None
         for a in added:
             bestscore = copies.get(a, (None, threshold))[1]
@@ -88,7 +87,7 @@ def _findsimilarmatches(repo, added, removed, threshold):
             myscore = _score(a, data)
             if myscore > bestscore:
                 copies[a] = (r, myscore)
-    repo.ui.progress(_('searching'), None)
+    progress.complete()
 
     for dest, v in copies.iteritems():
         source, bscore = v

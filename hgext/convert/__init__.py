@@ -204,6 +204,14 @@ def convert(ui, src, dest=None, revmapfile=None, **opts):
 
     :convert.hg.revs: revset specifying the source revisions to convert.
 
+    Bazaar Source
+    #############
+
+    The following options can be used with ``--config``:
+
+    :convert.bzr.saverev: whether to store the original Bazaar commit ID in
+        the metadata of the destination commit. The default is True.
+
     CVS Source
     ##########
 

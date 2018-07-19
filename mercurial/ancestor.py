@@ -339,6 +339,10 @@ class lazyancestors(object):
         seen = self._containsseen
         if target in seen:
             return True
+        # Only integer target is valid, but some callers expect 'None in self'
+        # to be False. So we explicitly allow it.
+        if target is None:
+            return False
 
         parentrevs = self._parentrevs
         visit = self._containsvisit

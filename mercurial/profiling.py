@@ -101,7 +101,8 @@ def statprofile(ui, fp):
     else:
         ui.warn(_("invalid sampling frequency '%s' - ignoring\n") % freq)
 
-    statprof.start(mechanism='thread')
+    track = ui.config('profiling', 'time-track')
+    statprof.start(mechanism='thread', track=track)
 
     try:
         yield

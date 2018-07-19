@@ -11,7 +11,13 @@ from .i18n import _
 from . import (
     error,
     fileset,
+    pycompat,
 )
+
+def _sizep(x):
+    # i18n: "size" is a keyword
+    expr = fileset.getstring(x, _("size requires an expression"))
+    return fileset.sizematcher(expr)
 
 def _compile(tree):
     if not tree:
@@ -21,14 +27,15 @@ def _compile(tree):
         name = fileset.getpattern(tree, {'path'}, _('invalid file pattern'))
         if name.startswith('**'): # file extension test, ex. "**.tar.gz"
             ext = name[2:]
-            for c in ext:
+            for c in pycompat.bytestr(ext):
                 if c in '*{}[]?/\\':
                     raise error.ParseError(_('reserved character: %s') % c)
             return lambda n, s: n.endswith(ext)
         elif name.startswith('path:'): # directory or full path test
             p = name[5:] # prefix
             pl = len(p)
-            f = lambda n, s: n.startswith(p) and (len(n) == pl or n[pl] == '/')
+            f = lambda n, s: n.startswith(p) and (len(n) == pl
+                                                  or n[pl:pl + 1] == '/')
             return f
         raise error.ParseError(_("unsupported file pattern: %s") % name,
                                hint=_('paths must be prefixed with "path:"'))
@@ -48,7 +55,7 @@ def _compile(tree):
         symbols = {
             'all': lambda n, s: True,
             'none': lambda n, s: False,
-            'size': lambda n, s: fileset.sizematcher(tree[2])(s),
+            'size': lambda n, s: _sizep(tree[2])(s),
         }
 
         name = fileset.getsymbol(tree[1])

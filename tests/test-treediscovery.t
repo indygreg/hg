@@ -1,5 +1,3 @@
-#require killdaemons
-
 Tests discovery against servers without getbundle support:
 
   $ CAP="getbundle bundle2"

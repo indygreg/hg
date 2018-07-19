@@ -30,5 +30,5 @@ for PYBIN in $PYTHON_TARGETS; do
     # Install mercurial wheel as root
     "${PYBIN}/pip" install mercurial --no-index -f /src/wheelhouse
     # But run tests as hgbuilder user (non-root)
-    su hgbuilder -c "\"${PYBIN}/python\" /io/tests/run-tests.py --with-hg=\"${PYBIN}/hg\" --blacklist=/io/contrib/linux-wheel-centos5-blacklist"
+    su hgbuilder -c "\"${PYBIN}/python\" /io/tests/run-tests.py --with-hg=\"${PYBIN}/hg\" --blacklist=/io/contrib/packaging/linux-wheel-centos5-blacklist"
 done

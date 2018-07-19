@@ -54,13 +54,16 @@ from mercurial.node import (
 )
 from mercurial import (
     context,
+    diffutil,
     error,
     hg,
     patch,
     registrar,
     scmutil,
 )
-from mercurial.utils import dateutil
+from mercurial.utils import (
+    dateutil,
+)
 
 # Note for extension authors: ONLY specify testedwith = 'ships-with-hg-core' for
 # extensions which SHIP WITH MERCURIAL. Non-mainline extensions should
@@ -172,13 +175,10 @@ def analyze(ui, repo, *revs, **opts):
         revs = scmutil.revrange(repo, revs)
         revs.sort()
 
-        progress = ui.progress
-        _analyzing = _('analyzing')
-        _changesets = _('changesets')
-        _total = len(revs)
-
+        progress = ui.makeprogress(_('analyzing'), unit=_('changesets'),
+                                   total=len(revs))
         for i, rev in enumerate(revs):
-            progress(_analyzing, i, unit=_changesets, total=_total)
+            progress.update(i)
             ctx = repo[rev]
             pl = ctx.parents()
             pctx = pl[0]
@@ -196,7 +196,9 @@ def analyze(ui, repo, *revs, **opts):
             if lastctx.rev() != nullrev:
                 timedelta = ctx.date()[0] - lastctx.date()[0]
                 interarrival[roundto(timedelta, 300)] += 1
-            diff = sum((d.splitlines() for d in ctx.diff(pctx, git=True)), [])
+            diffopts = diffutil.diffallopts(ui, {'git': True})
+            diff = sum((d.splitlines()
+                       for d in ctx.diff(pctx, opts=diffopts)), [])
             fileadds, diradds, fileremoves, filechanges = 0, 0, 0, 0
             for filename, mar, lineadd, lineremove, isbin in parsegitdiff(diff):
                 if isbin:
@@ -222,6 +224,7 @@ def analyze(ui, repo, *revs, **opts):
             filesadded[fileadds] += 1
             dirsadded[diradds] += 1
             filesremoved[fileremoves] += 1
+        progress.complete()
 
     invchildren = zerodict()
 
@@ -338,7 +341,6 @@ def synthesize(ui, repo, descpath, **opts):
 
     nevertouch = {'.hgsub', '.hgignore', '.hgtags'}
 
-    progress = ui.progress
     _synthesizing = _('synthesizing')
     _files = _('initial files')
     _changesets = _('changesets')
@@ -362,8 +364,9 @@ def synthesize(ui, repo, descpath, **opts):
                 path = os.path.dirname(path)
             return True
 
+        progress = ui.makeprogress(_synthesizing, unit=_files, total=initcount)
         for i in xrange(0, initcount):
-            ui.progress(_synthesizing, i, unit=_files, total=initcount)
+            progress.update(i)
 
             path = pickpath()
             while not validpath(path):
@@ -378,7 +381,7 @@ def synthesize(ui, repo, descpath, **opts):
         def filectxfn(repo, memctx, path):
             return context.memfilectx(repo, memctx, path, files[path])
 
-        ui.progress(_synthesizing, None)
+        progress.complete()
         message = 'synthesized wide repo with %d files' % (len(files),)
         mc = context.memctx(repo, [pctx.node(), nullid], message,
                             files, filectxfn, ui.username(),
@@ -394,8 +397,9 @@ def synthesize(ui, repo, descpath, **opts):
     # Synthesize incremental revisions to the repository, adding repo depth.
     count = int(opts['count'])
     heads = set(map(repo.changelog.rev, repo.heads()))
+    progress = ui.makeprogress(_synthesizing, unit=_changesets, total=count)
     for i in xrange(count):
-        progress(_synthesizing, i, unit=_changesets, total=count)
+        progress.update(i)
 
         node = repo.changelog.node
         revs = len(repo)
@@ -485,6 +489,7 @@ def synthesize(ui, repo, descpath, **opts):
         heads.add(repo.changelog.rev(newnode))
         heads.discard(r1)
         heads.discard(r2)
+    progress.complete()
 
     lock.release()
     wlock.release()

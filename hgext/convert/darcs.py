@@ -10,10 +10,11 @@ import errno
 import os
 import re
 import shutil
-import tempfile
+
 from mercurial.i18n import _
 from mercurial import (
     error,
+    pycompat,
     util,
 )
 from mercurial.utils import dateutil
@@ -76,7 +77,7 @@ class darcs_source(common.converter_source, common.commandline):
             self.ui.warn(_('failed to detect repository format!'))
 
     def before(self):
-        self.tmppath = tempfile.mkdtemp(
+        self.tmppath = pycompat.mkdtemp(
             prefix='convert-' + os.path.basename(self.path) + '-')
         output, status = self.run('init', repodir=self.tmppath)
         self.checkexit(status)
@@ -103,7 +104,7 @@ class darcs_source(common.converter_source, common.commandline):
         shutil.rmtree(self.tmppath, ignore_errors=True)
 
     def recode(self, s, encoding=None):
-        if isinstance(s, unicode):
+        if isinstance(s, pycompat.unicode):
             # XMLParser returns unicode objects for anything it can't
             # encode into ASCII. We convert them back to str to get
             # recode's normal conversion behavior.
@@ -125,8 +126,7 @@ class darcs_source(common.converter_source, common.commandline):
         return etree.getroot()
 
     def format(self):
-        output, status = self.run('show', 'repo', no_files=True,
-                                  repodir=self.path)
+        output, status = self.run('show', 'repo', repodir=self.path)
         self.checkexit(status)
         m = re.search(r'^\s*Format:\s*(.*)$', output, re.MULTILINE)
         if not m:

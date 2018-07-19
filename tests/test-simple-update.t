@@ -31,6 +31,7 @@
   adding file changes
   added 1 changesets with 1 changes to 1 files
   new changesets 30aff43faee1
+  1 local changesets published
   (run 'hg update' to get a working copy)
 
   $ hg verify
@@ -64,7 +65,7 @@ update with worker processes
 
   $ cat <<EOF > forceworker.py
   > from mercurial import extensions, worker
-  > def nocost(orig, ui, costperop, nops):
+  > def nocost(orig, ui, costperop, nops, threadsafe=True):
   >     return worker._numworkers(ui) > 1
   > def uisetup(ui):
   >     extensions.wrapfunction(worker, 'worthwhile', nocost)

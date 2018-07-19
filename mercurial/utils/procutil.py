@@ -16,7 +16,6 @@ import os
 import signal
 import subprocess
 import sys
-import tempfile
 import time
 
 from ..i18n import _
@@ -168,11 +167,11 @@ def tempfilter(s, cmd):
     the temporary files generated.'''
     inname, outname = None, None
     try:
-        infd, inname = tempfile.mkstemp(prefix='hg-filter-in-')
+        infd, inname = pycompat.mkstemp(prefix='hg-filter-in-')
         fp = os.fdopen(infd, r'wb')
         fp.write(s)
         fp.close()
-        outfd, outname = tempfile.mkstemp(prefix='hg-filter-out-')
+        outfd, outname = pycompat.mkstemp(prefix='hg-filter-out-')
         os.close(outfd)
         cmd = cmd.replace('INFILE', inname)
         cmd = cmd.replace('OUTFILE', outname)
@@ -318,6 +317,13 @@ def shellenviron(environ=None):
     env['HG'] = hgexecutable()
     return env
 
+if pycompat.iswindows:
+    def shelltonative(cmd, env):
+        return platform.shelltocmdexe(cmd, shellenviron(env))
+else:
+    def shelltonative(cmd, env):
+        return cmd
+
 def system(cmd, environ=None, cwd=None, out=None):
     '''enhanced shell command execution.
     run with environment maybe modified, maybe in different dir.
@@ -409,3 +415,36 @@ def rundetached(args, condfn):
     finally:
         if prevhandler is not None:
             signal.signal(signal.SIGCHLD, prevhandler)
+
+@contextlib.contextmanager
+def uninterruptable(warn):
+    """Inhibit SIGINT handling on a region of code.
+
+    Note that if this is called in a non-main thread, it turns into a no-op.
+
+    Args:
+      warn: A callable which takes no arguments, and returns True if the
+            previous signal handling should be restored.
+    """
+
+    oldsiginthandler = [signal.getsignal(signal.SIGINT)]
+    shouldbail = []
+
+    def disabledsiginthandler(*args):
+        if warn():
+            signal.signal(signal.SIGINT, oldsiginthandler[0])
+            del oldsiginthandler[0]
+        shouldbail.append(True)
+
+    try:
+        try:
+            signal.signal(signal.SIGINT, disabledsiginthandler)
+        except ValueError:
+            # wrong thread, oh well, we tried
+            del oldsiginthandler[0]
+        yield
+    finally:
+        if oldsiginthandler:
+            signal.signal(signal.SIGINT, oldsiginthandler[0])
+        if shouldbail:
+            raise KeyboardInterrupt

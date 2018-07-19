@@ -15,7 +15,6 @@ from __future__ import absolute_import
 
 import os
 import shutil
-import tempfile
 
 from .i18n import _
 from .node import nullid
@@ -270,7 +269,7 @@ class bundlerepository(localrepo.localrepository):
         try:
             localrepo.localrepository.__init__(self, ui, repopath)
         except error.RepoError:
-            self._tempparent = tempfile.mkdtemp()
+            self._tempparent = pycompat.mkdtemp()
             localrepo.instance(ui, self._tempparent, 1)
             localrepo.localrepository.__init__(self, ui, self._tempparent)
         self.ui.setconfig('phases', 'publish', False, 'bundlerepo')

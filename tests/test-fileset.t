@@ -1,5 +1,5 @@
   $ fileset() {
-  >   hg debugfileset "$@"
+  >   hg debugfileset --all-files "$@"
   > }
 
   $ hg init repo
@@ -68,7 +68,7 @@ Test operators and basic patterns
   a2
   $ fileset 'a_b'
   $ fileset '"\xy"'
-  hg: parse error: invalid \x escape
+  hg: parse error: invalid \x escape* (glob)
   [255]
 
 Test invalid syntax
@@ -142,8 +142,10 @@ Test files status
   .hgignore
   c2
   $ fileset 'hgignore()'
+  .hgignore
   a2
   b2
+  c2
   $ fileset 'clean()'
   b1
   $ fileset 'copied()'
@@ -169,8 +171,8 @@ Test files status in different revisions
   R a2
   ? c3
   $ fileset -r0 'added() and revs("wdir()", modified() or removed() or unknown())'
-  b2
   a2
+  b2
   $ fileset -r0 'added() or revs("wdir()", added())'
   a1
   a2
@@ -180,8 +182,9 @@ Test files status in different revisions
 
 Test files properties
 
-  >>> open('bin', 'wb').write(b'\0a')
+  >>> open('bin', 'wb').write(b'\0a') and None
   $ fileset 'binary()'
+  bin
   $ fileset 'binary() and unknown()'
   bin
   $ echo '^bin$' >> .hgignore
@@ -192,11 +195,12 @@ Test files properties
   bin
 
   $ fileset 'grep("b{1}")'
+  .hgignore
+  b1
   b2
   c1
-  b1
   $ fileset 'grep("missingparens(")'
-  hg: parse error: invalid match pattern: unbalanced parenthesis
+  hg: parse error: invalid match pattern: (unbalanced parenthesis|missing \)).* (re)
   [255]
 
 #if execbit
@@ -219,8 +223,8 @@ Test files properties
   $ hg --config ui.portablefilenames=ignore add con.xml
 #endif
 
-  >>> open('1k', 'wb').write(b' '*1024)
-  >>> open('2k', 'wb').write(b' '*2048)
+  >>> open('1k', 'wb').write(b' '*1024) and None
+  >>> open('2k', 'wb').write(b' '*2048) and None
   $ hg add 1k 2k
   $ fileset 'size("bar")'
   hg: parse error: couldn't parse size: bar
@@ -354,8 +358,12 @@ Test with a revision
   $ fileset -r1 'unknown()'
   $ fileset -r1 'ignored()'
   $ fileset -r1 'hgignore()'
+  .hgignore
+  a2
   b2
   bin
+  c2
+  sub2
   $ fileset -r1 'binary()'
   bin
   $ fileset -r1 'size(1k)'
@@ -391,9 +399,9 @@ Test with a revision
   b2
   c1
 
-  >>> open('dos', 'wb').write("dos\r\n")
-  >>> open('mixed', 'wb').write("dos\r\nunix\n")
-  >>> open('mac', 'wb').write("mac\r")
+  >>> open('dos', 'wb').write(b"dos\r\n") and None
+  >>> open('mixed', 'wb').write(b"dos\r\nunix\n") and None
+  >>> open('mac', 'wb').write(b"mac\r") and None
   $ hg add dos mixed mac
 
 (remove a1, to examine safety of 'eol' on removed files)
@@ -403,50 +411,42 @@ Test with a revision
   dos
   mixed
   $ fileset 'eol(unix)'
-  mixed
+  .hgignore
   .hgsub
   .hgsubstate
   b1
   b2
+  b2.orig
   c1
+  c2
+  c3
+  con.xml
+  mixed
+  unknown
   $ fileset 'eol(mac)'
   mac
 
 Test safety of 'encoding' on removed files
 
   $ fileset 'encoding("ascii")'
-  dos
-  mac
-  mixed
+  .hgignore
   .hgsub
   .hgsubstate
   1k
   2k
   b1
   b2
+  b2.orig
   b2link (symlink !)
   bin
   c1
-
-Test detection of unintentional 'matchctx.existing()' invocation
-
-  $ cat > $TESTTMP/existingcaller.py <<EOF
-  > from mercurial import registrar
-  > 
-  > filesetpredicate = registrar.filesetpredicate()
-  > @filesetpredicate('existingcaller()', callexisting=False)
-  > def existingcaller(mctx, x):
-  >     # this 'mctx.existing()' invocation is unintentional
-  >     return [f for f in mctx.existing()]
-  > EOF
-
-  $ cat >> .hg/hgrc <<EOF
-  > [extensions]
-  > existingcaller = $TESTTMP/existingcaller.py
-  > EOF
-
-  $ fileset 'existingcaller()' 2>&1 | tail -1
-  AssertionError: unexpected existing() invocation
+  c2
+  c3
+  con.xml
+  dos
+  mac
+  mixed
+  unknown
 
 Test 'revs(...)'
 ================
@@ -524,7 +524,7 @@ small reminder of the repository state
 Test files at -r0 should be filtered by files at wdir
 -----------------------------------------------------
 
-  $ fileset -r0 '* and revs("wdir()", *)'
+  $ fileset -r0 'tracked() and revs("wdir()", tracked())'
   a1
   b1
   b2
@@ -561,12 +561,12 @@ Call with revset matching multiple revs
 ---------------------------------------
 
   $ fileset "revs('0+4', added())"
+  .hgsub
+  .hgsubstate
   a1
   a2
   b1
   b2
-  .hgsub
-  .hgsubstate
 
 overlapping set
 
@@ -590,12 +590,12 @@ use rev to restrict matched file
   R a2
   $ fileset "status(0, 1, removed())"
   a2
-  $ fileset "* and status(0, 1, removed())"
+  $ fileset "tracked() and status(0, 1, removed())"
   $ fileset -r 4 "status(0, 1, removed())"
   a2
-  $ fileset -r 4 "* and status(0, 1, removed())"
-  $ fileset "revs('4', * and status(0, 1, removed()))"
-  $ fileset "revs('0', * and status(0, 1, removed()))"
+  $ fileset -r 4 "tracked() and status(0, 1, removed())"
+  $ fileset "revs('4', tracked() and status(0, 1, removed()))"
+  $ fileset "revs('0', tracked() and status(0, 1, removed()))"
   a2
 
 check wdir()

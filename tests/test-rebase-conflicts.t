@@ -80,8 +80,8 @@ Conflicting rebase:
   # 
   # To mark files as resolved:  hg resolve --mark FILE
   
-  # To continue:                hg rebase --continue
-  # To abort:                   hg rebase --abort
+  # To continue:    hg rebase --continue
+  # To abort:       hg rebase --abort
   
 
 Try to continue without solving the conflict:

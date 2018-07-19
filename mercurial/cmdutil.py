@@ -10,7 +10,6 @@ from __future__ import absolute_import
 import errno
 import os
 import re
-import tempfile
 
 from .i18n import _
 from .node import (
@@ -36,8 +35,8 @@ from . import (
     obsolete,
     patch,
     pathutil,
+    phases,
     pycompat,
-    registrar,
     revlog,
     rewriteutil,
     scmutil,
@@ -203,17 +202,21 @@ def setupwrapcolorwrite(ui):
     return oldwrite
 
 def filterchunks(ui, originalhunks, usecurses, testfile, operation=None):
-    if usecurses:
-        if testfile:
-            recordfn = crecordmod.testdecorator(testfile,
-                                                crecordmod.testchunkselector)
-        else:
-            recordfn = crecordmod.chunkselector
+    try:
+        if usecurses:
+            if testfile:
+                recordfn = crecordmod.testdecorator(
+                    testfile, crecordmod.testchunkselector)
+            else:
+                recordfn = crecordmod.chunkselector
 
-        return crecordmod.filterpatch(ui, originalhunks, recordfn, operation)
+            return crecordmod.filterpatch(ui, originalhunks, recordfn,
+                                          operation)
+    except crecordmod.fallbackerror as e:
+        ui.warn('%s\n' % e.message)
+        ui.warn(_('falling back to text mode\n'))
 
-    else:
-        return patch.filterpatch(ui, originalhunks, operation)
+    return patch.filterpatch(ui, originalhunks, operation)
 
 def recordfilter(ui, originalhunks, operation=None):
     """ Prompts the user to filter the originalhunks and return a list of
@@ -331,7 +334,7 @@ def dorecord(ui, repo, commitfunc, cmdsuggest, backupall,
         try:
             # backup continues
             for f in tobackup:
-                fd, tmpname = tempfile.mkstemp(prefix=f.replace('/', '_')+'.',
+                fd, tmpname = pycompat.mkstemp(prefix=f.replace('/', '_') + '.',
                                                dir=backupdir)
                 os.close(fd)
                 ui.debug('backup %r as %r\n' % (f, tmpname))
@@ -419,7 +422,7 @@ class dirnode(object):
     Represent a directory in user working copy with information required for
     the purpose of tersing its status.
 
-    path is the path to the directory
+    path is the path to the directory, without a trailing '/'
 
     statuses is a set of statuses of all files in this directory (this includes
     all the files in all the subdirectories too)
@@ -456,7 +459,7 @@ class dirnode(object):
 
             # does the dirnode object for subdir exists
             if subdir not in self.subdirs:
-                subdirpath = os.path.join(self.path, subdir)
+                subdirpath = pathutil.join(self.path, subdir)
                 self.subdirs[subdir] = dirnode(subdirpath)
 
             # try adding the file in subdir
@@ -471,7 +474,7 @@ class dirnode(object):
     def iterfilepaths(self):
         """Yield (status, path) for files directly under this directory."""
         for f, st in self.files:
-            yield st, os.path.join(self.path, f)
+            yield st, pathutil.join(self.path, f)
 
     def tersewalk(self, terseargs):
         """
@@ -485,7 +488,7 @@ class dirnode(object):
 
         1) All the files in the directory (including all the files in its
         subdirectories) share the same status and the user has asked us to terse
-        that status. -> yield (status, dirpath)
+        that status. -> yield (status, dirpath).  dirpath will end in '/'.
 
         2) Otherwise, we do following:
 
@@ -502,7 +505,7 @@ class dirnode(object):
             # Making sure we terse only when the status abbreviation is
             # passed as terse argument
             if onlyst in terseargs:
-                yield onlyst, self.path + pycompat.ossep
+                yield onlyst, self.path + '/'
                 return
 
         # add the files to status list
@@ -591,8 +594,8 @@ To mark files as resolved:  hg resolve --mark FILE''') % mergeliststr
     return _commentlines(msg)
 
 def _helpmessage(continuecmd, abortcmd):
-    msg = _('To continue:                %s\n'
-            'To abort:                   %s') % (continuecmd, abortcmd)
+    msg = _('To continue:    %s\n'
+            'To abort:       %s') % (continuecmd, abortcmd)
     return _commentlines(msg)
 
 def _rebasemsg():
@@ -606,7 +609,7 @@ def _unshelvemsg():
 
 def _updatecleanmsg(dest=None):
     warning = _('warning: this will discard uncommitted changes')
-    return 'hg update --clean %s    (%s)' % (dest or '.', warning)
+    return 'hg update --clean %s (%s)' % (dest or '.', warning)
 
 def _graftmsg():
     # tweakdefaults requires `update` to have a rev hence the `.`
@@ -633,7 +636,7 @@ STATES = (
     ('histedit', fileexistspredicate('histedit-state'), _histeditmsg),
     ('bisect', fileexistspredicate('bisect.state'), _bisectmsg),
     ('graft', fileexistspredicate('graftstate'), _graftmsg),
-    ('unshelve', fileexistspredicate('unshelverebasestate'), _unshelvemsg),
+    ('unshelve', fileexistspredicate('shelvedstate'), _unshelvemsg),
     ('rebase', fileexistspredicate('rebasestate'), _rebasemsg),
     # The merge state is part of a list that will be iterated over.
     # They need to be last because some of the other unfinished states may also
@@ -787,16 +790,12 @@ def changebranch(ui, repo, revs, label):
                                 extra=extra,
                                 branch=label)
 
-            commitphase = ctx.phase()
-            overrides = {('phases', 'new-commit'): commitphase}
-            with repo.ui.configoverride(overrides, 'branch-change'):
-                newnode = repo.commitctx(mc)
-
+            newnode = repo.commitctx(mc)
             replacements[ctx.node()] = (newnode,)
             ui.debug('new node id is %s\n' % hex(newnode))
 
         # create obsmarkers and move bookmarks
-        scmutil.cleanupnodes(repo, replacements, 'branch-change')
+        scmutil.cleanupnodes(repo, replacements, 'branch-change', fixphase=True)
 
         # move the working copy too
         wctx = repo[None]
@@ -1248,7 +1247,8 @@ def copy(ui, repo, pats, opts, rename=False):
                              dryrun=dryrun, cwd=cwd)
         if rename and not dryrun:
             if not after and srcexists and not samefile:
-                repo.wvfs.unlinkpath(abssrc)
+                rmdir = repo.ui.configbool('experimental', 'removeemptydirs')
+                repo.wvfs.unlinkpath(abssrc, rmdir=rmdir)
             wctx.forget([abssrc])
 
     # pat: ossep
@@ -1685,7 +1685,7 @@ def showmarker(fm, marker, index=None):
     fm.write('date', '(%s) ', fm.formatdate(marker.date()))
     meta = marker.metadata().copy()
     meta.pop('date', None)
-    smeta = util.rapply(pycompat.maybebytestr, meta)
+    smeta = pycompat.rapply(pycompat.maybebytestr, meta)
     fm.write('metadata', '{%s}', fm.formatdict(smeta, fmt='%r: %r', sep=', '))
     fm.plain('\n')
 
@@ -1884,10 +1884,14 @@ def walkchangerevs(repo, match, opts, prepare):
     yielding each context, the iterator will first call the prepare
     function on each context in the window in forward order.'''
 
+    allfiles = opts.get('all_files')
     follow = opts.get('follow') or opts.get('follow_first')
     revs = _walkrevs(repo, opts)
     if not revs:
         return []
+    if allfiles and len(revs) > 1:
+        raise error.Abort(_("multiple revisions not supported with "
+                            "--all-files"))
     wanted = set()
     slowpath = match.anypats() or (not match.always() and opts.get('removed'))
     fncache = {}
@@ -1993,7 +1997,11 @@ def walkchangerevs(repo, match, opts, prepare):
                 ctx = change(rev)
                 if not fns:
                     def fns_generator():
-                        for f in ctx.files():
+                        if allfiles:
+                            fiter = iter(ctx)
+                        else:
+                            fiter = ctx.files()
+                        for f in fiter:
                             if match(f):
                                 yield f
                     fns = fns_generator()
@@ -2137,15 +2145,13 @@ def forget(ui, repo, match, prefix, explicitonly, dryrun, interactive):
     return bad, forgot
 
 def files(ui, ctx, m, fm, fmt, subrepos):
-    rev = ctx.rev()
     ret = 1
-    ds = ctx.repo().dirstate
 
+    needsfctx = ui.verbose or {'size', 'flags'} & fm.datahint()
     for f in ctx.matches(m):
-        if rev is None and ds[f] == 'r':
-            continue
         fm.startitem()
-        if ui.verbose:
+        fm.context(ctx=ctx)
+        if needsfctx:
             fc = ctx[f]
             fm.write('size flags', '% 10d % 1s ', fc.size(), fc.flags())
         fm.data(abspath=f)
@@ -2181,13 +2187,12 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
         warn = False
 
     subs = sorted(wctx.substate)
-    total = len(subs)
-    count = 0
+    progress = ui.makeprogress(_('searching'), total=len(subs),
+                               unit=_('subrepos'))
     for subpath in subs:
-        count += 1
         submatch = matchmod.subdirmatcher(subpath, m)
         if subrepos or m.exact(subpath) or any(submatch.files()):
-            ui.progress(_('searching'), count, total=total, unit=_('subrepos'))
+            progress.increment()
             sub = wctx.sub(subpath)
             try:
                 if sub.removefiles(submatch, prefix, after, force, subrepos,
@@ -2196,13 +2201,13 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
             except error.LookupError:
                 warnings.append(_("skipping missing subrepository: %s\n")
                                % join(subpath))
-    ui.progress(_('searching'), None)
+    progress.complete()
 
     # warn about failure to delete explicit files/dirs
     deleteddirs = util.dirs(deleted)
     files = m.files()
-    total = len(files)
-    count = 0
+    progress = ui.makeprogress(_('deleting'), total=len(files),
+                               unit=_('files'))
     for f in files:
         def insubrepo():
             for subpath in wctx.substate:
@@ -2210,8 +2215,7 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                     return True
             return False
 
-        count += 1
-        ui.progress(_('deleting'), count, total=total, unit=_('files'))
+        progress.increment()
         isdir = f in deleteddirs or wctx.hasdir(f)
         if (f in repo.dirstate or isdir or f == '.'
             or insubrepo() or f in subs):
@@ -2226,50 +2230,47 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                         % m.rel(f))
         # missing files will generate a warning elsewhere
         ret = 1
-    ui.progress(_('deleting'), None)
+    progress.complete()
 
     if force:
         list = modified + deleted + clean + added
     elif after:
         list = deleted
         remaining = modified + added + clean
-        total = len(remaining)
-        count = 0
+        progress = ui.makeprogress(_('skipping'), total=len(remaining),
+                                   unit=_('files'))
         for f in remaining:
-            count += 1
-            ui.progress(_('skipping'), count, total=total, unit=_('files'))
+            progress.increment()
             if ui.verbose or (f in files):
                 warnings.append(_('not removing %s: file still exists\n')
                                 % m.rel(f))
             ret = 1
-        ui.progress(_('skipping'), None)
+        progress.complete()
     else:
         list = deleted + clean
-        total = len(modified) + len(added)
-        count = 0
+        progress = ui.makeprogress(_('skipping'),
+                                   total=(len(modified) + len(added)),
+                                   unit=_('files'))
         for f in modified:
-            count += 1
-            ui.progress(_('skipping'), count, total=total, unit=_('files'))
+            progress.increment()
             warnings.append(_('not removing %s: file is modified (use -f'
                       ' to force removal)\n') % m.rel(f))
             ret = 1
         for f in added:
-            count += 1
-            ui.progress(_('skipping'), count, total=total, unit=_('files'))
+            progress.increment()
             warnings.append(_("not removing %s: file has been marked for add"
                       " (use 'hg forget' to undo add)\n") % m.rel(f))
             ret = 1
-        ui.progress(_('skipping'), None)
+        progress.complete()
 
     list = sorted(list)
-    total = len(list)
-    count = 0
+    progress = ui.makeprogress(_('deleting'), total=len(list),
+                               unit=_('files'))
     for f in list:
-        count += 1
         if ui.verbose or not m.exact(f):
-            ui.progress(_('deleting'), count, total=total, unit=_('files'))
+            progress.increment()
             ui.status(_('removing %s\n') % m.rel(f))
-    ui.progress(_('deleting'), None)
+    progress.complete()
 
     if not dryrun:
         with repo.wlock():
@@ -2277,7 +2278,9 @@ def remove(ui, repo, m, prefix, after, force, subrepos, dryrun, warnings=None):
                 for f in list:
                     if f in added:
                         continue # we never unlink added files on remove
-                    repo.wvfs.unlinkpath(f, ignoremissing=True)
+                    rmdir = repo.ui.configbool('experimental',
+                                               'removeemptydirs')
+                    repo.wvfs.unlinkpath(f, ignoremissing=True, rmdir=rmdir)
             repo[None].forget(list)
 
     if warn:
@@ -2295,6 +2298,7 @@ def _updatecatformatter(fm, ctx, matcher, path, decode):
     if decode:
         data = ctx.repo().wwritedata(path, data)
     fm.startitem()
+    fm.context(ctx=ctx)
     fm.write('data', '%s', data)
     fm.data(abspath=path, path=matcher.rel(path))
 
@@ -2541,21 +2545,19 @@ def amend(ui, repo, old, extra, pats, opts):
             # This not what we expect from amend.
             return old.node()
 
+        commitphase = None
         if opts.get('secret'):
-            commitphase = 'secret'
-        else:
-            commitphase = old.phase()
-        overrides = {('phases', 'new-commit'): commitphase}
-        with ui.configoverride(overrides, 'amend'):
-            newid = repo.commitctx(new)
+            commitphase = phases.secret
+        newid = repo.commitctx(new)
 
         # Reroute the working copy parent to the new changeset
         repo.setparents(newid, nullid)
         mapping = {old.node(): (newid,)}
         obsmetadata = None
         if opts.get('note'):
-            obsmetadata = {'note': opts['note']}
-        scmutil.cleanupnodes(repo, mapping, 'amend', metadata=obsmetadata)
+            obsmetadata = {'note': encoding.fromlocal(opts['note'])}
+        scmutil.cleanupnodes(repo, mapping, 'amend', metadata=obsmetadata,
+                             fixphase=True, targetphase=commitphase)
 
         # Fixing the dirstate because localrepo.commitctx does not update
         # it. This is rather convenient because we did not need to update
@@ -3002,12 +3004,6 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
 
         if not opts.get('dry_run'):
             needdata = ('revert', 'add', 'undelete')
-            if _revertprefetch is not _revertprefetchstub:
-                ui.deprecwarn("'cmdutil._revertprefetch' is deprecated, "
-                              "add a callback to 'scmutil.fileprefetchhooks'",
-                              '4.6', stacklevel=1)
-                _revertprefetch(repo, ctx,
-                                *[actions[name][0] for name in needdata])
             oplist = [actions[name][0] for name in needdata]
             prefetch = scmutil.prefetchfiles
             matchfiles = scmutil.matchfiles
@@ -3025,12 +3021,6 @@ def revert(ui, repo, ctx, parents, *pats, **opts):
                 except KeyError:
                     raise error.Abort("subrepository '%s' does not exist in %s!"
                                       % (sub, short(ctx.node())))
-
-def _revertprefetchstub(repo, ctx, *files):
-    """Stub method for detecting extension wrapping of _revertprefetch(), to
-    issue a deprecation warning."""
-
-_revertprefetch = _revertprefetchstub
 
 def _performrevert(repo, parents, ctx, actions, interactive=False,
                    tobackup=None):
@@ -3051,7 +3041,8 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
 
     def doremove(f):
         try:
-            repo.wvfs.unlinkpath(f)
+            rmdir = repo.ui.configbool('experimental', 'removeemptydirs')
+            repo.wvfs.unlinkpath(f, rmdir=rmdir)
         except OSError:
             pass
         repo.dirstate.remove(f)
@@ -3168,12 +3159,6 @@ def _performrevert(repo, parents, ctx, actions, interactive=False,
         if f in copied:
             repo.dirstate.copy(copied[f], f)
 
-class command(registrar.command):
-    """deprecated: used registrar.command instead"""
-    def _doregister(self, func, name, *args, **kwargs):
-        func._deprecatedregistrar = True  # flag for deprecwarn in extensions.py
-        return super(command, self)._doregister(func, name, *args, **kwargs)
-
 # a list of (ui, repo, otherpeer, opts, missing) functions called by
 # commands.outgoing.  "missing" is "missing" of the result of
 # "findcommonoutgoing()"
@@ -3198,7 +3183,7 @@ summaryremotehooks = util.hooks()
 # (state file, clearable, allowcommit, error, hint)
 unfinishedstates = [
     ('graftstate', True, False, _('graft in progress'),
-     _("use 'hg graft --continue' or 'hg update' to abort")),
+     _("use 'hg graft --continue' or 'hg graft --stop' to stop")),
     ('updatestate', True, False, _('last update was interrupted'),
      _("use 'hg update' to get a consistent checkout"))
     ]
@@ -3285,23 +3270,3 @@ def wrongtooltocontinue(repo, task):
     if after[1]:
         hint = after[0]
     raise error.Abort(_('no %s in progress') % task, hint=hint)
-
-class changeset_printer(logcmdutil.changesetprinter):
-
-    def __init__(self, ui, *args, **kwargs):
-        msg = ("'cmdutil.changeset_printer' is deprecated, "
-               "use 'logcmdutil.logcmdutil'")
-        ui.deprecwarn(msg, "4.6")
-        super(changeset_printer, self).__init__(ui, *args, **kwargs)
-
-def displaygraph(ui, *args, **kwargs):
-    msg = ("'cmdutil.displaygraph' is deprecated, "
-           "use 'logcmdutil.displaygraph'")
-    ui.deprecwarn(msg, "4.6")
-    return logcmdutil.displaygraph(ui, *args, **kwargs)
-
-def show_changeset(ui, *args, **kwargs):
-    msg = ("'cmdutil.show_changeset' is deprecated, "
-           "use 'logcmdutil.changesetdisplayer'")
-    ui.deprecwarn(msg, "4.6")
-    return logcmdutil.changesetdisplayer(ui, *args, **kwargs)

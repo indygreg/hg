@@ -7,6 +7,8 @@
 
 from __future__ import absolute_import
 
+import ast
+import collections
 import functools
 import imp
 import inspect
@@ -121,10 +123,11 @@ def _importext(name, path=None, reportfunc=None):
 def _reportimporterror(ui, err, failed, next):
     # note: this ui.debug happens before --debug is processed,
     #       Use --config ui.debug=1 to see them.
-    ui.debug('could not import %s (%s): trying %s\n'
-             % (failed, stringutil.forcebytestr(err), next))
-    if ui.debugflag:
-        ui.traceback()
+    if ui.configbool('devel', 'debug.extensions'):
+        ui.debug('could not import %s (%s): trying %s\n'
+                 % (failed, stringutil.forcebytestr(err), next))
+        if ui.debugflag:
+            ui.traceback()
 
 def _rejectunicode(name, xs):
     if isinstance(xs, (list, set, tuple)):
@@ -145,9 +148,6 @@ def _validatecmdtable(ui, cmdtable):
     """Check if extension commands have required attributes"""
     for c, e in cmdtable.iteritems():
         f = e[0]
-        if getattr(f, '_deprecatedregistrar', False):
-            ui.deprecwarn("cmdutil.command is deprecated, use "
-                          "registrar.command to register '%s'" % c, '4.6')
         missing = [a for a in _cmdfuncattrs if not util.safehasattr(f, a)]
         if not missing:
             continue
@@ -541,9 +541,8 @@ def getwrapperchain(container, funcname):
         fn = getattr(fn, '_origfunc', None)
     return result
 
-def _disabledpaths(strip_init=False):
-    '''find paths of disabled extensions. returns a dict of {name: path}
-    removes /__init__.py from packages if strip_init is True'''
+def _disabledpaths():
+    '''find paths of disabled extensions. returns a dict of {name: path}'''
     import hgext
     extpath = os.path.dirname(
         os.path.abspath(pycompat.fsencode(hgext.__file__)))
@@ -562,8 +561,6 @@ def _disabledpaths(strip_init=False):
             path = os.path.join(extpath, e, '__init__.py')
             if not os.path.exists(path):
                 continue
-            if strip_init:
-                path = os.path.dirname(path)
         if name in exts or name in _order or name == '__init__':
             continue
         exts[name] = path
@@ -609,12 +606,10 @@ def _moduledoc(file):
 def _disabledhelp(path):
     '''retrieve help synopsis of a disabled extension (without importing)'''
     try:
-        file = open(path)
+        with open(path, 'rb') as src:
+            doc = _moduledoc(src)
     except IOError:
         return
-    else:
-        doc = _moduledoc(file)
-        file.close()
 
     if doc: # extracting localized synopsis
         return gettext(doc)
@@ -658,48 +653,82 @@ def disabledext(name):
     if name in paths:
         return _disabledhelp(paths[name])
 
-def disabledcmd(ui, cmd, strict=False):
-    '''import disabled extensions until cmd is found.
-    returns (cmdname, extname, module)'''
+def _walkcommand(node):
+    """Scan @command() decorators in the tree starting at node"""
+    todo = collections.deque([node])
+    while todo:
+        node = todo.popleft()
+        if not isinstance(node, ast.FunctionDef):
+            todo.extend(ast.iter_child_nodes(node))
+            continue
+        for d in node.decorator_list:
+            if not isinstance(d, ast.Call):
+                continue
+            if not isinstance(d.func, ast.Name):
+                continue
+            if d.func.id != r'command':
+                continue
+            yield d
 
-    paths = _disabledpaths(strip_init=True)
+def _disabledcmdtable(path):
+    """Construct a dummy command table without loading the extension module
+
+    This may raise IOError or SyntaxError.
+    """
+    with open(path, 'rb') as src:
+        root = ast.parse(src.read(), path)
+    cmdtable = {}
+    for node in _walkcommand(root):
+        if not node.args:
+            continue
+        a = node.args[0]
+        if isinstance(a, ast.Str):
+            name = pycompat.sysbytes(a.s)
+        elif pycompat.ispy3 and isinstance(a, ast.Bytes):
+            name = a.s
+        else:
+            continue
+        cmdtable[name] = (None, [], b'')
+    return cmdtable
+
+def _finddisabledcmd(ui, cmd, name, path, strict):
+    try:
+        cmdtable = _disabledcmdtable(path)
+    except (IOError, SyntaxError):
+        return
+    try:
+        aliases, entry = cmdutil.findcmd(cmd, cmdtable, strict)
+    except (error.AmbiguousCommand, error.UnknownCommand):
+        return
+    for c in aliases:
+        if c.startswith(cmd):
+            cmd = c
+            break
+    else:
+        cmd = aliases[0]
+    doc = _disabledhelp(path)
+    return (cmd, name, doc)
+
+def disabledcmd(ui, cmd, strict=False):
+    '''find cmd from disabled extensions without importing.
+    returns (cmdname, extname, doc)'''
+
+    paths = _disabledpaths()
     if not paths:
         raise error.UnknownCommand(cmd)
-
-    def findcmd(cmd, name, path):
-        try:
-            mod = loadpath(path, 'hgext.%s' % name)
-        except Exception:
-            return
-        try:
-            aliases, entry = cmdutil.findcmd(cmd,
-                getattr(mod, 'cmdtable', {}), strict)
-        except (error.AmbiguousCommand, error.UnknownCommand):
-            return
-        except Exception:
-            ui.warn(_('warning: error finding commands in %s\n') % path)
-            ui.traceback()
-            return
-        for c in aliases:
-            if c.startswith(cmd):
-                cmd = c
-                break
-        else:
-            cmd = aliases[0]
-        return (cmd, name, mod)
 
     ext = None
     # first, search for an extension with the same name as the command
     path = paths.pop(cmd, None)
     if path:
-        ext = findcmd(cmd, cmd, path)
+        ext = _finddisabledcmd(ui, cmd, cmd, path, strict=strict)
     if not ext:
         # otherwise, interrogate each extension until there's a match
         for name, path in paths.iteritems():
-            ext = findcmd(cmd, name, path)
+            ext = _finddisabledcmd(ui, cmd, name, path, strict=strict)
             if ext:
                 break
-    if ext and 'DEPRECATED' not in ext.__doc__:
+    if ext:
         return ext
 
     raise error.UnknownCommand(cmd)
@@ -729,7 +758,7 @@ def moduleversion(module):
     else:
         version = ''
     if isinstance(version, (list, tuple)):
-        version = '.'.join(str(o) for o in version)
+        version = '.'.join(pycompat.bytestr(o) for o in version)
     return version
 
 def ismoduleinternal(module):

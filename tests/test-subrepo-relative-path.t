@@ -1,5 +1,3 @@
-#require killdaemons
-
 Preparing the subrepository 'sub'
 
   $ hg init sub
@@ -57,6 +55,30 @@ Clone main from hgweb
   added 1 changesets with 1 changes to 1 files
   new changesets 863c1745b441
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
+
+Ensure that subrepos pay attention to default:pushurl
+
+  $ cat > cloned/.hg/hgrc << EOF
+  > [paths]
+  > default:pushurl = http://localhost:$HGPORT/main
+  > EOF
+
+  $ hg -R cloned out -S --config paths.default=bogus://invalid
+  comparing with http://localhost:$HGPORT/main
+  searching for changes
+  no changes found
+  comparing with http://localhost:$HGPORT/sub
+  searching for changes
+  no changes found
+  [1]
+
+  $ hg -R cloned push --config paths.default=bogus://invalid
+  pushing to http://localhost:$HGPORT/main
+  no changes made to subrepo sub since last push to http://localhost:$HGPORT/sub
+  searching for changes
+  no changes found
+  abort: HTTP Error 403: ssl required
+  [255]
 
 Checking cloned repo ids
 

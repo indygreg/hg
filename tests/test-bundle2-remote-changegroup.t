@@ -1,5 +1,3 @@
-#require killdaemons
-
 #testcases sshv1 sshv2
 
 #if sshv2
@@ -18,7 +16,14 @@ Create an extension to test bundle2 remote-changegroup parts
   > Current bundle2 implementation doesn't provide a way to generate those
   > parts, so they must be created by extensions.
   > """
-  > from mercurial import bundle2, changegroup, discovery, exchange, util
+  > from mercurial import (
+  >     bundle2,
+  >     changegroup,
+  >     discovery,
+  >     exchange,
+  >     pycompat,
+  >     util,
+  > )
   > 
   > def _getbundlechangegrouppart(bundler, repo, source, bundlecaps=None,
   >                               b2caps=None, heads=None, common=None,
@@ -42,45 +47,45 @@ Create an extension to test bundle2 remote-changegroup parts
   >           Python expression as parameters. The Python expression is
   >           evaluated with eval, and is expected to be a dict.
   >     """
-  >     def newpart(name, data=''):
+  >     def newpart(name, data=b''):
   >         """wrapper around bundler.newpart adding an extra part making the
   >         client output information about each processed part"""
-  >         bundler.newpart('output', data=name)
+  >         bundler.newpart(b'output', data=name)
   >         part = bundler.newpart(name, data=data)
   >         return part
   > 
-  >     for line in open(repo.vfs.join('bundle2maker'), 'r'):
+  >     for line in open(repo.vfs.join(b'bundle2maker'), 'rb'):
   >         line = line.strip()
   >         try:
   >             verb, args = line.split(None, 1)
   >         except ValueError:
-  >             verb, args = line, ''
-  >         if verb == 'remote-changegroup':
+  >             verb, args = line, b''
+  >         if verb == b'remote-changegroup':
   >            url, file = args.split()
   >            bundledata = open(file, 'rb').read()
-  >            digest = util.digester.preferred(b2caps['digests'])
+  >            digest = util.digester.preferred(b2caps[b'digests'])
   >            d = util.digester([digest], bundledata)
-  >            part = newpart('remote-changegroup')
-  >            part.addparam('url', url)
-  >            part.addparam('size', str(len(bundledata)))
-  >            part.addparam('digests', digest)
-  >            part.addparam('digest:%s' % digest, d[digest])
-  >         elif verb == 'raw-remote-changegroup':
-  >            part = newpart('remote-changegroup')
+  >            part = newpart(b'remote-changegroup')
+  >            part.addparam(b'url', url)
+  >            part.addparam(b'size', b'%d' % len(bundledata))
+  >            part.addparam(b'digests', digest)
+  >            part.addparam(b'digest:%s' % digest, d[digest])
+  >         elif verb == b'raw-remote-changegroup':
+  >            part = newpart(b'remote-changegroup')
   >            for k, v in eval(args).items():
-  >                part.addparam(k, str(v))
-  >         elif verb == 'changegroup':
+  >                part.addparam(pycompat.sysbytes(k), pycompat.bytestr(v))
+  >         elif verb == b'changegroup':
   >             _common, heads = args.split()
   >             common.extend(repo[r].node() for r in repo.revs(_common))
   >             heads = [repo[r].node() for r in repo.revs(heads)]
   >             outgoing = discovery.outgoing(repo, common, heads)
-  >             cg = changegroup.makechangegroup(repo, outgoing, '01',
-  >                                              'changegroup')
-  >             newpart('changegroup', cg.getchunks())
+  >             cg = changegroup.makechangegroup(repo, outgoing, b'01',
+  >                                              b'changegroup')
+  >             newpart(b'changegroup', cg.getchunks())
   >         else:
   >             raise Exception('unknown verb')
   > 
-  > exchange.getbundle2partsmapping['changegroup'] = _getbundlechangegrouppart
+  > exchange.getbundle2partsmapping[b'changegroup'] = _getbundlechangegrouppart
   > EOF
 
 Start a simple HTTP server to serve bundles

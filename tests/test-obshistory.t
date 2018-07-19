@@ -55,9 +55,9 @@ Actual test
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden "desc(A0)"
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: 4ae3a4151de9)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: 4ae3a4151de9)
 
 Test output with pruned commit
 ==============================
@@ -118,9 +118,9 @@ Actual test
   (use --hidden to access hidden revisions)
   [255]
   $ hg up --hidden -r 'desc(B0)'
-  updating to a hidden changeset 0dec01379d3b
-  (hidden revision '0dec01379d3b' is pruned)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' is pruned)
 
 Test output with splitted commit
 ================================
@@ -195,9 +195,9 @@ Actual test
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'min(desc(A0))'
-  updating to a hidden changeset 471597cad322
-  (hidden revision '471597cad322' was split as: 337fec4d2edc, f257fde29c7a)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471597cad322
+  (hidden revision '471597cad322' was split as: 337fec4d2edc, f257fde29c7a)
 
 Test output with lots of splitted commit
 ========================================
@@ -294,9 +294,9 @@ Actual test
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'min(desc(A0))'
-  updating to a hidden changeset de7290d8b885
-  (hidden revision 'de7290d8b885' was split as: 337fec4d2edc, f257fde29c7a and 2 more)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset de7290d8b885
+  (hidden revision 'de7290d8b885' was split as: 337fec4d2edc, f257fde29c7a and 2 more)
 
 Test output with folded commit
 ==============================
@@ -373,17 +373,17 @@ Test setup
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(A0)'
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   $ hg update 0dec01379d3b
   abort: hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192!
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(B0)'
-  updating to a hidden changeset 0dec01379d3b
-  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
 
 Test output with divergence
 ===========================
@@ -416,9 +416,9 @@ Test setup
      summary:     ROOT
   
   $ hg update --hidden 'desc(A0)'
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: fdf9bde5129a)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: fdf9bde5129a)
   $ hg commit --amend -m "A2"
   2 new content-divergent changesets
   $ hg log --hidden -G
@@ -456,9 +456,9 @@ Actual test
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(A0)'
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' has diverged)
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' has diverged)
 
 Test output with amended + folded commit
 ========================================
@@ -551,13 +551,13 @@ Test setup
   (use --hidden to access hidden revisions)
   [255]
   $ hg update --hidden 'desc(A0)'
-  updating to a hidden changeset 471f378eab4c
-  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   0 files updated, 0 files merged, 1 files removed, 0 files unresolved
+  updated to hidden changeset 471f378eab4c
+  (hidden revision '471f378eab4c' was rewritten as: eb5a0daa2192)
   $ hg update --hidden 0dec01379d3b
-  updating to a hidden changeset 0dec01379d3b
-  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
   1 files updated, 0 files merged, 0 files removed, 0 files unresolved
+  updated to hidden changeset 0dec01379d3b
+  (hidden revision '0dec01379d3b' was rewritten as: eb5a0daa2192)
   $ hg update 0dec01379d3b
   0 files updated, 0 files merged, 0 files removed, 0 files unresolved
   $ hg update --hidden 'desc(B0)'

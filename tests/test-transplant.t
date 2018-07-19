@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ cat <<EOF >> $HGRCPATH
   > [extensions]
   > transplant=
@@ -838,9 +836,9 @@ test transplanting a patch turning into a no-op
   $ cd binarysource
   $ echo a > a
   $ hg ci -Am adda a
-  >>> open('b', 'wb').write(b'\0b1')
+  >>> open('b', 'wb').write(b'\0b1') and None
   $ hg ci -Am addb b
-  >>> open('b', 'wb').write(b'\0b2')
+  >>> open('b', 'wb').write(b'\0b2') and None
   $ hg ci -m changeb b
   $ cd ..
 

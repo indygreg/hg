@@ -1,4 +1,4 @@
-#require serve killdaemons
+#require serve
 
   $ hg clone http://localhost:$HGPORT/ copy
   abort: * (glob)

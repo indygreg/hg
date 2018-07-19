@@ -216,7 +216,7 @@ def checkexec(path):
             # check directly in path and don't leave checkisexec behind
             checkdir = path
             checkisexec = None
-        fh, fn = tempfile.mkstemp(dir=checkdir, prefix='hg-checkexec-')
+        fh, fn = pycompat.mkstemp(dir=checkdir, prefix='hg-checkexec-')
         try:
             os.close(fh)
             m = os.stat(fn).st_mode
@@ -249,16 +249,15 @@ def checklink(path):
         else:
             checkdir = path
             cachedir = None
-        fscheckdir = pycompat.fsdecode(checkdir)
-        name = tempfile.mktemp(dir=fscheckdir,
+        name = tempfile.mktemp(dir=pycompat.fsdecode(checkdir),
                                prefix=r'checklink-')
         name = pycompat.fsencode(name)
         try:
             fd = None
             if cachedir is None:
-                fd = tempfile.NamedTemporaryFile(dir=fscheckdir,
-                                                 prefix=r'hg-checklink-')
-                target = pycompat.fsencode(os.path.basename(fd.name))
+                fd = pycompat.namedtempfile(dir=checkdir,
+                                            prefix='hg-checklink-')
+                target = os.path.basename(fd.name)
             else:
                 # create a fixed file to link to; doesn't matter if it
                 # already exists.
@@ -287,7 +286,7 @@ def checklink(path):
                 return True
             except OSError as inst:
                 # link creation might race, try again
-                if inst[0] == errno.EEXIST:
+                if inst.errno == errno.EEXIST:
                     continue
                 raise
             finally:
@@ -297,7 +296,7 @@ def checklink(path):
             return False
         except OSError as inst:
             # sshfs might report failure while successfully creating the link
-            if inst[0] == errno.EIO and os.path.exists(name):
+            if inst.errno == errno.EIO and os.path.exists(name):
                 unlink(name)
             return False
 
@@ -542,9 +541,9 @@ def username(uid=None):
     if uid is None:
         uid = os.getuid()
     try:
-        return pwd.getpwuid(uid)[0]
+        return pycompat.fsencode(pwd.getpwuid(uid)[0])
     except KeyError:
-        return str(uid)
+        return b'%d' % uid
 
 def groupname(gid=None):
     """Return the name of the group with the given gid.

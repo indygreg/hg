@@ -126,6 +126,8 @@ _fphasesentry = struct.Struct('>i20s')
 allphases = public, draft, secret = range(3)
 trackedphases = allphases[1:]
 phasenames = ['public', 'draft', 'secret']
+mutablephases = tuple(allphases[1:])
+remotehiddenphases = tuple(allphases[2:])
 
 def _readroots(repo, phasedefaults=None):
     """Read phase roots from disk
@@ -352,10 +354,14 @@ class phasecache(object):
                 _trackphasechange(phasetracking, rev, None, revphase)
         repo.invalidatevolatilesets()
 
-    def advanceboundary(self, repo, tr, targetphase, nodes):
+    def advanceboundary(self, repo, tr, targetphase, nodes, dryrun=None):
         """Set all 'nodes' to phase 'targetphase'
 
         Nodes with a phase lower than 'targetphase' are not affected.
+
+        If dryrun is True, no actions will be performed
+
+        Returns a set of revs whose phase is changed or should be changed
         """
         # Be careful to preserve shallow-copied values: do not update
         # phaseroots values, replace them.
@@ -366,6 +372,7 @@ class phasecache(object):
 
         repo = repo.unfiltered()
 
+        changes = set() # set of revisions to be changed
         delroots = [] # set of root deleted by this path
         for phase in xrange(targetphase + 1, len(allphases)):
             # filter nodes that are not in a compatible phase already
@@ -377,6 +384,9 @@ class phasecache(object):
             olds = self.phaseroots[phase]
 
             affected = repo.revs('%ln::%ln', olds, nodes)
+            changes.update(affected)
+            if dryrun:
+                continue
             for r in affected:
                 _trackphasechange(phasetracking, r, self.phase(repo, r),
                                   targetphase)
@@ -387,10 +397,12 @@ class phasecache(object):
                 self._updateroots(phase, roots, tr)
                 # some roots may need to be declared for lower phases
                 delroots.extend(olds - roots)
-        # declare deleted root in the target phase
-        if targetphase != 0:
-            self._retractboundary(repo, tr, targetphase, delroots)
-        repo.invalidatevolatilesets()
+        if not dryrun:
+            # declare deleted root in the target phase
+            if targetphase != 0:
+                self._retractboundary(repo, tr, targetphase, delroots)
+            repo.invalidatevolatilesets()
+        return changes
 
     def retractboundary(self, repo, tr, targetphase, nodes):
         oldroots = self.phaseroots[:targetphase + 1]
@@ -478,16 +490,24 @@ class phasecache(object):
         # (see branchmap one)
         self.invalidate()
 
-def advanceboundary(repo, tr, targetphase, nodes):
+def advanceboundary(repo, tr, targetphase, nodes, dryrun=None):
     """Add nodes to a phase changing other nodes phases if necessary.
 
     This function move boundary *forward* this means that all nodes
     are set in the target phase or kept in a *lower* phase.
 
-    Simplify boundary to contains phase roots only."""
+    Simplify boundary to contains phase roots only.
+
+    If dryrun is True, no actions will be performed
+
+    Returns a set of revs whose phase is changed or should be changed
+    """
     phcache = repo._phasecache.copy()
-    phcache.advanceboundary(repo, tr, targetphase, nodes)
-    repo._phasecache.replace(phcache)
+    changes = phcache.advanceboundary(repo, tr, targetphase, nodes,
+                                      dryrun=dryrun)
+    if not dryrun:
+        repo._phasecache.replace(phcache)
+    return changes
 
 def retractboundary(repo, tr, targetphase, nodes):
     """Set nodes back to a phase changing other nodes phases if
@@ -645,10 +665,8 @@ def newheads(repo, heads, roots):
     * `heads`: define the first subset
     * `roots`: define the second we subtract from the first"""
     repo = repo.unfiltered()
-    revset = repo.set('heads((%ln + parents(%ln)) - (%ln::%ln))',
-                      heads, roots, roots, heads)
-    return [c.node() for c in revset]
-
+    revs = repo.revs('heads(::%ln - (%ln::%ln))', heads, roots, heads)
+    return pycompat.maplist(repo.changelog.node, revs)
 
 def newcommitphase(ui):
     """helper to get the target phase of new commit

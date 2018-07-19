@@ -49,7 +49,7 @@ class unionrevlog(revlog.revlog):
         for rev2 in self.revlog2:
             rev = self.revlog2.index[rev2]
             # rev numbers - in revlog2, very different from self.rev
-            _start, _csize, _rsize, base, linkrev, p1rev, p2rev, node = rev
+            _start, _csize, rsize, base, linkrev, p1rev, p2rev, node = rev
             flags = _start & 0xFFFF
 
             if linkmapper is None: # link is to same revlog
@@ -69,7 +69,9 @@ class unionrevlog(revlog.revlog):
             p1node = self.revlog2.node(p1rev)
             p2node = self.revlog2.node(p2rev)
 
-            e = (flags, None, None, base,
+            # TODO: it's probably wrong to set compressed length to None, but
+            # I have no idea if csize is valid in the base revlog context.
+            e = (flags, None, rsize, base,
                  link, self.rev(p1node), self.rev(p2node), node)
             self.index.insert(-1, e)
             self.nodemap[node] = n

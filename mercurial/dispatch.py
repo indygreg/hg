@@ -83,20 +83,23 @@ class request(object):
 
 def run():
     "run the command in sys.argv"
-    _initstdio()
+    initstdio()
     req = request(pycompat.sysargv[1:])
     err = None
     try:
-        status = (dispatch(req) or 0)
+        status = dispatch(req)
     except error.StdioError as e:
         err = e
         status = -1
+
+    # In all cases we try to flush stdio streams.
     if util.safehasattr(req.ui, 'fout'):
         try:
             req.ui.fout.flush()
         except IOError as e:
             err = e
             status = -1
+
     if util.safehasattr(req.ui, 'ferr'):
         try:
             if err is not None and err.errno != errno.EPIPE:
@@ -112,7 +115,7 @@ def run():
     sys.exit(status & 255)
 
 if pycompat.ispy3:
-    def _initstdio():
+    def initstdio():
         pass
 
     def _silencestdio():
@@ -132,7 +135,7 @@ if pycompat.ispy3:
             except IOError:
                 pass
 else:
-    def _initstdio():
+    def initstdio():
         for fp in (sys.stdin, sys.stdout, sys.stderr):
             procutil.setbinary(fp)
 
@@ -172,7 +175,7 @@ def _formatargs(args):
     return ' '.join(procutil.shellquote(a) for a in args)
 
 def dispatch(req):
-    "run the command specified in req.args"
+    """run the command specified in req.args; returns an integer status code"""
     if req.ferr:
         ferr = req.ferr
     elif req.ui:
@@ -205,9 +208,9 @@ def dispatch(req):
 
     msg = _formatargs(req.args)
     starttime = util.timer()
-    ret = None
+    ret = 1  # default of Python exit code on unhandled exception
     try:
-        ret = _runcatch(req)
+        ret = _runcatch(req) or 0
     except error.ProgrammingError as inst:
         req.ui.warn(_('** ProgrammingError: %s\n') % inst)
         if inst.hint:
@@ -236,7 +239,7 @@ def dispatch(req):
             req.ui.log('uiblocked', 'ui blocked ms',
                        **pycompat.strkwargs(req.ui._blockedtimes))
         req.ui.log("commandfinish", "%s exited %d after %0.2f seconds\n",
-                   msg, ret or 0, duration)
+                   msg, ret & 255, duration)
         try:
             req._runexithandlers()
         except: # exiting, so no re-raises
@@ -285,8 +288,8 @@ def _runcatch(req):
                 req.args[2] != 'serve' or
                 req.args[3] != '--stdio'):
                 raise error.Abort(
-                    _('potentially unsafe serve --stdio invocation: %r') %
-                    (req.args,))
+                    _('potentially unsafe serve --stdio invocation: %s') %
+                    (stringutil.pprint(req.args),))
 
         try:
             debugger = 'pdb'
@@ -808,6 +811,13 @@ def _dispatch(req):
     if req.repo:
         uis.add(req.repo.ui)
 
+    if (req.earlyoptions['verbose'] or req.earlyoptions['debug']
+            or req.earlyoptions['quiet']):
+        for opt in ('verbose', 'debug', 'quiet'):
+            val = pycompat.bytestr(bool(req.earlyoptions[opt]))
+            for ui_ in uis:
+                ui_.setconfig('ui', opt, val, '--' + opt)
+
     if req.earlyoptions['profile']:
         for ui_ in uis:
             ui_.setconfig('profiling', 'enabled', 'true', '--profile')
@@ -873,8 +883,11 @@ def _dispatch(req):
         if options["profile"]:
             profiler.start()
 
+        # if abbreviated version of this were used, take them in account, now
         if options['verbose'] or options['debug'] or options['quiet']:
             for opt in ('verbose', 'debug', 'quiet'):
+                if options[opt] == req.earlyoptions[opt]:
+                    continue
                 val = pycompat.bytestr(bool(options[opt]))
                 for ui_ in uis:
                     ui_.setconfig('ui', opt, val, '--' + opt)
@@ -1025,7 +1038,7 @@ def _exceptionwarning(ui):
                      '** which supports versions %s of Mercurial.\n'
                      '** Please disable %s and try your action again.\n'
                      '** If that fixes the bug please report it to %s\n')
-                   % (name, testedwith, name, report))
+                   % (name, testedwith, name, stringutil.forcebytestr(report)))
     else:
         bugtracker = ui.config('ui', 'supportcontact')
         if bugtracker is None:

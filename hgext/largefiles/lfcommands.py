@@ -118,12 +118,14 @@ def lfconvert(ui, src, dest, *pats, **opts):
                 matcher = None
 
             lfiletohash = {}
+            progress = ui.makeprogress(_('converting revisions'),
+                                       unit=_('revisions'),
+                                       total=rsrc['tip'].rev())
             for ctx in ctxs:
-                ui.progress(_('converting revisions'), ctx.rev(),
-                    unit=_('revisions'), total=rsrc['tip'].rev())
+                progress.update(ctx.rev())
                 _lfconvert_addchangeset(rsrc, rdst, ctx, revmap,
                     lfiles, normalfiles, matcher, size, lfiletohash)
-            ui.progress(_('converting revisions'), None)
+            progress.complete()
 
             if rdst.wvfs.exists(lfutil.shortname):
                 rdst.wvfs.rmtree(lfutil.shortname)
@@ -368,9 +370,10 @@ def uploadlfiles(ui, rsrc, rdst, files):
     files = [h for h in files if not retval[h]]
     ui.debug("%d largefiles need to be uploaded\n" % len(files))
 
+    progress = ui.makeprogress(_('uploading largefiles'), unit=_('files'),
+                               total=len(files))
     for hash in files:
-        ui.progress(_('uploading largefiles'), at, unit=_('files'),
-                    total=len(files))
+        progress.update(at)
         source = lfutil.findfile(rsrc, hash)
         if not source:
             raise error.Abort(_('largefile %s missing from store'
@@ -378,7 +381,7 @@ def uploadlfiles(ui, rsrc, rdst, files):
         # XXX check for errors here
         store.put(source, hash)
         at += 1
-    ui.progress(_('uploading largefiles'), None)
+    progress.complete()
 
 def verifylfiles(ui, repo, all=False, contents=False):
     '''Verify that every largefile revision in the current changeset

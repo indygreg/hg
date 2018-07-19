@@ -35,9 +35,9 @@ while [ "$1" ]; do
     esac
 done
 
-cd "`dirname $0`/.."
+cd "`dirname $0`/../.."
 
-specfile=$PWD/contrib/mercurial.spec
+specfile=$PWD/contrib/packaging/mercurial.spec
 if [ ! -f $specfile ]; then
     echo "Cannot find $specfile!" 1>&2
     exit 1

@@ -247,9 +247,9 @@ Pager should not override the exit code of other commands
   > from mercurial import registrar, commands
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'fortytwo', [], 'fortytwo', norepo=True)
+  > @command(b'fortytwo', [], b'fortytwo', norepo=True)
   > def fortytwo(ui, *opts):
-  >     ui.write('42\n')
+  >     ui.write(b'42\n')
   >     return 42
   > EOF
 

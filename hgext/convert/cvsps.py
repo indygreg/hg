@@ -6,6 +6,7 @@
 # GNU General Public License version 2 or any later version.
 from __future__ import absolute_import
 
+import functools
 import os
 import re
 
@@ -50,8 +51,8 @@ class logentry(object):
         self.__dict__.update(entries)
 
     def __repr__(self):
-        items = ("%s=%r"%(k, self.__dict__[k]) for k in sorted(self.__dict__))
-        return "%s(%s)"%(type(self).__name__, ", ".join(items))
+        items = (r"%s=%r"%(k, self.__dict__[k]) for k in sorted(self.__dict__))
+        return r"%s(%s)"%(type(self).__name__, r", ".join(items))
 
 class logerror(Exception):
     pass
@@ -110,25 +111,25 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
     log = []      # list of logentry objects containing the CVS state
 
     # patterns to match in CVS (r)log output, by state of use
-    re_00 = re.compile('RCS file: (.+)$')
-    re_01 = re.compile('cvs \\[r?log aborted\\]: (.+)$')
-    re_02 = re.compile('cvs (r?log|server): (.+)\n$')
-    re_03 = re.compile("(Cannot access.+CVSROOT)|"
-                       "(can't create temporary directory.+)$")
-    re_10 = re.compile('Working file: (.+)$')
-    re_20 = re.compile('symbolic names:')
-    re_30 = re.compile('\t(.+): ([\\d.]+)$')
-    re_31 = re.compile('----------------------------$')
-    re_32 = re.compile('======================================='
-                       '======================================$')
-    re_50 = re.compile('revision ([\\d.]+)(\s+locked by:\s+.+;)?$')
-    re_60 = re.compile(r'date:\s+(.+);\s+author:\s+(.+);\s+state:\s+(.+?);'
-                       r'(\s+lines:\s+(\+\d+)?\s+(-\d+)?;)?'
-                       r'(\s+commitid:\s+([^;]+);)?'
-                       r'(.*mergepoint:\s+([^;]+);)?')
-    re_70 = re.compile('branches: (.+);$')
+    re_00 = re.compile(b'RCS file: (.+)$')
+    re_01 = re.compile(b'cvs \\[r?log aborted\\]: (.+)$')
+    re_02 = re.compile(b'cvs (r?log|server): (.+)\n$')
+    re_03 = re.compile(b"(Cannot access.+CVSROOT)|"
+                       b"(can't create temporary directory.+)$")
+    re_10 = re.compile(b'Working file: (.+)$')
+    re_20 = re.compile(b'symbolic names:')
+    re_30 = re.compile(b'\t(.+): ([\\d.]+)$')
+    re_31 = re.compile(b'----------------------------$')
+    re_32 = re.compile(b'======================================='
+                       b'======================================$')
+    re_50 = re.compile(b'revision ([\\d.]+)(\s+locked by:\s+.+;)?$')
+    re_60 = re.compile(br'date:\s+(.+);\s+author:\s+(.+);\s+state:\s+(.+?);'
+                       br'(\s+lines:\s+(\+\d+)?\s+(-\d+)?;)?'
+                       br'(\s+commitid:\s+([^;]+);)?'
+                       br'(.*mergepoint:\s+([^;]+);)?')
+    re_70 = re.compile(b'branches: (.+);$')
 
-    file_added_re = re.compile(r'file [^/]+ was (initially )?added on branch')
+    file_added_re = re.compile(br'file [^/]+ was (initially )?added on branch')
 
     prefix = ''   # leading path to strip of what we get from CVS
 
@@ -509,7 +510,8 @@ def createlog(ui, directory=None, root="", rlog=True, cache=None):
             comment = entry.comment
             for e in encodings:
                 try:
-                    entry.comment = comment.decode(e).encode('utf-8')
+                    entry.comment = comment.decode(
+                        pycompat.sysstr(e)).encode('utf-8')
                     if ui.debugflag:
                         ui.debug("transcoding by %s: %s of %s\n" %
                                  (e, revstr(entry.revision), entry.file))
@@ -565,11 +567,15 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     mindate = {}
     for e in log:
         if e.commitid:
-            mindate[e.commitid] = min(e.date, mindate.get(e.commitid))
+            if e.commitid not in mindate:
+                mindate[e.commitid] = e.date
+            else:
+                mindate[e.commitid] = min(e.date, mindate[e.commitid])
 
     # Merge changesets
-    log.sort(key=lambda x: (mindate.get(x.commitid), x.commitid, x.comment,
-                            x.author, x.branch, x.date, x.branchpoints))
+    log.sort(key=lambda x: (mindate.get(x.commitid, (-1, 0)),
+                            x.commitid or '', x.comment,
+                            x.author, x.branch or '', x.date, x.branchpoints))
 
     changesets = []
     files = set()
@@ -653,7 +659,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
         return 0
 
     for c in changesets:
-        c.entries.sort(entitycompare)
+        c.entries.sort(key=functools.cmp_to_key(entitycompare))
 
     # Sort changesets by date
 
@@ -706,7 +712,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
             d = c(len(l.branchpoints), len(r.branchpoints))
         return d
 
-    changesets.sort(cscmp)
+    changesets.sort(key=functools.cmp_to_key(cscmp))
 
     # Collect tags
 
@@ -729,12 +735,12 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
     # {{mergefrombranch BRANCHNAME}} by setting two parents.
 
     if mergeto is None:
-        mergeto = r'{{mergetobranch ([-\w]+)}}'
+        mergeto = br'{{mergetobranch ([-\w]+)}}'
     if mergeto:
         mergeto = re.compile(mergeto)
 
     if mergefrom is None:
-        mergefrom = r'{{mergefrombranch ([-\w]+)}}'
+        mergefrom = br'{{mergefrombranch ([-\w]+)}}'
     if mergefrom:
         mergefrom = re.compile(mergefrom)
 
@@ -797,7 +803,7 @@ def createchangeset(ui, log, fuzz=60, mergefrom=None, mergeto=None):
                 except KeyError:
                     ui.warn(_("warning: CVS commit message references "
                               "non-existent branch %r:\n%s\n")
-                            % (m, c.comment))
+                            % (pycompat.bytestr(m), c.comment))
                 if m in branches and c.branch != m and not candidate.synthetic:
                     c.parents.append(candidate)
 
@@ -940,7 +946,8 @@ def debugcvsps(ui, *args, **opts):
                 if fn.startswith(opts["prefix"]):
                     fn = fn[len(opts["prefix"]):]
                 ui.write('\t%s:%s->%s%s \n' % (
-                        fn, '.'.join([str(x) for x in f.parent]) or 'INITIAL',
+                        fn,
+                        '.'.join([b"%d" % x for x in f.parent]) or 'INITIAL',
                         '.'.join([(b"%d" % x) for x in f.revision]),
                         ['', '(DEAD)'][f.dead]))
             ui.write('\n')

@@ -87,7 +87,6 @@ from __future__ import absolute_import
 
 import os
 import re
-import tempfile
 import weakref
 
 from mercurial.i18n import _
@@ -246,7 +245,7 @@ class kwtemplater(object):
     @util.propertycache
     def escape(self):
         '''Returns bar-separated and escaped keywords.'''
-        return '|'.join(map(re.escape, self.templates.keys()))
+        return '|'.join(map(stringutil.reescape, self.templates.keys()))
 
     @util.propertycache
     def rekw(self):
@@ -434,7 +433,7 @@ def demo(ui, repo, *args, **opts):
             ui.write('%s = %s\n' % (k, v))
 
     fn = 'demo.txt'
-    tmpdir = tempfile.mkdtemp('', 'kwdemo.')
+    tmpdir = pycompat.mkdtemp('', 'kwdemo.')
     ui.note(_('creating temporary repository at %s\n') % tmpdir)
     if repo is None:
         baseui = ui

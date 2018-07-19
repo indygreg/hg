@@ -31,7 +31,6 @@ import shutil
 import socket
 import stat
 import sys
-import tempfile
 import time
 import traceback
 import warnings
@@ -47,7 +46,6 @@ from . import (
     urllibcompat,
 )
 from .utils import (
-    dateutil,
     procutil,
     stringutil,
 )
@@ -60,10 +58,8 @@ b85decode = base85.b85decode
 b85encode = base85.b85encode
 
 cookielib = pycompat.cookielib
-empty = pycompat.empty
 httplib = pycompat.httplib
 pickle = pycompat.pickle
-queue = pycompat.queue
 safehasattr = pycompat.safehasattr
 socketserver = pycompat.socketserver
 bytesio = pycompat.bytesio
@@ -134,39 +130,6 @@ except AttributeError:
 # Python compatibility
 
 _notset = object()
-
-def _rapply(f, xs):
-    if xs is None:
-        # assume None means non-value of optional data
-        return xs
-    if isinstance(xs, (list, set, tuple)):
-        return type(xs)(_rapply(f, x) for x in xs)
-    if isinstance(xs, dict):
-        return type(xs)((_rapply(f, k), _rapply(f, v)) for k, v in xs.items())
-    return f(xs)
-
-def rapply(f, xs):
-    """Apply function recursively to every item preserving the data structure
-
-    >>> def f(x):
-    ...     return 'f(%s)' % x
-    >>> rapply(f, None) is None
-    True
-    >>> rapply(f, 'a')
-    'f(a)'
-    >>> rapply(f, {'a'}) == {'f(a)'}
-    True
-    >>> rapply(f, ['a', 'b', None, {'c': 'd'}, []])
-    ['f(a)', 'f(b)', None, {'f(c)': 'f(d)'}, []]
-
-    >>> xs = [object()]
-    >>> rapply(pycompat.identity, xs) is xs
-    True
-    """
-    if f is pycompat.identity:
-        # fast path mainly for py2
-        return xs
-    return _rapply(f, xs)
 
 def bitsfrom(container):
     bits = 0
@@ -359,6 +322,11 @@ class bufferedinputpipe(object):
             self._fillbuffer()
         return self._frombuffer(size)
 
+    def unbufferedread(self, size):
+        if not self._eof and self._lenbuf == 0:
+            self._fillbuffer(max(size, _chunksize))
+        return self._frombuffer(min(self._lenbuf, size))
+
     def readline(self, *args, **kwargs):
         if 1 < len(self._buffer):
             # this should not happen because both read and readline end with a
@@ -400,9 +368,9 @@ class bufferedinputpipe(object):
             self._lenbuf = 0
         return data
 
-    def _fillbuffer(self):
+    def _fillbuffer(self, size=_chunksize):
         """read data to the buffer"""
-        data = os.read(self._input.fileno(), _chunksize)
+        data = os.read(self._input.fileno(), size)
         if not data:
             self._eof = True
         else:
@@ -785,6 +753,13 @@ class fileobjectobserver(baseproxyobserver):
         # Python 3 can return None from reads at EOF instead of empty strings.
         if res is None:
             res = ''
+
+        if size == -1 and res == '':
+            # Suppress pointless read(-1) calls that return
+            # nothing. These happen _a lot_ on Python 3, and there
+            # doesn't seem to be a better workaround to have matching
+            # Python 2 and 3 behavior. :(
+            return
 
         if self.logdataapis:
             self.fh.write('%s> read(%d) -> %d' % (self.name, size, len(res)))
@@ -1628,31 +1603,30 @@ def copyfile(src, dest, hardlink=False, copystat=False, checkambig=False):
         except shutil.Error as inst:
             raise error.Abort(str(inst))
 
-def copyfiles(src, dst, hardlink=None, progress=lambda t, pos: None):
+def copyfiles(src, dst, hardlink=None, progress=None):
     """Copy a directory tree using hardlinks if possible."""
     num = 0
 
-    gettopic = lambda: hardlink and _('linking') or _('copying')
+    def settopic():
+        if progress:
+            progress.topic = _('linking') if hardlink else _('copying')
 
     if os.path.isdir(src):
         if hardlink is None:
             hardlink = (os.stat(src).st_dev ==
                         os.stat(os.path.dirname(dst)).st_dev)
-        topic = gettopic()
+        settopic()
         os.mkdir(dst)
         for name, kind in listdir(src):
             srcname = os.path.join(src, name)
             dstname = os.path.join(dst, name)
-            def nprog(t, pos):
-                if pos is not None:
-                    return progress(t, pos + num)
-            hardlink, n = copyfiles(srcname, dstname, hardlink, progress=nprog)
+            hardlink, n = copyfiles(srcname, dstname, hardlink, progress)
             num += n
     else:
         if hardlink is None:
             hardlink = (os.stat(os.path.dirname(src)).st_dev ==
                         os.stat(os.path.dirname(dst)).st_dev)
-        topic = gettopic()
+        settopic()
 
         if hardlink:
             try:
@@ -1663,8 +1637,8 @@ def copyfiles(src, dst, hardlink=None, progress=lambda t, pos: None):
         else:
             shutil.copy(src, dst)
         num += 1
-        progress(topic, num)
-    progress(topic, None)
+        if progress:
+            progress.increment()
 
     return hardlink, num
 
@@ -1896,7 +1870,7 @@ def checknlink(testfile):
     # work around issue2543 (or testfile may get lost on Samba shares)
     f1, f2, fp = None, None, None
     try:
-        fd, f1 = tempfile.mkstemp(prefix='.%s-' % os.path.basename(testfile),
+        fd, f1 = pycompat.mkstemp(prefix='.%s-' % os.path.basename(testfile),
                                   suffix='1~', dir=os.path.dirname(testfile))
         os.close(fd)
         f2 = '%s2~' % f1[:-2]
@@ -1942,7 +1916,7 @@ def mktempcopy(name, emptyok=False, createmode=None):
     Returns the name of the temporary file.
     """
     d, fn = os.path.split(name)
-    fd, temp = tempfile.mkstemp(prefix='.%s-' % fn, suffix='~', dir=d)
+    fd, temp = pycompat.mkstemp(prefix='.%s-' % fn, suffix='~', dir=d)
     os.close(fd)
     # Temporary files are created with mode 0600, which is usually not
     # what we want.  If the original file already exists, just copy
@@ -2137,17 +2111,18 @@ class atomictempfile(object):
         else:
             self.close()
 
-def unlinkpath(f, ignoremissing=False):
+def unlinkpath(f, ignoremissing=False, rmdir=True):
     """unlink and remove the directory if it is empty"""
     if ignoremissing:
         tryunlink(f)
     else:
         unlink(f)
-    # try removing directories that might now be empty
-    try:
-        removedirs(os.path.dirname(f))
-    except OSError:
-        pass
+    if rmdir:
+        # try removing directories that might now be empty
+        try:
+            removedirs(os.path.dirname(f))
+        except OSError:
+            pass
 
 def tryunlink(f):
     """Attempt to remove a file, ignoring ENOENT errors."""
@@ -2719,7 +2694,7 @@ class url(object):
                   'query', 'fragment'):
             v = getattr(self, a)
             if v is not None:
-                attrs.append('%s: %r' % (a, v))
+                attrs.append('%s: %r' % (a, pycompat.bytestr(v)))
         return '<url %s>' % ', '.join(attrs)
 
     def __bytes__(self):
@@ -2921,6 +2896,7 @@ def timed(func):
         finally:
             elapsed = timer() - start
             _timenesting[0] -= indent
+            stderr = procutil.stderr
             stderr.write('%s%s: %s\n' %
                          (' ' * _timenesting[0], func.__name__,
                           timecount(elapsed)))
@@ -3331,6 +3307,104 @@ class compressionengine(object):
         """
         raise NotImplementedError()
 
+class _CompressedStreamReader(object):
+    def __init__(self, fh):
+        if safehasattr(fh, 'unbufferedread'):
+            self._reader = fh.unbufferedread
+        else:
+            self._reader = fh.read
+        self._pending = []
+        self._pos = 0
+        self._eof = False
+
+    def _decompress(self, chunk):
+        raise NotImplementedError()
+
+    def read(self, l):
+        buf = []
+        while True:
+            while self._pending:
+                if len(self._pending[0]) > l + self._pos:
+                    newbuf = self._pending[0]
+                    buf.append(newbuf[self._pos:self._pos + l])
+                    self._pos += l
+                    return ''.join(buf)
+
+                newbuf = self._pending.pop(0)
+                if self._pos:
+                    buf.append(newbuf[self._pos:])
+                    l -= len(newbuf) - self._pos
+                else:
+                    buf.append(newbuf)
+                    l -= len(newbuf)
+                self._pos = 0
+
+            if self._eof:
+                return ''.join(buf)
+            chunk = self._reader(65536)
+            self._decompress(chunk)
+
+class _GzipCompressedStreamReader(_CompressedStreamReader):
+    def __init__(self, fh):
+        super(_GzipCompressedStreamReader, self).__init__(fh)
+        self._decompobj = zlib.decompressobj()
+    def _decompress(self, chunk):
+        newbuf = self._decompobj.decompress(chunk)
+        if newbuf:
+            self._pending.append(newbuf)
+        d = self._decompobj.copy()
+        try:
+            d.decompress('x')
+            d.flush()
+            if d.unused_data == 'x':
+                self._eof = True
+        except zlib.error:
+            pass
+
+class _BZ2CompressedStreamReader(_CompressedStreamReader):
+    def __init__(self, fh):
+        super(_BZ2CompressedStreamReader, self).__init__(fh)
+        self._decompobj = bz2.BZ2Decompressor()
+    def _decompress(self, chunk):
+        newbuf = self._decompobj.decompress(chunk)
+        if newbuf:
+            self._pending.append(newbuf)
+        try:
+            while True:
+                newbuf = self._decompobj.decompress('')
+                if newbuf:
+                    self._pending.append(newbuf)
+                else:
+                    break
+        except EOFError:
+            self._eof = True
+
+class _TruncatedBZ2CompressedStreamReader(_BZ2CompressedStreamReader):
+    def __init__(self, fh):
+        super(_TruncatedBZ2CompressedStreamReader, self).__init__(fh)
+        newbuf = self._decompobj.decompress('BZ')
+        if newbuf:
+            self._pending.append(newbuf)
+
+class _ZstdCompressedStreamReader(_CompressedStreamReader):
+    def __init__(self, fh, zstd):
+        super(_ZstdCompressedStreamReader, self).__init__(fh)
+        self._zstd = zstd
+        self._decompobj = zstd.ZstdDecompressor().decompressobj()
+    def _decompress(self, chunk):
+        newbuf = self._decompobj.decompress(chunk)
+        if newbuf:
+            self._pending.append(newbuf)
+        try:
+            while True:
+                newbuf = self._decompobj.decompress('')
+                if newbuf:
+                    self._pending.append(newbuf)
+                else:
+                    break
+        except self._zstd.ZstdError:
+            self._eof = True
+
 class _zlibengine(compressionengine):
     def name(self):
         return 'zlib'
@@ -3364,15 +3438,7 @@ class _zlibengine(compressionengine):
         yield z.flush()
 
     def decompressorreader(self, fh):
-        def gen():
-            d = zlib.decompressobj()
-            for chunk in filechunkiter(fh):
-                while chunk:
-                    # Limit output size to limit memory.
-                    yield d.decompress(chunk, 2 ** 18)
-                    chunk = d.unconsumed_tail
-
-        return chunkbuffer(gen())
+        return _GzipCompressedStreamReader(fh)
 
     class zlibrevlogcompressor(object):
         def compress(self, data):
@@ -3452,12 +3518,7 @@ class _bz2engine(compressionengine):
         yield z.flush()
 
     def decompressorreader(self, fh):
-        def gen():
-            d = bz2.BZ2Decompressor()
-            for chunk in filechunkiter(fh):
-                yield d.decompress(chunk)
-
-        return chunkbuffer(gen())
+        return _BZ2CompressedStreamReader(fh)
 
 compengines.register(_bz2engine())
 
@@ -3471,14 +3532,7 @@ class _truncatedbz2engine(compressionengine):
     # We don't implement compressstream because it is hackily handled elsewhere.
 
     def decompressorreader(self, fh):
-        def gen():
-            # The input stream doesn't have the 'BZ' header. So add it back.
-            d = bz2.BZ2Decompressor()
-            d.decompress('BZ')
-            for chunk in filechunkiter(fh):
-                yield d.decompress(chunk)
-
-        return chunkbuffer(gen())
+        return _TruncatedBZ2CompressedStreamReader(fh)
 
 compengines.register(_truncatedbz2engine())
 
@@ -3573,9 +3627,7 @@ class _zstdengine(compressionengine):
         yield z.flush()
 
     def decompressorreader(self, fh):
-        zstd = self._module
-        dctx = zstd.ZstdDecompressor()
-        return chunkbuffer(dctx.read_from(fh))
+        return _ZstdCompressedStreamReader(fh, self._module)
 
     class zstdrevlogcompressor(object):
         def __init__(self, zstd, level=3):
@@ -3784,93 +3836,3 @@ def uvarintdecodestream(fh):
         if not (byte & 0x80):
             return result
         shift += 7
-
-###
-# Deprecation warnings for util.py splitting
-###
-
-def _deprecatedfunc(func, version, modname=None):
-    def wrapped(*args, **kwargs):
-        fn = pycompat.sysbytes(func.__name__)
-        mn = modname or pycompat.sysbytes(func.__module__)[len('mercurial.'):]
-        msg = "'util.%s' is deprecated, use '%s.%s'" % (fn, mn, fn)
-        nouideprecwarn(msg, version, stacklevel=2)
-        return func(*args, **kwargs)
-    wrapped.__name__ = func.__name__
-    return wrapped
-
-defaultdateformats = dateutil.defaultdateformats
-extendeddateformats = dateutil.extendeddateformats
-makedate = _deprecatedfunc(dateutil.makedate, '4.6')
-datestr = _deprecatedfunc(dateutil.datestr, '4.6')
-shortdate = _deprecatedfunc(dateutil.shortdate, '4.6')
-parsetimezone = _deprecatedfunc(dateutil.parsetimezone, '4.6')
-strdate = _deprecatedfunc(dateutil.strdate, '4.6')
-parsedate = _deprecatedfunc(dateutil.parsedate, '4.6')
-matchdate = _deprecatedfunc(dateutil.matchdate, '4.6')
-
-stderr = procutil.stderr
-stdin = procutil.stdin
-stdout = procutil.stdout
-explainexit = _deprecatedfunc(procutil.explainexit, '4.6',
-                              modname='utils.procutil')
-findexe = _deprecatedfunc(procutil.findexe, '4.6', modname='utils.procutil')
-getuser = _deprecatedfunc(procutil.getuser, '4.6', modname='utils.procutil')
-getpid = _deprecatedfunc(procutil.getpid, '4.6', modname='utils.procutil')
-hidewindow = _deprecatedfunc(procutil.hidewindow, '4.6',
-                             modname='utils.procutil')
-popen = _deprecatedfunc(procutil.popen, '4.6', modname='utils.procutil')
-quotecommand = _deprecatedfunc(procutil.quotecommand, '4.6',
-                               modname='utils.procutil')
-readpipe = _deprecatedfunc(procutil.readpipe, '4.6', modname='utils.procutil')
-setbinary = _deprecatedfunc(procutil.setbinary, '4.6', modname='utils.procutil')
-setsignalhandler = _deprecatedfunc(procutil.setsignalhandler, '4.6',
-                                   modname='utils.procutil')
-shellquote = _deprecatedfunc(procutil.shellquote, '4.6',
-                             modname='utils.procutil')
-shellsplit = _deprecatedfunc(procutil.shellsplit, '4.6',
-                             modname='utils.procutil')
-spawndetached = _deprecatedfunc(procutil.spawndetached, '4.6',
-                                modname='utils.procutil')
-sshargs = _deprecatedfunc(procutil.sshargs, '4.6', modname='utils.procutil')
-testpid = _deprecatedfunc(procutil.testpid, '4.6', modname='utils.procutil')
-try:
-    setprocname = _deprecatedfunc(procutil.setprocname, '4.6',
-                                  modname='utils.procutil')
-except AttributeError:
-    pass
-try:
-    unblocksignal = _deprecatedfunc(procutil.unblocksignal, '4.6',
-                                    modname='utils.procutil')
-except AttributeError:
-    pass
-closefds = procutil.closefds
-isatty = _deprecatedfunc(procutil.isatty, '4.6')
-popen2 = _deprecatedfunc(procutil.popen2, '4.6')
-popen3 = _deprecatedfunc(procutil.popen3, '4.6')
-popen4 = _deprecatedfunc(procutil.popen4, '4.6')
-pipefilter = _deprecatedfunc(procutil.pipefilter, '4.6')
-tempfilter = _deprecatedfunc(procutil.tempfilter, '4.6')
-filter = _deprecatedfunc(procutil.filter, '4.6')
-mainfrozen = _deprecatedfunc(procutil.mainfrozen, '4.6')
-hgexecutable = _deprecatedfunc(procutil.hgexecutable, '4.6')
-isstdin = _deprecatedfunc(procutil.isstdin, '4.6')
-isstdout = _deprecatedfunc(procutil.isstdout, '4.6')
-shellenviron = _deprecatedfunc(procutil.shellenviron, '4.6')
-system = _deprecatedfunc(procutil.system, '4.6')
-gui = _deprecatedfunc(procutil.gui, '4.6')
-hgcmd = _deprecatedfunc(procutil.hgcmd, '4.6')
-rundetached = _deprecatedfunc(procutil.rundetached, '4.6')
-
-binary = _deprecatedfunc(stringutil.binary, '4.6')
-stringmatcher = _deprecatedfunc(stringutil.stringmatcher, '4.6')
-shortuser = _deprecatedfunc(stringutil.shortuser, '4.6')
-emailuser = _deprecatedfunc(stringutil.emailuser, '4.6')
-email = _deprecatedfunc(stringutil.email, '4.6')
-ellipsis = _deprecatedfunc(stringutil.ellipsis, '4.6')
-escapestr = _deprecatedfunc(stringutil.escapestr, '4.6')
-unescapestr = _deprecatedfunc(stringutil.unescapestr, '4.6')
-forcebytestr = _deprecatedfunc(stringutil.forcebytestr, '4.6')
-uirepr = _deprecatedfunc(stringutil.uirepr, '4.6')
-wrap = _deprecatedfunc(stringutil.wrap, '4.6')
-parsebool = _deprecatedfunc(stringutil.parsebool, '4.6')

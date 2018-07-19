@@ -68,11 +68,19 @@ list bookmarks
      X                         0:f7b1eb17ad24
    * X2                        0:f7b1eb17ad24
      Y                         -1:000000000000
+  $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
+  0 X
+  0 X2
 
   $ echo b > b
   $ hg add b
   $ hg commit -m 1 --config "$TESTHOOK"
   test-hook-bookmark: X2:  f7b1eb17ad24730a1651fccd46c43826d1bbc2ac -> 925d80f479bb026b0fb3deb27503780b13f74123
+
+  $ hg bookmarks -T '{rev}:{node|shortest} {bookmark} {desc|firstline}\n'
+  0:f7b1 X 0
+  1:925d X2 1
+  -1:0000 Y 
 
   $ hg bookmarks -Tjson
   [
@@ -299,6 +307,11 @@ list bookmarks
      Y                         2:db815d6d32e6
      Z                         0:f7b1eb17ad24
    * x  y                      2:db815d6d32e6
+  $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
+  2 Y
+  2 x  y
+  1 X2
+  0 Z
 
 look up stripped bookmark name
 
@@ -445,6 +458,11 @@ list bookmarks
      Y                         2:db815d6d32e6
    * Z                         2:db815d6d32e6
      x  y                      2:db815d6d32e6
+  $ hg log -T '{bookmarks % "{rev} {bookmark}\n"}'
+  2 Y
+  2 Z
+  2 x  y
+  1 X2
 
 revision but no bookmark name
 

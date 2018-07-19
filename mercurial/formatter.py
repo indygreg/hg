@@ -107,7 +107,6 @@ baz: foo, bar
 
 from __future__ import absolute_import, print_function
 
-import collections
 import contextlib
 import itertools
 import os
@@ -117,11 +116,15 @@ from .node import (
     hex,
     short,
 )
+from .thirdparty import (
+    attr,
+)
 
 from . import (
     error,
     pycompat,
     templatefilters,
+    templatefuncs,
     templatekw,
     templater,
     templateutil,
@@ -190,12 +193,18 @@ class baseformatter(object):
         # name is mandatory argument for now, but it could be optional if
         # we have default template keyword, e.g. {item}
         return self._converter.formatlist(data, name, fmt, sep)
+    def contexthint(self, datafields):
+        '''set of context object keys to be required given datafields set'''
+        return set()
     def context(self, **ctxs):
         '''insert context objects to be used to render template keywords'''
         ctxs = pycompat.byteskwargs(ctxs)
         assert all(k in {'ctx', 'fctx'} for k in ctxs)
         if self._converter.storecontext:
             self._item.update(ctxs)
+    def datahint(self):
+        '''set of field names to be referenced'''
+        return set()
     def data(self, **data):
         '''insert data into item that's not shown in default output'''
         data = pycompat.byteskwargs(data)
@@ -365,7 +374,7 @@ class _templateconverter(object):
     @staticmethod
     def formatdate(date, fmt):
         '''return date tuple'''
-        return date
+        return templateutil.date(date)
     @staticmethod
     def formatdict(data, key, value, fmt, sep):
         '''build object that can be evaluated as either plain string or dict'''
@@ -409,12 +418,41 @@ class templateformatter(baseformatter):
         ref = self._parts[part]
         self._out.write(self._t.render(ref, item))
 
+    @util.propertycache
+    def _symbolsused(self):
+        return self._t.symbolsused(self._tref)
+
+    def contexthint(self, datafields):
+        '''set of context object keys to be required by the template, given
+        datafields overridden by immediate values'''
+        requires = set()
+        ksyms, fsyms = self._symbolsused
+        ksyms = ksyms - set(datafields.split())  # exclude immediate fields
+        symtables = [(ksyms, templatekw.keywords),
+                     (fsyms, templatefuncs.funcs)]
+        for syms, table in symtables:
+            for k in syms:
+                f = table.get(k)
+                if not f:
+                    continue
+                requires.update(getattr(f, '_requires', ()))
+        if 'repo' in requires:
+            requires.add('ctx')  # there's no API to pass repo to formatter
+        return requires & {'ctx', 'fctx'}
+
+    def datahint(self):
+        '''set of field names to be referenced from the template'''
+        return self._symbolsused[0]
+
     def end(self):
         baseformatter.end(self)
         self._renderitem('docfooter', {})
 
-templatespec = collections.namedtuple(r'templatespec',
-                                      r'ref tmpl mapfile')
+@attr.s(frozen=True)
+class templatespec(object):
+    ref = attr.ib()
+    tmpl = attr.ib()
+    mapfile = attr.ib()
 
 def lookuptemplate(ui, topic, tmpl):
     """Find the template matching the given -T/--template spec 'tmpl'

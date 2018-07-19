@@ -341,6 +341,22 @@ def asciistate():
         'graphshorten': False,
     }
 
+def outputgraph(ui, graph):
+    """outputs an ASCII graph of a DAG
+
+    this is a helper function for 'ascii' below.
+
+    takes the following arguments:
+
+    - ui to write to
+    - graph data: list of { graph nodes/edges, text }
+
+    this function can be monkey-patched by extensions to alter graph display
+    without needing to mimic all of the edge-fixup logic in ascii()
+    """
+    for (ln, logstr) in graph:
+        ui.write((ln + logstr).rstrip() + "\n")
+
 def ascii(ui, state, type, char, text, coldata):
     """prints an ASCII graph of the DAG
 
@@ -469,9 +485,8 @@ def ascii(ui, state, type, char, text, coldata):
 
     # print lines
     indentation_level = max(ncols, ncols + coldiff)
-    for (line, logstr) in zip(lines, text):
-        ln = "%-*s %s" % (2 * indentation_level, "".join(line), logstr)
-        ui.write(ln.rstrip() + '\n')
+    lines = ["%-*s " % (2 * indentation_level, "".join(line)) for line in lines]
+    outputgraph(ui, zip(lines, text))
 
     # ... and start over
     state['lastcoldiff'] = coldiff

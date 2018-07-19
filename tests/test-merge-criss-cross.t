@@ -410,6 +410,21 @@ Verify how the output looks and and how verbose it is:
   3 files updated, 0 files merged, 0 files removed, 0 files unresolved
   (branch merge, don't forget to commit)
 
+Test the greatest common ancestor returning multiple changesets
+
+  $ hg log -r 'heads(commonancestors(head()))'
+  changeset:   1:0f6b37dbe527
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     1 first change f1
+  
+  changeset:   2:d1d156401c1b
+  parent:      0:40494bf2444c
+  user:        test
+  date:        Thu Jan 01 00:00:00 1970 +0000
+  summary:     2 first change f2
+  
+
   $ cd ..
 
 http://stackoverflow.com/questions/9350005/how-do-i-specify-a-merge-base-to-use-in-a-hg-merge/9430810

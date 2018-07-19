@@ -27712,11 +27712,11 @@ msgstr ""
 "    サーバの待ちうけアドレス。 (デフォルト値: ホストの持つ全アドレス)"
 
 msgid ""
-"``allow_archive``\n"
+"``allow-archive``\n"
 "    List of archive format (bz2, gz, zip) allowed for downloading.\n"
 "    (default: empty)"
 msgstr ""
-"``allow_archive``\n"
+"``allow-archive``\n"
 "    利用可能なダウンロード向けのアーカイブ形式 (bz2, gz, zip) 一覧。\n"
 "    (デフォルト値: 空 ＝ ダウンロード不可)"
 

@@ -15034,7 +15034,7 @@ msgid ""
 msgstr ""
 
 msgid ""
-"``allow_archive``\n"
+"``allow-archive``\n"
 "    List of archive format (bz2, gz, zip) allowed for downloading.\n"
 "    Default is empty."
 msgstr ""

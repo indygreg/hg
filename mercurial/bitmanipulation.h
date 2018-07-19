@@ -9,7 +9,8 @@ static inline uint32_t getbe32(const char *c)
 {
 	const unsigned char *d = (const unsigned char *)c;
 
-	return ((d[0] << 24) | (d[1] << 16) | (d[2] << 8) | (d[3]));
+	return ((((uint32_t)d[0]) << 24) | (((uint32_t)d[1]) << 16) |
+	        (((uint32_t)d[2]) << 8) | (d[3]));
 }
 
 static inline int16_t getbeint16(const char *c)

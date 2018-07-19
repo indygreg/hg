@@ -58,12 +58,12 @@ print("os =", f(os))
 print("os.system =", f(os.system))
 print("os =", f(os))
 
-from mercurial import util
+from mercurial.utils import procutil
 
-print("util =", f(util))
-print("util.system =", f(util.system))
-print("util =", f(util))
-print("util.system =", f(util.system))
+print("procutil =", f(procutil))
+print("procutil.system =", f(procutil.system))
+print("procutil =", f(procutil))
+print("procutil.system =", f(procutil.system))
 
 from mercurial import hgweb
 print("hgweb =", f(hgweb))
@@ -99,6 +99,8 @@ try:
 except ImportError as inst:
     print('contextlib.unknownattr = ImportError: %s'
           % rsub(r"'", '', str(inst)))
+
+from mercurial import util
 
 # Unlike the import statement, __import__() function should not raise
 # ImportError even if fromlist has an unknown item

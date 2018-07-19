@@ -263,6 +263,9 @@ Some tests for hgweb in an empty repository
   <li><a href="/file/tip">browse</a></li>
   </ul>
   <ul>
+  
+  </ul>
+  <ul>
    <li><a href="/help">help</a></li>
   </ul>
   <div class="atom-logo">
@@ -396,11 +399,7 @@ Some tests for hgweb in an empty repository
   </tr>
   </thead>
   <tbody class="stripes2">
-  <tr class="fileline">
-    <td class="name"><a href="/file/tip/">[up]</a></td>
-    <td class="size"></td>
-    <td class="permissions">drwxr-xr-x</td>
-  </tr>
+  
   
   
   </tbody>

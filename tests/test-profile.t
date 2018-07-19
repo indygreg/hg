@@ -69,7 +69,7 @@ Install an extension that can sleep and guarantee a profiler has time to run
   > from mercurial import registrar, commands
   > cmdtable = {}
   > command = registrar.command(cmdtable)
-  > @command(b'sleep', [], 'hg sleep')
+  > @command(b'sleep', [], b'hg sleep')
   > def sleep(ui, *args, **kwargs):
   >     time.sleep(0.1)
   > EOF
@@ -123,13 +123,13 @@ profiler extension could be loaded before other extensions
   >     yield
   >     print('fooprof: end profile')
   > def extsetup(ui):
-  >     ui.write('fooprof: loaded\n')
+  >     ui.write(b'fooprof: loaded\n')
   > EOF
 
   $ cat > otherextension.py <<EOF
   > from __future__ import absolute_import
   > def extsetup(ui):
-  >     ui.write('otherextension: loaded\n')
+  >     ui.write(b'otherextension: loaded\n')
   > EOF
 
   $ hg init b

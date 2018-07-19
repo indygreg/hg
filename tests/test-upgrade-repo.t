@@ -56,6 +56,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes
   dotencode:      yes
   generaldelta:   yes
+  sparserevlog:    no
   plain-cl-delta: yes
   compression:    zlib
   $ hg debugformat --verbose
@@ -63,6 +64,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes    yes     yes
   dotencode:      yes    yes     yes
   generaldelta:   yes    yes     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegfncache=no
@@ -70,6 +72,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   fncache:        yes    yes     yes
   dotencode:      yes    yes     yes
   generaldelta:   yes    yes     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegfncache=no --color=debug
@@ -77,6 +80,7 @@ An upgrade of a repository created with recommended settings only suggests optim
   [formatvariant.name.uptodate|fncache:       ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|dotencode:     ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|generaldelta:  ][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   $ hg debugformat -Tjson
@@ -98,6 +102,12 @@ An upgrade of a repository created with recommended settings only suggests optim
     "default": true,
     "name": "generaldelta",
     "repo": true
+   },
+   {
+    "config": false,
+    "default": false,
+    "name": "sparserevlog",
+    "repo": false
    },
    {
     "config": true,
@@ -170,6 +180,7 @@ Various sub-optimal detections work
   fncache:         no
   dotencode:       no
   generaldelta:    no
+  sparserevlog:    no
   plain-cl-delta: yes
   compression:    zlib
   $ hg debugformat --verbose
@@ -177,6 +188,7 @@ Various sub-optimal detections work
   fncache:         no    yes     yes
   dotencode:       no    yes     yes
   generaldelta:    no    yes     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegeneraldelta=no
@@ -184,6 +196,7 @@ Various sub-optimal detections work
   fncache:         no    yes     yes
   dotencode:       no    yes     yes
   generaldelta:    no     no     yes
+  sparserevlog:    no     no      no
   plain-cl-delta: yes    yes     yes
   compression:    zlib   zlib    zlib
   $ hg debugformat --verbose --config format.usegeneraldelta=no --color=debug
@@ -191,6 +204,7 @@ Various sub-optimal detections work
   [formatvariant.name.mismatchconfig|fncache:       ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchconfig|dotencode:     ][formatvariant.repo.mismatchconfig|  no][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.mismatchdefault|generaldelta:  ][formatvariant.repo.mismatchdefault|  no][formatvariant.config.special|     no][formatvariant.default|     yes]
+  [formatvariant.name.uptodate|sparserevlog:  ][formatvariant.repo.uptodate|  no][formatvariant.config.default|     no][formatvariant.default|      no]
   [formatvariant.name.uptodate|plain-cl-delta:][formatvariant.repo.uptodate| yes][formatvariant.config.default|    yes][formatvariant.default|     yes]
   [formatvariant.name.uptodate|compression:   ][formatvariant.repo.uptodate| zlib][formatvariant.config.default|   zlib][formatvariant.default|    zlib]
   $ hg debugupgraderepo
@@ -697,3 +711,42 @@ repository config is taken in account
   > [format]
   > maxchainlen = 9001
   > EOF
+
+Check upgrading a sparse-revlog repository
+---------------------------------------
+
+  $ hg init sparserevlogrepo
+  $ cd sparserevlogrepo
+  $ touch foo
+  $ hg add foo
+  $ hg -q commit -m "foo"
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  store
+
+Check that we can add the sparse-revlog format requirement
+  $ hg --config format.sparse-revlog=yes debugupgraderepo --run >/dev/null
+  copy of old repository backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  sparserevlog
+  store
+
+Check that we can remove the sparse-revlog format requirement
+  $ hg --config format.sparse-revlog=no debugupgraderepo --run >/dev/null
+  copy of old repository backed up at $TESTTMP/sparserevlogrepo/.hg/upgradebackup.* (glob)
+  the old repository will not be deleted; remove it to free up disk space once the upgraded repository is verified
+  $ cat .hg/requires
+  dotencode
+  fncache
+  generaldelta
+  revlogv1
+  store
+  $ cd ..

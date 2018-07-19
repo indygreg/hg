@@ -14,6 +14,7 @@ from .node import (
 )
 
 from . import (
+    diffutil,
     encoding,
     error,
     hbisect,
@@ -31,40 +32,11 @@ from .utils import (
 )
 
 _hybrid = templateutil.hybrid
-_mappable = templateutil.mappable
 hybriddict = templateutil.hybriddict
 hybridlist = templateutil.hybridlist
 compatdict = templateutil.compatdict
 compatlist = templateutil.compatlist
 _showcompatlist = templateutil._showcompatlist
-
-def _showlist(name, values, templ, mapping, plural=None, separator=' '):
-    ui = mapping.get('ui')
-    if ui:
-        ui.deprecwarn("templatekw._showlist() is deprecated, use "
-                      "templateutil._showcompatlist()", '4.6')
-    context = templ  # this is actually a template context, not a templater
-    return _showcompatlist(context, mapping, name, values, plural, separator)
-
-def showdict(name, data, mapping, plural=None, key='key', value='value',
-             fmt=None, separator=' '):
-    ui = mapping.get('ui')
-    if ui:
-        ui.deprecwarn("templatekw.showdict() is deprecated, use "
-                      "templateutil.compatdict()", '4.6')
-    c = [{key: k, value: v} for k, v in data.iteritems()]
-    f = _showlist(name, c, mapping['templ'], mapping, plural, separator)
-    return hybriddict(data, key=key, value=value, fmt=fmt, gen=f)
-
-def showlist(name, values, mapping, plural=None, element=None, separator=' '):
-    ui = mapping.get('ui')
-    if ui:
-        ui.deprecwarn("templatekw.showlist() is deprecated, use "
-                      "templateutil.compatlist()", '4.6')
-    if not element:
-        element = name
-    f = _showlist(name, values, mapping['templ'], mapping, plural, separator)
-    return hybridlist(values, name=element, gen=f)
 
 def getlatesttags(context, mapping, pattern=None):
     '''return date, distance and name for the latest tag of rev'''
@@ -139,7 +111,7 @@ def getrenamedfn(repo, endrev=None):
             for i in fl:
                 lr = fl.linkrev(i)
                 renamed = fl.renamed(fl.node(i))
-                rcache[fn][lr] = renamed
+                rcache[fn][lr] = renamed and renamed[0]
                 if lr >= endrev:
                     break
         if rev in rcache[fn]:
@@ -148,7 +120,8 @@ def getrenamedfn(repo, endrev=None):
         # If linkrev != rev (i.e. rev not found in rcache) fallback to
         # filectx logic.
         try:
-            return repo[rev][fn].renamed()
+            renamed = repo[rev][fn].renamed()
+            return renamed and renamed[0]
         except error.LookupError:
             return None
 
@@ -268,7 +241,9 @@ def showactivebookmark(context, mapping):
 def showdate(context, mapping):
     """Date information. The date when the changeset was committed."""
     ctx = context.resource(mapping, 'ctx')
-    return ctx.date()
+    # the default string format is '<float(unixtime)><tzoffset>' because
+    # python-hglib splits date at decimal separator.
+    return templateutil.date(ctx.date(), showfmt='%d.0%d')
 
 @templatekeyword('desc', requires={'ctx'})
 def showdescription(context, mapping):
@@ -278,16 +253,21 @@ def showdescription(context, mapping):
     if isinstance(s, encoding.localstr):
         # try hard to preserve utf-8 bytes
         return encoding.tolocal(encoding.fromlocal(s).strip())
+    elif isinstance(s, encoding.safelocalstr):
+        return encoding.safelocalstr(s.strip())
     else:
         return s.strip()
 
-@templatekeyword('diffstat', requires={'ctx'})
+@templatekeyword('diffstat', requires={'ui', 'ctx'})
 def showdiffstat(context, mapping):
     """String. Statistics of changes with the following format:
     "modified files: +added/-removed lines"
     """
+    ui = context.resource(mapping, 'ui')
     ctx = context.resource(mapping, 'ctx')
-    stats = patch.diffstatdata(util.iterlines(ctx.diff(noprefix=False)))
+    diffopts = diffutil.diffallopts(ui, {'noprefix': False})
+    diff = ctx.diff(opts=diffopts)
+    stats = patch.diffstatdata(util.iterlines(diff))
     maxname, maxtotal, adds, removes, binary = patch.diffstatsum(stats)
     return '%d: +%d/-%d' % (len(stats), adds, removes)
 
@@ -344,7 +324,7 @@ def showfilecopies(context, mapping):
         for fn in ctx.files():
             rename = getrenamed(fn, ctx.rev())
             if rename:
-                copies.append((fn, rename[0]))
+                copies.append((fn, rename))
 
     copies = util.sortdict(copies)
     return compatdict(context, mapping, 'file_copy', copies,
@@ -392,12 +372,19 @@ def showgraphnode(context, mapping):
     return getgraphnode(repo, ctx)
 
 def getgraphnode(repo, ctx):
+    return getgraphnodecurrent(repo, ctx) or getgraphnodesymbol(ctx)
+
+def getgraphnodecurrent(repo, ctx):
     wpnodes = repo.dirstate.parents()
     if wpnodes[1] == nullid:
         wpnodes = wpnodes[:1]
     if ctx.node() in wpnodes:
         return '@'
-    elif ctx.obsolete():
+    else:
+        return ''
+
+def getgraphnodesymbol(ctx):
+    if ctx.obsolete():
         return 'x'
     elif ctx.isunstable():
         return '*'
@@ -481,13 +468,14 @@ def showmanifest(context, mapping):
     if mnode is None:
         # just avoid crash, we might want to use the 'ff...' hash in future
         return
-    mrev = repo.manifestlog._revlog.rev(mnode)
+    mrev = repo.manifestlog.rev(mnode)
     mhex = hex(mnode)
     mapping = context.overlaymap(mapping, {'rev': mrev, 'node': mhex})
     f = context.process('manifest', mapping)
     # TODO: perhaps 'ctx' should be dropped from mapping because manifest
     # rev and node are completely different from changeset's.
-    return _mappable(f, None, f, lambda x: {'rev': mrev, 'node': mhex})
+    return templateutil.hybriditem(f, None, f,
+                                   lambda x: {'rev': mrev, 'node': mhex})
 
 @templatekeyword('obsfate', requires={'ui', 'repo', 'ctx'})
 def showobsfate(context, mapping):
@@ -583,7 +571,7 @@ def showpredecessors(context, mapping):
     repo = context.resource(mapping, 'repo')
     ctx = context.resource(mapping, 'ctx')
     predecessors = sorted(obsutil.closestpredecessors(repo, ctx.node()))
-    predecessors = map(hex, predecessors)
+    predecessors = pycompat.maplist(hex, predecessors)
 
     return _hybrid(None, predecessors,
                    lambda x: {'ctx': repo[x]},

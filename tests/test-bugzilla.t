@@ -8,15 +8,15 @@ mock bugzilla driver for testing template output:
   > configtable = {}
   > configitem = registrar.configitem(configtable)
   > 
-  > configitem('bugzilla', 'mocklog',
+  > configitem(b'bugzilla', b'mocklog',
   >     default=None,
   > )
   > def extsetup(ui):
-  >     bugzilla = extensions.find('bugzilla')
+  >     bugzilla = extensions.find(b'bugzilla')
   >     class bzmock(bugzilla.bzaccess):
   >         def __init__(self, ui):
   >             super(bzmock, self).__init__(ui)
-  >             self._logfile = ui.config('bugzilla', 'mocklog')
+  >             self._logfile = ui.config(b'bugzilla', b'mocklog')
   >         def updatebug(self, bugid, newstate, text, committer):
   >             with open(self._logfile, 'a') as f:
   >                 f.write('update bugid=%r, newstate=%r, committer=%r\n'
@@ -26,7 +26,7 @@ mock bugzilla driver for testing template output:
   >             with open(self._logfile, 'a') as f:
   >                 f.write('notify bugs=%r, committer=%r\n'
   >                         % (bugs, committer))
-  >     bugzilla.bugzilla._versions['mock'] = bzmock
+  >     bugzilla.bugzilla._versions[b'mock'] = bzmock
   > EOF
 
 set up mock repository:

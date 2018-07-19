@@ -112,7 +112,6 @@ import json
 import os
 import signal
 import sys
-import tempfile
 import threading
 import time
 
@@ -140,7 +139,7 @@ skips = {"util.py:check", "extensions.py:closure",
 
 def clock():
     times = os.times()
-    return times[0] + times[1]
+    return (times[0] + times[1], times[4])
 
 
 ###########################################################################
@@ -149,10 +148,11 @@ def clock():
 class ProfileState(object):
     def __init__(self, frequency=None):
         self.reset(frequency)
+        self.track = 'cpu'
 
     def reset(self, frequency=None):
         # total so far
-        self.accumulated_time = 0.0
+        self.accumulated_time = (0.0, 0.0)
         # start_time when timer is active
         self.last_start_time = None
         # a float
@@ -171,10 +171,23 @@ class ProfileState(object):
         self.samples = []
 
     def accumulate_time(self, stop_time):
-        self.accumulated_time += stop_time - self.last_start_time
+        increment = (
+            stop_time[0] - self.last_start_time[0],
+            stop_time[1] - self.last_start_time[1],
+        )
+        self.accumulated_time = (
+            self.accumulated_time[0] + increment[0],
+            self.accumulated_time[1] + increment[1],
+        )
 
     def seconds_per_sample(self):
-        return self.accumulated_time / len(self.samples)
+        return self.accumulated_time[self.timeidx] / len(self.samples)
+
+    @property
+    def timeidx(self):
+        if self.track == 'real':
+            return 1
+        return 0
 
 state = ProfileState()
 
@@ -262,7 +275,8 @@ def profile_signal_handler(signum, frame):
         now = clock()
         state.accumulate_time(now)
 
-        state.samples.append(Sample.from_frame(frame, state.accumulated_time))
+        timestamp = state.accumulated_time[state.timeidx]
+        state.samples.append(Sample.from_frame(frame, timestamp))
 
         signal.setitimer(signal.ITIMER_PROF,
             state.sample_interval, 0.0)
@@ -275,7 +289,9 @@ def samplerthread(tid):
         state.accumulate_time(now)
 
         frame = sys._current_frames()[tid]
-        state.samples.append(Sample.from_frame(frame, state.accumulated_time))
+
+        timestamp = state.accumulated_time[state.timeidx]
+        state.samples.append(Sample.from_frame(frame, timestamp))
 
         state.last_start_time = now
         time.sleep(state.sample_interval)
@@ -289,8 +305,9 @@ def is_active():
     return state.profile_level > 0
 
 lastmechanism = None
-def start(mechanism='thread'):
+def start(mechanism='thread', track='cpu'):
     '''Install the profiling signal handler, and start profiling.'''
+    state.track = track # note: nesting different mode won't work
     state.profile_level += 1
     if state.profile_level == 1:
         state.last_start_time = clock()
@@ -333,7 +350,7 @@ def stop():
 
 def save_data(path):
     with open(path, 'w+') as file:
-        file.write(str(state.accumulated_time) + '\n')
+        file.write("%f %f\n" % state.accumulated_time)
         for sample in state.samples:
             time = str(sample.time)
             stack = sample.stack
@@ -344,7 +361,7 @@ def save_data(path):
 def load_data(path):
     lines = open(path, 'r').read().splitlines()
 
-    state.accumulated_time = float(lines[0])
+    state.accumulated_time = [float(value) for value in lines[0].split()]
     state.samples = []
     for line in lines[1:]:
         parts = line.split('\0')
@@ -437,7 +454,8 @@ class DisplayFormats:
 
 def display(fp=None, format=3, data=None, **kwargs):
     '''Print statistics, either to stdout or the given file object.'''
-    data = data or state
+    if data is None:
+        data = state
 
     if fp is None:
         import sys
@@ -466,7 +484,8 @@ def display(fp=None, format=3, data=None, **kwargs):
     if format not in (DisplayFormats.Json, DisplayFormats.Chrome):
         print('---', file=fp)
         print('Sample count: %d' % len(data.samples), file=fp)
-        print('Total time: %f seconds' % data.accumulated_time, file=fp)
+        print('Total time: %f seconds (%f wall)' % data.accumulated_time,
+              file=fp)
 
 def display_by_line(data, fp):
     '''Print the profiler data with each sample line represented
@@ -691,7 +710,7 @@ def write_to_flame(data, fp, scriptpath=None, outputfile=None, **kwargs):
               file=fp)
         return
 
-    fd, path = tempfile.mkstemp()
+    fd, path = pycompat.mkstemp()
 
     file = open(path, "w+")
 

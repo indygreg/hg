@@ -150,6 +150,7 @@ pull empty (with phase movement)
   pulling from $TESTTMP/main
   no changes found
   pre-close-tip:24b6387c8c8c public 
+  1 local changesets published
   postclose-tip:24b6387c8c8c public 
   txnclose hook: HG_HOOKNAME=txnclose.env HG_HOOKTYPE=txnclose HG_NEW_OBSMARKERS=0 HG_PHASES_MOVED=1 HG_SOURCE=pull HG_TXNID=TXN:$ID$ HG_TXNNAME=pull
   file:/*/$TESTTMP/main HG_URL=file:$TESTTMP/main (glob)
@@ -935,11 +936,11 @@ Test lazily acquiring the lock during unbundle
   > import os
   > from mercurial import extensions, bundle2, error
   > def checklock(orig, repo, *args, **kwargs):
-  >     if repo.svfs.lexists("lock"):
-  >         raise error.Abort("Lock should not be taken")
+  >     if repo.svfs.lexists(b"lock"):
+  >         raise error.Abort(b"Lock should not be taken")
   >     return orig(repo, *args, **kwargs)
   > def extsetup(ui):
-  >    extensions.wrapfunction(bundle2, 'processbundle', checklock)
+  >    extensions.wrapfunction(bundle2, b'processbundle', checklock)
   > EOF
 
   $ hg init lazylock

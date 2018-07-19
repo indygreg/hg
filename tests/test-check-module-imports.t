@@ -20,6 +20,7 @@ outputs, which should be fixed later.
   > -X setup.py \
   > -X contrib/debugshell.py \
   > -X contrib/hgweb.fcgi \
+  > -X contrib/packaging/hg-docker \
   > -X contrib/python-zstandard/ \
   > -X contrib/win32/hgwebdir_wsgi.py \
   > -X doc/gendoc.py \

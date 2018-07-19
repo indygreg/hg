@@ -52,7 +52,7 @@ def countrate(ui, repo, amap, *pats, **opts):
         def getkey(ctx):
             t, tz = ctx.date()
             date = datetime.datetime(*time.gmtime(float(t) - tz)[:6])
-            return date.strftime(opts['dateformat'])
+            return date.strftime(encoding.strfromlocal(opts['dateformat']))
     else:
         tmpl = opts.get('oldtemplate') or opts.get('template')
         tmpl = logcmdutil.maketemplater(ui, repo, tmpl)
@@ -61,7 +61,8 @@ def countrate(ui, repo, amap, *pats, **opts):
             tmpl.show(ctx)
             return ui.popbuffer()
 
-    state = {'count': 0}
+    progress = ui.makeprogress(_('analyzing'), unit=_('revisions'),
+                               total=len(repo))
     rate = {}
     df = False
     if opts.get('date'):
@@ -87,14 +88,12 @@ def countrate(ui, repo, amap, *pats, **opts):
             lines = changedlines(ui, repo, ctx1, ctx, fns)
             rate[key] = [r + l for r, l in zip(rate.get(key, (0, 0)), lines)]
 
-        state['count'] += 1
-        ui.progress(_('analyzing'), state['count'], total=len(repo),
-                    unit=_('revisions'))
+        progress.increment()
 
     for ctx in cmdutil.walkchangerevs(repo, m, opts, prep):
         continue
 
-    ui.progress(_('analyzing'), None)
+    progress.complete()
 
     return rate
 
@@ -161,7 +160,7 @@ def churn(ui, repo, *pats, **opts):
     if not aliases and os.path.exists(repo.wjoin('.hgchurn')):
         aliases = repo.wjoin('.hgchurn')
     if aliases:
-        for l in open(aliases, "r"):
+        for l in open(aliases, "rb"):
             try:
                 alias, actual = l.rsplit('=' in l and '=' or None, 1)
                 amap[alias.strip()] = actual.strip()

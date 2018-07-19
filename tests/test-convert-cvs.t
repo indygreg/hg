@@ -12,10 +12,10 @@
   $ echo "convert = " >> $HGRCPATH
   $ cat > cvshooks.py <<EOF
   > def cvslog(ui,repo,hooktype,log):
-  >     ui.write('%s hook: %d entries\n' % (hooktype,len(log)))
+  >     ui.write(b'%s hook: %d entries\n' % (hooktype,len(log)))
   > 
   > def cvschangesets(ui,repo,hooktype,changesets):
-  >     ui.write('%s hook: %d changesets\n' % (hooktype,len(changesets)))
+  >     ui.write(b'%s hook: %d changesets\n' % (hooktype,len(changesets)))
   > EOF
   $ hookpath=`pwd`
   $ cat <<EOF >> $HGRCPATH
@@ -522,8 +522,8 @@ Commit messages of version 1.2 - 1.4 use u3042 in 3 encodings below.
 
   $ mkdir -p cvsrepo/transcoding
   $ python <<EOF
-  > fp = open('cvsrepo/transcoding/file,v', 'w')
-  > fp.write(('''
+  > fp = open('cvsrepo/transcoding/file,v', 'wb')
+  > fp.write((b'''
   > head	1.4;
   > access;
   > symbols
@@ -570,7 +570,7 @@ Commit messages of version 1.2 - 1.4 use u3042 in 3 encodings below.
   > 
   > 1.4
   > log
-  > @''' + u'\u3042'.encode('cp932') + ''' (cp932)
+  > @''' + u'\u3042'.encode('cp932') + b''' (cp932)
   > @
   > text
   > @1
@@ -582,7 +582,7 @@ Commit messages of version 1.2 - 1.4 use u3042 in 3 encodings below.
   > 
   > 1.3
   > log
-  > @''' + u'\u3042'.encode('euc-jp') + ''' (euc-jp)
+  > @''' + u'\u3042'.encode('euc-jp') + b''' (euc-jp)
   > @
   > text
   > @d4 1
@@ -591,7 +591,7 @@ Commit messages of version 1.2 - 1.4 use u3042 in 3 encodings below.
   > 
   > 1.2
   > log
-  > @''' + u'\u3042'.encode('utf-8') +  ''' (utf-8)
+  > @''' + u'\u3042'.encode('utf-8') +  b''' (utf-8)
   > @
   > text
   > @d3 1

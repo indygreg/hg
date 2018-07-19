@@ -82,6 +82,13 @@ test bad extdata() template source
   $ hg log -T "{extdata('unknown')}\n"
   abort: unknown extdata source 'unknown'
   [255]
+  $ hg log -T "{extdata(unknown)}\n"
+  hg: parse error: empty data source specified
+  (did you mean extdata('unknown')?)
+  [255]
+  $ hg log -T "{extdata('{unknown}')}\n"
+  hg: parse error: empty data source specified
+  [255]
 
 we don't fix up relative file URLs, but we do run shell commands in repo root
 

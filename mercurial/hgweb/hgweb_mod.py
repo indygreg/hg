@@ -441,6 +441,8 @@ class hgweb(object):
             res.headers['Content-Type'] = ctype
             return rctx.sendtemplate('error', error=pycompat.bytestr(e))
         except ErrorResponse as e:
+            for k, v in e.headers:
+                res.headers[k] = v
             res.status = statusmessage(e.code, pycompat.bytestr(e))
             res.headers['Content-Type'] = ctype
             return rctx.sendtemplate('error', error=pycompat.bytestr(e))

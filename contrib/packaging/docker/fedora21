@@ -1,12 +1,15 @@
-FROM centos:centos7
+FROM fedora:21
+
+RUN groupadd -g 1000 build && \
+    useradd -u 1000 -g 1000 -s /bin/bash -d /build -m build
+
 RUN yum install -y \
 	gcc \
 	gettext \
 	make \
 	python-devel \
 	python-docutils \
-	rpm-build \
-	tar
+	rpm-build
 
 # For creating repo meta data
 RUN yum install -y createrepo

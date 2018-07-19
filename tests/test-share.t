@@ -1,5 +1,3 @@
-#require killdaemons
-
   $ echo "[extensions]"      >> $HGRCPATH
   $ echo "share = "          >> $HGRCPATH
 
@@ -362,6 +360,7 @@ verify that bookmarks are not written on failed transaction
   searching for changes
   no changes found
   adding remote bookmark bm3
+  1 local changesets published
   $ hg boo
      bm1                       3:b87954705719
    * bm3                       4:62f4ded848e4

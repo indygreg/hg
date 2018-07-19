@@ -11,7 +11,6 @@ import errno
 import os
 import shutil
 import stat
-import tempfile
 import threading
 
 from .i18n import _
@@ -171,7 +170,7 @@ class abstractvfs(object):
         return os.mkdir(self.join(path))
 
     def mkstemp(self, suffix='', prefix='tmp', dir=None):
-        fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix,
+        fd, name = pycompat.mkstemp(suffix=suffix, prefix=prefix,
                                     dir=self.join(dir))
         dname, fname = util.split(name)
         if dir:
@@ -247,8 +246,9 @@ class abstractvfs(object):
         """Attempt to remove a file, ignoring missing file errors."""
         util.tryunlink(self.join(path))
 
-    def unlinkpath(self, path=None, ignoremissing=False):
-        return util.unlinkpath(self.join(path), ignoremissing=ignoremissing)
+    def unlinkpath(self, path=None, ignoremissing=False, rmdir=True):
+        return util.unlinkpath(self.join(path), ignoremissing=ignoremissing,
+                               rmdir=rmdir)
 
     def utime(self, path=None, t=None):
         return os.utime(self.join(path), t)
@@ -568,7 +568,7 @@ class backgroundfilecloser(object):
         ui.debug('starting %d threads for background file closing\n' %
                  threadcount)
 
-        self._queue = util.queue(maxsize=maxqueue)
+        self._queue = pycompat.queue.Queue(maxsize=maxqueue)
         self._running = True
 
         for i in range(threadcount):
@@ -600,7 +600,7 @@ class backgroundfilecloser(object):
                 except Exception as e:
                     # Stash so can re-raise from main thread later.
                     self._threadexception = e
-            except util.empty:
+            except pycompat.queue.Empty:
                 if not self._running:
                     break
 

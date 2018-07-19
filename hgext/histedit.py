@@ -183,7 +183,6 @@ unexpectedly::
 
 from __future__ import absolute_import
 
-import errno
 import os
 
 from mercurial.i18n import _
@@ -207,6 +206,7 @@ from mercurial import (
     registrar,
     repair,
     scmutil,
+    state as statemod,
     util,
 )
 from mercurial.utils import (
@@ -304,6 +304,7 @@ class histeditstate(object):
         self.lock = lock
         self.wlock = wlock
         self.backupfile = None
+        self.stateobj = statemod.cmdstate(repo, 'histedit-state')
         if replacements is None:
             self.replacements = []
         else:
@@ -311,29 +312,33 @@ class histeditstate(object):
 
     def read(self):
         """Load histedit state from disk and set fields appropriately."""
-        try:
-            state = self.repo.vfs.read('histedit-state')
-        except IOError as err:
-            if err.errno != errno.ENOENT:
-                raise
+        if not self.stateobj.exists():
             cmdutil.wrongtooltocontinue(self.repo, _('histedit'))
 
-        if state.startswith('v1\n'):
+        data = self._read()
+
+        self.parentctxnode = data['parentctxnode']
+        actions = parserules(data['rules'], self)
+        self.actions = actions
+        self.keep = data['keep']
+        self.topmost = data['topmost']
+        self.replacements = data['replacements']
+        self.backupfile = data['backupfile']
+
+    def _read(self):
+        fp = self.repo.vfs.read('histedit-state')
+        if fp.startswith('v1\n'):
             data = self._load()
             parentctxnode, rules, keep, topmost, replacements, backupfile = data
         else:
-            data = pickle.loads(state)
+            data = pickle.loads(fp)
             parentctxnode, rules, keep, topmost, replacements = data
             backupfile = None
-
-        self.parentctxnode = parentctxnode
         rules = "\n".join(["%s %s" % (verb, rest) for [verb, rest] in rules])
-        actions = parserules(rules, self)
-        self.actions = actions
-        self.keep = keep
-        self.topmost = topmost
-        self.replacements = replacements
-        self.backupfile = backupfile
+
+        return {'parentctxnode': parentctxnode, "rules": rules, "keep": keep,
+                "topmost": topmost, "replacements": replacements,
+                "backupfile": backupfile}
 
     def write(self, tr=None):
         if tr:
@@ -779,9 +784,7 @@ class fold(histeditaction):
 
     def finishfold(self, ui, repo, ctx, oldctx, newnode, internalchanges):
         parent = ctx.parents()[0].node()
-        repo.ui.pushbuffer()
-        hg.update(repo, parent)
-        repo.ui.popbuffer()
+        hg.updaterepo(repo, parent, overwrite=False)
         ### prepare new commit data
         commitopts = {}
         commitopts['user'] = ctx.user()
@@ -812,9 +815,7 @@ class fold(histeditaction):
                          skipprompt=self.skipprompt())
         if n is None:
             return ctx, []
-        repo.ui.pushbuffer()
-        hg.update(repo, n)
-        repo.ui.popbuffer()
+        hg.updaterepo(repo, n, overwrite=False)
         replacements = [(oldctx.node(), (newnode,)),
                         (ctx.node(), (n,)),
                         (newnode, (n,)),
@@ -1109,6 +1110,8 @@ def _histedit(ui, repo, state, *freeargs, **opts):
     fm.startitem()
     goal = _getgoal(opts)
     revs = opts.get('rev', [])
+    # experimental config: ui.history-editing-backup
+    nobackup = not ui.configbool('ui', 'history-editing-backup')
     rules = opts.get('commands', '')
     state.keep = opts.get('keep', False)
 
@@ -1122,7 +1125,7 @@ def _histedit(ui, repo, state, *freeargs, **opts):
         _edithisteditplan(ui, repo, state, rules)
         return
     elif goal == goalabort:
-        _aborthistedit(ui, repo, state)
+        _aborthistedit(ui, repo, state, nobackup=nobackup)
         return
     else:
         # goal == goalnew
@@ -1149,8 +1152,6 @@ def _continuehistedit(ui, repo, state):
     # even if there's an exception before the first transaction serialize.
     state.write()
 
-    total = len(state.actions)
-    pos = 0
     tr = None
     # Don't use singletransaction by default since it rolls the entire
     # transaction back if an unexpected exception happens (like a
@@ -1160,13 +1161,13 @@ def _continuehistedit(ui, repo, state):
         # and reopen a transaction. For example, if the action executes an
         # external process it may choose to commit the transaction first.
         tr = repo.transaction('histedit')
-    with util.acceptintervention(tr):
+    progress = ui.makeprogress(_("editing"), unit=_('changes'),
+                               total=len(state.actions))
+    with progress, util.acceptintervention(tr):
         while state.actions:
             state.write(tr=tr)
             actobj = state.actions[0]
-            pos += 1
-            ui.progress(_("editing"), pos, actobj.torule(),
-                        _('changes'), total)
+            progress.increment(item=actobj.torule())
             ui.debug('histedit: processing %s %s\n' % (actobj.verb,\
                                                        actobj.torule()))
             parentctx, replacement_ = actobj.run()
@@ -1175,13 +1176,10 @@ def _continuehistedit(ui, repo, state):
             state.actions.pop(0)
 
     state.write()
-    ui.progress(_("editing"), None)
 
 def _finishhistedit(ui, repo, state, fm):
     """This action runs when histedit is finishing its session"""
-    repo.ui.pushbuffer()
-    hg.update(repo, state.parentctxnode, quietempty=True)
-    repo.ui.popbuffer()
+    hg.updaterepo(repo, state.parentctxnode, overwrite=False)
 
     mapping, tmpnodes, created, ntm = processreplacement(state)
     if mapping:
@@ -1225,7 +1223,7 @@ def _finishhistedit(ui, repo, state, fm):
     if repo.vfs.exists('histedit-last-edit.txt'):
         repo.vfs.unlink('histedit-last-edit.txt')
 
-def _aborthistedit(ui, repo, state):
+def _aborthistedit(ui, repo, state, nobackup=False):
     try:
         state.read()
         __, leafs, tmpnodes, __ = processreplacement(state)
@@ -1247,8 +1245,8 @@ def _aborthistedit(ui, repo, state):
         if repo.unfiltered().revs('parents() and (%n  or %ln::)',
                                 state.parentctxnode, leafs | tmpnodes):
             hg.clean(repo, state.topmost, show_stats=True, quietempty=True)
-        cleanupnode(ui, repo, tmpnodes)
-        cleanupnode(ui, repo, leafs)
+        cleanupnode(ui, repo, tmpnodes, nobackup=nobackup)
+        cleanupnode(ui, repo, leafs, nobackup=nobackup)
     except Exception:
         if state.inprogress():
             ui.warn(_('warning: encountered an exception during histedit '
@@ -1605,7 +1603,7 @@ def movetopmostbookmarks(repo, oldtopmost, newtopmost):
                 changes.append((name, newtopmost))
             marks.applychanges(repo, tr, changes)
 
-def cleanupnode(ui, repo, nodes):
+def cleanupnode(ui, repo, nodes, nobackup=False):
     """strip a group of nodes from the repository
 
     The set of node to strip may contains unknown nodes."""
@@ -1620,7 +1618,8 @@ def cleanupnode(ui, repo, nodes):
         nodes = sorted(n for n in nodes if n in nm)
         roots = [c.node() for c in repo.set("roots(%ln)", nodes)]
         if roots:
-            repair.strip(ui, repo, roots)
+            backup = not nobackup
+            repair.strip(ui, repo, roots, backup=backup)
 
 def stripwrapper(orig, ui, repo, nodelist, *args, **kwargs):
     if isinstance(nodelist, str):

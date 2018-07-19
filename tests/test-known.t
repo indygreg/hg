@@ -1,5 +1,3 @@
-#require killdaemons
-
 = Test the known() protocol function =
 
 Create a test repository:

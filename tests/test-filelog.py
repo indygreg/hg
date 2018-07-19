@@ -14,21 +14,21 @@ from mercurial import (
 )
 
 myui = uimod.ui.load()
-repo = hg.repository(myui, path='.', create=True)
+repo = hg.repository(myui, path=b'.', create=True)
 
-fl = repo.file('foobar')
+fl = repo.file(b'foobar')
 
 def addrev(text, renamed=False):
     if renamed:
         # data doesn't matter. Just make sure filelog.renamed() returns True
-        meta = {'copyrev': hex(nullid), 'copy': 'bar'}
+        meta = {b'copyrev': hex(nullid), b'copy': b'bar'}
     else:
         meta = {}
 
     lock = t = None
     try:
         lock = repo.lock()
-        t = repo.transaction('commit')
+        t = repo.transaction(b'commit')
         node = fl.add(text, meta, t, 0, nullid, nullid)
         return node
     finally:
@@ -40,8 +40,8 @@ def addrev(text, renamed=False):
 def error(text):
     print('ERROR: ' + text)
 
-textwith = '\1\nfoo'
-without = 'foo'
+textwith = b'\1\nfoo'
+without = b'foo'
 
 node = addrev(textwith)
 if not textwith == fl.read(node):

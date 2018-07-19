@@ -13,29 +13,9 @@ from . import (
     pycompat,
     util,
 )
-
-def _formatsetrepr(r):
-    """Format an optional printable representation of a set
-
-    ========  =================================
-    type(r)   example
-    ========  =================================
-    tuple     ('<not %r>', other)
-    bytes     '<branch closed>'
-    callable  lambda: '<branch %r>' % sorted(b)
-    object    other
-    ========  =================================
-    """
-    if r is None:
-        return ''
-    elif isinstance(r, tuple):
-        return r[0] % util.rapply(pycompat.maybebytestr, r[1:])
-    elif isinstance(r, bytes):
-        return r
-    elif callable(r):
-        return r()
-    else:
-        return pycompat.byterepr(r)
+from .utils import (
+    stringutil,
+)
 
 def _typename(o):
     return pycompat.sysbytes(type(o).__name__).lstrip('_')
@@ -392,7 +372,7 @@ class baseset(abstractsmartset):
     @encoding.strmethod
     def __repr__(self):
         d = {None: '', False: '-', True: '+'}[self._ascending]
-        s = _formatsetrepr(self._datarepr)
+        s = stringutil.buildrepr(self._datarepr)
         if not s:
             l = self._list
             # if _list has been built from a set, it might have a different
@@ -514,7 +494,7 @@ class filteredset(abstractsmartset):
     @encoding.strmethod
     def __repr__(self):
         xs = [pycompat.byterepr(self._subset)]
-        s = _formatsetrepr(self._condrepr)
+        s = stringutil.buildrepr(self._condrepr)
         if s:
             xs.append(s)
         return '<%s %s>' % (_typename(self), ', '.join(xs))
@@ -1129,17 +1109,3 @@ class fullreposet(_spanset):
 
         other.sort(reverse=self.isdescending())
         return other
-
-def prettyformat(revs):
-    lines = []
-    rs = pycompat.byterepr(revs)
-    p = 0
-    while p < len(rs):
-        q = rs.find('<', p + 1)
-        if q < 0:
-            q = len(rs)
-        l = rs.count('<', 0, p) - rs.count('>', 0, p)
-        assert l >= 0
-        lines.append((l, rs[p:q].rstrip()))
-        p = q
-    return '\n'.join('  ' * l + s for l, s in lines)

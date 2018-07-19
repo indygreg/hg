@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 import os
 import re
-import tempfile
 import xml.dom.minidom
 
 from mercurial.i18n import _
@@ -751,9 +750,10 @@ class svn_source(converter_source):
             self.module = new_module
             self.reparent(self.module)
 
+        progress = self.ui.makeprogress(_('scanning paths'), unit=_('paths'),
+                                        total=len(paths))
         for i, (path, ent) in enumerate(paths):
-            self.ui.progress(_('scanning paths'), i, item=path,
-                             total=len(paths), unit=_('paths'))
+            progress.update(i, item=path)
             entrypath = self.getrelpath(path)
 
             kind = self._checkpath(entrypath, revnum)
@@ -839,7 +839,7 @@ class svn_source(converter_source):
                     copytopath = self.getrelpath(copytopath)
                     copies[self.recode(copytopath)] = self.recode(childpath)
 
-        self.ui.progress(_('scanning paths'), None)
+        progress.complete()
         changed.update(removed)
         return (list(changed), removed, copies)
 
@@ -1081,7 +1081,7 @@ class svn_source(converter_source):
                                ' hg executable is in PATH'))
         return logstream(stdout)
 
-pre_revprop_change = '''#!/bin/sh
+pre_revprop_change = b'''#!/bin/sh
 
 REPOS="$1"
 REV="$2"
@@ -1098,8 +1098,8 @@ exit 1
 '''
 
 class svn_sink(converter_sink, commandline):
-    commit_re = re.compile(r'Committed revision (\d+).', re.M)
-    uuid_re = re.compile(r'Repository UUID:\s*(\S+)', re.M)
+    commit_re = re.compile(br'Committed revision (\d+).', re.M)
+    uuid_re = re.compile(br'Repository UUID:\s*(\S+)', re.M)
 
     def prerun(self):
         if self.wc:
@@ -1225,7 +1225,7 @@ class svn_sink(converter_sink, commandline):
         wdest = self.wjoin(dest)
         exists = os.path.lexists(wdest)
         if exists:
-            fd, tempname = tempfile.mkstemp(
+            fd, tempname = pycompat.mkstemp(
                 prefix='hg-copy-', dir=os.path.dirname(wdest))
             os.close(fd)
             os.unlink(tempname)
@@ -1313,7 +1313,7 @@ class svn_sink(converter_sink, commandline):
             self.xargs(self.setexec, 'propset', 'svn:executable', '*')
             self.setexec = []
 
-        fd, messagefile = tempfile.mkstemp(prefix='hg-convert-')
+        fd, messagefile = pycompat.mkstemp(prefix='hg-convert-')
         fp = os.fdopen(fd, r'wb')
         fp.write(util.tonativeeol(commit.desc))
         fp.close()

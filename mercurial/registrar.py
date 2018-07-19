@@ -247,10 +247,6 @@ class filesetpredicate(_funcregistrarbase):
      implies 'matchctx.status()' at runtime or not (False, by
      default).
 
-    Optional argument 'callexisting' indicates whether a predicate
-    implies 'matchctx.existing()' at runtime or not (False, by
-    default).
-
     'filesetpredicate' instance in example above can be used to
     decorate multiple functions.
 
@@ -263,9 +259,8 @@ class filesetpredicate(_funcregistrarbase):
     _getname = _funcregistrarbase._parsefuncdecl
     _docformat = "``%s``\n    %s"
 
-    def _extrasetup(self, name, func, callstatus=False, callexisting=False):
+    def _extrasetup(self, name, func, callstatus=False):
         func._callstatus = callstatus
-        func._callexisting = callexisting
 
 class _templateregistrarbase(_funcregistrarbase):
     """Base of decorator to register functions as template specific one
@@ -351,7 +346,8 @@ class templatefunc(_templateregistrarbase):
 
         templatefunc = registrar.templatefunc()
 
-        @templatefunc('myfunc(arg1, arg2[, arg3])', argspec='arg1 arg2 arg3')
+        @templatefunc('myfunc(arg1, arg2[, arg3])', argspec='arg1 arg2 arg3',
+                      requires={'ctx'})
         def myfuncfunc(context, mapping, args):
             '''Explanation of this template function ....
             '''
@@ -362,6 +358,9 @@ class templatefunc(_templateregistrarbase):
     If optional 'argspec' is defined, the function will receive 'args' as
     a dict of named arguments. Otherwise 'args' is a list of positional
     arguments.
+
+    Optional argument 'requires' should be a collection of resource names
+    which the template function depends on.
 
     'templatefunc' instance in example above can be used to
     decorate multiple functions.
@@ -374,8 +373,9 @@ class templatefunc(_templateregistrarbase):
     """
     _getname = _funcregistrarbase._parsefuncdecl
 
-    def _extrasetup(self, name, func, argspec=None):
+    def _extrasetup(self, name, func, argspec=None, requires=()):
         func._argspec = argspec
+        func._requires = requires
 
 class internalmerge(_funcregistrarbase):
     """Decorator to register in-process merge tool

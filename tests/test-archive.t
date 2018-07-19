@@ -94,7 +94,7 @@ hg subrepos are shared into existence on demand if the parent was shared
   $ echo "archivesubrepos = True" >> .hg/hgrc
   $ cp .hg/hgrc .hg/hgrc-base
   > test_archtype() {
-  >     echo "allow_archive = $1" >> .hg/hgrc
+  >     echo "allow-archive = $1" >> .hg/hgrc
   >     test_archtype_run "$@"
   > }
   > test_archtype_deprecated() {
@@ -293,7 +293,7 @@ check http return codes (with deprecated option)
   
   body: size=1451, sha1=4c5cf0f574446c44feb7f88f4e0e2a56bd92c352
 
-  $ echo "allow_archive = gz bz2 zip" >> .hg/hgrc
+  $ echo "allow-archive = gz bz2 zip" >> .hg/hgrc
   $ hg serve -p $HGPORT -d --pid-file=hg.pid -E errors.log
   $ cat hg.pid >> $DAEMON_PIDS
 

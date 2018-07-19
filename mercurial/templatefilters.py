@@ -99,6 +99,45 @@ def basename(path):
     """
     return os.path.basename(path)
 
+@templatefilter('commondir')
+def commondir(filelist):
+    """List of text. Treats each list item as file name with /
+    as path separator and returns the longest common directory
+    prefix shared by all list items.
+    Returns the empty string if no common prefix exists.
+
+    The list items are not normalized, i.e. "foo/../bar" is handled as
+    file "bar" in the directory "foo/..". Leading slashes are ignored.
+
+    For example, ["foo/bar/baz", "foo/baz/bar"] becomes "foo" and
+    ["foo/bar", "baz"] becomes "".
+    """
+    def common(a, b):
+        if len(a) > len(b):
+            a = b[:len(a)]
+        elif len(b) > len(a):
+            b = b[:len(a)]
+        if a == b:
+            return a
+        for i in xrange(len(a)):
+            if a[i] != b[i]:
+                return a[:i]
+        return a
+    try:
+        if not filelist:
+            return ""
+        dirlist = [f.lstrip('/').split('/')[:-1] for f in filelist]
+        if len(dirlist) == 1:
+            return '/'.join(dirlist[0])
+        a = min(dirlist)
+        b = max(dirlist)
+        # The common prefix of a and b is shared with all
+        # elements of the list since Python sorts lexicographical
+        # and [1, x] after [1].
+        return '/'.join(common(a, b))
+    except TypeError:
+        raise error.ParseError(_('argument is not a list of text'))
+
 @templatefilter('count')
 def count(i):
     """List or text. Returns the length as an integer."""
@@ -238,6 +277,7 @@ def indent(text, prefix):
 
 @templatefilter('json')
 def json(obj, paranoid=True):
+    """Any object. Serializes the object to a JSON formatted text."""
     if obj is None:
         return 'null'
     elif obj is False:
@@ -248,13 +288,9 @@ def json(obj, paranoid=True):
         return pycompat.bytestr(obj)
     elif isinstance(obj, bytes):
         return '"%s"' % encoding.jsonescape(obj, paranoid=paranoid)
-    elif isinstance(obj, str):
-        # This branch is unreachable on Python 2, because bytes == str
-        # and we'll return in the next-earlier block in the elif
-        # ladder. On Python 3, this helps us catch bugs before they
-        # hurt someone.
+    elif isinstance(obj, type(u'')):
         raise error.ProgrammingError(
-            'Mercurial only does output with bytes on Python 3: %r' % obj)
+            'Mercurial only does output with bytes: %r' % obj)
     elif util.safehasattr(obj, 'keys'):
         out = ['"%s": %s' % (encoding.jsonescape(k, paranoid=paranoid),
                              json(v, paranoid))

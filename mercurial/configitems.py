@@ -147,6 +147,9 @@ coreconfigitem('annotate', 'nobinary',
 coreconfigitem('annotate', 'noprefix',
     default=False,
 )
+coreconfigitem('annotate', 'word-diff',
+    default=False,
+)
 coreconfigitem('auth', 'cookiefile',
     default=None,
 )
@@ -184,6 +187,9 @@ coreconfigitem('color', 'mode',
 coreconfigitem('color', 'pagermode',
     default=dynamicdefault,
 )
+coreconfigitem('commands', 'grep.all-files',
+    default=False,
+)
 coreconfigitem('commands', 'show.aliasprefix',
     default=list,
 )
@@ -193,13 +199,14 @@ coreconfigitem('commands', 'status.relative',
 coreconfigitem('commands', 'status.skipstates',
     default=[],
 )
+coreconfigitem('commands', 'status.terse',
+    default='',
+)
 coreconfigitem('commands', 'status.verbose',
     default=False,
 )
 coreconfigitem('commands', 'update.check',
     default=None,
-    # Deprecated, remove after 4.4 release
-    alias=[('experimental', 'updatecheck')]
 )
 coreconfigitem('commands', 'update.requiredest',
     default=False,
@@ -207,6 +214,9 @@ coreconfigitem('commands', 'update.requiredest',
 coreconfigitem('committemplate', '.*',
     default=None,
     generic=True,
+)
+coreconfigitem('convert', 'bzr.saverev',
+    default=True,
 )
 coreconfigitem('convert', 'cvsps.cache',
     default=True,
@@ -362,6 +372,9 @@ coreconfigitem('devel', 'user.obsmarker',
 coreconfigitem('devel', 'warn-config-unknown',
     default=None,
 )
+coreconfigitem('devel', 'debug.extensions',
+    default=False,
+)
 coreconfigitem('devel', 'debug.peer-request',
     default=False,
 )
@@ -393,6 +406,9 @@ coreconfigitem('diff', 'nobinary',
     default=False,
 )
 coreconfigitem('diff', 'noprefix',
+    default=False,
+)
+coreconfigitem('diff', 'word-diff',
     default=False,
 )
 coreconfigitem('email', 'bcc',
@@ -508,9 +524,6 @@ coreconfigitem('experimental', 'evolution.report-instabilities',
 coreconfigitem('experimental', 'evolution.track-operation',
     default=True,
 )
-coreconfigitem('experimental', 'worddiff',
-    default=False,
-)
 coreconfigitem('experimental', 'maxdeltachainspan',
     default=-1,
 )
@@ -559,11 +572,17 @@ coreconfigitem('experimental', 'httppostargs',
 coreconfigitem('experimental', 'mergedriver',
     default=None,
 )
+coreconfigitem('experimental', 'nointerrupt', default=False)
+coreconfigitem('experimental', 'nointerrupt-interactiveonly', default=True)
+
 coreconfigitem('experimental', 'obsmarkers-exchange-debug',
     default=False,
 )
 coreconfigitem('experimental', 'remotenames',
     default=False,
+)
+coreconfigitem('experimental', 'removeemptydirs',
+    default=True,
 )
 coreconfigitem('experimental', 'revlogv2',
     default=None,
@@ -581,10 +600,10 @@ coreconfigitem('experimental', 'sparse-read',
     default=False,
 )
 coreconfigitem('experimental', 'sparse-read.density-threshold',
-    default=0.25,
+    default=0.50,
 )
 coreconfigitem('experimental', 'sparse-read.min-gap-size',
-    default='256K',
+    default='65K',
 )
 coreconfigitem('experimental', 'treemanifest',
     default=False,
@@ -604,6 +623,9 @@ coreconfigitem('experimental', 'web.api.http-v2',
 coreconfigitem('experimental', 'web.api.debugreflect',
     default=False,
 )
+coreconfigitem('experimental', 'worker.wdir-get-thread-safe',
+    default=False,
+)
 coreconfigitem('experimental', 'xdiff',
     default=False,
 )
@@ -614,9 +636,6 @@ coreconfigitem('extensions', '.*',
 coreconfigitem('extdata', '.*',
     default=None,
     generic=True,
-)
-coreconfigitem('format', 'aggressivemergedeltas',
-    default=False,
 )
 coreconfigitem('format', 'chunkcachesize',
     default=None,
@@ -635,6 +654,9 @@ coreconfigitem('format', 'maxchainlen',
 )
 coreconfigitem('format', 'obsstore-version',
     default=None,
+)
+coreconfigitem('format', 'sparse-revlog',
+    default=False,
 )
 coreconfigitem('format', 'usefncache',
     default=True,
@@ -866,6 +888,9 @@ coreconfigitem('profiling', 'sort',
 coreconfigitem('profiling', 'statformat',
     default='hotpath',
 )
+coreconfigitem('profiling', 'time-track',
+    default='cpu',
+)
 coreconfigitem('profiling', 'type',
     default='stat',
 )
@@ -902,6 +927,10 @@ coreconfigitem('progress', 'width',
 coreconfigitem('push', 'pushvars.server',
     default=False,
 )
+coreconfigitem('revlog', 'optimize-delta-parent-choice',
+    default=True,
+    # formely an experimental option: format.aggressivemergedeltas
+)
 coreconfigitem('server', 'bookmarks-pushkey-compat',
     default=True,
 )
@@ -932,16 +961,16 @@ coreconfigitem('server', 'concurrent-push-mode',
 coreconfigitem('server', 'disablefullbundle',
     default=False,
 )
-coreconfigitem('server', 'streamunbundle',
-    default=False,
+coreconfigitem('server', 'maxhttpheaderlen',
+    default=1024,
 )
 coreconfigitem('server', 'pullbundle',
     default=False,
 )
-coreconfigitem('server', 'maxhttpheaderlen',
-    default=1024,
-)
 coreconfigitem('server', 'preferuncompressed',
+    default=False,
+)
+coreconfigitem('server', 'streamunbundle',
     default=False,
 )
 coreconfigitem('server', 'uncompressed',
@@ -1065,6 +1094,9 @@ coreconfigitem('ui', 'formatted',
 coreconfigitem('ui', 'graphnodetemplate',
     default=None,
 )
+coreconfigitem('ui', 'history-editing-backup',
+    default=True,
+)
 coreconfigitem('ui', 'interactive',
     default=None,
 )
@@ -1073,6 +1105,9 @@ coreconfigitem('ui', 'interface',
 )
 coreconfigitem('ui', 'interface.chunkselector',
     default=None,
+)
+coreconfigitem('ui', 'large-file-limit',
+    default=10000000,
 )
 coreconfigitem('ui', 'logblockedtimes',
     default=False,
@@ -1225,7 +1260,8 @@ coreconfigitem('web', 'accesslog',
 coreconfigitem('web', 'address',
     default='',
 )
-coreconfigitem('web', 'allow_archive',
+coreconfigitem('web', 'allow-archive',
+    alias=[('web', 'allow_archive')],
     default=list,
 )
 coreconfigitem('web', 'allow_read',

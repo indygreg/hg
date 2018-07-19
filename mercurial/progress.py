@@ -264,39 +264,40 @@ class progbar(object):
             self.starttimes[topic] = now - interval
 
     def progress(self, topic, pos, item='', unit='', total=None):
+        if pos is None:
+            self.closetopic(topic)
+            return
         now = time.time()
-        self._refreshlock.acquire()
-        try:
-            if pos is None:
-                self.starttimes.pop(topic, None)
-                self.startvals.pop(topic, None)
-                self.topicstates.pop(topic, None)
-                # reset the progress bar if this is the outermost topic
-                if self.topics and self.topics[0] == topic and self.printed:
-                    self.complete()
-                    self.resetstate()
-                # truncate the list of topics assuming all topics within
-                # this one are also closed
-                if topic in self.topics:
-                    self.topics = self.topics[:self.topics.index(topic)]
-                    # reset the last topic to the one we just unwound to,
-                    # so that higher-level topics will be stickier than
-                    # lower-level topics
-                    if self.topics:
-                        self.lasttopic = self.topics[-1]
-                    else:
-                        self.lasttopic = None
-            else:
-                if topic not in self.topics:
-                    self.starttimes[topic] = now
-                    self.startvals[topic] = pos
-                    self.topics.append(topic)
-                self.topicstates[topic] = pos, item, unit, total
-                self.curtopic = topic
-                self._calibrateestimate(topic, now, pos)
-                if now - self.lastprint >= self.refresh and self.topics:
-                    if self._oktoprint(now):
-                        self.lastprint = now
-                        self.show(now, topic, *self.topicstates[topic])
-        finally:
-            self._refreshlock.release()
+        with self._refreshlock:
+            if topic not in self.topics:
+                self.starttimes[topic] = now
+                self.startvals[topic] = pos
+                self.topics.append(topic)
+            self.topicstates[topic] = pos, item, unit, total
+            self.curtopic = topic
+            self._calibrateestimate(topic, now, pos)
+            if now - self.lastprint >= self.refresh and self.topics:
+                if self._oktoprint(now):
+                    self.lastprint = now
+                    self.show(now, topic, *self.topicstates[topic])
+
+    def closetopic(self, topic):
+        with self._refreshlock:
+            self.starttimes.pop(topic, None)
+            self.startvals.pop(topic, None)
+            self.topicstates.pop(topic, None)
+            # reset the progress bar if this is the outermost topic
+            if self.topics and self.topics[0] == topic and self.printed:
+                self.complete()
+                self.resetstate()
+            # truncate the list of topics assuming all topics within
+            # this one are also closed
+            if topic in self.topics:
+                self.topics = self.topics[:self.topics.index(topic)]
+                # reset the last topic to the one we just unwound to,
+                # so that higher-level topics will be stickier than
+                # lower-level topics
+                if self.topics:
+                    self.lasttopic = self.topics[-1]
+                else:
+                    self.lasttopic = None

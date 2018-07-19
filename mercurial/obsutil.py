@@ -11,11 +11,15 @@ import re
 
 from .i18n import _
 from . import (
+    diffutil,
+    encoding,
     node as nodemod,
     phases,
     util,
 )
-from .utils import dateutil
+from .utils import (
+    dateutil,
+)
 
 ### obsolescence marker flag
 
@@ -392,13 +396,13 @@ def _cmpdiff(leftctx, rightctx):
 
     This is a first and basic implementation, with many shortcoming.
     """
-
+    diffopts = diffutil.diffallopts(leftctx.repo().ui, {'git': True})
     # Leftctx or right ctx might be filtered, so we need to use the contexts
     # with an unfiltered repository to safely compute the diff
     leftunfi = leftctx._repo.unfiltered()[leftctx.rev()]
-    leftdiff = leftunfi.diff(git=1)
+    leftdiff = leftunfi.diff(opts=diffopts)
     rightunfi = rightctx._repo.unfiltered()[rightctx.rev()]
-    rightdiff = rightunfi.diff(git=1)
+    rightdiff = rightunfi.diff(opts=diffopts)
 
     left, right = (0, 0)
     while None not in (left, right):
@@ -819,7 +823,8 @@ def markersusers(markers):
     """ Returns a sorted list of markers users without duplicates
     """
     markersmeta = [dict(m[3]) for m in markers]
-    users = set(meta.get('user') for meta in markersmeta if meta.get('user'))
+    users = set(encoding.tolocal(meta['user']) for meta in markersmeta
+                if meta.get('user'))
 
     return sorted(users)
 

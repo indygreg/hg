@@ -24,7 +24,7 @@ from .utils import (
     stringutil,
 )
 
-def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
+def pythonhook(ui, repo, htype, hname, funcname, args, throw):
     '''call python hook. hook is callable object, looked up as
     name in python module. if callable returns "true", hook
     fails, else passes. if hook raises exception, treated as
@@ -120,8 +120,6 @@ def _pythonhook(ui, repo, htype, hname, funcname, args, throw):
     return r, False
 
 def _exthook(ui, repo, htype, name, cmd, args, throw):
-    ui.note(_("running hook %s: %s\n") % (name, cmd))
-
     starttime = util.timer()
     env = {}
 
@@ -138,8 +136,16 @@ def _exthook(ui, repo, htype, name, cmd, args, throw):
         if callable(v):
             v = v()
         if isinstance(v, (dict, list)):
-            v = stringutil.pprint(v, bprefix=False)
+            v = stringutil.pprint(v)
         env['HG_' + k.upper()] = v
+
+    if ui.configbool('hooks', 'tonative.%s' % name, False):
+        oldcmd = cmd
+        cmd = procutil.shelltonative(cmd, env)
+        if cmd != oldcmd:
+            ui.note(_('converting hook "%s" to native\n') % name)
+
+    ui.note(_("running hook %s: %s\n") % (name, cmd))
 
     if repo:
         cwd = repo.root
@@ -179,9 +185,11 @@ def _hookitems(ui, _untrusted=False):
     """return all hooks items ready to be sorted"""
     hooks = {}
     for name, cmd in ui.configitems('hooks', untrusted=_untrusted):
-        if not name.startswith('priority'):
-            priority = ui.configint('hooks', 'priority.%s' % name, 0)
-            hooks[name] = (-priority, len(hooks), name, cmd)
+        if name.startswith('priority.') or name.startswith('tonative.'):
+            continue
+
+        priority = ui.configint('hooks', 'priority.%s' % name, 0)
+        hooks[name] = (-priority, len(hooks), name, cmd)
     return hooks
 
 _redirect = False
@@ -242,7 +250,7 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
                 r = 1
                 raised = False
             elif callable(cmd):
-                r, raised = _pythonhook(ui, repo, htype, hname, cmd, args,
+                r, raised = pythonhook(ui, repo, htype, hname, cmd, args,
                                         throw)
             elif cmd.startswith('python:'):
                 if cmd.count(':') >= 2:
@@ -258,7 +266,7 @@ def runhooks(ui, repo, htype, hooks, throw=False, **args):
                     hookfn = getattr(mod, cmd)
                 else:
                     hookfn = cmd[7:].strip()
-                r, raised = _pythonhook(ui, repo, htype, hname, hookfn, args,
+                r, raised = pythonhook(ui, repo, htype, hname, hookfn, args,
                                         throw)
             else:
                 r = _exthook(ui, repo, htype, hname, cmd, args, throw)

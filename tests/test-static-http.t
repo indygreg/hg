@@ -1,4 +1,4 @@
-#require killdaemons no-reposimplestore
+#require no-reposimplestore
 
   $ hg clone http://localhost:$HGPORT/ copy
   abort: * (glob)

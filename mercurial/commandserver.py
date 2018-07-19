@@ -256,7 +256,7 @@ class server(object):
                                self.cout, self.cerr)
 
         try:
-            ret = (dispatch.dispatch(req) or 0) & 255 # might return None
+            ret = dispatch.dispatch(req) & 255
             self.cresult.write(struct.pack('>i', int(ret)))
         finally:
             # restore old cwd
@@ -494,6 +494,8 @@ class unixforkingservice(object):
                     conn.close()  # release handle in parent process
             else:
                 try:
+                    selector.close()
+                    self._sock.close()
                     self._runworker(conn)
                     conn.close()
                     os._exit(0)

@@ -60,6 +60,7 @@ def split(ui, repo, *revs, **opts):
     By default, rebase connected non-obsoleted descendants onto the new
     changeset. Use --no-rebase to avoid the rebase.
     """
+    opts = pycompat.byteskwargs(opts)
     revlist = []
     if opts.get('rev'):
         revlist.append(opts.get('rev'))
@@ -169,7 +170,7 @@ def dosplit(ui, repo, tr, ctx, opts):
         raise error.Abort(_('cannot split an empty revision'))
 
     scmutil.cleanupnodes(repo, {ctx.node(): [c.node() for c in committed]},
-                         operation='split')
+                         operation='split', fixphase=True)
 
     return committed[-1]
 

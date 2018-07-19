@@ -125,8 +125,9 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         # Ensure the slicing of path below is valid
         if (path != self.server.prefix
             and not path.startswith(self.server.prefix + b'/')):
-            self._start_response(common.statusmessage(404), [])
-            self._write("Not Found")
+            self._start_response(pycompat.strurl(common.statusmessage(404)),
+                                 [])
+            self._write(b"Not Found")
             self._done()
             return
 
@@ -214,6 +215,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
         self.sent_headers = True
 
     def _start_response(self, http_status, headers, exc_info=None):
+        assert isinstance(http_status, str)
         code, msg = http_status.split(None, 1)
         code = int(code)
         self.saved_status = http_status
@@ -244,7 +246,7 @@ class _httprequesthandler(httpservermod.basehttprequesthandler):
 
     def version_string(self):
         if self.server.serverheader:
-            return self.server.serverheader
+            return encoding.strfromlocal(self.server.serverheader)
         return httpservermod.basehttprequesthandler.version_string(self)
 
 class _httprequesthandlerssl(_httprequesthandler):

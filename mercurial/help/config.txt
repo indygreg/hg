@@ -442,6 +442,10 @@ effect and style see :hg:`help color`.
     Make paths in :hg:`status` output relative to the current directory.
     (default: False)
 
+``status.terse``
+    Default value for the --terse flag, which condenes status output.
+    (default: empty)
+
 ``update.check``
     Determines what level of checking :hg:`update` will perform before moving
     to a destination revision. Valid values are ``abort``, ``none``,
@@ -698,6 +702,9 @@ for related options for the annotate command.
 ``unified``
     Number of lines of context to show.
 
+``word-diff``
+    Highlight changed words.
+
 ``email``
 ---------
 
@@ -782,6 +789,14 @@ Example for ``~/.hgrc``::
 
 ``format``
 ----------
+
+Configuration that controls the repository format. Newer format options are more
+powerful but incompatible with some older versions of Mercurial. Format options
+are considered at repository initialization only. You need to make a new clone
+for config change to be taken into account.
+
+For more details about repository format and version compatibility, see
+https://www.mercurial-scm.org/wiki/MissingRequirement
 
 ``usegeneraldelta``
     Enable or disable the "generaldelta" repository format which improves
@@ -881,6 +896,23 @@ it is passed are listed with names in the form ``$HG_foo``. The
 They contain the type of hook which triggered the run and the full name
 of the hook in the config, respectively. In the example above, this will
 be ``$HG_HOOKTYPE=incoming`` and ``$HG_HOOKNAME=incoming.email``.
+
+.. container:: windows
+
+  Some basic Unix syntax can be enabled for portability, including ``$VAR``
+  and ``${VAR}`` style variables.  A ``~`` followed by ``\`` or ``/`` will
+  be expanded to ``%USERPROFILE%`` to simulate a subset of tilde expansion
+  on Unix.  To use a literal ``$`` or ``~``, it must be escaped with a back
+  slash or inside of a strong quote.  Strong quotes will be replaced by
+  double quotes after processing.
+
+  This feature is enabled by adding a prefix of ``tonative.`` to the hook
+  name on a new line, and setting it to ``True``.  For example::
+
+    [hooks]
+    incoming.autobuild = /my/build/hook
+    # enable translation to cmd.exe syntax for autobuild hook
+    tonative.incoming.autobuild = True
 
 ``changegroup``
   Run after a changegroup has been added via push, pull or unbundle.  The ID of
@@ -1648,6 +1680,10 @@ statistical text report generated from the profiling data.
     ``inlinetime``.
     (default: inlinetime)
 
+``time-track``
+    Control if the stat profiler track ``cpu`` or ``real`` time.
+    (default: ``cpu``)
+
 ``limit``
     Number of lines to show. Specific to the ``ls`` instrumenting profiler.
     (default: 30)
@@ -1736,6 +1772,20 @@ have a definite end point.
 ---------------
 
 Alias definitions for revsets. See :hg:`help revsets` for details.
+
+``revlog``
+----------
+
+Control the strategy Mercurial uses internally to store history. Options in this
+category impact performance and repository size.
+
+``optimize-delta-parent-choice``
+    When storing a merge revision, both parents will be equally considered as
+    a possible delta base. This results in better delta selection and improved
+    revlog compression. This option is enabled by default.
+
+    Turning this option off can result in large increase of repository size for
+    repository with many merges.
 
 ``server``
 ----------
@@ -2121,6 +2171,11 @@ User interface controls.
     Possible values are 'text' and 'curses'.
     This config overrides the interface specified by ui.interface.
 
+``large-file-limit``
+    Largest file size that gives no memory use warning.
+    Possible values are integers or 0 to disable the check.
+    (default: 10000000)
+
 ``logtemplate``
     Template string for commands that print changesets.
 
@@ -2325,7 +2380,7 @@ The full set of options is:
 ``address``
     Interface address to bind to. (default: all)
 
-``allow_archive``
+``allow-archive``
     List of archive format (bz2, gz, zip) allowed for downloading.
     (default: empty)
 

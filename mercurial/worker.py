@@ -14,6 +14,12 @@ import sys
 import threading
 import time
 
+try:
+    import selectors
+    selectors.BaseSelector
+except ImportError:
+    from .thirdparty import selectors2 as selectors
+
 from .i18n import _
 from . import (
     encoding,
@@ -56,19 +62,28 @@ def _numworkers(ui):
     return min(max(countcpus(), 4), 32)
 
 if pycompat.isposix or pycompat.iswindows:
-    _startupcost = 0.01
+    _STARTUP_COST = 0.01
+    # The Windows worker is thread based. If tasks are CPU bound, threads
+    # in the presence of the GIL result in excessive context switching and
+    # this overhead can slow down execution.
+    _DISALLOW_THREAD_UNSAFE = pycompat.iswindows
 else:
-    _startupcost = 1e30
+    _STARTUP_COST = 1e30
+    _DISALLOW_THREAD_UNSAFE = False
 
-def worthwhile(ui, costperop, nops):
+def worthwhile(ui, costperop, nops, threadsafe=True):
     '''try to determine whether the benefit of multiple processes can
     outweigh the cost of starting them'''
+
+    if not threadsafe and _DISALLOW_THREAD_UNSAFE:
+        return False
+
     linear = costperop * nops
     workers = _numworkers(ui)
-    benefit = linear - (_startupcost * workers + linear / workers)
+    benefit = linear - (_STARTUP_COST * workers + linear / workers)
     return benefit >= 0.15
 
-def worker(ui, costperarg, func, staticargs, args):
+def worker(ui, costperarg, func, staticargs, args, threadsafe=True):
     '''run a function, possibly in parallel in multiple worker
     processes.
 
@@ -82,14 +97,17 @@ def worker(ui, costperarg, func, staticargs, args):
 
     args - arguments to split into chunks, to pass to individual
     workers
+
+    threadsafe - whether work items are thread safe and can be executed using
+    a thread-based worker. Should be disabled for CPU heavy tasks that don't
+    release the GIL.
     '''
     enabled = ui.configbool('worker', 'enabled')
-    if enabled and worthwhile(ui, costperarg, len(args)):
+    if enabled and worthwhile(ui, costperarg, len(args), threadsafe=threadsafe):
         return _platformworker(ui, func, staticargs, args)
     return func(*staticargs + (args,))
 
 def _posixworker(ui, func, staticargs, args):
-    rfd, wfd = os.pipe()
     workers = _numworkers(ui)
     oldhandler = signal.getsignal(signal.SIGINT)
     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -138,7 +156,15 @@ def _posixworker(ui, func, staticargs, args):
     oldchldhandler = signal.signal(signal.SIGCHLD, sigchldhandler)
     ui.flush()
     parentpid = os.getpid()
+    pipes = []
     for pargs in partition(args, workers):
+        # Every worker gets its own pipe to send results on, so we don't have to
+        # implement atomic writes larger than PIPE_BUF. Each forked process has
+        # its own pipe's descriptors in the local variables, and the parent
+        # process has the full list of pipe descriptors (and it doesn't really
+        # care what order they're in).
+        rfd, wfd = os.pipe()
+        pipes.append((rfd, wfd))
         # make sure we use os._exit in all worker code paths. otherwise the
         # worker may do some clean-ups which could cause surprises like
         # deadlock. see sshpeer.cleanup for example.
@@ -154,9 +180,12 @@ def _posixworker(ui, func, staticargs, args):
                 signal.signal(signal.SIGCHLD, oldchldhandler)
 
                 def workerfunc():
+                    for r, w in pipes[:-1]:
+                        os.close(r)
+                        os.close(w)
                     os.close(rfd)
-                    for i, item in func(*(staticargs + (pargs,))):
-                        os.write(wfd, '%d %s\n' % (i, item))
+                    for result in func(*(staticargs + (pargs,))):
+                        os.write(wfd, util.pickle.dumps(result))
                     return 0
 
                 ret = scmutil.callcatch(ui, workerfunc)
@@ -175,8 +204,10 @@ def _posixworker(ui, func, staticargs, args):
                 finally:
                     os._exit(ret & 255)
         pids.add(pid)
-    os.close(wfd)
-    fp = os.fdopen(rfd, r'rb', 0)
+    selector = selectors.DefaultSelector()
+    for rfd, wfd in pipes:
+        os.close(wfd)
+        selector.register(os.fdopen(rfd, r'rb', 0), selectors.EVENT_READ)
     def cleanup():
         signal.signal(signal.SIGINT, oldhandler)
         waitforworkers()
@@ -187,9 +218,19 @@ def _posixworker(ui, func, staticargs, args):
                 os.kill(os.getpid(), -status)
             sys.exit(status)
     try:
-        for line in util.iterfile(fp):
-            l = line.split(' ', 1)
-            yield int(l[0]), l[1][:-1]
+        openpipes = len(pipes)
+        while openpipes > 0:
+            for key, events in selector.select():
+                try:
+                    yield util.pickle.load(key.fileobj)
+                except EOFError:
+                    selector.unregister(key.fileobj)
+                    key.fileobj.close()
+                    openpipes -= 1
+                except IOError as e:
+                    if e.errno == errno.EINTR:
+                        continue
+                    raise
     except: # re-raises
         killworkers()
         cleanup()
@@ -235,7 +276,7 @@ def _windowsworker(ui, func, staticargs, args):
                             # iteration.
                             if self._interrupted:
                                 return
-                    except util.empty:
+                    except pycompat.queue.Empty:
                         break
             except Exception as e:
                 # store the exception such that the main thread can resurface
@@ -262,8 +303,8 @@ def _windowsworker(ui, func, staticargs, args):
                 return
 
     workers = _numworkers(ui)
-    resultqueue = util.queue()
-    taskqueue = util.queue()
+    resultqueue = pycompat.queue.Queue()
+    taskqueue = pycompat.queue.Queue()
     # partition work to more pieces than workers to minimize the chance
     # of uneven distribution of large tasks between the workers
     for pargs in partition(args, workers * 20):

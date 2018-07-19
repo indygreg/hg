@@ -18,7 +18,6 @@ import os
 import posixpath
 import re
 import shutil
-import tempfile
 import zlib
 
 from .i18n import _
@@ -29,6 +28,7 @@ from .node import (
 from . import (
     copies,
     diffhelper,
+    diffutil,
     encoding,
     error,
     mail,
@@ -51,7 +51,7 @@ stringio = util.stringio
 gitre = re.compile(br'diff --git a/(.*) b/(.*)')
 tabsplitter = re.compile(br'(\t+|[^\t]+)')
 wordsplitter = re.compile(br'(\t+| +|[a-zA-Z0-9_\x80-\xff]+|'
-                          '[^ \ta-zA-Z0-9_\x80-\xff])')
+                          b'[^ \ta-zA-Z0-9_\x80-\xff])')
 
 PatchError = error.PatchError
 
@@ -113,7 +113,7 @@ def split(stream):
             cur.append(line)
         c = chunk(cur)
 
-        m = pycompat.emailparser().parse(c)
+        m = mail.parse(c)
         if not m.is_multipart():
             yield msgfp(m)
         else:
@@ -211,7 +211,7 @@ def extract(ui, fileobj):
     Any item can be missing from the dictionary. If filename is missing,
     fileobj did not contain a patch. Caller must unlink filename when done.'''
 
-    fd, tmpname = tempfile.mkstemp(prefix='hg-patch-')
+    fd, tmpname = pycompat.mkstemp(prefix='hg-patch-')
     tmpfp = os.fdopen(fd, r'wb')
     try:
         yield _extract(ui, fileobj, tmpname, tmpfp)
@@ -231,7 +231,7 @@ def _extract(ui, fileobj, tmpname, tmpfp):
 
     data = {}
 
-    msg = pycompat.emailparser().parse(fileobj)
+    msg = mail.parse(fileobj)
 
     subject = msg[r'Subject'] and mail.headdecode(msg[r'Subject'])
     data['user'] = msg[r'From'] and mail.headdecode(msg[r'From'])
@@ -498,7 +498,8 @@ class fsbackend(abstractbackend):
                 self.opener.setflags(fname, False, True)
 
     def unlink(self, fname):
-        self.opener.unlinkpath(fname, ignoremissing=True)
+        rmdir = self.ui.configbool('experimental', 'removeemptydirs')
+        self.opener.unlinkpath(fname, ignoremissing=True, rmdir=rmdir)
 
     def writerej(self, fname, failed, total, lines):
         fname = fname + ".rej"
@@ -573,7 +574,7 @@ class filestore(object):
             self.size += len(data)
         else:
             if self.opener is None:
-                root = tempfile.mkdtemp(prefix='hg-patch-')
+                root = pycompat.mkdtemp(prefix='hg-patch-')
                 self.opener = vfsmod.vfs(root)
             # Avoid filename issues with these simple names
             fn = '%d' % self.created
@@ -708,7 +709,7 @@ class patchfile(object):
         if self.eolmode != 'strict' and eol and eol != '\n':
             rawlines = []
             for l in lines:
-                if l and l[-1] == '\n':
+                if l and l.endswith('\n'):
                     l = l[:-1] + eol
                 rawlines.append(l)
             lines = rawlines
@@ -1109,7 +1110,7 @@ file will be generated: you can use that when you try again. If
 all lines of the hunk are removed, then the edit is aborted and
 the hunk is left unchanged.
 """)
-                (patchfd, patchfn) = tempfile.mkstemp(prefix="hg-editor-",
+                (patchfd, patchfn) = pycompat.mkstemp(prefix="hg-editor-",
                                                       suffix=".diff")
                 ncpatchfp = None
                 try:
@@ -1946,7 +1947,7 @@ def applybindelta(binchunk, data):
     """
     def deltahead(binchunk):
         i = 0
-        for c in binchunk:
+        for c in pycompat.bytestr(binchunk):
             i += 1
             if not (ord(c) & 0x80):
                 return i
@@ -1958,31 +1959,31 @@ def applybindelta(binchunk, data):
     binchunk = binchunk[s:]
     i = 0
     while i < len(binchunk):
-        cmd = ord(binchunk[i])
+        cmd = ord(binchunk[i:i + 1])
         i += 1
         if (cmd & 0x80):
             offset = 0
             size = 0
             if (cmd & 0x01):
-                offset = ord(binchunk[i])
+                offset = ord(binchunk[i:i + 1])
                 i += 1
             if (cmd & 0x02):
-                offset |= ord(binchunk[i]) << 8
+                offset |= ord(binchunk[i:i + 1]) << 8
                 i += 1
             if (cmd & 0x04):
-                offset |= ord(binchunk[i]) << 16
+                offset |= ord(binchunk[i:i + 1]) << 16
                 i += 1
             if (cmd & 0x08):
-                offset |= ord(binchunk[i]) << 24
+                offset |= ord(binchunk[i:i + 1]) << 24
                 i += 1
             if (cmd & 0x10):
-                size = ord(binchunk[i])
+                size = ord(binchunk[i:i + 1])
                 i += 1
             if (cmd & 0x20):
-                size |= ord(binchunk[i]) << 8
+                size |= ord(binchunk[i:i + 1]) << 8
                 i += 1
             if (cmd & 0x40):
-                size |= ord(binchunk[i]) << 16
+                size |= ord(binchunk[i:i + 1]) << 16
                 i += 1
             if size == 0:
                 size = 0x10000
@@ -2113,6 +2114,7 @@ def _externalpatch(ui, repo, patcher, patchname, strip, files,
         args.append('-d %s' % procutil.shellquote(cwd))
     cmd = ('%s %s -p%d < %s'
            % (patcher, ' '.join(args), strip, procutil.shellquote(patchname)))
+    ui.debug('Using external patch tool: %s\n' % cmd)
     fp = procutil.popen(cmd, 'rb')
     try:
         for line in util.iterfile(fp):
@@ -2231,95 +2233,9 @@ def changedfiles(ui, repo, patchpath, strip=1, prefix=''):
 class GitDiffRequired(Exception):
     pass
 
-def diffallopts(ui, opts=None, untrusted=False, section='diff'):
-    '''return diffopts with all features supported and parsed'''
-    return difffeatureopts(ui, opts=opts, untrusted=untrusted, section=section,
-                           git=True, whitespace=True, formatchanging=True)
-
-diffopts = diffallopts
-
-def difffeatureopts(ui, opts=None, untrusted=False, section='diff', git=False,
-                    whitespace=False, formatchanging=False):
-    '''return diffopts with only opted-in features parsed
-
-    Features:
-    - git: git-style diffs
-    - whitespace: whitespace options like ignoreblanklines and ignorews
-    - formatchanging: options that will likely break or cause correctness issues
-      with most diff parsers
-    '''
-    def get(key, name=None, getter=ui.configbool, forceplain=None):
-        if opts:
-            v = opts.get(key)
-            # diffopts flags are either None-default (which is passed
-            # through unchanged, so we can identify unset values), or
-            # some other falsey default (eg --unified, which defaults
-            # to an empty string). We only want to override the config
-            # entries from hgrc with command line values if they
-            # appear to have been set, which is any truthy value,
-            # True, or False.
-            if v or isinstance(v, bool):
-                return v
-        if forceplain is not None and ui.plain():
-            return forceplain
-        return getter(section, name or key, untrusted=untrusted)
-
-    # core options, expected to be understood by every diff parser
-    buildopts = {
-        'nodates': get('nodates'),
-        'showfunc': get('show_function', 'showfunc'),
-        'context': get('unified', getter=ui.config),
-    }
-    buildopts['worddiff'] = ui.configbool('experimental', 'worddiff')
-    buildopts['xdiff'] = ui.configbool('experimental', 'xdiff')
-
-    if git:
-        buildopts['git'] = get('git')
-
-        # since this is in the experimental section, we need to call
-        # ui.configbool directory
-        buildopts['showsimilarity'] = ui.configbool('experimental',
-                                                    'extendedheader.similarity')
-
-        # need to inspect the ui object instead of using get() since we want to
-        # test for an int
-        hconf = ui.config('experimental', 'extendedheader.index')
-        if hconf is not None:
-            hlen = None
-            try:
-                # the hash config could be an integer (for length of hash) or a
-                # word (e.g. short, full, none)
-                hlen = int(hconf)
-                if hlen < 0 or hlen > 40:
-                    msg = _("invalid length for extendedheader.index: '%d'\n")
-                    ui.warn(msg % hlen)
-            except ValueError:
-                # default value
-                if hconf == 'short' or hconf == '':
-                    hlen = 12
-                elif hconf == 'full':
-                    hlen = 40
-                elif hconf != 'none':
-                    msg = _("invalid value for extendedheader.index: '%s'\n")
-                    ui.warn(msg % hconf)
-            finally:
-                buildopts['index'] = hlen
-
-    if whitespace:
-        buildopts['ignorews'] = get('ignore_all_space', 'ignorews')
-        buildopts['ignorewsamount'] = get('ignore_space_change',
-                                          'ignorewsamount')
-        buildopts['ignoreblanklines'] = get('ignore_blank_lines',
-                                            'ignoreblanklines')
-        buildopts['ignorewseol'] = get('ignore_space_at_eol', 'ignorewseol')
-    if formatchanging:
-        buildopts['text'] = opts and opts.get('text')
-        binary = None if opts is None else opts.get('binary')
-        buildopts['nobinary'] = (not binary if binary is not None
-                                 else get('nobinary', forceplain=False))
-        buildopts['noprefix'] = get('noprefix', forceplain=False)
-
-    return mdiff.diffopts(**pycompat.strkwargs(buildopts))
+diffopts = diffutil.diffallopts
+diffallopts = diffutil.diffallopts
+difffeatureopts = diffutil.difffeatureopts
 
 def diff(repo, node1=None, node2=None, match=None, changes=None,
          opts=None, losedatafn=None, prefix='', relroot='', copy=None,
@@ -2489,17 +2405,17 @@ def diffsinglehunk(hunklines):
     """yield tokens for a list of lines in a single hunk"""
     for line in hunklines:
         # chomp
-        chompline = line.rstrip('\n')
+        chompline = line.rstrip('\r\n')
         # highlight tabs and trailing whitespace
         stripline = chompline.rstrip()
-        if line[0] == '-':
+        if line.startswith('-'):
             label = 'diff.deleted'
-        elif line[0] == '+':
+        elif line.startswith('+'):
             label = 'diff.inserted'
         else:
             raise error.ProgrammingError('unexpected hunk line: %s' % line)
         for token in tabsplitter.findall(stripline):
-            if '\t' == token[0]:
+            if token.startswith('\t'):
                 yield (token, 'diff.tab')
             else:
                 yield (token, label)
@@ -2557,6 +2473,9 @@ def diffsinglehunkinline(hunklines):
             isendofline = token.endswith('\n')
             if isendofline:
                 chomp = token[:-1] # chomp
+                if chomp.endswith('\r'):
+                    chomp = chomp[:-1]
+                endofline = token[len(chomp):]
                 token = chomp.rstrip() # detect spaces at the end
                 endspaces = chomp[len(token):]
             # scan tabs
@@ -2572,7 +2491,7 @@ def diffsinglehunkinline(hunklines):
             if isendofline:
                 if endspaces:
                     yield (endspaces, 'diff.trailingwhitespace')
-                yield ('\n', '')
+                yield (endofline, '')
                 nextisnewline = True
 
 def difflabel(func, *args, **kw):

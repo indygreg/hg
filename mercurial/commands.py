@@ -40,7 +40,6 @@ from . import (
     hbisect,
     help,
     hg,
-    lock as lockmod,
     logcmdutil,
     merge as mergemod,
     obsolete,
@@ -50,10 +49,12 @@ from . import (
     pycompat,
     rcutil,
     registrar,
+    repair,
     revsetlang,
     rewriteutil,
     scmutil,
     server,
+    state as statemod,
     streamclone,
     tags as tagsmod,
     templatekw,
@@ -63,11 +64,8 @@ from . import (
 )
 from .utils import (
     dateutil,
-    procutil,
     stringutil,
 )
-
-release = lockmod.release
 
 table = {}
 table.update(debugcommandsmod.command._table)
@@ -335,13 +333,13 @@ def annotate(ui, repo, *pats, **opts):
         formatrev = formathex = pycompat.bytestr
 
     opmap = [('user', ' ', lambda x: x.fctx.user(), ui.shortuser),
-             ('number', ' ', lambda x: x.fctx.rev(), formatrev),
-             ('changeset', ' ', lambda x: hexfn(x.fctx.node()), formathex),
+             ('rev', ' ', lambda x: x.fctx.rev(), formatrev),
+             ('node', ' ', lambda x: hexfn(x.fctx.node()), formathex),
              ('date', ' ', lambda x: x.fctx.date(), util.cachefunc(datefunc)),
              ('file', ' ', lambda x: x.fctx.path(), pycompat.bytestr),
              ('line_number', ':', lambda x: x.lineno, pycompat.bytestr),
             ]
-    fieldnamemap = {'number': 'rev', 'changeset': 'node'}
+    opnamemap = {'rev': 'number', 'node': 'changeset'}
 
     if (not opts.get('user') and not opts.get('changeset')
         and not opts.get('date') and not opts.get('file')):
@@ -359,11 +357,12 @@ def annotate(ui, repo, *pats, **opts):
     else:
         def makefunc(get, fmt):
             return get
-    funcmap = [(makefunc(get, fmt), sep) for op, sep, get, fmt in opmap
-               if opts.get(op)]
+    datahint = rootfm.datahint()
+    funcmap = [(makefunc(get, fmt), sep) for fn, sep, get, fmt in opmap
+               if opts.get(opnamemap.get(fn, fn)) or fn in datahint]
     funcmap[0] = (funcmap[0][0], '') # no separator in front of first column
-    fields = ' '.join(fieldnamemap.get(op, op) for op, sep, get, fmt in opmap
-                      if opts.get(op))
+    fields = ' '.join(fn for fn, sep, get, fmt in opmap
+                      if opts.get(opnamemap.get(fn, fn)) or fn in datahint)
 
     def bad(x, y):
         raise error.Abort("%s: %s" % (x, y))
@@ -560,13 +559,8 @@ def backout(ui, repo, node=None, rev=None, **opts):
     Returns 0 on success, 1 if nothing to backout or there are unresolved
     files.
     '''
-    wlock = lock = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
+    with repo.wlock(), repo.lock():
         return _dobackout(ui, repo, node, rev, **opts)
-    finally:
-        release(lock, wlock)
 
 def _dobackout(ui, repo, node=None, rev=None, **opts):
     opts = pycompat.byteskwargs(opts)
@@ -617,21 +611,16 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
     bheads = repo.branchheads(branch)
     rctx = scmutil.revsingle(repo, hex(parent))
     if not opts.get('merge') and op1 != node:
-        dsguard = dirstateguard.dirstateguard(repo, 'backout')
-        try:
-            ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                         'backout')
-            stats = mergemod.update(repo, parent, True, True, node, False)
+        with dirstateguard.dirstateguard(repo, 'backout'):
+            overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+            with ui.configoverride(overrides, 'backout'):
+                stats = mergemod.update(repo, parent, True, True, node, False)
             repo.setparents(op1, op2)
-            dsguard.close()
-            hg._showstats(repo, stats)
-            if stats.unresolvedcount:
-                repo.ui.status(_("use 'hg resolve' to retry unresolved "
-                                 "file merges\n"))
-                return 1
-        finally:
-            ui.setconfig('ui', 'forcemerge', '', '')
-            lockmod.release(dsguard)
+        hg._showstats(repo, stats)
+        if stats.unresolvedcount:
+            repo.ui.status(_("use 'hg resolve' to retry unresolved "
+                             "file merges\n"))
+            return 1
     else:
         hg.clean(repo, node, show_stats=False)
         repo.dirstate.setbranch(branch)
@@ -667,12 +656,9 @@ def _dobackout(ui, repo, node=None, rev=None, **opts):
         hg.clean(repo, op1, show_stats=False)
         ui.status(_('merging with changeset %s\n')
                   % nice(repo.changelog.tip()))
-        try:
-            ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                         'backout')
+        overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+        with ui.configoverride(overrides, 'backout'):
             return hg.merge(repo, hex(repo.changelog.tip()))
-        finally:
-            ui.setconfig('ui', 'forcemerge', '', '')
     return 0
 
 @command('bisect',
@@ -1234,7 +1220,7 @@ def bundle(ui, repo, fname, dest=None, **opts):
         other = hg.peer(repo, opts, dest)
         revs = [repo[r].hex() for r in revs]
         revs, checkout = hg.addbranchrevs(repo, repo, branches, revs)
-        heads = revs and map(repo.lookup, revs) or revs
+        heads = revs and pycompat.maplist(repo.lookup, revs) or revs
         outgoing = discovery.findcommonoutgoing(repo, other,
                                                 onlyheads=heads,
                                                 force=opts.get('force'),
@@ -1536,13 +1522,8 @@ def commit(ui, repo, *pats, **opts):
 
           hg commit --amend --date now
     """
-    wlock = lock = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
+    with repo.wlock(), repo.lock():
         return _docommit(ui, repo, *pats, **opts)
-    finally:
-        release(lock, wlock)
 
 def _docommit(ui, repo, *pats, **opts):
     if opts.get(r'interactive'):
@@ -1895,7 +1876,9 @@ def diff(ui, repo, *pats, **opts):
                               root=opts.get('root'))
 
 @command('^export',
-    [('o', 'output', '',
+    [('B', 'bookmark', '',
+     _('export changes only reachable by given bookmark')),
+    ('o', 'output', '',
      _('print output to file with formatted name'), _('FORMAT')),
     ('', 'switch-parent', None, _('diff against the second parent')),
     ('r', 'rev', [], _('revisions to export'), _('REV')),
@@ -1938,6 +1921,9 @@ def export(ui, repo, *changesets, **opts):
     of files it detects as binary. With -a, export will generate a
     diff anyway, probably with undesirable results.
 
+    With -B/--bookmark changesets reachable by the given bookmark are
+    selected.
+
     Use the -g/--git option to generate diffs in the git extended diff
     format. See :hg:`help diffs` for more information.
 
@@ -1966,11 +1952,24 @@ def export(ui, repo, *changesets, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
+    bookmark = opts.get('bookmark')
     changesets += tuple(opts.get('rev', []))
-    if not changesets:
-        changesets = ['.']
-    repo = scmutil.unhidehashlikerevs(repo, changesets, 'nowarn')
-    revs = scmutil.revrange(repo, changesets)
+
+    if bookmark and changesets:
+        raise error.Abort(_("-r and -B are mutually exclusive"))
+
+    if bookmark:
+        if bookmark not in repo._bookmarks:
+            raise error.Abort(_("bookmark '%s' not found") % bookmark)
+
+        revs = scmutil.bookmarkrevs(repo, bookmark)
+    else:
+        if not changesets:
+            changesets = ['.']
+
+        repo = scmutil.unhidehashlikerevs(repo, changesets, 'nowarn')
+        revs = scmutil.revrange(repo, changesets)
+
     if not revs:
         raise error.Abort(_("export requires at least one changeset"))
     if len(revs) > 1:
@@ -2108,8 +2107,12 @@ def forget(ui, repo, *pats, **opts):
     'graft',
     [('r', 'rev', [], _('revisions to graft'), _('REV')),
      ('c', 'continue', False, _('resume interrupted graft')),
+     ('', 'stop', False, _('stop interrupted graft')),
+     ('', 'abort', False, _('abort interrupted graft')),
      ('e', 'edit', False, _('invoke editor on commit messages')),
      ('', 'log', None, _('append graft info to log message')),
+     ('', 'no-commit', None,
+      _("don't commit, just apply the changes in working directory")),
      ('f', 'force', False, _('force graft')),
      ('D', 'currentdate', False,
       _('record the current date as commit date')),
@@ -2143,10 +2146,7 @@ def graft(ui, repo, *revs, **opts):
     Once all conflicts are addressed, the graft process can be
     continued with the -c/--continue option.
 
-    .. note::
-
-       The -c/--continue option does not reapply earlier options, except
-       for --force.
+    The -c/--continue option reapplies all the earlier options.
 
     .. container:: verbose
 
@@ -2188,6 +2188,10 @@ def _dograft(ui, repo, *revs, **opts):
 
     revs = list(revs)
     revs.extend(opts.get('rev'))
+    # a dict of data to be stored in state file
+    statedata = {}
+    # list of new nodes created by ongoing graft
+    statedata['newnodes'] = []
 
     if not opts.get('user') and opts.get('currentuser'):
         opts['user'] = ui.username()
@@ -2198,17 +2202,62 @@ def _dograft(ui, repo, *revs, **opts):
                                      **pycompat.strkwargs(opts))
 
     cont = False
-    if opts.get('continue'):
+    if opts.get('no_commit'):
+        if opts.get('edit'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--edit together"))
+        if opts.get('currentuser'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--currentuser together"))
+        if opts.get('currentdate'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--currentdate together"))
+        if opts.get('log'):
+            raise error.Abort(_("cannot specify --no-commit and "
+                                "--log together"))
+
+    graftstate = statemod.cmdstate(repo, 'graftstate')
+
+    if opts.get('stop'):
+        if opts.get('continue'):
+            raise error.Abort(_("cannot use '--continue' and "
+                                "'--stop' together"))
+        if opts.get('abort'):
+            raise error.Abort(_("cannot use '--abort' and '--stop' together"))
+
+        if any((opts.get('edit'), opts.get('log'), opts.get('user'),
+                opts.get('date'), opts.get('currentdate'),
+                opts.get('currentuser'), opts.get('rev'))):
+            raise error.Abort(_("cannot specify any other flag with '--stop'"))
+        return _stopgraft(ui, repo, graftstate)
+    elif opts.get('abort'):
+        if opts.get('continue'):
+            raise error.Abort(_("cannot use '--continue' and "
+                                "'--abort' together"))
+        if any((opts.get('edit'), opts.get('log'), opts.get('user'),
+                opts.get('date'), opts.get('currentdate'),
+                opts.get('currentuser'), opts.get('rev'))):
+            raise error.Abort(_("cannot specify any other flag with '--abort'"))
+
+        return _abortgraft(ui, repo, graftstate)
+    elif opts.get('continue'):
         cont = True
         if revs:
             raise error.Abort(_("can't specify --continue and revisions"))
         # read in unfinished revisions
-        try:
-            nodes = repo.vfs.read('graftstate').splitlines()
+        if graftstate.exists():
+            statedata = _readgraftstate(repo, graftstate)
+            if statedata.get('date'):
+                opts['date'] = statedata['date']
+            if statedata.get('user'):
+                opts['user'] = statedata['user']
+            if statedata.get('log'):
+                opts['log'] = True
+            if statedata.get('no_commit'):
+                opts['no_commit'] = statedata.get('no_commit')
+            nodes = statedata['nodes']
             revs = [repo[node].rev() for node in nodes]
-        except IOError as inst:
-            if inst.errno != errno.ENOENT:
-                raise
+        else:
             cmdutil.wrongtooltocontinue(repo, _('graft'))
     else:
         if not revs:
@@ -2292,6 +2341,8 @@ def _dograft(ui, repo, *revs, **opts):
         if not revs:
             return -1
 
+    if opts.get('no_commit'):
+        statedata['no_commit'] = True
     for pos, ctx in enumerate(repo.set("%ld", revs)):
         desc = '%d:%s "%s"' % (ctx.rev(), ctx,
                                ctx.description().split('\n', 1)[0])
@@ -2312,60 +2363,134 @@ def _dograft(ui, repo, *revs, **opts):
         user = ctx.user()
         if opts.get('user'):
             user = opts['user']
+            statedata['user'] = user
         date = ctx.date()
         if opts.get('date'):
             date = opts['date']
+            statedata['date'] = date
         message = ctx.description()
         if opts.get('log'):
             message += '\n(grafted from %s)' % ctx.hex()
+            statedata['log'] = True
 
         # we don't merge the first commit when continuing
         if not cont:
             # perform the graft merge with p1(rev) as 'ancestor'
-            try:
-                # ui.forcemerge is an internal variable, do not document
-                repo.ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                                  'graft')
-                stats = mergemod.graft(repo, ctx, ctx.p1(),
-                                       ['local', 'graft'])
-            finally:
-                repo.ui.setconfig('ui', 'forcemerge', '', 'graft')
+            overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+            with ui.configoverride(overrides, 'graft'):
+                stats = mergemod.graft(repo, ctx, ctx.p1(), ['local', 'graft'])
             # report any conflicts
             if stats.unresolvedcount > 0:
                 # write out state for --continue
-                nodelines = [repo[rev].hex() + "\n" for rev in revs[pos:]]
-                repo.vfs.write('graftstate', ''.join(nodelines))
-                extra = ''
-                if opts.get('user'):
-                    extra += ' --user %s' % procutil.shellquote(opts['user'])
-                if opts.get('date'):
-                    extra += ' --date %s' % procutil.shellquote(opts['date'])
-                if opts.get('log'):
-                    extra += ' --log'
-                hint=_("use 'hg resolve' and 'hg graft --continue%s'") % extra
+                nodes = [repo[rev].hex() for rev in revs[pos:]]
+                statedata['nodes'] = nodes
+                stateversion = 1
+                graftstate.save(stateversion, statedata)
+                hint = _("use 'hg resolve' and 'hg graft --continue'")
                 raise error.Abort(
                     _("unresolved conflicts, can't continue"),
                     hint=hint)
         else:
             cont = False
 
-        # commit
-        node = repo.commit(text=message, user=user,
-                    date=date, extra=extra, editor=editor)
-        if node is None:
-            ui.warn(
-                _('note: graft of %d:%s created no changes to commit\n') %
-                (ctx.rev(), ctx))
+        # commit if --no-commit is false
+        if not opts.get('no_commit'):
+            node = repo.commit(text=message, user=user, date=date, extra=extra,
+                               editor=editor)
+            if node is None:
+                ui.warn(
+                    _('note: graft of %d:%s created no changes to commit\n') %
+                    (ctx.rev(), ctx))
+            # checking that newnodes exist because old state files won't have it
+            elif statedata.get('newnodes') is not None:
+                statedata['newnodes'].append(node)
 
     # remove state when we complete successfully
     if not opts.get('dry_run'):
-        repo.vfs.unlinkpath('graftstate', ignoremissing=True)
+        graftstate.delete()
 
+    return 0
+
+def _abortgraft(ui, repo, graftstate):
+    """abort the interrupted graft and rollbacks to the state before interrupted
+    graft"""
+    if not graftstate.exists():
+        raise error.Abort(_("no interrupted graft to abort"))
+    statedata = _readgraftstate(repo, graftstate)
+    newnodes = statedata.get('newnodes')
+    if newnodes is None:
+        # and old graft state which does not have all the data required to abort
+        # the graft
+        raise error.Abort(_("cannot abort using an old graftstate"))
+
+    # changeset from which graft operation was started
+    startctx = None
+    if len(newnodes) > 0:
+        startctx = repo[newnodes[0]].p1()
+    else:
+        startctx = repo['.']
+    # whether to strip or not
+    cleanup = False
+    if newnodes:
+        newnodes = [repo[r].rev() for r in newnodes]
+        cleanup = True
+        # checking that none of the newnodes turned public or is public
+        immutable = [c for c in newnodes if not repo[c].mutable()]
+        if immutable:
+            repo.ui.warn(_("cannot clean up public changesets %s\n")
+                         % ', '.join(bytes(repo[r]) for r in immutable),
+                         hint=_("see 'hg help phases' for details"))
+            cleanup = False
+
+        # checking that no new nodes are created on top of grafted revs
+        desc = set(repo.changelog.descendants(newnodes))
+        if desc - set(newnodes):
+            repo.ui.warn(_("new changesets detected on destination "
+                           "branch, can't strip\n"))
+            cleanup = False
+
+        if cleanup:
+            with repo.wlock(), repo.lock():
+                hg.updaterepo(repo, startctx.node(), overwrite=True)
+                # stripping the new nodes created
+                strippoints = [c.node() for c in repo.set("roots(%ld)",
+                                                          newnodes)]
+                repair.strip(repo.ui, repo, strippoints, backup=False)
+
+    if not cleanup:
+        # we don't update to the startnode if we can't strip
+        startctx = repo['.']
+        hg.updaterepo(repo, startctx.node(), overwrite=True)
+
+    ui.status(_("graft aborted\n"))
+    ui.status(_("working directory is now at %s\n") % startctx.hex()[:12])
+    graftstate.delete()
+    return 0
+
+def _readgraftstate(repo, graftstate):
+    """read the graft state file and return a dict of the data stored in it"""
+    try:
+        return graftstate.read()
+    except error.CorruptedState:
+        nodes = repo.vfs.read('graftstate').splitlines()
+        return {'nodes': nodes}
+
+def _stopgraft(ui, repo, graftstate):
+    """stop the interrupted graft"""
+    if not graftstate.exists():
+        raise error.Abort(_("no interrupted graft found"))
+    pctx = repo['.']
+    hg.updaterepo(repo, pctx.node(), overwrite=True)
+    graftstate.delete()
+    ui.status(_("stopped the interrupted graft\n"))
+    ui.status(_("working directory is now at %s\n") % pctx.hex()[:12])
     return 0
 
 @command('grep',
     [('0', 'print0', None, _('end fields with NUL')),
-    ('', 'all', None, _('print all revisions that match')),
+    ('', 'all', None, _('print all revisions that match (DEPRECATED) ')),
+    ('', 'diff', None, _('print all revisions when the term was introduced '
+                         'or removed')),
     ('a', 'text', None, _('treat all files as text')),
     ('f', 'follow', None,
      _('follow changeset history,'
@@ -2376,6 +2501,8 @@ def _dograft(ui, repo, *revs, **opts):
     ('n', 'line-number', None, _('print matching line numbers')),
     ('r', 'rev', [],
      _('only search files changed within revision range'), _('REV')),
+    ('', 'all-files', None,
+     _('include all files in the changeset while grepping (EXPERIMENTAL)')),
     ('u', 'user', None, _('list the author (long with -v)')),
     ('d', 'date', None, _('list the date (short with -q)')),
     ] + formatteropts + walkopts,
@@ -2392,7 +2519,7 @@ def grep(ui, repo, pattern, *pats, **opts):
     file in which it finds a match. To get it to print every revision
     that contains a change in match status ("-" for a match that becomes
     a non-match, or "+" for a non-match that becomes a match), use the
-    --all flag.
+    --diff flag.
 
     PATTERN can be any Python (roughly Perl-compatible) regular
     expression.
@@ -2404,6 +2531,17 @@ def grep(ui, repo, pattern, *pats, **opts):
     Returns 0 if a match is found, 1 otherwise.
     """
     opts = pycompat.byteskwargs(opts)
+    diff = opts.get('all') or opts.get('diff')
+    if diff and opts.get('all_files'):
+        raise error.Abort(_('--diff and --all-files are mutually exclusive'))
+    # TODO: remove "not opts.get('rev')" if --all-files -rMULTIREV gets working
+    if opts.get('all_files') is None and not opts.get('rev') and not diff:
+        # experimental config: commands.grep.all-files
+        opts['all_files'] = ui.configbool('commands', 'grep.all-files')
+    plaingrep = opts.get('all_files') and not opts.get('rev')
+    if plaingrep:
+        opts['rev'] = ['wdir()']
+
     reflags = re.M
     if opts.get('ignore_case'):
         reflags |= re.I
@@ -2481,7 +2619,7 @@ def grep(ui, repo, pattern, *pats, **opts):
                     yield ('+', b[i])
 
     def display(fm, fn, ctx, pstates, states):
-        rev = ctx.rev()
+        rev = scmutil.intrev(ctx)
         if fm.isplain():
             formatuser = ui.shortuser
         else:
@@ -2494,22 +2632,27 @@ def grep(ui, repo, pattern, *pats, **opts):
         @util.cachefunc
         def binary():
             flog = getfile(fn)
-            return stringutil.binary(flog.read(ctx.filenode(fn)))
+            try:
+                return stringutil.binary(flog.read(ctx.filenode(fn)))
+            except error.WdirUnsupported:
+                return ctx[fn].isbinary()
 
         fieldnamemap = {'filename': 'file', 'linenumber': 'line_number'}
-        if opts.get('all'):
+        if diff:
             iter = difflinestates(pstates, states)
         else:
             iter = [('', l) for l in states]
         for change, l in iter:
             fm.startitem()
-            fm.data(node=fm.hexfunc(ctx.node()))
+            fm.context(ctx=ctx)
+            fm.data(node=fm.hexfunc(scmutil.binnode(ctx)))
+
             cols = [
                 ('filename', fn, True),
-                ('rev', rev, True),
+                ('rev', rev, not plaingrep),
                 ('linenumber', l.linenum, opts.get('line_number')),
             ]
-            if opts.get('all'):
+            if diff:
                 cols.append(('change', change, True))
             cols.extend([
                 ('user', formatuser(ctx.user()), opts.get('user')),
@@ -2569,8 +2712,10 @@ def grep(ui, repo, pattern, *pats, **opts):
                 fnode = ctx.filenode(fn)
             except error.LookupError:
                 continue
-
-            copied = flog.renamed(fnode)
+            try:
+                copied = flog.renamed(fnode)
+            except error.WdirUnsupported:
+                copied = ctx[fn].renamed()
             copy = follow and copied and copied[0]
             if copy:
                 copies.setdefault(rev, {})[fn] = copy
@@ -2581,7 +2726,11 @@ def grep(ui, repo, pattern, *pats, **opts):
             files.append(fn)
 
             if fn not in matches[rev]:
-                grepbody(fn, rev, flog.read(fnode))
+                try:
+                    content = flog.read(fnode)
+                except error.WdirUnsupported:
+                    content = ctx[fn].data()
+                grepbody(fn, rev, content)
 
             pfn = copy or fn
             if pfn not in matches[parent]:
@@ -2607,7 +2756,7 @@ def grep(ui, repo, pattern, *pats, **opts):
             if pstates or states:
                 r = display(fm, fn, ctx, pstates, states)
                 found = found or r
-                if r and not opts.get('all'):
+                if r and not diff:
                     skip[fn] = True
                     if copy:
                         skip[copy] = True
@@ -3071,69 +3220,62 @@ def import_(ui, repo, patch1=None, *patches, **opts):
             raise error.Abort(_('cannot use --exact with --prefix'))
 
     base = opts["base"]
-    wlock = dsguard = lock = tr = None
     msgs = []
     ret = 0
 
-
-    try:
-        wlock = repo.wlock()
-
+    with repo.wlock():
         if update:
             cmdutil.checkunfinished(repo)
             if (exact or not opts.get('force')):
                 cmdutil.bailifchanged(repo)
 
         if not opts.get('no_commit'):
-            lock = repo.lock()
-            tr = repo.transaction('import')
+            lock = repo.lock
+            tr = lambda: repo.transaction('import')
+            dsguard = util.nullcontextmanager
         else:
-            dsguard = dirstateguard.dirstateguard(repo, 'import')
-        parents = repo[None].parents()
-        for patchurl in patches:
-            if patchurl == '-':
-                ui.status(_('applying patch from stdin\n'))
-                patchfile = ui.fin
-                patchurl = 'stdin'      # for error message
-            else:
-                patchurl = os.path.join(base, patchurl)
-                ui.status(_('applying %s\n') % patchurl)
-                patchfile = hg.openpath(ui, patchurl)
-
-            haspatch = False
-            for hunk in patch.split(patchfile):
-                with patch.extract(ui, hunk) as patchdata:
-                    msg, node, rej = cmdutil.tryimportone(ui, repo, patchdata,
-                                                          parents, opts,
-                                                          msgs, hg.clean)
-                if msg:
-                    haspatch = True
-                    ui.note(msg + '\n')
-                if update or exact:
-                    parents = repo[None].parents()
+            lock = util.nullcontextmanager
+            tr = util.nullcontextmanager
+            dsguard = lambda: dirstateguard.dirstateguard(repo, 'import')
+        with lock(), tr(), dsguard():
+            parents = repo[None].parents()
+            for patchurl in patches:
+                if patchurl == '-':
+                    ui.status(_('applying patch from stdin\n'))
+                    patchfile = ui.fin
+                    patchurl = 'stdin'      # for error message
                 else:
-                    parents = [repo[node]]
-                if rej:
-                    ui.write_err(_("patch applied partially\n"))
-                    ui.write_err(_("(fix the .rej files and run "
-                                   "`hg commit --amend`)\n"))
-                    ret = 1
-                    break
+                    patchurl = os.path.join(base, patchurl)
+                    ui.status(_('applying %s\n') % patchurl)
+                    patchfile = hg.openpath(ui, patchurl)
 
-            if not haspatch:
-                raise error.Abort(_('%s: no diffs found') % patchurl)
+                haspatch = False
+                for hunk in patch.split(patchfile):
+                    with patch.extract(ui, hunk) as patchdata:
+                        msg, node, rej = cmdutil.tryimportone(ui, repo,
+                                                              patchdata,
+                                                              parents, opts,
+                                                              msgs, hg.clean)
+                    if msg:
+                        haspatch = True
+                        ui.note(msg + '\n')
+                    if update or exact:
+                        parents = repo[None].parents()
+                    else:
+                        parents = [repo[node]]
+                    if rej:
+                        ui.write_err(_("patch applied partially\n"))
+                        ui.write_err(_("(fix the .rej files and run "
+                                       "`hg commit --amend`)\n"))
+                        ret = 1
+                        break
 
-        if tr:
-            tr.close()
-        if msgs:
-            repo.savecommitmessage('\n* * *\n'.join(msgs))
-        if dsguard:
-            dsguard.close()
+                if not haspatch:
+                    raise error.Abort(_('%s: no diffs found') % patchurl)
+
+            if msgs:
+                repo.savecommitmessage('\n* * *\n'.join(msgs))
         return ret
-    finally:
-        if tr:
-            tr.release()
-        release(lock, dsguard, wlock)
 
 @command('incoming|in',
     [('f', 'force', None,
@@ -3291,7 +3433,13 @@ def locate(ui, repo, *pats, **opts):
                       badfn=lambda x, y: False)
 
     ui.pager('locate')
-    for abs in ctx.matches(m):
+    if ctx.rev() is None:
+        # When run on the working copy, "locate" includes removed files, so
+        # we get the list of files from the dirstate.
+        filesgen = sorted(repo.dirstate.matches(m))
+    else:
+        filesgen = ctx.matches(m)
+    for abs in filesgen:
         if opts.get('fullpath'):
             ui.write(repo.wjoin(abs), end)
         else:
@@ -3545,6 +3693,7 @@ def manifest(ui, repo, node=None, rev=None, **opts):
     ui.pager('manifest')
     for f in ctx:
         fm.startitem()
+        fm.context(ctx=ctx)
         fl = ctx[f].flags()
         fm.condwrite(ui.debugflag, 'hash', '%s ', hex(mf[f]))
         fm.condwrite(ui.verbose, 'mode type', '%s %1s ', mode[fl], char[fl])
@@ -3623,15 +3772,13 @@ def merge(ui, repo, node=None, **opts):
         displayer.close()
         return 0
 
-    try:
-        # ui.forcemerge is an internal variable, do not document
-        repo.ui.setconfig('ui', 'forcemerge', opts.get('tool', ''), 'merge')
+    # ui.forcemerge is an internal variable, do not document
+    overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+    with ui.configoverride(overrides, 'merge'):
         force = opts.get('force')
         labels = ['working copy', 'merge rev']
         return hg.merge(repo, node, force=force, mergeforce=force,
                         labels=labels, abort=abort)
-    finally:
-        ui.setconfig('ui', 'forcemerge', '', 'merge')
 
 @command('outgoing|out',
     [('f', 'force', None, _('run even when the destination is unrelated')),
@@ -3679,6 +3826,13 @@ def outgoing(ui, repo, dest=None, **opts):
 
     Returns 0 if there are outgoing changes, 1 otherwise.
     """
+    # hg._outgoing() needs to re-resolve the path in order to handle #branch
+    # style URLs, so don't overwrite dest.
+    path = ui.paths.getpath(dest, default=('default-push', 'default'))
+    if not path:
+        raise error.Abort(_('default repository not configured!'),
+                          hint=_("see 'hg help config.paths'"))
+
     opts = pycompat.byteskwargs(opts)
     if opts.get('graph'):
         logcmdutil.checkunsupportedgraphflags([], opts)
@@ -3696,8 +3850,7 @@ def outgoing(ui, repo, dest=None, **opts):
         return 0
 
     if opts.get('bookmarks'):
-        dest = ui.expandpath(dest or 'default-push', dest or 'default')
-        dest, branches = hg.parseurl(dest, opts.get('branch'))
+        dest = path.pushloc or path.loc
         other = hg.peer(repo, opts, dest)
         if 'bookmarks' not in other.listkeys('namespaces'):
             ui.warn(_("remote doesn't support bookmarks\n"))
@@ -3706,7 +3859,7 @@ def outgoing(ui, repo, dest=None, **opts):
         ui.pager('outgoing')
         return bookmarks.outgoing(ui, repo, other)
 
-    repo._subtoppath = ui.expandpath(dest or 'default-push', dest or 'default')
+    repo._subtoppath = path.pushloc or path.loc
     try:
         return hg.outgoing(ui, repo, dest, opts)
     finally:
@@ -4391,7 +4544,8 @@ def resolve(ui, repo, *pats, **opts):
         ui.pager('resolve')
         fm = ui.formatter('resolve', opts)
         ms = mergemod.mergestate.read(repo)
-        m = scmutil.match(repo[None], pats, opts)
+        wctx = repo[None]
+        m = scmutil.match(wctx, pats, opts)
 
         # Labels and keys based on merge state.  Unresolved path conflicts show
         # as 'P'.  Resolved path conflicts show as 'R', the same as normal
@@ -4411,6 +4565,7 @@ def resolve(ui, repo, *pats, **opts):
 
             label, key = mergestateinfo[ms[f]]
             fm.startitem()
+            fm.context(ctx=wctx)
             fm.condwrite(not nostatus, 'status', '%s ', key, label=label)
             fm.write('path', '%s\n', f, label=label)
         fm.end()
@@ -4488,15 +4643,14 @@ def resolve(ui, repo, *pats, **opts):
 
                 try:
                     # preresolve file
-                    ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                                 'resolve')
-                    complete, r = ms.preresolve(f, wctx)
+                    overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+                    with ui.configoverride(overrides, 'resolve'):
+                        complete, r = ms.preresolve(f, wctx)
                     if not complete:
                         tocomplete.append(f)
                     elif r:
                         ret = 1
                 finally:
-                    ui.setconfig('ui', 'forcemerge', '', 'resolve')
                     ms.commit()
 
                 # replace filemerge's .orig file with our resolve file, but only
@@ -4512,13 +4666,12 @@ def resolve(ui, repo, *pats, **opts):
         for f in tocomplete:
             try:
                 # resolve file
-                ui.setconfig('ui', 'forcemerge', opts.get('tool', ''),
-                             'resolve')
-                r = ms.resolve(f, wctx)
+                overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
+                with ui.configoverride(overrides, 'resolve'):
+                    r = ms.resolve(f, wctx)
                 if r:
                     ret = 1
             finally:
-                ui.setconfig('ui', 'forcemerge', '', 'resolve')
                 ms.commit()
 
             # replace filemerge's .orig file with our resolve file
@@ -4747,7 +4900,8 @@ def root(ui, repo):
     ('t', 'templates', '', _('web templates to use'), _('TEMPLATE')),
     ('', 'style', '', _('template style to use'), _('STYLE')),
     ('6', 'ipv6', None, _('use IPv6 in addition to IPv4')),
-    ('', 'certificate', '', _('SSL certificate file'), _('FILE'))]
+    ('', 'certificate', '', _('SSL certificate file'), _('FILE')),
+    ('', 'print-url', None, _('start and print only the URL'))]
      + subrepoopts,
     _('[OPTION]...'),
     optionalrepo=True)
@@ -4779,6 +4933,8 @@ def serve(ui, repo, **opts):
     opts = pycompat.byteskwargs(opts)
     if opts["stdio"] and opts["cmdserver"]:
         raise error.Abort(_("cannot use --stdio with --cmdserver"))
+    if opts["print_url"] and ui.verbose:
+        raise error.Abort(_("cannot use --print-url with --verbose"))
 
     if opts["stdio"]:
         if repo is None:
@@ -4790,6 +4946,8 @@ def serve(ui, repo, **opts):
     service = server.createservice(ui, repo, opts)
     return server.runservice(opts, initfn=service.init, runfn=service.run)
 
+_NOTTERSE = 'nothing'
+
 @command('^status|st',
     [('A', 'all', None, _('show status of all files')),
     ('m', 'modified', None, _('show only modified files')),
@@ -4800,7 +4958,7 @@ def serve(ui, repo, **opts):
     ('u', 'unknown', None, _('show only unknown (not tracked) files')),
     ('i', 'ignored', None, _('show only ignored files')),
     ('n', 'no-status', None, _('hide status prefix')),
-    ('t', 'terse', '', _('show the terse output (EXPERIMENTAL)')),
+    ('t', 'terse', _NOTTERSE, _('show the terse output (EXPERIMENTAL)')),
     ('C', 'copies', None, _('show source of copied files')),
     ('0', 'print0', None, _('end filenames with NUL, for use with xargs')),
     ('', 'rev', [], _('show difference from revision'), _('REV')),
@@ -4898,6 +5056,11 @@ def status(ui, repo, *pats, **opts):
     revs = opts.get('rev')
     change = opts.get('change')
     terse = opts.get('terse')
+    if terse is _NOTTERSE:
+        if revs:
+            terse = ''
+        else:
+            terse = ui.config('commands', 'status.terse')
 
     if revs and change:
         msg = _('cannot specify --rev and --change at the same time')
@@ -4939,7 +5102,8 @@ def status(ui, repo, *pats, **opts):
         # we need to compute clean and unknown to terse
         stat = repo.status(ctx1.node(), ctx2.node(), m,
                            'ignored' in show or 'i' in terse,
-                            True, True, opts.get('subrepos'))
+                            clean=True, unknown=True,
+                            listsubrepos=opts.get('subrepos'))
 
         stat = cmdutil.tersedir(stat, terse)
     else:
@@ -4963,6 +5127,7 @@ def status(ui, repo, *pats, **opts):
             label = 'status.' + state
             for f in files:
                 fm.startitem()
+                fm.context(ctx=ctx2)
                 fm.condwrite(showchar, 'status', '%s ', char, label=label)
                 fm.write('path', fmt, repo.pathto(f, cwd), label=label)
                 if f in copy:
@@ -5301,10 +5466,7 @@ def tag(ui, repo, name1, *names, **opts):
     Returns 0 on success.
     """
     opts = pycompat.byteskwargs(opts)
-    wlock = lock = None
-    try:
-        wlock = repo.wlock()
-        lock = repo.lock()
+    with repo.wlock(), repo.lock():
         rev_ = "."
         names = [t.strip() for t in (name1,) + names]
         if len(names) != len(set(names)):
@@ -5375,8 +5537,6 @@ def tag(ui, repo, name1, *names, **opts):
 
         tagsmod.tag(repo, names, node, message, opts.get('local'),
                     opts.get('user'), date, editor=editor)
-    finally:
-        release(lock, wlock)
 
 @command('tags', formatteropts, '', intents={INTENT_READONLY})
 def tags(ui, repo, **opts):
@@ -5392,6 +5552,7 @@ def tags(ui, repo, **opts):
     opts = pycompat.byteskwargs(opts)
     ui.pager('tags')
     fm = ui.formatter('tags', opts)
+    contexthint = fm.contexthint('tag rev node type')
     hexfunc = fm.hexfunc
     tagtype = ""
 
@@ -5404,6 +5565,8 @@ def tags(ui, repo, **opts):
             tagtype = 'local'
 
         fm.startitem()
+        if 'ctx' in contexthint:
+            fm.context(ctx=repo[n])
         fm.write('tag', '%s', t, label=label)
         fmt = " " * (30 - encoding.colwidth(t)) + ' %5d:%s'
         fm.condwrite(not ui.quiet, 'rev node', fmt,
@@ -5583,18 +5746,19 @@ def update(ui, repo, node=None, **opts):
             repo = scmutil.unhidehashlikerevs(repo, [rev], 'nowarn')
         ctx = scmutil.revsingle(repo, rev, rev)
         rev = ctx.rev()
-        if ctx.hidden():
+        hidden = ctx.hidden()
+        overrides = {('ui', 'forcemerge'): opts.get(r'tool', '')}
+        with ui.configoverride(overrides, 'update'):
+            ret = hg.updatetotally(ui, repo, rev, brev, clean=clean,
+                                   updatecheck=updatecheck)
+        if hidden:
             ctxstr = ctx.hex()[:12]
-            ui.warn(_("updating to a hidden changeset %s\n") % ctxstr)
+            ui.warn(_("updated to hidden changeset %s\n") % ctxstr)
 
             if ctx.obsolete():
                 obsfatemsg = obsutil._getfilteredreason(repo, ctxstr, ctx)
                 ui.warn("(%s)\n" % obsfatemsg)
-
-        repo.ui.setconfig('ui', 'forcemerge', opts.get(r'tool'), 'update')
-
-        return hg.updatetotally(ui, repo, rev, brev, clean=clean,
-                                updatecheck=updatecheck)
+        return ret
 
 @command('verify', [])
 def verify(ui, repo):

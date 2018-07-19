@@ -113,6 +113,9 @@ notify.maxsubject
 notify.diffstat
   Set to True to include a diffstat before diff content. Default: True.
 
+notify.showfunc
+  If set, override ``diff.showfunc`` for the diff content. Default: None.
+
 notify.merge
   If True, send notifications for merge changesets. Default: True.
 
@@ -206,6 +209,9 @@ configitem('notify', 'outgoing',
 configitem('notify', 'sources',
     default='serve',
 )
+configitem('notify', 'showfunc',
+    default=None,
+)
 configitem('notify', 'strip',
     default=0,
 )
@@ -260,6 +266,9 @@ class notifier(object):
         self.charsets = mail._charsets(self.ui)
         self.subs = self.subscribers()
         self.merge = self.ui.configbool('notify', 'merge')
+        self.showfunc = self.ui.configbool('notify', 'showfunc')
+        if self.showfunc is None:
+            self.showfunc = self.ui.configbool('diff', 'showfunc')
 
         mapfile = None
         template = (self.ui.config('notify', hooktype) or
@@ -420,8 +429,9 @@ class notifier(object):
             ref = ref.node()
         else:
             ref = ctx.node()
-        chunks = patch.diff(self.repo, prev, ref,
-                            opts=patch.diffallopts(self.ui))
+        diffopts = patch.diffallopts(self.ui)
+        diffopts.showfunc = self.showfunc
+        chunks = patch.diff(self.repo, prev, ref, opts=diffopts)
         difflines = ''.join(chunks).splitlines()
 
         if self.ui.configbool('notify', 'diffstat'):

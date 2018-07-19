@@ -209,7 +209,7 @@ class lock(object):
 
     def __del__(self):
         if self.held:
-            warnings.warn("use lock.release instead of del lock",
+            warnings.warn(r"use lock.release instead of del lock",
                     category=DeprecationWarning,
                     stacklevel=2)
 

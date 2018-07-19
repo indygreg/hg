@@ -474,7 +474,10 @@ static Py_ssize_t basicencode(char *dest, size_t destsize, const char *src,
 	static const uint32_t twobytes[8] = {0, 0, 0x87fffffe};
 
 	static const uint32_t onebyte[8] = {
-	    1, 0x2bff3bfa, 0x68000001, 0x2fffffff,
+	    1,
+	    0x2bff3bfa,
+	    0x68000001,
+	    0x2fffffff,
 	};
 
 	Py_ssize_t destlen = 0;
@@ -655,16 +658,10 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 	PyObject *shaobj, *hashobj;
 
 	if (shafunc == NULL) {
-		PyObject *hashlib, *name = PyBytes_FromString("hashlib");
-
-		if (name == NULL)
-			return -1;
-
-		hashlib = PyImport_Import(name);
-		Py_DECREF(name);
-
+		PyObject *hashlib = PyImport_ImportModule("hashlib");
 		if (hashlib == NULL) {
-			PyErr_SetString(PyExc_ImportError, "hashlib");
+			PyErr_SetString(PyExc_ImportError,
+			                "pathencode failed to find hashlib");
 			return -1;
 		}
 		shafunc = PyObject_GetAttrString(hashlib, "sha1");
@@ -673,12 +670,12 @@ static int sha1hash(char hash[20], const char *str, Py_ssize_t len)
 		if (shafunc == NULL) {
 			PyErr_SetString(PyExc_AttributeError,
 			                "module 'hashlib' has no "
-			                "attribute 'sha1'");
+			                "attribute 'sha1' in pathencode");
 			return -1;
 		}
 	}
 
-	shaobj = PyObject_CallFunction(shafunc, "s#", str, len);
+	shaobj = PyObject_CallFunction(shafunc, PY23("s#", "y#"), str, len);
 
 	if (shaobj == NULL)
 		return -1;

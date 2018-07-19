@@ -594,10 +594,15 @@ def listcmd(ui, repo, pats, opts):
                 for chunk, label in patch.diffstatui(difflines, width=width):
                     ui.write(chunk, label=label)
 
-def patchcmds(ui, repo, pats, opts, subcommand):
+def patchcmds(ui, repo, pats, opts):
     """subcommand that displays shelves"""
     if len(pats) == 0:
-        raise error.Abort(_("--%s expects at least one shelf") % subcommand)
+        shelves = listshelves(repo)
+        if not shelves:
+            raise error.Abort(_("there are no shelves to show"))
+        mtime, name = shelves[0]
+        sname = util.split(name)[1]
+        pats = [sname]
 
     for shelfname in pats:
         if not shelvedfile(repo, shelfname, patchextension).exists():
@@ -621,14 +626,14 @@ def unshelveabort(ui, repo, state, opts):
         try:
             checkparents(repo, state)
 
-            repo.vfs.rename('unshelverebasestate', 'rebasestate')
-            try:
-                rebase.rebase(ui, repo, **{
-                    r'abort' : True
-                })
-            except Exception:
-                repo.vfs.rename('rebasestate', 'unshelverebasestate')
-                raise
+            merge.update(repo, state.pendingctx, False, True)
+            if (state.activebookmark
+                    and state.activebookmark in repo._bookmarks):
+                bookmarks.activate(repo, state.activebookmark)
+
+            if repo.vfs.exists('unshelverebasestate'):
+                repo.vfs.rename('unshelverebasestate', 'rebasestate')
+                rebase.clearstatus(repo)
 
             mergefiles(ui, repo, state.wctx, state.pendingctx)
             repair.strip(ui, repo, state.nodestoremove, backup=False,
@@ -683,22 +688,41 @@ def unshelvecontinue(ui, repo, state, opts):
                 _("unresolved conflicts, can't continue"),
                 hint=_("see 'hg resolve', then 'hg unshelve --continue'"))
 
-        repo.vfs.rename('unshelverebasestate', 'rebasestate')
-        try:
-            rebase.rebase(ui, repo, **{
-                r'continue' : True
-            })
-        except Exception:
-            repo.vfs.rename('rebasestate', 'unshelverebasestate')
-            raise
+        shelvectx = repo[state.parents[1]]
+        pendingctx = state.pendingctx
 
-        shelvectx = repo['tip']
-        if state.pendingctx not in shelvectx.parents():
-            # rebase was a no-op, so it produced no child commit
+        with repo.dirstate.parentchange():
+            repo.setparents(state.pendingctx.node(), nodemod.nullid)
+            repo.dirstate.write(repo.currenttransaction())
+
+        overrides = {('phases', 'new-commit'): phases.secret}
+        with repo.ui.configoverride(overrides, 'unshelve'):
+            with repo.dirstate.parentchange():
+                repo.setparents(state.parents[0], nodemod.nullid)
+                newnode = repo.commit(text=shelvectx.description(),
+                                      extra=shelvectx.extra(),
+                                      user=shelvectx.user(),
+                                      date=shelvectx.date())
+
+        if newnode is None:
+            # If it ended up being a no-op commit, then the normal
+            # merge state clean-up path doesn't happen, so do it
+            # here. Fix issue5494
+            merge.mergestate.clean(repo)
             shelvectx = state.pendingctx
+            msg = _('note: unshelved changes already existed '
+                    'in the working copy\n')
+            ui.status(msg)
         else:
-            # only strip the shelvectx if the rebase produced it
-            state.nodestoremove.append(shelvectx.node())
+            # only strip the shelvectx if we produced one
+            state.nodestoremove.append(newnode)
+            shelvectx = repo[newnode]
+
+        hg.updaterepo(repo, pendingctx.node(), overwrite=False)
+
+        if repo.vfs.exists('unshelverebasestate'):
+            repo.vfs.rename('unshelverebasestate', 'rebasestate')
+            rebase.clearstatus(repo)
 
         mergefiles(ui, repo, state.wctx, shelvectx)
         restorebranch(ui, repo, state.branchtorestore)
@@ -746,33 +770,46 @@ def _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev, basename, pctx,
     if tmpwctx.node() == shelvectx.parents()[0].node():
         return shelvectx
 
-    ui.status(_('rebasing shelved changes\n'))
-    try:
-        rebase.rebase(ui, repo, **{
-            r'rev': [shelvectx.rev()],
-            r'dest': "%d" % tmpwctx.rev(),
-            r'keep': True,
-            r'tool': opts.get('tool', ''),
-        })
-    except error.InterventionRequired:
-        tr.close()
+    overrides = {
+        ('ui', 'forcemerge'): opts.get('tool', ''),
+        ('phases', 'new-commit'): phases.secret,
+    }
+    with repo.ui.configoverride(overrides, 'unshelve'):
+        ui.status(_('rebasing shelved changes\n'))
+        stats = merge.graft(repo, shelvectx, shelvectx.p1(),
+                           labels=['shelve', 'working-copy'],
+                           keepconflictparent=True)
+        if stats.unresolvedcount:
+            tr.close()
 
-        nodestoremove = [repo.changelog.node(rev)
-                         for rev in xrange(oldtiprev, len(repo))]
-        shelvedstate.save(repo, basename, pctx, tmpwctx, nodestoremove,
-                          branchtorestore, opts.get('keep'), activebookmark)
+            nodestoremove = [repo.changelog.node(rev)
+                             for rev in xrange(oldtiprev, len(repo))]
+            shelvedstate.save(repo, basename, pctx, tmpwctx, nodestoremove,
+                              branchtorestore, opts.get('keep'), activebookmark)
+            raise error.InterventionRequired(
+                _("unresolved conflicts (see 'hg resolve', then "
+                  "'hg unshelve --continue')"))
 
-        repo.vfs.rename('rebasestate', 'unshelverebasestate')
-        raise error.InterventionRequired(
-            _("unresolved conflicts (see 'hg resolve', then "
-              "'hg unshelve --continue')"))
+        with repo.dirstate.parentchange():
+            repo.setparents(tmpwctx.node(), nodemod.nullid)
+            newnode = repo.commit(text=shelvectx.description(),
+                                  extra=shelvectx.extra(),
+                                  user=shelvectx.user(),
+                                  date=shelvectx.date())
 
-    # refresh ctx after rebase completes
-    shelvectx = repo['tip']
+        if newnode is None:
+            # If it ended up being a no-op commit, then the normal
+            # merge state clean-up path doesn't happen, so do it
+            # here. Fix issue5494
+            merge.mergestate.clean(repo)
+            shelvectx = tmpwctx
+            msg = _('note: unshelved changes already existed '
+                    'in the working copy\n')
+            ui.status(msg)
+        else:
+            shelvectx = repo[newnode]
+            hg.updaterepo(repo, tmpwctx.node(), False)
 
-    if tmpwctx not in shelvectx.parents():
-        # rebase was a no-op, so it produced no child commit
-        shelvectx = tmpwctx
     return shelvectx
 
 def _forgetunknownfiles(repo, shelvectx, addedbefore):
@@ -933,27 +970,27 @@ def _dounshelve(ui, repo, *shelved, **opts):
         # to the original pctx.
 
         activebookmark = _backupactivebookmark(repo)
+        tmpwctx, addedbefore = _commitworkingcopychanges(ui, repo, opts,
+                                                         tmpwctx)
+        repo, shelvectx = _unshelverestorecommit(ui, repo, basename)
+        _checkunshelveuntrackedproblems(ui, repo, shelvectx)
+        branchtorestore = ''
+        if shelvectx.branch() != shelvectx.p1().branch():
+            branchtorestore = shelvectx.branch()
+
+        shelvectx = _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev,
+                                          basename, pctx, tmpwctx,
+                                          shelvectx, branchtorestore,
+                                          activebookmark)
         overrides = {('ui', 'forcemerge'): opts.get('tool', '')}
         with ui.configoverride(overrides, 'unshelve'):
-            tmpwctx, addedbefore = _commitworkingcopychanges(ui, repo, opts,
-                                                             tmpwctx)
-            repo, shelvectx = _unshelverestorecommit(ui, repo, basename)
-            _checkunshelveuntrackedproblems(ui, repo, shelvectx)
-            branchtorestore = ''
-            if shelvectx.branch() != shelvectx.p1().branch():
-                branchtorestore = shelvectx.branch()
-
-            shelvectx = _rebaserestoredcommit(ui, repo, opts, tr, oldtiprev,
-                                              basename, pctx, tmpwctx,
-                                              shelvectx, branchtorestore,
-                                              activebookmark)
             mergefiles(ui, repo, pctx, shelvectx)
-            restorebranch(ui, repo, branchtorestore)
-            _forgetunknownfiles(repo, shelvectx, addedbefore)
+        restorebranch(ui, repo, branchtorestore)
+        _forgetunknownfiles(repo, shelvectx, addedbefore)
 
-            shelvedstate.clear(repo)
-            _finishunshelve(repo, oldtiprev, tr, activebookmark)
-            unshelvecleanup(ui, repo, basename, opts)
+        shelvedstate.clear(repo)
+        _finishunshelve(repo, oldtiprev, tr, activebookmark)
+        unshelvecleanup(ui, repo, basename, opts)
     finally:
         if tr:
             tr.release()
@@ -979,11 +1016,14 @@ def _dounshelve(ui, repo, *shelved, **opts):
           ('n', 'name', '',
            _('use the given name for the shelved commit'), _('NAME')),
           ('p', 'patch', None,
-           _('show patch')),
+           _('output patches for changes (provide the names of the shelved '
+             'changes as positional arguments)')),
           ('i', 'interactive', None,
            _('interactive mode, only works while creating a shelve')),
           ('', 'stat', None,
-           _('output diffstat-style summary of changes'))] + cmdutil.walkopts,
+           _('output diffstat-style summary of changes (provide the names of '
+             'the shelved changes as positional arguments)')
+           )] + cmdutil.walkopts,
          _('hg shelve [OPTION]... [FILE]...'))
 def shelvecmd(ui, repo, *pats, **opts):
     '''save and set aside changes from the working directory
@@ -1047,10 +1087,8 @@ def shelvecmd(ui, repo, *pats, **opts):
         return deletecmd(ui, repo, pats)
     elif checkopt('list'):
         return listcmd(ui, repo, pats, opts)
-    elif checkopt('patch'):
-        return patchcmds(ui, repo, pats, opts, subcommand='patch')
-    elif checkopt('stat'):
-        return patchcmds(ui, repo, pats, opts, subcommand='stat')
+    elif checkopt('patch') or checkopt('stat'):
+        return patchcmds(ui, repo, pats, opts)
     else:
         return createcmd(ui, repo, pats, opts)
 

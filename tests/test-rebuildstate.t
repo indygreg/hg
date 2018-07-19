@@ -4,9 +4,9 @@
   > cmdtable = {}
   > command = registrar.command(cmdtable)
   > @command(b'debugadddrop',
-  >   [('', 'drop', False, 'drop file from dirstate', 'FILE'),
-  >    ('', 'normal-lookup', False, 'add file to dirstate', 'FILE')],
-  >     'hg debugadddrop')
+  >   [(b'', b'drop', False, b'drop file from dirstate', b'FILE'),
+  >    (b'', b'normal-lookup', False, b'add file to dirstate', b'FILE')],
+  >     b'hg debugadddrop')
   > def debugadddrop(ui, repo, *pats, **opts):
   >   '''Add or drop unnamed arguments to or from the dirstate'''
   >   drop = opts.get('drop')

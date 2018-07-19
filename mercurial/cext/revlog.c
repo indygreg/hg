@@ -41,6 +41,10 @@ typedef struct {
  */
 typedef struct {
 	nodetreenode *nodes;
+	unsigned ntlength;     /* # nodes in use */
+	unsigned ntcapacity;   /* # nodes allocated */
+	int ntdepth;           /* maximum depth of tree */
+	int ntsplits;          /* # splits performed */
 } nodetree;
 
 /*
@@ -68,10 +72,6 @@ typedef struct {
 	PyObject *headrevs;    /* cache, invalidated on changes */
 	PyObject *filteredrevs;/* filtered revs set */
 	nodetree *nt;          /* base-16 trie */
-	unsigned ntlength;          /* # nodes in use */
-	unsigned ntcapacity;        /* # nodes allocated */
-	int ntdepth;           /* maximum depth of tree */
-	int ntsplits;          /* # splits performed */
 	int ntrev;             /* last rev scanned */
 	int ntlookups;         /* # lookups */
 	int ntmisses;          /* # lookups that miss the cache */
@@ -332,8 +332,6 @@ static void _index_clearcaches(indexObject *self)
 static PyObject *index_clearcaches(indexObject *self)
 {
 	_index_clearcaches(self);
-	self->ntlength = self->ntcapacity = 0;
-	self->ntdepth = self->ntsplits = 0;
 	self->ntrev = -1;
 	self->ntlookups = self->ntmisses = 0;
 	Py_RETURN_NONE;
@@ -370,13 +368,15 @@ static PyObject *index_stats(indexObject *self)
 	if (self->raw_length != self->length - 1)
 		istat(raw_length, "revs on disk");
 	istat(length, "revs in memory");
-	istat(ntcapacity, "node trie capacity");
-	istat(ntdepth, "node trie depth");
-	istat(ntlength, "node trie count");
 	istat(ntlookups, "node trie lookups");
 	istat(ntmisses, "node trie misses");
 	istat(ntrev, "node trie last rev scanned");
-	istat(ntsplits, "node trie splits");
+	if (self->nt) {
+		istat(nt->ntcapacity, "node trie capacity");
+		istat(nt->ntdepth, "node trie depth");
+		istat(nt->ntlength, "node trie count");
+		istat(nt->ntsplits, "node trie splits");
+	}
 
 #undef istat
 
@@ -1017,23 +1017,24 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 
 static int nt_new(indexObject *self)
 {
-	if (self->ntlength == self->ntcapacity) {
-		if (self->ntcapacity >= INT_MAX / (sizeof(nodetreenode) * 2)) {
+	nodetree *nt = self->nt;
+	if (nt->ntlength == nt->ntcapacity) {
+		if (nt->ntcapacity >= INT_MAX / (sizeof(nodetreenode) * 2)) {
 			PyErr_SetString(PyExc_MemoryError,
 					"overflow in nt_new");
 			return -1;
 		}
-		self->ntcapacity *= 2;
-		self->nt->nodes = realloc(self->nt->nodes,
-					  self->ntcapacity * sizeof(nodetreenode));
-		if (self->nt->nodes == NULL) {
+		nt->ntcapacity *= 2;
+		nt->nodes = realloc(nt->nodes,
+				    nt->ntcapacity * sizeof(nodetreenode));
+		if (nt->nodes == NULL) {
 			PyErr_SetString(PyExc_MemoryError, "out of memory");
 			return -1;
 		}
-		memset(&self->nt->nodes[self->ntlength], 0,
-		       sizeof(nodetreenode) * (self->ntcapacity - self->ntlength));
+		memset(&nt->nodes[nt->ntlength], 0,
+		       sizeof(nodetreenode) * (nt->ntcapacity - nt->ntlength));
 	}
-	return self->ntlength++;
+	return nt->ntlength++;
 }
 
 static int nt_insert(indexObject *self, const char *node, int rev)
@@ -1071,9 +1072,9 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 			off = noff;
 			n = &self->nt->nodes[off];
 			n->children[nt_level(oldnode, ++level)] = v;
-			if (level > self->ntdepth)
-				self->ntdepth = level;
-			self->ntsplits += 1;
+			if (level > self->nt->ntdepth)
+				self->nt->ntdepth = level;
+			self->nt->ntsplits += 1;
 		} else {
 			level += 1;
 			off = v;
@@ -1101,20 +1102,22 @@ static int nt_init(indexObject *self)
 			PyErr_SetString(PyExc_ValueError, "overflow in nt_init");
 			return -1;
 		}
-		self->ntcapacity = self->raw_length < 4
+		self->nt->ntcapacity = self->raw_length < 4
 			? 4 : (int)self->raw_length / 2;
 
-		self->nt->nodes = calloc(self->ntcapacity, sizeof(nodetreenode));
+		self->nt->nodes = calloc(self->nt->ntcapacity, sizeof(nodetreenode));
 		if (self->nt->nodes == NULL) {
 			free(self->nt);
 			self->nt = NULL;
 			PyErr_NoMemory();
 			return -1;
 		}
-		self->ntlength = 1;
 		self->ntrev = (int)index_length(self);
 		self->ntlookups = 1;
 		self->ntmisses = 0;
+		self->nt->ntdepth = 0;
+		self->nt->ntsplits = 0;
+		self->nt->ntlength = 1;
 		if (nt_insert(self, nullid, -1) == -1) {
 			free(self->nt->nodes);
 			free(self->nt);
@@ -1981,8 +1984,6 @@ static int index_init(indexObject *self, PyObject *args)
 	self->inlined = inlined_obj && PyObject_IsTrue(inlined_obj);
 	self->data = data_obj;
 
-	self->ntlength = self->ntcapacity = 0;
-	self->ntdepth = self->ntsplits = 0;
 	self->ntlookups = self->ntmisses = 0;
 	self->ntrev = -1;
 	Py_INCREF(self->data);

@@ -1114,6 +1114,58 @@ static int nt_init(nodetree *self, indexObject *index, unsigned capacity)
 	return 0;
 }
 
+static int nt_partialmatch(nodetree *self, const char *node,
+			   Py_ssize_t nodelen)
+{
+	return nt_find(self, node, nodelen, 1);
+}
+
+/*
+ * Find the length of the shortest unique prefix of node.
+ *
+ * Return values:
+ *
+ *   -3: error (exception set)
+ *   -2: not found (no exception set)
+ * rest: length of shortest prefix
+ */
+static int nt_shortest(nodetree *self, const char *node)
+{
+	int level, off;
+
+	for (level = off = 0; level < 40; level++) {
+		int k, v;
+		nodetreenode *n = &self->nodes[off];
+		k = nt_level(node, level);
+		v = n->children[k];
+		if (v < 0) {
+			const char *n;
+			v = -(v + 2);
+			n = index_node_existing(self->index, v);
+			if (n == NULL)
+				return -3;
+			if (memcmp(node, n, 20) != 0)
+				/*
+				 * Found a unique prefix, but it wasn't for the
+				 * requested node (i.e the requested node does
+				 * not exist).
+				 */
+				return -2;
+			return level + 1;
+		}
+		if (v == 0)
+			return -2;
+		off = v;
+	}
+	/*
+	 * The node was still not unique after 40 hex digits, so this won't
+	 * happen. Also, if we get here, then there's a programming error in
+	 * this file that made us insert a node longer than 40 hex digits.
+	 */
+	PyErr_SetString(PyExc_Exception, "broken node tree");
+	return -3;
+}
+
 static int index_init_nt(indexObject *self)
 {
 	if (self->nt == NULL) {
@@ -1264,58 +1316,6 @@ static int index_populate_nt(indexObject *self) {
 		self->ntrev = -1;
 	}
 	return 0;
-}
-
-static int nt_partialmatch(nodetree *self, const char *node,
-			   Py_ssize_t nodelen)
-{
-	return nt_find(self, node, nodelen, 1);
-}
-
-/*
- * Find the length of the shortest unique prefix of node.
- *
- * Return values:
- *
- *   -3: error (exception set)
- *   -2: not found (no exception set)
- * rest: length of shortest prefix
- */
-static int nt_shortest(nodetree *self, const char *node)
-{
-	int level, off;
-
-	for (level = off = 0; level < 40; level++) {
-		int k, v;
-		nodetreenode *n = &self->nodes[off];
-		k = nt_level(node, level);
-		v = n->children[k];
-		if (v < 0) {
-			const char *n;
-			v = -(v + 2);
-			n = index_node_existing(self->index, v);
-			if (n == NULL)
-				return -3;
-			if (memcmp(node, n, 20) != 0)
-				/*
-				 * Found a unique prefix, but it wasn't for the
-				 * requested node (i.e the requested node does
-				 * not exist).
-				 */
-				return -2;
-			return level + 1;
-		}
-		if (v == 0)
-			return -2;
-		off = v;
-	}
-	/*
-	 * The node was still not unique after 40 hex digits, so this won't
-	 * happen. Also, if we get here, then there's a programming error in
-	 * this file that made us insert a node longer than 40 hex digits.
-	 */
-	PyErr_SetString(PyExc_Exception, "broken node tree");
-	return -3;
 }
 
 static PyObject *index_partialmatch(indexObject *self, PyObject *args)

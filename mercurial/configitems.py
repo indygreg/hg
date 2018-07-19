@@ -929,7 +929,7 @@ coreconfigitem('push', 'pushvars.server',
 )
 coreconfigitem('revlog', 'optimize-delta-parent-choice',
     default=True,
-    # formely an experimental option: format.aggressivemergedeltas
+    alias=[('format', 'aggressivemergedeltas')],
 )
 coreconfigitem('server', 'bookmarks-pushkey-compat',
     default=True,

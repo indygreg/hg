@@ -1240,11 +1240,6 @@ static int nt_populate(indexObject *self) {
 static int nt_partialmatch(indexObject *self, const char *node,
 			   Py_ssize_t nodelen)
 {
-	if (nt_init(self) == -1)
-		return -3;
-	if (nt_populate(self) == -1)
-		return -3;
-
 	return nt_find(self, node, nodelen, 1);
 }
 
@@ -1260,11 +1255,6 @@ static int nt_partialmatch(indexObject *self, const char *node,
 static int nt_shortest(indexObject *self, const char *node)
 {
 	int level, off;
-
-	if (nt_init(self) == -1)
-		return -3;
-	if (nt_populate(self) == -1)
-		return -3;
 
 	for (level = off = 0; level < 40; level++) {
 		int k, v;
@@ -1327,12 +1317,15 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 		Py_RETURN_NONE;
 	}
 
+	if (nt_init(self) == -1)
+		return NULL;
+	if (nt_populate(self) == -1)
+		return NULL;
 	rev = nt_partialmatch(self, node, nodelen);
 
 	switch (rev) {
 	case -4:
 		raise_revlog_error();
-	case -3:
 		return NULL;
 	case -2:
 		Py_RETURN_NONE;
@@ -1359,6 +1352,10 @@ static PyObject *index_shortest(indexObject *self, PyObject *args)
 		return NULL;
 
 	self->ntlookups++;
+	if (nt_init(self) == -1)
+		return NULL;
+	if (nt_populate(self) == -1)
+		return NULL;
 	length = nt_shortest(self, node);
 	if (length == -3)
 		return NULL;

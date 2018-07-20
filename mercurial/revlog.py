@@ -2247,7 +2247,9 @@ class revlog(object):
         revlog has grown too large to be an inline revlog, it will convert it
         to use multiple index and data files.
         """
-        if not self._inline or (self.start(-2) + self.length(-2)) < _maxinline:
+        tiprev = len(self) - 1
+        if (not self._inline or
+            (self.start(tiprev) + self.length(tiprev)) < _maxinline):
             return
 
         trinfo = tr.find(self.indexfile)
@@ -2261,7 +2263,7 @@ class revlog(object):
         else:
             # revlog was stripped at start of transaction, use all leftover data
             trindex = len(self) - 1
-            dataoff = self.end(-2)
+            dataoff = self.end(tiprev)
 
         tr.add(self.datafile, dataoff)
 

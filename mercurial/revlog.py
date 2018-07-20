@@ -2514,6 +2514,11 @@ class revlog(object):
             else:
                 deltachain = []
 
+            # search for the first non-snapshot revision
+            for idx, r in enumerate(deltachain):
+                if not self.issnapshot(r):
+                    break
+            deltachain = deltachain[idx:]
             chunks = _slicechunk(self, deltachain, deltainfo)
             all_span = [_segmentspan(self, revs, deltainfo) for revs in chunks]
             distance = max(all_span)

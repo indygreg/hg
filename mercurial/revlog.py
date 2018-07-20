@@ -2103,7 +2103,10 @@ class revlog(object):
         deltap = self.deltaparent(rev)
         if deltap == nullrev:
             return True
-        return False
+        p1, p2 = self.parentrevs(rev)
+        if deltap in (p1, p2):
+            return False
+        return self.issnapshot(deltap)
 
     def revdiff(self, rev1, rev2):
         """return or calculate a delta between two revisions

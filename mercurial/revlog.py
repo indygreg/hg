@@ -2095,6 +2095,16 @@ class revlog(object):
         else:
             return rev - 1
 
+    def issnapshot(self, rev):
+        """tells whether rev is a snapshot
+        """
+        if rev == nullrev:
+            return True
+        deltap = self.deltaparent(rev)
+        if deltap == nullrev:
+            return True
+        return False
+
     def revdiff(self, rev1, rev2):
         """return or calculate a delta between two revisions
 

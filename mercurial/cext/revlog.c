@@ -310,36 +310,6 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	Py_RETURN_NONE;
 }
 
-static void _index_clearcaches(indexObject *self)
-{
-	if (self->cache) {
-		Py_ssize_t i;
-
-		for (i = 0; i < self->raw_length; i++)
-			Py_CLEAR(self->cache[i]);
-		free(self->cache);
-		self->cache = NULL;
-	}
-	if (self->offsets) {
-		PyMem_Free(self->offsets);
-		self->offsets = NULL;
-	}
-	if (self->nt != NULL) {
-		free(self->nt->nodes);
-		PyMem_Free(self->nt);
-	}
-	self->nt = NULL;
-	Py_CLEAR(self->headrevs);
-}
-
-static PyObject *index_clearcaches(indexObject *self)
-{
-	_index_clearcaches(self);
-	self->ntrev = -1;
-	self->ntlookups = self->ntmisses = 0;
-	Py_RETURN_NONE;
-}
-
 static PyObject *index_stats(indexObject *self)
 {
 	PyObject *obj = PyDict_New();
@@ -2023,6 +1993,36 @@ static PyObject *index_nodemap(indexObject *self)
 {
 	Py_INCREF(self);
 	return (PyObject *)self;
+}
+
+static void _index_clearcaches(indexObject *self)
+{
+	if (self->cache) {
+		Py_ssize_t i;
+
+		for (i = 0; i < self->raw_length; i++)
+			Py_CLEAR(self->cache[i]);
+		free(self->cache);
+		self->cache = NULL;
+	}
+	if (self->offsets) {
+		PyMem_Free(self->offsets);
+		self->offsets = NULL;
+	}
+	if (self->nt != NULL) {
+		free(self->nt->nodes);
+		PyMem_Free(self->nt);
+	}
+	self->nt = NULL;
+	Py_CLEAR(self->headrevs);
+}
+
+static PyObject *index_clearcaches(indexObject *self)
+{
+	_index_clearcaches(self);
+	self->ntrev = -1;
+	self->ntlookups = self->ntmisses = 0;
+	Py_RETURN_NONE;
 }
 
 static void index_dealloc(indexObject *self)

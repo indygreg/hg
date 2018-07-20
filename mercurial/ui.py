@@ -1420,6 +1420,7 @@ class ui(object):
                     return getpass.getpass('')
         except EOFError:
             raise error.ResponseExpected()
+
     def status(self, *msg, **opts):
         '''write status message to output (if ui.quiet is False)
 
@@ -1428,6 +1429,7 @@ class ui(object):
         if not self.quiet:
             opts[r'label'] = opts.get(r'label', '') + ' ui.status'
             self.write(*msg, **opts)
+
     def warn(self, *msg, **opts):
         '''write warning message to output (stderr)
 
@@ -1435,6 +1437,15 @@ class ui(object):
         '''
         opts[r'label'] = opts.get(r'label', '') + ' ui.warning'
         self.write_err(*msg, **opts)
+
+    def error(self, *msg, **opts):
+        '''write error message to output (stderr)
+
+        This adds an output label of "ui.error".
+        '''
+        opts[r'label'] = opts.get(r'label', '') + ' ui.error'
+        self.write_err(*msg, **opts)
+
     def note(self, *msg, **opts):
         '''write note to output (if ui.verbose is True)
 
@@ -1443,6 +1454,7 @@ class ui(object):
         if self.verbose:
             opts[r'label'] = opts.get(r'label', '') + ' ui.note'
             self.write(*msg, **opts)
+
     def debug(self, *msg, **opts):
         '''write debug message to output (if ui.debugflag is True)
 

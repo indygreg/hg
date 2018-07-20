@@ -117,6 +117,7 @@ _defaultstyles = {
     'formatvariant.config.default': 'green',
     'formatvariant.default': '',
     'histedit.remaining': 'red bold',
+    'ui.error': 'red',
     'ui.prompt': 'yellow',
     'log.changeset': 'yellow',
     'patchbomb.finalsummary': '',

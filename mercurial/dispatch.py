@@ -212,9 +212,9 @@ def dispatch(req):
     try:
         ret = _runcatch(req) or 0
     except error.ProgrammingError as inst:
-        req.ui.warn(_('** ProgrammingError: %s\n') % inst)
+        req.ui.error(_('** ProgrammingError: %s\n') % inst)
         if inst.hint:
-            req.ui.warn(_('** (%s)\n') % inst.hint)
+            req.ui.error(_('** (%s)\n') % inst.hint)
         raise
     except KeyboardInterrupt as inst:
         try:
@@ -222,7 +222,7 @@ def dispatch(req):
                 msg = _("killed!\n")
             else:
                 msg = _("interrupted!\n")
-            req.ui.warn(msg)
+            req.ui.error(msg)
         except error.SignalInterrupt:
             # maybe pager would quit without consuming all the output, and
             # SIGPIPE was raised. we cannot print anything in this case.

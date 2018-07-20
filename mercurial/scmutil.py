@@ -169,64 +169,64 @@ def callcatch(ui, func):
             reason = _('timed out waiting for lock held by %r') % inst.locker
         else:
             reason = _('lock held by %r') % inst.locker
-        ui.warn(_("abort: %s: %s\n")
-                % (inst.desc or stringutil.forcebytestr(inst.filename), reason))
+        ui.error(_("abort: %s: %s\n") % (
+            inst.desc or stringutil.forcebytestr(inst.filename), reason))
         if not inst.locker:
-            ui.warn(_("(lock might be very busy)\n"))
+            ui.error(_("(lock might be very busy)\n"))
     except error.LockUnavailable as inst:
-        ui.warn(_("abort: could not lock %s: %s\n") %
-                (inst.desc or stringutil.forcebytestr(inst.filename),
-                 encoding.strtolocal(inst.strerror)))
+        ui.error(_("abort: could not lock %s: %s\n") %
+                 (inst.desc or stringutil.forcebytestr(inst.filename),
+                  encoding.strtolocal(inst.strerror)))
     except error.OutOfBandError as inst:
         if inst.args:
             msg = _("abort: remote error:\n")
         else:
             msg = _("abort: remote error\n")
-        ui.warn(msg)
+        ui.error(msg)
         if inst.args:
-            ui.warn(''.join(inst.args))
+            ui.error(''.join(inst.args))
         if inst.hint:
-            ui.warn('(%s)\n' % inst.hint)
+            ui.error('(%s)\n' % inst.hint)
     except error.RepoError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
+        ui.error(_("abort: %s!\n") % inst)
         if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
+            ui.error(_("(%s)\n") % inst.hint)
     except error.ResponseError as inst:
-        ui.warn(_("abort: %s") % inst.args[0])
+        ui.error(_("abort: %s") % inst.args[0])
         msg = inst.args[1]
         if isinstance(msg, type(u'')):
             msg = pycompat.sysbytes(msg)
         if not isinstance(msg, bytes):
-            ui.warn(" %r\n" % (msg,))
+            ui.error(" %r\n" % (msg,))
         elif not msg:
-            ui.warn(_(" empty string\n"))
+            ui.error(_(" empty string\n"))
         else:
-            ui.warn("\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
+            ui.error("\n%r\n" % pycompat.bytestr(stringutil.ellipsis(msg)))
     except error.CensoredNodeError as inst:
-        ui.warn(_("abort: file censored %s!\n") % inst)
+        ui.error(_("abort: file censored %s!\n") % inst)
     except error.RevlogError as inst:
-        ui.warn(_("abort: %s!\n") % inst)
+        ui.error(_("abort: %s!\n") % inst)
     except error.InterventionRequired as inst:
-        ui.warn("%s\n" % inst)
+        ui.error("%s\n" % inst)
         if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
+            ui.error(_("(%s)\n") % inst.hint)
         return 1
     except error.WdirUnsupported:
-        ui.warn(_("abort: working directory revision cannot be specified\n"))
+        ui.error(_("abort: working directory revision cannot be specified\n"))
     except error.Abort as inst:
-        ui.warn(_("abort: %s\n") % inst)
+        ui.error(_("abort: %s\n") % inst)
         if inst.hint:
-            ui.warn(_("(%s)\n") % inst.hint)
+            ui.error(_("(%s)\n") % inst.hint)
     except ImportError as inst:
-        ui.warn(_("abort: %s!\n") % stringutil.forcebytestr(inst))
+        ui.error(_("abort: %s!\n") % stringutil.forcebytestr(inst))
         m = stringutil.forcebytestr(inst).split()[-1]
         if m in "mpatch bdiff".split():
-            ui.warn(_("(did you forget to compile extensions?)\n"))
+            ui.error(_("(did you forget to compile extensions?)\n"))
         elif m in "zlib".split():
-            ui.warn(_("(is your Python install correct?)\n"))
+            ui.error(_("(is your Python install correct?)\n"))
     except IOError as inst:
         if util.safehasattr(inst, "code"):
-            ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst))
+            ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst))
         elif util.safehasattr(inst, "reason"):
             try: # usually it is in the form (errno, strerror)
                 reason = inst.reason.args[1]
@@ -236,34 +236,34 @@ def callcatch(ui, func):
             if isinstance(reason, pycompat.unicode):
                 # SSLError of Python 2.7.9 contains a unicode
                 reason = encoding.unitolocal(reason)
-            ui.warn(_("abort: error: %s\n") % reason)
+            ui.error(_("abort: error: %s\n") % reason)
         elif (util.safehasattr(inst, "args")
               and inst.args and inst.args[0] == errno.EPIPE):
             pass
         elif getattr(inst, "strerror", None):
             if getattr(inst, "filename", None):
-                ui.warn(_("abort: %s: %s\n") % (
+                ui.error(_("abort: %s: %s\n") % (
                     encoding.strtolocal(inst.strerror),
                     stringutil.forcebytestr(inst.filename)))
             else:
-                ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
+                ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
         else:
             raise
     except OSError as inst:
         if getattr(inst, "filename", None) is not None:
-            ui.warn(_("abort: %s: '%s'\n") % (
+            ui.error(_("abort: %s: '%s'\n") % (
                 encoding.strtolocal(inst.strerror),
                 stringutil.forcebytestr(inst.filename)))
         else:
-            ui.warn(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
+            ui.error(_("abort: %s\n") % encoding.strtolocal(inst.strerror))
     except MemoryError:
-        ui.warn(_("abort: out of memory\n"))
+        ui.error(_("abort: out of memory\n"))
     except SystemExit as inst:
         # Commands shouldn't sys.exit directly, but give a return code.
         # Just in case catch this and and pass exit code to caller.
         return inst.code
     except socket.error as inst:
-        ui.warn(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
+        ui.error(_("abort: %s\n") % stringutil.forcebytestr(inst.args[-1]))
 
     return -1
 

@@ -606,6 +606,7 @@ class _deltainfo(object):
     chainbase = attr.ib()
     chainlen = attr.ib()
     compresseddeltalen = attr.ib()
+    snapshotdepth = attr.ib()
 
 class _deltacomputer(object):
     def __init__(self, revlog):
@@ -736,8 +737,21 @@ class _deltacomputer(object):
         chainlen, compresseddeltalen = revlog._chaininfo(base)
         chainlen += 1
         compresseddeltalen += deltalen
+
+        revlog = self.revlog
+        snapshotdepth = None
+        if deltabase == nullrev:
+            snapshotdepth = 0
+        elif revlog._sparserevlog and revlog.issnapshot(deltabase):
+            # A delta chain should always be one full snapshot,
+            # zero or more semi-snapshots, and zero or more deltas
+            p1, p2 = revlog.rev(revinfo.p1), revlog.rev(revinfo.p2)
+            if deltabase not in (p1, p2) and revlog.issnapshot(deltabase):
+                snapshotdepth = len(revlog._deltachain(deltabase)[0])
+
         return _deltainfo(dist, deltalen, (header, data), deltabase,
-                         chainbase, chainlen, compresseddeltalen)
+                          chainbase, chainlen, compresseddeltalen,
+                          snapshotdepth)
 
     def finddeltainfo(self, revinfo, fh):
         """Find an acceptable delta against a candidate revision

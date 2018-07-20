@@ -146,7 +146,7 @@ Test revlog.optimize-delta-parent-choice
 - Verify aggressive merge uses p2 (commit 0) as delta parent
   $ hg up -q -C 1
   $ hg merge -q 0
-  $ hg commit -q -m merge --config revlog.optimize-delta-parent-choice=yes
+  $ hg commit -q -m merge --config storage.revlog.optimize-delta-parent-choice=yes
   $ hg debugdeltachain -m
       rev  chain# chainlen     prev   delta       size    rawsize  chainsize     ratio   lindist extradist extraratio
         0       1        1       -1    base         59        215         59   0.27442        59         0    0.00000

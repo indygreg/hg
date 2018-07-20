@@ -927,7 +927,7 @@ coreconfigitem('progress', 'width',
 coreconfigitem('push', 'pushvars.server',
     default=False,
 )
-coreconfigitem('revlog', 'optimize-delta-parent-choice',
+coreconfigitem('storage', 'revlog.optimize-delta-parent-choice',
     default=True,
     alias=[('format', 'aggressivemergedeltas')],
 )

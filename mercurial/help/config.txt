@@ -1773,13 +1773,13 @@ have a definite end point.
 
 Alias definitions for revsets. See :hg:`help revsets` for details.
 
-``revlog``
+``storage``
 ----------
 
 Control the strategy Mercurial uses internally to store history. Options in this
 category impact performance and repository size.
 
-``optimize-delta-parent-choice``
+``revlog.optimize-delta-parent-choice``
     When storing a merge revision, both parents will be equally considered as
     a possible delta base. This results in better delta selection and improved
     revlog compression. This option is enabled by default.

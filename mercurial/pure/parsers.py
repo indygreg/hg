@@ -48,8 +48,6 @@ class BaseIndexObject(object):
     def _fix_index(self, i):
         if not isinstance(i, int):
             raise TypeError("expecting int indexes")
-        if i < 0:
-            i = len(self) + i
         if i < 0 or i >= len(self):
             raise IndexError
         return i

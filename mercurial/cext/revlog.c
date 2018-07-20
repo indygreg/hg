@@ -163,9 +163,6 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 		return nullentry;
 	}
 
-	if (pos < 0)
-		pos += length;
-
 	if (pos < 0 || pos >= length) {
 		PyErr_SetString(PyExc_IndexError, "revlog index out of range");
 		return NULL;

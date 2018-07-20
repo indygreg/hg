@@ -77,8 +77,8 @@ typedef struct {
 static Py_ssize_t index_length(const indexObject *self)
 {
 	if (self->added == NULL)
-		return self->length;
-	return self->length + PyList_GET_SIZE(self->added);
+		return self->length - 1;
+	return self->length + PyList_GET_SIZE(self->added) - 1;
 }
 
 static PyObject *nullentry;
@@ -155,7 +155,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	int comp_len, uncomp_len, base_rev, link_rev, parent_1, parent_2;
 	const char *c_node_id;
 	const char *data;
-	Py_ssize_t length = index_length(self);
+	Py_ssize_t length = index_length(self) + 1;
 	PyObject *entry;
 
 	if (pos == -1 || pos == length - 1) {
@@ -225,7 +225,7 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
  */
 static const char *index_node(indexObject *self, Py_ssize_t pos)
 {
-	Py_ssize_t length = index_length(self);
+	Py_ssize_t length = index_length(self) + 1;
 	const char *data;
 
 	if (pos == length - 1 || pos == -1)
@@ -285,7 +285,7 @@ static PyObject *index_append(indexObject *self, PyObject *obj)
 	if (node_check(PyTuple_GET_ITEM(obj, 7), &node) == -1)
 		return NULL;
 
-	len = index_length(self);
+	len = index_length(self) + 1;
 
 	if (self->added == NULL) {
 		self->added = PyList_New(0);
@@ -435,7 +435,7 @@ static Py_ssize_t add_roots_get_min(indexObject *self, PyObject *list,
 {
 	PyObject *iter = NULL;
 	PyObject *iter_item = NULL;
-	Py_ssize_t min_idx = index_length(self) + 1;
+	Py_ssize_t min_idx = index_length(self) + 2;
 	long iter_item_long;
 
 	if (PyList_GET_SIZE(list) != 0) {
@@ -477,7 +477,7 @@ static PyObject *reachableroots2(indexObject *self, PyObject *args)
 	PyObject *reachable = NULL;
 
 	PyObject *val;
-	Py_ssize_t len = index_length(self) - 1;
+	Py_ssize_t len = index_length(self);
 	long revnum;
 	Py_ssize_t k;
 	Py_ssize_t i;
@@ -629,7 +629,7 @@ static PyObject *compute_phases_map_sets(indexObject *self, PyObject *args)
 	PyObject *phaseset = NULL;
 	PyObject *phasessetlist = NULL;
 	PyObject *rev = NULL;
-	Py_ssize_t len = index_length(self) - 1;
+	Py_ssize_t len = index_length(self);
 	Py_ssize_t numphase = 0;
 	Py_ssize_t minrevallphases = 0;
 	Py_ssize_t minrevphase = 0;
@@ -740,7 +740,7 @@ static PyObject *index_headrevs(indexObject *self, PyObject *args)
 		}
 	}
 
-	len = index_length(self) - 1;
+	len = index_length(self);
 	heads = PyList_New(0);
 	if (heads == NULL)
 		goto bail;
@@ -844,7 +844,7 @@ static PyObject *index_deltachain(indexObject *self, PyObject *args)
 	int stoprev, iterrev, baserev = -1;
 	int stopped;
 	PyObject *chain = NULL, *result = NULL;
-	const Py_ssize_t length = index_length(self);
+	const Py_ssize_t length = index_length(self) + 1;
 
 	if (!PyArg_ParseTuple(args, "iOi", &rev, &stoparg, &generaldelta)) {
 		return NULL;
@@ -1098,7 +1098,7 @@ static int nt_init(indexObject *self)
 			return -1;
 		}
 		self->ntlength = 1;
-		self->ntrev = (int)index_length(self) - 1;
+		self->ntrev = (int)index_length(self);
 		self->ntlookups = 1;
 		self->ntmisses = 0;
 		if (nt_insert(self, nullid, -1) == -1) {
@@ -1393,7 +1393,7 @@ static int index_contains(indexObject *self, PyObject *value)
 
 	if (PyInt_Check(value)) {
 		long rev = PyInt_AS_LONG(value);
-		return rev >= -1 && rev < index_length(self);
+		return rev >= -1 && rev < index_length(self) + 1;
 	}
 
 	if (node_check(value, &node) == -1)
@@ -1673,7 +1673,7 @@ static PyObject *index_commonancestorsheads(indexObject *self, PyObject *args)
 	revs = PyMem_Malloc(argcount * sizeof(*revs));
 	if (argcount > 0 && revs == NULL)
 		return PyErr_NoMemory();
-	len = index_length(self) - 1;
+	len = index_length(self);
 
 	for (i = 0; i < argcount; i++) {
 		static const int capacity = 24;
@@ -1795,7 +1795,7 @@ static void nt_invalidate_added(indexObject *self, Py_ssize_t start)
 static int index_slice_del(indexObject *self, PyObject *item)
 {
 	Py_ssize_t start, stop, step, slicelength;
-	Py_ssize_t length = index_length(self);
+	Py_ssize_t length = index_length(self) + 1;
 	int ret = 0;
 
 /* Argument changed from PySliceObject* to PyObject* in Python 3. */

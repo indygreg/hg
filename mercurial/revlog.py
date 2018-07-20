@@ -791,10 +791,8 @@ indexformatv0_pack = indexformatv0.pack
 indexformatv0_unpack = indexformatv0.unpack
 
 class revlogoldindex(list):
-    def __len__(self):
-        return list.__len__(self) + 1
     def __getitem__(self, i):
-        if i == -1 or i == len(self) - 1:
+        if i == -1 or i == len(self):
             return (0, 0, 0, -1, -1, -1, -1, nullid)
         return list.__getitem__(self, i)
 
@@ -1066,11 +1064,11 @@ class revlog(object):
                 yield fp
 
     def tip(self):
-        return self.node(len(self.index) - 2)
+        return self.node(len(self.index) - 1)
     def __contains__(self, rev):
         return 0 <= rev < len(self)
     def __len__(self):
-        return len(self.index) - 1
+        return len(self.index)
     def __iter__(self):
         return iter(pycompat.xrange(len(self)))
     def revs(self, start=0, stop=None):
@@ -1139,7 +1137,7 @@ class revlog(object):
             i = self.index
             p = self._nodepos
             if p is None:
-                p = len(i) - 2
+                p = len(i) - 1
             else:
                 assert p < len(i)
             for r in pycompat.xrange(p, -1, -1):

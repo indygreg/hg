@@ -39,7 +39,7 @@ def offset_type(offset, type):
 
 class BaseIndexObject(object):
     def __len__(self):
-        return self._lgt + len(self._extra) + 1
+        return self._lgt + len(self._extra)
 
     def append(self, tup):
         self._extra.append(tup)
@@ -47,12 +47,12 @@ class BaseIndexObject(object):
     def _fix_index(self, i):
         if not isinstance(i, int):
             raise TypeError("expecting int indexes")
-        if i < 0 or i >= len(self):
+        if i < 0 or i >= len(self) + 1:
             raise IndexError
         return i
 
     def __getitem__(self, i):
-        if i == -1 or i == len(self) - 1:
+        if i == -1 or i == len(self):
             return (0, 0, 0, -1, -1, -1, -1, nullid)
         i = self._fix_index(i)
         if i >= self._lgt:

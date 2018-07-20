@@ -210,7 +210,7 @@ class repoview(object):
         unfichangelog = unfi.changelog
         # bypass call to changelog.method
         unfiindex = unfichangelog.index
-        unfilen = len(unfiindex) - 1
+        unfilen = len(unfiindex)
         unfinode = unfiindex[unfilen - 1][7]
 
         revs = filterrevs(unfi, self.filtername, self._visibilityexceptions)

@@ -790,6 +790,14 @@ indexformatv0 = struct.Struct(">4l20s20s20s")
 indexformatv0_pack = indexformatv0.pack
 indexformatv0_unpack = indexformatv0.unpack
 
+class revlogoldindex(list):
+    def __len__(self):
+        return list.__len__(self) + 1
+    def __getitem__(self, i):
+        if i == -1 or i == len(self) - 1:
+            return (0, 0, 0, -1, -1, -1, -1, nullid)
+        return list.__getitem__(self, i)
+
 class revlogoldio(object):
     def __init__(self):
         self.size = indexformatv0.size
@@ -811,10 +819,7 @@ class revlogoldio(object):
             nodemap[e[6]] = n
             n += 1
 
-        # add the magic null revision at -1
-        index.append((0, 0, 0, -1, -1, -1, -1, nullid))
-
-        return index, nodemap, None
+        return revlogoldindex(index), nodemap, None
 
     def packentry(self, entry, node, version, rev):
         if gettype(entry[0]):

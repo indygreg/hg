@@ -923,7 +923,7 @@ def perfmoonwalk(ui, repo, **opts):
     """
     timer, fm = gettimer(ui, opts)
     def moonwalk():
-        for i in xrange(len(repo), -1, -1):
+        for i in repo.changelog.revs(start=(len(repo) - 1), stop=-1):
             ctx = repo[i]
             ctx.branch() # read changelog data (in addition to the index)
     timer(moonwalk)

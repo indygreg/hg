@@ -158,12 +158,12 @@ static PyObject *index_get(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self) + 1;
 	PyObject *entry;
 
-	if (pos == -1 || pos == length - 1) {
+	if (pos == -1) {
 		Py_INCREF(nullentry);
 		return nullentry;
 	}
 
-	if (pos < 0 || pos >= length) {
+	if (pos < 0 || pos >= length - 1) {
 		PyErr_SetString(PyExc_IndexError, "revlog index out of range");
 		return NULL;
 	}

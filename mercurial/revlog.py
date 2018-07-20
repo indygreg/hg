@@ -792,7 +792,7 @@ indexformatv0_unpack = indexformatv0.unpack
 
 class revlogoldindex(list):
     def __getitem__(self, i):
-        if i == -1 or i == len(self):
+        if i == -1:
             return (0, 0, 0, -1, -1, -1, -1, nullid)
         return list.__getitem__(self, i)
 

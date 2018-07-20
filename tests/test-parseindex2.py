@@ -61,9 +61,6 @@ def py_parseindex(data, inline) :
     e[0] = offset_type(0, type)
     index[0] = tuple(e)
 
-    # add the magic null revision at -1
-    index.append((0, 0, 0, -1, -1, -1, -1, nullid))
-
     return index, cache
 
 data_inlined = (

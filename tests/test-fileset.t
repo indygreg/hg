@@ -203,6 +203,73 @@ Show parsed tree at stages:
   b1
   b2
 
+Use differencematcher for 'x and not y':
+
+  $ fileset -p optimized -s 'a* and not a1'
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (symbol 'a1'))
+  * matcher:
+  <differencematcher
+    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
+    m2=<patternmatcher patterns='(?:a1$)'>>
+  a2
+
+  $ fileset -p optimized -s '!binary() and a*'
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (func
+      (symbol 'binary')
+      None))
+  * matcher:
+  <differencematcher
+    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
+    m2=<predicatenmatcher pred=binary>>
+  a1
+  a2
+
+'x - y' is rewritten to 'x and not y' first so the operands can be reordered:
+
+  $ fileset -p analyzed -p optimized -s 'a* - a1'
+  * analyzed:
+  (and
+    (symbol 'a*')
+    (not
+      (symbol 'a1')))
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (symbol 'a1'))
+  * matcher:
+  <differencematcher
+    m1=<patternmatcher patterns='(?:a[^/]*$)'>,
+    m2=<patternmatcher patterns='(?:a1$)'>>
+  a2
+
+  $ fileset -p analyzed -p optimized -s 'binary() - a*'
+  * analyzed:
+  (and
+    (func
+      (symbol 'binary')
+      None)
+    (not
+      (symbol 'a*')))
+  * optimized:
+  (and
+    (not
+      (symbol 'a*'))
+    (func
+      (symbol 'binary')
+      None))
+  * matcher:
+  <intersectionmatcher
+    m1=<predicatenmatcher
+      pred=<not
+        <patternmatcher patterns='(?:a[^/]*$)'>>>,
+    m2=<predicatenmatcher pred=binary>>
+
 Test files status
 
   $ rm a1

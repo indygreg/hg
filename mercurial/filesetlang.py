@@ -149,10 +149,12 @@ def _analyze(x):
     if op == 'not':
         t = _analyze(x[1])
         return (op, t)
-    if op in {'and', 'minus'}:
+    if op == 'and':
         ta = _analyze(x[1])
         tb = _analyze(x[2])
         return (op, ta, tb)
+    if op == 'minus':
+        return _analyze(('and', x[1], ('not', x[2])))
     if op in {'list', 'or'}:
         ts = tuple(_analyze(y) for y in x[1:])
         return (op,) + ts
@@ -171,6 +173,11 @@ def analyze(x):
     """
     return _analyze(x)
 
+def _optimizeandops(op, ta, tb):
+    if tb is not None and tb[0] == 'not':
+        return ('minus', ta, tb[1])
+    return (op, ta, tb)
+
 def _optimize(x):
     if x is None:
         return 0, x
@@ -188,13 +195,9 @@ def _optimize(x):
         wa, ta = _optimize(x[1])
         wb, tb = _optimize(x[2])
         if wa <= wb:
-            return wa, (op, ta, tb)
+            return wa, _optimizeandops(op, ta, tb)
         else:
-            return wb, (op, tb, ta)
-    if op == 'minus':
-        wa, ta = _optimize(x[1])
-        wb, tb = _optimize(x[2])
-        return max(wa, wb), (op, ta, tb)
+            return wb, _optimizeandops(op, tb, ta)
     if op == 'or':
         ws, ts = zip(*(_optimize(y) for y in x[1:]))
         return max(ws), (op,) + ts

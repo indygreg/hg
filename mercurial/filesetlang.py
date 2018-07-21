@@ -144,7 +144,9 @@ def _analyze(x):
         return (op, x[1], t)
     if op == 'group':
         return _analyze(x[1])
-    if op in {'not', 'negate'}:
+    if op == 'negate':
+        raise error.ParseError(_("can't use negate operator in this context"))
+    if op == 'not':
         t = _analyze(x[1])
         return (op, t)
     if op in {'and', 'minus'}:

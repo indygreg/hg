@@ -62,9 +62,6 @@ def minusmatch(mctx, x, y):
     ym = getmatch(mctx, y)
     return matchmod.differencematcher(xm, ym)
 
-def negatematch(mctx, x):
-    raise error.ParseError(_("can't use negate operator in this context"))
-
 def listmatch(mctx, *xs):
     raise error.ParseError(_("can't use a list in this context"),
                            hint=_('see \'hg help "filesets.x or y"\''))
@@ -436,7 +433,6 @@ methods = {
     'and': andmatch,
     'or': ormatch,
     'minus': minusmatch,
-    'negate': negatematch,
     'list': listmatch,
     'not': notmatch,
     'func': func,

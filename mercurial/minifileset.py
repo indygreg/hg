@@ -65,8 +65,6 @@ def _compile(tree):
         func1 = _compile(tree[1])
         func2 = _compile(tree[2])
         return lambda n, s: func1(n, s) and not func2(n, s)
-    elif op == 'negate':
-        raise error.ParseError(_("can't use negate operator in this context"))
     elif op == 'list':
         raise error.ParseError(_("can't use a list in this context"),
                                hint=_('see \'hg help "filesets.x or y"\''))

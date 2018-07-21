@@ -18,13 +18,19 @@ Test operators and basic patterns
 
   $ fileset -v a1
   (symbol 'a1')
+  * matcher:
+  <patternmatcher patterns='(?:a1$)'>
   a1
   $ fileset -v 'a*'
   (symbol 'a*')
+  * matcher:
+  <patternmatcher patterns='(?:a[^/]*$)'>
   a1
   a2
   $ fileset -v '"re:a\d"'
   (string 're:a\\d')
+  * matcher:
+  <patternmatcher patterns='(?:a\\d)'>
   a1
   a2
   $ fileset -v '!re:"a\d"'
@@ -32,6 +38,10 @@ Test operators and basic patterns
     (kindpat
       (symbol 're')
       (string 'a\\d')))
+  * matcher:
+  <predicatenmatcher
+    pred=<not
+      <patternmatcher patterns='(?:a\\d)'>>>
   b1
   b2
   $ fileset -v 'path:a1 or glob:b?'
@@ -42,10 +52,14 @@ Test operators and basic patterns
     (kindpat
       (symbol 'glob')
       (symbol 'b?')))
+  * matcher:
+  <unionmatcher matchers=[
+    <patternmatcher patterns='(?:a1(?:/|$))'>,
+    <patternmatcher patterns='(?:b.$)'>]>
   a1
   b1
   b2
-  $ fileset -v 'a1 or a2'
+  $ fileset -v --no-show-matcher 'a1 or a2'
   (or
     (symbol 'a1')
     (symbol 'a2'))
@@ -133,7 +147,7 @@ Show parsed tree at stages:
   b1
   b2
 
-  $ fileset -p all 'a1 or a2 or (grep("b") & clean())'
+  $ fileset -p all -s 'a1 or a2 or (grep("b") & clean())'
   * parsed:
   (or
     (or
@@ -147,6 +161,14 @@ Show parsed tree at stages:
         (func
           (symbol 'clean')
           None))))
+  * matcher:
+  <unionmatcher matchers=[
+    <unionmatcher matchers=[
+      <patternmatcher patterns='(?:a1$)'>,
+      <patternmatcher patterns='(?:a2$)'>]>,
+    <intersectionmatcher
+      m1=<predicatenmatcher pred=grep('b')>,
+      m2=<predicatenmatcher pred=clean>>]>
   a1
   a2
   b1

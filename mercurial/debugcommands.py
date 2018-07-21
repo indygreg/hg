@@ -889,6 +889,8 @@ def debugextensions(ui, repo, **opts):
     [('r', 'rev', '', _('apply the filespec on this revision'), _('REV')),
      ('', 'all-files', False,
       _('test files from all revisions and working directory')),
+     ('s', 'show-matcher', None,
+      _('print internal representation of matcher')),
      ('p', 'show-stage', [],
       _('print parsed tree at the given stage'), _('NAME'))],
     _('[-r REV] [--all-files] [OPTION]... FILESPEC'))
@@ -939,6 +941,8 @@ def debugfileset(ui, repo, expr, **opts):
         files.update(ctx.substate)
 
     m = ctx.matchfileset(expr)
+    if opts['show_matcher'] or (opts['show_matcher'] is None and ui.verbose):
+        ui.write(('* matcher:\n'), stringutil.prettyrepr(m), '\n')
     for f in sorted(files):
         if not m(f):
             continue

@@ -40,7 +40,7 @@ def _compile(tree):
             return f
         raise error.ParseError(_("unsupported file pattern: %s") % name,
                                hint=_('paths must be prefixed with "path:"'))
-    elif op == 'or':
+    elif op in {'or', 'patterns'}:
         funcs = [_compile(x) for x in tree[1:]]
         return lambda n, s: any(f(n, s) for f in funcs)
     elif op == 'and':

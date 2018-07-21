@@ -185,6 +185,21 @@ def _optimizeandops(op, ta, tb):
         return ('minus', ta, tb[1])
     return (op, ta, tb)
 
+def _optimizeunion(xs):
+    # collect string patterns so they can be compiled into a single regexp
+    ws, ts, ss = [], [], []
+    for x in xs:
+        w, t = _optimize(x)
+        if t is not None and t[0] in {'string', 'symbol', 'kindpat'}:
+            ss.append(t)
+            continue
+        ws.append(w)
+        ts.append(t)
+    if ss:
+        ws.append(WEIGHT_CHECK_FILENAME)
+        ts.append(('patterns',) + tuple(ss))
+    return ws, ts
+
 def _optimize(x):
     if x is None:
         return 0, x
@@ -206,7 +221,9 @@ def _optimize(x):
         else:
             return wb, _optimizeandops(op, tb, ta)
     if op == 'or':
-        ws, ts = zip(*(_optimize(y) for y in x[1:]))
+        ws, ts = _optimizeunion(x[1:])
+        if len(ts) == 1:
+            return ws[0], ts[0] # 'or' operation is fully optimized out
         ts = tuple(it[1] for it in sorted(enumerate(ts),
                                           key=lambda it: ws[it[0]]))
         return max(ws), (op,) + ts

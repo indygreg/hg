@@ -53,9 +53,7 @@ Test operators and basic patterns
       (symbol 'glob')
       (symbol 'b?')))
   * matcher:
-  <unionmatcher matchers=[
-    <patternmatcher patterns='(?:a1(?:/|$))'>,
-    <patternmatcher patterns='(?:b.$)'>]>
+  <patternmatcher patterns='(?:a1(?:/|$)|b.$)'>
   a1
   b1
   b2
@@ -182,8 +180,9 @@ Show parsed tree at stages:
         None)))
   * optimized:
   (or
-    (symbol 'a1')
-    (symbol 'a2')
+    (patterns
+      (symbol 'a1')
+      (symbol 'a2'))
     (and
       (func
         (symbol 'clean')
@@ -193,8 +192,7 @@ Show parsed tree at stages:
         (string 'b'))))
   * matcher:
   <unionmatcher matchers=[
-    <patternmatcher patterns='(?:a1$)'>,
-    <patternmatcher patterns='(?:a2$)'>,
+    <patternmatcher patterns='(?:a1$|a2$)'>,
     <intersectionmatcher
       m1=<predicatenmatcher pred=clean>,
       m2=<predicatenmatcher pred=grep('b')>>]>
@@ -203,13 +201,30 @@ Show parsed tree at stages:
   b1
   b2
 
+Union of basic patterns:
+
+  $ fileset -p optimized -s -r. 'a1 or a2 or path:b1'
+  * optimized:
+  (patterns
+    (symbol 'a1')
+    (symbol 'a2')
+    (kindpat
+      (symbol 'path')
+      (symbol 'b1')))
+  * matcher:
+  <patternmatcher patterns='(?:a1$|a2$|b1(?:/|$))'>
+  a1
+  a2
+  b1
+
 OR expression should be reordered by weight:
 
   $ fileset -p optimized -s -r. 'grep("a") or a1 or grep("b") or b2'
   * optimized:
   (or
-    (symbol 'a1')
-    (symbol 'b2')
+    (patterns
+      (symbol 'a1')
+      (symbol 'b2'))
     (func
       (symbol 'grep')
       (string 'a'))
@@ -218,8 +233,7 @@ OR expression should be reordered by weight:
       (string 'b')))
   * matcher:
   <unionmatcher matchers=[
-    <patternmatcher patterns='(?:a1$)'>,
-    <patternmatcher patterns='(?:b2$)'>,
+    <patternmatcher patterns='(?:a1$|b2$)'>,
     <predicatenmatcher pred=grep('a')>,
     <predicatenmatcher pred=grep('b')>]>
   a1

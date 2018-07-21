@@ -50,6 +50,12 @@ def kindpatmatch(mctx, x, y):
     return stringmatch(mctx, _getkindpat(x, y, matchmod.allpatternkinds,
                                          _("pattern must be a string")))
 
+def patternsmatch(mctx, *xs):
+    allkinds = matchmod.allpatternkinds
+    patterns = [getpattern(x, allkinds, _("pattern must be a string"))
+                for x in xs]
+    return mctx.matcher(patterns)
+
 def andmatch(mctx, x, y):
     xm = getmatch(mctx, x)
     ym = getmatch(mctx, y)
@@ -436,6 +442,7 @@ methods = {
     'string': stringmatch,
     'symbol': stringmatch,
     'kindpat': kindpatmatch,
+    'patterns': patternsmatch,
     'and': andmatch,
     'or': ormatch,
     'minus': minusmatch,

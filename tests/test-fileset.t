@@ -203,6 +203,30 @@ Show parsed tree at stages:
   b1
   b2
 
+OR expression should be reordered by weight:
+
+  $ fileset -p optimized -s -r. 'grep("a") or a1 or grep("b") or b2'
+  * optimized:
+  (or
+    (symbol 'a1')
+    (symbol 'b2')
+    (func
+      (symbol 'grep')
+      (string 'a'))
+    (func
+      (symbol 'grep')
+      (string 'b')))
+  * matcher:
+  <unionmatcher matchers=[
+    <patternmatcher patterns='(?:a1$)'>,
+    <patternmatcher patterns='(?:b2$)'>,
+    <predicatenmatcher pred=grep('a')>,
+    <predicatenmatcher pred=grep('b')>]>
+  a1
+  a2
+  b1
+  b2
+
 Use differencematcher for 'x and not y':
 
   $ fileset -p optimized -s 'a* and not a1'

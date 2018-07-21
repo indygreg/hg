@@ -207,6 +207,8 @@ def _optimize(x):
             return wb, _optimizeandops(op, tb, ta)
     if op == 'or':
         ws, ts = zip(*(_optimize(y) for y in x[1:]))
+        ts = tuple(it[1] for it in sorted(enumerate(ts),
+                                          key=lambda it: ws[it[0]]))
         return max(ws), (op,) + ts
     if op == 'list':
         ws, ts = zip(*(_optimize(y) for y in x[1:]))

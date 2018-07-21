@@ -264,11 +264,12 @@ static const char *index_node_existing(indexObject *self, Py_ssize_t pos)
 
 static int nt_insert(indexObject *self, const char *node, int rev);
 
-static int node_check(PyObject *obj, char **node, Py_ssize_t *nodelen)
+static int node_check(PyObject *obj, char **node)
 {
-	if (PyBytes_AsStringAndSize(obj, node, nodelen) == -1)
+	Py_ssize_t nodelen;
+	if (PyBytes_AsStringAndSize(obj, node, &nodelen) == -1)
 		return -1;
-	if (*nodelen == 20)
+	if (nodelen == 20)
 		return 0;
 	PyErr_SetString(PyExc_ValueError, "20-byte hash required");
 	return -1;
@@ -279,7 +280,7 @@ static PyObject *index_insert(indexObject *self, PyObject *args)
 	PyObject *obj;
 	char *node;
 	int index;
-	Py_ssize_t len, nodelen;
+	Py_ssize_t len;
 
 	if (!PyArg_ParseTuple(args, "iO", &index, &obj))
 		return NULL;
@@ -289,7 +290,7 @@ static PyObject *index_insert(indexObject *self, PyObject *args)
 		return NULL;
 	}
 
-	if (node_check(PyTuple_GET_ITEM(obj, 7), &node, &nodelen) == -1)
+	if (node_check(PyTuple_GET_ITEM(obj, 7), &node) == -1)
 		return NULL;
 
 	len = index_length(self);
@@ -1214,15 +1215,14 @@ cleanup:
 static PyObject *index_getitem(indexObject *self, PyObject *value)
 {
 	char *node;
-	Py_ssize_t nodelen;
 	int rev;
 
 	if (PyInt_Check(value))
 		return index_get(self, PyInt_AS_LONG(value));
 
-	if (node_check(value, &node, &nodelen) == -1)
+	if (node_check(value, &node) == -1)
 		return NULL;
-	rev = index_find_node(self, node, nodelen);
+	rev = index_find_node(self, node, 20);
 	if (rev >= -1)
 		return PyInt_FromLong(rev);
 	if (rev == -2)
@@ -1360,14 +1360,13 @@ static PyObject *index_partialmatch(indexObject *self, PyObject *args)
 
 static PyObject *index_shortest(indexObject *self, PyObject *args)
 {
-	Py_ssize_t nodelen;
 	PyObject *val;
 	char *node;
 	int length;
 
 	if (!PyArg_ParseTuple(args, "O", &val))
 		return NULL;
-	if (node_check(val, &node, &nodelen) == -1)
+	if (node_check(val, &node) == -1)
 		return NULL;
 
 	self->ntlookups++;
@@ -1383,16 +1382,15 @@ static PyObject *index_shortest(indexObject *self, PyObject *args)
 
 static PyObject *index_m_get(indexObject *self, PyObject *args)
 {
-	Py_ssize_t nodelen;
 	PyObject *val;
 	char *node;
 	int rev;
 
 	if (!PyArg_ParseTuple(args, "O", &val))
 		return NULL;
-	if (node_check(val, &node, &nodelen) == -1)
+	if (node_check(val, &node) == -1)
 		return NULL;
-	rev = index_find_node(self, node, nodelen);
+	rev = index_find_node(self, node, 20);
 	if (rev == -3)
 		return NULL;
 	if (rev == -2)
@@ -1403,17 +1401,16 @@ static PyObject *index_m_get(indexObject *self, PyObject *args)
 static int index_contains(indexObject *self, PyObject *value)
 {
 	char *node;
-	Py_ssize_t nodelen;
 
 	if (PyInt_Check(value)) {
 		long rev = PyInt_AS_LONG(value);
 		return rev >= -1 && rev < index_length(self);
 	}
 
-	if (node_check(value, &node, &nodelen) == -1)
+	if (node_check(value, &node) == -1)
 		return -1;
 
-	switch (index_find_node(self, node, nodelen)) {
+	switch (index_find_node(self, node, 20)) {
 	case -3:
 		return -1;
 	case -2:
@@ -1897,13 +1894,12 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 				  PyObject *value)
 {
 	char *node;
-	Py_ssize_t nodelen;
 	long rev;
 
 	if (PySlice_Check(item) && value == NULL)
 		return index_slice_del(self, item);
 
-	if (node_check(item, &node, &nodelen) == -1)
+	if (node_check(item, &node) == -1)
 		return -1;
 
 	if (value == NULL)

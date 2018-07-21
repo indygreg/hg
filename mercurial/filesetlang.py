@@ -164,12 +164,50 @@ def _analyze(x):
 
 def analyze(x):
     """Transform raw parsed tree to evaluatable tree which can be fed to
-    getmatch()
+    optimize() or getmatch()
 
     All pseudo operations should be mapped to real operations or functions
     defined in methods or symbols table respectively.
     """
     return _analyze(x)
+
+def _optimize(x):
+    if x is None:
+        return 0, x
+
+    op = x[0]
+    if op in {'string', 'symbol'}:
+        return 0.5, x
+    if op == 'kindpat':
+        w, t = _optimize(x[2])
+        return w, (op, x[1], t)
+    if op == 'not':
+        w, t = _optimize(x[1])
+        return w, (op, t)
+    if op in {'and', 'minus'}:
+        wa, ta = _optimize(x[1])
+        wb, tb = _optimize(x[2])
+        return max(wa, wb), (op, ta, tb)
+    if op == 'or':
+        ws, ts = zip(*(_optimize(y) for y in x[1:]))
+        return max(ws), (op,) + ts
+    if op == 'list':
+        ws, ts = zip(*(_optimize(y) for y in x[1:]))
+        return sum(ws), (op,) + ts
+    if op == 'func':
+        f = getsymbol(x[1])
+        w = getattr(symbols.get(f), '_weight', 1)
+        wa, ta = _optimize(x[2])
+        return w + wa, (op, x[1], ta)
+    raise error.ProgrammingError('invalid operator %r' % op)
+
+def optimize(x):
+    """Reorder/rewrite evaluatable tree for optimization
+
+    All pseudo operations should be transformed beforehand.
+    """
+    _w, t = _optimize(x)
+    return t
 
 def prettyformat(tree):
     return parser.prettyformat(tree, ('string', 'symbol'))

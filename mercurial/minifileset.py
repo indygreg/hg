@@ -86,4 +86,5 @@ def compile(text):
     """
     tree = filesetlang.parse(text)
     tree = filesetlang.analyze(tree)
+    tree = filesetlang.optimize(tree)
     return _compile(tree)

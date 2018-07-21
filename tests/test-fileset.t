@@ -180,6 +180,17 @@ Show parsed tree at stages:
       (func
         (symbol 'clean')
         None)))
+  * optimized:
+  (or
+    (symbol 'a1')
+    (symbol 'a2')
+    (and
+      (func
+        (symbol 'grep')
+        (string 'b'))
+      (func
+        (symbol 'clean')
+        None)))
   * matcher:
   <unionmatcher matchers=[
     <patternmatcher patterns='(?:a1$)'>,

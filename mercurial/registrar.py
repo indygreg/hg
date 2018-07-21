@@ -247,6 +247,9 @@ class filesetpredicate(_funcregistrarbase):
      implies 'matchctx.status()' at runtime or not (False, by
      default).
 
+    Optional argument 'weight' indicates the estimated run-time cost, useful
+    for static optimization, default is 1. Higher weight means more expensive.
+
     'filesetpredicate' instance in example above can be used to
     decorate multiple functions.
 
@@ -259,8 +262,9 @@ class filesetpredicate(_funcregistrarbase):
     _getname = _funcregistrarbase._parsefuncdecl
     _docformat = "``%s``\n    %s"
 
-    def _extrasetup(self, name, func, callstatus=False):
+    def _extrasetup(self, name, func, callstatus=False, weight=1):
         func._callstatus = callstatus
+        func._weight = weight
 
 class _templateregistrarbase(_funcregistrarbase):
     """Base of decorator to register functions as template specific one

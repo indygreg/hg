@@ -173,14 +173,13 @@ Show parsed tree at stages:
   (or
     (symbol 'a1')
     (symbol 'a2')
-    (group
-      (and
-        (func
-          (symbol 'grep')
-          (string 'b'))
-        (func
-          (symbol 'clean')
-          None))))
+    (and
+      (func
+        (symbol 'grep')
+        (string 'b'))
+      (func
+        (symbol 'clean')
+        None)))
   * matcher:
   <unionmatcher matchers=[
     <patternmatcher patterns='(?:a1$)'>,

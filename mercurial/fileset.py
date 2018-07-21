@@ -438,7 +438,6 @@ methods = {
     'minus': minusmatch,
     'negate': negatematch,
     'list': listmatch,
-    'group': getmatch,
     'not': notmatch,
     'func': func,
 }

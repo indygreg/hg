@@ -49,8 +49,6 @@ def _compile(tree):
         return lambda n, s: func1(n, s) and func2(n, s)
     elif op == 'not':
         return lambda n, s: not _compile(tree[1])(n, s)
-    elif op == 'group':
-        return _compile(tree[1])
     elif op == 'func':
         symbols = {
             'all': lambda n, s: True,

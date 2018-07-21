@@ -142,7 +142,9 @@ def _analyze(x):
         getsymbol(x[1])  # kind must be a symbol
         t = _analyze(x[2])
         return (op, x[1], t)
-    if op in {'group', 'not', 'negate'}:
+    if op == 'group':
+        return _analyze(x[1])
+    if op in {'not', 'negate'}:
         t = _analyze(x[1])
         return (op, t)
     if op in {'and', 'minus'}:

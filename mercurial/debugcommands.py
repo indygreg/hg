@@ -888,15 +888,39 @@ def debugextensions(ui, repo, **opts):
 @command('debugfileset',
     [('r', 'rev', '', _('apply the filespec on this revision'), _('REV')),
      ('', 'all-files', False,
-      _('test files from all revisions and working directory'))],
-    _('[-r REV] [--all-files] FILESPEC'))
+      _('test files from all revisions and working directory')),
+     ('p', 'show-stage', [],
+      _('print parsed tree at the given stage'), _('NAME'))],
+    _('[-r REV] [--all-files] [OPTION]... FILESPEC'))
 def debugfileset(ui, repo, expr, **opts):
     '''parse and apply a fileset specification'''
     opts = pycompat.byteskwargs(opts)
     ctx = scmutil.revsingle(repo, opts.get('rev'), None)
-    if ui.verbose:
-        tree = fileset.parse(expr)
-        ui.note(fileset.prettyformat(tree), "\n")
+
+    stages = [
+        ('parsed', pycompat.identity),
+    ]
+    stagenames = set(n for n, f in stages)
+
+    showalways = set()
+    if ui.verbose and not opts['show_stage']:
+        # show parsed tree by --verbose (deprecated)
+        showalways.add('parsed')
+    if opts['show_stage'] == ['all']:
+        showalways.update(stagenames)
+    else:
+        for n in opts['show_stage']:
+            if n not in stagenames:
+                raise error.Abort(_('invalid stage name: %s') % n)
+        showalways.update(opts['show_stage'])
+
+    tree = fileset.parse(expr)
+    for n, f in stages:
+        tree = f(tree)
+        if n in showalways:
+            if opts['show_stage'] or n != 'parsed':
+                ui.write(("* %s:\n") % n)
+            ui.write(fileset.prettyformat(tree), "\n")
 
     files = set()
     if opts['all_files']:

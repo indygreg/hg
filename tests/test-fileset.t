@@ -114,6 +114,44 @@ Test invalid syntax
   hg: parse error: invalid pattern kind: foo
   [255]
 
+Show parsed tree at stages:
+
+  $ fileset -p unknown a
+  abort: invalid stage name: unknown
+  [255]
+
+  $ fileset -p parsed 'path:a1 or glob:b?'
+  * parsed:
+  (or
+    (kindpat
+      (symbol 'path')
+      (symbol 'a1'))
+    (kindpat
+      (symbol 'glob')
+      (symbol 'b?')))
+  a1
+  b1
+  b2
+
+  $ fileset -p all 'a1 or a2 or (grep("b") & clean())'
+  * parsed:
+  (or
+    (or
+      (symbol 'a1')
+      (symbol 'a2'))
+    (group
+      (and
+        (func
+          (symbol 'grep')
+          (string 'b'))
+        (func
+          (symbol 'clean')
+          None))))
+  a1
+  a2
+  b1
+  b2
+
 Test files status
 
   $ rm a1

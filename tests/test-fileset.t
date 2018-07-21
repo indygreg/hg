@@ -186,18 +186,18 @@ Show parsed tree at stages:
     (symbol 'a2')
     (and
       (func
-        (symbol 'grep')
-        (string 'b'))
-      (func
         (symbol 'clean')
-        None)))
+        None)
+      (func
+        (symbol 'grep')
+        (string 'b'))))
   * matcher:
   <unionmatcher matchers=[
     <patternmatcher patterns='(?:a1$)'>,
     <patternmatcher patterns='(?:a2$)'>,
     <intersectionmatcher
-      m1=<predicatenmatcher pred=grep('b')>,
-      m2=<predicatenmatcher pred=clean>>]>
+      m1=<predicatenmatcher pred=clean>,
+      m2=<predicatenmatcher pred=grep('b')>>]>
   a1
   a2
   b1
@@ -281,6 +281,19 @@ Test files properties
   bin
   $ hg add bin
   $ fileset 'binary()'
+  bin
+
+  $ fileset -p optimized -s 'binary() and b*'
+  * optimized:
+  (and
+    (symbol 'b*')
+    (func
+      (symbol 'binary')
+      None))
+  * matcher:
+  <intersectionmatcher
+    m1=<patternmatcher patterns='(?:b[^/]*$)'>,
+    m2=<predicatenmatcher pred=binary>>
   bin
 
   $ fileset 'grep("b{1}")'

@@ -184,7 +184,14 @@ def _optimize(x):
     if op == 'not':
         w, t = _optimize(x[1])
         return w, (op, t)
-    if op in {'and', 'minus'}:
+    if op == 'and':
+        wa, ta = _optimize(x[1])
+        wb, tb = _optimize(x[2])
+        if wa <= wb:
+            return wa, (op, ta, tb)
+        else:
+            return wb, (op, tb, ta)
+    if op == 'minus':
         wa, ta = _optimize(x[1])
         wb, tb = _optimize(x[2])
         return max(wa, wb), (op, ta, tb)

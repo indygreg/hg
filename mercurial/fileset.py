@@ -103,7 +103,7 @@ def parse(expr):
     tree, pos = p.parse(tokenize(expr))
     if pos != len(expr):
         raise error.ParseError(_("invalid token"), pos)
-    return tree
+    return parser.simplifyinfixops(tree, {'list'})
 
 def getsymbol(x):
     if x and x[0] == 'symbol':
@@ -131,7 +131,7 @@ def getlist(x):
     if not x:
         return []
     if x[0] == 'list':
-        return getlist(x[1]) + [x[2]]
+        return list(x[1:])
     return [x]
 
 def getargs(x, min, max, err):
@@ -174,7 +174,7 @@ def minusmatch(mctx, x, y):
 def negatematch(mctx, x):
     raise error.ParseError(_("can't use negate operator in this context"))
 
-def listmatch(mctx, x, y):
+def listmatch(mctx, *xs):
     raise error.ParseError(_("can't use a list in this context"),
                            hint=_('see hg help "filesets.x or y"'))
 

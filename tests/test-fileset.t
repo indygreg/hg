@@ -111,6 +111,15 @@ Test invalid syntax
       None))
   hg: parse error: can't use negate operator in this context
   [255]
+  $ fileset -p parsed 'a, b, c'
+  * parsed:
+  (list
+    (symbol 'a')
+    (symbol 'b')
+    (symbol 'c'))
+  hg: parse error: can't use a list in this context
+  (see hg help "filesets.x or y")
+  [255]
 
   $ fileset '"path":.'
   hg: parse error: not a symbol

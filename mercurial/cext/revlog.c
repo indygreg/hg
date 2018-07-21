@@ -32,7 +32,7 @@
  * A base-16 trie for fast node->rev mapping.
  *
  * Positive value is index of the next node in the trie
- * Negative value is a leaf: -(rev + 1)
+ * Negative value is a leaf: -(rev + 2)
  * Zero is empty
  */
 typedef struct {
@@ -231,7 +231,7 @@ static const char *index_node(indexObject *self, Py_ssize_t pos)
 	Py_ssize_t length = index_length(self);
 	const char *data;
 
-	if (pos == length - 1 || pos == INT_MAX)
+	if (pos == length - 1 || pos == -1)
 		return nullid;
 
 	if (pos >= length)
@@ -1008,7 +1008,7 @@ static int nt_find(indexObject *self, const char *node, Py_ssize_t nodelen,
 			const char *n;
 			Py_ssize_t i;
 
-			v = -(v + 1);
+			v = -(v + 2);
 			n = index_node(self, v);
 			if (n == NULL)
 				return -2;
@@ -1060,17 +1060,17 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 		v = n->children[k];
 
 		if (v == 0) {
-			n->children[k] = -rev - 1;
+			n->children[k] = -rev - 2;
 			return 0;
 		}
 		if (v < 0) {
-			const char *oldnode = index_node_existing(self, -(v + 1));
+			const char *oldnode = index_node_existing(self, -(v + 2));
 			int noff;
 
 			if (oldnode == NULL)
 				return -1;
 			if (!memcmp(oldnode, node, 20)) {
-				n->children[k] = -rev - 1;
+				n->children[k] = -rev - 2;
 				return 0;
 			}
 			noff = nt_new(self);
@@ -1095,8 +1095,8 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 
 static int nt_delete_node(indexObject *self, const char *node)
 {
-	/* rev==-1 happens to get encoded as 0, which is interpreted as not set */
-	return nt_insert(self, node, -1);
+	/* rev==-2 happens to get encoded as 0, which is interpreted as not set */
+	return nt_insert(self, node, -2);
 }
 
 static int nt_init(indexObject *self)
@@ -1118,7 +1118,7 @@ static int nt_init(indexObject *self)
 		self->ntrev = (int)index_length(self) - 1;
 		self->ntlookups = 1;
 		self->ntmisses = 0;
-		if (nt_insert(self, nullid, INT_MAX) == -1) {
+		if (nt_insert(self, nullid, -1) == -1) {
 			free(self->nt);
 			self->nt = NULL;
 			return -1;
@@ -1290,7 +1290,7 @@ static int nt_shortest(indexObject *self, const char *node)
 		v = n->children[k];
 		if (v < 0) {
 			const char *n;
-			v = -(v + 1);
+			v = -(v + 2);
 			n = index_node_existing(self, v);
 			if (n == NULL)
 				return -3;

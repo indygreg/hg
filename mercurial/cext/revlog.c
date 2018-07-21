@@ -1093,6 +1093,12 @@ static int nt_insert(indexObject *self, const char *node, int rev)
 	return -1;
 }
 
+static int nt_delete_node(indexObject *self, const char *node)
+{
+	/* rev==-1 happens to get encoded as 0, which is interpreted as not set */
+	return nt_insert(self, node, -1);
+}
+
 static int nt_init(indexObject *self)
 {
 	if (self->nt == NULL) {
@@ -1792,7 +1798,7 @@ static void nt_invalidate_added(indexObject *self, Py_ssize_t start)
 		PyObject *tuple = PyList_GET_ITEM(self->added, i);
 		PyObject *node = PyTuple_GET_ITEM(tuple, 7);
 
-		nt_insert(self, PyBytes_AS_STRING(node), -1);
+		nt_delete_node(self, PyBytes_AS_STRING(node));
 	}
 
 	if (start == 0)
@@ -1851,7 +1857,7 @@ static int index_slice_del(indexObject *self, PyObject *item)
 				if (node == NULL)
 					return -1;
 
-				nt_insert(self, node, -1);
+				nt_delete_node(self, node);
 			}
 			if (self->added)
 				nt_invalidate_added(self, 0);
@@ -1903,7 +1909,7 @@ static int index_assign_subscript(indexObject *self, PyObject *item,
 		return -1;
 
 	if (value == NULL)
-		return self->nt ? nt_insert(self, node, -1) : 0;
+		return self->nt ? nt_delete_node(self, node) : 0;
 	rev = PyInt_AsLong(value);
 	if (rev > INT_MAX || rev < 0) {
 		if (!PyErr_Occurred())

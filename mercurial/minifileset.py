@@ -40,9 +40,8 @@ def _compile(tree):
         raise error.ParseError(_("unsupported file pattern: %s") % name,
                                hint=_('paths must be prefixed with "path:"'))
     elif op == 'or':
-        func1 = _compile(tree[1])
-        func2 = _compile(tree[2])
-        return lambda n, s: func1(n, s) or func2(n, s)
+        funcs = [_compile(x) for x in tree[1:]]
+        return lambda n, s: any(f(n, s) for f in funcs)
     elif op == 'and':
         func1 = _compile(tree[1])
         func2 = _compile(tree[2])

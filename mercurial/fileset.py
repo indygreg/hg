@@ -103,7 +103,7 @@ def parse(expr):
     tree, pos = p.parse(tokenize(expr))
     if pos != len(expr):
         raise error.ParseError(_("invalid token"), pos)
-    return parser.simplifyinfixops(tree, {'list'})
+    return parser.simplifyinfixops(tree, {'list', 'or'})
 
 def getsymbol(x):
     if x and x[0] == 'symbol':
@@ -157,10 +157,9 @@ def andmatch(mctx, x, y):
     ym = getmatch(mctx, y)
     return matchmod.intersectmatchers(xm, ym)
 
-def ormatch(mctx, x, y):
-    xm = getmatch(mctx, x)
-    ym = getmatch(mctx, y)
-    return matchmod.unionmatcher([xm, ym])
+def ormatch(mctx, *xs):
+    ms = [getmatch(mctx, x) for x in xs]
+    return matchmod.unionmatcher(ms)
 
 def notmatch(mctx, x):
     m = getmatch(mctx, x)

@@ -159,9 +159,8 @@ Show parsed tree at stages:
   $ fileset -p all -s 'a1 or a2 or (grep("b") & clean())'
   * parsed:
   (or
-    (or
-      (symbol 'a1')
-      (symbol 'a2'))
+    (symbol 'a1')
+    (symbol 'a2')
     (group
       (and
         (func
@@ -172,9 +171,8 @@ Show parsed tree at stages:
           None))))
   * matcher:
   <unionmatcher matchers=[
-    <unionmatcher matchers=[
-      <patternmatcher patterns='(?:a1$)'>,
-      <patternmatcher patterns='(?:a2$)'>]>,
+    <patternmatcher patterns='(?:a1$)'>,
+    <patternmatcher patterns='(?:a2$)'>,
     <intersectionmatcher
       m1=<predicatenmatcher pred=grep('b')>,
       m2=<predicatenmatcher pred=clean>>]>

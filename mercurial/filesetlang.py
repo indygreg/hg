@@ -171,6 +171,82 @@ def _analyze(x):
         return (op, x[1], ta)
     raise error.ProgrammingError('invalid operator %r' % op)
 
+def _insertstatushints(x):
+    """Insert hint nodes where status should be calculated (first path)
+
+    This works in bottom-up way, summing up status names and inserting hint
+    nodes at 'and' and 'or' as needed. Thus redundant hint nodes may be left.
+
+    Returns (status-names, new-tree) at the given subtree, where status-names
+    is a sum of status names referenced in the given subtree.
+    """
+    if x is None:
+        return (), x
+
+    op = x[0]
+    if op in {'string', 'symbol', 'kindpat'}:
+        return (), x
+    if op == 'not':
+        h, t = _insertstatushints(x[1])
+        return h, (op, t)
+    if op == 'and':
+        ha, ta = _insertstatushints(x[1])
+        hb, tb = _insertstatushints(x[2])
+        hr = ha + hb
+        if ha and hb:
+            return hr, ('withstatus', (op, ta, tb), ('string', ' '.join(hr)))
+        return hr, (op, ta, tb)
+    if op == 'or':
+        hs, ts = zip(*(_insertstatushints(y) for y in x[1:]))
+        hr = sum(hs, ())
+        if sum(bool(h) for h in hs) > 1:
+            return hr, ('withstatus', (op,) + ts, ('string', ' '.join(hr)))
+        return hr, (op,) + ts
+    if op == 'list':
+        hs, ts = zip(*(_insertstatushints(y) for y in x[1:]))
+        return sum(hs, ()), (op,) + ts
+    if op == 'func':
+        f = getsymbol(x[1])
+        # don't propagate 'ha' crossing a function boundary
+        ha, ta = _insertstatushints(x[2])
+        if getattr(symbols.get(f), '_callstatus', False):
+            return (f,), ('withstatus', (op, x[1], ta), ('string', f))
+        return (), (op, x[1], ta)
+    raise error.ProgrammingError('invalid operator %r' % op)
+
+def _mergestatushints(x, instatus):
+    """Remove redundant status hint nodes (second path)
+
+    This is the top-down path to eliminate inner hint nodes.
+    """
+    if x is None:
+        return x
+
+    op = x[0]
+    if op == 'withstatus':
+        if instatus:
+            # drop redundant hint node
+            return _mergestatushints(x[1], instatus)
+        t = _mergestatushints(x[1], instatus=True)
+        return (op, t, x[2])
+    if op in {'string', 'symbol', 'kindpat'}:
+        return x
+    if op == 'not':
+        t = _mergestatushints(x[1], instatus)
+        return (op, t)
+    if op == 'and':
+        ta = _mergestatushints(x[1], instatus)
+        tb = _mergestatushints(x[2], instatus)
+        return (op, ta, tb)
+    if op in {'list', 'or'}:
+        ts = tuple(_mergestatushints(y, instatus) for y in x[1:])
+        return (op,) + ts
+    if op == 'func':
+        # don't propagate 'instatus' crossing a function boundary
+        ta = _mergestatushints(x[2], instatus=False)
+        return (op, x[1], ta)
+    raise error.ProgrammingError('invalid operator %r' % op)
+
 def analyze(x):
     """Transform raw parsed tree to evaluatable tree which can be fed to
     optimize() or getmatch()
@@ -178,7 +254,9 @@ def analyze(x):
     All pseudo operations should be mapped to real operations or functions
     defined in methods or symbols table respectively.
     """
-    return _analyze(x)
+    t = _analyze(x)
+    _h, t = _insertstatushints(t)
+    return _mergestatushints(t, instatus=False)
 
 def _optimizeandops(op, ta, tb):
     if tb is not None and tb[0] == 'not':
@@ -205,6 +283,9 @@ def _optimize(x):
         return 0, x
 
     op = x[0]
+    if op == 'withstatus':
+        w, t = _optimize(x[1])
+        return w, (op, t, x[2])
     if op in {'string', 'symbol'}:
         return WEIGHT_CHECK_FILENAME, x
     if op == 'kindpat':

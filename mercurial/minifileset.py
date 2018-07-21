@@ -24,7 +24,9 @@ def _compile(tree):
     if not tree:
         raise error.ParseError(_("missing argument"))
     op = tree[0]
-    if op in {'symbol', 'string', 'kindpat'}:
+    if op == 'withstatus':
+        return _compile(tree[1])
+    elif op in {'symbol', 'string', 'kindpat'}:
         name = filesetlang.getpattern(tree, {'path'}, _('invalid file pattern'))
         if name.startswith('**'): # file extension test, ex. "**.tar.gz"
             ext = name[2:]

@@ -175,18 +175,22 @@ Show parsed tree at stages:
       (func
         (symbol 'grep')
         (string 'b'))
-      (func
-        (symbol 'clean')
-        None)))
+      (withstatus
+        (func
+          (symbol 'clean')
+          None)
+        (string 'clean'))))
   * optimized:
   (or
     (patterns
       (symbol 'a1')
       (symbol 'a2'))
     (and
-      (func
-        (symbol 'clean')
-        None)
+      (withstatus
+        (func
+          (symbol 'clean')
+          None)
+        (string 'clean'))
       (func
         (symbol 'grep')
         (string 'b'))))
@@ -373,6 +377,156 @@ Test files status in different revisions
   b1
   b2
   c1
+
+Test insertion of status hints
+
+  $ fileset -p optimized 'added()'
+  * optimized:
+  (withstatus
+    (func
+      (symbol 'added')
+      None)
+    (string 'added'))
+  c1
+
+  $ fileset -p optimized 'a* & removed()'
+  * optimized:
+  (and
+    (symbol 'a*')
+    (withstatus
+      (func
+        (symbol 'removed')
+        None)
+      (string 'removed')))
+  a2
+
+  $ fileset -p optimized 'a* - removed()'
+  * optimized:
+  (minus
+    (symbol 'a*')
+    (withstatus
+      (func
+        (symbol 'removed')
+        None)
+      (string 'removed')))
+  a1
+
+  $ fileset -p analyzed -p optimized '(added() + removed()) - a*'
+  * analyzed:
+  (and
+    (withstatus
+      (or
+        (func
+          (symbol 'added')
+          None)
+        (func
+          (symbol 'removed')
+          None))
+      (string 'added removed'))
+    (not
+      (symbol 'a*')))
+  * optimized:
+  (and
+    (not
+      (symbol 'a*'))
+    (withstatus
+      (or
+        (func
+          (symbol 'added')
+          None)
+        (func
+          (symbol 'removed')
+          None))
+      (string 'added removed')))
+  c1
+
+  $ fileset -p optimized 'a* + b* + added() + unknown()'
+  * optimized:
+  (withstatus
+    (or
+      (patterns
+        (symbol 'a*')
+        (symbol 'b*'))
+      (func
+        (symbol 'added')
+        None)
+      (func
+        (symbol 'unknown')
+        None))
+    (string 'added unknown'))
+  a1
+  a2
+  b1
+  b2
+  c1
+  c3
+
+  $ fileset -p analyzed -p optimized 'removed() & missing() & a*'
+  * analyzed:
+  (and
+    (withstatus
+      (and
+        (func
+          (symbol 'removed')
+          None)
+        (func
+          (symbol 'missing')
+          None))
+      (string 'removed missing'))
+    (symbol 'a*'))
+  * optimized:
+  (and
+    (symbol 'a*')
+    (withstatus
+      (and
+        (func
+          (symbol 'removed')
+          None)
+        (func
+          (symbol 'missing')
+          None))
+      (string 'removed missing')))
+
+  $ fileset -p optimized 'clean() & revs(0, added())'
+  * optimized:
+  (and
+    (withstatus
+      (func
+        (symbol 'clean')
+        None)
+      (string 'clean'))
+    (func
+      (symbol 'revs')
+      (list
+        (symbol '0')
+        (withstatus
+          (func
+            (symbol 'added')
+            None)
+          (string 'added')))))
+  b1
+
+  $ fileset -p optimized 'clean() & status(null, 0, b* & added())'
+  * optimized:
+  (and
+    (withstatus
+      (func
+        (symbol 'clean')
+        None)
+      (string 'clean'))
+    (func
+      (symbol 'status')
+      (list
+        (symbol 'null')
+        (symbol '0')
+        (and
+          (symbol 'b*')
+          (withstatus
+            (func
+              (symbol 'added')
+              None)
+            (string 'added'))))))
+  b1
 
 Test files properties
 

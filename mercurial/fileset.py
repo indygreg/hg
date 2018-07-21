@@ -43,6 +43,9 @@ def getmatch(mctx, x):
         raise error.ParseError(_("missing argument"))
     return methods[x[0]](mctx, *x[1:])
 
+def getmatchwithstatus(mctx, x, hint):
+    return getmatch(mctx, x)
+
 def stringmatch(mctx, x):
     return mctx.matcher([x])
 
@@ -443,6 +446,7 @@ def subrepo(mctx, x):
         return mctx.predicate(sstate.__contains__, predrepr='subrepo')
 
 methods = {
+    'withstatus': getmatchwithstatus,
     'string': stringmatch,
     'symbol': stringmatch,
     'kindpat': kindpatmatch,

@@ -528,6 +528,7 @@ def _intree(funcs, tree):
 def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""
     tree = filesetlang.parse(expr)
+    tree = filesetlang.analyze(tree)
     mctx = matchctx(ctx, _buildstatus(ctx, tree), badfn=badfn)
     return getmatch(mctx, tree)
 

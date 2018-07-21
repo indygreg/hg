@@ -89,4 +89,5 @@ def compile(text):
     root except for "bin/README".
     """
     tree = filesetlang.parse(text)
+    tree = filesetlang.analyze(tree)
     return _compile(tree)

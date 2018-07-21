@@ -131,5 +131,41 @@ def getargs(x, min, max, err):
         raise error.ParseError(err)
     return l
 
+def _analyze(x):
+    if x is None:
+        return x
+
+    op = x[0]
+    if op in {'string', 'symbol'}:
+        return x
+    if op == 'kindpat':
+        getsymbol(x[1])  # kind must be a symbol
+        t = _analyze(x[2])
+        return (op, x[1], t)
+    if op in {'group', 'not', 'negate'}:
+        t = _analyze(x[1])
+        return (op, t)
+    if op in {'and', 'minus'}:
+        ta = _analyze(x[1])
+        tb = _analyze(x[2])
+        return (op, ta, tb)
+    if op in {'list', 'or'}:
+        ts = tuple(_analyze(y) for y in x[1:])
+        return (op,) + ts
+    if op == 'func':
+        getsymbol(x[1])  # function name must be a symbol
+        ta = _analyze(x[2])
+        return (op, x[1], ta)
+    raise error.ProgrammingError('invalid operator %r' % op)
+
+def analyze(x):
+    """Transform raw parsed tree to evaluatable tree which can be fed to
+    getmatch()
+
+    All pseudo operations should be mapped to real operations or functions
+    defined in methods or symbols table respectively.
+    """
+    return _analyze(x)
+
 def prettyformat(tree):
     return parser.prettyformat(tree, ('string', 'symbol'))

@@ -901,6 +901,7 @@ def debugfileset(ui, repo, expr, **opts):
 
     stages = [
         ('parsed', pycompat.identity),
+        ('analyzed', filesetlang.analyze),
     ]
     stagenames = set(n for n, f in stages)
 

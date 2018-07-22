@@ -62,7 +62,7 @@ def patternsmatch(mctx, *xs):
 
 def andmatch(mctx, x, y):
     xm = getmatch(mctx, x)
-    ym = getmatch(mctx, y)
+    ym = getmatch(mctx.narrowed(xm), y)
     return matchmod.intersectmatchers(xm, ym)
 
 def ormatch(mctx, *xs):
@@ -75,7 +75,7 @@ def notmatch(mctx, x):
 
 def minusmatch(mctx, x, y):
     xm = getmatch(mctx, x)
-    ym = getmatch(mctx, y)
+    ym = getmatch(mctx.narrowed(xm), y)
     return matchmod.differencematcher(xm, ym)
 
 def listmatch(mctx, *xs):
@@ -460,19 +460,31 @@ class matchctx(object):
         self._basectx = basectx
         self.ctx = ctx
         self._badfn = badfn
+        self._match = None
         self._status = None
 
+    def narrowed(self, match):
+        """Create matchctx for a sub-tree narrowed by the given matcher"""
+        mctx = matchctx(self._basectx, self.ctx, self._badfn)
+        mctx._match = match
+        # leave wider status which we don't have to care
+        mctx._status = self._status
+        return mctx
+
     def switch(self, basectx, ctx):
-        return matchctx(basectx, ctx, self._badfn)
+        mctx = matchctx(basectx, ctx, self._badfn)
+        mctx._match = self._match
+        return mctx
 
     def withstatus(self, keys):
         """Create matchctx which has precomputed status specified by the keys"""
         mctx = matchctx(self._basectx, self.ctx, self._badfn)
+        mctx._match = self._match
         mctx._buildstatus(keys)
         return mctx
 
     def _buildstatus(self, keys):
-        self._status = self._basectx.status(self.ctx,
+        self._status = self._basectx.status(self.ctx, self._match,
                                             listignored='ignored' in keys,
                                             listclean=True,
                                             listunknown='unknown' in keys)

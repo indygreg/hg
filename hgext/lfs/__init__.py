@@ -136,7 +136,7 @@ from mercurial import (
     exchange,
     extensions,
     filelog,
-    fileset,
+    filesetlang,
     hg,
     localrepo,
     minifileset,
@@ -261,7 +261,7 @@ def _trackedmatcher(repo):
         # deprecated config: lfs.threshold
         threshold = repo.ui.configbytes('lfs', 'threshold')
         if threshold:
-            fileset.parse(trackspec)  # make sure syntax errors are confined
+            filesetlang.parse(trackspec)  # make sure syntax errors are confined
             trackspec = "(%s) | size('>%d')" % (trackspec, threshold)
 
         return minifileset.compile(trackspec)
@@ -361,7 +361,7 @@ def extsetup(ui):
 def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword
-    fileset.getargs(x, 0, 0, _("lfs takes no arguments"))
+    filesetlang.getargs(x, 0, 0, _("lfs takes no arguments"))
     ctx = mctx.ctx
     def lfsfilep(f):
         return wrapper.pointerfromctx(ctx, f, removed=True) is not None

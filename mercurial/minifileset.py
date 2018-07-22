@@ -11,12 +11,13 @@ from .i18n import _
 from . import (
     error,
     fileset,
+    filesetlang,
     pycompat,
 )
 
 def _sizep(x):
     # i18n: "size" is a keyword
-    expr = fileset.getstring(x, _("size requires an expression"))
+    expr = filesetlang.getstring(x, _("size requires an expression"))
     return fileset.sizematcher(expr)
 
 def _compile(tree):
@@ -24,7 +25,7 @@ def _compile(tree):
         raise error.ParseError(_("missing argument"))
     op = tree[0]
     if op in {'symbol', 'string', 'kindpat'}:
-        name = fileset.getpattern(tree, {'path'}, _('invalid file pattern'))
+        name = filesetlang.getpattern(tree, {'path'}, _('invalid file pattern'))
         if name.startswith('**'): # file extension test, ex. "**.tar.gz"
             ext = name[2:]
             for c in pycompat.bytestr(ext):
@@ -57,7 +58,7 @@ def _compile(tree):
             'size': lambda n, s: _sizep(tree[2])(s),
         }
 
-        name = fileset.getsymbol(tree[1])
+        name = filesetlang.getsymbol(tree[1])
         if name in symbols:
             return symbols[name]
 
@@ -87,5 +88,5 @@ def compile(text):
     files whose name ends with ".zip", and all files under "bin" in the repo
     root except for "bin/README".
     """
-    tree = fileset.parse(text)
+    tree = filesetlang.parse(text)
     return _compile(tree)

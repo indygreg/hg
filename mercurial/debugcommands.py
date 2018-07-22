@@ -48,7 +48,7 @@ from . import (
     exchange,
     extensions,
     filemerge,
-    fileset,
+    filesetlang,
     formatter,
     hg,
     httppeer,
@@ -916,13 +916,13 @@ def debugfileset(ui, repo, expr, **opts):
                 raise error.Abort(_('invalid stage name: %s') % n)
         showalways.update(opts['show_stage'])
 
-    tree = fileset.parse(expr)
+    tree = filesetlang.parse(expr)
     for n, f in stages:
         tree = f(tree)
         if n in showalways:
             if opts['show_stage'] or n != 'parsed':
                 ui.write(("* %s:\n") % n)
-            ui.write(fileset.prettyformat(tree), "\n")
+            ui.write(filesetlang.prettyformat(tree), "\n")
 
     files = set()
     if opts['all_files']:

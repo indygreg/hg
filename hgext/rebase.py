@@ -733,7 +733,8 @@ def rebase(ui, repo, **opts):
     deleted, there is no hook presently available for this.
 
     If a rebase is interrupted to manually resolve a conflict, it can be
-    continued with --continue/-c or aborted with --abort/-a.
+    continued with --continue/-c, aborted with --abort/-a, or stopped with
+    --stop.
 
     .. container:: verbose
 

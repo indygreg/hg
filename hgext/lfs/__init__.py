@@ -357,7 +357,7 @@ def extsetup(ui):
     # when writing a bundle via "hg bundle" command, upload related LFS blobs
     wrapfunction(bundle2, 'writenewbundle', wrapper.writenewbundle)
 
-@filesetpredicate('lfs()', callstatus=True)
+@filesetpredicate('lfs()')
 def lfsfileset(mctx, x):
     """File that uses LFS storage."""
     # i18n: "lfs" is a keyword

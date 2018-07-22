@@ -805,6 +805,12 @@ def rebase(ui, repo, **opts):
     inmemory = ui.configbool('rebase', 'experimental.inmemory')
     dryrun = opts.get('dry_run')
     stop = opts.get('stop')
+    if stop:
+        if opts.get('dry_run') or opts.get('confirm'):
+            raise error.Abort(_('cannot use --stop with --dry-run '
+                                'or --confirm'))
+        if opts.get('abort') or opts.get('continue'):
+            raise error.Abort(_('cannot use --stop with --abort or --continue'))
     if dryrun:
         if opts.get('abort'):
             raise error.Abort(_('cannot specify both --dry-run and --abort'))
@@ -841,7 +847,6 @@ def rebase(ui, repo, **opts):
         rbsrt = rebaseruntime(repo, ui)
         rbsrt.restorestatus()
 
-        #todo: raise error for conflicting options
         if rbsrt.collapsef:
             raise error.Abort(_("cannot stop in --collapse session"))
         allowunstable = obsolete.isenabled(repo, obsolete.allowunstableopt)

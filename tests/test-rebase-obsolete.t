@@ -2003,3 +2003,22 @@ Test --stop aborts when --collapse was passed:
   o  0:cb9a9f314b8b test
      a
   
+Test --stop raise errors with conflicting options:
+=================================================
+  $ hg rebase -s 3 -d 5
+  rebasing 3:055a42cdd887 "d"
+  merging d
+  warning: conflicts while merging d! (edit, then use 'hg resolve --mark')
+  unresolved conflicts (see hg resolve, then hg rebase --continue)
+  [1]
+  $ hg rebase --stop --dry-run
+  abort: cannot use --stop with --dry-run or --confirm
+  [255]
+
+  $ hg rebase -s 3 -d 5
+  abort: rebase in progress
+  (use 'hg rebase --continue' or 'hg rebase --abort')
+  [255]
+  $ hg rebase --stop --continue
+  abort: cannot use --stop with --abort or --continue
+  [255]

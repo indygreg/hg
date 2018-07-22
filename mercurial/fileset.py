@@ -462,6 +462,9 @@ class matchctx(object):
         self._badfn = badfn
         self._status = None
 
+    def switch(self, basectx, ctx):
+        return matchctx(basectx, ctx, self._badfn)
+
     def withstatus(self, keys):
         """Create matchctx which has precomputed status specified by the keys"""
         mctx = matchctx(self._basectx, self.ctx, self._badfn)
@@ -527,9 +530,6 @@ class matchctx(object):
         repo = self.ctx.repo()
         return matchmod.nevermatcher(repo.root, repo.getcwd(),
                                      badfn=self._badfn)
-
-    def switch(self, basectx, ctx):
-        return matchctx(basectx, ctx, self._badfn)
 
 def match(ctx, expr, badfn=None):
     """Create a matcher for a single fileset expression"""

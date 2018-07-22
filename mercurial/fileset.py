@@ -386,7 +386,7 @@ def revs(mctx, x):
     matchers = []
     for r in revs:
         ctx = repo[r]
-        mc = mctx.switch(ctx, _buildstatus(ctx.p1(), ctx, x))
+        mc = mctx.switch(ctx.p1(), ctx, _buildstatus(ctx.p1(), ctx, x))
         matchers.append(getmatch(mc, x))
     if not matchers:
         return mctx.never()
@@ -414,7 +414,7 @@ def status(mctx, x):
     if not revspec:
         raise error.ParseError(reverr)
     basectx, ctx = scmutil.revpair(repo, [baserevspec, revspec])
-    mc = mctx.switch(ctx, _buildstatus(basectx, ctx, x))
+    mc = mctx.switch(basectx, ctx, _buildstatus(basectx, ctx, x))
     return getmatch(mc, x)
 
 @predicate('subrepo([pattern])')
@@ -454,7 +454,8 @@ methods = {
 }
 
 class matchctx(object):
-    def __init__(self, ctx, status=None, badfn=None):
+    def __init__(self, basectx, ctx, status=None, badfn=None):
+        self._basectx = basectx
         self.ctx = ctx
         self._status = status
         self._badfn = badfn
@@ -513,8 +514,8 @@ class matchctx(object):
         return matchmod.nevermatcher(repo.root, repo.getcwd(),
                                      badfn=self._badfn)
 
-    def switch(self, ctx, status=None):
-        return matchctx(ctx, status, self._badfn)
+    def switch(self, basectx, ctx, status=None):
+        return matchctx(basectx, ctx, status, self._badfn)
 
 # filesets using matchctx.switch()
 _switchcallers = [
@@ -540,7 +541,8 @@ def match(ctx, expr, badfn=None):
     tree = filesetlang.parse(expr)
     tree = filesetlang.analyze(tree)
     tree = filesetlang.optimize(tree)
-    mctx = matchctx(ctx, _buildstatus(ctx.p1(), ctx, tree), badfn=badfn)
+    mctx = matchctx(ctx.p1(), ctx, _buildstatus(ctx.p1(), ctx, tree),
+                    badfn=badfn)
     return getmatch(mctx, tree)
 
 def _buildstatus(basectx, ctx, tree):

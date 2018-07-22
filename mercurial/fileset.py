@@ -386,7 +386,8 @@ def revs(mctx, x):
     matchers = []
     for r in revs:
         ctx = repo[r]
-        matchers.append(getmatch(mctx.switch(ctx, _buildstatus(ctx, x)), x))
+        mc = mctx.switch(ctx, _buildstatus(ctx.p1(), ctx, x))
+        matchers.append(getmatch(mc, x))
     if not matchers:
         return mctx.never()
     if len(matchers) == 1:
@@ -413,7 +414,8 @@ def status(mctx, x):
     if not revspec:
         raise error.ParseError(reverr)
     basectx, ctx = scmutil.revpair(repo, [baserevspec, revspec])
-    return getmatch(mctx.switch(ctx, _buildstatus(ctx, x, basectx=basectx)), x)
+    mc = mctx.switch(ctx, _buildstatus(basectx, ctx, x))
+    return getmatch(mc, x)
 
 @predicate('subrepo([pattern])')
 def subrepo(mctx, x):
@@ -538,18 +540,16 @@ def match(ctx, expr, badfn=None):
     tree = filesetlang.parse(expr)
     tree = filesetlang.analyze(tree)
     tree = filesetlang.optimize(tree)
-    mctx = matchctx(ctx, _buildstatus(ctx, tree), badfn=badfn)
+    mctx = matchctx(ctx, _buildstatus(ctx.p1(), ctx, tree), badfn=badfn)
     return getmatch(mctx, tree)
 
-def _buildstatus(ctx, tree, basectx=None):
+def _buildstatus(basectx, ctx, tree):
     # do we need status info?
 
     if _intree(_statuscallers, tree):
         unknown = _intree(['unknown'], tree)
         ignored = _intree(['ignored'], tree)
 
-        if basectx is None:
-            basectx = ctx.p1()
         return basectx.status(ctx, listunknown=unknown, listignored=ignored,
                               listclean=True)
     else:
